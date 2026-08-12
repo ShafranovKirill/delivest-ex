@@ -8,7 +8,6 @@ defmodule Delivest.Repo.Migrations.CreateRoleAndUpdateStaff do
 
       add :permissions, :jsonb, default: "[]", null: false
 
-      add :deleted_at, :utc_datetime
       timestamps(type: :utc_datetime)
     end
 

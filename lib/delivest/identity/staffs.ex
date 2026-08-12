@@ -121,6 +121,13 @@ defmodule Delivest.Identity.Staffs do
     end
   end
 
+  @spec system_create_staff(map()) :: {:ok, Account.t()} | {:error, Ecto.Changeset.t()}
+  def system_create_staff(attrs) do
+    %Staff{}
+    |> Staff.changeset(attrs)
+    |> Repo.insert()
+  end
+
   defp fetch_from_db_and_cache(id, opts) do
     case Repo.get(Staff, id) do
       nil ->

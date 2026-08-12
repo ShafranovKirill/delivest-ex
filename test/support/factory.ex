@@ -6,7 +6,7 @@ defmodule Delivest.Factory do
   def role_factory do
     %Role{
       name: sequence(:role_name, &"Role_#{&1}"),
-      permissions: ["courses.read", "courses.update"]
+      permissions: ["staff.read", "staff.update"]
     }
   end
 
