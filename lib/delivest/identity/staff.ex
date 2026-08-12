@@ -68,6 +68,20 @@ defmodule Delivest.Identity.Staff do
     |> hash_password()
   end
 
+  def password_changeset(staff, attrs) do
+    staff
+    |> cast(attrs, [:password])
+    |> validate_required([:password])
+    |> validate_format(:password, password_regex(),
+      message:
+        dgettext_noop(
+          "errors",
+          "must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+        )
+    )
+    |> hash_password()
+  end
+
   defp validate_password_required(changeset) do
     if is_nil(changeset.data.id) do
       validate_required(changeset, [:password])

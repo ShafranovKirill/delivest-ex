@@ -1,8 +1,10 @@
 defmodule Delivest.Identity.Staffs do
   import Ecto.Query
-  alias Delivest.{Identity, Repo}
+  alias Delivest.Repo
   alias Delivest.Identity.{Staff, Acl}
 
+  @spec list_staff(map(), map(), keyword()) ::
+          {:ok, {[Staff.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()}
   def list_staff(staff, params \\ %{}, opts \\ []) do
     base_query =
       Staff
@@ -19,15 +21,23 @@ defmodule Delivest.Identity.Staffs do
     Flop.validate_and_run(query, params, for: Staff)
   end
 
+  @spec create_staff(Staff.t(), map()) ::
+          {:ok, Staff.t()} | {:error, :forbidden} | {:error, Ecto.Changeset.t()}
   def create_staff(staff, attrs) do
     if Acl.can?(staff, "staff.create") do
       %Staff{}
       |> Staff.changeset(attrs)
       |> Repo.insert()
     else
-      {:error, :unauthorized}
+      {:error, :forbidden}
     end
   end
+
+  @spec update_staff(
+          Staff.t(),
+          Staff.t(),
+          map()
+        ) :: {:ok, Staff.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
 
   def update_staff(staff, %Staff{} = updatable_staff, attrs) do
     if(Acl.can?(staff, "staff.update")) do
@@ -35,10 +45,27 @@ defmodule Delivest.Identity.Staffs do
       |> Staff.changeset(attrs)
       |> Repo.update()
     else
-      {:error, :unauthorized}
+      {:error, :forbidden}
     end
   end
 
+  @spec change_password(Staff.t(), Staff.t(), map()) ::
+          {:ok, Staff.t()}
+          | {:error, Ecto.Changeset.t()}
+          | {:error, :forbidden}
+  def change_password(staff, %Staff{} = updatable_staff, attrs) do
+    if Acl.can?(staff, "admin") do
+      with {:ok, updated_staff} <-
+             updatable_staff |> Staff.password_changeset(attrs) |> Repo.update() do
+        Cachex.del(:staff_cache, updated_staff.id)
+        {:ok, updated_staff}
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  @spec get_staff(String.t(), keyword()) :: {:error, :not_found} | {:ok, nil} | {:ok, Staff.t()}
   def get_staff(id, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
@@ -54,20 +81,24 @@ defmodule Delivest.Identity.Staffs do
     end
   end
 
-  def soft_delete_staff(%Staff{} = staff) do
-    staff
-    |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
-    |> Repo.update()
-    |> case do
-      {:ok, deleted_staff} ->
+  @spec soft_delete_staff(Staff.t(), Staff.t()) ::
+          {:ok, Staff.t()} | {:error, :forbidden} | {:error, Ecto.Changeset.t()}
+  def soft_delete_staff(staff, %Staff{} = removable_staff) do
+    if Acl.can?(staff, "staff.delete") do
+      with {:ok, deleted_staff} <-
+             removable_staff
+             |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
+             |> Repo.update() do
         Cachex.del(:staff_cache, deleted_staff.id)
         {:ok, deleted_staff}
-
-      error ->
-        error
+      end
+    else
+      {:error, :forbidden}
     end
   end
 
+  @spec authenticate(any(), any()) ::
+          {:error, :invalid_credentials | :staff_blocked} | {:ok, Staff.t()}
   def authenticate(login, password) do
     staff = Repo.get_by(Staff, login: login)
 
