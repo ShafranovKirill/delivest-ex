@@ -1,5 +1,5 @@
 defmodule Delivest.Identity do
-  alias Delivest.Identity.{Staff, Staffs, Acl}
+  alias Delivest.Identity.{Staffs}
 
   defdelegate list_staff(staff, params \\ %{}, opts \\ []), to: Staffs
 end

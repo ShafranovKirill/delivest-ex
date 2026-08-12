@@ -24,6 +24,7 @@ defmodule Delivest.Identity.Staff do
 
   schema "staff" do
     field :login, :string
+    field :name, :string
     field :password_hash, :string
     field :status, Ecto.Enum, values: [:active, :blocked], default: :active
 
