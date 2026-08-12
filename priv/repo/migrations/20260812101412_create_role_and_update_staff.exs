@@ -1,4 +1,4 @@
-defmodule Delivest.Repo.Migrations.CreateRoleAndUpdateAccounts do
+defmodule Delivest.Repo.Migrations.CreateRoleAndUpdateStaff do
   use Ecto.Migration
 
   def change do

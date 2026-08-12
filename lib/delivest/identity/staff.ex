@@ -22,7 +22,7 @@ defmodule Delivest.Identity.Staff do
     }
   }
 
-  schema "accounts" do
+  schema "staff" do
     field :login, :string
     field :password_hash, :string
     field :status, Ecto.Enum, values: [:active, :blocked], default: :active
@@ -36,8 +36,8 @@ defmodule Delivest.Identity.Staff do
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(account, attrs) do
-    account
+  def changeset(staff, attrs) do
+    staff
     |> cast(attrs, [:login, :password, :name, :role_id, :branch_id, :status, :deleted_at])
     |> validate_required([:login, :role_id])
     |> validate_password_required()
