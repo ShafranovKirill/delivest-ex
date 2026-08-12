@@ -15,6 +15,7 @@ defmodule Delivest.Application do
       # Start a worker by calling: Delivest.Worker.start_link(arg)
       # {Delivest.Worker, arg},
       # Start to serve requests, typically the last entry
+      {Cachex, name: :staff_cache},
       DelivestWeb.Endpoint
     ]
 
