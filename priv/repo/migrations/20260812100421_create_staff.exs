@@ -7,6 +7,7 @@ defmodule Delivest.Repo.Migrations.CreateStaff do
 
       add :login, :string, null: false
       add :password_hash, :string, null: false
+      add :name, :string
 
       add :status, :string, default: "active", null: false
 
