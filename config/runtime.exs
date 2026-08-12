@@ -16,6 +16,9 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+
+config :delivest, :default_locale, System.get_env("DEFAULT_LOCALE") || "en"
+
 if System.get_env("PHX_SERVER") do
   config :delivest, DelivestWeb.Endpoint, server: true
 end
