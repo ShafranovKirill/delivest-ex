@@ -121,7 +121,7 @@ defmodule Delivest.Identity.Staffs do
     end
   end
 
-  @spec system_create_staff(map()) :: {:ok, Account.t()} | {:error, Ecto.Changeset.t()}
+  @spec system_create_staff(map()) :: {:ok, Staff.t()} | {:error, Ecto.Changeset.t()}
   def system_create_staff(attrs) do
     %Staff{}
     |> Staff.changeset(attrs)
