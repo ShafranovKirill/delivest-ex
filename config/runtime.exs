@@ -1,5 +1,15 @@
 import Config
 
+if File.exists?(".env") do
+  DotenvParser.load_file(".env")
+end
+
+# Admin credentials: read directly from OS environment at runtime
+config :delivest,
+  admin_login: System.get_env("ADMIN_LOGIN") || "admin123",
+  admin_password: System.get_env("ADMIN_PASSWORD") || "AdminSecret123!",
+  default_locale: System.get_env("DEFAULT_LOCALE") || "en"
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -16,8 +26,6 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
-
-config :delivest, :default_locale, System.get_env("DEFAULT_LOCALE") || "en"
 
 if System.get_env("PHX_SERVER") do
   config :delivest, DelivestWeb.Endpoint, server: true
