@@ -1,0 +1,73 @@
+<div class="min-h-screen flex flex-col bg-base-200 text-base-content">
+  <header class="fixed top-0 left-0 right-0 z-50 bg-base-100 border-b border-base-300 px-6 h-16 flex items-center justify-between shrink-0">
+    
+    <div class="flex items-center gap-3">
+      <a href="/" class="font-bold text-xl tracking-tight text-base-content hover:text-primary transition-colors">
+        {gettext("Delivest CRM")}
+      </a>
+    </div>
+
+    <div class="flex items-center gap-4">
+      
+      <% current_locale = Gettext.get_locale(DelivestWeb.Gettext) %>
+      <.link
+        :if={current_locale == "ru"}
+        href={~p"/locale/en"}
+        class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-base-300 rounded-lg bg-base-100 hover:bg-base-200 text-base-content transition-colors"
+      >
+        <span>🇬🇧</span>
+        <span>EN</span>
+      </.link>
+
+      <.link
+        :if={current_locale == "en"}
+        href={~p"/locale/ru"}
+        class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-base-300 rounded-lg bg-base-100 hover:bg-base-200 text-base-content transition-colors"
+      >
+        <span>🇷🇺</span>
+        <span>RU</span>
+      </.link>
+
+
+<label class="btn btn-ghost btn-sm btn-square swap swap-rotate min-h-9 h-9 w-9">
+  <!-- Класс theme-controller указывает DaisyUI 5 менять data-theme при переключении -->
+  <input
+    type="checkbox"
+    id="theme-toggle"
+    class="theme-controller"
+    value="dark"
+  />
+  <.icon name="hero-sun" class="swap-off h-5 w-5" />
+  <.icon name="hero-moon" class="swap-on h-5 w-5" />
+</label>
+
+      <div class="h-4 w-px bg-base-300"></div>
+
+      <%= if assigns[:current_staff] do %>
+        <span class="text-sm font-medium text-base-content/70">
+          {@current_staff.login}
+        </span>
+        
+        <.link
+          href={~p"/auth/log_out"}
+          method="delete"
+          class="px-3 py-1.5 text-sm font-medium text-error hover:bg-error/10 rounded-md transition-colors"
+        >
+          {gettext("Log out")}
+        </.link>
+      <% else %>
+        <span class="text-sm font-medium text-base-content/50">
+          {gettext("Control Panel")}
+        </span>
+      <% end %>
+
+    </div>
+  </header>
+
+  <main class="flex-1 p-6 pt-16">
+    <div class="max-w-7xl mx-auto">
+      <.flash_group flash={@flash} />
+      {@inner_content}
+    </div>
+  </main>
+</div>

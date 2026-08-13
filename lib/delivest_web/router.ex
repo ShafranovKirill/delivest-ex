@@ -24,6 +24,8 @@ defmodule DelivestWeb.Router do
     pipe_through :browser
 
     get "/locale/:locale", LocaleController, :set
+    post "/auth/log_in", SessionController, :create
+    delete "/auth/log_out", SessionController, :delete
     get "/", PageController, :home
   end
 
@@ -35,10 +37,20 @@ defmodule DelivestWeb.Router do
     end
   end
 
-  scope "/staff", DelivestWeb.StaffWeb do
+  scope "/staff", DelivestWeb.Staff do
     pipe_through :staff_browser
 
-    live_session :staff_session,
+    live_session :staff_public,
+      layout: {DelivestWeb.Layouts, :staff_app},
+      on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
+      scope "/auth" do
+        pipe_through :browser
+        live "/login", AuthLive.Login, :new
+      end
+    end
+
+    live_session :staff_authenticated,
+      layout: {DelivestWeb.Layouts, :staff_app},
       on_mount: [
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}

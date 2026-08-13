@@ -6,6 +6,7 @@ defmodule Delivest.Identity do
   defdelegate update_staff(staff, updatable_staff, attrs), to: Staffs
   defdelegate change_password(staff, updatable_staff, attrs), to: Staffs
   defdelegate get_staff(id, opts \\ []), to: Staffs
+  defdelegate get_staff_by_login(login), to: Staffs
   defdelegate soft_delete_staff(staff, removable_staff), to: Staffs
   defdelegate authenticate(login, password), to: Staffs
 

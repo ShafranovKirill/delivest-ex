@@ -81,6 +81,14 @@ defmodule Delivest.Identity.Staffs do
     end
   end
 
+  @spec get_staff_by_login(String.t()) :: {:ok, Staff.t()} | {:error, :not_found}
+  def get_staff_by_login(login) do
+    case Repo.get_by(Staff, login: login) do
+      nil -> {:error, :not_found}
+      staff -> {:ok, staff}
+    end
+  end
+
   @spec soft_delete_staff(Staff.t(), Staff.t()) ::
           {:ok, Staff.t()} | {:error, :forbidden} | {:error, Ecto.Changeset.t()}
   def soft_delete_staff(staff, %Staff{} = removable_staff) do
