@@ -1,4 +1,4 @@
-defmodule DelivestWeb.StaffSessionController do
+defmodule DelivestWeb.Staff.StaffSessionController do
   @moduledoc """
   Handles user authentication sessions.
 
