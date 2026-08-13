@@ -82,7 +82,41 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
   end
 
   def render(assigns) do
+    current_locale = Gettext.get_locale(DelivestWeb.Gettext)
+
     ~H"""
+    <div class="fixed right-4 top-4 z-60 flex items-center gap-2">
+      <.link
+        :if={current_locale == "ru"}
+        href={~p"/locale/en"}
+        class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-base-300 bg-base-100/90 px-3 text-sm font-medium text-base-content shadow-sm backdrop-blur-sm transition hover:bg-base-200"
+      >
+        <span>🇬🇧</span>
+        <span>EN</span>
+      </.link>
+
+      <.link
+        :if={current_locale == "en"}
+        href={~p"/locale/ru"}
+        class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-base-300 bg-base-100/90 px-3 text-sm font-medium text-base-content shadow-sm backdrop-blur-sm transition hover:bg-base-200"
+      >
+        <span>🇷🇺</span>
+        <span>RU</span>
+      </.link>
+
+      <label class="btn btn-ghost btn-sm btn-square swap swap-rotate h-10 w-10 rounded-lg border border-base-300 bg-base-100/90 shadow-sm backdrop-blur-sm hover:bg-base-200">
+        <input
+          type="checkbox"
+          id="theme-toggle-login"
+          phx-hook="ThemeToggle"
+          class="theme-controller hidden"
+          value="dark"
+        />
+        <.icon name="hero-sun" class="swap-off h-5 w-5" />
+        <.icon name="hero-moon" class="swap-on h-5 w-5" />
+      </label>
+    </div>
+
     <div class="min-h-screen flex-1 flex flex-col items-center justify-center p-4">
       <div class="card w-full max-w-md">
         <div class="card-body gap-4 p-6">

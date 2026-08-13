@@ -42,7 +42,6 @@ defmodule DelivestWeb.Router do
     delete "/auth/log_out", StaffSessionController, :delete
 
     live_session :staff_public,
-      layout: {DelivestWeb.Layouts, :staff_app},
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
       scope "/auth" do
         pipe_through :browser
