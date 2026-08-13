@@ -1,0 +1,93 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/delivest_web/components/core_components.ex:375
+#, elixir-autogen, elixir-format
+msgid "Actions"
+msgstr ""
+
+#: lib/delivest_web/components/layouts.ex:26
+#: lib/delivest_web/components/layouts.ex:41
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:34
+#, elixir-autogen, elixir-format
+msgid "Authentication failed."
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:117
+#, elixir-autogen, elixir-format
+msgid "Enter your login"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:76
+#, elixir-autogen, elixir-format
+msgid "Invalid login or password"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:126
+#, elixir-autogen, elixir-format
+msgid "Log in"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:46
+#, elixir-autogen, elixir-format
+msgid "Logged out successfully."
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:122
+#, elixir-autogen, elixir-format
+msgid "Password"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:94
+#, elixir-autogen, elixir-format
+msgid "Sign in to your account to continue"
+msgstr ""
+
+#: lib/delivest_web/components/layouts.ex:33
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:21
+#, elixir-autogen, elixir-format
+msgid "Successfully logged in!"
+msgstr ""
+
+#: lib/delivest_web/components/layouts.ex:18
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:91
+#, elixir-autogen, elixir-format
+msgid "Welcome to Delivest CRM"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:28
+#, elixir-autogen, elixir-format
+msgid "Your account is blocked. Try again later or contact admin."
+msgstr ""
+
+#: lib/delivest_web/components/core_components.ex:81
+#, elixir-autogen, elixir-format
+msgid "close"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:116
+#, elixir-autogen, elixir-format
+msgid "login"
+msgstr ""
