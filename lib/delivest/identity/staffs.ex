@@ -44,6 +44,21 @@ defmodule Delivest.Identity.Staffs do
       updatable_staff
       |> Staff.changeset(attrs)
       |> Repo.update()
+      |> case do
+        {:ok, updated_staff} ->
+          Cachex.del(:staff_cache, updatable_staff.id)
+
+          Phoenix.PubSub.broadcast(
+            Delivest.PubSub,
+            "staff_updates:#{updated_staff.id}",
+            :staff_updated
+          )
+
+          {:ok, updated_staff}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
     else
       {:error, :forbidden}
     end

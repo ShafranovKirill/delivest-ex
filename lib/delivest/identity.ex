@@ -1,5 +1,5 @@
 defmodule Delivest.Identity do
-  alias Delivest.Identity.{Staffs, Staff, Roles}
+  alias Delivest.Identity.{Staffs, Staff, Roles, Acl}
 
   defdelegate list_staff(staff, params \\ %{}, opts \\ []), to: Staffs
   defdelegate create_staff(staff, attrs), to: Staffs
@@ -12,6 +12,10 @@ defmodule Delivest.Identity do
 
   defdelegate login_regex, to: Staff
   defdelegate password_regex, to: Staff
+
+  defdelegate can?(staff, permission), to: Acl
+  defdelegate can_any?(staff, permissions), to: Acl
+  defdelegate scope_query(query, staff, permission), to: Acl
 
   defdelegate list_all_roles(user), to: Roles
   defdelegate get_role(user, id), to: Roles

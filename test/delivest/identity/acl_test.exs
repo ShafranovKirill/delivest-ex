@@ -111,4 +111,46 @@ defmodule Delivest.Identity.AclTest do
       assert Repo.all(scoped_query) == []
     end
   end
+
+  describe "can?/2 - advanced scenarios" do
+    test "should handle empty permissions list" do
+      role = build(:role, permissions: [])
+      staff = build(:staff, role: role)
+
+      refute Acl.can?(staff, "any.permission")
+    end
+
+    test "should be case-sensitive for permissions" do
+      role = build(:role, permissions: ["staff.Read"])
+      staff = build(:staff, role: role)
+
+      refute Acl.can?(staff, "staff.read")
+      assert Acl.can?(staff, "staff.Read")
+    end
+
+    test "should not match partial permission strings" do
+      role = build(:role, permissions: ["staff.read.basic"])
+      staff = build(:staff, role: role)
+
+      refute Acl.can?(staff, "staff.read")
+      assert Acl.can?(staff, "staff.read.basic")
+    end
+  end
+
+  describe "can_any?/2 - advanced scenarios" do
+    test "should return false with empty permission list" do
+      role = build(:role, permissions: ["staff.read"])
+      staff = build(:staff, role: role)
+
+      refute Acl.can_any?(staff, [])
+    end
+
+    test "should work with single permission check" do
+      role = build(:role, permissions: ["staff.create"])
+      staff = build(:staff, role: role)
+
+      assert Acl.can_any?(staff, ["staff.create"])
+      refute Acl.can_any?(staff, ["staff.delete"])
+    end
+  end
 end

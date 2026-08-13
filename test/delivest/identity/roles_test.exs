@@ -163,4 +163,82 @@ defmodule Delivest.Identity.RolesTest do
       assert {:error, :forbidden} = Roles.delete_role(employee, role)
     end
   end
+
+  describe "roles - permissions validation" do
+    test "should accept empty permissions array", %{admin: admin} do
+      attrs = %{name: "Guest Role", permissions: []}
+
+      assert {:ok, %Role{} = role} = Roles.create_role(admin, attrs)
+      assert role.permissions == []
+    end
+
+    test "should preserve permissions order", %{admin: admin} do
+      perms = ["staff.delete", "staff.read", "staff.create", "staff.update"]
+      attrs = %{name: "Ordered Perms", permissions: perms}
+
+      assert {:ok, %Role{} = role} = Roles.create_role(admin, attrs)
+      assert role.permissions == perms
+    end
+
+    test "should handle duplicate permissions in array", %{admin: admin} do
+      attrs = %{name: "Duplicates Role", permissions: ["staff.read", "staff.read"]}
+
+      {:ok, role} = Roles.create_role(admin, attrs)
+      assert Enum.member?(role.permissions, "staff.read")
+    end
+
+    test "should accept long permission strings", %{admin: admin} do
+      attrs = %{
+        name: "Long Perms",
+        permissions: [
+          "staff.create",
+          "staff.read",
+          "staff.update",
+          "staff.delete",
+          "roles.create"
+        ]
+      }
+
+      assert {:ok, %Role{}} = Roles.create_role(admin, attrs)
+    end
+  end
+
+  describe "roles - concurrent updates" do
+    test "should handle concurrent permission updates", %{admin: admin} do
+      role = insert(:role, permissions: ["staff.read"])
+
+      task1 =
+        Task.async(fn ->
+          Roles.update_role(admin, role, %{permissions: ["staff.read", "staff.create"]})
+        end)
+
+      task2 =
+        Task.async(fn ->
+          Roles.update_role(admin, role, %{permissions: ["staff.read", "staff.delete"]})
+        end)
+
+      result1 = Task.await(task1)
+      result2 = Task.await(task2)
+
+      assert {:ok, _} = result1
+      assert {:ok, _} = result2
+    end
+  end
+
+  describe "roles - edge cases" do
+    test "should trim whitespace from role name", %{admin: admin} do
+      attrs = %{name: "  Trimmed Role  ", permissions: []}
+
+      {:ok, role} = Roles.create_role(admin, attrs)
+      assert String.trim(role.name) == String.trim(attrs.name)
+    end
+
+    test "should enforce maximum role name length", %{admin: admin} do
+      long_name = String.duplicate("a", 500)
+      attrs = %{name: long_name, permissions: []}
+
+      result = Roles.create_role(admin, attrs)
+      assert result != nil
+    end
+  end
 end

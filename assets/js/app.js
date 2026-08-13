@@ -43,7 +43,20 @@ const liveSocket = new LiveSocket("/live", Socket, {
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
 window.addEventListener("phx:page-loading-stop", (_info) => topbar.hide());
-
+window.addEventListener("phx:force_staff_logout", (e) => {
+  let csrfToken = document
+    .querySelector("meta[name='csrf-token']")
+    .getAttribute("content");
+  fetch("/staff/auth/log_out", {
+    method: "DELETE",
+    headers: {
+      "X-CSRF-Token": csrfToken,
+      "Content-Type": "application/json",
+    },
+  }).then(() => {
+    window.location.href = "/staff/auth/login";
+  });
+});
 liveSocket.connect();
 
 window.liveSocket = liveSocket;

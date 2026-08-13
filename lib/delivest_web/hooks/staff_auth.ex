@@ -14,8 +14,14 @@ defmodule DelivestWeb.Hooks.StaffAuth do
 
       staff_id ->
         case(Identity.get_staff(staff_id, preload: [:role])) do
-          {:ok, %{status: :active} = staff} ->
-            socket = assign(socket, :current_staff, staff)
+          {:ok, staff} ->
+            maybe_connect_auth_events(socket, staff)
+
+            socket =
+              socket
+              |> assign(:current_staff, staff)
+              |> attach_hook(:current_staff_reloaded, :handle_info, &reload_user_on_event/2)
+
             {:cont, socket}
 
           _ ->
@@ -31,4 +37,41 @@ defmodule DelivestWeb.Hooks.StaffAuth do
       {:halt, redirect(socket, to: "/staff/auth/login")}
     end
   end
+
+  def maybe_connect_auth_events(socket, staff) do
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Delivest.PubSub, "staff_updates:#{staff.id}")
+      Phoenix.PubSub.subscribe(Delivest.PubSub, "role_updates:#{staff.role_id}")
+    end
+  end
+
+  defp reload_user_on_event(event, socket) when event in [:role_updated, :staff_updated] do
+    case Identity.get_staff(socket.assigns.current_staff.id, preload: [:role]) do
+      {:ok, fresh_staff} ->
+        socket = assign(socket, :current_staff, fresh_staff)
+
+        required_perm = socket.assigns[:required_permission]
+
+        if required_perm && not Identity.can?(fresh_staff, required_perm) do
+          {:halt,
+           socket
+           |> put_flash(
+             :error,
+             Gettext.dgettext(
+               DelivestWeb.Gettext,
+               "errors",
+               "You dont have permission to access this page"
+             )
+           )
+           |> redirect(to: "/staff/dashboard")}
+        else
+          {:halt, socket}
+        end
+
+      {:error, :not_found} ->
+        {:halt, push_event(socket, "force_staff_logout", %{})}
+    end
+  end
+
+  defp reload_user_on_event(_message, socket), do: {:cont, socket}
 end

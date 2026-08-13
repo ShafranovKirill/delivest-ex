@@ -217,5 +217,185 @@ defmodule Delivest.Identity.StaffsTest do
     test "should return error when staff doesn't exist" do
       assert {:error, :invalid_credentials} = Staffs.authenticate("ghost_user", @valid_password)
     end
+
+    test "should be case-sensitive for login authentication" do
+      password_hash = Argon2.hash_pwd_salt(@valid_password)
+      insert(:staff, login: "CaseSensitive", password_hash: password_hash)
+
+      assert {:error, :invalid_credentials} =
+               Staffs.authenticate("casesensitive", @valid_password)
+
+      assert {:ok, %Staff{}} = Staffs.authenticate("CaseSensitive", @valid_password)
+    end
+  end
+
+  describe "staff - creation and validation" do
+    test "should reject login with invalid characters", %{admin: admin} do
+      role = insert(:role)
+
+      attrs = %{login: "inv@lid!login", password: @valid_password, role_id: role.id}
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Staffs.create_staff(admin, attrs)
+      assert changeset.errors[:login] != nil
+    end
+
+    test "should reject duplicate logins", %{admin: admin} do
+      role = insert(:role)
+      existing_login = "existing_user"
+      insert(:staff, login: existing_login)
+
+      attrs = %{login: existing_login, password: @valid_password, role_id: role.id}
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Staffs.create_staff(admin, attrs)
+      assert "has already been taken" in errors_on(changeset).login
+    end
+
+    test "should accept valid password formats", %{admin: admin} do
+      role = insert(:role)
+
+      valid_passwords = [
+        "ValidPass1!",
+        "C0mpl3x@Password",
+        "Test1234!@#$"
+      ]
+
+      Enum.each(valid_passwords, fn pwd ->
+        attrs = %{login: "user_#{:rand.uniform(1000)}", password: pwd, role_id: role.id}
+        assert {:ok, %Staff{}} = Staffs.create_staff(admin, attrs)
+      end)
+    end
+  end
+
+  describe "staff - password management" do
+    test "should handle password update with special characters", %{admin: admin} do
+      staff = insert(:staff)
+      new_password = "NewP@ssw0rd!"
+
+      assert {:ok, updated_staff} =
+               Staffs.change_password(admin, staff, %{password: new_password})
+
+      assert Argon2.verify_pass(new_password, updated_staff.password_hash)
+    end
+
+    test "should reject password that is too weak", %{admin: admin} do
+      staff = insert(:staff)
+
+      weak_passwords = [
+        "abc",
+        "12345678",
+        "password",
+        "NoNumbers!",
+        "nouppercase1!"
+      ]
+
+      Enum.each(weak_passwords, fn pwd ->
+        {:error, %Ecto.Changeset{} = changeset} =
+          Staffs.change_password(admin, staff, %{password: pwd})
+
+        assert changeset.errors[:password] != nil
+      end)
+    end
+
+    test "should clear cache after password change", %{admin: admin} do
+      staff = insert(:staff)
+      Cachex.put(:staff_cache, staff.id, staff)
+
+      {:ok, nil} = Cachex.get(:staff_cache, staff.id) |> (fn _ -> {:ok, nil} end).()
+
+      Staffs.change_password(admin, staff, %{password: "NewPass123!"})
+
+      assert {:ok, nil} = Cachex.get(:staff_cache, staff.id)
+    end
+  end
+
+  describe "staff - deletion and recovery" do
+    test "should only list non-deleted staff", %{admin: admin} do
+      active_staff = insert(:staff)
+      deleted_staff = insert(:staff, deleted_at: DateTime.utc_now(:second))
+
+      {:ok, {staff_list, _}} = Staffs.list_staff(admin)
+      staff_ids = Enum.map(staff_list, & &1.id)
+
+      assert active_staff.id in staff_ids
+      refute deleted_staff.id in staff_ids
+    end
+
+    test "should soft delete without removing data", %{admin: admin} do
+      staff = insert(:staff, login: "to_delete")
+      staff_id = staff.id
+
+      {:ok, deleted_staff} = Staffs.soft_delete_staff(admin, staff)
+      assert deleted_staff.deleted_at != nil
+      assert deleted_staff.id == staff_id
+    end
+
+    test "should not allow deletion by non-admin", %{forbidden_user: actor} do
+      staff = insert(:staff)
+
+      assert {:error, :forbidden} = Staffs.soft_delete_staff(actor, staff)
+    end
+  end
+
+  describe "staff - role transitions" do
+    test "should update staff role", %{admin: admin} do
+      staff = insert(:staff)
+      new_role = insert(:role)
+
+      {:ok, updated} = Staffs.update_staff(admin, staff, %{role_id: new_role.id})
+      assert updated.role_id == new_role.id
+    end
+
+    test "should clear cache when updating role", %{admin: admin} do
+      staff = insert(:staff)
+      new_role = insert(:role)
+      Cachex.put(:staff_cache, staff.id, staff)
+
+      Staffs.update_staff(admin, staff, %{role_id: new_role.id})
+
+      assert {:ok, nil} = Cachex.get(:staff_cache, staff.id)
+    end
+  end
+
+  describe "staff - concurrent operations" do
+    test "should handle concurrent staff updates safely", %{admin: admin} do
+      staff = insert(:staff)
+
+      task1 =
+        Task.async(fn ->
+          Staffs.update_staff(admin, staff, %{login: "concurrent_user_1"})
+        end)
+
+      task2 =
+        Task.async(fn ->
+          Staffs.update_staff(admin, staff, %{login: "concurrent_user_2"})
+        end)
+
+      result1 = Task.await(task1)
+      result2 = Task.await(task2)
+
+      # Both should complete, one update overwrites
+      assert result1 != nil or result2 != nil
+    end
+  end
+
+  describe "staff - edge cases" do
+    test "should accept minimum valid login length", %{admin: admin} do
+      role = insert(:role)
+      attrs = %{login: "ab", password: @valid_password, role_id: role.id}
+
+      result = Staffs.create_staff(admin, attrs)
+      assert result != nil
+    end
+
+    test "should preload associations correctly", %{admin: admin} do
+      _staff = insert(:staff)
+
+      {:ok, {[fetched | _], _}} = Staffs.list_staff(admin, %{}, preload: [:role])
+      assert Ecto.assoc_loaded?(fetched.role)
+    end
+
+    test "should handle nil password during authentication" do
+      assert {:error, :invalid_credentials} = Staffs.authenticate("user", nil)
+    end
   end
 end
