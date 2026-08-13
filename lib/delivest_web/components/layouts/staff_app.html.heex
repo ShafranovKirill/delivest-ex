@@ -29,17 +29,17 @@
       </.link>
 
 
-<label class="btn btn-ghost btn-sm btn-square swap swap-rotate min-h-9 h-9 w-9">
-  <!-- Класс theme-controller указывает DaisyUI 5 менять data-theme при переключении -->
-  <input
-    type="checkbox"
-    id="theme-toggle"
-    class="theme-controller"
-    value="dark"
-  />
-  <.icon name="hero-sun" class="swap-off h-5 w-5" />
-  <.icon name="hero-moon" class="swap-on h-5 w-5" />
-</label>
+      <label class="btn btn-ghost btn-sm btn-square swap swap-rotate min-h-9 h-9 w-9">
+        <input
+          type="checkbox"
+          id="theme-toggle"
+          phx-hook="ThemeToggle"
+          class="theme-controller hidden"
+          value="dark"
+        />
+        <.icon name="hero-sun" class="swap-off h-5 w-5" />
+        <.icon name="hero-moon" class="swap-on h-5 w-5" />
+      </label>
 
       <div class="h-4 w-px bg-base-300"></div>
 
