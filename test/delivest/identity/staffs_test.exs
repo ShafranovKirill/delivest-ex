@@ -200,19 +200,10 @@ defmodule Delivest.Identity.StaffsTest do
       password = @valid_password
       password_hash = Argon2.hash_pwd_salt(password)
 
-      staff = insert(:staff, login: "active_user", password_hash: password_hash, status: :active)
+      staff = insert(:staff, login: "active_user", password_hash: password_hash)
 
       assert {:ok, %Staff{} = auth_staff} = Staffs.authenticate("active_user", password)
       assert auth_staff.id == staff.id
-    end
-
-    test "should return error when staff is blocked" do
-      password = @valid_password
-      password_hash = Argon2.hash_pwd_salt(password)
-
-      insert(:staff, login: "blocked_user", password_hash: password_hash, status: :blocked)
-
-      assert {:error, :staff_blocked} = Staffs.authenticate("blocked_user", password)
     end
 
     test "should return error on invalid password" do

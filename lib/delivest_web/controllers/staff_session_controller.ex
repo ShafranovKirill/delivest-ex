@@ -21,14 +21,6 @@ defmodule DelivestWeb.Staff.StaffSessionController do
         |> put_flash(:info, gettext("Successfully logged in!"))
         |> redirect(to: "/staff/dashboard")
 
-      {:error, :staff_blocked} ->
-        conn
-        |> put_flash(
-          :error,
-          gettext("Your account is blocked. Try again later or contact admin.")
-        )
-        |> redirect(to: "/staff/auth/login")
-
       {:error, :invalid_credentials} ->
         conn
         |> put_flash(:error, gettext("Authentication failed."))

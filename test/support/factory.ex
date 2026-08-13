@@ -14,7 +14,6 @@ defmodule Delivest.Factory do
     %Staff{
       login: sequence(:login, &"staff_user_#{&1}"),
       password_hash: Argon2.hash_pwd_salt("Q1w2e3r4t5!"),
-      status: :active,
       role: build(:role)
     }
   end

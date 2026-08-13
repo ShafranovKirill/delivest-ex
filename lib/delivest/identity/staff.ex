@@ -13,8 +13,8 @@ defmodule Delivest.Identity.Staff do
 
   @derive {
     Flop.Schema,
-    filterable: [:login, :status],
-    sortable: [:login, :status, :inserted_at],
+    filterable: [:login],
+    sortable: [:login, :inserted_at],
     default_limit: 10,
     default_order: %{
       order_by: [:inserted_at],
@@ -26,7 +26,6 @@ defmodule Delivest.Identity.Staff do
     field :login, :string
     field :name, :string
     field :password_hash, :string
-    field :status, Ecto.Enum, values: [:active, :blocked], default: :active
 
     field :password, :string, virtual: true
 
@@ -39,7 +38,7 @@ defmodule Delivest.Identity.Staff do
 
   def changeset(staff, attrs) do
     staff
-    |> cast(attrs, [:login, :password, :name, :role_id, :branch_id, :status, :deleted_at])
+    |> cast(attrs, [:login, :password, :name, :role_id, :branch_id, :deleted_at])
     |> validate_required([:login, :role_id])
     |> validate_password_required()
     |> validate_length(:login, min: 3, max: 50)

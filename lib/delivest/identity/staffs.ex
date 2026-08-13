@@ -106,7 +106,7 @@ defmodule Delivest.Identity.Staffs do
   end
 
   @spec authenticate(any(), any()) ::
-          {:error, :invalid_credentials | :staff_blocked} | {:ok, Staff.t()}
+          {:error, :invalid_credentials} | {:ok, Staff.t()}
   def authenticate(login, password) do
     staff = Repo.get_by(Staff, login: login)
 
@@ -114,9 +114,6 @@ defmodule Delivest.Identity.Staffs do
       valid_pass? = Argon2.verify_pass(password, staff.password_hash)
 
       cond do
-        staff.status in [:blocked] ->
-          {:error, :staff_blocked}
-
         valid_pass? ->
           {:ok, staff}
 
