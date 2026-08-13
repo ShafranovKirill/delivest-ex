@@ -23,14 +23,7 @@ defmodule Delivest.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Delivest.Supervisor]
 
-    case Supervisor.start_link(children, opts) do
-      {:ok, pid} ->
-        Delivest.Identity.AdminSeeder.run()
-        {:ok, pid}
-
-      error ->
-        error
-    end
+    Supervisor.start_link(children, opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
