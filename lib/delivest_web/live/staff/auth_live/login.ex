@@ -104,7 +104,7 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
           <.form
             id="user"
             for={@form}
-            action={~p"/auth/log_in"}
+            action={~p"/staff/auth/log_in"}
             phx-change="validate"
             phx-submit="submit"
             phx-trigger-action={assigns[:trigger_action]}
