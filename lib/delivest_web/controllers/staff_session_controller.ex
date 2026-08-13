@@ -44,6 +44,6 @@ defmodule DelivestWeb.Staff.StaffSessionController do
     conn
     |> clear_session()
     |> put_flash(:info, gettext("Logged out successfully."))
-    |> redirect(to: "/")
+    |> redirect(to: "/staff/auth/login")
   end
 end

@@ -2,9 +2,11 @@
   <!-- Навигация -->
   <header class="navbar bg-base-100 border-b border-base-300 px-6 lg:px-12 sticky top-0 z-50">
     <div class="flex-1">
-      <a href="/" class="text-xl font-extrabold tracking-tight text-primary flex items-center gap-2">
-        <.icon name="hero-shopping-bag" class="w-6 h-6" />
-        Delivest
+      <a
+        href="/"
+        class="text-xl font-extrabold tracking-tight text-primary flex items-center gap-2"
+      >
+        <.icon name="hero-shopping-bag" class="w-6 h-6" /> Delivest
       </a>
     </div>
 
@@ -61,7 +63,9 @@
           <span class="text-primary">{gettext("for Food Ordering & Delivery")}</span>
         </h1>
         <p class="py-4 text-lg sm:text-xl text-base-content/70 max-w-2xl mx-auto leading-relaxed">
-          {gettext("Delivest combines client-facing interfaces, a modern CRM system, and a centralized control panel for efficient management of all business operations.")}
+          {gettext(
+            "Delivest combines client-facing interfaces, a modern CRM system, and a centralized control panel for efficient management of all business operations."
+          )}
         </p>
         <div class="flex flex-wrap justify-center gap-4 mt-8">
           <.link href={~p"/staff/auth/login"} class="btn btn-primary btn-lg gap-2 shadow-md">
@@ -91,7 +95,9 @@
           </div>
           <h3 class="text-xl font-bold mb-3">{gettext("Client Application")}</h3>
           <p class="text-base-content/70 text-sm leading-relaxed">
-            {gettext("An interface for end-users featuring an interactive menu, cart, order placement, and real-time delivery status tracking.")}
+            {gettext(
+              "An interface for end-users featuring an interactive menu, cart, order placement, and real-time delivery status tracking."
+            )}
           </p>
         </div>
 
@@ -101,7 +107,9 @@
           </div>
           <h3 class="text-xl font-bold mb-3">{gettext("CRM System")}</h3>
           <p class="text-base-content/70 text-sm leading-relaxed">
-            {gettext("Customer base management, order history tracking, and analytics tools designed to increase audience loyalty.")}
+            {gettext(
+              "Customer base management, order history tracking, and analytics tools designed to increase audience loyalty."
+            )}
           </p>
         </div>
 
@@ -111,7 +119,9 @@
           </div>
           <h3 class="text-xl font-bold mb-3">{gettext("Control Panel")}</h3>
           <p class="text-base-content/70 text-sm leading-relaxed">
-            {gettext("Branch administration, staff role configuration, product catalog setup, and operational workflow control.")}
+            {gettext(
+              "Branch administration, staff role configuration, product catalog setup, and operational workflow control."
+            )}
           </p>
         </div>
       </div>
