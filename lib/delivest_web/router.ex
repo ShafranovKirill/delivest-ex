@@ -8,6 +8,8 @@ defmodule DelivestWeb.Router do
     plug :put_root_layout, html: {DelivestWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug DelivestWeb.Plugs.Locale
+    plug DelivestWeb.Plugs.FetchCurrentStaff
   end
 
   pipeline :api do
@@ -17,6 +19,7 @@ defmodule DelivestWeb.Router do
   scope "/", DelivestWeb do
     pipe_through :browser
 
+    get "/locale/:locale", LocaleController, :set
     get "/", PageController, :home
   end
 
