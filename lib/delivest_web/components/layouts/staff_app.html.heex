@@ -21,9 +21,8 @@
       </div>
 
       <div class="flex items-center gap-4">
-        <% current_locale = Gettext.get_locale(DelivestWeb.Gettext) %>
-
         <%= if assigns[:current_staff] do %>
+          <% current_locale = Gettext.get_locale(DelivestWeb.Gettext) %>
           <% staff_name =
             if assigns[:current_staff].name && @current_staff.name != "",
               do: @current_staff.name,
@@ -99,36 +98,6 @@
               </li>
             </ul>
           </div>
-        <% else %>
-          <.link
-            :if={current_locale == "ru"}
-            href={~p"/locale/en"}
-            class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-base-100 hover:bg-base-200 text-base-content transition-colors"
-          >
-            <span>🇬🇧</span>
-            <span>EN</span>
-          </.link>
-
-          <.link
-            :if={current_locale == "en"}
-            href={~p"/locale/ru"}
-            class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg hover:bg-base-200 text-base-content transition-colors"
-          >
-            <span>🇷🇺</span>
-            <span>RU</span>
-          </.link>
-
-          <label class="btn btn-ghost btn-sm btn-square swap swap-rotate min-h-9 h-9 w-9 rounded-lg hover:bg-base-200 border-none shadow-none">
-            <input
-              type="checkbox"
-              id="theme-toggle"
-              phx-hook="ThemeToggle"
-              class="theme-controller hidden"
-              value="dark"
-            />
-            <.icon name="hero-sun" class="swap-off h-5 w-5" />
-            <.icon name="hero-moon" class="swap-on h-5 w-5" />
-          </label>
         <% end %>
       </div>
     </header>
