@@ -9,6 +9,10 @@ defmodule DelivestWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug DelivestWeb.Plugs.Locale
+  end
+
+  pipeline :staff_browser do
+    plug :browser
     plug DelivestWeb.Plugs.FetchCurrentStaff
   end
 
@@ -21,6 +25,25 @@ defmodule DelivestWeb.Router do
 
     get "/locale/:locale", LocaleController, :set
     get "/", PageController, :home
+  end
+
+  scope "/", DelivestWeb.ClientWeb do
+    pipe_through :browser
+
+    live_session :client_session,
+      on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
+    end
+  end
+
+  scope "/staff", DelivestWeb.StaffWeb do
+    pipe_through :staff_browser
+
+    live_session :staff_session,
+      on_mount: [
+        {DelivestWeb.Hooks.StaffAuth, :default},
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
+      ] do
+    end
   end
 
   # Other scopes may use custom stacks.
