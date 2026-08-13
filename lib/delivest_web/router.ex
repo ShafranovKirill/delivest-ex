@@ -56,6 +56,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
       ] do
+      live "/dashboard", DashboardLive.Index, :index
     end
   end
 

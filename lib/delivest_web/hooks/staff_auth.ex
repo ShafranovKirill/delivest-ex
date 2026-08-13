@@ -15,7 +15,7 @@ defmodule DelivestWeb.Hooks.StaffAuth do
       staff_id ->
         case(Identity.get_staff(staff_id, preload: [:role])) do
           {:ok, %{status: :active} = staff} ->
-            socket = assign(:current_staff, staff)
+            socket = assign(socket, :current_staff, staff)
             {:cont, socket}
 
           _ ->

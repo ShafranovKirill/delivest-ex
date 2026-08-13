@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.StaffSessionController do
         conn
         |> put_session(:staff_id, account.id)
         |> put_flash(:info, gettext("Successfully logged in!"))
-        |> redirect(to: "/dashboard")
+        |> redirect(to: "/staff/dashboard")
 
       {:error, :staff_blocked} ->
         conn
