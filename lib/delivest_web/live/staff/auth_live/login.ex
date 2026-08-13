@@ -82,12 +82,12 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
   end
 
   def render(assigns) do
-    current_locale = Gettext.get_locale(DelivestWeb.Gettext)
+    assigns = assign(assigns, :current_locale, Gettext.get_locale(DelivestWeb.Gettext))
 
     ~H"""
     <div class="fixed right-4 top-4 z-60 flex items-center gap-2">
       <.link
-        :if={current_locale == "ru"}
+        :if={@current_locale == "ru"}
         href={~p"/locale/en"}
         class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-base-300 bg-base-100/90 px-3 text-sm font-medium text-base-content shadow-sm backdrop-blur-sm transition hover:bg-base-200"
       >
@@ -96,7 +96,7 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
       </.link>
 
       <.link
-        :if={current_locale == "en"}
+        :if={@current_locale == "en"}
         href={~p"/locale/ru"}
         class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-base-300 bg-base-100/90 px-3 text-sm font-medium text-base-content shadow-sm backdrop-blur-sm transition hover:bg-base-200"
       >
