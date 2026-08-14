@@ -9,6 +9,8 @@ defmodule Delivest.Identity do
   defdelegate get_staff_by_login(login), to: Staffs
   defdelegate soft_delete_staff(staff, removable_staff), to: Staffs
   defdelegate authenticate(login, password), to: Staffs
+  defdelegate assign_branch_to_staff(admin, staff_id, branch_id), to: Staffs
+  defdelegate revoke_branch_from_staff(staff_id, branch_id), to: Staffs
 
   defdelegate login_regex, to: Staff
   defdelegate password_regex, to: Staff
