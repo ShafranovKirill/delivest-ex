@@ -13,7 +13,7 @@ defmodule DelivestWeb.Hooks.StaffAuth do
         {:cont, assign(socket, :current_staff, nil)}
 
       staff_id ->
-        case(Identity.get_staff(staff_id, preload: [:role, :branches])) do
+        case Identity.get_staff(staff_id, preload: [:role, :branches]) do
           {:ok, staff} ->
             maybe_connect_auth_events(socket, staff)
 

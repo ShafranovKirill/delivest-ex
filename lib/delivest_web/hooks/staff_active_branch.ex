@@ -1,7 +1,9 @@
 defmodule DelivestWeb.Hooks.StaffActiveBranch do
   import Phoenix.LiveView
   import Phoenix.Component
+  alias Delivest.Identity
   alias Delivest.Identity.Acl
+  alias Delivest.Net
 
   def on_mount(:default, _params, session, socket) do
     current_staff = socket.assigns[:current_staff]
@@ -34,16 +36,29 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
          )}
 
       true ->
-        socket =
-          socket
-          |> assign(:active_branch_id, active_branch_id)
-          |> attach_hook(
-            :staff_active_branch_reloaded,
-            :handle_info,
-            &check_branch_access_on_event/2
-          )
+        case Net.get_branch(active_branch_id) do
+          {:ok, branch} ->
+            socket =
+              socket
+              |> assign(:active_branch_id, active_branch_id)
+              |> assign(:current_branch, branch)
+              |> attach_hook(
+                :staff_active_branch_reloaded,
+                :handle_info,
+                &check_branch_access_on_event/2
+              )
 
-        {:cont, socket}
+            {:cont, socket}
+
+          _ ->
+            {:halt,
+             socket
+             |> put_flash(
+               :error,
+               Gettext.dgettext(DelivestWeb.Gettext, "error", "Branch not found.")
+             )
+             |> redirect(to: "/staff/branches/select")}
+        end
     end
   end
 
