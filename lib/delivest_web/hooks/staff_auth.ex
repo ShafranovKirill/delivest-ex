@@ -65,7 +65,7 @@ defmodule DelivestWeb.Hooks.StaffAuth do
            )
            |> redirect(to: "/staff/dashboard")}
         else
-          {:halt, socket}
+          {:cont, socket}
         end
 
       {:error, :not_found} ->

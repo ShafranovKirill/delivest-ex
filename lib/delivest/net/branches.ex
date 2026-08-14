@@ -10,7 +10,7 @@ defmodule Delivest.Net.Branches do
     end
   end
 
-  def fetch_from_db_and_cache(id) do
+  defp fetch_from_db_and_cache(id) do
     case Repo.get(Branch, id) do
       nil ->
         {:error, :not_found}

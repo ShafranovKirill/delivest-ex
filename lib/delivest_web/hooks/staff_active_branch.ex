@@ -1,0 +1,77 @@
+defmodule DelivestWeb.Hooks.StaffActiveBranch do
+  import Phoenix.LiveView
+  import Phoenix.Component
+  alias Delivest.Identity.Acl
+
+  def on_mount(:default, _params, session, socket) do
+    current_staff = socket.assigns[:current_staff]
+    active_branch_id = session["active_branch_id"]
+
+    cond do
+      is_nil(active_branch_id) ->
+        {:halt,
+         socket
+         |> put_flash(
+           :info,
+           Gettext.dgettext(
+             DelivestWeb.Gettext,
+             "info",
+             "Please select a branch to continue."
+           )
+         )
+         |> redirect(to: "/staff/branches/select")}
+
+      not Acl.has_branch_access?(current_staff, active_branch_id) ->
+        {:halt,
+         socket
+         |> put_flash(
+           :error,
+           Gettext.dgettext(
+             DelivestWeb.Gettext,
+             "error",
+             "Access to this branch has been revoked."
+           )
+         )}
+
+      true ->
+        socket =
+          socket
+          |> assign(:active_branch_id, active_branch_id)
+          |> attach_hook(
+            :staff_active_branch_reloaded,
+            :handle_info,
+            &check_branch_access_on_event/2
+          )
+
+        {:cont, socket}
+    end
+  end
+
+  defp check_branch_access_on_event(event, socket)
+       when event in [:staff_updated] do
+    current_staff = socket.assigns[:current_staff]
+    active_branch_id = socket.assigns[:active_branch_id]
+
+    if current_staff && active_branch_id do
+      if Acl.has_branch_access?(current_staff, active_branch_id) do
+        {:cont, socket}
+      else
+        {:halt,
+         socket
+         |> put_flash(
+           :error,
+           Gettext.dgettext(
+             DelivestWeb.Gettext,
+             "error",
+             "Access to this branch has been revoked."
+           )
+         )
+         |> redirect(to: "/staff/branches/select")}
+      end
+    else
+      {:cont, socket}
+    end
+  end
+
+  defp check_branch_access_on_event(_message, socket), do: {:cont, socket}
+end

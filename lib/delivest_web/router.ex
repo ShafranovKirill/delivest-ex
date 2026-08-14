@@ -53,7 +53,8 @@ defmodule DelivestWeb.Router do
       layout: {DelivestWeb.Layouts, :staff_app},
       on_mount: [
         {DelivestWeb.Hooks.StaffAuth, :default},
-        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+        {DelivestWeb.Hooks.StaffActiveBranch, :default}
       ] do
       live "/dashboard", DashboardLive.Index, :index
     end

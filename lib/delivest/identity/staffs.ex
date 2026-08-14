@@ -4,21 +4,24 @@ defmodule Delivest.Identity.Staffs do
   alias Delivest.Identity.{Staff, Acl, StaffBranch}
 
   @spec list_staff(map(), map(), keyword()) ::
-          {:ok, {[Staff.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()}
+          {:ok, {[Staff.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
   def list_staff(staff, params \\ %{}, opts \\ []) do
-    base_query =
-      Staff
-      |> where([a], is_nil(a.deleted_at))
-      |> Acl.scope_query(staff, "staff.read")
+    if Acl.can?(staff, "staff.read") do
+      base_query =
+        Staff
+        |> where([a], is_nil(a.deleted_at))
 
-    query =
-      if preloads = Keyword.get(opts, :preload) do
-        preload(base_query, ^preloads)
-      else
-        base_query
-      end
+      query =
+        if preloads = Keyword.get(opts, :preload) do
+          preload(base_query, ^preloads)
+        else
+          base_query
+        end
 
-    Flop.validate_and_run(query, params, for: Staff)
+      Flop.validate_and_run(query, params, for: Staff)
+    else
+      {:error, :forbidden}
+    end
   end
 
   @spec create_staff(Staff.t(), map()) ::
