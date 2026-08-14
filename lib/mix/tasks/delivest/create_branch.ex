@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Delivest.CreateBranch do
   def run(_args) do
     Mix.Task.run("app.start")
 
-    branch_name = Application.get_env(:delivest, :default_branch_name, "Main Branch")
+    branch_name = "Main Branch"
 
     case Repo.get_by(Branch, name: branch_name) do
       nil ->

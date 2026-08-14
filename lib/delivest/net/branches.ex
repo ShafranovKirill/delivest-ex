@@ -24,7 +24,7 @@ defmodule Delivest.Net.Branches do
     end
   end
 
-  @spec get_branch(integer()) :: {:ok, Branch.t()} | {:error, :not_found}
+  @spec get_branch(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
   def get_branch(id) do
     case Cachex.get(:branch_cache, id) do
       {:ok, nil} -> fetch_from_db_and_cache(id)
@@ -85,7 +85,7 @@ defmodule Delivest.Net.Branches do
     end
   end
 
-  @spec fetch_from_db_and_cache(integer()) :: {:ok, Branch.t()} | {:error, :not_found}
+  @spec fetch_from_db_and_cache(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
   defp fetch_from_db_and_cache(id) do
     case Repo.get(Branch, id) do
       nil ->
