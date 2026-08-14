@@ -1,14 +1,15 @@
 defmodule Delivest.Identity.StaffBranch do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Swoosh.Attachment
+
+  use Gettext, backend: DelivestWeb.Gettext
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   schema "staff_branches" do
-    field :staff_id, Ecto.UUID
-    field :branch_id, Ecto.UUID
+    belongs_to :staff_id, Delivest.Identity.Staff
+    belongs_to :branch_id, Delivest.Net.Branch
 
     timestamps()
   end
@@ -33,7 +34,7 @@ defmodule Delivest.Identity.StaffBranch do
           "The branch not exist"
         )
     )
-    |> unique_constraint(:staff_id, :branch_id,
+    |> unique_constraint([:staff_id, :branch_id],
       name: :staff_branches__staff_id_branch_id__uk,
       message:
         dgettext_noop(
