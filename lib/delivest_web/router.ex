@@ -40,6 +40,7 @@ defmodule DelivestWeb.Router do
 
     post "/auth/log_in", StaffSessionController, :create
     delete "/auth/log_out", StaffSessionController, :delete
+    get "/branches/select/:branch_id", StaffActiveBranchController, :set
 
     live_session :staff_public,
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do

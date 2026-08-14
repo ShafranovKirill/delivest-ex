@@ -1,18 +1,28 @@
-defmodule DelivestWeb.StaffActiveBranchController do
+defmodule DelivestWeb.Staff.StaffActiveBranchController do
   use DelivestWeb, :controller
+  alias Delivest.Identity.Acl
   alias Delivest.Net.Branches
 
   def set(conn, %{"branch_id" => branch_id}) do
-    case Branches.get_branch(branch_id) do
-      {:ok, _branch} ->
-        conn
-        |> put_session(:active_branch_id, branch_id)
-        |> redirect(to: ~p"/staff/dashboard")
+    current_staff = conn.assigns[:current_staff]
 
-      {:error, :not_found} ->
+    with {:ok, _branch} <- Branches.get_branch(branch_id),
+         true <- Acl.has_branch_access?(current_staff, branch_id) do
+      conn
+      |> put_session(:active_branch_id, branch_id)
+      |> redirect(to: ~p"/staff/dashboard")
+    else
+      _ ->
         conn
-        |> put_flash(:error, "Branch not found")
-        |> redirect(to: ~p"/staff/dashboard")
+        |> put_flash(
+          :error,
+          Gettext.dgettext(
+            DelivestWeb.Gettext,
+            "error",
+            "Branch not found or access denied."
+          )
+        )
+        |> redirect(to: "/staff/branches/select")
     end
   end
 end

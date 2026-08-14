@@ -1,7 +1,6 @@
 defmodule DelivestWeb.Hooks.StaffActiveBranch do
   import Phoenix.LiveView
   import Phoenix.Component
-  alias Delivest.Identity
   alias Delivest.Identity.Acl
   alias Delivest.Net
 
@@ -11,17 +10,23 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
 
     cond do
       is_nil(active_branch_id) ->
-        {:halt,
-         socket
-         |> put_flash(
-           :info,
-           Gettext.dgettext(
-             DelivestWeb.Gettext,
-             "info",
-             "Please select a branch to continue."
-           )
-         )
-         |> redirect(to: "/staff/branches/select")}
+        case current_staff.branches do
+          [branch] ->
+            {:halt, redirect(socket, to: "/staff/branches/select/#{branch.id}")}
+
+          _ ->
+            {:halt,
+             socket
+             |> put_flash(
+               :info,
+               Gettext.dgettext(
+                 DelivestWeb.Gettext,
+                 "info",
+                 "Please select a branch to continue."
+               )
+             )
+             |> redirect(to: "/staff/branches/select")}
+        end
 
       not Acl.has_branch_access?(current_staff, active_branch_id) ->
         {:halt,
@@ -33,7 +38,8 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
              "error",
              "Access to this branch has been revoked."
            )
-         )}
+         )
+         |> redirect(to: "/staff/branches/select")}
 
       true ->
         case Net.get_branch(active_branch_id) do
