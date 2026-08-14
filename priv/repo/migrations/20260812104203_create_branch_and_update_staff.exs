@@ -13,15 +13,31 @@ defmodule Delivest.Repo.Migrations.CreateBranchAndUpdateStaff do
 
     create unique_index(:branches, [:name], name: :branches__name__uk)
 
-    alter table(:staff) do
+    create table(:staff_branches, primary_key: false) do
+      add :staff_id,
+          references(:staff,
+            on_delete: :delete_all,
+            type: :binary_id,
+            name: :staff_branches__staff_id__fk
+          ),
+          primary_key: true
+
       add :branch_id,
           references(:branches,
-            on_delete: :restrict,
+            on_delete: :delete_all,
             type: :binary_id,
-            name: :staff__branch_id__fk
-          )
+            name: :staff_branches__branch_id__fk
+          ),
+          primary_key: true
+
+      timestamps()
     end
 
-    create index(:staff, [:branch_id])
+    create index(:staff_branches, [:staff_id])
+    create index(:staff_branches, [:branch_id])
+
+    create unique_index(:staff_branches, [:staff_id, :branch_id],
+             name: :staff_branches__staff_id_branch_id__uk
+           )
   end
 end
