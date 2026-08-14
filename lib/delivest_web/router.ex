@@ -13,7 +13,6 @@ defmodule DelivestWeb.Router do
 
   pipeline :staff_browser do
     plug :browser
-    plug DelivestWeb.Plugs.FetchCurrentStaff
   end
 
   pipeline :api do

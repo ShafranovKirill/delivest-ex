@@ -8,8 +8,8 @@ defmodule Delivest.Identity.StaffBranch do
   @foreign_key_type :binary_id
 
   schema "staff_branches" do
-    belongs_to :staff_id, Delivest.Identity.Staff
-    belongs_to :branch_id, Delivest.Net.Branch
+    belongs_to :staff, Delivest.Identity.Staff
+    belongs_to :branch, Delivest.Net.Branch
 
     timestamps()
   end

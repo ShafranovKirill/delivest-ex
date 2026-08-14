@@ -39,7 +39,7 @@ defmodule Delivest.Identity.Staff do
 
   def changeset(staff, attrs) do
     staff
-    |> cast(attrs, [:login, :password, :name, :role_id, :branch_id, :deleted_at])
+    |> cast(attrs, [:login, :password, :name, :role_id, :deleted_at])
     |> validate_required([:login, :role_id])
     |> validate_password_required()
     |> validate_length(:login, min: 3, max: 50)
