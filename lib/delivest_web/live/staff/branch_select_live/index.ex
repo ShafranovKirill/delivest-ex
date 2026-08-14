@@ -18,8 +18,8 @@ defmodule DelivestWeb.Staff.BranchSelectLive.Index do
     ~H"""
     <div class="mx-auto max-w-xl py-12 px-4 sm:px-6">
       <.header>
-        {gettext("Выберите филиал")}
-        <:subtitle>{gettext("Выберите подразделение для продолжения работы в системе")}</:subtitle>
+        {gettext("Select a branch")}
+        <:subtitle>{gettext("Choose a branch to continue working in the system")}</:subtitle>
       </.header>
 
       <div class="space-y-4">
@@ -33,7 +33,7 @@ defmodule DelivestWeb.Staff.BranchSelectLive.Index do
             {branch.name}
           </h2>
           <p class="mt-1 text-sm text-base-content/60">
-            {gettext("Нажмите, чтобы активировать этот филиал")}
+            {gettext("Click to activate this branch")}
           </p>
         </.link>
       </div>
@@ -43,7 +43,9 @@ defmodule DelivestWeb.Staff.BranchSelectLive.Index do
         class="mt-6 p-6 rounded-2xl border border-base-300 bg-base-100 shadow-sm"
       >
         <p class="text-sm text-base-content/70">
-          {gettext("У вас нет доступа к активным филиалам. Обратитесь к системному администратору.")}
+          {gettext(
+            "You do not have access to any active branches. Please contact your system administrator."
+          )}
         </p>
       </div>
     </div>
