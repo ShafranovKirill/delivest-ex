@@ -2,7 +2,7 @@ defmodule Delivest.Net.Branch do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Delivest.Identity.Staff
+  alias Delivest.Identity.{Staff, StaffBranch}
 
   @type t :: %__MODULE__{}
 
@@ -23,7 +23,7 @@ defmodule Delivest.Net.Branch do
   schema "branches" do
     field :name, :string
 
-    has_many :staff, Staff
+    many_to_many :staff, Staff, join_through: StaffBranch
 
     timestamps(type: :utc_datetime)
   end

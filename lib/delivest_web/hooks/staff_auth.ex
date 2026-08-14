@@ -13,7 +13,7 @@ defmodule DelivestWeb.Hooks.StaffAuth do
         {:cont, assign(socket, :current_staff, nil)}
 
       staff_id ->
-        case(Identity.get_staff(staff_id, preload: [:role])) do
+        case(Identity.get_staff(staff_id, preload: [:role, :branches])) do
           {:ok, staff} ->
             maybe_connect_auth_events(socket, staff)
 
@@ -46,7 +46,7 @@ defmodule DelivestWeb.Hooks.StaffAuth do
   end
 
   defp reload_user_on_event(event, socket) when event in [:role_updated, :staff_updated] do
-    case Identity.get_staff(socket.assigns.current_staff.id, preload: [:role]) do
+    case Identity.get_staff(socket.assigns.current_staff.id, preload: [:role, :branches]) do
       {:ok, fresh_staff} ->
         socket = assign(socket, :current_staff, fresh_staff)
 
