@@ -6,13 +6,31 @@ import topbar from "../vendor/topbar";
 
 const ThemeToggle = {
   mounted() {
-    this.el.addEventListener("click", () => {
-      const currentTheme = document.documentElement.getAttribute("data-theme");
-      const newTheme = currentTheme === "dark" ? "light" : "dark";
+    const currentTheme =
+      document.documentElement.getAttribute("data-theme") ||
+      localStorage.getItem("theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light");
+
+    this.el.checked = currentTheme === "dark";
+
+    this.handleToggle = (e) => {
+      const newTheme = e.target.checked ? "dark" : "light";
 
       document.documentElement.setAttribute("data-theme", newTheme);
       localStorage.setItem("theme", newTheme);
-    });
+    };
+
+    this.el.addEventListener("change", this.handleToggle);
+  },
+
+  updated() {
+    const currentTheme =
+      document.documentElement.getAttribute("data-theme") ||
+      localStorage.getItem("theme");
+
+    this.el.checked = currentTheme === "dark";
   },
 };
 
