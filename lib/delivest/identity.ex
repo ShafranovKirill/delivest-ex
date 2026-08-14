@@ -17,7 +17,8 @@ defmodule Delivest.Identity do
 
   defdelegate can?(staff, permission), to: Acl
   defdelegate can_any?(staff, permissions), to: Acl
-  defdelegate scope_query(query, staff, permission), to: Acl
+  defdelegate scope_by_branch(query, staff, permission), to: Acl
+  defdelegate has_branch_access?(staff, branch_id), to: Acl
 
   defdelegate list_all_roles(user), to: Roles
   defdelegate get_role(user, id), to: Roles

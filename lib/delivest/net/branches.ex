@@ -1,6 +1,27 @@
 defmodule Delivest.Net.Branches do
-  alias Delivest.{Repo}
+  import Ecto.Query
+  alias Delivest.{Repo, Identity}
   alias Delivest.Net.Branch
+
+  def list_branch(staff) do
+    permissions = staff.role.permissions || []
+
+    cond do
+      "admin" in permissions ->
+        Branch
+
+      Identity.can?(staff, "branch.read") ->
+        branch_ids =
+          Enum.map(staff.branches, & &1.id)
+
+        Branch
+        |> where([b], b.id in ^branch_ids)
+
+      true ->
+        Branch
+        |> where([_b], false)
+    end
+  end
 
   def get_branch(id) do
     case Cachex.get(:branch_cache, id) do
@@ -16,7 +37,12 @@ defmodule Delivest.Net.Branches do
         {:error, :not_found}
 
       branch ->
+        cache_branch(id, branch)
         {:ok, branch}
     end
+  end
+
+  defp cache_branch(id, branch) do
+    Cachex.put(:branch_cache, id, branch, ttl: :timer.minutes(30))
   end
 end

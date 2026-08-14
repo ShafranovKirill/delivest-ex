@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Hooks.StaffActiveBranch do
   import Phoenix.LiveView
   import Phoenix.Component
-  alias Delivest.Identity.Acl
+  alias Delivest.Identity
   alias Delivest.Net
 
   def on_mount(:default, _params, session, socket) do
@@ -28,7 +28,7 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
              |> redirect(to: "/staff/branches/select")}
         end
 
-      not Acl.has_branch_access?(current_staff, active_branch_id) ->
+      not Identity.has_branch_access?(current_staff, active_branch_id) ->
         {:halt,
          socket
          |> put_flash(
@@ -74,7 +74,7 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
     active_branch_id = socket.assigns[:active_branch_id]
 
     if current_staff && active_branch_id do
-      if Acl.has_branch_access?(current_staff, active_branch_id) do
+      if Identity.has_branch_access?(current_staff, active_branch_id) do
         {:cont, socket}
       else
         {:halt,

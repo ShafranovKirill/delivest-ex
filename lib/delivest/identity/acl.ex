@@ -26,16 +26,6 @@ defmodule Delivest.Identity.Acl do
     end
   end
 
-  def scope_query(query, nil, _permission), do: where(query, [q], false)
-
-  def scope_query(query, staff, permission) do
-    if can?(staff, permission) do
-      query
-    else
-      where(query, [q], false)
-    end
-  end
-
   def has_branch_access?(nil, _branch_id), do: false
 
   def has_branch_access?(staff, branch_id) do
