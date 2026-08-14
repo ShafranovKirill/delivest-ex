@@ -4,12 +4,12 @@ defmodule Delivest.Identity.StaffBranch do
 
   use Gettext, backend: DelivestWeb.Gettext
 
-  @primary_key {:id, :binary_id, autogenerate: true}
+  @primary_key false
   @foreign_key_type :binary_id
 
   schema "staff_branches" do
-    belongs_to :staff, Delivest.Identity.Staff
-    belongs_to :branch, Delivest.Net.Branch
+    belongs_to :staff, Delivest.Identity.Staff, primary_key: true
+    belongs_to :branch, Delivest.Net.Branch, primary_key: true
 
     timestamps()
   end

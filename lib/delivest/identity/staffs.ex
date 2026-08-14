@@ -146,16 +146,27 @@ defmodule Delivest.Identity.Staffs do
 
   def assign_branch_to_staff(admin, staff_id, branch_id) do
     if Acl.can?(admin, "admin") do
-      %StaffBranch{}
-      |> StaffBranch.changeset(%{staff_id: staff_id, branch_id: branch_id})
-      |> Repo.insert()
-      |> case do
-        {:ok, staff_branch} ->
-          Cachex.del(:staff_cache, staff_id)
-          {:ok, staff_branch}
+      changeset =
+        %StaffBranch{}
+        |> StaffBranch.changeset(%{staff_id: staff_id, branch_id: branch_id})
 
-        {:error, changeset} ->
-          {:error, changeset}
+      try do
+        changeset
+        |> Repo.insert()
+        |> case do
+          {:ok, staff_branch} ->
+            Cachex.del(:staff_cache, staff_id)
+            {:ok, staff_branch}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:error, changeset}
+        end
+      rescue
+        Ecto.ConstraintError ->
+          {:error,
+           changeset
+           |> Ecto.Changeset.add_error(:staff_id, "has already been taken")
+           |> Ecto.Changeset.add_error(:branch_id, "has already been taken")}
       end
     else
       {:error, :forbidden}

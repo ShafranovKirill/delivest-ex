@@ -1,7 +1,8 @@
 defmodule Delivest.Factory do
   use ExMachina.Ecto, repo: Delivest.Repo
 
-  alias Delivest.Identity.{Staff, Role}
+  alias Delivest.Identity.{Staff, Role, StaffBranch}
+  alias Delivest.Net.Branch
 
   def role_factory do
     %Role{
@@ -15,6 +16,19 @@ defmodule Delivest.Factory do
       login: sequence(:login, &"staff_user_#{&1}"),
       password_hash: Argon2.hash_pwd_salt("Q1w2e3r4t5!"),
       role: build(:role)
+    }
+  end
+
+  def branch_factory do
+    %Branch{
+      name: sequence(:branch_name, &"Branch_#{&1}")
+    }
+  end
+
+  def staff_branch_factory do
+    %StaffBranch{
+      staff: build(:staff),
+      branch: build(:branch)
     }
   end
 end
