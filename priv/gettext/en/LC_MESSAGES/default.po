@@ -1,0 +1,222 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/delivest_web/components/core_components.ex:375
+#, elixir-autogen, elixir-format
+msgid "Actions"
+msgstr ""
+
+#: lib/delivest_web/components/layouts.ex:26
+#: lib/delivest_web/components/layouts.ex:41
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:34
+#, elixir-autogen, elixir-format
+msgid "Authentication failed."
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:151
+#, elixir-autogen, elixir-format
+msgid "Enter your login"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:76
+#, elixir-autogen, elixir-format
+msgid "Invalid login or password"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:160
+#, elixir-autogen, elixir-format
+msgid "Log in"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:46
+#, elixir-autogen, elixir-format
+msgid "Logged out successfully."
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:156
+#, elixir-autogen, elixir-format
+msgid "Password"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:128
+#, elixir-autogen, elixir-format
+msgid "Sign in to your account to continue"
+msgstr ""
+
+#: lib/delivest_web/components/layouts.ex:33
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:21
+#, elixir-autogen, elixir-format
+msgid "Successfully logged in!"
+msgstr ""
+
+#: lib/delivest_web/components/layouts.ex:18
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:125
+#, elixir-autogen, elixir-format
+msgid "Welcome to Delivest CRM"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff_session_controller.ex:28
+#, elixir-autogen, elixir-format
+msgid "Your account is blocked. Try again later or contact admin."
+msgstr ""
+
+#: lib/delivest_web/components/core_components.ex:81
+#, elixir-autogen, elixir-format
+msgid "close"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:150
+#, elixir-autogen, elixir-format
+msgid "login"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:137
+#, elixir-autogen, elixir-format
+msgid "All rights reserved."
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:98
+#, elixir-autogen, elixir-format
+msgid "An interface for end-users featuring an interactive menu, cart, order placement, and real-time delivery status tracking."
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:122
+#, elixir-autogen, elixir-format
+msgid "Branch administration, staff role configuration, product catalog setup, and operational workflow control."
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:108
+#, elixir-autogen, elixir-format
+msgid "CRM System"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:96
+#, elixir-autogen, elixir-format
+msgid "Client Application"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:114
+#, elixir-autogen, elixir-format
+msgid "Close menu"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:50
+#: lib/delivest_web/controllers/page_html/home.html.heex:120
+#, elixir-autogen, elixir-format
+msgid "Control Panel"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:110
+#, elixir-autogen, elixir-format
+msgid "Customer base management, order history tracking, and analytics tools designed to increase audience loyalty."
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:77
+#, elixir-autogen, elixir-format
+msgid "Dark Mode"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:128
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:16
+#, elixir-autogen, elixir-format
+msgid "Dashboard"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:121
+#, elixir-autogen, elixir-format
+msgid "Delivest"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:19
+#, elixir-autogen, elixir-format
+msgid "Delivest CRM"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:66
+#, elixir-autogen, elixir-format
+msgid "Delivest combines client-facing interfaces, a modern CRM system, and a centralized control panel for efficient management of all business operations."
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:59
+#, elixir-autogen, elixir-format
+msgid "Enterprise Platform for Restaurant Business"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:62
+#, elixir-autogen, elixir-format
+msgid "Integrated System"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:56
+#, elixir-autogen, elixir-format
+msgid "Language"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:96
+#: lib/delivest_web/components/layouts/staff_app.html.heex:138
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:19
+#, elixir-autogen, elixir-format
+msgid "Log out"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:10
+#, elixir-autogen, elixir-format
+msgid "Open menu"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:84
+#, elixir-autogen, elixir-format
+msgid "Platform Architecture"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:87
+#, elixir-autogen, elixir-format
+msgid "Professional tools designed to automate every step of your service delivery."
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:72
+#, elixir-autogen, elixir-format
+msgid "Sign In"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:29
+#, elixir-autogen, elixir-format
+msgid "Staff"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:73
+#, elixir-autogen, elixir-format
+msgid "Theme"
+msgstr ""
+
+#: lib/delivest_web/components/layouts/staff_app.html.heex:119
+#, elixir-autogen, elixir-format
+msgid "Workspace"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:63
+#, elixir-autogen, elixir-format
+msgid "for Food Ordering & Delivery"
+msgstr ""

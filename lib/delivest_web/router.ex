@@ -8,6 +8,12 @@ defmodule DelivestWeb.Router do
     plug :put_root_layout, html: {DelivestWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug DelivestWeb.Plugs.Locale
+  end
+
+  pipeline :staff_browser do
+    plug :browser
+    plug DelivestWeb.Plugs.FetchCurrentStaff
   end
 
   pipeline :api do
@@ -17,21 +23,43 @@ defmodule DelivestWeb.Router do
   scope "/", DelivestWeb do
     pipe_through :browser
 
+    get "/locale/:locale", LocaleController, :set
     get "/", PageController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", DelivestWeb do
-  #   pipe_through :api
-  # end
+  scope "/", DelivestWeb.Client do
+    pipe_through :browser
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
+    live_session :client_public,
+      on_mount: [] do
+    end
+  end
+
+  scope "/staff", DelivestWeb.Staff do
+    pipe_through :staff_browser
+
+    post "/auth/log_in", StaffSessionController, :create
+    delete "/auth/log_out", StaffSessionController, :delete
+
+    live_session :staff_public,
+      on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
+      scope "/auth" do
+        pipe_through :browser
+        live "/login", AuthLive.Login, :new
+      end
+    end
+
+    live_session :staff_authenticated,
+      layout: {DelivestWeb.Layouts, :staff_app},
+      on_mount: [
+        {DelivestWeb.Hooks.StaffAuth, :default},
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
+      ] do
+      live "/dashboard", DashboardLive.Index, :index
+    end
+  end
+
   if Application.compile_env(:delivest, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do

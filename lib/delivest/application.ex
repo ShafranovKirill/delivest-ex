@@ -15,12 +15,14 @@ defmodule Delivest.Application do
       # Start a worker by calling: Delivest.Worker.start_link(arg)
       # {Delivest.Worker, arg},
       # Start to serve requests, typically the last entry
+      {Cachex, name: :staff_cache},
       DelivestWeb.Endpoint
     ]
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Delivest.Supervisor]
+
     Supervisor.start_link(children, opts)
   end
 

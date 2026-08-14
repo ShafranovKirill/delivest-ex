@@ -26,6 +26,7 @@ config :delivest, DelivestWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "psKKtXNZ4oNQRc9Mw2HSfDgy1HKK5tYpZq89TyAlr40byEfX0rcaoXydz5X6RAlu",
   watchers: [
+    esbuild: {Esbuild, :install_and_run, [:delivest, ~w(--sourcemap=inline --watch)]},
     npm: ["run", "build:css", "--", "--watch", cd: Path.expand("../assets", __DIR__)]
   ]
 
