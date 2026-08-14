@@ -1,7 +1,7 @@
 defmodule Delivest.Identity.Staffs do
   import Ecto.Query
   alias Delivest.Repo
-  alias Delivest.Identity.{Staff, Acl}
+  alias Delivest.Identity.{Staff, Acl, StaffBranch}
 
   @spec list_staff(map(), map(), keyword()) ::
           {:ok, {[Staff.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()}
@@ -138,6 +138,40 @@ defmodule Delivest.Identity.Staffs do
     else
       Argon2.no_user_verify()
       {:error, :invalid_credentials}
+    end
+  end
+
+  def assign_branch_to_staff(admin, staff_id, branch_id) do
+    if Acl.can?(admin, "admin") do
+      %StaffBranch{}
+      |> StaffBranch.changeset(%{staff_id: staff_id, branch_id: branch_id})
+      |> Repo.insert()
+      |> case do
+        {:ok, staff_branch} ->
+          Cachex.del(:staff_cache, staff_id)
+          {:ok, staff_branch}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  def revoke_branch_from_staff(staff_id, branch_id) do
+    query =
+      from sb in StaffBranch,
+        where: sb.staff_id == ^staff_id and sb.branch_id == ^branch_id
+
+    case Repo.delete_all(query) do
+      {0, _} ->
+        {:error, :not_found}
+
+      {_count, _} ->
+        Cachex.del(:staff_cache, staff_id)
+        Phoenix.PubSub.broadcast(Delivest.PubSub, "staff_updates:#{staff_id}", :staff_updated)
+        :ok
     end
   end
 
