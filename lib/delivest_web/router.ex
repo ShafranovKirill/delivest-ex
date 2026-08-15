@@ -13,6 +13,7 @@ defmodule DelivestWeb.Router do
 
   pipeline :staff_browser do
     plug :browser
+    plug DelivestWeb.Plugs.FetchCurrentStaff
   end
 
   pipeline :api do
@@ -39,6 +40,7 @@ defmodule DelivestWeb.Router do
 
     post "/auth/log_in", StaffSessionController, :create
     delete "/auth/log_out", StaffSessionController, :delete
+    get "/branches/select/:branch_id", StaffActiveBranchController, :set
 
     live_session :staff_public,
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
@@ -54,8 +56,6 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
       ] do
-      get "/branches/select/:branch_id", StaffActiveBranchController, :set
-
       live "/branches/select", BranchSelectLive.Index, :index
     end
 
@@ -64,7 +64,8 @@ defmodule DelivestWeb.Router do
       on_mount: [
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
-        {DelivestWeb.Hooks.StaffActiveBranch, :default}
+        {DelivestWeb.Hooks.StaffActiveBranch, :default},
+        {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/dashboard", DashboardLive.Index, :index
     end
