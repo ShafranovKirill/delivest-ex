@@ -30,7 +30,7 @@ defmodule Delivest.Net.Branches do
     preloads = Keyword.get(opts, :preload, [])
 
     case Cachex.get(:branch_cache, id) do
-      {:ok, nil} -> fetch_from_db_and_cache(id)
+      {:ok, nil} -> fetch_from_db_and_cache(id, opts)
       {:ok, %Branch{} = branch} -> ensure_preloaded_and_cached(branch, preloads, id, opts)
       _ -> {:error, :not_found}
     end
@@ -57,7 +57,7 @@ defmodule Delivest.Net.Branches do
   defp upsert_branch_info(repo, branch, attrs) do
     if branch.info do
       branch.info
-      |> Branch.changeset(attrs)
+      |> BranchInfo.changeset(attrs)
       |> repo.update()
     else
       Ecto.build_assoc(branch, :info)
@@ -121,13 +121,13 @@ defmodule Delivest.Net.Branches do
     end
   end
 
-  @spec fetch_from_db_and_cache(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
-  defp fetch_from_db_and_cache(id) do
+  defp fetch_from_db_and_cache(id, opts) do
     case Repo.get(Branch, id) do
       nil ->
         {:error, :not_found}
 
       branch ->
+        branch = maybe_preload_branch(branch, opts)
         cache_branch(id, branch)
         {:ok, branch}
     end

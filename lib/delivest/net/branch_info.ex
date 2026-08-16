@@ -2,6 +2,11 @@ defmodule Delivest.Net.BranchInfo do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   schema "branch_info" do
     field :address, :string
     field :phone_number, :string

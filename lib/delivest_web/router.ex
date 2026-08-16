@@ -68,6 +68,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/dashboard", DashboardLive.Index, :index
+      live "/branches", BranchLive.Index, :index
     end
   end
 
