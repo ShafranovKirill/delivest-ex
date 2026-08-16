@@ -1,5 +1,6 @@
 defmodule Delivest.Net.Branches do
   import Ecto.Query
+  alias Delivest.Net.BranchInfo
   alias Delivest.{Repo, Identity}
   alias Delivest.Net.Branch
 
@@ -21,6 +22,36 @@ defmodule Delivest.Net.Branches do
       true ->
         Branch
         |> where([_b], false)
+    end
+  end
+
+  def update_branch(%Branch{} = branch, branch_attrs, info_attrs) do
+    branch = Repo.preload(branch, :info)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:branch, Branch.changeset(branch, branch_attrs))
+    |> Ecto.Multi.run(:info, fn repo, _changes -> upsert_branch_info(repo, branch, info_attrs) end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{branch: updated_branch, info: updates_info}} ->
+        Cachex.del(:branch_cache, updated_branch.id)
+
+        {:ok, %{updated_branch | info: updates_info}}
+
+      {:error, failed_operation, changeset, _changes} ->
+        {:error, failed_operation, changeset}
+    end
+  end
+
+  defp upsert_branch_info(repo, branch, attrs) do
+    if branch.info do
+      branch.info
+      |> Branch.changeset(attrs)
+      |> repo.update()
+    else
+      Ecto.build_assoc(branch, :info)
+      |> BranchInfo.changeset(attrs)
+      |> repo.insert()
     end
   end
 

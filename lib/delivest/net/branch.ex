@@ -25,6 +25,8 @@ defmodule Delivest.Net.Branch do
 
     many_to_many :staff, Staff, join_through: StaffBranch
 
+    has_one :info, Delivest.Net.BranchInfo, foreign_key: :branch_id
+
     timestamps(type: :utc_datetime)
   end
 
