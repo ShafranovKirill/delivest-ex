@@ -31,45 +31,56 @@ defmodule DelivestWeb.StaffSidebar do
           </li>
 
           <li :if={can_any?(@current_staff, ["branches.read", "staff.read", "roles.read"])}>
-            <details open={@current_page in [:orders_active, :orders_archive]}>
+            <details open={@current_page in [:branches, :employee, :roles]}>
               <summary class="font-medium">
                 {gettext("Company")}
               </summary>
               <ul>
                 <li :if={can?(@current_staff, "branches.read")}>
                   <.link
-                    navigate={~p"/staff/orders/active"}
-                    class={(@current_page == :orders_active && "menu-active") || ""}
+                    navigate={~p"/staff/branches"}
+                    class={(@current_page == :branches && "menu-active") || ""}
                   >
                     {gettext("Branches")}
                   </.link>
                 </li>
                 <li :if={can_any?(@current_staff, ["staff.read", "roles.read"])}>
-                  <details open={@current_page in [:orders_active, :orders_archive]}>
+                  <details open={@current_page in [:employee, :roles]}>
                     <summary class="font-medium">
                       {gettext("Staff")}
                     </summary>
-
-                    <li :if={can?(@current_staff, "staff.read")}>
-                      <.link
-                        navigate={~p"/staff/orders/active"}
-                        class={(@current_page == :orders_active && "menu-active") || ""}
-                      >
-                        {gettext("Employee")}
-                      </.link>
-                    </li>
-                    <li :if={can?(@current_staff, "roles.read")}>
-                      <.link
-                        navigate={~p"/staff/orders/active"}
-                        class={(@current_page == :orders_active && "menu-active") || ""}
-                      >
-                        {gettext("Roles")}
-                      </.link>
-                    </li>
+                    <ul>
+                      <li :if={can?(@current_staff, "staff.read")}>
+                        <.link
+                          navigate={~p"/staff/employee"}
+                          class={(@current_page == :employee && "menu-active") || ""}
+                        >
+                          {gettext("Employee")}
+                        </.link>
+                      </li>
+                      <li :if={can?(@current_staff, "roles.read")}>
+                        <.link
+                          navigate={~p"/staff/roles"}
+                          class={(@current_page == :roles && "menu-active") || ""}
+                        >
+                          {gettext("Roles")}
+                        </.link>
+                      </li>
+                    </ul>
                   </details>
                 </li>
               </ul>
             </details>
+          </li>
+
+          <li>
+            <.link
+              patch={~p"/staff/branches/select"}
+              class="flex items-center gap-2 text-primary hover:bg-primary/10"
+            >
+              <.icon name="hero-arrow-path-rounded-square" class="h-5 w-5" />
+              <span>{gettext("Change branch")}</span>
+            </.link>
           </li>
 
           <li>

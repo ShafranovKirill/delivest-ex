@@ -25,7 +25,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
       path && String.starts_with?(path, "/staff/branches/select") -> :branches_select
       path && String.starts_with?(path, "/staff/branches") -> :branches
       path && String.starts_with?(path, "/staff/roles") -> :roles
-      path && String.starts_with?(path, "/staff/staff") -> :staff
+      path && String.starts_with?(path, "/staff/employee") -> :employee
       true -> :unknown
     end
   end
