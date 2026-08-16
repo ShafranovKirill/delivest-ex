@@ -25,6 +25,17 @@ defmodule Delivest.Net.Branches do
     end
   end
 
+  @spec get_branch(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
+  def get_branch(id, opts \\ []) do
+    preloads = Keyword.get(opts, :preload, [])
+
+    case Cachex.get(:branch_cache, id) do
+      {:ok, nil} -> fetch_from_db_and_cache(id)
+      {:ok, %Branch{} = branch} -> ensure_preloaded_and_cached(branch, preloads, id, opts)
+      _ -> {:error, :not_found}
+    end
+  end
+
   def update_branch(%Branch{} = branch, branch_attrs, info_attrs) do
     branch = Repo.preload(branch, :info)
 
@@ -55,15 +66,6 @@ defmodule Delivest.Net.Branches do
     end
   end
 
-  @spec get_branch(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
-  def get_branch(id) do
-    case Cachex.get(:branch_cache, id) do
-      {:ok, nil} -> fetch_from_db_and_cache(id)
-      {:ok, %Branch{} = branch} -> {:ok, branch}
-      _ -> {:error, :not_found}
-    end
-  end
-
   @spec create_branch(Delivest.Identity.Staff.t(), map()) ::
           {:ok, Branch.t()} | {:error, Ecto.Changeset.t() | :forbidden}
   def create_branch(staff, attrs) do
@@ -71,26 +73,6 @@ defmodule Delivest.Net.Branches do
       %Branch{}
       |> Branch.changeset(attrs)
       |> Repo.insert()
-    else
-      {:error, :forbidden}
-    end
-  end
-
-  @spec update_branch(Delivest.Identity.Staff.t(), Branch.t(), map()) ::
-          {:ok, Branch.t()} | {:error, Ecto.Changeset.t() | :forbidden}
-  def update_branch(staff, %Branch{} = branch, attrs) do
-    if Identity.can?(staff, "branch.update") do
-      branch
-      |> Branch.changeset(attrs)
-      |> Repo.update()
-      |> case do
-        {:ok, updated_branch} ->
-          Cachex.del(:branch_cache, updated_branch.id)
-          {:ok, updated_branch}
-
-        error ->
-          error
-      end
     else
       {:error, :forbidden}
     end
@@ -113,6 +95,29 @@ defmodule Delivest.Net.Branches do
       end
     else
       {:error, :forbidden}
+    end
+  end
+
+  defp ensure_preloaded_and_cached(branch, preloads, id, opts) do
+    if needs_preload?(branch, preloads) do
+      branch = maybe_preload_branch(branch, opts)
+      cache_branch(id, branch)
+      {:ok, branch}
+    else
+      {:ok, branch}
+    end
+  end
+
+  defp needs_preload?(branch, preloads) do
+    Enum.any?(preloads, fn assoc ->
+      match?(%Ecto.Association.NotLoaded{}, Map.get(branch, assoc))
+    end)
+  end
+
+  defp maybe_preload_branch(branch, opts) do
+    case Keyword.get(opts, :preload) do
+      nil -> branch
+      preloads -> Repo.preload(branch, preloads)
     end
   end
 
