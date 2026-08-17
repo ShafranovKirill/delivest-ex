@@ -3,97 +3,121 @@ defmodule DelivestWeb.Staff.BranchLive.Index do
 
   alias Delivest.Net.Branches
   alias Delivest.Repo
+  alias Delivest.Net.Branch
+  alias Delivest.Identity
 
   @impl true
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
-    branches = Repo.all(Branches.list_branch(staff))
 
-    {:ok,
-     socket
-     |> assign(:branches, branches)
-     |> assign(:modal, nil)
-     |> assign(:selected_branch, nil)}
+    branches =
+      staff
+      |> Branches.list_branch()
+      |> Repo.all()
+      |> Repo.preload(:info)
+
+    {:ok, assign(socket, branches: branches, branch_to_delete: nil)}
   end
 
   @impl true
-  def handle_event("open_create_modal", _, socket) do
-    {:noreply,
-     socket
-     |> assign(:modal, :create)
-     |> assign(:selected_branch, nil)}
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
-  @impl true
-  def handle_event("open_edit_modal", %{"id" => id}, socket) do
-    case Branches.get_branch(id, preload: [:info]) do
-      {:ok, branch} ->
-        {:noreply,
-         socket
-         |> assign(:modal, :edit)
-         |> assign(:selected_branch, branch)}
+  defp apply_action(socket, :index, _params) do
+    assign(socket, page_title: gettext("Branches"), branch: nil)
+  end
 
-      {:error, :not_found} ->
-        {:noreply, put_flash(socket, :error, gettext("Branch not found"))}
+  defp apply_action(socket, :new, _params) do
+    if Identity.can?(socket.assigns.current_staff, "branches.create") do
+      assign(socket, page_title: gettext("Create branch"), branch: %Branch{})
+    else
+      socket
+      |> put_flash(:error, gettext("You don't have permission to create branch."))
+      |> push_patch(to: ~p"/staff/branches")
+    end
+  end
+
+  defp apply_action(socket, :edit, %{"id" => id}) do
+    if Identity.can?(socket.assigns.current_staff, "branches.update") do
+      case Branches.get_branch(id) do
+        {:ok, branch} ->
+          # Также делаем preload для редактируемого филиала, чтобы форма в slide_over видела данные
+          branch = Repo.preload(branch, :info)
+          assign(socket, page_title: gettext("Edit Branch"), branch: branch)
+
+        _ ->
+          socket
+          |> put_flash(:error, gettext("Branch not found."))
+          |> push_patch(to: ~p"/staff/branches")
+      end
+    else
+      socket
+      |> put_flash(:error, gettext("You don't have permission to edit branches."))
+      |> push_patch(to: ~p"/staff/branches")
     end
   end
 
   @impl true
-  def handle_event("close_modal", _, socket) do
+  def handle_info({DelivestWeb.Staff.BranchLive.BranchFormComponent, {:saved, branch}}, socket) do
+    branch = Repo.preload(branch, :info)
+
     {:noreply,
      socket
-     |> assign(:modal, nil)
-     |> assign(:selected_branch, nil)}
+     |> put_flash(:info, gettext("Branch saved successfully"))
+     |> push_patch(to: ~p"/staff/branches")
+     |> update(:branches, fn branches ->
+       if Enum.any?(branches, &(&1.id == branch.id)) do
+         Enum.map(branches, fn b -> if b.id == branch.id, do: branch, else: b end)
+       else
+         [branch | branches]
+       end
+     end)}
   end
 
   @impl true
-  def handle_event("save_branch", %{"branch" => branch_params}, socket) do
-    staff = socket.assigns.current_staff
-
-    case socket.assigns.modal do
-      :create ->
-        case Branches.create_branch(staff, branch_params) do
-          {:ok, _branch} ->
-            branches = Repo.all(Branches.list_branch(staff))
-
-            {:noreply,
-             socket
-             |> put_flash(:info, gettext("Branch successfully created"))
-             |> assign(:branches, branches)
-             |> assign(:modal, nil)
-             |> assign(:selected_branch, nil)}
-
-          {:error, %Ecto.Changeset{} = _changeset} ->
-            {:noreply, put_flash(socket, :error, gettext("Validation error on creation"))}
-
-          {:error, :forbidden} ->
-            {:noreply,
-             put_flash(socket, :error, gettext("Insufficient permissions to create a branch"))}
-        end
-
-      :edit ->
-        branch = socket.assigns.selected_branch
-        branch_attrs = Map.take(branch_params, ["name"])
-        info_attrs = Map.take(branch_params, ["address", "phone_number"])
-
-        case Branches.update_branch(branch, branch_attrs, info_attrs) do
-          {:ok, _updated_branch} ->
-            branches = Repo.all(Branches.list_branch(staff))
-
-            {:noreply,
-             socket
-             |> put_flash(:info, gettext("Branch successfully updated"))
-             |> assign(:branches, branches)
-             |> assign(:modal, nil)
-             |> assign(:selected_branch, nil)}
-
-          {:error, _, _changeset} ->
-            {:noreply, put_flash(socket, :error, gettext("Error updating branch"))}
-        end
+  def handle_event("delete_branch", %{"id" => id}, socket) do
+    case Branches.get_branch(id) do
+      {:ok, branch} ->
+        {:noreply, assign(socket, branch_to_delete: branch)}
 
       _ ->
-        {:noreply, socket}
+        {:noreply, put_flash(socket, :error, gettext("Branch not found."))}
     end
+  end
+
+  @impl true
+  def handle_event(
+        "confirm_delete",
+        _,
+        %{assigns: %{branch_to_delete: branch, current_staff: staff} = assigns} = socket
+      ) do
+    case Branches.soft_delete_branch(staff, branch) do
+      {:ok, deleted_branch} ->
+        branches = Enum.reject(socket.assigns.branches, &(&1.id == deleted_branch.id))
+
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Branch deleted successfully"))
+         |> assign(branches: branches, branch_to_delete: nil)}
+
+      {:error, :forbidden} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("You don't have permission to delete branches."))
+         |> assign(branch_to_delete: nil)}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("Failed to delete branch"))
+         |> assign(branch_to_delete: nil)}
+    end
+  end
+
+  @impl true
+  def handle_event("cancel_delete", _, socket) do
+    {:noreply, assign(socket, branch_to_delete: nil)}
   end
 
   @impl true
@@ -105,89 +129,75 @@ defmodule DelivestWeb.Staff.BranchLive.Index do
           <h1 class="text-3xl font-bold">{gettext("Branches Management")}</h1>
           <p class="text-sm opacity-70">{gettext("List of available company branches")}</p>
         </div>
-        <button type="button" class="btn btn-primary" phx-click="open_create_modal">
+
+        <.link patch={~p"/staff/branches/new"} class="btn btn-primary">
           {gettext("Create Branch")}
-        </button>
+        </.link>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <%= for branch <- @branches do %>
-          <div
-            class="card bg-base-100 shadow-xl cursor-pointer hover:shadow-2xl transition-all"
-            phx-click="open_edit_modal"
-            phx-value-id={branch.id}
-          >
-            <div class="card-body">
-              <h2 class="card-title">{branch.name}</h2>
-              <p class="text-xs opacity-60">{gettext("Click to view and edit")}</p>
+          <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
+            <div class="card-body flex flex-row items-start justify-between gap-4">
+              <.link
+                patch={~p"/staff/branches/#{branch.id}/edit"}
+                class="cursor-pointer flex-1"
+              >
+                <h2 class="card-title">{branch.name}</h2>
+                <p class="text-xs opacity-60 mt-4">{gettext("Click to view and edit")}</p>
+              </.link>
+
+              <div class="flex flex-col items-center gap-1 shrink-0">
+                <.link
+                  patch={~p"/staff/branches/#{branch.id}/edit"}
+                  class="btn btn-sm btn-ghost btn-square text-info"
+                  title={gettext("Edit")}
+                >
+                  <.icon name="hero-pencil-square" class="w-5 h-5" />
+                </.link>
+
+                <button
+                  type="button"
+                  phx-click="delete_branch"
+                  phx-value-id={branch.id}
+                  class="btn btn-sm btn-ghost btn-square text-error"
+                  title={gettext("Delete")}
+                >
+                  <.icon name="hero-trash" class="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         <% end %>
       </div>
 
-      <%= if @modal do %>
-        <div class="modal modal-open">
-          <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">
-              {if @modal == :create, do: gettext("Create Branch"), else: gettext("Edit Branch")}
-            </h3>
+      <.modal
+        id="delete-branch-modal"
+        show={@branch_to_delete != nil}
+        title={gettext("Delete Branch")}
+        description={gettext("Are you sure you want to delete this branch?")}
+        confirm_label={gettext("Delete")}
+        danger={true}
+        on_cancel={JS.push("cancel_delete")}
+        on_confirm={JS.push("confirm_delete")}
+      />
 
-            <form phx-submit="save_branch">
-              <div class="form-control w-full mb-4">
-                <label class="label">
-                  <span class="label-text">{gettext("Branch Name")}</span>
-                </label>
-                <input
-                  type="text"
-                  name="branch[name]"
-                  value={if @modal == :edit, do: @selected_branch.name, else: ""}
-                  class="input input-bordered w-full"
-                  required
-                />
-              </div>
-
-              <%= if @modal == :edit do %>
-                <div class="form-control w-full mb-4">
-                  <label class="label">
-                    <span class="label-text">{gettext("Address")}</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="branch[address]"
-                    value={
-                      if Ecto.assoc_loaded?(@selected_branch.info) && @selected_branch.info,
-                        do: @selected_branch.info.address,
-                        else: ""
-                    }
-                    class="input input-bordered w-full"
-                  />
-                </div>
-
-                <div class="form-control w-full mb-4">
-                  <label class="label">
-                    <span class="label-text">{gettext("Phone Number")}</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="branch[phone_number]"
-                    value={
-                      if Ecto.assoc_loaded?(@selected_branch.info) && @selected_branch.info,
-                        do: @selected_branch.info.phone_number,
-                        else: ""
-                    }
-                    class="input input-bordered w-full"
-                  />
-                </div>
-              <% end %>
-
-              <div class="modal-action">
-                <button type="button" class="btn" phx-click="close_modal">{gettext("Cancel")}</button>
-                <button type="submit" class="btn btn-primary">{gettext("Save")}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      <% end %>
+      <.slide_over
+        id="branch-slideover"
+        show={@live_action in [:new, :edit]}
+        title={@page_title}
+        on_close={JS.patch(~p"/staff/branches")}
+      >
+        <.live_component
+          :if={@branch}
+          module={DelivestWeb.Staff.BranchLive.BranchFormComponent}
+          id={@branch.id || :new}
+          action={@live_action}
+          branch={@branch}
+          current_staff={@current_staff}
+          patch={~p"/staff/branches"}
+        />
+      </.slide_over>
     </div>
     """
   end

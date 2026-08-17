@@ -5,18 +5,27 @@ defmodule Delivest.Net.Branches do
   alias Delivest.Net.Branch
 
   @spec list_branch(Delivest.Identity.Staff.t()) :: Ecto.Query.t()
-  def list_branch(staff) do
+  def list_branch(staff, opts \\ []) do
     permissions = staff.role.permissions || []
+
+    base_query = Branch |> where([b], is_nil(b.deleted_at))
+
+    query =
+      if preloads = Keyword.get(opts, :preload) do
+        preload(base_query, ^preloads)
+      else
+        base_query
+      end
 
     cond do
       "admin" in permissions ->
-        Branch
+        query
 
       Identity.can?(staff, "branch.read") ->
         branch_ids =
           Enum.map(staff.branches, & &1.id)
 
-        Branch
+        query
         |> where([b], b.id in ^branch_ids)
 
       true ->
@@ -36,21 +45,27 @@ defmodule Delivest.Net.Branches do
     end
   end
 
-  def update_branch(%Branch{} = branch, branch_attrs, info_attrs) do
-    branch = Repo.preload(branch, :info)
+  def update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
+    if Identity.can?(staff, "branches.update") do
+      branch = Repo.preload(branch, :info)
 
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:branch, Branch.changeset(branch, branch_attrs))
-    |> Ecto.Multi.run(:info, fn repo, _changes -> upsert_branch_info(repo, branch, info_attrs) end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{branch: updated_branch, info: updates_info}} ->
-        Cachex.del(:branch_cache, updated_branch.id)
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:branch, Branch.changeset(branch, branch_attrs))
+      |> Ecto.Multi.run(:info, fn repo, _changes ->
+        upsert_branch_info(repo, branch, info_attrs)
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{branch: updated_branch, info: updates_info}} ->
+          Cachex.del(:branch_cache, updated_branch.id)
 
-        {:ok, %{updated_branch | info: updates_info}}
+          {:ok, %{updated_branch | info: updates_info}}
 
-      {:error, failed_operation, changeset, _changes} ->
-        {:error, failed_operation, changeset}
+        {:error, failed_operation, changeset, _changes} ->
+          {:error, failed_operation, changeset}
+      end
+    else
+      {:error, :forbidden}
     end
   end
 
@@ -66,13 +81,22 @@ defmodule Delivest.Net.Branches do
     end
   end
 
-  @spec create_branch(Delivest.Identity.Staff.t(), map()) ::
-          {:ok, Branch.t()} | {:error, Ecto.Changeset.t() | :forbidden}
-  def create_branch(staff, attrs) do
+  def create_branch(staff, branch_attrs, info_attrs) do
     if Identity.can?(staff, "branch.create") do
-      %Branch{}
-      |> Branch.changeset(attrs)
-      |> Repo.insert()
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, branch_attrs))
+      |> Ecto.Multi.insert(:branch_info, fn %{branch: branch} ->
+        attrs = Map.put(info_attrs, "branch_id", branch.id)
+        BranchInfo.changeset(%BranchInfo{}, attrs)
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{branch: branch, branch_info: branch_info}} ->
+          {:ok, %{branch | info: branch_info}}
+
+        {:error, failed_operation, changeset, _changes} ->
+          {:error, failed_operation, changeset}
+      end
     else
       {:error, :forbidden}
     end

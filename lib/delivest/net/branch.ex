@@ -27,6 +27,7 @@ defmodule Delivest.Net.Branch do
 
     has_one :info, Delivest.Net.BranchInfo, foreign_key: :branch_id
 
+    field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)
   end
 
