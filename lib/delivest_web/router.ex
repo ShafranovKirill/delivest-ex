@@ -56,7 +56,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
       ] do
-      live "/branches/select", BranchSelectLive.Index, :index
+      live "/branches/select", BranchLive.BranchSelect, :index
     end
 
     live_session :staff_authenticated,

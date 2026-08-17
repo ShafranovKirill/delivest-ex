@@ -1,4 +1,4 @@
-defmodule DelivestWeb.Staff.BranchSelectLive.Index do
+defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   use DelivestWeb, :live_view
   alias Delivest.Net.Branches
   alias Delivest.Repo
