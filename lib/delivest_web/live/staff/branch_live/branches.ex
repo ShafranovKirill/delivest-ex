@@ -1,7 +1,7 @@
-defmodule DelivestWeb.Staff.BranchLive.Index do
+defmodule DelivestWeb.Staff.BranchLive.Branches do
   use DelivestWeb, :live_view
 
-  alias Delivest.Net.Branches
+  alias Delivest.Net
   alias Delivest.Repo
   alias Delivest.Net.Branch
   alias Delivest.Identity
@@ -12,7 +12,7 @@ defmodule DelivestWeb.Staff.BranchLive.Index do
 
     branches =
       staff
-      |> Branches.list_branch()
+      |> Net.list_branch()
       |> Repo.all()
       |> Repo.preload(:info)
 
@@ -40,9 +40,8 @@ defmodule DelivestWeb.Staff.BranchLive.Index do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "branches.update") do
-      case Branches.get_branch(id) do
+      case Net.get_branch(id) do
         {:ok, branch} ->
-          # Также делаем preload для редактируемого филиала, чтобы форма в slide_over видела данные
           branch = Repo.preload(branch, :info)
           assign(socket, page_title: gettext("Edit Branch"), branch: branch)
 
@@ -77,7 +76,7 @@ defmodule DelivestWeb.Staff.BranchLive.Index do
 
   @impl true
   def handle_event("delete_branch", %{"id" => id}, socket) do
-    case Branches.get_branch(id) do
+    case Net.get_branch(id) do
       {:ok, branch} ->
         {:noreply, assign(socket, branch_to_delete: branch)}
 
@@ -90,9 +89,9 @@ defmodule DelivestWeb.Staff.BranchLive.Index do
   def handle_event(
         "confirm_delete",
         _,
-        %{assigns: %{branch_to_delete: branch, current_staff: staff} = assigns} = socket
+        %{assigns: %{branch_to_delete: branch, current_staff: staff} = _assigns} = socket
       ) do
-    case Branches.soft_delete_branch(staff, branch) do
+    case Net.soft_delete_branch(staff, branch) do
       {:ok, deleted_branch} ->
         branches = Enum.reject(socket.assigns.branches, &(&1.id == deleted_branch.id))
 
