@@ -426,6 +426,99 @@ defmodule DelivestWeb.CoreComponents do
   end
 
   @doc """
+  Renders a slide-over (drawer) for forms.
+  """
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :title, :string, required: true
+  attr :on_close, JS, required: true
+  slot :inner_block, required: true
+
+  def slide_over(assigns) do
+    ~H"""
+    <div
+      class={["drawer drawer-end absolute inset-0 z-100", !@show && "hidden"]}
+      style="pointer-events: none;"
+    >
+      <input
+        id={"#{@id}-toggle"}
+        type="checkbox"
+        class="drawer-toggle"
+        checked={@show}
+        aria-hidden="true"
+      />
+      <div class="drawer-side" style="pointer-events: auto;">
+        <label for={"#{@id}-toggle"} class="drawer-overlay" phx-click={@on_close}></label>
+        <div class="bg-base-100 text-base-content min-h-full w-full max-w-md p-0 flex flex-col border-l border-base-300">
+          <div class="p-6 border-b border-base-300 flex items-center justify-between shrink-0">
+            <h2 class="text-xl font-display font-bold">{@title}</h2>
+            <button type="button" class="btn btn-ghost btn-square btn-sm" phx-click={@on_close}>
+              <.icon name="hero-x-mark" class="size-5" />
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-6">
+            {render_slot(@inner_block)}
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a DaisyUI modal dynamically using LiveView state.
+  """
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :title, :string, default: nil
+  attr :description, :string, default: nil
+  attr :on_cancel, JS, default: %JS{}
+  attr :on_confirm, JS, default: nil
+  attr :confirm_label, :string, default: "Confirm"
+  attr :danger, :boolean, default: false
+  slot :inner_block
+
+  def modal(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class={["modal", @show && "modal-open"]}
+      phx-window-keydown={@show && @on_cancel}
+      phx-key="escape"
+    >
+      <div class="modal-box rounded-sm border border-base-300">
+        <h3 :if={@title} class="font-bold text-lg">{@title}</h3>
+        <p :if={@description} class="py-4 text-base-content/70">{@description}</p>
+
+        {render_slot(@inner_block)}
+
+        <div :if={@on_confirm} class="modal-action">
+          <button
+            type="button"
+            class="btn btn-outline btn-sm"
+            phx-click={@on_cancel}
+          >
+            {gettext("Cancel")}
+          </button>
+
+          <button
+            type="button"
+            class={["btn btn-sm", @danger && "btn-error", !@danger && "btn-primary"]}
+            phx-click={@on_confirm}
+          >
+            {@confirm_label}
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-backdrop bg-black/50" phx-click={@on_cancel}>
+        <button type="button" class="cursor-default" aria-label={gettext("close")}></button>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a [Heroicon](https://heroicons.com).
 
   Heroicons come in three styles – outline, solid, and mini.

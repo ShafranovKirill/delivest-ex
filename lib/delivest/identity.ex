@@ -9,13 +9,16 @@ defmodule Delivest.Identity do
   defdelegate get_staff_by_login(login), to: Staffs
   defdelegate soft_delete_staff(staff, removable_staff), to: Staffs
   defdelegate authenticate(login, password), to: Staffs
+  defdelegate assign_branch_to_staff(admin, staff_id, branch_id), to: Staffs
+  defdelegate revoke_branch_from_staff(staff_id, branch_id), to: Staffs
 
   defdelegate login_regex, to: Staff
   defdelegate password_regex, to: Staff
 
   defdelegate can?(staff, permission), to: Acl
   defdelegate can_any?(staff, permissions), to: Acl
-  defdelegate scope_query(query, staff, permission), to: Acl
+  defdelegate scope_by_branch(query, staff, permission), to: Acl
+  defdelegate has_branch_access?(staff, branch_id), to: Acl
 
   defdelegate list_all_roles(user), to: Roles
   defdelegate get_role(user, id), to: Roles

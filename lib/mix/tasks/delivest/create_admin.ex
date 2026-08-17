@@ -15,7 +15,6 @@ defmodule Mix.Tasks.Delivest.CreateAdmin do
 
     admin_role = get_or_create_admin_role()
 
-    # 2. Проверяем, существует ли уже админ
     case Repo.get_by(Staff, login: admin_login) do
       nil ->
         params = %{

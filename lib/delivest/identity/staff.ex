@@ -1,7 +1,7 @@
 defmodule Delivest.Identity.Staff do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Role
+  alias Delivest.Identity.{Role, StaffBranch}
   alias Delivest.Net.Branch
 
   use Gettext, backend: DelivestWeb.Gettext
@@ -30,7 +30,8 @@ defmodule Delivest.Identity.Staff do
     field :password, :string, virtual: true
 
     belongs_to :role, Role
-    belongs_to :branch, Branch
+
+    many_to_many :branches, Branch, join_through: StaffBranch
 
     field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)
@@ -38,7 +39,7 @@ defmodule Delivest.Identity.Staff do
 
   def changeset(staff, attrs) do
     staff
-    |> cast(attrs, [:login, :password, :name, :role_id, :branch_id, :deleted_at])
+    |> cast(attrs, [:login, :password, :name, :role_id, :deleted_at])
     |> validate_required([:login, :role_id])
     |> validate_password_required()
     |> validate_length(:login, min: 3, max: 50)

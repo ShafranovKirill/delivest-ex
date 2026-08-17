@@ -1,5 +1,4 @@
 <div class="min-h-screen bg-base-100 text-base-content flex flex-col">
-  <!-- Навигация -->
   <header class="navbar bg-base-100 border-b border-base-300 px-6 lg:px-12 sticky top-0 z-50">
     <div class="flex-1">
       <a
@@ -11,7 +10,6 @@
     </div>
 
     <div class="flex items-center gap-4">
-      <!-- Переключение языка -->
       <% current_locale = Gettext.get_locale(DelivestWeb.Gettext) %>
       <.link
         :if={current_locale == "ru"}
@@ -52,7 +50,7 @@
     </div>
   </header>
 
-  <section class="hero flex-1 bg-gradient-to-b from-base-200/40 to-base-100 py-28 px-6">
+  <section class="hero flex-1 bg-linear-to-b from-base-200/40 to-base-100 py-28 px-6">
     <div class="hero-content text-center max-w-4xl mx-auto">
       <div>
         <div class="badge badge-primary badge-outline mb-6 px-4 py-3 font-medium text-sm">

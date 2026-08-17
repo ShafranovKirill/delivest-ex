@@ -4,6 +4,7 @@ defmodule Delivest.Identity.AclTest do
   alias Delivest.Identity.{Acl, Staff}
   alias Delivest.Repo
   import Delivest.Factory
+  import Ecto.Query
 
   describe "can?/2" do
     test "should return false when staff is nil" do
@@ -62,27 +63,13 @@ defmodule Delivest.Identity.AclTest do
     end
   end
 
-  describe "scope_query/3" do
+  describe "scope_by_branch/3" do
     test "should return empty result set (WHERE false) when staff is nil" do
       insert(:staff)
-      query = Staff
+      query = from(s in Staff, select: s)
 
-      scoped_query = Acl.scope_query(query, nil, "staff.read")
+      scoped_query = Acl.scope_by_branch(query, nil, "staff.read")
       assert Repo.all(scoped_query) == []
-    end
-
-    test "should return original query when staff has permission" do
-      staff_record = insert(:staff)
-
-      role = build(:role, permissions: ["staff.read"])
-      staff_actor = build(:staff, role: role)
-
-      query = Staff
-      scoped_query = Acl.scope_query(query, staff_actor, "staff.read")
-
-      results = Repo.all(scoped_query)
-      assert length(results) >= 1
-      assert Enum.any?(results, &(&1.id == staff_record.id))
     end
 
     test "should return original query when staff is admin" do
@@ -91,8 +78,8 @@ defmodule Delivest.Identity.AclTest do
       role = build(:role, permissions: ["admin"])
       staff_actor = build(:staff, role: role)
 
-      query = Staff
-      scoped_query = Acl.scope_query(query, staff_actor, "staff.read")
+      query = from(s in Staff, select: s)
+      scoped_query = Acl.scope_by_branch(query, staff_actor, "staff.read")
 
       results = Repo.all(scoped_query)
       assert length(results) >= 1
@@ -105,8 +92,8 @@ defmodule Delivest.Identity.AclTest do
       role = build(:role, permissions: ["staff.read"])
       staff_actor = build(:staff, role: role)
 
-      query = Staff
-      scoped_query = Acl.scope_query(query, staff_actor, "staff.delete")
+      query = from(s in Staff, select: s)
+      scoped_query = Acl.scope_by_branch(query, staff_actor, "staff.delete")
 
       assert Repo.all(scoped_query) == []
     end
@@ -151,6 +138,67 @@ defmodule Delivest.Identity.AclTest do
 
       assert Acl.can_any?(staff, ["staff.create"])
       refute Acl.can_any?(staff, ["staff.delete"])
+    end
+  end
+
+  describe "has_branch_access?/2" do
+    test "should return false when staff is nil" do
+      branch = insert(:branch)
+      refute Acl.has_branch_access?(nil, branch.id)
+    end
+
+    test "should return true when staff has 'admin' permission" do
+      role = build(:role, permissions: ["admin"])
+      staff = build(:staff, role: role)
+      branch = insert(:branch)
+
+      assert Acl.has_branch_access?(staff, branch.id)
+    end
+
+    test "should return true when staff has branch assignment" do
+      branch = insert(:branch)
+      role = build(:role, permissions: ["staff.read"])
+      staff = insert(:staff, role: role)
+      insert(:staff_branch, staff: staff, branch: branch)
+
+      staff = Repo.preload(staff, :branches)
+
+      assert Acl.has_branch_access?(staff, branch.id)
+    end
+
+    test "should return false when staff lacks branch access and is not admin" do
+      role = build(:role, permissions: ["staff.read"])
+      staff = build(:staff, role: role)
+      branch = insert(:branch)
+
+      staff = Repo.preload(staff, :branches)
+
+      refute Acl.has_branch_access?(staff, branch.id)
+    end
+
+    test "should return false when branches association is not preloaded" do
+      role = build(:role, permissions: ["staff.read"])
+      staff = insert(:staff, role: role)
+      branch = insert(:branch)
+
+      refute Acl.has_branch_access?(staff, branch.id)
+    end
+
+    test "should handle multiple branch assignments" do
+      role = build(:role, permissions: ["staff.read"])
+      staff = insert(:staff, role: role)
+      branch1 = insert(:branch)
+      branch2 = insert(:branch)
+      branch3 = insert(:branch)
+
+      insert(:staff_branch, staff: staff, branch: branch1)
+      insert(:staff_branch, staff: staff, branch: branch2)
+
+      staff = Repo.preload(staff, :branches)
+
+      assert Acl.has_branch_access?(staff, branch1.id)
+      assert Acl.has_branch_access?(staff, branch2.id)
+      refute Acl.has_branch_access?(staff, branch3.id)
     end
   end
 end

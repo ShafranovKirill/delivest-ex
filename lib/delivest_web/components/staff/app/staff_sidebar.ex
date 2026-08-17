@@ -1,8 +1,11 @@
 defmodule DelivestWeb.StaffSidebar do
+  alias Delivest.Identity
   use DelivestWeb, :html
+  import Identity.Acl
 
+  attr :current_page, :atom, default: nil
+  attr :current_staff, :map, default: nil
   attr :drawer_id, :string, default: "staff-drawer", doc: "ID чекбокса для DaisyUI drawer"
-  attr :current_page, :atom, default: nil, doc: "Текущая активная страница для подсветки пунктов"
 
   def staff_sidebar(assigns) do
     ~H"""
@@ -17,21 +20,68 @@ defmodule DelivestWeb.StaffSidebar do
           <h2 class="mt-1 text-lg font-bold text-base-content">{gettext("Delivest")}</h2>
         </div>
 
-        <ul class="menu menu-md gap-1">
+        <ul class="menu w-full p-0 gap-1">
           <li>
             <.link
-              href={~p"/staff/dashboard"}
-              class={["rounded-xl hover:bg-base-200", @current_page == :dashboard && "active"]}
+              navigate={~p"/staff/dashboard"}
+              class={(@current_page == :dashboard && "menu-active") || ""}
             >
-              <.icon name="hero-home" class="h-5 w-5" />
-              <span>{gettext("Dashboard")}</span>
+              {gettext("Dashboard")}
             </.link>
           </li>
+
+          <li :if={can_any?(@current_staff, ["branches.read", "staff.read", "roles.read"])}>
+            <details open={@current_page in [:branches, :employee, :roles]}>
+              <summary class="font-medium">
+                {gettext("Company")}
+              </summary>
+              <ul>
+                <li :if={can?(@current_staff, "branches.read")}>
+                  <.link
+                    navigate={~p"/staff/branches"}
+                    class={(@current_page == :branches && "menu-active") || ""}
+                  >
+                    {gettext("Branches")}
+                  </.link>
+                </li>
+                <li :if={can_any?(@current_staff, ["staff.read", "roles.read"])}>
+                  <details open={@current_page in [:employee, :roles]}>
+                    <summary class="font-medium">
+                      {gettext("Staff")}
+                    </summary>
+                    <ul>
+                      <li :if={can?(@current_staff, "staff.read")}>
+                        <.link class={(@current_page == :employee && "menu-active") || ""}>
+                          {gettext("Employee")}
+                        </.link>
+                      </li>
+                      <li :if={can?(@current_staff, "roles.read")}>
+                        <.link class={(@current_page == :roles && "menu-active") || ""}>
+                          {gettext("Roles")}
+                        </.link>
+                      </li>
+                    </ul>
+                  </details>
+                </li>
+              </ul>
+            </details>
+          </li>
+
+          <li>
+            <.link
+              patch={~p"/staff/branches/select"}
+              class="flex items-center gap-2 text-primary hover:bg-primary/10"
+            >
+              <.icon name="hero-arrow-path-rounded-square" class="h-5 w-5" />
+              <span>{gettext("Change branch")}</span>
+            </.link>
+          </li>
+
           <li>
             <.link
               href={~p"/staff/auth/log_out"}
               method="delete"
-              class="rounded-xl text-error hover:bg-error/10"
+              class="text-error hover:bg-error/10"
             >
               <.icon name="hero-arrow-right-start-on-rectangle" class="h-5 w-5" />
               <span>{gettext("Log out")}</span>

@@ -13,7 +13,7 @@ defmodule DelivestWeb.Plugs.FetchCurrentStaff do
         assign(conn, :current_staff, nil)
 
       staff_id ->
-        case Identity.get_staff(staff_id) do
+        case Identity.get_staff(staff_id, preload: [:role, :branches]) do
           {:ok, staff} ->
             assign(conn, :current_staff, staff)
 

@@ -40,6 +40,7 @@ defmodule DelivestWeb.Router do
 
     post "/auth/log_in", StaffSessionController, :create
     delete "/auth/log_out", StaffSessionController, :delete
+    get "/branches/select/:branch_id", StaffActiveBranchController, :set
 
     live_session :staff_public,
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
@@ -49,13 +50,28 @@ defmodule DelivestWeb.Router do
       end
     end
 
-    live_session :staff_authenticated,
+    live_session :staff_branch_selection,
       layout: {DelivestWeb.Layouts, :staff_app},
       on_mount: [
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
       ] do
+      live "/branches/select", BranchSelectLive.Index, :index
+    end
+
+    live_session :staff_authenticated,
+      layout: {DelivestWeb.Layouts, :staff_app},
+      on_mount: [
+        {DelivestWeb.Hooks.StaffAuth, :default},
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+        {DelivestWeb.Hooks.StaffActiveBranch, :default},
+        {DelivestWeb.Hooks.StaffPath, :default}
+      ] do
       live "/dashboard", DashboardLive.Index, :index
+
+      live "/branches", BranchLive.Branches, :index
+      live "/branches/:id/edit", BranchLive.Branches, :edit
+      live "/branches/new", BranchLive.Branches, :new
     end
   end
 

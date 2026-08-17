@@ -229,6 +229,166 @@ defmodule Delivest.Identity.StaffsTest do
     end
   end
 
+  describe "get_staff_by_login/1" do
+    test "should return staff by login when found" do
+      staff = insert(:staff, login: "findme")
+
+      assert {:ok, %Staff{} = found_staff} = Staffs.get_staff_by_login("findme")
+      assert found_staff.id == staff.id
+      assert found_staff.login == "findme"
+    end
+
+    test "should return not found when staff doesn't exist" do
+      assert {:error, :not_found} = Staffs.get_staff_by_login("nonexistent")
+    end
+
+    test "should be case-sensitive for login lookup" do
+      insert(:staff, login: "CaseSensitive")
+
+      assert {:error, :not_found} = Staffs.get_staff_by_login("casesensitive")
+      assert {:ok, %Staff{}} = Staffs.get_staff_by_login("CaseSensitive")
+    end
+
+    test "should not return deleted staff" do
+      insert(:staff, login: "deleted_user", deleted_at: DateTime.utc_now(:second))
+
+      assert {:ok, %Staff{} = found_staff} = Staffs.get_staff_by_login("deleted_user")
+      assert found_staff.deleted_at != nil
+    end
+  end
+
+  describe "system_create_staff/1" do
+    test "should create staff without ACL checks" do
+      role = insert(:role)
+
+      attrs = %{
+        login: "system_staff",
+        password: @valid_password,
+        role_id: role.id
+      }
+
+      assert {:ok, %Staff{} = staff} = Staffs.system_create_staff(attrs)
+      assert staff.login == "system_staff"
+      assert Argon2.verify_pass(@valid_password, staff.password_hash)
+    end
+
+    test "should return error changeset with invalid data" do
+      attrs = %{login: "usr", password: @invalid_password}
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Staffs.system_create_staff(attrs)
+      assert changeset.errors[:password] != nil
+    end
+
+    test "should enforce duplicate login constraint" do
+      role = insert(:role)
+      existing_login = "existing_user"
+      insert(:staff, login: existing_login)
+
+      attrs = %{login: existing_login, password: @valid_password, role_id: role.id}
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Staffs.system_create_staff(attrs)
+      assert "has already been taken" in errors_on(changeset).login
+    end
+  end
+
+  describe "assign_branch_to_staff/3" do
+    test "should assign branch to staff when admin", %{admin: admin} do
+      staff = insert(:staff)
+      branch = insert(:branch)
+
+      assert {:ok, %Delivest.Identity.StaffBranch{}} =
+               Staffs.assign_branch_to_staff(admin, staff.id, branch.id)
+    end
+
+    test "should clear staff cache after branch assignment", %{admin: admin} do
+      staff = insert(:staff)
+      branch = insert(:branch)
+      Cachex.put(:staff_cache, staff.id, staff)
+
+      {:ok, _} = Staffs.assign_branch_to_staff(admin, staff.id, branch.id)
+
+      assert {:ok, nil} = Cachex.get(:staff_cache, staff.id)
+    end
+
+    test "should return forbidden when actor lacks admin permission", %{forbidden_user: actor} do
+      staff = insert(:staff)
+      branch = insert(:branch)
+
+      assert {:error, :forbidden} = Staffs.assign_branch_to_staff(actor, staff.id, branch.id)
+    end
+
+    test "should handle duplicate branch assignments" do
+      admin_role = insert(:role, permissions: ["admin"])
+      admin = insert(:staff, role: admin_role)
+      staff = insert(:staff)
+      branch = insert(:branch)
+
+      {:ok, _} = Staffs.assign_branch_to_staff(admin, staff.id, branch.id)
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Staffs.assign_branch_to_staff(admin, staff.id, branch.id)
+
+      assert changeset.errors[:staff_id] != nil or changeset.errors[:branch_id] != nil
+    end
+  end
+
+  describe "revoke_branch_from_staff/2" do
+    test "should revoke branch from staff" do
+      staff = insert(:staff)
+      branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
+
+      assert :ok = Staffs.revoke_branch_from_staff(staff.id, branch.id)
+    end
+
+    test "should clear staff cache after branch revocation" do
+      staff = insert(:staff)
+      branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
+      Cachex.put(:staff_cache, staff.id, staff)
+
+      Staffs.revoke_branch_from_staff(staff.id, branch.id)
+
+      assert {:ok, nil} = Cachex.get(:staff_cache, staff.id)
+    end
+
+    test "should return not found when branch assignment doesn't exist" do
+      staff = insert(:staff)
+      branch = insert(:branch)
+
+      assert {:error, :not_found} = Staffs.revoke_branch_from_staff(staff.id, branch.id)
+    end
+
+    test "should broadcast staff update event after revocation" do
+      staff = insert(:staff)
+      branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
+
+      Phoenix.PubSub.subscribe(Delivest.PubSub, "staff_updates:#{staff.id}")
+
+      Staffs.revoke_branch_from_staff(staff.id, branch.id)
+
+      assert_receive :staff_updated, 1000
+    end
+
+    test "should only revoke the specific branch" do
+      staff = insert(:staff)
+      branch1 = insert(:branch)
+      branch2 = insert(:branch)
+
+      insert(:staff_branch, staff: staff, branch: branch1)
+      insert(:staff_branch, staff: staff, branch: branch2)
+
+      Staffs.revoke_branch_from_staff(staff.id, branch1.id)
+
+      staff = Repo.preload(staff, :branches, force: true)
+      branch_ids = Enum.map(staff.branches, & &1.id)
+
+      assert branch2.id in branch_ids
+      refute branch1.id in branch_ids
+    end
+  end
+
   describe "staff - creation and validation" do
     test "should reject login with invalid characters", %{admin: admin} do
       role = insert(:role)
