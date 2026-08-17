@@ -69,9 +69,11 @@ defmodule DelivestWeb.Router do
       ] do
       live "/dashboard", DashboardLive.Index, :index
 
-      live "/branches", BranchLive.Branches, :index
-      live "/branches/:id/edit", BranchLive.Branches, :edit
-      live "/branches/new", BranchLive.Branches, :new
+      scope "/branches", BranchLive do
+        live "/", Branches, :index
+        live "/:id/edit", Branches, :edit
+        live "/new", Branches, :new
+      end
     end
   end
 
