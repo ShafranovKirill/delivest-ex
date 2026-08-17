@@ -6,6 +6,8 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   alias Delivest.Net.Branch
   alias Delivest.Identity
 
+  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
+
   @impl true
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
