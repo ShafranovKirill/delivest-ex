@@ -40,9 +40,8 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "branches.update") do
-      case Net.get_branch(id) do
+      case Net.get_branch(id, preload: [:info]) do
         {:ok, branch} ->
-          branch = Repo.preload(branch, :info)
           assign(socket, page_title: gettext("Edit Branch"), branch: branch)
 
         _ ->
