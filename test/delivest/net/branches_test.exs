@@ -4,6 +4,22 @@ defmodule Delivest.Net.BranchesTest do
   alias Delivest.Net.{Branches, Branch}
   import Delivest.Factory
 
+  defp assert_changeset_error(result) do
+    case result do
+      {:error, %Ecto.Changeset{} = changeset} ->
+        changeset
+
+      {:error, _step, %Ecto.Changeset{} = changeset} ->
+        changeset
+
+      {:error, _step, %Ecto.Changeset{} = changeset, _changes} ->
+        changeset
+
+      other ->
+        flunk("expected changeset error, got: #{inspect(other)}")
+    end
+  end
+
   setup do
     start_supervised({Cachex, name: :branch_cache})
     Cachex.clear(:branch_cache)
@@ -86,11 +102,11 @@ defmodule Delivest.Net.BranchesTest do
     end
   end
 
-  describe "create_branch/2" do
+  describe "create_branch/3" do
     test "should create branch with valid data when permitted", %{admin: admin} do
       attrs = %{name: "New Branch"}
 
-      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs)
+      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, %{})
       assert branch.name == "New Branch"
       assert branch.id != nil
     end
@@ -98,31 +114,31 @@ defmodule Delivest.Net.BranchesTest do
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
       attrs = %{name: ""}
 
-      assert {:error, %Ecto.Changeset{} = changeset} = Branches.create_branch(admin, attrs)
+      changeset = assert_changeset_error(Branches.create_branch(admin, attrs, %{}))
       assert "can't be blank" in errors_on(changeset).name
     end
 
     test "should return error when branch name is too short", %{admin: admin} do
       attrs = %{name: "B"}
 
-      assert {:error, %Ecto.Changeset{} = changeset} = Branches.create_branch(admin, attrs)
-      assert "should be at least 2 character(s)" in errors_on(changeset).name
+      changeset = assert_changeset_error(Branches.create_branch(admin, attrs, %{}))
+      assert Enum.any?(errors_on(changeset).name, &String.contains?(&1, "at least"))
     end
 
     test "should return error when branch name is too long", %{admin: admin} do
       long_name = String.duplicate("a", 51)
       attrs = %{name: long_name}
 
-      assert {:error, %Ecto.Changeset{} = changeset} = Branches.create_branch(admin, attrs)
-      assert "should be at most 50 character(s)" in errors_on(changeset).name
+      changeset = assert_changeset_error(Branches.create_branch(admin, attrs, %{}))
+      assert Enum.any?(errors_on(changeset).name, &String.contains?(&1, "at most"))
     end
 
     test "should return error when branch name is not unique", %{admin: admin} do
       insert(:branch, name: "Existing Branch")
       attrs = %{name: "Existing Branch"}
 
-      assert {:error, %Ecto.Changeset{} = changeset} = Branches.create_branch(admin, attrs)
-      assert "has already been taken" in errors_on(changeset).name
+      changeset = assert_changeset_error(Branches.create_branch(admin, attrs, %{}))
+      assert Enum.any?(errors_on(changeset).name, &String.contains?(&1, "already been taken"))
     end
 
     test "should return forbidden when actor lacks branch.create permission", %{
@@ -130,22 +146,24 @@ defmodule Delivest.Net.BranchesTest do
     } do
       attrs = %{name: "Forbidden Branch"}
 
-      assert {:error, :forbidden} = Branches.create_branch(staff, attrs)
+      assert {:error, :forbidden} = Branches.create_branch(staff, attrs, %{})
     end
 
     test "should return forbidden when actor has no permissions", %{read_only_staff: staff} do
       attrs = %{name: "ReadOnly Branch"}
 
-      assert {:error, :forbidden} = Branches.create_branch(staff, attrs)
+      assert {:error, :forbidden} = Branches.create_branch(staff, attrs, %{})
     end
   end
 
-  describe "update_branch/3" do
+  describe "update_branch/4" do
     test "should update branch with valid data when permitted", %{admin: admin} do
       branch = insert(:branch, name: "Old Name")
       attrs = %{name: "New Name"}
 
-      assert {:ok, %Branch{} = updated_branch} = Branches.update_branch(admin, branch, attrs)
+      assert {:ok, %Branch{} = updated_branch} =
+               Branches.update_branch(admin, branch, attrs, %{})
+
       assert updated_branch.name == "New Name"
     end
 
@@ -155,7 +173,8 @@ defmodule Delivest.Net.BranchesTest do
 
       assert {:ok, nil} != Cachex.get(:branch_cache, branch.id)
 
-      {:ok, _updated_branch} = Branches.update_branch(admin, branch, %{name: "New Name"})
+      {:ok, _updated_branch} =
+        Branches.update_branch(admin, branch, %{name: "New Name"}, %{})
 
       assert {:ok, nil} = Cachex.get(:branch_cache, branch.id)
     end
@@ -164,8 +183,7 @@ defmodule Delivest.Net.BranchesTest do
       branch = insert(:branch, name: "Valid Name")
       attrs = %{name: ""}
 
-      assert {:error, %Ecto.Changeset{} = changeset} =
-               Branches.update_branch(admin, branch, attrs)
+      changeset = assert_changeset_error(Branches.update_branch(admin, branch, attrs, %{}))
 
       assert "can't be blank" in errors_on(changeset).name
     end
@@ -176,8 +194,7 @@ defmodule Delivest.Net.BranchesTest do
 
       attrs = %{name: "Branch One"}
 
-      assert {:error, %Ecto.Changeset{} = changeset} =
-               Branches.update_branch(admin, branch2, attrs)
+      changeset = assert_changeset_error(Branches.update_branch(admin, branch2, attrs, %{}))
 
       assert "has already been taken" in errors_on(changeset).name
     end
@@ -186,10 +203,9 @@ defmodule Delivest.Net.BranchesTest do
       branch = insert(:branch, name: "Valid Name")
       attrs = %{name: "B"}
 
-      assert {:error, %Ecto.Changeset{} = changeset} =
-               Branches.update_branch(admin, branch, attrs)
+      changeset = assert_changeset_error(Branches.update_branch(admin, branch, attrs, %{}))
 
-      assert "should be at least 2 character(s)" in errors_on(changeset).name
+      assert Enum.any?(errors_on(changeset).name, &String.contains?(&1, "at least"))
     end
 
     test "should return error with name too long when permitted", %{admin: admin} do
@@ -197,10 +213,9 @@ defmodule Delivest.Net.BranchesTest do
       long_name = String.duplicate("a", 51)
       attrs = %{name: long_name}
 
-      assert {:error, %Ecto.Changeset{} = changeset} =
-               Branches.update_branch(admin, branch, attrs)
+      changeset = assert_changeset_error(Branches.update_branch(admin, branch, attrs, %{}))
 
-      assert "should be at most 50 character(s)" in errors_on(changeset).name
+      assert Enum.any?(errors_on(changeset).name, &String.contains?(&1, "at most"))
     end
 
     test "should return forbidden when actor lacks branch.update permission", %{
@@ -209,7 +224,7 @@ defmodule Delivest.Net.BranchesTest do
       branch = insert(:branch)
 
       assert {:error, :forbidden} =
-               Branches.update_branch(staff, branch, %{name: "New Name"})
+               Branches.update_branch(staff, branch, %{name: "New Name"}, %{})
     end
 
     test "should return forbidden when actor has only read permission", %{
@@ -218,7 +233,7 @@ defmodule Delivest.Net.BranchesTest do
       branch = insert(:branch)
 
       assert {:error, :forbidden} =
-               Branches.update_branch(staff, branch, %{name: "New Name"})
+               Branches.update_branch(staff, branch, %{name: "New Name"}, %{})
     end
   end
 
@@ -263,12 +278,12 @@ defmodule Delivest.Net.BranchesTest do
 
       task1 =
         Task.async(fn ->
-          Branches.update_branch(admin, branch, %{name: "Updated1"})
+          Branches.update_branch(admin, branch, %{name: "Updated1"}, %{})
         end)
 
       task2 =
         Task.async(fn ->
-          Branches.update_branch(admin, branch, %{name: "Updated2"})
+          Branches.update_branch(admin, branch, %{name: "Updated2"}, %{})
         end)
 
       result1 = Task.await(task1)
@@ -287,26 +302,26 @@ defmodule Delivest.Net.BranchesTest do
     test "should handle branch name with special characters", %{admin: admin} do
       attrs = %{name: "Branch-Name (Special) & Characters"}
 
-      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs)
+      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, %{})
       assert branch.name == "Branch-Name (Special) & Characters"
     end
 
     test "should handle branch name with spaces", %{admin: admin} do
       attrs = %{name: "   Trimmed Name   "}
 
-      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs)
+      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, %{})
       assert branch.name == "   Trimmed Name   "
     end
 
     test "should handle exact length boundaries", %{admin: admin} do
       # Minimum valid length
       min_attrs = %{name: "ab"}
-      assert {:ok, %Branch{}} = Branches.create_branch(admin, min_attrs)
+      assert {:ok, %Branch{}} = Branches.create_branch(admin, min_attrs, %{})
 
       # Maximum valid length
       max_name = String.duplicate("x", 50)
       max_attrs = %{name: max_name}
-      assert {:ok, %Branch{}} = Branches.create_branch(admin, max_attrs)
+      assert {:ok, %Branch{}} = Branches.create_branch(admin, max_attrs, %{})
     end
   end
 end

@@ -56,7 +56,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
            info_params
          ) do
       {:ok, branch} ->
-        # Только уведомляем родителя, навигацию делает родительский LiveView!
         notify_parent({:saved, branch})
 
         {:noreply, socket}
