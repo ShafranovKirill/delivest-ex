@@ -51,7 +51,10 @@ defmodule DelivestWeb.StaffSidebar do
                     </summary>
                     <ul>
                       <li :if={can?(@current_staff, "staff.read")}>
-                        <.link class={(@current_page == :employee && "menu-active") || ""}>
+                        <.link
+                          class={(@current_page == :employee && "menu-active") || ""}
+                          navigate={~p"/staff/employee"}
+                        >
                           {gettext("Employee")}
                         </.link>
                       </li>
