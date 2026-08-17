@@ -28,11 +28,31 @@ defmodule Delivest.Identity.Staffs do
           {:ok, Staff.t()} | {:error, :forbidden} | {:error, Ecto.Changeset.t()}
   def create_staff(staff, attrs) do
     if Acl.can?(staff, "staff.create") do
-      %Staff{}
-      |> Staff.changeset(attrs)
-      |> Repo.insert()
+      insert_staff_with_branches(attrs)
     else
       {:error, :forbidden}
+    end
+  end
+
+  defp insert_staff_with_branches(attrs) do
+    changeset = Staff.changeset(%Staff{}, attrs)
+
+    changeset =
+      case Ecto.Changeset.get_field(changeset, :branch_ids) do
+        nil ->
+          changeset
+
+        branch_ids ->
+          branches = Repo.all(from b in Branch, where: b.id in ^branch_ids)
+          Ecto.Changeset.put_assoc(changeset, :branches, branches)
+      end
+
+    case Repo.insert(changeset) do
+      {:ok, created_staff} ->
+        {:ok, Repo.preload(created_staff, :branches)}
+
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
@@ -191,9 +211,7 @@ defmodule Delivest.Identity.Staffs do
 
   @spec system_create_staff(map()) :: {:ok, Staff.t()} | {:error, Ecto.Changeset.t()}
   def system_create_staff(attrs) do
-    %Staff{}
-    |> Staff.changeset(attrs)
-    |> Repo.insert()
+    insert_staff_with_branches(attrs)
   end
 
   defp fetch_from_db_and_cache(id, opts) do

@@ -28,6 +28,7 @@ defmodule Delivest.Identity.Staff do
     field :password_hash, :string
 
     field :password, :string, virtual: true
+    field :branch_ids, {:array, :binary_id}, virtual: true
 
     belongs_to :role, Role
 
@@ -39,7 +40,7 @@ defmodule Delivest.Identity.Staff do
 
   def changeset(staff, attrs) do
     staff
-    |> cast(attrs, [:login, :password, :name, :role_id, :deleted_at])
+    |> cast(attrs, [:login, :password, :name, :role_id, :deleted_at, :branch_ids])
     |> validate_required([:login, :role_id])
     |> validate_password_required()
     |> validate_length(:login, min: 3, max: 50)
