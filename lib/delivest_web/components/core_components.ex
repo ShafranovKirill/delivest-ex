@@ -519,6 +519,61 @@ defmodule DelivestWeb.CoreComponents do
   end
 
   @doc """
+  Renders pagination and page size selector using Flop.Meta.
+  """
+  attr :meta, Flop.Meta, required: true
+
+  attr :path_fn, :any,
+    required: true,
+    doc: "Function that takes a map of params and returns a URL"
+
+  def pagination(assigns) do
+    ~H"""
+    <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 mt-4">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-base-content/60">{gettext("Show")}</span>
+        <form phx-change="update_page_size">
+          <select name="page_size" class="select select-sm">
+            <%= for size <- [10, 20, 50, 100] do %>
+              <option value={size} selected={@meta.page_size == size}>{size}</option>
+            <% end %>
+          </select>
+        </form>
+      </div>
+
+      <div :if={@meta.total_pages > 1} class="join">
+        <.link
+          patch={@path_fn.(%{"page" => @meta.current_page - 1})}
+          class={[
+            "join-item btn btn-sm btn-outline",
+            @meta.current_page <= 1 && "pointer-events-none opacity-50"
+          ]}
+          tabindex={if @meta.current_page <= 1, do: -1, else: 0}
+        >
+          «
+        </.link>
+        <button class="join-item btn btn-sm pointer-events-none btn-outline">
+          {gettext("Page %{current} of %{total}",
+            current: @meta.current_page,
+            total: @meta.total_pages
+          )}
+        </button>
+        <.link
+          patch={@path_fn.(%{"page" => @meta.current_page + 1})}
+          class={[
+            "join-item btn btn-sm btn-outline",
+            @meta.current_page >= @meta.total_pages && "pointer-events-none opacity-50"
+          ]}
+          tabindex={if @meta.current_page >= @meta.total_pages, do: -1, else: 0}
+        >
+          »
+        </.link>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a [Heroicon](https://heroicons.com).
 
   Heroicons come in three styles – outline, solid, and mini.
