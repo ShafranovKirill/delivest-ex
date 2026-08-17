@@ -11,6 +11,7 @@ defmodule Delivest.Identity do
   defdelegate authenticate(login, password), to: Staffs
   defdelegate assign_branch_to_staff(admin, staff_id, branch_id), to: Staffs
   defdelegate revoke_branch_from_staff(staff_id, branch_id), to: Staffs
+  defdelegate clear_cache(), to: Staffs
 
   defdelegate login_regex, to: Staff
   defdelegate password_regex, to: Staff

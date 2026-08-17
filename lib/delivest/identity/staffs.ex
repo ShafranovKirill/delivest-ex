@@ -234,4 +234,9 @@ defmodule Delivest.Identity.Staffs do
       match?(%Ecto.Association.NotLoaded{}, Map.get(staff, assoc))
     end)
   end
+
+  @spec clear_cache() :: {:ok, non_neg_integer()} | {:error, any()}
+  def clear_cache() do
+    Cachex.clear(:staff_cache)
+  end
 end
