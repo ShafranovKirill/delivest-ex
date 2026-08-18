@@ -181,7 +181,7 @@ defmodule DelivestWeb.Staff.StaffLive.Staff do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6">
+    <div class="space-y-6 p-6">
       <div class="flex justify-between items-center">
         <div>
           <h1 class="text-2xl font-display font-bold text-base-content">{gettext("Staff")}</h1>
@@ -190,14 +190,6 @@ defmodule DelivestWeb.Staff.StaffLive.Staff do
           </p>
         </div>
         <div class="flex gap-2">
-          <.button
-            :if={Identity.can?(@current_staff, "system.cache")}
-            phx-click="clear_cache"
-            class="btn btn-outline btn-warning"
-          >
-            <.icon name="hero-arrow-path" class="size-5" />
-            {gettext("Clear Cache")}
-          </.button>
           <.button
             :if={Identity.can?(@current_staff, "staff.create")}
             patch={~p"/staff/employee/new?#{build_query_params(assigns, %{})}"}
@@ -244,10 +236,8 @@ defmodule DelivestWeb.Staff.StaffLive.Staff do
           <div class="badge badge-outline">{stf.role.name}</div>
         </:col>
         <:col :let={{_id, stf}} label={gettext("Branches")}>
-          <div class="flex flex-wrap gap-1">
-            <%= for branch <- stf.branches do %>
-              <div class="badge badge-sm badge-ghost">{branch.name}</div>
-            <% end %>
+          <div class="max-w-40 text-sm">
+            {Enum.map_join(stf.branches, ", ", & &1.name)}
           </div>
         </:col>
         <:col :let={{_id, stf}} label={gettext("Created At")} sort="inserted_at">
