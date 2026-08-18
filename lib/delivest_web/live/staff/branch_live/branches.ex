@@ -106,12 +106,6 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
          socket
          |> put_flash(:error, gettext("You don't have permission to delete branches."))
          |> assign(branch_to_delete: nil)}
-
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, gettext("Failed to delete branch"))
-         |> assign(branch_to_delete: nil)}
     end
   end
 
