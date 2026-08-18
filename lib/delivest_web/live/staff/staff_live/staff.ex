@@ -76,28 +76,6 @@ defmodule DelivestWeb.Staff.StaffLive.Staff do
     {:noreply, push_patch(socket, to: ~p"/staff/employee?#{params}")}
   end
 
-  def handle_event("clear_cache", _params, socket) do
-    if Identity.can?(socket.assigns.current_staff, "staff.delete") do
-      Identity.clear_cache()
-      |> case do
-        {:ok, _} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, gettext("Staff cache cleared successfully"))}
-
-        {:error, _} ->
-          {:noreply,
-           socket
-           |> put_flash(:error, gettext("Failed to clear staff cache"))}
-      end
-    else
-      {:noreply,
-       socket
-       |> put_flash(:error, gettext("You don't have permission to clear staff cache."))
-       |> push_patch(to: ~p"/staff/employee")}
-    end
-  end
-
   def handle_event("update_page_size", %{"page_size" => size}, socket) do
     params = build_query_params(socket.assigns, %{"page_size" => size, "page" => 1})
     {:noreply, push_patch(socket, to: ~p"/staff/employee?#{params}")}

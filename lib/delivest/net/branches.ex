@@ -103,19 +103,28 @@ defmodule Delivest.Net.Branches do
   end
 
   @spec soft_delete_branch(Delivest.Identity.Staff.t(), Branch.t()) ::
-          {:ok, Branch.t()} | {:error, Ecto.Changeset.t() | :forbidden}
+          {:ok, Branch.t()}
+          | {:error, atom(), Ecto.Changeset.t() | term(), map()}
+          | {:error, :forbidden}
   def soft_delete_branch(staff, %Branch{} = branch) do
     if Identity.can?(staff, "branch.delete") do
-      branch
-      |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
-      |> Repo.update()
+      Ecto.Multi.new()
+      |> Ecto.Multi.delete_all(
+        :delete_staff_branches,
+        from(sb in "staff_branches", where: sb.branch_id == type(^branch.id, :binary_id))
+      )
+      |> Ecto.Multi.update(
+        :soft_delete_branch,
+        Ecto.Changeset.change(branch, %{deleted_at: DateTime.utc_now(:second)})
+      )
+      |> Repo.transaction()
       |> case do
-        {:ok, deleted_branch} ->
+        {:ok, %{soft_delete_branch: deleted_branch}} ->
           Cachex.del(:branch_cache, deleted_branch.id)
           {:ok, deleted_branch}
 
-        error ->
-          error
+        {:error, failed_operation, reason, changes} ->
+          {:error, failed_operation, reason, changes}
       end
     else
       {:error, :forbidden}
