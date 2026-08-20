@@ -4,7 +4,7 @@ defmodule Delivest.Net.Branches do
   alias Delivest.{Repo, Identity}
   alias Delivest.Net.Branch
 
-  @spec list_branch(Delivest.Identity.Staff.t()) :: Ecto.Query.t()
+  @spec list_branch(Delivest.Identity.Staff.t(), keyword()) :: Ecto.Query.t()
   def list_branch(staff, opts \\ []) do
     permissions = staff.role.permissions || []
 
@@ -21,16 +21,11 @@ defmodule Delivest.Net.Branches do
       "admin" in permissions ->
         query
 
-      Identity.can?(staff, "branch.read") ->
-        branch_ids =
-          Enum.map(staff.branches, & &1.id)
+      true ->
+        branch_ids = Enum.map(staff.branches || [], & &1.id)
 
         query
         |> where([b], b.id in ^branch_ids)
-
-      true ->
-        Branch
-        |> where([_b], false)
     end
   end
 

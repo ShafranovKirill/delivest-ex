@@ -125,8 +125,8 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto p-6">
-      <div class="flex justify-between items-center mb-6">
+    <div class="space-y-6 mx-auto p-6">
+      <div class="flex justify-between items-center ">
         <div>
           <h1 class="text-3xl font-bold">{gettext("Branches Management")}</h1>
           <p class="text-sm opacity-70">{gettext("List of available company branches")}</p>

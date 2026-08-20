@@ -22,4 +22,7 @@ defmodule Delivest.Identity do
   defdelegate list_all_roles(user), to: Roles
   defdelegate get_role(user, id), to: Roles
   defdelegate get_role_by_name(name), to: Roles
+  defdelegate create_role(user, attrs), to: Roles
+  defdelegate update_role(user, role, attrs), to: Roles
+  defdelegate delete_role(user, role), to: Roles
 end

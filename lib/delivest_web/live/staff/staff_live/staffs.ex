@@ -1,9 +1,11 @@
-defmodule DelivestWeb.Staff.StaffLive.Staff do
+defmodule DelivestWeb.Staff.StaffLive.Staffs do
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Repo}
   alias Delivest.Identity.Staff
   alias DelivestWeb.Staff.StaffLive.StaffFormComponent
+
+  on_mount {DelivestWeb.Hooks.Permission, "staff.read"}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -167,8 +169,8 @@ defmodule DelivestWeb.Staff.StaffLive.Staff do
     <div class="space-y-6 p-6">
       <div class="flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-display font-bold text-base-content">{gettext("Staff")}</h1>
-          <p class="text-base-content/60">
+          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Staff")}</h1>
+          <p class="text-sm text-base-content/60">
             {gettext("Manage system staff accounts and branches access.")}
           </p>
         </div>

@@ -3,16 +3,6 @@ defmodule Delivest.Identity.Roles do
   alias Delivest.Identity.{Role, Staff, Acl}
   import Ecto.Query
 
-  @spec list_roles(map(), map()) ::
-          {:ok, {[Role.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
-  def list_roles(user, params \\ %{}) do
-    if Acl.can?(user, "roles.read") do
-      Flop.validate_and_run(Role, params, for: Role)
-    else
-      {:error, :forbidden}
-    end
-  end
-
   @spec list_all_roles(map()) :: [Role.t()] | {:error, :forbidden}
   def list_all_roles(user) do
     if Acl.can?(user, "roles.read") do

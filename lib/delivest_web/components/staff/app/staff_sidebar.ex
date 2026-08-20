@@ -67,7 +67,6 @@ defmodule DelivestWeb.StaffSidebar do
           </div>
 
           <ul class="menu w-full p-0 gap-1">
-            <!-- Branches -->
             <li :if={can?(@current_staff, "branches.read")}>
               <.link
                 navigate={~p"/staff/branches"}
@@ -99,10 +98,13 @@ defmodule DelivestWeb.StaffSidebar do
             </li>
 
             <li :if={can?(@current_staff, "roles.read")}>
-              <.link class={[
-                "flex items-center gap-2",
-                (@current_page == :roles && "menu-active") || ""
-              ]}>
+              <.link
+                navigate={~p"/staff/roles"}
+                class={[
+                  "flex items-center gap-2",
+                  (@current_page == :roles && "menu-active") || ""
+                ]}
+              >
                 <.icon name="hero-shield-check" class="size-6 shrink-0" />
                 <span class="group-[.is-collapsed]/sidebar:hidden font-bold truncate">
                   {gettext("Roles")}
