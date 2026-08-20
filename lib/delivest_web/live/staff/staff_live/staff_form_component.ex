@@ -153,8 +153,14 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
               required={is_nil(@staff.id)}
               placeholder={if @staff.id, do: gettext("Leave blank to keep current")}
             />
-            <.input field={@form[:name]} type="text" label={gettext("Name")} required />
+            <.input
+              field={@form[:password_confirmation]}
+              type="password"
+              label={gettext("Repeat Password")}
+              required={is_nil(@staff.id)}
+            />
           </div>
+          <.input field={@form[:name]} type="text" label={gettext("Name")} required />
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input
@@ -184,7 +190,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
 
             <input type="hidden" name={@form[:branch_ids].name} value="" />
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-3 border border-base-200 rounded-box bg-base-100 shadow-inner">
+            <div class="grid grid-cols-1 gap-2 max-h-52 overflow-y-auto p-3 border border-base-200 rounded-box bg-base-100 shadow-inner">
               <%= for {name, id} <- @branch_options do %>
                 <% current_values = @form[:branch_ids].value || [] %>
                 <% checked =
