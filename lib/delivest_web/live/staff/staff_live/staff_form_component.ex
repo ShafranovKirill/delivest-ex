@@ -70,7 +70,6 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
   end
 
   def handle_event("save", %{"staff" => params}, socket) do
-    params = Map.put_new(params, "branch_ids", [])
     save_staff(socket, socket.assigns.action, params)
   end
 

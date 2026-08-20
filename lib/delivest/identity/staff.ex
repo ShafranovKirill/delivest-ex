@@ -32,7 +32,9 @@ defmodule Delivest.Identity.Staff do
 
     belongs_to :role, Role
 
-    many_to_many :branches, Branch, join_through: StaffBranch
+    many_to_many :branches, Branch,
+      join_through: StaffBranch,
+      on_replace: :delete
 
     field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)
@@ -51,6 +53,7 @@ defmodule Delivest.Identity.Staff do
           "can only contain letters, numbers, dots, dashes, and underscores"
         )
     )
+    |> put_assoc(:branches, attrs[:branches] || [])
     |> validate_format(:password, password_regex(),
       message:
         dgettext_noop(

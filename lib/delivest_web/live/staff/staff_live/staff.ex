@@ -131,6 +131,11 @@ defmodule DelivestWeb.Staff.StaffLive.Staff do
      |> push_patch(to: ~p"/staff/employee?#{build_query_params(socket.assigns, %{})}")}
   end
 
+  @impl true
+  def handle_info(:staff_updated, socket) do
+    {:noreply, socket}
+  end
+
   defp build_query_params(assigns, overrides) do
     meta = assigns.meta
 
