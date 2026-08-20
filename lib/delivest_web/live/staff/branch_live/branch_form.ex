@@ -1,6 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Delivest.Net
   alias Delivest.Repo
 
   use Gettext, backend: Delivest.Gettext
@@ -8,6 +9,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   @primary_key false
   embedded_schema do
     field :name, :string
+    field :slug, :string
+    field :is_active, :boolean
 
     field :address, :string
     field :phone_number, :string
@@ -15,8 +18,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
   def changeset(form, attrs) do
     form
-    |> cast(attrs, [:name, :address, :phone_number])
-    |> validate_format(:phone_number, ~r/^\+7\d{10}$/,
+    |> cast(attrs, [:name, :address, :phone_number, :slug, :is_active])
+    |> validate_format(:phone_number, Net.phone_regex(),
       message:
         dgettext_noop(
           "errors",
@@ -31,6 +34,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     %__MODULE__{
       name: branch.name,
+      slug: branch.slug,
+      is_active: branch.is_active,
       address: info && info.address,
       phone_number: info && info.phone_number
     }
@@ -41,7 +46,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     branch_params =
       data
-      |> Map.take([:name])
+      |> Map.take([:name, :slug, :is_active])
       |> Enum.reject(fn {_, v} -> is_nil(v) end)
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
 
