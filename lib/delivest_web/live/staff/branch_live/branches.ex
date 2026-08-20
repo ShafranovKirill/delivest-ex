@@ -40,16 +40,24 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
     end
   end
 
-  defp apply_action(socket, :edit, %{"id" => id}) do
+  defp apply_action(socket, :edit, %{"slug" => slug}) do
     if Identity.can?(socket.assigns.current_staff, "branches.update") do
-      case Net.get_branch(id, preload: [:info]) do
-        {:ok, branch} ->
-          assign(socket, page_title: gettext("Edit Branch"), branch: branch)
+      branch = Enum.find(socket.assigns.branches, &(&1.slug == slug))
 
-        _ ->
-          socket
-          |> put_flash(:error, gettext("Branch not found."))
-          |> push_patch(to: ~p"/staff/branches")
+      if branch do
+        case Net.get_branch(branch.id, preload: [:info]) do
+          {:ok, loaded_branch} ->
+            assign(socket, page_title: gettext("Edit Branch"), branch: loaded_branch)
+
+          _ ->
+            socket
+            |> put_flash(:error, gettext("Branch not found."))
+            |> push_patch(to: ~p"/staff/branches")
+        end
+      else
+        socket
+        |> put_flash(:error, gettext("Branch not found."))
+        |> push_patch(to: ~p"/staff/branches")
       end
     else
       socket
@@ -138,7 +146,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
           <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
             <div class="card-body flex flex-row items-center justify-between gap-4">
               <.link
-                patch={~p"/staff/branches/#{branch.id}/edit"}
+                patch={~p"/staff/branches/#{branch.slug}/edit"}
                 class="cursor-pointer flex-1"
               >
                 <h2 class="card-title">{branch.name}</h2>
@@ -150,7 +158,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
               <div class="flex flex-col items-center gap-1 shrink-0">
                 <.link
                   :if={Identity.can?(@current_staff, "branches.update")}
-                  patch={~p"/staff/branches/#{branch.id}/edit"}
+                  patch={~p"/staff/branches/#{branch.slug}/edit"}
                   class="btn btn-sm btn-ghost btn-square text-info"
                   title={gettext("Edit")}
                 >
