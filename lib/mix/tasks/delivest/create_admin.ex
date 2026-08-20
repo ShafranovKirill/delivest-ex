@@ -10,8 +10,8 @@ defmodule Mix.Tasks.Delivest.CreateAdmin do
   def run(_args) do
     Mix.Task.run("app.start")
 
-    admin_login = Application.get_env(:delivest, :admin_login, "admin123")
-    admin_pass = Application.get_env(:delivest, :admin_password, "AdminSecret123!")
+    admin_login = "admin123"
+    admin_pass = "AdminSecret123!"
 
     admin_role = get_or_create_admin_role()
 
