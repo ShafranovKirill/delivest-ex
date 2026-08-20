@@ -124,7 +124,11 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
           <p class="text-sm opacity-70">{gettext("List of available company branches")}</p>
         </div>
 
-        <.link patch={~p"/staff/branches/new"} class="btn btn-primary">
+        <.link
+          :if={Identity.can?(@current_staff, "branches.create")}
+          patch={~p"/staff/branches/new"}
+          class="btn btn-primary"
+        >
           {gettext("Create Branch")}
         </.link>
       </div>
@@ -132,17 +136,20 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <%= for branch <- @branches do %>
           <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
-            <div class="card-body flex flex-row items-start justify-between gap-4">
+            <div class="card-body flex flex-row items-center justify-between gap-4">
               <.link
                 patch={~p"/staff/branches/#{branch.id}/edit"}
                 class="cursor-pointer flex-1"
               >
                 <h2 class="card-title">{branch.name}</h2>
-                <p class="text-xs opacity-60 mt-4">{gettext("Click to view and edit")}</p>
+                <p :if={branch.is_active == false} class="text-xs text-error opacity-60 mt-4">
+                  {gettext("Branch is not active")}
+                </p>
               </.link>
 
               <div class="flex flex-col items-center gap-1 shrink-0">
                 <.link
+                  :if={Identity.can?(@current_staff, "branches.update")}
                   patch={~p"/staff/branches/#{branch.id}/edit"}
                   class="btn btn-sm btn-ghost btn-square text-info"
                   title={gettext("Edit")}
@@ -151,6 +158,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
                 </.link>
 
                 <button
+                  :if={Identity.can?(@current_staff, "branches.delete")}
                   type="button"
                   phx-click="delete_branch"
                   phx-value-id={branch.id}

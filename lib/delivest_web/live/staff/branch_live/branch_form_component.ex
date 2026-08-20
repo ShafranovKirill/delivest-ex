@@ -106,6 +106,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
           <.input field={@form[:address]} type="text" label={gettext("Address")} />
           <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
+          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>
 
         <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
