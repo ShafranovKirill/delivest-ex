@@ -5,6 +5,8 @@ defmodule Delivest.Repo.Migrations.CreateBranchAndUpdateStaff do
     create table(:branches, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
+      add :slug, :string, null: false
+      add :is_active, :boolean, default: false, null: false
 
       add :deleted_at, :utc_datetime
 
@@ -12,6 +14,7 @@ defmodule Delivest.Repo.Migrations.CreateBranchAndUpdateStaff do
     end
 
     create unique_index(:branches, [:name], name: :branches__name__uk)
+    create unique_index(:branches, [:slug], name: :branches__slug_uk)
 
     create table(:staff_branches, primary_key: false) do
       add :staff_id,
