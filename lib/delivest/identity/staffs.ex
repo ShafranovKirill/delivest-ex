@@ -1,6 +1,7 @@
 defmodule Delivest.Identity.Staffs do
   import Ecto.Query
   alias Delivest.Repo
+  alias Delivest.Net.Branch
   alias Delivest.Identity.{Staff, Acl, StaffBranch}
 
   @spec list_staff(map(), map(), keyword()) ::
@@ -28,11 +29,23 @@ defmodule Delivest.Identity.Staffs do
           {:ok, Staff.t()} | {:error, :forbidden} | {:error, Ecto.Changeset.t()}
   def create_staff(staff, attrs) do
     if Acl.can?(staff, "staff.create") do
-      %Staff{}
-      |> Staff.changeset(attrs)
-      |> Repo.insert()
+      insert_staff_with_branches(attrs)
     else
       {:error, :forbidden}
+    end
+  end
+
+  defp insert_staff_with_branches(attrs) do
+    %Staff{}
+    |> Staff.changeset(attrs)
+    |> put_branches(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, created_staff} ->
+        {:ok, Repo.preload(created_staff, :branches)}
+
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
@@ -43,9 +56,11 @@ defmodule Delivest.Identity.Staffs do
         ) :: {:ok, Staff.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
 
   def update_staff(staff, %Staff{} = updatable_staff, attrs) do
-    if(Acl.can?(staff, "staff.update")) do
+    if Acl.can?(staff, "staff.update") do
       updatable_staff
+      |> Repo.preload(:branches)
       |> Staff.changeset(attrs)
+      |> put_branches(attrs)
       |> Repo.update()
       |> case do
         {:ok, updated_staff} ->
@@ -57,13 +72,26 @@ defmodule Delivest.Identity.Staffs do
             :staff_updated
           )
 
-          {:ok, updated_staff}
+          {:ok, Repo.preload(updated_staff, :branches, force: true)}
 
         {:error, changeset} ->
           {:error, changeset}
       end
     else
       {:error, :forbidden}
+    end
+  end
+
+  defp put_branches(changeset, attrs) do
+    branch_ids = attrs["branch_ids"] || attrs[:branch_ids]
+
+    case branch_ids do
+      nil ->
+        changeset
+
+      branch_ids ->
+        branches = Repo.all(from b in Branch, where: b.id in ^branch_ids)
+        Ecto.Changeset.put_assoc(changeset, :branches, branches)
     end
   end
 
@@ -191,9 +219,7 @@ defmodule Delivest.Identity.Staffs do
 
   @spec system_create_staff(map()) :: {:ok, Staff.t()} | {:error, Ecto.Changeset.t()}
   def system_create_staff(attrs) do
-    %Staff{}
-    |> Staff.changeset(attrs)
-    |> Repo.insert()
+    insert_staff_with_branches(attrs)
   end
 
   defp fetch_from_db_and_cache(id, opts) do

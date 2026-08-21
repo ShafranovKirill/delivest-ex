@@ -11,7 +11,6 @@ defmodule Delivest.Identity do
   defdelegate authenticate(login, password), to: Staffs
   defdelegate assign_branch_to_staff(admin, staff_id, branch_id), to: Staffs
   defdelegate revoke_branch_from_staff(staff_id, branch_id), to: Staffs
-
   defdelegate login_regex, to: Staff
   defdelegate password_regex, to: Staff
 
@@ -23,4 +22,7 @@ defmodule Delivest.Identity do
   defdelegate list_all_roles(user), to: Roles
   defdelegate get_role(user, id), to: Roles
   defdelegate get_role_by_name(name), to: Roles
+  defdelegate create_role(user, attrs), to: Roles
+  defdelegate update_role(user, role, attrs), to: Roles
+  defdelegate delete_role(user, role), to: Roles
 end

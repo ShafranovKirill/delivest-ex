@@ -58,6 +58,7 @@ defmodule Delivest.Net.BranchesTest do
     } do
       insert(:branch)
       insert(:branch)
+      staff = Repo.preload(staff, :branches)
 
       query = Branches.list_branch(staff)
       branches = Delivest.Repo.all(query)
@@ -104,7 +105,7 @@ defmodule Delivest.Net.BranchesTest do
 
   describe "create_branch/3" do
     test "should create branch with valid data when permitted", %{admin: admin} do
-      attrs = %{name: "New Branch"}
+      attrs = %{name: "New Branch", slug: "new-branch"}
 
       assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, %{})
       assert branch.name == "New Branch"
@@ -135,7 +136,7 @@ defmodule Delivest.Net.BranchesTest do
 
     test "should return error when branch name is not unique", %{admin: admin} do
       insert(:branch, name: "Existing Branch")
-      attrs = %{name: "Existing Branch"}
+      attrs = %{name: "Existing Branch", slug: "another-branch"}
 
       changeset = assert_changeset_error(Branches.create_branch(admin, attrs, %{}))
       assert Enum.any?(errors_on(changeset).name, &String.contains?(&1, "already been taken"))
@@ -144,13 +145,13 @@ defmodule Delivest.Net.BranchesTest do
     test "should return forbidden when actor lacks branch.create permission", %{
       forbidden_staff: staff
     } do
-      attrs = %{name: "Forbidden Branch"}
+      attrs = %{name: "Forbidden Branch", slug: "forbidden-branch"}
 
       assert {:error, :forbidden} = Branches.create_branch(staff, attrs, %{})
     end
 
     test "should return forbidden when actor has no permissions", %{read_only_staff: staff} do
-      attrs = %{name: "ReadOnly Branch"}
+      attrs = %{name: "ReadOnly Branch", slug: "readonly-branch"}
 
       assert {:error, :forbidden} = Branches.create_branch(staff, attrs, %{})
     end
@@ -300,14 +301,14 @@ defmodule Delivest.Net.BranchesTest do
 
   describe "branches - edge cases" do
     test "should handle branch name with special characters", %{admin: admin} do
-      attrs = %{name: "Branch-Name (Special) & Characters"}
+      attrs = %{name: "Branch-Name (Special) & Characters", slug: "special-branch"}
 
       assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, %{})
       assert branch.name == "Branch-Name (Special) & Characters"
     end
 
     test "should handle branch name with spaces", %{admin: admin} do
-      attrs = %{name: "   Trimmed Name   "}
+      attrs = %{name: "   Trimmed Name   ", slug: "trimmed-name"}
 
       assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, %{})
       assert branch.name == "   Trimmed Name   "
@@ -315,12 +316,12 @@ defmodule Delivest.Net.BranchesTest do
 
     test "should handle exact length boundaries", %{admin: admin} do
       # Minimum valid length
-      min_attrs = %{name: "ab"}
+      min_attrs = %{name: "ab", slug: "ab-branch"}
       assert {:ok, %Branch{}} = Branches.create_branch(admin, min_attrs, %{})
 
       # Maximum valid length
       max_name = String.duplicate("x", 50)
-      max_attrs = %{name: max_name}
+      max_attrs = %{name: max_name, slug: "maximum-branch"}
       assert {:ok, %Branch{}} = Branches.create_branch(admin, max_attrs, %{})
     end
   end

@@ -10,13 +10,6 @@ defmodule DelivestWeb.StaffHeader do
     <header class="fixed top-0 left-0 right-0 z-50 bg-base-100 border-b border-base-300 px-4 sm:px-6 h-16 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-3">
         <.drawer_toggle drawer_id={@drawer_id} />
-
-        <a
-          href="/staff/dashboard"
-          class="hidden md:inline-block font-bold text-xl tracking-tight text-base-content hover:text-primary transition-colors"
-        >
-          {gettext("Delivest CRM")}
-        </a>
       </div>
 
       <div class="flex items-center gap-4">
@@ -29,13 +22,14 @@ defmodule DelivestWeb.StaffHeader do
 
   defp drawer_toggle(assigns) do
     ~H"""
-    <label
-      for={@drawer_id}
-      class="btn btn-ghost btn-square rounded-xl w-10 h-10 btn-sm border border-base-300 bg-base-100 shadow-sm hover:bg-base-200"
+    <button
+      type="button"
+      phx-click={JS.toggle_class("is-mobile-open", to: "#main-sidebar")}
+      class="btn btn-ghost btn-square rounded-xl w-10 h-10 btn-sm border border-base-300 bg-base-100 shadow-sm hover:bg-base-200 lg:hidden"
       aria-label={gettext("Open menu")}
     >
       <.icon name="hero-bars-3" class="h-5 w-5" />
-    </label>
+    </button>
     """
   end
 

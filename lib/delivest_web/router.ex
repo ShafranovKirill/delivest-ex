@@ -50,16 +50,34 @@ defmodule DelivestWeb.Router do
       end
     end
 
-    live_session :staff_branch_selection,
+    live_session :staff_default,
       layout: {DelivestWeb.Layouts, :staff_app},
       on_mount: [
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
       ] do
-      live "/branches/select", BranchSelectLive.Index, :index
+      live "/branches/select", BranchLive.BranchSelect, :index
+
+      scope "/branches", BranchLive do
+        live "/", Branches, :index
+        live "/:slug/edit", Branches, :edit
+        live "/new", Branches, :new
+      end
+
+      scope "/employee", StaffLive do
+        live "/", Staffs, :index
+        live "/:id/edit", Staffs, :edit
+        live "/new", Staffs, :new
+      end
+
+      scope "/roles", RoleLive do
+        live "/", Roles, :index
+        live "/:id/edit", Roles, :edit
+        live "/new", Roles, :new
+      end
     end
 
-    live_session :staff_authenticated,
+    live_session :staff_need_branch,
       layout: {DelivestWeb.Layouts, :staff_app},
       on_mount: [
         {DelivestWeb.Hooks.StaffAuth, :default},
@@ -68,10 +86,6 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/dashboard", DashboardLive.Index, :index
-
-      live "/branches", BranchLive.Branches, :index
-      live "/branches/:id/edit", BranchLive.Branches, :edit
-      live "/branches/new", BranchLive.Branches, :new
     end
   end
 

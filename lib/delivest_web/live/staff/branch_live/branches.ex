@@ -40,16 +40,24 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
     end
   end
 
-  defp apply_action(socket, :edit, %{"id" => id}) do
+  defp apply_action(socket, :edit, %{"slug" => slug}) do
     if Identity.can?(socket.assigns.current_staff, "branches.update") do
-      case Net.get_branch(id, preload: [:info]) do
-        {:ok, branch} ->
-          assign(socket, page_title: gettext("Edit Branch"), branch: branch)
+      branch = Enum.find(socket.assigns.branches, &(&1.slug == slug))
 
-        _ ->
-          socket
-          |> put_flash(:error, gettext("Branch not found."))
-          |> push_patch(to: ~p"/staff/branches")
+      if branch do
+        case Net.get_branch(branch.id, preload: [:info]) do
+          {:ok, loaded_branch} ->
+            assign(socket, page_title: gettext("Edit Branch"), branch: loaded_branch)
+
+          _ ->
+            socket
+            |> put_flash(:error, gettext("Branch not found."))
+            |> push_patch(to: ~p"/staff/branches")
+        end
+      else
+        socket
+        |> put_flash(:error, gettext("Branch not found."))
+        |> push_patch(to: ~p"/staff/branches")
       end
     else
       socket
@@ -106,12 +114,6 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
          socket
          |> put_flash(:error, gettext("You don't have permission to delete branches."))
          |> assign(branch_to_delete: nil)}
-
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, gettext("Failed to delete branch"))
-         |> assign(branch_to_delete: nil)}
     end
   end
 
@@ -123,14 +125,18 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto p-6">
-      <div class="flex justify-between items-center mb-6">
+    <div class="space-y-6 mx-auto p-6">
+      <div class="flex justify-between items-center ">
         <div>
           <h1 class="text-3xl font-bold">{gettext("Branches Management")}</h1>
           <p class="text-sm opacity-70">{gettext("List of available company branches")}</p>
         </div>
 
-        <.link patch={~p"/staff/branches/new"} class="btn btn-primary">
+        <.link
+          :if={Identity.can?(@current_staff, "branches.create")}
+          patch={~p"/staff/branches/new"}
+          class="btn btn-primary"
+        >
           {gettext("Create Branch")}
         </.link>
       </div>
@@ -138,18 +144,21 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <%= for branch <- @branches do %>
           <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
-            <div class="card-body flex flex-row items-start justify-between gap-4">
+            <div class="card-body flex flex-row items-center justify-between gap-4">
               <.link
-                patch={~p"/staff/branches/#{branch.id}/edit"}
+                patch={~p"/staff/branches/#{branch.slug}/edit"}
                 class="cursor-pointer flex-1"
               >
                 <h2 class="card-title">{branch.name}</h2>
-                <p class="text-xs opacity-60 mt-4">{gettext("Click to view and edit")}</p>
+                <p :if={branch.is_active == false} class="text-xs text-error opacity-60 mt-4">
+                  {gettext("Branch is not active")}
+                </p>
               </.link>
 
               <div class="flex flex-col items-center gap-1 shrink-0">
                 <.link
-                  patch={~p"/staff/branches/#{branch.id}/edit"}
+                  :if={Identity.can?(@current_staff, "branches.update")}
+                  patch={~p"/staff/branches/#{branch.slug}/edit"}
                   class="btn btn-sm btn-ghost btn-square text-info"
                   title={gettext("Edit")}
                 >
@@ -157,6 +166,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
                 </.link>
 
                 <button
+                  :if={Identity.can?(@current_staff, "branches.delete")}
                   type="button"
                   phx-click="delete_branch"
                   phx-value-id={branch.id}

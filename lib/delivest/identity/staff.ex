@@ -28,10 +28,14 @@ defmodule Delivest.Identity.Staff do
     field :password_hash, :string
 
     field :password, :string, virtual: true
+    field :password_confirmation, :string, virtual: true
+    field :branch_ids, {:array, :binary_id}, virtual: true
 
     belongs_to :role, Role
 
-    many_to_many :branches, Branch, join_through: StaffBranch
+    many_to_many :branches, Branch,
+      join_through: StaffBranch,
+      on_replace: :delete
 
     field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)
@@ -39,9 +43,18 @@ defmodule Delivest.Identity.Staff do
 
   def changeset(staff, attrs) do
     staff
-    |> cast(attrs, [:login, :password, :name, :role_id, :deleted_at])
+    |> cast(attrs, [
+      :login,
+      :password,
+      :name,
+      :role_id,
+      :deleted_at,
+      :branch_ids,
+      :password_confirmation
+    ])
     |> validate_required([:login, :role_id])
     |> validate_password_required()
+    |> validate_confirmation(:password, message: dgettext("errors", "does not match password"))
     |> validate_length(:login, min: 3, max: 50)
     |> validate_format(:login, login_regex(),
       message:
@@ -50,6 +63,7 @@ defmodule Delivest.Identity.Staff do
           "can only contain letters, numbers, dots, dashes, and underscores"
         )
     )
+    |> put_assoc(:branches, attrs[:branches] || [])
     |> validate_format(:password, password_regex(),
       message:
         dgettext_noop(

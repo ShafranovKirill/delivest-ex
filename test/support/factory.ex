@@ -21,7 +21,8 @@ defmodule Delivest.Factory do
 
   def branch_factory do
     %Branch{
-      name: sequence(:branch_name, &"Branch_#{&1}")
+      name: sequence(:branch_name, &"Branch_#{&1}"),
+      slug: sequence(:branch_slug, &"branch-#{&1}")
     }
   end
 
