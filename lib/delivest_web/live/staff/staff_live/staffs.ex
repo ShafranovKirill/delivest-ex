@@ -218,7 +218,7 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
           {stf.name || "—"}
         </:col>
         <:col :let={{_id, stf}} label={gettext("Role")}>
-          <div class="badge badge-outline">{stf.role.name}</div>
+          <span class="font-bold">{stf.role.name}</span>
         </:col>
         <:col :let={{_id, stf}} label={gettext("Branches")}>
           <div class="max-w-40 text-sm">

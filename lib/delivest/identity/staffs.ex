@@ -4,13 +4,25 @@ defmodule Delivest.Identity.Staffs do
   alias Delivest.Net.Branch
   alias Delivest.Identity.{Staff, Acl, StaffBranch}
 
-  @spec list_staff(map(), map(), keyword()) ::
+  @spec list_staff(Delivest.Identity.Staff.t(), map(), keyword()) ::
           {:ok, {[Staff.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
   def list_staff(staff, params \\ %{}, opts \\ []) do
     if Acl.can?(staff, "staff.read") do
       base_query =
         Staff
         |> where([a], is_nil(a.deleted_at))
+
+      base_query =
+        if Acl.can?(staff, "admin") do
+          base_query
+        else
+          branch_ids = Enum.map(staff.branches, & &1.id)
+
+          base_query
+          |> join(:inner, [s], sb in "staff_branches", on: sb.staff_id == s.id)
+          |> where([s, sb], sb.branch_id in type(^branch_ids, {:array, Ecto.UUID}))
+          |> distinct([s], s.id)
+        end
 
       query =
         if preloads = Keyword.get(opts, :preload) do
