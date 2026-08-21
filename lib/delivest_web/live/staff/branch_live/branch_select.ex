@@ -8,7 +8,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
 
     branches =
       staff
-      |> Branches.list_branch()
+      |> Branches.list_branch_for_staff()
       |> Repo.all()
 
     {:ok, assign(socket, branches: branches)}

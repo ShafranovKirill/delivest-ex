@@ -14,7 +14,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
 
     branches =
       staff
-      |> Net.list_branch()
+      |> Net.list_branch_for_staff()
       |> Repo.all()
       |> Repo.preload(:info)
 

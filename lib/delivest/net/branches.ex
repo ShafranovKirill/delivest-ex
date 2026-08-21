@@ -4,8 +4,8 @@ defmodule Delivest.Net.Branches do
   alias Delivest.{Repo, Identity}
   alias Delivest.Net.Branch
 
-  @spec list_branch(Delivest.Identity.Staff.t(), keyword()) :: Ecto.Query.t()
-  def list_branch(staff, opts \\ []) do
+  @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: Ecto.Query.t()
+  def list_branch_for_staff(staff, opts \\ []) do
     permissions = staff.role.permissions || []
 
     base_query = Branch |> where([b], is_nil(b.deleted_at))
@@ -27,6 +27,22 @@ defmodule Delivest.Net.Branches do
         query
         |> where([b], b.id in ^branch_ids)
     end
+  end
+
+  def list_all_branch(opts \\ []) do
+    base_query =
+      Branch
+      |> where([b], is_nil(b.deleted_at))
+      |> where([b], b.is_active == true)
+
+    query =
+      if preloads = Keyword.get(opts, :preload) do
+        preload(base_query, ^preloads)
+      else
+        base_query
+      end
+
+    query
   end
 
   @spec get_branch(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
