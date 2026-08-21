@@ -2,7 +2,7 @@ defmodule Delivest.Net.Category do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Delivest.Net.{Branch, CategoriesBranch}
+  alias Delivest.Net.{Branch, CategoriesBranches}
 
   @type t :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -22,7 +22,7 @@ defmodule Delivest.Net.Category do
     field :name, :string
 
     many_to_many :branches, Branch,
-      join_through: CategoriesBranch,
+      join_through: CategoriesBranches,
       on_replace: :delete
 
     timestamps(type: :utc_datetime)

@@ -1,4 +1,4 @@
-defmodule Delivest.Net.CategoriesBranch do
+defmodule Delivest.Net.CategoriesBranches do
   use Ecto.Schema
   import Ecto.Changeset
 
