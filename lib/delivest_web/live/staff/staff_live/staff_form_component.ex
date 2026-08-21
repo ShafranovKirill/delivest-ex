@@ -77,12 +77,14 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
     do:
       socket.assigns.staff
       |> Staff.changeset(params)
+      |> Map.put(:action, :update)
       |> do_save_staff(socket, :edit)
 
   defp save_staff(socket, :new, params),
     do:
       %Staff{}
       |> Staff.changeset(params)
+      |> Map.put(:action, :insert)
       |> do_save_staff(socket, :new)
 
   defp do_save_staff(%Ecto.Changeset{valid?: true} = changeset, socket, :edit) do
@@ -151,13 +153,21 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
               type="password"
               label={gettext("Password")}
               required={is_nil(@staff.id)}
-              placeholder={if @staff.id, do: gettext("Leave blank to keep current")}
+              autocomplete="new-password"
+              placeholder={
+                if @staff.id,
+                  do: gettext("Enter to edit"),
+                  else: gettext("Enter password")
+              }
             />
             <.input
+              :if={not is_nil(@form[:password].value) && @form[:password].value != ""}
               field={@form[:password_confirmation]}
               type="password"
               label={gettext("Repeat Password")}
               required={is_nil(@staff.id)}
+              autocomplete="new-password"
+              placeholder={gettext("Repeat password")}
             />
           </div>
           <.input field={@form[:name]} type="text" label={gettext("Name")} required />
@@ -169,6 +179,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
               label={gettext("Role")}
               options={@role_options}
               required
+              autocomplete="new-password"
               prompt={gettext("Select a role...")}
             />
           </div>
