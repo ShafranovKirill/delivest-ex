@@ -20,7 +20,7 @@ defmodule DelivestWeb.Staff.AuthLive.LoginTest do
 
       conn = init_test_session(conn, %{"staff_id" => user.id})
 
-      assert {:error, {:redirect, %{to: "/dashboard"}}} = live(conn, ~p"/staff/auth/login")
+      assert {:error, {:redirect, %{to: "/staff/dashboard"}}} = live(conn, ~p"/staff/auth/login")
     end
 
     test "shows validation errors on change (phx-change)", %{conn: conn} do
