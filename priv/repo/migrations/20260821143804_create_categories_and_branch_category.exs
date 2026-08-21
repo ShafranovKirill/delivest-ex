@@ -6,8 +6,6 @@ defmodule Delivest.Repo.Migrations.CreateCategoriesAndBranchCategory do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
 
-      add :deleted_at, :utc_datetime
-
       timestamps(type: :utc_datetime)
     end
 

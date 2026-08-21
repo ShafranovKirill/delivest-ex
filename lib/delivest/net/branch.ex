@@ -29,6 +29,11 @@ defmodule Delivest.Net.Branch do
 
     many_to_many :staff, Staff, join_through: StaffBranch
 
+    many_to_many :categories, Delivest.Net.Category,
+      join_through: Delivest.Net.CategoriesBranch,
+      on_replace: :delete,
+      preload_order: [asc: :order]
+
     has_one :info, Delivest.Net.BranchInfo, foreign_key: :branch_id
 
     field :deleted_at, :utc_datetime

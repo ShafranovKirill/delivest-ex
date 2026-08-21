@@ -4,6 +4,7 @@ defmodule Delivest.Identity.StaffBranch do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  @type t :: %__MODULE__{}
   @primary_key false
   @foreign_key_type :binary_id
 
