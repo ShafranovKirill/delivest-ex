@@ -16,15 +16,13 @@ defmodule Delivest.Identity.RolesTest do
     %{admin: admin, employee: employee}
   end
 
-  describe "list_roles/2 and list_all_roles/1" do
-    test "should return list of roles with flop pagination", %{admin: admin} do
+  describe "list_all_roles/1" do
+    test "should return all roles", %{admin: admin} do
       insert_list(3, :role)
 
-      {:ok, {roles, meta}} = Roles.list_roles(admin, %{page: 1, page_size: 2})
+      roles = Roles.list_all_roles(admin)
 
-      assert length(roles) == 2
-      assert meta.total_count == 5
-      assert meta.current_page == 1
+      assert length(roles) == 5
     end
 
     test "should return all roles without pagination", %{admin: admin} do
@@ -35,7 +33,6 @@ defmodule Delivest.Identity.RolesTest do
     end
 
     test "should return forbidden if user lacks roles.read", %{employee: employee} do
-      assert {:error, :forbidden} = Roles.list_roles(employee, %{})
       assert {:error, :forbidden} = Roles.list_all_roles(employee)
     end
   end
