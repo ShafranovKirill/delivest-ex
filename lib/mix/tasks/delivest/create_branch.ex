@@ -11,11 +11,13 @@ defmodule Mix.Tasks.Delivest.CreateBranch do
     Mix.Task.run("app.start")
 
     branch_name = "Main Branch"
+    branch_slug = "slug"
 
     case Repo.get_by(Branch, name: branch_name) do
       nil ->
         branch_params = %{
-          name: branch_name
+          name: branch_name,
+          slug: branch_slug
         }
 
         changeset = Branch.changeset(%Branch{}, branch_params)

@@ -6,10 +6,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   def mount(_params, _session, socket) do
     staff = socket.assigns[:current_staff]
 
-    branches =
-      staff
-      |> Branches.list_branch_for_staff()
-      |> Repo.all()
+    branches = Branches.list_branch_for_staff(staff)
 
     {:ok, assign(socket, branches: branches)}
   end
