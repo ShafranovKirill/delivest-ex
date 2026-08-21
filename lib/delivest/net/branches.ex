@@ -4,46 +4,35 @@ defmodule Delivest.Net.Branches do
   alias Delivest.{Repo, Identity}
   alias Delivest.Net.Branch
 
-  @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: Ecto.Query.t()
+  @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
     permissions = staff.role.permissions || []
 
-    base_query = Branch |> where([b], is_nil(b.deleted_at))
+    Branch
+    |> where([b], is_nil(b.deleted_at))
+    |> then(fn query ->
+      cond do
+        "admin" in permissions ->
+          query
 
-    query =
-      if preloads = Keyword.get(opts, :preload) do
-        preload(base_query, ^preloads)
-      else
-        base_query
+        true ->
+          branch_ids = Enum.map(staff.branches || [], & &1.id)
+          where(query, [b], b.id in ^branch_ids)
       end
-
-    cond do
-      "admin" in permissions ->
-        query
-
-      true ->
-        branch_ids = Enum.map(staff.branches || [], & &1.id)
-
-        query
-        |> where([b], b.id in ^branch_ids)
-    end
+    end)
+    |> maybe_preload_query(opts[:preload])
+    |> Repo.all()
   end
 
   def list_all_branch(opts \\ []) do
-    base_query =
-      Branch
-      |> where([b], is_nil(b.deleted_at))
-      |> where([b], b.is_active == true)
-
-    query =
-      if preloads = Keyword.get(opts, :preload) do
-        preload(base_query, ^preloads)
-      else
-        base_query
-      end
-
-    query
+    Branch
+    |> where([b], is_nil(b.deleted_at) and b.is_active == true)
+    |> maybe_preload_query(opts[:preload])
+    |> Repo.all()
   end
+
+  defp maybe_preload_query(query, nil), do: query
+  defp maybe_preload_query(query, preloads), do: preload(query, ^preloads)
 
   @spec get_branch(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
   def get_branch(id, opts \\ []) do
