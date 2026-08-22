@@ -28,16 +28,27 @@ defmodule DelivestWeb.StaffSidebar do
         />
       </button>
 
-      <div class="h-20 flex flex-col justify-center px-6 shrink-0 overflow-hidden">
+      <div class="h-20 flex flex-col justify-center px-6 shrink-0">
         <p class="text-xs uppercase tracking-[0.2em] text-base-content/50 group-[.is-collapsed]/sidebar:hidden">
           {gettext("Workspace")}
         </p>
         <h2 class="mt-1 text-lg font-bold text-base-content group-[.is-collapsed]/sidebar:hidden truncate">
           {gettext("Delivest")}
         </h2>
-        <span class="hidden group-[.is-collapsed]/sidebar:inline text-primary font-black text-xl">
-          D
-        </span>
+
+        <div class="hidden group-[.is-collapsed]/sidebar:flex items-center justify-start">
+          <img
+            src={~p"/images/logo-dark.png"}
+            alt={gettext("Delivest")}
+            class="size-8 object-contain dark:hidden"
+          />
+
+          <img
+            src={~p"/images/logo-white.png"}
+            alt={gettext("Delivest")}
+            class="size-8 object-contain hidden dark:block"
+          />
+        </div>
       </div>
 
       <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 mt-2 space-y-1">

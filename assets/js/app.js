@@ -3,6 +3,7 @@ import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import { hooks as colocatedHooks } from "phoenix-colocated/delivest";
 import topbar from "../vendor/topbar";
+import Sortable from "sortablejs";
 
 const ThemeToggle = {
   mounted() {
@@ -46,6 +47,34 @@ const initTheme = () => {
 };
 initTheme();
 
+export const SortableCategories = {
+  mounted() {
+    let hook = this;
+    let listEl = this.el;
+
+    new Sortable(listEl, {
+      animation: 150,
+      handle: ".drag-handle",
+      ghostClass: "bg-base-200",
+      onEnd(evt) {
+        let draggedId = evt.item.dataset.id;
+
+        let prevNode = evt.item.previousElementSibling;
+        let nextNode = evt.item.nextElementSibling;
+
+        let aboveOrder = prevNode ? parseFloat(prevNode.dataset.order) : null;
+        let belowOrder = nextNode ? parseFloat(nextNode.dataset.order) : null;
+
+        hook.pushEvent("reorder_category", {
+          id: draggedId,
+          above_order: aboveOrder,
+          below_order: belowOrder,
+        });
+      },
+    });
+  },
+};
+
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
@@ -55,6 +84,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: {
     ...colocatedHooks,
     ThemeToggle,
+    SortableCategories,
   },
 });
 
