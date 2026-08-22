@@ -154,18 +154,18 @@ defmodule Delivest.Net.CategoriesTest do
     end
   end
 
-  describe "soft_delete_category/2" do
+  describe "delete_category/2" do
     test "deletes the category when permitted", %{admin: admin} do
       category = insert(:category)
 
-      assert {:ok, %Category{id: category_id}} = Categories.soft_delete_category(admin, category)
+      assert {:ok, %Category{id: category_id}} = Categories.delete_category(admin, category)
       assert Repo.get(Category, category_id) == nil
     end
 
     test "returns forbidden when staff lacks permission", %{forbidden_staff: staff} do
       category = insert(:category)
 
-      assert {:error, :forbidden} = Categories.soft_delete_category(staff, category)
+      assert {:error, :forbidden} = Categories.delete_category(staff, category)
     end
   end
 end
