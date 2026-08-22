@@ -58,6 +58,47 @@ defmodule DelivestWeb.StaffSidebar do
           </li>
         </ul>
 
+        <%= if can_any?(@current_staff, ["categories.read", "products.read"]) do %>
+          <div class="py-4 overflow-hidden">
+            <div class="h-px bg-base-300 w-full"></div>
+            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest group-[.is-collapsed]/sidebar:hidden">
+              {gettext("Catalog")}
+            </div>
+          </div>
+
+          <ul class="menu w-full p-0 gap-1">
+            <li :if={can?(@current_staff, "categories.read")}>
+              <.link
+                navigate={~p"/staff/categories"}
+                class={[
+                  "flex items-center gap-2",
+                  (@current_page == :categories && "menu-active") || ""
+                ]}
+              >
+                <.icon name="hero-rectangle-stack" class="size-6 shrink-0" />
+                <span class="group-[.is-collapsed]/sidebar:hidden font-bold truncate">
+                  {gettext("Categories")}
+                </span>
+              </.link>
+            </li>
+
+            <li :if={can?(@current_staff, "products.read")}>
+              <.link
+                navigate={~p"/staff/products"}
+                class={[
+                  "flex items-center gap-2",
+                  (@current_page == :products && "menu-active") || ""
+                ]}
+              >
+                <.icon name="hero-cube" class="size-6 shrink-0" />
+                <span class="group-[.is-collapsed]/sidebar:hidden font-bold truncate">
+                  {gettext("Products")}
+                </span>
+              </.link>
+            </li>
+          </ul>
+        <% end %>
+
         <%= if can_any?(@current_staff, ["branches.read", "staff.read", "roles.read"]) do %>
           <div class="py-4 overflow-hidden">
             <div class="h-px bg-base-300 w-full"></div>
