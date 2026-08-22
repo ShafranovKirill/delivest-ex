@@ -1,8 +1,7 @@
 defmodule Delivest.Net.Branches do
   import Ecto.Query
-  alias Delivest.Net.BranchInfo
-  alias Delivest.{Repo, Identity}
-  alias Delivest.Net.Branch
+  alias Delivest.Net.{BranchInfo, Branch}
+  alias Delivest.{Repo, Identity, Net}
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
@@ -131,6 +130,19 @@ defmodule Delivest.Net.Branches do
     end
   end
 
+  def get_menu_for_branch(branch_id) do
+    case Cachex.get(:menu_cache, branch_id) do
+      {:ok, nil} ->
+        menu = Net.list_category_for_branch(branch_id, preload: [:products])
+
+        Cachex.put(:menu_cache, branch_id, menu, ttl: :timer.hours(1))
+        {:ok, menu}
+
+      {:ok, menu} ->
+        {:ok, menu}
+    end
+  end
+
   defp ensure_preloaded_and_cached(branch, preloads, id, opts) do
     if needs_preload?(branch, preloads) do
       branch = maybe_preload_branch(branch, opts)
@@ -169,6 +181,6 @@ defmodule Delivest.Net.Branches do
   @spec cache_branch(integer(), Branch.t()) ::
           {:commit, true} | {:commit, false} | {:error, term()}
   defp cache_branch(id, branch) do
-    Cachex.put(:branch_cache, id, branch, ttl: :timer.minutes(30))
+    Cachex.put(:branch_cache, id, branch, ttl: :timer.hours(1))
   end
 end
