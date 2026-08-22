@@ -92,8 +92,20 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
          |> put_flash(:info, gettext("Role deleted successfully"))
          |> assign(roles: roles, role_to_delete: nil)}
 
+      {:error, :role_in_use} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           gettext("Cannot delete role because it is assigned to staff members.")
+         )
+         |> assign(role_to_delete: nil)}
+
       {:error, _} ->
-        {:noreply, socket |> put_flash(:error, gettext("Failed to delete role"))}
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("Failed to delete role"))
+         |> assign(role_to_delete: nil)}
     end
   end
 
@@ -174,6 +186,19 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
           patch={~p"/staff/roles"}
         />
       </.slide_over>
+
+      <.modal
+        id="delete-modal"
+        show={@role_to_delete != nil}
+        title={gettext("Delete Role")}
+        description={
+          gettext("Are you sure you want to delete this role? This action cannot be undone.")
+        }
+        confirm_label={gettext("Delete")}
+        danger={true}
+        on_cancel={JS.push("cancel_delete")}
+        on_confirm={JS.push("confirm_delete")}
+      />
     </div>
     """
   end

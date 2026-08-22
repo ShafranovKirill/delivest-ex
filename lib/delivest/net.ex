@@ -14,7 +14,7 @@ defmodule Delivest.Net do
   defdelegate get_category(id, opts), to: Categories
   defdelegate create_category(staff, attrs), to: Categories
   defdelegate update_category(staff, updateble_category, attrs), to: Categories
-  defdelegate soft_delete_category(staff, category), to: Categories
+  defdelegate delete_category(staff, category), to: Categories
 
   defdelegate phone_regex(), to: BranchInfo
 end

@@ -92,15 +92,17 @@ defmodule Delivest.Net.Categories do
     end
   end
 
-  @spec soft_delete_category(Staff.t(), Category.t()) ::
-          {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
-  def soft_delete_category(staff, %Category{} = category) do
+  def delete_category(staff, %Category{} = category) do
     if Identity.can?(staff, "categories.delete") do
-      category = maybe_preload_category(category, preload: [:branches])
+      category_with_branches = Repo.preload(category, :branches)
 
-      with {:ok, deleted_category} <- Repo.delete(category) do
-        invalidate_menu_cache(category.branches)
-        {:ok, deleted_category}
+      case Repo.delete(category) do
+        {:ok, deleted_category} ->
+          invalidate_menu_cache(category_with_branches.branches)
+          {:ok, deleted_category}
+
+        {:error, changeset} ->
+          {:error, changeset}
       end
     else
       {:error, :forbidden}
