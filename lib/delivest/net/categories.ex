@@ -2,15 +2,14 @@ defmodule Delivest.Net.Categories do
   import Ecto.Query
 
   alias Delivest.{Repo, Identity}
-  alias Delivest.Net.{Category, Branch}
+  alias Delivest.Net.Category
   alias Delivest.Identity.Staff
 
   @spec list_category_for_branch(binary(), keyword()) :: [Category.t()]
   def list_category_for_branch(branch_id, opts \\ []) do
     Category
-    |> join(:inner, [c], cb in "categories_branches", on: cb.category_id == c.id)
-    |> where([c, cb], cb.branch_id == type(^branch_id, :binary_id) and c.is_active == true)
-    |> order_by([_c, cb], asc: cb.order)
+    |> where([c], c.branch_id == type(^branch_id, :binary_id))
+    |> order_by([c], asc: c.order)
     |> maybe_preload_query(opts)
     |> Repo.all()
   end
@@ -20,9 +19,8 @@ defmodule Delivest.Net.Categories do
   def list_staff_categories_for_branch(staff, branch_id, opts \\ []) do
     if Identity.can?(staff, "categories.read") do
       Category
-      |> join(:inner, [c], cb in "categories_branches", on: cb.category_id == c.id)
-      |> where([c, cb], cb.branch_id == type(^branch_id, :binary_id))
-      |> order_by([_c, cb], asc: cb.order)
+      |> where([c], c.branch_id == type(^branch_id, :binary_id))
+      |> order_by([c], asc: c.order)
       |> maybe_preload_query(opts)
       |> Repo.all()
     else
@@ -48,14 +46,10 @@ defmodule Delivest.Net.Categories do
     if Identity.can?(staff, "categories.create") do
       %Category{}
       |> Category.changeset(attrs)
-      |> put_branches(attrs)
       |> Repo.insert()
       |> case do
         {:ok, created_category} ->
-          created_category = Repo.preload(created_category, :branches)
-
-          invalidate_menu_cache(created_category.branches)
-
+          invalidate_menu_cache(created_category.branch_id)
           {:ok, created_category}
 
         {:error, changeset} ->
@@ -70,17 +64,12 @@ defmodule Delivest.Net.Categories do
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def update_category(staff, %Category{} = updateble_category, attrs) do
     if Identity.can?(staff, "categories.update") do
-      old_category = maybe_preload_category(updateble_category, preload: [:branches])
-
-      old_category
+      updateble_category
       |> Category.changeset(attrs)
-      |> put_branches(attrs)
       |> Repo.update()
       |> case do
         {:ok, updated_category} ->
-          updated_category = Repo.preload(updated_category, :branches, force: true)
-
-          invalidate_menu_cache(old_category.branches ++ updated_category.branches)
+          invalidate_menu_cache(updateble_category.branch_id)
 
           {:ok, updated_category}
 
@@ -92,13 +81,13 @@ defmodule Delivest.Net.Categories do
     end
   end
 
+  @spec delete_category(Staff.t(), Category.t()) ::
+          {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def delete_category(staff, %Category{} = category) do
     if Identity.can?(staff, "categories.delete") do
-      category_with_branches = Repo.preload(category, :branches)
-
       case Repo.delete(category) do
         {:ok, deleted_category} ->
-          invalidate_menu_cache(category_with_branches.branches)
+          invalidate_menu_cache(deleted_category.branch_id)
           {:ok, deleted_category}
 
         {:error, changeset} ->
@@ -109,27 +98,11 @@ defmodule Delivest.Net.Categories do
     end
   end
 
-  defp invalidate_menu_cache(branches) do
-    branches
-    |> Enum.map(& &1.id)
-    |> Enum.uniq()
-    |> Enum.each(fn branch_id ->
-      Cachex.del(:menu_cache, branch_id)
-    end)
+  defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
+    Cachex.del(:menu_cache, branch_id)
   end
 
-  defp put_branches(changeset, attrs) do
-    branch_ids = attrs["branch_ids"] || attrs[:branch_ids]
-
-    case branch_ids do
-      nil ->
-        changeset
-
-      branch_ids ->
-        branches = Repo.all(from b in Branch, where: b.id in ^branch_ids)
-        Ecto.Changeset.put_assoc(changeset, :branches, branches)
-    end
-  end
+  defp invalidate_menu_cache(_), do: :ok
 
   defp maybe_preload_category(category, opts) do
     case Keyword.get(opts, :preload) do
