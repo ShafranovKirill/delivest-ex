@@ -12,7 +12,7 @@ defmodule Delivest.Net do
   defdelegate list_category_for_branch(branch_id, opts), to: Categories
   defdelegate list_staff_categories_for_branch(staff, branch_id, opts), to: Categories
   defdelegate get_category(id, opts), to: Categories
-  defdelegate create_category(staff, attrs), to: Categories
+  defdelegate create_category(staff, branch_id, attrs), to: Categories
   defdelegate update_category(staff, updateble_category, attrs), to: Categories
   defdelegate delete_category(staff, category), to: Categories
 

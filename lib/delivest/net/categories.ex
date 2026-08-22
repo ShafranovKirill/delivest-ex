@@ -40,12 +40,19 @@ defmodule Delivest.Net.Categories do
     end
   end
 
-  @spec create_category(Staff.t(), map()) ::
+  @spec create_category(Staff.t(), binary(), map()) ::
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
-  def create_category(staff, attrs) do
+  def create_category(staff, branch_id, attrs) do
     if Identity.can?(staff, "categories.create") do
+      next_order = calculate_next_order(branch_id)
+
+      attrs_with_order =
+        attrs
+        |> Map.put("branch_id", branch_id)
+        |> Map.put("order", next_order)
+
       %Category{}
-      |> Category.changeset(attrs)
+      |> Category.changeset(attrs_with_order)
       |> Repo.insert()
       |> case do
         {:ok, created_category} ->
@@ -117,4 +124,19 @@ defmodule Delivest.Net.Categories do
       preloads -> preload(query, ^preloads)
     end
   end
+
+  defp calculate_next_order(branch_id) when not is_nil(branch_id) do
+    max_order =
+      Category
+      |> where([c], c.branch_id == type(^branch_id, :binary_id))
+      |> select([c], max(c.order))
+      |> Repo.one()
+
+    case max_order do
+      nil -> 1.0
+      val -> val + 1.0
+    end
+  end
+
+  defp calculate_next_order(_), do: 1.0
 end
