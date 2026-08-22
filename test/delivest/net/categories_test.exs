@@ -1,12 +1,12 @@
 defmodule Delivest.Net.CategoriesTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   alias Delivest.Net.{Categories, Category}
+
   import Delivest.Factory
 
   setup do
-    start_supervised({Cachex, name: :menu_cache})
-    Cachex.clear(:menu_cache)
+    start_supervised!({Cachex, name: :menu_cache})
 
     admin_role =
       insert(:role,
@@ -18,94 +18,69 @@ defmodule Delivest.Net.CategoriesTest do
         ]
       )
 
-    read_only_role = insert(:role, permissions: ["categories.read"])
-    forbidden_role = insert(:role, permissions: [])
+    read_only_staff = insert(:staff, role: insert(:role, permissions: ["categories.read"]))
+    forbidden_staff = insert(:staff, role: insert(:role, permissions: []))
+    admin = insert(:staff, role: admin_role)
+    branch = insert(:branch)
 
     {:ok,
-     admin: insert(:staff, role: admin_role),
-     read_only_staff: insert(:staff, role: read_only_role),
-     forbidden_staff: insert(:staff, role: forbidden_role)}
-  end
-
-  defp category_attrs(branch_ids, name \\ "Drinks") do
-    %{name: name, branch_ids: branch_ids}
+     admin: admin,
+     read_only_staff: read_only_staff,
+     forbidden_staff: forbidden_staff,
+     branch: branch}
   end
 
   describe "list_category_for_branch/2" do
-    test "returns active categories for a branch", %{} do
-      branch = insert(:branch)
-      active = insert(:category, name: "Active", is_active: true)
-      inactive = insert(:category, name: "Inactive", is_active: false)
+    test "returns categories for the branch ordered by order", %{branch: branch} do
+      first = insert(:category, branch: branch, order: 2.0)
+      second = insert(:category, branch: branch, order: 1.0)
+      insert(:category, branch: insert(:branch), order: 0.0)
 
-      Repo.insert!(%Delivest.Net.CategoriesBranches{
-        category_id: active.id,
-        branch_id: branch.id,
-        order: 1.0
-      })
+      assert [%Category{id: second_id, order: 1.0}, %Category{id: first_id, order: 2.0}] =
+               Categories.list_category_for_branch(branch.id)
 
-      Repo.insert!(%Delivest.Net.CategoriesBranches{
-        category_id: inactive.id,
-        branch_id: branch.id,
-        order: 2.0
-      })
-
-      categories = Categories.list_category_for_branch(branch.id)
-
-      assert Enum.map(categories, & &1.id) == [active.id]
-      refute inactive.id in Enum.map(categories, & &1.id)
+      assert second_id == second.id
+      assert first_id == first.id
     end
 
-    test "preloads branches when requested", %{admin: admin} do
-      branch = insert(:branch)
-      {:ok, category} = Categories.create_category(admin, category_attrs([branch.id]))
-      Repo.update_all(from(c in Category, where: c.id == ^category.id), set: [is_active: true])
+    test "preloads requested associations", %{branch: branch} do
+      category = insert(:category, branch: branch, order: 1.0)
 
-      [loaded_category] = Categories.list_category_for_branch(branch.id, preload: [:branches])
+      assert [%Category{branch: %Delivest.Net.Branch{id: branch_id}}] =
+               Categories.list_category_for_branch(branch.id, preload: :branch)
 
-      [loaded_branch] = loaded_category.branches
-      branch_id = loaded_branch.id
       assert branch_id == branch.id
+      assert category.id == hd(Categories.list_category_for_branch(branch.id)).id
     end
   end
 
   describe "list_staff_categories_for_branch/3" do
-    test "returns categories, including inactive ones, for permitted staff", %{
-      read_only_staff: staff
-    } do
-      branch = insert(:branch)
-      category = insert(:category, name: "Hidden")
+    test "returns categories for staff with permission", %{read_only_staff: staff, branch: branch} do
+      category = insert(:category, branch: branch, order: 1.0)
 
-      Repo.insert!(%Delivest.Net.CategoriesBranches{
-        category_id: category.id,
-        branch_id: branch.id
-      })
-
-      assert [%Category{id: category_id}] =
+      assert [%Category{id: category_id, name: category_name, order: 1.0}] =
                Categories.list_staff_categories_for_branch(staff, branch.id)
 
       assert category_id == category.id
+      assert category_name == category.name
     end
 
-    test "returns forbidden for staff without permission", %{forbidden_staff: staff} do
-      branch = insert(:branch)
-
-      assert {:error, :forbidden} =
-               Categories.list_staff_categories_for_branch(staff, branch.id)
+    test "returns forbidden without categories.read permission", %{
+      forbidden_staff: staff,
+      branch: branch
+    } do
+      assert {:error, :forbidden} = Categories.list_staff_categories_for_branch(staff, branch.id)
     end
   end
 
   describe "get_category/2" do
-    test "returns a category and preloads requested associations" do
-      branch = insert(:branch)
-      category = insert(:category)
+    test "returns a category and preloads requested associations", %{branch: branch} do
+      category = insert(:category, branch: branch, order: 1.0)
 
-      Repo.insert!(%Delivest.Net.CategoriesBranches{
-        category_id: category.id,
-        branch_id: branch.id
-      })
+      assert {:ok, %Category{id: id, branch: %Delivest.Net.Branch{id: branch_id}}} =
+               Categories.get_category(category.id, preload: :branch)
 
-      assert {:ok, loaded_category} = Categories.get_category(category.id, preload: [:branches])
-      assert [%{id: branch_id}] = loaded_category.branches
+      assert id == category.id
       assert branch_id == branch.id
     end
 
@@ -114,58 +89,128 @@ defmodule Delivest.Net.CategoriesTest do
     end
   end
 
-  describe "create_category/2" do
-    test "creates a category with branches when permitted", %{admin: admin} do
-      branch = insert(:branch)
+  describe "create_category/3" do
+    test "creates a category with the next order and clears the menu cache", %{
+      admin: admin,
+      branch: branch
+    } do
+      insert(:category, branch: branch, order: 3.5)
+      Cachex.put(:menu_cache, branch.id, :cached_menu)
 
-      assert {:ok, %Category{name: "Desserts", branches: [%{id: branch_id}]}} =
-               Categories.create_category(admin, category_attrs([branch.id], "Desserts"))
+      assert {:ok, %Category{name: "Drinks", order: 4.5, branch_id: branch_id}} =
+               Categories.create_category(admin, branch.id, %{"name" => "Drinks"})
 
       assert branch_id == branch.id
+      assert {:ok, nil} = Cachex.get(:menu_cache, branch.id)
     end
 
-    test "returns forbidden when staff lacks permission", %{forbidden_staff: staff} do
-      assert {:error, :forbidden} = Categories.create_category(staff, %{name: "Desserts"})
+    test "starts the order at one for the first category", %{admin: admin, branch: branch} do
+      assert {:ok, %Category{order: 1.0}} =
+               Categories.create_category(admin, branch.id, %{"name" => "Food"})
+    end
+
+    test "returns changeset errors for invalid data", %{admin: admin, branch: branch} do
+      assert {:error, changeset} = Categories.create_category(admin, branch.id, %{"name" => ""})
+      assert "can't be blank" in errors_on(changeset).name
+    end
+
+    test "returns forbidden without categories.create permission", %{
+      read_only_staff: staff,
+      branch: branch
+    } do
+      assert {:error, :forbidden} =
+               Categories.create_category(staff, branch.id, %{"name" => "Food"})
     end
   end
 
   describe "update_category/3" do
-    test "updates the category and its branches", %{admin: admin} do
-      old_branch = insert(:branch)
-      new_branch = insert(:branch)
-      {:ok, category} = Categories.create_category(admin, category_attrs([old_branch.id]))
+    test "updates a category and clears the menu cache", %{admin: admin, branch: branch} do
+      category = insert(:category, branch: branch, name: "Food", order: 1.0)
+      Cachex.put(:menu_cache, branch.id, :cached_menu)
 
-      assert {:ok, updated} =
-               Categories.update_category(
-                 admin,
-                 category,
-                 category_attrs([new_branch.id], "Food")
-               )
+      assert {:ok, %Category{name: "Drinks"}} =
+               Categories.update_category(admin, category, %{"name" => "Drinks"})
 
-      assert updated.name == "Food"
-      assert Enum.map(updated.branches, & &1.id) == [new_branch.id]
-      refute old_branch.id in Enum.map(updated.branches, & &1.id)
+      assert {:ok, nil} = Cachex.get(:menu_cache, branch.id)
     end
 
-    test "returns forbidden when staff lacks permission", %{forbidden_staff: staff} do
-      category = insert(:category)
+    test "returns forbidden without categories.update permission", %{
+      read_only_staff: staff,
+      branch: branch
+    } do
+      category = insert(:category, branch: branch, order: 1.0)
 
       assert {:error, :forbidden} = Categories.update_category(staff, category, %{name: "Food"})
     end
   end
 
   describe "delete_category/2" do
-    test "deletes the category when permitted", %{admin: admin} do
-      category = insert(:category)
+    test "deletes a category and clears the menu cache", %{admin: admin, branch: branch} do
+      category = insert(:category, branch: branch, order: 1.0)
+      Cachex.put(:menu_cache, branch.id, :cached_menu)
 
-      assert {:ok, %Category{id: category_id}} = Categories.delete_category(admin, category)
-      assert Repo.get(Category, category_id) == nil
+      assert {:ok, %Category{id: id}} = Categories.delete_category(admin, category)
+      assert Repo.get(Category, id) == nil
+      assert {:ok, nil} = Cachex.get(:menu_cache, branch.id)
     end
 
-    test "returns forbidden when staff lacks permission", %{forbidden_staff: staff} do
-      category = insert(:category)
+    test "returns forbidden without categories.delete permission", %{
+      read_only_staff: staff,
+      branch: branch
+    } do
+      category = insert(:category, branch: branch, order: 1.0)
 
       assert {:error, :forbidden} = Categories.delete_category(staff, category)
+    end
+  end
+
+  describe "update_category_order/4" do
+    test "places a category between neighboring categories", %{admin: admin, branch: branch} do
+      category = insert(:category, branch: branch, order: 10.0)
+      Cachex.put(:menu_cache, branch.id, :cached_menu)
+
+      assert {:ok, %Category{order: 3.0}} =
+               Categories.update_category_order(admin, category, 2.0, 4.0)
+
+      assert {:ok, nil} = Cachex.get(:menu_cache, branch.id)
+    end
+
+    test "places a category before a positive first category", %{admin: admin, branch: branch} do
+      category = insert(:category, branch: branch, order: 10.0)
+
+      assert {:ok, %Category{order: 2.0}} =
+               Categories.update_category_order(admin, category, nil, 4.0)
+    end
+
+    test "places a category before a non-positive first category", %{admin: admin, branch: branch} do
+      category = insert(:category, branch: branch, order: 10.0)
+
+      assert {:ok, %Category{order: -2.0}} =
+               Categories.update_category_order(admin, category, nil, -1.0)
+    end
+
+    test "places a category after the last category", %{admin: admin, branch: branch} do
+      category = insert(:category, branch: branch, order: 1.0)
+
+      assert {:ok, %Category{order: 6.0}} =
+               Categories.update_category_order(admin, category, 5.0, nil)
+    end
+
+    test "uses one when no neighbors are provided", %{admin: admin, branch: branch} do
+      category = insert(:category, branch: branch, order: 10.0)
+
+      assert {:ok, %Category{order: 1.0}} =
+               Categories.update_category_order(admin, category, nil, nil)
+    end
+
+    test "returns forbidden without categories.update permission", %{
+      read_only_staff: staff,
+      branch: branch
+    } do
+      category = insert(:category, branch: branch, order: 1.0)
+
+      assert {:error, :forbidden} =
+               Categories.update_category_order(staff, category, nil, nil)
     end
   end
 end
