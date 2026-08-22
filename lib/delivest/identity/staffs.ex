@@ -8,30 +8,22 @@ defmodule Delivest.Identity.Staffs do
           {:ok, {[Staff.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
   def list_staff(staff, params \\ %{}, opts \\ []) do
     if Acl.can?(staff, "staff.read") do
-      base_query =
-        Staff
-        |> where([a], is_nil(a.deleted_at))
-
-      base_query =
+      Staff
+      |> where([a], is_nil(a.deleted_at))
+      |> then(fn query ->
         if Acl.can?(staff, "admin") do
-          base_query
+          query
         else
-          branch_ids = Enum.map(staff.branches, & &1.id)
+          branch_ids = Enum.map(staff.branches || [], & &1.id)
 
-          base_query
+          query
           |> join(:inner, [s], sb in "staff_branches", on: sb.staff_id == s.id)
           |> where([s, sb], sb.branch_id in type(^branch_ids, {:array, Ecto.UUID}))
           |> distinct([s], s.id)
         end
-
-      query =
-        if preloads = Keyword.get(opts, :preload) do
-          preload(base_query, ^preloads)
-        else
-          base_query
-        end
-
-      Flop.validate_and_run(query, params, for: Staff)
+      end)
+      |> maybe_preload_query(opts)
+      |> Flop.validate_and_run(params, for: Staff)
     else
       {:error, :forbidden}
     end
@@ -254,6 +246,13 @@ defmodule Delivest.Identity.Staffs do
     case Keyword.get(opts, :preload) do
       nil -> staff
       preloads -> Repo.preload(staff, preloads)
+    end
+  end
+
+  defp maybe_preload_query(query, opts) do
+    case Keyword.get(opts, :preload) do
+      nil -> query
+      preloads -> preload(query, ^preloads)
     end
   end
 
