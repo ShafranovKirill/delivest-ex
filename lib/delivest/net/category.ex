@@ -20,6 +20,7 @@ defmodule Delivest.Net.Category do
 
   schema "categories" do
     field :name, :string
+    field :is_active, :boolean, default: false
 
     many_to_many :branches, Branch,
       join_through: CategoriesBranches,

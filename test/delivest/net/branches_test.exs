@@ -40,13 +40,12 @@ defmodule Delivest.Net.BranchesTest do
     {:ok, admin: admin_staff, read_only_staff: read_only_staff, forbidden_staff: forbidden_staff}
   end
 
-  describe "list_branch/1" do
+  describe "list_branch_for_staff/1" do
     test "should return all branches when admin", %{admin: admin} do
       branch1 = insert(:branch, name: "Main Branch")
       branch2 = insert(:branch, name: "Secondary Branch")
 
-      query = Branches.list_branch(admin)
-      branches = Delivest.Repo.all(query)
+      branches = Branches.list_branch_for_staff(admin)
       branch_ids = Enum.map(branches, & &1.id)
 
       assert branch1.id in branch_ids
@@ -60,8 +59,7 @@ defmodule Delivest.Net.BranchesTest do
       insert(:branch)
       staff = Repo.preload(staff, :branches)
 
-      query = Branches.list_branch(staff)
-      branches = Delivest.Repo.all(query)
+      branches = Branches.list_branch_for_staff(staff)
 
       assert branches == []
     end
