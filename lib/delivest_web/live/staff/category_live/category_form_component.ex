@@ -55,7 +55,6 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
     staff = socket.assigns.current_staff
     branch_id = socket.assigns.branch_id
 
-    # Передаем staff, branch_id и attrs в соответствии с нашей функцией создания
     case Net.create_category(staff, branch_id, category_params) do
       {:ok, created_category} ->
         notify_parent({:saved, created_category})
@@ -92,6 +91,7 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
             required
             autofocus
           />
+          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>
 
         <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">

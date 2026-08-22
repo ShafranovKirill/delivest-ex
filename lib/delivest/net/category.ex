@@ -21,6 +21,7 @@ defmodule Delivest.Net.Category do
   schema "categories" do
     field :name, :string
     field :order, :float
+    field :is_active, :boolean
     belongs_to :branch, Branch, type: :binary_id
 
     timestamps(type: :utc_datetime)
@@ -28,7 +29,7 @@ defmodule Delivest.Net.Category do
 
   def changeset(category, attrs) do
     category
-    |> cast(attrs, [:name, :order, :branch_id])
+    |> cast(attrs, [:name, :order, :branch_id, :is_active])
     |> validate_required([:name, :branch_id])
     |> assoc_constraint(:branch)
   end

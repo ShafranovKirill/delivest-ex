@@ -15,6 +15,7 @@ defmodule Delivest.Repo.Migrations.CreateCategories do
 
       add :name, :string, null: false
       add :order, :float, null: false
+      add :is_active, :boolean, null: false, default: false
 
       timestamps(type: :utc_datetime)
     end
