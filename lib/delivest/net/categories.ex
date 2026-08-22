@@ -105,6 +105,49 @@ defmodule Delivest.Net.Categories do
     end
   end
 
+  @spec update_category_order(Staff.t(), Category.t(), float() | nil, float() | nil) ::
+          {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
+  def update_category_order(staff, %Category{} = category, above_order, below_order) do
+    if Identity.can?(staff, "categories.update") do
+      new_order = calculate_new_order(above_order, below_order)
+
+      category
+      |> Category.changeset(%{"order" => new_order})
+      |> Repo.update()
+      |> case do
+        {:ok, updated_category} ->
+          invalidate_menu_cache(updated_category.branch_id)
+          {:ok, updated_category}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  defp calculate_new_order(above_order, below_order)
+       when not is_nil(above_order) and not is_nil(below_order) do
+    (above_order + below_order) / 2.0
+  end
+
+  defp calculate_new_order(nil, below_order) when not is_nil(below_order) do
+    if below_order > 0.0 do
+      below_order / 2.0
+    else
+      below_order - 1.0
+    end
+  end
+
+  defp calculate_new_order(above_order, nil) when not is_nil(above_order) do
+    above_order + 1.0
+  end
+
+  defp calculate_new_order(nil, nil) do
+    1.0
+  end
+
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
     Cachex.del(:menu_cache, branch_id)
   end
