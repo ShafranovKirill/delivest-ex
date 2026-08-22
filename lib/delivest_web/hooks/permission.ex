@@ -21,7 +21,7 @@ defmodule DelivestWeb.Hooks.Permission do
            "You don't have permission to access this page."
          )
        )
-       |> redirect(to: "/dashboard")}
+       |> redirect(to: "/staff/dashboard")}
     end
   end
 end

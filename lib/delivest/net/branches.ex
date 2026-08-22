@@ -1,33 +1,37 @@
 defmodule Delivest.Net.Branches do
   import Ecto.Query
-  alias Delivest.Net.BranchInfo
-  alias Delivest.{Repo, Identity}
-  alias Delivest.Net.Branch
+  alias Delivest.Net.{BranchInfo, Branch, ProductsBranches}
+  alias Delivest.{Repo, Identity, Net}
 
-  @spec list_branch(Delivest.Identity.Staff.t(), keyword()) :: Ecto.Query.t()
-  def list_branch(staff, opts \\ []) do
+  @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
+  def list_branch_for_staff(staff, opts \\ []) do
     permissions = staff.role.permissions || []
 
-    base_query = Branch |> where([b], is_nil(b.deleted_at))
+    Branch
+    |> where([b], is_nil(b.deleted_at))
+    |> then(fn query ->
+      cond do
+        "admin" in permissions ->
+          query
 
-    query =
-      if preloads = Keyword.get(opts, :preload) do
-        preload(base_query, ^preloads)
-      else
-        base_query
+        true ->
+          branch_ids = Enum.map(staff.branches || [], & &1.id)
+          where(query, [b], b.id in ^branch_ids)
       end
-
-    cond do
-      "admin" in permissions ->
-        query
-
-      true ->
-        branch_ids = Enum.map(staff.branches || [], & &1.id)
-
-        query
-        |> where([b], b.id in ^branch_ids)
-    end
+    end)
+    |> maybe_preload_query(opts[:preload])
+    |> Repo.all()
   end
+
+  def list_all_branch(opts \\ []) do
+    Branch
+    |> where([b], is_nil(b.deleted_at) and b.is_active == true)
+    |> maybe_preload_query(opts[:preload])
+    |> Repo.all()
+  end
+
+  defp maybe_preload_query(query, nil), do: query
+  defp maybe_preload_query(query, preloads), do: preload(query, ^preloads)
 
   @spec get_branch(binary()) :: {:ok, Branch.t()} | {:error, :not_found}
   def get_branch(id, opts \\ []) do
@@ -126,6 +130,37 @@ defmodule Delivest.Net.Branches do
     end
   end
 
+  def get_menu_for_branch(branch_id) do
+    case Cachex.get(:menu_cache, branch_id) do
+      {:ok, nil} ->
+        menu = fetch_and_filter_menu(branch_id)
+
+        Cachex.put(:menu_cache, branch_id, menu, ttl: :timer.hours(1))
+        {:ok, menu}
+
+      {:ok, menu} ->
+        {:ok, menu}
+    end
+  end
+
+  defp fetch_and_filter_menu(branch_id) do
+    inactive_product_ids =
+      ProductsBranches
+      |> where([pb], pb.branch_id == type(^branch_id, :binary_id))
+      |> where([pb], is_nil(pb.is_active) or pb.is_active == false)
+      |> select([pb], pb.product_id)
+      |> Repo.all()
+
+    Net.list_category_for_branch(branch_id, preload: [:products])
+    |> Enum.map(fn category ->
+      filtered_products =
+        category.products
+        |> Enum.reject(fn product -> product.id in inactive_product_ids end)
+
+      %{category | products: filtered_products}
+    end)
+  end
+
   defp ensure_preloaded_and_cached(branch, preloads, id, opts) do
     if needs_preload?(branch, preloads) do
       branch = maybe_preload_branch(branch, opts)
@@ -164,6 +199,6 @@ defmodule Delivest.Net.Branches do
   @spec cache_branch(integer(), Branch.t()) ::
           {:commit, true} | {:commit, false} | {:error, term()}
   defp cache_branch(id, branch) do
-    Cachex.put(:branch_cache, id, branch, ttl: :timer.minutes(30))
+    Cachex.put(:branch_cache, id, branch, ttl: :timer.hours(1))
   end
 end

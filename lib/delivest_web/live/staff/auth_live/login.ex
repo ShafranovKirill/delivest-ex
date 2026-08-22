@@ -34,7 +34,7 @@ defmodule DelivestWeb.Staff.AuthLive.Login do
 
   def mount(_params, _session, socket) do
     if socket.assigns[:current_staff] do
-      {:ok, redirect(socket, to: "/dashboard")}
+      {:ok, redirect(socket, to: "/staff/dashboard")}
     else
       changeset = LoginForm.changeset(%{})
 

@@ -45,22 +45,39 @@ defmodule Delivest.Identity.Acl do
     end
   end
 
+  defp get_branch_ids(%{branches: branches}) when is_list(branches) do
+    Enum.map(branches, & &1.id)
+  end
+
+  defp get_branch_ids(_), do: []
+
+  @spec scope_by_branch(Ecto.Queryable.t(), Delivest.Identity.Staff.t(), String.t()) ::
+          Ecto.Query.t()
   def scope_by_branch(query, staff, permission) do
     cond do
       not can?(staff, permission) ->
         where(query, [q], false)
 
-      "admin" in staff.role.permissions ->
+      can?(staff, "admin") ->
         query
 
       true ->
-        branch_ids =
-          case Map.get(staff, :branches) do
-            nil -> []
-            branches -> Enum.map(branches, & &1.id)
-          end
+        {join_table, foreign_key} = extract_join_info(query)
+        branch_ids = get_branch_ids(staff)
 
-        where(query, [q], q.branch_id in ^branch_ids)
+        if branch_ids == [] do
+          where(query, [q], false)
+        else
+          query
+          |> join(:inner, [q], j in ^join_table, on: field(j, ^foreign_key) == q.id)
+          |> where([q, j], j.branch_id in ^branch_ids)
+          |> distinct([q, j], q.id)
+        end
     end
   end
+
+  defp extract_join_info(%Ecto.Query{from: %{source: {_, model}}}), do: extract_join_info(model)
+  defp extract_join_info(Delivest.Net.Category), do: {"categories_branches", :category_id}
+  defp extract_join_info(Delivest.Net.Product), do: {"products_branches", :product_id}
+  defp extract_join_info(Delivest.Identity.Staff), do: {"staff_branches", :staff_id}
 end

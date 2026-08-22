@@ -12,11 +12,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
 
-    branches =
-      staff
-      |> Net.list_branch()
-      |> Repo.all()
-      |> Repo.preload(:info)
+    branches = Net.list_branch_for_staff(staff, preload: [:info])
 
     {:ok, assign(socket, branches: branches, branch_to_delete: nil)}
   end
