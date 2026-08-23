@@ -1,7 +1,7 @@
 defmodule Delivest.Identity.Staffs do
   import Ecto.Query
   alias Delivest.Repo
-  alias Delivest.Net.Branch
+  alias Delivest.Identity.Branch
   alias Delivest.Identity.{Staff, Acl, StaffBranch}
 
   @spec list_staff(Delivest.Identity.Staff.t(), map(), keyword()) ::
