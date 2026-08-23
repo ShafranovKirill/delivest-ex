@@ -78,7 +78,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
 
     with {:ok, category} <- Net.get_category(id),
          {:ok, _updated} <- Net.update_category_order(staff, category, above_order, below_order) do
-      categories = Net.list_category_for_branch(branch_id)
+      categories = Net.list_staff_categories_for_branch(staff, branch_id)
       {:noreply, assign(socket, categories: categories)}
     else
       _ ->

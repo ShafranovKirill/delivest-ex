@@ -2,7 +2,7 @@ defmodule Delivest.Identity.Staff do
   use Ecto.Schema
   import Ecto.Changeset
   alias Delivest.Identity.{Role, StaffBranch}
-  alias Delivest.Net.Branch
+  alias Delivest.Identity.Branch
 
   use Gettext, backend: DelivestWeb.Gettext
 

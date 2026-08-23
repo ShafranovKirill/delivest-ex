@@ -29,8 +29,6 @@ defmodule Delivest.Identity.Branch do
 
     many_to_many :staff, Staff, join_through: StaffBranch
 
-    has_many :categories, Delivest.Net.Category, foreign_key: :branch_id, on_replace: :delete
-
     has_one :info, Delivest.Identity.BranchInfo, foreign_key: :branch_id
 
     field :deleted_at, :utc_datetime

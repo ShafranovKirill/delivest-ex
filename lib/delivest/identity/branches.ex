@@ -133,7 +133,7 @@ defmodule Delivest.Identity.Branches do
   def get_menu_for_branch(branch_id) do
     case Cachex.get(:menu_cache, branch_id) do
       {:ok, nil} ->
-        menu = fetch_and_filter_menu(branch_id)
+        menu = Net.list_category_for_branch(branch_id, preload: [:products])
 
         Cachex.put(:menu_cache, branch_id, menu, ttl: :timer.hours(1))
         {:ok, menu}
@@ -141,24 +141,6 @@ defmodule Delivest.Identity.Branches do
       {:ok, menu} ->
         {:ok, menu}
     end
-  end
-
-  defp fetch_and_filter_menu(branch_id) do
-    inactive_product_ids =
-      ProductsBranches
-      |> where([pb], pb.branch_id == type(^branch_id, :binary_id))
-      |> where([pb], is_nil(pb.is_active) or pb.is_active == false)
-      |> select([pb], pb.product_id)
-      |> Repo.all()
-
-    Net.list_category_for_branch(branch_id, preload: [:products])
-    |> Enum.map(fn category ->
-      filtered_products =
-        category.products
-        |> Enum.reject(fn product -> product.id in inactive_product_ids end)
-
-      %{category | products: filtered_products}
-    end)
   end
 
   defp ensure_preloaded_and_cached(branch, preloads, id, opts) do

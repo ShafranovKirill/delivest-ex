@@ -1,14 +1,18 @@
 defmodule Delivest.Net.Categories do
   import Ecto.Query
 
-  alias Delivest.{Repo, Identity}
+  alias Ecto.Multi
+  alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Net.Category
   alias Delivest.Identity.Staff
 
   @spec list_category_for_branch(binary(), keyword()) :: [Category.t()]
   def list_category_for_branch(branch_id, opts \\ []) do
+    category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
+
     Category
-    |> where([c], c.branch_id == type(^branch_id, :binary_id))
+    |> where([c], c.id in ^category_ids)
+    |> where([c], c.is_active == true)
     |> order_by([c], asc: c.order)
     |> maybe_preload_query(opts)
     |> Repo.all()
@@ -18,8 +22,10 @@ defmodule Delivest.Net.Categories do
           [Category.t()] | {:error, :forbidden}
   def list_staff_categories_for_branch(staff, branch_id, opts \\ []) do
     if Identity.can?(staff, "categories.read") do
+      category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
+
       Category
-      |> where([c], c.branch_id == type(^branch_id, :binary_id))
+      |> where([c], c.id in ^category_ids)
       |> order_by([c], asc: c.order)
       |> maybe_preload_query(opts)
       |> Repo.all()
@@ -48,19 +54,24 @@ defmodule Delivest.Net.Categories do
 
       attrs_with_order =
         attrs
-        |> Map.put("branch_id", branch_id)
         |> Map.put("order", next_order)
 
-      %Category{}
-      |> Category.changeset(attrs_with_order)
-      |> Repo.insert()
+      Multi.new()
+      |> Multi.insert(:category, Category.changeset(%Category{}, attrs_with_order))
+      |> Multi.run(:relation, fn _repo, %{category: category} ->
+        case Relations.create_relation("Branch", branch_id, "Category", category.id) do
+          {:ok, relation} -> {:ok, relation}
+          {:error, reason} -> {:error, reason}
+        end
+      end)
+      |> Repo.transaction()
       |> case do
-        {:ok, created_category} ->
-          invalidate_menu_cache(created_category.branch_id)
+        {:ok, %{category: created_category}} ->
+          invalidate_menu_cache(branch_id)
           {:ok, created_category}
 
-        {:error, changeset} ->
-          {:error, changeset}
+        {:error, _failed_operation, error, _changes_so_far} ->
+          {:error, error}
       end
     else
       {:error, :forbidden}
@@ -76,8 +87,8 @@ defmodule Delivest.Net.Categories do
       |> Repo.update()
       |> case do
         {:ok, updated_category} ->
-          invalidate_menu_cache(updateble_category.branch_id)
-
+          branch_id = get_category_branch_id(updated_category.id)
+          invalidate_menu_cache(branch_id)
           {:ok, updated_category}
 
         {:error, changeset} ->
@@ -116,7 +127,9 @@ defmodule Delivest.Net.Categories do
       |> Repo.update()
       |> case do
         {:ok, updated_category} ->
-          invalidate_menu_cache(updated_category.branch_id)
+          branch_id = get_category_branch_id(updated_category.id)
+          invalidate_menu_cache(branch_id)
+
           {:ok, updated_category}
 
         {:error, changeset} ->
@@ -125,6 +138,11 @@ defmodule Delivest.Net.Categories do
     else
       {:error, :forbidden}
     end
+  end
+
+  defp get_category_branch_id(category_id) do
+    Relations.list_source_ids("Category", category_id, "Branch")
+    |> List.first()
   end
 
   defp calculate_new_order(above_order, below_order)
@@ -169,9 +187,11 @@ defmodule Delivest.Net.Categories do
   end
 
   defp calculate_next_order(branch_id) when not is_nil(branch_id) do
+    category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
+
     max_order =
       Category
-      |> where([c], c.branch_id == type(^branch_id, :binary_id))
+      |> where([c], c.id in ^category_ids)
       |> select([c], max(c.order))
       |> Repo.one()
 
