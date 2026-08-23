@@ -1,10 +1,12 @@
 import Config
 
+external_host = System.get_env("DEV_EXTERNAL_HOST", "localhost")
+
 # Configure your database
 config :delivest, Delivest.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: external_host,
   database: "delivest",
   port: 5432,
   stacktrace: true,
@@ -76,3 +78,14 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :ex_aws,
+  access_key_id: "minioadmin",
+  secret_access_key: "minioadmin",
+  s3: [
+    scheme: "http://",
+    host: external_host,
+    port: 9000
+  ]
+
+config :delivest, Delivest.Media, bucket: "delivest"
