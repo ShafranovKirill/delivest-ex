@@ -105,7 +105,9 @@ defmodule Delivest.Net.Categories do
     if Identity.can?(staff, "categories.delete") do
       case Repo.delete(category) do
         {:ok, deleted_category} ->
-          invalidate_menu_cache(deleted_category.branch_id)
+          branch_id = get_category_branch_id(deleted_category.id)
+
+          invalidate_menu_cache(branch_id)
           {:ok, deleted_category}
 
         {:error, changeset} ->

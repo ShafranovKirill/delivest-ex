@@ -27,7 +27,11 @@ defmodule Delivest.Factory do
   end
 
   def category_factory do
-    %Category{name: sequence(:category_name, &"Category #{&1}")}
+    %Category{
+      name: sequence(:name, &"Category #{&1}"),
+      order: 1.0,
+      is_active: true
+    }
   end
 
   def staff_branch_factory do
