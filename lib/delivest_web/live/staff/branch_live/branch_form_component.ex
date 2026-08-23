@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
+  alias Delivest.Identity
   use DelivestWeb, :live_component
   alias DelivestWeb.Staff.BranchLive.BranchForm
-  alias Delivest.Net
 
   @impl true
   def update(assigns, socket) do
@@ -50,7 +50,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   defp do_save_branch(%Ecto.Changeset{valid?: true} = changeset, socket, :new) do
     {branch_params, info_params} = BranchForm.to_params(changeset)
 
-    case Net.create_branch(
+    case Identity.create_branch(
            socket.assigns.current_staff,
            branch_params,
            info_params
@@ -68,7 +68,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   defp do_save_branch(%Ecto.Changeset{valid?: true} = changeset, socket, :edit) do
     {branch_params, info_params} = BranchForm.to_params(changeset)
 
-    case Net.update_branch(
+    case Identity.update_branch(
            socket.assigns.current_staff,
            socket.assigns.branch,
            branch_params,

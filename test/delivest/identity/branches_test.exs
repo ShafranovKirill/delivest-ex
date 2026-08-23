@@ -1,7 +1,7 @@
-defmodule Delivest.Net.BranchesTest do
+defmodule Delivest.Identity.BranchesTest do
   use Delivest.DataCase, async: true
 
-  alias Delivest.Net.{Branches, Branch}
+  alias Delivest.Identity.{Branches, Branch}
   import Delivest.Factory
 
   defp assert_changeset_error(result) do

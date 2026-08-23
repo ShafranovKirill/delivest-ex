@@ -2,7 +2,6 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
   import Phoenix.LiveView
   import Phoenix.Component
   alias Delivest.Identity
-  alias Delivest.Net
 
   def on_mount(:default, _params, session, socket) do
     current_staff = socket.assigns[:current_staff]
@@ -42,7 +41,7 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
          |> redirect(to: "/staff/branches/select")}
 
       true ->
-        case Net.get_branch(active_branch_id) do
+        case Identity.get_branch(active_branch_id) do
           {:ok, branch} ->
             socket =
               socket

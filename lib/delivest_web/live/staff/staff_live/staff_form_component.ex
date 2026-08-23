@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Identity, Net}
+  alias Delivest.{Identity}
   alias Delivest.Identity.Staff
 
   import Ecto.Changeset
@@ -34,7 +34,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
         |> Enum.map(&{&1.name, &1.id})
 
       branch_options =
-        Net.list_branch_for_staff(current_staff)
+        Identity.list_branch_for_staff(current_staff)
         |> Enum.map(&{&1.name, &1.id})
 
       {:ok,

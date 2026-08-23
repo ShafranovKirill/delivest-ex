@@ -1,5 +1,5 @@
 defmodule Delivest.Identity do
-  alias Delivest.Identity.{Staffs, Staff, Roles, Acl}
+  alias Delivest.Identity.{Staffs, Staff, Roles, Acl, Branches, BranchInfo}
 
   defdelegate list_staff(staff, params \\ %{}, opts \\ []), to: Staffs
   defdelegate create_staff(staff, attrs), to: Staffs
@@ -13,6 +13,15 @@ defmodule Delivest.Identity do
   defdelegate revoke_branch_from_staff(staff_id, branch_id), to: Staffs
   defdelegate login_regex, to: Staff
   defdelegate password_regex, to: Staff
+
+  defdelegate list_branch_for_staff(staff, opts \\ []), to: Branches
+  defdelegate list_all_branch(opts), to: Branches
+  defdelegate get_branch(id, opts \\ []), to: Branches
+  defdelegate update_branch(staff, branch, branch_attrs, info_attrs), to: Branches
+  defdelegate create_branch(staff, branch_attrs, info_attrs), to: Branches
+  defdelegate soft_delete_branch(staff, branch), to: Branches
+
+  defdelegate phone_regex(), to: BranchInfo
 
   defdelegate can?(staff, permission), to: Acl
   defdelegate can_any?(staff, permissions), to: Acl

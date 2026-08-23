@@ -1,7 +1,7 @@
-defmodule Delivest.Net.BranchInfo do
+defmodule Delivest.Identity.BranchInfo do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Net
+  alias Delivest.Identity
 
   use Gettext, backend: DelivestWeb.Gettext
 
@@ -14,7 +14,7 @@ defmodule Delivest.Net.BranchInfo do
     field :address, :string
     field :phone_number, :string
 
-    belongs_to :branch, Delivest.Net.Branch
+    belongs_to :branch, Delivest.Identity.Branch
 
     timestamps()
   end
@@ -23,7 +23,7 @@ defmodule Delivest.Net.BranchInfo do
     branch_info
     |> cast(attrs, [:address, :phone_number, :branch_id])
     |> validate_required([:branch_id])
-    |> validate_format(:phone_number, Net.phone_regex(),
+    |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(
           "errors",

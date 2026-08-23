@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Net
+  alias Delivest.Identity
   alias Delivest.Repo
 
   use Gettext, backend: Delivest.Gettext
@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   def changeset(form, attrs) do
     form
     |> cast(attrs, [:name, :address, :phone_number, :slug, :is_active])
-    |> validate_format(:phone_number, Net.phone_regex(),
+    |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(
           "errors",

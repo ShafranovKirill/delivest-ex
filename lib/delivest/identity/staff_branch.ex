@@ -10,7 +10,7 @@ defmodule Delivest.Identity.StaffBranch do
 
   schema "staff_branches" do
     belongs_to :staff, Delivest.Identity.Staff, primary_key: true
-    belongs_to :branch, Delivest.Net.Branch, primary_key: true
+    belongs_to :branch, Delivest.Identity.Branch, primary_key: true
 
     timestamps()
   end
