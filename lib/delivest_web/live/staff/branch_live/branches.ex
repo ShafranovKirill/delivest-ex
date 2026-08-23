@@ -1,9 +1,8 @@
 defmodule DelivestWeb.Staff.BranchLive.Branches do
   use DelivestWeb, :live_view
 
-  alias Delivest.Net
   alias Delivest.Repo
-  alias Delivest.Net.Branch
+  alias Delivest.Identity.Branch
   alias Delivest.Identity
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
@@ -12,7 +11,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
 
-    branches = Net.list_branch_for_staff(staff, preload: [:info])
+    branches = Identity.list_branch_for_staff(staff, preload: [:info])
 
     {:ok, assign(socket, branches: branches, branch_to_delete: nil)}
   end
@@ -41,7 +40,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
       branch = Enum.find(socket.assigns.branches, &(&1.slug == slug))
 
       if branch do
-        case Net.get_branch(branch.id, preload: [:info]) do
+        case Identity.get_branch(branch.id, preload: [:info]) do
           {:ok, loaded_branch} ->
             assign(socket, page_title: gettext("Edit Branch"), branch: loaded_branch)
 
@@ -81,7 +80,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
 
   @impl true
   def handle_event("delete_branch", %{"id" => id}, socket) do
-    case Net.get_branch(id) do
+    case Identity.get_branch(id) do
       {:ok, branch} ->
         {:noreply, assign(socket, branch_to_delete: branch)}
 
@@ -96,7 +95,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
         _,
         %{assigns: %{branch_to_delete: branch, current_staff: staff} = _assigns} = socket
       ) do
-    case Net.soft_delete_branch(staff, branch) do
+    case Identity.soft_delete_branch(staff, branch) do
       {:ok, deleted_branch} ->
         branches = Enum.reject(socket.assigns.branches, &(&1.id == deleted_branch.id))
 

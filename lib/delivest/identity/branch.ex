@@ -1,4 +1,4 @@
-defmodule Delivest.Net.Branch do
+defmodule Delivest.Identity.Branch do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -31,7 +31,7 @@ defmodule Delivest.Net.Branch do
 
     has_many :categories, Delivest.Net.Category, foreign_key: :branch_id, on_replace: :delete
 
-    has_one :info, Delivest.Net.BranchInfo, foreign_key: :branch_id
+    has_one :info, Delivest.Identity.BranchInfo, foreign_key: :branch_id
 
     field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)

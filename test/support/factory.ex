@@ -1,8 +1,8 @@
 defmodule Delivest.Factory do
   use ExMachina.Ecto, repo: Delivest.Repo
 
-  alias Delivest.Identity.{Staff, Role, StaffBranch}
-  alias Delivest.Net.{Branch, Category}
+  alias Delivest.Identity.{Staff, Role, StaffBranch, Branch}
+  alias Delivest.Net.{Category}
 
   def role_factory do
     %Role{

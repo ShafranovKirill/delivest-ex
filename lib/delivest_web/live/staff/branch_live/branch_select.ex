@@ -1,11 +1,11 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   use DelivestWeb, :live_view
-  alias Delivest.Net.Branches
+  alias Delivest.Identity
 
   def mount(_params, _session, socket) do
     staff = socket.assigns[:current_staff]
 
-    branches = Branches.list_branch_for_staff(staff)
+    branches = Identity.list_branch_for_staff(staff)
 
     {:ok, assign(socket, branches: branches)}
   end
