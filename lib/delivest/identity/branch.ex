@@ -11,17 +11,6 @@ defmodule Delivest.Identity.Branch do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @derive {
-    Flop.Schema,
-    filterable: [:name],
-    sortable: [:name, :inserted_at],
-    default_limit: 10,
-    default_order: %{
-      order_by: [:name],
-      order_directions: [:asc]
-    }
-  }
-
   schema "branches" do
     field :name, :string
     field :slug, :string

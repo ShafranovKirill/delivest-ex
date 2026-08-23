@@ -5,17 +5,6 @@ defmodule Delivest.Net.Category do
   @type t :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: true}
 
-  @derive {
-    Flop.Schema,
-    filterable: [:name],
-    sortable: [:name, :inserted_at],
-    default_limit: 10,
-    default_order: %{
-      order_by: [:inserted_at],
-      order_directions: [:asc]
-    }
-  }
-
   schema "categories" do
     field :name, :string
     field :order, :float
