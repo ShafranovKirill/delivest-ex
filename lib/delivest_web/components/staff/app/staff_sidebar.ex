@@ -94,10 +94,13 @@ defmodule DelivestWeb.StaffSidebar do
             </li>
 
             <li :if={can?(@current_staff, "products.read")}>
-              <.link class={[
-                "flex items-center gap-2",
-                (@current_page == :products && "menu-active") || ""
-              ]}>
+              <.link
+                navigate={~p"/staff/products"}
+                class={[
+                  "flex items-center gap-2",
+                  (@current_page == :products && "menu-active") || ""
+                ]}
+              >
                 <.icon name="hero-cube" class="size-6 shrink-0" />
                 <span class="group-[.is-collapsed]/sidebar:hidden font-bold truncate">
                   {gettext("Products")}

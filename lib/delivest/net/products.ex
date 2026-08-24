@@ -5,7 +5,7 @@ defmodule Delivest.Net.Products do
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
 
-  def list_staff_products_for_branch(staff, branch_id, opts \\ []) do
+  def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
     if Identity.can?(staff, "product.read") do
       product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
 
@@ -13,35 +13,50 @@ defmodule Delivest.Net.Products do
       |> where([p], p.id in ^product_ids)
       |> where([p], is_nil(p.deleted_at))
       |> maybe_preload_query(opts)
-      |> Repo.all()
+      |> Flop.validate_and_run(params, for: Product)
     else
       {:error, :forbidden}
     end
   end
 
-  def list_staff_products_for_category(staff, category_id, opts \\ []) do
-    if Identity.can?(staff, "product.read") do
-      product_ids = Relations.list_target_ids("Category", category_id, "Product")
+  # def list_staff_products_for_category(staff, category_id, params \\ %{}, opts \\ []) do
+  #   if Identity.can?(staff, "product.read") do
+  #     product_ids = Relations.list_target_ids("Category", category_id, "Product")
 
-      Product
-      |> where([p], p.id in ^product_ids)
-      |> where([p], is_nil(p.deleted_at))
-      |> maybe_preload_query(opts)
-      |> Repo.all()
-    else
-      {:error, :forbidden}
-    end
-  end
+  #     Product
+  #     |> where([p], p.id in ^product_ids)
+  #     |> where([p], is_nil(p.deleted_at))
+  #     |> maybe_preload_query(opts)
+  #     |> Flop.validate_and_run(params, for: Product)
+  #   else
+  #     {:error, :forbidden}
+  #   end
+  # end
 
   def create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
+      category_id = attrs["category_id"] || attrs[:category_id]
+
       Multi.new()
       |> Multi.insert(:product, Product.changeset(%Product{}, attrs))
-      |> Multi.run(:relation, fn repo, %{product: product} ->
+      |> Multi.run(:relation_category, fn repo, %{product: product} ->
         case Relations.create_relation(
                repo,
                "Category",
-               attrs.category_id,
+               category_id,
+               "Product",
+               product.id,
+               %{}
+             ) do
+          {:ok, relation} -> {:ok, relation}
+          {:error, reason} -> {:error, reason}
+        end
+      end)
+      |> Multi.run(:relation_branch, fn repo, %{product: product} ->
+        case Relations.create_relation(
+               repo,
+               "Branch",
+               branch_id,
                "Product",
                product.id,
                %{}

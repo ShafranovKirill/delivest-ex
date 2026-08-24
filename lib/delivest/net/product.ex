@@ -25,7 +25,7 @@ defmodule Delivest.Net.Product do
     field :media_id, :binary_id
     field :external_id, :string
 
-    belongs_to :category, Category
+    belongs_to :category, Category, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end
