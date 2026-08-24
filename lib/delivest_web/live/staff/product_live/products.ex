@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   alias Delivest.{Identity, Repo, Net}
   alias Delivest.Net.Product
+  alias Delivest.Net.Category
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "product.read"}
@@ -10,26 +11,25 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def mount(_params, _session, socket) do
     branch_id = socket.assigns.current_branch.id
+    categories = Repo.all(Category)
 
     {:ok,
      socket
-     |> assign(product_to_delete: nil, branch_id: branch_id)
+     |> assign(
+       product_to_delete: nil,
+       branch_id: branch_id,
+       categories: categories,
+       search: "",
+       selected_category_id: nil,
+       selected_status: nil
+     )
      |> stream(:products, [])}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    search = Map.get(params, "search", "")
     branch_id = socket.assigns.branch_id
-
-    flop_params =
-      if search != "" do
-        Map.put(params, "filters", %{
-          "0" => %{"field" => "name", "op" => "ilike_and", "value" => search}
-        })
-      else
-        params
-      end
+    flop_params = prepare_flop_params(params)
 
     case Net.Products.list_staff_products_for_branch(
            socket.assigns.current_staff,
@@ -40,7 +40,12 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       {:ok, {products, meta}} ->
         socket =
           socket
-          |> assign(meta: meta, search: search)
+          |> assign(
+            meta: meta,
+            search: Map.get(params, "search", ""),
+            selected_category_id: Flop.Filter.get_value(meta.flop.filters, :category_id),
+            selected_status: Flop.Filter.get_value(meta.flop.filters, :is_active)
+          )
           |> stream(:products, products, reset: true)
           |> apply_action(socket.assigns.live_action, params)
 
@@ -48,6 +53,26 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
       {:error, _meta} ->
         {:noreply, push_patch(socket, to: ~p"/staff/products")}
+    end
+  end
+
+  defp prepare_flop_params(params) do
+    case Map.get(params, "search") do
+      val when val in [nil, ""] ->
+        params
+
+      val ->
+        filters = Map.get(params, "filters", %{})
+        next_idx = map_size(filters)
+
+        new_filters =
+          Map.put(filters, to_string(next_idx), %{
+            "field" => "name",
+            "op" => "ilike_and",
+            "value" => val
+          })
+
+        Map.put(params, "filters", new_filters)
     end
   end
 
@@ -82,9 +107,26 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
-  def handle_event("search", %{"search" => search}, socket) do
-    params = build_query_params(socket.assigns, %{"search" => search, "page" => 1})
-    {:noreply, push_patch(socket, to: ~p"/staff/products?#{params}")}
+  def handle_event("filter", params, socket) do
+    search = params["search"]
+    category_id = params["category_id"]
+    is_active = parse_boolean_status(params["is_active"])
+
+    filters =
+      []
+      |> maybe_add_filter(:category_id, "==", category_id)
+      |> maybe_add_filter(:is_active, "==", is_active)
+      |> maybe_add_filter(:name, "ilike_and", search)
+      |> map_to_flop_format()
+
+    query_params =
+      build_query_params(socket.assigns, %{
+        "search" => search,
+        "filters" => filters,
+        "page" => 1
+      })
+
+    {:noreply, push_patch(socket, to: ~p"/staff/products?#{query_params}")}
   end
 
   def handle_event("update_page_size", %{"page_size" => size}, socket) do
@@ -141,6 +183,32 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
      |> push_patch(to: ~p"/staff/products?#{build_query_params(socket.assigns, %{})}")}
   end
 
+  defp maybe_add_filter(filters, _field, _op, val) when val in [nil, ""], do: filters
+
+  defp maybe_add_filter(filters, field, op, val) do
+    [%{"field" => to_string(field), "op" => op, "value" => val} | filters]
+  end
+
+  defp map_to_flop_format(list_of_filters) do
+    list_of_filters
+    |> Enum.with_index()
+    |> Map.new(fn {filter, idx} -> {to_string(idx), filter} end)
+  end
+
+  defp parse_boolean_status("true"), do: true
+  defp parse_boolean_status("false"), do: false
+  defp parse_boolean_status(_), do: nil
+
+  defp with_indexed_map(list) do
+    list
+    |> Enum.map(fn
+      %Flop.Filter{} = f -> Map.from_struct(f)
+      f -> f
+    end)
+    |> Enum.with_index()
+    |> Map.new(fn {f, idx} -> {to_string(idx), f} end)
+  end
+
   defp build_query_params(assigns, overrides) do
     meta = assigns.meta
 
@@ -154,15 +222,25 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       |> List.wrap()
       |> Enum.map(&to_string/1)
 
+    filters_for_query =
+      meta.flop.filters
+      |> List.wrap()
+      |> Enum.map(fn
+        %Flop.Filter{} = f -> Map.from_struct(f)
+        f -> f
+      end)
+      |> with_indexed_map()
+
     %{
       "search" => assigns.search,
       "page" => meta.current_page,
       "page_size" => meta.page_size,
       "order_by" => order_by,
-      "order_directions" => order_directions
+      "order_directions" => order_directions,
+      "filters" => filters_for_query
     }
     |> Map.merge(overrides)
-    |> Enum.reject(fn {_, v} -> is_nil(v) or v == "" or v == [] end)
+    |> Enum.reject(fn {_, v} -> is_nil(v) or v == "" or v == [] or v == %{} end)
     |> Map.new()
   end
 
@@ -189,24 +267,41 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </div>
       </div>
 
-      <div class="flex gap-4">
-        <.form for={nil} phx-change="search" phx-submit="search" class="w-full max-w-sm">
-          <div class="relative">
-            <.icon
-              name="hero-magnifying-glass"
-              class="absolute left-3 top-3.5 size-5 text-base-content/50 z-10"
-            />
-            <.input
-              type="text"
-              name="search"
-              value={@search}
-              placeholder={gettext("Search products...")}
-              class="input input-bordered w-full pl-10"
-              phx-debounce="500"
-            />
-          </div>
-        </.form>
-      </div>
+      <.form
+        for={nil}
+        phx-change="filter"
+        class="flex gap-4 items-center justify-between flex-wrap w-full"
+      >
+        <div class="relative w-full sm:max-w-sm">
+          <.icon
+            name="hero-magnifying-glass"
+            class="absolute left-3 top-3.5 size-5 text-base-content/50 z-10"
+          />
+          <.input
+            type="text"
+            name="search"
+            value={@search}
+            placeholder={gettext("Search products...")}
+            class="input input-bordered w-full pl-10"
+            phx-debounce="500"
+          />
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          <select name="category_id" class="select select-bordered w-full sm:w-52 shrink-0">
+            <option value="">{gettext("All categories")}</option>
+            <%= for cat <- @categories do %>
+              <option value={cat.id} selected={@selected_category_id == cat.id}>{cat.name}</option>
+            <% end %>
+          </select>
+
+          <select name="is_active" class="select select-bordered w-full sm:w-48 shrink-0">
+            <option value="">{gettext("All statuses")}</option>
+            <option value="true" selected={@selected_status == true}>{gettext("Active")}</option>
+            <option value="false" selected={@selected_status == false}>{gettext("Inactive")}</option>
+          </select>
+        </div>
+      </.form>
 
       <% path_fn = fn overrides -> ~p"/staff/products?#{build_query_params(assigns, overrides)}" end %>
 
@@ -223,12 +318,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <span class="font-mono">{prod.price}</span>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Description")}>
-          <p class="max-w-xs truncate text-sm text-base-content/70" title={prod.description}>
-            {prod.description || "—"}
-          </p>
-        </:col>
-
         <:col :let={{_id, prod}} label={gettext("Status")}>
           <%= if prod.is_active do %>
             <span class="badge badge-success badge-sm whitespace-nowrap">{gettext("Active")}</span>
@@ -236,6 +325,14 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             <span class="badge badge-error badge-sm text-error-content whitespace-nowrap">{gettext(
               "Inactive"
             )}</span>
+          <% end %>
+        </:col>
+
+        <:col :let={{_id, prod}} label={gettext("Description")}>
+          <%= if prod.description && prod.description != "" do %>
+            <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
+          <% else %>
+            <span class="text-xs opacity-40">—</span>
           <% end %>
         </:col>
 

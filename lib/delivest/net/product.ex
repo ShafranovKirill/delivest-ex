@@ -8,7 +8,7 @@ defmodule Delivest.Net.Product do
 
   @derive {
     Flop.Schema,
-    filterable: [:name],
+    filterable: [:name, :category_id, :is_active],
     sortable: [:name, :price, :inserted_at],
     default_limit: 10,
     default_order: %{
@@ -27,6 +27,7 @@ defmodule Delivest.Net.Product do
 
     belongs_to :category, Category, type: :binary_id
 
+    field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)
   end
 
@@ -39,7 +40,8 @@ defmodule Delivest.Net.Product do
       :media_id,
       :is_active,
       :external_id,
-      :category_id
+      :category_id,
+      :deleted_at
     ])
     |> validate_required([:name, :price])
     |> validate_number(:price, greater_than_or_equal_to: 0)
