@@ -47,6 +47,42 @@ const initTheme = () => {
 };
 initTheme();
 
+let Uploaders = {};
+
+Uploaders.S3 = function (entries, onViewError) {
+  entries.forEach((entry) => {
+    let { url } = entry.meta;
+    let xhr = new XMLHttpRequest();
+
+    onViewError(() => xhr.abort());
+
+    xhr.open("PUT", url, true);
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        entry.progress(100);
+      } else {
+        entry.error();
+      }
+    };
+
+    xhr.onerror = () => {
+      entry.error();
+    };
+
+    xhr.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        let percent = Math.round((event.loaded / event.total) * 100);
+        if (percent < 100) {
+          entry.progress(percent);
+        }
+      }
+    });
+
+    xhr.send(entry.file);
+  });
+};
+
 export const SortableCategories = {
   mounted() {
     let hook = this;
@@ -81,6 +117,7 @@ const csrfToken = document
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
+  uploaders: Uploaders,
   hooks: {
     ...colocatedHooks,
     ThemeToggle,

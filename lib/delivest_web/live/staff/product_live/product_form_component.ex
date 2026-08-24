@@ -26,9 +26,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
         case Net.Categories.list_staff_categories_for_branch(current_staff, branch_id) do
           categories when is_list(categories) ->
             no_category_option = {gettext("Without category"), ""}
-
             mapped_categories = Enum.map(categories, &{&1.name, &1.id})
-
             [no_category_option | mapped_categories]
 
           _ ->
@@ -45,7 +43,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
         |> allow_upload(:photo,
           accept: ~w(.jpg .jpeg .png .webp),
           max_entries: 1,
-          max_file_size: 5 * 1024 * 1024
+          max_file_size: 5 * 1024 * 1024,
+          external: &ext_uploader/2
         )
 
       {:ok, socket}
@@ -78,16 +77,31 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   @impl true
   def handle_event("save", %{"product" => params}, socket) do
     case consume_uploaded_photo(socket) do
-      {:ok, media_id} when not is_nil(media_id) ->
-        params = Map.put(params, "media_id", media_id)
-        save_product_with_params(socket, socket.assigns.action, params)
+      {:ok, media_id} ->
+        params =
+          params
+          |> Map.put_new("category_id", nil)
+          |> then(fn p -> if media_id, do: Map.put(p, "media_id", media_id), else: p end)
+          |> normalize_params()
 
-      {:ok, nil} ->
         save_product_with_params(socket, socket.assigns.action, params)
 
       {:error, reason} ->
         socket = put_flash(socket, :error, "#{gettext("File upload error:")} #{inspect(reason)}")
         {:noreply, socket}
+    end
+  end
+
+  defp ext_uploader(entry, socket) do
+    case Net.Products.prepare_product_media_upload(
+           socket.assigns.current_staff,
+           entry.client_name
+         ) do
+      {:ok, meta} ->
+        {:ok, meta, socket}
+
+      {:error, _} ->
+        {:error, %{reason: gettext("Could not generate upload URL")}, socket}
     end
   end
 
@@ -100,63 +114,35 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
 
   defp consume_uploaded_photo(socket) do
     try do
-      result =
-        consume_uploaded_entries(socket, :photo, fn %{path: path}, entry ->
-          bucket = Application.get_env(:delivest, Delivest.Media)[:bucket] || "delivest"
-          unique_filename = "#{Ecto.UUID.generate()}-#{entry.client_name}"
-          key = "products/#{unique_filename}"
+      results =
+        consume_uploaded_entries(socket, :photo, fn meta, entry ->
+          case Net.Products.create_product_media_file(socket.assigns.current_staff, meta, entry) do
+            {:ok, media_file} ->
+              {:ok, media_file.id}
 
-          file_binary = File.read!(path)
-
-          case ExAws.S3.put_object(bucket, key, file_binary, content_type: entry.client_type)
-               |> ExAws.request() do
-            {:ok, _} ->
-              file_attrs = %{
-                "bucket" => bucket,
-                "key" => key,
-                "original_name" => entry.client_name,
-                "mime_type" => entry.client_type,
-                "size" => entry.client_size,
-                "context" => :product,
-                "owner_id" => socket.assigns.current_staff.id
-              }
-
-              case Media.create_file(file_attrs) do
-                {:ok, media_file} ->
-                  {:ok, media_file.id}
-
-                {:error, changeset} ->
-                  raise "Failed to create media file: #{inspect(changeset)}"
-              end
-
-            {:error, error} ->
-              raise "S3 upload failed: #{inspect(error)}"
+            {:error, err} ->
+              {:error, err}
           end
         end)
 
-      case result do
-        [media_id | _] -> {:ok, media_id}
+      case results do
+        [media_id | _] when not is_nil(media_id) -> {:ok, media_id}
         [] -> {:ok, nil}
+        [{:error, reason} | _] -> {:error, reason}
       end
     rescue
       exception -> {:error, exception}
     end
   end
 
-  defp save_product_with_params(socket, :edit, params) do
-    params = Map.put_new(params, "category_id", nil)
-    normalized_params = normalize_params(params)
-
+  defp save_product_with_params(socket, :edit, normalized_params) do
     socket.assigns.product
     |> Product.changeset(normalized_params)
     |> Map.put(:action, :update)
     |> do_save_product(socket, :edit)
   end
 
-  defp save_product_with_params(socket, :new, params) do
-    params = Map.put_new(params, "category_id", nil)
-    normalized_params = normalize_params(params)
-
+  defp save_product_with_params(socket, :new, normalized_params) do
     %Product{}
     |> Product.changeset(normalized_params)
     |> Map.put(:action, :insert)
@@ -226,6 +212,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   def render(assigns) do
     ~H"""
     <div class="h-full flex flex-col">
+      <% is_uploading =
+        Enum.any?(
+          @uploads.photo.entries,
+          &(&1.progress > 0 and &1.progress < 100 and upload_errors(@uploads.photo, &1) == [])
+        )
+
+      has_errors = upload_errors(@uploads.photo) != [] %>
+
       <.form
         for={@form}
         id="product-form"
@@ -326,8 +320,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
 
         <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
           <.link patch={@patch} class="btn btn-ghost">{gettext("Cancel")}</.link>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
+          <button
+            type="submit"
+            class="btn btn-primary"
+            disabled={is_uploading || has_errors}
+            phx-disable-with={gettext("Saving...")}
+          >
+            {if is_uploading, do: gettext("Uploading..."), else: gettext("Save")}
           </button>
         </div>
       </.form>

@@ -109,14 +109,14 @@ defmodule Delivest.Net.Products do
     end
   end
 
-  def create_product_media_file(staff, meta, file_info) do
+  def create_product_media_file(staff, meta, entry) do
     if Identity.can?(staff, "products.create") or Identity.can?(staff, "products.update") do
       file_attrs = %{
         "bucket" => meta.bucket,
         "key" => meta.key,
-        "original_name" => file_info.name,
-        "mime_type" => file_info.type,
-        "size" => file_info.size,
+        "original_name" => entry.client_name,
+        "mime_type" => entry.client_type,
+        "size" => entry.client_size,
         "context" => :product,
         "owner_id" => staff.id
       }
