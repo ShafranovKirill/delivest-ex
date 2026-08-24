@@ -79,6 +79,54 @@ defmodule Delivest.Net.Products do
     end
   end
 
+  def prepare_product_media_upload(staff, filename) do
+    if Identity.can?(staff, "products.create") or Identity.can?(staff, "products.update") do
+      # Берем бакет из конфигурации или дефолтный "delivest" (или какой у вас принят)
+      bucket = Application.get_env(:delivest, Delivest.Media)[:bucket] || "delivest"
+
+      unique_filename = "#{Ecto.UUID.generate()}-#{filename}"
+      key = "products/#{unique_filename}"
+
+      case Delivest.Media.generate_upload_url(bucket, key) do
+        {:ok, presigned_url} ->
+          local_url = "/media/#{key}"
+
+          meta = %{
+            uploader: "S3",
+            url: presigned_url,
+            url_for_saved_entry: local_url,
+            bucket: bucket,
+            key: key
+          }
+
+          {:ok, meta}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  def create_product_media_file(staff, meta, file_info) do
+    if Identity.can?(staff, "products.create") or Identity.can?(staff, "products.update") do
+      file_attrs = %{
+        "bucket" => meta.bucket,
+        "key" => meta.key,
+        "original_name" => file_info.name,
+        "mime_type" => file_info.type,
+        "size" => file_info.size,
+        "context" => :product,
+        "owner_id" => staff.id
+      }
+
+      Delivest.Media.create_file(file_attrs)
+    else
+      {:error, :forbidden}
+    end
+  end
+
   def update_product(staff, %Product{} = updateble_product, attrs) do
     if Identity.can?(staff, "products.update") do
       updateble_product

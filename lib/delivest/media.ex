@@ -48,6 +48,13 @@ defmodule Delivest.Media do
     end
   end
 
+  @spec get_file(binary() | nil) :: File.t() | nil
+  def get_file(nil), do: nil
+
+  def get_file(id) do
+    Repo.get(File, id)
+  end
+
   def delete_file_by_key(key) do
     case Repo.get_by(File, key: key) do
       %File{} = file -> delete_file(file)

@@ -338,7 +338,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
         <:col :let={{_id, prod}} label={gettext("Media")}>
           <%= if prod.media_id do %>
-            <span class="text-xs text-info font-medium">{gettext("Has photo")}</span>
+            <span class="text-xs badge badge-outline whitespace-nowrap">{gettext("Has photo")}</span>
           <% else %>
             <span class="text-xs opacity-40">—</span>
           <% end %>
