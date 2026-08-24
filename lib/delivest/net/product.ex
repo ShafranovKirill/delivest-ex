@@ -1,6 +1,7 @@
 defmodule Delivest.Net.Product do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Delivest.Net.Category
 
   @type t :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -20,14 +21,26 @@ defmodule Delivest.Net.Product do
     field :name, :string
     field :price, :integer
     field :description, :string
-    field :photos, {:array, :map}, default: []
+    field :is_active, :boolean
+    field :media_id, :binary_id
+    field :external_id, :string
+
+    belongs_to :category, Category
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(product, attrs) do
     product
-    |> cast(attrs, [:name, :price, :description, :photos])
+    |> cast(attrs, [
+      :name,
+      :price,
+      :description,
+      :media_id,
+      :is_active,
+      :external_id,
+      :category_id
+    ])
     |> validate_required([:name, :price])
     |> validate_number(:price, greater_than_or_equal_to: 0)
   end
