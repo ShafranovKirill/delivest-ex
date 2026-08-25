@@ -6,7 +6,7 @@ defmodule Delivest.Net.Products do
   alias Delivest.{Repo, Identity, Relations}
 
   def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
-    if Identity.can?(staff, "product.read") do
+    if Identity.can?(staff, "products.read") do
       product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
 
       Product

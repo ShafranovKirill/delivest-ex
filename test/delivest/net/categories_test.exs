@@ -5,6 +5,7 @@ defmodule Delivest.Net.CategoriesTest do
 
   alias Delivest.Net.Categories
   alias Delivest.Net.Category
+  alias Delivest.Repo
   alias Delivest.Relations
 
   defp staff_with_permissions(permissions) do
@@ -19,9 +20,9 @@ defmodule Delivest.Net.CategoriesTest do
       cat2 = insert(:category, name: "Second", order: 1.0, is_active: true)
       inactive_cat = insert(:category, name: "Inactive", order: 0.5, is_active: false)
 
-      Relations.create_relation("Branch", branch.id, "Category", cat1.id)
-      Relations.create_relation("Branch", branch.id, "Category", cat2.id)
-      Relations.create_relation("Branch", branch.id, "Category", inactive_cat.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", cat1.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", cat2.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", inactive_cat.id)
 
       result = Categories.list_category_for_branch(branch.id)
 
@@ -37,8 +38,8 @@ defmodule Delivest.Net.CategoriesTest do
       cat1 = insert(:category, order: 1.0, is_active: true)
       cat2 = insert(:category, order: 2.0, is_active: false)
 
-      Relations.create_relation("Branch", branch.id, "Category", cat1.id)
-      Relations.create_relation("Branch", branch.id, "Category", cat2.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", cat1.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", cat2.id)
 
       result = Categories.list_staff_categories_for_branch(staff, branch.id)
       assert is_list(result)
@@ -72,7 +73,7 @@ defmodule Delivest.Net.CategoriesTest do
       branch = insert(:branch)
 
       existing_cat = insert(:category, order: 1.0)
-      Relations.create_relation("Branch", branch.id, "Category", existing_cat.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", existing_cat.id)
 
       attrs = %{"name" => "New Category", "is_active" => true}
 
@@ -106,7 +107,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category, name: "Old Name")
       branch = insert(:branch)
-      Relations.create_relation("Branch", branch.id, "Category", category.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} =
                Categories.update_category(staff, category, %{"name" => "Updated Name"})
@@ -128,7 +129,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.delete"])
       category = insert(:category)
       branch = insert(:branch)
-      Relations.create_relation("Branch", branch.id, "Category", category.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, deleted} = Categories.delete_category(staff, category)
       assert {:error, :not_found} = Categories.get_category(deleted.id)
@@ -147,7 +148,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category, order: 1.0)
       branch = insert(:branch)
-      Relations.create_relation("Branch", branch.id, "Category", category.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} = Categories.update_category_order(staff, category, 1.0, 3.0)
       assert updated.order == 2.0
@@ -157,7 +158,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category)
       branch = insert(:branch)
-      Relations.create_relation("Branch", branch.id, "Category", category.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} = Categories.update_category_order(staff, category, nil, 4.0)
       assert updated.order == 2.0
@@ -167,7 +168,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category)
       branch = insert(:branch)
-      Relations.create_relation("Branch", branch.id, "Category", category.id)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} = Categories.update_category_order(staff, category, 5.0, nil)
       assert updated.order == 6.0

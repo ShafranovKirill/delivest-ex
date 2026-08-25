@@ -29,7 +29,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
   end
 
   defp presign_upload(entry, socket) do
-    gorup_name = socket.assigns[:media_group_name]
+    gorup_name = socket.assigns[:media_group_name] || "general"
     context = socket.assigns[:context] || "general"
 
     case Media.prepare_upload(gorup_name, context, entry.client_name) do

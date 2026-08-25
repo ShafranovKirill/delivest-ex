@@ -2,7 +2,7 @@ defmodule Delivest.Factory do
   use ExMachina.Ecto, repo: Delivest.Repo
 
   alias Delivest.Identity.{Staff, Role, StaffBranch, Branch}
-  alias Delivest.Net.{Category}
+  alias Delivest.Net.{Category, Product}
 
   def role_factory do
     %Role{
@@ -30,6 +30,14 @@ defmodule Delivest.Factory do
     %Category{
       name: sequence(:name, &"Category #{&1}"),
       order: 1.0,
+      is_active: true
+    }
+  end
+
+  def product_factory do
+    %Product{
+      name: sequence(:product_name, &"Product #{&1}"),
+      price: 100,
       is_active: true
     }
   end
