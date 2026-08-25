@@ -19,20 +19,6 @@ defmodule Delivest.Net.Products do
     end
   end
 
-  # def list_staff_products_for_category(staff, category_id, params \\ %{}, opts \\ []) do
-  #   if Identity.can?(staff, "product.read") do
-  #     product_ids = Relations.list_target_ids("Category", category_id, "Product")
-
-  #     Product
-  #     |> where([p], p.id in ^product_ids)
-  #     |> where([p], is_nil(p.deleted_at))
-  #     |> maybe_preload_query(opts)
-  #     |> Flop.validate_and_run(params, for: Product)
-  #   else
-  #     {:error, :forbidden}
-  #   end
-  # end
-
   def create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
       Multi.new()
@@ -66,7 +52,6 @@ defmodule Delivest.Net.Products do
 
   def prepare_product_media_upload(staff, filename) do
     if Identity.can?(staff, "products.create") or Identity.can?(staff, "products.update") do
-      # Берем бакет из конфигурации или дефолтный "delivest" (или какой у вас принят)
       bucket = Application.get_env(:delivest, Delivest.Media)[:bucket] || "delivest"
 
       unique_filename = "#{Ecto.UUID.generate()}-#{filename}"

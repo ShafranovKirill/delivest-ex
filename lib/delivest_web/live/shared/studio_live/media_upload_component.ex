@@ -30,7 +30,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
 
   # Используем общую функцию подготовки из Media, а не из контекста продуктов
   defp presign_upload(entry, socket) do
-    user_id = socket.assigns[:current_user_id] || socket.assigns[:current_staff].id
+    user_id = socket.assigns[:current_staff].id
     context = socket.assigns[:context] || "general"
 
     case Media.prepare_upload(user_id, context, entry.client_name) do
@@ -53,7 +53,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
   end
 
   def handle_event("save", _params, socket) do
-    user_id = socket.assigns[:current_user_id] || socket.assigns[:current_staff].id
+    user_id = socket.assigns[:current_staff].id
     file_context = socket.assigns[:context] || "general"
 
     results =
