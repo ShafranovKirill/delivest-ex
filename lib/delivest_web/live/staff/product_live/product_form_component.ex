@@ -149,17 +149,30 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
         {:noreply, socket}
 
       {:error, changeset_or_reason} ->
-        changeset =
+        {changeset, error_message} =
           case changeset_or_reason do
             %Ecto.Changeset{} = cs ->
-              cs
+              {cs, gettext("Please check the fields below.")}
 
-            _ ->
-              Product.changeset(socket.assigns.product || %Product{}, params)
-              |> Map.put(:action, :insert)
+            :forbidden ->
+              cs =
+                Product.changeset(socket.assigns.product || %Product{}, params)
+                |> Map.put(:action, :insert)
+
+              {cs, gettext("You don't have permission to perform this action.")}
+
+            other_error ->
+              cs =
+                Product.changeset(socket.assigns.product || %Product{}, params)
+                |> Map.put(:action, :insert)
+
+              {cs, "#{gettext("Failed to save product:")} #{inspect(other_error)}"}
           end
 
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply,
+         socket
+         |> put_flash(:error, error_message)
+         |> assign(socket.assigns, form: to_form(changeset))}
     end
   end
 

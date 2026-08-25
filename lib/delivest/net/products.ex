@@ -35,23 +35,8 @@ defmodule Delivest.Net.Products do
 
   def create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
-      category_id = attrs["category_id"] || attrs[:category_id]
-
       Multi.new()
       |> Multi.insert(:product, Product.changeset(%Product{}, attrs))
-      |> Multi.run(:relation_category, fn repo, %{product: product} ->
-        case Relations.create_relation(
-               repo,
-               "Category",
-               category_id,
-               "Product",
-               product.id,
-               %{}
-             ) do
-          {:ok, relation} -> {:ok, relation}
-          {:error, reason} -> {:error, reason}
-        end
-      end)
       |> Multi.run(:relation_branch, fn repo, %{product: product} ->
         case Relations.create_relation(
                repo,
