@@ -25,16 +25,12 @@ defmodule Mix.Tasks.Delivest.Storage.Setup do
     Logger.info("[Storage.Setup] Ensuring bucket '#{bucket}' exists...")
 
     case ExAws.S3.put_bucket(bucket, "") |> ExAws.request() do
-      {:ok, _} ->
+      {:ok, _response} ->
         Logger.info("[Storage.Setup] Bucket '#{bucket}' successfully created.")
         apply_policy(bucket)
 
-      {:ok, status, _} when status in 200..299 ->
-        Logger.info("[Storage.Setup] Bucket '#{bucket}' successfully created.")
-        apply_policy(bucket)
-
-      other ->
-        error_str = inspect(other)
+      {:error, error} ->
+        error_str = inspect(error)
 
         if String.contains?(error_str, "BucketAlreadyOwnedByYou") or
              String.contains?(error_str, "BucketAlreadyExists") or
@@ -66,13 +62,10 @@ defmodule Mix.Tasks.Delivest.Storage.Setup do
     policy_json = Jason.encode!(policy)
 
     case ExAws.S3.put_bucket_policy(bucket, policy_json) |> ExAws.request() do
-      {:ok, _} ->
+      {:ok, _response} ->
         Logger.info("[Storage.Setup] Policy successfully applied.")
 
-      {:ok, status, _} when status in 200..299 ->
-        Logger.info("[Storage.Setup] Policy successfully applied.")
-
-      error ->
+      {:error, error} ->
         Logger.error("[Storage.Setup] Failed to apply policy: #{inspect(error)}")
     end
   end
