@@ -30,6 +30,30 @@ defmodule Delivest.Media do
     %{config | host: host, port: port}
   end
 
+  def prepare_upload(user_id, context, filename) do
+    bucket = Application.get_env(:delivest, Delivest.Media)[:bucket] || "delivest-uploads"
+    ext = Path.extname(filename)
+    unique_name = "#{Ecto.UUID.generate()}_#{System.system_time(:millisecond)}#{ext}"
+    key = "#{context}/#{user_id}/#{unique_name}"
+
+    case generate_upload_url(bucket, key) do
+      {:ok, presigned_url} ->
+        {:ok, download_url} = generate_download_url(bucket, key)
+
+        {:ok,
+         %{
+           bucket: bucket,
+           key: key,
+           url_for_saved_entry: download_url,
+           url: presigned_url,
+           presigned_url: presigned_url
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec create_file(map()) :: {:ok, File.t()} | {:error, Ecto.Changeset.t()}
   def create_file(attrs) do
     %File{}

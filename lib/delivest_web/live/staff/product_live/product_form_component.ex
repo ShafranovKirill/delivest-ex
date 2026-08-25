@@ -10,46 +10,53 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   def update(assigns, socket) do
     socket = assign(socket, assigns)
 
-    current_product_id = socket.assigns[:product] && socket.assigns[:product].id
-    new_product_id = assigns.product && assigns.product.id
+    if uploaded_media = assigns[:uploaded_media] do
+      changeset =
+        socket.assigns.form.source
+        |> Ecto.Changeset.put_change(:media_id, uploaded_media.id)
 
-    if is_nil(socket.assigns[:form]) || current_product_id != new_product_id ||
-         socket.assigns[:action] != assigns.action do
-      product = assigns.product
-      current_staff = assigns.current_staff
-      branch_id = assigns.branch_id
-
-      form_data = if product && product.id, do: product, else: %Product{}
-      changeset = Product.changeset(form_data, %{})
-
-      category_options =
-        case Net.Categories.list_staff_categories_for_branch(current_staff, branch_id) do
-          categories when is_list(categories) ->
-            no_category_option = {gettext("Without category"), ""}
-            mapped_categories = Enum.map(categories, &{&1.name, &1.id})
-            [no_category_option | mapped_categories]
-
-          _ ->
-            [{gettext("Without category"), ""}]
-        end
-
-      current_media = if product, do: Media.get_file(product.media_id), else: nil
-
-      socket =
-        socket
-        |> assign(:form, to_form(changeset))
-        |> assign(:category_options, category_options)
-        |> assign(:current_media, current_media)
-        |> allow_upload(:photo,
-          accept: ~w(.jpg .jpeg .png .webp),
-          max_entries: 1,
-          max_file_size: 5 * 1024 * 1024,
-          external: &ext_uploader/2
-        )
-
-      {:ok, socket}
+      {:ok,
+       socket
+       |> assign(:form, to_form(changeset))
+       |> assign(:current_media, uploaded_media)
+       |> assign(:show_upload_modal, false)}
     else
-      {:ok, socket}
+      current_product_id = socket.assigns[:product] && socket.assigns[:product].id
+      new_product_id = assigns.product && assigns.product.id
+
+      if is_nil(socket.assigns[:form]) || current_product_id != new_product_id ||
+           socket.assigns[:action] != assigns.action do
+        product = assigns.product
+        current_staff = assigns.current_staff
+        branch_id = assigns.branch_id
+
+        form_data = if product && product.id, do: product, else: %Product{}
+        changeset = Product.changeset(form_data, %{})
+
+        category_options =
+          case Net.Categories.list_staff_categories_for_branch(current_staff, branch_id) do
+            categories when is_list(categories) ->
+              no_category_option = {gettext("Without category"), ""}
+              mapped_categories = Enum.map(categories, &{&1.name, &1.id})
+              [no_category_option | mapped_categories]
+
+            _ ->
+              [{gettext("Without category"), ""}]
+          end
+
+        current_media = if product, do: Media.get_file(product.media_id), else: nil
+
+        socket =
+          socket
+          |> assign(:form, to_form(changeset))
+          |> assign(:category_options, category_options)
+          |> assign(:current_media, current_media)
+          |> assign(:show_upload_modal, false)
+
+        {:ok, socket}
+      else
+        {:ok, socket}
+      end
     end
   end
 
@@ -70,68 +77,30 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
-  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :photo, ref)}
+  def handle_event("open_upload_modal", _, socket) do
+    # Просим родительский LiveView открыть модальное окно загрузки
+    notify_parent({:open_upload_modal})
+    {:noreply, socket}
+  end
+
+  def handle_event("close_modal", _, socket) do
+    {:noreply, assign(socket, :show_upload_modal, false)}
   end
 
   @impl true
   def handle_event("save", %{"product" => params}, socket) do
-    case consume_uploaded_photo(socket) do
-      {:ok, media_id} ->
-        params =
-          params
-          |> Map.put_new("category_id", nil)
-          |> then(fn p -> if media_id, do: Map.put(p, "media_id", media_id), else: p end)
-          |> normalize_params()
+    params =
+      params
+      |> Map.put_new("category_id", nil)
+      |> normalize_params()
 
-        save_product_with_params(socket, socket.assigns.action, params)
-
-      {:error, reason} ->
-        socket = put_flash(socket, :error, "#{gettext("File upload error:")} #{inspect(reason)}")
-        {:noreply, socket}
-    end
-  end
-
-  defp ext_uploader(entry, socket) do
-    case Net.Products.prepare_product_media_upload(
-           socket.assigns.current_staff,
-           entry.client_name
-         ) do
-      {:ok, meta} ->
-        {:ok, meta, socket}
-
-      {:error, _} ->
-        {:error, %{reason: gettext("Could not generate upload URL")}, socket}
-    end
+    save_product_with_params(socket, socket.assigns.action, params)
   end
 
   defp normalize_params(params) do
     case params["category_id"] do
       "" -> Map.put(params, "category_id", nil)
       _ -> params
-    end
-  end
-
-  defp consume_uploaded_photo(socket) do
-    try do
-      results =
-        consume_uploaded_entries(socket, :photo, fn meta, entry ->
-          case Net.Products.create_product_media_file(socket.assigns.current_staff, meta, entry) do
-            {:ok, media_file} ->
-              {:ok, media_file.id}
-
-            {:error, err} ->
-              {:error, err}
-          end
-        end)
-
-      case results do
-        [media_id | _] when not is_nil(media_id) -> {:ok, media_id}
-        [] -> {:ok, nil}
-        [{:error, reason} | _] -> {:error, reason}
-      end
-    rescue
-      exception -> {:error, exception}
     end
   end
 
@@ -212,14 +181,6 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   def render(assigns) do
     ~H"""
     <div class="h-full flex flex-col">
-      <% is_uploading =
-        Enum.any?(
-          @uploads.photo.entries,
-          &(&1.progress > 0 and &1.progress < 100 and upload_errors(@uploads.photo, &1) == [])
-        )
-
-      has_errors = upload_errors(@uploads.photo) != [] %>
-
       <.form
         for={@form}
         id="product-form"
@@ -233,6 +194,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             {gettext("Product Information")}
           </div>
 
+          <input type="hidden" name={@form[:media_id].name} value={@form[:media_id].value} />
+
           <div class="form-control w-full">
             <label class="label">
               <span class="label-text font-bold">{gettext("Product Image")}</span>
@@ -241,35 +204,29 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             <div class="flex items-center gap-4">
               <div class="avatar">
                 <div class="w-24 h-24 rounded-box bg-base-200 border border-base-300 flex items-center justify-center overflow-hidden">
-                  <%= if length(@uploads.photo.entries) > 0 do %>
-                    <% [entry | _] = @uploads.photo.entries %>
-                    <.live_img_preview entry={entry} class="w-full h-full object-cover" />
+                  <%= if @current_media && !is_nil(@current_media.key) do %>
+                    <% {:ok, download_url} =
+                      Media.generate_download_url(@current_media.bucket, @current_media.key) %>
+                    <img src={download_url} class="w-full h-full object-cover" />
                   <% else %>
-                    <%= if @current_media && !is_nil(@current_media.key) do %>
-                      <% {:ok, download_url} =
-                        Media.generate_download_url(@current_media.bucket, @current_media.key) %>
-                      <img src={download_url} class="w-full h-full object-cover" />
-                    <% else %>
-                      <span class="text-xs text-base-content/40">{gettext("No image")}</span>
-                    <% end %>
+                    <span class="text-xs text-base-content/40">{gettext("No image")}</span>
                   <% end %>
                 </div>
               </div>
 
               <div class="flex-1">
-                <.live_file_input
-                  upload={@uploads.photo}
-                  class="file-input file-input-bordered file-input-sm w-full"
-                />
-                <label class="label">
-                  <span class="label-text-alt text-base-content/60">
-                    {gettext("PNG, JPG, WEBP up to 5MB")}
-                  </span>
-                </label>
-
-                <%= for err <- upload_errors(@uploads.photo) do %>
-                  <p class="text-error text-xs mt-1">{error_to_string(err)}</p>
-                <% end %>
+                <button
+                  type="button"
+                  phx-click="open_upload_modal"
+                  phx-target={@myself}
+                  class="btn btn-outline btn-sm"
+                >
+                  <.icon name="hero-photo" class="size-4 mr-1" />
+                  {if @current_media, do: gettext("Change Image"), else: gettext("Upload Image")}
+                </button>
+                <p class="text-xs text-base-content/60 mt-1">
+                  {gettext("PNG, JPG, WEBP up to 5MB")}
+                </p>
               </div>
             </div>
           </div>
@@ -323,19 +280,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           <button
             type="submit"
             class="btn btn-primary"
-            disabled={is_uploading || has_errors}
             phx-disable-with={gettext("Saving...")}
           >
-            {if is_uploading, do: gettext("Uploading..."), else: gettext("Save")}
+            {gettext("Save")}
           </button>
         </div>
       </.form>
     </div>
     """
   end
-
-  defp error_to_string(:too_large), do: gettext("File is too large")
-  defp error_to_string(:too_many_files), do: gettext("Too many files")
-  defp error_to_string(:not_accepted), do: gettext("Unacceptable file format")
-  defp error_to_string(_), do: gettext("Upload error")
 end

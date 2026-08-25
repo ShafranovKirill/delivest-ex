@@ -183,6 +183,55 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
      |> push_patch(to: ~p"/staff/products?#{build_query_params(socket.assigns, %{})}")}
   end
 
+  @impl true
+  def handle_info({ProductFormComponent, {:open_upload_modal}}, socket) do
+    {:noreply, assign(socket, show_upload_modal: true)}
+  end
+
+  @impl true
+  def handle_info(
+        {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, results}},
+        socket
+      ) do
+    handle_media_results(results, socket)
+  end
+
+  @impl true
+  def handle_info(
+        {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, _context_or_id, _type, results}},
+        socket
+      ) do
+    handle_media_results(results, socket)
+  end
+
+  defp handle_media_results(results, socket) do
+    {successes, _errors} =
+      Enum.split_with(results, fn
+        {:ok, _} -> true
+        _ -> false
+      end)
+
+    media_file =
+      case List.first(successes) do
+        {:ok, file} -> file
+        _ -> nil
+      end
+
+    if media_file do
+      form_component_id = (socket.assigns.product && socket.assigns.product.id) || :new
+
+      send_update(ProductFormComponent,
+        id: form_component_id,
+        uploaded_media: media_file
+      )
+    end
+
+    {:noreply,
+     socket
+     |> put_flash(:info, gettext("Image uploaded successfully"))
+     |> assign(:show_upload_modal, false)}
+  end
+
   defp maybe_add_filter(filters, _field, _op, val) when val in [nil, ""], do: filters
 
   defp maybe_add_filter(filters, field, op, val) do
@@ -398,6 +447,16 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           patch={~p"/staff/products?#{build_query_params(assigns, %{})}"}
         />
       </.slide_over>
+
+      <%= if assigns[:show_upload_modal] do %>
+        <.live_component
+          module={DelivestWeb.StudioLive.MediaUploadComponent}
+          id="product-media-upload"
+          current_staff={@current_staff}
+          upload_type="image"
+          context="product"
+        />
+      <% end %>
 
       <.modal
         id="delete-product-modal"
