@@ -165,6 +165,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
+  def handle_event("cancel_media_upload", _params, socket) do
+    {:noreply, assign(socket, show_upload_modal: false)}
+  end
+
+  @impl true
   def handle_info({ProductFormComponent, {:saved, product}}, socket) do
     product_with_assoc = Repo.preload(product, [:category])
     action = socket.assigns.live_action
@@ -453,6 +458,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           module={DelivestWeb.StudioLive.MediaUploadComponent}
           id="product-media-upload"
           current_staff={@current_staff}
+          media_group_name={@current_branch.id}
           upload_type="image"
           context="product"
         />

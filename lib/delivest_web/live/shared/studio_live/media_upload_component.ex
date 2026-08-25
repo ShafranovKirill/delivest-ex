@@ -28,14 +28,12 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
      )}
   end
 
-  # Используем общую функцию подготовки из Media, а не из контекста продуктов
   defp presign_upload(entry, socket) do
-    user_id = socket.assigns[:current_staff].id
+    gorup_name = socket.assigns[:media_group_name]
     context = socket.assigns[:context] || "general"
 
-    case Media.prepare_upload(user_id, context, entry.client_name) do
+    case Media.prepare_upload(gorup_name, context, entry.client_name) do
       {:ok, meta} ->
-        # Добавляем ключ :uploader, чтобы LiveView понял, как загружать файл напрямую
         meta_with_uploader = Map.put(meta, :uploader, "S3")
 
         {:ok, meta_with_uploader, socket}
