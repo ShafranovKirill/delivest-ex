@@ -58,8 +58,8 @@ defmodule Delivest.Net.Categories do
 
       Multi.new()
       |> Multi.insert(:category, Category.changeset(%Category{}, attrs_with_order))
-      |> Multi.run(:relation, fn _repo, %{category: category} ->
-        case Relations.create_relation("Branch", branch_id, "Category", category.id) do
+      |> Multi.run(:relation, fn repo, %{category: category} ->
+        case Relations.create_relation(repo, "Branch", branch_id, "Category", category.id, %{}) do
           {:ok, relation} -> {:ok, relation}
           {:error, reason} -> {:error, reason}
         end

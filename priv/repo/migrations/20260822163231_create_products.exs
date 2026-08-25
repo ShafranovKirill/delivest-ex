@@ -10,6 +10,11 @@ defmodule Delivest.Repo.Migrations.CreateProducts do
       add :is_active, :boolean, null: false, default: true
       add :external_id, :string
 
+      add :category_id, references(:categories, type: :binary_id, on_delete: :nilify_all)
+      add :media_id, :binary_id
+
+      add :deleted_at, :utc_datetime
+
       timestamps(type: :utc_datetime)
     end
   end

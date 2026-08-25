@@ -3,7 +3,7 @@ defmodule Delivest.Relations.EntityRelations do
   alias Delivest.Repo
   alias Delivest.Relations.EntityRelation
 
-  def create_relation(from_type, from_id, to_type, to_id, payload \\ %{}) do
+  def create_relation(repo, from_type, from_id, to_type, to_id, payload \\ %{}) do
     %EntityRelation{}
     |> EntityRelation.changeset(%{
       from_entity_type: from_type,
@@ -12,7 +12,7 @@ defmodule Delivest.Relations.EntityRelations do
       to_id: to_id,
       payload: payload
     })
-    |> Repo.insert(
+    |> repo.insert(
       on_conflict: {:replace_all_except, [:id, :inserted_at]},
       conflict_target: [:from_entity_type, :from_id, :to_entity_type, :to_id]
     )
@@ -35,6 +35,7 @@ defmodule Delivest.Relations.EntityRelations do
     |> Repo.all()
   end
 
+  @spec list_source_ids(any(), any(), any()) :: any()
   def list_source_ids(target_type, target_id, source_type) do
     from(er in EntityRelation,
       where: er.to_entity_type == ^target_type and er.to_id == ^target_id,

@@ -16,9 +16,26 @@ services:
     networks:
       - delivest-network
 
+  minio:
+    image: minio/minio
+    container_name: delivest-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - delivest-network
+
 networks:
   delivest-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  minio_data:

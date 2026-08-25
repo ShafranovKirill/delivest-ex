@@ -1,7 +1,7 @@
 defmodule Delivest.Relations do
   alias Delivest.Relations.EntityRelations
 
-  defdelegate create_relation(from_type, from_id, to_type, to_id, payload \\ %{}),
+  defdelegate create_relation(repo, from_type, from_id, to_type, to_id, payload \\ %{}),
     to: EntityRelations
 
   defdelegate delete_relation(from_type, from_id, to_type, to_id), to: EntityRelations
