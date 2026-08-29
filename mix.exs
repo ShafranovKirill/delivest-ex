@@ -75,7 +75,8 @@ defmodule Delivest.MixProject do
       {:ex_aws_s3, "~> 2.5"},
       {:hackney, "~> 4.0"},
       {:sweet_xml, "~> 0.7"},
-      {:cors_plug, "~> 3.0"}
+      {:cors_plug, "~> 3.0"},
+      {:open_api_spex, "~> 3.18"}
     ]
   end
 

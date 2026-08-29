@@ -18,6 +18,7 @@ defmodule DelivestWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: DelivestWeb.OpenApi
   end
 
   scope "/", DelivestWeb do
@@ -27,12 +28,24 @@ defmodule DelivestWeb.Router do
     get "/", PageController, :home
   end
 
+  scope "/" do
+    pipe_through :browser
+
+    get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
+  end
+
   scope "/", DelivestWeb.Client do
     pipe_through :browser
 
     live_session :client_public,
       on_mount: [] do
     end
+  end
+
+  scope "/api" do
+    pipe_through :api
+
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, spec: DelivestWeb.OpenApi
   end
 
   scope "/staff", DelivestWeb.Staff do

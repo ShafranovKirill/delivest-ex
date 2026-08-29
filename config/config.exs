@@ -70,4 +70,8 @@ config :phoenix, :json_library, Jason
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
 
+config :open_api_spex,
+  default_spec: DelivestWeb.OpenApi,
+  json_encoder: Jason
+
 config :flop, repo: Delivest.Repo
