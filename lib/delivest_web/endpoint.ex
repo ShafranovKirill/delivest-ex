@@ -52,4 +52,5 @@ defmodule DelivestWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug DelivestWeb.Router
+  plug CORSPlug, origin: [System.get_env("CLIENT_ORIGIN")]
 end
