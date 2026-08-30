@@ -34,12 +34,10 @@ defmodule DelivestWeb.Router do
     get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end
 
-  scope "/", DelivestWeb.Client do
-    pipe_through :browser
+  scope "/api", DelivestWeb.Client do
+    pipe_through :api
 
-    live_session :client_public,
-      on_mount: [] do
-    end
+    get "/branches/:branch_id/menu", Menu.MenuController, :index
   end
 
   scope "/api" do

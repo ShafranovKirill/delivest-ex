@@ -17,6 +17,7 @@ defmodule Delivest.Application do
       # Start to serve requests, typically the last entry
       Supervisor.child_spec({Cachex, name: :staff_cache}, id: :staff_cache),
       Supervisor.child_spec({Cachex, name: :branch_cache}, id: :branch_cache),
+      Supervisor.child_spec({Cachex, name: :menu_cache}, id: :menu_cache),
       DelivestWeb.Endpoint
     ]
 

@@ -20,6 +20,7 @@ defmodule Delivest.Identity do
   defdelegate update_branch(staff, branch, branch_attrs, info_attrs), to: Branches
   defdelegate create_branch(staff, branch_attrs, info_attrs), to: Branches
   defdelegate soft_delete_branch(staff, branch), to: Branches
+  defdelegate get_menu_for_branch(branch_id), to: Branches
 
   defdelegate phone_regex(), to: BranchInfo
 
