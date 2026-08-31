@@ -15,9 +15,10 @@ defmodule Delivest.Media do
   end
 
   def generate_public_url(bucket, key) do
-    config = get_public_config()
+    public_config = get_public_config()
+    url = "#{public_config.scheme}#{public_config.host}:#{public_config.port}/#{bucket}/#{key}"
 
-    "#{config.scheme}#{config.host}:#{config.port}/#{bucket}/#{key}"
+    {:ok, url}
   end
 
   defp get_public_config do
@@ -42,23 +43,21 @@ defmodule Delivest.Media do
     unique_name = "#{Ecto.UUID.generate()}_#{System.system_time(:millisecond)}#{ext}"
     key = "#{context}/#{group_name}/#{unique_name}"
 
-    case generate_upload_url(bucket, key) do
-      {:ok, presigned_url} ->
-        {:ok, download_url} = generate_download_url(bucket, key)
-
-        {:ok,
-         %{
-           bucket: bucket,
-           key: key,
-           url_for_saved_entry: download_url,
-           url: presigned_url,
-           presigned_url: presigned_url
-         }}
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, presigned_url} <- generate_upload_url(bucket, key),
+         {:ok, download_url} <- generate_url_by_key(bucket, key) do
+      {:ok,
+       %{
+         bucket: bucket,
+         key: key,
+         url_for_saved_entry: download_url,
+         url: presigned_url,
+         presigned_url: presigned_url
+       }}
     end
   end
+
+  defp generate_url_by_key(bucket, "public/" <> _ = key), do: generate_public_url(bucket, key)
+  defp generate_url_by_key(bucket, key), do: generate_download_url(bucket, key)
 
   @spec create_file(map()) :: {:ok, File.t()} | {:error, Ecto.Changeset.t()}
   def create_file(attrs) do
@@ -98,8 +97,9 @@ defmodule Delivest.Media do
   def get_url(media_id) when is_binary(media_id) do
     case Repo.get(File, media_id) do
       %File{key: key, bucket: bucket} ->
-        case generate_public_url(bucket, key) do
-          url -> url
+        case generate_url_by_key(bucket, key) do
+          {:ok, url} -> url
+          {:error, _reason} -> nil
         end
 
       nil ->
