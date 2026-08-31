@@ -457,10 +457,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         <.live_component
           module={DelivestWeb.StudioLive.MediaUploadComponent}
           id="product-media-upload"
-          current_staff={@current_staff}
+          user_id={@current_staff.id}
           media_group_name={@current_branch.id}
           upload_type="image"
-          context="product"
+          context="public/product"
         />
       <% end %>
 

@@ -51,7 +51,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
   end
 
   def handle_event("save", _params, socket) do
-    user_id = socket.assigns[:current_staff].id
+    user_id = socket.assigns[:user_id]
     file_context = socket.assigns[:context] || "general"
 
     results =

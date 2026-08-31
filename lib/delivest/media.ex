@@ -14,6 +14,12 @@ defmodule Delivest.Media do
     ExAws.S3.presigned_url(public_config, :get, bucket, key, expires_in: 900)
   end
 
+  def generate_public_url(bucket, key) do
+    config = get_public_config()
+
+    "#{config.scheme}#{config.host}:#{config.port}/#{bucket}/#{key}"
+  end
+
   defp get_public_config do
     config = ExAws.Config.new(:s3)
     media_conf = Application.get_env(:delivest, Delivest.Media, [])
@@ -91,10 +97,9 @@ defmodule Delivest.Media do
 
   def get_url(media_id) when is_binary(media_id) do
     case Repo.get(File, media_id) do
-      %File{bucket: bucket, key: key} ->
-        case generate_download_url(bucket, key) do
-          {:ok, url} -> url
-          _ -> nil
+      %File{key: key, bucket: bucket} ->
+        case generate_public_url(bucket, key) do
+          url -> url
         end
 
       nil ->

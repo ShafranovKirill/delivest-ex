@@ -14,7 +14,7 @@ defmodule Delivest.Media.File do
     field :mime_type, :string
     field :size, :integer
 
-    field :context, Ecto.Enum, values: [:product]
+    field :context, Ecto.Enum, values: [:"public/product"]
 
     field :owner_id, :binary_id
 
