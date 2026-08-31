@@ -78,7 +78,6 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   def handle_event("open_upload_modal", _, socket) do
-    # Просим родительский LiveView открыть модальное окно загрузки
     notify_parent({:open_upload_modal})
     {:noreply, socket}
   end

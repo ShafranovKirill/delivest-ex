@@ -119,25 +119,4 @@ defmodule Delivest.Net.ProductsTest do
       assert {:error, :forbidden} = Products.soft_delete_product(staff, product)
     end
   end
-
-  describe "create_product_media_file/3" do
-    test "creates a media file when permitted" do
-      staff = staff_with_permissions(["products.create"])
-      meta = %{bucket: "test", key: "products/file.jpg"}
-      entry = %{client_name: "file.jpg", client_type: "image/jpeg", client_size: 42}
-
-      assert {:ok, file} = Products.create_product_media_file(staff, meta, entry)
-      assert file.original_name == "file.jpg"
-      assert file.context == :product
-      assert Media.get_file(file.id).id == file.id
-    end
-
-    test "returns forbidden without product permissions" do
-      staff = staff_with_permissions([])
-      meta = %{bucket: "test", key: "products/file.jpg"}
-      entry = %{client_name: "file.jpg", client_type: "image/jpeg", client_size: 42}
-
-      assert {:error, :forbidden} = Products.create_product_media_file(staff, meta, entry)
-    end
-  end
 end
