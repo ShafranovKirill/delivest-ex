@@ -135,8 +135,10 @@ defmodule Delivest.Identity.Branches do
       {:ok, nil} ->
         menu = Net.list_category_for_branch(branch_id, preload: [:products])
 
-        Cachex.put(:menu_cache, branch_id, menu, ttl: :timer.hours(1))
-        {:ok, menu}
+        processed_menu = process_menu(menu)
+
+        Cachex.put(:menu_cache, branch_id, processed_menu, ttl: :timer.hours(1))
+        {:ok, processed_menu}
 
       {:ok, menu} ->
         {:ok, menu}
@@ -144,6 +146,19 @@ defmodule Delivest.Identity.Branches do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp process_menu(menu) do
+    Enum.map(menu, fn category ->
+      processed_products =
+        category.products
+        |> Enum.filter(& &1.is_active)
+        |> Enum.map(fn product ->
+          %{product | media_id: Delivest.Media.get_url(product.media_id)}
+        end)
+
+      %{category | products: processed_products}
+    end)
   end
 
   defp ensure_preloaded_and_cached(branch, preloads, id, opts) do
