@@ -140,6 +140,9 @@ defmodule Delivest.Identity.Branches do
 
       {:ok, menu} ->
         {:ok, menu}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
