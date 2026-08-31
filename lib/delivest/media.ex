@@ -85,4 +85,20 @@ defmodule Delivest.Media do
       nil -> {:ok, nil}
     end
   end
+
+  @spec get_url(String.t() | nil) :: String.t() | nil
+  def get_url(nil), do: nil
+
+  def get_url(media_id) when is_binary(media_id) do
+    case Repo.get(File, media_id) do
+      %File{bucket: bucket, key: key} ->
+        case generate_download_url(bucket, key) do
+          {:ok, url} -> url
+          _ -> nil
+        end
+
+      nil ->
+        nil
+    end
+  end
 end

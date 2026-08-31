@@ -217,10 +217,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             <div class="flex items-center gap-4">
               <div class="avatar">
                 <div class="w-24 h-24 rounded-box bg-base-200 border border-base-300 flex items-center justify-center overflow-hidden">
-                  <%= if @current_media && !is_nil(@current_media.key) do %>
-                    <% {:ok, download_url} =
-                      Media.generate_download_url(@current_media.bucket, @current_media.key) %>
-                    <img src={download_url} class="w-full h-full object-cover" />
+                  <%= if url = Media.get_url(@current_media && @current_media.id) do %>
+                    <img src={url} class="w-full h-full object-cover" />
                   <% else %>
                     <span class="text-xs text-base-content/40">{gettext("No image")}</span>
                   <% end %>
