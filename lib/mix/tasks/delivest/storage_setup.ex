@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Delivest.Storage.Setup do
+defmodule Mix.Tasks.Delivest.StorageSetup do
   @moduledoc """
   Automatically creates S3/MinIO buckets and applies public policies.
   """

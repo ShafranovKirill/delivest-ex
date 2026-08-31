@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Delivest.Storage.Delete do
+defmodule Mix.Tasks.Delivest.StorageDelete do
   @moduledoc """
   Deletes S3/MinIO buckets and all their contents.
   """
