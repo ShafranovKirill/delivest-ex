@@ -262,27 +262,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             placeholder={gettext("Enter product description...")}
           />
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-2">
-            <.input field={@form[:external_id]} type="text" label={gettext("External ID")} />
+          <.input field={@form[:external_id]} type="text" label={gettext("External ID")} />
 
-            <div class="form-control">
-              <label class="label cursor-pointer justify-start gap-4 pt-6">
-                <input
-                  type="hidden"
-                  name={@form[:is_active].name}
-                  value="false"
-                />
-                <input
-                  type="checkbox"
-                  name={@form[:is_active].name}
-                  value="true"
-                  checked={@form[:is_active].value == true}
-                  class="checkbox checkbox-primary"
-                />
-                <span class="label-text font-bold">{gettext("Active")}</span>
-              </label>
-            </div>
-          </div>
+          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>
 
         <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
