@@ -21,28 +21,18 @@ defmodule DelivestWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: DelivestWeb.OpenApi
   end
 
-  scope "/", DelivestWeb do
-    pipe_through :browser
-
-    get "/locale/:locale", LocaleController, :set
-    get "/", PageController, :home
-  end
-
   scope "/" do
     pipe_through :browser
 
-    get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
-  end
-
-  scope "/api", DelivestWeb.Client do
-    pipe_through :api
-
-    get "/branches/:branch_id/menu", Menu.MenuController, :index
+    get "/", DelivestWeb.PageController, :home
+    get "/locale/:locale", DelivestWeb.LocaleController, :set
+    forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end
 
   scope "/api" do
     pipe_through :api
 
+    get "/branches/:branch_id/menu", DelivestWeb.Client.Menu.MenuController, :index
     get "/openapi", OpenApiSpex.Plug.RenderSpec, spec: DelivestWeb.OpenApi
   end
 
