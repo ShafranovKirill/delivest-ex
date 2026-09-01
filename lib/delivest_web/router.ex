@@ -25,7 +25,7 @@ defmodule DelivestWeb.Router do
     pipe_through :browser
 
     get "/", DelivestWeb.PageController, :home
-    get "/locale/:locale", DelivestWeb.LocaleController, :set
+    get "/locale/:locale", DelivestWeb.Staff.StaffLocaleController, :set
     forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end
 

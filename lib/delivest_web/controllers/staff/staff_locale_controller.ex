@@ -1,4 +1,4 @@
-defmodule DelivestWeb.LocaleController do
+defmodule DelivestWeb.Staff.StaffLocaleController do
   use DelivestWeb, :controller
 
   def set(conn, %{"locale" => locale}) do
