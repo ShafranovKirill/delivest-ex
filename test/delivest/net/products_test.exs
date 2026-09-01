@@ -3,7 +3,6 @@ defmodule Delivest.Net.ProductsTest do
 
   import Delivest.Factory
 
-  alias Delivest.Media
   alias Delivest.Net.Product
   alias Delivest.Net.Products
   alias Delivest.Relations
