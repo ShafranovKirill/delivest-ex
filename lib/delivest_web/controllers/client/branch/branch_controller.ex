@@ -1,0 +1,75 @@
+defmodule DelivestWeb.Client.Branch.BranchController do
+  use DelivestWeb, :controller
+  use OpenApiSpex.ControllerSpecs
+
+  alias Delivest.Identity
+  alias DelivestWeb.Schemas.BranchSchemas.{BranchListResponse, BranchResponse}
+  alias OpenApiSpex.Schema
+
+  operation(:index,
+    summary: "Получить список филиалов",
+    description: "Возвращает список всех активных филиалов.",
+    tags: ["Branches"],
+    responses: [
+      ok: {"Список филиалов", "application/json", BranchListResponse},
+      internal_server_error:
+        {"Ошибка получения списка", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             error: %Schema{type: :string, example: "Failed to fetch branches"}
+           }
+         }}
+    ]
+  )
+
+  def index(conn, _params) do
+    try do
+      branches = Identity.list_branches()
+      render(conn, :index, branches: branches)
+    rescue
+      _ ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Failed to fetch branches"})
+    end
+  end
+
+  operation(:show,
+    summary: "Получить филиал по ID",
+    description: "Возвращает детальную информацию о филиале с предзагруженными данными (info).",
+    tags: ["Branches"],
+    parameters: [
+      id: [
+        in: :path,
+        schema: %Schema{type: :string, format: :uuid},
+        required: true,
+        description: "UUID филиала",
+        example: "c4a3b8e0-1234-5678-9abc-def012345678"
+      ]
+    ],
+    responses: [
+      ok: {"Детальная информация о филиале", "application/json", BranchResponse},
+      not_found:
+        {"Филиал не найден", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             error: %Schema{type: :string, example: "Branch not found"}
+           }
+         }}
+    ]
+  )
+
+  def show(conn, %{"id" => id}) do
+    case Identity.get_branch(id, preload: [:info]) do
+      {:ok, branch} ->
+        render(conn, :show, branch: branch)
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Branch not found"})
+    end
+  end
+end

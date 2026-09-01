@@ -23,7 +23,7 @@ defmodule Delivest.Identity.Branches do
     |> Repo.all()
   end
 
-  def list_all_branch(opts \\ []) do
+  def list_branches(opts \\ []) do
     Branch
     |> where([b], is_nil(b.deleted_at) and b.is_active == true)
     |> maybe_preload_query(opts[:preload])
