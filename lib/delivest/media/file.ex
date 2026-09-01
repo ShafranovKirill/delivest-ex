@@ -13,8 +13,9 @@ defmodule Delivest.Media.File do
     field :original_name, :string
     field :mime_type, :string
     field :size, :integer
+    field :is_private, :boolean, default: false
 
-    field :context, Ecto.Enum, values: [:"public/product"]
+    field :context, Ecto.Enum, values: [:product]
 
     field :owner_id, :binary_id
 
@@ -25,7 +26,16 @@ defmodule Delivest.Media.File do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(file, attrs) do
     file
-    |> cast(attrs, [:bucket, :key, :original_name, :mime_type, :size, :context, :owner_id])
+    |> cast(attrs, [
+      :bucket,
+      :key,
+      :original_name,
+      :mime_type,
+      :size,
+      :context,
+      :owner_id,
+      :is_private
+    ])
     |> validate_required([:bucket, :key, :original_name, :mime_type, :size, :context, :owner_id])
     |> validate_number(:size, greater_than: 0)
     |> unique_constraint([:bucket, :key])

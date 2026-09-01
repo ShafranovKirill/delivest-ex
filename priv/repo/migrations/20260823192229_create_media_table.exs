@@ -11,6 +11,7 @@ defmodule Delivest.Repo.Migrations.CreateMediaTable do
       add :size, :bigint, null: false
       add :context, :string, null: false
       add :owner_id, :binary_id, null: false
+      add :is_private, :boolean, null: false
 
       timestamps(type: :utc_datetime)
     end

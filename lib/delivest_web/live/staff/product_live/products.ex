@@ -460,7 +460,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           user_id={@current_staff.id}
           media_group_name={@current_branch.id}
           upload_type="image"
-          context="public/product"
+          context="product"
+          is_private={false}
         />
       <% end %>
 
