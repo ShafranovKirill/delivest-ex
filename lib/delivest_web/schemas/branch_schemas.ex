@@ -10,7 +10,14 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
       properties: %{
         id: %Schema{type: :string, format: :uuid, example: "8f3b2c10-91ab-4cd2-81e2-123456789abc"},
         address: %Schema{type: :string, example: "ул. Пушкина, д. 10", nullable: true},
-        phone_number: %Schema{type: :string, example: "+79990000000", nullable: true}
+        phone_number: %Schema{type: :string, example: "+79990000000", nullable: true},
+        vk_url: %Schema{type: :string, example: "https://vk.com/group_name", nullable: true},
+        whatsapp_url: %Schema{type: :string, example: "https://wa.me/79990000000", nullable: true},
+        instagram_url: %Schema{
+          type: :string,
+          example: "https://instagram.com/profile_name",
+          nullable: true
+        }
       }
     })
   end

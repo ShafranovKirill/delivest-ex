@@ -24,7 +24,10 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     %{
       id: info.id,
       address: info.address,
-      phone_number: info.phone_number
+      phone_number: info.phone_number,
+      vk_url: info.vk_url,
+      whatsapp_url: info.whatsapp_url,
+      instagram_url: info.instagram_url
     }
   end
 end
