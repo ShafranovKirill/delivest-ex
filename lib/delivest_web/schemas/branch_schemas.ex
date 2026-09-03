@@ -18,7 +18,8 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           example: "https://instagram.com/profile_name",
           nullable: true
         }
-      }
+      },
+      required: [:id]
     })
   end
 
@@ -35,7 +36,8 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         slug: %Schema{type: :string, example: "central"},
         is_active: %Schema{type: :boolean, example: true},
         branch_info: %Schema{anyOf: [BranchInfoResponse, %Schema{type: :null}]}
-      }
+      },
+      required: [:id, :name, :slug, :is_active]
     })
   end
 
@@ -48,7 +50,8 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
       type: :object,
       properties: %{
         data: Branch
-      }
+      },
+      required: [:data]
     })
   end
 
@@ -61,7 +64,8 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
       type: :object,
       properties: %{
         data: %Schema{type: :array, items: Branch}
-      }
+      },
+      required: [:data]
     })
   end
 end

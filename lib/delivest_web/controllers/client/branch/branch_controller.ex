@@ -41,9 +41,9 @@ defmodule DelivestWeb.Client.Branch.BranchController do
     end
   end
 
-  operation(:show,
-    summary: "Получить филиал по ID",
-    description: "Возвращает детальную информацию о филиале с предзагруженными данными (info).",
+  operation(:select,
+    summary: "Выбрать филиал по ID",
+    description: "Возвращает детальную информацию о филиале и устанавливает cookie.",
     tags: ["Branches"],
     parameters: [
       id: [
@@ -62,7 +62,8 @@ defmodule DelivestWeb.Client.Branch.BranchController do
            type: :object,
            properties: %{
              error: %Schema{type: :string, example: "Branch not found"}
-           }
+           },
+           required: [:error]
          }}
     ]
   )
