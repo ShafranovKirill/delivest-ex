@@ -19,7 +19,6 @@ defmodule DelivestWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug OpenApiSpex.Plug.PutApiSpec, module: DelivestWeb.OpenApi
-    plug DelivestWeb.Plugs.CORS
   end
 
   scope "/client", DelivestWeb.Client do
