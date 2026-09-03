@@ -24,8 +24,13 @@ defmodule DelivestWeb.Router do
   scope "/client", DelivestWeb.Client do
     pipe_through :api
 
-    get "/branches", Branch.BranchController, :index
-    get "/branches/:id", Branch.BranchController, :show
+    scope "/branches", Branch do
+      get "/", BranchController, :index
+      get "/:id", BranchController, :show
+      post "/:id/select", BranchController, :select
+      delete "/active", BranchController, :clear_active
+    end
+
     get "/branches/:branch_id/menu", Menu.MenuController, :index
   end
 
