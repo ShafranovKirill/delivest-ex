@@ -44,6 +44,29 @@ defmodule Delivest.Identity.Branches do
     end
   end
 
+  @spec get_branch_by_slug(binary(), keyword()) :: {:ok, Branch.t()} | {:error, :not_found}
+  def get_branch_by_slug(slug, opts \\ []) do
+    slug_cache_key = "slug:#{slug}"
+
+    case Cachex.get(:branch_cache, slug_cache_key) do
+      {:ok, branch_id} when is_binary(branch_id) ->
+        get_branch(branch_id, opts)
+
+      _ ->
+        query = from(b in Branch, where: b.slug == ^slug and is_nil(b.deleted_at), select: b.id)
+
+        case Repo.one(query) do
+          nil ->
+            {:error, :not_found}
+
+          branch_id ->
+            Cachex.put(:branch_cache, slug_cache_key, branch_id, ttl: :timer.hours(24))
+
+            get_branch(branch_id, opts)
+        end
+    end
+  end
+
   def update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
     if Identity.can?(staff, "branches.update") do
       branch = Repo.preload(branch, :info)

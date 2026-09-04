@@ -98,6 +98,39 @@ defmodule DelivestWeb.Client.Branch.BranchController do
     ]
   )
 
+  operation(:select_by_slug,
+    summary: "Выбрать филиал по Slug",
+    description: "Возвращает детальную информацию о филиале по его slug и устанавливает cookie.",
+    tags: ["Branches"],
+    parameters: [
+      slug: [
+        in: :path,
+        schema: %Schema{type: :string},
+        required: true,
+        description: "Slug филиала",
+        example: "sochi-central"
+      ]
+    ],
+    responses: [
+      ok: {"Детальная информация о филиале", "application/json", BranchResponse},
+      not_found: {"Филиал не найден", "application/json", %Schema{type: :object}}
+    ]
+  )
+
+  def select_by_slug(conn, %{"slug" => slug}) do
+    case Identity.get_branch_by_slug(slug, preload: [:info]) do
+      {:ok, branch} ->
+        conn
+        |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
+        |> render(:show, branch: branch)
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Branch not found"})
+    end
+  end
+
   def clear_active(conn, _params) do
     conn
     |> CookieHelper.delete_cookie("active_branch_id", @active_branch_cookie_opts)
