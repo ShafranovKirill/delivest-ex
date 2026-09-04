@@ -79,8 +79,7 @@ defmodule Delivest.Identity.Branches do
       |> Repo.transaction()
       |> case do
         {:ok, %{branch: updated_branch, info: updates_info}} ->
-          Cachex.del(:branch_cache, updated_branch.id)
-
+          Cachex.clear(:branch_cache)
           {:ok, %{updated_branch | info: updates_info}}
 
         {:error, failed_operation, changeset, _changes} ->
@@ -143,6 +142,8 @@ defmodule Delivest.Identity.Branches do
       |> case do
         {:ok, %{soft_delete_branch: deleted_branch}} ->
           Cachex.del(:branch_cache, deleted_branch.id)
+          Cachex.del(:branch_cache, "slug:#{deleted_branch.slug}")
+
           {:ok, deleted_branch}
 
         {:error, failed_operation, reason, changes} ->

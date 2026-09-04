@@ -27,6 +27,7 @@ defmodule DelivestWeb.Router do
     scope "/branches", Branch do
       get "/", BranchController, :index
       post "/:id/select", BranchController, :select
+      post "/slug/:slug/select", BranchController, :select_by_slug
       delete "/active", BranchController, :clear_active
     end
 
