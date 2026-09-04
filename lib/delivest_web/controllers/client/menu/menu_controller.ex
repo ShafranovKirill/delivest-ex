@@ -2,7 +2,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   use DelivestWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Delivest.Identity
+  alias Delivest.Net
   alias DelivestWeb.Schemas.MenuSchemas.MenuResponse
   alias OpenApiSpex.Schema
 
@@ -34,7 +34,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   )
 
   def index(conn, %{"branch_id" => branch_id}) do
-    case Identity.get_menu_for_branch(branch_id) do
+    case Net.get_menu_for_branch(branch_id) do
       {:ok, menu} ->
         render(conn, :index, menu: menu)
 

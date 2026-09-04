@@ -35,7 +35,13 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           description: "Вес товара (в граммах)"
         },
         is_active: %Schema{type: :boolean, example: true},
-        media_id: %Schema{type: :string, format: :uuid, nullable: true},
+        photo_url: %Schema{
+          type: :string,
+          format: :uri,
+          nullable: true,
+          example: "https://storage.example.com/images/pepperoni.jpg",
+          description: "Ссылка на изображение товара"
+        },
         external_id: %Schema{type: :string, nullable: true}
       }
     })

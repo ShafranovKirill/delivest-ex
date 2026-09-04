@@ -1,5 +1,5 @@
 defmodule Delivest.Net do
-  alias Delivest.Net.Categories
+  alias Delivest.Net.{Categories, Catalogs}
 
   defdelegate list_category_for_branch(branch_id, opts \\ []), to: Categories
   defdelegate list_staff_categories_for_branch(staff, branch_id, opts \\ []), to: Categories
@@ -11,4 +11,7 @@ defmodule Delivest.Net do
   defdelegate update_category(staff, updateble_category, attrs), to: Categories
   defdelegate delete_category(staff, category), to: Categories
   defdelegate update_category_order(staff, category, above_order, below_order), to: Categories
+
+  defdelegate get_menu_for_branch(branch_id), to: Catalogs
+  defdelegate clear_menu_cache(branch_id), to: Catalogs
 end
