@@ -10,12 +10,30 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
       properties: %{
         id: %Schema{type: :string, format: :uuid, example: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"},
         name: %Schema{type: :string, example: "Пипперони"},
+        old_price: %Schema{
+          type: :string,
+          nullable: true,
+          example: "690",
+          description: "Старая цена до скидки"
+        },
         price: %Schema{
           type: :integer,
           example: 590,
           description: "Цена в копейках/минимальных единицах"
         },
-        description: %Schema{type: :string, example: "Сочная пицца с колбасками"},
+        description: %Schema{type: :string, nullable: true, example: "Сочная пицца с колбасками"},
+        quantity: %Schema{
+          type: :integer,
+          nullable: true,
+          example: 10,
+          description: "Количество товара на складе (в шт)"
+        },
+        weight: %Schema{
+          type: :integer,
+          nullable: true,
+          example: 450,
+          description: "Вес товара (в граммах)"
+        },
         is_active: %Schema{type: :boolean, example: true},
         media_id: %Schema{type: :string, format: :uuid, nullable: true},
         external_id: %Schema{type: :string, nullable: true}

@@ -17,8 +17,11 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
     %{
       id: product.id,
       name: product.name,
+      old_price: product.old_price,
       price: product.price,
       description: product.description,
+      quantity: product.quantity,
+      weight: product.weight,
       is_active: product.is_active,
       media_id: product.media_id,
       external_id: product.external_id

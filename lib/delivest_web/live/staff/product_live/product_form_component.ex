@@ -183,7 +183,18 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
     data = apply_changes(changeset)
 
     data
-    |> Map.take([:name, :price, :description, :is_active, :external_id, :category_id, :media_id])
+    |> Map.take([
+      :name,
+      :old_price,
+      :price,
+      :description,
+      :quantity,
+      :weight,
+      :is_active,
+      :external_id,
+      :category_id,
+      :media_id
+    ])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
   end
 
@@ -247,12 +258,28 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             <.input field={@form[:price]} type="number" label={gettext("Price")} required />
 
             <.input
+              field={@form[:old_price]}
+              type="text"
+              label={gettext("Price before discount")}
+            />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input field={@form[:quantity]} type="number" label={gettext("Quantity")} />
+
+            <.input field={@form[:weight]} type="number" label={gettext("Weight")} />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input
               field={@form[:category_id]}
               type="select"
               label={gettext("Category")}
               options={@category_options}
               prompt={gettext("Select a category...")}
             />
+
+            <.input field={@form[:external_id]} type="text" label={gettext("External ID")} />
           </div>
 
           <.input
@@ -261,8 +288,6 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             label={gettext("Description")}
             placeholder={gettext("Enter product description...")}
           />
-
-          <.input field={@form[:external_id]} type="text" label={gettext("External ID")} />
 
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>

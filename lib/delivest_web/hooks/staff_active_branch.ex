@@ -60,7 +60,7 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
              socket
              |> put_flash(
                :error,
-               Gettext.dgettext(DelivestWeb.Gettext, "error", "Branch not found.")
+               Gettext.dgettext(DelivestWeb.Gettext, "error", "Branch not selected.")
              )
              |> redirect(to: "/staff/branches/select")}
         end
