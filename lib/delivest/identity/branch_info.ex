@@ -13,6 +13,9 @@ defmodule Delivest.Identity.BranchInfo do
   schema "branch_info" do
     field :address, :string
     field :phone_number, :string
+    field :vk_url, :string
+    field :whatsapp_url, :string
+    field :instagram_url, :string
 
     belongs_to :branch, Delivest.Identity.Branch
 
@@ -21,7 +24,14 @@ defmodule Delivest.Identity.BranchInfo do
 
   def changeset(branch_info, attrs) do
     branch_info
-    |> cast(attrs, [:address, :phone_number, :branch_id])
+    |> cast(attrs, [
+      :address,
+      :phone_number,
+      :vk_url,
+      :whatsapp_url,
+      :instagram_url,
+      :branch_id
+    ])
     |> validate_required([:branch_id])
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:

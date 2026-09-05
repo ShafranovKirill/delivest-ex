@@ -1,13 +1,15 @@
-defmodule Mix.Tasks.Delivest.Storage.Setup do
+defmodule Mix.Tasks.Delivest.StorageSetup do
   @moduledoc """
-  Automatically creates S3/MinIO buckets and applies public policies.
+  Automatically creates S3/MinIO buckets and applies public policies to public buckets.
   """
   use Mix.Task
   require Logger
 
-  @shortdoc "Creates necessary S3/MinIO buckets and applies public policies"
+  @shortdoc "Creates S3/MinIO public and private buckets"
 
-  @default_buckets ["delivest"]
+  @public_bucket "delivest"
+  @private_bucket "delivest-private"
+  @default_buckets [@public_bucket, @private_bucket]
 
   def run(_args) do
     Mix.Task.run("app.start")
@@ -27,7 +29,7 @@ defmodule Mix.Tasks.Delivest.Storage.Setup do
     case ExAws.S3.put_bucket(bucket, "") |> ExAws.request() do
       {:ok, _response} ->
         Logger.info("[Storage.Setup] Bucket '#{bucket}' successfully created.")
-        apply_policy(bucket)
+        configure_bucket_policy(bucket)
 
       {:error, error} ->
         error_str = inspect(error)
@@ -35,16 +37,16 @@ defmodule Mix.Tasks.Delivest.Storage.Setup do
         if String.contains?(error_str, "BucketAlreadyOwnedByYou") or
              String.contains?(error_str, "BucketAlreadyExists") or
              String.contains?(error_str, "409") do
-          Logger.info("[Storage.Setup] Bucket '#{bucket}' already exists. Applying policy...")
-          apply_policy(bucket)
+          Logger.info("[Storage.Setup] Bucket '#{bucket}' already exists.")
+          configure_bucket_policy(bucket)
         else
           Logger.error("[Storage.Setup] Error creating bucket '#{bucket}': #{error_str}")
         end
     end
   end
 
-  defp apply_policy(bucket) do
-    Logger.info("[Storage.Setup] Applying public read policy to '#{bucket}/public/*'...")
+  defp configure_bucket_policy(@public_bucket = bucket) do
+    Logger.info("[Storage.Setup] Applying public read policy to '#{bucket}/*'...")
 
     policy = %{
       "Version" => "2012-10-17",
@@ -54,7 +56,7 @@ defmodule Mix.Tasks.Delivest.Storage.Setup do
           "Effect" => "Allow",
           "Principal" => "*",
           "Action" => ["s3:GetObject"],
-          "Resource" => ["arn:aws:s3:::#{bucket}/public/*"]
+          "Resource" => ["arn:aws:s3:::#{bucket}/*"]
         }
       ]
     }
@@ -63,10 +65,14 @@ defmodule Mix.Tasks.Delivest.Storage.Setup do
 
     case ExAws.S3.put_bucket_policy(bucket, policy_json) |> ExAws.request() do
       {:ok, _response} ->
-        Logger.info("[Storage.Setup] Policy successfully applied.")
+        Logger.info("[Storage.Setup] Public policy successfully applied to '#{bucket}'.")
 
       {:error, error} ->
-        Logger.error("[Storage.Setup] Failed to apply policy: #{inspect(error)}")
+        Logger.error("[Storage.Setup] Failed to apply policy to '#{bucket}': #{inspect(error)}")
     end
+  end
+
+  defp configure_bucket_policy(bucket) do
+    Logger.info("[Storage.Setup] Bucket '#{bucket}' is configured as private. Skipping policy.")
   end
 end

@@ -1,7 +1,7 @@
 defmodule Delivest.Identity.Branches do
   import Ecto.Query
   alias Delivest.Identity.{BranchInfo, Branch}
-  alias Delivest.{Repo, Identity, Net}
+  alias Delivest.{Repo, Identity}
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
@@ -23,7 +23,7 @@ defmodule Delivest.Identity.Branches do
     |> Repo.all()
   end
 
-  def list_all_branch(opts \\ []) do
+  def list_branches(opts \\ []) do
     Branch
     |> where([b], is_nil(b.deleted_at) and b.is_active == true)
     |> maybe_preload_query(opts[:preload])
@@ -44,6 +44,29 @@ defmodule Delivest.Identity.Branches do
     end
   end
 
+  @spec get_branch_by_slug(binary(), keyword()) :: {:ok, Branch.t()} | {:error, :not_found}
+  def get_branch_by_slug(slug, opts \\ []) do
+    slug_cache_key = "slug:#{slug}"
+
+    case Cachex.get(:branch_cache, slug_cache_key) do
+      {:ok, branch_id} when is_binary(branch_id) ->
+        get_branch(branch_id, opts)
+
+      _ ->
+        query = from(b in Branch, where: b.slug == ^slug and is_nil(b.deleted_at), select: b.id)
+
+        case Repo.one(query) do
+          nil ->
+            {:error, :not_found}
+
+          branch_id ->
+            Cachex.put(:branch_cache, slug_cache_key, branch_id, ttl: :timer.hours(24))
+
+            get_branch(branch_id, opts)
+        end
+    end
+  end
+
   def update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
     if Identity.can?(staff, "branches.update") do
       branch = Repo.preload(branch, :info)
@@ -56,8 +79,7 @@ defmodule Delivest.Identity.Branches do
       |> Repo.transaction()
       |> case do
         {:ok, %{branch: updated_branch, info: updates_info}} ->
-          Cachex.del(:branch_cache, updated_branch.id)
-
+          Cachex.clear(:branch_cache)
           {:ok, %{updated_branch | info: updates_info}}
 
         {:error, failed_operation, changeset, _changes} ->
@@ -120,6 +142,8 @@ defmodule Delivest.Identity.Branches do
       |> case do
         {:ok, %{soft_delete_branch: deleted_branch}} ->
           Cachex.del(:branch_cache, deleted_branch.id)
+          Cachex.del(:branch_cache, "slug:#{deleted_branch.slug}")
+
           {:ok, deleted_branch}
 
         {:error, failed_operation, reason, changes} ->
@@ -127,19 +151,6 @@ defmodule Delivest.Identity.Branches do
       end
     else
       {:error, :forbidden}
-    end
-  end
-
-  def get_menu_for_branch(branch_id) do
-    case Cachex.get(:menu_cache, branch_id) do
-      {:ok, nil} ->
-        menu = Net.list_category_for_branch(branch_id, preload: [:products])
-
-        Cachex.put(:menu_cache, branch_id, menu, ttl: :timer.hours(1))
-        {:ok, menu}
-
-      {:ok, menu} ->
-        {:ok, menu}
     end
   end
 

@@ -19,9 +19,12 @@ defmodule Delivest.Net.Product do
 
   schema "products" do
     field :name, :string
+    field :old_price, :string
     field :price, :integer
     field :description, :string
-    field :is_active, :boolean
+    field :quantity, :integer
+    field :weight, :integer
+    field :is_active, :boolean, default: true
     field :media_id, :binary_id
     field :external_id, :string
 
@@ -35,8 +38,11 @@ defmodule Delivest.Net.Product do
     product
     |> cast(attrs, [
       :name,
+      :old_price,
       :price,
       :description,
+      :quantity,
+      :weight,
       :media_id,
       :is_active,
       :external_id,

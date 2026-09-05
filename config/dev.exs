@@ -55,6 +55,13 @@ config :delivest, DelivestWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+config :delivest, :cookie_options,
+  max_age: 30 * 24 * 60 * 60,
+  http_only: false,
+  secure: false,
+  same_site: "Lax",
+  path: "/"
+
 # Enable dev routes for dashboard and mailbox
 config :delivest, dev_routes: true
 

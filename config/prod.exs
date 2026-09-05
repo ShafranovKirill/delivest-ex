@@ -19,6 +19,13 @@ config :delivest, DelivestWeb.Endpoint,
     ]
   ]
 
+config :delivest, :cookie_options,
+  max_age: 30 * 24 * 60 * 60,
+  http_only: false,
+  secure: true,
+  same_site: "Lax",
+  path: "/"
+
 # Configure Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req
 

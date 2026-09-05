@@ -6,6 +6,9 @@ defmodule Delivest.Repo.Migrations.CreateBranchInfo do
       add :id, :binary_id, primary_key: true
       add :address, :string
       add :phone_number, :string
+      add :vk_url, :string
+      add :whatsapp_url, :string
+      add :instagram_url, :string
 
       add :branch_id,
           references(:branches,

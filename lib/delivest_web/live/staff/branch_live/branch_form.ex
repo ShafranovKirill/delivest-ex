@@ -14,11 +14,23 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     field :address, :string
     field :phone_number, :string
+    field :vk_url, :string
+    field :whatsapp_url, :string
+    field :instagram_url, :string
   end
 
   def changeset(form, attrs) do
     form
-    |> cast(attrs, [:name, :address, :phone_number, :slug, :is_active])
+    |> cast(attrs, [
+      :name,
+      :address,
+      :phone_number,
+      :vk_url,
+      :whatsapp_url,
+      :instagram_url,
+      :slug,
+      :is_active
+    ])
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(
@@ -37,7 +49,10 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       slug: branch.slug,
       is_active: branch.is_active,
       address: info && info.address,
-      phone_number: info && info.phone_number
+      phone_number: info && info.phone_number,
+      vk_url: info && info.vk_url,
+      whatsapp_url: info && info.whatsapp_url,
+      instagram_url: info && info.instagram_url
     }
   end
 

@@ -369,7 +369,32 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Price")} sort="price">
-          <span class="font-mono">{prod.price}</span>
+          <div class="font-mono flex items-center gap-1.5">
+            <%= if prod.old_price && prod.old_price != "" do %>
+              <span class="line-through text-xs opacity-50">{prod.old_price}</span>
+            <% end %>
+            <span>{prod.price}</span>
+          </div>
+        </:col>
+
+        <:col :let={{_id, prod}} label={gettext("Quantity")}>
+          <span class="font-mono">
+            <%= if prod.quantity do %>
+              {prod.quantity} {gettext("pcs")}
+            <% else %>
+              —
+            <% end %>
+          </span>
+        </:col>
+
+        <:col :let={{_id, prod}} label={gettext("Weight")}>
+          <span class="font-mono">
+            <%= if prod.weight do %>
+              {prod.weight} {gettext("g")}
+            <% else %>
+              —
+            <% end %>
+          </span>
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Status")}>
@@ -457,10 +482,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         <.live_component
           module={DelivestWeb.StudioLive.MediaUploadComponent}
           id="product-media-upload"
-          current_staff={@current_staff}
+          user_id={@current_staff.id}
           media_group_name={@current_branch.id}
           upload_type="image"
           context="product"
+          is_private={false}
         />
       <% end %>
 

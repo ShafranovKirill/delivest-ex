@@ -1,17 +1,7 @@
 defmodule DelivestWeb.Staff.StaffSessionController do
-  @moduledoc """
-  Handles user authentication sessions.
-
-  Responsible for creating the session cookie upon successful login
-  (verifying both login and password) and clearing it upon logout.
-  """
-
   use DelivestWeb, :controller
   alias Delivest.Identity
 
-  @doc """
-  Creates a new session for the user if credentials are valid.
-  """
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"user" => %{"login" => login, "password" => password}}) do
     case Identity.authenticate(login, password) do
@@ -28,9 +18,6 @@ defmodule DelivestWeb.Staff.StaffSessionController do
     end
   end
 
-  @doc """
-  Deletes the current user session (logout).
-  """
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, _params) do
     conn

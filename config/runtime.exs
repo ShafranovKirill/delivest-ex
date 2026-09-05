@@ -6,9 +6,10 @@ end
 
 # Admin credentials: read directly from OS environment at runtime
 config :delivest,
-  admin_login: System.get_env("ADMIN_LOGIN") || "admin123",
-  admin_password: System.get_env("ADMIN_PASSWORD") || "AdminSecret123!",
   default_locale: System.get_env("DEFAULT_LOCALE") || "en"
+
+config :cors_plug,
+  origin: System.get_env("CLIENT_ORIGIN", "http://localhost:3000")
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
@@ -106,7 +107,8 @@ if config_env() == :prod do
     ]
 
   config :delivest, Delivest.Media,
-    bucket: System.get_env("MINIO_BUCKET"),
+    private_bucket: System.get_env("MINIO_PRIVATE_BUCKET"),
+    public_bucket: System.get_env("MINIO_PUBLIC_BUCKET"),
     public_host: System.get_env("MINIO_PUBLIC_HOST"),
     public_port: System.get_env("MINIO_PORT_EXTERNAL")
 

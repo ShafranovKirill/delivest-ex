@@ -5,8 +5,11 @@ defmodule Delivest.Repo.Migrations.CreateProducts do
     create table(:products, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
+      add :old_price, :string
       add :price, :integer, null: false
       add :description, :text
+      add :quantity, :integer
+      add :weight, :integer
       add :is_active, :boolean, null: false, default: true
       add :external_id, :string
 

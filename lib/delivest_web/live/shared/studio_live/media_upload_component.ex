@@ -18,6 +18,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign_new(:is_private, fn -> false end)
      |> assign(accept_str: settings.description)
      |> assign(max_entries: remaining)
      |> allow_upload(:media,
@@ -29,13 +30,13 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
   end
 
   defp presign_upload(entry, socket) do
-    gorup_name = socket.assigns[:media_group_name] || "general"
+    group_name = socket.assigns[:media_group_name] || "general"
     context = socket.assigns[:context] || "general"
+    is_private = socket.assigns.is_private
 
-    case Media.prepare_upload(gorup_name, context, entry.client_name) do
+    case Media.prepare_upload(group_name, context, entry.client_name, is_private: is_private) do
       {:ok, meta} ->
         meta_with_uploader = Map.put(meta, :uploader, "S3")
-
         {:ok, meta_with_uploader, socket}
 
       {:error, _} ->
@@ -51,8 +52,9 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
   end
 
   def handle_event("save", _params, socket) do
-    user_id = socket.assigns[:current_staff].id
+    user_id = socket.assigns[:user_id]
     file_context = socket.assigns[:context] || "general"
+    is_private = socket.assigns.is_private
 
     results =
       consume_uploaded_entries(socket, :media, fn meta, entry ->
@@ -63,6 +65,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
           "mime_type" => entry.client_type,
           "size" => entry.client_size,
           "context" => file_context,
+          "is_private" => is_private,
           "owner_id" => user_id
         }
 

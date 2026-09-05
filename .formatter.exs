@@ -6,5 +6,6 @@
     "*.{heex,ex,exs}",
     "{config,lib,test}/**/*.{heex,ex,exs}",
     "priv/*/seeds.exs"
-  ]
+  ],
+  import_deps: [:open_api_spex]
 ]

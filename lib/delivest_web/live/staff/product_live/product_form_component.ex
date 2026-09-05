@@ -78,7 +78,6 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   def handle_event("open_upload_modal", _, socket) do
-    # Просим родительский LiveView открыть модальное окно загрузки
     notify_parent({:open_upload_modal})
     {:noreply, socket}
   end
@@ -184,7 +183,18 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
     data = apply_changes(changeset)
 
     data
-    |> Map.take([:name, :price, :description, :is_active, :external_id, :category_id, :media_id])
+    |> Map.take([
+      :name,
+      :old_price,
+      :price,
+      :description,
+      :quantity,
+      :weight,
+      :is_active,
+      :external_id,
+      :category_id,
+      :media_id
+    ])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
   end
 
@@ -217,10 +227,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             <div class="flex items-center gap-4">
               <div class="avatar">
                 <div class="w-24 h-24 rounded-box bg-base-200 border border-base-300 flex items-center justify-center overflow-hidden">
-                  <%= if @current_media && !is_nil(@current_media.key) do %>
-                    <% {:ok, download_url} =
-                      Media.generate_download_url(@current_media.bucket, @current_media.key) %>
-                    <img src={download_url} class="w-full h-full object-cover" />
+                  <%= if url = Media.get_url(@current_media && @current_media.id) do %>
+                    <img src={url} class="w-full h-full object-cover" />
                   <% else %>
                     <span class="text-xs text-base-content/40">{gettext("No image")}</span>
                   <% end %>
@@ -250,12 +258,28 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             <.input field={@form[:price]} type="number" label={gettext("Price")} required />
 
             <.input
+              field={@form[:old_price]}
+              type="text"
+              label={gettext("Price before discount")}
+            />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input field={@form[:quantity]} type="number" label={gettext("Quantity")} />
+
+            <.input field={@form[:weight]} type="number" label={gettext("Weight")} />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input
               field={@form[:category_id]}
               type="select"
               label={gettext("Category")}
               options={@category_options}
               prompt={gettext("Select a category...")}
             />
+
+            <.input field={@form[:external_id]} type="text" label={gettext("External ID")} />
           </div>
 
           <.input
@@ -265,27 +289,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             placeholder={gettext("Enter product description...")}
           />
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-2">
-            <.input field={@form[:external_id]} type="text" label={gettext("External ID")} />
-
-            <div class="form-control">
-              <label class="label cursor-pointer justify-start gap-4 pt-6">
-                <input
-                  type="hidden"
-                  name={@form[:is_active].name}
-                  value="false"
-                />
-                <input
-                  type="checkbox"
-                  name={@form[:is_active].name}
-                  value="true"
-                  checked={@form[:is_active].value == true}
-                  class="checkbox checkbox-primary"
-                />
-                <span class="label-text font-bold">{gettext("Active")}</span>
-              </label>
-            </div>
-          </div>
+          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>
 
         <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
