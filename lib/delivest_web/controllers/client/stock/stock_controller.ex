@@ -4,6 +4,7 @@ defmodule DelivestWeb.Client.Stock.StockController do
 
   alias Delivest.Net.Stocks
   alias DelivestWeb.Schemas.StockSchemas.StocksListResponse
+  alias OpenApiSpex.Schema
 
   operation(:index,
     summary: "Получить список активных акций филиала",
@@ -11,8 +12,7 @@ defmodule DelivestWeb.Client.Stock.StockController do
     parameters: [
       branch_id: [
         in: :path,
-        type: :string,
-        format: :uuid,
+        schema: %Schema{type: :string, format: :uuid},
         description: "UUID филиала",
         required: true,
         example: "123e4567-e89b-12d3-a456-426614174000"
