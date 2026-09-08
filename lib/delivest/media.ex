@@ -64,6 +64,16 @@ defmodule Delivest.Media do
     end
   end
 
+  @spec get_url_from_file(File.t() | term()) :: String.t() | nil
+  def get_url_from_file(%File{key: key, bucket: bucket, is_private: is_private}) do
+    case generate_url_by_flag(bucket, key, is_private) do
+      {:ok, url} -> url
+      {:error, _reason} -> nil
+    end
+  end
+
+  def get_url_from_file(_), do: nil
+
   defp generate_url_by_flag(bucket, key, true = _is_private),
     do: generate_download_url(bucket, key)
 

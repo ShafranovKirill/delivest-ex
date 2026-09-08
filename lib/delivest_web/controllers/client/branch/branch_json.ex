@@ -43,7 +43,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     %{
       id: stock.id,
       description: stock.text,
-      photo_url: Delivest.Media.get_url(stock.media_id),
+      photo_url: Delivest.Media.get_url_from_file(stock.media),
       is_active: stock.is_active
     }
   end
