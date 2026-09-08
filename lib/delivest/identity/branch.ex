@@ -20,6 +20,11 @@ defmodule Delivest.Identity.Branch do
 
     has_one :info, Delivest.Identity.BranchInfo, foreign_key: :branch_id
 
+    many_to_many :stocks, Delivest.Net.Stock,
+      join_through: Delivest.Relations.EntityRelation,
+      join_keys: [from_id: :id, to_id: :id],
+      join_where: [from_entity_type: "Branch", to_entity_type: "Stock"]
+
     field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)
   end

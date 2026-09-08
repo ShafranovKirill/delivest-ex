@@ -118,7 +118,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   )
 
   def select_by_slug(conn, %{"slug" => slug}) do
-    case Identity.get_branch_by_slug(slug, preload: [:info]) do
+    case Identity.get_branch_by_slug(slug, preload: [:info, :stocks]) do
       {:ok, branch} ->
         conn
         |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
