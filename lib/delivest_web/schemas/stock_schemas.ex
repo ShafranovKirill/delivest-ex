@@ -27,7 +27,6 @@ defmodule DelivestWeb.Schemas.StockSchemas do
         photo_url: %Schema{
           type: :string,
           format: :uri,
-          nullable: true,
           example: "https://storage.example.com/images/stock.jpg",
           description: "Ссылка на медиафайл акции"
         }
