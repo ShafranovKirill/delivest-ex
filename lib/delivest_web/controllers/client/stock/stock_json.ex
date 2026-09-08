@@ -9,7 +9,7 @@ defmodule DelivestWeb.Client.Stock.StockJSON do
       description: stock.text,
       is_active: stock.is_active,
       order: stock.order,
-      media: render_media(stock.media)
+      photo_url: render_media(stock.media)
     }
   end
 
@@ -17,9 +17,6 @@ defmodule DelivestWeb.Client.Stock.StockJSON do
   defp render_media(nil), do: nil
 
   defp render_media(media) do
-    %{
-      id: media.id,
-      url: Delivest.Media.get_url_from_file(media)
-    }
+    Delivest.Media.get_url_from_file(media)
   end
 end
