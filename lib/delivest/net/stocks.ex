@@ -12,6 +12,7 @@ defmodule Delivest.Net.Stocks do
       if stock_ids != [] do
         Stock
         |> where([s], s.id in ^stock_ids)
+        |> order_by([s], asc: s.order)
         |> preload(:media)
         |> Repo.all()
       else
@@ -40,8 +41,14 @@ defmodule Delivest.Net.Stocks do
 
   def create_stock(staff, branch_id, attrs) do
     if Identity.can?(staff, "stocks.create") do
+      next_order = calculate_next_order(branch_id)
+
+      attrs_with_order =
+        attrs
+        |> Map.put("order", next_order)
+
       Multi.new()
-      |> Multi.insert(:stock, Stock.changeset(%Stock{}, attrs))
+      |> Multi.insert(:stock, Stock.changeset(%Stock{}, attrs_with_order))
       |> Multi.run(:relation_branch, fn repo, %{stock: stock} ->
         case Relations.create_relation(
                repo,
@@ -88,6 +95,28 @@ defmodule Delivest.Net.Stocks do
     end
   end
 
+  def update_stock_order(staff, %Stock{} = stock, above_order, below_order) do
+    if Identity.can?(staff, "stocks.update") do
+      new_order = calculate_new_order(above_order, below_order)
+
+      stock
+      |> Stock.changeset(%{"order" => new_order})
+      |> Repo.update()
+      |> case do
+        {:ok, updated_stock} ->
+          branch_id = get_stock_branch_id(updated_stock.id)
+          invalidate_stock_cache(branch_id)
+
+          {:ok, updated_stock}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
   def delete_stock(staff, %Stock{} = stock) do
     if Identity.can?(staff, "stocks.delete") do
       branch_id = get_stock_branch_id(stock.id)
@@ -111,6 +140,7 @@ defmodule Delivest.Net.Stocks do
     if stock_ids != [] do
       Stock
       |> where([s], s.id in ^stock_ids and s.is_active == true)
+      |> order_by([s], asc: s.order)
       |> preload(:media)
       |> Repo.all()
     else
@@ -122,6 +152,44 @@ defmodule Delivest.Net.Stocks do
     Relations.list_source_ids("Stock", stock_id, "Branch")
     |> List.first()
   end
+
+  defp calculate_new_order(above_order, below_order)
+       when not is_nil(above_order) and not is_nil(below_order) do
+    (above_order + below_order) / 2.0
+  end
+
+  defp calculate_new_order(nil, below_order) when not is_nil(below_order) do
+    if below_order > 0.0 do
+      below_order / 2.0
+    else
+      below_order - 1.0
+    end
+  end
+
+  defp calculate_new_order(above_order, nil) when not is_nil(above_order) do
+    above_order + 1.0
+  end
+
+  defp calculate_new_order(nil, nil) do
+    1.0
+  end
+
+  defp calculate_next_order(branch_id) when not is_nil(branch_id) do
+    stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
+
+    max_order =
+      Stock
+      |> where([s], s.id in ^stock_ids)
+      |> select([s], max(s.order))
+      |> Repo.one()
+
+    case max_order do
+      nil -> 1.0
+      val -> val + 1.0
+    end
+  end
+
+  defp calculate_next_order(_), do: 1.0
 
   defp invalidate_stock_cache(branch_id) when not is_nil(branch_id) do
     Cachex.del(:stock_cache, branch_id)

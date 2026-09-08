@@ -23,6 +23,7 @@ defmodule DelivestWeb.Schemas.StockSchemas do
           example: true,
           description: "Флаг активности акции"
         },
+        order: %Schema{type: :number, format: :float, example: 1.0},
         photo_url: %Schema{
           type: :string,
           format: :uri,

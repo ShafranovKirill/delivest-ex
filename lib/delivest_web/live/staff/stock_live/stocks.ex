@@ -15,9 +15,9 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
      socket
      |> assign(
        stock_to_delete: nil,
-       branch_id: branch_id
-     )
-     |> stream(:stocks, [])}
+       branch_id: branch_id,
+       stocks: []
+     )}
   end
 
   @impl true
@@ -28,7 +28,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
       stocks when is_list(stocks) ->
         socket =
           socket
-          |> stream(:stocks, stocks, reset: true)
+          |> assign(stocks: stocks)
           |> apply_action(socket.assigns.live_action, params)
 
         {:noreply, socket}
@@ -43,7 +43,8 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   end
 
   defp apply_action(socket, :new, _params) do
-    if Identity.can?(socket.assigns.current_staff, "stocks.create") do
+    if Identity.can?(socket.assigns.current_staff, "categories.create") or
+         Identity.can?(socket.assigns.current_staff, "stocks.create") do
       assign(socket, page_title: gettext("Create promotion"), stock: %Stock{})
     else
       socket
@@ -54,7 +55,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "stocks.update") do
-      case Repo.get(Stock, id) do
+      case Repo.get(Stock, id) |> Repo.preload(:media) do
         %Stock{} = stock ->
           assign(socket, page_title: gettext("Edit promotion"), stock: stock)
 
@@ -65,6 +66,25 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
       socket
       |> put_flash(:error, gettext("You don't have permission to edit promotions."))
       |> push_patch(to: ~p"/staff/stocks")
+    end
+  end
+
+  @impl true
+  def handle_event(
+        "reorder_stock",
+        %{"id" => id, "above_order" => above_order, "below_order" => below_order},
+        socket
+      ) do
+    staff = socket.assigns.current_staff
+    branch_id = socket.assigns.branch_id
+
+    with %Stock{} = stock <- Repo.get(Stock, id),
+         {:ok, _updated} <- Net.Stocks.update_stock_order(staff, stock, above_order, below_order) do
+      stocks = Net.Stocks.list_staff_stocks_for_branch(staff, branch_id)
+      {:noreply, assign(socket, stocks: stocks)}
+    else
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to reorder promotion"))}
     end
   end
 
@@ -81,20 +101,27 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
     end
   end
 
-  def handle_event("confirm_delete", _, %{assigns: %{stock_to_delete: stock}} = socket) do
+  @impl true
+  def handle_event(
+        "confirm_delete",
+        _,
+        %{assigns: %{stock_to_delete: stock, branch_id: branch_id}} = socket
+      ) do
     case Net.Stocks.delete_stock(socket.assigns.current_staff, stock) do
       {:ok, _} ->
+        stocks = Net.Stocks.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id)
+
         {:noreply,
          socket
          |> put_flash(:info, gettext("Promotion deleted successfully"))
-         |> stream_delete(:stocks, stock)
-         |> assign(stock_to_delete: nil)}
+         |> assign(stocks: stocks, stock_to_delete: nil)}
 
       {:error, _} ->
         {:noreply, socket |> put_flash(:error, gettext("Failed to delete promotion"))}
     end
   end
 
+  @impl true
   def handle_event("cancel_delete", _, socket) do
     {:noreply, assign(socket, stock_to_delete: nil)}
   end
@@ -105,20 +132,14 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   end
 
   @impl true
-  def handle_info({StockFormComponent, {:saved, stock}}, socket) do
-    action = socket.assigns.live_action
-
-    msg =
-      case action do
-        :new -> gettext("Promotion created successfully")
-        :edit -> gettext("Promotion updated successfully")
-        _ -> gettext("Promotion saved successfully")
-      end
+  def handle_info({StockFormComponent, {:saved, _stock}}, socket) do
+    branch_id = socket.assigns.branch_id
+    stocks = Net.Stocks.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id)
 
     {:noreply,
      socket
-     |> put_flash(:info, msg)
-     |> stream_insert(:stocks, stock)
+     |> put_flash(:info, gettext("Promotion saved successfully"))
+     |> assign(stocks: stocks)
      |> push_patch(to: ~p"/staff/stocks")}
   end
 
@@ -174,77 +195,94 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
+    <div class="space-y-6 p-6 max-w-4xl mx-auto">
       <div class="flex justify-between items-center">
         <div>
           <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Promotions")}</h1>
           <p class="text-sm text-base-content/60">
-            {gettext("Manage branch promotions and special offers.")}
+            {gettext("Drag and drop items to reorder promotions.")}
           </p>
         </div>
         <div class="flex gap-2">
-          <.button
+          <.link
             :if={Identity.can?(@current_staff, "stocks.create")}
             patch={~p"/staff/stocks/new"}
             class="btn btn-primary"
           >
             <.icon name="hero-plus" class="size-5" />
             {gettext("Create Promotion")}
-          </.button>
+          </.link>
         </div>
       </div>
 
-      <.table id="stocks" rows={@streams.stocks}>
-        <:col :let={{_id, stock}} label={gettext("Banner")}>
-          <%= if stock.media_id do %>
-            <span class="badge badge-outline text-xs">{gettext("Has photo")}</span>
-          <% else %>
-            <span class="text-xs opacity-40">—</span>
-          <% end %>
-        </:col>
+      <div id="stocks-list" phx-hook="SortableStocks" class="space-y-3">
+        <%= for stock <- @stocks do %>
+          <div
+            class="flex items-center justify-between p-3 bg-base-100 shadow rounded-xl border border-base-200 cursor-default"
+            data-id={stock.id}
+            data-order={stock.order}
+          >
+            <div class="flex items-center gap-4 min-w-0">
+              <span class="drag-handle cursor-grab hover:text-primary text-base-content/50 p-1 shrink-0">
+                <.icon name="hero-bars-3" class="w-5 h-5" />
+              </span>
 
-        <:col :let={{_id, stock}} label={gettext("Description")}>
-          <%= if stock.text && stock.text != "" do %>
-            <span class="text-sm font-medium">{stock.text}</span>
-          <% else %>
-            <span class="text-xs opacity-40">—</span>
-          <% end %>
-        </:col>
+              <div class="w-16 h-12 rounded-lg bg-base-200 overflow-hidden shrink-0 border border-base-300 flex items-center justify-center">
+                <%= if stock.media do %>
+                  <img
+                    src={Delivest.Media.get_url_from_file(stock.media)}
+                    alt=""
+                    class="w-full h-full object-cover"
+                  />
+                <% else %>
+                  <.icon name="hero-photo" class="w-6 h-6 opacity-30" />
+                <% end %>
+              </div>
 
-        <:col :let={{_id, stock}} label={gettext("Status")}>
-          <%= if stock.is_active do %>
-            <span class="badge badge-success badge-sm whitespace-nowrap">{gettext("Active")}</span>
-          <% else %>
-            <span class="badge badge-error badge-sm text-error-content whitespace-nowrap">
-              {gettext("Inactive")}
-            </span>
-          <% end %>
-        </:col>
+              <div class="flex flex-col min-w-0">
+                <span class="font-medium text-base truncate">
+                  <%= if stock.text && stock.text != "" do %>
+                    {stock.text}
+                  <% else %>
+                    <span class="italic opacity-50">{gettext("No description")}</span>
+                  <% end %>
+                </span>
 
-        <:col :let={{_id, stock}} label={gettext("Created At")}>
-          <span class="text-sm opacity-60">{Calendar.strftime(stock.inserted_at, "%d.%m.%Y")}</span>
-        </:col>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <%= if stock.is_active do %>
+                    <span class="badge badge-success badge-xs">{gettext("Active")}</span>
+                  <% else %>
+                    <span class="badge badge-error badge-xs text-error-content">{gettext("Inactive")}</span>
+                  <% end %>
+                  <span class="text-xs opacity-50">{Calendar.strftime(stock.inserted_at, "%d.%m.%Y")}</span>
+                </div>
+              </div>
+            </div>
 
-        <:action :let={{_id, stock}}>
-          <div class="flex justify-end gap-2">
-            <.button
-              :if={Identity.can?(@current_staff, "stocks.update")}
-              patch={~p"/staff/stocks/#{stock.id}/edit"}
-              class="btn btn-ghost btn-xs btn-square"
-            >
-              <.icon name="hero-pencil-square" class="size-4" />
-            </.button>
-            <.button
-              :if={Identity.can?(@current_staff, "stocks.delete")}
-              phx-click="delete_click"
-              phx-value-id={stock.id}
-              class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"
-            >
-              <.icon name="hero-trash" class="size-4" />
-            </.button>
+            <div class="flex items-center gap-1 shrink-0">
+              <.link
+                :if={Identity.can?(@current_staff, "stocks.update")}
+                patch={~p"/staff/stocks/#{stock.id}/edit"}
+                class="btn btn-sm btn-ghost btn-square text-info"
+                title={gettext("Edit")}
+              >
+                <.icon name="hero-pencil-square" class="w-5 h-5" />
+              </.link>
+
+              <button
+                :if={Identity.can?(@current_staff, "stocks.delete")}
+                type="button"
+                phx-click="delete_click"
+                phx-value-id={stock.id}
+                class="btn btn-sm btn-ghost btn-square text-error"
+                title={gettext("Delete")}
+              >
+                <.icon name="hero-trash" class="w-5 h-5" />
+              </button>
+            </div>
           </div>
-        </:action>
-      </.table>
+        <% end %>
+      </div>
 
       <.slide_over
         id="stock-slideover"

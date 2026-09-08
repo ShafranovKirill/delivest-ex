@@ -111,6 +111,34 @@ export const SortableCategories = {
   },
 };
 
+export const SortableStocks = {
+  mounted() {
+    let hook = this;
+    let listEl = this.el;
+
+    new Sortable(listEl, {
+      animation: 150,
+      handle: ".drag-handle",
+      ghostClass: "bg-base-200",
+      onEnd(evt) {
+        let draggedId = evt.item.dataset.id;
+
+        let prevNode = evt.item.previousElementSibling;
+        let nextNode = evt.item.nextElementSibling;
+
+        let aboveOrder = prevNode ? parseFloat(prevNode.dataset.order) : null;
+        let belowOrder = nextNode ? parseFloat(nextNode.dataset.order) : null;
+
+        hook.pushEvent("reorder_stock", {
+          id: draggedId,
+          above_order: aboveOrder,
+          below_order: belowOrder,
+        });
+      },
+    });
+  },
+};
+
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
@@ -122,6 +150,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ...colocatedHooks,
     ThemeToggle,
     SortableCategories,
+    SortableStocks,
   },
 });
 

@@ -8,6 +8,7 @@ defmodule DelivestWeb.Client.Stock.StockJSON do
       id: stock.id,
       description: stock.text,
       is_active: stock.is_active,
+      order: stock.order,
       media: render_media(stock.media)
     }
   end
