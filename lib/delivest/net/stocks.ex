@@ -1,6 +1,6 @@
 defmodule Delivest.Net.Stocks do
   import Ecto.Query
-
+  require Logger
   alias Delivest.Net.Stock
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
@@ -26,14 +26,13 @@ defmodule Delivest.Net.Stocks do
   def list_staff_stocks_for_branch(_staff, _branch_id), do: []
 
   def list_stocks_for_branch(branch_id) when not is_nil(branch_id) do
-    case Cachex.get(:stock_cache, branch_id) do
-      {:ok, stocks} when is_list(stocks) ->
-        stocks
-
-      _ ->
-        stocks = fetch_stocks_for_branch(branch_id)
-        Cachex.put(:stock_cache, branch_id, stocks, ttl: :timer.hours(1))
-        stocks
+    case Cachex.fetch(:stock_cache, branch_id, fn _key ->
+           stocks = fetch_stocks_for_branch(branch_id)
+           {:commit, stocks, ttl: :timer.hours(1)}
+         end) do
+      {:ok, stocks} -> stocks
+      {:commit, stocks} -> stocks
+      _ -> []
     end
   end
 
@@ -43,24 +42,19 @@ defmodule Delivest.Net.Stocks do
     if Identity.can?(staff, "stocks.create") do
       next_order = calculate_next_order(branch_id)
 
-      attrs_with_order =
-        attrs
-        |> Map.put("order", next_order)
+      attrs_with_order = Map.put(attrs, "order", next_order)
 
       Multi.new()
       |> Multi.insert(:stock, Stock.changeset(%Stock{}, attrs_with_order))
       |> Multi.run(:relation_branch, fn repo, %{stock: stock} ->
-        case Relations.create_relation(
-               repo,
-               "Branch",
-               branch_id,
-               "Stock",
-               stock.id,
-               %{}
-             ) do
-          {:ok, relation} -> {:ok, relation}
-          {:error, reason} -> {:error, reason}
-        end
+        Relations.create_relation(
+          repo,
+          "Branch",
+          branch_id,
+          "Stock",
+          stock.id,
+          %{}
+        )
       end)
       |> Repo.transaction()
       |> case do
@@ -170,9 +164,7 @@ defmodule Delivest.Net.Stocks do
     above_order + 1.0
   end
 
-  defp calculate_new_order(nil, nil) do
-    1.0
-  end
+  defp calculate_new_order(nil, nil), do: 1.0
 
   defp calculate_next_order(branch_id) when not is_nil(branch_id) do
     stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
