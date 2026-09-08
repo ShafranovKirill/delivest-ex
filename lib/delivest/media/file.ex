@@ -15,7 +15,7 @@ defmodule Delivest.Media.File do
     field :size, :integer
     field :is_private, :boolean, default: false
 
-    field :context, Ecto.Enum, values: [:product]
+    field :context, Ecto.Enum, values: [:product, :stock]
 
     field :owner_id, :binary_id
 

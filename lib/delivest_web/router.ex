@@ -97,6 +97,12 @@ defmodule DelivestWeb.Router do
         live "/:id/edit", Products, :edit
         live "/new", Products, :new
       end
+
+      scope "/stocks", StockLive do
+        live "/", Stocks, :index
+        live "/:id/edit", Stocks, :edit
+        live "/new", Stocks, :new
+      end
     end
   end
 

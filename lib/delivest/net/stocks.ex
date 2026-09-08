@@ -41,15 +41,6 @@ defmodule Delivest.Net.Stocks do
     if Identity.can?(staff, "stocks.create") do
       Multi.new()
       |> Multi.insert(:stock, Stock.changeset(%Stock{}, attrs))
-      |> Multi.run(:clear_old_relations, fn _repo, %{stock: stock} ->
-        old_stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
-
-        Enum.each(old_stock_ids, fn old_id ->
-          Relations.delete_relation("Branch", branch_id, "Stock", old_id)
-        end)
-
-        {:ok, stock}
-      end)
       |> Multi.run(:relation_branch, fn repo, %{stock: stock} ->
         case Relations.create_relation(
                repo,
