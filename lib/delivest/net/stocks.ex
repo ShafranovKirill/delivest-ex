@@ -1,23 +1,41 @@
 defmodule Delivest.Net.Stocks do
+  import Ecto.Query
+
   alias Delivest.Net.Stock
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
 
-  def get_staff_stock_for_branch(staff, branch_id) do
+  def list_staff_stocks_for_branch(staff, branch_id) when not is_nil(branch_id) do
     if Identity.can?(staff, "stocks.read") do
-      stock_id =
-        Relations.list_target_ids("Branch", branch_id, "Stock")
-        |> List.first()
+      stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
 
-      if stock_id do
-        Repo.get(Stock, stock_id)
+      if stock_ids != [] do
+        Stock
+        |> where([s], s.id in ^stock_ids)
+        |> Repo.all()
       else
-        nil
+        []
       end
     else
       {:error, :forbidden}
     end
   end
+
+  def list_staff_stocks_for_branch(_staff, _branch_id), do: []
+
+  def get_stocks_for_branch(branch_id) when not is_nil(branch_id) do
+    stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
+
+    if stock_ids != [] do
+      Stock
+      |> where([s], s.id in ^stock_ids and s.is_active == true)
+      |> Repo.all()
+    else
+      []
+    end
+  end
+
+  def get_stocks_for_branch(_), do: []
 
   def create_stock(staff, branch_id, attrs) do
     if Identity.can?(staff, "stocks.create") do
