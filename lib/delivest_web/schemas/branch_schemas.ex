@@ -23,29 +23,8 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
     })
   end
 
-  defmodule StockResponse do
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "StockResponse",
-      type: :object,
-      properties: %{
-        id: %Schema{type: :string, format: :uuid, example: "a1b2c3d4-5678-90ab-cdef-1234567890ab"},
-        description: %Schema{
-          type: :string,
-          example: "Скидка 20% на сет пицц по будням",
-          nullable: true
-        },
-        photo_url: %Schema{type: :string, example: "https://cdn.delivest.com/stocks/promo1.jpg"},
-        is_active: %Schema{type: :boolean, example: true}
-      },
-      required: [:id, :photo_url, :is_active]
-    })
-  end
-
   defmodule Branch do
     require OpenApiSpex
-    alias DelivestWeb.Schemas.BranchSchemas.{BranchInfoResponse, StockResponse}
 
     OpenApiSpex.schema(%{
       title: "Branch",
@@ -55,12 +34,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         name: %Schema{type: :string, example: "Центральный филиал"},
         slug: %Schema{type: :string, example: "central"},
         is_active: %Schema{type: :boolean, example: true},
-        branch_info: %Schema{anyOf: [BranchInfoResponse, %Schema{type: :null}]},
-        stocks: %Schema{
-          type: :array,
-          items: StockResponse,
-          description: "Список активных акций филиала"
-        }
+        branch_info: %Schema{anyOf: [BranchInfoResponse, %Schema{type: :null}]}
       },
       required: [:id, :name, :slug, :is_active, :stocks]
     })

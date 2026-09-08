@@ -69,7 +69,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   )
 
   def select(conn, %{"id" => id}) do
-    case Identity.get_branch(id, preload: [:info, :stocks]) do
+    case Identity.get_branch(id, preload: [:info]) do
       {:ok, branch} ->
         conn
         |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
@@ -108,7 +108,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
         schema: %Schema{type: :string},
         required: true,
         description: "Slug филиала",
-        example: "sochi-central"
+        example: "centralny-filial"
       ]
     ],
     responses: [
@@ -118,7 +118,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   )
 
   def select_by_slug(conn, %{"slug" => slug}) do
-    case Identity.get_branch_by_slug(slug, preload: [:info, stocks: :media]) do
+    case Identity.get_branch_by_slug(slug, preload: [:info]) do
       {:ok, branch} ->
         conn
         |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)

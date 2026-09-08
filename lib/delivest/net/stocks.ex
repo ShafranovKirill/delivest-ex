@@ -12,6 +12,7 @@ defmodule Delivest.Net.Stocks do
       if stock_ids != [] do
         Stock
         |> where([s], s.id in ^stock_ids)
+        |> preload(:media)
         |> Repo.all()
       else
         []
@@ -23,19 +24,19 @@ defmodule Delivest.Net.Stocks do
 
   def list_staff_stocks_for_branch(_staff, _branch_id), do: []
 
-  def get_stocks_for_branch(branch_id) when not is_nil(branch_id) do
-    stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
+  def list_stocks_for_branch(branch_id) when not is_nil(branch_id) do
+    case Cachex.get(:stock_cache, branch_id) do
+      {:ok, stocks} when is_list(stocks) ->
+        stocks
 
-    if stock_ids != [] do
-      Stock
-      |> where([s], s.id in ^stock_ids and s.is_active == true)
-      |> Repo.all()
-    else
-      []
+      _ ->
+        stocks = fetch_stocks_for_branch(branch_id)
+        Cachex.put(:stock_cache, branch_id, stocks, ttl: :timer.hours(1))
+        stocks
     end
   end
 
-  def get_stocks_for_branch(_), do: []
+  def list_stocks_for_branch(_), do: []
 
   def create_stock(staff, branch_id, attrs) do
     if Identity.can?(staff, "stocks.create") do
@@ -57,7 +58,7 @@ defmodule Delivest.Net.Stocks do
       |> Repo.transaction()
       |> case do
         {:ok, %{stock: created_stock}} ->
-          invalidate_branch_cache(branch_id)
+          invalidate_stock_cache(branch_id)
           {:ok, created_stock}
 
         {:error, _failed_operation, error, _changes_so_far} ->
@@ -76,7 +77,7 @@ defmodule Delivest.Net.Stocks do
       |> case do
         {:ok, updated_stock} ->
           branch_id = get_stock_branch_id(updated_stock.id)
-          invalidate_branch_cache(branch_id)
+          invalidate_stock_cache(branch_id)
           {:ok, updated_stock}
 
         {:error, changeset} ->
@@ -93,7 +94,7 @@ defmodule Delivest.Net.Stocks do
 
       case Repo.delete(stock) do
         {:ok, deleted_stock} ->
-          invalidate_branch_cache(branch_id)
+          invalidate_stock_cache(branch_id)
           {:ok, deleted_stock}
 
         {:error, changeset} ->
@@ -104,14 +105,27 @@ defmodule Delivest.Net.Stocks do
     end
   end
 
+  defp fetch_stocks_for_branch(branch_id) do
+    stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
+
+    if stock_ids != [] do
+      Stock
+      |> where([s], s.id in ^stock_ids and s.is_active == true)
+      |> preload(:media)
+      |> Repo.all()
+    else
+      []
+    end
+  end
+
   defp get_stock_branch_id(stock_id) do
     Relations.list_source_ids("Stock", stock_id, "Branch")
     |> List.first()
   end
 
-  defp invalidate_branch_cache(branch_id) when not is_nil(branch_id) do
-    Cachex.del(:branch_cache, branch_id)
+  defp invalidate_stock_cache(branch_id) when not is_nil(branch_id) do
+    Cachex.del(:stock_cache, branch_id)
   end
 
-  defp invalidate_branch_cache(_), do: :ok
+  defp invalidate_stock_cache(_), do: :ok
 end

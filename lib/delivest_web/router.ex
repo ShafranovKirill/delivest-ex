@@ -31,6 +31,7 @@ defmodule DelivestWeb.Router do
       delete "/active", BranchController, :clear_active
     end
 
+    get "/:branch_id/stocks", Stock.StockController, :index
     get "/branches/:branch_id/menu", Menu.MenuController, :index
   end
 
