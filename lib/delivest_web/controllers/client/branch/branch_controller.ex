@@ -69,7 +69,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   )
 
   def select(conn, %{"id" => id}) do
-    case Identity.get_branch(id, preload: [:info]) do
+    case Identity.get_branch(id, preload: [:info, :stocks]) do
       {:ok, branch} ->
         conn
         |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
