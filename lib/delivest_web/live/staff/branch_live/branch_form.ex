@@ -14,6 +14,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     field :address, :string
     field :phone_number, :string
+    field :delivery_time, :integer
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
@@ -25,6 +26,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :name,
       :address,
       :phone_number,
+      :delivery_time,
       :vk_url,
       :whatsapp_url,
       :instagram_url,
@@ -50,6 +52,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       is_active: branch.is_active,
       address: info && info.address,
       phone_number: info && info.phone_number,
+      delivery_time: info && info.delivery_time,
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url
@@ -67,7 +70,14 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     info_params =
       data
-      |> Map.take([:address, :phone_number])
+      |> Map.take([
+        :address,
+        :phone_number,
+        :delivery_time,
+        :vk_url,
+        :whatsapp_url,
+        :instagram_url
+      ])
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
 
     {branch_params, info_params}

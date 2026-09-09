@@ -13,6 +13,7 @@ defmodule Delivest.Identity.BranchInfo do
   schema "branch_info" do
     field :address, :string
     field :phone_number, :string
+    field :delivery_time, :integer
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
@@ -27,6 +28,7 @@ defmodule Delivest.Identity.BranchInfo do
     |> cast(attrs, [
       :address,
       :phone_number,
+      :delivery_time,
       :vk_url,
       :whatsapp_url,
       :instagram_url,
