@@ -6,7 +6,7 @@ defmodule DelivestWeb.Client.Stock.StockJSON do
   defp stock_data(stock) do
     %{
       id: stock.id,
-      description: stock.text,
+      text: stock.text,
       is_active: stock.is_active,
       order: stock.order,
       photo_url: render_media(stock.media)
