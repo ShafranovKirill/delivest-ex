@@ -1,7 +1,7 @@
 defmodule Delivest.Factory do
   use ExMachina.Ecto, repo: Delivest.Repo
 
-  alias Delivest.Identity.{Staff, Role, StaffBranch, Branch}
+  alias Delivest.Identity.{Staff, Role, StaffBranch, Branch, Client}
   alias Delivest.Net.{Category, Product}
 
   def role_factory do
@@ -39,6 +39,18 @@ defmodule Delivest.Factory do
       name: sequence(:product_name, &"Product #{&1}"),
       price: 100,
       is_active: true
+    }
+  end
+
+  def client_factory do
+    %Client{
+      phone:
+        sequence(
+          :client_phone,
+          &"+7999000#{&1}#{String.pad_leading(Integer.to_string(rem(&1, 10)), 1, "0")}"
+        ),
+      name: sequence(:client_name, &"Client #{&1}"),
+      status: :guest
     }
   end
 

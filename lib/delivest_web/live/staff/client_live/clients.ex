@@ -3,7 +3,6 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
   alias Delivest.Identity
   alias Delivest.Identity.Client
-  alias Delivest.Identity.Clients
   alias DelivestWeb.Staff.ClientLive.ClientFormComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "clients.read"}
@@ -24,7 +23,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   def handle_params(params, _url, socket) do
     flop_params = prepare_flop_params(params)
 
-    case Clients.list_clients(socket.assigns.current_staff, flop_params) do
+    case Identity.list_clients(socket.assigns.current_staff, flop_params) do
       {:ok, {clients, meta}} ->
         socket =
           socket
@@ -79,7 +78,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "clients.update") do
-      case Clients.get_client(socket.assigns.current_staff, id) do
+      case Identity.get_client(socket.assigns.current_staff, id) do
         {:ok, %Client{} = client} ->
           assign(socket, page_title: gettext("Edit Client"), client: client)
 
@@ -120,7 +119,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
   def handle_event("delete_click", %{"id" => id}, socket) do
     if Identity.can?(socket.assigns.current_staff, "clients.delete") do
-      case Clients.get_client(socket.assigns.current_staff, id) do
+      case Identity.get_client(socket.assigns.current_staff, id) do
         {:ok, client} ->
           {:noreply, assign(socket, client_to_delete: client)}
 
@@ -136,7 +135,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   end
 
   def handle_event("confirm_delete", _, %{assigns: %{client_to_delete: client}} = socket) do
-    case Clients.soft_delete_client(socket.assigns.current_staff, client) do
+    case Identity.soft_delete_client(socket.assigns.current_staff, client) do
       {:ok, _} ->
         {:noreply,
          socket

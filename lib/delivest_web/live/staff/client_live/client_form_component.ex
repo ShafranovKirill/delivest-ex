@@ -1,8 +1,8 @@
 defmodule DelivestWeb.Staff.ClientLive.ClientFormComponent do
   use DelivestWeb, :live_component
 
+  alias Delivest.Identity
   alias Delivest.Identity.Client
-  alias Delivest.Identity.Clients
 
   @impl true
   def update(assigns, socket) do
@@ -55,7 +55,7 @@ defmodule DelivestWeb.Staff.ClientLive.ClientFormComponent do
   end
 
   defp save_client_with_params(socket, :edit, params) do
-    case Clients.update_client(
+    case Identity.update_client(
            socket.assigns.current_staff,
            socket.assigns.client,
            params
@@ -75,7 +75,7 @@ defmodule DelivestWeb.Staff.ClientLive.ClientFormComponent do
   end
 
   defp save_client_with_params(socket, :new, params) do
-    case Clients.create_client(params) do
+    case Identity.create_client(params) do
       {:ok, client} ->
         notify_parent({:saved, client})
         {:noreply, socket}
