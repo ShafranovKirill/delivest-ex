@@ -8,30 +8,120 @@ defmodule DelivestWeb.Router do
     plug :put_root_layout, html: {DelivestWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug DelivestWeb.Plugs.Locale
+  end
+
+  pipeline :staff_browser do
+    plug :browser
+    plug DelivestWeb.Plugs.FetchCurrentStaff
   end
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: DelivestWeb.OpenApi
   end
 
-  scope "/", DelivestWeb do
+  scope "/client", DelivestWeb.Client do
+    pipe_through :api
+
+    scope "/branches", Branch do
+      get "/", BranchController, :index
+      post "/:id/select", BranchController, :select
+      post "/slug/:slug/select", BranchController, :select_by_slug
+      delete "/active", BranchController, :clear_active
+    end
+
+    get "/:branch_id/stocks", Stock.StockController, :index
+    get "/branches/:branch_id/menu", Menu.MenuController, :index
+  end
+
+  scope "/staff", DelivestWeb.Staff do
+    pipe_through :staff_browser
+
+    post "/auth/log_in", StaffSessionController, :create
+    delete "/auth/log_out", StaffSessionController, :delete
+    get "/branches/select/:branch_id", StaffActiveBranchController, :set
+
+    live_session :staff_public,
+      on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
+      scope "/auth" do
+        pipe_through :browser
+        live "/login", AuthLive.Login, :new
+      end
+    end
+
+    live_session :staff_default,
+      layout: {DelivestWeb.Layouts, :staff_app},
+      on_mount: [
+        {DelivestWeb.Hooks.StaffAuth, :default},
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
+      ] do
+      live "/branches/select", BranchLive.BranchSelect, :index
+
+      scope "/branches", BranchLive do
+        live "/", Branches, :index
+        live "/:slug/edit", Branches, :edit
+        live "/new", Branches, :new
+      end
+
+      scope "/employee", StaffLive do
+        live "/", Staffs, :index
+        live "/:id/edit", Staffs, :edit
+        live "/new", Staffs, :new
+      end
+
+      scope "/roles", RoleLive do
+        live "/", Roles, :index
+        live "/:id/edit", Roles, :edit
+        live "/new", Roles, :new
+      end
+    end
+
+    live_session :staff_need_branch,
+      layout: {DelivestWeb.Layouts, :staff_app},
+      on_mount: [
+        {DelivestWeb.Hooks.StaffAuth, :default},
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+        {DelivestWeb.Hooks.StaffActiveBranch, :default},
+        {DelivestWeb.Hooks.StaffPath, :default}
+      ] do
+      live "/dashboard", DashboardLive.Index, :index
+
+      scope "/categories", CategoryLive do
+        live "/", Categories, :index
+        live "/:id/edit", Categories, :edit
+        live "/new", Categories, :new
+      end
+
+      scope "/products", ProductLive do
+        live "/", Products, :index
+        live "/:id/edit", Products, :edit
+        live "/new", Products, :new
+      end
+
+      scope "/stocks", StockLive do
+        live "/", Stocks, :index
+        live "/:id/edit", Stocks, :edit
+        live "/new", Stocks, :new
+      end
+    end
+  end
+
+  scope "/" do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", DelivestWeb.PageController, :home
+    get "/locale/:locale", DelivestWeb.Staff.StaffLocaleController, :set
+    forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", DelivestWeb do
-  #   pipe_through :api
-  # end
+  scope "/api" do
+    pipe_through :api
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, spec: DelivestWeb.OpenApi
+  end
+
   if Application.compile_env(:delivest, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do

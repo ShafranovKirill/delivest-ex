@@ -1,5 +1,16 @@
 import Config
 
+if File.exists?(".env") do
+  DotenvParser.load_file(".env")
+end
+
+# Admin credentials: read directly from OS environment at runtime
+config :delivest,
+  default_locale: System.get_env("DEFAULT_LOCALE") || "en"
+
+config :cors_plug,
+  origin: System.get_env("CLIENT_ORIGIN", "http://localhost:3000")
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -16,6 +27,7 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+
 if System.get_env("PHX_SERVER") do
   config :delivest, DelivestWeb.Endpoint, server: true
 end
@@ -84,6 +96,21 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0}
     ],
     secret_key_base: secret_key_base
+
+  config :ex_aws,
+    access_key_id: System.get_env("MINIO_ACCESS_KEY") || raise("MINIO_ACCESS_KEY is missing"),
+    secret_access_key: System.get_env("MINIO_SECRET_KEY") || raise("MINIO_SECRET_KEY is missing"),
+    s3: [
+      scheme: System.get_env("MINIO_SCHEME") || "https://",
+      host: System.get_env("MINIO_HOST") || raise("MINIO_HOST is missing"),
+      port: String.to_integer(System.get_env("MINIO_PORT") || "443")
+    ]
+
+  config :delivest, Delivest.Media,
+    private_bucket: System.get_env("MINIO_PRIVATE_BUCKET"),
+    public_bucket: System.get_env("MINIO_PUBLIC_BUCKET"),
+    public_host: System.get_env("MINIO_PUBLIC_HOST"),
+    public_port: System.get_env("MINIO_PORT_EXTERNAL")
 
   # ## SSL Support
   #

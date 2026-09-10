@@ -110,3 +110,67 @@ msgstr ""
 
 msgid "must be equal to %{number}"
 msgstr ""
+
+#: lib/delivest/identity/staff.ex:61
+#, elixir-autogen, elixir-format
+msgid "can only contain letters, numbers, dots, dashes, and underscores"
+msgstr ""
+
+#: lib/delivest/identity/staff.ex:77
+#: lib/delivest/identity/staff.ex:81
+#, elixir-autogen, elixir-format
+msgid "does not exist"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:21
+#, elixir-autogen, elixir-format
+msgid "is required"
+msgstr ""
+
+#: lib/delivest/identity/staff.ex:69
+#: lib/delivest/identity/staff.ex:92
+#: lib/delivest_web/live/staff/auth_live/login.ex:27
+#, elixir-autogen, elixir-format
+msgid "must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+msgstr ""
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:23
+#, elixir-autogen, elixir-format
+msgid "should be a login"
+msgstr ""
+
+#: lib/delivest/identity/staff_branch.ex:33
+#, elixir-autogen, elixir-format
+msgid "The branch not exist"
+msgstr ""
+
+#: lib/delivest/identity/branch_info.ex:40
+#: lib/delivest_web/live/staff/branch_live/branch_form.ex:38
+#, elixir-autogen, elixir-format
+msgid "The number must be in the format +7XXXXXXXXXX"
+msgstr ""
+
+#: lib/delivest/identity/staff_branch.ex:41
+#, elixir-autogen, elixir-format
+msgid "The staff alredy has access to this branch"
+msgstr ""
+
+#: lib/delivest/identity/staff_branch.ex:25
+#, elixir-autogen, elixir-format
+msgid "The staff not exist"
+msgstr ""
+
+#: lib/delivest_web/hooks/permission.ex:19
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to access this page."
+msgstr ""
+
+#: lib/delivest/identity/branch.ex:42
+#, elixir-autogen, elixir-format
+msgid "can only contain lowercase letters, numbers, and hyphens"
+msgstr ""
+
+#: lib/delivest/identity/staff.ex:57
+#, elixir-autogen, elixir-format
+msgid "does not match password"
+msgstr ""

@@ -1,10 +1,12 @@
 import Config
 
+external_host = System.get_env("DEV_EXTERNAL_HOST", "localhost")
+
 # Configure your database
 config :delivest, Delivest.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: external_host,
   database: "delivest",
   port: 5432,
   stacktrace: true,
@@ -26,6 +28,7 @@ config :delivest, DelivestWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "psKKtXNZ4oNQRc9Mw2HSfDgy1HKK5tYpZq89TyAlr40byEfX0rcaoXydz5X6RAlu",
   watchers: [
+    esbuild: {Esbuild, :install_and_run, [:delivest, ~w(--sourcemap=inline --watch)]},
     npm: ["run", "build:css", "--", "--watch", cd: Path.expand("../assets", __DIR__)]
   ]
 
@@ -52,6 +55,13 @@ config :delivest, DelivestWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+config :delivest, :cookie_options,
+  max_age: 30 * 24 * 60 * 60,
+  http_only: false,
+  secure: false,
+  same_site: "Lax",
+  path: "/"
+
 # Enable dev routes for dashboard and mailbox
 config :delivest, dev_routes: true
 
@@ -75,3 +85,14 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :ex_aws,
+  access_key_id: "minioadmin",
+  secret_access_key: "minioadmin",
+  s3: [
+    scheme: "http://",
+    host: external_host,
+    port: 9000
+  ]
+
+config :delivest, Delivest.Media, bucket: "delivest"

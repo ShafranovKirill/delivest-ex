@@ -69,7 +69,14 @@ defmodule Delivest.MixProject do
       {:argon2_elixir, "~> 4.0"},
       {:flop, "~> 0.25.0"},
       {:cachex, "~> 4.1"},
-      {:ex_machina, "~> 2.7.0", only: :test}
+      {:ex_machina, "~> 2.7.0", only: :test},
+      {:dotenv_parser, "~> 2.0", only: [:dev, :test]},
+      {:ex_aws, "~> 2.7"},
+      {:ex_aws_s3, "~> 2.5"},
+      {:hackney, "~> 4.0"},
+      {:sweet_xml, "~> 0.7"},
+      {:cors_plug, "~> 3.0"},
+      {:open_api_spex, "~> 3.18"}
     ]
   end
 

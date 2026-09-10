@@ -1,0 +1,175 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
+
+msgid "can't be blank"
+msgstr "не может быть пустым"
+
+msgid "has already been taken"
+msgstr "уже занято"
+
+msgid "is invalid"
+msgstr "имеет неверное значение"
+
+msgid "must be accepted"
+msgstr "должно быть принято"
+
+msgid "has invalid format"
+msgstr "имеет неверный формат"
+
+msgid "has an invalid entry"
+msgstr "содержит неверную запись"
+
+msgid "is reserved"
+msgstr "зарезервировано"
+
+msgid "does not match confirmation"
+msgstr "не совпадает с подтверждением"
+
+msgid "is still associated with this entry"
+msgstr "все еще связано с этой записью"
+
+msgid "are still associated with this entry"
+msgstr "все еще связаны с этой записью"
+
+msgid "should have %{count} item(s)"
+msgid_plural "should have %{count} item(s)"
+msgstr[0] "должно содержать %{count} элемент"
+msgstr[1] "должно содержать %{count} элемента"
+msgstr[2] "должно содержать %{count} элементов"
+
+msgid "should be %{count} character(s)"
+msgid_plural "should be %{count} character(s)"
+msgstr[0] "должно быть длиной в %{count} символ"
+msgstr[1] "должно быть длиной в %{count} символа"
+msgstr[2] "должно быть длиной в %{count} символов"
+
+msgid "should be %{count} byte(s)"
+msgid_plural "should be %{count} byte(s)"
+msgstr[0] "должно быть размером в %{count} байт"
+msgstr[1] "должно быть размером в %{count} байта"
+msgstr[2] "должно быть размером в %{count} байт"
+
+msgid "should have at least %{count} item(s)"
+msgid_plural "should have at least %{count} item(s)"
+msgstr[0] "должно содержать как минимум %{count} элемент"
+msgstr[1] "должно содержать как минимум %{count} элемента"
+msgstr[2] "должно содержать как минимум %{count} элементов"
+
+msgid "should be at least %{count} character(s)"
+msgid_plural "should be at least %{count} character(s)"
+msgstr[0] "должно быть не менее %{count} символа"
+msgstr[1] "должно быть не менее %{count} символов"
+msgstr[2] "должно быть не менее %{count} символов"
+
+msgid "should be at least %{count} byte(s)"
+msgid_plural "should be at least %{count} byte(s)"
+msgstr[0] "должно быть не менее %{count} байта"
+msgstr[1] "должно быть не менее %{count} байтов"
+msgstr[2] "должно быть не менее %{count} байтов"
+
+msgid "should have at most %{count} item(s)"
+msgid_plural "should have at most %{count} item(s)"
+msgstr[0] "должно содержать не более %{count} элемента"
+msgstr[1] "должно содержать не более %{count} элементов"
+msgstr[2] "должно содержать не более %{count} элементов"
+
+msgid "should be at most %{count} character(s)"
+msgid_plural "should be at most %{count} character(s)"
+msgstr[0] "должно быть не более %{count} символа"
+msgstr[1] "должно быть не более %{count} символов"
+msgstr[2] "должно быть не более %{count} символов"
+
+msgid "should be at most %{count} byte(s)"
+msgid_plural "should be at most %{count} byte(s)"
+msgstr[0] "должно быть не более %{count} байта"
+msgstr[1] "должно быть не более %{count} байтов"
+msgstr[2] "должно быть не более %{count} байтов"
+
+msgid "must be less than %{number}"
+msgstr "должно быть меньше, чем %{number}"
+
+msgid "must be greater than %{number}"
+msgstr "должно быть больше, чем %{number}"
+
+msgid "must be less than or equal to %{number}"
+msgstr "должно быть меньше или равно %{number}"
+
+msgid "must be greater than or equal to %{number}"
+msgstr "должно быть больше или равно %{number}"
+
+msgid "must be equal to %{number}"
+msgstr "должно быть равно %{number}"
+
+#: lib/delivest/identity/staff.ex:61
+#, elixir-autogen, elixir-format
+msgid "can only contain letters, numbers, dots, dashes, and underscores"
+msgstr "может содержать только буквы, цифры, точки, дефисы и знаки подчеркивания"
+
+#: lib/delivest/identity/staff.ex:77
+#: lib/delivest/identity/staff.ex:81
+#, elixir-autogen, elixir-format
+msgid "does not exist"
+msgstr "не существует"
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:21
+#, elixir-autogen, elixir-format
+msgid "is required"
+msgstr "обязательное поле"
+
+#: lib/delivest/identity/staff.ex:69
+#: lib/delivest/identity/staff.ex:92
+#: lib/delivest_web/live/staff/auth_live/login.ex:27
+#, elixir-autogen, elixir-format
+msgid "must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+msgstr "должен быть длиной не менее 8 символов и содержать хотя бы одну заглавную букву, одну строчную букву, одну цифру и один специальный символ"
+
+#: lib/delivest_web/live/staff/auth_live/login.ex:23
+#, elixir-autogen, elixir-format
+msgid "should be a login"
+msgstr "должно быть логином"
+
+#: lib/delivest/identity/staff_branch.ex:33
+#, elixir-autogen, elixir-format
+msgid "The branch not exist"
+msgstr "Филиал не существует"
+
+#: lib/delivest/identity/branch_info.ex:40
+#: lib/delivest_web/live/staff/branch_live/branch_form.ex:38
+#, elixir-autogen, elixir-format
+msgid "The number must be in the format +7XXXXXXXXXX"
+msgstr "Номер должен быть в формате +7XXXXXXXXXX"
+
+#: lib/delivest/identity/staff_branch.ex:41
+#, elixir-autogen, elixir-format
+msgid "The staff alredy has access to this branch"
+msgstr "Сотрудник уже имеет доступ к этому филиалу"
+
+#: lib/delivest/identity/staff_branch.ex:25
+#, elixir-autogen, elixir-format
+msgid "The staff not exist"
+msgstr "Сотрудник не существует"
+
+#: lib/delivest_web/hooks/permission.ex:19
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to access this page."
+msgstr "У вас нет прав для доступа к этой странице."
+
+#: lib/delivest/identity/branch.ex:42
+#, elixir-autogen, elixir-format
+msgid "can only contain lowercase letters, numbers, and hyphens"
+msgstr "может содержать только строчные буквы, цифры и дефисы"
+
+#: lib/delivest/identity/staff.ex:57
+#, elixir-autogen, elixir-format
+msgid "does not match password"
+msgstr "не совпадает с паролем"

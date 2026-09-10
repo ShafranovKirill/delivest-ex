@@ -7,6 +7,85 @@
 
 @plugin "daisyui";
 
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --color-base-100: oklch(98% 0 0);
+  --color-base-200: oklch(96% 0.001 286.375);
+  --color-base-300: oklch(92% 0.004 286.32);
+  --color-base-content: oklch(21% 0.006 285.885);
+
+  --color-primary: var(--color-sky-500);
+  --color-primary-content: var(--color-sky-50);
+  --color-secondary: var(--color-blue-500);
+  --color-secondary-content: var(--color-blue-50);
+  --color-neutral: var(--color-slate-200);
+  --color-neutral-content: var(--color-slate-900);
+  --color-info: var(--color-cyan-500);
+  --color-info-content: var(--color-cyan-50);
+  --color-success: var(--color-emerald-500);
+  --color-success-content: var(--color-emerald-50);
+  --color-warning: var(--color-amber-400);
+  --color-warning-content: var(--color-amber-950);
+  --color-error: var(--color-red-500);
+  --color-error-content: var(--color-red-50);
+
+  --radius-selector: 0.125rem;
+  --radius-field: 0.125rem;
+  --radius-box: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-base-100: oklch(30.33% 0.016 252.42);
+    --color-base-200: oklch(25.26% 0.014 253.1);
+    --color-base-300: oklch(20.15% 0.012 254.09);
+    --color-base-content: oklch(97.807% 0.029 256.847);
+
+    --color-primary: var(--color-sky-400);
+    --color-primary-content: var(--color-sky-950);
+    --color-secondary: var(--color-blue-400);
+    --color-secondary-content: var(--color-blue-950);
+    --color-neutral: var(--color-slate-600);
+    --color-neutral-content: var(--color-slate-50);
+    --color-info: var(--color-cyan-400);
+    --color-info-content: var(--color-cyan-950);
+    --color-success: var(--color-emerald-400);
+    --color-success-content: var(--color-emerald-950);
+    --color-warning: var(--color-amber-400);
+    --color-warning-content: var(--color-amber-950);
+    --color-error: var(--color-red-400);
+    --color-error-content: var(--color-red-950);
+  }
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-base-100: oklch(30.33% 0.016 252.42);
+  --color-base-200: oklch(25.26% 0.014 253.1);
+  --color-base-300: oklch(20.15% 0.012 254.09);
+  --color-base-content: oklch(97.807% 0.029 256.847);
+
+  --color-primary: var(--color-sky-400);
+  --color-primary-content: var(--color-sky-950);
+  --color-secondary: var(--color-blue-400);
+  --color-secondary-content: var(--color-blue-950);
+  --color-neutral: var(--color-slate-600);
+  --color-neutral-content: var(--color-slate-50);
+  --color-info: var(--color-cyan-400);
+  --color-info-content: var(--color-cyan-950);
+  --color-success: var(--color-emerald-400);
+  --color-success-content: var(--color-emerald-950);
+  --color-warning: var(--color-amber-400);
+  --color-warning-content: var(--color-amber-950);
+  --color-error: var(--color-red-400);
+  --color-error-content: var(--color-red-950);
+}
+
 @custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
 @custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
 @custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
