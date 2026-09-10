@@ -149,6 +149,21 @@ defmodule DelivestWeb.StaffSidebar do
               </.link>
             </li>
 
+            <li :if={can?(@current_staff, "clients.read")}>
+              <.link
+                navigate={~p"/staff/clients"}
+                class={[
+                  "flex items-center gap-2",
+                  (@current_page == :clients && "menu-active") || ""
+                ]}
+              >
+                <.icon name="hero-users" class="size-6 shrink-0" />
+                <span class="group-[.is-collapsed]/sidebar:hidden font-bold truncate">
+                  {gettext("Clients")}
+                </span>
+              </.link>
+            </li>
+
             <li :if={can?(@current_staff, "staff.read")}>
               <.link
                 navigate={~p"/staff/employee"}

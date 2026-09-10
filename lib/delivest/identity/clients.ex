@@ -3,14 +3,11 @@ defmodule Delivest.Identity.Clients do
   alias Delivest.{Identity, Repo}
   alias Delivest.Identity.Client
 
-  @spec list_clients(map(), map(), keyword()) ::
+  @spec list_clients(map(), map()) ::
           {:ok, {[Client.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
-  def list_clients(staff, params \\ %{}, opts \\ []) do
+  def list_clients(staff, params \\ %{}) do
     if Identity.can?(staff, "clients.read") do
-      query =
-        Client
-        |> where([c], is_nil(c.deleted_at))
-        |> maybe_preload_query(opts)
+      query = where(Client, [c], is_nil(c.deleted_at))
 
       Flop.validate_and_run(query, params, for: Client)
     else
@@ -18,13 +15,12 @@ defmodule Delivest.Identity.Clients do
     end
   end
 
-  @spec get_client(map(), String.t(), keyword()) ::
+  @spec get_client(map(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found} | {:error, :forbidden}
-  def get_client(staff, id, opts \\ []) do
+  def get_client(staff, id) do
     if Identity.can?(staff, "clients.read") do
       Client
       |> where([c], is_nil(c.deleted_at))
-      |> maybe_preload_query(opts)
       |> Repo.get(id)
       |> case do
         nil -> {:error, :not_found}
@@ -40,7 +36,7 @@ defmodule Delivest.Identity.Clients do
   def get_or_create_client_by_phone(phone, attrs \\ %{}) do
     case get_active_client_by_phone(phone) do
       %Client{} = client ->
-        maybe_update_client_name(client, attrs)
+        update_client_if_changed(client, attrs)
 
       nil ->
         create_client(Map.put(attrs, :phone, phone))
@@ -120,28 +116,11 @@ defmodule Delivest.Identity.Clients do
     |> Repo.one()
   end
 
-  defp maybe_update_client_name(%Client{name: nil} = client, %{name: name})
-       when is_binary(name) and name != "" do
-    update_client_internal(client, %{name: name})
-  end
+  defp update_client_if_changed(%Client{} = client, attrs) do
+    sanitized_attrs = Map.drop(attrs, [:phone, "phone"])
 
-  defp maybe_update_client_name(%Client{name: nil} = client, %{"name" => name})
-       when is_binary(name) and name != "" do
-    update_client_internal(client, %{name: name})
-  end
-
-  defp maybe_update_client_name(client, _attrs), do: {:ok, client}
-
-  defp update_client_internal(client, attrs) do
     client
-    |> Client.changeset(attrs)
+    |> Client.changeset(sanitized_attrs)
     |> Repo.update()
-  end
-
-  defp maybe_preload_query(query, opts) do
-    case Keyword.get(opts, :preload) do
-      nil -> query
-      preloads -> preload(query, ^preloads)
-    end
   end
 end

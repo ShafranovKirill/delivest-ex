@@ -75,6 +75,12 @@ defmodule DelivestWeb.Router do
         live "/:id/edit", Roles, :edit
         live "/new", Roles, :new
       end
+
+      scope "/clients", ClientLive do
+        live "/", Clients, :index
+        live "/new", Clients, :new
+        live "/:id/edit", Clients, :edit
+      end
     end
 
     live_session :staff_need_branch,
