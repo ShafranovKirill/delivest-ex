@@ -2,7 +2,7 @@ defmodule DelivestWeb.Client.Stock.StockController do
   use DelivestWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Delivest.Net.Stocks
+  alias Delivest.Net
   alias DelivestWeb.Schemas.StockSchemas.StocksListResponse
   alias OpenApiSpex.Schema
 
@@ -24,7 +24,7 @@ defmodule DelivestWeb.Client.Stock.StockController do
   )
 
   def index(conn, %{"branch_id" => branch_id}) do
-    stocks = Stocks.list_stocks_for_branch(branch_id)
+    stocks = Net.list_stocks_for_branch(branch_id)
     render(conn, :index, stocks: stocks)
   end
 end

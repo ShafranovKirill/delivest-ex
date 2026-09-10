@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   def handle_params(params, _url, socket) do
     branch_id = socket.assigns.branch_id
 
-    case Net.Stocks.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id) do
+    case Net.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id) do
       stocks when is_list(stocks) ->
         socket =
           socket
@@ -79,8 +79,8 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
     branch_id = socket.assigns.branch_id
 
     with %Stock{} = stock <- Repo.get(Stock, id),
-         {:ok, _updated} <- Net.Stocks.update_stock_order(staff, stock, above_order, below_order) do
-      stocks = Net.Stocks.list_staff_stocks_for_branch(staff, branch_id)
+         {:ok, _updated} <- Net.update_stock_order(staff, stock, above_order, below_order) do
+      stocks = Net.list_staff_stocks_for_branch(staff, branch_id)
       {:noreply, assign(socket, stocks: stocks)}
     else
       _ ->
@@ -107,9 +107,9 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         _,
         %{assigns: %{stock_to_delete: stock, branch_id: branch_id}} = socket
       ) do
-    case Net.Stocks.delete_stock(socket.assigns.current_staff, stock) do
+    case Net.delete_stock(socket.assigns.current_staff, stock) do
       {:ok, _} ->
-        stocks = Net.Stocks.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id)
+        stocks = Net.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id)
 
         {:noreply,
          socket
@@ -134,7 +134,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   @impl true
   def handle_info({StockFormComponent, {:saved, _stock}}, socket) do
     branch_id = socket.assigns.branch_id
-    stocks = Net.Stocks.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id)
+    stocks = Net.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id)
 
     {:noreply,
      socket

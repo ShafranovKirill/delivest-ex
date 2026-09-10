@@ -92,7 +92,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
   defp do_save_stock(%Ecto.Changeset{valid?: true} = changeset, socket, :edit) do
     params = to_params(changeset)
 
-    case Net.Stocks.update_stock(
+    case Net.update_stock(
            socket.assigns.current_staff,
            socket.assigns.stock,
            params
@@ -110,7 +110,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
     params = to_params(changeset)
     branch_id = socket.assigns.branch_id
 
-    case Net.Stocks.create_stock(
+    case Net.create_stock(
            socket.assigns.current_staff,
            branch_id,
            params
