@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   alias Delivest.Identity
   alias Delivest.Repo
 
-  use Gettext, backend: Delivest.Gettext
+  use Gettext, backend: DelivestWeb.Gettext
 
   @primary_key false
   embedded_schema do
