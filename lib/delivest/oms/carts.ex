@@ -1,9 +1,8 @@
 defmodule Delivest.Carts do
   import Ecto.Query, warn: false
 
-  alias Delivest.Oms.CartView
   alias Delivest.{Repo, Net}
-  alias Delivest.Oms.{Cart, CartItem}
+  alias Delivest.Oms.{Cart, CartItem, CartView}
 
   @cache_store :cart_cache
 
@@ -31,72 +30,93 @@ defmodule Delivest.Carts do
     end
   end
 
-  def add_item(%Cart{} = cart, product_id) do
-    result =
-      case Repo.get_by(CartItem, cart_id: cart.id, product_id: product_id) do
-        nil ->
-          %CartItem{}
-          |> CartItem.changeset(%{
-            cart_id: cart.id,
-            product_id: product_id,
-            quantity: 1
-          })
-          |> Repo.insert()
+  def add_item(cart_id, product_id) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
-        %CartItem{} = item ->
-          item
-          |> CartItem.changeset(%{quantity: item.quantity + 1})
-          |> Repo.update()
-      end
+    changeset =
+      %CartItem{}
+      |> CartItem.changeset(%{
+        cart_id: cart_id,
+        product_id: product_id,
+        quantity: 1
+      })
+
+    result =
+      Repo.insert(
+        changeset,
+        on_conflict: [inc: [quantity: 1], set: [updated_at: now]],
+        conflict_target: [:cart_id, :product_id],
+        returning: true
+      )
 
     case result do
-      {:ok, _updated_item} = success ->
-        invalidate_cache(cart.id)
-        success
+      {:ok, item} ->
+        cart_view = refresh_and_cache(cart_id)
+        {:ok, item, cart_view}
 
-      error ->
-        error
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
-  def remove_item(%Cart{} = cart, product_id, opts \\ []) do
+  def remove_item(cart_id, product_id, opts \\ []) do
     delete_all? = Keyword.get(opts, :all, false)
 
-    result =
-      case Repo.get_by(CartItem, cart_id: cart.id, product_id: product_id) do
-        nil ->
-          {:error, :not_found}
+    query =
+      from(ci in CartItem,
+        where: ci.cart_id == ^cart_id and ci.product_id == ^product_id
+      )
 
-        %CartItem{} = item ->
-          if delete_all? or item.quantity <= 1 do
-            Repo.delete(item)
-          else
-            item
-            |> CartItem.changeset(%{quantity: item.quantity - 1})
-            |> Repo.update()
-          end
-      end
+    case Repo.one(query) do
+      nil ->
+        {:error, :not_found}
 
-    case result do
-      {:ok, _} = success ->
-        invalidate_cache(cart.id)
-        success
+      %CartItem{} = item ->
+        if delete_all? or item.quantity <= 1 do
+          Repo.delete(item)
+        else
+          item
+          |> CartItem.changeset(%{quantity: item.quantity - 1})
+          |> Repo.update()
+        end
+        |> case do
+          {:ok, result} ->
+            cart_view = refresh_and_cache(cart_id)
+            {:ok, result, cart_view}
 
-      error ->
-        error
+          error ->
+            error
+        end
+    end
+  end
+
+  # Сборка корзины по cart_id без загрузки полной структуры %Cart{}
+  def build_cart_view(cart_id) when is_integer(cart_id) or is_binary(cart_id) do
+    cart = Repo.get(Cart, cart_id)
+
+    if cart do
+      items = Repo.all(from(ci in CartItem, where: ci.cart_id == ^cart.id))
+      build_cart_view(cart, items)
+    else
+      nil
     end
   end
 
   def build_cart_view(%Cart{} = cart) do
+    items = Repo.all(from(ci in CartItem, where: ci.cart_id == ^cart.id))
+    build_cart_view(cart, items)
+  end
+
+  def build_cart_view(%Cart{} = cart, items) when is_list(items) do
     product_ids =
-      cart.items
+      items
       |> Enum.map(& &1.product_id)
       |> Enum.uniq()
 
     products_map = Net.list_products_by_ids(product_ids, preload: [:media])
 
-    {items, total_qty, total_amt} =
-      Enum.reduce(cart.items, {[], 0, 0}, fn item, {acc_items, acc_qty, acc_amt} ->
+    {view_items, total_qty, total_amt} =
+      Enum.reduce(items, {[], 0, 0}, fn item, {acc_items, acc_qty, acc_amt} ->
         case Map.get(products_map, item.product_id) do
           nil ->
             {acc_items, acc_qty, acc_amt}
@@ -126,10 +146,21 @@ defmodule Delivest.Carts do
       session_id: cart.session_id,
       staff_id: cart.staff_id,
       branch_id: cart.branch_id,
-      items: Enum.reverse(items),
+      items: Enum.reverse(view_items),
       total_quantity: total_qty,
       total_amount: total_amt
     }
+  end
+
+  defp refresh_and_cache(cart_id) do
+    case build_cart_view(cart_id) do
+      %CartView{} = cart_view ->
+        Cachex.put(@cache_store, cache_key(cart_id), cart_view, ttl: :timer.hours(24))
+        cart_view
+
+      nil ->
+        nil
+    end
   end
 
   defp recalculate_and_cache(%Cart{} = cart, cache_key) do
@@ -139,26 +170,19 @@ defmodule Delivest.Carts do
   end
 
   defp fetch_raw_cart(opts) do
-    session_id = Keyword.get(opts, :session_id)
-    staff_id = Keyword.get(opts, :staff_id)
+    query = from(c in Cart)
 
-    query = from(c in Cart, preload: [:items])
+    case {Keyword.get(opts, :session_id), Keyword.get(opts, :staff_id)} do
+      {session_id, _} when not is_nil(session_id) ->
+        Repo.get_by(query, session_id: session_id)
 
-    cond do
-      not is_nil(session_id) ->
-        Repo.one(from c in query, where: c.session_id == ^session_id)
+      {_, staff_id} when not is_nil(staff_id) ->
+        Repo.get_by(query, staff_id: staff_id)
 
-      not is_nil(staff_id) ->
-        Repo.one(from c in query, where: c.staff_id == ^staff_id)
-
-      true ->
+      _ ->
         nil
     end
   end
 
-  defp cache_key(cart_id), do: cart_id
-
-  defp invalidate_cache(cart_id) do
-    Cachex.del(@cache_store, cache_key(cart_id))
-  end
+  defp cache_key(cart_id), do: "cart:#{cart_id}"
 end
