@@ -7,9 +7,9 @@ defmodule Delivest.Relations.EntityRelation do
 
   schema "entity_relations" do
     field :from_entity_type, :string
-    field :from_id, Ecto.UUID
+    field :from_id, :binary_id
     field :to_entity_type, :string
-    field :to_id, Ecto.UUID
+    field :to_id, :binary_id
     field :payload, :map, default: %{}
 
     timestamps()

@@ -105,6 +105,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
           <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
           <.input field={@form[:address]} type="text" label={gettext("Address")} />
+          <.input
+            field={@form[:delivery_time]}
+            type="number"
+            label={gettext("Delivery Time(minute)")}
+          />
           <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
           <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
           <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />

@@ -108,7 +108,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
         schema: %Schema{type: :string},
         required: true,
         description: "Slug филиала",
-        example: "sochi-central"
+        example: "centralny-filial"
       ]
     ],
     responses: [

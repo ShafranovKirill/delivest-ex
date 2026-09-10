@@ -25,6 +25,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       id: info.id,
       address: info.address,
       phone_number: info.phone_number,
+      delivery_time: info.delivery_time,
       vk_url: info.vk_url,
       whatsapp_url: info.whatsapp_url,
       instagram_url: info.instagram_url

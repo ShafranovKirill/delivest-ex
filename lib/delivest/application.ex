@@ -18,6 +18,7 @@ defmodule Delivest.Application do
       Supervisor.child_spec({Cachex, name: :staff_cache}, id: :staff_cache),
       Supervisor.child_spec({Cachex, name: :branch_cache}, id: :branch_cache),
       Supervisor.child_spec({Cachex, name: :menu_cache}, id: :menu_cache),
+      Supervisor.child_spec({Cachex, name: :stock_cache}, id: :stock_cache),
       DelivestWeb.Endpoint
     ]
 

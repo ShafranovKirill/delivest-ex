@@ -11,6 +11,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         id: %Schema{type: :string, format: :uuid, example: "8f3b2c10-91ab-4cd2-81e2-123456789abc"},
         address: %Schema{type: :string, example: "ул. Пушкина, д. 10", nullable: true},
         phone_number: %Schema{type: :string, example: "+79990000000", nullable: true},
+        delivery_time: %Schema{type: :integer, example: "30", nullable: true},
         vk_url: %Schema{type: :string, example: "https://vk.com/group_name", nullable: true},
         whatsapp_url: %Schema{type: :string, example: "https://wa.me/79990000000", nullable: true},
         instagram_url: %Schema{
@@ -25,7 +26,6 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
 
   defmodule Branch do
     require OpenApiSpex
-    alias DelivestWeb.Schemas.BranchSchemas.BranchInfoResponse
 
     OpenApiSpex.schema(%{
       title: "Branch",
@@ -37,7 +37,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         is_active: %Schema{type: :boolean, example: true},
         branch_info: %Schema{anyOf: [BranchInfoResponse, %Schema{type: :null}]}
       },
-      required: [:id, :name, :slug, :is_active]
+      required: [:id, :name, :slug, :is_active, :stocks]
     })
   end
 

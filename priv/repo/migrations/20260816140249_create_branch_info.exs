@@ -5,6 +5,7 @@ defmodule Delivest.Repo.Migrations.CreateBranchInfo do
     create table(:branch_info, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :address, :string
+      add :delivery_time, :integer
       add :phone_number, :string
       add :vk_url, :string
       add :whatsapp_url, :string
