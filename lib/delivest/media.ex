@@ -72,6 +72,8 @@ defmodule Delivest.Media do
     end
   end
 
+  def get_url_from_file(%Ecto.Association.NotLoaded{}), do: nil
+  def get_url_from_file(nil), do: nil
   def get_url_from_file(_), do: nil
 
   defp generate_url_by_flag(bucket, key, true = _is_private),

@@ -19,6 +19,27 @@ defmodule Delivest.Net.Products do
     end
   end
 
+  def list_products_by_ids(ids, opts \\ []) when is_list(ids) do
+    if ids == [] do
+      %{}
+    else
+      Product
+      |> where([p], p.id in ^ids)
+      |> where([p], is_nil(p.deleted_at))
+      |> where([p], p.is_active == true)
+      |> maybe_preload_query(opts)
+      |> Repo.all()
+      |> Map.new(fn product -> {product.id, product} end)
+    end
+  end
+
+  def get_product(id, opts \\ []) do
+    Product
+    |> where([p], is_nil(p.deleted_at))
+    |> maybe_preload_query(opts)
+    |> Repo.get(id)
+  end
+
   def create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
       Multi.new()
