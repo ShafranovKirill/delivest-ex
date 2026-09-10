@@ -3,8 +3,8 @@ defmodule Delivest.Net.ProductsTest do
 
   import Delivest.Factory
 
+  alias Delivest.Net
   alias Delivest.Net.Product
-  alias Delivest.Net.Products
   alias Delivest.Relations
 
   defp staff_with_permissions(permissions) do
@@ -34,7 +34,7 @@ defmodule Delivest.Net.ProductsTest do
                  Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
       end
 
-      assert {:ok, {products, _meta}} = Products.list_staff_products_for_branch(staff, branch.id)
+      assert {:ok, {products, _meta}} = Net.list_staff_products_for_branch(staff, branch.id)
       product_ids = Enum.map(products, & &1.id)
       assert product_ids == [visible.id, inactive.id]
       refute deleted.id in product_ids
@@ -45,7 +45,7 @@ defmodule Delivest.Net.ProductsTest do
       staff = staff_with_permissions([])
       branch = insert(:branch)
 
-      assert {:error, :forbidden} = Products.list_staff_products_for_branch(staff, branch.id)
+      assert {:error, :forbidden} = Net.list_staff_products_for_branch(staff, branch.id)
     end
   end
 
@@ -55,7 +55,7 @@ defmodule Delivest.Net.ProductsTest do
       branch = insert(:branch)
 
       assert {:ok, %Product{} = product} =
-               Products.create_product(staff, branch.id, %{"name" => "New", "price" => 250})
+               Net.create_product(staff, branch.id, %{"name" => "New", "price" => 250})
 
       assert product.name == "New"
       assert product.price == 250
@@ -67,7 +67,7 @@ defmodule Delivest.Net.ProductsTest do
       branch = insert(:branch)
 
       assert {:error, changeset} =
-               Products.create_product(staff, branch.id, %{"name" => "Bad", "price" => -1})
+               Net.create_product(staff, branch.id, %{"name" => "Bad", "price" => -1})
 
       assert "must be greater than or equal to 0" in errors_on(changeset).price
     end
@@ -77,7 +77,7 @@ defmodule Delivest.Net.ProductsTest do
       branch = insert(:branch)
 
       assert {:error, :forbidden} =
-               Products.create_product(staff, branch.id, %{"name" => "New", "price" => 100})
+               Net.create_product(staff, branch.id, %{"name" => "New", "price" => 100})
     end
   end
 
@@ -87,7 +87,7 @@ defmodule Delivest.Net.ProductsTest do
       product = insert_product(%{name: "Old"})
 
       assert {:ok, updated} =
-               Products.update_product(staff, product, %{"name" => "Updated", "price" => 125})
+               Net.update_product(staff, product, %{"name" => "Updated", "price" => 125})
 
       assert updated.name == "Updated"
       assert updated.price == 125
@@ -98,7 +98,7 @@ defmodule Delivest.Net.ProductsTest do
       product = insert_product()
 
       assert {:error, :forbidden} =
-               Products.update_product(staff, product, %{"name" => "Updated"})
+               Net.update_product(staff, product, %{"name" => "Updated"})
     end
   end
 
@@ -107,7 +107,7 @@ defmodule Delivest.Net.ProductsTest do
       staff = staff_with_permissions(["products.delete"])
       product = insert_product()
 
-      assert {:ok, deleted} = Products.soft_delete_product(staff, product)
+      assert {:ok, deleted} = Net.soft_delete_product(staff, product)
       assert %DateTime{} = deleted.deleted_at
     end
 
@@ -115,7 +115,7 @@ defmodule Delivest.Net.ProductsTest do
       staff = staff_with_permissions([])
       product = insert_product()
 
-      assert {:error, :forbidden} = Products.soft_delete_product(staff, product)
+      assert {:error, :forbidden} = Net.soft_delete_product(staff, product)
     end
   end
 end
