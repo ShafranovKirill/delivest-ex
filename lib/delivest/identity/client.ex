@@ -14,8 +14,9 @@ defmodule Delivest.Identity.Client do
 
   @derive {
     Flop.Schema,
-    filterable: [:phone, :name, :status, :inserted_at],
+    filterable: [:phone, :name, :status, :inserted_at, :search_term],
     sortable: [:phone, :name, :status, :inserted_at],
+    compound_fields: [search_term: [:name, :phone]],
     default_order: %{
       order_by: [:inserted_at, :status],
       order_directions: [:desc]

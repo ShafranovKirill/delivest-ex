@@ -54,9 +54,9 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
         new_filters =
           Map.put(filters, to_string(next_idx), %{
-            "field" => "name",
-            "op" => "ilike_or",
-            "value" => val
+            "field" => "search_term",
+            "op" => "ilike",
+            "value" => String.trim(val)
           })
 
         Map.put(params, "filters", new_filters)
@@ -101,7 +101,6 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
     filters =
       []
       |> maybe_add_filter(:status, "==", status)
-      |> maybe_add_filter(:phone, "ilike_or", search)
       |> map_to_flop_format()
 
     query_params =
