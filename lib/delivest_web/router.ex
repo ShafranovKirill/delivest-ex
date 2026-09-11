@@ -37,6 +37,12 @@ defmodule DelivestWeb.Router do
       delete "/active", BranchController, :clear_active
     end
 
+    scope "/cart", Cart do
+      get "/", CartController, :show
+      post "/:cart_id/items", CartController, :add_item
+      delete "/:cart_id/items/:product_id", CartController, :remove_item
+    end
+
     get "/:branch_id/stocks", Stock.StockController, :index
     get "/branches/:branch_id/menu", Menu.MenuController, :index
   end

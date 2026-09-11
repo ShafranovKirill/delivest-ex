@@ -25,7 +25,7 @@ defmodule Delivest.Net.Product do
     field :quantity, :integer
     field :weight, :integer
     field :is_active, :boolean, default: true
-    belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :string
+    belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
     field :external_id, :string
 
     belongs_to :category, Category, type: :binary_id

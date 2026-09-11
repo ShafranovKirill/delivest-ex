@@ -7,6 +7,16 @@ defmodule Delivest.Oms.Carts do
   @cache_store :cart_cache
   @cache_ttl :timer.hours(24)
 
+  def get_or_create_cart(opts) when is_list(opts) do
+    case get_cart(opts) do
+      %CartView{} = cart_view ->
+        {:ok, cart_view}
+
+      nil ->
+        create_cart(opts)
+    end
+  end
+
   def get_cart(opts) when is_list(opts) do
     force? = Keyword.get(opts, :force, false)
 
@@ -19,6 +29,22 @@ defmodule Delivest.Oms.Carts do
           _ -> recalculate_and_cache(cart)
         end
       end
+    end
+  end
+
+  def create_cart(attrs) when is_map(attrs) or is_list(attrs) do
+    attrs = Map.new(attrs)
+
+    %Cart{}
+    |> Cart.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, %Cart{} = cart} ->
+        cart_view = recalculate_and_cache(cart)
+        {:ok, cart_view}
+
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 

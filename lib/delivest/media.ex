@@ -48,24 +48,18 @@ defmodule Delivest.Media do
     end
   end
 
-  @spec get_url(String.t() | binary() | nil) :: String.t() | nil
+  @spec get_url(String.t() | nil) :: String.t() | nil
   def get_url(nil), do: nil
 
   def get_url(media_id) when is_binary(media_id) do
-    case cast_uuid(media_id) do
-      {:ok, valid_uuid} ->
-        case Repo.get(File, valid_uuid) do
-          %File{key: key, bucket: bucket, is_private: is_private} ->
-            case generate_url_by_flag(bucket, key, is_private) do
-              {:ok, url} -> url
-              {:error, _reason} -> nil
-            end
-
-          nil ->
-            nil
+    case Repo.get(File, media_id) do
+      %File{key: key, bucket: bucket, is_private: is_private} ->
+        case generate_url_by_flag(bucket, key, is_private) do
+          {:ok, url} -> url
+          {:error, _reason} -> nil
         end
 
-      :error ->
+      nil ->
         nil
     end
   end
@@ -78,8 +72,6 @@ defmodule Delivest.Media do
     end
   end
 
-  def get_url_from_file(%Ecto.Association.NotLoaded{}), do: nil
-  def get_url_from_file(nil), do: nil
   def get_url_from_file(_), do: nil
 
   defp generate_url_by_flag(bucket, key, true = _is_private),
@@ -133,18 +125,8 @@ defmodule Delivest.Media do
   @spec get_file(binary() | nil) :: File.t() | nil
   def get_file(nil), do: nil
 
-  def get_file(id) when is_binary(id) do
-    case cast_uuid(id) do
-      {:ok, valid_uuid} -> Repo.get(File, valid_uuid)
-      :error -> nil
-    end
-  end
-
-  defp cast_uuid(id) do
-    case Ecto.UUID.cast(id) do
-      {:ok, _} = success -> success
-      :error -> Ecto.UUID.load(id)
-    end
+  def get_file(id) do
+    Repo.get(File, id)
   end
 
   def delete_file_by_key(key) do
