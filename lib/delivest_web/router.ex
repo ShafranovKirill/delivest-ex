@@ -21,8 +21,14 @@ defmodule DelivestWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: DelivestWeb.OpenApi
   end
 
+  pipeline :client_api do
+    plug :api
+    plug :fetch_cookies
+    plug DelivestWeb.Plugs.EnsureSessionId
+  end
+
   scope "/client", DelivestWeb.Client do
-    pipe_through :api
+    pipe_through :client_api
 
     scope "/branches", Branch do
       get "/", BranchController, :index

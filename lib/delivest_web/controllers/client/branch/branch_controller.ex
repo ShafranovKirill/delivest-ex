@@ -72,7 +72,11 @@ defmodule DelivestWeb.Client.Branch.BranchController do
     case Identity.get_branch(id, preload: [:info]) do
       {:ok, branch} ->
         conn
-        |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
+        |> CookieHelper.put_cookie(
+          "active_branch_id",
+          to_string(branch.id),
+          @active_branch_cookie_opts
+        )
         |> render(:show, branch: branch)
 
       {:error, _reason} ->
