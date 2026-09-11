@@ -39,7 +39,7 @@ defmodule DelivestWeb.Router do
 
     scope "/cart", Cart do
       get "/", CartController, :show
-      post "/:cart_id/items", CartController, :add_item
+      post "/:cart_id/items/:product_id", CartController, :add_item
       delete "/:cart_id/items/:product_id", CartController, :remove_item
     end
 

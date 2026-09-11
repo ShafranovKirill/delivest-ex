@@ -42,17 +42,14 @@ defmodule DelivestWeb.Client.Cart.CartController do
         schema: %Schema{type: :string, format: :uuid},
         required: true,
         description: "UUID корзины"
+      ],
+      product_id: [
+        in: :path,
+        schema: %Schema{type: :string, format: :uuid},
+        required: true,
+        description: "UUID товара"
       ]
     ],
-    request_body:
-      {"Данные товара", "application/json",
-       %Schema{
-         type: :object,
-         properties: %{
-           product_id: %Schema{type: :string, format: :uuid}
-         },
-         required: [:product_id]
-       }},
     responses: [
       ok: {"Обновленная корзина", "application/json", CartResponse},
       unprocessable_entity:
@@ -88,6 +85,12 @@ defmodule DelivestWeb.Client.Cart.CartController do
         schema: %Schema{type: :string, format: :uuid},
         required: true,
         description: "UUID товара"
+      ],
+      all: [
+        in: :query,
+        schema: %Schema{type: :boolean, default: false},
+        required: false,
+        description: "Удалить все единицы товара из корзины"
       ]
     ],
     responses: [
@@ -96,8 +99,15 @@ defmodule DelivestWeb.Client.Cart.CartController do
     ]
   )
 
-  def remove_item(conn, %{"cart_id" => cart_id, "product_id" => product_id}) do
-    case Carts.remove_item(cart_id, product_id) do
+  def remove_item(conn, %{"cart_id" => cart_id, "product_id" => product_id} = params) do
+    opts =
+      if Map.get(params, "all") in ["true", true] do
+        [all: true]
+      else
+        []
+      end
+
+    case Carts.remove_item(cart_id, product_id, opts) do
       {:ok, _status, cart_view} ->
         render(conn, :show, cart: cart_view)
 
