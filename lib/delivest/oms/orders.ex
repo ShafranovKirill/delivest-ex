@@ -1,13 +1,16 @@
 defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
-  alias Delivest.Net
-  alias Ecto.Multi
-  alias Delivest.Repo
-  alias Delivest.Oms.Order
-  alias Delivest.Oms.Order.OrderNumber
 
   alias Delivest.Identity
+  alias Delivest.Net
+  alias Delivest.Oms.CartView
   alias Delivest.Oms.Carts
+  alias Delivest.Oms.Order
+  alias Delivest.Oms.Order.OrderNumber
+  alias Delivest.Repo
+  alias Ecto.Multi
+
+  @cache_store :cart_cache
 
   def create_order(attrs) do
     Multi.new()
@@ -15,7 +18,7 @@ defmodule Delivest.Oms.Orders do
       get_or_create_client(attrs)
     end)
     |> Multi.run(:cart, fn _repo, _ ->
-      fetch_cart(attrs["cart_id"])
+      fetch_cart(attrs)
     end)
     |> Multi.run(:products, fn _repo, %{cart: cart} ->
       fetch_products_for_cart(cart)
@@ -32,12 +35,15 @@ defmodule Delivest.Oms.Orders do
       build_order_changeset(number, client, cart, products, attrs)
     end)
     |> Multi.run(:clear_cart, fn _repo, %{cart: cart} ->
-      Carts.delete_cart(cart.id)
+      clear_cart_in_transaction(cart.id)
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{order: order}} -> {:ok, Repo.preload(order, :items)}
-      {:error, step, reason, _changes} -> {:error, step, reason}
+      {:ok, %{order: order}} ->
+        {:ok, Repo.preload(order, :items)}
+
+      {:error, step, reason, _changes} ->
+        {:error, step, reason}
     end
   end
 
@@ -56,8 +62,11 @@ defmodule Delivest.Oms.Orders do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{order: updated_order}} -> {:ok, Repo.preload(updated_order, :items, force: true)}
-      {:error, step, reason, _changes} -> {:error, step, reason}
+      {:ok, %{order: updated_order}} ->
+        {:ok, Repo.preload(updated_order, :items, force: true)}
+
+      {:error, step, reason, _changes} ->
+        {:error, step, reason}
     end
   end
 
@@ -75,9 +84,11 @@ defmodule Delivest.Oms.Orders do
   defp maybe_resolve_client(_order, _attrs), do: {:ok, nil}
 
   defp prepare_update_attrs(_order, client, attrs) do
+    client_id = extract_client_id(client)
+
     attrs =
-      if client do
-        Map.put(attrs, "client_id", client.id)
+      if client_id do
+        Map.put(attrs, "client_id", client_id)
       else
         attrs
       end
@@ -97,30 +108,31 @@ defmodule Delivest.Oms.Orders do
         item["product_id"] || item[:product_id]
       end)
 
-    products_map =
-      product_ids
-      |> Net.list_products_by_ids([])
-      |> Map.new(&{&1.id, &1})
+    # Net.list_products_by_ids возвращает Map вида %{id => %Product{}}
+    products_map = Net.list_products_by_ids(product_ids, [])
 
     {items_attrs, total_amount} =
       Enum.reduce(items_params, {[], 0}, fn item_param, {acc_items, acc_total} ->
         product_id = item_param["product_id"] || item_param[:product_id]
-
         quantity = parse_quantity(item_param["quantity"] || item_param[:quantity])
 
-        product = Map.get(products_map, product_id)
+        case Map.get(products_map, product_id) do
+          nil ->
+            {acc_items, acc_total}
 
-        price = product.price
-        item_total = price * quantity
+          product ->
+            price = product.price
+            item_total = price * quantity
 
-        item_data = %{
-          product_id: product_id,
-          title: product.title,
-          price: price,
-          quantity: quantity
-        }
+            item_data = %{
+              product_id: product_id,
+              title: product.name,
+              price: price,
+              quantity: quantity
+            }
 
-        {[item_data | acc_items], acc_total + item_total}
+            {[item_data | acc_items], acc_total + item_total}
+        end
       end)
 
     updated_attrs =
@@ -135,46 +147,63 @@ defmodule Delivest.Oms.Orders do
   defp parse_quantity(q) when is_binary(q), do: String.to_integer(q)
   defp parse_quantity(_), do: 1
 
-  defp get_or_create_client(%{"phone" => phone} = attrs) when not is_nil(phone) do
+  defp get_or_create_client(%{"phone" => phone} = attrs) when not is_nil(phone) and phone != "" do
     client_attrs = %{name: Map.get(attrs, "client_name")}
     {:ok, Identity.get_or_create_client_by_phone(phone, client_attrs)}
   end
 
   defp get_or_create_client(_), do: {:ok, nil}
 
-  defp fetch_cart(cart_id) do
-    case Carts.get_cart(id: cart_id) do
-      nil -> {:error, :cart_not_found}
-      %{items: []} -> {:error, :cart_is_empty}
-      cart -> {:ok, cart}
+  defp fetch_cart(attrs) when is_map(attrs) do
+    cart_id = Map.get(attrs, "cart_id") || Map.get(attrs, :cart_id)
+    fetch_cart(cart_id)
+  end
+
+  defp fetch_cart(cart_id) when is_binary(cart_id) or is_integer(cart_id) do
+    case Carts.get_cart_by_id(cart_id) do
+      nil ->
+        {:error, :cart_not_found}
+
+      %CartView{items: []} ->
+        {:error, :cart_is_empty}
+
+      %CartView{} = cart ->
+        {:ok, cart}
     end
   end
 
-  defp fetch_products_for_cart(cart) do
-    product_ids = Enum.map(cart.items, & &1.product_id)
-    products = Net.list_products_by_ids(product_ids, [])
+  defp fetch_cart(_), do: {:error, :cart_not_found}
 
-    products_map = Map.new(products, &{&1.id, &1})
+  defp fetch_products_for_cart(%{items: items}) do
+    product_ids = Enum.map(items, & &1.product_id)
+    products_map = Net.list_products_by_ids(product_ids, [])
+
     {:ok, products_map}
   end
 
   defp build_order_changeset(number, client, cart, products_map, attrs) do
     {items_attrs, total_amount} =
       Enum.reduce(cart.items, {[], 0}, fn item, {acc_items, acc_total} ->
-        product = Map.get(products_map, item.product_id)
+        case Map.get(products_map, item.product_id) do
+          nil ->
+            {acc_items, acc_total}
 
-        price = product.price
-        item_total = price * item.quantity
+          product ->
+            price = product.price
+            item_total = price * item.quantity
 
-        order_item = %{
-          product_id: item.product_id,
-          title: product.title,
-          price: price,
-          quantity: item.quantity
-        }
+            order_item = %{
+              product_id: item.product_id,
+              title: product.name,
+              price: price,
+              quantity: item.quantity
+            }
 
-        {[order_item | acc_items], acc_total + item_total}
+            {[order_item | acc_items], acc_total + item_total}
+        end
       end)
+
+    client_id = extract_client_id(client)
 
     order_params =
       attrs
@@ -182,10 +211,27 @@ defmodule Delivest.Oms.Orders do
       |> Map.put("total_amount", total_amount)
       |> Map.put("branch_id", cart.branch_id)
       |> Map.put("staff_id", cart.staff_id)
-      |> Map.put("client_id", client && client.id)
+      |> Map.put("client_id", client_id)
 
     %Order{}
     |> Order.changeset(order_params)
     |> Ecto.Changeset.put_assoc(:items, items_attrs)
+  end
+
+  defp extract_client_id({:ok, %{id: id}}), do: id
+  defp extract_client_id(%{id: id}), do: id
+  defp extract_client_id(_), do: nil
+
+  defp clear_cart_in_transaction(cart_id) do
+    case Repo.get(Delivest.Oms.Cart, cart_id) do
+      %Delivest.Oms.Cart{} = cart ->
+        Repo.delete(cart)
+        Cachex.del(@cache_store, cart.id)
+        {:ok, :deleted}
+
+      nil ->
+        Cachex.del(@cache_store, cart_id)
+        {:ok, :not_found}
+    end
   end
 end

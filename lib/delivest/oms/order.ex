@@ -20,6 +20,9 @@ defmodule Delivest.Oms.Order do
     field :client_id, :binary_id
     field :branch_id, :binary_id
 
+    field :phone, :string, virtual: true
+    field :client_name, :string, virtual: true
+
     field :status, Ecto.Enum, values: @statuses, default: :created
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
     field :payment_method, Ecto.Enum, values: @payment_methods, default: :cash
@@ -41,6 +44,8 @@ defmodule Delivest.Oms.Order do
       :staff_id,
       :client_id,
       :branch_id,
+      :phone,
+      :client_name,
       :status,
       :fulfillment_type,
       :payment_method,
@@ -51,13 +56,12 @@ defmodule Delivest.Oms.Order do
     |> cast_embed(:address, required: false)
     |> cast_assoc(:items)
     |> validate_required([
-      :number,
       :branch_id,
       :status,
       :fulfillment_type,
-      :payment_method,
-      :total_amount
+      :payment_method
     ])
+    |> validate_phone()
     |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
     |> validate_inclusion(:payment_method, @payment_methods)
@@ -69,6 +73,20 @@ defmodule Delivest.Oms.Order do
     case get_field(changeset, :fulfillment_type) do
       :delivery -> validate_required(changeset, [:address])
       _ -> changeset
+    end
+  end
+
+  defp validate_phone(changeset) do
+    case get_field(changeset, :phone) do
+      nil ->
+        changeset
+
+      "" ->
+        changeset
+
+      _phone ->
+        changeset
+        |> validate_format(:phone, ~r/^\+7\d{10}$/, message: "must be in format +7XXXXXXXXXX")
     end
   end
 end
