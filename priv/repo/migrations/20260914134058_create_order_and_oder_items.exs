@@ -4,7 +4,7 @@ defmodule Delivest.Repo.Migrations.CreateOrderAndOderItems do
   def change do
     create table(:orders, primary_key: false) do
       add :id, :binary_id, primary_key: true
-      add :number, :serial, null: false
+      add :number, :string, null: false
 
       add :staff_id, :binary_id
       add :client_id, :binary_id

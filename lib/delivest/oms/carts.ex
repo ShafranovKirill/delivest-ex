@@ -18,18 +18,15 @@ defmodule Delivest.Oms.Carts do
   end
 
   def get_cart(opts) when is_list(opts) do
-    force? = Keyword.get(opts, :force, false)
-
-    with %Cart{} = cart <- fetch_raw_cart(opts) do
-      if force? do
-        recalculate_and_cache(cart)
-      else
-        case Cachex.get(@cache_store, cart.id) do
-          {:ok, %CartView{} = cached_view} -> cached_view
-          _ -> recalculate_and_cache(cart)
-        end
-      end
+    case fetch_raw_cart(opts) do
+      %Cart{id: cart_id} -> get_cart_by_id(cart_id, opts)
+      nil -> nil
     end
+  end
+
+  def get_cart_by_id(cart_id, opts \\ []) when is_integer(cart_id) or is_binary(cart_id) do
+    force? = Keyword.get(opts, :force, false)
+    fetch_cached_or_recalculate(cart_id, force?)
   end
 
   def create_cart(attrs) when is_map(attrs) or is_list(attrs) do
@@ -116,10 +113,28 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
+  def delete_cart(%Cart{} = cart) do
+    Repo.transaction(fn ->
+      case Repo.delete(cart) do
+        {:ok, deleted_cart} ->
+          Cachex.del(@cache_store, deleted_cart.id)
+          deleted_cart
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  def delete_cart(cart_id) when is_integer(cart_id) or is_binary(cart_id) do
+    case Repo.get(Cart, cart_id) do
+      %Cart{} = cart -> delete_cart(cart)
+      nil -> {:error, :not_found}
+    end
+  end
+
   def build_cart_view(cart_id) when is_integer(cart_id) or is_binary(cart_id) do
-    Cart
-    |> Repo.get(cart_id)
-    |> case do
+    case Repo.get(Cart, cart_id) do
       nil -> nil
       cart -> build_cart_view(cart)
     end
@@ -167,15 +182,26 @@ defmodule Delivest.Oms.Carts do
     }
   end
 
-  defp refresh_and_cache(cart_id) do
-    case build_cart_view(cart_id) do
-      %CartView{} = cart_view ->
-        Cachex.put(@cache_store, cart_id, cart_view, ttl: @cache_ttl)
-        cart_view
-
-      nil ->
-        nil
+  defp fetch_cached_or_recalculate(cart_id, force?) do
+    if force? do
+      fetch_and_recalculate(cart_id)
+    else
+      case Cachex.get(@cache_store, cart_id) do
+        {:ok, %CartView{} = cached_view} -> cached_view
+        _ -> fetch_and_recalculate(cart_id)
+      end
     end
+  end
+
+  defp fetch_and_recalculate(cart_id) do
+    case Repo.get(Cart, cart_id) do
+      %Cart{} = cart -> recalculate_and_cache(cart)
+      nil -> nil
+    end
+  end
+
+  defp refresh_and_cache(cart_id) do
+    fetch_and_recalculate(cart_id)
   end
 
   defp recalculate_and_cache(%Cart{} = cart) do

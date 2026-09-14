@@ -1,4 +1,4 @@
-defmodule Delivest.Oms.Address do
+defmodule Delivest.Oms.Order.Address do
   use Ecto.Schema
   import Ecto.Changeset
 

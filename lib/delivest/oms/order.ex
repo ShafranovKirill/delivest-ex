@@ -15,7 +15,7 @@ defmodule Delivest.Oms.Order do
   @foreign_key_type :binary_id
 
   schema "orders" do
-    field :number, :integer
+    field :number, :string
     field :staff_id, :binary_id
     field :client_id, :binary_id
     field :branch_id, :binary_id
