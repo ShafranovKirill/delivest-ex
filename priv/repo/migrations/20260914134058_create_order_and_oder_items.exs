@@ -24,6 +24,8 @@ defmodule Delivest.Repo.Migrations.CreateOrderAndOderItems do
 
       add :comment, :text
 
+      add :deleted_at, :utc_datetime
+
       timestamps(type: :utc_datetime)
     end
 

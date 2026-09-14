@@ -41,6 +41,100 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
+  def update_order(%Order{} = order, attrs) do
+    order = Repo.preload(order, :items)
+
+    Multi.new()
+    |> Multi.run(:client, fn _repo, _ ->
+      maybe_resolve_client(order, attrs)
+    end)
+    |> Multi.run(:prepared_attrs, fn _repo, %{client: client} ->
+      prepare_update_attrs(order, client, attrs)
+    end)
+    |> Multi.update(:order, fn %{prepared_attrs: prepared_attrs} ->
+      Order.changeset(order, prepared_attrs)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{order: updated_order}} -> {:ok, Repo.preload(updated_order, :items, force: true)}
+      {:error, step, reason, _changes} -> {:error, step, reason}
+    end
+  end
+
+  def soft_delete_order(%Order{} = order) do
+    order
+    |> Order.changeset(%{deleted_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+    |> Repo.update()
+  end
+
+  defp maybe_resolve_client(_order, %{"phone" => phone} = attrs) when not is_nil(phone) do
+    client_attrs = %{name: Map.get(attrs, "client_name")}
+    {:ok, Identity.get_or_create_client_by_phone(phone, client_attrs)}
+  end
+
+  defp maybe_resolve_client(_order, _attrs), do: {:ok, nil}
+
+  defp prepare_update_attrs(_order, client, attrs) do
+    attrs =
+      if client do
+        Map.put(attrs, "client_id", client.id)
+      else
+        attrs
+      end
+
+    case Map.get(attrs, "items") do
+      nil ->
+        {:ok, attrs}
+
+      new_items_params ->
+        recalculate_items_and_total(new_items_params, attrs)
+    end
+  end
+
+  defp recalculate_items_and_total(items_params, attrs) do
+    product_ids =
+      Enum.map(items_params, fn item ->
+        item["product_id"] || item[:product_id]
+      end)
+
+    products_map =
+      product_ids
+      |> Net.list_products_by_ids([])
+      |> Map.new(&{&1.id, &1})
+
+    {items_attrs, total_amount} =
+      Enum.reduce(items_params, {[], 0}, fn item_param, {acc_items, acc_total} ->
+        product_id = item_param["product_id"] || item_param[:product_id]
+
+        quantity = parse_quantity(item_param["quantity"] || item_param[:quantity])
+
+        product = Map.get(products_map, product_id)
+
+        price = product.price
+        item_total = price * quantity
+
+        item_data = %{
+          product_id: product_id,
+          title: product.title,
+          price: price,
+          quantity: quantity
+        }
+
+        {[item_data | acc_items], acc_total + item_total}
+      end)
+
+    updated_attrs =
+      attrs
+      |> Map.put("items", items_attrs)
+      |> Map.put("total_amount", total_amount)
+
+    {:ok, updated_attrs}
+  end
+
+  defp parse_quantity(q) when is_integer(q), do: q
+  defp parse_quantity(q) when is_binary(q), do: String.to_integer(q)
+  defp parse_quantity(_), do: 1
+
   defp get_or_create_client(%{"phone" => phone} = attrs) when not is_nil(phone) do
     client_attrs = %{name: Map.get(attrs, "client_name")}
     {:ok, Identity.get_or_create_client_by_phone(phone, client_attrs)}

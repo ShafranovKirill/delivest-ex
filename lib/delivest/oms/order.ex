@@ -26,9 +26,10 @@ defmodule Delivest.Oms.Order do
 
     field :total_amount, :integer, default: 0
     field :comment, :string
+    field :deleted_at, :utc_datetime
 
     embeds_one :address, Address, on_replace: :update
-    has_many :items, OrderItem, on_delete: :delete_all
+    has_many :items, OrderItem, on_delete: :delete_all, on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end
@@ -44,9 +45,11 @@ defmodule Delivest.Oms.Order do
       :fulfillment_type,
       :payment_method,
       :total_amount,
-      :comment
+      :comment,
+      :deleted_at
     ])
     |> cast_embed(:address, required: false)
+    |> cast_assoc(:items)
     |> validate_required([
       :number,
       :branch_id,
