@@ -135,6 +135,14 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   defp status_color("cancelled"), do: "bg-error/10 text-error border-error/20"
   defp status_color(_), do: "bg-base-200 text-base-content border-base-300"
 
+  defp format_fulfillment_type(:delivery), do: gettext("Delivery")
+  defp format_fulfillment_type(:dine_in), do: gettext("Dine in")
+  defp format_fulfillment_type(:pickup), do: gettext("Pickup")
+  defp format_fulfillment_type("delivery"), do: gettext("Delivery")
+  defp format_fulfillment_type("dine_in"), do: gettext("Dine in")
+  defp format_fulfillment_type("pickup"), do: gettext("Pickup")
+  defp format_fulfillment_type(_), do: "—"
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -292,7 +300,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
               <div class="lg:w-1/4 min-w-0 border-t lg:border-t-0 lg:border-l border-base-200 pt-2 lg:pt-0 lg:pl-4">
                 <div class="flex items-center gap-2">
                   <span class="badge badge-sm badge-ghost font-medium uppercase shrink-0">
-                    {order.fulfillment_type}
+                    {format_fulfillment_type(order.fulfillment_type)}
                   </span>
                 </div>
                 <%= if order.fulfillment_type == :delivery do %>
