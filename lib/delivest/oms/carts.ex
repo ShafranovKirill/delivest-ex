@@ -45,7 +45,15 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
-  def add_item(cart_id, product_id) do
+  def clear_cart(cart_id) do
+    Repo.delete_all(from ci in CartItem, where: ci.cart_id == ^cart_id)
+
+    # Обновляем кэш
+    cart_view = refresh_and_cache(cart_id)
+    {:ok, cart_view}
+  end
+
+  def add_item(cart_id, product_id, quantity \\ 1) when is_integer(quantity) and quantity > 0 do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     changeset =
@@ -53,13 +61,13 @@ defmodule Delivest.Oms.Carts do
       |> CartItem.changeset(%{
         cart_id: cart_id,
         product_id: product_id,
-        quantity: 1
+        quantity: quantity
       })
 
     result =
       Repo.insert(
         changeset,
-        on_conflict: [inc: [quantity: 1], set: [updated_at: now]],
+        on_conflict: [inc: [quantity: quantity], set: [updated_at: now]],
         conflict_target: [:cart_id, :product_id],
         returning: true
       )

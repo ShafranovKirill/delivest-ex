@@ -7,19 +7,73 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
   on_mount {DelivestWeb.Hooks.Permission, "order.create"}
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     staff = socket.assigns.current_staff
     branch_id = socket.assigns.current_branch.id
 
     {:ok, cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
     {:ok, categories} = Catalogs.get_menu_for_branch(branch_id)
 
-    order_changeset = Order.changeset(%Order{}, %{"branch_id" => branch_id, "cart_id" => cart.id})
+    {order, cart, page_title} =
+      case Map.get(params, "id") do
+        nil ->
+          {%Order{}, cart, gettext("New Order")}
+
+        id ->
+          existing_order = Orders.get_order!(id)
+          updated_cart = Orders.populate_cart_from_order(existing_order, cart.id)
+
+          {existing_order, updated_cart,
+           gettext("Edit Order #%{number}", number: existing_order.number)}
+      end
+
+    order =
+      case order.client do
+        %{phone: phone, name: name} ->
+          %{order | phone: phone, client_name: name}
+
+        _ ->
+          order
+      end
+
+    {address, raw_order_params} =
+      order
+      |> Map.from_struct()
+      |> Map.drop([:__meta__, :id, :inserted_at, :updated_at, :items, :branch, :staff, :client])
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
+      |> Map.pop("address")
+
+    default_params =
+      Map.merge(raw_order_params, %{
+        "branch_id" => branch_id,
+        "cart_id" => cart.id
+      })
+
+    default_params =
+      case address do
+        %_struct{} = addr ->
+          addr_map =
+            addr
+            |> Map.from_struct()
+            |> Map.drop([:__meta__, :id, :inserted_at, :updated_at, :order_id])
+            |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+            |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
+
+          Map.put(default_params, "address", addr_map)
+
+        _ ->
+          default_params
+      end
+
+    order_changeset = Order.changeset(order, default_params)
 
     {:ok,
      socket
      |> assign(
-       page_title: gettext("New Order"),
+       order: order,
+       is_edit: order.id != nil,
+       page_title: page_title,
        branch_id: branch_id,
        cart: cart,
        categories: categories,
@@ -86,14 +140,22 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
       |> Map.put("branch_id", socket.assigns.branch_id)
 
     changeset =
-      %Order{}
+      socket.assigns.order
       |> Order.changeset(full_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
-  def handle_event("create_order", %{"order" => order_params}, socket) do
+  def handle_event("save_order", %{"order" => order_params}, socket) do
+    if socket.assigns.is_edit do
+      update_existing_order(socket, order_params)
+    else
+      create_new_order(socket, order_params)
+    end
+  end
+
+  defp create_new_order(socket, order_params) do
     full_order_params =
       order_params
       |> Map.put("cart_id", socket.assigns.cart.id)
@@ -107,15 +169,42 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
          |> put_flash(:info, gettext("Order created successfully"))
          |> push_navigate(to: ~p"/staff/orders")}
 
-      {:error, :order, %Ecto.Changeset{} = err_changeset} ->
-        {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :insert)))}
-
       {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
         {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :insert)))}
 
       {:error, _failed_step, reason} ->
         {:noreply,
          put_flash(socket, :error, "#{gettext("Failed to create order")}: #{inspect(reason)}")}
+    end
+  end
+
+  defp update_existing_order(socket, order_params) do
+    items_attrs =
+      Enum.map(socket.assigns.cart.items, fn item ->
+        %{
+          "product_id" => item.product_id,
+          "quantity" => item.quantity
+        }
+      end)
+
+    full_order_params =
+      order_params
+      |> Map.put("items", items_attrs)
+      |> Map.put("branch_id", socket.assigns.branch_id)
+
+    case Orders.update_order(socket.assigns.order, full_order_params) do
+      {:ok, _updated_order} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Order updated successfully"))
+         |> push_navigate(to: ~p"/staff/orders")}
+
+      {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
+        {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :update)))}
+
+      {:error, _failed_step, reason} ->
+        {:noreply,
+         put_flash(socket, :error, "#{gettext("Failed to update order")}: #{inspect(reason)}")}
     end
   end
 
@@ -454,7 +543,7 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
               for={@form}
               id="order-details-form"
               phx-change="validate_order"
-              phx-submit="create_order"
+              phx-submit="save_order"
               class="space-y-3"
             >
               <div class="form-control">
@@ -567,7 +656,11 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
                 class="btn btn-success flex-1 text-white"
               >
                 <.icon name="hero-check" class="size-5 mr-1" />
-                {gettext("Submit Order")}
+                <%= if @is_edit do %>
+                  {gettext("Save Changes")}
+                <% else %>
+                  {gettext("Submit Order")}
+                <% end %>
               </button>
             </div>
           <% end %>

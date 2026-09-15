@@ -21,9 +21,7 @@ defmodule Delivest.Oms.Orders do
   end
 
   def get_order!(id) do
-    Order
-    |> Repo.get!(id)
-    |> Repo.preload([:items, :client])
+    Repo.get!(Order, id) |> Repo.preload([:client, :items])
   end
 
   def create_order(attrs) do
@@ -68,6 +66,16 @@ defmodule Delivest.Oms.Orders do
     order
     |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})
     |> Repo.update()
+  end
+
+  def populate_cart_from_order(%Order{} = order, cart_id) do
+    Carts.clear_cart(cart_id)
+
+    Enum.each(order.items, fn item ->
+      Carts.add_item(cart_id, item.product_id, item.quantity)
+    end)
+
+    Carts.get_cart_by_id(cart_id)
   end
 
   defp apply_filters(query, params) do

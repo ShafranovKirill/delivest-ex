@@ -259,13 +259,13 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                   </select>
                 </form>
 
-                <button
-                  type="button"
+                <.link
+                  navigate={~p"/staff/orders/#{order.id}/edit"}
                   class="btn btn-ghost btn-xs btn-square"
                   title={gettext("Edit Order")}
                 >
                   <.icon name="hero-pencil-square" class="size-4" />
-                </button>
+                </.link>
                 <button
                   type="button"
                   phx-click="delete_click"
