@@ -100,25 +100,22 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
       |> Map.put("branch_id", socket.assigns.branch_id)
       |> Map.put("staff_id", socket.assigns.current_staff.id)
 
-    changeset = Order.changeset(%Order{}, full_order_params)
+    case Orders.create_order(full_order_params) do
+      {:ok, _result} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Order created successfully"))
+         |> push_navigate(to: ~p"/staff/orders")}
 
-    if changeset.valid? do
-      case Orders.create_order(full_order_params) do
-        {:ok, _result} ->
-          {:noreply,
-           socket
-           |> put_flash(:info, gettext("Order created successfully"))
-           |> push_navigate(to: ~p"/staff/orders")}
+      {:error, :order, %Ecto.Changeset{} = err_changeset} ->
+        {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :insert)))}
 
-        {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
-          {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :insert)))}
+      {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
+        {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :insert)))}
 
-        {:error, _failed_step, reason} ->
-          {:noreply,
-           put_flash(socket, :error, "#{gettext("Failed to create order")}: #{inspect(reason)}")}
-      end
-    else
-      {:noreply, assign(socket, form: to_form(Map.put(changeset, :action, :insert)))}
+      {:error, _failed_step, reason} ->
+        {:noreply,
+         put_flash(socket, :error, "#{gettext("Failed to create order")}: #{inspect(reason)}")}
     end
   end
 
@@ -148,7 +145,6 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
   def render(assigns) do
     ~H"""
     <div class="w-full min-h-screen lg:min-h-0 lg:h-[calc(100vh-4rem)] flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden gap-3 bg-base-200 pb-20 lg:pb-0">
-      <!-- Мобильный таббар сверху -->
       <div class="lg:hidden shrink-0 bg-base-100 p-2 rounded-box border border-base-300 shadow-sm sticky top-0 z-20">
         <div class="tabs tabs-boxed grid grid-cols-2">
           <button
@@ -179,7 +175,6 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
         "w-full lg:w-7/12 xl:w-8/12 flex flex-col bg-base-100 rounded-box border border-base-200 lg:overflow-hidden shadow-sm",
         @active_tab != :cart && "hidden lg:flex"
       ]}>
-        <!-- Поиск и категории -->
         <div class="p-3 border-b border-base-200 space-y-2 shrink-0 bg-base-100">
           <form phx-change="search_products" phx-submit="search_products" class="relative w-full">
             <.icon
@@ -226,7 +221,6 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
           </div>
         </div>
 
-        <!-- Грид товаров (Скролл для десктопа, свободный скролл на мобиле) -->
         <div class="flex-1 lg:overflow-y-auto p-3">
           <% products = filtered_products(@categories, @selected_category_id, @search_query) %>
 
@@ -269,9 +263,7 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
           <% end %>
         </div>
 
-        <!-- МОБИЛЬНАЯ ВСПЛЫВАЮЩАЯ КОРЗИНА (Только для мобилок во вкладке :cart) -->
         <div class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-300 shadow-2xl rounded-t-2xl transition-all">
-          <!-- Заголовок раскрывающейся корзины -->
           <div
             phx-click="toggle_mobile_cart"
             class="p-3 flex items-center justify-between cursor-pointer select-none bg-base-200/50 rounded-t-2xl border-b border-base-200"
@@ -346,12 +338,10 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
         </div>
       </div>
 
-      <!-- ПРАВАЯ СЕКЦИЯ: Корзина и Форма (На десктопе всегда видна, на мобиле в :details) -->
       <div class={[
         "w-full lg:w-5/12 xl:w-4/12 flex flex-col bg-base-100 rounded-box border border-base-200 lg:overflow-hidden shadow-sm",
         @active_tab != :details && "hidden lg:flex"
       ]}>
-        <!-- Переключатель видов для десктопа -->
         <div class="p-3 border-b border-base-200 shrink-0 hidden lg:block">
           <div class="tabs tabs-boxed grid grid-cols-2">
             <button
@@ -380,9 +370,7 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
           </div>
         </div>
 
-        <!-- Контент правого блока -->
         <div class="flex-1 lg:overflow-y-auto p-3 lg:p-4">
-          <!-- Режим Корзины на десктопе -->
           <div class={[@active_tab != :cart && "hidden lg:hidden"]}>
             <%= if Enum.empty?(@cart.items) do %>
               <div class="h-64 flex flex-col items-center justify-center text-base-content/40 space-y-2">
@@ -436,9 +424,7 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
             <% end %>
           </div>
 
-          <!-- Режим Оформления (Форма + На мобиле наглядный список заказа) -->
           <div class={[@active_tab != :details && "hidden lg:hidden"]}>
-            <!-- Краткая корзина над формой в мобильной версии -->
             <div class="lg:hidden mb-4 p-3 rounded-box bg-base-200/70 border border-base-300">
               <div class="flex justify-between items-center mb-2 pb-2 border-b border-base-300">
                 <span class="font-bold text-xs uppercase text-base-content/60">
@@ -512,14 +498,25 @@ defmodule DelivestWeb.Staff.OrderLive.NewOrder do
                 ]}
               />
 
-              <%= if Ecto.Changeset.get_field(@form.source, :fulfillment_type) == :delivery do %>
+              <% fulfillment_type = Ecto.Changeset.get_field(@form.source, :fulfillment_type) %>
+              <%= if to_string(fulfillment_type) == "delivery" do %>
                 <div class="p-3 bg-base-200/50 rounded-box border border-base-300 space-y-2">
                   <span class="text-xs font-bold">{gettext("Delivery Address")}</span>
                   <.inputs_for :let={address_form} field={@form[:address]}>
-                    <.input field={address_form[:city]} type="text" label={gettext("City")} />
-                    <.input field={address_form[:street]} type="text" label={gettext("Street")} />
+                    <.input field={address_form[:city]} type="text" label={gettext("City")} required />
+                    <.input
+                      field={address_form[:street]}
+                      type="text"
+                      label={gettext("Street")}
+                      required
+                    />
                     <div class="grid grid-cols-2 gap-2">
-                      <.input field={address_form[:building]} type="text" label={gettext("Building")} />
+                      <.input
+                        field={address_form[:house]}
+                        type="text"
+                        label={gettext("House / Building")}
+                        required
+                      />
                       <.input
                         field={address_form[:apartment]}
                         type="text"

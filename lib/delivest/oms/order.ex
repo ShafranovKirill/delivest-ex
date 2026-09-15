@@ -14,10 +14,20 @@ defmodule Delivest.Oms.Order do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
+  @derive {
+    Flop.Schema,
+    filterable: [:status, :fulfillment_type, :payment_method, :inserted_at, :number],
+    sortable: [:inserted_at, :number, :status, :total_amount],
+    default_order: %{
+      order_by: [:inserted_at],
+      order_directions: [:desc]
+    }
+  }
+
   schema "orders" do
     field :number, :string
     field :staff_id, :binary_id
-    field :client_id, :binary_id
+    belongs_to :client, Delivest.Identity.Client
     field :branch_id, :binary_id
 
     field :phone, :string, virtual: true
@@ -70,9 +80,13 @@ defmodule Delivest.Oms.Order do
   end
 
   defp validate_address_if_delivery(changeset) do
-    case get_field(changeset, :fulfillment_type) do
-      :delivery -> validate_required(changeset, [:address])
-      _ -> changeset
+    fulfillment_type = get_field(changeset, :fulfillment_type)
+
+    if to_string(fulfillment_type) == "delivery" do
+      changeset
+      |> validate_required([:address])
+    else
+      changeset
     end
   end
 

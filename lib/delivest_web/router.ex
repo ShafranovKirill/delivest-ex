@@ -124,6 +124,7 @@ defmodule DelivestWeb.Router do
       end
 
       scope "/orders", OrderLive do
+        live "/", Orders, :index
         live "/new", NewOrder, :new
       end
     end

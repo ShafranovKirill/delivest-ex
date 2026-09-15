@@ -29,6 +29,8 @@ defmodule Delivest.Identity.Client do
     field :status, Ecto.Enum, values: @statuses, default: :guest
     field :deleted_at, :utc_datetime
 
+    has_many :orders, Delivest.Oms.Order
+
     timestamps(type: :utc_datetime)
   end
 
