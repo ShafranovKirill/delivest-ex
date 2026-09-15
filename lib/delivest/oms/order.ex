@@ -30,8 +30,8 @@ defmodule Delivest.Oms.Order do
     belongs_to :client, Delivest.Identity.Client
     field :branch_id, :binary_id
 
-    field :phone, :string, virtual: true
-    field :client_name, :string, virtual: true
+    field :customer_phone, :string
+    field :customer_name, :string
 
     field :status, Ecto.Enum, values: @statuses, default: :created
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
@@ -54,8 +54,8 @@ defmodule Delivest.Oms.Order do
       :staff_id,
       :client_id,
       :branch_id,
-      :phone,
-      :client_name,
+      :customer_phone,
+      :customer_name,
       :status,
       :fulfillment_type,
       :payment_method,

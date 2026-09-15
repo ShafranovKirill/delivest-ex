@@ -29,8 +29,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     order =
       case order.client do
-        %{phone: phone, name: name} ->
-          %{order | phone: phone, client_name: name}
+        %{customer_phone: customer_phone, customer_name: name} ->
+          %{order | customer_phone: customer_phone, customer_name: name}
 
         _ ->
           order
@@ -56,7 +56,16 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           addr_map =
             addr
             |> Map.from_struct()
-            |> Map.drop([:__meta__, :id, :inserted_at, :updated_at, :order_id])
+            |> Map.drop([
+              :__meta__,
+              :id,
+              :inserted_at,
+              :updated_at,
+              :order_id,
+              :street,
+              :district,
+              :city
+            ])
             |> Enum.reject(fn {_k, v} -> is_nil(v) end)
             |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
 
@@ -552,13 +561,13 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                 </label>
                 <div class="space-y-2">
                   <.input
-                    field={@form[:phone]}
+                    field={@form[:customer_phone]}
                     type="text"
                     label={gettext("Phone")}
                     placeholder="+79991112233"
                     required
                   />
-                  <.input field={@form[:client_name]} type="text" label={gettext("Client Name")} />
+                  <.input field={@form[:customer_name]} type="text" label={gettext("Client Name")} />
                 </div>
               </div>
 
@@ -592,20 +601,34 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                 <div class="p-3 bg-base-200/50 rounded-box border border-base-300 space-y-2">
                   <span class="text-xs font-bold">{gettext("Delivery Address")}</span>
                   <.inputs_for :let={address_form} field={@form[:address]}>
-                    <.input field={address_form[:city]} type="text" label={gettext("City")} required />
                     <.input
-                      field={address_form[:street]}
+                      field={address_form[:city_name]}
+                      type="text"
+                      label={gettext("City")}
+                      required
+                    />
+                    <.input
+                      field={address_form[:street_name]}
                       type="text"
                       label={gettext("Street")}
                       required
                     />
                     <div class="grid grid-cols-2 gap-2">
                       <.input
-                        field={address_form[:house]}
+                        field={address_form[:house_number]}
                         type="text"
                         label={gettext("House / Building")}
                         required
                       />
+                      <.input
+                        field={address_form[:building]}
+                        type="text"
+                        label={gettext("Building/Block")}
+                      />
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                      <.input field={address_form[:entrance]} type="text" label={gettext("Entrance")} />
+                      <.input field={address_form[:floor]} type="text" label={gettext("Floor")} />
                       <.input
                         field={address_form[:apartment]}
                         type="text"

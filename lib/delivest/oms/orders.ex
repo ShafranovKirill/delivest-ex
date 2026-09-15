@@ -11,6 +11,16 @@ defmodule Delivest.Oms.Orders do
   alias Ecto.Multi
 
   @cache_store :cart_cache
+  @confirmed_statuses [
+    "preparing",
+    "ready",
+    "delivering",
+    "completed",
+    :preparing,
+    :ready,
+    :delivering,
+    :completed
+  ]
 
   def list_orders(params \\ %{}) do
     Order
@@ -26,12 +36,12 @@ defmodule Delivest.Oms.Orders do
 
   def create_order(attrs) do
     Multi.new()
-    |> Multi.run(:client, fn _, _ -> resolve_client(attrs) end)
+    |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_create(attrs) end)
     |> Multi.run(:cart, fn _, _ -> fetch_cart(attrs) end)
     |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
     |> Multi.run(:order_number, fn _, _ -> OrderNumber.generate() end)
-    |> Multi.insert(:order, fn %{client: c, cart: cart, products: p, order_number: num} ->
-      build_order_changeset(num, c, cart, p, attrs)
+    |> Multi.insert(:order, fn %{client_id: client_id, cart: cart, products: p, order_number: num} ->
+      build_order_changeset(num, client_id, cart, p, attrs)
     end)
     |> Multi.run(:clear_cart, fn _, %{cart: cart} -> clear_cart_in_transaction(cart.id) end)
     |> Repo.transaction()
@@ -45,7 +55,7 @@ defmodule Delivest.Oms.Orders do
     order = Repo.preload(order, [:items, :client])
 
     Multi.new()
-    |> Multi.run(:client, fn _, _ -> resolve_client(attrs) end)
+    |> Multi.run(:client, fn _, _ -> resolve_client_on_update(order, attrs) end)
     |> Multi.run(:prepared_attrs, fn _, %{client: client} ->
       prepare_update_attrs(order, client, attrs)
     end)
@@ -125,15 +135,40 @@ defmodule Delivest.Oms.Orders do
     order_by(q, [o], [{^dir_atom, field(o, ^field_atom)}])
   end
 
-  defp resolve_client(%{"phone" => phone} = attrs) when is_binary(phone) and phone != "" do
-    {:ok, Identity.get_or_create_client_by_phone(phone, %{name: Map.get(attrs, "client_name")})}
+  defp resolve_client_id_on_create(attrs) do
+    case Map.get(attrs, "client_id") || Map.get(attrs, :client_id) do
+      client_id when is_binary(client_id) and client_id != "" ->
+        {:ok, client_id}
+
+      _ ->
+        {:ok, nil}
+    end
   end
 
-  defp resolve_client(%{phone: phone} = attrs) when is_binary(phone) and phone != "" do
-    {:ok, Identity.get_or_create_client_by_phone(phone, %{name: Map.get(attrs, :client_name)})}
-  end
+  defp resolve_client_on_update(order, attrs) do
+    new_status = Map.get(attrs, "status") || Map.get(attrs, :status) || order.status
+    incoming_client_id = Map.get(attrs, "client_id") || Map.get(attrs, :client_id)
+    new_phone = phone_for_order(order, attrs)
+    new_name = name_for_order(order, attrs)
 
-  defp resolve_client(_), do: {:ok, nil}
+    cond do
+      is_binary(incoming_client_id) and incoming_client_id != "" ->
+        {:ok, %{id: incoming_client_id}}
+
+      present?(new_phone) and (is_nil(order.client) or order.client.phone != new_phone) and
+          new_status in @confirmed_statuses ->
+        case Identity.get_or_create_client_by_phone(new_phone, %{name: new_name}) do
+          {:ok, client} -> {:ok, client}
+          {:error, changeset} -> {:error, changeset}
+        end
+
+      not is_nil(order.client_id) ->
+        {:ok, order.client}
+
+      true ->
+        {:ok, nil}
+    end
+  end
 
   defp prepare_update_attrs(_order, client, attrs) do
     attrs =
@@ -192,7 +227,7 @@ defmodule Delivest.Oms.Orders do
     {:ok, Net.list_products_by_ids(product_ids, [])}
   end
 
-  defp build_order_changeset(number, client, cart, products_map, attrs) do
+  defp build_order_changeset(number, client_id, cart, products_map, attrs) do
     {items_attrs, total_amount} =
       Enum.reduce(cart.items, {[], 0}, fn item, {acc_items, acc_total} ->
         pid = item[:product_id] || item.product_id
@@ -208,13 +243,19 @@ defmodule Delivest.Oms.Orders do
         end
       end)
 
+    # Пробрасываем параметры, сохраняя customer_phone и customer_name при создании заказа
     order_params =
       attrs
       |> Map.put("number", number)
       |> Map.put("total_amount", total_amount)
       |> Map.put("branch_id", cart.branch_id)
       |> Map.put("staff_id", cart.staff_id)
-      |> Map.put("client_id", extract_client_id(client))
+      |> Map.put("client_id", client_id)
+      |> Map.put_new("customer_phone", Map.get(attrs, "phone") || Map.get(attrs, :phone))
+      |> Map.put_new(
+        "customer_name",
+        Map.get(attrs, "client_name") || Map.get(attrs, :client_name)
+      )
 
     %Order{}
     |> Order.changeset(order_params)
@@ -224,6 +265,25 @@ defmodule Delivest.Oms.Orders do
   defp extract_client_id({:ok, %{id: id}}), do: id
   defp extract_client_id(%{id: id}), do: id
   defp extract_client_id(_), do: nil
+
+  defp phone_for_order(order, attrs) do
+    Map.get(attrs, "customer_phone") ||
+      Map.get(attrs, :customer_phone) ||
+      Map.get(attrs, "phone") ||
+      Map.get(attrs, :phone) ||
+      order.customer_phone
+  end
+
+  defp name_for_order(order, attrs) do
+    Map.get(attrs, "customer_name") ||
+      Map.get(attrs, :customer_name) ||
+      Map.get(attrs, "client_name") ||
+      Map.get(attrs, :client_name) ||
+      order.customer_name
+  end
+
+  defp present?(str) when is_binary(str), do: String.trim(str) != ""
+  defp present?(_), do: false
 
   defp clear_cart_in_transaction(cart_id) do
     case Repo.get(Delivest.Oms.Cart, cart_id) do
