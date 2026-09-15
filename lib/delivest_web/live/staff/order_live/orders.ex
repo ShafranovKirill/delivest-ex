@@ -74,7 +74,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   @impl true
   def handle_event("delete_click", %{"id" => id}, socket) do
-    {:noreply, assign(socket, order_to_delete: %Order{id: id})}
+    order = Orders.get_order!(id)
+    {:noreply, assign(socket, order_to_delete: order)}
   end
 
   @impl true

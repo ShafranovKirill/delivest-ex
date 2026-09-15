@@ -164,7 +164,7 @@ msgid "Language"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:103
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:207
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:263
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:19
 #, elixir-autogen, elixir-format
 msgid "Log out"
@@ -191,7 +191,7 @@ msgid "Sign In"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:42
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:162
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:218
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:172
 #, elixir-autogen, elixir-format
 msgid "Staff"
@@ -214,6 +214,9 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:117
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:94
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:91
+#: lib/delivest_web/live/staff/client_live/clients.ex:280
+#: lib/delivest_web/live/staff/client_live/clients.ex:303
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:292
 #: lib/delivest_web/live/staff/product_live/products.ex:354
 #: lib/delivest_web/live/staff/product_live/products.ex:402
@@ -233,6 +236,7 @@ msgstr ""
 msgid "All categories"
 msgstr ""
 
+#: lib/delivest_web/live/staff/client_live/clients.ex:275
 #: lib/delivest_web/live/staff/product_live/products.ex:353
 #, elixir-autogen, elixir-format
 msgid "All statuses"
@@ -305,7 +309,7 @@ msgstr ""
 msgid "Branch saved successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:147
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:188
 #: lib/delivest_web/live/staff/branch_live/branches.ex:25
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:193
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:223
@@ -328,6 +332,7 @@ msgstr ""
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:207
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:121
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:98
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:137
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:296
 #: lib/delivest_web/live/staff/role_live/role_form_component.ex:150
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:229
@@ -341,12 +346,12 @@ msgstr ""
 msgid "Cannot delete role because it is assigned to staff members."
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:76
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:117
 #, elixir-autogen, elixir-format
 msgid "Catalog"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:91
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:132
 #: lib/delivest_web/live/staff/category_live/categories.ex:67
 #, elixir-autogen, elixir-format
 msgid "Categories"
@@ -395,7 +400,7 @@ msgid "Change Image"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:153
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:194
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:250
 #, elixir-autogen, elixir-format
 msgid "Change branch"
 msgstr ""
@@ -420,7 +425,7 @@ msgstr ""
 msgid "Click to activate this branch"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:132
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:173
 #, elixir-autogen, elixir-format
 msgid "Company"
 msgstr ""
@@ -490,6 +495,7 @@ msgstr ""
 msgid "Create staff"
 msgstr ""
 
+#: lib/delivest_web/live/staff/client_live/clients.ex:315
 #: lib/delivest_web/live/staff/product_live/products.ex:434
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:228
 #, elixir-autogen, elixir-format
@@ -505,6 +511,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branches.ex:184
 #: lib/delivest_web/live/staff/category_live/categories.ex:196
 #: lib/delivest_web/live/staff/category_live/categories.ex:228
+#: lib/delivest_web/live/staff/client_live/clients.ex:370
+#: lib/delivest_web/live/staff/order_live/orders.ex:365
 #: lib/delivest_web/live/staff/product_live/products.ex:502
 #: lib/delivest_web/live/staff/role_live/roles.ex:163
 #: lib/delivest_web/live/staff/role_live/roles.ex:197
@@ -574,6 +582,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branches.ex:158
 #: lib/delivest_web/live/staff/category_live/categories.ex:185
+#: lib/delivest_web/live/staff/order_live/order_form.ex:528
 #: lib/delivest_web/live/staff/role_live/roles.ex:152
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:267
 #, elixir-autogen, elixir-format
@@ -740,6 +749,8 @@ msgstr ""
 msgid "Media"
 msgstr ""
 
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:123
+#: lib/delivest_web/live/staff/client_live/clients.ex:292
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:255
 #: lib/delivest_web/live/staff/product_live/products.ex:363
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:172
@@ -787,6 +798,7 @@ msgid "Permissions"
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:113
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:115
 #, elixir-autogen, elixir-format
 msgid "Phone Number"
 msgstr ""
@@ -838,7 +850,7 @@ msgstr ""
 msgid "Product updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:106
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:147
 #: lib/delivest_web/live/staff/product_live/products.ex:307
 #, elixir-autogen, elixir-format
 msgid "Products"
@@ -864,7 +876,7 @@ msgstr ""
 msgid "Promotion saved successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:121
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:162
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:42
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:201
 #, elixir-autogen, elixir-format
@@ -918,7 +930,7 @@ msgstr ""
 msgid "Role updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:177
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:233
 #: lib/delivest_web/live/staff/role_live/roles.ex:49
 #, elixir-autogen, elixir-format
 msgid "Roles"
@@ -931,6 +943,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:123
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:100
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:143
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:302
 #: lib/delivest_web/live/staff/role_live/role_form_component.ex:152
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:231
@@ -941,6 +954,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:122
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:99
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:141
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:300
 #: lib/delivest_web/live/staff/role_live/role_form_component.ex:151
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:230
@@ -975,6 +989,7 @@ msgid "Select a role..."
 msgstr ""
 
 #: lib/delivest_web/components/core_components.ex:567
+#: lib/delivest_web/live/staff/order_live/orders.ex:333
 #, elixir-autogen, elixir-format
 msgid "Show"
 msgstr ""
@@ -1015,6 +1030,8 @@ msgstr ""
 msgid "Staff updated successfully"
 msgstr ""
 
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:130
+#: lib/delivest_web/live/staff/client_live/clients.ex:300
 #: lib/delivest_web/live/staff/product_live/products.ex:400
 #, elixir-autogen, elixir-format
 msgid "Status"
@@ -1179,6 +1196,7 @@ msgstr ""
 msgid "g"
 msgstr ""
 
+#: lib/delivest_web/live/staff/order_live/orders.ex:345
 #: lib/delivest_web/live/staff/product_live/products.ex:383
 #, elixir-autogen, elixir-format
 msgid "pcs"
@@ -1187,4 +1205,459 @@ msgstr ""
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:197
 #, elixir-autogen, elixir-format
 msgid "selected"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:246
+#, elixir-autogen, elixir-format
+msgid "1. Menu & Cart"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:258
+#, elixir-autogen, elixir-format
+msgid "2. Checkout"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:168
+#, elixir-autogen, elixir-format
+msgid "All"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:294
+#, elixir-autogen, elixir-format
+msgid "All Categories"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:205
+#, elixir-autogen, elixir-format
+msgid "All Statuses"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:612
+#, elixir-autogen, elixir-format
+msgid "Apartment"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:123
+#, elixir-autogen, elixir-format
+msgid "Apt."
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:368
+#, elixir-autogen, elixir-format
+msgid "Are you sure you want to delete this client? This action cannot be easily undone."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:363
+#, elixir-autogen, elixir-format
+msgid "Are you sure you want to delete this order? This action cannot be undone."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:650
+#, elixir-autogen, elixir-format
+msgid "Back"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:92
+#: lib/delivest_web/live/staff/client_live/clients.ex:283
+#: lib/delivest_web/live/staff/client_live/clients.ex:308
+#, elixir-autogen, elixir-format
+msgid "Blocked"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:212
+#: lib/delivest_web/live/staff/order_live/orders.ex:250
+#, elixir-autogen, elixir-format
+msgid "Cancelled"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:586
+#: lib/delivest_web/live/staff/order_live/orders.ex:320
+#, elixir-autogen, elixir-format
+msgid "Card Offline"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:362
+#: lib/delivest_web/live/staff/order_live/order_form.ex:443
+#, elixir-autogen, elixir-format
+msgid "Cart"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:381
+#: lib/delivest_web/live/staff/order_live/order_form.ex:467
+#, elixir-autogen, elixir-format
+msgid "Cart is empty"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:585
+#: lib/delivest_web/live/staff/order_live/orders.ex:317
+#, elixir-autogen, elixir-format
+msgid "Cash"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:595
+#, elixir-autogen, elixir-format
+msgid "City"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:109
+#, elixir-autogen, elixir-format
+msgid "Client Details"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:124
+#: lib/delivest_web/live/staff/order_live/order_form.ex:561
+#, elixir-autogen, elixir-format
+msgid "Client Name"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:161
+#, elixir-autogen, elixir-format
+msgid "Client created successfully"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:142
+#, elixir-autogen, elixir-format
+msgid "Client deleted successfully"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:163
+#, elixir-autogen, elixir-format
+msgid "Client saved successfully"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:162
+#, elixir-autogen, elixir-format
+msgid "Client updated successfully"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:203
+#: lib/delivest_web/live/staff/client_live/clients.ex:236
+#, elixir-autogen, elixir-format
+msgid "Clients"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:66
+#, elixir-autogen, elixir-format
+msgid "Clients List"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:619
+#, elixir-autogen, elixir-format
+msgid "Comment"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:308
+#, elixir-autogen, elixir-format
+msgid "Comment:"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:211
+#: lib/delivest_web/live/staff/order_live/orders.ex:249
+#, elixir-autogen, elixir-format
+msgid "Completed"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:71
+#: lib/delivest_web/live/staff/client_live/clients.ex:248
+#, elixir-autogen, elixir-format
+msgid "Create Client"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:207
+#: lib/delivest_web/live/staff/order_live/orders.ex:245
+#, elixir-autogen, elixir-format
+msgid "Created"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:174
+#, elixir-autogen, elixir-format
+msgid "Custom"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:551
+#, elixir-autogen, elixir-format
+msgid "Customer Info"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:366
+#, elixir-autogen, elixir-format
+msgid "Delete Client"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:275
+#: lib/delivest_web/live/staff/order_live/orders.ex:361
+#, elixir-autogen, elixir-format
+msgid "Delete Order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:210
+#: lib/delivest_web/live/staff/order_live/orders.ex:248
+#, elixir-autogen, elixir-format
+msgid "Delivering"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:575
+#, elixir-autogen, elixir-format
+msgid "Delivery"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:593
+#, elixir-autogen, elixir-format
+msgid "Delivery Address"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:574
+#, elixir-autogen, elixir-format
+msgid "Dine In"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:83
+#, elixir-autogen, elixir-format
+msgid "Edit Client"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:266
+#, elixir-autogen, elixir-format
+msgid "Edit Order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:27
+#, elixir-autogen, elixir-format
+msgid "Edit Order #%{number}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:112
+#, elixir-autogen, elixir-format
+msgid "Failed to add product to cart."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:177
+#, elixir-autogen, elixir-format
+msgid "Failed to create order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:147
+#, elixir-autogen, elixir-format
+msgid "Failed to delete client"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:92
+#, elixir-autogen, elixir-format
+msgid "Failed to delete order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:207
+#: lib/delivest_web/live/staff/order_live/orders.ex:71
+#, elixir-autogen, elixir-format
+msgid "Failed to update order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:572
+#, elixir-autogen, elixir-format
+msgid "Fulfillment Type"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:90
+#: lib/delivest_web/live/staff/client_live/clients.ex:277
+#: lib/delivest_web/live/staff/client_live/clients.ex:305
+#, elixir-autogen, elixir-format
+msgid "Guest"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:336
+#, elixir-autogen, elixir-format
+msgid "Hide"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:606
+#, elixir-autogen, elixir-format
+msgid "House / Building"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:146
+#, elixir-autogen, elixir-format
+msgid "Manage customer orders, track statuses and process fulfillment."
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:238
+#, elixir-autogen, elixir-format
+msgid "Manage system clients, status, and information."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:173
+#, elixir-autogen, elixir-format
+msgid "Month"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:91
+#: lib/delivest_web/live/staff/order_live/order_form.ex:20
+#: lib/delivest_web/live/staff/order_live/orders.ex:151
+#, elixir-autogen, elixir-format
+msgid "New Order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:319
+#, elixir-autogen, elixir-format
+msgid "No products found"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:76
+#, elixir-autogen, elixir-format
+msgid "OMS"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:566
+#, elixir-autogen, elixir-format
+msgid "Options"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:457
+#, elixir-autogen, elixir-format
+msgid "Order Details"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:169
+#, elixir-autogen, elixir-format
+msgid "Order created successfully"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:87
+#, elixir-autogen, elixir-format
+msgid "Order deleted successfully"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:199
+#: lib/delivest_web/live/staff/order_live/orders.ex:67
+#, elixir-autogen, elixir-format
+msgid "Order updated successfully"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:106
+#: lib/delivest_web/live/staff/order_live/orders.ex:144
+#, elixir-autogen, elixir-format
+msgid "Orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:583
+#, elixir-autogen, elixir-format
+msgid "Payment Method"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:163
+#, elixir-autogen, elixir-format
+msgid "Period:"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:296
+#: lib/delivest_web/live/staff/order_live/order_form.ex:557
+#, elixir-autogen, elixir-format
+msgid "Phone"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:576
+#, elixir-autogen, elixir-format
+msgid "Pickup"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:208
+#: lib/delivest_web/live/staff/order_live/orders.ex:246
+#, elixir-autogen, elixir-format
+msgid "Preparing"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:423
+#: lib/delivest_web/live/staff/order_live/order_form.ex:638
+#, elixir-autogen, elixir-format
+msgid "Proceed to Checkout"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:209
+#: lib/delivest_web/live/staff/order_live/orders.ex:247
+#, elixir-autogen, elixir-format
+msgid "Ready"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:660
+#, elixir-autogen, elixir-format
+msgid "Save Changes"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:267
+#, elixir-autogen, elixir-format
+msgid "Search by name or phone..."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:277
+#, elixir-autogen, elixir-format
+msgid "Search products by name..."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:520
+#, elixir-autogen, elixir-format
+msgid "Selected Items"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:201
+#, elixir-autogen, elixir-format
+msgid "Status:"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:599
+#, elixir-autogen, elixir-format
+msgid "Street"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:662
+#, elixir-autogen, elixir-format
+msgid "Submit Order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:169
+#, elixir-autogen, elixir-format
+msgid "Today"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:170
+#, elixir-autogen, elixir-format
+msgid "Tomorrow"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex:626
+#, elixir-autogen, elixir-format
+msgid "Total:"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:172
+#, elixir-autogen, elixir-format
+msgid "Week"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:171
+#, elixir-autogen, elixir-format
+msgid "Yesterday"
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:74
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to create clients."
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:132
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to delete clients."
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/clients.ex:90
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to edit clients."
+msgstr ""
+
+#: lib/delivest_web/live/staff/client_live/client_form_component.ex:73
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to update clients."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:332
+#, elixir-autogen, elixir-format
+msgid "items"
 msgstr ""

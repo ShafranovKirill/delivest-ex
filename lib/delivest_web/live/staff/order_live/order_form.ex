@@ -1,4 +1,4 @@
-defmodule DelivestWeb.Staff.OrderLive.NewOrder do
+defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   use DelivestWeb, :live_view
 
   alias Delivest.Net.Catalogs
