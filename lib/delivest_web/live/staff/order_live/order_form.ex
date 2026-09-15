@@ -602,28 +602,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                   <span class="text-xs font-bold">{gettext("Delivery Address")}</span>
                   <.inputs_for :let={address_form} field={@form[:address]}>
                     <.input
-                      field={address_form[:city_name]}
+                      field={address_form[:city]}
                       type="text"
                       label={gettext("City")}
                       required
                     />
                     <.input
-                      field={address_form[:street_name]}
+                      field={address_form[:street]}
                       type="text"
                       label={gettext("Street")}
                       required
                     />
                     <div class="grid grid-cols-2 gap-2">
                       <.input
-                        field={address_form[:house_number]}
+                        field={address_form[:intercom]}
                         type="text"
-                        label={gettext("House / Building")}
-                        required
-                      />
-                      <.input
-                        field={address_form[:building]}
-                        type="text"
-                        label={gettext("Building/Block")}
+                        label={gettext("Intercom")}
                       />
                     </div>
                     <div class="grid grid-cols-3 gap-2">

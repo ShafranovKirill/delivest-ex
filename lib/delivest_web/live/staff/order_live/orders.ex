@@ -120,8 +120,16 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   defp parse_date(_), do: nil
 
   defp format_address(%Order.Address{} = addr) do
-    [addr.city, addr.street, addr.house, addr.apartment && "#{gettext("Apt.")} #{addr.apartment}"]
-    |> Enum.reject(&(&1 in [nil, ""]))
+    [
+      addr.city,
+      addr.street,
+      addr.house && "#{gettext("d.")} #{addr.house}",
+      addr.entrance && "#{gettext("ent.")} #{addr.entrance}",
+      addr.floor && "#{gettext("fl.")} #{addr.floor}",
+      addr.apartment && "#{gettext("apt.")} #{addr.apartment}",
+      addr.intercom && "#{gettext("code")} #{addr.intercom}"
+    ]
+    |> Enum.reject(&(is_nil(&1) or &1 == ""))
     |> Enum.join(", ")
   end
 
