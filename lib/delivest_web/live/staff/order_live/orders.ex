@@ -297,12 +297,21 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
             <div class="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 text-xs">
               <div class="lg:w-1/5 min-w-0">
-                <div class="font-mono font-semibold text-base-content truncate">
-                  {(order.client && order.client.phone) || order.customer_phone || "—"}
-                </div>
-                <div class="text-base-content/60 truncate">
-                  {(order.client && order.client.name) || order.customer_name || "—"}
-                </div>
+                <% phone = (order.client && order.client.phone) || order.customer_phone %>
+                <% name = (order.client && order.client.name) || order.customer_name %>
+
+                <%= if phone || name do %>
+                  <div class="font-mono font-semibold text-base-content truncate">
+                    {phone || "—"}
+                  </div>
+                  <div class="text-base-content/60 truncate">
+                    {name || ""}
+                  </div>
+                <% else %>
+                  <div class="font-semibold text-base-content/50 italic truncate">
+                    {gettext("Customer not specified")}
+                  </div>
+                <% end %>
               </div>
 
               <div class="lg:w-1/4 min-w-0 border-t lg:border-t-0 lg:border-l border-base-200 pt-2 lg:pt-0 lg:pl-4">

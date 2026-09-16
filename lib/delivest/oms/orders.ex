@@ -11,8 +11,6 @@ defmodule Delivest.Oms.Orders do
   alias Delivest.Repo
   alias Ecto.Multi
 
-  @cache_store :cart_cache
-
   def list_orders(params \\ %{}) do
     Order
     |> where([o], is_nil(o.deleted_at))
@@ -43,7 +41,6 @@ defmodule Delivest.Oms.Orders do
                                } ->
       build_order_from_cart(%Order{}, num, client_id, cart, products, attrs)
     end)
-    |> Multi.run(:clear_cart, fn _, %{cart: cart} -> clear_cart_in_transaction(cart.id) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{order: order}} -> {:ok, Repo.preload(order, [:items, :client])}
@@ -61,7 +58,6 @@ defmodule Delivest.Oms.Orders do
     |> Multi.update(:order, fn %{client_id: client_id, cart: cart, products: products} ->
       build_order_from_cart(order, order.number, client_id, cart, products, attrs)
     end)
-    |> Multi.run(:clear_cart, fn _, %{cart: cart} -> clear_cart_in_transaction(cart.id) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{order: updated_order}} ->
@@ -163,15 +159,5 @@ defmodule Delivest.Oms.Orders do
     order_struct
     |> Order.changeset(order_params)
     |> Ecto.Changeset.put_assoc(:items, items_attrs)
-  end
-
-  defp clear_cart_in_transaction(cart_id) do
-    case Repo.get(Delivest.Oms.Cart, cart_id) do
-      %Delivest.Oms.Cart{} = cart -> Repo.delete(cart)
-      nil -> :ok
-    end
-
-    Cachex.del(@cache_store, cart_id)
-    {:ok, :deleted}
   end
 end

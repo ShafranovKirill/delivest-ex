@@ -11,20 +11,24 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     staff = socket.assigns.current_staff
     branch_id = socket.assigns.current_branch.id
 
-    {:ok, cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
     {:ok, categories} = Catalogs.get_menu_for_branch(branch_id)
 
     {order, cart, page_title} =
       case Map.get(params, "id") do
         nil ->
-          {%Order{}, cart, gettext("New Order")}
+          {:ok, default_cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
+          {%Order{}, default_cart, gettext("New Order")}
 
         id ->
           existing_order = Orders.get_order!(id)
-          updated_cart = Orders.populate_cart_from_order(existing_order, cart.id)
 
-          {existing_order, updated_cart,
-           gettext("Edit Order #%{number}", number: existing_order.number)}
+          cart =
+            Carts.get_cart_by_id(existing_order.cart_id) ||
+              case Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id) do
+                {:ok, c} -> c
+              end
+
+          {existing_order, cart, gettext("Edit Order #%{number}", number: existing_order.number)}
       end
 
     {customer_phone, customer_name} =
