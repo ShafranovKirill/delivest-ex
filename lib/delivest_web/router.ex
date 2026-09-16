@@ -43,6 +43,10 @@ defmodule DelivestWeb.Router do
       delete "/:cart_id/items/:product_id", CartController, :remove_item
     end
 
+    scope "/orders", Order do
+      post "/", OrderController, :create
+    end
+
     get "/:branch_id/stocks", Stock.StockController, :index
     get "/branches/:branch_id/menu", Menu.MenuController, :index
   end

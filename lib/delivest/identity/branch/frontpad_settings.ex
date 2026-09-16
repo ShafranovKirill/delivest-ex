@@ -3,6 +3,9 @@ defmodule Delivest.Identity.Branch.FrontpadSettings do
   import Ecto.Changeset
 
   @primary_key false
+
+  @derive {Jason.Encoder, only: [:frontpad_branch_id]}
+
   embedded_schema do
     field :frontpad_branch_id, :string
   end
