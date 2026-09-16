@@ -27,14 +27,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
            gettext("Edit Order #%{number}", number: existing_order.number)}
       end
 
-    order =
+    {customer_phone, customer_name} =
       case order.client do
-        %{customer_phone: customer_phone, customer_name: name} ->
-          %{order | customer_phone: customer_phone, customer_name: name}
+        %Ecto.Association.NotLoaded{} ->
+          {nil, nil}
+
+        %{} = client ->
+          phone = Map.get(client, :phone) || Map.get(client, :customer_phone)
+          c_name = Map.get(client, :name) || Map.get(client, :customer_name)
+          {phone, c_name}
 
         _ ->
-          %{order | customer_phone: nil, customer_name: nil}
+          {nil, nil}
       end
+
+    # 2. Проставляем их в структуру order, используя именно переменные customer_phone и customer_name
+    order = %{order | customer_phone: customer_phone, customer_name: customer_name}
 
     {address, raw_order_params} =
       order
@@ -45,7 +53,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       |> Map.pop("address")
 
     default_params =
-      Map.merge(raw_order_params, %{
+      raw_order_params
+      |> Map.merge(%{
         "branch_id" => branch_id,
         "cart_id" => cart.id
       })
@@ -191,22 +200,9 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   defp update_existing_order(socket, order_params) do
-    {items_attrs, total_amount} =
-      Enum.reduce(socket.assigns.cart.items, {[], 0}, fn item, {acc_items, acc_total} ->
-        item_attr = %{
-          "product_id" => item.product_id,
-          "title" => item.name,
-          "price" => item.price,
-          "quantity" => item.quantity
-        }
-
-        {[item_attr | acc_items], acc_total + item.price * item.quantity}
-      end)
-
     full_order_params =
       order_params
-      |> Map.put("items", items_attrs)
-      |> Map.put("total_amount", total_amount)
+      |> Map.put("cart_id", socket.assigns.cart.id)
       |> Map.put("branch_id", socket.assigns.branch_id)
 
     case Orders.update_order(socket.assigns.order, full_order_params) do

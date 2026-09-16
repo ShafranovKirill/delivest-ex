@@ -28,6 +28,7 @@ defmodule Delivest.Oms.Order do
     field :number, :string
     field :staff_id, :binary_id
     belongs_to :client, Delivest.Identity.Client
+    belongs_to :cart, Delivest.Oms.Cart
     field :branch_id, :binary_id
 
     field :customer_phone, :string, virtual: true
@@ -54,6 +55,7 @@ defmodule Delivest.Oms.Order do
       :staff_id,
       :client_id,
       :branch_id,
+      :cart_id,
       :customer_phone,
       :customer_name,
       :status,
@@ -69,7 +71,8 @@ defmodule Delivest.Oms.Order do
       :branch_id,
       :status,
       :fulfillment_type,
-      :payment_method
+      :payment_method,
+      :cart_id
     ])
     |> validate_phone()
     |> validate_inclusion(:status, @statuses)

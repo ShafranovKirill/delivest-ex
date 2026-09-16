@@ -9,6 +9,7 @@ defmodule Delivest.Repo.Migrations.CreateOrderAndOderItems do
       add :staff_id, :binary_id
       add :client_id, :binary_id
       add :branch_id, :binary_id, null: false
+      add :cart_id, :binary_id, null: false
 
       add :status, :string, null: false, default: "created"
 

@@ -111,8 +111,8 @@ defmodule Delivest.Identity.Clients do
 
   def resolve_client(attrs) do
     client_id = attrs["client_id"]
-    phone = attrs["phone"] || attrs["customer_phone"]
-    name = attrs["name"] || attrs["client_name"]
+    phone = attrs["customer_phone"]
+    name = attrs["customer_name"]
 
     cond do
       present?(client_id) ->

@@ -34,8 +34,13 @@ defmodule Delivest.Oms.Orders do
     |> Multi.run(:cart, fn _, _ -> fetch_cart(attrs) end)
     |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
     |> Multi.run(:order_number, fn _, _ -> OrderNumber.generate() end)
-    |> Multi.insert(:order, fn %{client_id: client_id, cart: cart, products: p, order_number: num} ->
-      build_order_changeset(num, client_id, cart, p, attrs)
+    |> Multi.insert(:order, fn %{
+                                 client_id: client_id,
+                                 cart: cart,
+                                 products: products,
+                                 order_number: num
+                               } ->
+      build_order_from_cart(%Order{}, num, client_id, cart, products, attrs)
     end)
     |> Multi.run(:clear_cart, fn _, %{cart: cart} -> clear_cart_in_transaction(cart.id) end)
     |> Repo.transaction()
@@ -50,10 +55,12 @@ defmodule Delivest.Oms.Orders do
 
     Multi.new()
     |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_update(order, attrs) end)
-    |> Multi.update(:order, fn %{client_id: client_id} ->
-      prepared_attrs = attrs |> Map.put("client_id", client_id)
-      Order.changeset(order, prepared_attrs)
+    |> Multi.run(:cart, fn _, _ -> fetch_cart(attrs) end)
+    |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
+    |> Multi.update(:order, fn %{client_id: client_id, cart: cart, products: products} ->
+      build_order_from_cart(order, order.number, client_id, cart, products, attrs)
     end)
+    |> Multi.run(:clear_cart, fn _, %{cart: cart} -> clear_cart_in_transaction(cart.id) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{order: updated_order}} ->
@@ -181,7 +188,7 @@ defmodule Delivest.Oms.Orders do
     {:ok, Net.list_products_by_ids(product_ids, [])}
   end
 
-  defp build_order_changeset(number, client_id, cart, products_map, attrs) do
+  defp build_order_from_cart(order_struct, number, client_id, cart, products_map, attrs) do
     {items_attrs, total_amount} =
       Enum.reduce(cart.items, {[], 0}, fn item, {acc_items, acc_total} ->
         pid = item[:product_id] || Map.get(item, "product_id")
@@ -202,10 +209,11 @@ defmodule Delivest.Oms.Orders do
       |> Map.put("number", to_string(number))
       |> Map.put("total_amount", total_amount)
       |> Map.put("branch_id", cart.branch_id)
-      |> Map.put("staff_id", cart.staff_id)
+      |> Map.put("cart_id", cart.id)
+      |> Map.put_new("staff_id", cart.staff_id)
       |> Map.put("client_id", client_id)
 
-    %Order{}
+    order_struct
     |> Order.changeset(order_params)
     |> Ecto.Changeset.put_assoc(:items, items_attrs)
   end
