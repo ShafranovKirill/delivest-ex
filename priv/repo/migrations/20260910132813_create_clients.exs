@@ -3,7 +3,7 @@ defmodule Delivest.Repo.Migrations.CreateClients do
 
   def change do
     execute(
-      "CREATE TYPE client_status AS ENUM ('guest', 'active', 'blocked')",
+      "CREATE TYPE client_status AS ENUM ('active', 'blocked')",
       "DROP TYPE client_status"
     )
 
@@ -12,7 +12,7 @@ defmodule Delivest.Repo.Migrations.CreateClients do
 
       add :phone, :string, null: false
       add :name, :string
-      add :status, :client_status, null: false, default: "guest"
+      add :status, :client_status, null: false, default: "active"
 
       add :deleted_at, :utc_datetime
 

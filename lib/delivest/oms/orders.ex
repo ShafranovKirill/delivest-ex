@@ -11,8 +11,6 @@ defmodule Delivest.Oms.Orders do
   alias Ecto.Multi
 
   @cache_store :cart_cache
-  @confirmed_statuses ~w(preparing ready delivering completed)s ++
-                        [:preparing, :ready, :delivering, :completed]
 
   def list_orders(params \\ %{}) do
     Order
@@ -35,7 +33,7 @@ defmodule Delivest.Oms.Orders do
     |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_create(attrs) end)
     |> Multi.run(:cart, fn _, _ -> fetch_cart(attrs) end)
     |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
-    |> Multi.run(:order_number, fn _, _ -> {:ok, OrderNumber.generate()} end)
+    |> Multi.run(:order_number, fn _, _ -> OrderNumber.generate() end)
     |> Multi.insert(:order, fn %{client_id: client_id, cart: cart, products: p, order_number: num} ->
       build_order_changeset(num, client_id, cart, p, attrs)
     end)
@@ -51,11 +49,9 @@ defmodule Delivest.Oms.Orders do
     attrs = normalize_params(attrs)
 
     Multi.new()
-    |> Multi.run(:client, fn _, _ -> resolve_client_on_update(order, attrs) end)
-    |> Multi.run(:prepared_attrs, fn _, %{client: client} ->
-      prepare_update_attrs(order, client, attrs)
-    end)
-    |> Multi.update(:order, fn %{prepared_attrs: prepared_attrs} ->
+    |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_update(order, attrs) end)
+    |> Multi.update(:order, fn %{client_id: client_id} ->
+      prepared_attrs = attrs |> Map.put("client_id", client_id)
       Order.changeset(order, prepared_attrs)
     end)
     |> Repo.transaction()
@@ -139,94 +135,28 @@ defmodule Delivest.Oms.Orders do
   end
 
   defp resolve_client_id_on_create(attrs) do
-    case Map.get(attrs, "client_id") do
-      client_id when is_binary(client_id) and client_id != "" -> {:ok, client_id}
-      _ -> {:ok, nil}
+    phone = Map.get(attrs, "customer_phone")
+
+    if is_nil(phone) || String.trim(phone) == "" do
+      {:ok, nil}
+    else
+      Identity.resolve_client(attrs)
     end
   end
 
-  defp resolve_client_on_update(order, attrs) do
-    new_status = Map.get(attrs, "status", order.status)
+  defp resolve_client_id_on_update(order, attrs) do
+    phone = Map.get(attrs, "customer_phone")
 
-    incoming_phone =
-      Map.get(attrs, "customer_phone") || Map.get(attrs, "phone")
-
-    incoming_client_id = Map.get(attrs, "client_id")
-    new_name = name_for_order(order, attrs)
-
-    client_id_changed? = present?(incoming_client_id) and incoming_client_id != order.client_id
-
-    current_phone = order.customer_phone || (order.client && order.client.phone)
-    phone_changed? = present?(incoming_phone) and incoming_phone != current_phone
-
-    target_phone = incoming_phone || current_phone
-    becoming_confirmed? = new_status in @confirmed_statuses
-
-    cond do
-      phone_changed? ->
-        if becoming_confirmed? do
-          Identity.get_or_create_client_by_phone(incoming_phone, %{name: new_name})
-        else
-          {:ok, nil}
-        end
-
-      client_id_changed? ->
-        {:ok, %{id: incoming_client_id}}
-
-      becoming_confirmed? and is_nil(order.client_id) and present?(target_phone) ->
-        Identity.get_or_create_client_by_phone(target_phone, %{name: new_name})
-
-      not is_nil(order.client_id) ->
-        {:ok, order.client}
-
-      true ->
-        {:ok, nil}
+    if is_nil(phone) || String.trim(phone) == "" do
+      {:ok, nil}
+    else
+      case Identity.resolve_client(attrs) do
+        {:ok, nil} -> {:ok, order.client_id}
+        {:ok, new_client_id} -> {:ok, new_client_id}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
-
-  defp prepare_update_attrs(_order, client, attrs) do
-    client_id = extract_client_id(client)
-    attrs = Map.put(attrs, "client_id", client_id)
-
-    case Map.get(attrs, "items") do
-      nil -> {:ok, attrs}
-      items -> recalculate_items_and_total(items, attrs)
-    end
-  end
-
-  defp recalculate_items_and_total(items_params, attrs) do
-    items_params = Enum.map(items_params, &normalize_params/1)
-    product_ids = Enum.map(items_params, & &1["product_id"])
-    products_map = Net.list_products_by_ids(product_ids, [])
-
-    {items_attrs, total_amount} =
-      Enum.reduce(items_params, {[], 0}, fn item_param, {acc_items, acc_total} ->
-        pid = item_param["product_id"]
-        qty = parse_quantity(item_param["quantity"])
-
-        case Map.get(products_map, pid) do
-          nil ->
-            {acc_items, acc_total}
-
-          p ->
-            {[%{product_id: pid, title: p.name, price: p.price, quantity: qty} | acc_items],
-             acc_total + p.price * qty}
-        end
-      end)
-
-    {:ok, attrs |> Map.put("items", items_attrs) |> Map.put("total_amount", total_amount)}
-  end
-
-  defp parse_quantity(q) when is_integer(q), do: q
-
-  defp parse_quantity(q) when is_binary(q) do
-    case Integer.parse(q) do
-      {int, _} -> int
-      :error -> 1
-    end
-  end
-
-  defp parse_quantity(_), do: 1
 
   defp fetch_cart(attrs) do
     case Map.get(attrs, "cart_id") do
@@ -269,31 +199,16 @@ defmodule Delivest.Oms.Orders do
 
     order_params =
       attrs
-      |> Map.put("number", number)
+      |> Map.put("number", to_string(number))
       |> Map.put("total_amount", total_amount)
       |> Map.put("branch_id", cart.branch_id)
       |> Map.put("staff_id", cart.staff_id)
       |> Map.put("client_id", client_id)
-      |> Map.put_new("customer_phone", Map.get(attrs, "phone"))
-      |> Map.put_new("customer_name", Map.get(attrs, "client_name"))
 
     %Order{}
     |> Order.changeset(order_params)
     |> Ecto.Changeset.put_assoc(:items, items_attrs)
   end
-
-  defp extract_client_id({:ok, %{id: id}}), do: id
-  defp extract_client_id(%{id: id}), do: id
-  defp extract_client_id(_), do: nil
-
-  defp name_for_order(order, attrs) do
-    Map.get(attrs, "customer_name") ||
-      Map.get(attrs, "client_name") ||
-      order.customer_name
-  end
-
-  defp present?(str) when is_binary(str), do: String.trim(str) != ""
-  defp present?(_), do: false
 
   defp clear_cart_in_transaction(cart_id) do
     case Repo.get(Delivest.Oms.Cart, cart_id) do

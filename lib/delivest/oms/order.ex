@@ -30,8 +30,8 @@ defmodule Delivest.Oms.Order do
     belongs_to :client, Delivest.Identity.Client
     field :branch_id, :binary_id
 
-    field :customer_phone, :string
-    field :customer_name, :string
+    field :customer_phone, :string, virtual: true
+    field :customer_name, :string, virtual: true
 
     field :status, Ecto.Enum, values: @statuses, default: :created
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
@@ -91,7 +91,7 @@ defmodule Delivest.Oms.Order do
   end
 
   defp validate_phone(changeset) do
-    case get_field(changeset, :phone) do
+    case get_field(changeset, :customer_phone) do
       nil ->
         changeset
 
@@ -100,7 +100,9 @@ defmodule Delivest.Oms.Order do
 
       _phone ->
         changeset
-        |> validate_format(:phone, ~r/^\+7\d{10}$/, message: "must be in format +7XXXXXXXXXX")
+        |> validate_format(:customer_phone, ~r/^\+7\d{10}$/,
+          message: "must be in format +7XXXXXXXXXX"
+        )
     end
   end
 end

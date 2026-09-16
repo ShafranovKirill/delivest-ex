@@ -7,7 +7,7 @@ defmodule Delivest.Identity.Client do
 
   @type t :: %__MODULE__{}
 
-  @statuses [:guest, :active, :blocked]
+  @statuses [:active, :blocked]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -26,7 +26,7 @@ defmodule Delivest.Identity.Client do
   schema "clients" do
     field :phone, :string
     field :name, :string
-    field :status, Ecto.Enum, values: @statuses, default: :guest
+    field :status, Ecto.Enum, values: @statuses, default: :active
     field :deleted_at, :utc_datetime
 
     has_many :orders, Delivest.Oms.Order

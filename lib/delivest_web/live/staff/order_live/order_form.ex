@@ -33,7 +33,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           %{order | customer_phone: customer_phone, customer_name: name}
 
         _ ->
-          order
+          %{order | customer_phone: nil, customer_name: nil}
       end
 
     {address, raw_order_params} =
@@ -179,7 +179,10 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
          |> push_navigate(to: ~p"/staff/orders")}
 
       {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
-        {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :insert)))}
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("Validation error"))
+         |> assign(form: to_form(Map.put(err_changeset, :action, :insert)))}
 
       {:error, _failed_step, reason} ->
         {:noreply,
@@ -188,17 +191,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   defp update_existing_order(socket, order_params) do
-    items_attrs =
-      Enum.map(socket.assigns.cart.items, fn item ->
-        %{
+    {items_attrs, total_amount} =
+      Enum.reduce(socket.assigns.cart.items, {[], 0}, fn item, {acc_items, acc_total} ->
+        item_attr = %{
           "product_id" => item.product_id,
+          "title" => item.name,
+          "price" => item.price,
           "quantity" => item.quantity
         }
+
+        {[item_attr | acc_items], acc_total + item.price * item.quantity}
       end)
 
     full_order_params =
       order_params
       |> Map.put("items", items_attrs)
+      |> Map.put("total_amount", total_amount)
       |> Map.put("branch_id", socket.assigns.branch_id)
 
     case Orders.update_order(socket.assigns.order, full_order_params) do
@@ -209,7 +217,10 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
          |> push_navigate(to: ~p"/staff/orders")}
 
       {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
-        {:noreply, assign(socket, form: to_form(Map.put(err_changeset, :action, :update)))}
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("Validation error"))
+         |> assign(form: to_form(Map.put(err_changeset, :action, :update)))}
 
       {:error, _failed_step, reason} ->
         {:noreply,
@@ -565,7 +576,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                     type="text"
                     label={gettext("Phone")}
                     placeholder="+79991112233"
-                    required
                   />
                   <.input field={@form[:customer_name]} type="text" label={gettext("Client Name")} />
                 </div>

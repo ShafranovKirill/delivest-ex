@@ -31,6 +31,7 @@ defmodule Delivest.Identity do
   defdelegate get_clients_map(ids), to: Clients
   defdelegate search_clients(staff, query, limit \\ 10), to: Clients
   defdelegate get_client_ids_by_search(query), to: Clients
+  defdelegate resolve_client(attrs), to: Clients
 
   defdelegate phone_regex(), to: BranchInfo
 

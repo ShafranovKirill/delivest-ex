@@ -24,10 +24,6 @@ defmodule Delivest.Repo.Migrations.CreateOrderAndOderItems do
 
       add :comment, :text
 
-      add :customer_phone, :string
-
-      add :customer_name, :string
-
       add :deleted_at, :utc_datetime
 
       timestamps(type: :utc_datetime)

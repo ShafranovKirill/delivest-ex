@@ -109,6 +109,30 @@ defmodule Delivest.Identity.Clients do
     |> Repo.all()
   end
 
+  def resolve_client(attrs) do
+    client_id = attrs["client_id"]
+    phone = attrs["phone"] || attrs["customer_phone"]
+    name = attrs["name"] || attrs["client_name"]
+
+    cond do
+      present?(client_id) ->
+        {:ok, client_id}
+
+      present?(phone) ->
+        case get_or_create_client_by_phone(phone, %{name: name}) do
+          {:ok, %Client{id: id}} -> {:ok, id}
+          {:error, changeset} -> {:error, changeset}
+        end
+
+      true ->
+        {:ok, nil}
+    end
+  end
+
+  defp present?(nil), do: false
+  defp present?(val) when is_binary(val), do: String.trim(val) != ""
+  defp present?(_), do: false
+
   defp get_active_client_by_phone(phone) do
     Client
     |> where([c], c.phone == ^phone)
