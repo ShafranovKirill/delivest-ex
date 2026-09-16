@@ -2,13 +2,21 @@ defmodule Delivest.Net.MenuView do
   @type product :: %{
           id: binary(),
           name: String.t(),
+          old_price: term(),
           price: integer(),
-          photo_url: String.t() | nil
+          description: String.t() | nil,
+          quantity: integer() | nil,
+          weight: integer() | nil,
+          is_active: boolean() | nil,
+          photo_url: String.t() | nil,
+          external_id: String.t() | nil
         }
 
   @type category :: %{
           id: binary(),
           name: String.t(),
+          order: number() | nil,
+          is_active: boolean() | nil,
           products: [product()]
         }
 
@@ -22,7 +30,9 @@ defmodule Delivest.Net.MenuView do
     %{
       id: category.id,
       name: category.name,
-      products: Enum.map(category.products, &build_product/1)
+      order: Map.get(category, :order),
+      is_active: Map.get(category, :is_active),
+      products: Enum.map(category.products || [], &build_product/1)
     }
   end
 
@@ -30,8 +40,14 @@ defmodule Delivest.Net.MenuView do
     %{
       id: product.id,
       name: product.name,
+      old_price: Map.get(product, :old_price),
       price: product.price,
-      photo_url: Delivest.Media.get_url_from_file(product.media)
+      description: Map.get(product, :description),
+      quantity: Map.get(product, :quantity),
+      weight: Map.get(product, :weight),
+      is_active: Map.get(product, :is_active),
+      photo_url: Delivest.Media.get_url_from_file(product.media),
+      external_id: Map.get(product, :external_id)
     }
   end
 end
