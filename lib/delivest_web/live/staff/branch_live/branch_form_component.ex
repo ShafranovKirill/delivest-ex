@@ -12,7 +12,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
     form_data = if branch && branch.id, do: BranchForm.from_branch(branch), else: %BranchForm{}
     changeset = BranchForm.changeset(form_data, %{})
 
-    {:ok, assign(socket, :form, to_form(changeset))}
+    {:ok,
+     socket
+     |> assign(:form, to_form(changeset))
+     |> assign_new(:show_frontpad, fn -> false end)
+     |> assign_new(:show_links, fn -> false end)}
   end
 
   @impl true
@@ -28,6 +32,18 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, form: to_form(changeset))}
+  end
+
+  @impl true
+  def handle_event("toggle_section", %{"section" => section}, socket) do
+    key =
+      case section do
+        "frontpad" -> :show_frontpad
+        "links" -> :show_links
+        _ -> nil
+      end
+
+    {:noreply, assign(socket, key, !socket.assigns[key])}
   end
 
   def handle_event("save", %{"branch_form" => params}, socket) do
@@ -57,7 +73,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
          ) do
       {:ok, branch} ->
         notify_parent({:saved, branch})
-
         {:noreply, socket}
 
       {:error, _step, changeset} ->
@@ -76,7 +91,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
          ) do
       {:ok, branch} ->
         notify_parent({:saved, branch})
-
         {:noreply, socket}
 
       {:error, _step, changeset} ->
@@ -108,23 +122,67 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           <.input
             field={@form[:delivery_time]}
             type="number"
-            label={gettext("Delivery Time(minute)")}
+            label={gettext("Delivery Time (minutes)")}
           />
           <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
-          <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
-          <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
-          <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
-          <.input field={@form[:frontpad_api_key]} type="text" label={gettext("Frontpad API Key")} />
-          <.input
-            field={@form[:frontpad_enabled]}
-            type="checkbox"
-            label={gettext("Frontpad Enabled")}
-          />
-          <.input
-            field={@form[:frontpad_settings]}
-            type="textarea"
-            label={gettext("Frontpad Settings (JSON)")}
-          />
+
+          <div class="border border-base-300 rounded-box bg-base-100">
+            <div
+              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
+              phx-click="toggle_section"
+              phx-value-section="links"
+              phx-target={@myself}
+            >
+              <span>{gettext("Social Links & Messengers")}</span>
+              <span class={"transition-transform duration-200 #{if @show_links, do: "rotate-180", else: ""}"}>
+                ▼
+              </span>
+            </div>
+            <%= if @show_links do %>
+              <div class="p-4 pt-0 space-y-4 border-t border-base-200">
+                <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
+                <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
+                <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
+              </div>
+            <% end %>
+          </div>
+
+          <div class="border border-base-300 rounded-box bg-base-100">
+            <div
+              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
+              phx-click="toggle_section"
+              phx-value-section="frontpad"
+              phx-target={@myself}
+            >
+              <span>{gettext("Frontpad Integration Settings")}</span>
+              <span class={"transition-transform duration-200 #{if @show_frontpad, do: "rotate-180", else: ""}"}>
+                ▼
+              </span>
+            </div>
+            <%= if @show_frontpad do %>
+              <div class="p-4 pt-0 space-y-4 border-t border-base-200">
+                <.input
+                  field={@form[:frontpad_enabled]}
+                  type="checkbox"
+                  label={gettext("Frontpad Enabled")}
+                />
+                <.input
+                  field={@form[:frontpad_api_key]}
+                  type="text"
+                  label={gettext("Frontpad API Key")}
+                />
+
+                <.inputs_for :let={f_settings} field={@form[:frontpad_settings]}>
+                  <.input
+                    field={f_settings[:frontpad_branch_id]}
+                    type="text"
+                    label={gettext("Frontpad Branch ID")}
+                  />
+                </.inputs_for>
+              </div>
+            <% end %>
+          </div>
+
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>
 

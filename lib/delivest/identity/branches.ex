@@ -1,6 +1,7 @@
 defmodule Delivest.Identity.Branches do
   import Ecto.Query
-  alias Delivest.Identity.{BranchInfo, Branch}
+  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Identity.{Branch}
   alias Delivest.{Repo, Identity}
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
