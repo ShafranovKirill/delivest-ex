@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.OrderLive.OrderForm do
+  alias Delivest.Oms
   use DelivestWeb, :live_view
 
   alias Delivest.Net.Catalogs
@@ -184,7 +185,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       |> Map.put("branch_id", socket.assigns.branch_id)
       |> Map.put("staff_id", socket.assigns.current_staff.id)
 
-    case Orders.create_order(full_order_params) do
+    case Oms.create_order(full_order_params) do
       {:ok, _result} ->
         {:noreply,
          socket
