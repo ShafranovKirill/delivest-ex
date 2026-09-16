@@ -18,6 +18,18 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           type: :string,
           example: "https://instagram.com/profile_name",
           nullable: true
+        },
+        frontpad_api_key: %Schema{
+          type: :string,
+          example: "frontpad-secret-key",
+          nullable: true
+        },
+        frontpad_enabled: %Schema{type: :boolean, example: true, nullable: true},
+        frontpad_settings: %Schema{
+          type: :object,
+          additionalProperties: true,
+          example: %{mode: "live", webhook: "https://example.com/hook"},
+          nullable: true
         }
       },
       required: [:id]

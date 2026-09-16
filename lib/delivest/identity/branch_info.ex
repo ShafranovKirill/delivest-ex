@@ -17,6 +17,9 @@ defmodule Delivest.Identity.BranchInfo do
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
+    field :frontpad_api_key, :string
+    field :frontpad_enabled, :boolean, default: false
+    field :frontpad_settings, :map, default: %{}
 
     belongs_to :branch, Delivest.Identity.Branch
 
@@ -32,6 +35,9 @@ defmodule Delivest.Identity.BranchInfo do
       :vk_url,
       :whatsapp_url,
       :instagram_url,
+      :frontpad_api_key,
+      :frontpad_enabled,
+      :frontpad_settings,
       :branch_id
     ])
     |> validate_required([:branch_id])

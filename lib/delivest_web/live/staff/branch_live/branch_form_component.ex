@@ -114,6 +114,17 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
           <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
           <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
+          <.input field={@form[:frontpad_api_key]} type="text" label={gettext("Frontpad API Key")} />
+          <.input
+            field={@form[:frontpad_enabled]}
+            type="checkbox"
+            label={gettext("Frontpad Enabled")}
+          />
+          <.input
+            field={@form[:frontpad_settings]}
+            type="textarea"
+            label={gettext("Frontpad Settings (JSON)")}
+          />
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>
 
