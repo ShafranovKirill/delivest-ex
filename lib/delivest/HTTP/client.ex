@@ -9,7 +9,8 @@ defmodule Delivest.HTTP.Client do
           base_url: String.t(),
           headers: headers(),
           timeout: non_neg_integer(),
-          decode_json: boolean()
+          decode_json: boolean(),
+          format: :json | :form
         ]
 
   @spec request(method(), String.t(), keyword() | map() | [{String.t(), String.t()}], options()) ::
@@ -41,18 +42,30 @@ defmodule Delivest.HTTP.Client do
           end
       end
 
-    Logger.debug("HTTP Request -> #{String.upcase(to_string(method))} #{full_url}")
+    Logger.info(
+      "HTTP >>> #{String.upcase(to_string(method))} #{full_url}\nPayload/Params: #{inspect(body_or_params, pretty: true)}"
+    )
 
     case Req.request(req_options) do
       {:ok, %{status: status, body: body}} when status in 200..299 ->
+        Logger.info(
+          "HTTP <<< [#{status}] Success Response from #{full_url}\nBody: #{inspect(body, pretty: true)}"
+        )
+
         handle_response_body(body, decode_json?)
 
       {:ok, %{status: status, body: body}} ->
-        Logger.warning("HTTP Error Response <- Status: #{status}, Body: #{inspect(body)}")
+        Logger.warning(
+          "HTTP <<< [#{status}] Error Response from #{full_url}\nBody: #{inspect(body, pretty: true)}"
+        )
+
         {:error, {:http_error, status, body}}
 
       {:error, exception} ->
-        Logger.error("HTTP Connection Exception -> #{inspect(exception)}")
+        Logger.error(
+          "HTTP <<< Connection Exception on #{full_url}\nReason: #{inspect(exception)}"
+        )
+
         {:error, {:connection_error, Exception.message(exception)}}
     end
   end

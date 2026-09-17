@@ -84,6 +84,12 @@ defmodule Delivest.Oms.Orders do
     Carts.get_cart_by_id(cart_id)
   end
 
+  def update_order_crm_info(%Order{} = order, attrs) do
+    order
+    |> Order.changeset(attrs)
+    |> Repo.update()
+  end
+
   defp resolve_client_id_on_create(attrs) do
     phone = Map.get(attrs, "customer_phone")
 

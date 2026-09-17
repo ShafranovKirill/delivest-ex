@@ -263,7 +263,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                       {"ready", gettext("Ready")},
                       {"delivering", gettext("Delivering")},
                       {"completed", gettext("Completed")},
-                      {"cancelled", gettext("Cancelled")}
+                      {"cancelled", gettext("Cancelled")},
+                      {"crm", gettext("Crm")}
                     ] do %>
                       <option
                         value={val}

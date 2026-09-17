@@ -46,7 +46,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           {nil, nil}
       end
 
-    # 2. Проставляем их в структуру order, используя именно переменные customer_phone и customer_name
     order = %{order | customer_phone: customer_phone, customer_name: customer_name}
 
     {address, raw_order_params} =
@@ -56,6 +55,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
       |> Map.pop("address")
+
+    {crm_info, raw_order_params} = Map.pop(raw_order_params, "crm_info")
 
     default_params =
       raw_order_params
@@ -84,6 +85,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
             |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
 
           Map.put(default_params, "address", addr_map)
+
+        _ ->
+          default_params
+      end
+
+    default_params =
+      case crm_info do
+        %_struct{} = crm ->
+          crm_map =
+            crm
+            |> Map.from_struct()
+            |> Map.drop([:__meta__, :id, :inserted_at, :updated_at])
+            |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+            |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
+
+          Map.put(default_params, "crm_info", crm_map)
 
         _ ->
           default_params
@@ -624,13 +641,13 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                       label={gettext("Street")}
                       required
                     />
-                    <div class="grid grid-cols-2 gap-2">
-                      <.input
-                        field={address_form[:intercom]}
-                        type="text"
-                        label={gettext("Intercom")}
-                      />
-                    </div>
+                    <.input
+                      field={address_form[:house]}
+                      type="text"
+                      label={gettext("House")}
+                      required
+                    />
+
                     <div class="grid grid-cols-3 gap-2">
                       <.input field={address_form[:entrance]} type="text" label={gettext("Entrance")} />
                       <.input field={address_form[:floor]} type="text" label={gettext("Floor")} />

@@ -34,14 +34,14 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
          {:ok, formatted_products} <- extract_products(order.items, products_map) do
       payload = %__MODULE__{
         secret: secret,
-        phone: order.customer_phone,
-        name: order.customer_name,
-        street: order.address && order.address.street,
-        home: order.address && order.address.house,
-        pod: order.address && order.address.entrance,
-        et: order.address && order.address.floor,
-        apart: order.address && order.address.apartment,
-        descr: order.comment,
+        phone: truncate(order.customer_phone, 50),
+        name: truncate(order.customer_name, 50),
+        street: truncate(order.address && order.address.street, 50),
+        home: truncate(order.address && order.address.house, 50),
+        pod: truncate_int_string(order.address && order.address.entrance, 2),
+        et: truncate_int_string(order.address && order.address.floor, 2),
+        apart: truncate(order.address && order.address.apartment, 50),
+        descr: truncate(order.comment, 100),
         pay: map_payment_method(order.payment_method),
         products: formatted_products
       }
@@ -101,6 +101,27 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
       {:error, _} = err -> err
       list -> {:ok, Enum.reverse(list)}
     end
+  end
+
+  defp truncate(nil, _max_len), do: nil
+
+  defp truncate(str, max_len) when is_binary(str) do
+    str
+    |> String.trim()
+    |> String.slice(0, max_len)
+  end
+
+  defp truncate(val, max_len) when not is_nil(val) do
+    val |> to_string() |> truncate(max_len)
+  end
+
+  defp truncate_int_string(nil, _max_len), do: nil
+
+  defp truncate_int_string(val, max_len) do
+    val
+    |> to_string()
+    |> String.replace(~r/\D/, "")
+    |> truncate(max_len)
   end
 
   defp map_payment_method(:cash), do: "1"

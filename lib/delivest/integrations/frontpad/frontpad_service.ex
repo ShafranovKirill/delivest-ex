@@ -51,6 +51,10 @@ defmodule Delivest.Integrations.Frontpad.FrontpadService do
   defp perform_request_with_retry(order, branch, attempt) do
     with {:ok, view} <- build_frontpad_view(order, branch),
          form_params <- FrontpadView.to_form_params(view),
+         _ =
+           Logger.info(
+             "Frontpad sending order #{order.id} (attempt #{attempt}/#{@max_attempts}). Params: #{inspect(form_params)}"
+           ),
          {:ok, response} <- execute_request(form_params) do
       handle_frontpad_response(order, response)
     else
@@ -82,7 +86,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadService do
           {:ok, %{"result" => "success"} = decoded} -> {:ok, decoded}
           {:ok, %{"result" => "error", "error" => err}} -> {:error, {:frontpad_api_error, err}}
           {:ok, other} -> {:error, {:unexpected_response, other}}
-          {:error, _} -> {:error, {:invalid_json, binary}}
+          {:error, reason} -> {:error, {:invalid_json, binary, reason}}
         end
 
       {:ok, other} ->
@@ -104,16 +108,19 @@ defmodule Delivest.Integrations.Frontpad.FrontpadService do
 
   @spec handle_frontpad_response(Delivest.Oms.Order.t(), map()) :: term()
   defp handle_frontpad_response(order, response) do
-    crm_id = response["order_id"]
+    crm_id = to_string(response["order_id"])
 
-    attrs =
-      attrs_with_cart(order, %{
-        "crm_id" => crm_id,
-        "crm_info" => %{
-          "status" => "sent",
-          "sent_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-        }
-      })
+    Logger.info(
+      "Frontpad order successfully created! Order ID in CRM: #{crm_id}, Response: #{inspect(response)}"
+    )
+
+    attrs = %{
+      "crm_id" => crm_id,
+      "crm_info" => %{
+        "status" => "sent",
+        "sent_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+      }
+    }
 
     update_crm_info(order, attrs)
   end
@@ -123,48 +130,43 @@ defmodule Delivest.Integrations.Frontpad.FrontpadService do
   defp handle_frontpad_error_or_retry(order, branch, attempt, reason) do
     error_message = inspect(reason)
 
-    Logger.warning(
-      "Frontpad send failed (attempt #{attempt}/#{@max_attempts}) for order #{order.id}: #{error_message}"
+    Logger.error(
+      "Frontpad send failed (attempt #{attempt}/#{@max_attempts}) for order #{order.id}. Reason: #{error_message}"
     )
 
     if attempt < @max_attempts do
       multiplier = Enum.at(@fibonacci_intervals, attempt - 1)
       sleep_ms = multiplier * 10 * 1000
 
-      attrs =
-        attrs_with_cart(order, %{
-          "crm_info" => %{
-            "status" => "pending",
-            "attempts" => attempt,
-            "last_error" => error_message
-          }
-        })
+      attrs = %{
+        "crm_info" => %{
+          "status" => "pending",
+          "attempts" => attempt,
+          "last_error" => error_message
+        }
+      }
 
       update_crm_info(order, attrs)
 
       Process.sleep(sleep_ms)
       perform_request_with_retry(order, branch, attempt + 1)
     else
-      attrs =
-        attrs_with_cart(order, %{
-          "crm_info" => %{
-            "status" => "failed",
-            "attempts" => attempt,
-            "last_error" => "Max attempts reached. Last error: #{error_message}"
-          }
-        })
+      attrs = %{
+        "crm_info" => %{
+          "status" => "failed",
+          "attempts" => attempt,
+          "last_error" => "Max attempts reached. Last error: #{error_message}"
+        }
+      }
 
       update_crm_info(order, attrs)
     end
   end
 
-  @spec attrs_with_cart(Delivest.Oms.Order.t(), map()) :: map()
-  defp attrs_with_cart(order, attrs) do
-    Map.put(attrs, "cart_id", order.cart_id)
-  end
-
   @spec update_crm_info(Delivest.Oms.Order.t(), map()) :: term()
   defp update_crm_info(order, attrs) do
-    Orders.update_order(order, attrs)
+    order
+    |> Delivest.Oms.Order.changeset(attrs)
+    |> Delivest.Repo.update()
   end
 end
