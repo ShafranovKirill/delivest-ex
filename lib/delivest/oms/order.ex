@@ -3,12 +3,13 @@ defmodule Delivest.Oms.Order do
   import Ecto.Changeset
 
   alias Delivest.Oms.Order.Address
+  alias Delivest.Oms.Order.CrmInfo
   alias Delivest.Oms.OrderItem
 
   @type t :: %__MODULE__{}
 
   @fulfillment_types [:dine_in, :delivery, :pickup]
-  @statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled]
+  @statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled, :crm]
   @payment_methods [:cash, :card_offline]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -38,6 +39,9 @@ defmodule Delivest.Oms.Order do
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
     field :payment_method, Ecto.Enum, values: @payment_methods, default: :cash
 
+    field :crm_id, :string
+    embeds_one :crm_info, CrmInfo, on_replace: :update
+
     field :total_amount, :integer, default: 0
     field :comment, :string
     field :deleted_at, :utc_datetime
@@ -63,8 +67,10 @@ defmodule Delivest.Oms.Order do
       :payment_method,
       :total_amount,
       :comment,
-      :deleted_at
+      :deleted_at,
+      :crm_id
     ])
+    |> cast_embed(:crm_info, required: false)
     |> cast_embed(:address, required: false)
     |> cast_assoc(:items)
     |> validate_required([

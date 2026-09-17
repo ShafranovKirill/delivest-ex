@@ -13,6 +13,9 @@ defmodule Delivest.Repo.Migrations.CreateOrderAndOderItems do
 
       add :status, :string, null: false, default: "created"
 
+      add :crm_id, :string
+      add :crm_info, :jsonb, default: "{}"
+
       # Способ выдачи: dine_in (в ресторане), delivery (доставка), pickup (самовывоз)
       add :fulfillment_type, :string, null: false, default: "dine_in"
 
@@ -31,12 +34,10 @@ defmodule Delivest.Repo.Migrations.CreateOrderAndOderItems do
     end
 
     create unique_index(:orders, [:number])
+    create unique_index(:orders, [:crm_id], where: "crm_id IS NOT NULL")
     create index(:orders, [:staff_id], where: "staff_id IS NOT NULL")
     create index(:orders, [:client_id], where: "client_id IS NOT NULL")
     create index(:orders, [:branch_id])
-    create index(:orders, [:status])
-    create index(:orders, [:fulfillment_type])
-    create index(:orders, [:payment_method])
 
     create table(:order_items, primary_key: false) do
       add :id, :binary_id, primary_key: true
