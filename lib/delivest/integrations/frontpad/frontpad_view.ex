@@ -1,6 +1,7 @@
 defmodule Delivest.Integrations.Frontpad.FrontpadView do
   @type t :: %__MODULE__{
           secret: String.t(),
+          affiliate: String.t() | nil,
           phone: String.t() | nil,
           name: String.t() | nil,
           street: String.t() | nil,
@@ -15,6 +16,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
 
   defstruct [
     :secret,
+    :affiliate,
     :phone,
     :name,
     :street,
@@ -34,6 +36,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
          {:ok, formatted_products} <- extract_products(order.items, products_map) do
       payload = %__MODULE__{
         secret: secret,
+        affiliate: extract_branch_id(branch),
         phone: truncate(order.customer_phone, 50),
         name: truncate(order.customer_name, 50),
         street: truncate(order.address && order.address.street, 50),
@@ -55,6 +58,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     base_params =
       [
         {"secret", view.secret},
+        {"affiliate", view.affiliate},
         {"phone", view.phone},
         {"name", view.name},
         {"street", view.street},
@@ -84,6 +88,15 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     do: {:ok, secret}
 
   defp extract_secret(_), do: {:error, :missing_frontpad_api_key}
+
+  defp extract_branch_id(%{info: %{frontpad_branch_id: fb_id}}) when not is_nil(fb_id),
+    do: to_string(fb_id)
+
+  defp extract_branch_id(%{info: %{frontpad_settings: %{frontpad_branch_id: fb_id}}})
+       when not is_nil(fb_id),
+       do: to_string(fb_id)
+
+  defp extract_branch_id(_), do: nil
 
   defp extract_products(order_items, products_map) do
     result =
