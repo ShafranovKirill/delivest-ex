@@ -1,4 +1,5 @@
 import Config
+config :delivest, Oban, testing: :manual
 
 # Configure your database
 #
