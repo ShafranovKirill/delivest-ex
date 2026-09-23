@@ -190,6 +190,27 @@ defmodule Delivest.Oms.Carts do
     }
   end
 
+  def detach_staff_cart(cart_id) when is_integer(cart_id) or is_binary(cart_id) do
+    case Repo.get(Cart, cart_id) do
+      %Cart{} = cart ->
+        case cart |> Cart.changeset(%{staff_id: nil}) |> Repo.update() do
+          {:ok, updated_cart} ->
+            Cachex.del(@cache_store, cart_id)
+            {:ok, updated_cart}
+
+          {:error, changeset} ->
+            {:error, changeset}
+        end
+
+      nil ->
+        {:error, :not_found}
+    end
+  end
+
+  def detach_staff_cart(%Cart{id: cart_id}) do
+    detach_staff_cart(cart_id)
+  end
+
   defp fetch_cached_or_recalculate(cart_id, force?) do
     if force? do
       fetch_and_recalculate(cart_id)

@@ -126,6 +126,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   @impl true
+  def handle_event("detach_cart", _params, socket) do
+    current_cart = socket.assigns.cart
+
+    case Carts.clear_cart(current_cart.id) do
+      {:ok, updated_cart} ->
+        {:noreply,
+         socket
+         |> assign(cart: updated_cart)
+         |> put_flash(:info, gettext("Cart has been cleared"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to clear cart"))}
+    end
+  end
+
+  @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
     {:noreply, assign(socket, active_tab: String.to_existing_atom(tab))}
   end
@@ -205,14 +221,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   defp create_new_order(socket, order_params) do
+    staff = socket.assigns.current_staff
+    branch_id = socket.assigns.branch_id
+    current_cart = socket.assigns.cart
+
     full_order_params =
       order_params
-      |> Map.put("cart_id", socket.assigns.cart.id)
-      |> Map.put("branch_id", socket.assigns.branch_id)
-      |> Map.put("staff_id", socket.assigns.current_staff.id)
+      |> Map.put("cart_id", current_cart.id)
+      |> Map.put("branch_id", branch_id)
+      |> Map.put("staff_id", staff.id)
 
     case Oms.create_order(full_order_params) do
       {:ok, _result} ->
+        Carts.detach_staff_cart(current_cart.id)
+
+        {:ok, _new_cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
+
         {:noreply,
          socket
          |> put_flash(:info, gettext("Order created successfully"))
@@ -231,13 +255,21 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   defp update_existing_order(socket, order_params) do
+    staff = socket.assigns.current_staff
+    branch_id = socket.assigns.branch_id
+    current_cart = socket.assigns.cart
+
     full_order_params =
       order_params
-      |> Map.put("cart_id", socket.assigns.cart.id)
-      |> Map.put("branch_id", socket.assigns.branch_id)
+      |> Map.put("cart_id", current_cart.id)
+      |> Map.put("branch_id", branch_id)
 
     case Orders.update_order(socket.assigns.order, full_order_params) do
       {:ok, _updated_order} ->
+        Carts.detach_staff_cart(current_cart.id)
+
+        {:ok, _new_cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
+
         {:noreply,
          socket
          |> put_flash(:info, gettext("Order updated successfully"))
@@ -428,6 +460,20 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                   {gettext("Cart is empty")}
                 </p>
               <% else %>
+                <div class="flex justify-between items-center mb-2 pb-2 border-b border-base-200">
+                  <span class="text-xs font-bold uppercase text-base-content/60">
+                    {gettext("Items in Cart")}
+                  </span>
+                  <button
+                    type="button"
+                    phx-click="detach_cart"
+                    class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                  >
+                    <.icon name="hero-trash" class="size-3.5 mr-1" />
+                    {gettext("Clear Cart")}
+                  </button>
+                </div>
+
                 <%= for item <- @cart.items do %>
                   <div class="flex items-center justify-between p-2 rounded-lg bg-base-200/60 text-xs">
                     <div class="flex-1 truncate pr-2">
@@ -514,6 +560,20 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                 <p class="text-sm font-medium">{gettext("Cart is empty")}</p>
               </div>
             <% else %>
+              <div class="flex justify-between items-center mb-3 pb-2 border-b border-base-200">
+                <span class="text-xs font-bold uppercase text-base-content/60">
+                  {gettext("Items in Cart")}
+                </span>
+                <button
+                  type="button"
+                  phx-click="detach_cart"
+                  class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                >
+                  <.icon name="hero-trash" class="size-3.5 mr-1" />
+                  {gettext("Clear Cart")}
+                </button>
+              </div>
+
               <div class="space-y-2">
                 <%= for item <- @cart.items do %>
                   <div class="flex items-center justify-between p-2.5 rounded-box bg-base-200/60 border border-base-200">

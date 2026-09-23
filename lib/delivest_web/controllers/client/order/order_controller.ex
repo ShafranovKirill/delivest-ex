@@ -40,16 +40,6 @@ defmodule DelivestWeb.Client.Order.OrderController do
         |> put_status(:unprocessable_entity)
         |> json(%{error: "Branch not found"})
 
-      {:error, :cart_not_found} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Cart not found"})
-
-      {:error, :cart_is_empty} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Cart is empty"})
-
       {:error, _step, %Ecto.Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
