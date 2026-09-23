@@ -19,9 +19,9 @@ defmodule Delivest.Oms.Orders do
     |> Repo.all()
   end
 
-  def get_order!(id) do
+  def get_order(id) do
     Order
-    |> Repo.get!(id)
+    |> Repo.get(id)
     |> Repo.preload([:client, :items])
   end
 

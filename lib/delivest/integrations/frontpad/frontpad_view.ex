@@ -92,10 +92,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
   defp extract_branch_id(%{info: %{frontpad_branch_id: fb_id}}) when not is_nil(fb_id),
     do: to_string(fb_id)
 
-  defp extract_branch_id(%{info: %{frontpad_settings: %{frontpad_branch_id: fb_id}}})
-       when not is_nil(fb_id),
-       do: to_string(fb_id)
-
   defp extract_branch_id(_), do: nil
 
   defp extract_products(order_items, products_map) do

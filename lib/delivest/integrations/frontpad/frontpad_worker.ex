@@ -6,8 +6,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
 
   require Logger
 
+  alias Delivest.Identity
   alias Delivest.Oms.Orders
-  alias Delivest.Identity.Branch
   alias Delivest.Integrations.Frontpad.FrontpadView
   alias Delivest.HTTP.Client, as: HttpClient
   alias Delivest.Net
@@ -16,7 +16,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
 
   @impl Oban.Worker
   def backoff(%Oban.Job{attempt: attempt}) do
-    # Обнуляем индекс массива с учетом текущей попытки (в секундах для Oban)
     multiplier = Enum.at(@fibonacci_intervals, attempt - 1, List.last(@fibonacci_intervals))
     multiplier * 10
   end
@@ -54,16 +53,16 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
   end
 
   defp fetch_order(order_id) do
-    case Orders.get_order!(order_id) do
+    case Orders.get_order(order_id) do
       nil -> {:error, :order_not_found}
       order -> {:ok, order}
     end
   end
 
   defp fetch_branch(branch_id) do
-    case Delivest.Repo.get(Branch, branch_id) do
-      nil -> {:error, :branch_not_found}
-      branch -> {:ok, Delivest.Repo.preload(branch, :info)}
+    case Identity.get_branch(branch_id, preload: [:info]) do
+      {:ok, %Identity.Branch{} = branch} -> {:ok, branch}
+      _ -> {:error, :branch_not_found}
     end
   end
 
@@ -101,7 +100,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
     end
   end
 
-  @spec build_frontpad_view(Delivest.Oms.Order.t(), Branch.t()) ::
+  @spec build_frontpad_view(Delivest.Oms.Order.t(), Identity.Branch.t()) ::
           {:ok, FrontpadView.t()} | {:error, atom()}
   defp build_frontpad_view(order, branch) do
     product_ids = Enum.map(order.items, & &1.product_id)
@@ -130,7 +129,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
   end
 
   defp update_order_failure_status(order_id, attempt, max_attempts, error_message) do
-    with %{} = order <- Orders.get_order!(order_id) do
+    with %{} = order <- Orders.get_order(order_id) do
       status = if attempt >= max_attempts, do: "failed", else: "pending"
 
       last_error =

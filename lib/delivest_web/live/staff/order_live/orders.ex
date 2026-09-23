@@ -58,7 +58,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("update_order", %{"order-id" => id} = params, socket) do
     attrs = Map.drop(params, ["order-id", "_target"])
 
-    order = Orders.get_order!(id)
+    order = Orders.get_order(id)
 
     case Orders.update_order(order, attrs) do
       {:ok, updated_order} ->
@@ -74,7 +74,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   @impl true
   def handle_event("delete_click", %{"id" => id}, socket) do
-    order = Orders.get_order!(id)
+    order = Orders.get_order(id)
     {:noreply, assign(socket, order_to_delete: order)}
   end
 

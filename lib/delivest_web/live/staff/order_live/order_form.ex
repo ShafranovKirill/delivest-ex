@@ -21,7 +21,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           {%Order{}, default_cart, gettext("New Order")}
 
         id ->
-          existing_order = Orders.get_order!(id)
+          existing_order = Orders.get_order(id)
 
           cart =
             Carts.get_cart_by_id(existing_order.cart_id) ||
