@@ -80,6 +80,8 @@ defmodule Delivest.Oms.Order do
       :payment_method,
       :cart_id
     ])
+    |> validate_length(:customer_name, max: 100)
+    |> validate_length(:comment, max: 500)
     |> validate_phone()
     |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)

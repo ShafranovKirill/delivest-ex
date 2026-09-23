@@ -184,6 +184,15 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       |> Order.changeset(full_params)
       |> Map.put(:action, :validate)
 
+    changeset =
+      case Ecto.Changeset.get_change(changeset, :address) do
+        %Ecto.Changeset{} = addr_cs ->
+          Ecto.Changeset.put_change(changeset, :address, %{addr_cs | action: :validate})
+
+        _ ->
+          changeset
+      end
+
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
@@ -594,11 +603,16 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                     type="text"
                     label={gettext("Phone")}
                     placeholder="+79991112233"
+                    maxlength="12"
                   />
-                  <.input field={@form[:customer_name]} type="text" label={gettext("Client Name")} />
+                  <.input
+                    field={@form[:customer_name]}
+                    type="text"
+                    label={gettext("Client Name")}
+                    maxlength="100"
+                  />
                 </div>
               </div>
-
               <div class="divider text-xs font-bold uppercase text-base-content/40 my-2">
                 {gettext("Options")}
               </div>
@@ -633,35 +647,55 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                       field={address_form[:city]}
                       type="text"
                       label={gettext("City")}
+                      maxlength="100"
                       required
                     />
                     <.input
                       field={address_form[:street]}
                       type="text"
                       label={gettext("Street")}
+                      maxlength="150"
                       required
                     />
                     <.input
                       field={address_form[:house]}
                       type="text"
                       label={gettext("House")}
+                      maxlength="20"
                       required
                     />
 
                     <div class="grid grid-cols-3 gap-2">
-                      <.input field={address_form[:entrance]} type="text" label={gettext("Entrance")} />
-                      <.input field={address_form[:floor]} type="text" label={gettext("Floor")} />
+                      <.input
+                        field={address_form[:entrance]}
+                        type="text"
+                        label={gettext("Entrance")}
+                        maxlength="10"
+                      />
+                      <.input
+                        field={address_form[:floor]}
+                        type="text"
+                        label={gettext("Floor")}
+                        maxlength="10"
+                      />
                       <.input
                         field={address_form[:apartment]}
                         type="text"
                         label={gettext("Apartment")}
+                        maxlength="20"
                       />
                     </div>
                   </.inputs_for>
                 </div>
               <% end %>
 
-              <.input field={@form[:comment]} type="textarea" label={gettext("Comment")} rows={2} />
+              <.input
+                field={@form[:comment]}
+                type="textarea"
+                label={gettext("Comment")}
+                rows={2}
+                maxlength="500"
+              />
             </.form>
           </div>
         </div>

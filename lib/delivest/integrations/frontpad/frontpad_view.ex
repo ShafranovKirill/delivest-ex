@@ -1,4 +1,10 @@
 defmodule Delivest.Integrations.Frontpad.FrontpadView do
+  @type product_item :: %{
+          external_id: String.t(),
+          quantity: integer(),
+          mod: String.t() | nil
+        }
+
   @type t :: %__MODULE__{
           secret: String.t(),
           affiliate: String.t() | nil,
@@ -11,7 +17,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
           apart: String.t() | nil,
           descr: String.t() | nil,
           pay: String.t() | nil,
-          products: [%{external_id: String.t(), quantity: integer()}]
+          products: [product_item()]
         }
 
   defstruct [
@@ -75,10 +81,16 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
       view.products
       |> Enum.with_index()
       |> Enum.flat_map(fn {item, index} ->
-        [
+        params = [
           {"product[#{index}]", item.external_id},
           {"product_kol[#{index}]", to_string(item.quantity)}
         ]
+
+        if item.mod do
+          params ++ [{"product_mod[#{index}]", item.mod}]
+        else
+          params
+        end
       end)
 
     base_params ++ products_params
@@ -98,8 +110,11 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     result =
       Enum.reduce_while(order_items, [], fn item, acc ->
         case Map.get(products_map, item.product_id) do
-          %{external_id: ext_id} when not is_nil(ext_id) ->
-            {:cont, [%{external_id: ext_id, quantity: item.quantity} | acc]}
+          %{external_id: ext_id} = product when not is_nil(ext_id) ->
+            # Если в структуре продукта/элемента заказа есть привязка к модификатору (например, parent_index или mod)
+            mod = Map.get(item, :mod) || Map.get(product, :mod)
+
+            {:cont, [%{external_id: ext_id, quantity: item.quantity, mod: mod} | acc]}
 
           _ ->
             {:halt, {:error, {:missing_external_id, item.product_id}}}
