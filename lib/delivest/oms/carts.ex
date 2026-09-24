@@ -46,11 +46,11 @@ defmodule Delivest.Oms.Carts do
   end
 
   def clear_cart(cart_id) do
-    Repo.delete_all(from ci in CartItem, where: ci.cart_id == ^cart_id)
+    Repo.transaction(fn ->
+      {_count, _} = Repo.delete_all(from ci in CartItem, where: ci.cart_id == ^cart_id)
 
-    # Обновляем кэш
-    cart_view = refresh_and_cache(cart_id)
-    {:ok, cart_view}
+      refresh_and_cache(cart_id)
+    end)
   end
 
   def add_item(cart_id, product_id, quantity \\ 1) when is_integer(quantity) and quantity > 0 do

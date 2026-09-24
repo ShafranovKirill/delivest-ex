@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   alias Delivest.Net.Catalogs
   alias Delivest.Oms.{Carts, Order, Orders}
+  alias DelivestWeb.Staff.OrderLive.Components.{CatalogComponent, DetailsComponent}
 
   on_mount {DelivestWeb.Hooks.Permission, "order.create"}
 
@@ -38,9 +39,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           {nil, nil}
 
         %{} = client ->
-          phone = Map.get(client, :phone) || Map.get(client, :customer_phone)
-          c_name = Map.get(client, :name) || Map.get(client, :customer_name)
-          {phone, c_name}
+          {Map.get(client, :phone) || Map.get(client, :customer_phone),
+           Map.get(client, :name) || Map.get(client, :customer_name)}
 
         _ ->
           {nil, nil}
@@ -60,10 +60,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     default_params =
       raw_order_params
-      |> Map.merge(%{
-        "branch_id" => branch_id,
-        "cart_id" => cart.id
-      })
+      |> Map.merge(%{"branch_id" => branch_id, "cart_id" => cart.id})
+      |> Map.put_new("customer_phone", "+7")
 
     default_params =
       case address do
@@ -171,21 +169,15 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   def handle_event("remove_item", %{"product-id" => product_id}, socket) do
     case Carts.remove_item(socket.assigns.cart.id, product_id) do
-      {:ok, _status, updated_cart} ->
-        {:noreply, assign(socket, cart: updated_cart)}
-
-      {:error, _reason} ->
-        {:noreply, socket}
+      {:ok, _status, updated_cart} -> {:noreply, assign(socket, cart: updated_cart)}
+      {:error, _reason} -> {:noreply, socket}
     end
   end
 
   def handle_event("delete_item", %{"product-id" => product_id}, socket) do
     case Carts.remove_item(socket.assigns.cart.id, product_id, all: true) do
-      {:ok, _status, updated_cart} ->
-        {:noreply, assign(socket, cart: updated_cart)}
-
-      {:error, _reason} ->
-        {:noreply, socket}
+      {:ok, _status, updated_cart} -> {:noreply, assign(socket, cart: updated_cart)}
+      {:error, _reason} -> {:noreply, socket}
     end
   end
 
@@ -213,11 +205,9 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   def handle_event("save_order", %{"order" => order_params}, socket) do
-    if socket.assigns.is_edit do
-      update_existing_order(socket, order_params)
-    else
-      create_new_order(socket, order_params)
-    end
+    if socket.assigns.is_edit,
+      do: update_existing_order(socket, order_params),
+      else: create_new_order(socket, order_params)
   end
 
   defp create_new_order(socket, order_params) do
@@ -234,7 +224,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     case Oms.create_order(full_order_params) do
       {:ok, _result} ->
         Carts.detach_staff_cart(current_cart.id)
-
         {:ok, _new_cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
 
         {:noreply,
@@ -260,14 +249,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     current_cart = socket.assigns.cart
 
     full_order_params =
-      order_params
-      |> Map.put("cart_id", current_cart.id)
-      |> Map.put("branch_id", branch_id)
+      order_params |> Map.put("cart_id", current_cart.id) |> Map.put("branch_id", branch_id)
 
     case Orders.update_order(socket.assigns.order, full_order_params) do
       {:ok, _updated_order} ->
         Carts.detach_staff_cart(current_cart.id)
-
         {:ok, _new_cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
 
         {:noreply,
@@ -284,28 +270,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       {:error, _failed_step, reason} ->
         {:noreply,
          put_flash(socket, :error, "#{gettext("Failed to update order")}: #{inspect(reason)}")}
-    end
-  end
-
-  defp filtered_products(categories, category_id, search_query) do
-    categories
-    |> Enum.filter(fn cat -> is_nil(category_id) or cat.id == category_id end)
-    |> Enum.flat_map(fn cat -> cat.products || [] end)
-    |> Enum.filter(fn prod ->
-      query = String.downcase(String.trim(search_query))
-
-      if query == "" do
-        true
-      else
-        String.contains?(String.downcase(prod.name), query)
-      end
-    end)
-  end
-
-  defp get_cart_quantity(cart, product_id) do
-    case Enum.find(cart.items, &(&1.product_id == product_id)) do
-      nil -> 0
-      item -> item.quantity
     end
   end
 
@@ -339,185 +303,18 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
         </div>
       </div>
 
+      <!-- Левая колонка: Каталог товаров -->
       <div class={[
         "w-full lg:w-7/12 xl:w-8/12 flex flex-col bg-base-100 rounded-box border border-base-200 lg:overflow-hidden shadow-sm",
         @active_tab != :cart && "hidden lg:flex"
       ]}>
-        <div class="p-3 border-b border-base-200 space-y-2 shrink-0 bg-base-100">
-          <form phx-change="search_products" phx-submit="search_products" class="relative w-full">
-            <.icon
-              name="hero-magnifying-glass"
-              class="absolute left-3 top-2.5 size-4 text-base-content/40"
-            />
-            <input
-              type="text"
-              name="search[query]"
-              value={@search_query}
-              placeholder={gettext("Search products by name...")}
-              class="input input-bordered input-sm w-full pl-9"
-              autocomplete="off"
-            />
-          </form>
-
-          <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            <button
-              type="button"
-              phx-click="select_category"
-              phx-value-id=""
-              class={[
-                "btn btn-xs sm:btn-sm shrink-0",
-                is_nil(@selected_category_id) && "btn-primary",
-                !is_nil(@selected_category_id) && "btn-ghost bg-base-200"
-              ]}
-            >
-              {gettext("All Categories")}
-            </button>
-            <%= for cat <- @categories do %>
-              <button
-                type="button"
-                phx-click="select_category"
-                phx-value-id={cat.id}
-                class={[
-                  "btn btn-xs sm:btn-sm shrink-0",
-                  @selected_category_id == cat.id && "btn-primary",
-                  @selected_category_id != cat.id && "btn-ghost bg-base-200"
-                ]}
-              >
-                {cat.name}
-              </button>
-            <% end %>
-          </div>
-        </div>
-
-        <div class="flex-1 lg:overflow-y-auto p-3">
-          <% products = filtered_products(@categories, @selected_category_id, @search_query) %>
-
-          <%= if Enum.empty?(products) do %>
-            <div class="h-64 lg:h-full flex flex-col items-center justify-center text-base-content/40 space-y-2">
-              <.icon name="hero-inbox" class="size-12 stroke-1" />
-              <p class="text-sm">{gettext("No products found")}</p>
-            </div>
-          <% else %>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-              <%= for prod <- products do %>
-                <% qty = get_cart_quantity(@cart, prod.id) %>
-                <div
-                  phx-click="add_item"
-                  phx-value-product-id={prod.id}
-                  class={[
-                    "relative cursor-pointer select-none rounded-lg p-2.5 border transition-all flex flex-col justify-between h-24 hover:shadow-md active:scale-95",
-                    qty > 0 && "border-primary bg-primary/5 ring-1 ring-primary",
-                    qty == 0 && "border-base-200 hover:border-primary/50 bg-base-100"
-                  ]}
-                >
-                  <div class="font-medium text-xs leading-snug line-clamp-2 text-base-content">
-                    {prod.name}
-                  </div>
-
-                  <div class="flex items-end justify-between mt-1">
-                    <span class="font-mono font-bold text-xs sm:text-sm text-base-content">
-                      {prod.price} ₽
-                    </span>
-
-                    <%= if qty > 0 do %>
-                      <span class="badge badge-primary badge-sm font-bold font-mono">
-                        {qty}
-                      </span>
-                    <% end %>
-                  </div>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-
-        <div class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-300 shadow-2xl rounded-t-2xl transition-all">
-          <div
-            phx-click="toggle_mobile_cart"
-            class="p-3 flex items-center justify-between cursor-pointer select-none bg-base-200/50 rounded-t-2xl border-b border-base-200"
-          >
-            <div class="flex items-center gap-2">
-              <.icon name="hero-shopping-bag" class="size-5 text-primary" />
-              <span class="font-bold text-sm">{gettext("Cart")}</span>
-              <span class="badge badge-primary badge-sm font-mono font-bold">
-                {@cart.total_quantity}
-              </span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="font-mono font-bold text-base">{@cart.total_amount} ₽</span>
-              <.icon
-                name={if @mobile_cart_expanded, do: "hero-chevron-down", else: "hero-chevron-up"}
-                class="size-5 text-base-content/60"
-              />
-            </div>
-          </div>
-
-          <%= if @mobile_cart_expanded do %>
-            <div class="max-h-60 overflow-y-auto p-3 space-y-2 bg-base-100">
-              <%= if Enum.empty?(@cart.items) do %>
-                <p class="text-xs text-center text-base-content/50 py-4">
-                  {gettext("Cart is empty")}
-                </p>
-              <% else %>
-                <div class="flex justify-between items-center mb-2 pb-2 border-b border-base-200">
-                  <span class="text-xs font-bold uppercase text-base-content/60">
-                    {gettext("Items in Cart")}
-                  </span>
-                  <button
-                    type="button"
-                    phx-click="detach_cart"
-                    class="btn btn-ghost btn-xs text-error hover:bg-error/10"
-                  >
-                    <.icon name="hero-trash" class="size-3.5 mr-1" />
-                    {gettext("Clear Cart")}
-                  </button>
-                </div>
-
-                <%= for item <- @cart.items do %>
-                  <div class="flex items-center justify-between p-2 rounded-lg bg-base-200/60 text-xs">
-                    <div class="flex-1 truncate pr-2">
-                      <p class="font-medium truncate">{item.name}</p>
-                      <p class="text-base-content/60 font-mono">{item.price} ₽ × {item.quantity}</p>
-                    </div>
-                    <div class="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        phx-click="remove_item"
-                        phx-value-product-id={item.product_id}
-                        class="btn btn-xs btn-square btn-ghost"
-                      >
-                        <.icon name="hero-minus" class="size-3" />
-                      </button>
-                      <span class="w-4 text-center font-bold font-mono">{item.quantity}</span>
-                      <button
-                        type="button"
-                        phx-click="add_item"
-                        phx-value-product-id={item.product_id}
-                        class="btn btn-xs btn-square btn-ghost"
-                      >
-                        <.icon name="hero-plus" class="size-3" />
-                      </button>
-                    </div>
-                  </div>
-                <% end %>
-              <% end %>
-            </div>
-          <% end %>
-
-          <div class="p-3 bg-base-100">
-            <button
-              type="button"
-              phx-click="switch_tab"
-              phx-value-tab="details"
-              disabled={Enum.empty?(@cart.items)}
-              class="btn btn-primary w-full btn-sm"
-            >
-              {gettext("Proceed to Checkout")}
-              <.icon name="hero-arrow-right" class="size-4 ml-1" />
-            </button>
-          </div>
-        </div>
+        <CatalogComponent.render_catalog
+          categories={@categories}
+          selected_category_id={@selected_category_id}
+          search_query={@search_query}
+          cart={@cart}
+          mobile_cart_expanded={@mobile_cart_expanded}
+        />
       </div>
 
       <div class={[
@@ -535,9 +332,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
               <.icon name="hero-shopping-bag" class="size-4 mr-1.5" />
               {gettext("Cart")}
               <%= if @cart.total_quantity > 0 do %>
-                <span class="badge badge-sm badge-primary ml-1 font-mono">
-                  {@cart.total_quantity}
-                </span>
+                <span class="badge badge-sm badge-primary ml-1 font-mono">{@cart.total_quantity}</span>
               <% end %>
             </button>
             <button
@@ -561,9 +356,9 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
               </div>
             <% else %>
               <div class="flex justify-between items-center mb-3 pb-2 border-b border-base-200">
-                <span class="text-xs font-bold uppercase text-base-content/60">
-                  {gettext("Items in Cart")}
-                </span>
+                <span class="text-xs font-bold uppercase text-base-content/60">{gettext(
+                  "Items in Cart"
+                )}</span>
                 <button
                   type="button"
                   phx-click="detach_cart"
@@ -594,9 +389,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
                       >
                         <.icon name="hero-minus" class="size-3" />
                       </button>
-                      <span class="w-5 text-center text-xs font-bold font-mono">
-                        {item.quantity}
-                      </span>
+                      <span class="w-5 text-center text-xs font-bold font-mono">{item.quantity}</span>
                       <button
                         type="button"
                         phx-click="add_item"
@@ -623,19 +416,16 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           <div class={[@active_tab != :details && "hidden lg:hidden"]}>
             <div class="lg:hidden mb-4 p-3 rounded-box bg-base-200/70 border border-base-300">
               <div class="flex justify-between items-center mb-2 pb-2 border-b border-base-300">
-                <span class="font-bold text-xs uppercase text-base-content/60">
-                  {gettext("Selected Items")} ({@cart.total_quantity})
-                </span>
+                <span class="font-bold text-xs uppercase text-base-content/60">{gettext(
+                  "Selected Items"
+                )} ({@cart.total_quantity})</span>
                 <button
                   type="button"
                   phx-click="switch_tab"
                   phx-value-tab="cart"
                   class="btn btn-ghost btn-xs text-primary"
-                >
-                  {gettext("Edit")}
-                </button>
+                >{gettext("Edit")}</button>
               </div>
-
               <div class="space-y-1.5 max-h-36 overflow-y-auto">
                 <%= for item <- @cart.items do %>
                   <div class="flex justify-between text-xs">
@@ -646,117 +436,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
               </div>
             </div>
 
-            <.form
-              for={@form}
-              id="order-details-form"
-              phx-change="validate_order"
-              phx-submit="save_order"
-              class="space-y-3"
-            >
-              <div class="form-control">
-                <label class="label text-xs font-bold uppercase text-base-content/60 p-0 mb-1">
-                  {gettext("Customer Info")}
-                </label>
-                <div class="space-y-2">
-                  <.input
-                    field={@form[:customer_phone]}
-                    type="text"
-                    label={gettext("Phone")}
-                    placeholder="+79991112233"
-                    maxlength="12"
-                  />
-                  <.input
-                    field={@form[:customer_name]}
-                    type="text"
-                    label={gettext("Client Name")}
-                    maxlength="100"
-                  />
-                </div>
-              </div>
-              <div class="divider text-xs font-bold uppercase text-base-content/40 my-2">
-                {gettext("Options")}
-              </div>
-
-              <.input
-                field={@form[:fulfillment_type]}
-                type="select"
-                label={gettext("Fulfillment Type")}
-                options={[
-                  {gettext("Dine In"), "dine_in"},
-                  {gettext("Delivery"), "delivery"},
-                  {gettext("Pickup"), "pickup"}
-                ]}
-              />
-
-              <.input
-                field={@form[:payment_method]}
-                type="select"
-                label={gettext("Payment Method")}
-                options={[
-                  {gettext("Cash"), "cash"},
-                  {gettext("Card Offline"), "card_offline"}
-                ]}
-              />
-
-              <% fulfillment_type = Ecto.Changeset.get_field(@form.source, :fulfillment_type) %>
-              <%= if to_string(fulfillment_type) == "delivery" do %>
-                <div class="p-3 bg-base-200/50 rounded-box border border-base-300 space-y-2">
-                  <span class="text-xs font-bold">{gettext("Delivery Address")}</span>
-                  <.inputs_for :let={address_form} field={@form[:address]}>
-                    <.input
-                      field={address_form[:city]}
-                      type="text"
-                      label={gettext("City")}
-                      maxlength="100"
-                      required
-                    />
-                    <.input
-                      field={address_form[:street]}
-                      type="text"
-                      label={gettext("Street")}
-                      maxlength="150"
-                      required
-                    />
-                    <.input
-                      field={address_form[:house]}
-                      type="text"
-                      label={gettext("House")}
-                      maxlength="20"
-                      required
-                    />
-
-                    <div class="grid grid-cols-3 gap-2">
-                      <.input
-                        field={address_form[:entrance]}
-                        type="text"
-                        label={gettext("Entrance")}
-                        maxlength="10"
-                      />
-                      <.input
-                        field={address_form[:floor]}
-                        type="text"
-                        label={gettext("Floor")}
-                        maxlength="10"
-                      />
-                      <.input
-                        field={address_form[:apartment]}
-                        type="text"
-                        label={gettext("Apartment")}
-                        maxlength="20"
-                      />
-                    </div>
-                  </.inputs_for>
-                </div>
-              <% end %>
-
-              <.input
-                field={@form[:comment]}
-                type="textarea"
-                label={gettext("Comment")}
-                rows={2}
-                maxlength="500"
-              />
-            </.form>
+            <DetailsComponent.render_form form={@form} />
           </div>
         </div>
 

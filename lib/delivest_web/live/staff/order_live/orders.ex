@@ -15,7 +15,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   @impl true
   def handle_params(params, _url, socket) do
-    period = Map.get(params, "period", "all")
+    period = Map.get(params, "period", "today")
     status = Map.get(params, "status", "")
     custom_from = Map.get(params, "date_from", "")
     custom_to = Map.get(params, "date_to", "")
