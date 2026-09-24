@@ -242,11 +242,25 @@ defmodule Delivest.Oms.Carts do
   defp fetch_raw_cart(opts) do
     session_id = Keyword.get(opts, :session_id)
     staff_id = Keyword.get(opts, :staff_id)
+    branch_id = Keyword.get(opts, :branch_id)
 
     cond do
-      not is_nil(session_id) -> Repo.get_by(Cart, session_id: session_id)
-      not is_nil(staff_id) -> Repo.get_by(Cart, staff_id: staff_id)
-      true -> nil
+      not is_nil(session_id) ->
+        Repo.get_by(Cart, session_id: session_id)
+
+      not is_nil(staff_id) ->
+        query =
+          from c in Cart,
+            where: c.staff_id == ^staff_id,
+            order_by: [desc: c.inserted_at],
+            limit: 1
+
+        query = if branch_id, do: from(c in query, where: c.branch_id == ^branch_id), else: query
+
+        Repo.one(query)
+
+      true ->
+        nil
     end
   end
 end
