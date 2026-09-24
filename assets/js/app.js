@@ -5,6 +5,30 @@ import { hooks as colocatedHooks } from "phoenix-colocated/delivest";
 import topbar from "../vendor/topbar";
 import Sortable from "sortablejs";
 
+const Sidebar = {
+  mounted() {
+    const sidebar = this.el;
+    const isCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
+    if (isCollapsed) {
+      sidebar.classList.add("is-collapsed");
+    }
+
+    const toggleBtn = sidebar.querySelector("button");
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sidebar.classList.toggle("is-collapsed");
+        localStorage.setItem(
+          "sidebar_collapsed",
+          sidebar.classList.contains("is-collapsed"),
+        );
+      });
+    }
+
+    sidebar.addEventListener("click", (e) => {});
+  },
+};
+
 const ThemeToggle = {
   mounted() {
     const currentTheme =
@@ -151,6 +175,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ThemeToggle,
     SortableCategories,
     SortableStocks,
+    Sidebar,
   },
 });
 
