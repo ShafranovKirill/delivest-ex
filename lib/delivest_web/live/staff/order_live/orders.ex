@@ -7,6 +7,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Orders.subscribe()
+    end
+
     {:ok,
      socket
      |> assign(order_to_delete: nil)
@@ -97,6 +101,25 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("cancel_delete", _, socket),
     do: {:noreply, assign(socket, order_to_delete: nil)}
 
+  @impl true
+  def handle_info({Delivest.Oms.Orders, [:order, :created], order}, socket) do
+    {:noreply, stream_insert(socket, :orders, order, at: 0)}
+  end
+
+  @impl true
+  def handle_info({Delivest.Oms.Orders, [:order, :updated], order}, socket) do
+    if order.deleted_at do
+      {:noreply, stream_delete(socket, :orders, order)}
+    else
+      {:noreply, stream_insert(socket, :orders, order)}
+    end
+  end
+
+  @impl true
+  def handle_info({Delivest.Oms.Orders, [:order, :deleted], order}, socket) do
+    {:noreply, stream_delete(socket, :orders, order)}
+  end
+
   defp resolve_date_range("today", _, _), do: {Date.utc_today(), Date.utc_today()}
 
   defp resolve_date_range("tomorrow", _, _),
@@ -141,6 +164,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   defp status_color("delivering"), do: "bg-secondary/10 text-secondary border-secondary/20"
   defp status_color("completed"), do: "bg-success/10 text-success border-success/20"
   defp status_color("cancelled"), do: "bg-error/10 text-error border-error/20"
+  defp status_color("crm"), do: "bg-purple-500/10 text-purple-600 border-purple-500/20"
   defp status_color(_), do: "bg-base-200 text-base-content border-base-300"
 
   defp format_fulfillment_type(:delivery), do: gettext("Delivery")
@@ -225,7 +249,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                 {"ready", gettext("Ready")},
                 {"delivering", gettext("Delivering")},
                 {"completed", gettext("Completed")},
-                {"cancelled", gettext("Cancelled")}
+                {"cancelled", gettext("Cancelled")},
+                {"crm", gettext("Crm")}
               ] do %>
                 <option value={val} selected={@selected_status == val}>{label}</option>
               <% end %>
@@ -249,41 +274,62 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
               </div>
 
               <div class="flex items-center gap-2">
-                <form phx-change="update_order" phx-value-order-id={order.id}>
-                  <select
-                    name="status"
-                    class={[
-                      "select select-xs font-medium border",
-                      status_color(Atom.to_string(order.status))
-                    ]}
-                  >
-                    <%= for {val, label} <- [
-                      {"created", gettext("Created")},
-                      {"preparing", gettext("Preparing")},
-                      {"ready", gettext("Ready")},
-                      {"delivering", gettext("Delivering")},
-                      {"completed", gettext("Completed")},
-                      {"cancelled", gettext("Cancelled")},
-                      {"crm", gettext("Crm")}
-                    ] do %>
-                      <option
-                        value={val}
-                        selected={Atom.to_string(order.status) == val}
-                        class="bg-base-100 text-base-content"
-                      >
-                        {label}
-                      </option>
-                    <% end %>
-                  </select>
-                </form>
+                <% is_crm = Atom.to_string(order.status) == "crm" %>
 
-                <.link
-                  navigate={~p"/staff/orders/#{order.id}/edit"}
-                  class="btn btn-ghost btn-xs btn-square"
-                  title={gettext("Edit Order")}
-                >
-                  <.icon name="hero-pencil-square" class="size-4" />
-                </.link>
+                <%= if is_crm do %>
+                  <% crm_status = order.crm_info && order.crm_info.status %>
+                  <div class="text-xs font-medium px-2 py-1 rounded border bg-base-100 flex items-center gap-1.5">
+                    <span class="text-base-content/60">CRM:</span>
+                    <%= cond do %>
+                      <% crm_status == "sent" -> %>
+                        <span>
+                          {gettext("sent at")} {order.crm_info.sent_at &&
+                            Calendar.strftime(order.crm_info.sent_at, "%d.%m.%Y %H:%M")}
+                        </span>
+                      <% crm_status == "failed" -> %>
+                        <span class="text-error font-bold uppercase">{gettext("error")}</span>
+                      <% true -> %>
+                        <span>{crm_status || gettext("sending")}</span>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <form phx-change="update_order" phx-value-order-id={order.id}>
+                    <select
+                      name="status"
+                      class={[
+                        "select select-xs font-medium border",
+                        status_color(Atom.to_string(order.status))
+                      ]}
+                    >
+                      <%= for {val, label} <- [
+                        {"created", gettext("Created")},
+                        {"preparing", gettext("Preparing")},
+                        {"ready", gettext("Ready")},
+                        {"delivering", gettext("Delivering")},
+                        {"completed", gettext("Completed")},
+                        {"cancelled", gettext("Cancelled")},
+                        {"crm", gettext("Crm")}
+                      ] do %>
+                        <option
+                          value={val}
+                          selected={Atom.to_string(order.status) == val}
+                          class="bg-base-100 text-base-content"
+                        >
+                          {label}
+                        </option>
+                      <% end %>
+                    </select>
+                  </form>
+
+                  <.link
+                    navigate={~p"/staff/orders/#{order.id}/edit"}
+                    class="btn btn-ghost btn-xs btn-square"
+                    title={gettext("Edit Order")}
+                  >
+                    <.icon name="hero-pencil-square" class="size-4" />
+                  </.link>
+                <% end %>
+
                 <button
                   type="button"
                   phx-click="delete_click"
@@ -295,7 +341,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                 </button>
               </div>
             </div>
-
             <div class="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 text-xs">
               <div class="lg:w-1/5 min-w-0">
                 <% phone = (order.client && order.client.phone) || order.customer_phone %>

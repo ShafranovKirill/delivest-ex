@@ -151,8 +151,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
 
   @spec update_crm_info(Delivest.Oms.Order.t(), map()) :: term()
   defp update_crm_info(order, attrs) do
-    order
-    |> Delivest.Oms.Order.changeset(attrs)
-    |> Delivest.Repo.update()
+    Orders.update_order_crm_info(order, attrs)
   end
 end

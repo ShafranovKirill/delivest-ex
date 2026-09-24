@@ -11,6 +11,12 @@ defmodule Delivest.Oms.Orders do
   alias Delivest.Repo
   alias Ecto.Multi
 
+  @topic inspect(__MODULE__)
+
+  def subscribe do
+    Phoenix.PubSub.subscribe(Delivest.PubSub, @topic)
+  end
+
   def list_orders(params \\ %{}) do
     Order
     |> where([o], is_nil(o.deleted_at))
@@ -43,8 +49,12 @@ defmodule Delivest.Oms.Orders do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{order: order}} -> {:ok, Repo.preload(order, [:items, :client])}
-      {:error, step, reason, _} -> {:error, step, reason}
+      {:ok, %{order: order}} ->
+        order = Repo.preload(order, [:items, :client])
+        notify_subscribers({:ok, order}, [:order, :created])
+
+      {:error, step, reason, _} ->
+        {:error, step, reason}
     end
   end
 
@@ -61,7 +71,8 @@ defmodule Delivest.Oms.Orders do
     |> Repo.transaction()
     |> case do
       {:ok, %{order: updated_order}} ->
-        {:ok, Repo.preload(updated_order, [:items, :client], force: true)}
+        updated_order = Repo.preload(updated_order, [:items, :client], force: true)
+        notify_subscribers({:ok, updated_order}, [:order, :updated])
 
       {:error, step, reason, _} ->
         {:error, step, reason}
@@ -69,9 +80,12 @@ defmodule Delivest.Oms.Orders do
   end
 
   def soft_delete_order(%Order{} = order) do
-    order
-    |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})
-    |> Repo.update()
+    result =
+      order
+      |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})
+      |> Repo.update()
+
+    notify_subscribers(result, [:order, :deleted])
   end
 
   def populate_cart_from_order(%Order{} = order, cart_id) do
@@ -85,9 +99,19 @@ defmodule Delivest.Oms.Orders do
   end
 
   def update_order_crm_info(%Order{} = order, attrs) do
-    order
-    |> Order.changeset(attrs)
-    |> Repo.update()
+    result =
+      order
+      |> Order.changeset(attrs)
+      |> Repo.update()
+
+    case result do
+      {:ok, updated_order} ->
+        updated_order = Repo.preload(updated_order, [:items, :client], force: true)
+        notify_subscribers({:ok, updated_order}, [:order, :updated])
+
+      error ->
+        error
+    end
   end
 
   defp resolve_client_id_on_create(attrs) do
@@ -165,5 +189,18 @@ defmodule Delivest.Oms.Orders do
     order_struct
     |> Order.changeset(order_params)
     |> Ecto.Changeset.put_assoc(:items, items_attrs)
+  end
+
+  defp notify_subscribers({:ok, order}, event) do
+    Phoenix.PubSub.broadcast(Delivest.PubSub, @topic, {__MODULE__, event, order})
+    {:ok, order}
+  end
+
+  defp notify_subscribers({:error, step, reason}, _event) do
+    {:error, step, reason}
+  end
+
+  defp notify_subscribers({:error, reason}, _event) do
+    {:error, reason}
   end
 end
