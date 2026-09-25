@@ -65,6 +65,36 @@ defmodule DelivestWeb.Client.Cart.CartController do
     ]
   )
 
+  operation(:clear,
+    summary: "Очистить корзину",
+    description: "Удаляет все товары из указанной корзины.",
+    tags: ["Cart"],
+    parameters: [
+      cart_id: [
+        in: :path,
+        schema: %Schema{type: :string, format: :uuid},
+        required: true,
+        description: "UUID корзины"
+      ]
+    ],
+    responses: [
+      ok: {"Очищенная корзина", "application/json", CartResponse},
+      not_found: {"Корзина не найдена", "application/json", %Schema{type: :object}}
+    ]
+  )
+
+  def clear(conn, %{"cart_id" => cart_id}) do
+    case Carts.clear_cart(cart_id) do
+      {:ok, cart_view} ->
+        render(conn, :show, cart: cart_view)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Cart not found"})
+    end
+  end
+
   def add_item(conn, %{"cart_id" => cart_id, "product_id" => product_id}) do
     case Carts.add_item(cart_id, product_id) do
       {:ok, _item, cart_view} ->
