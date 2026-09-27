@@ -18,7 +18,7 @@ defmodule Delivest.Identity.Branch do
 
     many_to_many :staff, Staff, join_through: StaffBranch
 
-    has_one :info, Delivest.Identity.BranchInfo, foreign_key: :branch_id
+    has_one :info, Delivest.Identity.Branch.BranchInfo, foreign_key: :branch_id
 
     many_to_many :stocks, Delivest.Net.Stock,
       join_through: Delivest.Relations.EntityRelation,

@@ -1,6 +1,7 @@
-defmodule Delivest.Identity.BranchInfo do
+defmodule Delivest.Identity.Branch.BranchInfo do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Delivest.Identity.Branch.FrontpadSettings
   alias Delivest.Identity
 
   use Gettext, backend: DelivestWeb.Gettext
@@ -17,7 +18,9 @@ defmodule Delivest.Identity.BranchInfo do
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
-
+    field :frontpad_api_key, :string
+    field :frontpad_enabled, :boolean, default: false
+    embeds_one :frontpad_settings, FrontpadSettings, on_replace: :update
     belongs_to :branch, Delivest.Identity.Branch
 
     timestamps()
@@ -32,8 +35,11 @@ defmodule Delivest.Identity.BranchInfo do
       :vk_url,
       :whatsapp_url,
       :instagram_url,
+      :frontpad_api_key,
+      :frontpad_enabled,
       :branch_id
     ])
+    |> cast_embed(:frontpad_settings, with: &FrontpadSettings.changeset/2)
     |> validate_required([:branch_id])
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:

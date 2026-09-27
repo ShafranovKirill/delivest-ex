@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     branch_id = socket.assigns.branch_id
     flop_params = prepare_flop_params(params)
 
-    case Net.Products.list_staff_products_for_branch(
+    case Net.list_staff_products_for_branch(
            socket.assigns.current_staff,
            branch_id,
            flop_params,
@@ -147,7 +147,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   def handle_event("confirm_delete", _, %{assigns: %{product_to_delete: product}} = socket) do
-    case Net.Products.soft_delete_product(socket.assigns.current_staff, product) do
+    case Net.soft_delete_product(socket.assigns.current_staff, product) do
       {:ok, _} ->
         {:noreply,
          socket

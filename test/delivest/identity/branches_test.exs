@@ -110,6 +110,22 @@ defmodule Delivest.Identity.BranchesTest do
       assert branch.id != nil
     end
 
+    test "should persist frontpad integration fields in branch info", %{admin: admin} do
+      attrs = %{name: "Frontpad Branch", slug: "frontpad-branch"}
+
+      info_attrs = %{
+        frontpad_api_key: "frontpad-secret-key",
+        frontpad_enabled: true,
+        frontpad_settings: %{frontpad_branch_id: "frontpad-branch-123"}
+      }
+
+      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, info_attrs)
+      assert branch.info.frontpad_api_key == "frontpad-secret-key"
+      assert branch.info.frontpad_enabled == true
+
+      assert branch.info.frontpad_settings.frontpad_branch_id == "frontpad-branch-123"
+    end
+
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
       attrs = %{name: ""}
 

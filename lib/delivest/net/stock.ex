@@ -11,8 +11,7 @@ defmodule Delivest.Net.Stock do
     field :is_active, :boolean, default: true
     field :order, :float
 
-    belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :string
-
+    belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
     timestamps(type: :utc_datetime)
   end
 
