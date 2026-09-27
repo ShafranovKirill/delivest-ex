@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   alias Delivest.Oms.{Order, Orders}
 
-  on_mount {DelivestWeb.Hooks.Permission, "order.read"}
+  on_mount {DelivestWeb.Hooks.Permission, "orders.read"}
 
   @impl true
   def mount(_params, _session, socket) do

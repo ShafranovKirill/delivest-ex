@@ -7,6 +7,7 @@ defmodule Delivest.Identity.Definitions do
   products.create products.read products.update products.delete
   stocks.create stocks.read stocks.update stocks.delete
   clients.create clients.read clients.update clients.delete
+  orders.create orders.read orders.update orders.delete
   admin
   """
 
