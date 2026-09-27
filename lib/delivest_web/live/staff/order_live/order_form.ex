@@ -38,9 +38,9 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
           cart =
             cart ||
-              Orders.populate_cart_from_order(
-                existing_order,
-                Carts.create_cart(%{staff_id: staff.id, branch_id: branch_id}).id
+              (
+                {:ok, new_cart} = Carts.create_cart(%{staff_id: staff.id, branch_id: branch_id})
+                Orders.populate_cart_from_order(existing_order, new_cart.id)
               )
 
           {existing_order, cart, gettext("Edit Order #%{number}", number: existing_order.number)}
