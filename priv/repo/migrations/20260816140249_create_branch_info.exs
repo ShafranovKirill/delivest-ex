@@ -11,6 +11,10 @@ defmodule Delivest.Repo.Migrations.CreateBranchInfo do
       add :whatsapp_url, :string
       add :instagram_url, :string
 
+      add :frontpad_api_key, :string
+      add :frontpad_enabled, :boolean, default: false, null: false
+      add :frontpad_settings, :map, default: %{}
+
       add :branch_id,
           references(:branches,
             on_delete: :restrict,

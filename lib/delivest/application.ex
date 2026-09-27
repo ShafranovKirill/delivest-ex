@@ -11,6 +11,7 @@ defmodule Delivest.Application do
       DelivestWeb.Telemetry,
       Delivest.Repo,
       {DNSCluster, query: Application.get_env(:delivest, :dns_cluster_query) || :ignore},
+      {Oban, Application.fetch_env!(:delivest, Oban)},
       {Phoenix.PubSub, name: Delivest.PubSub},
       # Start a worker by calling: Delivest.Worker.start_link(arg)
       # {Delivest.Worker, arg},
@@ -19,6 +20,7 @@ defmodule Delivest.Application do
       Supervisor.child_spec({Cachex, name: :branch_cache}, id: :branch_cache),
       Supervisor.child_spec({Cachex, name: :menu_cache}, id: :menu_cache),
       Supervisor.child_spec({Cachex, name: :stock_cache}, id: :stock_cache),
+      Supervisor.child_spec({Cachex, name: :cart_cache}, id: :cart_cache),
       DelivestWeb.Endpoint
     ]
 

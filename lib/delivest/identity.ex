@@ -1,5 +1,6 @@
 defmodule Delivest.Identity do
-  alias Delivest.Identity.{Staffs, Staff, Roles, Acl, Branches, BranchInfo}
+  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Identity.{Staffs, Staff, Roles, Acl, Branches, Clients}
 
   defdelegate list_staff(staff, params \\ %{}, opts \\ []), to: Staffs
   defdelegate create_staff(staff, attrs), to: Staffs
@@ -21,6 +22,17 @@ defmodule Delivest.Identity do
   defdelegate update_branch(staff, branch, branch_attrs, info_attrs), to: Branches
   defdelegate create_branch(staff, branch_attrs, info_attrs), to: Branches
   defdelegate soft_delete_branch(staff, branch), to: Branches
+
+  defdelegate list_clients(staff, params \\ %{}), to: Clients
+  defdelegate get_client(staff, id), to: Clients
+  defdelegate get_or_create_client_by_phone(phone, attrs \\ %{}), to: Clients
+  defdelegate create_client(attrs), to: Clients
+  defdelegate update_client(staff, client, attrs), to: Clients
+  defdelegate soft_delete_client(staff, client), to: Clients
+  defdelegate get_clients_map(ids), to: Clients
+  defdelegate search_clients(staff, query, limit \\ 10), to: Clients
+  defdelegate get_client_ids_by_search(query), to: Clients
+  defdelegate resolve_client(attrs), to: Clients
 
   defdelegate phone_regex(), to: BranchInfo
 

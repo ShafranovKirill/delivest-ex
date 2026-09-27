@@ -21,14 +21,31 @@ defmodule DelivestWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: DelivestWeb.OpenApi
   end
 
+  pipeline :client_api do
+    plug :api
+    plug :fetch_cookies
+    plug DelivestWeb.Plugs.EnsureSessionId
+  end
+
   scope "/client", DelivestWeb.Client do
-    pipe_through :api
+    pipe_through :client_api
 
     scope "/branches", Branch do
       get "/", BranchController, :index
       post "/:id/select", BranchController, :select
       post "/slug/:slug/select", BranchController, :select_by_slug
       delete "/active", BranchController, :clear_active
+    end
+
+    scope "/cart", Cart do
+      get "/", CartController, :show
+      post "/:cart_id/items/:product_id", CartController, :add_item
+      delete "/:cart_id/items/:product_id", CartController, :remove_item
+      delete "/:cart_id/clear", CartController, :clear
+    end
+
+    scope "/orders", Order do
+      post "/", OrderController, :create
     end
 
     get "/:branch_id/stocks", Stock.StockController, :index
@@ -75,6 +92,12 @@ defmodule DelivestWeb.Router do
         live "/:id/edit", Roles, :edit
         live "/new", Roles, :new
       end
+
+      scope "/clients", ClientLive do
+        live "/", Clients, :index
+        live "/new", Clients, :new
+        live "/:id/edit", Clients, :edit
+      end
     end
 
     live_session :staff_need_branch,
@@ -103,6 +126,12 @@ defmodule DelivestWeb.Router do
         live "/", Stocks, :index
         live "/:id/edit", Stocks, :edit
         live "/new", Stocks, :new
+      end
+
+      scope "/orders", OrderLive do
+        live "/", Orders, :index
+        live "/new", OrderForm, :new
+        live "/:id/edit", OrderForm, :edit
       end
     end
   end

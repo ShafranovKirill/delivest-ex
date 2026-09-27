@@ -120,7 +120,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   defp do_save_product(%Ecto.Changeset{valid?: true} = changeset, socket, :edit) do
     params = to_params(changeset)
 
-    case Net.Products.update_product(
+    case Net.update_product(
            socket.assigns.current_staff,
            socket.assigns.product,
            params
@@ -138,7 +138,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
     params = to_params(changeset)
     branch_id = socket.assigns.branch_id
 
-    case Net.Products.create_product(
+    case Net.create_product(
            socket.assigns.current_staff,
            branch_id,
            params

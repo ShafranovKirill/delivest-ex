@@ -1,6 +1,7 @@
 defmodule Delivest.Identity.Branches do
   import Ecto.Query
-  alias Delivest.Identity.{BranchInfo, Branch}
+  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Identity.{Branch}
   alias Delivest.{Repo, Identity}
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
@@ -107,8 +108,9 @@ defmodule Delivest.Identity.Branches do
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, branch_attrs))
       |> Ecto.Multi.insert(:branch_info, fn %{branch: branch} ->
-        attrs = Map.put(info_attrs, "branch_id", branch.id)
-        BranchInfo.changeset(%BranchInfo{}, attrs)
+        branch
+        |> Ecto.build_assoc(:info)
+        |> BranchInfo.changeset(info_attrs)
       end)
       |> Repo.transaction()
       |> case do
