@@ -116,17 +116,14 @@ defmodule Delivest.Identity.BranchesTest do
       info_attrs = %{
         frontpad_api_key: "frontpad-secret-key",
         frontpad_enabled: true,
-        frontpad_settings: %{"mode" => "live", "webhook" => "https://example.com/hook"}
+        frontpad_settings: %{frontpad_branch_id: "frontpad-branch-123"}
       }
 
       assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, info_attrs)
       assert branch.info.frontpad_api_key == "frontpad-secret-key"
       assert branch.info.frontpad_enabled == true
 
-      assert branch.info.frontpad_settings == %{
-               "mode" => "live",
-               "webhook" => "https://example.com/hook"
-             }
+      assert branch.info.frontpad_settings.frontpad_branch_id == "frontpad-branch-123"
     end
 
     test "should return error changeset with invalid data when permitted", %{admin: admin} do

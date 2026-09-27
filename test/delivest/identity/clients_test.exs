@@ -24,7 +24,7 @@ defmodule Delivest.Identity.ClientsTest do
           deleted_at: DateTime.utc_now(:second)
         )
 
-      _other = insert(:client, phone: "+79990000003", name: "Bob", status: :guest)
+      _other = insert(:client, phone: "+79990000003", name: "Bob", status: :blocked)
 
       assert {:ok, {clients, _meta}} = Identity.list_clients(staff, %{})
       ids = Enum.map(clients, & &1.id)
@@ -99,7 +99,7 @@ defmodule Delivest.Identity.ClientsTest do
 
     test "returns validation errors for invalid phone" do
       assert {:error, changeset} =
-               Identity.create_client(%{"phone" => "12345", "status" => :guest})
+               Identity.create_client(%{"phone" => "12345", "status" => :active})
 
       assert "The number must be in the format +7XXXXXXXXXX" in errors_on(changeset).phone
     end

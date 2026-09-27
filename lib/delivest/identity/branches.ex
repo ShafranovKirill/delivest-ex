@@ -108,8 +108,9 @@ defmodule Delivest.Identity.Branches do
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, branch_attrs))
       |> Ecto.Multi.insert(:branch_info, fn %{branch: branch} ->
-        attrs = Map.put(info_attrs, "branch_id", branch.id)
-        BranchInfo.changeset(%BranchInfo{}, attrs)
+        branch
+        |> Ecto.build_assoc(:info)
+        |> BranchInfo.changeset(info_attrs)
       end)
       |> Repo.transaction()
       |> case do

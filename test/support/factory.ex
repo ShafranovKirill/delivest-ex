@@ -50,7 +50,7 @@ defmodule Delivest.Factory do
           &"+7999000#{&1}#{String.pad_leading(Integer.to_string(rem(&1, 10)), 1, "0")}"
         ),
       name: sequence(:client_name, &"Client #{&1}"),
-      status: :guest
+      status: :active
     }
   end
 
