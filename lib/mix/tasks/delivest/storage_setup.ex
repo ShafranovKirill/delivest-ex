@@ -1,11 +1,11 @@
 defmodule Mix.Tasks.Delivest.StorageSetup do
   @moduledoc """
-  Automatically creates S3/MinIO buckets and applies public policies to public buckets.
+  Automatically creates S3 / SeaweedFS buckets and applies public policies to public buckets.
   """
   use Mix.Task
   require Logger
 
-  @shortdoc "Creates S3/MinIO public and private buckets"
+  @shortdoc "Creates S3/SeaweedFS public and private buckets"
 
   @public_bucket "delivest"
   @private_bucket "delivest-private"

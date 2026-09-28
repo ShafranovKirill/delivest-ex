@@ -87,12 +87,12 @@ config :phoenix_live_view,
 config :swoosh, :api_client, false
 
 config :ex_aws,
-  access_key_id: "minioadmin",
-  secret_access_key: "minioadmin",
+  access_key_id: System.get_env("S3_ACCESS_KEY", "athena_admin"),
+  secret_access_key: System.get_env("S3_SECRET_KEY", "StrongS3Password!"),
   s3: [
-    scheme: "http://",
+    scheme: System.get_env("S3_SCHEME", "http://"),
     host: external_host,
-    port: 9000
+    port: String.to_integer(System.get_env("S3_PORT", "8333"))
   ]
 
 config :delivest, Delivest.Media, bucket: "delivest"
