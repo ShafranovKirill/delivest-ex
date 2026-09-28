@@ -97,13 +97,15 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  external_host = System.get_env("S3_HOST") || System.get_env("S3_PUBLIC_HOST") || "localhost"
+
   config :ex_aws,
-    access_key_id: System.get_env("MINIO_ACCESS_KEY") || raise("MINIO_ACCESS_KEY is missing"),
-    secret_access_key: System.get_env("MINIO_SECRET_KEY") || raise("MINIO_SECRET_KEY is missing"),
+    access_key_id: System.get_env("S3_ACCESS_KEY") || raise("S3_ACCESS_KEY is missing"),
+    secret_access_key: System.get_env("S3_SECRET_KEY") || raise("S3_SECRET_KEY is missing"),
     s3: [
-      scheme: System.get_env("MINIO_SCHEME") || "https://",
-      host: System.get_env("MINIO_HOST") || raise("MINIO_HOST is missing"),
-      port: String.to_integer(System.get_env("MINIO_PORT") || "443")
+      scheme: System.get_env("S3_SCHEME", "http://"),
+      host: external_host,
+      port: String.to_integer(System.get_env("S3_PORT", "8333"))
     ]
 
   config :delivest, Delivest.Media,
