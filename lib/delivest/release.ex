@@ -224,7 +224,6 @@ defmodule Delivest.Release do
   def storage_setup do
     load_app()
 
-    # Убедимся, что ex_aws запущен
     Application.ensure_all_started(:ex_aws)
 
     buckets = Application.get_env(:delivest, Delivest.Storage)[:buckets] || @default_buckets
@@ -300,6 +299,16 @@ defmodule Delivest.Release do
 
   defp load_app do
     Application.ensure_all_started(:ssl)
-    Application.ensure_all_started(@app)
+
+    Application.load(@app)
+
+    Application.ensure_all_started(:ecto_sql)
+    Application.ensure_all_started(:postgrex)
+
+    for app <- [:logger, :jason, :ecto, :ecto_sql, :postgrex, :ex_aws, :ex_aws_s3] do
+      Application.ensure_all_started(app)
+    end
+
+    {:ok, _} = Repo.start_link(pool: Ecto.Adapters.SQL.Sandbox.NoPool)
   end
 end
