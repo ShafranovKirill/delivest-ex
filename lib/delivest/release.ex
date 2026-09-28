@@ -299,16 +299,12 @@ defmodule Delivest.Release do
 
   defp load_app do
     Application.ensure_all_started(:ssl)
-
     Application.load(@app)
-
-    Application.ensure_all_started(:ecto_sql)
-    Application.ensure_all_started(:postgrex)
 
     for app <- [:logger, :jason, :ecto, :ecto_sql, :postgrex, :ex_aws, :ex_aws_s3] do
       Application.ensure_all_started(app)
     end
 
-    {:ok, _} = Repo.start_link(pool: Ecto.Adapters.SQL.Sandbox.NoPool)
+    {:ok, _} = Repo.start_link()
   end
 end
