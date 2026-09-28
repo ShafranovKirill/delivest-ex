@@ -117,7 +117,7 @@ if config_env() == :prod do
         case System.get_env("S3_PORT_EXTERNAL") do
           nil -> nil
           "" -> nil
-          port -> String.to_integer(port)
+          port_str -> String.to_integer(port_str)
         end
     end
 
@@ -134,7 +134,7 @@ if config_env() == :prod do
     private_bucket: System.get_env("S3_BUCKET", "delivest-private"),
     public_bucket: System.get_env("S3_BUCKET", "delivest"),
     public_host: System.get_env("S3_PUBLIC_HOST", "delivest-s3.shafranov.tech"),
-    public_port: System.get_env("S3_PORT_EXTERNAL", 833)
+    public_port: s3_port
 
   # ## SSL Support
   #
