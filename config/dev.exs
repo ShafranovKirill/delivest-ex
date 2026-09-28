@@ -87,17 +87,12 @@ config :phoenix_live_view,
 config :swoosh, :api_client, false
 
 config :ex_aws,
-  access_key_id: System.get_env("S3_ACCESS_KEY") || raise("S3_ACCESS_KEY is missing"),
-  secret_access_key: System.get_env("S3_SECRET_KEY") || raise("S3_SECRET_KEY is missing"),
+  access_key_id: System.get_env("S3_ACCESS_KEY", "athena_admin"),
+  secret_access_key: System.get_env("S3_SECRET_KEY", "StrongS3Password!"),
   s3: [
-    scheme: System.get_env("S3_SCHEME", "https://"),
-    host: System.get_env("S3_HOST", "delivest-s3.shafranov.tech"),
-    port:
-      case System.get_env("S3_PORT_EXTERNAL") do
-        nil -> nil
-        "" -> nil
-        port -> String.to_integer(port)
-      end
+    scheme: System.get_env("S3_SCHEME", "http://"),
+    host: System.get_env("S3_HOST", "localhost"),
+    port: 8333
   ]
 
 config :delivest, Delivest.Media, bucket: "delivest"

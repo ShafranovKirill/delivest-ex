@@ -106,27 +106,35 @@ if config_env() == :prod do
     System.get_env(var_name) || raise("#{var_name} is missing")
   end
 
+  s3_scheme = System.get_env("S3_SCHEME", "https://")
+
   s3_port =
-    case System.get_env("S3_PORT_EXTERNAL") do
-      nil -> nil
-      "" -> nil
-      port -> String.to_integer(port)
+    case s3_scheme do
+      "https://" ->
+        nil
+
+      _ ->
+        case System.get_env("S3_PORT_EXTERNAL") do
+          nil -> nil
+          "" -> nil
+          port -> String.to_integer(port)
+        end
     end
 
   config :ex_aws,
     access_key_id: get_env!.("S3_ACCESS_KEY"),
     secret_access_key: get_env!.("S3_SECRET_KEY"),
     s3: [
-      scheme: System.get_env("S3_SCHEME", "https://"),
+      scheme: s3_scheme,
       host: System.get_env("S3_HOST", "delivest-s3.shafranov.tech"),
       port: s3_port
     ]
 
   config :delivest, Delivest.Media,
-    private_bucket: System.get_env("MINIO_PRIVATE_BUCKET"),
-    public_bucket: System.get_env("MINIO_PUBLIC_BUCKET"),
-    public_host: System.get_env("MINIO_PUBLIC_HOST"),
-    public_port: System.get_env("MINIO_PORT_EXTERNAL")
+    private_bucket: System.get_env("S3_BUCKET", "delivest-private"),
+    public_bucket: System.get_env("S3_BUCKET", "delivest"),
+    public_host: System.get_env("S3_PUBLIC_HOST", "delivest-s3.shafranov.tech"),
+    public_port: System.get_env("S3_PORT_EXTERNAL", 833)
 
   # ## SSL Support
   #
