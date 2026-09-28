@@ -305,6 +305,10 @@ defmodule Delivest.Release do
       Application.ensure_all_started(app)
     end
 
-    {:ok, _} = Repo.start_link()
+    case Repo.start_link() do
+      {:ok, _pid} -> {:ok, :started}
+      {:error, {:already_started, _pid}} -> {:ok, :already_started}
+      error -> error
+    end
   end
 end
