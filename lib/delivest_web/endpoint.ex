@@ -16,7 +16,12 @@ defmodule DelivestWeb.Endpoint do
     longpoll: [connect_info: [session: @session_options]]
   )
 
-  plug CORSPlug
+  plug(CORSPlug,
+    origin: Application.get_env(:cors_plug, :origin, ["http://localhost:3000"]),
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
+  )
 
   # Serve at "/" the static files from "priv/static" directory.
   #
