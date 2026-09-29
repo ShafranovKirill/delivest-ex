@@ -1,4 +1,6 @@
 defmodule Delivest.Integrations.Frontpad.FrontpadView do
+  alias Delivest.Identity.Branch
+
   @type product_item :: %{
           external_id: String.t(),
           quantity: integer(),
@@ -101,8 +103,11 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
 
   defp extract_secret(_), do: {:error, :missing_frontpad_api_key}
 
-  defp extract_branch_id(%{info: %{frontpad_branch_id: fb_id}}) when not is_nil(fb_id),
-    do: to_string(fb_id)
+  @spec extract_branch_id(Branch.t() | nil) :: String.t() | nil
+  defp extract_branch_id(%Branch{info: %{frontpad_settings: %{frontpad_branch_id: fb_id}}})
+       when not is_nil(fb_id) and fb_id != "" do
+    to_string(fb_id)
+  end
 
   defp extract_branch_id(_), do: nil
 
@@ -111,7 +116,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
       Enum.reduce_while(order_items, [], fn item, acc ->
         case Map.get(products_map, item.product_id) do
           %{external_id: ext_id} = product when not is_nil(ext_id) ->
-            # Если в структуре продукта/элемента заказа есть привязка к модификатору (например, parent_index или mod)
             mod = Map.get(item, :mod) || Map.get(product, :mod)
 
             {:cont, [%{external_id: ext_id, quantity: item.quantity, mod: mod} | acc]}

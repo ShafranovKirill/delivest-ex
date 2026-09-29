@@ -60,7 +60,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
   end
 
   defp fetch_branch(branch_id) do
-    case Identity.get_branch(branch_id, preload: [:info]) do
+    case Identity.get_branch(branch_id, preload: [info: :frontpad_settings]) do
       {:ok, %Identity.Branch{} = branch} -> {:ok, branch}
       _ -> {:error, :branch_not_found}
     end
