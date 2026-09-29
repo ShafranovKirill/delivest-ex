@@ -17,11 +17,15 @@ defmodule DelivestWeb.Endpoint do
   )
 
   plug(CORSPlug,
-    origin: Application.get_env(:cors_plug, :origin, ["http://localhost:3000"]),
+    origin: &__MODULE__.fetch_cors_origin/1,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
   )
+
+  def fetch_cors_origin(_conn) do
+    Application.get_env(:cors_plug, :origin, ["http://localhost:3000"])
+  end
 
   # Serve at "/" the static files from "priv/static" directory.
   #
