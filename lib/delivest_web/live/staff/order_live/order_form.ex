@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   use DelivestWeb, :live_view
 
   alias Delivest.Net.Catalogs
-  alias Delivest.Oms.{Carts, Order, Orders}
+  alias Delivest.Oms.{Order, Orders}
   alias DelivestWeb.Staff.OrderLive.Components.{CatalogComponent, DetailsComponent}
 
   on_mount {DelivestWeb.Hooks.Permission, "order.create"}
@@ -18,11 +18,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     {order, cart, page_title} =
       case Map.get(params, "id") do
         nil ->
-          if old_cart_view = Carts.get_cart(staff_id: staff.id, branch_id: branch_id) do
-            Carts.detach_staff_cart(old_cart_view.id)
+          if old_cart_view = Oms.get_cart(staff_id: staff.id, branch_id: branch_id) do
+            Oms.detach_cart(old_cart_view.id)
           end
 
-          {:ok, new_cart} = Carts.create_cart(%{staff_id: staff.id, branch_id: branch_id})
+          {:ok, new_cart} = Oms.create_cart(%{staff_id: staff.id, branch_id: branch_id})
 
           {%Order{}, new_cart, gettext("New Order")}
 
@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
           cart =
             if existing_order.cart_id do
-              Carts.get_cart_by_id(existing_order.cart_id)
+              Oms.get_cart_by_id(existing_order.cart_id)
             else
               nil
             end
@@ -39,7 +39,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           cart =
             cart ||
               (
-                {:ok, new_cart} = Carts.create_cart(%{staff_id: staff.id, branch_id: branch_id})
+                {:ok, new_cart} = Oms.create_cart(%{staff_id: staff.id, branch_id: branch_id})
                 Orders.populate_cart_from_order(existing_order, new_cart.id)
               )
 
@@ -140,7 +140,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   def handle_event("detach_cart", _params, socket) do
     current_cart = socket.assigns.cart
 
-    case Carts.clear_cart(current_cart.id) do
+    case Oms.clear_cart(current_cart.id) do
       {:ok, updated_cart} ->
         {:noreply,
          socket
@@ -171,7 +171,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   def handle_event("add_item", %{"product-id" => product_id}, socket) do
-    case Carts.add_item(socket.assigns.cart.id, product_id) do
+    case Oms.add_item(socket.assigns.cart.id, product_id) do
       {:ok, _item, updated_cart} ->
         {:noreply, assign(socket, cart: updated_cart)}
 
@@ -181,14 +181,14 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   def handle_event("remove_item", %{"product-id" => product_id}, socket) do
-    case Carts.remove_item(socket.assigns.cart.id, product_id) do
+    case Oms.remove_item(socket.assigns.cart.id, product_id) do
       {:ok, _status, updated_cart} -> {:noreply, assign(socket, cart: updated_cart)}
       {:error, _reason} -> {:noreply, socket}
     end
   end
 
   def handle_event("delete_item", %{"product-id" => product_id}, socket) do
-    case Carts.remove_item(socket.assigns.cart.id, product_id, all: true) do
+    case Oms.remove_item(socket.assigns.cart.id, product_id, all: true) do
       {:ok, _status, updated_cart} -> {:noreply, assign(socket, cart: updated_cart)}
       {:error, _reason} -> {:noreply, socket}
     end
@@ -236,8 +236,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     case Oms.create_order(full_order_params) do
       {:ok, _result} ->
-        Carts.detach_staff_cart(current_cart.id)
-        {:ok, _new_cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
+        Oms.detach_cart(current_cart.id)
+        {:ok, _new_cart} = Oms.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
 
         {:noreply,
          socket
@@ -266,8 +266,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     case Orders.update_order(socket.assigns.order, full_order_params) do
       {:ok, _updated_order} ->
-        Carts.detach_staff_cart(current_cart.id)
-        {:ok, _new_cart} = Carts.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
+        Oms.detach_cart(current_cart.id)
+        {:ok, _new_cart} = Oms.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
 
         {:noreply,
          socket

@@ -3,9 +3,7 @@ defmodule Delivest.Oms.Orders do
 
   alias Delivest.Identity
   alias Delivest.Net
-  alias Delivest.Oms.CartView
-  alias Delivest.Oms.Carts
-  alias Delivest.Oms.Order
+  alias Delivest.Oms.{CartView, Carts, Order}
   alias Delivest.Oms.Order.OrderNumber
   alias Delivest.Oms.Orders.Filter
   alias Delivest.Repo
@@ -46,6 +44,9 @@ defmodule Delivest.Oms.Orders do
                                  order_number: num
                                } ->
       build_order_from_cart(%Order{}, num, client_id, cart, products, attrs)
+    end)
+    |> Multi.run(:detached_cart, fn _, %{cart: cart} ->
+      Carts.detach_cart(cart)
     end)
     |> Repo.transaction()
     |> case do

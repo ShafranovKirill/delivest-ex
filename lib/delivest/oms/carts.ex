@@ -153,7 +153,7 @@ defmodule Delivest.Oms.Carts do
     build_cart_view(cart, cart.items)
   end
 
-  def build_cart_view(%Cart{} = cart, items) when is_list(items) do
+  defp build_cart_view(%Cart{} = cart, items) when is_list(items) do
     product_ids = Enum.map(items, & &1.product_id) |> Enum.uniq()
     products_map = Net.list_products_by_ids(product_ids, preload: [:media])
 
@@ -190,13 +190,21 @@ defmodule Delivest.Oms.Carts do
     }
   end
 
-  def detach_staff_cart(cart_id) when is_integer(cart_id) or is_binary(cart_id) do
+  def detach_cart(%CartView{id: cart_id}) do
+    detach_cart(cart_id)
+  end
+
+  def detach_cart(%Cart{id: cart_id}) do
+    detach_cart(cart_id)
+  end
+
+  def detach_cart(cart_id) when is_integer(cart_id) or is_binary(cart_id) do
     case Repo.get(Cart, cart_id) do
       %Cart{} = cart ->
-        case cart |> Cart.changeset(%{staff_id: nil}) |> Repo.update() do
+        case cart |> Cart.changeset(%{session_id: nil, staff_id: nil}) |> Repo.update() do
           {:ok, updated_cart} ->
-            Cachex.del(@cache_store, cart_id)
-            {:ok, updated_cart}
+            cart_view = refresh_and_cache(updated_cart.id)
+            {:ok, cart_view}
 
           {:error, changeset} ->
             {:error, changeset}
@@ -205,10 +213,6 @@ defmodule Delivest.Oms.Carts do
       nil ->
         {:error, :not_found}
     end
-  end
-
-  def detach_staff_cart(%Cart{id: cart_id}) do
-    detach_staff_cart(cart_id)
   end
 
   defp fetch_cached_or_recalculate(cart_id, force?) do
