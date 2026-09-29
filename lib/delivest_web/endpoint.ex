@@ -16,12 +16,7 @@ defmodule DelivestWeb.Endpoint do
     longpoll: [connect_info: [session: @session_options]]
   )
 
-  plug(CORSPlug,
-    origin: [System.get_env("CLIENT_ORIGIN") || "https://delivest-client.shafranov.tech"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
-  )
+  plug CORSPlug
 
   # Serve at "/" the static files from "priv/static" directory.
   #

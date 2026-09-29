@@ -100,8 +100,6 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  external_host = System.get_env("S3_HOST") || System.get_env("S3_PUBLIC_HOST") || "localhost"
-
   get_env! = fn var_name ->
     System.get_env(var_name) || raise("#{var_name} is missing")
   end

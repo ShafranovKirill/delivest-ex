@@ -25,20 +25,5 @@ defmodule Delivest.Oms.Cart do
   def changeset(cart, attrs) do
     cart
     |> cast(attrs, [:session_id, :staff_id, :branch_id, :expires_at])
-    |> validate_at_least_one_owner()
-  end
-
-  defp validate_at_least_one_owner(changeset) do
-    case {get_field(changeset, :session_id), get_field(changeset, :staff_id)} do
-      {nil, nil} ->
-        add_error(
-          changeset,
-          :session_id,
-          dgettext_noop("errors", "must provide either session_id or staff_id")
-        )
-
-      _ ->
-        changeset
-    end
   end
 end
