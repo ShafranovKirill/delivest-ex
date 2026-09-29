@@ -8,12 +8,6 @@ end
 config :delivest,
   default_locale: System.get_env("DEFAULT_LOCALE") || "en"
 
-config :cors_plug,
-  origin: [System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
-
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration

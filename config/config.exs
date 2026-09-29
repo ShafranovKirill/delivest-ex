@@ -19,6 +19,14 @@ config :delivest,
   ecto_repos: [Delivest.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+client_origin = System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"
+
+config :cors_plug,
+  origin: [client_origin],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
+
 # Configure the endpoint
 config :delivest, DelivestWeb.Endpoint,
   url: [host: "localhost"],
