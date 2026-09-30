@@ -28,10 +28,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       delivery_time: info.delivery_time,
       vk_url: info.vk_url,
       whatsapp_url: info.whatsapp_url,
-      instagram_url: info.instagram_url,
-      frontpad_api_key: info.frontpad_api_key,
-      frontpad_enabled: info.frontpad_enabled,
-      frontpad_settings: info.frontpad_settings || %{}
+      instagram_url: info.instagram_url
     }
   end
 end

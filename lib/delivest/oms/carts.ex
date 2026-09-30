@@ -250,7 +250,9 @@ defmodule Delivest.Oms.Carts do
 
     cond do
       not is_nil(session_id) ->
-        Repo.get_by(Cart, session_id: session_id)
+        query = from c in Cart, where: c.session_id == ^session_id
+        query = if branch_id, do: from(c in query, where: c.branch_id == ^branch_id), else: query
+        Repo.one(query)
 
       not is_nil(staff_id) ->
         query =

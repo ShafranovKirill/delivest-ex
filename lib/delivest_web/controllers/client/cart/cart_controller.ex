@@ -9,7 +9,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
 
   operation(:show,
     summary: "Получить корзину пользователя",
-    description: "Извлекает session_id из кук и возвращает состав текущей корзины.",
+    description: "Извлекает branch_id из query или кук и возвращает состав текущей корзины.",
     tags: ["Cart"],
     parameters: [
       force: [
@@ -17,6 +17,12 @@ defmodule DelivestWeb.Client.Cart.CartController do
         schema: %Schema{type: :boolean, default: false},
         required: false,
         description: "Принудительно пересчитать и обновить кэш корзины"
+      ],
+      branch_id: [
+        in: :query,
+        schema: %Schema{type: :string, format: :uuid},
+        required: false,
+        description: "ID активного филиала"
       ]
     ],
     responses: [
@@ -158,7 +164,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
 
   defp build_cart_opts(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
-    branch_id = CookieHelper.get_cookie(conn, "active_branch_id")
+    branch_id = params["branch_id"] || CookieHelper.get_cookie(conn, "active_branch_id")
     force? = Map.get(params, "force") in ["true", true]
 
     [session_id: session_id, branch_id: branch_id, force: force?]
