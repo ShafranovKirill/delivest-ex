@@ -30,6 +30,17 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           additionalProperties: true,
           example: %{mode: "live", webhook: "https://example.com/hook"},
           nullable: true
+        },
+        ycart_settings: %Schema{
+          type: :object,
+          properties: %{
+            yandex_org_id: %Schema{type: :string, example: "123456789", nullable: true},
+            latitude: %Schema{type: :number, example: 55.7558, nullable: true},
+            longitude: %Schema{type: :number, example: 37.6173, nullable: true},
+            address: %Schema{type: :string, example: "Москва, Красная площадь", nullable: true}
+          },
+          additionalProperties: true,
+          nullable: true
         }
       },
       required: [:id]

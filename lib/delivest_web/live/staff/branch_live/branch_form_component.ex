@@ -16,7 +16,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
      socket
      |> assign(:form, to_form(changeset))
      |> assign_new(:show_frontpad, fn -> false end)
-     |> assign_new(:show_links, fn -> false end)}
+     |> assign_new(:show_links, fn -> false end)
+     |> assign_new(:show_ycart, fn -> false end)}
   end
 
   @impl true
@@ -40,6 +41,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
       case section do
         "frontpad" -> :show_frontpad
         "links" -> :show_links
+        "ycart" -> :show_ycart
         _ -> nil
       end
 
@@ -143,6 +145,48 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                 <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
                 <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
                 <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
+              </div>
+            <% end %>
+          </div>
+
+          <div class="border border-base-300 rounded-box bg-base-100">
+            <div
+              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
+              phx-click="toggle_section"
+              phx-value-section="ycart"
+              phx-target={@myself}
+            >
+              <span>{gettext("YCart Settings")}</span>
+              <span class={"transition-transform duration-200 #{if @show_ycart, do: "rotate-180", else: ""}"}>
+                ▼
+              </span>
+            </div>
+            <%= if @show_ycart do %>
+              <div class="p-4 pt-0 space-y-4 border-t border-base-200">
+                <.inputs_for :let={f_settings} field={@form[:ycart_settings]}>
+                  <.input
+                    field={f_settings[:yandex_org_id]}
+                    type="text"
+                    label={gettext("Yandex Org ID")}
+                  />
+                  <.input
+                    field={f_settings[:latitude]}
+                    type="number"
+                    step="0.000001"
+                    label={gettext("Latitude")}
+                  />
+                  <.input
+                    field={f_settings[:longitude]}
+                    type="number"
+                    step="0.000001"
+                    label={gettext("Longitude")}
+                  />
+                  <.input
+                    field={f_settings[:address]}
+                    type="text"
+                    label={gettext("YCart Address")}
+                  />
+                </.inputs_for>
               </div>
             <% end %>
           </div>

@@ -31,7 +31,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       instagram_url: info.instagram_url,
       frontpad_api_key: info.frontpad_api_key,
       frontpad_enabled: info.frontpad_enabled,
-      frontpad_settings: info.frontpad_settings || %{}
+      frontpad_settings: info.frontpad_settings || %{},
+      ycart_settings: info.ycart_settings || %{}
     }
   end
 end

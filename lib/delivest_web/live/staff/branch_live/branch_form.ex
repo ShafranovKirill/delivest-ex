@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.FrontpadSettings
+  alias Delivest.Identity.Branch.{FrontpadSettings, YcartSettings}
   alias Delivest.Identity
   alias Delivest.Repo
 
@@ -23,6 +23,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :frontpad_enabled, :boolean, default: false
 
     embeds_one :frontpad_settings, FrontpadSettings, on_replace: :update
+    embeds_one :ycart_settings, YcartSettings, on_replace: :update
   end
 
   def changeset(form, attrs) do
@@ -41,6 +42,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :is_active
     ])
     |> cast_embed(:frontpad_settings, with: &FrontpadSettings.changeset/2)
+    |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(
@@ -66,7 +68,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       instagram_url: info && info.instagram_url,
       frontpad_api_key: info && info.frontpad_api_key,
       frontpad_enabled: info && info.frontpad_enabled,
-      frontpad_settings: info && info.frontpad_settings
+      frontpad_settings: info && info.frontpad_settings,
+      ycart_settings: info && info.ycart_settings
     }
   end
 
@@ -86,6 +89,13 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         _ -> %{}
       end
 
+    ycart_settings_param =
+      case data.ycart_settings do
+        %YcartSettings{} = settings -> Map.from_struct(settings) |> Map.delete(:__struct__)
+        map when is_map(map) -> map
+        _ -> %{}
+      end
+
     info_params =
       data
       |> Map.take([
@@ -100,6 +110,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       ])
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
       |> Map.put("frontpad_settings", frontpad_settings_param)
+      |> Map.put("ycart_settings", ycart_settings_param)
 
     {branch_params, info_params}
   end
