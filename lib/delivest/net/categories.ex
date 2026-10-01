@@ -12,7 +12,8 @@ defmodule Delivest.Net.Categories do
 
     products_query =
       from p in Delivest.Net.Product,
-        where: p.is_active == true and is_nil(p.deleted_at)
+        where: p.is_active == true and is_nil(p.deleted_at),
+        preload: [:media]
 
     Category
     |> where([c], c.id in ^category_ids)
