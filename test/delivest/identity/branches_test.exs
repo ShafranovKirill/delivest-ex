@@ -126,6 +126,25 @@ defmodule Delivest.Identity.BranchesTest do
       assert branch.info.frontpad_settings.frontpad_branch_id == "frontpad-branch-123"
     end
 
+    test "should persist ycart integration fields in branch info", %{admin: admin} do
+      attrs = %{name: "YCart Branch", slug: "ycart-branch"}
+
+      info_attrs = %{
+        ycart_settings: %{
+          yandex_org_id: "123456789",
+          latitude: 55.7558,
+          longitude: 37.6173,
+          address: "Москва, Красная площадь"
+        }
+      }
+
+      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, info_attrs)
+      assert branch.info.ycart_settings.yandex_org_id == "123456789"
+      assert branch.info.ycart_settings.latitude == 55.7558
+      assert branch.info.ycart_settings.longitude == 37.6173
+      assert branch.info.ycart_settings.address == "Москва, Красная площадь"
+    end
+
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
       attrs = %{name: ""}
 
