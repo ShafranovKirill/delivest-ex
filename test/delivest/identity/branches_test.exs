@@ -131,6 +131,7 @@ defmodule Delivest.Identity.BranchesTest do
 
       info_attrs = %{
         ycart_settings: %{
+          enabled: true,
           yandex_org_id: "123456789",
           latitude: 55.7558,
           longitude: 37.6173,
@@ -139,6 +140,7 @@ defmodule Delivest.Identity.BranchesTest do
       }
 
       assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, info_attrs)
+      assert branch.info.ycart_settings.enabled == true
       assert branch.info.ycart_settings.yandex_org_id == "123456789"
       assert branch.info.ycart_settings.latitude == 55.7558
       assert branch.info.ycart_settings.longitude == 37.6173

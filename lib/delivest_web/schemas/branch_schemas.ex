@@ -34,6 +34,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         ycart_settings: %Schema{
           type: :object,
           properties: %{
+            enabled: %Schema{type: :boolean, example: true, nullable: true},
             yandex_org_id: %Schema{type: :string, example: "123456789", nullable: true},
             latitude: %Schema{type: :number, example: 55.7558, nullable: true},
             longitude: %Schema{type: :number, example: 37.6173, nullable: true},

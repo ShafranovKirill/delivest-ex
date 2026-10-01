@@ -165,6 +165,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
               <div class="p-4 pt-0 space-y-4 border-t border-base-200">
                 <.inputs_for :let={f_settings} field={@form[:ycart_settings]}>
                   <.input
+                    field={f_settings[:enabled]}
+                    type="checkbox"
+                    label={gettext("YCart Enabled")}
+                  />
+                  <.input
                     field={f_settings[:yandex_org_id]}
                     type="text"
                     label={gettext("Yandex Org ID")}

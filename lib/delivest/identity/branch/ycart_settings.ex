@@ -4,9 +4,10 @@ defmodule Delivest.Identity.Branch.YcartSettings do
 
   @primary_key false
 
-  @derive {Jason.Encoder, only: [:yandex_org_id, :latitude, :longitude, :address]}
+  @derive {Jason.Encoder, only: [:enabled, :yandex_org_id, :latitude, :longitude, :address]}
 
   embedded_schema do
+    field :enabled, :boolean, default: false
     field :yandex_org_id, :string
     field :latitude, :float
     field :longitude, :float
@@ -15,6 +16,6 @@ defmodule Delivest.Identity.Branch.YcartSettings do
 
   def changeset(settings, attrs) do
     settings
-    |> cast(attrs, [:yandex_org_id, :latitude, :longitude, :address])
+    |> cast(attrs, [:enabled, :yandex_org_id, :latitude, :longitude, :address])
   end
 end
