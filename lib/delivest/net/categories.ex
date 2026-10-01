@@ -7,14 +7,18 @@ defmodule Delivest.Net.Categories do
   alias Delivest.Identity.Staff
 
   @spec list_category_for_branch(binary(), keyword()) :: [Category.t()]
-  def list_category_for_branch(branch_id, opts \\ []) do
+  def list_category_for_branch(branch_id, _opts \\ []) do
     category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
+
+    products_query =
+      from p in Delivest.Net.Product,
+        where: p.is_active == true and is_nil(p.deleted_at)
 
     Category
     |> where([c], c.id in ^category_ids)
     |> where([c], c.is_active == true)
     |> order_by([c], asc: c.order)
-    |> maybe_preload_query(opts)
+    |> preload(products: ^products_query)
     |> Repo.all()
   end
 

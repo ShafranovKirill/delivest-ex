@@ -157,27 +157,39 @@ defmodule Delivest.Oms.Carts do
     product_ids = Enum.map(items, & &1.product_id) |> Enum.uniq()
     products_map = Net.list_products_by_ids(product_ids, preload: [:media])
 
-    {view_items, total_qty, total_amt} =
-      Enum.reduce(items, {[], 0, 0}, fn item, {acc_items, acc_qty, acc_amt} ->
+    {view_items, total_qty, total_amt, inactive_product_ids} =
+      Enum.reduce(items, {[], 0, 0, []}, fn item, {acc_items, acc_qty, acc_amt, inactive_acc} ->
         case Map.get(products_map, item.product_id) do
           nil ->
-            {acc_items, acc_qty, acc_amt}
+            {acc_items, acc_qty, acc_amt, [item.product_id | inactive_acc]}
 
           product ->
-            item_total = product.price * item.quantity
+            if product.is_active && is_nil(product.deleted_at) do
+              item_total = product.price * item.quantity
 
-            view_item = %{
-              product_id: item.product_id,
-              name: product.name,
-              image_url: Delivest.Media.get_url_from_file(product.media),
-              price: product.price,
-              quantity: item.quantity,
-              total_price: item_total
-            }
+              view_item = %{
+                product_id: item.product_id,
+                name: product.name,
+                image_url: Delivest.Media.get_url_from_file(product.media),
+                price: product.price,
+                quantity: item.quantity,
+                total_price: item_total
+              }
 
-            {[view_item | acc_items], acc_qty + item.quantity, acc_amt + item_total}
+              {[view_item | acc_items], acc_qty + item.quantity, acc_amt + item_total,
+               inactive_acc}
+            else
+              {acc_items, acc_qty, acc_amt, [item.product_id | inactive_acc]}
+            end
         end
       end)
+
+    if length(inactive_product_ids) > 0 do
+      from(ci in CartItem,
+        where: ci.cart_id == ^cart.id and ci.product_id in ^inactive_product_ids
+      )
+      |> Repo.delete_all()
+    end
 
     %CartView{
       id: cart.id,
