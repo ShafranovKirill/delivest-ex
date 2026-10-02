@@ -1,8 +1,4 @@
 defmodule DelivestWeb.StudioLive.MediaUploadComponent do
-  @moduledoc """
-  Reusable S3 direct-upload LiveComponent modal.
-  Ничего не знает о продуктах, заказах или пользователях конкретного домена.
-  """
   use DelivestWeb, :live_component
   alias Delivest.Media
 

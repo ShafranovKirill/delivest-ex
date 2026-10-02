@@ -47,7 +47,7 @@ if config_env() == :dev do
       web_console_logger: true,
       patterns: [
         # Static assets, except user uploads
-        ~r"priv/static/(?!uploads/).*\.(js|css|png|jpeg|jpg|gif|svg)$",
+        ~r"priv/static/(?!uploads/).*\.(js|css|png|jpeg|jpg|gif|svg|csv|tsv)$",
         # Gettext translations
         ~r"priv/gettext/.*\.po$",
         # Router, Controllers, LiveViews and LiveComponents

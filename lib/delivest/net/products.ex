@@ -61,6 +61,7 @@ defmodule Delivest.Net.Products do
       |> case do
         {:ok, %{product: created_product}} ->
           invalidate_menu_cache(branch_id)
+          broadcast_change(branch_id, {:product_created, created_product})
           {:ok, created_product}
 
         {:error, _failed_operation, error, _changes_so_far} ->
@@ -80,6 +81,7 @@ defmodule Delivest.Net.Products do
         {:ok, updated_product} ->
           branch_id = get_product_branch_id(updated_product.id)
           invalidate_menu_cache(branch_id)
+          broadcast_change(branch_id, {:product_updated, updated_product})
           {:ok, updated_product}
 
         {:error, changeset} ->
@@ -98,12 +100,25 @@ defmodule Delivest.Net.Products do
              |> Repo.update() do
         branch_id = get_product_branch_id(product.id)
         invalidate_menu_cache(branch_id)
+        broadcast_change(branch_id, {:product_deleted, deleted_product})
         {:ok, deleted_product}
       end
     else
       {:error, :forbidden}
     end
   end
+
+  def subscribe_branch(branch_id) when not is_nil(branch_id) do
+    Phoenix.PubSub.subscribe(Delivest.PubSub, "branch_products:#{branch_id}")
+  end
+
+  def subscribe_branch(_), do: :ok
+
+  defp broadcast_change(branch_id, message) when not is_nil(branch_id) do
+    Phoenix.PubSub.broadcast(Delivest.PubSub, "branch_products:#{branch_id}", message)
+  end
+
+  defp broadcast_change(_, _), do: :ok
 
   defp get_product_branch_id(product_id) do
     Relations.list_source_ids("Product", product_id, "Branch")

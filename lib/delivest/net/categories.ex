@@ -83,6 +83,32 @@ defmodule Delivest.Net.Categories do
     end
   end
 
+  def find_or_create_category_by_name(staff, branch_id, name) when is_binary(name) do
+    name = String.trim(name)
+
+    if name == "" do
+      {:ok, nil}
+    else
+      category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
+
+      existing =
+        Category
+        |> where([c], c.id in ^category_ids)
+        |> where([c], fragment("lower(?) = lower(?)", c.name, ^name))
+        |> Repo.one()
+
+      case existing do
+        %Category{} = cat ->
+          {:ok, cat}
+
+        nil ->
+          create_category(staff, branch_id, %{"name" => name, "is_active" => true})
+      end
+    end
+  end
+
+  def find_or_create_category_by_name(_staff, _branch_id, _), do: {:ok, nil}
+
   @spec update_category(Staff.t(), Category.t(), map()) ::
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def update_category(staff, %Category{} = updateble_category, attrs) do

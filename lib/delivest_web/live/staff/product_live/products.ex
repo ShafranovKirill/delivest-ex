@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias Delivest.Net.Product
   alias Delivest.Net.Category
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
+  alias DelivestWeb.Staff.ProductLive.ImportComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "product.read"}
 
@@ -12,6 +13,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   def mount(_params, _session, socket) do
     branch_id = socket.assigns.current_branch.id
     categories = Repo.all(Category)
+
+    if connected?(socket) and branch_id do
+      Delivest.Net.Products.subscribe_branch(branch_id)
+    end
 
     {:ok,
      socket
@@ -146,6 +151,16 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     end
   end
 
+  @impl true
+  def handle_event("open_import_modal", _params, socket) do
+    {:noreply, assign(socket, show_import_modal: true)}
+  end
+
+  @impl true
+  def handle_event("close_import_modal", _params, socket) do
+    {:noreply, assign(socket, show_import_modal: false)}
+  end
+
   def handle_event("confirm_delete", _, %{assigns: %{product_to_delete: product}} = socket) do
     case Net.soft_delete_product(socket.assigns.current_staff, product) do
       {:ok, _} ->
@@ -189,8 +204,14 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
-  def handle_info({ProductFormComponent, {:open_upload_modal}}, socket) do
-    {:noreply, assign(socket, show_upload_modal: true)}
+  def handle_info({ImportComponent, {:queued}}, socket) do
+    {:noreply,
+     socket
+     |> assign(show_import_modal: false)
+     |> put_flash(
+       :info,
+       gettext("Import task started in the background. Products will appear shortly.")
+     )}
   end
 
   @impl true
@@ -198,43 +219,54 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, results}},
         socket
       ) do
-    handle_media_results(results, socket)
-  end
-
-  @impl true
-  def handle_info(
-        {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, _context_or_id, _type, results}},
-        socket
-      ) do
-    handle_media_results(results, socket)
-  end
-
-  defp handle_media_results(results, socket) do
-    {successes, _errors} =
-      Enum.split_with(results, fn
-        {:ok, _} -> true
+    successes =
+      Enum.filter(results, fn
+        {:ok, {:ok, _file}} -> true
         _ -> false
       end)
 
-    media_file =
-      case List.first(successes) do
-        {:ok, file} -> file
-        _ -> nil
-      end
+    case successes do
+      [{:ok, {:ok, media_file}} | _] ->
+        current_staff = socket.assigns.current_staff
+        branch_id = socket.assigns.branch_id
 
-    if media_file do
-      form_component_id = (socket.assigns.product && socket.assigns.product.id) || :new
+        %{media_file_id: media_file.id, staff_id: current_staff.id, branch_id: branch_id}
+        |> Delivest.Net.Products.ProductImportWorker.new()
+        |> Oban.insert()
 
-      send_update(ProductFormComponent,
-        id: form_component_id,
-        uploaded_media: media_file
-      )
+        {:noreply,
+         socket
+         |> assign(show_import_modal: false)
+         |> put_flash(
+           :info,
+           gettext("Import task started in the background. Products will appear shortly.")
+         )}
+
+      _ ->
+        {:noreply, socket}
     end
+  end
 
-    {:noreply,
-     socket
-     |> put_flash(:info, gettext("Image uploaded successfully"))
-     |> assign(:show_upload_modal, false)}
+  @impl true
+  def handle_info({:product_created, product}, socket) do
+    product_with_assoc = Repo.preload(product, [:category])
+    {:noreply, stream_insert(socket, :products, product_with_assoc, at: 0)}
+  end
+
+  @impl true
+  def handle_info({:product_updated, product}, socket) do
+    product_with_assoc = Repo.preload(product, [:category])
+    {:noreply, stream_insert(socket, :products, product_with_assoc)}
+  end
+
+  @impl true
+  def handle_info({:product_deleted, product}, socket) do
+    {:noreply, stream_delete(socket, :products, product)}
+  end
+
+  @impl true
+  def handle_info({ProductFormComponent, {:open_upload_modal}}, socket) do
+    {:noreply, assign(socket, show_upload_modal: true)}
   end
 
   defp maybe_add_filter(filters, _field, _op, val) when val in [nil, ""], do: filters
@@ -310,6 +342,14 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </p>
         </div>
         <div class="flex gap-2">
+          <.button
+            phx-click="open_import_modal"
+            class="btn btn-outline"
+          >
+            <.icon name="hero-document-arrow-up" class="size-5 mr-1" />
+            {gettext("Bulk import")}
+          </.button>
+
           <.button
             :if={Identity.can?(@current_staff, "products.create")}
             patch={~p"/staff/products/new?#{build_query_params(assigns, %{})}"}
@@ -488,6 +528,19 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           context="product"
           is_private={false}
         />
+      <% end %>
+
+      <%= if assigns[:show_import_modal] do %>
+        <.modal id="import-products-modal" show={true} on_cancel={JS.push("close_import_modal")}>
+          <div class="p-2">
+            <.live_component
+              module={DelivestWeb.Staff.ProductLive.ImportComponent}
+              id="product-import-modal-component"
+              current_staff={@current_staff}
+              branch_id={@branch_id}
+            />
+          </div>
+        </.modal>
       <% end %>
 
       <.modal
