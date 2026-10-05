@@ -12,6 +12,15 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         address: %Schema{type: :string, example: "ул. Пушкина, д. 10", nullable: true},
         phone_number: %Schema{type: :string, example: "+79990000000", nullable: true},
         delivery_time: %Schema{type: :integer, example: "30", nullable: true},
+        working_hours: %Schema{
+          type: :object,
+          additionalProperties: true,
+          example: %{
+            monday: %{enabled: true, open: "09:00", close: "22:00"},
+            sunday: %{enabled: false, open: nil, close: nil}
+          },
+          nullable: true
+        },
         vk_url: %Schema{type: :string, example: "https://vk.com/group_name", nullable: true},
         whatsapp_url: %Schema{type: :string, example: "https://wa.me/79990000000", nullable: true},
         instagram_url: %Schema{

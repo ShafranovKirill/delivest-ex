@@ -15,6 +15,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     field :address, :string
     field :phone_number, :string
     field :delivery_time, :integer
+    field :working_hours, :map, default: %{}
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
@@ -33,6 +34,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
       :address,
       :phone_number,
       :delivery_time,
+      :working_hours,
       :vk_url,
       :whatsapp_url,
       :instagram_url,

@@ -53,6 +53,50 @@ defmodule Delivest.Oms.OrderTest do
       refute changeset.valid?
       assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
     end
+
+    test "accepts cook_by as a datetime value" do
+      attrs = %{
+        branch_id: Ecto.UUID.generate(),
+        status: :created,
+        fulfillment_type: :pickup,
+        payment_method: :cash,
+        cart_id: Ecto.UUID.generate(),
+        customer_phone: "+79991234567",
+        customer_name: "Иван",
+        cook_by: ~N[2026-10-05 18:30:00]
+      }
+
+      assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
+    end
+
+    test "accepts cook_by up to 30 days from today" do
+      attrs = %{
+        branch_id: Ecto.UUID.generate(),
+        status: :created,
+        fulfillment_type: :pickup,
+        payment_method: :cash,
+        cart_id: Ecto.UUID.generate(),
+        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 30), ~T[23:59:59])
+      }
+
+      assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
+    end
+
+    test "rejects cook_by more than 30 days from today" do
+      attrs = %{
+        branch_id: Ecto.UUID.generate(),
+        status: :created,
+        fulfillment_type: :pickup,
+        payment_method: :cash,
+        cart_id: Ecto.UUID.generate(),
+        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 31), ~T[00:00:00])
+      }
+
+      changeset = Order.changeset(%Order{}, attrs)
+
+      refute changeset.valid?
+      assert "must be no more than 30 days from today" in errors_on(changeset).cook_by
+    end
   end
 
   describe "order context" do
@@ -96,6 +140,30 @@ defmodule Delivest.Oms.OrderTest do
                  "fulfillment_type" => "pickup",
                  "payment_method" => "cash"
                })
+    end
+
+    test "stores cook_by timestamp when provided by the client" do
+      product = insert(:product, price: 150)
+
+      assert {:ok, %CartView{} = cart} =
+               Carts.create_cart(%{
+                 session_id: "cook-by-order-cart",
+                 branch_id: Ecto.UUID.generate()
+               })
+
+      assert {:ok, _, %CartView{} = cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %Order{} = order} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "customer_phone" => "+79991234567",
+                 "customer_name" => "Павел",
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash",
+                 "cook_by" => "2026-10-05T18:30"
+               })
+
+      assert order.cook_by == ~N[2026-10-05 18:30:00]
     end
 
     test "updates order values when the cart is changed" do

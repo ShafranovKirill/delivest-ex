@@ -16,6 +16,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :address, :string
     field :phone_number, :string
     field :delivery_time, :integer
+    field :working_hours, :map, default: %{}
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
@@ -27,12 +28,15 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   end
 
   def changeset(form, attrs) do
+    attrs = normalize_working_hours_attrs(form, attrs)
+
     form
     |> cast(attrs, [
       :name,
       :address,
       :phone_number,
       :delivery_time,
+      :working_hours,
       :vk_url,
       :whatsapp_url,
       :instagram_url,
@@ -63,14 +67,100 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       address: info && info.address,
       phone_number: info && info.phone_number,
       delivery_time: info && info.delivery_time,
+      working_hours: (info && info.working_hours) || %{},
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
       frontpad_api_key: info && info.frontpad_api_key,
-      frontpad_enabled: info && info.frontpad_enabled,
+      frontpad_enabled: if(info, do: info.frontpad_enabled, else: false),
       frontpad_settings: info && info.frontpad_settings,
       ycart_settings: info && info.ycart_settings
     }
+  end
+
+  defp normalize_working_hours_attrs(form, attrs) when is_map(attrs) do
+    case Map.fetch(attrs, "working_hours") do
+      {:ok, incoming} when is_map(incoming) ->
+        working_hours =
+          form.working_hours
+          |> stringify_map_keys()
+          |> deep_merge(stringify_map_keys(incoming))
+          |> normalize_working_hours_map()
+
+        Map.put(attrs, "working_hours", working_hours)
+
+      _ ->
+        case Map.fetch(attrs, :working_hours) do
+          {:ok, incoming} when is_map(incoming) ->
+            working_hours =
+              form.working_hours
+              |> stringify_map_keys()
+              |> deep_merge(stringify_map_keys(incoming))
+              |> normalize_working_hours_map()
+
+            Map.put(attrs, :working_hours, working_hours)
+
+          _ ->
+            attrs
+        end
+    end
+  end
+
+  defp normalize_working_hours_attrs(_form, attrs), do: attrs
+
+  defp stringify_map_keys(map) when is_map(map) do
+    Map.new(map, fn {key, value} ->
+      value = if is_map(value), do: stringify_map_keys(value), else: value
+      {to_string(key), value}
+    end)
+  end
+
+  defp stringify_map_keys(_), do: %{}
+
+  defp deep_merge(existing, incoming) do
+    Map.merge(existing, incoming, fn _key, existing_value, incoming_value ->
+      if is_map(existing_value) and is_map(incoming_value) do
+        deep_merge(existing_value, incoming_value)
+      else
+        incoming_value
+      end
+    end)
+  end
+
+  defp normalize_working_hours_map(map) when is_map(map) do
+    Enum.reduce(map, %{}, fn {day, schedule}, acc ->
+      normalized_schedule =
+        case schedule do
+          %{} = schedule_map ->
+            schedule_map
+            |> Enum.reject(fn {key, _value} -> String.starts_with?(to_string(key), "_unused_") end)
+            |> Enum.reduce(%{}, fn {key, value}, day_acc ->
+              normalized_value =
+                case key do
+                  "enabled" ->
+                    case value do
+                      "true" -> true
+                      "false" -> false
+                      "on" -> true
+                      "off" -> false
+                      true -> true
+                      false -> false
+                      _ -> value
+                    end
+
+                  _ ->
+                    if value in ["", nil], do: nil, else: value
+                end
+
+              Map.put(day_acc, key, normalized_value)
+            end)
+
+          _ ->
+            %{}
+        end
+
+      Map.put(acc, day, normalized_schedule)
+    end)
   end
 
   def to_params(changeset) do
@@ -102,6 +192,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :address,
         :phone_number,
         :delivery_time,
+        :working_hours,
         :vk_url,
         :whatsapp_url,
         :instagram_url,

@@ -43,6 +43,7 @@ defmodule Delivest.Oms.Order do
     embeds_one :crm_info, CrmInfo, on_replace: :update
 
     field :total_amount, :integer, default: 0
+    field :cook_by, :naive_datetime
     field :comment, :string
     field :deleted_at, :utc_datetime
 
@@ -66,6 +67,7 @@ defmodule Delivest.Oms.Order do
       :fulfillment_type,
       :payment_method,
       :total_amount,
+      :cook_by,
       :comment,
       :deleted_at,
       :crm_id
@@ -87,6 +89,7 @@ defmodule Delivest.Oms.Order do
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
     |> validate_inclusion(:payment_method, @payment_methods)
     |> validate_number(:total_amount, greater_than_or_equal_to: 0)
+    |> validate_cook_by_range()
     |> validate_address_if_delivery()
   end
 
@@ -114,6 +117,22 @@ defmodule Delivest.Oms.Order do
         |> validate_format(:customer_phone, ~r/^\+7\d{10}$/,
           message: "must be in format +7XXXXXXXXXX"
         )
+    end
+  end
+
+  defp validate_cook_by_range(changeset) do
+    case get_field(changeset, :cook_by) do
+      %NaiveDateTime{} = cook_by ->
+        max_date = Date.add(Date.utc_today(), 30)
+
+        if Date.compare(NaiveDateTime.to_date(cook_by), max_date) == :gt do
+          add_error(changeset, :cook_by, "must be no more than 30 days from today")
+        else
+          changeset
+        end
+
+      _ ->
+        changeset
     end
   end
 end

@@ -19,6 +19,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
           apart: String.t() | nil,
           descr: String.t() | nil,
           pay: String.t() | nil,
+          datetime: String.t() | nil,
           products: [product_item()]
         }
 
@@ -34,6 +35,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     :apart,
     :descr,
     :pay,
+    :datetime,
     products: []
   ]
 
@@ -54,6 +56,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
         apart: truncate(order.address && order.address.apartment, 50),
         descr: truncate(order.comment, 100),
         pay: map_payment_method(order.payment_method),
+        datetime: format_cook_by(order.cook_by),
         products: formatted_products
       }
 
@@ -75,7 +78,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
         {"et", view.et},
         {"apart", view.apart},
         {"descr", view.descr},
-        {"pay", view.pay}
+        {"pay", view.pay},
+        {"datetime", view.datetime}
       ]
       |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
 
@@ -155,4 +159,9 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
   defp map_payment_method(:cash), do: "1"
   defp map_payment_method(:card_offline), do: "2"
   defp map_payment_method(_), do: "1"
+
+  defp format_cook_by(%NaiveDateTime{} = cook_by),
+    do: Calendar.strftime(cook_by, "%Y-%m-%d %H:%M:%S")
+
+  defp format_cook_by(_), do: nil
 end

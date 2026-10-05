@@ -147,6 +147,72 @@ defmodule Delivest.Identity.BranchesTest do
       assert branch.info.ycart_settings.address == "Москва, Красная площадь"
     end
 
+    test "should persist working hours in branch info", %{admin: admin} do
+      attrs = %{name: "Schedule Branch", slug: "schedule-branch"}
+
+      info_attrs = %{
+        working_hours: %{
+          monday: %{enabled: true, open: "09:00", close: "22:00"},
+          sunday: %{enabled: false, open: nil, close: nil}
+        }
+      }
+
+      assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, info_attrs)
+      assert branch.info.working_hours.monday.enabled == true
+      assert branch.info.working_hours.monday.open == "09:00"
+      assert branch.info.working_hours.sunday.enabled == false
+    end
+
+    test "should normalize working hours checkbox values to booleans" do
+      params = %{
+        "working_hours" => %{
+          "friday" => %{
+            "enabled" => "true",
+            "open" => "09:00",
+            "close" => "22:00"
+          },
+          "sunday" => %{
+            "enabled" => "false",
+            "open" => "",
+            "close" => ""
+          }
+        }
+      }
+
+      changeset =
+        DelivestWeb.Staff.BranchLive.BranchForm.changeset(
+          %DelivestWeb.Staff.BranchLive.BranchForm{},
+          params
+        )
+
+      assert Ecto.Changeset.get_field(changeset, :working_hours)["friday"]["enabled"] == true
+      assert Ecto.Changeset.get_field(changeset, :working_hours)["sunday"]["enabled"] == false
+    end
+
+    test "should preserve existing working hours when updating another day" do
+      form = %DelivestWeb.Staff.BranchLive.BranchForm{
+        working_hours: %{
+          "monday" => %{"enabled" => true, "open" => "09:00", "close" => "18:00"},
+          "tuesday" => %{"enabled" => false, "open" => nil, "close" => nil}
+        }
+      }
+
+      params = %{
+        "working_hours" => %{
+          "tuesday" => %{"open" => "19:30"}
+        }
+      }
+
+      changeset = DelivestWeb.Staff.BranchLive.BranchForm.changeset(form, params)
+
+      working_hours = Ecto.Changeset.get_field(changeset, :working_hours)
+
+      assert working_hours["monday"]["open"] == "09:00"
+      assert working_hours["monday"]["close"] == "18:00"
+      assert working_hours["tuesday"]["open"] == "19:30"
+      assert working_hours["tuesday"]["enabled"] == false
+    end
+
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
       attrs = %{name: ""}
 

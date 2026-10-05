@@ -14,6 +14,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       branch_id: order.branch_id,
       cart_id: order.cart_id,
       client_id: order.client_id,
+      cook_by: order.cook_by,
       comment: order.comment,
       customer_phone: order.customer_phone || customer_phone(order),
       customer_name: order.customer_name || customer_name(order),

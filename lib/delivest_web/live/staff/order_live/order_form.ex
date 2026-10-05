@@ -2,6 +2,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   alias Delivest.Oms
   use DelivestWeb, :live_view
 
+  use Gettext, backend: DelivestWeb.Gettext
+
   alias Delivest.Net.Catalogs
   alias Delivest.Oms.{Order, Orders}
   alias DelivestWeb.Staff.OrderLive.Components.{CatalogComponent, DetailsComponent}

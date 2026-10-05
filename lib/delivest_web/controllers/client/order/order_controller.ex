@@ -41,11 +41,13 @@ defmodule DelivestWeb.Client.Order.OrderController do
         |> json(%{error: "Branch not found"})
 
       {:error, _step, %Ecto.Changeset{} = changeset} ->
+        errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{
           error: "Validation failed",
-          details: Ecto.Changeset.traverse_errors(changeset, & &1)
+          details: errors
         })
 
       {:error, _step, reason} ->

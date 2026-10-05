@@ -16,7 +16,6 @@ defmodule Delivest.Oms.Order.Address do
   def changeset(address, attrs) do
     address
     |> cast(attrs, [:city, :street, :house, :apartment, :floor, :entrance, :intercom])
-    |> validate_required([:city, :street, :house])
     |> validate_length(:city, max: 100)
     |> validate_length(:street, max: 150)
     |> validate_length(:house, max: 20)

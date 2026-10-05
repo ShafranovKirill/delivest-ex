@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
   use DelivestWeb, :html
 
+  use Gettext, backend: DelivestWeb.Gettext
+
   def render_catalog(assigns) do
     ~H"""
     <div>
