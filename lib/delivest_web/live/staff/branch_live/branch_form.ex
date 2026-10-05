@@ -72,7 +72,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
       frontpad_api_key: info && info.frontpad_api_key,
-      frontpad_enabled: info && info.frontpad_enabled,
+      frontpad_enabled: if(info, do: info.frontpad_enabled, else: false),
       frontpad_settings: info && info.frontpad_settings,
       ycart_settings: info && info.ycart_settings
     }
