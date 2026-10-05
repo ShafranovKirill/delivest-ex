@@ -113,6 +113,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
         field={@form[:cook_by]}
         type="datetime-local"
         label={gettext("Prepare by (empty = ASAP)")}
+        max={Date.to_iso8601(Date.add(Date.utc_today(), 30)) <> "T23:59:59"}
       />
 
       <.input

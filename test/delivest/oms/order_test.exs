@@ -86,6 +86,35 @@ defmodule Delivest.Oms.OrderTest do
 
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
     end
+
+    test "accepts cook_by up to 30 days from today" do
+      attrs = %{
+        branch_id: Ecto.UUID.generate(),
+        status: :created,
+        fulfillment_type: :pickup,
+        payment_method: :cash,
+        cart_id: Ecto.UUID.generate(),
+        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 30), ~T[23:59:59])
+      }
+
+      assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
+    end
+
+    test "rejects cook_by more than 30 days from today" do
+      attrs = %{
+        branch_id: Ecto.UUID.generate(),
+        status: :created,
+        fulfillment_type: :pickup,
+        payment_method: :cash,
+        cart_id: Ecto.UUID.generate(),
+        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 31), ~T[00:00:00])
+      }
+
+      changeset = Order.changeset(%Order{}, attrs)
+
+      refute changeset.valid?
+      assert "must be no more than 30 days from today" in errors_on(changeset).cook_by
+    end
   end
 
   describe "order context" do

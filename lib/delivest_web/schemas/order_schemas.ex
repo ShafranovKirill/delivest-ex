@@ -67,7 +67,8 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           format: :date_time,
           example: "2026-10-05T18:30:00",
           nullable: true,
-          description: "Желаемое время приготовления. Если пусто — как можно скорее"
+          description:
+            "Желаемое время приготовления. Если пусто — как можно скорее. Не более 30 дней от текущей даты"
         },
         comment: %Schema{
           type: :string,
