@@ -45,7 +45,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
         |> put_status(:unprocessable_entity)
         |> json(%{
           error: "Validation failed",
-          details: Ecto.Changeset.traverse_errors(changeset, & &1)
+          details: validation_details(changeset)
         })
 
       {:error, _step, reason} ->
@@ -53,5 +53,20 @@ defmodule DelivestWeb.Client.Order.OrderController do
         |> put_status(:unprocessable_entity)
         |> json(%{error: "Failed to create order", reason: inspect(reason)})
     end
+  end
+
+  def validation_details(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      detail =
+        opts
+        |> Enum.map(fn {key, value} -> "#{key}: #{inspect(value)}" end)
+        |> Enum.join(", ")
+
+      if detail == "" do
+        msg
+      else
+        "#{msg} (#{detail})"
+      end
+    end)
   end
 end
