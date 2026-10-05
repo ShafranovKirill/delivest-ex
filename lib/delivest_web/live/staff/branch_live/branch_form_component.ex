@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   alias Delivest.Identity
   use DelivestWeb, :live_component
-  alias DelivestWeb.Staff.BranchLive.BranchForm
+  alias DelivestWeb.Staff.BranchLive.{BranchForm, WorkingHoursComponent}
 
   @impl true
   def update(assigns, socket) do
@@ -17,6 +17,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
      |> assign(:form, to_form(changeset))
      |> assign_new(:show_frontpad, fn -> false end)
      |> assign_new(:show_links, fn -> false end)
+     |> assign_new(:show_schedule, fn -> false end)
      |> assign_new(:show_ycart, fn -> false end)}
   end
 
@@ -27,9 +28,20 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
         do: BranchForm.from_branch(socket.assigns.branch),
         else: %BranchForm{}
 
+    current_working_hours =
+      Ecto.Changeset.get_field(socket.assigns.form.source, :working_hours) || %{}
+
+    new_working_hours =
+      Map.merge(
+        current_working_hours,
+        get_in(params, ["working_hours"]) || %{}
+      )
+
+    merged_params = Map.put(params, "working_hours", new_working_hours)
+
     changeset =
       base_form
-      |> BranchForm.changeset(params)
+      |> BranchForm.changeset(merged_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, form: to_form(changeset))}
@@ -41,6 +53,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
       case section do
         "frontpad" -> :show_frontpad
         "links" -> :show_links
+        "schedule" -> :show_schedule
         "ycart" -> :show_ycart
         _ -> nil
       end
@@ -50,6 +63,22 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
 
   def handle_event("save", %{"branch_form" => params}, socket) do
     save_branch(socket, socket.assigns.action, params)
+  end
+
+  def handle_info({WorkingHoursComponent, {:working_hours_changed, working_hours}}, socket) do
+    base_form =
+      if socket.assigns.branch.id,
+        do: BranchForm.from_branch(socket.assigns.branch),
+        else: %BranchForm{}
+
+    params = %{"working_hours" => working_hours}
+
+    changeset =
+      base_form
+      |> BranchForm.changeset(params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, form: to_form(changeset), working_hours: working_hours)}
   end
 
   defp save_branch(socket, :edit, params),
@@ -127,6 +156,27 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             label={gettext("Delivery Time (minutes)")}
           />
           <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
+
+          <div class="border border-base-300 rounded-box bg-base-100">
+            <div
+              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
+              phx-click="toggle_section"
+              phx-value-section="schedule"
+              phx-target={@myself}
+            >
+              <span>{gettext("Working Hours")}</span>
+              <span class={"transition-transform duration-200 #{if @show_schedule, do: "rotate-180", else: ""}"}>
+                ▼
+              </span>
+            </div>
+            <%= if @show_schedule do %>
+              <.live_component
+                module={WorkingHoursComponent}
+                id="working-hours-editor"
+                working_hours={Ecto.Changeset.get_field(@form.source, :working_hours) || %{}}
+              />
+            <% end %>
+          </div>
 
           <div class="border border-base-300 rounded-box bg-base-100">
             <div

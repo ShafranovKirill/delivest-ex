@@ -16,6 +16,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :address, :string
     field :phone_number, :string
     field :delivery_time, :integer
+    field :working_hours, :map, default: %{}
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
@@ -27,12 +28,15 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   end
 
   def changeset(form, attrs) do
+    attrs = normalize_working_hours_attrs(attrs)
+
     form
     |> cast(attrs, [
       :name,
       :address,
       :phone_number,
       :delivery_time,
+      :working_hours,
       :vk_url,
       :whatsapp_url,
       :instagram_url,
@@ -63,6 +67,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       address: info && info.address,
       phone_number: info && info.phone_number,
       delivery_time: info && info.delivery_time,
+      working_hours: (info && info.working_hours) || %{},
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
@@ -71,6 +76,49 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       frontpad_settings: info && info.frontpad_settings,
       ycart_settings: info && info.ycart_settings
     }
+  end
+
+  defp normalize_working_hours_attrs(%{"working_hours" => working_hours} = attrs)
+       when is_map(working_hours) do
+    Map.put(attrs, "working_hours", normalize_working_hours_map(working_hours))
+  end
+
+  defp normalize_working_hours_attrs(attrs), do: attrs
+
+  defp normalize_working_hours_map(map) when is_map(map) do
+    Enum.reduce(map, %{}, fn {day, schedule}, acc ->
+      normalized_schedule =
+        case schedule do
+          %{} = schedule_map ->
+            schedule_map
+            |> Enum.reject(fn {key, _value} -> String.starts_with?(to_string(key), "_unused_") end)
+            |> Enum.reduce(%{}, fn {key, value}, day_acc ->
+              normalized_value =
+                case key do
+                  "enabled" ->
+                    case value do
+                      "true" -> true
+                      "false" -> false
+                      "on" -> true
+                      "off" -> false
+                      true -> true
+                      false -> false
+                      _ -> value
+                    end
+
+                  _ ->
+                    if value in ["", nil], do: nil, else: value
+                end
+
+              Map.put(day_acc, key, normalized_value)
+            end)
+
+          _ ->
+            %{}
+        end
+
+      Map.put(acc, day, normalized_schedule)
+    end)
   end
 
   def to_params(changeset) do
@@ -102,6 +150,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :address,
         :phone_number,
         :delivery_time,
+        :working_hours,
         :vk_url,
         :whatsapp_url,
         :instagram_url,

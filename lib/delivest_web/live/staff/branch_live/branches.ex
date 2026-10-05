@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   alias Delivest.Repo
   alias Delivest.Identity.Branch
   alias Delivest.Identity
+  alias DelivestWeb.Staff.BranchLive.WorkingHoursComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
 
@@ -76,6 +77,10 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
          [branch | branches]
        end
      end)}
+  end
+
+  def handle_info({WorkingHoursComponent, {:working_hours_changed, _working_hours}}, socket) do
+    {:noreply, socket}
   end
 
   @impl true
