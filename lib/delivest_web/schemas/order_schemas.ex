@@ -62,6 +62,13 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "cash",
           nullable: true
         },
+        cook_by: %Schema{
+          type: :string,
+          format: :date_time,
+          example: "2026-10-05T18:30:00",
+          nullable: true,
+          description: "Желаемое время приготовления. Если пусто — как можно скорее"
+        },
         comment: %Schema{
           type: :string,
           example: "Без лука",
@@ -129,6 +136,12 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               format: :uuid,
               nullable: true,
               example: "c4a3b8e0-1234-5678-9abc-def012345678"
+            },
+            cook_by: %Schema{
+              type: :string,
+              format: :date_time,
+              nullable: true,
+              example: "2026-10-05T18:30:00"
             },
             comment: %Schema{type: :string, nullable: true, example: "Без лука"},
             customer_phone: %Schema{type: :string, nullable: true, example: "+79990000000"},

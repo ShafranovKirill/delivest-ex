@@ -43,6 +43,7 @@ defmodule Delivest.Oms.Order do
     embeds_one :crm_info, CrmInfo, on_replace: :update
 
     field :total_amount, :integer, default: 0
+    field :cook_by, :naive_datetime
     field :comment, :string
     field :deleted_at, :utc_datetime
 
@@ -66,6 +67,7 @@ defmodule Delivest.Oms.Order do
       :fulfillment_type,
       :payment_method,
       :total_amount,
+      :cook_by,
       :comment,
       :deleted_at,
       :crm_id

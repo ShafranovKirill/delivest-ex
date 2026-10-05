@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
   use DelivestWeb, :html
 
+  use Gettext, backend: DelivestWeb.Gettext
+
   def render_form(assigns) do
     ~H"""
     <.form
@@ -106,6 +108,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
           </.inputs_for>
         </div>
       <% end %>
+
+      <.input
+        field={@form[:cook_by]}
+        type="datetime-local"
+        label={gettext("Prepare by (empty = ASAP)")}
+      />
 
       <.input
         field={@form[:comment]}

@@ -3,6 +3,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   alias Delivest.Oms.{Order, Orders}
 
+  use Gettext, backend: DelivestWeb.Gettext
+
   on_mount {DelivestWeb.Hooks.Permission, "orders.read"}
 
   @impl true
@@ -372,6 +374,17 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                     title={format_address(order.address)}
                   >
                     {format_address(order.address)}
+                  </p>
+                <% end %>
+                <%= if order.cook_by do %>
+                  <p
+                    class="text-base-content/70 truncate mt-0.5"
+                    title={Calendar.strftime(order.cook_by, "%d.%m.%Y %H:%M")}
+                  >
+                    <span class="font-semibold">{gettext("Prepare by:")}</span> {Calendar.strftime(
+                      order.cook_by,
+                      "%d.%m.%Y %H:%M"
+                    )}
                   </p>
                 <% end %>
                 <%= if order.comment && order.comment != "" do %>
