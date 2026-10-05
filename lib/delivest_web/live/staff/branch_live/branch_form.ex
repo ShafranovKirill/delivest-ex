@@ -28,7 +28,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   end
 
   def changeset(form, attrs) do
-    attrs = normalize_working_hours_attrs(attrs)
+    attrs = normalize_working_hours_attrs(form, attrs)
 
     form
     |> cast(attrs, [
@@ -78,12 +78,54 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     }
   end
 
-  defp normalize_working_hours_attrs(%{"working_hours" => working_hours} = attrs)
-       when is_map(working_hours) do
-    Map.put(attrs, "working_hours", normalize_working_hours_map(working_hours))
+  defp normalize_working_hours_attrs(form, attrs) when is_map(attrs) do
+    case Map.fetch(attrs, "working_hours") do
+      {:ok, incoming} when is_map(incoming) ->
+        working_hours =
+          form.working_hours
+          |> stringify_map_keys()
+          |> deep_merge(stringify_map_keys(incoming))
+          |> normalize_working_hours_map()
+
+        Map.put(attrs, "working_hours", working_hours)
+
+      _ ->
+        case Map.fetch(attrs, :working_hours) do
+          {:ok, incoming} when is_map(incoming) ->
+            working_hours =
+              form.working_hours
+              |> stringify_map_keys()
+              |> deep_merge(stringify_map_keys(incoming))
+              |> normalize_working_hours_map()
+
+            Map.put(attrs, :working_hours, working_hours)
+
+          _ ->
+            attrs
+        end
+    end
   end
 
-  defp normalize_working_hours_attrs(attrs), do: attrs
+  defp normalize_working_hours_attrs(_form, attrs), do: attrs
+
+  defp stringify_map_keys(map) when is_map(map) do
+    Map.new(map, fn {key, value} ->
+      value = if is_map(value), do: stringify_map_keys(value), else: value
+      {to_string(key), value}
+    end)
+  end
+
+  defp stringify_map_keys(_), do: %{}
+
+  defp deep_merge(existing, incoming) do
+    Map.merge(existing, incoming, fn _key, existing_value, incoming_value ->
+      if is_map(existing_value) and is_map(incoming_value) do
+        deep_merge(existing_value, incoming_value)
+      else
+        incoming_value
+      end
+    end)
+  end
 
   defp normalize_working_hours_map(map) when is_map(map) do
     Enum.reduce(map, %{}, fn {day, schedule}, acc ->

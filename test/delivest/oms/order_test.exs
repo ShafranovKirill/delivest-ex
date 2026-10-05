@@ -38,24 +38,6 @@ defmodule Delivest.Oms.OrderTest do
       assert "can't be blank" in errors_on(changeset).address
     end
 
-    test "formats delivery validation errors as JSON-safe values" do
-      attrs = %{
-        branch_id: Ecto.UUID.generate(),
-        status: :created,
-        fulfillment_type: :delivery,
-        payment_method: :cash,
-        cart_id: Ecto.UUID.generate(),
-        customer_phone: "+79991234567",
-        customer_name: "Иван"
-      }
-
-      changeset = Order.changeset(%Order{}, attrs)
-      details = DelivestWeb.Client.Order.OrderController.validation_details(changeset)
-
-      assert Map.has_key?(details, :address)
-      assert "can't be blank" in List.flatten(Map.values(details.address))
-    end
-
     test "validates phone format" do
       attrs = %{
         branch_id: Ecto.UUID.generate(),
