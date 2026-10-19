@@ -42,15 +42,12 @@ defmodule Delivest.HTTP.Client do
           end
       end
 
-    Logger.info(
-      "HTTP >>> #{String.upcase(to_string(method))} #{full_url}\nPayload/Params: #{inspect(body_or_params, pretty: true)}"
-    )
+    # Payload is not logged: it may contain API secrets and customer personal data.
+    Logger.info("HTTP >>> #{String.upcase(to_string(method))} #{full_url}")
 
     case Req.request(req_options) do
       {:ok, %{status: status, body: body}} when status in 200..299 ->
-        Logger.info(
-          "HTTP <<< [#{status}] Success Response from #{full_url}\nBody: #{inspect(body, pretty: true)}"
-        )
+        Logger.info("HTTP <<< [#{status}] Success Response from #{full_url}")
 
         handle_response_body(body, decode_json?)
 

@@ -1,8 +1,9 @@
 defmodule Delivest.Oms do
   alias Delivest.Oms.{OrderService, Orders, Carts}
 
-  defdelegate create_order(attrs), to: OrderService
+  defdelegate create_order(attrs, opts \\ []), to: OrderService
   defdelegate update_order(order, attrs), to: Orders
+  defdelegate update_order_details(order, attrs), to: Orders
   defdelegate soft_delete_order(order), to: Orders
 
   defdelegate get_or_create_cart(opts), to: Carts

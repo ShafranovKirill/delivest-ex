@@ -5,10 +5,6 @@ defmodule Delivest.Release do
   alias Delivest.Identity.{Staff, Staffs, Role}
   import Ecto.Query
 
-  @public_bucket "delivest"
-  @private_bucket "delivest-private"
-  @default_buckets [@public_bucket, @private_bucket]
-
   def migrate do
     load_app()
 
@@ -22,8 +18,21 @@ defmodule Delivest.Release do
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
-  def create_admin(login \\ "admin123", password \\ "AdminSecret123!") do
+  @doc """
+  Creates the admin account. Credentials come from the arguments, then from the
+  ADMIN_LOGIN / ADMIN_PASSWORD environment variables. When no password is given,
+  a random one is generated and printed once.
+  """
+  def create_admin(login \\ nil, password \\ nil) do
     load_app()
+
+    login = login || System.get_env("ADMIN_LOGIN") || "admin123"
+
+    password =
+      case password || System.get_env("ADMIN_PASSWORD") do
+        value when is_binary(value) and value != "" -> value
+        _ -> nil
+      end
 
     Ecto.Migrator.with_repo(Repo, fn _repo ->
       Repo.transaction(fn ->
@@ -68,13 +77,20 @@ defmodule Delivest.Release do
       nil ->
         params = %{
           login: login,
-          password: password,
+          password: password || generate_admin_password(),
           role_id: role_id
         }
 
         case Staffs.system_create_staff(params) do
           {:ok, staff} ->
             IO.puts("Admin created: #{staff.login} (Role ID: #{role_id})")
+
+            if is_nil(password) do
+              IO.puts(
+                "Generated admin password (save it now, it is not stored anywhere): #{params.password}"
+              )
+            end
+
             staff
 
           {:error, changeset} ->
@@ -226,7 +242,7 @@ defmodule Delivest.Release do
 
     Application.ensure_all_started(:ex_aws)
 
-    buckets = Application.get_env(:delivest, Delivest.Storage)[:buckets] || @default_buckets
+    buckets = [Delivest.Media.public_bucket(), Delivest.Media.private_bucket()] |> Enum.uniq()
     IO.puts("[Storage.Setup] Starting storage setup. Target buckets: #{inspect(buckets)}")
 
     Enum.each(buckets, &setup_bucket/1)
@@ -255,7 +271,13 @@ defmodule Delivest.Release do
     end
   end
 
-  defp configure_bucket_policy(@public_bucket = bucket) do
+  defp configure_bucket_policy(bucket) do
+    if bucket == Delivest.Media.public_bucket(),
+      do: apply_public_policy(bucket),
+      else: skip_private_policy(bucket)
+  end
+
+  defp apply_public_policy(bucket) do
     IO.puts("[Storage.Setup] Applying public read policy to '#{bucket}/*'...")
 
     policy = %{
@@ -282,7 +304,7 @@ defmodule Delivest.Release do
     end
   end
 
-  defp configure_bucket_policy(bucket) do
+  defp skip_private_policy(bucket) do
     IO.puts("[Storage.Setup] Bucket '#{bucket}' is configured as private. Skipping policy.")
   end
 
@@ -291,6 +313,12 @@ defmodule Delivest.Release do
     storage_setup()
     seed_roles()
     create_admin()
+  end
+
+  # Satisfies Staff.password_regex/0: lowercase, uppercase, digit and special character.
+  defp generate_admin_password do
+    random = :crypto.strong_rand_bytes(18) |> Base.url_encode64(padding: false)
+    "Aa1!" <> random
   end
 
   defp repos do

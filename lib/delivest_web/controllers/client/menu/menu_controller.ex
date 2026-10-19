@@ -3,6 +3,8 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   use OpenApiSpex.ControllerSpecs
 
   alias Delivest.Net
+  alias DelivestWeb.Helpers.ApiError
+  alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias DelivestWeb.Schemas.MenuSchemas.MenuResponse
   alias OpenApiSpex.Schema
 
@@ -22,14 +24,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
     ],
     responses: [
       ok: {"Меню филиала с категориями и товарами", "application/json", MenuResponse},
-      bad_request:
-        {"Ошибка получения меню", "application/json",
-         %OpenApiSpex.Schema{
-           type: :object,
-           properties: %{
-             error: %OpenApiSpex.Schema{type: :string, example: "Failed to fetch menu"}
-           }
-         }}
+      bad_request: {"Ошибка получения меню", "application/json", ErrorResponse}
     ]
   )
 
@@ -39,9 +34,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
         render(conn, :index, menu: menu)
 
       {:error, _reason} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Failed to fetch menu"})
+        ApiError.send_error(conn, :bad_request, :bad_request, "Failed to fetch menu")
     end
   end
 end

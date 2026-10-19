@@ -3,6 +3,8 @@ defmodule Delivest.Oms.CartTest do
 
   import Delivest.Factory
 
+  @branch_id "00000000-0000-4000-8000-000000000001"
+
   alias Delivest.Oms.{Cart, CartItem, CartView, Carts}
 
   describe "cart schema" do
@@ -30,10 +32,10 @@ defmodule Delivest.Oms.CartTest do
 
   describe "cart context" do
     test "creates a cart and calculates totals" do
-      product = insert(:product, price: 250)
+      product = insert_branch_product(@branch_id, price: 250)
 
       assert {:ok, %CartView{} = cart} =
-               Carts.create_cart(%{session_id: "session-cart", branch_id: Ecto.UUID.generate()})
+               Carts.create_cart(%{session_id: "session-cart", branch_id: @branch_id})
 
       assert cart.total_quantity == 0
       assert cart.items == []
@@ -47,10 +49,10 @@ defmodule Delivest.Oms.CartTest do
     end
 
     test "adds quantity to existing product instead of duplicating item" do
-      product = insert(:product, price: 100)
+      product = insert_branch_product(@branch_id, price: 100)
 
       assert {:ok, %CartView{} = cart} =
-               Carts.create_cart(%{session_id: "session-merge", branch_id: Ecto.UUID.generate()})
+               Carts.create_cart(%{session_id: "session-merge", branch_id: @branch_id})
 
       assert {:ok, _, %CartView{} = first} = Carts.add_item(cart.id, product.id, 1)
       assert {:ok, _, %CartView{} = second} = Carts.add_item(cart.id, product.id, 2)
@@ -61,10 +63,10 @@ defmodule Delivest.Oms.CartTest do
     end
 
     test "decrements quantity and removes item when it reaches zero" do
-      product = insert(:product, price: 80)
+      product = insert_branch_product(@branch_id, price: 80)
 
       assert {:ok, %CartView{} = cart} =
-               Carts.create_cart(%{session_id: "session-clear", branch_id: Ecto.UUID.generate()})
+               Carts.create_cart(%{session_id: "session-clear", branch_id: @branch_id})
 
       assert {:ok, _, %CartView{} = cart_with_item} = Carts.add_item(cart.id, product.id, 2)
       assert cart_with_item.total_quantity == 2
@@ -80,13 +82,13 @@ defmodule Delivest.Oms.CartTest do
     end
 
     test "clear_cart removes all cart items and refreshes totals" do
-      product_one = insert(:product, price: 120)
-      product_two = insert(:product, price: 80)
+      product_one = insert_branch_product(@branch_id, price: 120)
+      product_two = insert_branch_product(@branch_id, price: 80)
 
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{
                  session_id: "session-clear-all",
-                 branch_id: Ecto.UUID.generate()
+                 branch_id: @branch_id
                })
 
       assert {:ok, _, _} = Carts.add_item(cart.id, product_one.id, 1)
@@ -101,12 +103,48 @@ defmodule Delivest.Oms.CartTest do
                Carts.create_cart(%{
                  session_id: "session-detach",
                  staff_id: Ecto.UUID.generate(),
-                 branch_id: Ecto.UUID.generate()
+                 branch_id: @branch_id
                })
 
       assert {:ok, %CartView{} = detached_cart} = Carts.detach_cart(cart.id)
       assert detached_cart.session_id == nil
       assert detached_cart.staff_id == nil
+    end
+
+    test "rejects products of another branch and inactive products" do
+      foreign = insert_branch_product(Ecto.UUID.generate(), price: 100)
+      inactive = insert_branch_product(@branch_id, price: 100, is_active: false)
+
+      {:ok, cart} = Carts.create_cart(%{session_id: "foreign-product", branch_id: @branch_id})
+
+      assert {:error, :product_unavailable} = Carts.add_item(cart.id, foreign.id, 1)
+      assert {:error, :product_unavailable} = Carts.add_item(cart.id, inactive.id, 1)
+      assert {:error, :product_unavailable} = Carts.add_item(cart.id, "not-a-uuid", 1)
+    end
+
+    test "limits the quantity of a single product" do
+      product = insert_branch_product(@branch_id, price: 10)
+      {:ok, cart} = Carts.create_cart(%{session_id: "quantity-limit", branch_id: @branch_id})
+
+      assert {:ok, _, _} = Carts.add_item(cart.id, product.id, 99)
+      assert {:error, :quantity_limit_exceeded} = Carts.add_item(cart.id, product.id, 1)
+    end
+
+    test "owned_by_session? only matches the owning session" do
+      {:ok, cart} = Carts.create_cart(%{session_id: "owner", branch_id: @branch_id})
+
+      assert Carts.owned_by_session?(cart.id, "owner")
+      refute Carts.owned_by_session?(cart.id, "stranger")
+      refute Carts.owned_by_session?(cart.id, nil)
+      refute Carts.owned_by_session?("not-a-uuid", "owner")
+    end
+
+    test "returns one cart when a session has duplicate carts for a branch" do
+      {:ok, _first} = Carts.create_cart(%{session_id: "duplicated", branch_id: @branch_id})
+      {:ok, _second} = Carts.create_cart(%{session_id: "duplicated", branch_id: @branch_id})
+
+      assert %CartView{} = Carts.get_cart(session_id: "duplicated", branch_id: @branch_id)
+      assert %CartView{} = Carts.get_cart(session_id: "duplicated")
     end
   end
 end

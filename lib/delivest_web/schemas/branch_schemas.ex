@@ -28,18 +28,6 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           example: "https://instagram.com/profile_name",
           nullable: true
         },
-        frontpad_api_key: %Schema{
-          type: :string,
-          example: "frontpad-secret-key",
-          nullable: true
-        },
-        frontpad_enabled: %Schema{type: :boolean, example: true, nullable: true},
-        frontpad_settings: %Schema{
-          type: :object,
-          additionalProperties: true,
-          example: %{mode: "live", webhook: "https://example.com/hook"},
-          nullable: true
-        },
         ycart_settings: %Schema{
           type: :object,
           properties: %{
@@ -70,7 +58,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         is_active: %Schema{type: :boolean, example: true},
         branch_info: %Schema{anyOf: [BranchInfoResponse, %Schema{type: :null}]}
       },
-      required: [:id, :name, :slug, :is_active, :stocks]
+      required: [:id, :name, :slug, :is_active]
     })
   end
 

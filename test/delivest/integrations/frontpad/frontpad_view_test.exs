@@ -28,4 +28,20 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
 
     refute Enum.any?(FrontpadView.to_form_params(view), fn {key, _value} -> key == "datetime" end)
   end
+
+  test "takes phone and name from the linked client once the order is reloaded" do
+    # customer_phone/customer_name are virtual: empty after Orders.get_order/1.
+    order = %Order{
+      items: [],
+      client: %Delivest.Identity.Client{phone: "+79991234567", name: "Иван"}
+    }
+
+    branch = %Branch{info: %BranchInfo{frontpad_api_key: "secret"}}
+
+    assert {:ok, view} = FrontpadView.build(order, branch, %{})
+
+    params = FrontpadView.to_form_params(view)
+    assert {"phone", "+79991234567"} in params
+    assert {"name", "Иван"} in params
+  end
 end

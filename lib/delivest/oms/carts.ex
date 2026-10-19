@@ -53,7 +53,61 @@ defmodule Delivest.Oms.Carts do
     end)
   end
 
+  @max_item_quantity 99
+
+  @doc "True when the cart exists and belongs to the given client session."
+  def owned_by_session?(_cart_id, nil), do: false
+
+  def owned_by_session?(cart_id, session_id) do
+    case Ecto.UUID.cast(cart_id) do
+      {:ok, uuid} ->
+        Repo.exists?(from(c in Cart, where: c.id == ^uuid and c.session_id == ^session_id))
+
+      :error ->
+        false
+    end
+  end
+
   def add_item(cart_id, product_id, quantity \\ 1) when is_integer(quantity) and quantity > 0 do
+    with :ok <- ensure_product_available(cart_id, product_id),
+         :ok <- ensure_quantity_limit(cart_id, product_id, quantity) do
+      insert_or_increment_item(cart_id, product_id, quantity)
+    end
+  end
+
+  # Only active products of the cart's branch can be added.
+  defp ensure_product_available(cart_id, product_id) do
+    with {:ok, product_uuid} <- Ecto.UUID.cast(product_id),
+         %Cart{} = cart <- Repo.get(Cart, cart_id),
+         %{} <- Map.get(Net.list_products_by_ids([product_uuid]), product_uuid),
+         true <- product_in_branch?(product_uuid, cart.branch_id) do
+      :ok
+    else
+      _ -> {:error, :product_unavailable}
+    end
+  end
+
+  defp product_in_branch?(_product_id, nil), do: true
+
+  defp product_in_branch?(product_id, branch_id) do
+    branch_id in Delivest.Relations.list_source_ids("Product", product_id, "Branch")
+  end
+
+  defp ensure_quantity_limit(cart_id, product_id, quantity) do
+    current =
+      Repo.one(
+        from(ci in CartItem,
+          where: ci.cart_id == ^cart_id and ci.product_id == ^product_id,
+          select: ci.quantity
+        )
+      ) || 0
+
+    if current + quantity > @max_item_quantity,
+      do: {:error, :quantity_limit_exceeded},
+      else: :ok
+  end
+
+  defp insert_or_increment_item(cart_id, product_id, quantity) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
     changeset =
@@ -262,7 +316,14 @@ defmodule Delivest.Oms.Carts do
 
     cond do
       not is_nil(session_id) ->
-        query = from c in Cart, where: c.session_id == ^session_id
+        # No unique index on (session_id, branch_id): concurrent first requests may
+        # create two carts, so always pick the most recently used one.
+        query =
+          from c in Cart,
+            where: c.session_id == ^session_id,
+            order_by: [desc: c.updated_at, desc: c.inserted_at],
+            limit: 1
+
         query = if branch_id, do: from(c in query, where: c.branch_id == ^branch_id), else: query
         Repo.one(query)
 

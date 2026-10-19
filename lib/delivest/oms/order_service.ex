@@ -3,20 +3,15 @@ defmodule Delivest.Oms.OrderService do
   alias Delivest.Identity
   alias Delivest.Integrations.Frontpad.FrontpadService
 
-  def create_order(attrs) do
+  @doc "Options are passed to `Delivest.Oms.Orders.create_order/2`."
+  def create_order(attrs, opts \\ []) do
     with {:ok, branch} <- fetch_branch(attrs) do
-      cond do
-        FrontpadService.enabled?(branch) ->
-          FrontpadService.create_order(attrs, branch)
-
-        true ->
-          create_classic_order(attrs)
+      if FrontpadService.enabled?(branch) do
+        FrontpadService.create_order(attrs, branch, opts)
+      else
+        Orders.create_order(attrs, opts)
       end
     end
-  end
-
-  defp create_classic_order(attrs) do
-    Orders.create_order(attrs)
   end
 
   defp fetch_branch(attrs) do

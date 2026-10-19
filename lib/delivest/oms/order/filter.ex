@@ -21,7 +21,7 @@ defmodule Delivest.Oms.Orders.Filter do
   end
 
   defp filter_date_from(q, %Date{} = date) do
-    where(q, [o], o.inserted_at >= ^DateTime.new!(date, ~T[00:00:00], "Etc/UTC"))
+    where(q, [o], o.inserted_at >= ^Delivest.LocalTime.start_of_day_utc(date))
   end
 
   defp filter_date_from(q, str) when is_binary(str) do
@@ -32,7 +32,7 @@ defmodule Delivest.Oms.Orders.Filter do
   end
 
   defp filter_date_to(q, %Date{} = date) do
-    where(q, [o], o.inserted_at <= ^DateTime.new!(date, ~T[23:59:59], "Etc/UTC"))
+    where(q, [o], o.inserted_at <= ^Delivest.LocalTime.end_of_day_utc(date))
   end
 
   defp filter_date_to(q, str) when is_binary(str) do

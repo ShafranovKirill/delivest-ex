@@ -7,14 +7,10 @@ defmodule Mix.Tasks.Delivest.StorageSetup do
 
   @shortdoc "Creates S3/SeaweedFS public and private buckets"
 
-  @public_bucket "delivest"
-  @private_bucket "delivest-private"
-  @default_buckets [@public_bucket, @private_bucket]
-
   def run(_args) do
     Mix.Task.run("app.start")
 
-    buckets = Application.get_env(:delivest, Delivest.Storage)[:buckets] || @default_buckets
+    buckets = [Delivest.Media.public_bucket(), Delivest.Media.private_bucket()] |> Enum.uniq()
 
     Logger.info("[Storage.Setup] Starting storage setup. Target buckets: #{inspect(buckets)}")
 
@@ -45,7 +41,13 @@ defmodule Mix.Tasks.Delivest.StorageSetup do
     end
   end
 
-  defp configure_bucket_policy(@public_bucket = bucket) do
+  defp configure_bucket_policy(bucket) do
+    if bucket == Delivest.Media.public_bucket(),
+      do: apply_public_policy(bucket),
+      else: skip_private_policy(bucket)
+  end
+
+  defp apply_public_policy(bucket) do
     Logger.info("[Storage.Setup] Applying public read policy to '#{bucket}/*'...")
 
     policy = %{
@@ -72,7 +74,7 @@ defmodule Mix.Tasks.Delivest.StorageSetup do
     end
   end
 
-  defp configure_bucket_policy(bucket) do
+  defp skip_private_policy(bucket) do
     Logger.info("[Storage.Setup] Bucket '#{bucket}' is configured as private. Skipping policy.")
   end
 end

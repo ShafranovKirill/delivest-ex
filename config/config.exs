@@ -13,7 +13,12 @@ config :delivest, Oban,
   queues: [default: 10, frontpad: 10],
   lifeline: [rescue_after: {2, :hours}],
   pruner: [max_age: {1, :day}],
+  crontab: [
+    {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker}
+  ],
   repo: Delivest.Repo
+
+config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :delivest,
   ecto_repos: [Delivest.Repo],

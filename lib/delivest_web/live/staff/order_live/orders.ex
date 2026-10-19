@@ -1,6 +1,7 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
+  alias Delivest.Identity
   alias Delivest.Oms.{Order, Orders}
 
   use Gettext, backend: DelivestWeb.Gettext
@@ -64,51 +65,62 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("update_order", %{"order-id" => id} = params, socket) do
     attrs = Map.drop(params, ["order-id", "_target"])
 
-    order = Orders.get_order(id)
-
-    case Orders.update_order(order, attrs) do
-      {:ok, updated_order} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, gettext("Order updated successfully"))
-         |> stream_insert(:orders, updated_order)}
-
-      {:error, _step, _reason} ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to update order"))}
+    with :ok <- authorize(socket, "orders.update"),
+         {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, updated_order} <- Orders.update_order_details(order, attrs) do
+      {:noreply,
+       socket
+       |> put_flash(:info, gettext("Order updated successfully"))
+       |> stream_insert(:orders, updated_order)}
+    else
+      {:error, :forbidden} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to update order"))}
     end
   end
 
   @impl true
   def handle_event("delete_click", %{"id" => id}, socket) do
-    order = Orders.get_order(id)
-    {:noreply, assign(socket, order_to_delete: order)}
+    case fetch_branch_order(socket, id) do
+      {:ok, order} -> {:noreply, assign(socket, order_to_delete: order)}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to delete order"))}
+    end
   end
 
   @impl true
-  def handle_event("confirm_delete", _, %{assigns: %{order_to_delete: order}} = socket) do
-    case Orders.soft_delete_order(order) do
-      {:ok, _} ->
+  def handle_event("confirm_delete", _, %{assigns: %{order_to_delete: %Order{} = order}} = socket) do
+    with :ok <- authorize(socket, "orders.delete"),
+         {:ok, _} <- Orders.soft_delete_order(order) do
+      {:noreply,
+       socket
+       |> put_flash(:info, gettext("Order deleted successfully"))
+       |> stream_delete(:orders, order)
+       |> assign(order_to_delete: nil)}
+    else
+      {:error, :forbidden} ->
         {:noreply,
-         socket
-         |> put_flash(:info, gettext("Order deleted successfully"))
-         |> stream_delete(:orders, order)
-         |> assign(order_to_delete: nil)}
+         socket |> assign(order_to_delete: nil) |> put_flash(:error, gettext("Permission denied"))}
 
-      {:error, _} ->
+      _ ->
         {:noreply, put_flash(socket, :error, gettext("Failed to delete order"))}
     end
   end
+
+  def handle_event("confirm_delete", _, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("cancel_delete", _, socket),
     do: {:noreply, assign(socket, order_to_delete: nil)}
 
+  # Orders of all branches share one PubSub topic: only show the current branch.
   @impl true
+  def handle_info({Delivest.Oms.Orders, _event, order}, socket)
+      when order.branch_id != socket.assigns.current_branch.id,
+      do: {:noreply, socket}
+
   def handle_info({Delivest.Oms.Orders, [:order, :created], order}, socket) do
     {:noreply, stream_insert(socket, :orders, order, at: 0)}
   end
 
-  @impl true
   def handle_info({Delivest.Oms.Orders, [:order, :updated], order}, socket) do
     if order.deleted_at do
       {:noreply, stream_delete(socket, :orders, order)}
@@ -117,21 +129,37 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
-  @impl true
   def handle_info({Delivest.Oms.Orders, [:order, :deleted], order}, socket) do
     {:noreply, stream_delete(socket, :orders, order)}
   end
 
-  defp resolve_date_range("today", _, _), do: {Date.utc_today(), Date.utc_today()}
+  defp authorize(socket, permission) do
+    if Identity.can?(socket.assigns.current_staff, permission),
+      do: :ok,
+      else: {:error, :forbidden}
+  end
+
+  defp fetch_branch_order(socket, id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(id),
+         %Order{branch_id: branch_id} = order <- Orders.get_order(uuid),
+         true <- branch_id == socket.assigns.current_branch.id do
+      {:ok, order}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp resolve_date_range("today", _, _),
+    do: {Delivest.LocalTime.today(), Delivest.LocalTime.today()}
 
   defp resolve_date_range("tomorrow", _, _),
-    do: {Date.add(Date.utc_today(), 1), Date.add(Date.utc_today(), 1)}
+    do: {Date.add(Delivest.LocalTime.today(), 1), Date.add(Delivest.LocalTime.today(), 1)}
 
   defp resolve_date_range("yesterday", _, _),
-    do: {Date.add(Date.utc_today(), -1), Date.add(Date.utc_today(), -1)}
+    do: {Date.add(Delivest.LocalTime.today(), -1), Date.add(Delivest.LocalTime.today(), -1)}
 
-  defp resolve_date_range("week", _, _), do: {Date.add(Date.utc_today(), -7), nil}
-  defp resolve_date_range("month", _, _), do: {Date.add(Date.utc_today(), -30), nil}
+  defp resolve_date_range("week", _, _), do: {Date.add(Delivest.LocalTime.today(), -7), nil}
+  defp resolve_date_range("month", _, _), do: {Date.add(Delivest.LocalTime.today(), -30), nil}
   defp resolve_date_range("custom", from, to), do: {parse_date(from), parse_date(to)}
   defp resolve_date_range(_, _, _), do: {nil, nil}
 
@@ -197,6 +225,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       <div class="bg-base-100 p-4 rounded-box border border-base-200 shadow-sm space-y-4">
         <.form
           for={%{}}
+          id="orders-filter"
           phx-change="filter"
           class="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-stretch sm:items-center"
         >
@@ -295,7 +324,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                     <% end %>
                   </div>
                 <% else %>
-                  <form phx-change="update_order" phx-value-order-id={order.id}>
+                  <form
+                    id={"order-status-#{order.id}"}
+                    phx-change="update_order"
+                    phx-value-order-id={order.id}
+                  >
                     <select
                       name="status"
                       class={[
@@ -395,7 +428,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
               </div>
 
               <div class="lg:w-1/5 flex items-center justify-between lg:justify-start gap-3 border-t lg:border-t-0 lg:border-l border-base-200 pt-2 lg:pt-0 lg:pl-4">
-                <form phx-change="update_order" phx-value-order-id={order.id}>
+                <form
+                  id={"order-payment-#{order.id}"}
+                  phx-change="update_order"
+                  phx-value-order-id={order.id}
+                >
                   <select name="payment_method" class="select select-xs select-bordered font-medium">
                     <option value="cash" selected={order.payment_method == :cash}>
                       {gettext("Cash")}

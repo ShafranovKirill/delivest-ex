@@ -3,8 +3,9 @@ defmodule DelivestWeb.Client.Cart.CartController do
   use OpenApiSpex.ControllerSpecs
 
   alias Delivest.Oms.Carts
-  alias DelivestWeb.Helpers.CookieHelper
+  alias DelivestWeb.Helpers.{ApiError, CookieHelper}
   alias DelivestWeb.Schemas.CartSchemas.CartResponse
+  alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias OpenApiSpex.Schema
 
   operation(:show,
@@ -27,8 +28,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
     ],
     responses: [
       ok: {"Данные корзины", "application/json", CartResponse},
-      unprocessable_entity:
-        {"Ошибка создания корзины", "application/json", %Schema{type: :object}}
+      unprocessable_entity: {"Ошибка создания корзины", "application/json", ErrorResponse}
     ]
   )
 
@@ -40,9 +40,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
         render(conn, :show, cart: cart_view)
 
       {:error, _changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Failed to create cart"})
+        ApiError.send_error(conn, :unprocessable_entity, :bad_request, "Failed to create cart")
     end
   end
 
@@ -66,8 +64,8 @@ defmodule DelivestWeb.Client.Cart.CartController do
     ],
     responses: [
       ok: {"Обновленная корзина", "application/json", CartResponse},
-      unprocessable_entity:
-        {"Ошибка добавления товара", "application/json", %Schema{type: :object}}
+      unprocessable_entity: {"Ошибка добавления товара", "application/json", ErrorResponse},
+      not_found: {"Корзина не найдена", "application/json", ErrorResponse}
     ]
   )
 
@@ -85,31 +83,45 @@ defmodule DelivestWeb.Client.Cart.CartController do
     ],
     responses: [
       ok: {"Очищенная корзина", "application/json", CartResponse},
-      not_found: {"Корзина не найдена", "application/json", %Schema{type: :object}}
+      not_found: {"Корзина не найдена", "application/json", ErrorResponse}
     ]
   )
 
   def clear(conn, %{"cart_id" => cart_id}) do
-    case Carts.clear_cart(cart_id) do
-      {:ok, cart_view} ->
-        render(conn, :show, cart: cart_view)
-
-      {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Cart not found"})
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, cart_view} <- Carts.clear_cart(cart_id) do
+      render(conn, :show, cart: cart_view)
+    else
+      _ -> cart_not_found(conn)
     end
   end
 
   def add_item(conn, %{"cart_id" => cart_id, "product_id" => product_id}) do
-    case Carts.add_item(cart_id, product_id) do
-      {:ok, _item, cart_view} ->
-        render(conn, :show, cart: cart_view)
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, _item, cart_view} <- Carts.add_item(cart_id, product_id) do
+      render(conn, :show, cart: cart_view)
+    else
+      {:error, :cart_not_found} ->
+        cart_not_found(conn)
+
+      {:error, :product_unavailable} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :product_unavailable,
+          "Product is unavailable"
+        )
+
+      {:error, :quantity_limit_exceeded} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :quantity_limit_exceeded,
+          "Quantity limit exceeded"
+        )
 
       {:error, _changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Failed to add item"})
+        ApiError.send_error(conn, :unprocessable_entity, :bad_request, "Failed to add item")
     end
   end
 
@@ -139,7 +151,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
     ],
     responses: [
       ok: {"Обновленная корзина", "application/json", CartResponse},
-      not_found: {"Товар не найден в корзине", "application/json", %Schema{type: :object}}
+      not_found: {"Корзина или товар не найдены", "application/json", ErrorResponse}
     ]
   )
 
@@ -151,15 +163,38 @@ defmodule DelivestWeb.Client.Cart.CartController do
         []
       end
 
-    case Carts.remove_item(cart_id, product_id, opts) do
-      {:ok, _status, cart_view} ->
-        render(conn, :show, cart: cart_view)
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, product_uuid} <- cast_uuid(product_id),
+         {:ok, _status, cart_view} <- Carts.remove_item(cart_id, product_uuid, opts) do
+      render(conn, :show, cart: cart_view)
+    else
+      {:error, :cart_not_found} ->
+        cart_not_found(conn)
 
-      {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Item not found in cart"})
+      _ ->
+        ApiError.send_error(conn, :not_found, :item_not_found, "Item not found in cart")
     end
+  end
+
+  # A cart can only be changed from the session that owns it. Unknown and foreign
+  # carts get the same 404, so cart ids cannot be probed.
+  defp authorize_cart(conn, cart_id) do
+    session_id = CookieHelper.get_cookie(conn, "session_id")
+
+    if Carts.owned_by_session?(cart_id, session_id),
+      do: :ok,
+      else: {:error, :cart_not_found}
+  end
+
+  defp cast_uuid(value) do
+    case Ecto.UUID.cast(value) do
+      {:ok, uuid} -> {:ok, uuid}
+      :error -> {:error, :invalid_uuid}
+    end
+  end
+
+  defp cart_not_found(conn) do
+    ApiError.send_error(conn, :not_found, :cart_not_found, "Cart not found")
   end
 
   defp build_cart_opts(conn, params) do

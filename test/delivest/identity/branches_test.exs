@@ -26,7 +26,13 @@ defmodule Delivest.Identity.BranchesTest do
 
     admin_role =
       insert(:role,
-        permissions: ["admin", "branch.read", "branch.create", "branch.update", "branch.delete"]
+        permissions: [
+          "admin",
+          "branch.read",
+          "branches.create",
+          "branch.update",
+          "branches.delete"
+        ]
       )
 
     admin_staff = insert(:staff, role: admin_role)

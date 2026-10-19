@@ -109,7 +109,15 @@ defmodule Delivest.Identity.Clients do
     |> Repo.all()
   end
 
-  def resolve_client(attrs) do
+  @doc """
+  Resolves the client for an order.
+
+  Options:
+    * `:update_existing` (default `true`) - overwrite the name of an existing client
+      found by phone. Public (anonymous) orders pass `false`, so a stranger cannot
+      rename someone else's client record by typing their phone number.
+  """
+  def resolve_client(attrs, opts \\ []) do
     client_id = attrs["client_id"]
     phone = attrs["customer_phone"]
     name = attrs["customer_name"]
@@ -119,13 +127,24 @@ defmodule Delivest.Identity.Clients do
         {:ok, client_id}
 
       present?(phone) ->
-        case get_or_create_client_by_phone(phone, %{name: name}) do
+        case find_or_create_client(phone, %{name: name}, opts) do
           {:ok, %Client{id: id}} -> {:ok, id}
           {:error, changeset} -> {:error, changeset}
         end
 
       true ->
         {:ok, nil}
+    end
+  end
+
+  defp find_or_create_client(phone, attrs, opts) do
+    if Keyword.get(opts, :update_existing, true) do
+      get_or_create_client_by_phone(phone, attrs)
+    else
+      case get_active_client_by_phone(phone) do
+        %Client{} = client -> {:ok, client}
+        nil -> create_client(Map.put(attrs, :phone, phone))
+      end
     end
   end
 
@@ -137,6 +156,7 @@ defmodule Delivest.Identity.Clients do
     Client
     |> where([c], c.phone == ^phone)
     |> where([c], is_nil(c.deleted_at))
+    |> limit(1)
     |> Repo.one()
   end
 

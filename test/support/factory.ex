@@ -60,4 +60,20 @@ defmodule Delivest.Factory do
       branch: build(:branch)
     }
   end
+
+  @doc "Inserts a product and attaches it to the branch (carts only accept branch products)."
+  def insert_branch_product(branch_id, attrs \\ []) do
+    product = insert(:product, attrs)
+
+    {:ok, _relation} =
+      Delivest.Relations.create_relation(
+        Delivest.Repo,
+        "Branch",
+        branch_id,
+        "Product",
+        product.id
+      )
+
+    product
+  end
 end

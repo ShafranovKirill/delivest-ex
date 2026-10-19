@@ -3,6 +3,8 @@ defmodule Delivest.Oms.OrderTest do
 
   import Delivest.Factory
 
+  @branch_id "00000000-0000-4000-8000-000000000001"
+
   alias Delivest.Oms.{CartView, Carts, Order, Orders}
   alias Delivest.Repo
 
@@ -101,10 +103,10 @@ defmodule Delivest.Oms.OrderTest do
 
   describe "order context" do
     test "creates an order from a non-empty cart and detaches it" do
-      product = insert(:product, price: 175)
+      product = insert_branch_product(@branch_id, price: 175)
 
       assert {:ok, %CartView{} = cart} =
-               Carts.create_cart(%{session_id: "order-cart", branch_id: Ecto.UUID.generate()})
+               Carts.create_cart(%{session_id: "order-cart", branch_id: @branch_id})
 
       assert {:ok, _, %CartView{} = populated_cart} = Carts.add_item(cart.id, product.id, 3)
 
@@ -129,7 +131,7 @@ defmodule Delivest.Oms.OrderTest do
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{
                  session_id: "empty-order-cart",
-                 branch_id: Ecto.UUID.generate()
+                 branch_id: @branch_id
                })
 
       assert {:error, :cart, :cart_is_empty} =
@@ -143,12 +145,12 @@ defmodule Delivest.Oms.OrderTest do
     end
 
     test "stores cook_by timestamp when provided by the client" do
-      product = insert(:product, price: 150)
+      product = insert_branch_product(@branch_id, price: 150)
 
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{
                  session_id: "cook-by-order-cart",
-                 branch_id: Ecto.UUID.generate()
+                 branch_id: @branch_id
                })
 
       assert {:ok, _, %CartView{} = cart} = Carts.add_item(cart.id, product.id, 1)
@@ -167,12 +169,12 @@ defmodule Delivest.Oms.OrderTest do
     end
 
     test "updates order values when the cart is changed" do
-      product = insert(:product, price: 200)
+      product = insert_branch_product(@branch_id, price: 200)
 
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{
                  session_id: "update-order-cart",
-                 branch_id: Ecto.UUID.generate()
+                 branch_id: @branch_id
                })
 
       assert {:ok, _, %CartView{} = cart} = Carts.add_item(cart.id, product.id, 2)
@@ -199,12 +201,12 @@ defmodule Delivest.Oms.OrderTest do
     end
 
     test "soft_delete_order marks the order as deleted" do
-      product = insert(:product, price: 150)
+      product = insert_branch_product(@branch_id, price: 150)
 
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{
                  session_id: "delete-order-cart",
-                 branch_id: Ecto.UUID.generate()
+                 branch_id: @branch_id
                })
 
       assert {:ok, _, %CartView{} = cart} = Carts.add_item(cart.id, product.id, 1)
@@ -222,10 +224,10 @@ defmodule Delivest.Oms.OrderTest do
     end
 
     test "populate_cart_from_order rebuilds the cart from the order items" do
-      product = insert(:product, price: 90)
+      product = insert_branch_product(@branch_id, price: 90)
 
       assert {:ok, %CartView{} = cart} =
-               Carts.create_cart(%{session_id: "populate-cart", branch_id: Ecto.UUID.generate()})
+               Carts.create_cart(%{session_id: "populate-cart", branch_id: @branch_id})
 
       assert {:ok, _, %CartView{} = cart} = Carts.add_item(cart.id, product.id, 2)
 
@@ -239,13 +241,111 @@ defmodule Delivest.Oms.OrderTest do
                })
 
       assert {:ok, %CartView{} = restored_cart} =
-               Carts.create_cart(%{session_id: "restored", branch_id: Ecto.UUID.generate()})
+               Carts.create_cart(%{session_id: "restored", branch_id: @branch_id})
 
       assert %CartView{} = Orders.populate_cart_from_order(order, restored_cart.id)
 
       cart_view = Carts.get_cart_by_id(restored_cart.id)
       assert cart_view.total_quantity == 2
       assert cart_view.total_amount == 180
+    end
+
+    test "does not create a second order from the same cart" do
+      product = insert_branch_product(@branch_id, price: 100)
+
+      {:ok, cart} = Carts.create_cart(%{session_id: "double-order", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      attrs = %{"cart_id" => cart.id, "fulfillment_type" => "pickup", "payment_method" => "cash"}
+
+      assert {:ok, %Order{}} = Orders.create_order(attrs)
+      assert {:error, :cart, :cart_already_ordered} = Orders.create_order(attrs)
+    end
+
+    test "rejects a cart that belongs to another branch" do
+      product = insert_branch_product(@branch_id, price: 100)
+
+      {:ok, cart} = Carts.create_cart(%{session_id: "branch-mismatch", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:error, :cart, :cart_branch_mismatch} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "branch_id" => Ecto.UUID.generate(),
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+    end
+
+    test "allows repeated order numbers once the number sequence wraps around" do
+      product = insert_branch_product(@branch_id, price: 100)
+
+      for session <- ["wrap-1", "wrap-2"] do
+        {:ok, cart} = Carts.create_cart(%{session_id: session, branch_id: @branch_id})
+        {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
+
+        {:ok, order} =
+          Orders.create_order(%{
+            "cart_id" => cart.id,
+            "fulfillment_type" => "pickup",
+            "payment_method" => "cash"
+          })
+
+        order |> Ecto.Changeset.change(number: "A000") |> Repo.update!()
+      end
+
+      assert Repo.aggregate(from(o in Order, where: o.number == "A000"), :count) == 2
+    end
+
+    test "update_order_details changes status and payment without a cart" do
+      product = insert_branch_product(@branch_id, price: 120)
+
+      {:ok, cart} = Carts.create_cart(%{session_id: "details-update", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 2)
+
+      {:ok, order} =
+        Orders.create_order(%{
+          "cart_id" => cart.id,
+          "fulfillment_type" => "pickup",
+          "payment_method" => "cash"
+        })
+
+      assert {:ok, updated} =
+               Orders.update_order_details(order, %{
+                 "status" => "preparing",
+                 "payment_method" => "card_offline",
+                 "total_amount" => 1
+               })
+
+      assert updated.status == :preparing
+      assert updated.payment_method == :card_offline
+      assert updated.total_amount == 240
+      assert length(updated.items) == 1
+    end
+
+    test "Frontpad orders enqueue their CRM job in the same transaction" do
+      branch = insert(:branch, is_active: true)
+
+      Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+        branch_id: branch.id,
+        frontpad_enabled: true,
+        frontpad_api_key: "key"
+      })
+
+      product = insert_branch_product(branch.id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "frontpad", branch_id: branch.id})
+      {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %Order{status: :crm} = order} =
+               Delivest.Oms.create_order(%{
+                 "cart_id" => cart.id,
+                 "branch_id" => branch.id,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+
+      assert [%Oban.Job{args: %{"order_id" => order_id}}] = Repo.all(Oban.Job)
+      assert order_id == order.id
     end
   end
 end

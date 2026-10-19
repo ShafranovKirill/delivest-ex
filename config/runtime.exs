@@ -6,7 +6,9 @@ end
 
 # Admin credentials: read directly from OS environment at runtime
 config :delivest,
-  default_locale: System.get_env("DEFAULT_LOCALE") || "en"
+  default_locale: System.get_env("DEFAULT_LOCALE") || "en",
+  # Local time zone of the business: used for "today"/"yesterday" order filters.
+  timezone: System.get_env("APP_TIMEZONE") || "Europe/Moscow"
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
@@ -131,7 +133,7 @@ if config_env() == :prod do
     ]
 
   config :delivest, Delivest.Media,
-    private_bucket: System.get_env("S3_BUCKET", "delivest-private"),
+    private_bucket: System.get_env("S3_PRIVATE_BUCKET", "delivest-private"),
     public_bucket: System.get_env("S3_BUCKET", "delivest"),
     public_host: System.get_env("S3_PUBLIC_HOST", "delivest-s3.shafranov.tech"),
     public_port: s3_port

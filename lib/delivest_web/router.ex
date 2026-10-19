@@ -27,6 +27,22 @@ defmodule DelivestWeb.Router do
     plug DelivestWeb.Plugs.EnsureSessionId
   end
 
+  pipeline :order_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :orders, limit: 10, period: :timer.minutes(1)
+  end
+
+  pipeline :cart_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :cart, limit: 300, period: :timer.minutes(1)
+  end
+
+  pipeline :login_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit,
+      bucket: :staff_login,
+      limit: 10,
+      period: :timer.minutes(1),
+      format: :text
+  end
+
   scope "/client", DelivestWeb.Client do
     pipe_through :client_api
 
@@ -38,6 +54,8 @@ defmodule DelivestWeb.Router do
     end
 
     scope "/cart", Cart do
+      pipe_through :cart_rate_limit
+
       get "/", CartController, :show
       post "/:cart_id/items/:product_id", CartController, :add_item
       delete "/:cart_id/items/:product_id", CartController, :remove_item
@@ -45,6 +63,8 @@ defmodule DelivestWeb.Router do
     end
 
     scope "/orders", Order do
+      pipe_through :order_rate_limit
+
       post "/", OrderController, :create
     end
 
@@ -55,7 +75,11 @@ defmodule DelivestWeb.Router do
   scope "/staff", DelivestWeb.Staff do
     pipe_through :staff_browser
 
-    post "/auth/log_in", StaffSessionController, :create
+    scope "/" do
+      pipe_through :login_rate_limit
+      post "/auth/log_in", StaffSessionController, :create
+    end
+
     delete "/auth/log_out", StaffSessionController, :delete
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
 

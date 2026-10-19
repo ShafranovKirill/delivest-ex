@@ -33,7 +33,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
          form_params <- FrontpadView.to_form_params(view),
          _ =
            Logger.info(
-             "Frontpad sending order #{order.id} (attempt #{attempt}/#{job.max_attempts}). Params: #{inspect(form_params)}"
+             "Frontpad sending order #{order.id} (attempt #{attempt}/#{job.max_attempts})"
            ),
          {:ok, response} <- execute_request(form_params) do
       handle_frontpad_response(order, response)
@@ -46,11 +46,22 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
           "Frontpad send failed (attempt #{attempt}/#{job.max_attempts}) for order #{order_id}. Reason: #{error_message}"
         )
 
-        update_order_failure_status(order_id, attempt, job.max_attempts, error_message)
-
-        error
+        if permanent_error?(reason) do
+          update_order_failure_status(order_id, job.max_attempts, job.max_attempts, error_message)
+          {:cancel, reason}
+        else
+          update_order_failure_status(order_id, attempt, job.max_attempts, error_message)
+          error
+        end
     end
   end
+
+  # Retrying cannot fix these: the order/branch data itself is incomplete.
+  defp permanent_error?(:order_not_found), do: true
+  defp permanent_error?(:branch_not_found), do: true
+  defp permanent_error?(:missing_frontpad_api_key), do: true
+  defp permanent_error?({:missing_external_id, _product_id}), do: true
+  defp permanent_error?(_reason), do: false
 
   defp fetch_order(order_id) do
     case Orders.get_order(order_id) do
@@ -60,7 +71,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
   end
 
   defp fetch_branch(branch_id) do
-    case Identity.get_branch(branch_id, preload: [info: :frontpad_settings]) do
+    case Identity.get_branch(branch_id, preload: [:info]) do
       {:ok, %Identity.Branch{} = branch} -> {:ok, branch}
       _ -> {:error, :branch_not_found}
     end

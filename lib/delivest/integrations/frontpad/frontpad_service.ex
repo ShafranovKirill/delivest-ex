@@ -1,6 +1,4 @@
 defmodule Delivest.Integrations.Frontpad.FrontpadService do
-  require Logger
-
   alias Delivest.Identity.Branch
   alias Delivest.Oms.Orders
   alias Delivest.Integrations.Frontpad.FrontpadWorker
@@ -23,29 +21,19 @@ defmodule Delivest.Integrations.Frontpad.FrontpadService do
 
   def settings(_), do: nil
 
-  @spec create_order(map(), Branch.t()) ::
+  @spec create_order(map(), Branch.t(), keyword()) ::
           {:ok, Delivest.Oms.Order.t()} | {:error, atom(), term()}
-  def create_order(attrs, %Branch{} = branch) do
+  def create_order(attrs, %Branch{} = branch, opts \\ []) do
     enriched_attrs = Map.put(attrs, "status", "crm")
 
-    case Orders.create_order(enriched_attrs) do
-      {:ok, order} = result ->
-        enqueue_frontpad_job(order, branch)
-        result
-
-      {:error, _step, _reason} = error ->
-        error
-    end
-  end
-
-  @spec enqueue_frontpad_job(Delivest.Oms.Order.t(), Branch.t()) ::
-          {:ok, Oban.Job.t()} | {:error, term()}
-  defp enqueue_frontpad_job(order, branch) do
-    %{
-      "order_id" => order.id,
-      "branch_id" => branch.id
-    }
-    |> FrontpadWorker.new()
-    |> Oban.insert()
+    # The job is inserted in the same transaction as the order: either both exist or neither.
+    Orders.create_order(
+      enriched_attrs,
+      Keyword.put(opts, :after_insert, fn multi ->
+        Oban.insert(multi, :frontpad_job, fn %{order: order} ->
+          FrontpadWorker.new(%{"order_id" => order.id, "branch_id" => branch.id})
+        end)
+      end)
+    )
   end
 end

@@ -4,14 +4,41 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias Delivest.Identity
   alias Delivest.Net.Catalogs
   alias Delivest.Oms.{Order, Orders}
   alias DelivestWeb.Staff.OrderLive.Components.{CatalogComponent, DetailsComponent}
 
-  on_mount {DelivestWeb.Hooks.Permission, "order.create"}
+  on_mount {DelivestWeb.Hooks.Permission, "orders.create"}
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(%{"id" => id} = params, session, socket) do
+    case authorize_edit(socket, id) do
+      :ok ->
+        do_mount(params, session, socket)
+
+      {:error, message} ->
+        {:ok, socket |> put_flash(:error, message) |> redirect(to: ~p"/staff/orders")}
+    end
+  end
+
+  def mount(params, session, socket), do: do_mount(params, session, socket)
+
+  # Editing needs orders.update and is limited to orders of the active branch.
+  defp authorize_edit(socket, id) do
+    branch_id = socket.assigns.current_branch.id
+
+    with true <- Identity.can?(socket.assigns.current_staff, "orders.update"),
+         {:ok, uuid} <- Ecto.UUID.cast(id),
+         %Order{branch_id: ^branch_id} <- Orders.get_order(uuid) do
+      :ok
+    else
+      false -> {:error, gettext("Permission denied")}
+      _ -> {:error, gettext("Order not found")}
+    end
+  end
+
+  defp do_mount(params, _session, socket) do
     staff = socket.assigns.current_staff
     branch_id = socket.assigns.current_branch.id
 

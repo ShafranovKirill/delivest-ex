@@ -47,8 +47,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
       payload = %__MODULE__{
         secret: secret,
         affiliate: extract_branch_id(branch),
-        phone: truncate(order.customer_phone, 50),
-        name: truncate(order.customer_name, 50),
+        phone: truncate(customer_phone(order), 50),
+        name: truncate(customer_name(order), 50),
         street: truncate(order.address && order.address.street, 50),
         home: truncate(order.address && order.address.house, 50),
         pod: truncate_int_string(order.address && order.address.entrance, 2),
@@ -101,6 +101,16 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
 
     base_params ++ products_params
   end
+
+  # customer_phone/customer_name are virtual fields: they are empty once the order
+  # is reloaded from the database, so fall back to the linked client.
+  defp customer_phone(%{customer_phone: phone}) when is_binary(phone) and phone != "", do: phone
+  defp customer_phone(%{client: %{phone: phone}}), do: phone
+  defp customer_phone(_), do: nil
+
+  defp customer_name(%{customer_name: name}) when is_binary(name) and name != "", do: name
+  defp customer_name(%{client: %{name: name}}), do: name
+  defp customer_name(_), do: nil
 
   defp extract_secret(%{info: %{frontpad_api_key: secret}}) when not is_nil(secret),
     do: {:ok, secret}

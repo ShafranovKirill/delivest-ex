@@ -5,7 +5,8 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   alias Delivest.Identity
   alias DelivestWeb.Schemas.BranchSchemas.{BranchListResponse, BranchResponse}
   alias OpenApiSpex.Schema
-  alias DelivestWeb.Helpers.CookieHelper
+  alias DelivestWeb.Helpers.{ApiError, CookieHelper}
+  alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
 
   @active_branch_cookie_opts [
     http_only: false,
@@ -18,14 +19,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
     tags: ["Branches"],
     responses: [
       ok: {"Список филиалов", "application/json", BranchListResponse},
-      internal_server_error:
-        {"Ошибка получения списка", "application/json",
-         %Schema{
-           type: :object,
-           properties: %{
-             error: %Schema{type: :string, example: "Failed to fetch branches"}
-           }
-         }}
+      internal_server_error: {"Ошибка получения списка", "application/json", ErrorResponse}
     ]
   )
 
@@ -35,9 +29,12 @@ defmodule DelivestWeb.Client.Branch.BranchController do
       render(conn, :index, branches: branches)
     rescue
       _ ->
-        conn
-        |> put_status(:internal_server_error)
-        |> json(%{error: "Failed to fetch branches"})
+        ApiError.send_error(
+          conn,
+          :internal_server_error,
+          :internal_error,
+          "Failed to fetch branches"
+        )
     end
   end
 
@@ -56,21 +53,13 @@ defmodule DelivestWeb.Client.Branch.BranchController do
     ],
     responses: [
       ok: {"Детальная информация о филиале", "application/json", BranchResponse},
-      not_found:
-        {"Филиал не найден", "application/json",
-         %Schema{
-           type: :object,
-           properties: %{
-             error: %Schema{type: :string, example: "Branch not found"}
-           },
-           required: [:error]
-         }}
+      not_found: {"Филиал не найден", "application/json", ErrorResponse}
     ]
   )
 
   def select(conn, %{"id" => id}) do
     case Identity.get_branch(id, preload: [:info]) do
-      {:ok, branch} ->
+      {:ok, %{is_active: true} = branch} ->
         conn
         |> CookieHelper.put_cookie(
           "active_branch_id",
@@ -79,10 +68,8 @@ defmodule DelivestWeb.Client.Branch.BranchController do
         )
         |> render(:show, branch: branch)
 
-      {:error, _reason} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Branch not found"})
+      _inactive_or_missing ->
+        ApiError.send_error(conn, :not_found, :branch_not_found, "Branch not found")
     end
   end
 
@@ -117,21 +104,19 @@ defmodule DelivestWeb.Client.Branch.BranchController do
     ],
     responses: [
       ok: {"Детальная информация о филиале", "application/json", BranchResponse},
-      not_found: {"Филиал не найден", "application/json", %Schema{type: :object}}
+      not_found: {"Филиал не найден", "application/json", ErrorResponse}
     ]
   )
 
   def select_by_slug(conn, %{"slug" => slug}) do
     case Identity.get_branch_by_slug(slug, preload: [:info]) do
-      {:ok, branch} ->
+      {:ok, %{is_active: true} = branch} ->
         conn
         |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
         |> render(:show, branch: branch)
 
-      {:error, _reason} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Branch not found"})
+      _inactive_or_missing ->
+        ApiError.send_error(conn, :not_found, :branch_not_found, "Branch not found")
     end
   end
 

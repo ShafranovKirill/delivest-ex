@@ -3,7 +3,7 @@ defmodule Delivest.Oms.Orders do
 
   alias Delivest.Identity
   alias Delivest.Net
-  alias Delivest.Oms.{CartView, Carts, Order}
+  alias Delivest.Oms.{Cart, CartView, Carts, Order}
   alias Delivest.Oms.Order.OrderNumber
   alias Delivest.Oms.Orders.Filter
   alias Delivest.Repo
@@ -29,12 +29,23 @@ defmodule Delivest.Oms.Orders do
     |> Repo.preload([:client, :items])
   end
 
-  def create_order(attrs) do
+  @doc """
+  Creates an order from the cart referenced by `attrs["cart_id"]`.
+
+  Options:
+    * `:after_insert` - `(Ecto.Multi.t() -> Ecto.Multi.t())` appended after the order
+      insert, so extra steps (e.g. enqueueing a CRM job) commit atomically with the order.
+    * `:update_client` (default `true`) - see `Delivest.Identity.Clients.resolve_client/2`.
+  """
+  def create_order(attrs, opts \\ []) do
     attrs = Filter.normalize_params(attrs)
+    after_insert = Keyword.get(opts, :after_insert, & &1)
 
     Multi.new()
-    |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_create(attrs) end)
-    |> Multi.run(:cart, fn _, _ -> fetch_cart(attrs) end)
+    |> Multi.run(:client_id, fn _, _ ->
+      resolve_client_id_on_create(attrs, update_existing: Keyword.get(opts, :update_client, true))
+    end)
+    |> Multi.run(:cart, fn _, _ -> fetch_cart_for_new_order(attrs) end)
     |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
     |> Multi.run(:order_number, fn _, _ -> OrderNumber.generate() end)
     |> Multi.insert(:order, fn %{
@@ -45,6 +56,7 @@ defmodule Delivest.Oms.Orders do
                                } ->
       build_order_from_cart(%Order{}, num, client_id, cart, products, attrs)
     end)
+    |> after_insert.()
     |> Multi.run(:detached_cart, fn _, %{cart: cart} ->
       Carts.detach_cart(cart)
     end)
@@ -77,6 +89,23 @@ defmodule Delivest.Oms.Orders do
 
       {:error, step, reason, _} ->
         {:error, step, reason}
+    end
+  end
+
+  @doc "Changes only the status and/or payment method, keeping items and totals intact."
+  def update_order_details(%Order{} = order, attrs) do
+    attrs = attrs |> Filter.normalize_params() |> Map.take(["status", "payment_method"])
+
+    order
+    |> Order.details_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, updated_order} ->
+        updated_order = Repo.preload(updated_order, [:items, :client], force: true)
+        notify_subscribers({:ok, updated_order}, [:order, :updated])
+
+      error ->
+        error
     end
   end
 
@@ -115,13 +144,13 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
-  defp resolve_client_id_on_create(attrs) do
+  defp resolve_client_id_on_create(attrs, client_opts) do
     phone = Map.get(attrs, "customer_phone")
 
     if is_nil(phone) || String.trim(phone) == "" do
       {:ok, nil}
     else
-      Identity.resolve_client(attrs)
+      Identity.resolve_client(attrs, client_opts)
     end
   end
 
@@ -152,6 +181,48 @@ defmodule Delivest.Oms.Orders do
         end
     end
   end
+
+  # Locks the cart row for the rest of the transaction, so two concurrent requests
+  # (double click, client retry) cannot both turn the same cart into an order.
+  defp fetch_cart_for_new_order(attrs) do
+    with {:ok, cart_id} <- cast_cart_id(Map.get(attrs, "cart_id")),
+         :ok <- lock_cart(cart_id),
+         :ok <- ensure_cart_not_ordered(cart_id),
+         {:ok, cart} <- fetch_cart(attrs),
+         :ok <- ensure_cart_branch(cart, Map.get(attrs, "branch_id")) do
+      {:ok, cart}
+    end
+  end
+
+  defp cast_cart_id(cart_id) do
+    case Ecto.UUID.cast(cart_id) do
+      {:ok, uuid} -> {:ok, uuid}
+      :error -> {:error, :cart_not_found}
+    end
+  end
+
+  defp lock_cart(cart_id) do
+    query = from(c in Cart, where: c.id == ^cart_id, lock: "FOR UPDATE", select: c.id)
+
+    case Repo.one(query) do
+      nil -> {:error, :cart_not_found}
+      _id -> :ok
+    end
+  end
+
+  defp ensure_cart_not_ordered(cart_id) do
+    if Repo.exists?(from(o in Order, where: o.cart_id == ^cart_id)) do
+      {:error, :cart_already_ordered}
+    else
+      :ok
+    end
+  end
+
+  defp ensure_cart_branch(_cart, nil), do: :ok
+
+  defp ensure_cart_branch(%CartView{branch_id: branch_id}, branch_id), do: :ok
+
+  defp ensure_cart_branch(_cart, _branch_id), do: {:error, :cart_branch_mismatch}
 
   defp fetch_products_for_cart(%{items: items}) do
     product_ids =

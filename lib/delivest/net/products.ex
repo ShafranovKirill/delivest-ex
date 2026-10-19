@@ -125,11 +125,13 @@ defmodule Delivest.Net.Products do
     |> List.first()
   end
 
+  # Cart views embed product names and prices, so they are dropped together with the menu.
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
     Cachex.del(:menu_cache, branch_id)
+    Cachex.clear(:cart_cache)
   end
 
-  defp invalidate_menu_cache(_), do: :ok
+  defp invalidate_menu_cache(_), do: Cachex.clear(:cart_cache)
 
   defp maybe_preload_query(query, opts) do
     case Keyword.get(opts, :preload) do

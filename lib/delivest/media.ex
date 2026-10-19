@@ -80,11 +80,11 @@ defmodule Delivest.Media do
   defp generate_url_by_flag(bucket, key, false = _is_private),
     do: generate_public_url(bucket, key)
 
-  defp private_bucket do
+  def private_bucket do
     Application.get_env(:delivest, Delivest.Media)[:private_bucket] || "delivest-private"
   end
 
-  defp public_bucket do
+  def public_bucket do
     Application.get_env(:delivest, Delivest.Media)[:public_bucket] || "delivest"
   end
 

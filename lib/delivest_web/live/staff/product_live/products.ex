@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.ImportComponent
 
-  on_mount {DelivestWeb.Hooks.Permission, "product.read"}
+  on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
   @impl true
   def mount(_params, _session, socket) do

@@ -93,6 +93,12 @@ defmodule Delivest.Oms.Order do
     |> validate_address_if_delivery()
   end
 
+  def details_changeset(order, attrs) do
+    order
+    |> cast(attrs, [:status, :payment_method])
+    |> validate_required([:status, :payment_method])
+  end
+
   defp validate_address_if_delivery(changeset) do
     fulfillment_type = get_field(changeset, :fulfillment_type)
 

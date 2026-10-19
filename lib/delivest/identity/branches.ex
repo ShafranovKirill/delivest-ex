@@ -104,7 +104,7 @@ defmodule Delivest.Identity.Branches do
   end
 
   def create_branch(staff, branch_attrs, info_attrs) do
-    if Identity.can?(staff, "branch.create") do
+    if Identity.can?(staff, "branches.create") do
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, branch_attrs))
       |> Ecto.Multi.insert(:branch_info, fn %{branch: branch} ->
@@ -130,7 +130,7 @@ defmodule Delivest.Identity.Branches do
           | {:error, atom(), Ecto.Changeset.t() | term(), map()}
           | {:error, :forbidden}
   def soft_delete_branch(staff, %Branch{} = branch) do
-    if Identity.can?(staff, "branch.delete") do
+    if Identity.can?(staff, "branches.delete") do
       Ecto.Multi.new()
       |> Ecto.Multi.delete_all(
         :delete_staff_branches,
@@ -167,8 +167,11 @@ defmodule Delivest.Identity.Branches do
   end
 
   defp needs_preload?(branch, preloads) do
-    Enum.any?(preloads, fn assoc ->
-      match?(%Ecto.Association.NotLoaded{}, Map.get(branch, assoc))
+    preloads
+    |> List.wrap()
+    |> Enum.any?(fn
+      {assoc, _nested} -> match?(%Ecto.Association.NotLoaded{}, Map.get(branch, assoc))
+      assoc -> match?(%Ecto.Association.NotLoaded{}, Map.get(branch, assoc))
     end)
   end
 
@@ -180,7 +183,7 @@ defmodule Delivest.Identity.Branches do
   end
 
   defp fetch_from_db_and_cache(id, opts) do
-    case Repo.get(Branch, id) do
+    case fetch_not_deleted(id) do
       nil ->
         {:error, :not_found}
 
@@ -188,6 +191,13 @@ defmodule Delivest.Identity.Branches do
         branch = maybe_preload_branch(branch, opts)
         cache_branch(id, branch)
         {:ok, branch}
+    end
+  end
+
+  defp fetch_not_deleted(id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, uuid} -> Repo.one(from(b in Branch, where: b.id == ^uuid and is_nil(b.deleted_at)))
+      :error -> nil
     end
   end
 
