@@ -1,7 +1,4 @@
 defmodule DelivestWeb.Helpers.ApiError do
-  @moduledoc """
-  Renders client API errors in the `DelivestWeb.Schemas.ErrorSchemas.ErrorResponse` shape.
-  """
   import Plug.Conn
   import Phoenix.Controller, only: [json: 2]
 

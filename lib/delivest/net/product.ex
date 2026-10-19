@@ -19,6 +19,7 @@ defmodule Delivest.Net.Product do
 
   schema "products" do
     field :name, :string
+    field :slug, :string
     field :old_price, :string
     field :price, :integer
     field :description, :string
@@ -47,9 +48,13 @@ defmodule Delivest.Net.Product do
       :is_active,
       :external_id,
       :category_id,
-      :deleted_at
+      :deleted_at,
+      :slug
     ])
     |> validate_required([:name, :price])
     |> validate_number(:price, greater_than_or_equal_to: 0)
+    |> update_change(:slug, &Delivest.Slug.slugify/1)
+    |> validate_length(:slug, max: 80)
+    |> unique_constraint(:slug)
   end
 end

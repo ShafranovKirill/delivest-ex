@@ -26,7 +26,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadService do
   def create_order(attrs, %Branch{} = branch, opts \\ []) do
     enriched_attrs = Map.put(attrs, "status", "crm")
 
-    # The job is inserted in the same transaction as the order: either both exist or neither.
     Orders.create_order(
       enriched_attrs,
       Keyword.put(opts, :after_insert, fn multi ->

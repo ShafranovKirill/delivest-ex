@@ -1,0 +1,49 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "system"
+msgstr "System"
+
+msgid "staff"
+msgstr "Staff"
+
+msgid "roles"
+msgstr "Roles"
+
+msgid "branches"
+msgstr "Branches"
+
+msgid "categories"
+msgstr "Categories"
+
+msgid "products"
+msgstr "Products"
+
+msgid "stocks"
+msgstr "Stocks"
+
+msgid "clients"
+msgstr "Clients"
+
+msgid "orders"
+msgstr "Orders"
+
+msgid "statistics"
+msgstr "Statistics"
+
+msgid "create"
+msgstr "Create"
+
+msgid "read"
+msgstr "View"
+
+msgid "update"
+msgstr "Update"
+
+msgid "delete"
+msgstr "Delete"
+
+msgid "admin"
+msgstr "Full access (administrator)"

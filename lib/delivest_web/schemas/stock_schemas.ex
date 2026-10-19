@@ -29,6 +29,12 @@ defmodule DelivestWeb.Schemas.StockSchemas do
           format: :uri,
           example: "https://storage.example.com/images/stock.jpg",
           description: "Ссылка на медиафайл акции"
+        },
+        product_slug: %Schema{
+          type: :string,
+          nullable: true,
+          example: "hinkali",
+          description: "Slug товара, к которому ведёт акция (null — акция без товара)"
         }
       }
     })

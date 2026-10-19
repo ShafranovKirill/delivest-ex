@@ -43,7 +43,7 @@ defmodule Delivest.Net.Products do
   def create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
       Multi.new()
-      |> Multi.insert(:product, Product.changeset(%Product{}, attrs))
+      |> Multi.insert(:product, %Product{} |> Product.changeset(attrs) |> put_slug())
       |> Multi.run(:relation_branch, fn repo, %{product: product} ->
         case Relations.create_relation(
                repo,
@@ -76,6 +76,7 @@ defmodule Delivest.Net.Products do
     if Identity.can?(staff, "products.update") do
       updateble_product
       |> Product.changeset(attrs)
+      |> put_slug()
       |> Repo.update()
       |> case do
         {:ok, updated_product} ->
@@ -90,6 +91,48 @@ defmodule Delivest.Net.Products do
     else
       {:error, :forbidden}
     end
+  end
+
+  def get_branch_product_by_slug(branch_id, slug) when is_binary(slug) do
+    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+
+    Product
+    |> where([p], p.slug == ^slug and p.id in ^product_ids)
+    |> where([p], is_nil(p.deleted_at) and p.is_active == true)
+    |> Repo.one()
+  end
+
+  def list_product_options_for_branch(branch_id) do
+    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+
+    Product
+    |> where([p], p.id in ^product_ids and is_nil(p.deleted_at))
+    |> order_by([p], asc: p.name)
+    |> select([p], {p.name, p.id})
+    |> Repo.all()
+  end
+
+  defp put_slug(changeset) do
+    case Ecto.Changeset.get_field(changeset, :slug) do
+      slug when is_binary(slug) and slug != "" ->
+        changeset
+
+      _ ->
+        base = Delivest.Slug.slugify(Ecto.Changeset.get_field(changeset, :name)) || "product"
+        own_id = changeset.data.id
+
+        Ecto.Changeset.put_change(
+          changeset,
+          :slug,
+          Delivest.Slug.unique(base, &slug_taken?(&1, own_id))
+        )
+    end
+  end
+
+  defp slug_taken?(slug, own_id) do
+    query = from(p in Product, where: p.slug == ^slug)
+    query = if own_id, do: where(query, [p], p.id != ^own_id), else: query
+    Repo.exists?(query)
   end
 
   def soft_delete_product(staff, %Product{} = product) do
@@ -125,13 +168,16 @@ defmodule Delivest.Net.Products do
     |> List.first()
   end
 
-  # Cart views embed product names and prices, so they are dropped together with the menu.
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
     Cachex.del(:menu_cache, branch_id)
+    Cachex.del(:stock_cache, branch_id)
     Cachex.clear(:cart_cache)
   end
 
-  defp invalidate_menu_cache(_), do: Cachex.clear(:cart_cache)
+  defp invalidate_menu_cache(_) do
+    Cachex.clear(:stock_cache)
+    Cachex.clear(:cart_cache)
+  end
 
   defp maybe_preload_query(query, opts) do
     case Keyword.get(opts, :preload) do

@@ -8,6 +8,7 @@ defmodule Delivest.Identity.Definitions do
   stocks.create stocks.read stocks.update stocks.delete
   clients.create clients.read clients.update clients.delete
   orders.create orders.read orders.update orders.delete
+  statistics.read
   admin
   """
 

@@ -33,9 +33,14 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
 
         current_media = if stock && stock.media_id, do: Media.get_file(stock.media_id), else: nil
 
+        product_options = [
+          {gettext("No product"), ""} | Net.list_product_options_for_branch(assigns.branch_id)
+        ]
+
         socket =
           socket
           |> assign(:form, to_form(changeset))
+          |> assign(:product_options, product_options)
           |> assign(:current_media, current_media)
           |> assign(:show_upload_modal, false)
 
@@ -155,7 +160,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
     data = apply_changes(changeset)
 
     data
-    |> Map.take([:text, :media_id, :is_active])
+    |> Map.take([:text, :media_id, :is_active, :product_id])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
   end
 
@@ -219,6 +224,18 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
             label={gettext("Description")}
             placeholder={gettext("Enter promotion details...")}
           />
+
+          <div>
+            <.input
+              field={@form[:product_id]}
+              type="select"
+              label={gettext("Linked product")}
+              options={@product_options}
+            />
+            <p class="text-xs text-base-content/60 mt-1">
+              {gettext("On the website the promotion opens this product card.")}
+            </p>
+          </div>
 
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>

@@ -23,20 +23,27 @@ defmodule Delivest.Oms.Orders do
     |> Repo.all()
   end
 
+  def list_client_orders(client_id, branch_scope, limit \\ 50) do
+    Order
+    |> where([o], o.client_id == ^client_id and is_nil(o.deleted_at))
+    |> then(fn query ->
+      case branch_scope do
+        :all -> query
+        ids -> where(query, [o], o.branch_id in ^ids)
+      end
+    end)
+    |> order_by([o], desc: o.inserted_at)
+    |> limit(^limit)
+    |> preload(:items)
+    |> Repo.all()
+  end
+
   def get_order(id) do
     Order
     |> Repo.get(id)
     |> Repo.preload([:client, :items])
   end
 
-  @doc """
-  Creates an order from the cart referenced by `attrs["cart_id"]`.
-
-  Options:
-    * `:after_insert` - `(Ecto.Multi.t() -> Ecto.Multi.t())` appended after the order
-      insert, so extra steps (e.g. enqueueing a CRM job) commit atomically with the order.
-    * `:update_client` (default `true`) - see `Delivest.Identity.Clients.resolve_client/2`.
-  """
   def create_order(attrs, opts \\ []) do
     attrs = Filter.normalize_params(attrs)
     after_insert = Keyword.get(opts, :after_insert, & &1)
@@ -92,7 +99,6 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
-  @doc "Changes only the status and/or payment method, keeping items and totals intact."
   def update_order_details(%Order{} = order, attrs) do
     attrs = attrs |> Filter.normalize_params() |> Map.take(["status", "payment_method"])
 
@@ -182,8 +188,6 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
-  # Locks the cart row for the rest of the transaction, so two concurrent requests
-  # (double click, client retry) cannot both turn the same cart into an order.
   defp fetch_cart_for_new_order(attrs) do
     with {:ok, cart_id} <- cast_cart_id(Map.get(attrs, "cart_id")),
          :ok <- lock_cart(cart_id),
@@ -230,7 +234,7 @@ defmodule Delivest.Oms.Orders do
         item[:product_id] || Map.get(item, "product_id")
       end)
 
-    {:ok, Net.list_products_by_ids(product_ids, [])}
+    {:ok, Net.list_products_by_ids(product_ids, preload: [:category])}
   end
 
   defp build_order_from_cart(order_struct, number, client_id, cart, products_map, attrs) do
@@ -244,8 +248,16 @@ defmodule Delivest.Oms.Orders do
             {acc_items, acc_total}
 
           p ->
-            {[%{product_id: pid, title: p.name, price: p.price, quantity: qty} | acc_items],
-             acc_total + p.price * qty}
+            item = %{
+              product_id: pid,
+              title: p.name,
+              price: p.price,
+              quantity: qty,
+              category_id: p.category_id,
+              category_name: category_name(p)
+            }
+
+            {[item | acc_items], acc_total + p.price * qty}
         end
       end)
 
@@ -262,6 +274,9 @@ defmodule Delivest.Oms.Orders do
     |> Order.changeset(order_params)
     |> Ecto.Changeset.put_assoc(:items, items_attrs)
   end
+
+  defp category_name(%{category: %{name: name}}), do: name
+  defp category_name(_product), do: nil
 
   defp notify_subscribers({:ok, order}, event) do
     Phoenix.PubSub.broadcast(Delivest.PubSub, @topic, {__MODULE__, event, order})

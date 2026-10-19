@@ -20,8 +20,6 @@ services:
     image: chrislusf/seaweedfs
     container_name: delivest-s3
     restart: always
-    # S3 requires the S3_ACCESS_KEY/S3_SECRET_KEY credentials for any write or listing.
-    # Anonymous visitors can only read objects from the public bucket (S3_BUCKET).
     entrypoint:
       - sh
       - -c
@@ -42,8 +40,6 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET=${S3_BUCKET:-delivest}
       - S3_PORT=${S3_PORT:-8333}
-    # Bound to localhost: expose it publicly through the reverse proxy (S3_PUBLIC_HOST).
-    # Set S3_BIND_ADDRESS=0.0.0.0 only if the S3 port must be reachable directly.
     ports:
       - "${S3_BIND_ADDRESS:-127.0.0.1}:${S3_PORT_EXTERNAL:-8333}:${S3_PORT:-8333}"
     volumes:

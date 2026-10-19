@@ -290,11 +290,18 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
       <.table id="clients" rows={@streams.clients} meta={@meta} path_fn={path_fn}>
         <:col :let={{_id, client}} label={gettext("Name")} sort="name">
-          <span class="font-bold">{client.name || "—"}</span>
+          <.link
+            navigate={~p"/staff/clients/#{client.id}"}
+            class="font-bold hover:text-primary hover:underline"
+          >
+            {client.name || "—"}
+          </.link>
         </:col>
 
         <:col :let={{_id, client}} label={gettext("Phone")} sort="phone">
-          <span class="font-mono">{client.phone}</span>
+          <.link navigate={~p"/staff/clients/#{client.id}"} class="font-mono hover:text-primary">
+            {client.phone}
+          </.link>
         </:col>
 
         <:col :let={{_id, client}} label={gettext("Status")} sort="status">
@@ -320,6 +327,13 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
         <:action :let={{_id, client}}>
           <div class="flex justify-end gap-2">
+            <.link
+              navigate={~p"/staff/clients/#{client.id}"}
+              class="btn btn-ghost btn-xs btn-square"
+              title={gettext("Client card and orders")}
+            >
+              <.icon name="hero-eye" class="size-4" />
+            </.link>
             <.button
               :if={Identity.can?(@current_staff, "clients.update")}
               patch={~p"/staff/clients/#{client.id}/edit?#{build_query_params(assigns, %{})}"}

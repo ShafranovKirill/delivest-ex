@@ -7,7 +7,6 @@ end
 # Admin credentials: read directly from OS environment at runtime
 config :delivest,
   default_locale: System.get_env("DEFAULT_LOCALE") || "en",
-  # Local time zone of the business: used for "today"/"yesterday" order filters.
   timezone: System.get_env("APP_TIMEZONE") || "Europe/Moscow"
 
 # config/runtime.exs is executed for all environments, including

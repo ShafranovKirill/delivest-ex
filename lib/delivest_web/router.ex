@@ -95,7 +95,9 @@ defmodule DelivestWeb.Router do
       layout: {DelivestWeb.Layouts, :staff_app},
       on_mount: [
         {DelivestWeb.Hooks.StaffAuth, :default},
-        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+        {DelivestWeb.Hooks.StaffActiveBranch, :optional},
+        {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/branches/select", BranchLive.BranchSelect, :index
 
@@ -120,6 +122,7 @@ defmodule DelivestWeb.Router do
       scope "/clients", ClientLive do
         live "/", Clients, :index
         live "/new", Clients, :new
+        live "/:id", Show, :show
         live "/:id/edit", Clients, :edit
       end
     end
@@ -133,6 +136,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/dashboard", DashboardLive.Index, :index
+      live "/statistics", StatisticsLive.Index, :index
 
       scope "/categories", CategoryLive do
         live "/", Categories, :index

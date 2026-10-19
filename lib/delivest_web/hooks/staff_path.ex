@@ -19,14 +19,26 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {:cont, socket}
   end
 
-  defp determine_page_by_path(path) do
-    cond do
-      path && String.starts_with?(path, "/staff/dashboard") -> :dashboard
-      path && String.starts_with?(path, "/staff/branches/select") -> :branches_select
-      path && String.starts_with?(path, "/staff/branches") -> :branches
-      path && String.starts_with?(path, "/staff/roles") -> :roles
-      path && String.starts_with?(path, "/staff/employee") -> :employee
-      true -> :unknown
-    end
+  @pages [
+    {"/staff/dashboard", :dashboard},
+    {"/staff/statistics", :statistics},
+    {"/staff/orders/new", :orders_new},
+    {"/staff/orders", :orders},
+    {"/staff/categories", :categories},
+    {"/staff/products", :products},
+    {"/staff/stocks", :stocks},
+    {"/staff/branches/select", :branches_select},
+    {"/staff/branches", :branches},
+    {"/staff/clients", :clients},
+    {"/staff/employee", :employee},
+    {"/staff/roles", :roles}
+  ]
+
+  defp determine_page_by_path(path) when is_binary(path) do
+    Enum.find_value(@pages, :unknown, fn {prefix, page} ->
+      if String.starts_with?(path, prefix), do: page
+    end)
   end
+
+  defp determine_page_by_path(_path), do: :unknown
 end

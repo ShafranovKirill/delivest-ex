@@ -193,7 +193,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :is_active,
       :external_id,
       :category_id,
-      :media_id
+      :media_id,
+      :slug
     ])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
   end
@@ -253,6 +254,20 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           </div>
 
           <.input field={@form[:name]} type="text" label={gettext("Name")} required />
+
+          <div>
+            <.input
+              field={@form[:slug]}
+              type="text"
+              label={gettext("URL slug")}
+              placeholder={Delivest.Slug.slugify(@form[:name].value) || "hinkali"}
+            />
+            <p class="text-xs text-base-content/60 mt-1">
+              {gettext(
+                "Used in the product link on the website. Leave empty to generate it from the name."
+              )}
+            </p>
+          </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input field={@form[:price]} type="number" label={gettext("Price")} required />

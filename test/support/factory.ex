@@ -61,7 +61,6 @@ defmodule Delivest.Factory do
     }
   end
 
-  @doc "Inserts a product and attaches it to the branch (carts only accept branch products)."
   def insert_branch_product(branch_id, attrs \\ []) do
     product = insert(:product, attrs)
 

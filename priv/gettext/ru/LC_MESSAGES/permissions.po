@@ -1,0 +1,49 @@
+msgid ""
+msgstr ""
+"Language: ru\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "system"
+msgstr "Система"
+
+msgid "staff"
+msgstr "Сотрудники"
+
+msgid "roles"
+msgstr "Роли"
+
+msgid "branches"
+msgstr "Филиалы"
+
+msgid "categories"
+msgstr "Категории"
+
+msgid "products"
+msgstr "Товары"
+
+msgid "stocks"
+msgstr "Акции"
+
+msgid "clients"
+msgstr "Клиенты"
+
+msgid "orders"
+msgstr "Заказы"
+
+msgid "statistics"
+msgstr "Статистика"
+
+msgid "create"
+msgstr "Создание"
+
+msgid "read"
+msgstr "Просмотр"
+
+msgid "update"
+msgstr "Изменение"
+
+msgid "delete"
+msgstr "Удаление"
+
+msgid "admin"
+msgstr "Полный доступ (администратор)"

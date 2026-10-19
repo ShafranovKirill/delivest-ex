@@ -22,8 +22,6 @@ defmodule DelivestWeb.Client.Order.OrderController do
     ]
   )
 
-  # Only these fields may come from an anonymous client. Everything else
-  # (status, staff_id, client_id, deleted_at, crm_*) is set by the server.
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
                     payment_method cook_by comment address)
 

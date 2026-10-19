@@ -13,7 +13,7 @@ defmodule Delivest.Net.Stocks do
         Stock
         |> where([s], s.id in ^stock_ids)
         |> order_by([s], asc: s.order)
-        |> preload(:media)
+        |> preload([:media, :product])
         |> Repo.all()
       else
         []
@@ -135,7 +135,7 @@ defmodule Delivest.Net.Stocks do
       Stock
       |> where([s], s.id in ^stock_ids and s.is_active == true)
       |> order_by([s], asc: s.order)
-      |> preload(:media)
+      |> preload([:media, :product])
       |> Repo.all()
     else
       []

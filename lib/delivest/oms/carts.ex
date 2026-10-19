@@ -55,7 +55,6 @@ defmodule Delivest.Oms.Carts do
 
   @max_item_quantity 99
 
-  @doc "True when the cart exists and belongs to the given client session."
   def owned_by_session?(_cart_id, nil), do: false
 
   def owned_by_session?(cart_id, session_id) do
@@ -75,7 +74,6 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
-  # Only active products of the cart's branch can be added.
   defp ensure_product_available(cart_id, product_id) do
     with {:ok, product_uuid} <- Ecto.UUID.cast(product_id),
          %Cart{} = cart <- Repo.get(Cart, cart_id),
@@ -316,8 +314,6 @@ defmodule Delivest.Oms.Carts do
 
     cond do
       not is_nil(session_id) ->
-        # No unique index on (session_id, branch_id): concurrent first requests may
-        # create two carts, so always pick the most recently used one.
         query =
           from c in Cart,
             where: c.session_id == ^session_id,

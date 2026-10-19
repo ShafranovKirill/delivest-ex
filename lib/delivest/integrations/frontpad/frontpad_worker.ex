@@ -56,7 +56,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
     end
   end
 
-  # Retrying cannot fix these: the order/branch data itself is incomplete.
   defp permanent_error?(:order_not_found), do: true
   defp permanent_error?(:branch_not_found), do: true
   defp permanent_error?(:missing_frontpad_api_key), do: true

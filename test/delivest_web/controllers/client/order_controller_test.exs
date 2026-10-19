@@ -18,14 +18,12 @@ defmodule DelivestWeb.Client.OrderControllerTest do
 
     product = insert_branch_product(branch.id, price: 300)
 
-    # A unique client address per test keeps rate-limit counters independent.
     client_ip = "client-#{System.unique_integer([:positive])}"
     conn = put_req_header(conn, "x-forwarded-for", "spoofed, #{client_ip}")
 
     %{conn: conn, branch: branch, product: product}
   end
 
-  # Selecting a branch issues the session cookie; recycled conns keep it.
   defp start_session(conn, branch) do
     conn = post(conn, ~p"/client/branches/#{branch.id}/select")
     assert json_response(conn, 200)

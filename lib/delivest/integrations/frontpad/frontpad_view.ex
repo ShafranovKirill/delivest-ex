@@ -102,8 +102,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     base_params ++ products_params
   end
 
-  # customer_phone/customer_name are virtual fields: they are empty once the order
-  # is reloaded from the database, so fall back to the linked client.
   defp customer_phone(%{customer_phone: phone}) when is_binary(phone) and phone != "", do: phone
   defp customer_phone(%{client: %{phone: phone}}), do: phone
   defp customer_phone(_), do: nil

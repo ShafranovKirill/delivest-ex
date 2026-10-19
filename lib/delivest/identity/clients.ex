@@ -109,14 +109,6 @@ defmodule Delivest.Identity.Clients do
     |> Repo.all()
   end
 
-  @doc """
-  Resolves the client for an order.
-
-  Options:
-    * `:update_existing` (default `true`) - overwrite the name of an existing client
-      found by phone. Public (anonymous) orders pass `false`, so a stranger cannot
-      rename someone else's client record by typing their phone number.
-  """
   def resolve_client(attrs, opts \\ []) do
     client_id = attrs["client_id"]
     phone = attrs["customer_phone"]

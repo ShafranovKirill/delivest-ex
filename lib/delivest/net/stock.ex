@@ -12,13 +12,15 @@ defmodule Delivest.Net.Stock do
     field :order, :float
 
     belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
+    belongs_to :product, Delivest.Net.Product
     timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(stock, attrs) do
     stock
-    |> cast(attrs, [:media_id, :text, :is_active, :order])
+    |> cast(attrs, [:media_id, :text, :is_active, :order, :product_id], empty_values: [nil, ""])
     |> validate_required([:media_id])
+    |> foreign_key_constraint(:product_id)
   end
 end

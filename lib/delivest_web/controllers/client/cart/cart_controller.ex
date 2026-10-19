@@ -176,8 +176,6 @@ defmodule DelivestWeb.Client.Cart.CartController do
     end
   end
 
-  # A cart can only be changed from the session that owns it. Unknown and foreign
-  # carts get the same 404, so cart ids cannot be probed.
   defp authorize_cart(conn, cart_id) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
 

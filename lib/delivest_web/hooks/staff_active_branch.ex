@@ -3,6 +3,19 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
   import Phoenix.Component
   alias Delivest.Identity
 
+  def on_mount(:optional, _params, session, socket) do
+    staff = socket.assigns[:current_staff]
+    branch_id = session["active_branch_id"]
+
+    with true <- not is_nil(branch_id),
+         true <- Identity.has_branch_access?(staff, branch_id),
+         {:ok, branch} <- Identity.get_branch(branch_id) do
+      {:cont, socket |> assign(:active_branch_id, branch_id) |> assign(:current_branch, branch)}
+    else
+      _ -> {:cont, socket}
+    end
+  end
+
   def on_mount(:default, _params, session, socket) do
     current_staff = socket.assigns[:current_staff]
     active_branch_id = session["active_branch_id"]

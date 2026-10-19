@@ -254,6 +254,13 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
                   <% else %>
                     <span class="badge badge-error badge-xs text-error-content">{gettext("Inactive")}</span>
                   <% end %>
+                  <span
+                    :if={match?(%Delivest.Net.Product{}, stock.product)}
+                    class="badge badge-ghost badge-xs gap-1"
+                  >
+                    <.icon name="hero-link" class="size-3" />
+                    {stock.product.name}
+                  </span>
                   <span class="text-xs opacity-50">{Calendar.strftime(stock.inserted_at, "%d.%m.%Y")}</span>
                 </div>
               </div>

@@ -16,6 +16,8 @@ defmodule Delivest.Oms.OrderItem do
     field :title, :string
     field :price, :integer
     field :quantity, :integer, default: 1
+    field :category_id, :binary_id
+    field :category_name, :string
 
     belongs_to :order, Order
 
@@ -24,7 +26,15 @@ defmodule Delivest.Oms.OrderItem do
 
   def changeset(order_item, attrs) do
     order_item
-    |> cast(attrs, [:order_id, :product_id, :title, :price, :quantity])
+    |> cast(attrs, [
+      :order_id,
+      :product_id,
+      :title,
+      :price,
+      :quantity,
+      :category_id,
+      :category_name
+    ])
     |> validate_required([:product_id, :title, :price, :quantity])
     |> validate_number(:quantity, greater_than: 0)
     |> validate_number(:price, greater_than_or_equal_to: 0)

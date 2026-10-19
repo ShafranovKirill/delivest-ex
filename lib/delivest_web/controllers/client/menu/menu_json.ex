@@ -21,6 +21,7 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
     %{
       id: product.id,
       name: product.name,
+      slug: Map.get(product, :slug),
       old_price: Map.get(product, :old_price),
       price: product.price,
       description: Map.get(product, :description),

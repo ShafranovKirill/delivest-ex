@@ -1,10 +1,4 @@
 defmodule Delivest.Oms.Workers.CartCleanupWorker do
-  @moduledoc """
-  Deletes abandoned carts: every visitor gets a cart, and nothing else ever removes them.
-
-  Carts referenced by an order are kept, because order editing in the admin panel
-  reuses the order's cart.
-  """
   use Oban.Worker, queue: :default, max_attempts: 3
 
   import Ecto.Query

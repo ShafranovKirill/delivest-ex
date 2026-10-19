@@ -9,9 +9,13 @@ defmodule DelivestWeb.Client.Stock.StockJSON do
       text: stock.text,
       is_active: stock.is_active,
       order: stock.order,
-      photo_url: render_media(stock.media)
+      photo_url: render_media(stock.media),
+      product_slug: product_slug(stock.product)
     }
   end
+
+  defp product_slug(%Delivest.Net.Product{is_active: true, deleted_at: nil, slug: slug}), do: slug
+  defp product_slug(_), do: nil
 
   defp render_media(%Ecto.Association.NotLoaded{}), do: nil
   defp render_media(nil), do: nil

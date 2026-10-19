@@ -18,11 +18,6 @@ defmodule Delivest.Release do
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
-  @doc """
-  Creates the admin account. Credentials come from the arguments, then from the
-  ADMIN_LOGIN / ADMIN_PASSWORD environment variables. When no password is given,
-  a random one is generated and printed once.
-  """
   def create_admin(login \\ nil, password \\ nil) do
     load_app()
 
@@ -315,7 +310,6 @@ defmodule Delivest.Release do
     create_admin()
   end
 
-  # Satisfies Staff.password_regex/0: lowercase, uppercase, digit and special character.
   defp generate_admin_password do
     random = :crypto.strong_rand_bytes(18) |> Base.url_encode64(padding: false)
     "Aa1!" <> random

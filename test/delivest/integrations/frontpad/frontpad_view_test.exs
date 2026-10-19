@@ -30,7 +30,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
   end
 
   test "takes phone and name from the linked client once the order is reloaded" do
-    # customer_phone/customer_name are virtual: empty after Orders.get_order/1.
     order = %Order{
       items: [],
       client: %Delivest.Identity.Client{phone: "+79991234567", name: "Иван"}

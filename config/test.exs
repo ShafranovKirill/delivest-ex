@@ -40,3 +40,13 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+config :ex_aws,
+  access_key_id: "test-access-key",
+  secret_access_key: "test-secret-key",
+  s3: [scheme: "http://", host: "s3.test", port: 8333]
+
+config :delivest, Delivest.Media,
+  public_bucket: "delivest",
+  private_bucket: "delivest-private",
+  public_host: "s3.test"

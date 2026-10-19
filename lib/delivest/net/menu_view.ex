@@ -2,6 +2,7 @@ defmodule Delivest.Net.MenuView do
   @type product :: %{
           id: binary(),
           name: String.t(),
+          slug: String.t() | nil,
           old_price: term(),
           price: integer(),
           description: String.t() | nil,
@@ -40,6 +41,7 @@ defmodule Delivest.Net.MenuView do
     %{
       id: product.id,
       name: product.name,
+      slug: Map.get(product, :slug),
       old_price: Map.get(product, :old_price),
       price: product.price,
       description: Map.get(product, :description),

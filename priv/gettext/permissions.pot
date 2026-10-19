@@ -1,0 +1,47 @@
+msgid ""
+msgstr ""
+
+msgid "system"
+msgstr ""
+
+msgid "staff"
+msgstr ""
+
+msgid "roles"
+msgstr ""
+
+msgid "branches"
+msgstr ""
+
+msgid "categories"
+msgstr ""
+
+msgid "products"
+msgstr ""
+
+msgid "stocks"
+msgstr ""
+
+msgid "clients"
+msgstr ""
+
+msgid "orders"
+msgstr ""
+
+msgid "statistics"
+msgstr ""
+
+msgid "create"
+msgstr ""
+
+msgid "read"
+msgstr ""
+
+msgid "update"
+msgstr ""
+
+msgid "delete"
+msgstr ""
+
+msgid "admin"
+msgstr ""

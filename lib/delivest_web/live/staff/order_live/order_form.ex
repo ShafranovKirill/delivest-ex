@@ -24,7 +24,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   def mount(params, session, socket), do: do_mount(params, session, socket)
 
-  # Editing needs orders.update and is limited to orders of the active branch.
   defp authorize_edit(socket, id) do
     branch_id = socket.assigns.current_branch.id
 

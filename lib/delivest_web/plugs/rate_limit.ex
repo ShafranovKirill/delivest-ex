@@ -1,19 +1,4 @@
 defmodule DelivestWeb.Plugs.RateLimit do
-  @moduledoc """
-  Fixed-window rate limit per client IP, stored in the `:rate_limit_cache` Cachex.
-
-      plug DelivestWeb.Plugs.RateLimit, bucket: :orders, limit: 10, period: :timer.minutes(1)
-
-  Options:
-    * `:bucket` - name separating independent limits (required)
-    * `:limit` - allowed requests per window (required)
-    * `:period` - window length in milliseconds (default 1 minute)
-    * `:format` - `:json` (default) or `:text` response body when the limit is hit
-
-  Behind a reverse proxy `remote_ip` is the proxy itself, so for loopback/private
-  peers the client address is taken from the last `X-Forwarded-For` entry
-  (the one appended by our proxy, which the client cannot forge).
-  """
   @behaviour Plug
   import Plug.Conn
 
@@ -66,7 +51,6 @@ defmodule DelivestWeb.Plugs.RateLimit do
 
   defp retry_after(period), do: period |> div(1000) |> max(1) |> Integer.to_string()
 
-  @doc false
   def client_ip(conn) do
     if trusted_proxy?(conn.remote_ip) do
       case forwarded_ip(conn) do

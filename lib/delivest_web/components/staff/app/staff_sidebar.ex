@@ -69,6 +69,33 @@ defmodule DelivestWeb.StaffSidebar do
           </li>
         </ul>
 
+        <%= if can?(@current_staff, "statistics.read") do %>
+          <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
+            <div class="h-px bg-base-300 w-full"></div>
+            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
+              {gettext("Analytics")}
+            </div>
+          </div>
+
+          <ul class="menu w-full p-0 gap-1">
+            <li>
+              <.link
+                navigate={~p"/staff/statistics"}
+                class={[
+                  "flex items-center gap-2 px-3 py-2",
+                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
+                  (@current_page == :statistics && "menu-active") || ""
+                ]}
+              >
+                <.icon name="hero-chart-bar" class="size-6 shrink-0" />
+                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
+                  {gettext("Statistics")}
+                </span>
+              </.link>
+            </li>
+          </ul>
+        <% end %>
+
         <%= if can_any?(@current_staff, ["orders.read", "orders.create"]) do %>
           <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
             <div class="h-px bg-base-300 w-full"></div>

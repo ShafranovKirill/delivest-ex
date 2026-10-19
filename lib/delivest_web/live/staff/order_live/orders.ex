@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   alias Delivest.Identity
   alias Delivest.Oms.{Order, Orders}
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   use Gettext, backend: DelivestWeb.Gettext
 
@@ -111,7 +112,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("cancel_delete", _, socket),
     do: {:noreply, assign(socket, order_to_delete: nil)}
 
-  # Orders of all branches share one PubSub topic: only show the current branch.
   @impl true
   def handle_info({Delivest.Oms.Orders, _event, order}, socket)
       when order.branch_id != socket.assigns.current_branch.id,
@@ -188,22 +188,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   defp format_address(_), do: "—"
 
-  defp status_color("created"), do: "bg-info/10 text-info border-info/20"
-  defp status_color("preparing"), do: "bg-warning/10 text-warning border-warning/20"
-  defp status_color("ready"), do: "bg-accent/10 text-accent border-accent/20"
-  defp status_color("delivering"), do: "bg-secondary/10 text-secondary border-secondary/20"
-  defp status_color("completed"), do: "bg-success/10 text-success border-success/20"
-  defp status_color("cancelled"), do: "bg-error/10 text-error border-error/20"
-  defp status_color("crm"), do: "bg-purple-500/10 text-purple-600 border-purple-500/20"
-  defp status_color(_), do: "bg-base-200 text-base-content border-base-300"
-
-  defp format_fulfillment_type(:delivery), do: gettext("Delivery")
-  defp format_fulfillment_type(:dine_in), do: gettext("Dine in")
-  defp format_fulfillment_type(:pickup), do: gettext("Pickup")
-  defp format_fulfillment_type("delivery"), do: gettext("Delivery")
-  defp format_fulfillment_type("dine_in"), do: gettext("Dine in")
-  defp format_fulfillment_type("pickup"), do: gettext("Pickup")
-  defp format_fulfillment_type(_), do: "—"
+  defp status_color(status), do: OrderHelpers.status_color(status)
+  defp format_fulfillment_type(type), do: OrderHelpers.fulfillment_label(type)
 
   @impl true
   def render(assigns) do
@@ -382,11 +368,24 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                 <% name = (order.client && order.client.name) || order.customer_name %>
 
                 <%= if phone || name do %>
-                  <div class="font-mono font-semibold text-base-content truncate">
-                    {phone || "—"}
-                  </div>
-                  <div class="text-base-content/60 truncate">
-                    {name || ""}
+                  <.link
+                    :if={order.client_id && Identity.can?(@current_staff, "clients.read")}
+                    navigate={~p"/staff/clients/#{order.client_id}"}
+                    class="group block min-w-0"
+                    title={gettext("Open client card")}
+                  >
+                    <div class="font-mono font-semibold text-base-content truncate group-hover:text-primary group-hover:underline">
+                      {phone || "—"}
+                    </div>
+                    <div class="text-base-content/60 truncate">{name || ""}</div>
+                  </.link>
+                  <div :if={!(order.client_id && Identity.can?(@current_staff, "clients.read"))}>
+                    <div class="font-mono font-semibold text-base-content truncate">
+                      {phone || "—"}
+                    </div>
+                    <div class="text-base-content/60 truncate">
+                      {name || ""}
+                    </div>
                   </div>
                 <% else %>
                   <div class="font-semibold text-base-content/50 italic truncate">

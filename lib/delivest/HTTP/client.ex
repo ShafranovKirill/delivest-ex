@@ -42,7 +42,6 @@ defmodule Delivest.HTTP.Client do
           end
       end
 
-    # Payload is not logged: it may contain API secrets and customer personal data.
     Logger.info("HTTP >>> #{String.upcase(to_string(method))} #{full_url}")
 
     case Req.request(req_options) do
