@@ -16,6 +16,11 @@ defmodule DelivestWeb.Endpoint do
     longpoll: [connect_info: [session: @session_options]]
   )
 
+  socket("/socket", DelivestWeb.ClientSocket,
+    websocket: [check_origin: {__MODULE__, :allowed_socket_origin?, []}],
+    longpoll: false
+  )
+
   plug(CORSPlug,
     origin: &__MODULE__.fetch_cors_origin/1,
     credentials: true,
@@ -27,6 +32,11 @@ defmodule DelivestWeb.Endpoint do
 
   def fetch_cors_origin(_conn) do
     Application.get_env(:cors_plug, :origin, ["http://localhost:3000"])
+  end
+
+  def allowed_socket_origin?(%URI{} = uri) do
+    origin = URI.to_string(%URI{scheme: uri.scheme, host: uri.host, port: uri.port})
+    origin in fetch_cors_origin(nil) or uri.host == URI.parse(url()).host
   end
 
   # Serve at "/" the static files from "priv/static" directory.

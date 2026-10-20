@@ -53,6 +53,30 @@ defmodule DelivestWeb.Client.AuthControllerTest do
     )
   end
 
+  test "socket token carries the session and the signed in client", %{conn: conn} do
+    client = insert(:client)
+
+    session_id =
+      conn |> Plug.Conn.fetch_cookies() |> Map.fetch!(:req_cookies) |> Map.fetch!("session_id")
+
+    token =
+      conn |> get(~p"/client/socket_token") |> json_response(200) |> get_in(["data", "token"])
+
+    assert {:ok, %{session_id: ^session_id, client_id: nil}} = ClientToken.verify_socket(token)
+
+    %{access_token: access} = ClientToken.issue(client.id)
+
+    token =
+      conn
+      |> put_req_header("authorization", "Bearer " <> access)
+      |> get(~p"/client/socket_token")
+      |> json_response(200)
+      |> get_in(["data", "token"])
+
+    assert {:ok, %{client_id: client_id}} = ClientToken.verify_socket(token)
+    assert client_id == client.id
+  end
+
   test "full call confirmation flow issues working tokens", %{conn: conn} do
     data = start_call(conn)
     assert data["call_number"] == "+78005553535"

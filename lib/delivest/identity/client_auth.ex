@@ -15,9 +15,11 @@ defmodule Delivest.Identity.ClientAuth do
 
   @spec confirm_call(term(), term()) :: :ok | {:error, :not_found}
   def confirm_call(call_id, phone) when is_binary(call_id) do
-    case Phone.normalize(phone) do
-      nil -> {:error, :not_found}
-      phone -> PhoneConfirmations.confirm(call_id, phone)
+    with phone when is_binary(phone) <- Phone.normalize(phone),
+         {:ok, ids} <- PhoneConfirmations.confirm(call_id, phone) do
+      Enum.each(ids, &notify_confirmed/1)
+    else
+      _ -> {:error, :not_found}
     end
   end
 
@@ -40,6 +42,12 @@ defmodule Delivest.Identity.ClientAuth do
       client -> ensure_active(client)
     end
   end
+
+  def subscribe(confirmation_id),
+    do: Phoenix.PubSub.subscribe(Delivest.PubSub, PhoneConfirmations.topic(confirmation_id))
+
+  defp notify_confirmed(id),
+    do: Phoenix.PubSub.broadcast(Delivest.PubSub, PhoneConfirmations.topic(id), :phone_confirmed)
 
   defp validate_phone(phone) do
     case Phone.normalize(phone) do

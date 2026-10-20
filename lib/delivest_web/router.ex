@@ -113,6 +113,8 @@ defmodule DelivestWeb.Router do
       end
     end
 
+    get "/socket_token", Socket.SocketController, :token
+
     scope "/orders", Order do
       get "/active", OrderController, :active
 

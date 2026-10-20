@@ -13,17 +13,30 @@ defmodule Delivest.Identity.PhoneConfirmations do
     |> Repo.insert()
   end
 
-  @spec confirm(String.t(), String.t()) :: :ok | {:error, :not_found}
+  @spec confirm(String.t(), String.t()) :: {:ok, [String.t()]} | {:error, :not_found}
   def confirm(call_id, phone) do
     PhoneConfirmation
     |> fresh()
     |> where([c], c.call_id == ^call_id and c.phone == ^phone and is_nil(c.confirmed_at))
+    |> select([c], c.id)
     |> Repo.update_all(set: [confirmed_at: now()])
     |> case do
       {0, _} -> {:error, :not_found}
-      _ -> :ok
+      {_count, ids} -> {:ok, ids}
     end
   end
+
+  @spec pending?(String.t(), String.t() | nil) :: boolean()
+  def pending?(id, session_id) when is_binary(session_id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, id} -> Repo.exists?(owned(id, session_id))
+      :error -> false
+    end
+  end
+
+  def pending?(_id, _session_id), do: false
+
+  def topic(id), do: "phone_confirmation:#{id}"
 
   @spec consume(String.t(), String.t() | nil) ::
           {:ok, String.t()} | {:error, :pending | :not_found}

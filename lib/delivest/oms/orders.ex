@@ -7,6 +7,7 @@ defmodule Delivest.Oms.Orders do
   alias Delivest.Repo
 
   defdelegate subscribe, to: Notifier
+  defdelegate subscribe_owner(kind, id), to: Notifier
   defdelegate create_order(attrs, opts \\ []), to: Create, as: :run
   defdelegate update_order(order, attrs, opts \\ []), to: Update, as: :run
   defdelegate create_draft_cart(order), to: DraftCart, as: :create
