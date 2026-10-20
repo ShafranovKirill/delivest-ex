@@ -54,6 +54,32 @@ defmodule Delivest.Factory do
     }
   end
 
+  def promotion_factory do
+    %Delivest.Promo.Promotion{
+      name: sequence(:promotion_name, &"Promotion #{&1}"),
+      kind: :automatic,
+      rules: "then discount 10%",
+      enabled: true
+    }
+  end
+
+  def promo_code_factory do
+    %Delivest.Promo.PromoCode{code: sequence(:promo_code, &"CODE#{&1}")}
+  end
+
+  def insert_promotion(branch_id, attrs) do
+    promotion = insert(:promotion, Keyword.put(attrs, :branch_id, branch_id))
+    Delivest.Promo.Catalog.invalidate(branch_id)
+    promotion
+  end
+
+  def insert_code(promotion, attrs \\ []) do
+    insert(
+      :promo_code,
+      Keyword.merge([promotion_id: promotion.id, branch_id: promotion.branch_id], attrs)
+    )
+  end
+
   def staff_branch_factory do
     %StaffBranch{
       staff: build(:staff),

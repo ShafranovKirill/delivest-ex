@@ -445,9 +445,25 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                     </option>
                   </select>
                 </form>
-                <span class="font-mono font-bold text-base text-base-content shrink-0">
-                  {order.total_amount} ₽
-                </span>
+                <div class="flex flex-col items-end shrink-0">
+                  <span class="font-mono font-bold text-base text-base-content">
+                    {order.total_amount} ₽
+                  </span>
+                  <span
+                    :if={order.discount_amount > 0}
+                    class="font-mono text-[11px] text-base-content/50 line-through"
+                  >
+                    {order.subtotal_amount} ₽
+                  </span>
+                  <span
+                    :for={promotion <- order.promotions}
+                    class="badge badge-success badge-xs whitespace-nowrap"
+                    title={promotion.name}
+                  >
+                    {promotion.code || promotion.name}
+                    <span :if={promotion.discount > 0}>−{promotion.discount}</span>
+                  </span>
+                </div>
               </div>
 
               <div class="lg:w-1/4 border-t lg:border-t-0 lg:border-l border-base-200 pt-2 lg:pt-0 lg:pl-4">
@@ -464,7 +480,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                   <div class="mt-2 space-y-1.5 pt-2 border-t border-base-200 max-h-36 overflow-y-auto scrollbar-thin">
                     <%= for item <- order.items do %>
                       <div class="flex justify-between items-center text-[11px]">
-                        <span class="truncate pr-2 text-base-content/80">{item.title}</span>
+                        <span class="truncate pr-2 text-base-content/80">
+                          <.icon :if={item.gift} name="hero-gift" class="size-3 text-success" />
+                          {item.title}
+                        </span>
                         <div class="flex items-center gap-2 shrink-0 font-mono">
                           <span class="text-base-content/50">{item.quantity} {gettext("pcs")}</span>
                           <span class="font-medium">{item.price * item.quantity} ₽</span>

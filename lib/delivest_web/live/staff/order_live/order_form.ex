@@ -6,7 +6,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   alias Delivest.Net.Catalogs
   alias Delivest.Oms
   alias Delivest.Oms.Order
-  alias DelivestWeb.Staff.OrderLive.{OrderDraft, SaveErrors}
+  alias DelivestWeb.Staff.OrderLive.{CartContext, OrderDraft, SaveErrors}
+  alias DelivestWeb.Staff.PromotionLive.ReasonText
 
   alias DelivestWeb.Staff.OrderLive.Components.{
     CartComponent,
@@ -103,7 +104,29 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     socket.assigns.cart.id |> Oms.remove_item(product_id, all: true) |> assign_cart(socket)
   end
 
+  def handle_event("apply_promo", %{"promo" => %{"code" => code}}, socket) do
+    case Oms.apply_promo_code(socket.assigns.cart.id, code) do
+      {:ok, cart} ->
+        {:noreply, assign(socket, cart: cart)}
+
+      {:error, {:promo, reason}} ->
+        {:noreply, put_flash(socket, :error, ReasonText.rejected(reason))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Promo code cannot be applied"))}
+    end
+  end
+
+  def handle_event("remove_promo", _params, socket) do
+    case Oms.remove_promo_code(socket.assigns.cart.id) do
+      {:ok, cart} -> {:noreply, assign(socket, cart: cart)}
+      _error -> {:noreply, socket}
+    end
+  end
+
   def handle_event("validate_order", %{"order" => params}, socket) do
+    socket = assign(socket, cart: CartContext.sync(socket.assigns.cart, params))
+
     changeset =
       socket.assigns.order
       |> Order.changeset(Map.put(params, "cart_id", socket.assigns.cart.id))
@@ -114,6 +137,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   def handle_event("save_order", %{"order" => params}, socket) do
+    socket = assign(socket, cart: CartContext.sync(socket.assigns.cart, params))
+
     params
     |> Map.put("cart_id", socket.assigns.cart.id)
     |> save(socket)
@@ -159,8 +184,14 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   defp handle_saved({:error, _step, reason}, socket), do: handle_saved({:error, reason}, socket)
 
-  defp handle_saved({:error, reason}, socket),
-    do: {:noreply, put_flash(socket, :error, SaveErrors.message(reason))}
+  defp handle_saved({:error, reason}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:error, SaveErrors.message(reason))
+     |> assign(
+       cart: Oms.get_cart_by_id(socket.assigns.cart.id, force: true) || socket.assigns.cart
+     )}
+  end
 
   @impl true
   def render(assigns) do
@@ -205,10 +236,12 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
         <div class="flex-1 lg:overflow-y-auto p-3 lg:p-4">
           <div class={[@active_tab != :cart && "hidden"]}>
             <CartComponent.render_items cart={@cart} />
+            <CartComponent.render_promo id="cart-promo" cart={@cart} />
           </div>
 
           <div class={[@active_tab != :details && "hidden"]}>
             <CartComponent.render_summary cart={@cart} />
+            <CartComponent.render_promo id="details-promo" cart={@cart} />
             <DetailsComponent.render_form form={@form} />
           </div>
         </div>

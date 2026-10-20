@@ -2,7 +2,7 @@ defmodule Delivest.Oms.Carts do
   import Ecto.Query, warn: false
 
   alias Delivest.{Repo, Net}
-  alias Delivest.Oms.{Cart, CartItem, CartView}
+  alias Delivest.Oms.{Cart, CartItem, CartPricing, CartView}
 
   @cache_store :cart_cache
   @cache_ttl :timer.hours(24)
@@ -248,10 +248,30 @@ defmodule Delivest.Oms.Carts do
       session_id: cart.session_id,
       staff_id: cart.staff_id,
       branch_id: cart.branch_id,
+      client_id: cart.client_id,
+      fulfillment_type: cart.fulfillment_type,
+      promo_code: cart.promo_code,
       items: Enum.reverse(view_items),
       total_quantity: total_qty,
+      subtotal_amount: total_amt,
       total_amount: total_amt
     }
+  end
+
+  def update_context(cart_id, attrs) do
+    case Repo.get(Cart, cart_id) do
+      %Cart{} = cart ->
+        cart
+        |> Cart.context_changeset(attrs)
+        |> Repo.update()
+        |> case do
+          {:ok, updated} -> {:ok, recalculate_and_cache(updated)}
+          error -> error
+        end
+
+      nil ->
+        {:error, :cart_not_found}
+    end
   end
 
   def detach_cart(%CartView{id: cart_id}) do
@@ -284,7 +304,7 @@ defmodule Delivest.Oms.Carts do
       fetch_and_recalculate(cart_id)
     else
       case Cachex.get(@cache_store, cart_id) do
-        {:ok, %CartView{} = cached_view} -> cached_view
+        {:ok, %CartView{} = cached_view} -> CartPricing.apply(cached_view)
         _ -> fetch_and_recalculate(cart_id)
       end
     end
@@ -304,7 +324,7 @@ defmodule Delivest.Oms.Carts do
   defp recalculate_and_cache(%Cart{} = cart) do
     cart_view = build_cart_view(cart)
     Cachex.put(@cache_store, cart.id, cart_view, ttl: @cache_ttl)
-    cart_view
+    CartPricing.apply(cart_view)
   end
 
   defp fetch_raw_cart(opts) do

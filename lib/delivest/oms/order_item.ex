@@ -15,6 +15,8 @@ defmodule Delivest.Oms.OrderItem do
     field :product_id, :binary_id
     field :title, :string
     field :price, :integer
+    field :base_price, :integer
+    field :gift, :boolean, default: false
     field :quantity, :integer, default: 1
     field :category_id, :binary_id
     field :category_name, :string
@@ -31,6 +33,8 @@ defmodule Delivest.Oms.OrderItem do
       :product_id,
       :title,
       :price,
+      :base_price,
+      :gift,
       :quantity,
       :category_id,
       :category_name

@@ -44,6 +44,7 @@ defmodule Delivest.Identity do
   defdelegate get_client_ids_by_search(query), to: Clients
   defdelegate resolve_client(attrs, opts \\ []), to: Clients
   defdelegate client_blocked?(client_id), to: Clients
+  defdelegate get_active_client_by_phone(phone), to: Clients
 
   defdelegate start_client_auth(phone, session_id), to: ClientAuth, as: :start
   defdelegate confirm_client_call(call_id, phone), to: ClientAuth, as: :confirm_call

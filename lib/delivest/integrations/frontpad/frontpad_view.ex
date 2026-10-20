@@ -4,7 +4,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
   @type product_item :: %{
           external_id: String.t(),
           quantity: integer(),
-          mod: String.t() | nil
+          mod: String.t() | nil,
+          price: String.t() | nil
         }
 
   @type t :: %__MODULE__{
@@ -22,6 +23,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
           datetime: String.t() | nil,
           hook_url: String.t() | nil,
           hook_status: [String.t()],
+          sale_amount: String.t() | nil,
           products: [product_item()]
         }
 
@@ -39,6 +41,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     :pay,
     :datetime,
     :hook_url,
+    :sale_amount,
     hook_status: [],
     products: []
   ]
@@ -46,7 +49,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
   @spec build(Delivest.Oms.Order.t(), Settings.t(), map()) :: {:ok, t()} | {:error, term()}
   def build(order, %Settings{} = settings, products_map) do
     with {:ok, secret} <- extract_secret(settings),
-         {:ok, formatted_products} <- extract_products(order.items, products_map) do
+         {:ok, formatted_products} <- extract_products(order.items, products_map, settings) do
       payload =
         %__MODULE__{
           secret: secret,
@@ -61,6 +64,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
           descr: truncate(order.comment, 100),
           pay: map_payment_method(order.payment_method),
           datetime: format_cook_by(order.cook_by),
+          sale_amount: sale_amount(order.items, settings),
           products: formatted_products
         }
         |> put_hooks(settings)
@@ -85,7 +89,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
         {"descr", view.descr},
         {"pay", view.pay},
         {"datetime", view.datetime},
-        {"hook_url", view.hook_url}
+        {"hook_url", view.hook_url},
+        {"sale_amount", view.sale_amount}
       ]
       |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
 
@@ -93,16 +98,13 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
       view.products
       |> Enum.with_index()
       |> Enum.flat_map(fn {item, index} ->
-        params = [
+        [
           {"product[#{index}]", item.external_id},
-          {"product_kol[#{index}]", to_string(item.quantity)}
+          {"product_kol[#{index}]", to_string(item.quantity)},
+          {"product_mod[#{index}]", item.mod},
+          {"product_price[#{index}]", item.price}
         ]
-
-        if item.mod do
-          params ++ [{"product_mod[#{index}]", item.mod}]
-        else
-          params
-        end
+        |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       end)
 
     hook_params =
@@ -139,14 +141,42 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
   defp blank_to_nil(""), do: nil
   defp blank_to_nil(value), do: value
 
-  defp extract_products(order_items, products_map) do
+  defp sale_amount(_items, %Settings{price_override: true}), do: nil
+
+  defp sale_amount(items, _settings) do
+    case items |> Enum.map(&(discount_per_unit(&1) * &1.quantity)) |> Enum.sum() do
+      0 -> nil
+      amount -> to_string(amount)
+    end
+  end
+
+  defp forced_price(item, %Settings{price_override: true}) do
+    if discount_per_unit(item) > 0, do: to_string(item.price)
+  end
+
+  defp forced_price(_item, _settings), do: nil
+
+  defp discount_per_unit(%{base_price: base, price: price})
+       when is_integer(base) and is_integer(price),
+       do: max(base - price, 0)
+
+  defp discount_per_unit(_item), do: 0
+
+  defp extract_products(order_items, products_map, settings) do
     result =
       Enum.reduce_while(order_items, [], fn item, acc ->
         case Map.get(products_map, item.product_id) do
           %{external_id: ext_id} = product when not is_nil(ext_id) ->
             mod = Map.get(item, :mod) || Map.get(product, :mod)
 
-            {:cont, [%{external_id: ext_id, quantity: item.quantity, mod: mod} | acc]}
+            line = %{
+              external_id: ext_id,
+              quantity: item.quantity,
+              mod: mod,
+              price: forced_price(item, settings)
+            }
+
+            {:cont, [line | acc]}
 
           _ ->
             {:halt, {:error, {:missing_external_id, item.product_id}}}

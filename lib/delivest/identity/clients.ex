@@ -175,7 +175,7 @@ defmodule Delivest.Identity.Clients do
   defp present?(val) when is_binary(val), do: String.trim(val) != ""
   defp present?(_), do: false
 
-  defp get_active_client_by_phone(phone) do
+  def get_active_client_by_phone(phone) do
     Client
     |> where([c], c.phone == ^phone)
     |> where([c], is_nil(c.deleted_at))

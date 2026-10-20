@@ -11,12 +11,13 @@ defmodule Delivest.Integrations.Frontpad.Settings do
     field :api_key, :string, redact: true
     field :affiliate, :string
     field :webhook_token, :string, redact: true
+    field :price_override, :boolean, default: false
     embeds_one :statuses, StatusCodes, on_replace: :update
   end
 
   def changeset(settings, attrs, required? \\ false) do
     settings
-    |> cast(attrs, [:api_key, :affiliate])
+    |> cast(attrs, [:api_key, :affiliate, :price_override])
     |> cast_embed(:statuses)
     |> put_webhook_token()
     |> then(&if(required?, do: validate_required(&1, [:api_key]), else: &1))

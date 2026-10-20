@@ -29,7 +29,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
   )
 
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
-                    payment_method cook_by comment address)
+                    payment_method cook_by comment address expected_total)
 
   def create(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
@@ -132,7 +132,9 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :cart_already_ordered,
               :cart_branch_mismatch,
               :product_unavailable,
-              :client_blocked
+              :client_blocked,
+              :price_changed,
+              :promo_unavailable
             ] do
     ApiError.send_error(conn, :unprocessable_entity, reason, Phoenix.Naming.humanize(reason))
   end

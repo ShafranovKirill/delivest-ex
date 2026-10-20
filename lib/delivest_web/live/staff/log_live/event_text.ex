@@ -27,6 +27,7 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
       {"product", gettext("Products")},
       {"category", gettext("Categories")},
       {"stock", gettext("Promotions")},
+      {"promotion", gettext("Discounts & promo codes")},
       {"client", gettext("Clients")},
       {"staff", gettext("Staff")},
       {"role", gettext("Roles")},
@@ -56,6 +57,12 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
   defp text("stock.created", b), do: gettext("Promotion «%{subject}» created", b)
   defp text("stock.updated", b), do: gettext("Promotion «%{subject}» edited", b)
   defp text("stock.deleted", b), do: gettext("Promotion «%{subject}» deleted", b)
+
+  defp text("promotion.created", b), do: gettext("Promotion «%{subject}» created", b)
+  defp text("promotion.updated", b), do: gettext("Promotion «%{subject}» edited", b)
+  defp text("promotion.deleted", b), do: gettext("Promotion «%{subject}» deleted", b)
+  defp text("promo_code.issued", b), do: gettext("Promo code %{subject} issued", b)
+  defp text("promo_code.revoked", b), do: gettext("Promo code %{subject} revoked", b)
 
   defp text("client.created", b), do: gettext("Client %{subject} added", b)
   defp text("client.updated", b), do: gettext("Client %{subject} edited", b)

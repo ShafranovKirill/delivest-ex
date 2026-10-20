@@ -139,7 +139,7 @@ defmodule DelivestWeb.StaffSidebar do
           </ul>
         <% end %>
 
-        <%= if can_any?(@current_staff, ["categories.read", "products.read", "stocks.read"]) do %>
+        <%= if can_any?(@current_staff, ["categories.read", "products.read", "stocks.read", "promotions.read"]) do %>
           <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
             <div class="h-px bg-base-300 w-full"></div>
             <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
@@ -192,6 +192,22 @@ defmodule DelivestWeb.StaffSidebar do
                 <.icon name="hero-tag" class="size-6 shrink-0" />
                 <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
                   {gettext("Promotions")}
+                </span>
+              </.link>
+            </li>
+
+            <li :if={can?(@current_staff, "promotions.read")}>
+              <.link
+                navigate={~p"/staff/promotions"}
+                class={[
+                  "flex items-center gap-2 px-3 py-2",
+                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
+                  (@current_page == :promotions && "menu-active") || ""
+                ]}
+              >
+                <.icon name="hero-receipt-percent" class="size-6 shrink-0" />
+                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
+                  {gettext("Discounts & promo codes")}
                 </span>
               </.link>
             </li>

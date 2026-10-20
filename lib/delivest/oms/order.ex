@@ -3,6 +3,7 @@ defmodule Delivest.Oms.Order do
   import Ecto.Changeset
 
   alias Delivest.Oms.Order.Address
+  alias Delivest.Oms.Order.AppliedPromotion
   alias Delivest.Oms.Order.CrmSync
   alias Delivest.Oms.OrderItem
 
@@ -44,6 +45,9 @@ defmodule Delivest.Oms.Order do
     embeds_one :crm, CrmSync, on_replace: :update
 
     field :total_amount, :integer, default: 0
+    field :subtotal_amount, :integer
+    field :discount_amount, :integer, default: 0
+    embeds_many :promotions, AppliedPromotion, on_replace: :delete
     field :cook_by, :naive_datetime
     field :comment, :string
     field :deleted_at, :utc_datetime
@@ -69,6 +73,8 @@ defmodule Delivest.Oms.Order do
       :fulfillment_type,
       :payment_method,
       :total_amount,
+      :subtotal_amount,
+      :discount_amount,
       :cook_by,
       :comment,
       :deleted_at
@@ -89,6 +95,7 @@ defmodule Delivest.Oms.Order do
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
     |> validate_inclusion(:payment_method, @payment_methods)
     |> validate_number(:total_amount, greater_than_or_equal_to: 0)
+    |> validate_number(:discount_amount, greater_than_or_equal_to: 0)
     |> validate_cook_by_range()
     |> validate_address_if_delivery()
   end

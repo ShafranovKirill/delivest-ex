@@ -3,8 +3,18 @@ defmodule Delivest.Oms.Orders.Update do
 
   alias Delivest.Audit
   alias Delivest.Oms.{Carts, Order}
-  alias Delivest.Oms.Orders.{Assembler, Attrs, CartGuard, ClientResolver, Lines, Notifier}
-  alias Delivest.Repo
+
+  alias Delivest.Oms.Orders.{
+    Assembler,
+    Attrs,
+    CartGuard,
+    ClientResolver,
+    Lines,
+    Notifier,
+    Pricing
+  }
+
+  alias Delivest.{Promo, Repo}
   alias Ecto.Multi
 
   @protected ["number", "staff_id", "branch_id"]
@@ -18,8 +28,14 @@ defmodule Delivest.Oms.Orders.Update do
     |> Multi.run(:cart, fn _, _ ->
       CartGuard.acquire(attrs["cart_id"], order.branch_id, order.id)
     end)
-    |> Multi.run(:lines, fn _, %{cart: cart} -> Lines.from_cart(cart) end)
+    |> Multi.run(:pricing, fn _, %{cart: cart, client_id: client_id} ->
+      Pricing.run(cart, attrs, client_id, order)
+    end)
+    |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.update(:order, &Assembler.changeset(order, attrs, &1))
+    |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
+      Promo.redeem(order, pricing)
+    end)
     |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
     |> Repo.transaction()
     |> case do

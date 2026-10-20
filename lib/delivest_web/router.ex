@@ -47,6 +47,10 @@ defmodule DelivestWeb.Router do
     plug DelivestWeb.Plugs.RateLimit, bucket: :cart, limit: 300, period: :timer.minutes(1)
   end
 
+  pipeline :promo_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :promo_codes, limit: 10, period: :timer.minutes(1)
+  end
+
   pipeline :login_rate_limit do
     plug DelivestWeb.Plugs.RateLimit,
       bucket: :staff_login,
@@ -99,6 +103,14 @@ defmodule DelivestWeb.Router do
       post "/:cart_id/items/:product_id", CartController, :add_item
       delete "/:cart_id/items/:product_id", CartController, :remove_item
       delete "/:cart_id/clear", CartController, :clear
+      put "/:cart_id/context", CartController, :update_context
+      delete "/:cart_id/promo_code", CartController, :remove_promo_code
+
+      scope "/" do
+        pipe_through :promo_rate_limit
+
+        post "/:cart_id/promo_code", CartController, :apply_promo_code
+      end
     end
 
     scope "/orders", Order do
@@ -214,6 +226,13 @@ defmodule DelivestWeb.Router do
         live "/", Stocks, :index
         live "/:id/edit", Stocks, :edit
         live "/new", Stocks, :new
+      end
+
+      scope "/promotions", PromotionLive do
+        live "/", Promotions, :index
+        live "/new", Promotions, :new
+        live "/:id/edit", Promotions, :edit
+        live "/:id/codes", Promotions, :codes
       end
 
       scope "/orders", OrderLive do

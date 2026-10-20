@@ -24,6 +24,9 @@ msgstr "Товары"
 msgid "stocks"
 msgstr "Акции"
 
+msgid "promotions"
+msgstr "Скидки и промокоды"
+
 msgid "clients"
 msgstr "Клиенты"
 

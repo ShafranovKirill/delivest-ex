@@ -34,7 +34,19 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "confirmation_not_found",
             "invalid_refresh_token",
             "address_not_found",
-            "internal_error"
+            "internal_error",
+            "price_changed",
+            "promo_unavailable",
+            "promo_not_found",
+            "promo_inactive",
+            "promo_not_started",
+            "promo_expired",
+            "promo_exhausted",
+            "promo_requires_client",
+            "promo_client_limit",
+            "promo_not_owner",
+            "promo_code_used",
+            "promo_code_required"
           ]
         },
         message: %Schema{type: :string, example: "Validation failed"},

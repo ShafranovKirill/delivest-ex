@@ -10,7 +10,8 @@ defmodule Delivest.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      compilers: [:leex, :yecc, :phoenix_live_view] ++ Mix.compilers(),
+      leex_options: [error_location: :column],
       listeners: [Phoenix.CodeReloader]
     ]
   end

@@ -2,8 +2,18 @@ defmodule Delivest.Oms.Orders.Create do
   alias Delivest.Audit
   alias Delivest.Oms.{Carts, Order}
   alias Delivest.Oms.Order.OrderNumber
-  alias Delivest.Oms.Orders.{Assembler, Attrs, CartGuard, ClientResolver, Lines, Notifier}
-  alias Delivest.Repo
+
+  alias Delivest.Oms.Orders.{
+    Assembler,
+    Attrs,
+    CartGuard,
+    ClientResolver,
+    Lines,
+    Notifier,
+    Pricing
+  }
+
+  alias Delivest.{Promo, Repo}
   alias Ecto.Multi
 
   def run(attrs, opts \\ []) do
@@ -14,9 +24,13 @@ defmodule Delivest.Oms.Orders.Create do
     Multi.new()
     |> Multi.run(:client_id, fn _, _ -> ClientResolver.resolve(attrs, client_opts) end)
     |> Multi.run(:cart, fn _, _ -> CartGuard.acquire(attrs["cart_id"], attrs["branch_id"]) end)
-    |> Multi.run(:lines, fn _, %{cart: cart} -> Lines.from_cart(cart) end)
+    |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> Pricing.run(cart, attrs, id) end)
+    |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn _, _ -> OrderNumber.generate() end)
     |> Multi.insert(:order, &build(attrs, &1, opts[:crm]))
+    |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
+      Promo.redeem(order, pricing)
+    end)
     |> after_insert.()
     |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
     |> Repo.transaction()

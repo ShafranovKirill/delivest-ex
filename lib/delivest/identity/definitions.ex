@@ -6,6 +6,7 @@ defmodule Delivest.Identity.Definitions do
   categories.create categories.read categories.update categories.delete
   products.create products.read products.update products.delete
   stocks.create stocks.read stocks.update stocks.delete
+  promotions.create promotions.read promotions.update promotions.delete
   clients.create clients.read clients.update clients.delete
   orders.create orders.read orders.update orders.delete
   statistics.read

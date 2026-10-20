@@ -24,6 +24,9 @@ msgstr "Products"
 msgid "stocks"
 msgstr "Stocks"
 
+msgid "promotions"
+msgstr "Discounts & promo codes"
+
 msgid "clients"
 msgstr "Clients"
 

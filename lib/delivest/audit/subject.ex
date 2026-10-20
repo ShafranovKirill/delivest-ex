@@ -2,6 +2,7 @@ defmodule Delivest.Audit.Subject do
   alias Delivest.Identity.{Branch, Client, Role, Staff}
   alias Delivest.Net.{Category, Product, Stock}
   alias Delivest.Oms.Order
+  alias Delivest.Promo.{PromoCode, Promotion}
 
   @label_length 120
 
@@ -15,6 +16,12 @@ defmodule Delivest.Audit.Subject do
   def describe(%Staff{} = staff), do: build("staff", staff.id, staff.name || staff.login)
   def describe(%Role{} = role), do: build("role", role.id, role.name)
   def describe(%Client{} = client), do: build("client", client.id, client.name || client.phone)
+
+  def describe(%Promotion{} = promotion),
+    do: build("promotion", promotion.id, promotion.name, promotion.branch_id)
+
+  def describe(%PromoCode{} = code),
+    do: build("promotion", code.promotion_id, code.code, code.branch_id)
 
   defp build(type, id, label, branch_id \\ nil) do
     %{

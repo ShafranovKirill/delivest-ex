@@ -3,6 +3,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias DelivestWeb.Staff.PromotionLive.ReasonText
+
   attr :cart, :map, required: true
 
   def render_items(assigns) do
@@ -33,17 +35,31 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
       <div class="space-y-2">
         <div
           :for={item <- @cart.items}
-          class="flex items-center justify-between p-2.5 rounded-box bg-base-200/60 border border-base-200"
+          id={"cart-item-#{item_key(item)}"}
+          class={[
+            "flex items-center justify-between p-2.5 rounded-box border",
+            if(gift?(item),
+              do: "bg-success/10 border-success/30",
+              else: "bg-base-200/60 border-base-200"
+            )
+          ]}
         >
           <div class="flex-1 min-w-0 pr-2">
-            <p class="font-medium text-xs sm:text-sm truncate">{item.name}</p>
-            <p class="text-xs text-base-content/60 font-mono mt-0.5">
+            <p class="font-medium text-xs sm:text-sm truncate">
+              <.icon :if={gift?(item)} name="hero-gift" class="size-4 text-success" />
+              {item.name}
+            </p>
+            <p :if={gift?(item)} class="text-xs text-success font-medium mt-0.5">
+              {gettext("Gift × %{count}", count: item.quantity)}
+            </p>
+            <p :if={!gift?(item)} class="text-xs text-base-content/60 font-mono mt-0.5">
               {item.price} × {item.quantity} =
+              <span :if={discounted?(item)} class="line-through opacity-60">{base_total(item)}</span>
               <span class="font-bold text-base-content">{item.total_price} ₽</span>
             </p>
           </div>
 
-          <div class="flex items-center gap-1 shrink-0">
+          <div :if={!gift?(item)} class="flex items-center gap-1 shrink-0">
             <button
               type="button"
               phx-click="remove_item"
@@ -76,6 +92,71 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
     """
   end
 
+  attr :id, :string, required: true
+  attr :cart, :map, required: true
+
+  def render_promo(assigns) do
+    ~H"""
+    <div :if={@cart.items != []} id={@id} class="mt-4 space-y-2">
+      <.form
+        :if={is_nil(@cart.promo_code)}
+        for={%{}}
+        as={:promo}
+        id={"#{@id}-form"}
+        phx-submit="apply_promo"
+        class="join w-full"
+      >
+        <input
+          type="text"
+          name="promo[code]"
+          placeholder={gettext("Promo code")}
+          maxlength="32"
+          autocomplete="off"
+          class="input input-sm join-item w-full font-mono uppercase"
+        />
+        <button type="submit" class="btn btn-sm btn-primary join-item">{gettext("Apply")}</button>
+      </.form>
+
+      <div
+        :if={@cart.code}
+        class={[
+          "rounded-box border p-2.5 text-xs flex items-start gap-2",
+          code_class(@cart.code.status)
+        ]}
+      >
+        <.icon name="hero-ticket" class="size-4 shrink-0 mt-0.5" />
+        <div class="flex-1 min-w-0">
+          <p class="font-bold font-mono">{@cart.code.code}</p>
+          <p :if={@cart.code.name}>{@cart.code.name}</p>
+          <p :if={@cart.code.status == :rejected}>{ReasonText.rejected(@cart.code.reason)}</p>
+          <p :if={@cart.code.status == :pending}>
+            {Enum.map_join(@cart.code.reasons, "; ", &ReasonText.unmet/1)}
+          </p>
+        </div>
+        <button type="button" phx-click="remove_promo" class="btn btn-ghost btn-xs btn-square">
+          <.icon name="hero-x-mark" class="size-4" />
+        </button>
+      </div>
+
+      <div :for={promotion <- @cart.promotions} class="flex justify-between text-xs text-success">
+        <span class="truncate">
+          <.icon name="hero-receipt-percent" class="size-3.5" /> {promotion.name}
+        </span>
+        <span :if={promotion.discount > 0} class="font-mono font-bold">−{promotion.discount} ₽</span>
+      </div>
+
+      <div :for={hint <- @cart.hints} class="text-xs text-base-content/60">
+        <.icon name="hero-light-bulb" class="size-3.5" />
+        <span class="font-medium">{hint.name}</span>: {Enum.map_join(
+          hint.reasons,
+          "; ",
+          &ReasonText.unmet/1
+        )}
+      </div>
+    </div>
+    """
+  end
+
   attr :cart, :map, required: true
 
   def render_summary(assigns) do
@@ -96,11 +177,26 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
       </div>
       <div class="space-y-1.5 max-h-36 overflow-y-auto">
         <div :for={item <- @cart.items} class="flex justify-between text-xs">
-          <span class="truncate pr-2">{item.name} × {item.quantity}</span>
+          <span class="truncate pr-2">
+            <.icon :if={gift?(item)} name="hero-gift" class="size-3.5 text-success" />
+            {item.name} × {item.quantity}
+          </span>
           <span class="font-mono font-bold shrink-0">{item.total_price} ₽</span>
         </div>
       </div>
     </div>
     """
   end
+
+  defp gift?(item), do: Map.get(item, :gift, false)
+
+  defp item_key(item), do: item |> Map.get(:key, item.product_id) |> String.replace(":", "-")
+
+  defp base_total(item), do: Map.get(item, :base_total, item.total_price)
+
+  defp discounted?(item), do: base_total(item) > item.total_price
+
+  defp code_class(:applied), do: "border-success/40 bg-success/10 text-success"
+  defp code_class(:pending), do: "border-warning/40 bg-warning/10"
+  defp code_class(:rejected), do: "border-error/40 bg-error/10 text-error"
 end

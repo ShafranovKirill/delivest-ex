@@ -144,9 +144,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
                 <div class="flex items-center justify-between p-2 rounded-lg bg-base-200/60 text-xs">
                   <div class="flex-1 truncate pr-2">
                     <p class="font-medium truncate">{item.name}</p>
-                    <p class="text-base-content/60 font-mono">{item.price} ₽ × {item.quantity}</p>
+                    <p :if={Map.get(item, :gift)} class="text-success font-medium">
+                      {gettext("Gift × %{count}", count: item.quantity)}
+                    </p>
+                    <p :if={!Map.get(item, :gift)} class="text-base-content/60 font-mono">
+                      {item.price} ₽ × {item.quantity}
+                    </p>
                   </div>
-                  <div class="flex items-center gap-1 shrink-0">
+                  <div :if={!Map.get(item, :gift)} class="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       phx-click="remove_item"
@@ -199,7 +204,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
   end
 
   defp get_cart_quantity(cart, product_id) do
-    case Enum.find(cart.items, &(&1.product_id == product_id)) do
+    case Enum.find(cart.items, &(&1.product_id == product_id and !Map.get(&1, :gift, false))) do
       nil -> 0
       item -> item.quantity
     end

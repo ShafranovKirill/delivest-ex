@@ -1,33 +1,30 @@
 defmodule Delivest.Oms.Orders.Lines do
   alias Delivest.Net
-  alias Delivest.Oms.CartView
+  alias Delivest.Promo.{Allocation, Line, Result}
 
-  def from_cart(%CartView{items: items}) do
-    products = Net.list_products_by_ids(Enum.map(items, & &1.product_id), preload: [:category])
+  def from_pricing(%Result{lines: lines, total: total}) do
+    products = Net.list_products_by_ids(Enum.map(lines, & &1.product_id), preload: [:category])
 
-    if Enum.all?(items, &Map.has_key?(products, &1.product_id)),
-      do: {:ok, build(items, products)},
+    if Enum.all?(lines, &Map.has_key?(products, &1.product_id)),
+      do: {:ok, %{items: Enum.flat_map(lines, &split(&1, products)), total_amount: total}},
       else: {:error, :product_unavailable}
   end
 
-  defp build(items, products) do
-    lines = Enum.map(items, &line(&1, Map.fetch!(products, &1.product_id)))
+  defp split(%Line{} = line, products) do
+    product = Map.fetch!(products, line.product_id)
 
-    %{
-      items: lines,
-      total_amount: lines |> Enum.map(&(&1.price * &1.quantity)) |> Enum.sum()
-    }
-  end
-
-  defp line(item, product) do
-    %{
-      product_id: product.id,
-      title: product.name,
-      price: product.price,
-      quantity: item.quantity,
-      category_id: product.category_id,
-      category_name: category_name(product)
-    }
+    for {price, quantity} <- Allocation.split_unit_price(line.total, line.quantity) do
+      %{
+        product_id: product.id,
+        title: product.name,
+        price: price,
+        base_price: line.base_price,
+        gift: line.gift,
+        quantity: quantity,
+        category_id: product.category_id,
+        category_name: category_name(product)
+      }
+    end
   end
 
   defp category_name(%{category: %{name: name}}), do: name

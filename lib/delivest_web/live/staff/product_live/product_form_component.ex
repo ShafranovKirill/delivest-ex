@@ -272,11 +272,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input field={@form[:price]} type="number" label={gettext("Price")} required />
 
-            <.input
-              field={@form[:old_price]}
-              type="text"
-              label={gettext("Price before discount")}
-            />
+            <p class="text-xs text-base-content/60 sm:self-end sm:pb-3">
+              {gettext("Discounts are set in «Discounts & promo codes» by the product URL slug.")}
+            </p>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

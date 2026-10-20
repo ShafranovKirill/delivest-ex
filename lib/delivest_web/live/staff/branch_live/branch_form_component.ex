@@ -209,6 +209,19 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                 />
               </div>
 
+              <div class="space-y-1">
+                <.input
+                  field={frontpad[:price_override]}
+                  type="checkbox"
+                  label={gettext("Send discounted prices to Frontpad")}
+                />
+                <p class="text-xs text-base-content/60">
+                  {gettext(
+                    "Enable only when «price change on order» is turned on for products in Frontpad. Otherwise the order discount is sent as a single amount."
+                  )}
+                </p>
+              </div>
+
               <div class="space-y-2">
                 <p class="text-sm font-medium">{gettext("Frontpad status codes")}</p>
                 <p class="text-xs text-base-content/60">

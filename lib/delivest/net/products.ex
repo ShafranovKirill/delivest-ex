@@ -124,6 +124,19 @@ defmodule Delivest.Net.Products do
     |> Repo.one()
   end
 
+  def list_branch_products_by_slugs(_branch_id, []), do: %{}
+
+  def list_branch_products_by_slugs(branch_id, slugs) when is_list(slugs) do
+    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+
+    Product
+    |> where([p], p.slug in ^slugs and p.id in ^product_ids)
+    |> where([p], is_nil(p.deleted_at) and p.is_active == true)
+    |> preload(:media)
+    |> Repo.all()
+    |> Map.new(&{&1.slug, &1})
+  end
+
   def list_product_options_for_branch(branch_id) do
     product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
 
@@ -199,11 +212,13 @@ defmodule Delivest.Net.Products do
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
     Cachex.del(:menu_cache, branch_id)
     Cachex.del(:stock_cache, branch_id)
+    Cachex.del(:promo_cache, branch_id)
     Cachex.clear(:cart_cache)
   end
 
   defp invalidate_menu_cache(_) do
     Cachex.clear(:stock_cache)
+    Cachex.clear(:promo_cache)
     Cachex.clear(:cart_cache)
   end
 

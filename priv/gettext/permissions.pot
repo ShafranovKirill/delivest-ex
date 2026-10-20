@@ -22,6 +22,9 @@ msgstr ""
 msgid "stocks"
 msgstr ""
 
+msgid "promotions"
+msgstr ""
+
 msgid "clients"
 msgstr ""
 

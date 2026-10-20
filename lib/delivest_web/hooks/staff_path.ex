@@ -27,6 +27,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/categories", :categories},
     {"/staff/products", :products},
     {"/staff/stocks", :stocks},
+    {"/staff/promotions", :promotions},
     {"/staff/branches/select", :branches_select},
     {"/staff/branches", :branches},
     {"/staff/clients", :clients},
