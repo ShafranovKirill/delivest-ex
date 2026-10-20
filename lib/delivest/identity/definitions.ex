@@ -9,6 +9,7 @@ defmodule Delivest.Identity.Definitions do
   clients.create clients.read clients.update clients.delete
   orders.create orders.read orders.update orders.delete
   statistics.read
+  logs.read
   admin
   """
 

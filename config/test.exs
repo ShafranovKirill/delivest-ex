@@ -1,5 +1,6 @@
 import Config
 config :delivest, Oban, testing: :manual
+config :delivest, Delivest.Logs, enabled: false
 
 # Configure your database
 #

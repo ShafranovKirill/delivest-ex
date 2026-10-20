@@ -10,6 +10,7 @@ defmodule Delivest.Application do
     children = [
       DelivestWeb.Telemetry,
       Delivest.Repo,
+      log_buffer(),
       {DNSCluster, query: Application.get_env(:delivest, :dns_cluster_query) || :ignore},
       {Oban, Application.fetch_env!(:delivest, Oban)},
       {Phoenix.PubSub, name: Delivest.PubSub},
@@ -29,7 +30,12 @@ defmodule Delivest.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Delivest.Supervisor]
 
-    Supervisor.start_link(children, opts)
+    Delivest.Logs.ObanErrors.attach()
+    Supervisor.start_link(Enum.reject(children, &is_nil/1), opts)
+  end
+
+  defp log_buffer do
+    if Delivest.Logs.enabled?(), do: {Delivest.Logs.Buffer, level: Delivest.Logs.level()}
   end
 
   # Tell Phoenix to update the endpoint configuration

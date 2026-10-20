@@ -14,11 +14,14 @@ config :delivest, Oban,
   lifeline: [rescue_after: {2, :hours}],
   pruner: [max_age: {1, :day}],
   crontab: [
-    {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker}
+    {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker},
+    {"0 4 * * *", Delivest.Logs.PruneWorker}
   ],
   repo: Delivest.Repo
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
+config :delivest, Delivest.Logs, enabled: true, level: :info, retention_days: 14
 
 config :delivest,
   ecto_repos: [Delivest.Repo],
