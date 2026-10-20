@@ -63,22 +63,5 @@ defmodule Delivest.Repo.Migrations.CreatePromotions do
     create index(:promo_redemptions, [:promotion_id])
     create index(:promo_redemptions, [:promo_code_id])
     create index(:promo_redemptions, [:client_id])
-
-    alter table(:carts) do
-      add :promo_code, :string
-      add :fulfillment_type, :string
-      add :client_id, :binary_id
-    end
-
-    alter table(:orders) do
-      add :subtotal_amount, :integer
-      add :discount_amount, :integer, null: false, default: 0
-      add :promotions, :map, null: false, default: fragment("'[]'::jsonb")
-    end
-
-    alter table(:order_items) do
-      add :base_price, :integer
-      add :gift, :boolean, null: false, default: false
-    end
   end
 end

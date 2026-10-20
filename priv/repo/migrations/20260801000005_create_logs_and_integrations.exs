@@ -1,4 +1,4 @@
-defmodule Delivest.Repo.Migrations.CreateAuditEventsAndAppLogs do
+defmodule Delivest.Repo.Migrations.CreateLogsAndIntegrations do
   use Ecto.Migration
 
   def change do
@@ -19,6 +19,8 @@ defmodule Delivest.Repo.Migrations.CreateAuditEventsAndAppLogs do
     create index(:audit_events, [:inserted_at])
     create index(:audit_events, [:subject_type, :inserted_at])
     create index(:audit_events, [:branch_id, :inserted_at])
+    create index(:audit_events, [:actor_id, :inserted_at])
+    create index(:audit_events, [:action, :inserted_at])
 
     create table(:app_logs) do
       add :level, :string, null: false
@@ -30,5 +32,16 @@ defmodule Delivest.Repo.Migrations.CreateAuditEventsAndAppLogs do
 
     create index(:app_logs, [:inserted_at])
     create index(:app_logs, [:level, :inserted_at])
+
+    create table(:crm_catalog_snapshots, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+      add :branch_id, references(:branches, type: :binary_id, on_delete: :delete_all), null: false
+      add :provider, :string, null: false
+      add :products, :map, null: false, default: fragment("'[]'::jsonb")
+      add :issues, :map, null: false, default: fragment("'[]'::jsonb")
+      add :checked_at, :utc_datetime, null: false
+    end
+
+    create unique_index(:crm_catalog_snapshots, [:branch_id])
   end
 end
