@@ -63,13 +63,23 @@ defmodule DelivestWeb.Router do
     end
 
     scope "/orders", Order do
-      pipe_through :order_rate_limit
+      get "/active", OrderController, :active
 
-      post "/", OrderController, :create
+      scope "/" do
+        pipe_through :order_rate_limit
+
+        post "/", OrderController, :create
+      end
     end
 
     get "/:branch_id/stocks", Stock.StockController, :index
     get "/branches/:branch_id/menu", Menu.MenuController, :index
+  end
+
+  scope "/integrations", DelivestWeb.Integrations do
+    pipe_through :api
+
+    post "/frontpad/:token", FrontpadWebhookController, :create
   end
 
   scope "/staff", DelivestWeb.Staff do

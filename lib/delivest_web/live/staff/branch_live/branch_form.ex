@@ -80,11 +80,12 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   def for_branch(_branch), do: new()
 
   defp prefill_crm(nil), do: prefill_crm(%BranchSettings{})
+  defp prefill_crm(%BranchSettings{} = crm), do: %{crm | frontpad: prefill_frontpad(crm.frontpad)}
 
-  defp prefill_crm(%BranchSettings{frontpad: nil} = crm),
-    do: %{crm | frontpad: %Frontpad.Settings{}}
+  defp prefill_frontpad(nil), do: prefill_frontpad(%Frontpad.Settings{})
 
-  defp prefill_crm(crm), do: crm
+  defp prefill_frontpad(%Frontpad.Settings{} = settings),
+    do: %{settings | statuses: settings.statuses || %Frontpad.StatusCodes{}}
 
   defp normalize_working_hours_attrs(form, attrs) when is_map(attrs) do
     case Map.fetch(attrs, "working_hours") do

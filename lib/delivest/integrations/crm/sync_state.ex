@@ -25,6 +25,21 @@ defmodule Delivest.Integrations.Crm.SyncState do
     })
   end
 
+  def remote_status(order, status, code, at) do
+    if is_nil(status),
+      do: Logger.warning("crm order #{order.number} got unmapped status code #{code}")
+
+    Audit.record(:system, "order.crm_status_changed", order,
+      metadata: %{status: status, code: code}
+    )
+
+    Orders.update_order_crm(order, %{
+      remote_status: status && to_string(status),
+      remote_status_code: code,
+      remote_status_at: at
+    })
+  end
+
   def retrying(order, error, attempt),
     do: Orders.update_order_crm(order, %{status: "pending", attempts: attempt, last_error: error})
 

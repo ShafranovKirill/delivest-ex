@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.Frontpad.FrontpadView do
-  alias Delivest.Integrations.Frontpad.Settings
+  alias Delivest.Integrations.Frontpad.{Settings, StatusCodes}
 
   @type product_item :: %{
           external_id: String.t(),
@@ -20,6 +20,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
           descr: String.t() | nil,
           pay: String.t() | nil,
           datetime: String.t() | nil,
+          hook_url: String.t() | nil,
+          hook_status: [String.t()],
           products: [product_item()]
         }
 
@@ -36,6 +38,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     :descr,
     :pay,
     :datetime,
+    :hook_url,
+    hook_status: [],
     products: []
   ]
 
@@ -43,21 +47,23 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
   def build(order, %Settings{} = settings, products_map) do
     with {:ok, secret} <- extract_secret(settings),
          {:ok, formatted_products} <- extract_products(order.items, products_map) do
-      payload = %__MODULE__{
-        secret: secret,
-        affiliate: blank_to_nil(settings.affiliate),
-        phone: truncate(customer_phone(order), 50),
-        name: truncate(customer_name(order), 50),
-        street: truncate(order.address && order.address.street, 50),
-        home: truncate(order.address && order.address.house, 50),
-        pod: truncate_int_string(order.address && order.address.entrance, 2),
-        et: truncate_int_string(order.address && order.address.floor, 2),
-        apart: truncate(order.address && order.address.apartment, 50),
-        descr: truncate(order.comment, 100),
-        pay: map_payment_method(order.payment_method),
-        datetime: format_cook_by(order.cook_by),
-        products: formatted_products
-      }
+      payload =
+        %__MODULE__{
+          secret: secret,
+          affiliate: blank_to_nil(settings.affiliate),
+          phone: truncate(customer_phone(order), 50),
+          name: truncate(customer_name(order), 50),
+          street: truncate(order.address && order.address.street, 50),
+          home: truncate(order.address && order.address.house, 50),
+          pod: truncate_int_string(order.address && order.address.entrance, 2),
+          et: truncate_int_string(order.address && order.address.floor, 2),
+          apart: truncate(order.address && order.address.apartment, 50),
+          descr: truncate(order.comment, 100),
+          pay: map_payment_method(order.payment_method),
+          datetime: format_cook_by(order.cook_by),
+          products: formatted_products
+        }
+        |> put_hooks(settings)
 
       {:ok, payload}
     end
@@ -78,7 +84,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
         {"apart", view.apart},
         {"descr", view.descr},
         {"pay", view.pay},
-        {"datetime", view.datetime}
+        {"datetime", view.datetime},
+        {"hook_url", view.hook_url}
       ]
       |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
 
@@ -98,7 +105,22 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
         end
       end)
 
-    base_params ++ products_params
+    hook_params =
+      view.hook_status
+      |> Enum.with_index()
+      |> Enum.map(fn {code, index} -> {"hook_status[#{index}]", code} end)
+
+    base_params ++ products_params ++ hook_params
+  end
+
+  defp put_hooks(view, %Settings{webhook_token: token, statuses: statuses}) do
+    case StatusCodes.codes(statuses) do
+      codes when codes == [] or is_nil(token) ->
+        view
+
+      codes ->
+        %{view | hook_status: codes, hook_url: Delivest.Integrations.Frontpad.webhook_url(token)}
+    end
   end
 
   defp customer_phone(%{customer_phone: phone}) when is_binary(phone) and phone != "", do: phone

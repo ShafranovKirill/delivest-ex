@@ -13,6 +13,7 @@ defmodule Delivest.Integrations.CrmTest do
 
   defp branch(crm) do
     branch = insert(:branch, is_active: true)
+    crm = put_in(crm.frontpad.webhook_token, "token-#{branch.id}")
     Repo.insert!(%BranchInfo{branch_id: branch.id, crm: crm})
     branch
   end
@@ -21,7 +22,12 @@ defmodule Delivest.Integrations.CrmTest do
     %BranchSettings{
       enabled: enabled?,
       provider: :frontpad,
-      frontpad: %Frontpad.Settings{api_key: "key", affiliate: "3"}
+      frontpad: %Frontpad.Settings{
+        api_key: "key",
+        affiliate: "3",
+        webhook_token: "hook-token",
+        statuses: %Frontpad.StatusCodes{preparing: "2", delivering: "4", completed: "5"}
+      }
     }
   end
 
@@ -112,5 +118,75 @@ defmodule Delivest.Integrations.CrmTest do
 
     assert {:cancel, {:missing_external_id, _}} = sync(order)
     assert %{status: "failed"} = Repo.reload!(order).crm
+  end
+
+  describe "status webhook" do
+    alias Delivest.Integrations.Frontpad.Webhook
+    alias Delivest.Oms.OrderStatus
+
+    defp sent_order(branch) do
+      {:ok, order} = place_order(branch)
+      stub_frontpad(%{"result" => "success", "order_id" => "900"})
+      :ok = sync(order)
+      Repo.reload!(order)
+    end
+
+    test "maps the crm status code to the order status" do
+      branch = branch(frontpad(true))
+      order = sent_order(branch)
+
+      assert {:ok, updated} =
+               Webhook.change_status("token-#{branch.id}", 900, 4, "2026-10-20 12:03:00")
+
+      assert OrderStatus.current(updated) == :delivering
+      assert updated.crm.remote_status_code == "4"
+      assert updated.crm.remote_status_at == ~U[2026-10-20 09:03:00Z]
+
+      assert [%Event{}] =
+               Repo.all(from(e in Event, where: e.action == "order.crm_status_changed"))
+
+      assert OrderStatus.current(order) == :created
+    end
+
+    test "completed crm orders stop being active" do
+      branch = branch(frontpad(true))
+      sent_order(branch)
+
+      {:ok, updated} = Webhook.change_status("token-#{branch.id}", "900", "5", nil)
+      refute OrderStatus.active?(updated)
+    end
+
+    test "unknown codes keep the previous status" do
+      branch = branch(frontpad(true))
+      sent_order(branch)
+
+      assert {:ok, updated} = Webhook.change_status("token-#{branch.id}", "900", "99", nil)
+      assert OrderStatus.current(updated) == :created
+      assert updated.crm.remote_status_code == "99"
+    end
+
+    test "a wrong token finds nothing" do
+      sent_order(branch(frontpad(true)))
+      assert {:error, :not_found} = Webhook.change_status("wrong", "900", "4", nil)
+    end
+
+    test "new orders ask Frontpad for the configured status hooks" do
+      branch = branch(frontpad(true))
+      {:ok, order} = place_order(branch)
+      test_pid = self()
+
+      Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        send(test_pid, {:params, URI.decode_query(body)})
+        Req.Test.json(conn, %{"result" => "success", "order_id" => "1"})
+      end)
+
+      :ok = sync(order)
+
+      assert_receive {:params, params}
+      assert params["hook_status[0]"] == "2"
+      assert params["hook_status[2]"] == "5"
+      assert params["hook_url"] =~ "/integrations/frontpad/token-#{branch.id}"
+    end
   end
 end

@@ -2,7 +2,7 @@ defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
 
   alias Delivest.Audit
-  alias Delivest.Oms.Order
+  alias Delivest.Oms.{Order, OrderStatus}
   alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, Update}
   alias Delivest.Repo
 
@@ -33,6 +33,20 @@ defmodule Delivest.Oms.Orders do
     |> limit(^limit)
     |> preload(:items)
     |> Repo.all()
+  end
+
+  def list_active_orders(nil), do: []
+
+  def list_active_orders(session_id) do
+    since = DateTime.add(DateTime.utc_now(), -active_hours(), :hour)
+
+    Order
+    |> where([o], o.session_id == ^session_id and is_nil(o.deleted_at))
+    |> where([o], o.inserted_at >= ^since and o.status not in ^OrderStatus.final())
+    |> order_by([o], desc: o.inserted_at)
+    |> preload(:items)
+    |> Repo.all()
+    |> Enum.filter(&OrderStatus.active?/1)
   end
 
   def get_order(id) do
@@ -67,6 +81,8 @@ defmodule Delivest.Oms.Orders do
     |> persist([:order, :deleted])
     |> Audit.track(actor, "order.deleted")
   end
+
+  defp active_hours, do: Application.get_env(:delivest, :active_order_hours, 7)
 
   defp persist(changeset, event) do
     changeset

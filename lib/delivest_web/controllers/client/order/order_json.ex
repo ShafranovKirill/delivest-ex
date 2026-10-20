@@ -1,13 +1,36 @@
 defmodule DelivestWeb.Client.Order.OrderJSON do
+  alias Delivest.Oms.OrderStatus
+
   def create(%{order: order}) do
     %{data: order_data(order)}
+  end
+
+  def active(%{orders: orders}) do
+    %{data: Enum.map(orders, &active_order_data/1)}
+  end
+
+  defp active_order_data(order) do
+    %{
+      id: order.id,
+      number: order.number,
+      status: OrderStatus.current(order),
+      fulfillment_type: order.fulfillment_type,
+      payment_method: order.payment_method,
+      total_amount: order.total_amount,
+      branch_id: order.branch_id,
+      cook_by: order.cook_by,
+      comment: order.comment,
+      address: serialize_address(order.address),
+      inserted_at: order.inserted_at,
+      items: Enum.map(order.items, &item_data/1)
+    }
   end
 
   defp order_data(order) do
     %{
       id: order.id,
       number: order.number,
-      status: order.status,
+      status: OrderStatus.current(order),
       fulfillment_type: order.fulfillment_type,
       payment_method: order.payment_method,
       total_amount: order.total_amount,

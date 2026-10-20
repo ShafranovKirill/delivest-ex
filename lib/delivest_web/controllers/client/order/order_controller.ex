@@ -8,7 +8,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
   alias Delivest.Oms.Carts
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
-  alias DelivestWeb.Schemas.OrderSchemas.{CreateOrderRequest, OrderResponse}
+  alias DelivestWeb.Schemas.OrderSchemas.{ActiveOrdersResponse, CreateOrderRequest, OrderResponse}
 
   operation(:create,
     summary: "Создать заказ",
@@ -26,8 +26,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
                     payment_method cook_by comment address)
 
   def create(conn, params) do
-    attrs = Map.take(params, @public_fields)
     session_id = CookieHelper.get_cookie(conn, "session_id")
+    attrs = params |> Map.take(@public_fields) |> Map.put("session_id", session_id)
 
     with {:ok, _branch} <- fetch_public_branch(attrs["branch_id"]),
          true <-
@@ -38,6 +38,20 @@ defmodule DelivestWeb.Client.Order.OrderController do
       {:error, reason} -> render_error(conn, reason)
       {:error, _step, reason} -> render_error(conn, reason)
     end
+  end
+
+  operation(:active,
+    summary: "Активные заказы",
+    description:
+      "Заказы текущей сессии, которые ещё не завершены и созданы не раньше нескольких часов назад. " <>
+        "Статус берётся из CRM, если заказ обрабатывается в ней.",
+    tags: ["Orders"],
+    responses: [ok: {"Активные заказы", "application/json", ActiveOrdersResponse}]
+  )
+
+  def active(conn, _params) do
+    orders = conn |> CookieHelper.get_cookie("session_id") |> Oms.list_active_orders()
+    render(conn, :active, orders: orders)
   end
 
   defp fetch_public_branch(nil), do: {:error, :branch_id_required}

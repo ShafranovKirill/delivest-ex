@@ -39,6 +39,10 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
   defp text("order.details_changed", b), do: gettext("Order %{subject} changed: %{changes}", b)
   defp text("order.deleted", b), do: gettext("Order %{subject} deleted", b)
   defp text("order.sent_to_crm", b), do: gettext("Order %{subject} sent to CRM", b)
+
+  defp text("order.crm_status_changed", b),
+    do: gettext("Order %{subject} status changed in CRM: %{changes}", b)
+
   defp text("order.crm_failed", b), do: gettext("Order %{subject} not sent to CRM: %{error}", b)
 
   defp text("product.created", b), do: gettext("Product «%{subject}» created", b)

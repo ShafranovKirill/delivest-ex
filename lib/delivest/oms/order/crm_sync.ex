@@ -3,6 +3,7 @@ defmodule Delivest.Oms.Order.CrmSync do
   import Ecto.Changeset
 
   @statuses ~w(pending sent failed)
+  @remote_statuses ~w(created preparing ready delivering completed cancelled)
 
   @primary_key false
   embedded_schema do
@@ -14,6 +15,9 @@ defmodule Delivest.Oms.Order.CrmSync do
     field :last_error, :string
     field :sent_at, :utc_datetime
     field :warnings, :map
+    field :remote_status, :string
+    field :remote_status_code, :string
+    field :remote_status_at, :utc_datetime
   end
 
   def changeset(sync, attrs) do
@@ -26,10 +30,14 @@ defmodule Delivest.Oms.Order.CrmSync do
       :attempts,
       :last_error,
       :sent_at,
-      :warnings
+      :warnings,
+      :remote_status,
+      :remote_status_code,
+      :remote_status_at
     ])
     |> validate_required([:provider, :status])
     |> validate_inclusion(:status, @statuses)
+    |> validate_inclusion(:remote_status, @remote_statuses)
     |> validate_number(:attempts, greater_than_or_equal_to: 0)
   end
 end

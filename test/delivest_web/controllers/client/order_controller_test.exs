@@ -177,6 +177,49 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     assert body["details"]["customer_phone"]
   end
 
+  describe "active orders" do
+    test "lists orders of the current session only", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+      conn = post(conn, ~p"/client/orders", order_params(branch, cart_id))
+      order_id = json_response(conn, 200)["data"]["id"]
+
+      body =
+        conn |> recycle_with_headers() |> get(~p"/client/orders/active") |> json_response(200)
+
+      assert [%{"id" => ^order_id, "status" => "created", "items" => [_]}] = body["data"]
+
+      other = build_conn() |> get(~p"/client/orders/active") |> json_response(200)
+      assert other["data"] == []
+    end
+
+    test "hides finished and stale orders", %{conn: conn, branch: branch, product: product} do
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+      conn = post(conn, ~p"/client/orders", order_params(branch, cart_id))
+      order = Repo.get!(Order, json_response(conn, 200)["data"]["id"])
+
+      order |> Ecto.Changeset.change(status: :completed) |> Repo.update!()
+
+      assert conn
+             |> recycle_with_headers()
+             |> get(~p"/client/orders/active")
+             |> json_response(200) == %{"data" => []}
+
+      stale = DateTime.add(DateTime.utc_now(:second), -8, :hour)
+      order |> Ecto.Changeset.change(status: :ready, inserted_at: stale) |> Repo.update!()
+
+      assert conn
+             |> recycle_with_headers()
+             |> get(~p"/client/orders/active")
+             |> json_response(200) == %{"data" => []}
+    end
+  end
+
   test "order creation is rate limited per client IP", %{conn: conn} do
     statuses =
       for _ <- 1..11 do

@@ -156,4 +156,55 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       required: [:data]
     })
   end
+
+  defmodule ActiveOrder do
+    require OpenApiSpex
+    alias DelivestWeb.Schemas.OrderSchemas.OrderItemResponse
+
+    OpenApiSpex.schema(%{
+      title: "ActiveOrder",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        number: %Schema{type: :string, example: "A042"},
+        status: %Schema{
+          type: :string,
+          enum: ["created", "preparing", "ready", "delivering", "completed", "cancelled"],
+          example: "preparing"
+        },
+        fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
+        payment_method: %Schema{type: :string, enum: ["cash", "card_offline"]},
+        total_amount: %Schema{type: :integer, example: 1180},
+        branch_id: %Schema{type: :string, format: :uuid},
+        cook_by: %Schema{type: :string, format: :date_time, nullable: true},
+        comment: %Schema{type: :string, nullable: true},
+        address: %Schema{type: :object, nullable: true, additionalProperties: true},
+        inserted_at: %Schema{type: :string, format: :date_time},
+        items: %Schema{type: :array, items: OrderItemResponse}
+      },
+      required: [
+        :id,
+        :number,
+        :status,
+        :fulfillment_type,
+        :payment_method,
+        :total_amount,
+        :branch_id,
+        :inserted_at,
+        :items
+      ]
+    })
+  end
+
+  defmodule ActiveOrdersResponse do
+    require OpenApiSpex
+    alias DelivestWeb.Schemas.OrderSchemas.ActiveOrder
+
+    OpenApiSpex.schema(%{
+      title: "ActiveOrdersResponse",
+      type: :object,
+      properties: %{data: %Schema{type: :array, items: ActiveOrder}},
+      required: [:data]
+    })
+  end
 end

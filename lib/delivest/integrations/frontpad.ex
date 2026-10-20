@@ -10,6 +10,8 @@ defmodule Delivest.Integrations.Frontpad do
   @impl true
   def name, do: "Frontpad"
 
+  def webhook_url(token), do: DelivestWeb.Endpoint.url() <> "/integrations/frontpad/" <> token
+
   @impl true
   def deliver_order(order, settings) do
     products = Net.list_products_by_ids(Enum.map(order.items, & &1.product_id))

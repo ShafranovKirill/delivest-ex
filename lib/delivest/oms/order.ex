@@ -10,6 +10,7 @@ defmodule Delivest.Oms.Order do
 
   @fulfillment_types [:dine_in, :delivery, :pickup]
   @statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled, :crm]
+  @progress_statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled]
   @payment_methods [:cash, :card_offline]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -31,6 +32,7 @@ defmodule Delivest.Oms.Order do
     belongs_to :client, Delivest.Identity.Client
     belongs_to :cart, Delivest.Oms.Cart
     field :branch_id, :binary_id
+    field :session_id, :string
 
     field :customer_phone, :string, virtual: true
     field :customer_name, :string, virtual: true
@@ -60,6 +62,7 @@ defmodule Delivest.Oms.Order do
       :client_id,
       :branch_id,
       :cart_id,
+      :session_id,
       :customer_phone,
       :customer_name,
       :status,
@@ -89,6 +92,8 @@ defmodule Delivest.Oms.Order do
     |> validate_cook_by_range()
     |> validate_address_if_delivery()
   end
+
+  def progress_statuses, do: @progress_statuses
 
   def crm_changeset(order, attrs) do
     order

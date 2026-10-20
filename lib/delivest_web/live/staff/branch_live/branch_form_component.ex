@@ -1,7 +1,8 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   alias Delivest.Identity
   use DelivestWeb, :live_component
-  alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.{Crm, Frontpad}
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
   alias DelivestWeb.Staff.BranchLive.{BranchForm, WorkingHoursComponent}
 
   @impl true
@@ -279,6 +280,34 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                     type="text"
                     label={gettext("Frontpad Branch ID")}
                   />
+
+                  <div class="space-y-2">
+                    <p class="text-sm font-medium">{gettext("Frontpad status codes")}</p>
+                    <p class="text-xs text-base-content/60">
+                      {gettext(
+                        "Codes from the Frontpad status reference. Customers see the matching status of their order."
+                      )}
+                    </p>
+                    <.inputs_for :let={codes} field={frontpad[:statuses]}>
+                      <div class="grid grid-cols-2 gap-2">
+                        <.input
+                          :for={status <- Frontpad.StatusCodes.statuses()}
+                          field={codes[status]}
+                          type="text"
+                          label={OrderHelpers.status_label(status)}
+                        />
+                      </div>
+                    </.inputs_for>
+                  </div>
+
+                  <div :if={frontpad[:webhook_token].value} class="space-y-1">
+                    <p class="text-sm font-medium">
+                      {gettext("Webhook URL for Frontpad API settings")}
+                    </p>
+                    <code class="block break-all rounded bg-base-200 p-2 text-xs">
+                      {Frontpad.webhook_url(frontpad[:webhook_token].value)}
+                    </code>
+                  </div>
                 </.inputs_for>
               </.inputs_for>
             </div>
