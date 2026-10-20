@@ -19,8 +19,8 @@ defmodule Delivest.AuditTest do
     assert event.actor_name == "Ivan"
     assert event.subject_type == "product"
     assert event.subject_label == "Pizza"
-    assert_receive {:audit_event, %Event{id: id}}
-    assert id == event.id
+    event_id = event.id
+    assert_receive {:audit_event, %Event{id: ^event_id}}
   end
 
   test "track keeps the branch and metadata" do

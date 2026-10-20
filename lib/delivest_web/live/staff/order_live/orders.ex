@@ -300,6 +300,9 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                     <span class="text-base-content/60">CRM:</span>
                     <%= cond do %>
                       <% crm_status == "sent" -> %>
+                        <span :if={order.crm.external_number} class="font-mono font-bold">
+                          #{order.crm.external_number}
+                        </span>
                         <span>
                           {gettext("sent at")} {order.crm.sent_at &&
                             Calendar.strftime(order.crm.sent_at, "%d.%m.%Y %H:%M")}

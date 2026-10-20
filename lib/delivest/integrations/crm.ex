@@ -1,7 +1,7 @@
 defmodule Delivest.Integrations.Crm do
   alias Delivest.Identity
   alias Delivest.Identity.Branch
-  alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker}
+  alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker, Throttle}
   alias Delivest.Integrations.Frontpad
   alias Delivest.Oms.{Order, Orders}
 
@@ -31,18 +31,18 @@ defmodule Delivest.Integrations.Crm do
   def deliver(%Order{crm: %{provider: provider}} = order) do
     with {:ok, name, module} <- provider_module(provider),
          {:ok, settings} <- branch_settings(order.branch_id, name) do
-      module.deliver_order(order, settings)
+      Throttle.run(module.rate_limit(settings), fn -> module.deliver_order(order, settings) end)
     end
   end
 
   def deliver(_order), do: {:error, :unknown_provider}
 
-  def permanent_error?(_order, reason) when reason in @permanent_errors, do: true
+  def classify_error(_order, reason) when reason in @permanent_errors, do: :permanent
 
-  def permanent_error?(%Order{crm: %{provider: provider}}, reason) do
+  def classify_error(%Order{crm: %{provider: provider}}, reason) do
     case provider_module(provider) do
-      {:ok, _name, module} -> module.permanent_error?(reason)
-      _ -> true
+      {:ok, _name, module} -> module.classify_error(reason)
+      _ -> :permanent
     end
   end
 

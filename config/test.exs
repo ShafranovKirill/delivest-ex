@@ -2,6 +2,8 @@ import Config
 config :delivest, Oban, testing: :manual
 config :delivest, Delivest.Logs, enabled: false
 
+config :delivest, Delivest.Integrations.Frontpad, request_interval_ms: 0
+
 config :delivest, Delivest.HTTP.Client,
   req_options: [plug: {Req.Test, Delivest.HTTP.Client}, retry: false]
 

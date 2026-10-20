@@ -24,9 +24,9 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
     end
   end
 
-  defp handle({:ok, external_id}, order, attempt, _max_attempts) do
-    Logger.info("crm order #{order.number} delivered as #{external_id}")
-    SyncState.sent(order, external_id, attempt)
+  defp handle({:ok, delivery}, order, attempt, _max_attempts) do
+    Logger.info("crm order #{order.number} delivered as #{delivery.external_id}")
+    SyncState.sent(order, delivery, attempt)
     :ok
   end
 
@@ -37,16 +37,20 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
       "crm order #{order.number} attempt #{attempt}/#{max_attempts} failed: #{message}"
     )
 
-    cond do
-      Crm.permanent_error?(order, reason) ->
+    case Crm.classify_error(order, reason) do
+      :permanent ->
         SyncState.failed(order, message, attempt)
         {:cancel, reason}
 
-      attempt >= max_attempts ->
+      {:snooze, seconds} ->
+        SyncState.retrying(order, message, attempt)
+        {:snooze, seconds}
+
+      :retry when attempt >= max_attempts ->
         SyncState.failed(order, message, attempt)
         error
 
-      true ->
+      :retry ->
         SyncState.retrying(order, message, attempt)
         error
     end

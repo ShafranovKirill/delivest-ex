@@ -1,13 +1,24 @@
 defmodule Delivest.Integrations.Crm.SyncState do
+  require Logger
+
   alias Delivest.Audit
   alias Delivest.Oms.Orders
 
-  def sent(order, external_id, attempt) do
-    Audit.record(:system, "order.sent_to_crm", order, metadata: %{external_id: external_id})
+  def sent(order, delivery, attempt) do
+    warnings = Map.get(delivery, :warnings)
+
+    if warnings,
+      do: Logger.warning("crm order #{order.number} accepted with warnings: #{inspect(warnings)}")
+
+    Audit.record(:system, "order.sent_to_crm", order,
+      metadata: %{external_id: delivery.external_id, warnings: warnings}
+    )
 
     Orders.update_order_crm(order, %{
       status: "sent",
-      external_id: external_id,
+      external_id: delivery.external_id,
+      external_number: Map.get(delivery, :external_number),
+      warnings: warnings,
       attempts: attempt,
       last_error: nil,
       sent_at: DateTime.utc_now(:second)

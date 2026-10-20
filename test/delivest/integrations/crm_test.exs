@@ -55,13 +55,25 @@ defmodule Delivest.Integrations.CrmTest do
     assert_enqueued(worker: SyncWorker, queue: :crm, args: %{"order_id" => order.id})
   end
 
-  test "successful delivery stores the crm order id" do
+  test "successful delivery stores the crm order id, number and warnings" do
     {:ok, order} = place_order(branch(frontpad(true)))
-    stub_frontpad(%{"result" => "success", "order_id" => 555})
+
+    stub_frontpad(%{
+      "result" => "success",
+      "order_id" => "555",
+      "order_number" => "143",
+      "warnings" => %{"invalid_datetime" => "too_long_period"}
+    })
 
     assert :ok = sync(order)
 
-    assert %{status: "sent", external_id: "555", attempts: 1} = Repo.reload!(order).crm
+    assert %{
+             status: "sent",
+             external_id: "555",
+             external_number: "143",
+             warnings: %{"invalid_datetime" => "too_long_period"},
+             attempts: 1
+           } = Repo.reload!(order).crm
 
     assert [%Event{action: "order.sent_to_crm"}] =
              Repo.all(from(e in Event, where: e.action == "order.sent_to_crm"))
@@ -71,9 +83,28 @@ defmodule Delivest.Integrations.CrmTest do
     {:ok, order} = place_order(branch(frontpad(true)))
     stub_frontpad(%{"result" => "error", "error" => "busy"})
 
-    assert {:error, {:frontpad_api_error, "busy"}} = sync(order)
+    assert {:error, {:frontpad, "busy"}} = sync(order)
     assert %{status: "pending", attempts: 1, last_error: last_error} = Repo.reload!(order).crm
     assert last_error =~ "busy"
+  end
+
+  test "rate limit and closed shift postpone the delivery" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+
+    stub_frontpad(%{"result" => "error", "error" => "requests_limit"})
+    assert {:snooze, 60} = sync(order)
+
+    stub_frontpad(%{"result" => "error", "error" => "cash_close"})
+    assert {:snooze, 600} = sync(order)
+    assert %{status: "pending"} = Repo.reload!(order).crm
+  end
+
+  test "invalid credentials fail the delivery at once" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    stub_frontpad(%{"result" => "error", "error" => "invalid_secret"})
+
+    assert {:cancel, {:frontpad, "invalid_secret"}} = sync(order)
+    assert %{status: "failed"} = Repo.reload!(order).crm
   end
 
   test "permanent crm errors stop retries" do

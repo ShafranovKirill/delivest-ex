@@ -19,12 +19,16 @@ defmodule Delivest.Integrations.Frontpad.Api do
 
   defp decode(response), do: response
 
-  defp result({:ok, %{"result" => "success", "order_id" => order_id}}),
-    do: {:ok, to_string(order_id)}
+  defp result({:ok, %{"result" => "success", "order_id" => order_id} = body}) do
+    {:ok,
+     %{
+       external_id: to_string(order_id),
+       external_number: body["order_number"] && to_string(body["order_number"]),
+       warnings: body["warnings"]
+     }}
+  end
 
-  defp result({:ok, %{"result" => "error", "error" => error}}),
-    do: {:error, {:frontpad_api_error, error}}
-
+  defp result({:ok, %{"result" => "error", "error" => error}}), do: {:error, {:frontpad, error}}
   defp result({:ok, other}), do: {:error, {:unexpected_response, other}}
   defp result(error), do: error
 end
