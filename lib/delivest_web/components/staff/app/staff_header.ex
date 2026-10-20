@@ -53,7 +53,7 @@ defmodule DelivestWeb.StaffHeader do
             <span>{initial}</span>
           </div>
         </div>
-        <div class="flex flex-col text-left">
+        <div class="hidden sm:flex flex-col text-left">
           <span class="text-sm font-semibold text-base-content leading-tight">{staff_name}</span>
           <span class="text-xs text-base-content/60 leading-tight mt-0.5">{@current_staff.role.name}</span>
         </div>

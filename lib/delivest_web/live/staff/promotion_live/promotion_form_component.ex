@@ -67,6 +67,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     end
   end
 
+  defp rules_placeholder, do: "when subtotal >= 1500\nthen discount 10%"
+
   defp product_names(strategy, branch_id) do
     branch_id
     |> Net.list_branch_products_by_slugs(Strategy.slugs(strategy))
@@ -129,7 +131,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
               label={gettext("Rules")}
               class="textarea w-full font-mono text-sm"
               spellcheck="false"
-              placeholder="when subtotal >= 1500\nthen discount 10%"
+              placeholder={rules_placeholder()}
             />
 
             <div
@@ -153,7 +155,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
             {gettext("Limits")}
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
             <.input
               field={@form[:starts_at]}
               type="datetime-local"

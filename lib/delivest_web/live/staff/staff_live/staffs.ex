@@ -166,15 +166,12 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Staff")}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Manage system staff accounts and branches access.")}
-          </p>
-        </div>
-        <div class="flex gap-2">
+    <div class="space-y-6 py-4 sm:p-6">
+      <.page_header
+        title={gettext("Staff")}
+        subtitle={gettext("Manage system staff accounts and branches access.")}
+      >
+        <:actions>
           <.button
             :if={Identity.can?(@current_staff, "staff.create")}
             patch={~p"/staff/employee/new?#{build_query_params(assigns, %{})}"}
@@ -183,8 +180,8 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
             <.icon name="hero-plus" class="size-5" />
             {gettext("Create Staff")}
           </.button>
-        </div>
-      </div>
+        </:actions>
+      </.page_header>
 
       <div class="flex gap-4">
         <.form for={nil} phx-change="search" phx-submit="search" class="w-full max-w-sm">

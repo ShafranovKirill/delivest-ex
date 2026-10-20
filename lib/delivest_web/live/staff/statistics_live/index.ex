@@ -117,10 +117,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
+    <div class="space-y-6 py-4 sm:p-6">
       <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Statistics")}</h1>
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">
+            {gettext("Statistics")}
+          </h1>
           <p class="text-sm text-base-content/60">
             {@current_branch.name} · {format_period(@period)}
           </p>

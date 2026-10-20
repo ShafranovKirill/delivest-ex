@@ -127,23 +127,22 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6 max-w-5xl mx-auto">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 class="text-3xl font-display font-bold">{gettext("Discounts & promo codes")}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Automatic promotions, sale prices, public and personal promo codes.")}
-          </p>
-        </div>
-        <.link
-          :if={Identity.can?(@current_staff, "promotions.create")}
-          patch={~p"/staff/promotions/new"}
-          class="btn btn-primary"
-          id="new-promotion"
-        >
-          <.icon name="hero-plus" class="size-5" /> {gettext("New promotion")}
-        </.link>
-      </div>
+    <div class="space-y-6 py-4 sm:p-6 max-w-5xl mx-auto">
+      <.page_header
+        title={gettext("Discounts & promo codes")}
+        subtitle={gettext("Automatic promotions, sale prices, public and personal promo codes.")}
+      >
+        <:actions>
+          <.link
+            :if={Identity.can?(@current_staff, "promotions.create")}
+            patch={~p"/staff/promotions/new"}
+            class="btn btn-primary"
+            id="new-promotion"
+          >
+            <.icon name="hero-plus" class="size-5" /> {gettext("New promotion")}
+          </.link>
+        </:actions>
+      </.page_header>
 
       <div
         :if={@promotions == []}

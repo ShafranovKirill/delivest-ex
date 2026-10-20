@@ -57,21 +57,21 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 mx-auto p-6">
-      <div class="flex justify-between items-center ">
-        <div>
-          <h1 class="text-3xl font-bold">{gettext("Branches Management")}</h1>
-          <p class="text-sm opacity-70">{gettext("List of available company branches")}</p>
-        </div>
-
-        <.link
-          :if={Identity.can?(@current_staff, "branches.create")}
-          navigate={~p"/staff/branches/new"}
-          class="btn btn-primary"
-        >
-          {gettext("Create Branch")}
-        </.link>
-      </div>
+    <div class="space-y-6 mx-auto py-4 sm:p-6">
+      <.page_header
+        title={gettext("Branches Management")}
+        subtitle={gettext("List of available company branches")}
+      >
+        <:actions>
+          <.link
+            :if={Identity.can?(@current_staff, "branches.create")}
+            navigate={~p"/staff/branches/new"}
+            class="btn btn-primary"
+          >
+            {gettext("Create Branch")}
+          </.link>
+        </:actions>
+      </.page_header>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <%= for branch <- @branches do %>

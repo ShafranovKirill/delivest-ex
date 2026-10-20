@@ -117,21 +117,21 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
-      <div class="flex justify-between items-center ">
-        <div>
-          <h1 class="text-3xl font-bold">{gettext("Roles Management")}</h1>
-          <p class="text-sm opacity-70">{gettext("List of available company roles")}</p>
-        </div>
-
-        <.link
-          :if={Identity.can?(@current_staff, "roles.create")}
-          patch={~p"/staff/roles/new"}
-          class="btn btn-primary"
-        >
-          {gettext("Create Role")}
-        </.link>
-      </div>
+    <div class="space-y-6 py-4 sm:p-6">
+      <.page_header
+        title={gettext("Roles Management")}
+        subtitle={gettext("List of available company roles")}
+      >
+        <:actions>
+          <.link
+            :if={Identity.can?(@current_staff, "roles.create")}
+            patch={~p"/staff/roles/new"}
+            class="btn btn-primary"
+          >
+            {gettext("Create Role")}
+          </.link>
+        </:actions>
+      </.page_header>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <%= for role <- @roles do %>

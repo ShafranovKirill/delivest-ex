@@ -46,7 +46,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
         </.link>
         <div class="min-w-0 flex-1">
           <p class="text-xs uppercase tracking-wider text-base-content/50">{gettext("Branches")}</p>
-          <h1 class="truncate text-3xl font-bold">{@page_title}</h1>
+          <h1 class="truncate text-2xl sm:text-3xl font-bold">{@page_title}</h1>
         </div>
         <span :if={@branch.id && !@branch.is_active} class="badge badge-error badge-soft">
           {gettext("Branch is not active")}

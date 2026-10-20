@@ -74,7 +74,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
+    <div class="space-y-6 py-4 sm:p-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
           <.link navigate={~p"/staff/clients"} class="btn btn-ghost btn-sm btn-square shrink-0">

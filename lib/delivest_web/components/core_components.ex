@@ -332,6 +332,30 @@ defmodule DelivestWeb.CoreComponents do
   end
 
   @doc """
+  Renders a page title with an optional subtitle and actions that wrap under it on phones.
+  """
+  attr :title, :string, required: true
+  attr :subtitle, :string, default: nil
+  slot :actions
+
+  def page_header(assigns) do
+    ~H"""
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">{@title}</h1>
+        <p :if={@subtitle} class="text-sm text-base-content/60">{@subtitle}</p>
+      </div>
+      <div
+        :if={@actions != []}
+        class="flex flex-wrap gap-2 shrink-0 *:max-sm:flex-1 *:max-sm:min-w-max"
+      >
+        {render_slot(@actions)}
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a table with generic styling.
 
   ## Examples
@@ -355,6 +379,7 @@ defmodule DelivestWeb.CoreComponents do
   slot :col, required: true do
     attr :label, :string
     attr :sort, :string, doc: "Field name for Flop sorting"
+    attr :secondary, :boolean, doc: "Hidden on phones"
   end
 
   slot :action, doc: "the slot for showing user actions in the last table column"
@@ -366,9 +391,9 @@ defmodule DelivestWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-x-auto overflow-y-visible border border-base-300 rounded-sm">
-      <table class="table table-zebra table-sm">
-        <thead>
+    <div class="overflow-x-auto overflow-y-visible sm:border sm:border-base-300 rounded-sm">
+      <table class="table table-zebra table-sm max-sm:block">
+        <thead class="max-sm:hidden">
           <tr>
             <th :for={col <- @col}>
               <%= if col[:sort] && @meta && @path_fn do %>
@@ -408,17 +433,31 @@ defmodule DelivestWeb.CoreComponents do
             </th>
           </tr>
         </thead>
-        <tbody id={@id} phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}>
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)}>
+        <tbody
+          id={@id}
+          phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
+          class="max-sm:block max-sm:space-y-2"
+        >
+          <tr
+            :for={row <- @rows}
+            id={@row_id && @row_id.(row)}
+            class="max-sm:block max-sm:rounded-box max-sm:border max-sm:border-base-300 max-sm:bg-base-100! max-sm:px-1 max-sm:py-2"
+          >
             <td
               :for={col <- @col}
               phx-click={@row_click && @row_click.(row)}
-              class={@row_click && "hover:cursor-pointer"}
+              data-label={col[:label]}
+              class={[
+                "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:py-1.5 max-sm:text-right",
+                "max-sm:before:content-[attr(data-label)] max-sm:before:text-xs max-sm:before:text-base-content/50 max-sm:before:text-left",
+                col[:secondary] && "max-sm:hidden!",
+                @row_click && "hover:cursor-pointer"
+              ]}
             >
               {render_slot(col, @row_item.(row))}
             </td>
-            <td :if={@action != []} class="w-0 font-semibold">
-              <div class="flex gap-4">
+            <td :if={@action != []} class="w-0 font-semibold max-sm:block max-sm:w-auto max-sm:pt-2">
+              <div class="flex gap-4 max-sm:justify-end">
                 <%= for action <- @action do %>
                   {render_slot(action, @row_item.(row))}
                 <% end %>
@@ -470,7 +509,7 @@ defmodule DelivestWeb.CoreComponents do
   def slide_over(assigns) do
     ~H"""
     <div
-      class={["drawer drawer-end absolute inset-0 z-100", !@show && "hidden"]}
+      class={["drawer drawer-end fixed inset-0 z-100", !@show && "hidden"]}
       style="pointer-events: none;"
     >
       <input
@@ -482,7 +521,7 @@ defmodule DelivestWeb.CoreComponents do
       />
       <div class="drawer-side" style="pointer-events: auto;">
         <label for={"#{@id}-toggle"} class="drawer-overlay" phx-click={@on_close}></label>
-        <div class="bg-base-100 text-base-content min-h-full w-full max-w-md p-0 flex flex-col border-l border-base-300">
+        <div class="bg-base-100 text-base-content h-dvh w-full max-w-md p-0 flex flex-col border-l border-base-300">
           <div class="p-6 border-b border-base-300 flex items-center justify-between shrink-0">
             <h2 class="text-xl font-display font-bold">{@title}</h2>
             <button type="button" class="btn btn-ghost btn-square btn-sm" phx-click={@on_close}>

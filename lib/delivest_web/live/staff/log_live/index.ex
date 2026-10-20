@@ -76,13 +76,11 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     assigns = assign(assigns, levels: @levels, subject_types: EventText.subject_types())
 
     ~H"""
-    <div class="space-y-6 p-6">
-      <div>
-        <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Logs")}</h1>
-        <p class="text-sm text-base-content/60">
-          {gettext("Who did what and when, application logs, errors and hints.")}
-        </p>
-      </div>
+    <div class="space-y-6 py-4 sm:p-6">
+      <.page_header
+        title={gettext("Logs")}
+        subtitle={gettext("Who did what and when, application logs, errors and hints.")}
+      />
 
       <TabsComponent.render_tabs active={@live_action} />
 

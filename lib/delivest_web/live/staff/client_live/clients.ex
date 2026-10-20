@@ -230,15 +230,12 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Clients")}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Manage system clients, status, and information.")}
-          </p>
-        </div>
-        <div class="flex gap-2">
+    <div class="space-y-6 py-4 sm:p-6">
+      <.page_header
+        title={gettext("Clients")}
+        subtitle={gettext("Manage system clients, status, and information.")}
+      >
+        <:actions>
           <.button
             :if={Identity.can?(@current_staff, "clients.create")}
             patch={~p"/staff/clients/new?#{build_query_params(assigns, %{})}"}
@@ -247,8 +244,8 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
             <.icon name="hero-user-plus" class="size-5" />
             {gettext("Create Client")}
           </.button>
-        </div>
-      </div>
+        </:actions>
+      </.page_header>
 
       <.form
         for={nil}

@@ -195,15 +195,12 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6 max-w-4xl mx-auto">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Promotions")}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Drag and drop items to reorder promotions.")}
-          </p>
-        </div>
-        <div class="flex gap-2">
+    <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+      <.page_header
+        title={gettext("Promotions")}
+        subtitle={gettext("Drag and drop items to reorder promotions.")}
+      >
+        <:actions>
           <.link
             :if={Identity.can?(@current_staff, "stocks.create")}
             patch={~p"/staff/stocks/new"}
@@ -212,8 +209,8 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
             <.icon name="hero-plus" class="size-5" />
             {gettext("Create Promotion")}
           </.link>
-        </div>
-      </div>
+        </:actions>
+      </.page_header>
 
       <div id="stocks-list" phx-hook="SortableStocks" class="space-y-3">
         <%= for stock <- @stocks do %>

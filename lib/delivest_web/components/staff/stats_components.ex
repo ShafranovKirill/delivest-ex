@@ -14,18 +14,20 @@ defmodule DelivestWeb.Staff.StatsComponents do
   def stat_card(assigns) do
     ~H"""
     <div class={[
-      "bg-base-100 rounded-box border border-base-200 shadow-sm p-4 flex items-start gap-3",
+      "bg-base-100 rounded-box border border-base-200 shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row items-start gap-2 sm:gap-3",
       @class
     ]}>
       <div class="bg-primary/10 text-primary rounded-field p-2 shrink-0">
         <.icon name={@icon} class="size-5" />
       </div>
       <div class="min-w-0 flex-1">
-        <p class="text-xs text-base-content/60 uppercase tracking-wide font-semibold truncate">
+        <p class="text-xs text-base-content/60 uppercase tracking-wide font-semibold line-clamp-2 break-words">
           {@label}
         </p>
-        <p class="text-xl font-bold truncate tabular-nums">{render_slot(@inner_block)}</p>
-        <div class="flex items-center gap-2 mt-0.5 min-h-5">
+        <p class="text-lg sm:text-xl font-bold tabular-nums whitespace-nowrap">
+          {render_slot(@inner_block)}
+        </p>
+        <div class="flex flex-wrap items-center gap-x-2 mt-0.5 min-h-5">
           <span
             :if={is_number(@delta)}
             class={[
@@ -39,7 +41,7 @@ defmodule DelivestWeb.Staff.StatsComponents do
           >
             {if @delta > 0, do: "+"}{@delta}%
           </span>
-          <span :if={@hint} class="text-xs text-base-content/50 truncate">{@hint}</span>
+          <span :if={@hint} class="text-xs text-base-content/50">{@hint}</span>
         </div>
       </div>
     </div>

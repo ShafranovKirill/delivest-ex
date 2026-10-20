@@ -353,15 +353,12 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Products")}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Manage branch products, prices, and categories.")}
-          </p>
-        </div>
-        <div class="flex gap-2">
+    <div class="space-y-6 py-4 sm:p-6">
+      <.page_header
+        title={gettext("Products")}
+        subtitle={gettext("Manage branch products, prices, and categories.")}
+      >
+        <:actions>
           <.button
             :if={Identity.can?(@current_staff, "products.create")}
             phx-click="open_copy"
@@ -390,8 +387,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             <.icon name="hero-plus" class="size-5" />
             {gettext("Create Product")}
           </.button>
-        </div>
-      </div>
+        </:actions>
+      </.page_header>
 
       <.form
         for={nil}
@@ -458,7 +455,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <div class="font-mono">{prod.price}</div>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Quantity")}>
+        <:col :let={{_id, prod}} label={gettext("Quantity")} secondary>
           <span class="font-mono">
             <%= if prod.quantity do %>
               {prod.quantity} {gettext("pcs")}
@@ -468,7 +465,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </span>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Weight")}>
+        <:col :let={{_id, prod}} label={gettext("Weight")} secondary>
           <span class="font-mono">
             <%= if prod.weight do %>
               {prod.weight} {gettext("g")}
@@ -488,7 +485,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Description")}>
+        <:col :let={{_id, prod}} label={gettext("Description")} secondary>
           <%= if prod.description && prod.description != "" do %>
             <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
           <% else %>
@@ -496,7 +493,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Media")}>
+        <:col :let={{_id, prod}} label={gettext("Media")} secondary>
           <%= if prod.media_id do %>
             <span class="text-xs badge badge-outline whitespace-nowrap">{gettext("Has photo")}</span>
           <% else %>
@@ -504,7 +501,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("External ID")}>
+        <:col :let={{_id, prod}} label={gettext("External ID")} secondary>
           <%= if prod.external_id && prod.external_id != "" do %>
             <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
           <% else %>
@@ -512,7 +509,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Created At")} sort="inserted_at">
+        <:col :let={{_id, prod}} label={gettext("Created At")} sort="inserted_at" secondary>
           <span class="text-sm opacity-60">{Calendar.strftime(prod.inserted_at, "%d.%m.%Y")}</span>
         </:col>
 
