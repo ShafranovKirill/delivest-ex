@@ -2202,12 +2202,12 @@ msgstr "Некоторые товары больше недоступны"
 msgid "%{action}: %{subject}"
 msgstr "%{action}: %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/index.ex:110
+#: lib/delivest_web/live/staff/log_live/index.ex:116
 #, elixir-autogen, elixir-format
 msgid "All levels"
 msgstr "Все уровни"
 
-#: lib/delivest_web/live/staff/log_live/index.ex:89
+#: lib/delivest_web/live/staff/log_live/index.ex:95
 #, elixir-autogen, elixir-format
 msgid "All sections"
 msgstr "Все разделы"
@@ -2298,8 +2298,8 @@ msgid "Level"
 msgstr "Уровень"
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:312
-#: lib/delivest_web/live/staff/log_live/index.ex:16
-#: lib/delivest_web/live/staff/log_live/index.ex:75
+#: lib/delivest_web/live/staff/log_live/index.ex:22
+#: lib/delivest_web/live/staff/log_live/index.ex:81
 #, elixir-autogen, elixir-format
 msgid "Logs"
 msgstr "Журнал"
@@ -2397,7 +2397,7 @@ msgstr "Удалена роль «%{subject}»"
 msgid "Role «%{subject}» edited"
 msgstr "Изменена роль «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/index.ex:104
+#: lib/delivest_web/live/staff/log_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Search in messages..."
 msgstr "Поиск по сообщениям..."
@@ -2439,7 +2439,7 @@ msgstr "Что произошло"
 msgid "Who"
 msgstr "Кто"
 
-#: lib/delivest_web/live/staff/log_live/index.ex:77
+#: lib/delivest_web/live/staff/log_live/index.ex:83
 #, elixir-autogen, elixir-format
 msgid "Who did what and when, application logs, errors and hints."
 msgstr "Кто, что и когда сделал, логи приложения, ошибки и подсказки."
@@ -3421,3 +3421,43 @@ msgstr "«subtotal» — сумма корзины по ценам меню. Б�
 #, elixir-autogen, elixir-format
 msgid "%{count} not delivered to CRM"
 msgstr "%{count} не доставлено в CRM"
+
+#: lib/delivest_web/live/staff/log_live/hint_text.ex:7
+#, elixir-autogen, elixir-format
+msgid "Hint"
+msgstr "Подсказка"
+
+#: lib/delivest_web/live/staff/log_live/hint_text.ex:5
+#, elixir-autogen, elixir-format
+msgid "Missing in CRM"
+msgstr "Нет в CRM"
+
+#: lib/delivest_web/live/staff/log_live/hint_text.ex:4
+#, elixir-autogen, elixir-format
+msgid "No CRM ID"
+msgstr "Нет ID в CRM"
+
+#: lib/delivest_web/live/staff/log_live/components/hints_component.ex:16
+#, elixir-autogen, elixir-format
+msgid "No hints: the catalog matches the CRM."
+msgstr "Подсказок нет: каталог совпадает с CRM."
+
+#: lib/delivest_web/live/staff/log_live/hint_text.ex:6
+#, elixir-autogen, elixir-format
+msgid "Price differs"
+msgstr "Цена отличается"
+
+#: lib/delivest_web/live/staff/log_live/hint_text.ex:25
+#, elixir-autogen, elixir-format
+msgid "Product «%{product}» (ID %{id}) costs %{app} ₽ in the app and %{crm} ₽ in %{provider}."
+msgstr "Товар «%{product}» (ID %{id}) стоит %{app} ₽ в приложении и %{crm} ₽ в %{provider}."
+
+#: lib/delivest_web/live/staff/log_live/hint_text.ex:10
+#, elixir-autogen, elixir-format
+msgid "Product «%{product}» has no CRM ID: orders with it will not reach %{provider}."
+msgstr "У товара «%{product}» не указан ID в CRM: заказы с ним не дойдут до %{provider}."
+
+#: lib/delivest_web/live/staff/log_live/hint_text.ex:17
+#, elixir-autogen, elixir-format
+msgid "Product «%{product}» with ID %{id} is not found in %{provider}."
+msgstr "Товар «%{product}» с ID %{id} отсутствует в %{provider}."

@@ -1,6 +1,19 @@
 defmodule Delivest.Logs.Formatter do
   @max_message 8_000
-  @metadata_keys [:request_id, :crash_reason, :error_code, :worker, :job_id]
+  @metadata_keys [
+    :request_id,
+    :crash_reason,
+    :error_code,
+    :worker,
+    :job_id,
+    :hint,
+    :hint_provider,
+    :hint_branch,
+    :hint_product,
+    :hint_external_id,
+    :hint_app_price,
+    :hint_crm_price
+  ]
 
   def to_entry(%{level: level, msg: msg, meta: meta}) do
     %{

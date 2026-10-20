@@ -4,10 +4,7 @@ defmodule Delivest.Logs do
   alias Delivest.Logs.Entry
   alias Delivest.Repo
 
-  @levels %{
-    errors: ~w(error critical alert emergency),
-    hints: ~w(warning)
-  }
+  @levels %{errors: ~w(error critical alert emergency)}
 
   def config, do: Application.get_env(:delivest, __MODULE__, [])
 
@@ -29,5 +26,9 @@ defmodule Delivest.Logs do
   end
 
   defp scope(query, :raw), do: query
+
+  defp scope(query, :hints),
+    do: where(query, [e], e.level == "warning" and fragment("?->>'hint' IS NOT NULL", e.metadata))
+
   defp scope(query, scope), do: where(query, [e], e.level in ^Map.fetch!(@levels, scope))
 end

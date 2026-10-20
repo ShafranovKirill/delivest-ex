@@ -3,7 +3,13 @@ defmodule DelivestWeb.Staff.LogLive.Index do
 
   alias Delivest.{Audit, Logs}
   alias DelivestWeb.Staff.LogLive.{EventText, Query}
-  alias DelivestWeb.Staff.LogLive.Components.{EntriesComponent, EventsComponent, TabsComponent}
+
+  alias DelivestWeb.Staff.LogLive.Components.{
+    EntriesComponent,
+    EventsComponent,
+    HintsComponent,
+    TabsComponent
+  }
 
   on_mount {DelivestWeb.Hooks.Permission, "logs.read"}
 
@@ -115,7 +121,11 @@ defmodule DelivestWeb.Staff.LogLive.Index do
       </form>
 
       <EventsComponent.render_events :if={@live_action == :events} events={@streams.rows} />
-      <EntriesComponent.render_entries :if={@live_action != :events} entries={@streams.rows} />
+      <EntriesComponent.render_entries
+        :if={@live_action in [:raw, :errors]}
+        entries={@streams.rows}
+      />
+      <HintsComponent.render_hints :if={@live_action == :hints} entries={@streams.rows} />
 
       <.pagination meta={@meta} path_fn={&Query.path(@live_action, Map.merge(@filters, &1))} />
     </div>

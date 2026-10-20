@@ -14,8 +14,14 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
     {conn, staff}
   end
 
-  defp log(level, message),
-    do: Repo.insert!(%Entry{level: level, message: message, inserted_at: DateTime.utc_now()})
+  defp log(level, message, metadata \\ %{}) do
+    Repo.insert!(%Entry{
+      level: level,
+      message: message,
+      metadata: metadata,
+      inserted_at: DateTime.utc_now()
+    })
+  end
 
   test "events describe who did what", %{conn: conn} do
     {conn, staff} = login(conn, ["logs.read"])
@@ -52,12 +58,22 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
     log("warning", "product.updated failed")
     log("info", "GET /staff/logs")
 
+    log("warning", "Frontpad · Main: product «Borsch» with CRM ID 7 is not found", %{
+      "hint" => "missing_in_crm",
+      "hint_provider" => "Frontpad",
+      "hint_branch" => "Main",
+      "hint_product" => "Borsch",
+      "hint_external_id" => "7"
+    })
+
     {:ok, _lv, errors} = live(conn, ~p"/staff/logs/errors")
     assert errors =~ "database exploded"
     refute errors =~ "product.updated failed"
 
     {:ok, _lv, hints} = live(conn, ~p"/staff/logs/hints")
-    assert hints =~ "product.updated failed"
+    assert hints =~ "Borsch"
+    assert hints =~ "Frontpad"
+    refute hints =~ "product.updated failed"
     refute hints =~ "database exploded"
 
     {:ok, lv, raw} = live(conn, ~p"/staff/logs/raw")
