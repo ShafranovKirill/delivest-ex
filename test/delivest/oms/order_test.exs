@@ -157,6 +157,21 @@ defmodule Delivest.Oms.OrderTest do
       assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
     end
 
+    test "rejects a cart with a product disabled after it was added" do
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "disabled-product", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      product |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
+
+      assert {:error, :products, :product_unavailable} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+    end
+
     test "rejects an empty cart" do
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{

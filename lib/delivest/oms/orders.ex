@@ -243,7 +243,11 @@ defmodule Delivest.Oms.Orders do
         item[:product_id] || Map.get(item, "product_id")
       end)
 
-    {:ok, Net.list_products_by_ids(product_ids, preload: [:category])}
+    products = Net.list_products_by_ids(product_ids, preload: [:category])
+
+    if Enum.all?(product_ids, &Map.has_key?(products, &1)),
+      do: {:ok, products},
+      else: {:error, :product_unavailable}
   end
 
   defp build_order_from_cart(order_struct, number, client_id, cart, products_map, attrs) do
