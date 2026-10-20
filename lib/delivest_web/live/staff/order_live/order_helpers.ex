@@ -36,6 +36,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
   def payment_label("card_offline"), do: gettext("Card Offline")
   def payment_label(_), do: "—"
 
+  def format_address(%Delivest.Oms.Order.Address{} = addr) do
+    [
+      addr.city,
+      addr.street,
+      addr.house && "#{gettext("d.")} #{addr.house}",
+      addr.entrance && "#{gettext("ent.")} #{addr.entrance}",
+      addr.floor && "#{gettext("fl.")} #{addr.floor}",
+      addr.apartment && "#{gettext("apt.")} #{addr.apartment}",
+      addr.intercom && "#{gettext("code")} #{addr.intercom}"
+    ]
+    |> Enum.reject(&(is_nil(&1) or &1 == ""))
+    |> Enum.join(", ")
+  end
+
+  def format_address(_address), do: "—"
+
   def money(nil), do: "0 ₽"
 
   def money(amount) when is_integer(amount) do

@@ -3,6 +3,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
+
   alias DelivestWeb.Staff.PromotionLive.ReasonText
 
   attr :cart, :map, required: true
@@ -55,7 +57,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
             <p :if={!gift?(item)} class="text-xs text-base-content/60 font-mono mt-0.5">
               {item.price} × {item.quantity} =
               <span :if={discounted?(item)} class="line-through opacity-60">{base_total(item)}</span>
-              <span class="font-bold text-base-content">{item.total_price} ₽</span>
+              <span class="font-bold text-base-content">{OrderHelpers.money(item.total_price)}</span>
             </p>
           </div>
 
@@ -97,7 +99,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
 
   def render_promo(assigns) do
     ~H"""
-    <div :if={@cart.items != []} id={@id} class="mt-4 space-y-2">
+    <div :if={@cart.items != []} id={@id} class="my-4 space-y-2">
       <.form
         :if={is_nil(@cart.promo_code)}
         for={%{}}
@@ -142,7 +144,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
         <span class="truncate">
           <.icon name="hero-receipt-percent" class="size-3.5" /> {promotion.name}
         </span>
-        <span :if={promotion.discount > 0} class="font-mono font-bold">−{promotion.discount} ₽</span>
+        <span :if={promotion.discount > 0} class="font-mono font-bold">−{OrderHelpers.money(
+          promotion.discount
+        )}</span>
       </div>
 
       <div :for={hint <- @cart.hints} class="text-xs text-base-content/60">
@@ -181,7 +185,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
             <.icon :if={gift?(item)} name="hero-gift" class="size-3.5 text-success" />
             {item.name} × {item.quantity}
           </span>
-          <span class="font-mono font-bold shrink-0">{item.total_price} ₽</span>
+          <span class="font-mono font-bold shrink-0">{OrderHelpers.money(item.total_price)}</span>
         </div>
       </div>
     </div>

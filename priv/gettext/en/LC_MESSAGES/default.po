@@ -11,7 +11,7 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/delivest_web/components/core_components.ex:407
+#: lib/delivest_web/components/core_components.ex:432
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -79,7 +79,7 @@ msgid "Welcome to Delivest CRM"
 msgstr ""
 
 #: lib/delivest_web/components/core_components.ex:81
-#: lib/delivest_web/components/core_components.ex:548
+#: lib/delivest_web/components/core_components.ex:587
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr ""
@@ -100,7 +100,7 @@ msgid "Dark Mode"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:66
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:21
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:23
 #, elixir-autogen, elixir-format
 msgid "Dashboard"
 msgstr ""
@@ -136,7 +136,7 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_header.ex:42
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:269
 #: lib/delivest_web/live/staff/log_live/event_text.ex:32
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:172
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:171
 #, elixir-autogen, elixir-format
 msgid "Staff"
 msgstr ""
@@ -154,15 +154,15 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:141
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:94
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:91
-#: lib/delivest_web/live/staff/client_live/clients.ex:280
-#: lib/delivest_web/live/staff/client_live/clients.ex:310
+#: lib/delivest_web/live/staff/client_live/clients.ex:277
+#: lib/delivest_web/live/staff/client_live/clients.ex:307
 #: lib/delivest_web/live/staff/client_live/show.ex:108
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:305
-#: lib/delivest_web/live/staff/product_live/products.ex:427
-#: lib/delivest_web/live/staff/product_live/products.ex:483
+#: lib/delivest_web/live/staff/product_live/products.ex:424
+#: lib/delivest_web/live/staff/product_live/products.ex:480
 #: lib/delivest_web/live/staff/promotion_live/promotion_helpers.ex:29
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:240
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:253
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:250
 #, elixir-autogen, elixir-format
 msgid "Active"
 msgstr ""
@@ -172,13 +172,13 @@ msgstr ""
 msgid "Address"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:419
+#: lib/delivest_web/live/staff/product_live/products.ex:416
 #, elixir-autogen, elixir-format
 msgid "All categories"
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:275
-#: lib/delivest_web/live/staff/product_live/products.ex:426
+#: lib/delivest_web/live/staff/client_live/clients.ex:272
+#: lib/delivest_web/live/staff/product_live/products.ex:423
 #, elixir-autogen, elixir-format
 msgid "All statuses"
 msgstr ""
@@ -188,17 +188,17 @@ msgstr ""
 msgid "Are you sure you want to delete this branch?"
 msgstr ""
 
-#: lib/delivest_web/live/staff/category_live/categories.ex:227
+#: lib/delivest_web/live/staff/category_live/categories.ex:225
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this category?"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:601
+#: lib/delivest_web/live/staff/product_live/products.ex:598
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this product? This action cannot be easily undone."
 msgstr ""
 
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:329
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:326
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this promotion? This action cannot be undone."
 msgstr ""
@@ -208,7 +208,7 @@ msgstr ""
 msgid "Are you sure you want to delete this role? This action cannot be undone."
 msgstr ""
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:278
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:275
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this staff member? This will revoke their access."
 msgstr ""
@@ -255,7 +255,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/edit.ex:48
 #: lib/delivest_web/live/staff/log_live/event_text.ex:34
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:193
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:223
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:220
 #, elixir-autogen, elixir-format
 msgid "Branches"
 msgstr ""
@@ -265,12 +265,12 @@ msgstr ""
 msgid "Branches Access"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branches.ex:63
+#: lib/delivest_web/live/staff/branch_live/branches.ex:62
 #, elixir-autogen, elixir-format
 msgid "Branches Management"
 msgstr ""
 
-#: lib/delivest_web/components/core_components.ex:534
+#: lib/delivest_web/components/core_components.ex:573
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:173
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:203
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:255
@@ -299,20 +299,20 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:162
 #: lib/delivest_web/live/staff/category_live/categories.ex:67
 #: lib/delivest_web/live/staff/log_live/event_text.ex:28
-#: lib/delivest_web/live/staff/statistics_live/index.ex:163
+#: lib/delivest_web/live/staff/statistics_live/index.ex:165
 #, elixir-autogen, elixir-format
 msgid "Categories"
 msgstr ""
 
-#: lib/delivest_web/live/staff/category_live/categories.ex:151
+#: lib/delivest_web/live/staff/category_live/categories.ex:150
 #, elixir-autogen, elixir-format
 msgid "Categories Management"
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:290
-#: lib/delivest_web/live/staff/product_live/products.ex:453
-#: lib/delivest_web/live/staff/statistics_live/index.ex:286
-#: lib/delivest_web/live/staff/statistics_live/index.ex:318
+#: lib/delivest_web/live/staff/product_live/products.ex:450
+#: lib/delivest_web/live/staff/statistics_live/index.ex:288
+#: lib/delivest_web/live/staff/statistics_live/index.ex:320
 #, elixir-autogen, elixir-format
 msgid "Category"
 msgstr ""
@@ -383,32 +383,32 @@ msgstr ""
 msgid "Could not generate upload URL"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branches.ex:72
+#: lib/delivest_web/live/staff/branch_live/branches.ex:71
 #, elixir-autogen, elixir-format
 msgid "Create Branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/category_live/categories.ex:162
+#: lib/delivest_web/live/staff/category_live/categories.ex:159
 #, elixir-autogen, elixir-format
 msgid "Create Category"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:391
+#: lib/delivest_web/live/staff/product_live/products.ex:388
 #, elixir-autogen, elixir-format
 msgid "Create Product"
 msgstr ""
 
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:213
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:210
 #, elixir-autogen, elixir-format
 msgid "Create Promotion"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:132
+#: lib/delivest_web/live/staff/role_live/roles.ex:131
 #, elixir-autogen, elixir-format
 msgid "Create Role"
 msgstr ""
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:184
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:181
 #, elixir-autogen, elixir-format
 msgid "Create Staff"
 msgstr ""
@@ -443,9 +443,9 @@ msgstr ""
 msgid "Create staff"
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:322
-#: lib/delivest_web/live/staff/product_live/products.ex:515
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:228
+#: lib/delivest_web/live/staff/client_live/clients.ex:319
+#: lib/delivest_web/live/staff/product_live/products.ex:512
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:225
 #, elixir-autogen, elixir-format
 msgid "Created At"
 msgstr ""
@@ -457,18 +457,18 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branches.ex:106
 #: lib/delivest_web/live/staff/branch_live/branches.ex:121
-#: lib/delivest_web/live/staff/category_live/categories.ex:196
-#: lib/delivest_web/live/staff/category_live/categories.ex:228
-#: lib/delivest_web/live/staff/client_live/clients.ex:384
-#: lib/delivest_web/live/staff/order_live/orders.ex:508
-#: lib/delivest_web/live/staff/product_live/products.ex:605
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:228
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:274
+#: lib/delivest_web/live/staff/category_live/categories.ex:194
+#: lib/delivest_web/live/staff/category_live/categories.ex:226
+#: lib/delivest_web/live/staff/client_live/clients.ex:381
+#: lib/delivest_web/live/staff/order_live/orders.ex:276
+#: lib/delivest_web/live/staff/product_live/products.ex:602
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:227
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:273
 #: lib/delivest_web/live/staff/role_live/roles.ex:163
 #: lib/delivest_web/live/staff/role_live/roles.ex:197
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:280
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:285
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:331
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:277
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:282
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:328
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr ""
@@ -478,17 +478,17 @@ msgstr ""
 msgid "Delete Branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/category_live/categories.ex:226
+#: lib/delivest_web/live/staff/category_live/categories.ex:224
 #, elixir-autogen, elixir-format
 msgid "Delete Category"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:599
+#: lib/delivest_web/live/staff/product_live/products.ex:596
 #, elixir-autogen, elixir-format
 msgid "Delete Product"
 msgstr ""
 
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:327
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:324
 #, elixir-autogen, elixir-format
 msgid "Delete Promotion"
 msgstr ""
@@ -498,7 +498,7 @@ msgstr ""
 msgid "Delete Role"
 msgstr ""
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:276
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:273
 #, elixir-autogen, elixir-format
 msgid "Delete Staff"
 msgstr ""
@@ -509,29 +509,29 @@ msgid "Delete failed"
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:301
-#: lib/delivest_web/live/staff/product_live/products.ex:491
+#: lib/delivest_web/live/staff/product_live/products.ex:488
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:224
 #, elixir-autogen, elixir-format
 msgid "Description"
 msgstr ""
 
-#: lib/delivest_web/live/staff/category_live/categories.ex:153
+#: lib/delivest_web/live/staff/category_live/categories.ex:151
 #, elixir-autogen, elixir-format
 msgid "Drag and drop items to reorder menu categories"
 msgstr ""
 
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:203
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:201
 #, elixir-autogen, elixir-format
 msgid "Drag and drop items to reorder promotions."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branches.ex:95
-#: lib/delivest_web/live/staff/category_live/categories.ex:185
+#: lib/delivest_web/live/staff/category_live/categories.ex:183
 #: lib/delivest_web/live/staff/client_live/show.ex:120
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:175
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:218
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:179
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:217
 #: lib/delivest_web/live/staff/role_live/roles.ex:152
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:274
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:271
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr ""
@@ -582,7 +582,7 @@ msgid "Enter to edit"
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:295
-#: lib/delivest_web/live/staff/product_live/products.ex:507
+#: lib/delivest_web/live/staff/product_live/products.ex:504
 #, elixir-autogen, elixir-format
 msgid "External ID"
 msgstr ""
@@ -633,7 +633,7 @@ msgstr ""
 msgid "File is too large"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:501
+#: lib/delivest_web/live/staff/product_live/products.ex:498
 #, elixir-autogen, elixir-format
 msgid "Has photo"
 msgstr ""
@@ -648,9 +648,9 @@ msgstr ""
 msgid "Images: JPG, PNG, WEBP (Max 10MB)"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:428
-#: lib/delivest_web/live/staff/product_live/products.ex:485
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:255
+#: lib/delivest_web/live/staff/product_live/products.ex:425
+#: lib/delivest_web/live/staff/product_live/products.ex:482
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:252
 #, elixir-autogen, elixir-format
 msgid "Inactive"
 msgstr ""
@@ -660,44 +660,44 @@ msgstr ""
 msgid "Instagram Link"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branches.ex:64
+#: lib/delivest_web/live/staff/branch_live/branches.ex:63
 #, elixir-autogen, elixir-format
 msgid "List of available company branches"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:124
+#: lib/delivest_web/live/staff/role_live/roles.ex:123
 #, elixir-autogen, elixir-format
 msgid "List of available company roles"
 msgstr ""
 
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:147
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:214
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:211
 #, elixir-autogen, elixir-format
 msgid "Login"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:361
+#: lib/delivest_web/live/staff/product_live/products.ex:359
 #, elixir-autogen, elixir-format
 msgid "Manage branch products, prices, and categories."
 msgstr ""
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:174
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:172
 #, elixir-autogen, elixir-format
 msgid "Manage system staff accounts and branches access."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:499
+#: lib/delivest_web/live/staff/product_live/products.ex:496
 #, elixir-autogen, elixir-format
 msgid "Media"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:123
-#: lib/delivest_web/live/staff/client_live/clients.ex:292
+#: lib/delivest_web/live/staff/client_live/clients.ex:289
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:256
-#: lib/delivest_web/live/staff/product_live/products.ex:449
+#: lib/delivest_web/live/staff/product_live/products.ex:446
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:89
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:172
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:217
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:214
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr ""
@@ -708,7 +708,7 @@ msgstr ""
 msgid "No branch selected"
 msgstr ""
 
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:247
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:244
 #, elixir-autogen, elixir-format
 msgid "No description"
 msgstr ""
@@ -725,7 +725,7 @@ msgstr ""
 msgid "PNG, JPG, WEBP up to 5MB"
 msgstr ""
 
-#: lib/delivest_web/components/core_components.ex:589
+#: lib/delivest_web/components/core_components.ex:628
 #, elixir-autogen, elixir-format
 msgid "Page %{current} of %{total}"
 msgstr ""
@@ -758,7 +758,7 @@ msgid "Please check the fields below."
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:273
-#: lib/delivest_web/live/staff/product_live/products.ex:457
+#: lib/delivest_web/live/staff/product_live/products.ex:454
 #, elixir-autogen, elixir-format
 msgid "Price"
 msgstr ""
@@ -795,9 +795,9 @@ msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:178
 #: lib/delivest_web/live/staff/log_live/event_text.ex:27
-#: lib/delivest_web/live/staff/product_live/products.ex:359
-#: lib/delivest_web/live/staff/statistics_live/index.ex:162
-#: lib/delivest_web/live/staff/statistics_live/index.ex:319
+#: lib/delivest_web/live/staff/product_live/products.ex:358
+#: lib/delivest_web/live/staff/statistics_live/index.ex:164
+#: lib/delivest_web/live/staff/statistics_live/index.ex:321
 #, elixir-autogen, elixir-format
 msgid "Products"
 msgstr ""
@@ -825,13 +825,13 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:194
 #: lib/delivest_web/live/staff/log_live/event_text.ex:29
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:42
-#: lib/delivest_web/live/staff/stock_live/stocks.ex:201
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:200
 #, elixir-autogen, elixir-format
 msgid "Promotions"
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:281
-#: lib/delivest_web/live/staff/product_live/products.ex:461
+#: lib/delivest_web/live/staff/product_live/products.ex:458
 #, elixir-autogen, elixir-format
 msgid "Quantity"
 msgstr ""
@@ -847,7 +847,7 @@ msgid "Repeat password"
 msgstr ""
 
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:178
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:220
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:217
 #, elixir-autogen, elixir-format
 msgid "Role"
 msgstr ""
@@ -884,7 +884,7 @@ msgstr ""
 msgid "Roles"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:123
+#: lib/delivest_web/live/staff/role_live/roles.ex:122
 #, elixir-autogen, elixir-format
 msgid "Roles Management"
 msgstr ""
@@ -914,12 +914,12 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:411
+#: lib/delivest_web/live/staff/product_live/products.ex:408
 #, elixir-autogen, elixir-format
 msgid "Search products..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:200
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:197
 #, elixir-autogen, elixir-format
 msgid "Search staff..."
 msgstr ""
@@ -939,14 +939,13 @@ msgstr ""
 msgid "Select a role..."
 msgstr ""
 
-#: lib/delivest_web/components/core_components.ex:567
-#: lib/delivest_web/live/staff/order_live/orders.ex:473
+#: lib/delivest_web/components/core_components.ex:606
 #, elixir-autogen, elixir-format
 msgid "Show"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:493
-#: lib/delivest_web/live/staff/product_live/products.ex:509
+#: lib/delivest_web/live/staff/product_live/products.ex:490
+#: lib/delivest_web/live/staff/product_live/products.ex:506
 #, elixir-autogen, elixir-format
 msgid "Specified"
 msgstr ""
@@ -982,8 +981,8 @@ msgid "Staff updated successfully"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:130
-#: lib/delivest_web/live/staff/client_live/clients.ex:307
-#: lib/delivest_web/live/staff/product_live/products.ex:481
+#: lib/delivest_web/live/staff/client_live/clients.ex:304
+#: lib/delivest_web/live/staff/product_live/products.ex:478
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr ""
@@ -1030,7 +1029,7 @@ msgid "VK Link"
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:283
-#: lib/delivest_web/live/staff/product_live/products.ex:471
+#: lib/delivest_web/live/staff/product_live/products.ex:468
 #, elixir-autogen, elixir-format
 msgid "Weight"
 msgstr ""
@@ -1042,7 +1041,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:39
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:44
-#: lib/delivest_web/live/staff/statistics_live/index.ex:328
+#: lib/delivest_web/live/staff/statistics_live/index.ex:330
 #, elixir-autogen, elixir-format
 msgid "Without category"
 msgstr ""
@@ -1145,13 +1144,12 @@ msgstr ""
 msgid "You don't have permission to perform this action."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:474
+#: lib/delivest_web/live/staff/product_live/products.ex:471
 #, elixir-autogen, elixir-format
 msgid "g"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:488
-#: lib/delivest_web/live/staff/product_live/products.ex:464
+#: lib/delivest_web/live/staff/product_live/products.ex:461
 #, elixir-autogen, elixir-format
 msgid "pcs"
 msgstr ""
@@ -1171,17 +1169,17 @@ msgstr ""
 msgid "2. Checkout"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:226
+#: lib/delivest_web/live/staff/order_live/orders.ex:206
 #, elixir-autogen, elixir-format
 msgid "All"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:41
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:43
 #, elixir-autogen, elixir-format
 msgid "All Categories"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:263
+#: lib/delivest_web/live/staff/order_live/orders.ex:243
 #, elixir-autogen, elixir-format
 msgid "All Statuses"
 msgstr ""
@@ -1191,59 +1189,58 @@ msgstr ""
 msgid "Apartment"
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:382
+#: lib/delivest_web/live/staff/client_live/clients.ex:379
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this client? This action cannot be easily undone."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:506
+#: lib/delivest_web/live/staff/order_live/orders.ex:274
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this order? This action cannot be undone."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:46
+#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:48
 #, elixir-autogen, elixir-format
 msgid "Back"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:92
-#: lib/delivest_web/live/staff/client_live/clients.ex:283
-#: lib/delivest_web/live/staff/client_live/clients.ex:315
+#: lib/delivest_web/live/staff/client_live/clients.ex:280
+#: lib/delivest_web/live/staff/client_live/clients.ex:312
 #: lib/delivest_web/live/staff/client_live/show.ex:105
 #, elixir-autogen, elixir-format
 msgid "Blocked"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:20
-#: lib/delivest_web/live/staff/order_live/orders.ex:270
-#: lib/delivest_web/live/staff/order_live/orders.ex:335
+#: lib/delivest_web/live/staff/order_live/orders.ex:250
 #, elixir-autogen, elixir-format
 msgid "Cancelled"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:57
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:52
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:36
-#: lib/delivest_web/live/staff/order_live/orders.ex:444
 #, elixir-autogen, elixir-format
 msgid "Card Offline"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:109
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:111
 #: lib/delivest_web/live/staff/order_live/order_form.ex:231
 #, elixir-autogen, elixir-format
 msgid "Cart"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:17
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:127
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:19
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:129
 #: lib/delivest_web/live/staff/order_live/save_errors.ex:4
 #, elixir-autogen, elixir-format
 msgid "Cart is empty"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:56
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:50
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:35
-#: lib/delivest_web/live/staff/order_live/orders.ex:441
 #, elixir-autogen, elixir-format
 msgid "Cash"
 msgstr ""
@@ -1285,7 +1282,7 @@ msgid "Client updated successfully"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:253
-#: lib/delivest_web/live/staff/client_live/clients.ex:236
+#: lib/delivest_web/live/staff/client_live/clients.ex:235
 #: lib/delivest_web/live/staff/log_live/event_text.ex:31
 #, elixir-autogen, elixir-format
 msgid "Clients"
@@ -1301,32 +1298,25 @@ msgstr ""
 msgid "Comment"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:428
-#, elixir-autogen, elixir-format
-msgid "Comment:"
-msgstr ""
-
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:19
-#: lib/delivest_web/live/staff/order_live/orders.ex:269
-#: lib/delivest_web/live/staff/order_live/orders.ex:334
+#: lib/delivest_web/live/staff/order_live/orders.ex:249
 #, elixir-autogen, elixir-format
 msgid "Completed"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/clients.ex:71
-#: lib/delivest_web/live/staff/client_live/clients.ex:248
+#: lib/delivest_web/live/staff/client_live/clients.ex:245
 #, elixir-autogen, elixir-format
 msgid "Create Client"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:15
-#: lib/delivest_web/live/staff/order_live/orders.ex:265
-#: lib/delivest_web/live/staff/order_live/orders.ex:330
+#: lib/delivest_web/live/staff/order_live/orders.ex:245
 #, elixir-autogen, elixir-format
 msgid "Created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:232
+#: lib/delivest_web/live/staff/order_live/orders.ex:212
 #: lib/delivest_web/live/staff/statistics_live/index.ex:103
 #, elixir-autogen, elixir-format
 msgid "Custom"
@@ -1337,21 +1327,20 @@ msgstr ""
 msgid "Customer Info"
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:380
+#: lib/delivest_web/live/staff/client_live/clients.ex:377
 #, elixir-autogen, elixir-format
 msgid "Delete Client"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:363
-#: lib/delivest_web/live/staff/order_live/orders.ex:504
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:79
+#: lib/delivest_web/live/staff/order_live/orders.ex:272
 #, elixir-autogen, elixir-format
 msgid "Delete Order"
 msgstr ""
 
 #: lib/delivest_web/controllers/page_html/home.html.heex:95
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:18
-#: lib/delivest_web/live/staff/order_live/orders.ex:268
-#: lib/delivest_web/live/staff/order_live/orders.ex:333
+#: lib/delivest_web/live/staff/order_live/orders.ex:248
 #, elixir-autogen, elixir-format
 msgid "Delivering"
 msgstr ""
@@ -1378,7 +1367,7 @@ msgid "Edit Client"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/show.ex:254
-#: lib/delivest_web/live/staff/order_live/orders.ex:352
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:70
 #, elixir-autogen, elixir-format
 msgid "Edit Order"
 msgstr ""
@@ -1415,42 +1404,37 @@ msgid "Fulfillment Type"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:90
-#: lib/delivest_web/live/staff/client_live/clients.ex:277
-#: lib/delivest_web/live/staff/client_live/clients.ex:312
+#: lib/delivest_web/live/staff/client_live/clients.ex:274
+#: lib/delivest_web/live/staff/client_live/clients.ex:309
 #: lib/delivest_web/live/staff/log_live/event_text.ex:21
 #, elixir-autogen, elixir-format
 msgid "Guest"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:476
-#, elixir-autogen, elixir-format
-msgid "Hide"
-msgstr ""
-
-#: lib/delivest_web/live/staff/order_live/orders.ex:203
+#: lib/delivest_web/live/staff/order_live/orders.ex:182
 #, elixir-autogen, elixir-format
 msgid "Manage customer orders, track statuses and process fulfillment."
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:238
+#: lib/delivest_web/live/staff/client_live/clients.ex:236
 #, elixir-autogen, elixir-format
 msgid "Manage system clients, status, and information."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:231
+#: lib/delivest_web/live/staff/order_live/orders.ex:211
 #, elixir-autogen, elixir-format
 msgid "Month"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:119
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:107
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:109
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:9
-#: lib/delivest_web/live/staff/order_live/orders.ex:208
+#: lib/delivest_web/live/staff/order_live/orders.ex:187
 #, elixir-autogen, elixir-format
 msgid "New Order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:66
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:68
 #, elixir-autogen, elixir-format
 msgid "No products found"
 msgstr ""
@@ -1488,12 +1472,12 @@ msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:135
 #: lib/delivest_web/live/staff/client_live/show.ex:125
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:111
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:113
 #: lib/delivest_web/live/staff/log_live/event_text.ex:26
-#: lib/delivest_web/live/staff/order_live/orders.ex:201
-#: lib/delivest_web/live/staff/statistics_live/index.ex:186
-#: lib/delivest_web/live/staff/statistics_live/index.ex:288
-#: lib/delivest_web/live/staff/statistics_live/index.ex:321
+#: lib/delivest_web/live/staff/order_live/orders.ex:181
+#: lib/delivest_web/live/staff/statistics_live/index.ex:188
+#: lib/delivest_web/live/staff/statistics_live/index.ex:290
+#: lib/delivest_web/live/staff/statistics_live/index.ex:323
 #, elixir-autogen, elixir-format
 msgid "Orders"
 msgstr ""
@@ -1503,12 +1487,12 @@ msgstr ""
 msgid "Payment Method"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:221
+#: lib/delivest_web/live/staff/order_live/orders.ex:201
 #, elixir-autogen, elixir-format
 msgid "Period:"
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:301
+#: lib/delivest_web/live/staff/client_live/clients.ex:298
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:23
 #, elixir-autogen, elixir-format
 msgid "Phone"
@@ -1523,46 +1507,44 @@ msgstr ""
 #: lib/delivest_web/controllers/page_html/home.html.heex:86
 #: lib/delivest_web/controllers/page_html/home.html.heex:94
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:16
-#: lib/delivest_web/live/staff/order_live/orders.ex:266
-#: lib/delivest_web/live/staff/order_live/orders.ex:331
+#: lib/delivest_web/live/staff/order_live/orders.ex:246
 #, elixir-autogen, elixir-format
 msgid "Preparing"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:187
-#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:34
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:191
+#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:36
 #, elixir-autogen, elixir-format
 msgid "Proceed to Checkout"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:17
-#: lib/delivest_web/live/staff/order_live/orders.ex:267
-#: lib/delivest_web/live/staff/order_live/orders.ex:332
+#: lib/delivest_web/live/staff/order_live/orders.ex:247
 #, elixir-autogen, elixir-format
 msgid "Ready"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:55
+#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:57
 #, elixir-autogen, elixir-format
 msgid "Save Changes"
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:267
+#: lib/delivest_web/live/staff/client_live/clients.ex:264
 #, elixir-autogen, elixir-format
 msgid "Search by name or phone..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:24
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:26
 #, elixir-autogen, elixir-format
 msgid "Search products by name..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:167
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:171
 #, elixir-autogen, elixir-format
 msgid "Selected Items"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:259
+#: lib/delivest_web/live/staff/order_live/orders.ex:239
 #, elixir-autogen, elixir-format
 msgid "Status:"
 msgstr ""
@@ -1572,34 +1554,34 @@ msgstr ""
 msgid "Street"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:55
+#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:57
 #, elixir-autogen, elixir-format
 msgid "Submit Order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:97
-#: lib/delivest_web/live/staff/order_live/orders.ex:227
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:99
+#: lib/delivest_web/live/staff/order_live/orders.ex:207
 #: lib/delivest_web/live/staff/statistics_live/index.ex:98
 #, elixir-autogen, elixir-format
 msgid "Today"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:228
+#: lib/delivest_web/live/staff/order_live/orders.ex:208
 #, elixir-autogen, elixir-format
 msgid "Tomorrow"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:22
+#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:24
 #, elixir-autogen, elixir-format
 msgid "Total:"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:230
+#: lib/delivest_web/live/staff/order_live/orders.ex:210
 #, elixir-autogen, elixir-format
 msgid "Week"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:229
+#: lib/delivest_web/live/staff/order_live/orders.ex:209
 #: lib/delivest_web/live/staff/statistics_live/index.ex:99
 #, elixir-autogen, elixir-format
 msgid "Yesterday"
@@ -1625,11 +1607,6 @@ msgstr ""
 msgid "You don't have permission to update clients."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:472
-#, elixir-autogen, elixir-format
-msgid "items"
-msgstr ""
-
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:28
 #, elixir-autogen, elixir-format
 msgid "Dine in"
@@ -1645,32 +1622,32 @@ msgstr ""
 msgid "Floor"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:183
+#: lib/delivest_web/live/staff/order_live/order_helpers.ex:46
 #, elixir-autogen, elixir-format
 msgid "apt."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:184
+#: lib/delivest_web/live/staff/order_live/order_helpers.ex:47
 #, elixir-autogen, elixir-format
 msgid "code"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:180
+#: lib/delivest_web/live/staff/order_live/order_helpers.ex:43
 #, elixir-autogen, elixir-format
 msgid "d."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:181
+#: lib/delivest_web/live/staff/order_live/order_helpers.ex:44
 #, elixir-autogen, elixir-format
 msgid "ent."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:182
+#: lib/delivest_web/live/staff/order_live/order_helpers.ex:45
 #, elixir-autogen, elixir-format
 msgid "fl."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:382
+#: lib/delivest_web/live/staff/product_live/products.ex:379
 #, elixir-autogen, elixir-format
 msgid "Bulk import"
 msgstr ""
@@ -1685,20 +1662,18 @@ msgstr ""
 msgid "Change/Select branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:31
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:139
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:33
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:141
 #, elixir-autogen, elixir-format
 msgid "Clear Cart"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:21
-#: lib/delivest_web/live/staff/order_live/orders.ex:271
-#: lib/delivest_web/live/staff/order_live/orders.ex:336
 #, elixir-autogen, elixir-format
 msgid "Crm"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:396
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:118
 #, elixir-autogen, elixir-format
 msgid "Customer not specified"
 msgstr ""
@@ -1744,8 +1719,8 @@ msgstr ""
 msgid "Import task started in the background. Products will appear shortly."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:23
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:130
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:25
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:132
 #, elixir-autogen, elixir-format
 msgid "Items in Cart"
 msgstr ""
@@ -1770,7 +1745,7 @@ msgstr ""
 msgid "Prepare by (empty = ASAP)"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:420
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:138
 #, elixir-autogen, elixir-format
 msgid "Prepare by:"
 msgstr ""
@@ -1817,27 +1792,22 @@ msgstr ""
 msgid "Yandex Org ID"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:311
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:186
 #, elixir-autogen, elixir-format
 msgid "error"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:313
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:188
 #, elixir-autogen, elixir-format
 msgid "sending"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:307
-#, elixir-autogen, elixir-format
-msgid "sent at"
-msgstr ""
-
-#: lib/delivest_web/live/staff/statistics_live/index.ex:350
+#: lib/delivest_web/live/staff/statistics_live/index.ex:352
 #, elixir-autogen, elixir-format
 msgid "%{count} cancelled"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:152
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:154
 #, elixir-autogen, elixir-format
 msgid "%{count} cancelled today"
 msgstr ""
@@ -1848,38 +1818,38 @@ msgid "Analytics"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/show.ex:131
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:140
-#: lib/delivest_web/live/staff/statistics_live/index.ex:194
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:142
+#: lib/delivest_web/live/staff/statistics_live/index.ex:196
 #, elixir-autogen, elixir-format
 msgid "Average check"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:216
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:226
 #, elixir-autogen, elixir-format
 msgid "Best sellers today"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:240
+#: lib/delivest_web/live/staff/statistics_live/index.ex:242
 #, elixir-autogen, elixir-format
 msgid "By fulfillment type"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:241
+#: lib/delivest_web/live/staff/statistics_live/index.ex:243
 #, elixir-autogen, elixir-format
 msgid "By payment method"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:276
+#: lib/delivest_web/live/staff/statistics_live/index.ex:278
 #, elixir-autogen, elixir-format
 msgid "By quantity"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:270
+#: lib/delivest_web/live/staff/statistics_live/index.ex:272
 #, elixir-autogen, elixir-format
 msgid "By revenue"
 msgstr ""
 
-#: lib/delivest_web/live/staff/client_live/clients.ex:333
+#: lib/delivest_web/live/staff/client_live/clients.ex:330
 #, elixir-autogen, elixir-format
 msgid "Client card and orders"
 msgstr ""
@@ -1914,12 +1884,12 @@ msgstr ""
 msgid "Fri"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:149
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:151
 #, elixir-autogen, elixir-format
 msgid "In work now"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:201
+#: lib/delivest_web/live/staff/statistics_live/index.ex:203
 #, elixir-autogen, elixir-format
 msgid "Items sold"
 msgstr ""
@@ -1944,7 +1914,7 @@ msgstr ""
 msgid "Last order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:165
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:167
 #, elixir-autogen, elixir-format
 msgid "Latest orders"
 msgstr ""
@@ -1969,7 +1939,7 @@ msgstr ""
 msgid "No orders yet"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:178
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:180
 #, elixir-autogen, elixir-format
 msgid "No orders yet today"
 msgstr ""
@@ -1979,18 +1949,18 @@ msgstr ""
 msgid "No product"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:247
+#: lib/delivest_web/live/staff/statistics_live/index.ex:249
 #, elixir-autogen, elixir-format
 msgid "No sales"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:305
-#: lib/delivest_web/live/staff/statistics_live/index.ex:337
+#: lib/delivest_web/live/staff/statistics_live/index.ex:307
+#: lib/delivest_web/live/staff/statistics_live/index.ex:339
 #, elixir-autogen, elixir-format
 msgid "No sales in this period"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:218
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:228
 #, elixir-autogen, elixir-format
 msgid "No sales yet today"
 msgstr ""
@@ -2010,7 +1980,7 @@ msgstr ""
 msgid "Open"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:379
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:113
 #, elixir-autogen, elixir-format
 msgid "Open client card"
 msgstr ""
@@ -2025,13 +1995,13 @@ msgstr ""
 msgid "Order not found"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:232
-#: lib/delivest_web/live/staff/statistics_live/index.ex:223
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:242
+#: lib/delivest_web/live/staff/statistics_live/index.ex:225
 #, elixir-autogen, elixir-format
 msgid "Orders by hour"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:132
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:134
 #, elixir-autogen, elixir-format
 msgid "Orders today"
 msgstr ""
@@ -2041,40 +2011,40 @@ msgstr ""
 msgid "Payment"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:285
+#: lib/delivest_web/live/staff/statistics_live/index.ex:287
 #, elixir-autogen, elixir-format
 msgid "Product"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:264
+#: lib/delivest_web/live/staff/statistics_live/index.ex:266
 #, elixir-autogen, elixir-format
 msgid "Products sold"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:287
-#: lib/delivest_web/live/staff/statistics_live/index.ex:320
+#: lib/delivest_web/live/staff/statistics_live/index.ex:289
+#: lib/delivest_web/live/staff/statistics_live/index.ex:322
 #, elixir-autogen, elixir-format
 msgid "Qty"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:178
-#: lib/delivest_web/live/staff/statistics_live/index.ex:289
-#: lib/delivest_web/live/staff/statistics_live/index.ex:322
+#: lib/delivest_web/live/staff/statistics_live/index.ex:180
+#: lib/delivest_web/live/staff/statistics_live/index.ex:291
+#: lib/delivest_web/live/staff/statistics_live/index.ex:324
 #, elixir-autogen, elixir-format
 msgid "Revenue"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:210
+#: lib/delivest_web/live/staff/statistics_live/index.ex:212
 #, elixir-autogen, elixir-format
 msgid "Revenue by day"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:124
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:126
 #, elixir-autogen, elixir-format
 msgid "Revenue today"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:161
+#: lib/delivest_web/live/staff/statistics_live/index.ex:163
 #, elixir-autogen, elixir-format
 msgid "Sales"
 msgstr ""
@@ -2084,17 +2054,17 @@ msgstr ""
 msgid "Sat"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:290
-#: lib/delivest_web/live/staff/statistics_live/index.ex:323
+#: lib/delivest_web/live/staff/statistics_live/index.ex:292
+#: lib/delivest_web/live/staff/statistics_live/index.ex:325
 #, elixir-autogen, elixir-format
 msgid "Share of revenue"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:92
 #: lib/delivest_web/controllers/page_html/home.html.heex:175
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:115
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:117
 #: lib/delivest_web/live/staff/statistics_live/index.ex:15
-#: lib/delivest_web/live/staff/statistics_live/index.ex:123
+#: lib/delivest_web/live/staff/statistics_live/index.ex:124
 #, elixir-autogen, elixir-format
 msgid "Statistics"
 msgstr ""
@@ -2144,7 +2114,7 @@ msgstr ""
 msgid "Wed"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:249
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:259
 #, elixir-autogen, elixir-format
 msgid "Welcome! Use the menu on the left to get started."
 msgstr ""
@@ -2160,23 +2130,23 @@ msgstr ""
 msgid "You don't have permission to view orders."
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:216
-#: lib/delivest_web/live/staff/statistics_live/index.ex:229
+#: lib/delivest_web/live/staff/statistics_live/index.ex:218
+#: lib/delivest_web/live/staff/statistics_live/index.ex:231
 #, elixir-autogen, elixir-format
 msgid "orders"
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:180
+#: lib/delivest_web/live/staff/statistics_live/index.ex:182
 #, elixir-autogen, elixir-format
 msgid "vs previous period"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:126
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:128
 #, elixir-autogen, elixir-format
 msgid "yesterday %{amount}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/dashboard_live/index.ex:134
+#: lib/delivest_web/live/staff/dashboard_live/index.ex:136
 #, elixir-autogen, elixir-format
 msgid "yesterday %{count}"
 msgstr ""
@@ -2202,12 +2172,12 @@ msgstr ""
 msgid "%{action}: %{subject}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:116
+#: lib/delivest_web/live/staff/log_live/index.ex:114
 #, elixir-autogen, elixir-format
 msgid "All levels"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:95
+#: lib/delivest_web/live/staff/log_live/index.ex:93
 #, elixir-autogen, elixir-format
 msgid "All sections"
 msgstr ""
@@ -2397,7 +2367,7 @@ msgstr ""
 msgid "Role «%{subject}» edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:110
+#: lib/delivest_web/live/staff/log_live/index.ex:108
 #, elixir-autogen, elixir-format
 msgid "Search in messages..."
 msgstr ""
@@ -2439,7 +2409,7 @@ msgstr ""
 msgid "Who"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:83
+#: lib/delivest_web/live/staff/log_live/index.ex:82
 #, elixir-autogen, elixir-format
 msgid "Who did what and when, application logs, errors and hints."
 msgstr ""
@@ -2526,7 +2496,7 @@ msgstr ""
 msgid "Copy products to another branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:371
+#: lib/delivest_web/live/staff/product_live/products.ex:368
 #, elixir-autogen, elixir-format
 msgid "Copy to branch"
 msgstr ""
@@ -2551,7 +2521,7 @@ msgstr ""
 msgid "Products were not copied"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/products.ex:445
+#: lib/delivest_web/live/staff/product_live/products.ex:442
 #, elixir-autogen, elixir-format
 msgid "Select %{name}"
 msgstr ""
@@ -2829,7 +2799,7 @@ msgstr ""
 msgid "An entered promo code always goes first. Automatic promotions follow by priority; a non-combinable one blocks the rest."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:117
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:119
 #, elixir-autogen, elixir-format
 msgid "Apply"
 msgstr ""
@@ -2839,7 +2809,7 @@ msgstr ""
 msgid "Automatic"
 msgstr ""
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:135
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:133
 #, elixir-autogen, elixir-format
 msgid "Automatic promotions, sale prices, public and personal promo codes."
 msgstr ""
@@ -2879,7 +2849,7 @@ msgstr ""
 msgid "Create a promotion with personal codes in this branch first."
 msgstr ""
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:272
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:271
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Delete promotion"
 msgstr ""
@@ -2894,7 +2864,7 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:18
+#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:20
 #, elixir-autogen, elixir-format
 msgid "Discount"
 msgstr ""
@@ -2902,7 +2872,7 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:210
 #: lib/delivest_web/live/staff/log_live/event_text.ex:30
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:30
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:133
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:132
 #, elixir-autogen, elixir-format
 msgid "Discounts & promo codes"
 msgstr ""
@@ -2928,7 +2898,7 @@ msgid "Enable only when «price change on order» is turned on for products in F
 msgstr ""
 
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:197
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:201
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:200
 #, elixir-autogen, elixir-format
 msgid "Enabled"
 msgstr ""
@@ -2969,8 +2939,8 @@ msgstr ""
 msgid "Gift for two pizzas"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:53
-#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:148
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:55
+#: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:150
 #, elixir-autogen, elixir-format
 msgid "Gift × %{count}"
 msgstr ""
@@ -3017,7 +2987,7 @@ msgid "Lunch on weekdays for pickup"
 msgstr ""
 
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:36
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:144
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:142
 #, elixir-autogen, elixir-format, fuzzy
 msgid "New promotion"
 msgstr ""
@@ -3027,7 +2997,7 @@ msgstr ""
 msgid "No codes issued yet"
 msgstr ""
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:153
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:152
 #, elixir-autogen, elixir-format
 msgid "No promotions yet"
 msgstr ""
@@ -3038,7 +3008,7 @@ msgid "Percent must be from 1 to 100"
 msgstr ""
 
 #: lib/delivest_web/live/staff/promotion_live/promotion_helpers.ex:11
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:210
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:209
 #, elixir-autogen, elixir-format
 msgid "Personal codes"
 msgstr ""
@@ -3068,7 +3038,7 @@ msgstr ""
 msgid "Product «%{slug}» is not found in the branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:112
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex:114
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:110
 #, elixir-autogen, elixir-format
 msgid "Promo code"
@@ -3196,7 +3166,7 @@ msgstr ""
 msgid "The promotion has just run out, the cart was recalculated"
 msgstr ""
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:273
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:272
 #, elixir-autogen, elixir-format
 msgid "The promotion stops working immediately. Order history keeps it."
 msgstr ""
@@ -3256,7 +3226,7 @@ msgstr ""
 msgid "Unknown symbol «%{symbol}»"
 msgstr ""
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:181
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:180
 #, elixir-autogen, elixir-format
 msgid "Used"
 msgstr ""
@@ -3282,7 +3252,7 @@ msgstr ""
 msgid "When"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:14
+#: lib/delivest_web/live/staff/order_live/components/footer_component.ex:16
 #, elixir-autogen, elixir-format
 msgid "Without discount"
 msgstr ""
@@ -3317,7 +3287,7 @@ msgstr ""
 msgid "cart total %{op} %{amount}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:175
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:174
 #, elixir-autogen, elixir-format
 msgid "combinable"
 msgstr ""
@@ -3417,7 +3387,7 @@ msgstr ""
 msgid "«subtotal» is the cart total at menu prices. Unconditional automatic sales are shown in the menu as crossed-out prices."
 msgstr ""
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:351
+#: lib/delivest_web/live/staff/statistics_live/index.ex:353
 #, elixir-autogen, elixir-format
 msgid "%{count} not delivered to CRM"
 msgstr ""
@@ -3460,4 +3430,16 @@ msgstr ""
 #: lib/delivest_web/live/staff/log_live/hint_text.ex:17
 #, elixir-autogen, elixir-format
 msgid "Product «%{product}» with ID %{id} is not found in %{provider}."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:155
+#, elixir-autogen, elixir-format
+msgid "%{count} item"
+msgid_plural "%{count} items"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex:251
+#, elixir-autogen, elixir-format
+msgid "Sent to CRM"
 msgstr ""

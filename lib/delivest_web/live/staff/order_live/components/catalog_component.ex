@@ -3,6 +3,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
+
   def render_catalog(assigns) do
     ~H"""
     <div>
@@ -15,7 +17,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
         >
           <.icon
             name="hero-magnifying-glass"
-            class="absolute left-3 top-2.5 size-4 text-base-content/40"
+            class="absolute left-3 top-2.5 size-4 text-base-content/40 z-10 pointer-events-none"
           />
           <input
             type="text"
@@ -84,7 +86,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
 
                 <div class="flex items-end justify-between mt-1">
                   <span class="font-mono font-bold text-xs sm:text-sm text-base-content">
-                    {prod.price} ₽
+                    {OrderHelpers.money(prod.price)}
                   </span>
 
                   <%= if qty > 0 do %>
@@ -113,7 +115,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
           </div>
 
           <div class="flex items-center gap-2">
-            <span class="font-mono font-bold text-base">{@cart.total_amount} ₽</span>
+            <span class="font-mono font-bold text-base">{OrderHelpers.money(@cart.total_amount)}</span>
             <.icon
               name={if @mobile_cart_expanded, do: "hero-chevron-down", else: "hero-chevron-up"}
               class="size-5 text-base-content/60"
@@ -148,7 +150,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
                       {gettext("Gift × %{count}", count: item.quantity)}
                     </p>
                     <p :if={!Map.get(item, :gift)} class="text-base-content/60 font-mono">
-                      {item.price} ₽ × {item.quantity}
+                      {item.quantity} × {OrderHelpers.money(item.price)} = {OrderHelpers.money(
+                        item.total_price
+                      )}
                     </p>
                   </div>
                   <div :if={!Map.get(item, :gift)} class="flex items-center gap-1 shrink-0">

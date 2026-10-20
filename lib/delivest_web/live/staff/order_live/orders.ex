@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   alias Delivest.Identity
   alias Delivest.Oms.{Order, Orders}
-  alias DelivestWeb.Staff.OrderLive.OrderHelpers
+  alias DelivestWeb.Staff.OrderLive.Components.OrderCardComponent
 
   use Gettext, backend: DelivestWeb.Gettext
 
@@ -173,41 +173,21 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   defp parse_date(_), do: nil
 
-  defp format_address(%Order.Address{} = addr) do
-    [
-      addr.city,
-      addr.street,
-      addr.house && "#{gettext("d.")} #{addr.house}",
-      addr.entrance && "#{gettext("ent.")} #{addr.entrance}",
-      addr.floor && "#{gettext("fl.")} #{addr.floor}",
-      addr.apartment && "#{gettext("apt.")} #{addr.apartment}",
-      addr.intercom && "#{gettext("code")} #{addr.intercom}"
-    ]
-    |> Enum.reject(&(is_nil(&1) or &1 == ""))
-    |> Enum.join(", ")
-  end
-
-  defp format_address(_), do: "—"
-
-  defp status_color(status), do: OrderHelpers.status_color(status)
-  defp format_fulfillment_type(type), do: OrderHelpers.fulfillment_label(type)
-
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6 bg-base-200/50 min-h-screen">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Orders")}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Manage customer orders, track statuses and process fulfillment.")}
-          </p>
-        </div>
-        <.link navigate={~p"/staff/orders/new"} class="btn btn-primary">
-          <.icon name="hero-plus" class="size-5" />
-          {gettext("New Order")}
-        </.link>
-      </div>
+    <div class="space-y-4 sm:space-y-6 py-4 sm:p-6">
+      <.page_header
+        title={gettext("Orders")}
+        subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
+      >
+        <:actions>
+          <.link navigate={~p"/staff/orders/new"} class="btn btn-primary">
+            <.icon name="hero-plus" class="size-5" />
+            {gettext("New Order")}
+          </.link>
+        </:actions>
+      </.page_header>
 
       <div class="bg-base-100 p-4 rounded-box border border-base-200 shadow-sm space-y-4">
         <.form
@@ -268,7 +248,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                 {"delivering", gettext("Delivering")},
                 {"completed", gettext("Completed")},
                 {"cancelled", gettext("Cancelled")},
-                {"crm", gettext("Crm")}
+                {"crm", gettext("Sent to CRM")}
               ] do %>
                 <option value={val} selected={@selected_status == val}>{label}</option>
               <% end %>
@@ -278,224 +258,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       </div>
 
       <div id="orders" phx-update="stream" class="space-y-3">
-        <%= for {id, order} <- @streams.orders do %>
-          <div
-            id={id}
-            class="bg-base-100 rounded-box border border-base-200 shadow-sm overflow-hidden"
-          >
-            <div class="px-4 py-2.5 bg-base-200/40 border-b border-base-200 flex items-center justify-between gap-4">
-              <div class="flex items-center gap-3">
-                <span class="font-mono font-bold text-base text-primary">#{order.number}</span>
-                <span class="text-xs text-base-content/50 border-l border-base-300 pl-3">
-                  {Calendar.strftime(order.inserted_at, "%d.%m.%Y %H:%M")}
-                </span>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <% is_crm = Atom.to_string(order.status) == "crm" %>
-
-                <%= if is_crm do %>
-                  <% crm_status = order.crm && order.crm.status %>
-                  <div class="text-xs font-medium px-2 py-1 rounded border bg-base-100 flex items-center gap-1.5">
-                    <span class="text-base-content/60">CRM:</span>
-                    <%= cond do %>
-                      <% crm_status == "sent" -> %>
-                        <span :if={order.crm.external_number} class="font-mono font-bold">
-                          #{order.crm.external_number}
-                        </span>
-                        <span>
-                          {gettext("sent at")} {order.crm.sent_at &&
-                            Calendar.strftime(order.crm.sent_at, "%d.%m.%Y %H:%M")}
-                        </span>
-                      <% crm_status == "failed" -> %>
-                        <span class="text-error font-bold uppercase">{gettext("error")}</span>
-                      <% true -> %>
-                        <span>{crm_status || gettext("sending")}</span>
-                    <% end %>
-                  </div>
-                <% else %>
-                  <form
-                    id={"order-status-#{order.id}"}
-                    phx-change="update_order"
-                    phx-value-order-id={order.id}
-                  >
-                    <select
-                      name="status"
-                      class={[
-                        "select select-xs font-medium border",
-                        status_color(Atom.to_string(order.status))
-                      ]}
-                    >
-                      <%= for {val, label} <- [
-                        {"created", gettext("Created")},
-                        {"preparing", gettext("Preparing")},
-                        {"ready", gettext("Ready")},
-                        {"delivering", gettext("Delivering")},
-                        {"completed", gettext("Completed")},
-                        {"cancelled", gettext("Cancelled")},
-                        {"crm", gettext("Crm")}
-                      ] do %>
-                        <option
-                          value={val}
-                          selected={Atom.to_string(order.status) == val}
-                          class="bg-base-100 text-base-content"
-                        >
-                          {label}
-                        </option>
-                      <% end %>
-                    </select>
-                  </form>
-
-                  <.link
-                    navigate={~p"/staff/orders/#{order.id}/edit"}
-                    class="btn btn-ghost btn-xs btn-square"
-                    title={gettext("Edit Order")}
-                  >
-                    <.icon name="hero-pencil-square" class="size-4" />
-                  </.link>
-                <% end %>
-
-                <button
-                  type="button"
-                  phx-click="delete_click"
-                  phx-value-id={order.id}
-                  class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"
-                  title={gettext("Delete Order")}
-                >
-                  <.icon name="hero-trash" class="size-4" />
-                </button>
-              </div>
-            </div>
-            <div class="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 text-xs">
-              <div class="lg:w-1/5 min-w-0">
-                <% phone = (order.client && order.client.phone) || order.customer_phone %>
-                <% name = (order.client && order.client.name) || order.customer_name %>
-
-                <%= if phone || name do %>
-                  <.link
-                    :if={order.client_id && Identity.can?(@current_staff, "clients.read")}
-                    navigate={~p"/staff/clients/#{order.client_id}"}
-                    class="group block min-w-0"
-                    title={gettext("Open client card")}
-                  >
-                    <div class="font-mono font-semibold text-base-content truncate group-hover:text-primary group-hover:underline">
-                      {phone || "—"}
-                    </div>
-                    <div class="text-base-content/60 truncate">{name || ""}</div>
-                  </.link>
-                  <div :if={!(order.client_id && Identity.can?(@current_staff, "clients.read"))}>
-                    <div class="font-mono font-semibold text-base-content truncate">
-                      {phone || "—"}
-                    </div>
-                    <div class="text-base-content/60 truncate">
-                      {name || ""}
-                    </div>
-                  </div>
-                <% else %>
-                  <div class="font-semibold text-base-content/50 italic truncate">
-                    {gettext("Customer not specified")}
-                  </div>
-                <% end %>
-              </div>
-
-              <div class="lg:w-1/4 min-w-0 border-t lg:border-t-0 lg:border-l border-base-200 pt-2 lg:pt-0 lg:pl-4">
-                <div class="flex items-center gap-2">
-                  <span class="badge badge-sm badge-ghost font-medium uppercase shrink-0">
-                    {format_fulfillment_type(order.fulfillment_type)}
-                  </span>
-                </div>
-                <%= if order.fulfillment_type == :delivery do %>
-                  <p
-                    class="text-base-content/70 truncate mt-0.5"
-                    title={format_address(order.address)}
-                  >
-                    {format_address(order.address)}
-                  </p>
-                <% end %>
-                <%= if order.cook_by do %>
-                  <p
-                    class="text-base-content/70 truncate mt-0.5"
-                    title={Calendar.strftime(order.cook_by, "%d.%m.%Y %H:%M")}
-                  >
-                    <span class="font-semibold">{gettext("Prepare by:")}</span> {Calendar.strftime(
-                      order.cook_by,
-                      "%d.%m.%Y %H:%M"
-                    )}
-                  </p>
-                <% end %>
-                <%= if order.comment && order.comment != "" do %>
-                  <p class="text-base-content/70 truncate mt-0.5" title={order.comment}>
-                    <span class="font-semibold">{gettext("Comment:")}</span> {order.comment}
-                  </p>
-                <% end %>
-              </div>
-
-              <div class="lg:w-1/5 flex items-center justify-between lg:justify-start gap-3 border-t lg:border-t-0 lg:border-l border-base-200 pt-2 lg:pt-0 lg:pl-4">
-                <form
-                  id={"order-payment-#{order.id}"}
-                  phx-change="update_order"
-                  phx-value-order-id={order.id}
-                >
-                  <select name="payment_method" class="select select-xs select-bordered font-medium">
-                    <option value="cash" selected={order.payment_method == :cash}>
-                      {gettext("Cash")}
-                    </option>
-                    <option value="card_offline" selected={order.payment_method == :card_offline}>
-                      {gettext("Card Offline")}
-                    </option>
-                  </select>
-                </form>
-                <div class="flex flex-col items-end shrink-0">
-                  <span class="font-mono font-bold text-base text-base-content">
-                    {order.total_amount} ₽
-                  </span>
-                  <span
-                    :if={order.discount_amount > 0}
-                    class="font-mono text-[11px] text-base-content/50 line-through"
-                  >
-                    {order.subtotal_amount} ₽
-                  </span>
-                  <span
-                    :for={promotion <- order.promotions}
-                    class="badge badge-success badge-xs whitespace-nowrap"
-                    title={promotion.name}
-                  >
-                    {promotion.code || promotion.name}
-                    <span :if={promotion.discount > 0}>−{promotion.discount}</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="lg:w-1/4 border-t lg:border-t-0 lg:border-l border-base-200 pt-2 lg:pt-0 lg:pl-4">
-                <details class="group">
-                  <summary class="cursor-pointer select-none text-primary font-medium flex items-center justify-between hover:underline">
-                    <span>{length(order.items)} {gettext("items")}</span>
-                    <span class="text-[10px] bg-base-200 px-2 py-0.5 rounded group-open:hidden">{gettext(
-                      "Show"
-                    )}</span>
-                    <span class="text-[10px] bg-base-200 px-2 py-0.5 rounded hidden group-open:inline">{gettext(
-                      "Hide"
-                    )}</span>
-                  </summary>
-                  <div class="mt-2 space-y-1.5 pt-2 border-t border-base-200 max-h-36 overflow-y-auto scrollbar-thin">
-                    <%= for item <- order.items do %>
-                      <div class="flex justify-between items-center text-[11px]">
-                        <span class="truncate pr-2 text-base-content/80">
-                          <.icon :if={item.gift} name="hero-gift" class="size-3 text-success" />
-                          {item.title}
-                        </span>
-                        <div class="flex items-center gap-2 shrink-0 font-mono">
-                          <span class="text-base-content/50">{item.quantity} {gettext("pcs")}</span>
-                          <span class="font-medium">{item.price * item.quantity} ₽</span>
-                        </div>
-                      </div>
-                    <% end %>
-                  </div>
-                </details>
-              </div>
-            </div>
-          </div>
-        <% end %>
+        <OrderCardComponent.render_card
+          :for={{id, order} <- @streams.orders}
+          id={id}
+          order={order}
+          current_staff={@current_staff}
+        />
       </div>
 
       <.modal
