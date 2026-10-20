@@ -7,7 +7,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
     ~H"""
     <div>
       <div class="p-3 border-b border-base-200 space-y-2 shrink-0 bg-base-100">
-        <form phx-change="search_products" phx-submit="search_products" class="relative w-full">
+        <form
+          id="catalog-search-form"
+          phx-change="search_products"
+          phx-submit="search_products"
+          class="relative w-full"
+        >
           <.icon
             name="hero-magnifying-glass"
             class="absolute left-3 top-2.5 size-4 text-base-content/40"
