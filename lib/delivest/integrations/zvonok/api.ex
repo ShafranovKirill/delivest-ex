@@ -9,10 +9,9 @@ defmodule Delivest.Integrations.Zvonok.Api do
           {:ok, %{call_id: String.t(), call_number: String.t()}} | {:error, term()}
   def confirm(%Config{} = config, phone) do
     @confirm_path
-    |> Client.post(
+    |> Client.get(
       [public_key: config.public_key, campaign_id: config.campaign_id, phone: phone],
-      base_url: @base_url,
-      format: :multipart
+      base_url: @base_url
     )
     |> result()
   end
