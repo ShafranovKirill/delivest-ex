@@ -45,7 +45,7 @@ defmodule Delivest.Oms.Orders do
   end
 
   def create_order(attrs, opts \\ []) do
-    attrs = Filter.normalize_params(attrs)
+    attrs = normalize_attrs(attrs)
     after_insert = Keyword.get(opts, :after_insert, & &1)
 
     Multi.new()
@@ -79,7 +79,7 @@ defmodule Delivest.Oms.Orders do
   end
 
   def update_order(%Order{} = order, attrs) do
-    attrs = Filter.normalize_params(attrs)
+    attrs = normalize_attrs(attrs)
 
     Multi.new()
     |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_update(order, attrs) end)
@@ -150,29 +150,38 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
-  defp resolve_client_id_on_create(attrs, client_opts) do
-    phone = Map.get(attrs, "customer_phone")
+  defp normalize_attrs(attrs) do
+    attrs
+    |> Filter.normalize_params()
+    |> drop_blank_phone()
+  end
 
-    if is_nil(phone) || String.trim(phone) == "" do
-      {:ok, nil}
-    else
-      Identity.resolve_client(attrs, client_opts)
-    end
+  defp drop_blank_phone(%{"customer_phone" => phone} = attrs) when is_binary(phone) do
+    if String.trim(phone) in ["", "+7"], do: Map.delete(attrs, "customer_phone"), else: attrs
+  end
+
+  defp drop_blank_phone(attrs), do: attrs
+
+  defp resolve_client_id_on_create(attrs, client_opts) do
+    if valid_phone?(attrs["customer_phone"]),
+      do: Identity.resolve_client(attrs, client_opts),
+      else: {:ok, nil}
   end
 
   defp resolve_client_id_on_update(order, attrs) do
-    phone = Map.get(attrs, "customer_phone")
-
-    if is_nil(phone) || String.trim(phone) == "" do
-      {:ok, nil}
-    else
+    if valid_phone?(attrs["customer_phone"]) do
       case Identity.resolve_client(attrs) do
         {:ok, nil} -> {:ok, order.client_id}
         {:ok, new_client_id} -> {:ok, new_client_id}
         {:error, reason} -> {:error, reason}
       end
+    else
+      {:ok, nil}
     end
   end
+
+  defp valid_phone?(phone) when is_binary(phone), do: Regex.match?(Identity.phone_regex(), phone)
+  defp valid_phone?(_phone), do: false
 
   defp fetch_cart(attrs) do
     case Map.get(attrs, "cart_id") do

@@ -174,7 +174,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
       |> json_response(422)
 
     assert body["error"] == "validation_failed"
-    assert body["details"]["phone"]
+    assert body["details"]["customer_phone"]
   end
 
   test "order creation is rate limited per client IP", %{conn: conn} do

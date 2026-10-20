@@ -127,6 +127,36 @@ defmodule Delivest.Oms.OrderTest do
       assert Repo.get!(Delivest.Oms.Cart, cart.id).staff_id == nil
     end
 
+    test "treats a bare phone prefix as no phone" do
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "bare-phone", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %Order{client_id: nil}} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "customer_phone" => "+7",
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+    end
+
+    test "reports an invalid phone as an order error" do
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "invalid-phone", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:error, :order, %Ecto.Changeset{data: %Order{}} = changeset} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "customer_phone" => "+7999",
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+
+      assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
+    end
+
     test "rejects an empty cart" do
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{
