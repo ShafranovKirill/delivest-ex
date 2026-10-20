@@ -14,6 +14,7 @@ defmodule Delivest.Net do
     to: Products
 
   defdelegate create_product(staff, branch_id, attrs), to: Products
+  defdelegate import_products(staff, branch_id, rows), to: Products
   defdelegate update_product(staff, product, attrs), to: Products
   defdelegate soft_delete_product(staff, product), to: Products
   defdelegate get_product(id, opts), to: Products

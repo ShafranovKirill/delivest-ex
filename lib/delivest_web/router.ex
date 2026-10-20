@@ -220,6 +220,7 @@ defmodule DelivestWeb.Router do
 
       scope "/products", ProductLive do
         live "/", Products, :index
+        live "/bulk", Bulk, :index
         live "/:id/edit", Products, :edit
         live "/new", Products, :new
       end

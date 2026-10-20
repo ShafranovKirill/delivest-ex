@@ -25,6 +25,31 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     end
   end
 
+  test "uploaded image goes to the product form", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, media} =
+      Delivest.Media.create_file(%{
+        "bucket" => "delivest",
+        "key" => "product/x.jpg",
+        "original_name" => "x.jpg",
+        "mime_type" => "image/jpeg",
+        "size" => 1,
+        "context" => "product",
+        "is_private" => false,
+        "owner_id" => staff.id
+      })
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/products/new")
+    send(lv.pid, {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, [{:ok, media}]}})
+
+    _ = render(lv)
+    assert render(lv) =~ "Change Image"
+    assert Oban.Testing.all_enqueued(Delivest.Repo, []) == []
+  end
+
   describe "copying products" do
     setup %{conn: conn} do
       branch = insert(:branch, name: "Source")

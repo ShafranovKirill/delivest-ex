@@ -88,6 +88,64 @@ defmodule Delivest.Net.Products do
     end
   end
 
+  def import_products(staff, branch_id, rows) do
+    if Identity.can?(staff, "products.create") do
+      Repo.transaction(fn ->
+        {products, _categories} =
+          Enum.map_reduce(rows, %{}, &import_row(staff, branch_id, &1, &2))
+
+        products
+      end)
+      |> case do
+        {:ok, products} ->
+          invalidate_menu_cache(branch_id)
+
+          Enum.each(products, fn product ->
+            broadcast_change(branch_id, {:product_created, product})
+            Audit.record(staff, "product.created", product, branch_id: branch_id)
+          end)
+
+          {:ok, products}
+
+        error ->
+          error
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  defp import_row(staff, branch_id, row, categories) do
+    {category_id, categories} = import_category(staff, branch_id, row["category"], categories)
+    attrs = row |> Map.delete("category") |> Map.put("category_id", category_id)
+
+    with {:ok, product} <- %Product{} |> Product.changeset(attrs) |> put_slug() |> Repo.insert(),
+         {:ok, _relation} <-
+           Relations.create_relation(Repo, "Branch", branch_id, "Product", product.id, %{}) do
+      {product, categories}
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp import_category(_staff, _branch_id, name, categories) when name in [nil, ""],
+    do: {nil, categories}
+
+  defp import_category(staff, branch_id, name, categories) do
+    key = String.downcase(name)
+
+    case Map.fetch(categories, key) do
+      {:ok, id} ->
+        {id, categories}
+
+      :error ->
+        case Delivest.Net.Categories.find_or_create_category_by_name(staff, branch_id, name) do
+          {:ok, category} -> {category.id, Map.put(categories, key, category.id)}
+          {:error, reason} -> Repo.rollback(reason)
+        end
+    end
+  end
+
   def update_product(staff, %Product{} = updateble_product, attrs) do
     staff
     |> do_update_product(updateble_product, attrs)

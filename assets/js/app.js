@@ -163,6 +163,23 @@ export const SortableStocks = {
   },
 };
 
+const BulkPaste = {
+  mounted() {
+    this.el.addEventListener("paste", (event) => {
+      const cell = event.target.closest("[data-row][data-column]");
+      const text = event.clipboardData?.getData("text/plain") || "";
+      if (!cell || !/[\t\n]/.test(text.trim())) return;
+
+      event.preventDefault();
+      this.pushEvent("paste", {
+        row: cell.dataset.row,
+        column: cell.dataset.column,
+        text,
+      });
+    });
+  },
+};
+
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
@@ -176,6 +193,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     SortableCategories,
     SortableStocks,
     Sidebar,
+    BulkPaste,
   },
 });
 
