@@ -130,6 +130,12 @@ defmodule Delivest.Oms.Orders do
     notify_subscribers(result, [:order, :deleted])
   end
 
+  def create_draft_cart(%Order{} = order) do
+    with {:ok, cart} <- Carts.create_cart(%{branch_id: order.branch_id}) do
+      {:ok, populate_cart_from_order(order, cart.id)}
+    end
+  end
+
   def populate_cart_from_order(%Order{} = order, cart_id) do
     Carts.clear_cart(cart_id)
 

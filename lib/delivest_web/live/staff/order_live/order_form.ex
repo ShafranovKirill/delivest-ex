@@ -6,7 +6,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   alias Delivest.Identity
   alias Delivest.Net.Catalogs
-  alias Delivest.Oms.{Order, Orders}
+  alias Delivest.Oms.{CartView, Order, Orders}
   alias DelivestWeb.Staff.OrderLive.Components.{CatalogComponent, DetailsComponent}
 
   on_mount {DelivestWeb.Hooks.Permission, "orders.create"}
@@ -29,10 +29,12 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     with true <- Identity.can?(socket.assigns.current_staff, "orders.update"),
          {:ok, uuid} <- Ecto.UUID.cast(id),
-         %Order{branch_id: ^branch_id} <- Orders.get_order(uuid) do
+         %Order{branch_id: ^branch_id} = order <- Orders.get_order(uuid),
+         false <- order.status == :crm do
       :ok
     else
       false -> {:error, gettext("Permission denied")}
+      true -> {:error, gettext("CRM orders cannot be edited")}
       _ -> {:error, gettext("Order not found")}
     end
   end
@@ -46,32 +48,14 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     {order, cart, page_title} =
       case Map.get(params, "id") do
         nil ->
-          if old_cart_view = Oms.get_cart(staff_id: staff.id, branch_id: branch_id) do
-            Oms.detach_cart(old_cart_view.id)
-          end
-
-          {:ok, new_cart} = Oms.create_cart(%{staff_id: staff.id, branch_id: branch_id})
-
-          {%Order{}, new_cart, gettext("New Order")}
+          {:ok, cart} = Oms.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
+          {%Order{}, cart, gettext("New Order")}
 
         id ->
           existing_order = Orders.get_order(id)
 
-          cart =
-            if existing_order.cart_id do
-              Oms.get_cart_by_id(existing_order.cart_id)
-            else
-              nil
-            end
-
-          cart =
-            cart ||
-              (
-                {:ok, new_cart} = Oms.create_cart(%{staff_id: staff.id, branch_id: branch_id})
-                Orders.populate_cart_from_order(existing_order, new_cart.id)
-              )
-
-          {existing_order, cart, gettext("Edit Order #%{number}", number: existing_order.number)}
+          {existing_order, edit_cart(socket, existing_order),
+           gettext("Edit Order #%{number}", number: existing_order.number)}
       end
 
     {customer_phone, customer_name} =
@@ -164,6 +148,15 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
      )}
   end
 
+  defp edit_cart(socket, order) do
+    if connected?(socket) do
+      {:ok, cart} = Oms.create_draft_cart(order)
+      cart
+    else
+      %CartView{branch_id: order.branch_id}
+    end
+  end
+
   @impl true
   def handle_event("detach_cart", _params, socket) do
     current_cart = socket.assigns.cart
@@ -181,7 +174,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   @impl true
-  def handle_event("switch_tab", %{"tab" => tab}, socket) do
+  def handle_event("switch_tab", %{"tab" => tab}, socket) when tab in ["cart", "details"] do
     {:noreply, assign(socket, active_tab: String.to_existing_atom(tab))}
   end
 
@@ -264,28 +257,26 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     case Oms.create_order(full_order_params) do
       {:ok, _result} ->
-        Oms.detach_cart(current_cart.id)
-        {:ok, _new_cart} = Oms.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
-
         {:noreply,
          socket
          |> put_flash(:info, gettext("Order created successfully"))
          |> push_navigate(to: ~p"/staff/orders")}
 
-      {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
+      {:error, _failed_step, %Ecto.Changeset{data: %Order{}} = err_changeset} ->
         {:noreply,
          socket
          |> put_flash(:error, gettext("Validation error"))
          |> assign(form: to_form(Map.put(err_changeset, :action, :insert)))}
 
       {:error, _failed_step, reason} ->
-        {:noreply,
-         put_flash(socket, :error, "#{gettext("Failed to create order")}: #{inspect(reason)}")}
+        {:noreply, put_flash(socket, :error, error_message(reason))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, error_message(reason))}
     end
   end
 
   defp update_existing_order(socket, order_params) do
-    staff = socket.assigns.current_staff
     branch_id = socket.assigns.branch_id
     current_cart = socket.assigns.cart
 
@@ -294,25 +285,26 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     case Orders.update_order(socket.assigns.order, full_order_params) do
       {:ok, _updated_order} ->
-        Oms.detach_cart(current_cart.id)
-        {:ok, _new_cart} = Oms.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
-
         {:noreply,
          socket
          |> put_flash(:info, gettext("Order updated successfully"))
          |> push_navigate(to: ~p"/staff/orders")}
 
-      {:error, _failed_step, %Ecto.Changeset{} = err_changeset} ->
+      {:error, _failed_step, %Ecto.Changeset{data: %Order{}} = err_changeset} ->
         {:noreply,
          socket
          |> put_flash(:error, gettext("Validation error"))
          |> assign(form: to_form(Map.put(err_changeset, :action, :update)))}
 
       {:error, _failed_step, reason} ->
-        {:noreply,
-         put_flash(socket, :error, "#{gettext("Failed to update order")}: #{inspect(reason)}")}
+        {:noreply, put_flash(socket, :error, error_message(reason))}
     end
   end
+
+  defp error_message(:cart_is_empty), do: gettext("Cart is empty")
+  defp error_message(:product_unavailable), do: gettext("Some products are no longer available")
+  defp error_message(:order_locked), do: gettext("CRM orders cannot be edited")
+  defp error_message(_reason), do: gettext("Failed to save order")
 
   @impl true
   def render(assigns) do

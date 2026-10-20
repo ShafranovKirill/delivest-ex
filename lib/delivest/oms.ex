@@ -5,6 +5,7 @@ defmodule Delivest.Oms do
   defdelegate update_order(order, attrs), to: Orders
   defdelegate update_order_details(order, attrs), to: Orders
   defdelegate soft_delete_order(order), to: Orders
+  defdelegate create_draft_cart(order), to: Orders
 
   defdelegate get_or_create_cart(opts), to: Carts
   defdelegate get_cart(opts), to: Carts
