@@ -1,19 +1,15 @@
 defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
 
-  alias Delivest.Identity
-  alias Delivest.Net
-  alias Delivest.Oms.{Cart, CartView, Carts, Order}
-  alias Delivest.Oms.Order.OrderNumber
-  alias Delivest.Oms.Orders.Filter
+  alias Delivest.Oms.Order
+  alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, Update}
   alias Delivest.Repo
-  alias Ecto.Multi
 
-  @topic inspect(__MODULE__)
-
-  def subscribe do
-    Phoenix.PubSub.subscribe(Delivest.PubSub, @topic)
-  end
+  defdelegate subscribe, to: Notifier
+  defdelegate create_order(attrs, opts \\ []), to: Create, as: :run
+  defdelegate update_order(order, attrs), to: Update, as: :run
+  defdelegate create_draft_cart(order), to: DraftCart, as: :create
+  defdelegate populate_cart_from_order(order, cart_id), to: DraftCart, as: :populate
 
   def list_orders(params \\ %{}) do
     Order
@@ -44,65 +40,6 @@ defmodule Delivest.Oms.Orders do
     |> Repo.preload([:client, :items])
   end
 
-  def create_order(attrs, opts \\ []) do
-    attrs = normalize_attrs(attrs)
-    after_insert = Keyword.get(opts, :after_insert, & &1)
-
-    Multi.new()
-    |> Multi.run(:client_id, fn _, _ ->
-      resolve_client_id_on_create(attrs, update_existing: Keyword.get(opts, :update_client, true))
-    end)
-    |> Multi.run(:cart, fn _, _ -> acquire_cart(attrs["cart_id"], attrs["branch_id"], nil) end)
-    |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
-    |> Multi.run(:order_number, fn _, _ -> OrderNumber.generate() end)
-    |> Multi.insert(:order, fn %{
-                                 client_id: client_id,
-                                 cart: cart,
-                                 products: products,
-                                 order_number: num
-                               } ->
-      build_order_from_cart(%Order{}, num, client_id, cart, products, attrs)
-    end)
-    |> after_insert.()
-    |> Multi.run(:detached_cart, fn _, %{cart: cart} ->
-      Carts.detach_cart(cart)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{order: order}} ->
-        order = Repo.preload(order, [:items, :client])
-        notify_subscribers({:ok, order}, [:order, :created])
-
-      {:error, step, reason, _} ->
-        {:error, step, reason}
-    end
-  end
-
-  def update_order(%Order{} = order, attrs) do
-    attrs = normalize_attrs(attrs)
-
-    attrs = Map.put(attrs, "staff_id", order.staff_id)
-
-    Multi.new()
-    |> Multi.run(:lock, fn _, _ -> lock_editable_order(order) end)
-    |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_update(order, attrs) end)
-    |> Multi.run(:cart, fn _, _ -> acquire_cart(attrs["cart_id"], order.branch_id, order.id) end)
-    |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
-    |> Multi.update(:order, fn %{client_id: client_id, cart: cart, products: products} ->
-      build_order_from_cart(order, order.number, client_id, cart, products, attrs)
-    end)
-    |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{order: updated_order}} ->
-        updated_order = Repo.preload(updated_order, [:items, :client], force: true)
-        notify_subscribers({:ok, updated_order}, [:order, :updated])
-
-      {:error, step, reason, _} ->
-        {:error, step, reason}
-    end
-  end
-
   def update_order_details(%Order{status: :crm}, _attrs), do: {:error, :order_locked}
 
   def update_order_details(%Order{} = order, attrs) do
@@ -110,227 +47,24 @@ defmodule Delivest.Oms.Orders do
 
     order
     |> Order.details_changeset(attrs)
-    |> Repo.update()
-    |> case do
-      {:ok, updated_order} ->
-        updated_order = Repo.preload(updated_order, [:items, :client], force: true)
-        notify_subscribers({:ok, updated_order}, [:order, :updated])
-
-      error ->
-        error
-    end
-  end
-
-  def soft_delete_order(%Order{} = order) do
-    result =
-      order
-      |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})
-      |> Repo.update()
-
-    notify_subscribers(result, [:order, :deleted])
-  end
-
-  def create_draft_cart(%Order{} = order) do
-    with {:ok, cart} <- Carts.create_cart(%{branch_id: order.branch_id}) do
-      {:ok, populate_cart_from_order(order, cart.id)}
-    end
-  end
-
-  def populate_cart_from_order(%Order{} = order, cart_id) do
-    Carts.clear_cart(cart_id)
-
-    Enum.each(order.items, fn item ->
-      Carts.add_item(cart_id, item.product_id, item.quantity)
-    end)
-
-    Carts.get_cart_by_id(cart_id)
+    |> persist([:order, :updated])
   end
 
   def update_order_crm_info(%Order{} = order, attrs) do
-    result =
-      order
-      |> Order.changeset(attrs)
-      |> Repo.update()
-
-    case result do
-      {:ok, updated_order} ->
-        updated_order = Repo.preload(updated_order, [:items, :client], force: true)
-        notify_subscribers({:ok, updated_order}, [:order, :updated])
-
-      error ->
-        error
-    end
+    order
+    |> Order.changeset(attrs)
+    |> persist([:order, :updated])
   end
 
-  defp normalize_attrs(attrs) do
-    attrs
-    |> Filter.normalize_params()
-    |> drop_blank_phone()
+  def soft_delete_order(%Order{} = order) do
+    order
+    |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})
+    |> persist([:order, :deleted])
   end
 
-  defp drop_blank_phone(%{"customer_phone" => phone} = attrs) when is_binary(phone) do
-    if String.trim(phone) in ["", "+7"], do: Map.delete(attrs, "customer_phone"), else: attrs
-  end
-
-  defp drop_blank_phone(attrs), do: attrs
-
-  defp resolve_client_id_on_create(attrs, client_opts) do
-    if valid_phone?(attrs["customer_phone"]),
-      do: Identity.resolve_client(attrs, client_opts),
-      else: {:ok, nil}
-  end
-
-  defp resolve_client_id_on_update(order, attrs) do
-    if valid_phone?(attrs["customer_phone"]) do
-      case Identity.resolve_client(attrs) do
-        {:ok, nil} -> {:ok, order.client_id}
-        {:ok, new_client_id} -> {:ok, new_client_id}
-        {:error, reason} -> {:error, reason}
-      end
-    else
-      {:ok, nil}
-    end
-  end
-
-  defp valid_phone?(phone) when is_binary(phone), do: Regex.match?(Identity.phone_regex(), phone)
-  defp valid_phone?(_phone), do: false
-
-  defp fetch_cart(attrs) do
-    case Map.get(attrs, "cart_id") do
-      nil ->
-        {:error, :cart_not_found}
-
-      cart_id ->
-        case Carts.get_cart_by_id(cart_id) do
-          nil -> {:error, :cart_not_found}
-          %CartView{items: []} -> {:error, :cart_is_empty}
-          %CartView{} = cart -> {:ok, cart}
-        end
-    end
-  end
-
-  defp lock_editable_order(%Order{id: id}) do
-    query =
-      from(o in Order,
-        where: o.id == ^id and is_nil(o.deleted_at),
-        lock: "FOR UPDATE",
-        select: o.status
-      )
-
-    case Repo.one(query) do
-      nil -> {:error, :order_not_found}
-      :crm -> {:error, :order_locked}
-      _status -> {:ok, :locked}
-    end
-  end
-
-  defp acquire_cart(cart_id, branch_id, order_id) do
-    with {:ok, cart_id} <- cast_cart_id(cart_id),
-         :ok <- lock_cart(cart_id),
-         :ok <- ensure_cart_not_ordered(cart_id, order_id),
-         {:ok, cart} <- fetch_cart(%{"cart_id" => cart_id}),
-         :ok <- ensure_cart_branch(cart, branch_id) do
-      {:ok, cart}
-    end
-  end
-
-  defp cast_cart_id(cart_id) do
-    case Ecto.UUID.cast(cart_id) do
-      {:ok, uuid} -> {:ok, uuid}
-      :error -> {:error, :cart_not_found}
-    end
-  end
-
-  defp lock_cart(cart_id) do
-    query = from(c in Cart, where: c.id == ^cart_id, lock: "FOR UPDATE", select: c.id)
-
-    case Repo.one(query) do
-      nil -> {:error, :cart_not_found}
-      _id -> :ok
-    end
-  end
-
-  defp ensure_cart_not_ordered(cart_id, order_id) do
-    query = from(o in Order, where: o.cart_id == ^cart_id)
-    query = if order_id, do: where(query, [o], o.id != ^order_id), else: query
-
-    if Repo.exists?(query) do
-      {:error, :cart_already_ordered}
-    else
-      :ok
-    end
-  end
-
-  defp ensure_cart_branch(_cart, nil), do: :ok
-
-  defp ensure_cart_branch(%CartView{branch_id: branch_id}, branch_id), do: :ok
-
-  defp ensure_cart_branch(_cart, _branch_id), do: {:error, :cart_branch_mismatch}
-
-  defp fetch_products_for_cart(%{items: items}) do
-    product_ids =
-      Enum.map(items, fn item ->
-        item[:product_id] || Map.get(item, "product_id")
-      end)
-
-    products = Net.list_products_by_ids(product_ids, preload: [:category])
-
-    if Enum.all?(product_ids, &Map.has_key?(products, &1)),
-      do: {:ok, products},
-      else: {:error, :product_unavailable}
-  end
-
-  defp build_order_from_cart(order_struct, number, client_id, cart, products_map, attrs) do
-    {items_attrs, total_amount} =
-      Enum.reduce(cart.items, {[], 0}, fn item, {acc_items, acc_total} ->
-        pid = item[:product_id] || Map.get(item, "product_id")
-        qty = item[:quantity] || Map.get(item, "quantity")
-
-        case Map.get(products_map, pid) do
-          nil ->
-            {acc_items, acc_total}
-
-          p ->
-            item = %{
-              product_id: pid,
-              title: p.name,
-              price: p.price,
-              quantity: qty,
-              category_id: p.category_id,
-              category_name: category_name(p)
-            }
-
-            {[item | acc_items], acc_total + p.price * qty}
-        end
-      end)
-
-    order_params =
-      attrs
-      |> Map.put("number", to_string(number))
-      |> Map.put("total_amount", total_amount)
-      |> Map.put("branch_id", cart.branch_id)
-      |> Map.put("cart_id", cart.id)
-      |> Map.put_new("staff_id", cart.staff_id)
-      |> Map.put("client_id", client_id)
-
-    order_struct
-    |> Order.changeset(order_params)
-    |> Ecto.Changeset.put_assoc(:items, items_attrs)
-  end
-
-  defp category_name(%{category: %{name: name}}), do: name
-  defp category_name(_product), do: nil
-
-  defp notify_subscribers({:ok, order}, event) do
-    Phoenix.PubSub.broadcast(Delivest.PubSub, @topic, {__MODULE__, event, order})
-    {:ok, order}
-  end
-
-  defp notify_subscribers({:error, step, reason}, _event) do
-    {:error, step, reason}
-  end
-
-  defp notify_subscribers({:error, reason}, _event) do
-    {:error, reason}
+  defp persist(changeset, event) do
+    changeset
+    |> Repo.update()
+    |> Notifier.publish(event)
   end
 end

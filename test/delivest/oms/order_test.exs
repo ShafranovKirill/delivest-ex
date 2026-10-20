@@ -165,7 +165,7 @@ defmodule Delivest.Oms.OrderTest do
 
       product |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
 
-      assert {:error, :products, :product_unavailable} =
+      assert {:error, :lines, :product_unavailable} =
                Orders.create_order(%{
                  "cart_id" => cart.id,
                  "fulfillment_type" => "pickup",
