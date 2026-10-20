@@ -1311,6 +1311,7 @@ msgstr ""
 msgid "Create Client"
 msgstr ""
 
+#: lib/delivest_web/live/staff/log_live/event_text.ex:55
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:15
 #: lib/delivest_web/live/staff/order_live/orders.ex:245
 #, elixir-autogen, elixir-format
@@ -2175,47 +2176,47 @@ msgstr ""
 msgid "Some products are no longer available"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:86
+#: lib/delivest_web/live/staff/log_live/event_text.ex:119
 #, elixir-autogen, elixir-format
 msgid "%{action}: %{subject}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:114
+#: lib/delivest_web/live/staff/log_live/index.ex:197
 #, elixir-autogen, elixir-format
 msgid "All levels"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:93
+#: lib/delivest_web/live/staff/log_live/index.ex:127
 #, elixir-autogen, elixir-format
 msgid "All sections"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:82
+#: lib/delivest_web/live/staff/log_live/event_text.ex:115
 #, elixir-autogen, elixir-format
 msgid "Branch «%{subject}» created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:84
+#: lib/delivest_web/live/staff/log_live/event_text.ex:117
 #, elixir-autogen, elixir-format
 msgid "Branch «%{subject}» deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:83
+#: lib/delivest_web/live/staff/log_live/event_text.ex:116
 #, elixir-autogen, elixir-format
 msgid "Branch «%{subject}» edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:53
+#: lib/delivest_web/live/staff/log_live/event_text.ex:86
 #, elixir-autogen, elixir-format
 msgid "Category «%{subject}» created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:55
+#: lib/delivest_web/live/staff/log_live/event_text.ex:88
 #, elixir-autogen, elixir-format
 msgid "Category «%{subject}» deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:54
+#: lib/delivest_web/live/staff/log_live/event_text.ex:87
 #, elixir-autogen, elixir-format
 msgid "Category «%{subject}» edited"
 msgstr ""
@@ -2225,32 +2226,32 @@ msgstr ""
 msgid "Client %{name}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:67
+#: lib/delivest_web/live/staff/log_live/event_text.ex:100
 #, elixir-autogen, elixir-format
 msgid "Client %{subject} added"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:69
+#: lib/delivest_web/live/staff/log_live/event_text.ex:102
 #, elixir-autogen, elixir-format
 msgid "Client %{subject} deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:68
+#: lib/delivest_web/live/staff/log_live/event_text.ex:101
 #, elixir-autogen, elixir-format
 msgid "Client %{subject} edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:71
+#: lib/delivest_web/live/staff/log_live/event_text.ex:104
 #, elixir-autogen, elixir-format
 msgid "Employee %{subject} added"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:74
+#: lib/delivest_web/live/staff/log_live/event_text.ex:107
 #, elixir-autogen, elixir-format
 msgid "Employee %{subject} deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:72
+#: lib/delivest_web/live/staff/log_live/event_text.ex:105
 #, elixir-autogen, elixir-format
 msgid "Employee %{subject} edited"
 msgstr ""
@@ -2276,8 +2277,8 @@ msgid "Level"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:312
-#: lib/delivest_web/live/staff/log_live/index.ex:22
-#: lib/delivest_web/live/staff/log_live/index.ex:81
+#: lib/delivest_web/live/staff/log_live/index.ex:24
+#: lib/delivest_web/live/staff/log_live/index.ex:118
 #, elixir-autogen, elixir-format
 msgid "Logs"
 msgstr ""
@@ -2287,70 +2288,70 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:40
+#: lib/delivest_web/live/staff/log_live/event_text.ex:73
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} changed: %{changes}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:38
+#: lib/delivest_web/live/staff/log_live/event_text.ex:71
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:41
+#: lib/delivest_web/live/staff/log_live/event_text.ex:74
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:39
+#: lib/delivest_web/live/staff/log_live/event_text.ex:72
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:47
+#: lib/delivest_web/live/staff/log_live/event_text.ex:80
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} not sent to CRM: %{error}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:42
+#: lib/delivest_web/live/staff/log_live/event_text.ex:75
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} sent to CRM"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:73
+#: lib/delivest_web/live/staff/log_live/event_text.ex:106
 #, elixir-autogen, elixir-format
 msgid "Password of %{subject} changed"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:49
+#: lib/delivest_web/live/staff/log_live/event_text.ex:82
 #, elixir-autogen, elixir-format
 msgid "Product «%{subject}» created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:51
+#: lib/delivest_web/live/staff/log_live/event_text.ex:84
 #, elixir-autogen, elixir-format
 msgid "Product «%{subject}» deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:50
+#: lib/delivest_web/live/staff/log_live/event_text.ex:83
 #, elixir-autogen, elixir-format
 msgid "Product «%{subject}» edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:57
-#: lib/delivest_web/live/staff/log_live/event_text.ex:61
+#: lib/delivest_web/live/staff/log_live/event_text.ex:90
+#: lib/delivest_web/live/staff/log_live/event_text.ex:94
 #, elixir-autogen, elixir-format
 msgid "Promotion «%{subject}» created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:59
-#: lib/delivest_web/live/staff/log_live/event_text.ex:63
+#: lib/delivest_web/live/staff/log_live/event_text.ex:92
+#: lib/delivest_web/live/staff/log_live/event_text.ex:96
 #, elixir-autogen, elixir-format
 msgid "Promotion «%{subject}» deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:58
-#: lib/delivest_web/live/staff/log_live/event_text.ex:62
+#: lib/delivest_web/live/staff/log_live/event_text.ex:91
+#: lib/delivest_web/live/staff/log_live/event_text.ex:95
 #, elixir-autogen, elixir-format
 msgid "Promotion «%{subject}» edited"
 msgstr ""
@@ -2360,32 +2361,34 @@ msgstr ""
 msgid "Raw logs"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:78
+#: lib/delivest_web/live/staff/log_live/event_text.ex:111
 #, elixir-autogen, elixir-format
 msgid "Role «%{subject}» created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:80
+#: lib/delivest_web/live/staff/log_live/event_text.ex:113
 #, elixir-autogen, elixir-format
 msgid "Role «%{subject}» deleted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:79
+#: lib/delivest_web/live/staff/log_live/event_text.ex:112
 #, elixir-autogen, elixir-format
 msgid "Role «%{subject}» edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:108
+#: lib/delivest_web/live/staff/log_live/index.ex:191
 #, elixir-autogen, elixir-format
 msgid "Search in messages..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:75
+#: lib/delivest_web/live/staff/log_live/event_text.ex:65
+#: lib/delivest_web/live/staff/log_live/event_text.ex:108
 #, elixir-autogen, elixir-format
 msgid "Signed in"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:76
+#: lib/delivest_web/live/staff/log_live/event_text.ex:66
+#: lib/delivest_web/live/staff/log_live/event_text.ex:109
 #, elixir-autogen, elixir-format
 msgid "Signed out"
 msgstr ""
@@ -2402,32 +2405,32 @@ msgid "System"
 msgstr ""
 
 #: lib/delivest_web/live/staff/log_live/components/entries_component.ex:11
-#: lib/delivest_web/live/staff/log_live/components/events_component.ex:12
+#: lib/delivest_web/live/staff/log_live/components/events_component.ex:14
 #, elixir-autogen, elixir-format
 msgid "Time"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/components/events_component.ex:22
+#: lib/delivest_web/live/staff/log_live/components/events_component.ex:35
 #, elixir-autogen, elixir-format
 msgid "What happened"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/components/events_component.ex:17
+#: lib/delivest_web/live/staff/log_live/components/events_component.ex:19
 #, elixir-autogen, elixir-format
 msgid "Who"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:82
+#: lib/delivest_web/live/staff/log_live/index.ex:119
 #, elixir-autogen, elixir-format
 msgid "Who did what and when, application logs, errors and hints."
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:95
+#: lib/delivest_web/live/staff/log_live/event_text.ex:128
 #, elixir-autogen, elixir-format
 msgid "payment → %{value}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:92
+#: lib/delivest_web/live/staff/log_live/event_text.ex:125
 #, elixir-autogen, elixir-format
 msgid "status → %{value}"
 msgstr ""
@@ -2468,7 +2471,7 @@ msgstr ""
 msgid "Webhook URL for Frontpad API settings"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:45
+#: lib/delivest_web/live/staff/log_live/event_text.ex:78
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} status changed in CRM: %{changes}"
 msgstr ""
@@ -2489,6 +2492,7 @@ msgstr ""
 msgid "All products of this branch"
 msgstr ""
 
+#: lib/delivest_web/live/staff/log_live/components/events_component.ex:38
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:61
 #, elixir-autogen, elixir-format
 msgid "Branch"
@@ -3054,12 +3058,12 @@ msgstr ""
 msgid "Promo code"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:64
+#: lib/delivest_web/live/staff/log_live/event_text.ex:97
 #, elixir-autogen, elixir-format
 msgid "Promo code %{subject} issued"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:65
+#: lib/delivest_web/live/staff/log_live/event_text.ex:98
 #, elixir-autogen, elixir-format
 msgid "Promo code %{subject} revoked"
 msgstr ""
@@ -3453,6 +3457,7 @@ msgid_plural "%{count} items"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/delivest_web/live/staff/log_live/event_text.ex:59
 #: lib/delivest_web/live/staff/order_live/orders.ex:251
 #, elixir-autogen, elixir-format
 msgid "Sent to CRM"
@@ -3680,4 +3685,94 @@ msgstr ""
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:699
 #, elixir-autogen, elixir-format
 msgid "to"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:162
+#, elixir-autogen, elixir-format
+msgid "All branches"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:151
+#, elixir-autogen, elixir-format
+msgid "All employees"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:138
+#, elixir-autogen, elixir-format
+msgid "All events"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:94
+#, elixir-autogen, elixir-format
+msgid "By branch"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:92
+#, elixir-autogen, elixir-format
+msgid "By employee"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:93
+#, elixir-autogen, elixir-format
+msgid "By event"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:62
+#, elixir-autogen, elixir-format
+msgid "Code issued"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:63
+#, elixir-autogen, elixir-format
+msgid "Code revoked"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:57
+#, elixir-autogen, elixir-format
+msgid "Deleted"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:58
+#, elixir-autogen, elixir-format
+msgid "Details changed"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:56
+#, elixir-autogen, elixir-format
+msgid "Edited"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:90
+#, elixir-autogen, elixir-format
+msgid "Newest first"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:61
+#, elixir-autogen, elixir-format
+msgid "Not sent to CRM"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:91
+#, elixir-autogen, elixir-format
+msgid "Oldest first"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:64
+#, elixir-autogen, elixir-format
+msgid "Password changed"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:182
+#, elixir-autogen, elixir-format
+msgid "Reset"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/components/events_component.ex:24
+#, elixir-autogen, elixir-format
+msgid "Show events of this employee"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:60
+#, elixir-autogen, elixir-format
+msgid "Status changed in CRM"
 msgstr ""

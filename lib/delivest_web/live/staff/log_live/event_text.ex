@@ -35,6 +35,39 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
     ]
   end
 
+  def action_groups(actions) do
+    sections = Map.new(subject_types())
+
+    actions
+    |> Enum.group_by(&(&1 |> String.split(".") |> hd()))
+    |> Enum.map(fn {section, actions} ->
+      label = Map.get(sections, section_type(section), section)
+      {label, Enum.map(actions, &{verb(&1), &1})}
+    end)
+    |> Enum.sort_by(&elem(&1, 0))
+  end
+
+  defp section_type("promo_code"), do: "promotion"
+  defp section_type(section), do: section
+
+  defp verb(action) do
+    case action |> String.split(".") |> List.last() do
+      "created" -> gettext("Created")
+      "updated" -> gettext("Edited")
+      "deleted" -> gettext("Deleted")
+      "details_changed" -> gettext("Details changed")
+      "sent_to_crm" -> gettext("Sent to CRM")
+      "crm_status_changed" -> gettext("Status changed in CRM")
+      "crm_failed" -> gettext("Not sent to CRM")
+      "issued" -> gettext("Code issued")
+      "revoked" -> gettext("Code revoked")
+      "password_changed" -> gettext("Password changed")
+      "logged_in" -> gettext("Signed in")
+      "logged_out" -> gettext("Signed out")
+      other -> other
+    end
+  end
+
   defp text("order.created", b), do: gettext("Order %{subject} created", b)
   defp text("order.updated", b), do: gettext("Order %{subject} edited", b)
   defp text("order.details_changed", b), do: gettext("Order %{subject} changed: %{changes}", b)

@@ -9,8 +9,9 @@ defmodule Delivest.Audit.Event do
 
   @derive {
     Flop.Schema,
-    filterable: [:subject_type, :actor_type, :branch_id],
-    sortable: [:inserted_at],
+    filterable: [:subject_type, :actor_type, :actor_id, :action, :branch_id],
+    sortable: [:inserted_at, :actor_name, :action, :branch_name],
+    join_fields: [branch_name: [binding: :branch, field: :name, ecto_type: :string]],
     default_order: %{order_by: [:inserted_at], order_directions: [:desc]},
     default_limit: 50,
     max_limit: 100
@@ -26,6 +27,7 @@ defmodule Delivest.Audit.Event do
     field :subject_label, :string
     field :branch_id, :binary_id
     field :metadata, :map, default: %{}
+    field :branch_name, :string, virtual: true
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end

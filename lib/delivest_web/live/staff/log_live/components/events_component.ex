@@ -5,6 +5,8 @@ defmodule DelivestWeb.Staff.LogLive.Components.EventsComponent do
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   attr :events, :any, required: true
+  attr :branches, :map, default: %{}
+  attr :actor_path, :any, required: true
 
   def render_events(assigns) do
     ~H"""
@@ -15,12 +17,28 @@ defmodule DelivestWeb.Staff.LogLive.Components.EventsComponent do
         </span>
       </:col>
       <:col :let={{_id, event}} label={gettext("Who")}>
-        <span class={["badge badge-sm whitespace-nowrap", actor_class(event.actor_type)]}>
+        <.link
+          :if={event.actor_type == :staff and event.actor_id}
+          patch={@actor_path.(event.actor_id)}
+          class={["badge badge-sm whitespace-nowrap hover:underline", actor_class(event.actor_type)]}
+          title={gettext("Show events of this employee")}
+        >
+          {EventText.actor(event)}
+        </.link>
+        <span
+          :if={!(event.actor_type == :staff and event.actor_id)}
+          class={["badge badge-sm whitespace-nowrap", actor_class(event.actor_type)]}
+        >
           {EventText.actor(event)}
         </span>
       </:col>
       <:col :let={{_id, event}} label={gettext("What happened")}>
         <span class="text-sm">{EventText.describe(event)}</span>
+      </:col>
+      <:col :let={{_id, event}} label={gettext("Branch")} secondary>
+        <span class="text-xs text-base-content/70 whitespace-nowrap">
+          {event.branch_name || Map.get(@branches, event.branch_id, "—")}
+        </span>
       </:col>
     </.table>
     """

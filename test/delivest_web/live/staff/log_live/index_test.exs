@@ -43,6 +43,33 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
     assert html =~ "Создан товар «Borsch»"
   end
 
+  test "events filter by employee, event and branch and sort by branch", %{conn: conn} do
+    {conn, staff} = login(conn, ["logs.read"])
+    other = insert(:staff, name: "Petr")
+    alpha = insert(:branch, name: "Alpha")
+    beta = insert(:branch, name: "Beta")
+
+    Audit.record(staff, "product.created", insert(:product, name: "Borsch"), branch_id: beta.id)
+    Audit.record(other, "product.deleted", insert(:product, name: "Pelmeni"), branch_id: alpha.id)
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/logs?actor=#{other.id}")
+    html = render(lv)
+    assert html =~ "Pelmeni"
+    refute html =~ "Borsch"
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/logs?action=product.created")
+    assert render(lv) =~ "Borsch"
+    refute render(lv) =~ "Pelmeni"
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/logs?branch=#{beta.id}")
+    assert render(lv) =~ "Borsch"
+    refute render(lv) =~ "Pelmeni"
+
+    {:ok, _lv, html} = live(conn, ~p"/staff/logs?sort=branch")
+    [first, _second] = Regex.scan(~r/Borsch|Pelmeni/, html) |> Enum.map(&hd/1) |> Enum.uniq()
+    assert first == "Pelmeni"
+  end
+
   test "new events appear without reload", %{conn: conn} do
     {conn, staff} = login(conn, ["logs.read"])
     {:ok, lv, _html} = live(conn, ~p"/staff/logs")
