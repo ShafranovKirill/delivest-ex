@@ -2,7 +2,7 @@ defmodule Delivest.Analytics do
   import Ecto.Query
 
   alias Delivest.LocalTime
-  alias Delivest.Oms.{Order, OrderItem}
+  alias Delivest.Oms.{Order, OrderItem, OrderScopes}
   alias Delivest.Repo
 
   @type period :: {Date.t(), Date.t()}
@@ -64,12 +64,8 @@ defmodule Delivest.Analytics do
       |> select([_o, i], coalesce(sum(i.quantity), 0))
       |> Repo.one()
 
-    cancelled_count =
-      branch_id
-      |> period_orders(period)
-      |> where([o], o.status == ^:cancelled)
-      |> select([o], count(o.id))
-      |> Repo.one()
+    cancelled_count = branch_id |> period_orders(period) |> count_where(OrderScopes.cancelled())
+    lost_count = branch_id |> period_orders(period) |> count_where(OrderScopes.lost())
 
     revenue = to_int(revenue)
 
@@ -78,7 +74,8 @@ defmodule Delivest.Analytics do
       orders_count: orders_count,
       avg_check: if(orders_count > 0, do: round(revenue / orders_count), else: 0),
       items_sold: to_int(items_sold),
-      cancelled_count: cancelled_count
+      cancelled_count: cancelled_count,
+      lost_count: lost_count
     }
   end
 
@@ -197,12 +194,14 @@ defmodule Delivest.Analytics do
 
   @spec status_counts(binary(), period()) :: %{atom() => non_neg_integer()}
   def status_counts(branch_id, period) do
+    status = OrderScopes.effective_status()
+
     branch_id
     |> period_orders(period)
-    |> group_by([o], o.status)
-    |> select([o], {o.status, count(o.id)})
+    |> group_by(^[status])
+    |> select(^%{status: status, count: dynamic([o], count(o.id))})
     |> Repo.all()
-    |> Map.new()
+    |> Map.new(&{String.to_existing_atom(&1.status), &1.count})
   end
 
   @spec client_summary(binary(), [binary()] | :all) :: map()
@@ -210,7 +209,7 @@ defmodule Delivest.Analytics do
     base =
       Order
       |> where([o], o.client_id == ^client_id and is_nil(o.deleted_at))
-      |> where([o], o.status != ^:cancelled)
+      |> OrderScopes.sold()
       |> scope_branches(branch_ids)
 
     totals =
@@ -255,8 +254,11 @@ defmodule Delivest.Analytics do
   defp sales_orders(branch_id, period) do
     branch_id
     |> period_orders(period)
-    |> where([o], o.status != ^:cancelled)
+    |> OrderScopes.sold()
   end
+
+  defp count_where(query, condition),
+    do: query |> where(^condition) |> select([o], count(o.id)) |> Repo.one()
 
   defp items_query(branch_id, period) do
     branch_id

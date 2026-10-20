@@ -163,4 +163,32 @@ defmodule Delivest.AnalyticsTest do
     assert item.category_name == "Горячее"
     assert %Order{} = order
   end
+
+  defp crm!(order, crm) do
+    order
+    |> Ecto.Changeset.change(status: :crm)
+    |> Order.crm_changeset(Map.put(crm, :provider, "frontpad"))
+    |> Repo.update!()
+  end
+
+  test "crm orders cancelled remotely or never delivered are not sales", ctx do
+    period = {~D[2026-10-19], ~D[2026-10-19]}
+
+    order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 10:00:00Z])
+    |> crm!(%{status: "sent", remote_status: "completed"})
+
+    order!(@branch_id, [{ctx.tea, 2}], ~U[2026-10-19 11:00:00Z])
+    |> crm!(%{status: "sent", remote_status: "cancelled"})
+
+    order!(@branch_id, [{ctx.tea, 3}], ~U[2026-10-19 12:00:00Z])
+    |> crm!(%{status: "failed"})
+
+    order!(@branch_id, [{ctx.tea, 4}], ~U[2026-10-19 13:00:00Z])
+    |> crm!(%{status: "sent"})
+
+    assert %{revenue: 500, orders_count: 2, cancelled_count: 1, lost_count: 1} =
+             Analytics.summary(@branch_id, period)
+
+    assert %{completed: 1, cancelled: 1, created: 2} = Analytics.status_counts(@branch_id, period)
+  end
 end

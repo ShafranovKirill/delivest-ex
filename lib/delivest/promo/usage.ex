@@ -1,7 +1,7 @@
 defmodule Delivest.Promo.Usage do
   import Ecto.Query, warn: false
 
-  alias Delivest.Oms.Order
+  alias Delivest.Oms.{Order, OrderScopes}
   alias Delivest.Promo.Redemption
   alias Delivest.Repo
 
@@ -30,12 +30,11 @@ defmodule Delivest.Promo.Usage do
   def code(%__MODULE__{code: code}, code_id), do: Map.get(code, code_id, 0)
 
   defp counted(except_order_id) do
-    query =
-      from(r in Redemption,
-        join: o in Order,
-        on: o.id == r.order_id,
-        where: is_nil(o.deleted_at) and o.status != :cancelled
-      )
+    sold =
+      from(o in Order, where: is_nil(o.deleted_at), select: o.id)
+      |> OrderScopes.sold()
+
+    query = from(r in Redemption, where: r.order_id in subquery(sold))
 
     if except_order_id, do: where(query, [r], r.order_id != ^except_order_id), else: query
   end

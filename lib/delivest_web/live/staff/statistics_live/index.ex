@@ -185,10 +185,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             icon="hero-shopping-bag"
             label={gettext("Orders")}
             delta={delta(@summary.orders_count, @previous.orders_count)}
-            hint={
-              if @summary.cancelled_count > 0,
-                do: gettext("%{count} cancelled", count: @summary.cancelled_count)
-            }
+            hint={excluded_hint(@summary)}
           >
             {@summary.orders_count}
           </.stat_card>
@@ -346,5 +343,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       <% end %>
     </div>
     """
+  end
+
+  defp excluded_hint(%{cancelled_count: cancelled, lost_count: lost}) do
+    [
+      cancelled > 0 && gettext("%{count} cancelled", count: cancelled),
+      lost > 0 && gettext("%{count} not delivered to CRM", count: lost)
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(", ")
+    |> case do
+      "" -> nil
+      hint -> hint
+    end
   end
 end
