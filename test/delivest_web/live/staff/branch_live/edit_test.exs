@@ -18,7 +18,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     {:ok, lv, html} = live(conn, ~p"/staff/branches/old-name/edit")
     assert html =~ "CRM"
 
-    assert {:error, {:live_redirect, %{to: "/staff/branches/new-name/edit"}}} =
+    assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
              lv
              |> form("#branch-form", branch_form: %{name: "New name", slug: "new-name"})
              |> render_submit()
@@ -29,7 +29,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
   test "a new branch is created from the page", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/branches/new")
 
-    assert {:error, {:live_redirect, %{to: "/staff/branches/fresh/edit"}}} =
+    assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
              lv
              |> form("#branch-form", branch_form: %{name: "Fresh", slug: "fresh"})
              |> render_submit()

@@ -44,11 +44,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
     {branch_params, info_params} = BranchForm.to_params(changeset)
 
     case persist(socket.assigns, branch_params, info_params) do
-      {:ok, branch} ->
+      {:ok, _branch} ->
         {:noreply,
          socket
          |> put_flash(:info, gettext("Branch saved successfully"))
-         |> push_navigate(to: ~p"/staff/branches/#{branch.slug}/edit")}
+         |> push_navigate(to: ~p"/staff/branches")}
 
       {:error, _step, %Ecto.Changeset{} = error} ->
         {:noreply,
