@@ -52,7 +52,7 @@ defmodule Delivest.Oms.Orders do
     |> Multi.run(:client_id, fn _, _ ->
       resolve_client_id_on_create(attrs, update_existing: Keyword.get(opts, :update_client, true))
     end)
-    |> Multi.run(:cart, fn _, _ -> fetch_cart_for_new_order(attrs) end)
+    |> Multi.run(:cart, fn _, _ -> acquire_cart(attrs["cart_id"], attrs["branch_id"], nil) end)
     |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
     |> Multi.run(:order_number, fn _, _ -> OrderNumber.generate() end)
     |> Multi.insert(:order, fn %{
@@ -81,13 +81,17 @@ defmodule Delivest.Oms.Orders do
   def update_order(%Order{} = order, attrs) do
     attrs = normalize_attrs(attrs)
 
+    attrs = Map.put(attrs, "staff_id", order.staff_id)
+
     Multi.new()
+    |> Multi.run(:lock, fn _, _ -> lock_editable_order(order) end)
     |> Multi.run(:client_id, fn _, _ -> resolve_client_id_on_update(order, attrs) end)
-    |> Multi.run(:cart, fn _, _ -> fetch_cart(attrs) end)
+    |> Multi.run(:cart, fn _, _ -> acquire_cart(attrs["cart_id"], order.branch_id, order.id) end)
     |> Multi.run(:products, fn _, %{cart: cart} -> fetch_products_for_cart(cart) end)
     |> Multi.update(:order, fn %{client_id: client_id, cart: cart, products: products} ->
       build_order_from_cart(order, order.number, client_id, cart, products, attrs)
     end)
+    |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{order: updated_order}} ->
@@ -98,6 +102,8 @@ defmodule Delivest.Oms.Orders do
         {:error, step, reason}
     end
   end
+
+  def update_order_details(%Order{status: :crm}, _attrs), do: {:error, :order_locked}
 
   def update_order_details(%Order{} = order, attrs) do
     attrs = attrs |> Filter.normalize_params() |> Map.take(["status", "payment_method"])
@@ -197,12 +203,27 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
-  defp fetch_cart_for_new_order(attrs) do
-    with {:ok, cart_id} <- cast_cart_id(Map.get(attrs, "cart_id")),
+  defp lock_editable_order(%Order{id: id}) do
+    query =
+      from(o in Order,
+        where: o.id == ^id and is_nil(o.deleted_at),
+        lock: "FOR UPDATE",
+        select: o.status
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :order_not_found}
+      :crm -> {:error, :order_locked}
+      _status -> {:ok, :locked}
+    end
+  end
+
+  defp acquire_cart(cart_id, branch_id, order_id) do
+    with {:ok, cart_id} <- cast_cart_id(cart_id),
          :ok <- lock_cart(cart_id),
-         :ok <- ensure_cart_not_ordered(cart_id),
-         {:ok, cart} <- fetch_cart(attrs),
-         :ok <- ensure_cart_branch(cart, Map.get(attrs, "branch_id")) do
+         :ok <- ensure_cart_not_ordered(cart_id, order_id),
+         {:ok, cart} <- fetch_cart(%{"cart_id" => cart_id}),
+         :ok <- ensure_cart_branch(cart, branch_id) do
       {:ok, cart}
     end
   end
@@ -223,8 +244,11 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
-  defp ensure_cart_not_ordered(cart_id) do
-    if Repo.exists?(from(o in Order, where: o.cart_id == ^cart_id)) do
+  defp ensure_cart_not_ordered(cart_id, order_id) do
+    query = from(o in Order, where: o.cart_id == ^cart_id)
+    query = if order_id, do: where(query, [o], o.id != ^order_id), else: query
+
+    if Repo.exists?(query) do
       {:error, :cart_already_ordered}
     else
       :ok

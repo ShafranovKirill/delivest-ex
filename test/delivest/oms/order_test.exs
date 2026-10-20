@@ -2,6 +2,7 @@ defmodule Delivest.Oms.OrderTest do
   use Delivest.DataCase, async: true
 
   import Delivest.Factory
+  import Delivest.OrderFixtures
 
   @branch_id "00000000-0000-4000-8000-000000000001"
 
@@ -245,6 +246,46 @@ defmodule Delivest.Oms.OrderTest do
       assert updated_order.total_amount == 400
     end
 
+    test "update keeps the author and detaches the new cart" do
+      staff_id = Ecto.UUID.generate()
+      order = order_fixture(@branch_id, attrs: %{"staff_id" => staff_id})
+      draft = draft_cart_for(order)
+
+      assert {:ok, %Order{} = updated} =
+               Orders.update_order(order, %{"cart_id" => draft.id, "payment_method" => "cash"})
+
+      assert updated.staff_id == staff_id
+      assert updated.cart_id == draft.id
+      assert Repo.get!(Delivest.Oms.Cart, draft.id).staff_id == nil
+    end
+
+    test "update rejects a cart of another order" do
+      order = order_fixture(@branch_id)
+      other = order_fixture(@branch_id)
+
+      assert {:error, :cart, :cart_already_ordered} =
+               Orders.update_order(order, %{"cart_id" => other.cart_id})
+    end
+
+    test "update rejects a cart of another branch" do
+      order = order_fixture(@branch_id)
+      foreign = order_fixture(Ecto.UUID.generate())
+      draft = draft_cart_for(foreign)
+
+      assert {:error, :cart, :cart_branch_mismatch} =
+               Orders.update_order(order, %{"cart_id" => draft.id})
+    end
+
+    test "crm orders cannot be changed" do
+      order = order_fixture(@branch_id, attrs: %{"status" => "crm"})
+
+      assert {:error, :lock, :order_locked} =
+               Orders.update_order(order, %{"cart_id" => order.cart_id})
+
+      assert {:error, :order_locked} =
+               Orders.update_order_details(order, %{"status" => "completed"})
+    end
+
     test "soft_delete_order marks the order as deleted" do
       product = insert_branch_product(@branch_id, price: 150)
 
@@ -392,5 +433,10 @@ defmodule Delivest.Oms.OrderTest do
       assert [%Oban.Job{args: %{"order_id" => order_id}}] = Repo.all(Oban.Job)
       assert order_id == order.id
     end
+  end
+
+  defp draft_cart_for(order) do
+    {:ok, cart} = Carts.create_cart(%{branch_id: order.branch_id})
+    Orders.populate_cart_from_order(order, cart.id)
   end
 end
