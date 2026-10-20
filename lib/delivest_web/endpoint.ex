@@ -23,6 +23,8 @@ defmodule DelivestWeb.Endpoint do
     headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
   )
 
+  def fetch_cors_origin(%Plug.Conn{path_info: ["integrations" | _]}), do: ["*"]
+
   def fetch_cors_origin(_conn) do
     Application.get_env(:cors_plug, :origin, ["http://localhost:3000"])
   end

@@ -207,4 +207,16 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       required: [:data]
     })
   end
+
+  defmodule ClientOrdersResponse do
+    require OpenApiSpex
+    alias DelivestWeb.Schemas.OrderSchemas.ActiveOrder
+
+    OpenApiSpex.schema(%{
+      title: "ClientOrdersResponse",
+      type: :object,
+      properties: %{data: %Schema{type: :array, items: ActiveOrder}},
+      required: [:data]
+    })
+  end
 end

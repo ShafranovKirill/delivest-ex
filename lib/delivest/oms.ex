@@ -6,7 +6,8 @@ defmodule Delivest.Oms do
   defdelegate update_order_details(order, attrs, actor \\ :system), to: Orders
   defdelegate soft_delete_order(order, actor \\ :system), to: Orders
   defdelegate create_draft_cart(order), to: Orders
-  defdelegate list_active_orders(session_id), to: Orders
+  defdelegate list_active_orders(session_id, client_id \\ nil), to: Orders
+  defdelegate list_client_orders(client_id, branch_scope, limit \\ 50), to: Orders
 
   defdelegate get_or_create_cart(opts), to: Carts
   defdelegate get_cart(opts), to: Carts

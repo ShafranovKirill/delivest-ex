@@ -28,6 +28,12 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "validation_failed",
             "order_failed",
             "too_many_requests",
+            "unauthorized",
+            "invalid_phone",
+            "call_failed",
+            "confirmation_not_found",
+            "invalid_refresh_token",
+            "address_not_found",
             "internal_error"
           ]
         },

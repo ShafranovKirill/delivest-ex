@@ -9,6 +9,10 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
     %{data: Enum.map(orders, &active_order_data/1)}
   end
 
+  def index(%{orders: orders}) do
+    %{data: Enum.map(orders, &active_order_data/1)}
+  end
+
   defp active_order_data(order) do
     %{
       id: order.id,

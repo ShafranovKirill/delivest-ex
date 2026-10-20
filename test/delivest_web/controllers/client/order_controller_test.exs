@@ -8,6 +8,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   alias Delivest.Integrations.Frontpad
   alias Delivest.Oms.Order
   alias Delivest.Repo
+  alias DelivestWeb.ClientToken
 
   setup %{conn: conn} do
     branch = insert(:branch, is_active: true)
@@ -230,6 +231,54 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              |> recycle_with_headers()
              |> get(~p"/client/orders/active")
              |> json_response(200) == %{"data" => []}
+    end
+  end
+
+  describe "authenticated client" do
+    defp authorize(conn, client),
+      do:
+        put_req_header(
+          conn,
+          "authorization",
+          "Bearer " <> ClientToken.issue(client.id).access_token
+        )
+
+    test "orders are linked to the client and the address is remembered", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      client = insert(:client, phone: "+79995556677")
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+
+      params =
+        order_params(branch, cart_id, %{
+          "fulfillment_type" => "delivery",
+          "customer_phone" => "+79990001122",
+          "address" => %{"street" => "Ленина", "house" => "1"}
+        })
+
+      data =
+        conn |> authorize(client) |> post(~p"/client/orders", params) |> json_response(200)
+
+      order_id = data["data"]["id"]
+      assert Repo.get!(Order, order_id).client_id == client.id
+
+      assert [%{street: "Ленина", house: "1"}] =
+               Delivest.Identity.list_client_addresses(client.id)
+
+      other_device =
+        build_conn() |> put_req_header("x-forwarded-for", "203.0.113.9") |> authorize(client)
+
+      assert [%{"id" => ^order_id}] =
+               other_device
+               |> get(~p"/client/orders/active")
+               |> json_response(200)
+               |> Map.fetch!("data")
+
+      assert [%{"id" => ^order_id}] =
+               other_device |> get(~p"/client/orders") |> json_response(200) |> Map.fetch!("data")
     end
   end
 

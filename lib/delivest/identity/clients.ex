@@ -148,15 +148,27 @@ defmodule Delivest.Identity.Clients do
     end
   end
 
-  defp find_or_create_client(phone, attrs, opts) do
-    if Keyword.get(opts, :update_existing, true) do
-      get_or_create_client_by_phone(phone, attrs)
-    else
-      case get_active_client_by_phone(phone) do
-        %Client{} = client -> {:ok, client}
-        nil -> create_client(Map.put(attrs, :phone, phone))
-      end
+  @spec fetch_or_create_by_phone(String.t(), map()) ::
+          {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
+  def fetch_or_create_by_phone(phone, attrs \\ %{}) do
+    case get_active_client_by_phone(phone) do
+      %Client{} = client -> {:ok, client}
+      nil -> create_client(Map.put(attrs, :phone, phone))
     end
+  end
+
+  @spec get_active_client(String.t()) :: Client.t() | nil
+  def get_active_client(id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, id} -> Client |> where([c], is_nil(c.deleted_at)) |> Repo.get(id)
+      :error -> nil
+    end
+  end
+
+  defp find_or_create_client(phone, attrs, opts) do
+    if Keyword.get(opts, :update_existing, true),
+      do: get_or_create_client_by_phone(phone, attrs),
+      else: fetch_or_create_by_phone(phone, attrs)
   end
 
   defp present?(nil), do: false

@@ -10,7 +10,7 @@ defmodule Delivest.HTTP.Client do
           headers: headers(),
           timeout: non_neg_integer(),
           decode_json: boolean(),
-          format: :json | :form
+          format: :json | :form | :multipart
         ]
 
   @spec request(method(), String.t(), keyword() | map() | [{String.t(), String.t()}], options()) ::
@@ -40,6 +40,7 @@ defmodule Delivest.HTTP.Client do
         _ ->
           case Keyword.get(opts, :format, :json) do
             :form -> Keyword.put(req_options, :form, body_or_params)
+            :multipart -> Keyword.put(req_options, :form_multipart, body_or_params)
             :json -> Keyword.put(req_options, :json, body_or_params)
           end
       end

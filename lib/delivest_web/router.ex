@@ -27,6 +27,18 @@ defmodule DelivestWeb.Router do
     plug DelivestWeb.Plugs.EnsureSessionId
   end
 
+  pipeline :client_identity do
+    plug DelivestWeb.Plugs.FetchCurrentClient
+  end
+
+  pipeline :client_required do
+    plug DelivestWeb.Plugs.RequireClient
+  end
+
+  pipeline :client_auth_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :client_auth, limit: 5, period: :timer.minutes(1)
+  end
+
   pipeline :order_rate_limit do
     plug DelivestWeb.Plugs.RateLimit, bucket: :orders, limit: 10, period: :timer.minutes(1)
   end
@@ -43,8 +55,35 @@ defmodule DelivestWeb.Router do
       format: :text
   end
 
-  scope "/client", DelivestWeb.Client do
+  scope "/client/auth", DelivestWeb.Client.Auth do
     pipe_through :client_api
+
+    post "/call/:id/complete", AuthController, :complete
+    post "/refresh", AuthController, :refresh
+
+    scope "/" do
+      pipe_through :client_auth_rate_limit
+
+      post "/call", AuthController, :start
+    end
+  end
+
+  scope "/client", DelivestWeb.Client do
+    pipe_through [:client_api, :client_identity, :client_required]
+
+    get "/me", Profile.ProfileController, :show
+    get "/orders", Order.OrderController, :index
+
+    scope "/addresses", Address do
+      get "/", AddressController, :index
+      post "/", AddressController, :create
+      put "/:id", AddressController, :update
+      delete "/:id", AddressController, :delete
+    end
+  end
+
+  scope "/client", DelivestWeb.Client do
+    pipe_through [:client_api, :client_identity]
 
     scope "/branches", Branch do
       get "/", BranchController, :index
@@ -80,6 +119,10 @@ defmodule DelivestWeb.Router do
     pipe_through :api
 
     post "/frontpad/:token", FrontpadWebhookController, :create
+  end
+
+  scope "/integrations", DelivestWeb.Integrations do
+    get "/zvonok/:token", ZvonokWebhookController, :create
   end
 
   scope "/staff", DelivestWeb.Staff do

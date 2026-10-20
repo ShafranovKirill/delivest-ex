@@ -35,13 +35,15 @@ defmodule Delivest.Oms.Orders do
     |> Repo.all()
   end
 
-  def list_active_orders(nil), do: []
+  def list_active_orders(session_id, client_id \\ nil)
+  def list_active_orders(nil, nil), do: []
 
-  def list_active_orders(session_id) do
+  def list_active_orders(session_id, client_id) do
     since = DateTime.add(DateTime.utc_now(), -active_hours(), :hour)
 
     Order
-    |> where([o], o.session_id == ^session_id and is_nil(o.deleted_at))
+    |> where(^owned_by(session_id, client_id))
+    |> where([o], is_nil(o.deleted_at))
     |> where([o], o.inserted_at >= ^since and o.status not in ^OrderStatus.final())
     |> order_by([o], desc: o.inserted_at)
     |> preload(:items)
@@ -81,6 +83,12 @@ defmodule Delivest.Oms.Orders do
     |> persist([:order, :deleted])
     |> Audit.track(actor, "order.deleted")
   end
+
+  defp owned_by(session_id, nil), do: dynamic([o], o.session_id == ^session_id)
+  defp owned_by(nil, client_id), do: dynamic([o], o.client_id == ^client_id)
+
+  defp owned_by(session_id, client_id),
+    do: dynamic([o], o.session_id == ^session_id or o.client_id == ^client_id)
 
   defp active_hours, do: Application.get_env(:delivest, :active_order_hours, 7)
 

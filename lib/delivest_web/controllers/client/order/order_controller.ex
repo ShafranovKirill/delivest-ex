@@ -8,7 +8,13 @@ defmodule DelivestWeb.Client.Order.OrderController do
   alias Delivest.Oms.Carts
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
-  alias DelivestWeb.Schemas.OrderSchemas.{ActiveOrdersResponse, CreateOrderRequest, OrderResponse}
+
+  alias DelivestWeb.Schemas.OrderSchemas.{
+    ActiveOrdersResponse,
+    ClientOrdersResponse,
+    CreateOrderRequest,
+    OrderResponse
+  }
 
   operation(:create,
     summary: "Создать заказ",
@@ -27,12 +33,19 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
   def create(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
-    attrs = params |> Map.take(@public_fields) |> Map.put("session_id", session_id)
+    client = conn.assigns.current_client
+
+    attrs =
+      params
+      |> Map.take(@public_fields)
+      |> Map.put("session_id", session_id)
+      |> put_client(client)
 
     with {:ok, _branch} <- fetch_public_branch(attrs["branch_id"]),
          true <-
            Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
          {:ok, order} <- Oms.create_order(attrs, update_client: false) do
+      remember_address(client, order)
       render(conn, :create, order: order)
     else
       {:error, reason} -> render_error(conn, reason)
@@ -50,9 +63,46 @@ defmodule DelivestWeb.Client.Order.OrderController do
   )
 
   def active(conn, _params) do
-    orders = conn |> CookieHelper.get_cookie("session_id") |> Oms.list_active_orders()
+    session_id = CookieHelper.get_cookie(conn, "session_id")
+    orders = Oms.list_active_orders(session_id, client_id(conn.assigns.current_client))
     render(conn, :active, orders: orders)
   end
+
+  operation(:index,
+    summary: "Мои заказы",
+    description: "Все заказы авторизованного клиента, новые сначала.",
+    tags: ["Orders"],
+    security: [%{"bearer" => []}],
+    responses: [
+      ok: {"Заказы клиента", "application/json", ClientOrdersResponse},
+      unauthorized: {"Нужна авторизация", "application/json", ErrorResponse}
+    ]
+  )
+
+  def index(conn, _params) do
+    orders = Oms.list_client_orders(conn.assigns.current_client.id, :all)
+    render(conn, :index, orders: orders)
+  end
+
+  defp put_client(attrs, nil), do: attrs
+
+  defp put_client(attrs, client),
+    do: Map.merge(attrs, %{"client_id" => client.id, "customer_phone" => client.phone})
+
+  defp client_id(nil), do: nil
+  defp client_id(client), do: client.id
+
+  defp remember_address(nil, _order), do: :ok
+
+  defp remember_address(client, %{
+         fulfillment_type: :delivery,
+         address: %{street: street} = address
+       })
+       when is_binary(street) do
+    Identity.remember_client_address(client.id, Map.from_struct(address))
+  end
+
+  defp remember_address(_client, _order), do: :ok
 
   defp fetch_public_branch(nil), do: {:error, :branch_id_required}
 
