@@ -31,7 +31,8 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/branches", :branches},
     {"/staff/clients", :clients},
     {"/staff/employee", :employee},
-    {"/staff/roles", :roles}
+    {"/staff/roles", :roles},
+    {"/staff/logs", :logs}
   ]
 
   defp determine_page_by_path(path) when is_binary(path) do

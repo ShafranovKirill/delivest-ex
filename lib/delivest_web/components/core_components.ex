@@ -565,7 +565,7 @@ defmodule DelivestWeb.CoreComponents do
     <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 mt-4">
       <div class="flex items-center gap-2">
         <span class="text-sm text-base-content/60">{gettext("Show")}</span>
-        <form phx-change="update_page_size">
+        <form id="page-size-form" phx-change="update_page_size">
           <select name="page_size" class="select select-sm">
             <%= for size <- [10, 20, 50, 100] do %>
               <option value={size} selected={@meta.page_size == size}>{size}</option>

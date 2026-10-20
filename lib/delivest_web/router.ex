@@ -125,6 +125,13 @@ defmodule DelivestWeb.Router do
         live "/:id", Show, :show
         live "/:id/edit", Clients, :edit
       end
+
+      scope "/logs", LogLive do
+        live "/", Index, :events
+        live "/raw", Index, :raw
+        live "/errors", Index, :errors
+        live "/hints", Index, :hints
+      end
     end
 
     live_session :staff_need_branch,

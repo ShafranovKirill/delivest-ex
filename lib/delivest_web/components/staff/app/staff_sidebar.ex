@@ -272,6 +272,33 @@ defmodule DelivestWeb.StaffSidebar do
             </li>
           </ul>
         <% end %>
+
+        <%= if can?(@current_staff, "logs.read") do %>
+          <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
+            <div class="h-px bg-base-300 w-full"></div>
+            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
+              {gettext("System")}
+            </div>
+          </div>
+
+          <ul class="menu w-full p-0 gap-1">
+            <li>
+              <.link
+                navigate={~p"/staff/logs"}
+                class={[
+                  "flex items-center gap-2 px-3 py-2",
+                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
+                  (@current_page == :logs && "menu-active") || ""
+                ]}
+              >
+                <.icon name="hero-document-magnifying-glass" class="size-6 shrink-0" />
+                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
+                  {gettext("Logs")}
+                </span>
+              </.link>
+            </li>
+          </ul>
+        <% end %>
       </nav>
 
       <div class="p-3 border-t border-base-300 shrink-0 flex flex-col gap-1">
