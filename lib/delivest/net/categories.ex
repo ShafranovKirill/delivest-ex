@@ -5,6 +5,7 @@ defmodule Delivest.Net.Categories do
   alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Net.Category
   alias Delivest.Identity.Staff
+  alias Delivest.Audit
 
   @spec list_category_for_branch(binary(), keyword()) :: [Category.t()]
   def list_category_for_branch(branch_id, _opts \\ []) do
@@ -54,6 +55,12 @@ defmodule Delivest.Net.Categories do
   @spec create_category(Staff.t(), binary(), map()) ::
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def create_category(staff, branch_id, attrs) do
+    staff
+    |> do_create_category(branch_id, attrs)
+    |> Audit.track(staff, "category.created", branch_id: branch_id)
+  end
+
+  defp do_create_category(staff, branch_id, attrs) do
     if Identity.can?(staff, "categories.create") do
       next_order = calculate_next_order(branch_id)
 
@@ -112,6 +119,12 @@ defmodule Delivest.Net.Categories do
   @spec update_category(Staff.t(), Category.t(), map()) ::
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def update_category(staff, %Category{} = updateble_category, attrs) do
+    staff
+    |> do_update_category(updateble_category, attrs)
+    |> Audit.track(staff, "category.updated")
+  end
+
+  defp do_update_category(staff, %Category{} = updateble_category, attrs) do
     if Identity.can?(staff, "categories.update") do
       updateble_category
       |> Category.changeset(attrs)
@@ -133,6 +146,12 @@ defmodule Delivest.Net.Categories do
   @spec delete_category(Staff.t(), Category.t()) ::
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def delete_category(staff, %Category{} = category) do
+    staff
+    |> do_delete_category(category)
+    |> Audit.track(staff, "category.deleted")
+  end
+
+  defp do_delete_category(staff, %Category{} = category) do
     if Identity.can?(staff, "categories.delete") do
       case Repo.delete(category) do
         {:ok, deleted_category} ->

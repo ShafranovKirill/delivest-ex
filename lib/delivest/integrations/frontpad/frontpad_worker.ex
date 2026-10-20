@@ -6,7 +6,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
 
   require Logger
 
-  alias Delivest.Identity
+  alias Delivest.{Audit, Identity}
   alias Delivest.Oms.Orders
   alias Delivest.Integrations.Frontpad.FrontpadView
   alias Delivest.HTTP.Client, as: HttpClient
@@ -135,6 +135,7 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
       }
     }
 
+    Audit.record(:system, "order.sent_to_crm", order, metadata: %{crm_id: crm_id})
     update_crm_info(order, attrs)
   end
 
@@ -154,6 +155,9 @@ defmodule Delivest.Integrations.Frontpad.FrontpadWorker do
           "last_error" => last_error
         }
       }
+
+      if status == "failed",
+        do: Audit.record(:system, "order.crm_failed", order, metadata: %{error: error_message})
 
       update_crm_info(order, attrs)
     end

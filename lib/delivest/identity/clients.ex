@@ -2,6 +2,7 @@ defmodule Delivest.Identity.Clients do
   import Ecto.Query
   alias Delivest.{Identity, Repo}
   alias Delivest.Identity.Client
+  alias Delivest.Audit
 
   @spec list_clients(map(), map()) ::
           {:ok, {[Client.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
@@ -43,16 +44,23 @@ defmodule Delivest.Identity.Clients do
     end
   end
 
-  @spec create_client(map()) :: {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
-  def create_client(attrs) do
+  @spec create_client(map(), term()) :: {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
+  def create_client(attrs, actor \\ :system) do
     %Client{}
     |> Client.changeset(attrs)
     |> Repo.insert()
+    |> Audit.track(actor, "client.created")
   end
 
   @spec update_client(map(), Client.t(), map()) ::
           {:ok, Client.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def update_client(staff, %Client{} = client, attrs) do
+    staff
+    |> do_update_client(client, attrs)
+    |> Audit.track(staff, "client.updated")
+  end
+
+  defp do_update_client(staff, %Client{} = client, attrs) do
     if Identity.can?(staff, "clients.update") do
       client
       |> Client.changeset(attrs)
@@ -65,6 +73,12 @@ defmodule Delivest.Identity.Clients do
   @spec soft_delete_client(map(), Client.t()) ::
           {:ok, Client.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def soft_delete_client(staff, %Client{} = client) do
+    staff
+    |> do_soft_delete_client(client)
+    |> Audit.track(staff, "client.deleted")
+  end
+
+  defp do_soft_delete_client(staff, %Client{} = client) do
     if Identity.can?(staff, "clients.delete") do
       client
       |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})

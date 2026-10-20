@@ -1,6 +1,7 @@
 defmodule Delivest.Oms.Orders.Update do
   import Ecto.Query, warn: false
 
+  alias Delivest.Audit
   alias Delivest.Oms.{Carts, Order}
   alias Delivest.Oms.Orders.{Assembler, Attrs, CartGuard, ClientResolver, Lines, Notifier}
   alias Delivest.Repo
@@ -8,7 +9,7 @@ defmodule Delivest.Oms.Orders.Update do
 
   @protected ["number", "staff_id", "branch_id"]
 
-  def run(%Order{} = order, attrs) do
+  def run(%Order{} = order, attrs, opts \\ []) do
     attrs = attrs |> Attrs.normalize() |> Map.drop(@protected)
 
     Multi.new()
@@ -25,6 +26,7 @@ defmodule Delivest.Oms.Orders.Update do
       {:ok, %{order: order}} -> Notifier.publish({:ok, order}, [:order, :updated])
       {:error, step, reason, _} -> {:error, step, reason}
     end
+    |> Audit.track(Keyword.get(opts, :actor, :system), "order.updated")
   end
 
   defp lock_editable(%Order{id: id}) do

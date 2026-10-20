@@ -1,4 +1,5 @@
 defmodule Delivest.Oms.Orders.Create do
+  alias Delivest.Audit
   alias Delivest.Oms.{Carts, Order}
   alias Delivest.Oms.Order.OrderNumber
   alias Delivest.Oms.Orders.{Assembler, Attrs, CartGuard, ClientResolver, Lines, Notifier}
@@ -23,7 +24,16 @@ defmodule Delivest.Oms.Orders.Create do
       {:ok, %{order: order}} -> Notifier.publish({:ok, order}, [:order, :created])
       {:error, step, reason, _} -> {:error, step, reason}
     end
+    |> track(opts)
   end
+
+  defp track(result, opts) do
+    actor = Keyword.get_lazy(opts, :actor, fn -> customer(result) end)
+    Audit.track(result, actor, "order.created")
+  end
+
+  defp customer({:ok, %Order{client: client}}), do: client
+  defp customer(_result), do: nil
 
   defp own_attrs(attrs, %{number: number, cart: cart}) do
     attrs

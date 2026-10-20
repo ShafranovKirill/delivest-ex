@@ -4,6 +4,7 @@ defmodule Delivest.Net.Stocks do
   alias Delivest.Net.Stock
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
+  alias Delivest.Audit
 
   def list_staff_stocks_for_branch(staff, branch_id) when not is_nil(branch_id) do
     if Identity.can?(staff, "stocks.read") do
@@ -39,6 +40,12 @@ defmodule Delivest.Net.Stocks do
   def list_stocks_for_branch(_), do: []
 
   def create_stock(staff, branch_id, attrs) do
+    staff
+    |> do_create_stock(branch_id, attrs)
+    |> Audit.track(staff, "stock.created", branch_id: branch_id)
+  end
+
+  defp do_create_stock(staff, branch_id, attrs) do
     if Identity.can?(staff, "stocks.create") do
       next_order = calculate_next_order(branch_id)
 
@@ -71,6 +78,12 @@ defmodule Delivest.Net.Stocks do
   end
 
   def update_stock(staff, %Stock{} = updatable_stock, attrs) do
+    staff
+    |> do_update_stock(updatable_stock, attrs)
+    |> Audit.track(staff, "stock.updated")
+  end
+
+  defp do_update_stock(staff, %Stock{} = updatable_stock, attrs) do
     if Identity.can?(staff, "stocks.update") do
       updatable_stock
       |> Stock.changeset(attrs)
@@ -112,6 +125,12 @@ defmodule Delivest.Net.Stocks do
   end
 
   def delete_stock(staff, %Stock{} = stock) do
+    staff
+    |> do_delete_stock(stock)
+    |> Audit.track(staff, "stock.deleted")
+  end
+
+  defp do_delete_stock(staff, %Stock{} = stock) do
     if Identity.can?(staff, "stocks.delete") do
       branch_id = get_stock_branch_id(stock.id)
 

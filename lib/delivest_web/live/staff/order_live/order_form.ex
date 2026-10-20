@@ -137,10 +137,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     params
     |> Map.put("branch_id", assigns.branch_id)
     |> Map.put("staff_id", assigns.current_staff.id)
-    |> Oms.create_order()
+    |> Oms.create_order(actor: assigns.current_staff)
   end
 
-  defp save(params, %{assigns: %{order: order}}), do: Oms.update_order(order, params)
+  defp save(params, %{assigns: %{order: order} = assigns}),
+    do: Oms.update_order(order, params, actor: assigns.current_staff)
 
   defp handle_saved({:ok, _order}, socket) do
     message =

@@ -26,7 +26,7 @@ defmodule Delivest.Identity do
   defdelegate list_clients(staff, params \\ %{}), to: Clients
   defdelegate get_client(staff, id), to: Clients
   defdelegate get_or_create_client_by_phone(phone, attrs \\ %{}), to: Clients
-  defdelegate create_client(attrs), to: Clients
+  defdelegate create_client(attrs, actor \\ :system), to: Clients
   defdelegate update_client(staff, client, attrs), to: Clients
   defdelegate soft_delete_client(staff, client), to: Clients
   defdelegate get_clients_map(ids), to: Clients

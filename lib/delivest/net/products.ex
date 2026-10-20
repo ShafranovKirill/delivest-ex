@@ -4,6 +4,7 @@ defmodule Delivest.Net.Products do
   alias Delivest.Net.Product
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
+  alias Delivest.Audit
 
   def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
     if Identity.can?(staff, "products.read") do
@@ -41,6 +42,12 @@ defmodule Delivest.Net.Products do
   end
 
   def create_product(staff, branch_id, attrs) do
+    staff
+    |> do_create_product(branch_id, attrs)
+    |> Audit.track(staff, "product.created", branch_id: branch_id)
+  end
+
+  defp do_create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
       Multi.new()
       |> Multi.insert(:product, %Product{} |> Product.changeset(attrs) |> put_slug())
@@ -73,6 +80,12 @@ defmodule Delivest.Net.Products do
   end
 
   def update_product(staff, %Product{} = updateble_product, attrs) do
+    staff
+    |> do_update_product(updateble_product, attrs)
+    |> Audit.track(staff, "product.updated")
+  end
+
+  defp do_update_product(staff, %Product{} = updateble_product, attrs) do
     if Identity.can?(staff, "products.update") do
       updateble_product
       |> Product.changeset(attrs)
@@ -136,6 +149,12 @@ defmodule Delivest.Net.Products do
   end
 
   def soft_delete_product(staff, %Product{} = product) do
+    staff
+    |> do_soft_delete_product(product)
+    |> Audit.track(staff, "product.deleted")
+  end
+
+  defp do_soft_delete_product(staff, %Product{} = product) do
     if Identity.can?(staff, "products.delete") do
       with {:ok, deleted_product} <-
              product

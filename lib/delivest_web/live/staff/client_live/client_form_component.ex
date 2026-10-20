@@ -75,7 +75,7 @@ defmodule DelivestWeb.Staff.ClientLive.ClientFormComponent do
   end
 
   defp save_client_with_params(socket, :new, params) do
-    case Identity.create_client(params) do
+    case Identity.create_client(params, socket.assigns.current_staff) do
       {:ok, client} ->
         notify_parent({:saved, client})
         {:noreply, socket}

@@ -3,6 +3,7 @@ defmodule Delivest.Identity.Branches do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Identity.{Branch}
   alias Delivest.{Repo, Identity}
+  alias Delivest.Audit
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
@@ -69,6 +70,12 @@ defmodule Delivest.Identity.Branches do
   end
 
   def update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
+    staff
+    |> do_update_branch(branch, branch_attrs, info_attrs)
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  defp do_update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
     if Identity.can?(staff, "branches.update") do
       branch = Repo.preload(branch, :info)
 
@@ -104,6 +111,12 @@ defmodule Delivest.Identity.Branches do
   end
 
   def create_branch(staff, branch_attrs, info_attrs) do
+    staff
+    |> do_create_branch(branch_attrs, info_attrs)
+    |> Audit.track(staff, "branch.created")
+  end
+
+  defp do_create_branch(staff, branch_attrs, info_attrs) do
     if Identity.can?(staff, "branches.create") do
       Ecto.Multi.new()
       |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, branch_attrs))
@@ -130,6 +143,12 @@ defmodule Delivest.Identity.Branches do
           | {:error, atom(), Ecto.Changeset.t() | term(), map()}
           | {:error, :forbidden}
   def soft_delete_branch(staff, %Branch{} = branch) do
+    staff
+    |> do_soft_delete_branch(branch)
+    |> Audit.track(staff, "branch.deleted")
+  end
+
+  defp do_soft_delete_branch(staff, %Branch{} = branch) do
     if Identity.can?(staff, "branches.delete") do
       Ecto.Multi.new()
       |> Ecto.Multi.delete_all(

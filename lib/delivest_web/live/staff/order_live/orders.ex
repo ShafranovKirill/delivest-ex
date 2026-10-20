@@ -68,7 +68,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
     with :ok <- authorize(socket, "orders.update"),
          {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, updated_order} <- Orders.update_order_details(order, attrs) do
+         {:ok, updated_order} <-
+           Orders.update_order_details(order, attrs, socket.assigns.current_staff) do
       {:noreply,
        socket
        |> put_flash(:info, gettext("Order updated successfully"))
@@ -90,7 +91,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   @impl true
   def handle_event("confirm_delete", _, %{assigns: %{order_to_delete: %Order{} = order}} = socket) do
     with :ok <- authorize(socket, "orders.delete"),
-         {:ok, _} <- Orders.soft_delete_order(order) do
+         {:ok, _} <- Orders.soft_delete_order(order, socket.assigns.current_staff) do
       {:noreply,
        socket
        |> put_flash(:info, gettext("Order deleted successfully"))
