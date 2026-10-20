@@ -52,8 +52,8 @@ defmodule Delivest.Integrations.Crm do
     end)
   end
 
-  defp provider_module(provider) do
-    case Enum.find(@providers, fn {name, _module} -> to_string(name) == provider end) do
+  def provider_module(provider) do
+    case Enum.find(@providers, fn {name, _module} -> to_string(name) == to_string(provider) end) do
       {name, module} -> {:ok, name, module}
       nil -> {:error, :unknown_provider}
     end

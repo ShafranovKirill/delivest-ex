@@ -20,6 +20,15 @@ defmodule Delivest.Net.Products do
     end
   end
 
+  def list_branch_products(branch_id) do
+    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+
+    Product
+    |> where([p], p.id in ^product_ids and is_nil(p.deleted_at) and p.is_active == true)
+    |> order_by([p], asc: p.name)
+    |> Repo.all()
+  end
+
   def list_products_by_ids(ids, opts \\ []) when is_list(ids) do
     if ids == [] do
       %{}

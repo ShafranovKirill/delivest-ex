@@ -14,4 +14,11 @@ defmodule Delivest.Integrations.Crm.Provider do
   @callback classify_error(reason :: term()) :: error_kind()
   @callback rate_limit(settings :: struct()) ::
               {key :: term(), interval_ms :: pos_integer()} | nil
+
+  @type catalog_item :: %{external_id: String.t(), name: String.t(), price: integer()}
+
+  @callback catalog_source(settings :: struct()) :: term()
+  @callback fetch_catalog(settings :: struct()) :: {:ok, [catalog_item()]} | {:error, term()}
+
+  @optional_callbacks catalog_source: 1, fetch_catalog: 1
 end

@@ -22,6 +22,18 @@ defmodule Delivest.Integrations.Frontpad do
   end
 
   @impl true
+  def catalog_source(%{api_key: api_key}), do: {:frontpad, api_key}
+
+  @impl true
+  def fetch_catalog(%{api_key: api_key} = settings) when is_binary(api_key) and api_key != "" do
+    Delivest.Integrations.Crm.Throttle.run(rate_limit(settings), fn ->
+      Api.get_products(api_key)
+    end)
+  end
+
+  def fetch_catalog(_settings), do: {:error, :missing_api_key}
+
+  @impl true
   def rate_limit(%{api_key: api_key}), do: {{:frontpad, api_key}, request_interval_ms()}
 
   @impl true
