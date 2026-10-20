@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias Delivest.Net.Category
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.ImportComponent
+  alias DelivestWeb.Staff.ProductLive.CopyComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
@@ -26,7 +27,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        categories: categories,
        search: "",
        selected_category_id: nil,
-       selected_status: nil
+       selected_status: nil,
+       selected_ids: [],
+       copy_open: false
      )
      |> stream(:products, [])}
   end
@@ -47,6 +50,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           socket
           |> assign(
             meta: meta,
+            selected_ids: [],
             search: Map.get(params, "search", ""),
             selected_category_id: Flop.Filter.get_value(meta.flop.filters, :category_id),
             selected_status: Flop.Filter.get_value(meta.flop.filters, :is_active)
@@ -112,6 +116,15 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
+  def handle_event("select_products", params, socket) do
+    {:noreply, assign(socket, selected_ids: Map.get(params, "ids", []))}
+  end
+
+  def handle_event("open_copy", _params, socket), do: {:noreply, assign(socket, copy_open: true)}
+
+  def handle_event("close_copy", _params, socket),
+    do: {:noreply, assign(socket, copy_open: false)}
+
   def handle_event("filter", params, socket) do
     search = params["search"]
     category_id = params["category_id"]
@@ -204,6 +217,13 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
+  def handle_info({CopyComponent, {:copied, count}}, socket) do
+    {:noreply,
+     socket
+     |> assign(copy_open: false)
+     |> put_flash(:info, gettext("Products copied: %{count}", count: count))}
+  end
+
   def handle_info({ImportComponent, {:queued}}, socket) do
     {:noreply,
      socket
@@ -343,6 +363,18 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </div>
         <div class="flex gap-2">
           <.button
+            :if={Identity.can?(@current_staff, "products.create")}
+            phx-click="open_copy"
+            class="btn btn-outline"
+          >
+            <.icon name="hero-document-duplicate" class="size-5 mr-1" />
+            {gettext("Copy to branch")}
+            <span :if={@selected_ids != []} class="badge badge-sm badge-primary">
+              {length(@selected_ids)}
+            </span>
+          </.button>
+
+          <.button
             phx-click="open_import_modal"
             class="btn btn-outline"
           >
@@ -363,6 +395,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
       <.form
         for={nil}
+        id="products-filter"
         phx-change="filter"
         class="flex gap-4 items-center justify-between flex-wrap w-full"
       >
@@ -399,7 +432,20 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
       <% path_fn = fn overrides -> ~p"/staff/products?#{build_query_params(assigns, overrides)}" end %>
 
+      <form id="product-selection" phx-change="select_products"></form>
+
       <.table id="products" rows={@streams.products} meta={@meta} path_fn={path_fn}>
+        <:col :let={{_id, prod}} label="">
+          <input
+            type="checkbox"
+            name="ids[]"
+            value={prod.id}
+            form="product-selection"
+            class="checkbox checkbox-sm"
+            aria-label={gettext("Select %{name}", name: prod.name)}
+          />
+        </:col>
+
         <:col :let={{_id, prod}} label={gettext("Name")} sort="name">
           <span class="font-bold">{prod.name}</span>
         </:col>
@@ -499,6 +545,15 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       <div class="flex justify-end">
         <.pagination meta={@meta} path_fn={path_fn} />
       </div>
+
+      <.live_component
+        module={CopyComponent}
+        id="copy-products"
+        show={@copy_open}
+        branch_id={@branch_id}
+        selected_ids={@selected_ids}
+        current_staff={@current_staff}
+      />
 
       <.slide_over
         id="product-slideover"
