@@ -70,11 +70,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
       crm: prefill_crm(info && info.crm),
-      ycart_settings: info && info.ycart_settings
+      ycart_settings: (info && info.ycart_settings) || %YcartSettings{}
     }
   end
 
-  def new, do: %__MODULE__{crm: prefill_crm(nil)}
+  def new, do: %__MODULE__{crm: prefill_crm(nil), ycart_settings: %YcartSettings{}}
 
   def for_branch(%{id: id} = branch) when not is_nil(id), do: from_branch(branch)
   def for_branch(_branch), do: new()
@@ -199,12 +199,14 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     {branch_params, info_params}
   end
 
-  defp embed_params(%_{} = embed) do
+  defp embed_params(nil), do: %{}
+  defp embed_params(embed), do: params_value(embed)
+
+  defp params_value(%_{} = embed) do
     embed
     |> Map.from_struct()
-    |> Map.new(fn {key, value} -> {Atom.to_string(key), embed_params(value)} end)
+    |> Map.new(fn {key, value} -> {Atom.to_string(key), params_value(value)} end)
   end
 
-  defp embed_params(nil), do: %{}
-  defp embed_params(value), do: value
+  defp params_value(value), do: value
 end
