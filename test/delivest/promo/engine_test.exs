@@ -104,7 +104,7 @@ defmodule Delivest.Promo.EngineTest do
     result = price(branch, [item(pizza, 2), item(cola, 1)])
 
     assert result.total == 400 * 2 + 90
-    assert [%{discount: 0}, %{discount: 200}] = Enum.sort_by(result.applied, & &1.discount)
+    assert [%{discount: 200}] = result.applied
   end
 
   test "does not combine non-combinable promotions", %{branch: branch, pizza: pizza} do
@@ -218,6 +218,12 @@ defmodule Delivest.Promo.EngineTest do
 
     assert [%{products: [%{price: 399, old_price: 500}, %{price: 90, old_price: nil}]}] =
              Promo.overlay_menu(menu, branch.id)
+  end
+
+  test "does not report promotions without an effect on the cart", %{branch: branch, cola: cola} do
+    insert_promotion(branch.id, rules: ~s(then price "pizza" 299))
+
+    assert %{applied: [], total: 90} = price(branch, [item(cola, 1)])
   end
 
   defp utc(datetime), do: DateTime.shift_zone!(datetime, "Etc/UTC")

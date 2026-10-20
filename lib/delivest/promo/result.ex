@@ -47,7 +47,7 @@ defmodule Delivest.Promo.Result do
       subtotal: subtotal,
       total: total,
       discount: subtotal - total,
-      applied: Enum.map(selected, &applied(&1, basket, code)),
+      applied: selected |> Enum.map(&applied(&1, basket, code)) |> Enum.filter(&effective?/1),
       hints: hints,
       code: code_state
     }
@@ -92,6 +92,9 @@ defmodule Delivest.Promo.Result do
       gifts: gifts(basket, promotion.id)
     }
   end
+
+  defp effective?(%{code: code}) when is_binary(code), do: true
+  defp effective?(%{discount: discount, gifts: gifts}), do: discount > 0 or gifts != []
 
   defp code_of(promotion_id, %PromoCode{promotion_id: promotion_id} = code),
     do: {code.id, code.code}
