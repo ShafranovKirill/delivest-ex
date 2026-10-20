@@ -295,14 +295,14 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
                 <% is_crm = Atom.to_string(order.status) == "crm" %>
 
                 <%= if is_crm do %>
-                  <% crm_status = order.crm_info && order.crm_info.status %>
+                  <% crm_status = order.crm && order.crm.status %>
                   <div class="text-xs font-medium px-2 py-1 rounded border bg-base-100 flex items-center gap-1.5">
                     <span class="text-base-content/60">CRM:</span>
                     <%= cond do %>
                       <% crm_status == "sent" -> %>
                         <span>
-                          {gettext("sent at")} {order.crm_info.sent_at &&
-                            Calendar.strftime(order.crm_info.sent_at, "%d.%m.%Y %H:%M")}
+                          {gettext("sent at")} {order.crm.sent_at &&
+                            Calendar.strftime(order.crm.sent_at, "%d.%m.%Y %H:%M")}
                         </span>
                       <% crm_status == "failed" -> %>
                         <span class="text-error font-bold uppercase">{gettext("error")}</span>

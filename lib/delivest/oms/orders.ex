@@ -55,9 +55,9 @@ defmodule Delivest.Oms.Orders do
     |> Audit.track(actor, "order.details_changed", metadata: changeset.changes)
   end
 
-  def update_order_crm_info(%Order{} = order, attrs) do
+  def update_order_crm(%Order{} = order, attrs) do
     order
-    |> Order.changeset(attrs)
+    |> Order.crm_changeset(attrs)
     |> persist([:order, :updated])
   end
 

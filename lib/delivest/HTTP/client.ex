@@ -30,6 +30,8 @@ defmodule Delivest.HTTP.Client do
       headers: custom_headers
     ]
 
+    req_options = Keyword.merge(req_options, config_options())
+
     req_options =
       case method do
         :get ->
@@ -70,6 +72,9 @@ defmodule Delivest.HTTP.Client do
   def post(url, body \\ [], opts \\ []), do: request(:post, url, body, opts)
   def put(url, body \\ [], opts \\ []), do: request(:put, url, body, opts)
   def delete(url, params \\ [], opts \\ []), do: request(:delete, url, params, opts)
+
+  defp config_options,
+    do: :delivest |> Application.get_env(__MODULE__, []) |> Keyword.get(:req_options, [])
 
   defp handle_response_body(body, _decode_json?) do
     {:ok, body}

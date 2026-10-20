@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.Frontpad.FrontpadView do
-  alias Delivest.Identity.Branch
+  alias Delivest.Integrations.Frontpad.Settings
 
   @type product_item :: %{
           external_id: String.t(),
@@ -39,14 +39,13 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
     products: []
   ]
 
-  @spec build(Delivest.Oms.Order.t(), Delivest.Identity.Branch.t(), map()) ::
-          {:ok, t()} | {:error, atom()}
-  def build(order, branch, products_map) do
-    with {:ok, secret} <- extract_secret(branch),
+  @spec build(Delivest.Oms.Order.t(), Settings.t(), map()) :: {:ok, t()} | {:error, term()}
+  def build(order, %Settings{} = settings, products_map) do
+    with {:ok, secret} <- extract_secret(settings),
          {:ok, formatted_products} <- extract_products(order.items, products_map) do
       payload = %__MODULE__{
         secret: secret,
-        affiliate: extract_branch_id(branch),
+        affiliate: blank_to_nil(settings.affiliate),
         phone: truncate(customer_phone(order), 50),
         name: truncate(customer_name(order), 50),
         street: truncate(order.address && order.address.street, 50),
@@ -110,18 +109,13 @@ defmodule Delivest.Integrations.Frontpad.FrontpadView do
   defp customer_name(%{client: %{name: name}}), do: name
   defp customer_name(_), do: nil
 
-  defp extract_secret(%{info: %{frontpad_api_key: secret}}) when not is_nil(secret),
+  defp extract_secret(%Settings{api_key: secret}) when is_binary(secret) and secret != "",
     do: {:ok, secret}
 
-  defp extract_secret(_), do: {:error, :missing_frontpad_api_key}
+  defp extract_secret(_settings), do: {:error, :missing_api_key}
 
-  @spec extract_branch_id(Branch.t() | nil) :: String.t() | nil
-  defp extract_branch_id(%Branch{info: %{frontpad_settings: %{frontpad_branch_id: fb_id}}})
-       when not is_nil(fb_id) and fb_id != "" do
-    to_string(fb_id)
-  end
-
-  defp extract_branch_id(_), do: nil
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(value), do: value
 
   defp extract_products(order_items, products_map) do
     result =

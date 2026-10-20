@@ -2,6 +2,9 @@ import Config
 config :delivest, Oban, testing: :manual
 config :delivest, Delivest.Logs, enabled: false
 
+config :delivest, Delivest.HTTP.Client,
+  req_options: [plug: {Req.Test, Delivest.HTTP.Client}, retry: false]
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

@@ -3,7 +3,7 @@ defmodule Delivest.Oms.Order do
   import Ecto.Changeset
 
   alias Delivest.Oms.Order.Address
-  alias Delivest.Oms.Order.CrmInfo
+  alias Delivest.Oms.Order.CrmSync
   alias Delivest.Oms.OrderItem
 
   @type t :: %__MODULE__{}
@@ -39,8 +39,7 @@ defmodule Delivest.Oms.Order do
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
     field :payment_method, Ecto.Enum, values: @payment_methods, default: :cash
 
-    field :crm_id, :string
-    embeds_one :crm_info, CrmInfo, on_replace: :update
+    embeds_one :crm, CrmSync, on_replace: :update
 
     field :total_amount, :integer, default: 0
     field :cook_by, :naive_datetime
@@ -69,10 +68,8 @@ defmodule Delivest.Oms.Order do
       :total_amount,
       :cook_by,
       :comment,
-      :deleted_at,
-      :crm_id
+      :deleted_at
     ])
-    |> cast_embed(:crm_info, required: false)
     |> cast_embed(:address, required: false)
     |> cast_assoc(:items)
     |> validate_required([
@@ -91,6 +88,12 @@ defmodule Delivest.Oms.Order do
     |> validate_number(:total_amount, greater_than_or_equal_to: 0)
     |> validate_cook_by_range()
     |> validate_address_if_delivery()
+  end
+
+  def crm_changeset(order, attrs) do
+    order
+    |> cast(%{crm: attrs}, [])
+    |> cast_embed(:crm, required: true)
   end
 
   def details_changeset(order, attrs) do

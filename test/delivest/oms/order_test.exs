@@ -393,31 +393,6 @@ defmodule Delivest.Oms.OrderTest do
       assert updated.total_amount == 240
       assert length(updated.items) == 1
     end
-
-    test "Frontpad orders enqueue their CRM job in the same transaction" do
-      branch = insert(:branch, is_active: true)
-
-      Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
-        branch_id: branch.id,
-        frontpad_enabled: true,
-        frontpad_api_key: "key"
-      })
-
-      product = insert_branch_product(branch.id, price: 100)
-      {:ok, cart} = Carts.create_cart(%{session_id: "frontpad", branch_id: branch.id})
-      {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
-
-      assert {:ok, %Order{status: :crm} = order} =
-               Delivest.Oms.create_order(%{
-                 "cart_id" => cart.id,
-                 "branch_id" => branch.id,
-                 "fulfillment_type" => "pickup",
-                 "payment_method" => "cash"
-               })
-
-      assert [%Oban.Job{args: %{"order_id" => order_id}}] = Repo.all(Oban.Job)
-      assert order_id == order.id
-    end
   end
 
   defp draft_cart_for(order) do

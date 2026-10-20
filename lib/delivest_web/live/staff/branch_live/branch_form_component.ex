@@ -1,6 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   alias Delivest.Identity
   use DelivestWeb, :live_component
+  alias Delivest.Integrations.Crm
   alias DelivestWeb.Staff.BranchLive.{BranchForm, WorkingHoursComponent}
 
   @impl true
@@ -9,13 +10,12 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
 
     branch = socket.assigns.branch
 
-    form_data = if branch && branch.id, do: BranchForm.from_branch(branch), else: %BranchForm{}
-    changeset = BranchForm.changeset(form_data, %{})
+    changeset = BranchForm.changeset(BranchForm.for_branch(branch), %{})
 
     {:ok,
      socket
      |> assign(:form, to_form(changeset))
-     |> assign_new(:show_frontpad, fn -> false end)
+     |> assign_new(:show_crm, fn -> false end)
      |> assign_new(:show_links, fn -> false end)
      |> assign_new(:show_schedule, fn -> false end)
      |> assign_new(:show_ycart, fn -> false end)}
@@ -23,10 +23,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
 
   @impl true
   def handle_event("validate", %{"branch_form" => params}, socket) do
-    base_form =
-      if socket.assigns.branch.id,
-        do: BranchForm.from_branch(socket.assigns.branch),
-        else: %BranchForm{}
+    base_form = BranchForm.for_branch(socket.assigns.branch)
 
     current_working_hours =
       Ecto.Changeset.get_field(socket.assigns.form.source, :working_hours) || %{}
@@ -51,7 +48,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   def handle_event("toggle_section", %{"section" => section}, socket) do
     key =
       case section do
-        "frontpad" -> :show_frontpad
+        "crm" -> :show_crm
         "links" -> :show_links
         "schedule" -> :show_schedule
         "ycart" -> :show_ycart
@@ -66,10 +63,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   end
 
   def handle_info({WorkingHoursComponent, {:working_hours_changed, working_hours}}, socket) do
-    base_form =
-      if socket.assigns.branch.id,
-        do: BranchForm.from_branch(socket.assigns.branch),
-        else: %BranchForm{}
+    base_form = BranchForm.for_branch(socket.assigns.branch)
 
     params = %{"working_hours" => working_hours}
 
@@ -90,7 +84,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
 
   defp save_branch(socket, :new, params),
     do:
-      %BranchForm{}
+      BranchForm.new()
       |> BranchForm.changeset(params)
       |> do_save_branch(socket, :new)
 
@@ -250,36 +244,44 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             <div
               class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
               phx-click="toggle_section"
-              phx-value-section="frontpad"
+              phx-value-section="crm"
               phx-target={@myself}
             >
-              <span>{gettext("Frontpad Integration Settings")}</span>
-              <span class={"transition-transform duration-200 #{if @show_frontpad, do: "rotate-180", else: ""}"}>
+              <span>{gettext("CRM Integration")}</span>
+              <span class={"transition-transform duration-200 #{if @show_crm, do: "rotate-180", else: ""}"}>
                 ▼
               </span>
             </div>
-            <%= if @show_frontpad do %>
-              <div class="p-4 pt-0 space-y-4 border-t border-base-200">
+            <div :if={@show_crm} class="p-4 pt-0 space-y-4 border-t border-base-200">
+              <.inputs_for :let={crm} field={@form[:crm]}>
+                <.input field={crm[:enabled]} type="checkbox" label={gettext("Send orders to CRM")} />
                 <.input
-                  field={@form[:frontpad_enabled]}
-                  type="checkbox"
-                  label={gettext("Frontpad Enabled")}
-                />
-                <.input
-                  field={@form[:frontpad_api_key]}
-                  type="text"
-                  label={gettext("Frontpad API Key")}
+                  field={crm[:provider]}
+                  type="select"
+                  label={gettext("CRM")}
+                  prompt={gettext("Choose CRM")}
+                  options={Enum.map(Crm.providers(), fn {value, label} -> {label, value} end)}
                 />
 
-                <.inputs_for :let={f_settings} field={@form[:frontpad_settings]}>
+                <.inputs_for
+                  :let={frontpad}
+                  :if={to_string(crm[:provider].value) == "frontpad"}
+                  field={crm[:frontpad]}
+                >
                   <.input
-                    field={f_settings[:frontpad_branch_id]}
+                    field={frontpad[:api_key]}
+                    type="password"
+                    value={frontpad[:api_key].value}
+                    label={gettext("Frontpad API Key")}
+                  />
+                  <.input
+                    field={frontpad[:affiliate]}
                     type="text"
                     label={gettext("Frontpad Branch ID")}
                   />
                 </.inputs_for>
-              </div>
-            <% end %>
+              </.inputs_for>
+            </div>
           </div>
 
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />

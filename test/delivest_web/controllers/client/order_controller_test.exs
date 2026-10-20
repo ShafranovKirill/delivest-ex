@@ -4,6 +4,8 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Integrations.Frontpad
   alias Delivest.Oms.Order
   alias Delivest.Repo
 
@@ -12,8 +14,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
 
     Repo.insert!(%BranchInfo{
       branch_id: branch.id,
-      frontpad_api_key: "super-secret-key",
-      frontpad_enabled: false
+      crm: %BranchSettings{frontpad: %Frontpad.Settings{api_key: "super-secret-key"}}
     })
 
     product = insert_branch_product(branch.id, price: 300)
@@ -62,11 +63,10 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     )
   end
 
-  test "branch payload does not expose Frontpad credentials", %{conn: conn, branch: branch} do
+  test "branch payload does not expose CRM credentials", %{conn: conn, branch: branch} do
     body = conn |> post(~p"/client/branches/#{branch.id}/select") |> json_response(200)
 
-    refute Map.has_key?(body["data"]["branch_info"], "frontpad_api_key")
-    refute Map.has_key?(body["data"]["branch_info"], "frontpad_settings")
+    refute Map.has_key?(body["data"]["branch_info"], "crm")
     refute inspect(body) =~ "super-secret-key"
   end
 

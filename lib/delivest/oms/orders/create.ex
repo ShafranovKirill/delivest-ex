@@ -16,7 +16,7 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:cart, fn _, _ -> CartGuard.acquire(attrs["cart_id"], attrs["branch_id"]) end)
     |> Multi.run(:lines, fn _, %{cart: cart} -> Lines.from_cart(cart) end)
     |> Multi.run(:number, fn _, _ -> OrderNumber.generate() end)
-    |> Multi.insert(:order, &Assembler.changeset(%Order{}, own_attrs(attrs, &1), &1))
+    |> Multi.insert(:order, &build(attrs, &1, opts[:crm]))
     |> after_insert.()
     |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
     |> Repo.transaction()
@@ -34,6 +34,12 @@ defmodule Delivest.Oms.Orders.Create do
 
   defp customer({:ok, %Order{client: client}}), do: client
   defp customer(_result), do: nil
+
+  defp build(attrs, changes, crm) do
+    %Order{}
+    |> Assembler.changeset(own_attrs(attrs, changes), changes)
+    |> then(&if(crm, do: Order.crm_changeset(&1, crm), else: &1))
+  end
 
   defp own_attrs(attrs, %{number: number, cart: cart}) do
     attrs
