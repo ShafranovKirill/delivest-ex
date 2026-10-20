@@ -16,7 +16,14 @@ defmodule DelivestWeb.Client.Socket.SocketController do
 
   def token(conn, _params) do
     client_id = conn.assigns.current_client && conn.assigns.current_client.id
-    token = ClientToken.issue_socket(CookieHelper.get_cookie(conn, "session_id"), client_id)
+    token = ClientToken.issue_socket(session_id(conn), client_id)
     json(conn, %{data: %{token: token}})
+  end
+
+  defp session_id(conn) do
+    case conn.resp_cookies do
+      %{"session_id" => %{value: value}} -> value
+      _ -> CookieHelper.get_cookie(conn, "session_id")
+    end
   end
 end

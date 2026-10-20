@@ -77,6 +77,13 @@ defmodule DelivestWeb.Client.AuthControllerTest do
     assert client_id == client.id
   end
 
+  test "socket token of a brand new visitor has the new session" do
+    conn = build_conn() |> get(~p"/client/socket_token")
+    session_id = conn.resp_cookies["session_id"].value
+    token = conn |> json_response(200) |> get_in(["data", "token"])
+    assert {:ok, %{session_id: ^session_id}} = ClientToken.verify_socket(token)
+  end
+
   test "full call confirmation flow issues working tokens", %{conn: conn} do
     data = start_call(conn)
     assert data["call_number"] == "+78005553535"
