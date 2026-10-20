@@ -25,6 +25,19 @@ defmodule Delivest.Oms.OrderTest do
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
     end
 
+    test "pickup orders cannot be delivering" do
+      assert Order.statuses_for(:pickup) == [:created, :preparing, :ready, :completed, :cancelled]
+      assert :delivering in Order.statuses_for(:delivery)
+
+      order = %Order{status: :ready, fulfillment_type: :pickup, payment_method: :cash}
+      refute Order.details_changeset(order, %{status: :delivering}).valid?
+      assert Order.details_changeset(order, %{status: :completed}).valid?
+
+      delivering = %Order{order | fulfillment_type: :delivery, status: :delivering}
+      changeset = Order.changeset(delivering, %{fulfillment_type: :pickup})
+      assert Ecto.Changeset.get_field(changeset, :status) == :ready
+    end
+
     test "requires an address when fulfillment type is delivery" do
       attrs = %{
         branch_id: Ecto.UUID.generate(),

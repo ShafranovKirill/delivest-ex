@@ -98,9 +98,15 @@ defmodule Delivest.Oms.Order do
     |> validate_number(:discount_amount, greater_than_or_equal_to: 0)
     |> validate_cook_by_range()
     |> validate_address_if_delivery()
+    |> settle_delivering_status()
   end
 
   def progress_statuses, do: @progress_statuses
+
+  def statuses_for(fulfillment_type) when fulfillment_type in [:delivery, "delivery"],
+    do: @progress_statuses
+
+  def statuses_for(_fulfillment_type), do: List.delete(@progress_statuses, :delivering)
 
   def crm_changeset(order, attrs) do
     order
@@ -112,6 +118,23 @@ defmodule Delivest.Oms.Order do
     order
     |> cast(attrs, [:status, :payment_method])
     |> validate_required([:status, :payment_method])
+    |> validate_status_for_fulfillment()
+  end
+
+  defp settle_delivering_status(changeset) do
+    if get_field(changeset, :status) == :delivering and
+         get_field(changeset, :fulfillment_type) != :delivery,
+       do: put_change(changeset, :status, :ready),
+       else: changeset
+  end
+
+  defp validate_status_for_fulfillment(changeset) do
+    status = get_field(changeset, :status)
+
+    if status in @progress_statuses and
+         status not in statuses_for(get_field(changeset, :fulfillment_type)),
+       do: add_error(changeset, :status, "is not available for this fulfillment type"),
+       else: changeset
   end
 
   defp validate_address_if_delivery(changeset) do

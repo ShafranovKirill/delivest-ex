@@ -199,7 +199,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         class={["select select-sm font-medium border", OrderHelpers.status_color(@order.status)]}
       >
         <option
-          :for={status <- Delivest.Oms.Order.progress_statuses()}
+          :for={status <- Delivest.Oms.Order.statuses_for(@order.fulfillment_type)}
           value={status}
           selected={@order.status == status}
           class="bg-base-100 text-base-content"
