@@ -15,6 +15,7 @@ config :delivest, Oban,
   pruner: [max_age: {1, :day}],
   crontab: [
     {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker},
+    {"5 * * * *", Delivest.Oms.Workers.StaleOrderWorker},
     {"0 4 * * *", Delivest.Logs.PruneWorker},
     {"15 * * * *", Delivest.Integrations.Crm.CatalogWorker}
   ],
