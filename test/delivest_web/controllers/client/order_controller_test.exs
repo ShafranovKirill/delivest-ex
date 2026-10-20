@@ -177,6 +177,19 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     assert body["details"]["customer_phone"]
   end
 
+  test "blocked clients cannot order", %{conn: conn, branch: branch, product: product} do
+    insert(:client, phone: "+79990001122", status: :blocked)
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    body =
+      conn
+      |> post(~p"/client/orders", order_params(branch, cart_id))
+      |> json_response(422)
+
+    assert body["error"] == "client_blocked"
+  end
+
   describe "active orders" do
     test "lists orders of the current session only", %{
       conn: conn,

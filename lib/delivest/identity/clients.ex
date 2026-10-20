@@ -123,6 +123,11 @@ defmodule Delivest.Identity.Clients do
     |> Repo.all()
   end
 
+  def client_blocked?(nil), do: false
+
+  def client_blocked?(client_id),
+    do: Repo.exists?(from(c in Client, where: c.id == ^client_id and c.status == :blocked))
+
   def resolve_client(attrs, opts \\ []) do
     client_id = attrs["client_id"]
     phone = attrs["customer_phone"]

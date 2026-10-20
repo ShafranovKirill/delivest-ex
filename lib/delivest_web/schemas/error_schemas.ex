@@ -22,6 +22,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "cart_already_ordered",
             "cart_branch_mismatch",
             "product_unavailable",
+            "client_blocked",
             "quantity_limit_exceeded",
             "item_not_found",
             "validation_failed",

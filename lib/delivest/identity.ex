@@ -33,6 +33,7 @@ defmodule Delivest.Identity do
   defdelegate search_clients(staff, query, limit \\ 10), to: Clients
   defdelegate get_client_ids_by_search(query), to: Clients
   defdelegate resolve_client(attrs, opts \\ []), to: Clients
+  defdelegate client_blocked?(client_id), to: Clients
 
   defdelegate phone_regex(), to: BranchInfo
 

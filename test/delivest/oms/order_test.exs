@@ -158,6 +158,23 @@ defmodule Delivest.Oms.OrderTest do
       assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
     end
 
+    test "rejects orders of a blocked client" do
+      insert(:client, phone: "+79995550000", status: :blocked)
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "blocked", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:error, :client_id, :client_blocked} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "customer_phone" => "+79995550000",
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+
+      assert Repo.aggregate(Order, :count) == 0
+    end
+
     test "rejects an empty cart" do
       assert {:ok, %CartView{} = cart} =
                Carts.create_cart(%{

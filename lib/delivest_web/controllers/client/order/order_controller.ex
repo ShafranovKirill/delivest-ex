@@ -80,7 +80,9 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :cart_not_found,
               :cart_is_empty,
               :cart_already_ordered,
-              :cart_branch_mismatch
+              :cart_branch_mismatch,
+              :product_unavailable,
+              :client_blocked
             ] do
     ApiError.send_error(conn, :unprocessable_entity, reason, Phoenix.Naming.humanize(reason))
   end
