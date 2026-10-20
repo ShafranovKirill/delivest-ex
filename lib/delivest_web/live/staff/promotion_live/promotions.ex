@@ -1,14 +1,15 @@
 defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Identity, Promo}
-  alias Delivest.Promo.{Promotion, Usage}
+  alias Delivest.{Identity, Net, Promo}
+  alias Delivest.Promo.{Dsl, Promotion, Strategy, Usage}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   alias DelivestWeb.Staff.PromotionLive.{
     IssuedCodesComponent,
     PromotionFormComponent,
-    PromotionHelpers
+    PromotionHelpers,
+    RulesText
   }
 
   on_mount {DelivestWeb.Hooks.Permission, "promotions.read"}
@@ -107,13 +108,34 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       {:ok, promotions} ->
         assign(socket,
           promotions: promotions,
+          summaries: summaries(promotions, socket.assigns.branch_id),
           usage: Promo.promotions_usage(promotions),
           now: DateTime.utc_now()
         )
 
       {:error, _} ->
-        assign(socket, promotions: [], usage: %Usage{}, now: DateTime.utc_now())
+        assign(socket, promotions: [], summaries: %{}, usage: %Usage{}, now: DateTime.utc_now())
     end
+  end
+
+  defp summaries(promotions, branch_id) do
+    strategies =
+      for promotion <- promotions,
+          {:ok, strategy} <- [Dsl.parse(promotion.rules)],
+          into: %{},
+          do: {promotion.id, strategy}
+
+    names =
+      branch_id
+      |> Net.list_branch_products_by_slugs(
+        strategies
+        |> Map.values()
+        |> Enum.flat_map(&Strategy.slugs/1)
+        |> Enum.uniq()
+      )
+      |> Map.new(fn {slug, product} -> {slug, product.name} end)
+
+    Map.new(strategies, fn {id, strategy} -> {id, RulesText.describe(strategy, names)} end)
   end
 
   defp deny(socket) do
@@ -175,7 +197,17 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
                 "combinable"
               )}</span>
             </div>
-            <pre class="mt-1 text-xs text-base-content/60 font-mono whitespace-pre-wrap line-clamp-2">{promotion.rules}</pre>
+            <% summary = @summaries[promotion.id] %>
+            <p :if={summary} class="mt-1 text-sm text-base-content/70 line-clamp-2">
+              <span :if={summary.condition}>{summary.condition} → </span>{Enum.join(
+                summary.effects,
+                "; "
+              )}
+            </p>
+            <pre
+              :if={!summary}
+              class="mt-1 text-xs text-base-content/60 font-mono whitespace-pre-wrap line-clamp-2"
+            >{promotion.rules}</pre>
             <p class="mt-1 text-xs text-base-content/50">
               {gettext("Used")}: {PromotionHelpers.usage_label(
                 Usage.total(@usage, promotion.id),

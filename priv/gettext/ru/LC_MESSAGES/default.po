@@ -278,7 +278,7 @@ msgstr "Управление филиалами"
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:137
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:91
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:309
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:201
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:494
 #: lib/delivest_web/live/staff/role_live/role_form_component.ex:150
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:229
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:244
@@ -462,8 +462,8 @@ msgstr "Текущий филиал"
 #: lib/delivest_web/live/staff/client_live/clients.ex:381
 #: lib/delivest_web/live/staff/order_live/orders.ex:276
 #: lib/delivest_web/live/staff/product_live/products.ex:602
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:227
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:273
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:259
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:305
 #: lib/delivest_web/live/staff/role_live/roles.ex:163
 #: lib/delivest_web/live/staff/role_live/roles.ex:197
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:277
@@ -529,7 +529,7 @@ msgstr "Перетаскивайте элементы для изменения 
 #: lib/delivest_web/live/staff/category_live/categories.ex:183
 #: lib/delivest_web/live/staff/client_live/show.ex:120
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:179
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:217
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:249
 #: lib/delivest_web/live/staff/role_live/roles.ex:152
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:271
 #, elixir-autogen, elixir-format
@@ -592,7 +592,7 @@ msgstr "Внешний ID"
 msgid "Failed to delete product"
 msgstr "Не удалось удалить товар"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:82
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:83
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:120
 #, elixir-autogen, elixir-format
 msgid "Failed to delete promotion"
@@ -695,7 +695,7 @@ msgstr "Медиа"
 #: lib/delivest_web/live/staff/client_live/clients.ex:289
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:256
 #: lib/delivest_web/live/staff/product_live/products.ex:446
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:89
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:260
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:172
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:214
 #, elixir-autogen, elixir-format
@@ -893,7 +893,7 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:100
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:143
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:315
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:203
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:496
 #: lib/delivest_web/live/staff/role_live/role_form_component.ex:152
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:231
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:250
@@ -906,7 +906,7 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:141
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:313
 #: lib/delivest_web/live/staff/promotion_live/issued_codes_component.ex:112
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:202
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:495
 #: lib/delivest_web/live/staff/role_live/role_form_component.ex:151
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:230
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:248
@@ -1137,8 +1137,8 @@ msgid "You don't have permission to edit staff."
 msgstr "У вас нет прав для редактирования сотрудников."
 
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:161
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:45
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:121
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:61
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:143
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:138
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to perform this action."
@@ -1150,6 +1150,7 @@ msgid "g"
 msgstr "г"
 
 #: lib/delivest_web/live/staff/product_live/products.ex:461
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:648
 #, elixir-autogen, elixir-format
 msgid "pcs"
 msgstr "шт"
@@ -1880,6 +1881,7 @@ msgid "First order"
 msgstr "Первый заказ"
 
 #: lib/delivest_web/live/staff/branch_live/working_hours_component.ex:10
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:228
 #, elixir-autogen, elixir-format
 msgid "Fri"
 msgstr "Пт"
@@ -1925,6 +1927,7 @@ msgid "Linked product"
 msgstr "Товар акции"
 
 #: lib/delivest_web/live/staff/branch_live/working_hours_component.ex:6
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:224
 #, elixir-autogen, elixir-format
 msgid "Mon"
 msgstr "Пн"
@@ -2050,6 +2053,7 @@ msgid "Sales"
 msgstr "Продажи"
 
 #: lib/delivest_web/live/staff/branch_live/working_hours_component.ex:11
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:229
 #, elixir-autogen, elixir-format
 msgid "Sat"
 msgstr "Сб"
@@ -2070,6 +2074,7 @@ msgid "Statistics"
 msgstr "Статистика"
 
 #: lib/delivest_web/live/staff/branch_live/working_hours_component.ex:12
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:230
 #, elixir-autogen, elixir-format
 msgid "Sun"
 msgstr "Вс"
@@ -2085,6 +2090,7 @@ msgid "This month"
 msgstr "Этот месяц"
 
 #: lib/delivest_web/live/staff/branch_live/working_hours_component.ex:9
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:227
 #, elixir-autogen, elixir-format
 msgid "Thu"
 msgstr "Чт"
@@ -2095,6 +2101,7 @@ msgid "Total spent"
 msgstr "Всего потрачено"
 
 #: lib/delivest_web/live/staff/branch_live/working_hours_component.ex:7
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:225
 #, elixir-autogen, elixir-format
 msgid "Tue"
 msgstr "Вт"
@@ -2110,6 +2117,7 @@ msgid "Used in the product link on the website. Leave empty to generate it from 
 msgstr "Используется в ссылке на товар на сайте. Оставьте пустым — сгенерируется из названия."
 
 #: lib/delivest_web/live/staff/branch_live/working_hours_component.ex:8
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:226
 #, elixir-autogen, elixir-format
 msgid "Wed"
 msgstr "Ср"
@@ -2784,17 +2792,17 @@ msgstr "10% на заказ от 1500 ₽"
 msgid "3–32 latin letters, digits, «-» or «_»"
 msgstr "3–32 латинские буквы, цифры, «-» или «_»"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:101
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:102
 #, elixir-autogen, elixir-format
 msgid "Action failed"
 msgstr "Не удалось выполнить действие"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:143
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:607
 #, elixir-autogen, elixir-format
 msgid "Always"
 msgstr "Всегда"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:192
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:478
 #, elixir-autogen, elixir-format
 msgid "An entered promo code always goes first. Automatic promotions follow by priority; a non-combinable one blocks the rest."
 msgstr "Введённый промокод всегда применяется первым. Затем автоматические акции по приоритету; несовместимая акция блокирует остальные."
@@ -2809,7 +2817,7 @@ msgstr "Применить"
 msgid "Automatic"
 msgstr "Автоматическая"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:133
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:155
 #, elixir-autogen, elixir-format
 msgid "Automatic promotions, sale prices, public and personal promo codes."
 msgstr "Автоматические акции, скидки на товары, публичные и персональные промокоды."
@@ -2824,17 +2832,17 @@ msgstr "Телефон клиента"
 msgid "Code for %{client}:"
 msgstr "Код для %{client}:"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:53
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:54
 #, elixir-autogen, elixir-format
 msgid "Codes «%{name}»"
 msgstr "Коды «%{name}»"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:189
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:487
 #, elixir-autogen, elixir-format
 msgid "Combines with other combinable promotions"
 msgstr "Суммируется с другими совместимыми акциями"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:182
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:476
 #, elixir-autogen, elixir-format
 msgid "Compatibility"
 msgstr "Совместимость"
@@ -2849,12 +2857,12 @@ msgstr "Условия"
 msgid "Create a promotion with personal codes in this branch first."
 msgstr "Сначала создайте в филиале акцию с персональными промокодами."
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:271
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:303
 #, elixir-autogen, elixir-format
 msgid "Delete promotion"
 msgstr "Удалить акцию"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:94
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:265
 #, elixir-autogen, elixir-format
 msgid "Description for customers"
 msgstr "Описание для клиентов"
@@ -2871,8 +2879,8 @@ msgstr "Скидка"
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:210
 #: lib/delivest_web/live/staff/log_live/event_text.ex:30
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:30
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:132
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:31
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:154
 #, elixir-autogen, elixir-format
 msgid "Discounts & promo codes"
 msgstr "Скидки и промокоды"
@@ -2882,7 +2890,7 @@ msgstr "Скидки и промокоды"
 msgid "Discounts are set in «Discounts & promo codes» by the product URL slug."
 msgstr "Скидки задаются в разделе «Скидки и промокоды» по URL-слагу товара."
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:52
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:53
 #, elixir-autogen, elixir-format
 msgid "Edit «%{name}»"
 msgstr "Редактировать «%{name}»"
@@ -2897,8 +2905,8 @@ msgstr "Эффекты"
 msgid "Enable only when «price change on order» is turned on for products in Frontpad. Otherwise the order discount is sent as a single amount."
 msgstr "Включайте, только если в Frontpad у товаров стоит галочка «изменение цены при заказе». Иначе скидка заказа передаётся одной суммой."
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:197
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:200
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:489
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:232
 #, elixir-autogen, elixir-format
 msgid "Enabled"
 msgstr "Включена"
@@ -2908,7 +2916,7 @@ msgstr "Включена"
 msgid "Ended"
 msgstr "Завершена"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:166
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:456
 #, elixir-autogen, elixir-format
 msgid "Ends"
 msgstr "Окончание"
@@ -2929,6 +2937,7 @@ msgstr "Примеры"
 msgid "Failed to issue a code"
 msgstr "Не удалось выдать код"
 
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:205
 #: lib/delivest_web/live/staff/promotion_live/rules_help.ex:14
 #, elixir-autogen, elixir-format
 msgid "Fixed discount"
@@ -2971,12 +2980,12 @@ msgstr "Выдать код"
 msgid "Issued codes"
 msgstr "Выданные коды"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:178
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:444
 #, elixir-autogen, elixir-format
 msgid "Leave empty for no limit. Per-client limits need the client's phone."
 msgstr "Пусто — без ограничений. Лимит на клиента работает, только когда известен телефон клиента."
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:153
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:443
 #, elixir-autogen, elixir-format
 msgid "Limits"
 msgstr "Ограничения"
@@ -2986,8 +2995,8 @@ msgstr "Ограничения"
 msgid "Lunch on weekdays for pickup"
 msgstr "Обед в будни на самовывоз"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:36
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:142
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:37
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:164
 #, elixir-autogen, elixir-format
 msgid "New promotion"
 msgstr "Новая акция"
@@ -2997,18 +3006,19 @@ msgstr "Новая акция"
 msgid "No codes issued yet"
 msgstr "Коды ещё не выдавались"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:152
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:174
 #, elixir-autogen, elixir-format
 msgid "No promotions yet"
 msgstr "Акций пока нет"
 
 #: lib/delivest/promo/dsl/semantics.ex:41
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:122
 #, elixir-autogen, elixir-format
 msgid "Percent must be from 1 to 100"
 msgstr "Процент должен быть от 1 до 100"
 
 #: lib/delivest_web/live/staff/promotion_live/promotion_helpers.ex:11
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:209
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:241
 #, elixir-autogen, elixir-format
 msgid "Personal codes"
 msgstr "Персональные коды"
@@ -3028,7 +3038,7 @@ msgstr "Телефон в формате +7XXXXXXXXXX"
 msgid "Prices have changed, check the cart"
 msgstr "Цены изменились, проверьте корзину"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:185
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:483
 #, elixir-autogen, elixir-format
 msgid "Priority"
 msgstr "Приоритет"
@@ -3039,7 +3049,7 @@ msgid "Product «%{slug}» is not found in the branch"
 msgstr "Товар «%{slug}» не найден в филиале"
 
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:114
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:110
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:281
 #, elixir-autogen, elixir-format
 msgid "Promo code"
 msgstr "Промокод"
@@ -3065,7 +3075,7 @@ msgstr "Промокод нельзя применить"
 msgid "Promo code not found"
 msgstr "Промокод не найден"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:75
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:76
 #, elixir-autogen, elixir-format
 msgid "Promotion deleted"
 msgstr "Акция удалена"
@@ -3085,7 +3095,7 @@ msgstr "Акция ещё не началась"
 msgid "Promotion is turned off"
 msgstr "Акция выключена"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:91
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:92
 #, elixir-autogen, elixir-format
 msgid "Promotion saved"
 msgstr "Акция сохранена"
@@ -3101,6 +3111,7 @@ msgid "Public code"
 msgstr "Публичный промокод"
 
 #: lib/delivest/promo/dsl/semantics.ex:69
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:148
 #, elixir-autogen, elixir-format
 msgid "Quantity must be from 1 to 99"
 msgstr "Количество должно быть от 1 до 99"
@@ -3116,7 +3127,7 @@ msgstr "Отозвать"
 msgid "Revoke this code?"
 msgstr "Отозвать этот код?"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:129
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:410
 #, elixir-autogen, elixir-format
 msgid "Rules"
 msgstr "Правила"
@@ -3151,7 +3162,7 @@ msgstr "Запланирована"
 msgid "Send discounted prices to Frontpad"
 msgstr "Передавать в Frontpad цены со скидкой"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:160
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:450
 #, elixir-autogen, elixir-format
 msgid "Starts"
 msgstr "Начало"
@@ -3166,12 +3177,12 @@ msgstr "Клиент уже использовал эту акцию"
 msgid "The promotion has just run out, the cart was recalculated"
 msgstr "Акция только что закончилась, корзина пересчитана"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:272
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:304
 #, elixir-autogen, elixir-format
 msgid "The promotion stops working immediately. Order history keeps it."
 msgstr "Акция сразу перестанет работать. В истории заказов она сохранится."
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:145
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:609
 #, elixir-autogen, elixir-format
 msgid "Then"
 msgstr "Тогда"
@@ -3187,16 +3198,17 @@ msgid "This personal code belongs to another client"
 msgstr "Этот персональный код принадлежит другому клиенту"
 
 #: lib/delivest/promo/dsl/semantics.ex:107
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:114
 #, elixir-autogen, elixir-format
 msgid "Time window is empty"
 msgstr "Пустой интервал времени"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:169
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:463
 #, elixir-autogen, elixir-format
 msgid "Total uses"
 msgstr "Всего использований"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:101
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:272
 #, elixir-autogen, elixir-format
 msgid "Type"
 msgstr "Тип"
@@ -3211,7 +3223,7 @@ msgstr "Правило оборвано"
 msgid "Unexpected «%{token}»"
 msgstr "Неожиданное «%{token}»"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:121
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:292
 #, elixir-autogen, elixir-format
 msgid "Unique codes are issued to clients from the promotion list or the client page."
 msgstr "Уникальные коды выдаются клиентам из списка акций или на странице клиента."
@@ -3226,7 +3238,7 @@ msgstr "Неизвестный %{kind} «%{value}», допустимо: %{known
 msgid "Unknown symbol «%{symbol}»"
 msgstr "Неизвестный символ «%{symbol}»"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:180
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:212
 #, elixir-autogen, elixir-format
 msgid "Used"
 msgstr "Использовано"
@@ -3237,7 +3249,7 @@ msgstr "Использовано"
 msgid "Uses"
 msgstr "Использований"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:174
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:469
 #, elixir-autogen, elixir-format
 msgid "Uses per client"
 msgstr "На одного клиента"
@@ -3247,7 +3259,7 @@ msgstr "На одного клиента"
 msgid "Value must be positive"
 msgstr "Значение должно быть положительным"
 
-#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:141
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:605
 #, elixir-autogen, elixir-format
 msgid "When"
 msgstr "Когда"
@@ -3272,6 +3284,7 @@ msgstr "добавьте ещё %{count} шт."
 msgid "add «%{name}» × %{count}"
 msgstr "добавьте «%{name}» × %{count}"
 
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:335
 #: lib/delivest_web/live/staff/promotion_live/rules_text.ex:19
 #, elixir-autogen, elixir-format
 msgid "and"
@@ -3287,7 +3300,7 @@ msgstr "в корзине «%{name}» × %{count}"
 msgid "cart total %{op} %{amount}"
 msgstr "сумма корзины %{op} %{amount}"
 
-#: lib/delivest_web/live/staff/promotion_live/promotions.ex:174
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:196
 #, elixir-autogen, elixir-format
 msgid "combinable"
 msgstr "суммируется"
@@ -3347,6 +3360,7 @@ msgstr "не (%{condition})"
 msgid "only for: %{types}"
 msgstr "только для: %{types}"
 
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:335
 #: lib/delivest_web/live/staff/promotion_live/rules_text.ex:22
 #, elixir-autogen, elixir-format
 msgid "or"
@@ -3444,3 +3458,227 @@ msgstr[2] "%{count} товаров"
 #, elixir-autogen, elixir-format
 msgid "Sent to CRM"
 msgstr "Отправлен в CRM"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:235
+#, elixir-autogen, elixir-format
+msgid "%{slug} (not found)"
+msgstr "%{slug} (не найден)"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:797
+#, elixir-autogen, elixir-format
+msgid "+ Add product"
+msgstr "+ Добавить товар"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:377
+#, elixir-autogen, elixir-format
+msgid "Add at least one reward."
+msgstr "Добавьте хотя бы одну награду."
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:305
+#, elixir-autogen, elixir-format
+msgid "Apply when"
+msgstr "Применять, когда"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:432
+#, elixir-autogen, elixir-format
+msgid "Back to the constructor"
+msgstr "Вернуться в конструктор"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:259
+#, elixir-autogen, elixir-format
+msgid "Basics"
+msgstr "Основное"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:190
+#, elixir-autogen, elixir-format
+msgid "Cart total"
+msgstr "Сумма корзины"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:826
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:860
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:139
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:147
+#, elixir-autogen, elixir-format
+msgid "Choose a product"
+msgstr "Выберите товар"
+
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:109
+#, elixir-autogen, elixir-format
+msgid "Choose at least one option"
+msgstr "Выберите хотя бы один вариант"
+
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:154
+#, elixir-autogen, elixir-format
+msgid "Choose at least one product"
+msgstr "Выберите хотя бы один товар"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:195
+#, elixir-autogen, elixir-format
+msgid "Days of week"
+msgstr "Дни недели"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:407
+#, elixir-autogen, elixir-format
+msgid "Edit as text"
+msgstr "Редактировать текстом"
+
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:104
+#, elixir-autogen, elixir-format
+msgid "Enter a number of items"
+msgstr "Укажите количество товаров"
+
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:140
+#, elixir-autogen, elixir-format
+msgid "Enter a price"
+msgstr "Укажите цену"
+
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:101
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:133
+#, elixir-autogen, elixir-format
+msgid "Enter an amount"
+msgstr "Укажите сумму"
+
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:113
+#, elixir-autogen, elixir-format
+msgid "Enter both times"
+msgstr "Укажите оба времени"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:395
+#, elixir-autogen, elixir-format
+msgid "Fill in the highlighted fields."
+msgstr "Заполните выделенные поля."
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:193
+#, elixir-autogen, elixir-format
+msgid "Fulfillment method"
+msgstr "Способ получения"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:206
+#, elixir-autogen, elixir-format
+msgid "Gift product"
+msgstr "Подарок"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:302
+#, elixir-autogen, elixir-format
+msgid "Leave empty to apply to every order."
+msgstr "Оставьте пустым, чтобы акция действовала на любой заказ."
+
+#: lib/delivest_web/live/staff/promotion_live/rules_builder.ex:125
+#, elixir-autogen, elixir-format
+msgid "Limit must be a positive amount"
+msgstr "Ограничение должно быть положительной суммой"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:756
+#, elixir-autogen, elixir-format
+msgid "Max discount"
+msgstr "Не больше"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:191
+#, elixir-autogen, elixir-format
+msgid "Number of items"
+msgstr "Количество товаров"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:204
+#, elixir-autogen, elixir-format
+msgid "Percentage discount"
+msgstr "Скидка в процентах"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:192
+#, elixir-autogen, elixir-format
+msgid "Product in cart"
+msgstr "Товар в корзине"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:556
+#, elixir-autogen, elixir-format
+msgid "Remove"
+msgstr "Удалить"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:613
+#, elixir-autogen, elixir-format
+msgid "Rules code"
+msgstr "Код правил"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:736
+#, elixir-autogen, elixir-format
+msgid "Selected products"
+msgstr "Выбранные товары"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:207
+#, elixir-autogen, elixir-format
+msgid "Special price"
+msgstr "Специальная цена"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:435
+#, elixir-autogen, elixir-format
+msgid "These rules are too complex for the constructor."
+msgstr "Эти правила слишком сложные для конструктора."
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:194
+#, elixir-autogen, elixir-format
+msgid "Time of day"
+msgstr "Время суток"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:356
+#, elixir-autogen, elixir-format
+msgid "What does the customer get?"
+msgstr "Что получает клиент?"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:301
+#, elixir-autogen, elixir-format
+msgid "When does it apply?"
+msgstr "Когда действует?"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:735
+#, elixir-autogen, elixir-format
+msgid "Whole cart"
+msgstr "Вся корзина"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:309
+#, elixir-autogen, elixir-format
+msgid "all conditions are met"
+msgstr "выполнены все условия"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:310
+#, elixir-autogen, elixir-format
+msgid "any condition is met"
+msgstr "выполнено любое условие"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:216
+#, elixir-autogen, elixir-format
+msgid "at least"
+msgstr "не меньше"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:218
+#, elixir-autogen, elixir-format
+msgid "at most"
+msgstr "не больше"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:220
+#, elixir-autogen, elixir-format
+msgid "exactly"
+msgstr "ровно"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:691
+#, elixir-autogen, elixir-format
+msgid "from"
+msgstr "с"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:219
+#, elixir-autogen, elixir-format
+msgid "less than"
+msgstr "меньше"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:217
+#, elixir-autogen, elixir-format
+msgid "more than"
+msgstr "больше"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:763
+#, elixir-autogen, elixir-format
+msgid "no limit"
+msgstr "без ограничения"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:699
+#, elixir-autogen, elixir-format
+msgid "to"
+msgstr "до"
