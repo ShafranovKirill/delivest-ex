@@ -5,6 +5,7 @@ defmodule Delivest.Net.Products do
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Audit
+  alias Delivest.Relations.EntityRelation
 
   def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
     if Identity.can?(staff, "products.read") do
@@ -41,6 +42,26 @@ defmodule Delivest.Net.Products do
       |> Repo.all()
       |> Map.new(fn product -> {product.id, product} end)
     end
+  end
+
+  def product_available_in_branch?(product_id, nil),
+    do: product_id |> available_query() |> Repo.exists?()
+
+  def product_available_in_branch?(product_id, branch_id) do
+    product_id
+    |> available_query()
+    |> join(:inner, [p], r in EntityRelation,
+      on:
+        r.to_id == p.id and r.to_entity_type == "Product" and
+          r.from_entity_type == "Branch" and r.from_id == ^branch_id
+    )
+    |> Repo.exists?()
+  end
+
+  defp available_query(product_id) do
+    from(p in Product,
+      where: p.id == ^product_id and p.is_active == true and is_nil(p.deleted_at)
+    )
   end
 
   def get_product(id, opts \\ []) do

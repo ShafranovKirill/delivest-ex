@@ -126,6 +126,7 @@ defmodule Delivest.Oms.CartTest do
       product = insert_branch_product(@branch_id, price: 10)
       {:ok, cart} = Carts.create_cart(%{session_id: "quantity-limit", branch_id: @branch_id})
 
+      assert {:error, :quantity_limit_exceeded} = Carts.add_item(cart.id, product.id, 100)
       assert {:ok, _, _} = Carts.add_item(cart.id, product.id, 99)
       assert {:error, :quantity_limit_exceeded} = Carts.add_item(cart.id, product.id, 1)
     end
