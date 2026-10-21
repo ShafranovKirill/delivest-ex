@@ -8,6 +8,7 @@ defmodule Delivest.Oms.Orders do
 
   defdelegate subscribe, to: Notifier
   defdelegate subscribe_owner(kind, id), to: Notifier
+  defdelegate subscribe_branch(branch_id), to: Notifier
   defdelegate create_order(attrs, opts \\ []), to: Create, as: :run
   defdelegate update_order(order, attrs, opts \\ []), to: Update, as: :run
   defdelegate create_draft_cart(order), to: DraftCart, as: :create
@@ -19,6 +20,12 @@ defmodule Delivest.Oms.Orders do
     |> Filter.apply_filters(Filter.normalize_params(params))
     |> preload([:items, :client])
     |> Repo.all()
+  end
+
+  def count_unconfirmed(branch_id) do
+    Order
+    |> where([o], o.branch_id == ^branch_id and o.status == :created and is_nil(o.deleted_at))
+    |> Repo.aggregate(:count)
   end
 
   def list_client_orders(client_id, branch_scope, limit \\ 50) do

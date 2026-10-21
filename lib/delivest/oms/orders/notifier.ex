@@ -6,6 +6,9 @@ defmodule Delivest.Oms.Orders.Notifier do
 
   def subscribe, do: Phoenix.PubSub.subscribe(Delivest.PubSub, @topic)
 
+  def subscribe_branch(branch_id),
+    do: Phoenix.PubSub.subscribe(Delivest.PubSub, branch_topic(branch_id))
+
   def subscribe_owner(kind, id) when kind in [:session, :client] and is_binary(id),
     do: Phoenix.PubSub.subscribe(Delivest.PubSub, owner_topic(kind, id))
 
@@ -14,6 +17,12 @@ defmodule Delivest.Oms.Orders.Notifier do
   def publish({:ok, order}, event) do
     order = Repo.preload(order, [:items, :client], force: true)
     Phoenix.PubSub.broadcast(Delivest.PubSub, @topic, {@source, event, order})
+
+    Phoenix.PubSub.broadcast(
+      Delivest.PubSub,
+      branch_topic(order.branch_id),
+      {:branch_orders_changed, order.branch_id}
+    )
 
     for {kind, id} <- [session: order.session_id, client: order.client_id],
         is_binary(id),
@@ -24,6 +33,8 @@ defmodule Delivest.Oms.Orders.Notifier do
   end
 
   def publish(error, _event), do: error
+
+  defp branch_topic(branch_id), do: "orders:branch:#{branch_id}"
 
   defp owner_topic(kind, id), do: "client_orders:#{kind}:#{id}"
 end
