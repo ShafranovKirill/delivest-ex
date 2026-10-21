@@ -33,24 +33,23 @@ defmodule Delivest.Promo.Effects.ProductPrices do
     end
   end
 
+  def slugs({:price, slug, _price}), do: [slug]
+  def slugs({:percent, _percent, {:products, slugs}, _cap}), do: slugs
+  def slugs({:amount, _amount, {:products, slugs}}), do: slugs
+  def slugs(_effect), do: []
+
+  def unit_price({:price, _slug, price}, _base), do: price
+  def unit_price({:percent, percent, _target, _cap}, base), do: base - div(base * percent, 100)
+  def unit_price({:amount, amount, _target}, base), do: max(base - amount, 0)
+
   defp offers(%Compiled{strategy: strategy} = compiled),
     do: Enum.flat_map(strategy.effects, &offer(&1, compiled))
 
-  defp offer({:price, slug, price}, compiled),
-    do: targeted(compiled, [slug], fn _base -> price end)
-
-  defp offer({:percent, percent, {:products, slugs}, _cap}, compiled),
-    do: targeted(compiled, slugs, &(&1 - div(&1 * percent, 100)))
-
-  defp offer({:amount, amount, {:products, slugs}}, compiled),
-    do: targeted(compiled, slugs, &max(&1 - amount, 0))
-
-  defp offer(_effect, _compiled), do: []
-
-  defp targeted(compiled, slugs, price) do
-    slugs
+  defp offer(effect, compiled) do
+    effect
+    |> slugs()
     |> Enum.map(&Compiled.product_id(compiled, &1))
     |> Enum.reject(&is_nil/1)
-    |> Enum.map(&{&1, compiled.promotion.id, price})
+    |> Enum.map(&{&1, compiled.promotion.id, fn base -> unit_price(effect, base) end})
   end
 end

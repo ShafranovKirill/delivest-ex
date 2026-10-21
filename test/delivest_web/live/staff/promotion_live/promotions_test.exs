@@ -54,6 +54,38 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     assert has_element?(lv, "#promotion-#{promotion.id}")
   end
 
+  test "puts a product on sale from the quick form", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/sale")
+
+    lv
+    |> form("#sale-form", sale: %{add: "cola", mode: "percent", value: "20"})
+    |> render_change()
+
+    assert has_element?(lv, "#sale-products", "Cola")
+    assert has_element?(lv, "#sale-preview", "72 ₽")
+
+    lv
+    |> form("#sale-form", sale: %{products: ["cola"], mode: "percent", value: "20"})
+    |> render_submit()
+
+    assert %Promotion{kind: :automatic, combinable: true} =
+             promotion = Repo.get_by!(Promotion, branch_id: branch.id)
+
+    assert promotion.rules == "then discount 20% on \"cola\""
+    assert promotion.name =~ "Cola"
+  end
+
+  test "rejects a sale price that is not lower", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/sale")
+
+    lv
+    |> form("#sale-form", sale: %{add: "cola", mode: "price", value: "150"})
+    |> render_submit()
+
+    assert has_element?(lv, "#sale-error")
+    refute Repo.get_by(Promotion, kind: :automatic)
+  end
+
   test "highlights incomplete constructor rows", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/promotions/new")
 
