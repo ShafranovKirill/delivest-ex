@@ -10,6 +10,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   import DelivestWeb.Staff.StatsComponents
 
   @active_statuses [:created, :preparing, :ready, :delivering, :crm]
+  @reload_delay :timer.seconds(2)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -24,7 +25,8 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
        can_stats: Identity.can?(staff, "statistics.read"),
        can_orders: Identity.can?(staff, "orders.read"),
        can_create_order: Identity.can?(staff, "orders.create"),
-       can_clients: Identity.can?(staff, "clients.read")
+       can_clients: Identity.can?(staff, "clients.read"),
+       reload_scheduled: false
      )
      |> load()}
   end
@@ -32,11 +34,22 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   @impl true
   def handle_info({Orders, _event, %{branch_id: branch_id}}, socket) do
     if branch_id == socket.assigns.current_branch.id,
-      do: {:noreply, load(socket)},
+      do: {:noreply, schedule_reload(socket)},
       else: {:noreply, socket}
   end
 
+  def handle_info(:reload, socket) do
+    {:noreply, socket |> assign(reload_scheduled: false) |> load()}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp schedule_reload(%{assigns: %{reload_scheduled: true}} = socket), do: socket
+
+  defp schedule_reload(socket) do
+    Process.send_after(self(), :reload, @reload_delay)
+    assign(socket, reload_scheduled: true)
+  end
 
   defp load(socket) do
     branch_id = socket.assigns.current_branch.id
