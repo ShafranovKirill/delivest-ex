@@ -44,7 +44,9 @@ defmodule Delivest.Logs.Formatter do
   defp metadata(meta) do
     meta
     |> Map.take(@metadata_keys)
-    |> Map.new(fn {key, value} -> {key, if(is_binary(value), do: value, else: inspect(value))} end)
+    |> Map.new(fn {key, value} ->
+      {key, if(is_binary(value), do: value, else: inspect(value))}
+    end)
   end
 
   defp timestamp(%{time: time}), do: DateTime.from_unix!(time, :microsecond)

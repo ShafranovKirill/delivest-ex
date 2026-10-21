@@ -142,7 +142,9 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         case schedule do
           %{} = schedule_map ->
             schedule_map
-            |> Enum.reject(fn {key, _value} -> String.starts_with?(to_string(key), "_unused_") end)
+            |> Enum.reject(fn {key, _value} ->
+              String.starts_with?(to_string(key), "_unused_")
+            end)
             |> Enum.reduce(%{}, fn {key, value}, day_acc ->
               normalized_value =
                 case key do
