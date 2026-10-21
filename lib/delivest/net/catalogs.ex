@@ -2,24 +2,32 @@ defmodule Delivest.Net.Catalogs do
   alias Delivest.Net
   alias Delivest.Net.MenuView
 
+  @cache :menu_cache
+  @ttl :timer.hours(1)
+
   def get_menu_for_branch(branch_id) do
-    case Cachex.get(:menu_cache, branch_id) do
-      {:ok, nil} ->
-        raw_menu = Net.list_category_for_branch(branch_id, preload: [products: :media])
-        processed_menu = MenuView.build(raw_menu)
-
-        Cachex.put(:menu_cache, branch_id, processed_menu, ttl: :timer.hours(1))
-        {:ok, processed_menu}
-
-      {:ok, menu} ->
-        {:ok, menu}
-
-      {:error, reason} ->
-        {:error, reason}
+    case Ecto.UUID.cast(branch_id) do
+      {:ok, uuid} -> fetch(uuid)
+      :error -> {:error, :invalid_branch_id}
     end
   end
 
   def clear_menu_cache(branch_id) do
-    Cachex.del(:menu_cache, branch_id)
+    Cachex.del(@cache, branch_id)
+  end
+
+  defp fetch(branch_id) do
+    case Cachex.fetch(@cache, branch_id, fn id -> {:commit, build(id), ttl: @ttl} end) do
+      {:ok, menu} -> {:ok, menu}
+      {:commit, menu} -> {:ok, menu}
+      {:commit, menu, _opts} -> {:ok, menu}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp build(branch_id) do
+    branch_id
+    |> Net.list_category_for_branch(preload: [products: :media])
+    |> MenuView.build()
   end
 end

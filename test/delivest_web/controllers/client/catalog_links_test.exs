@@ -62,4 +62,9 @@ defmodule DelivestWeb.Client.CatalogLinksTest do
     body = build_conn() |> get(~p"/client/#{ctx.branch.id}/stocks") |> json_response(200)
     assert [%{"product_slug" => nil}] = body["data"]
   end
+
+  test "an invalid branch id is a bad request", %{conn: conn} do
+    assert %{"error" => "bad_request"} =
+             conn |> get(~p"/client/branches/not-a-uuid/menu") |> json_response(400)
+  end
 end
