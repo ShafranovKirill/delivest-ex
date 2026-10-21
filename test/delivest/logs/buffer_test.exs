@@ -14,4 +14,15 @@ defmodule Delivest.Logs.BufferTest do
 
     assert [%Entry{level: "error", message: "buffer test failure"}] = Repo.all(Entry)
   end
+
+  test "http request logs stay out of the database" do
+    pid = start_supervised!({Buffer, level: :info})
+    Ecto.Adapters.SQL.Sandbox.allow(Repo, self(), pid)
+
+    :logger.log(:info, "GET /client/cart", %{mfa: {Phoenix.Logger, :phoenix_endpoint_start, 4}})
+    Logger.warning("kept")
+    Buffer.flush()
+
+    assert [%Entry{message: "kept"}] = Repo.all(Entry)
+  end
 end
