@@ -188,6 +188,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           {status || gettext("sending")}
       <% end %>
     </span>
+    <span
+      :if={unmapped_crm_code(@order)}
+      id={"order-unmapped-#{@order.id}"}
+      class="badge badge-warning badge-sm"
+      title={gettext("Set this code in the branch Frontpad settings")}
+    >
+      {gettext("Frontpad status %{code} is not mapped", code: unmapped_crm_code(@order))}
+    </span>
     """
   end
 
@@ -208,6 +216,23 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </option>
       </select>
     </form>
+    <button
+      :if={@order.status == :created}
+      type="button"
+      id={"order-confirm-#{@order.id}"}
+      class="btn btn-sm btn-primary"
+      phx-click="update_order"
+      phx-value-order-id={@order.id}
+      phx-value-status="preparing"
+    >
+      <.icon name="hero-check" class="size-4" /> {gettext("Confirm")}
+    </button>
     """
   end
+
+  defp unmapped_crm_code(%{crm: %{remote_status: nil, remote_status_code: code}})
+       when is_binary(code),
+       do: code
+
+  defp unmapped_crm_code(_order), do: nil
 end

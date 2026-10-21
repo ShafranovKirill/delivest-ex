@@ -1339,7 +1339,7 @@ msgstr "Создать клиента"
 #: lib/delivest_web/live/staff/order_live/orders.ex:245
 #, elixir-autogen, elixir-format
 msgid "Created"
-msgstr "Создан"
+msgstr "Новый"
 
 #: lib/delivest_web/live/staff/order_live/orders.ex:212
 #: lib/delivest_web/live/staff/statistics_live/index.ex:103
@@ -2446,7 +2446,7 @@ msgstr "Передавать заказы в CRM"
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:228
 #, elixir-autogen, elixir-format
 msgid "Codes from the Frontpad status reference. Customers see the matching status of their order."
-msgstr "Коды из справочника статусов Frontpad. Клиент увидит соответствующий статус своего заказа."
+msgstr "ID статусов из справочника Frontpad. Статус «Новый» указывать не нужно: новый заказ ждёт подтверждения, пока его не переведут в производство. Клиент увидит соответствующий статус своего заказа."
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:226
 #, elixir-autogen, elixir-format
@@ -4132,3 +4132,18 @@ msgstr "Формат #RRGGBB"
 #, elixir-autogen, elixir-format
 msgid "White text is hard to read on this color. Choose a darker one."
 msgstr "Белый текст плохо читается на этом цвете. Выберите цвет темнее."
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:228
+#, elixir-autogen, elixir-format
+msgid "Confirm"
+msgstr "Подтвердить"
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:197
+#, elixir-autogen, elixir-format
+msgid "Frontpad status %{code} is not mapped"
+msgstr "Статус Frontpad %{code} не сопоставлен"
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:195
+#, elixir-autogen, elixir-format
+msgid "Set this code in the branch Frontpad settings"
+msgstr "Укажите этот код в настройках Frontpad филиала"
