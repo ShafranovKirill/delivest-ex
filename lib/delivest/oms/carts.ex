@@ -5,7 +5,7 @@ defmodule Delivest.Oms.Carts do
   alias Delivest.Oms.{Cart, CartItem, CartPricing, CartView}
 
   @cache_store :cart_cache
-  @cache_ttl :timer.hours(24)
+  @cache_ttl :timer.hours(2)
 
   def get_or_create_cart(opts) when is_list(opts) do
     case get_cart(opts) do
