@@ -94,7 +94,7 @@ msgstr ""
 msgid "All rights reserved."
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:81
+#: lib/delivest_web/components/staff/app/staff_header.ex:116
 #, elixir-autogen, elixir-format
 msgid "Dark Mode"
 msgstr ""
@@ -105,12 +105,12 @@ msgstr ""
 msgid "Dashboard"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:128
+#: lib/delivest_web/components/staff/app/staff_header.ex:94
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:146
+#: lib/delivest_web/components/staff/app/staff_header.ex:138
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr ""
@@ -125,7 +125,7 @@ msgstr ""
 msgid "Sign In"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:103
+#: lib/delivest_web/components/staff/app/staff_header.ex:69
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:121
 #: lib/delivest_web/live/staff/log_live/event_text.ex:32
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:171
@@ -333,7 +333,7 @@ msgstr ""
 msgid "Change Image"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:196
+#: lib/delivest_web/components/staff/app/staff_header.ex:188
 #, elixir-autogen, elixir-format
 msgid "Change branch"
 msgstr ""
@@ -436,7 +436,7 @@ msgstr ""
 msgid "Created At"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:180
+#: lib/delivest_web/components/staff/app/staff_header.ex:172
 #, elixir-autogen, elixir-format
 msgid "Current Branch"
 msgstr ""
@@ -695,8 +695,8 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:170
-#: lib/delivest_web/components/staff/app/staff_header.ex:186
+#: lib/delivest_web/components/staff/app/staff_header.ex:162
+#: lib/delivest_web/components/staff/app/staff_header.ex:178
 #, elixir-autogen, elixir-format
 msgid "No branch selected"
 msgstr ""
@@ -1433,8 +1433,6 @@ msgstr ""
 msgid "Month"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:39
-#: lib/delivest_web/components/staff/app/staff_header.ex:42
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:94
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:122
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:9
@@ -4132,12 +4130,17 @@ msgstr ""
 msgid "Collapse menu"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:90
+#: lib/delivest_web/components/staff/app/staff_header.ex:126
 #, elixir-autogen, elixir-format
 msgid "Light Mode"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:60
+#: lib/delivest_web/components/staff/app/staff_header.ex:49
 #, elixir-autogen, elixir-format
 msgid "Orders awaiting confirmation"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_header.ex:107
+#, elixir-autogen, elixir-format
+msgid "Theme"
 msgstr ""

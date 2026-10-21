@@ -19,31 +19,20 @@ defmodule DelivestWeb.StaffHeader do
         <.icon name="hero-bars-3" class="size-6" />
       </button>
 
-      <.link navigate={~p"/staff/dashboard"} class="flex items-center gap-2 shrink-0">
+      <.link navigate={~p"/staff/dashboard"} class="hidden sm:flex items-center gap-2 shrink-0">
         <img src={~p"/images/logo-dark.png"} alt="" class="size-8 object-contain dark:hidden" />
         <img src={~p"/images/logo-white.png"} alt="" class="size-8 object-contain hidden dark:block" />
-        <span class="hidden sm:inline text-lg font-bold">Delivest</span>
+        <span class="text-lg font-bold">Delivest</span>
       </.link>
 
-      <div class="flex-1"></div>
+      <div class="hidden sm:block flex-1"></div>
 
       <.new_orders
         :if={@current_branch && can?(@current_staff, "orders.read")}
         count={@new_orders_count}
       />
 
-      <.link
-        :if={@current_branch && can?(@current_staff, "orders.create")}
-        navigate={~p"/staff/orders/new"}
-        class="btn btn-primary btn-sm"
-        title={gettext("New Order")}
-      >
-        <.icon name="hero-plus" class="size-4" />
-        <span class="hidden md:inline">{gettext("New Order")}</span>
-      </.link>
-
       <.branch_selector current_branch={@current_branch} />
-      <.theme_switch />
       <.staff_menu current_staff={@current_staff} />
     </header>
     """
@@ -56,7 +45,7 @@ defmodule DelivestWeb.StaffHeader do
     <.link
       id="header-new-orders"
       navigate={~p"/staff/orders?status=created"}
-      class="btn btn-ghost btn-sm btn-square relative"
+      class="hidden sm:inline-flex btn btn-ghost btn-sm btn-square relative"
       title={gettext("Orders awaiting confirmation")}
     >
       <.icon name="hero-bell" class="size-5" />
@@ -68,29 +57,6 @@ defmodule DelivestWeb.StaffHeader do
         {@count}
       </span>
     </.link>
-    """
-  end
-
-  defp theme_switch(assigns) do
-    ~H"""
-    <button
-      type="button"
-      phx-click={JS.dispatch("phx:set-theme")}
-      data-phx-theme="dark"
-      class="btn btn-ghost btn-sm btn-square dark:hidden"
-      title={gettext("Dark Mode")}
-    >
-      <.icon name="hero-moon" class="size-5" />
-    </button>
-    <button
-      type="button"
-      phx-click={JS.dispatch("phx:set-theme")}
-      data-phx-theme="light"
-      class="btn btn-ghost btn-sm btn-square hidden dark:inline-flex"
-      title={gettext("Light Mode")}
-    >
-      <.icon name="hero-sun" class="size-5" />
-    </button>
     """
   end
 
@@ -137,6 +103,32 @@ defmodule DelivestWeb.StaffHeader do
 
         <div class="divider my-1"></div>
 
+        <li class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
+          {gettext("Theme")}
+        </li>
+        <li class="dark:hidden">
+          <button
+            id="header-theme-dark"
+            type="button"
+            phx-click={JS.dispatch("phx:set-theme")}
+            data-phx-theme="dark"
+          >
+            <.icon name="hero-moon" class="size-4" /> {gettext("Dark Mode")}
+          </button>
+        </li>
+        <li class="hidden dark:block">
+          <button
+            id="header-theme-light"
+            type="button"
+            phx-click={JS.dispatch("phx:set-theme")}
+            data-phx-theme="light"
+          >
+            <.icon name="hero-sun" class="size-4" /> {gettext("Light Mode")}
+          </button>
+        </li>
+
+        <div class="divider my-1"></div>
+
         <li>
           <.link
             href={~p"/staff/auth/log_out"}
@@ -153,7 +145,7 @@ defmodule DelivestWeb.StaffHeader do
 
   defp branch_selector(assigns) do
     ~H"""
-    <div class="dropdown dropdown-end">
+    <div id="header-branch" class="dropdown dropdown-end flex-1 min-w-0 sm:flex-none">
       <div
         tabindex="0"
         role="button"
@@ -161,7 +153,7 @@ defmodule DelivestWeb.StaffHeader do
       >
         <.icon name="hero-building-storefront" class="h-4 w-4 text-base-content/70 shrink-0" />
         <span
-          class="hidden sm:inline-block text-sm font-medium text-base-content truncate sm:max-w-75 lg:max-w-none align-middle"
+          class="text-sm font-medium text-base-content truncate sm:max-w-75 lg:max-w-none"
           title={@current_branch && @current_branch.name}
         >
           <%= if @current_branch do %>

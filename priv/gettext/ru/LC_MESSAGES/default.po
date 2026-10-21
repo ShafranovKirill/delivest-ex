@@ -94,7 +94,7 @@ msgstr "логин"
 msgid "All rights reserved."
 msgstr "Все права защищены."
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:81
+#: lib/delivest_web/components/staff/app/staff_header.ex:116
 #, elixir-autogen, elixir-format
 msgid "Dark Mode"
 msgstr "Темная тема"
@@ -105,12 +105,12 @@ msgstr "Темная тема"
 msgid "Dashboard"
 msgstr "Дашборд"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:128
+#: lib/delivest_web/components/staff/app/staff_header.ex:94
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr "Язык"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:146
+#: lib/delivest_web/components/staff/app/staff_header.ex:138
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Выйти"
@@ -125,7 +125,7 @@ msgstr "Открыть меню"
 msgid "Sign In"
 msgstr "Войти"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:103
+#: lib/delivest_web/components/staff/app/staff_header.ex:69
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:121
 #: lib/delivest_web/live/staff/log_live/event_text.ex:32
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:171
@@ -333,7 +333,7 @@ msgstr "Категория успешно обновлена"
 msgid "Change Image"
 msgstr "Изменить изображение"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:196
+#: lib/delivest_web/components/staff/app/staff_header.ex:188
 #, elixir-autogen, elixir-format
 msgid "Change branch"
 msgstr "Сменить филиал"
@@ -436,7 +436,7 @@ msgstr "Создать сотрудника"
 msgid "Created At"
 msgstr "Дата создания"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:180
+#: lib/delivest_web/components/staff/app/staff_header.ex:172
 #, elixir-autogen, elixir-format
 msgid "Current Branch"
 msgstr "Текущий филиал"
@@ -695,8 +695,8 @@ msgstr "Медиа"
 msgid "Name"
 msgstr "Название"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:170
-#: lib/delivest_web/components/staff/app/staff_header.ex:186
+#: lib/delivest_web/components/staff/app/staff_header.ex:162
+#: lib/delivest_web/components/staff/app/staff_header.ex:178
 #, elixir-autogen, elixir-format
 msgid "No branch selected"
 msgstr "Филиал не выбран"
@@ -1433,8 +1433,6 @@ msgstr "Управление клиентами системы, их стату�
 msgid "Month"
 msgstr "Месяц"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:39
-#: lib/delivest_web/components/staff/app/staff_header.ex:42
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:94
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:122
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:9
@@ -4133,12 +4131,17 @@ msgstr "Укажите этот код в настройках Frontpad фили
 msgid "Collapse menu"
 msgstr "Свернуть меню"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:90
+#: lib/delivest_web/components/staff/app/staff_header.ex:126
 #, elixir-autogen, elixir-format
 msgid "Light Mode"
 msgstr "Светлая тема"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:60
+#: lib/delivest_web/components/staff/app/staff_header.ex:49
 #, elixir-autogen, elixir-format
 msgid "Orders awaiting confirmation"
 msgstr "Заказы ждут подтверждения"
+
+#: lib/delivest_web/components/staff/app/staff_header.ex:107
+#, elixir-autogen, elixir-format
+msgid "Theme"
+msgstr "Тема"

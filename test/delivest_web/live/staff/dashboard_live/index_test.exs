@@ -79,5 +79,13 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       refute has_element?(lv, "#main-sidebar a[href='/staff/auth/log_out']")
       refute has_element?(lv, "#main-sidebar a[href='/staff/branches/select']")
     end
+
+    test "theme switch lives in the user menu and new order is not in the header", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/dashboard")
+
+      assert has_element?(lv, "header .dropdown #header-theme-dark")
+      assert has_element?(lv, "header .dropdown #header-theme-light")
+      refute has_element?(lv, "header a[href='/staff/orders/new']")
+    end
   end
 end
