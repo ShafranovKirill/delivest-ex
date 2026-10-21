@@ -27,12 +27,28 @@ defmodule DelivestWeb.Router do
     plug DelivestWeb.Plugs.EnsureSessionId
   end
 
+  pipeline :client_identity do
+    plug DelivestWeb.Plugs.FetchCurrentClient
+  end
+
+  pipeline :client_required do
+    plug DelivestWeb.Plugs.RequireClient
+  end
+
+  pipeline :client_auth_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :client_auth, limit: 5, period: :timer.minutes(1)
+  end
+
   pipeline :order_rate_limit do
     plug DelivestWeb.Plugs.RateLimit, bucket: :orders, limit: 10, period: :timer.minutes(1)
   end
 
   pipeline :cart_rate_limit do
     plug DelivestWeb.Plugs.RateLimit, bucket: :cart, limit: 300, period: :timer.minutes(1)
+  end
+
+  pipeline :promo_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :promo_codes, limit: 10, period: :timer.minutes(1)
   end
 
   pipeline :login_rate_limit do
@@ -43,8 +59,42 @@ defmodule DelivestWeb.Router do
       format: :text
   end
 
-  scope "/client", DelivestWeb.Client do
+  scope "/client/auth", DelivestWeb.Client.Auth do
     pipe_through :client_api
+
+    post "/call/:id/complete", AuthController, :complete
+    post "/refresh", AuthController, :refresh
+
+    scope "/" do
+      pipe_through :client_auth_rate_limit
+
+      post "/call", AuthController, :start
+    end
+  end
+
+  scope "/client/franchise", DelivestWeb.Client.Franchise do
+    pipe_through :api
+
+    get "/", FranchiseController, :show
+    get "/documents/:kind", FranchiseController, :document
+  end
+
+  scope "/client", DelivestWeb.Client do
+    pipe_through [:client_api, :client_identity, :client_required]
+
+    get "/me", Profile.ProfileController, :show
+    get "/orders", Order.OrderController, :index
+
+    scope "/addresses", Address do
+      get "/", AddressController, :index
+      post "/", AddressController, :create
+      put "/:id", AddressController, :update
+      delete "/:id", AddressController, :delete
+    end
+  end
+
+  scope "/client", DelivestWeb.Client do
+    pipe_through [:client_api, :client_identity]
 
     scope "/branches", Branch do
       get "/", BranchController, :index
@@ -60,16 +110,40 @@ defmodule DelivestWeb.Router do
       post "/:cart_id/items/:product_id", CartController, :add_item
       delete "/:cart_id/items/:product_id", CartController, :remove_item
       delete "/:cart_id/clear", CartController, :clear
+      put "/:cart_id/context", CartController, :update_context
+      delete "/:cart_id/promo_code", CartController, :remove_promo_code
+
+      scope "/" do
+        pipe_through :promo_rate_limit
+
+        post "/:cart_id/promo_code", CartController, :apply_promo_code
+      end
     end
 
-    scope "/orders", Order do
-      pipe_through :order_rate_limit
+    get "/socket_token", Socket.SocketController, :token
 
-      post "/", OrderController, :create
+    scope "/orders", Order do
+      get "/active", OrderController, :active
+
+      scope "/" do
+        pipe_through :order_rate_limit
+
+        post "/", OrderController, :create
+      end
     end
 
     get "/:branch_id/stocks", Stock.StockController, :index
     get "/branches/:branch_id/menu", Menu.MenuController, :index
+  end
+
+  scope "/integrations", DelivestWeb.Integrations do
+    pipe_through :api
+
+    post "/frontpad/:token", FrontpadWebhookController, :create
+  end
+
+  scope "/integrations", DelivestWeb.Integrations do
+    get "/zvonok/:token", ZvonokWebhookController, :create
   end
 
   scope "/staff", DelivestWeb.Staff do
@@ -97,20 +171,26 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
         {DelivestWeb.Hooks.StaffActiveBranch, :optional},
+        {DelivestWeb.Hooks.NewOrders, :default},
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/branches/select", BranchLive.BranchSelect, :index
 
       scope "/branches", BranchLive do
         live "/", Branches, :index
-        live "/:slug/edit", Branches, :edit
-        live "/new", Branches, :new
+        live "/new", Edit, :new
+        live "/:slug/edit", Edit, :edit
       end
 
       scope "/employee", StaffLive do
         live "/", Staffs, :index
         live "/:id/edit", Staffs, :edit
         live "/new", Staffs, :new
+      end
+
+      scope "/franchise", FranchiseLive do
+        live "/", Index, :index
+        live "/documents/:kind", Index, :document
       end
 
       scope "/roles", RoleLive do
@@ -125,6 +205,13 @@ defmodule DelivestWeb.Router do
         live "/:id", Show, :show
         live "/:id/edit", Clients, :edit
       end
+
+      scope "/logs", LogLive do
+        live "/", Index, :events
+        live "/raw", Index, :raw
+        live "/errors", Index, :errors
+        live "/hints", Index, :hints
+      end
     end
 
     live_session :staff_need_branch,
@@ -133,6 +220,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffAuth, :default},
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
         {DelivestWeb.Hooks.StaffActiveBranch, :default},
+        {DelivestWeb.Hooks.NewOrders, :default},
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/dashboard", DashboardLive.Index, :index
@@ -146,6 +234,7 @@ defmodule DelivestWeb.Router do
 
       scope "/products", ProductLive do
         live "/", Products, :index
+        live "/bulk", Bulk, :index
         live "/:id/edit", Products, :edit
         live "/new", Products, :new
       end
@@ -154,6 +243,14 @@ defmodule DelivestWeb.Router do
         live "/", Stocks, :index
         live "/:id/edit", Stocks, :edit
         live "/new", Stocks, :new
+      end
+
+      scope "/promotions", PromotionLive do
+        live "/", Promotions, :index
+        live "/new", Promotions, :new
+        live "/sale", Promotions, :sale
+        live "/:id/edit", Promotions, :edit
+        live "/:id/codes", Promotions, :codes
       end
 
       scope "/orders", OrderLive do
@@ -165,9 +262,14 @@ defmodule DelivestWeb.Router do
   end
 
   scope "/" do
-    pipe_through :browser
+    pipe_through :staff_browser
 
     get "/", DelivestWeb.PageController, :home
+  end
+
+  scope "/" do
+    pipe_through :browser
+
     get "/locale/:locale", DelivestWeb.Staff.StaffLocaleController, :set
     forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end

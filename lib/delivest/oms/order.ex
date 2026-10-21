@@ -3,13 +3,15 @@ defmodule Delivest.Oms.Order do
   import Ecto.Changeset
 
   alias Delivest.Oms.Order.Address
-  alias Delivest.Oms.Order.CrmInfo
+  alias Delivest.Oms.Order.AppliedPromotion
+  alias Delivest.Oms.Order.CrmSync
   alias Delivest.Oms.OrderItem
 
   @type t :: %__MODULE__{}
 
   @fulfillment_types [:dine_in, :delivery, :pickup]
   @statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled, :crm]
+  @progress_statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled]
   @payment_methods [:cash, :card_offline]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -31,6 +33,7 @@ defmodule Delivest.Oms.Order do
     belongs_to :client, Delivest.Identity.Client
     belongs_to :cart, Delivest.Oms.Cart
     field :branch_id, :binary_id
+    field :session_id, :string
 
     field :customer_phone, :string, virtual: true
     field :customer_name, :string, virtual: true
@@ -39,10 +42,12 @@ defmodule Delivest.Oms.Order do
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
     field :payment_method, Ecto.Enum, values: @payment_methods, default: :cash
 
-    field :crm_id, :string
-    embeds_one :crm_info, CrmInfo, on_replace: :update
+    embeds_one :crm, CrmSync, on_replace: :update
 
     field :total_amount, :integer, default: 0
+    field :subtotal_amount, :integer
+    field :discount_amount, :integer, default: 0
+    embeds_many :promotions, AppliedPromotion, on_replace: :delete
     field :cook_by, :naive_datetime
     field :comment, :string
     field :deleted_at, :utc_datetime
@@ -61,18 +66,19 @@ defmodule Delivest.Oms.Order do
       :client_id,
       :branch_id,
       :cart_id,
+      :session_id,
       :customer_phone,
       :customer_name,
       :status,
       :fulfillment_type,
       :payment_method,
       :total_amount,
+      :subtotal_amount,
+      :discount_amount,
       :cook_by,
       :comment,
-      :deleted_at,
-      :crm_id
+      :deleted_at
     ])
-    |> cast_embed(:crm_info, required: false)
     |> cast_embed(:address, required: false)
     |> cast_assoc(:items)
     |> validate_required([
@@ -89,14 +95,46 @@ defmodule Delivest.Oms.Order do
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
     |> validate_inclusion(:payment_method, @payment_methods)
     |> validate_number(:total_amount, greater_than_or_equal_to: 0)
+    |> validate_number(:discount_amount, greater_than_or_equal_to: 0)
     |> validate_cook_by_range()
     |> validate_address_if_delivery()
+    |> settle_delivering_status()
+  end
+
+  def progress_statuses, do: @progress_statuses
+
+  def statuses_for(fulfillment_type) when fulfillment_type in [:delivery, "delivery"],
+    do: @progress_statuses
+
+  def statuses_for(_fulfillment_type), do: List.delete(@progress_statuses, :delivering)
+
+  def crm_changeset(order, attrs) do
+    order
+    |> cast(%{crm: attrs}, [])
+    |> cast_embed(:crm, required: true)
   end
 
   def details_changeset(order, attrs) do
     order
     |> cast(attrs, [:status, :payment_method])
     |> validate_required([:status, :payment_method])
+    |> validate_status_for_fulfillment()
+  end
+
+  defp settle_delivering_status(changeset) do
+    if get_field(changeset, :status) == :delivering and
+         get_field(changeset, :fulfillment_type) != :delivery,
+       do: put_change(changeset, :status, :ready),
+       else: changeset
+  end
+
+  defp validate_status_for_fulfillment(changeset) do
+    status = get_field(changeset, :status)
+
+    if status in @progress_statuses and
+         status not in statuses_for(get_field(changeset, :fulfillment_type)),
+       do: add_error(changeset, :status, "is not available for this fulfillment type"),
+       else: changeset
   end
 
   defp validate_address_if_delivery(changeset) do

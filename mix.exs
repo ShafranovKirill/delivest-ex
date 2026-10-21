@@ -10,7 +10,8 @@ defmodule Delivest.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      compilers: [:leex, :yecc, :phoenix_live_view] ++ Mix.compilers(),
+      leex_options: [error_location: :column],
       listeners: [Phoenix.CodeReloader]
     ]
   end
@@ -78,7 +79,6 @@ defmodule Delivest.MixProject do
       {:cors_plug, "~> 3.0"},
       {:open_api_spex, "~> 3.18"},
       {:oban, "~> 2.18"},
-      {:nimble_csv, "~> 1.2"},
       {:tz, "~> 0.28"},
       {:igniter, "~> 0.5", only: [:dev]}
     ]

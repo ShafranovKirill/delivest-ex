@@ -1,5 +1,16 @@
 import Config
 config :delivest, Oban, testing: :manual
+config :delivest, Delivest.Logs, enabled: false
+
+config :delivest, Delivest.Integrations.Frontpad, request_interval_ms: 0
+
+config :delivest, Delivest.Integrations.Zvonok,
+  public_key: "zvonok-public-key",
+  campaign_id: "123",
+  webhook_token: "zvonok-token"
+
+config :delivest, Delivest.HTTP.Client,
+  req_options: [plug: {Req.Test, Delivest.HTTP.Client}, retry: false]
 
 # Configure your database
 #

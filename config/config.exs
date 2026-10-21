@@ -10,15 +10,20 @@ import Config
 config :delivest, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10, frontpad: 10],
+  queues: [default: 10, crm: 2],
   lifeline: [rescue_after: {2, :hours}],
   pruner: [max_age: {1, :day}],
   crontab: [
-    {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker}
+    {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker},
+    {"5 * * * *", Delivest.Oms.Workers.StaleOrderWorker},
+    {"0 4 * * *", Delivest.Logs.PruneWorker},
+    {"15 * * * *", Delivest.Integrations.Crm.CatalogWorker}
   ],
   repo: Delivest.Repo
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
+config :delivest, Delivest.Logs, enabled: true, level: :info, retention_days: 14
 
 config :delivest,
   ecto_repos: [Delivest.Repo],

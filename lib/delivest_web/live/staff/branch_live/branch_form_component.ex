@@ -1,292 +1,258 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
-  alias Delivest.Identity
   use DelivestWeb, :live_component
+
+  alias Delivest.Identity
+  alias Delivest.Integrations.{Crm, Frontpad}
   alias DelivestWeb.Staff.BranchLive.{BranchForm, WorkingHoursComponent}
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   @impl true
   def update(assigns, socket) do
     socket = assign(socket, assigns)
+    changeset = BranchForm.changeset(BranchForm.for_branch(socket.assigns.branch), %{})
 
-    branch = socket.assigns.branch
-
-    form_data = if branch && branch.id, do: BranchForm.from_branch(branch), else: %BranchForm{}
-    changeset = BranchForm.changeset(form_data, %{})
-
-    {:ok,
-     socket
-     |> assign(:form, to_form(changeset))
-     |> assign_new(:show_frontpad, fn -> false end)
-     |> assign_new(:show_links, fn -> false end)
-     |> assign_new(:show_schedule, fn -> false end)
-     |> assign_new(:show_ycart, fn -> false end)}
+    {:ok, assign(socket, :form, to_form(changeset))}
   end
 
   @impl true
   def handle_event("validate", %{"branch_form" => params}, socket) do
-    base_form =
-      if socket.assigns.branch.id,
-        do: BranchForm.from_branch(socket.assigns.branch),
-        else: %BranchForm{}
-
-    current_working_hours =
-      Ecto.Changeset.get_field(socket.assigns.form.source, :working_hours) || %{}
-
-    new_working_hours =
-      Map.merge(
-        current_working_hours,
-        get_in(params, ["working_hours"]) || %{}
-      )
-
-    merged_params = Map.put(params, "working_hours", new_working_hours)
-
     changeset =
-      base_form
-      |> BranchForm.changeset(merged_params)
+      socket.assigns.branch
+      |> BranchForm.for_branch()
+      |> BranchForm.changeset(with_working_hours(params, socket))
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
-  @impl true
-  def handle_event("toggle_section", %{"section" => section}, socket) do
-    key =
-      case section do
-        "frontpad" -> :show_frontpad
-        "links" -> :show_links
-        "schedule" -> :show_schedule
-        "ycart" -> :show_ycart
-        _ -> nil
-      end
-
-    {:noreply, assign(socket, key, !socket.assigns[key])}
-  end
-
   def handle_event("save", %{"branch_form" => params}, socket) do
-    save_branch(socket, socket.assigns.action, params)
+    socket.assigns.branch
+    |> BranchForm.for_branch()
+    |> BranchForm.changeset(with_working_hours(params, socket))
+    |> save(socket)
   end
 
-  def handle_info({WorkingHoursComponent, {:working_hours_changed, working_hours}}, socket) do
-    base_form =
-      if socket.assigns.branch.id,
-        do: BranchForm.from_branch(socket.assigns.branch),
-        else: %BranchForm{}
-
-    params = %{"working_hours" => working_hours}
-
-    changeset =
-      base_form
-      |> BranchForm.changeset(params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, form: to_form(changeset), working_hours: working_hours)}
+  defp with_working_hours(params, socket) do
+    current = Ecto.Changeset.get_field(socket.assigns.form.source, :working_hours) || %{}
+    Map.put(params, "working_hours", Map.merge(current, params["working_hours"] || %{}))
   end
 
-  defp save_branch(socket, :edit, params),
-    do:
-      socket.assigns.branch
-      |> BranchForm.from_branch()
-      |> BranchForm.changeset(params)
-      |> do_save_branch(socket, :edit)
-
-  defp save_branch(socket, :new, params),
-    do:
-      %BranchForm{}
-      |> BranchForm.changeset(params)
-      |> do_save_branch(socket, :new)
-
-  defp do_save_branch(%Ecto.Changeset{valid?: true} = changeset, socket, :new) do
-    {branch_params, info_params} = BranchForm.to_params(changeset)
-
-    case Identity.create_branch(
-           socket.assigns.current_staff,
-           branch_params,
-           info_params
-         ) do
-      {:ok, branch} ->
-        notify_parent({:saved, branch})
-        {:noreply, socket}
-
-      {:error, _step, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
-    end
-  end
-
-  defp do_save_branch(%Ecto.Changeset{valid?: true} = changeset, socket, :edit) do
-    {branch_params, info_params} = BranchForm.to_params(changeset)
-
-    case Identity.update_branch(
-           socket.assigns.current_staff,
-           socket.assigns.branch,
-           branch_params,
-           info_params
-         ) do
-      {:ok, branch} ->
-        notify_parent({:saved, branch})
-        {:noreply, socket}
-
-      {:error, _step, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
-    end
-  end
-
-  defp do_save_branch(%Ecto.Changeset{valid?: false} = changeset, socket, _),
+  defp save(%Ecto.Changeset{valid?: false} = changeset, socket),
     do: {:noreply, assign(socket, form: to_form(Map.put(changeset, :action, :insert)))}
 
-  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
+  defp save(changeset, socket) do
+    {branch_params, info_params} = BranchForm.to_params(changeset)
+
+    case persist(socket.assigns, branch_params, info_params) do
+      {:ok, _branch} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Branch saved successfully"))
+         |> push_navigate(to: ~p"/staff/branches")}
+
+      {:error, _step, %Ecto.Changeset{} = error} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("Please check the highlighted fields"))
+         |> assign(form: to_form(copy_errors(changeset, error)))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
+  defp persist(%{action: :new, current_staff: staff}, branch_params, info_params),
+    do: Identity.create_branch(staff, branch_params, info_params)
+
+  defp persist(
+         %{action: :edit, current_staff: staff, branch: branch},
+         branch_params,
+         info_params
+       ),
+       do: Identity.update_branch(staff, branch, branch_params, info_params)
+
+  defp copy_errors(changeset, error) do
+    error.errors
+    |> Enum.reduce(changeset, fn {field, {message, opts}}, acc ->
+      Ecto.Changeset.add_error(acc, field, message, opts)
+    end)
+    |> Map.put(:action, :insert)
+  end
+
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  attr :description, :string, default: nil
+  slot :inner_block, required: true
+
+  defp section(assigns) do
+    ~H"""
+    <section id={@id} class="scroll-mt-24 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
+      <header class="mb-4">
+        <h2 class="text-lg font-bold">{@title}</h2>
+        <p :if={@description} class="text-sm text-base-content/60">{@description}</p>
+      </header>
+      <div class="space-y-4">{render_slot(@inner_block)}</div>
+    </section>
+    """
+  end
+
+  defp sections do
+    [
+      {"branch-general", gettext("General")},
+      {"branch-schedule", gettext("Working Hours")},
+      {"branch-links", gettext("Social Links & Messengers")},
+      {"branch-map", gettext("YCart Settings")},
+      {"branch-crm", gettext("CRM Integration")}
+    ]
+  end
 
   @impl true
   def render(assigns) do
+    assigns = assign(assigns, :sections, sections())
+
     ~H"""
-    <div class="h-full flex flex-col">
+    <div class="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <nav class="hidden lg:block">
+        <ul class="menu sticky top-24 w-full rounded-box border border-base-300 bg-base-100 p-2">
+          <li :for={{id, label} <- @sections}><a href={"##{id}"}>{label}</a></li>
+        </ul>
+      </nav>
+
       <.form
         for={@form}
         id="branch-form"
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
-        class="flex flex-col h-full"
+        class="space-y-6"
       >
-        <div class="flex-1 overflow-y-auto p-6 space-y-6">
-          <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
-          <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
-          <.input field={@form[:address]} type="text" label={gettext("Address")} />
-          <.input
-            field={@form[:delivery_time]}
-            type="number"
-            label={gettext("Delivery Time (minutes)")}
+        <.section id="branch-general" title={gettext("General")}>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
+            <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
+            <.input field={@form[:address]} type="text" label={gettext("Address")} />
+            <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
+            <.input
+              field={@form[:delivery_time]}
+              type="number"
+              label={gettext("Delivery Time (minutes)")}
+            />
+          </div>
+          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
+        </.section>
+
+        <.section id="branch-schedule" title={gettext("Working Hours")}>
+          <.live_component
+            module={WorkingHoursComponent}
+            id="working-hours-editor"
+            working_hours={Ecto.Changeset.get_field(@form.source, :working_hours) || %{}}
           />
-          <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
+        </.section>
 
-          <div class="border border-base-300 rounded-box bg-base-100">
-            <div
-              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
-              phx-click="toggle_section"
-              phx-value-section="schedule"
-              phx-target={@myself}
-            >
-              <span>{gettext("Working Hours")}</span>
-              <span class={"transition-transform duration-200 #{if @show_schedule, do: "rotate-180", else: ""}"}>
-                ▼
-              </span>
-            </div>
-            <%= if @show_schedule do %>
-              <.live_component
-                module={WorkingHoursComponent}
-                id="working-hours-editor"
-                working_hours={Ecto.Changeset.get_field(@form.source, :working_hours) || %{}}
+        <.section id="branch-links" title={gettext("Social Links & Messengers")}>
+          <div class="grid gap-4 sm:grid-cols-3">
+            <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
+            <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
+            <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
+          </div>
+        </.section>
+
+        <.section id="branch-map" title={gettext("YCart Settings")}>
+          <.inputs_for :let={ycart} field={@form[:ycart_settings]}>
+            <.input field={ycart[:enabled]} type="checkbox" label={gettext("YCart Enabled")} />
+            <div class="grid gap-4 sm:grid-cols-2">
+              <.input field={ycart[:yandex_org_id]} type="text" label={gettext("Yandex Org ID")} />
+              <.input field={ycart[:address]} type="text" label={gettext("YCart Address")} />
+              <.input
+                field={ycart[:latitude]}
+                type="number"
+                step="0.000001"
+                label={gettext("Latitude")}
               />
-            <% end %>
-          </div>
-
-          <div class="border border-base-300 rounded-box bg-base-100">
-            <div
-              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
-              phx-click="toggle_section"
-              phx-value-section="links"
-              phx-target={@myself}
-            >
-              <span>{gettext("Social Links & Messengers")}</span>
-              <span class={"transition-transform duration-200 #{if @show_links, do: "rotate-180", else: ""}"}>
-                ▼
-              </span>
+              <.input
+                field={ycart[:longitude]}
+                type="number"
+                step="0.000001"
+                label={gettext("Longitude")}
+              />
             </div>
-            <%= if @show_links do %>
-              <div class="p-4 pt-0 space-y-4 border-t border-base-200">
-                <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
-                <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
-                <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
-              </div>
-            <% end %>
-          </div>
+          </.inputs_for>
+        </.section>
 
-          <div class="border border-base-300 rounded-box bg-base-100">
-            <div
-              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
-              phx-click="toggle_section"
-              phx-value-section="ycart"
-              phx-target={@myself}
-            >
-              <span>{gettext("YCart Settings")}</span>
-              <span class={"transition-transform duration-200 #{if @show_ycart, do: "rotate-180", else: ""}"}>
-                ▼
-              </span>
-            </div>
-            <%= if @show_ycart do %>
-              <div class="p-4 pt-0 space-y-4 border-t border-base-200">
-                <.inputs_for :let={f_settings} field={@form[:ycart_settings]}>
-                  <.input
-                    field={f_settings[:enabled]}
-                    type="checkbox"
-                    label={gettext("YCart Enabled")}
-                  />
-                  <.input
-                    field={f_settings[:yandex_org_id]}
-                    type="text"
-                    label={gettext("Yandex Org ID")}
-                  />
-                  <.input
-                    field={f_settings[:latitude]}
-                    type="number"
-                    step="0.000001"
-                    label={gettext("Latitude")}
-                  />
-                  <.input
-                    field={f_settings[:longitude]}
-                    type="number"
-                    step="0.000001"
-                    label={gettext("Longitude")}
-                  />
-                  <.input
-                    field={f_settings[:address]}
-                    type="text"
-                    label={gettext("YCart Address")}
-                  />
-                </.inputs_for>
-              </div>
-            <% end %>
-          </div>
+        <.section id="branch-crm" title={gettext("CRM Integration")}>
+          <.inputs_for :let={crm} field={@form[:crm]}>
+            <.input field={crm[:enabled]} type="checkbox" label={gettext("Send orders to CRM")} />
+            <.input
+              field={crm[:provider]}
+              type="select"
+              label={gettext("CRM")}
+              prompt={gettext("Choose CRM")}
+              options={Enum.map(Crm.providers(), fn {value, label} -> {label, value} end)}
+            />
 
-          <div class="border border-base-300 rounded-box bg-base-100">
-            <div
-              class="flex justify-between items-center p-4 cursor-pointer select-none font-medium"
-              phx-click="toggle_section"
-              phx-value-section="frontpad"
-              phx-target={@myself}
+            <.inputs_for
+              :let={frontpad}
+              :if={to_string(crm[:provider].value) == "frontpad"}
+              field={crm[:frontpad]}
             >
-              <span>{gettext("Frontpad Integration Settings")}</span>
-              <span class={"transition-transform duration-200 #{if @show_frontpad, do: "rotate-180", else: ""}"}>
-                ▼
-              </span>
-            </div>
-            <%= if @show_frontpad do %>
-              <div class="p-4 pt-0 space-y-4 border-t border-base-200">
+              <div class="grid gap-4 sm:grid-cols-2">
                 <.input
-                  field={@form[:frontpad_enabled]}
-                  type="checkbox"
-                  label={gettext("Frontpad Enabled")}
-                />
-                <.input
-                  field={@form[:frontpad_api_key]}
-                  type="text"
+                  field={frontpad[:api_key]}
+                  type="password"
+                  value={frontpad[:api_key].value}
                   label={gettext("Frontpad API Key")}
                 />
+                <.input
+                  field={frontpad[:affiliate]}
+                  type="text"
+                  label={gettext("Frontpad Branch ID")}
+                />
+              </div>
 
-                <.inputs_for :let={f_settings} field={@form[:frontpad_settings]}>
-                  <.input
-                    field={f_settings[:frontpad_branch_id]}
-                    type="text"
-                    label={gettext("Frontpad Branch ID")}
-                  />
+              <div class="space-y-1">
+                <.input
+                  field={frontpad[:price_override]}
+                  type="checkbox"
+                  label={gettext("Send discounted prices to Frontpad")}
+                />
+                <p class="text-xs text-base-content/60">
+                  {gettext(
+                    "Enable only when «price change on order» is turned on for products in Frontpad. Otherwise the order discount is sent as a single amount."
+                  )}
+                </p>
+              </div>
+
+              <div class="space-y-2">
+                <p class="text-sm font-medium">{gettext("Frontpad status codes")}</p>
+                <p class="text-xs text-base-content/60">
+                  {gettext(
+                    "Codes from the Frontpad status reference. Customers see the matching status of their order."
+                  )}
+                </p>
+                <.inputs_for :let={codes} field={frontpad[:statuses]}>
+                  <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    <.input
+                      :for={status <- Frontpad.StatusCodes.statuses()}
+                      field={codes[status]}
+                      type="text"
+                      label={OrderHelpers.status_label(status)}
+                    />
+                  </div>
                 </.inputs_for>
               </div>
-            <% end %>
-          </div>
 
-          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
-        </div>
+              <div :if={frontpad[:webhook_token].value} class="space-y-1">
+                <p class="text-sm font-medium">{gettext("Webhook URL for Frontpad API settings")}</p>
+                <code class="block break-all rounded bg-base-200 p-2 text-xs">
+                  {Frontpad.webhook_url(frontpad[:webhook_token].value)}
+                </code>
+              </div>
+            </.inputs_for>
+          </.inputs_for>
+        </.section>
 
-        <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
-          <.link patch={@patch} class="btn btn-ghost">{gettext("Cancel")}</.link>
+        <div class="sticky bottom-0 z-10 -mx-1 flex justify-end gap-3 border-t border-base-300 bg-base-200/90 px-1 py-4 backdrop-blur">
+          <.link navigate={~p"/staff/branches"} class="btn btn-ghost">{gettext("Cancel")}</.link>
           <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
             {gettext("Save")}
           </button>

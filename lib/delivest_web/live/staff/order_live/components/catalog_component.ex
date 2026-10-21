@@ -3,14 +3,21 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
+
   def render_catalog(assigns) do
     ~H"""
     <div>
       <div class="p-3 border-b border-base-200 space-y-2 shrink-0 bg-base-100">
-        <form phx-change="search_products" phx-submit="search_products" class="relative w-full">
+        <form
+          id="catalog-search-form"
+          phx-change="search_products"
+          phx-submit="search_products"
+          class="relative w-full"
+        >
           <.icon
             name="hero-magnifying-glass"
-            class="absolute left-3 top-2.5 size-4 text-base-content/40"
+            class="absolute left-3 top-2.5 size-4 text-base-content/40 z-10 pointer-events-none"
           />
           <input
             type="text"
@@ -79,7 +86,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
 
                 <div class="flex items-end justify-between mt-1">
                   <span class="font-mono font-bold text-xs sm:text-sm text-base-content">
-                    {prod.price} ₽
+                    {OrderHelpers.money(prod.price)}
                   </span>
 
                   <%= if qty > 0 do %>
@@ -108,7 +115,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
           </div>
 
           <div class="flex items-center gap-2">
-            <span class="font-mono font-bold text-base">{@cart.total_amount} ₽</span>
+            <span class="font-mono font-bold text-base">{OrderHelpers.money(@cart.total_amount)}</span>
             <.icon
               name={if @mobile_cart_expanded, do: "hero-chevron-down", else: "hero-chevron-up"}
               class="size-5 text-base-content/60"
@@ -139,9 +146,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
                 <div class="flex items-center justify-between p-2 rounded-lg bg-base-200/60 text-xs">
                   <div class="flex-1 truncate pr-2">
                     <p class="font-medium truncate">{item.name}</p>
-                    <p class="text-base-content/60 font-mono">{item.price} ₽ × {item.quantity}</p>
+                    <p :if={Map.get(item, :gift)} class="text-success font-medium">
+                      {gettext("Gift × %{count}", count: item.quantity)}
+                    </p>
+                    <p :if={!Map.get(item, :gift)} class="text-base-content/60 font-mono">
+                      {item.quantity} × {OrderHelpers.money(item.price)} = {OrderHelpers.money(
+                        item.total_price
+                      )}
+                    </p>
                   </div>
-                  <div class="flex items-center gap-1 shrink-0">
+                  <div :if={!Map.get(item, :gift)} class="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       phx-click="remove_item"
@@ -194,7 +208,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
   end
 
   defp get_cart_quantity(cart, product_id) do
-    case Enum.find(cart.items, &(&1.product_id == product_id)) do
+    case Enum.find(cart.items, &(&1.product_id == product_id and !Map.get(&1, :gift, false))) do
       nil -> 0
       item -> item.quantity
     end

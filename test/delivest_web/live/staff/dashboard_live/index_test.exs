@@ -42,8 +42,42 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       assert has_element?(lv, "#dashboard-order-#{order.id}")
 
       second = Delivest.OrderFixtures.order_fixture(branch.id, price: 50)
+      refute has_element?(lv, "#dashboard-order-#{second.id}")
+
+      send(lv.pid, :reload)
       assert has_element?(lv, "#dashboard-order-#{second.id}")
       assert render(lv) =~ "500 ₽"
+    end
+  end
+
+  describe "header" do
+    setup %{conn: conn} do
+      branch = insert(:branch, name: "Main Branch")
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      insert(:staff_branch, staff: staff, branch: branch)
+
+      conn =
+        init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      %{conn: conn, branch: branch}
+    end
+
+    test "counts orders awaiting confirmation live", %{conn: conn, branch: branch} do
+      Delivest.OrderFixtures.order_fixture(branch.id, price: 100)
+      {:ok, lv, _html} = live(conn, ~p"/staff/dashboard")
+
+      assert has_element?(lv, "#header-new-orders-count", "1")
+
+      Delivest.OrderFixtures.order_fixture(branch.id, price: 100)
+      assert has_element?(lv, "#header-new-orders-count", "2")
+    end
+
+    test "log out lives in the header, not the sidebar", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/dashboard")
+
+      assert has_element?(lv, "header a[href='/staff/auth/log_out']")
+      refute has_element?(lv, "#main-sidebar a[href='/staff/auth/log_out']")
+      refute has_element?(lv, "#main-sidebar a[href='/staff/branches/select']")
     end
   end
 end

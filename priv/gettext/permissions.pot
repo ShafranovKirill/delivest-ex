@@ -22,6 +22,9 @@ msgstr ""
 msgid "stocks"
 msgstr ""
 
+msgid "promotions"
+msgstr ""
+
 msgid "clients"
 msgstr ""
 
@@ -29,6 +32,9 @@ msgid "orders"
 msgstr ""
 
 msgid "statistics"
+msgstr ""
+
+msgid "logs"
 msgstr ""
 
 msgid "create"

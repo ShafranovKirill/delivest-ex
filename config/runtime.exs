@@ -26,6 +26,13 @@ config :delivest,
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 
+if config_env() != :test do
+  config :delivest, Delivest.Integrations.Zvonok,
+    public_key: System.get_env("ZVONOK_PUBLIC_KEY"),
+    campaign_id: System.get_env("ZVONOK_CAMPAIGN_ID"),
+    webhook_token: System.get_env("ZVONOK_WEBHOOK_TOKEN")
+end
+
 client_origin = System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"
 
 config :cors_plug,
@@ -71,7 +78,7 @@ if config_env() == :prod do
   config :delivest, Delivest.Repo,
     # ssl: true,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "20"),
     # For machines with several cores, consider starting multiple pools of `pool_size`
     # pool_count: 4,
     socket_options: maybe_ipv6

@@ -36,7 +36,7 @@ defmodule Delivest.Identity.Branch do
     |> validate_length(:name, min: 2, max: 50)
     |> validate_length(:slug, min: 2, max: 20)
     |> unique_constraint(:name, name: :branches__name__uk)
-    |> unique_constraint(:slug, name: :branches__slug__uk)
+    |> unique_constraint(:slug, name: :branches__slug_uk)
     |> validate_format(:slug, slug_regex(),
       message:
         dgettext_noop(

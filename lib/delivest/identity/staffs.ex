@@ -3,6 +3,7 @@ defmodule Delivest.Identity.Staffs do
   alias Delivest.Repo
   alias Delivest.Identity.Branch
   alias Delivest.Identity.{Staff, Acl, StaffBranch}
+  alias Delivest.Audit
 
   @spec list_staff(Delivest.Identity.Staff.t(), map(), keyword()) ::
           {:ok, {[Staff.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
@@ -32,6 +33,12 @@ defmodule Delivest.Identity.Staffs do
   @spec create_staff(Staff.t(), map()) ::
           {:ok, Staff.t()} | {:error, :forbidden} | {:error, Ecto.Changeset.t()}
   def create_staff(staff, attrs) do
+    staff
+    |> do_create_staff(attrs)
+    |> Audit.track(staff, "staff.created")
+  end
+
+  defp do_create_staff(staff, attrs) do
     if Acl.can?(staff, "staff.create") do
       insert_staff_with_branches(attrs)
     else
@@ -60,6 +67,12 @@ defmodule Delivest.Identity.Staffs do
         ) :: {:ok, Staff.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
 
   def update_staff(staff, %Staff{} = updatable_staff, attrs) do
+    staff
+    |> do_update_staff(updatable_staff, attrs)
+    |> Audit.track(staff, "staff.updated")
+  end
+
+  defp do_update_staff(staff, %Staff{} = updatable_staff, attrs) do
     if Acl.can?(staff, "staff.update") do
       updatable_staff
       |> Repo.preload(:branches)
@@ -104,6 +117,12 @@ defmodule Delivest.Identity.Staffs do
           | {:error, Ecto.Changeset.t()}
           | {:error, :forbidden}
   def change_password(staff, %Staff{} = updatable_staff, attrs) do
+    staff
+    |> do_change_password(updatable_staff, attrs)
+    |> Audit.track(staff, "staff.password_changed")
+  end
+
+  defp do_change_password(staff, %Staff{} = updatable_staff, attrs) do
     if Acl.can?(staff, "admin") do
       with {:ok, updated_staff} <-
              updatable_staff |> Staff.password_changeset(attrs) |> Repo.update() do
@@ -142,6 +161,12 @@ defmodule Delivest.Identity.Staffs do
   @spec soft_delete_staff(Staff.t(), Staff.t()) ::
           {:ok, Staff.t()} | {:error, :forbidden} | {:error, Ecto.Changeset.t()}
   def soft_delete_staff(staff, %Staff{} = removable_staff) do
+    staff
+    |> do_soft_delete_staff(removable_staff)
+    |> Audit.track(staff, "staff.deleted")
+  end
+
+  defp do_soft_delete_staff(staff, %Staff{} = removable_staff) do
     if Acl.can?(staff, "staff.delete") do
       with {:ok, deleted_staff} <-
              removable_staff

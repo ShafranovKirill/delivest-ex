@@ -1,5 +1,5 @@
 defmodule Delivest.Net do
-  alias Delivest.Net.{Categories, Catalogs, Products, Stocks}
+  alias Delivest.Net.{Catalogs, Categories, ProductCopier, Products, Stocks}
 
   defdelegate list_category_for_branch(branch_id, opts \\ []), to: Categories
   defdelegate list_staff_categories_for_branch(staff, branch_id, opts \\ []), to: Categories
@@ -14,12 +14,21 @@ defmodule Delivest.Net do
     to: Products
 
   defdelegate create_product(staff, branch_id, attrs), to: Products
+  defdelegate import_products(staff, branch_id, rows), to: Products
+  defdelegate product_available_in_branch?(product_id, branch_id), to: Products
   defdelegate update_product(staff, product, attrs), to: Products
   defdelegate soft_delete_product(staff, product), to: Products
   defdelegate get_product(id, opts), to: Products
   defdelegate list_products_by_ids(ids, opts \\ []), to: Products
+  defdelegate list_branch_products(branch_id), to: Products
+
+  defdelegate copy_products(staff, selection, from_branch_id, to_branch_id),
+    to: ProductCopier,
+    as: :copy
+
   defdelegate get_branch_product_by_slug(branch_id, slug), to: Products
   defdelegate list_product_options_for_branch(branch_id), to: Products
+  defdelegate list_branch_products_by_slugs(branch_id, slugs), to: Products
 
   defdelegate list_staff_stocks_for_branch(staff, branch_id), to: Stocks
   defdelegate list_stocks_for_branch(branch_id), to: Stocks

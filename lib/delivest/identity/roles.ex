@@ -2,6 +2,7 @@ defmodule Delivest.Identity.Roles do
   alias Delivest.Repo
   alias Delivest.Identity.{Role, Staff, Acl}
   import Ecto.Query
+  alias Delivest.Audit
 
   @spec list_all_roles(map()) :: [Role.t()] | {:error, :forbidden}
   def list_all_roles(user) do
@@ -36,6 +37,12 @@ defmodule Delivest.Identity.Roles do
   @spec create_role(map(), map()) ::
           {:ok, Role.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def create_role(user, attrs) do
+    user
+    |> do_create_role(attrs)
+    |> Audit.track(user, "role.created")
+  end
+
+  defp do_create_role(user, attrs) do
     if Acl.can?(user, "roles.create") do
       system_create_role(attrs)
     else
@@ -52,6 +59,12 @@ defmodule Delivest.Identity.Roles do
 
   @spec update_role(map(), Role.t(), map()) :: {:ok, Role.t()} | {:error, Ecto.Changeset.t()}
   def update_role(user, %Role{} = role, attrs) do
+    user
+    |> do_update_role(role, attrs)
+    |> Audit.track(user, "role.updated")
+  end
+
+  defp do_update_role(user, %Role{} = role, attrs) do
     if Acl.can?(user, "roles.update") do
       role
       |> Role.changeset(attrs)
@@ -77,6 +90,12 @@ defmodule Delivest.Identity.Roles do
   end
 
   def delete_role(user, %Role{} = role) do
+    user
+    |> do_delete_role(role)
+    |> Audit.track(user, "role.deleted")
+  end
+
+  defp do_delete_role(user, %Role{} = role) do
     if Acl.can?(user, "roles.delete") do
       role
       |> role_delete_changeset()

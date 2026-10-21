@@ -2,6 +2,7 @@ defmodule Delivest.Identity.Clients do
   import Ecto.Query
   alias Delivest.{Identity, Repo}
   alias Delivest.Identity.Client
+  alias Delivest.Audit
 
   @spec list_clients(map(), map()) ::
           {:ok, {[Client.t()], Flop.Meta.t()}} | {:error, Flop.Meta.t()} | {:error, :forbidden}
@@ -43,16 +44,23 @@ defmodule Delivest.Identity.Clients do
     end
   end
 
-  @spec create_client(map()) :: {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
-  def create_client(attrs) do
+  @spec create_client(map(), term()) :: {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
+  def create_client(attrs, actor \\ :system) do
     %Client{}
     |> Client.changeset(attrs)
     |> Repo.insert()
+    |> Audit.track(actor, "client.created")
   end
 
   @spec update_client(map(), Client.t(), map()) ::
           {:ok, Client.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def update_client(staff, %Client{} = client, attrs) do
+    staff
+    |> do_update_client(client, attrs)
+    |> Audit.track(staff, "client.updated")
+  end
+
+  defp do_update_client(staff, %Client{} = client, attrs) do
     if Identity.can?(staff, "clients.update") do
       client
       |> Client.changeset(attrs)
@@ -65,6 +73,12 @@ defmodule Delivest.Identity.Clients do
   @spec soft_delete_client(map(), Client.t()) ::
           {:ok, Client.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def soft_delete_client(staff, %Client{} = client) do
+    staff
+    |> do_soft_delete_client(client)
+    |> Audit.track(staff, "client.deleted")
+  end
+
+  defp do_soft_delete_client(staff, %Client{} = client) do
     if Identity.can?(staff, "clients.delete") do
       client
       |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
@@ -109,6 +123,11 @@ defmodule Delivest.Identity.Clients do
     |> Repo.all()
   end
 
+  def client_blocked?(nil), do: false
+
+  def client_blocked?(client_id),
+    do: Repo.exists?(from(c in Client, where: c.id == ^client_id and c.status == :blocked))
+
   def resolve_client(attrs, opts \\ []) do
     client_id = attrs["client_id"]
     phone = attrs["customer_phone"]
@@ -129,22 +148,34 @@ defmodule Delivest.Identity.Clients do
     end
   end
 
-  defp find_or_create_client(phone, attrs, opts) do
-    if Keyword.get(opts, :update_existing, true) do
-      get_or_create_client_by_phone(phone, attrs)
-    else
-      case get_active_client_by_phone(phone) do
-        %Client{} = client -> {:ok, client}
-        nil -> create_client(Map.put(attrs, :phone, phone))
-      end
+  @spec fetch_or_create_by_phone(String.t(), map()) ::
+          {:ok, Client.t()} | {:error, Ecto.Changeset.t()}
+  def fetch_or_create_by_phone(phone, attrs \\ %{}) do
+    case get_active_client_by_phone(phone) do
+      %Client{} = client -> {:ok, client}
+      nil -> create_client(Map.put(attrs, :phone, phone))
     end
+  end
+
+  @spec get_active_client(String.t()) :: Client.t() | nil
+  def get_active_client(id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, id} -> Client |> where([c], is_nil(c.deleted_at)) |> Repo.get(id)
+      :error -> nil
+    end
+  end
+
+  defp find_or_create_client(phone, attrs, opts) do
+    if Keyword.get(opts, :update_existing, true),
+      do: get_or_create_client_by_phone(phone, attrs),
+      else: fetch_or_create_by_phone(phone, attrs)
   end
 
   defp present?(nil), do: false
   defp present?(val) when is_binary(val), do: String.trim(val) != ""
   defp present?(_), do: false
 
-  defp get_active_client_by_phone(phone) do
+  def get_active_client_by_phone(phone) do
     Client
     |> where([c], c.phone == ^phone)
     |> where([c], is_nil(c.deleted_at))

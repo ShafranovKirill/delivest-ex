@@ -74,7 +74,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
+    <div class="space-y-6 py-4 sm:p-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
           <.link navigate={~p"/staff/clients"} class="btn btn-ghost btn-sm btn-square shrink-0">
@@ -137,32 +137,42 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-3">
-          <h2 class="font-bold">{gettext("Favourite products")}</h2>
-          <ul :if={@summary.favourites != []} class="space-y-2">
-            <li
-              :for={item <- @summary.favourites}
-              class="flex items-center justify-between gap-3 text-sm"
-            >
-              <span class="truncate">{item.title}</span>
-              <span class="badge badge-ghost badge-sm shrink-0">× {item.quantity}</span>
-            </li>
-          </ul>
-          <p :if={@summary.favourites == []} class="text-sm text-base-content/50">
-            {gettext("No orders yet")}
-          </p>
+        <div class="space-y-6">
+          <.live_component
+            :if={@active_branch_id && Identity.can?(@current_staff, "promotions.update")}
+            module={DelivestWeb.Staff.ClientLive.ClientCodesComponent}
+            id="client-codes"
+            client={@client}
+            branch_id={@active_branch_id}
+            current_staff={@current_staff}
+          />
+          <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-3">
+            <h2 class="font-bold">{gettext("Favourite products")}</h2>
+            <ul :if={@summary.favourites != []} class="space-y-2">
+              <li
+                :for={item <- @summary.favourites}
+                class="flex items-center justify-between gap-3 text-sm"
+              >
+                <span class="truncate">{item.title}</span>
+                <span class="badge badge-ghost badge-sm shrink-0">× {item.quantity}</span>
+              </li>
+            </ul>
+            <p :if={@summary.favourites == []} class="text-sm text-base-content/50">
+              {gettext("No orders yet")}
+            </p>
 
-          <div class="divider my-1"></div>
-          <dl class="text-sm space-y-1.5">
-            <div class="flex justify-between gap-3">
-              <dt class="text-base-content/60">{gettext("Client since")}</dt>
-              <dd>{OrderHelpers.local_datetime(@client.inserted_at)}</dd>
-            </div>
-            <div class="flex justify-between gap-3">
-              <dt class="text-base-content/60">{gettext("First order")}</dt>
-              <dd>{OrderHelpers.local_datetime(@summary.first_order_at)}</dd>
-            </div>
-          </dl>
+            <div class="divider my-1"></div>
+            <dl class="text-sm space-y-1.5">
+              <div class="flex justify-between gap-3">
+                <dt class="text-base-content/60">{gettext("Client since")}</dt>
+                <dd>{OrderHelpers.local_datetime(@client.inserted_at)}</dd>
+              </div>
+              <div class="flex justify-between gap-3">
+                <dt class="text-base-content/60">{gettext("First order")}</dt>
+                <dd>{OrderHelpers.local_datetime(@summary.first_order_at)}</dd>
+              </div>
+            </dl>
+          </div>
         </div>
 
         <div class="lg:col-span-2 bg-base-100 rounded-box border border-base-200 shadow-sm">
@@ -224,6 +234,12 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                     </span>
                   </li>
                 </ul>
+                <p :if={order.promotions != []} class="text-sm text-success">
+                  <.icon name="hero-receipt-percent" class="size-4" />
+                  {Enum.map_join(order.promotions, ", ", &(&1.code || &1.name))} · −{OrderHelpers.money(
+                    order.discount_amount
+                  )}
+                </p>
                 <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span class="text-base-content/60">
                     {gettext("Payment")}: {OrderHelpers.payment_label(order.payment_method)}

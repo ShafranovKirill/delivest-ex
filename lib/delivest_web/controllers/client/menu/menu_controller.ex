@@ -2,7 +2,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   use DelivestWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Delivest.Net
+  alias Delivest.{Net, Promo}
   alias DelivestWeb.Helpers.ApiError
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias DelivestWeb.Schemas.MenuSchemas.MenuResponse
@@ -31,7 +31,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   def index(conn, %{"branch_id" => branch_id}) do
     case Net.get_menu_for_branch(branch_id) do
       {:ok, menu} ->
-        render(conn, :index, menu: menu)
+        render(conn, :index, menu: Promo.overlay_menu(menu, branch_id))
 
       {:error, _reason} ->
         ApiError.send_error(conn, :bad_request, :bad_request, "Failed to fetch menu")

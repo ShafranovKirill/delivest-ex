@@ -116,20 +116,31 @@ defmodule Delivest.Identity.BranchesTest do
       assert branch.id != nil
     end
 
-    test "should persist frontpad integration fields in branch info", %{admin: admin} do
+    test "should persist crm integration settings in branch info", %{admin: admin} do
       attrs = %{name: "Frontpad Branch", slug: "frontpad-branch"}
 
       info_attrs = %{
-        frontpad_api_key: "frontpad-secret-key",
-        frontpad_enabled: true,
-        frontpad_settings: %{frontpad_branch_id: "frontpad-branch-123"}
+        crm: %{
+          enabled: true,
+          provider: "frontpad",
+          frontpad: %{api_key: "frontpad-secret-key", affiliate: "frontpad-branch-123"}
+        }
       }
 
       assert {:ok, %Branch{} = branch} = Branches.create_branch(admin, attrs, info_attrs)
-      assert branch.info.frontpad_api_key == "frontpad-secret-key"
-      assert branch.info.frontpad_enabled == true
+      assert branch.info.crm.enabled
+      assert branch.info.crm.provider == :frontpad
+      assert branch.info.crm.frontpad.api_key == "frontpad-secret-key"
+      assert branch.info.crm.frontpad.affiliate == "frontpad-branch-123"
+    end
 
-      assert branch.info.frontpad_settings.frontpad_branch_id == "frontpad-branch-123"
+    test "enabled crm requires credentials of the chosen provider", %{admin: admin} do
+      info_attrs = %{crm: %{enabled: true, provider: "frontpad", frontpad: %{}}}
+
+      assert {:error, :branch_info, changeset} =
+               Branches.create_branch(admin, %{name: "No Key", slug: "no-key"}, info_attrs)
+
+      assert %{crm: %{frontpad: %{api_key: ["can't be blank"]}}} = errors_on(changeset)
     end
 
     test "should persist ycart integration fields in branch info", %{admin: admin} do

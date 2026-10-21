@@ -6,6 +6,8 @@ defmodule Delivest.Oms.CartItem do
 
   @type t :: %__MODULE__{}
 
+  @max_quantity 99
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
@@ -18,11 +20,13 @@ defmodule Delivest.Oms.CartItem do
     timestamps(type: :utc_datetime)
   end
 
+  def max_quantity, do: @max_quantity
+
   def changeset(cart_item, attrs) do
     cart_item
     |> cast(attrs, [:cart_id, :product_id, :quantity])
     |> validate_required([:cart_id, :product_id, :quantity])
-    |> validate_number(:quantity, greater_than: 0)
+    |> validate_number(:quantity, greater_than: 0, less_than_or_equal_to: @max_quantity)
     |> foreign_key_constraint(:cart_id)
     |> unique_constraint([:cart_id, :product_id], name: :cart_items_cart_id_product_id_index)
   end

@@ -2,10 +2,10 @@ defmodule Delivest.Oms.Carts do
   import Ecto.Query, warn: false
 
   alias Delivest.{Repo, Net}
-  alias Delivest.Oms.{Cart, CartItem, CartView}
+  alias Delivest.Oms.{Cart, CartItem, CartPricing, CartView}
 
   @cache_store :cart_cache
-  @cache_ttl :timer.hours(24)
+  @cache_ttl :timer.hours(2)
 
   def get_or_create_cart(opts) when is_list(opts) do
     case get_cart(opts) do
@@ -53,8 +53,6 @@ defmodule Delivest.Oms.Carts do
     end)
   end
 
-  @max_item_quantity 99
-
   def owned_by_session?(_cart_id, nil), do: false
 
   def owned_by_session?(cart_id, session_id) do
@@ -68,69 +66,44 @@ defmodule Delivest.Oms.Carts do
   end
 
   def add_item(cart_id, product_id, quantity \\ 1) when is_integer(quantity) and quantity > 0 do
-    with :ok <- ensure_product_available(cart_id, product_id),
-         :ok <- ensure_quantity_limit(cart_id, product_id, quantity) do
-      insert_or_increment_item(cart_id, product_id, quantity)
+    with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found},
+         {:ok, product_uuid} <- available_product(product_id, cart.branch_id),
+         {:ok, item} <- upsert_item(cart.id, product_uuid, quantity) do
+      {:ok, item, recalculate_and_cache(cart)}
     end
   end
 
-  defp ensure_product_available(cart_id, product_id) do
-    with {:ok, product_uuid} <- Ecto.UUID.cast(product_id),
-         %Cart{} = cart <- Repo.get(Cart, cart_id),
-         %{} <- Map.get(Net.list_products_by_ids([product_uuid]), product_uuid),
-         true <- product_in_branch?(product_uuid, cart.branch_id) do
-      :ok
+  defp available_product(product_id, branch_id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(product_id),
+         true <- Net.product_available_in_branch?(uuid, branch_id) do
+      {:ok, uuid}
     else
       _ -> {:error, :product_unavailable}
     end
   end
 
-  defp product_in_branch?(_product_id, nil), do: true
+  defp upsert_item(cart_id, product_id, quantity) do
+    now = DateTime.utc_now(:second)
 
-  defp product_in_branch?(product_id, branch_id) do
-    branch_id in Delivest.Relations.list_source_ids("Product", product_id, "Branch")
-  end
-
-  defp ensure_quantity_limit(cart_id, product_id, quantity) do
-    current =
-      Repo.one(
-        from(ci in CartItem,
-          where: ci.cart_id == ^cart_id and ci.product_id == ^product_id,
-          select: ci.quantity
-        )
-      ) || 0
-
-    if current + quantity > @max_item_quantity,
-      do: {:error, :quantity_limit_exceeded},
-      else: :ok
-  end
-
-  defp insert_or_increment_item(cart_id, product_id, quantity) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-
-    changeset =
-      %CartItem{}
-      |> CartItem.changeset(%{
-        cart_id: cart_id,
-        product_id: product_id,
-        quantity: quantity
-      })
-
-    result =
-      Repo.insert(
-        changeset,
-        on_conflict: [inc: [quantity: quantity], set: [updated_at: now]],
-        conflict_target: [:cart_id, :product_id],
-        returning: true
+    increment =
+      from(ci in CartItem,
+        where: ci.quantity + ^quantity <= ^CartItem.max_quantity(),
+        update: [inc: [quantity: ^quantity], set: [updated_at: ^now]]
       )
 
-    case result do
-      {:ok, item} ->
-        cart_view = refresh_and_cache(cart_id)
-        {:ok, item, cart_view}
+    %CartItem{}
+    |> CartItem.changeset(%{cart_id: cart_id, product_id: product_id, quantity: quantity})
+    |> Repo.insert(
+      on_conflict: increment,
+      conflict_target: [:cart_id, :product_id],
+      stale_error_field: :quantity
+    )
+    |> case do
+      {:error, %Ecto.Changeset{errors: [quantity: _error]}} ->
+        {:error, :quantity_limit_exceeded}
 
-      {:error, changeset} ->
-        {:error, changeset}
+      result ->
+        result
     end
   end
 
@@ -248,10 +221,30 @@ defmodule Delivest.Oms.Carts do
       session_id: cart.session_id,
       staff_id: cart.staff_id,
       branch_id: cart.branch_id,
+      client_id: cart.client_id,
+      fulfillment_type: cart.fulfillment_type,
+      promo_code: cart.promo_code,
       items: Enum.reverse(view_items),
       total_quantity: total_qty,
+      subtotal_amount: total_amt,
       total_amount: total_amt
     }
+  end
+
+  def update_context(cart_id, attrs) do
+    case Repo.get(Cart, cart_id) do
+      %Cart{} = cart ->
+        cart
+        |> Cart.context_changeset(attrs)
+        |> Repo.update()
+        |> case do
+          {:ok, updated} -> {:ok, recalculate_and_cache(updated)}
+          error -> error
+        end
+
+      nil ->
+        {:error, :cart_not_found}
+    end
   end
 
   def detach_cart(%CartView{id: cart_id}) do
@@ -284,7 +277,7 @@ defmodule Delivest.Oms.Carts do
       fetch_and_recalculate(cart_id)
     else
       case Cachex.get(@cache_store, cart_id) do
-        {:ok, %CartView{} = cached_view} -> cached_view
+        {:ok, %CartView{} = cached_view} -> CartPricing.apply(cached_view)
         _ -> fetch_and_recalculate(cart_id)
       end
     end
@@ -304,7 +297,7 @@ defmodule Delivest.Oms.Carts do
   defp recalculate_and_cache(%Cart{} = cart) do
     cart_view = build_cart_view(cart)
     Cachex.put(@cache_store, cart.id, cart_view, ttl: @cache_ttl)
-    cart_view
+    CartPricing.apply(cart_view)
   end
 
   defp fetch_raw_cart(opts) do

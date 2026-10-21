@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias Delivest.Net.Product
   alias Delivest.Net.Category
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
-  alias DelivestWeb.Staff.ProductLive.ImportComponent
+  alias DelivestWeb.Staff.ProductLive.CopyComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
@@ -26,7 +26,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        categories: categories,
        search: "",
        selected_category_id: nil,
-       selected_status: nil
+       selected_status: nil,
+       selected_ids: [],
+       copy_open: false
      )
      |> stream(:products, [])}
   end
@@ -47,6 +49,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           socket
           |> assign(
             meta: meta,
+            selected_ids: [],
             search: Map.get(params, "search", ""),
             selected_category_id: Flop.Filter.get_value(meta.flop.filters, :category_id),
             selected_status: Flop.Filter.get_value(meta.flop.filters, :is_active)
@@ -112,6 +115,15 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
+  def handle_event("select_products", params, socket) do
+    {:noreply, assign(socket, selected_ids: Map.get(params, "ids", []))}
+  end
+
+  def handle_event("open_copy", _params, socket), do: {:noreply, assign(socket, copy_open: true)}
+
+  def handle_event("close_copy", _params, socket),
+    do: {:noreply, assign(socket, copy_open: false)}
+
   def handle_event("filter", params, socket) do
     search = params["search"]
     category_id = params["category_id"]
@@ -149,16 +161,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        |> put_flash(:error, gettext("You don't have permission to delete products."))
        |> push_patch(to: ~p"/staff/products")}
     end
-  end
-
-  @impl true
-  def handle_event("open_import_modal", _params, socket) do
-    {:noreply, assign(socket, show_import_modal: true)}
-  end
-
-  @impl true
-  def handle_event("close_import_modal", _params, socket) do
-    {:noreply, assign(socket, show_import_modal: false)}
   end
 
   def handle_event("confirm_delete", _, %{assigns: %{product_to_delete: product}} = socket) do
@@ -204,14 +206,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
-  def handle_info({ImportComponent, {:queued}}, socket) do
+  def handle_info({CopyComponent, {:copied, count}}, socket) do
     {:noreply,
      socket
-     |> assign(show_import_modal: false)
-     |> put_flash(
-       :info,
-       gettext("Import task started in the background. Products will appear shortly.")
-     )}
+     |> assign(copy_open: false)
+     |> put_flash(:info, gettext("Products copied: %{count}", count: count))}
   end
 
   @impl true
@@ -219,31 +218,20 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, results}},
         socket
       ) do
-    successes =
-      Enum.filter(results, fn
-        {:ok, {:ok, _file}} -> true
-        _ -> false
-      end)
-
-    case successes do
-      [{:ok, {:ok, media_file}} | _] ->
-        current_staff = socket.assigns.current_staff
-        branch_id = socket.assigns.branch_id
-
-        %{media_file_id: media_file.id, staff_id: current_staff.id, branch_id: branch_id}
-        |> Delivest.Net.Products.ProductImportWorker.new()
-        |> Oban.insert()
+    case Enum.find(results, &match?({:ok, _file}, &1)) do
+      {:ok, media_file} ->
+        send_update(ProductFormComponent,
+          id: (socket.assigns[:product] && socket.assigns.product.id) || :new,
+          uploaded_media: media_file
+        )
 
         {:noreply,
          socket
-         |> assign(show_import_modal: false)
-         |> put_flash(
-           :info,
-           gettext("Import task started in the background. Products will appear shortly.")
-         )}
+         |> assign(show_upload_modal: false)
+         |> put_flash(:info, gettext("Image uploaded successfully"))}
 
       _ ->
-        {:noreply, socket}
+        {:noreply, put_flash(socket, :error, gettext("Failed to upload image"))}
     end
   end
 
@@ -333,22 +321,32 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Products")}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Manage branch products, prices, and categories.")}
-          </p>
-        </div>
-        <div class="flex gap-2">
+    <div class="space-y-6 py-4 sm:p-6">
+      <.page_header
+        title={gettext("Products")}
+        subtitle={gettext("Manage branch products, prices, and categories.")}
+      >
+        <:actions>
           <.button
-            phx-click="open_import_modal"
+            :if={Identity.can?(@current_staff, "products.create")}
+            phx-click="open_copy"
             class="btn btn-outline"
           >
-            <.icon name="hero-document-arrow-up" class="size-5 mr-1" />
-            {gettext("Bulk import")}
+            <.icon name="hero-document-duplicate" class="size-5 mr-1" />
+            {gettext("Copy to branch")}
+            <span :if={@selected_ids != []} class="badge badge-sm badge-primary">
+              {length(@selected_ids)}
+            </span>
           </.button>
+
+          <.link
+            :if={Identity.can?(@current_staff, "products.create")}
+            navigate={~p"/staff/products/bulk"}
+            class="btn btn-outline"
+          >
+            <.icon name="hero-table-cells" class="size-5 mr-1" />
+            {gettext("Bulk add")}
+          </.link>
 
           <.button
             :if={Identity.can?(@current_staff, "products.create")}
@@ -358,11 +356,12 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             <.icon name="hero-plus" class="size-5" />
             {gettext("Create Product")}
           </.button>
-        </div>
-      </div>
+        </:actions>
+      </.page_header>
 
       <.form
         for={nil}
+        id="products-filter"
         phx-change="filter"
         class="flex gap-4 items-center justify-between flex-wrap w-full"
       >
@@ -399,7 +398,20 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
       <% path_fn = fn overrides -> ~p"/staff/products?#{build_query_params(assigns, overrides)}" end %>
 
+      <form id="product-selection" phx-change="select_products"></form>
+
       <.table id="products" rows={@streams.products} meta={@meta} path_fn={path_fn}>
+        <:col :let={{_id, prod}} label="">
+          <input
+            type="checkbox"
+            name="ids[]"
+            value={prod.id}
+            form="product-selection"
+            class="checkbox checkbox-sm"
+            aria-label={gettext("Select %{name}", name: prod.name)}
+          />
+        </:col>
+
         <:col :let={{_id, prod}} label={gettext("Name")} sort="name">
           <span class="font-bold">{prod.name}</span>
         </:col>
@@ -409,15 +421,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Price")} sort="price">
-          <div class="font-mono flex items-center gap-1.5">
-            <%= if prod.old_price && prod.old_price != "" do %>
-              <span class="line-through text-xs opacity-50">{prod.old_price}</span>
-            <% end %>
-            <span>{prod.price}</span>
-          </div>
+          <div class="font-mono">{prod.price}</div>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Quantity")}>
+        <:col :let={{_id, prod}} label={gettext("Quantity")} secondary>
           <span class="font-mono">
             <%= if prod.quantity do %>
               {prod.quantity} {gettext("pcs")}
@@ -427,7 +434,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </span>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Weight")}>
+        <:col :let={{_id, prod}} label={gettext("Weight")} secondary>
           <span class="font-mono">
             <%= if prod.weight do %>
               {prod.weight} {gettext("g")}
@@ -447,7 +454,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Description")}>
+        <:col :let={{_id, prod}} label={gettext("Description")} secondary>
           <%= if prod.description && prod.description != "" do %>
             <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
           <% else %>
@@ -455,7 +462,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Media")}>
+        <:col :let={{_id, prod}} label={gettext("Media")} secondary>
           <%= if prod.media_id do %>
             <span class="text-xs badge badge-outline whitespace-nowrap">{gettext("Has photo")}</span>
           <% else %>
@@ -463,7 +470,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("External ID")}>
+        <:col :let={{_id, prod}} label={gettext("External ID")} secondary>
           <%= if prod.external_id && prod.external_id != "" do %>
             <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
           <% else %>
@@ -471,7 +478,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <% end %>
         </:col>
 
-        <:col :let={{_id, prod}} label={gettext("Created At")} sort="inserted_at">
+        <:col :let={{_id, prod}} label={gettext("Created At")} sort="inserted_at" secondary>
           <span class="text-sm opacity-60">{Calendar.strftime(prod.inserted_at, "%d.%m.%Y")}</span>
         </:col>
 
@@ -499,6 +506,15 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       <div class="flex justify-end">
         <.pagination meta={@meta} path_fn={path_fn} />
       </div>
+
+      <.live_component
+        module={CopyComponent}
+        id="copy-products"
+        show={@copy_open}
+        branch_id={@branch_id}
+        selected_ids={@selected_ids}
+        current_staff={@current_staff}
+      />
 
       <.slide_over
         id="product-slideover"
@@ -528,19 +544,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           context="product"
           is_private={false}
         />
-      <% end %>
-
-      <%= if assigns[:show_import_modal] do %>
-        <.modal id="import-products-modal" show={true} on_cancel={JS.push("close_import_modal")}>
-          <div class="p-2">
-            <.live_component
-              module={DelivestWeb.Staff.ProductLive.ImportComponent}
-              id="product-import-modal-component"
-              current_staff={@current_staff}
-              branch_id={@branch_id}
-            />
-          </div>
-        </.modal>
       <% end %>
 
       <.modal

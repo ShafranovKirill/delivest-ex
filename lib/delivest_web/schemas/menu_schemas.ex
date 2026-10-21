@@ -11,10 +11,10 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
         id: %Schema{type: :string, format: :uuid, example: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"},
         name: %Schema{type: :string, example: "Пипперони"},
         old_price: %Schema{
-          type: :string,
+          type: :integer,
           nullable: true,
-          example: "690",
-          description: "Старая цена до скидки"
+          example: 690,
+          description: "Цена без скидки, если на товар действует акция; `price` — цена со скидкой"
         },
         price: %Schema{
           type: :integer,

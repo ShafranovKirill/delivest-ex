@@ -2,9 +2,12 @@ defmodule DelivestWeb.Client.Cart.CartController do
   use DelivestWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  alias Delivest.Oms
   alias Delivest.Oms.Carts
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
-  alias DelivestWeb.Schemas.CartSchemas.CartResponse
+
+  alias DelivestWeb.Schemas.CartSchemas.{CartContextRequest, CartResponse, PromoCodeRequest}
+
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias OpenApiSpex.Schema
 
@@ -35,12 +38,96 @@ defmodule DelivestWeb.Client.Cart.CartController do
   def show(conn, params) do
     cart_opts = build_cart_opts(conn, params)
 
-    case Carts.get_or_create_cart(cart_opts) do
-      {:ok, cart_view} ->
-        render(conn, :show, cart: cart_view)
-
+    with {:ok, cart_view} <- Carts.get_or_create_cart(cart_opts),
+         {:ok, cart_view} <- Oms.bind_cart_client(cart_view, current_client_id(conn)) do
+      render(conn, :show, cart: cart_view)
+    else
       {:error, _changeset} ->
         ApiError.send_error(conn, :unprocessable_entity, :bad_request, "Failed to create cart")
+    end
+  end
+
+  operation(:apply_promo_code,
+    summary: "Применить промокод",
+    description:
+      "Проверяет промокод и прикрепляет его к корзине. Если условия акции ещё не выполнены, " <>
+        "код сохраняется со статусом `pending` и применится автоматически, когда условия выполнятся.",
+    tags: ["Cart"],
+    parameters: [
+      cart_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true]
+    ],
+    request_body: {"Промокод", "application/json", PromoCodeRequest},
+    responses: [
+      ok: {"Обновлённая корзина", "application/json", CartResponse},
+      unprocessable_entity:
+        {"Промокод не может быть применён", "application/json", ErrorResponse},
+      not_found: {"Корзина не найдена", "application/json", ErrorResponse},
+      too_many_requests: {"Слишком много попыток", "application/json", ErrorResponse}
+    ]
+  )
+
+  def apply_promo_code(conn, %{"cart_id" => cart_id} = params) do
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, cart_view} <- Oms.apply_promo_code(cart_id, params["code"]) do
+      render(conn, :show, cart: cart_view)
+    else
+      {:error, {:promo, reason}} -> promo_error(conn, reason)
+      _ -> cart_not_found(conn)
+    end
+  end
+
+  operation(:remove_promo_code,
+    summary: "Убрать промокод",
+    tags: ["Cart"],
+    parameters: [
+      cart_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true]
+    ],
+    responses: [
+      ok: {"Обновлённая корзина", "application/json", CartResponse},
+      not_found: {"Корзина не найдена", "application/json", ErrorResponse}
+    ]
+  )
+
+  def remove_promo_code(conn, %{"cart_id" => cart_id}) do
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, cart_view} <- Oms.remove_promo_code(cart_id) do
+      render(conn, :show, cart: cart_view)
+    else
+      _ -> cart_not_found(conn)
+    end
+  end
+
+  operation(:update_context,
+    summary: "Обновить способ получения",
+    description: "Способ получения влияет на условия акций, поэтому корзина пересчитывается.",
+    tags: ["Cart"],
+    parameters: [
+      cart_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true]
+    ],
+    request_body: {"Контекст корзины", "application/json", CartContextRequest},
+    responses: [
+      ok: {"Обновлённая корзина", "application/json", CartResponse},
+      unprocessable_entity: {"Некорректный способ получения", "application/json", ErrorResponse},
+      not_found: {"Корзина не найдена", "application/json", ErrorResponse}
+    ]
+  )
+
+  def update_context(conn, %{"cart_id" => cart_id} = params) do
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, cart_view} <- Oms.set_cart_fulfillment(cart_id, params["fulfillment_type"]) do
+      render(conn, :show, cart: cart_view)
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :validation_failed,
+          "Validation failed",
+          ApiError.changeset_errors(changeset)
+        )
+
+      _ ->
+        cart_not_found(conn)
     end
   end
 
@@ -194,6 +281,14 @@ defmodule DelivestWeb.Client.Cart.CartController do
   defp cart_not_found(conn) do
     ApiError.send_error(conn, :not_found, :cart_not_found, "Cart not found")
   end
+
+  defp promo_error(conn, reason) do
+    code = "promo_#{reason}"
+    ApiError.send_error(conn, :unprocessable_entity, code, Phoenix.Naming.humanize(code))
+  end
+
+  defp current_client_id(%{assigns: %{current_client: %{id: id}}}), do: id
+  defp current_client_id(_conn), do: nil
 
   defp build_cart_opts(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")

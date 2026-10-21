@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.DashboardLive.Index do
   use DelivestWeb, :live_view
 
+  alias Delivest.Oms.OrderStatus
+
   alias Delivest.{Analytics, Identity, LocalTime}
   alias Delivest.Oms.Orders
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
@@ -8,6 +10,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   import DelivestWeb.Staff.StatsComponents
 
   @active_statuses [:created, :preparing, :ready, :delivering, :crm]
+  @reload_delay :timer.seconds(2)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -22,7 +25,8 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
        can_stats: Identity.can?(staff, "statistics.read"),
        can_orders: Identity.can?(staff, "orders.read"),
        can_create_order: Identity.can?(staff, "orders.create"),
-       can_clients: Identity.can?(staff, "clients.read")
+       can_clients: Identity.can?(staff, "clients.read"),
+       reload_scheduled: false
      )
      |> load()}
   end
@@ -30,11 +34,22 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   @impl true
   def handle_info({Orders, _event, %{branch_id: branch_id}}, socket) do
     if branch_id == socket.assigns.current_branch.id,
-      do: {:noreply, load(socket)},
+      do: {:noreply, schedule_reload(socket)},
       else: {:noreply, socket}
   end
 
+  def handle_info(:reload, socket) do
+    {:noreply, socket |> assign(reload_scheduled: false) |> load()}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp schedule_reload(%{assigns: %{reload_scheduled: true}} = socket), do: socket
+
+  defp schedule_reload(socket) do
+    Process.send_after(self(), :reload, @reload_delay)
+    assign(socket, reload_scheduled: true)
+  end
 
   defp load(socket) do
     branch_id = socket.assigns.current_branch.id
@@ -89,11 +104,11 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
+    <div class="space-y-6 py-4 sm:p-6">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p class="text-sm text-base-content/60">{@current_branch.name}</p>
-          <h1 class="text-3xl font-display font-bold text-base-content">
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">
             {gettext("Today")}, {today_label(@today)}
           </h1>
         </div>
@@ -165,7 +180,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             <h2 class="font-bold">{gettext("Latest orders")}</h2>
             <div class="flex flex-wrap gap-1.5">
               <span
-                :for={status <- [:created, :preparing, :ready, :delivering, :crm, :completed]}
+                :for={status <- [:created, :preparing, :ready, :delivering, :completed]}
                 :if={Map.get(@status_counts, status, 0) > 0}
                 class={["badge badge-sm border", OrderHelpers.status_color(status)]}
               >
@@ -182,31 +197,39 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             <li
               :for={order <- @latest_orders}
               id={"dashboard-order-#{order.id}"}
-              class="p-4 flex flex-wrap items-center gap-x-4 gap-y-1"
+              class="p-3 sm:p-4 space-y-1"
             >
-              <span class="font-mono font-bold">#{order.number}</span>
-              <span class="text-sm text-base-content/60 tabular-nums">
-                {OrderHelpers.local_time(order.inserted_at)}
-              </span>
-              <span class={["badge badge-sm border", OrderHelpers.status_color(order.status)]}>
-                {OrderHelpers.status_label(order.status)}
-              </span>
-              <span class="text-xs text-base-content/60">
-                {OrderHelpers.fulfillment_label(order.fulfillment_type)}
-              </span>
-              <%= if order.client do %>
-                <.link
-                  :if={@can_clients}
-                  navigate={~p"/staff/clients/#{order.client_id}"}
-                  class="text-sm hover:text-primary hover:underline truncate"
-                >
-                  {order.client.name || order.client.phone}
-                </.link>
-                <span :if={!@can_clients} class="text-sm truncate">
-                  {order.client.name || order.client.phone}
+              <div class="flex items-center gap-2 sm:gap-4">
+                <span class="font-mono font-bold">#{order.number}</span>
+                <span class="text-sm text-base-content/60 tabular-nums">
+                  {OrderHelpers.local_time(order.inserted_at)}
                 </span>
-              <% end %>
-              <span class="ml-auto font-mono font-bold">{OrderHelpers.money(order.total_amount)}</span>
+                <span class={[
+                  "badge badge-sm border",
+                  OrderHelpers.status_color(OrderStatus.current(order))
+                ]}>
+                  {OrderHelpers.status_label(OrderStatus.current(order))}
+                </span>
+                <span class="ml-auto font-mono font-bold whitespace-nowrap">
+                  {OrderHelpers.money(order.total_amount)}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-base-content/60 min-w-0">
+                <span class="shrink-0">{OrderHelpers.fulfillment_label(order.fulfillment_type)}</span>
+                <%= if order.client do %>
+                  <span>·</span>
+                  <.link
+                    :if={@can_clients}
+                    navigate={~p"/staff/clients/#{order.client_id}"}
+                    class="text-sm text-base-content hover:text-primary hover:underline truncate"
+                  >
+                    {order.client.name || order.client.phone}
+                  </.link>
+                  <span :if={!@can_clients} class="text-sm text-base-content truncate">
+                    {order.client.name || order.client.phone}
+                  </span>
+                <% end %>
+              </div>
             </li>
           </ul>
         </div>

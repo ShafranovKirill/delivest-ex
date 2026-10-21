@@ -1,6 +1,16 @@
 defmodule Delivest.Identity do
   alias Delivest.Identity.Branch.BranchInfo
-  alias Delivest.Identity.{Staffs, Staff, Roles, Acl, Branches, Clients}
+
+  alias Delivest.Identity.{
+    Staffs,
+    Staff,
+    Roles,
+    Acl,
+    Branches,
+    Clients,
+    ClientAuth,
+    ClientAddresses
+  }
 
   defdelegate list_staff(staff, params \\ %{}, opts \\ []), to: Staffs
   defdelegate create_staff(staff, attrs), to: Staffs
@@ -26,13 +36,27 @@ defmodule Delivest.Identity do
   defdelegate list_clients(staff, params \\ %{}), to: Clients
   defdelegate get_client(staff, id), to: Clients
   defdelegate get_or_create_client_by_phone(phone, attrs \\ %{}), to: Clients
-  defdelegate create_client(attrs), to: Clients
+  defdelegate create_client(attrs, actor \\ :system), to: Clients
   defdelegate update_client(staff, client, attrs), to: Clients
   defdelegate soft_delete_client(staff, client), to: Clients
   defdelegate get_clients_map(ids), to: Clients
   defdelegate search_clients(staff, query, limit \\ 10), to: Clients
   defdelegate get_client_ids_by_search(query), to: Clients
   defdelegate resolve_client(attrs, opts \\ []), to: Clients
+  defdelegate client_blocked?(client_id), to: Clients
+  defdelegate get_active_client_by_phone(phone), to: Clients
+
+  defdelegate start_client_auth(phone, session_id), to: ClientAuth, as: :start
+  defdelegate confirm_client_call(call_id, phone), to: ClientAuth, as: :confirm_call
+  defdelegate complete_client_auth(confirmation_id, session_id), to: ClientAuth, as: :complete
+  defdelegate fetch_authenticated_client(client_id), to: ClientAuth, as: :fetch_client
+
+  defdelegate list_client_addresses(client_id), to: ClientAddresses, as: :list
+  defdelegate get_client_address(client_id, id), to: ClientAddresses, as: :get
+  defdelegate create_client_address(client_id, attrs), to: ClientAddresses, as: :create
+  defdelegate update_client_address(address, attrs), to: ClientAddresses, as: :update
+  defdelegate delete_client_address(address), to: ClientAddresses, as: :delete
+  defdelegate remember_client_address(client_id, attrs), to: ClientAddresses, as: :remember
 
   defdelegate phone_regex(), to: BranchInfo
 

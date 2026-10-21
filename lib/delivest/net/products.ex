@@ -4,6 +4,8 @@ defmodule Delivest.Net.Products do
   alias Delivest.Net.Product
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
+  alias Delivest.Audit
+  alias Delivest.Relations.EntityRelation
 
   def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
     if Identity.can?(staff, "products.read") do
@@ -17,6 +19,15 @@ defmodule Delivest.Net.Products do
     else
       {:error, :forbidden}
     end
+  end
+
+  def list_branch_products(branch_id) do
+    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+
+    Product
+    |> where([p], p.id in ^product_ids and is_nil(p.deleted_at) and p.is_active == true)
+    |> order_by([p], asc: p.name)
+    |> Repo.all()
   end
 
   def list_products_by_ids(ids, opts \\ []) when is_list(ids) do
@@ -33,6 +44,26 @@ defmodule Delivest.Net.Products do
     end
   end
 
+  def product_available_in_branch?(product_id, nil),
+    do: product_id |> available_query() |> Repo.exists?()
+
+  def product_available_in_branch?(product_id, branch_id) do
+    product_id
+    |> available_query()
+    |> join(:inner, [p], r in EntityRelation,
+      on:
+        r.to_id == p.id and r.to_entity_type == "Product" and
+          r.from_entity_type == "Branch" and r.from_id == ^branch_id
+    )
+    |> Repo.exists?()
+  end
+
+  defp available_query(product_id) do
+    from(p in Product,
+      where: p.id == ^product_id and p.is_active == true and is_nil(p.deleted_at)
+    )
+  end
+
   def get_product(id, opts \\ []) do
     Product
     |> where([p], is_nil(p.deleted_at))
@@ -41,6 +72,12 @@ defmodule Delivest.Net.Products do
   end
 
   def create_product(staff, branch_id, attrs) do
+    staff
+    |> do_create_product(branch_id, attrs)
+    |> Audit.track(staff, "product.created", branch_id: branch_id)
+  end
+
+  defp do_create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
       Multi.new()
       |> Multi.insert(:product, %Product{} |> Product.changeset(attrs) |> put_slug())
@@ -72,7 +109,71 @@ defmodule Delivest.Net.Products do
     end
   end
 
+  def import_products(staff, branch_id, rows) do
+    if Identity.can?(staff, "products.create") do
+      Repo.transaction(fn ->
+        {products, _categories} =
+          Enum.map_reduce(rows, %{}, &import_row(staff, branch_id, &1, &2))
+
+        products
+      end)
+      |> case do
+        {:ok, products} ->
+          invalidate_menu_cache(branch_id)
+
+          Enum.each(products, fn product ->
+            broadcast_change(branch_id, {:product_created, product})
+            Audit.record(staff, "product.created", product, branch_id: branch_id)
+          end)
+
+          {:ok, products}
+
+        error ->
+          error
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  defp import_row(staff, branch_id, row, categories) do
+    {category_id, categories} = import_category(staff, branch_id, row["category"], categories)
+    attrs = row |> Map.delete("category") |> Map.put("category_id", category_id)
+
+    with {:ok, product} <- %Product{} |> Product.changeset(attrs) |> put_slug() |> Repo.insert(),
+         {:ok, _relation} <-
+           Relations.create_relation(Repo, "Branch", branch_id, "Product", product.id, %{}) do
+      {product, categories}
+    else
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp import_category(_staff, _branch_id, name, categories) when name in [nil, ""],
+    do: {nil, categories}
+
+  defp import_category(staff, branch_id, name, categories) do
+    key = String.downcase(name)
+
+    case Map.fetch(categories, key) do
+      {:ok, id} ->
+        {id, categories}
+
+      :error ->
+        case Delivest.Net.Categories.find_or_create_category_by_name(staff, branch_id, name) do
+          {:ok, category} -> {category.id, Map.put(categories, key, category.id)}
+          {:error, reason} -> Repo.rollback(reason)
+        end
+    end
+  end
+
   def update_product(staff, %Product{} = updateble_product, attrs) do
+    staff
+    |> do_update_product(updateble_product, attrs)
+    |> Audit.track(staff, "product.updated")
+  end
+
+  defp do_update_product(staff, %Product{} = updateble_product, attrs) do
     if Identity.can?(staff, "products.update") do
       updateble_product
       |> Product.changeset(attrs)
@@ -100,6 +201,19 @@ defmodule Delivest.Net.Products do
     |> where([p], p.slug == ^slug and p.id in ^product_ids)
     |> where([p], is_nil(p.deleted_at) and p.is_active == true)
     |> Repo.one()
+  end
+
+  def list_branch_products_by_slugs(_branch_id, []), do: %{}
+
+  def list_branch_products_by_slugs(branch_id, slugs) when is_list(slugs) do
+    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+
+    Product
+    |> where([p], p.slug in ^slugs and p.id in ^product_ids)
+    |> where([p], is_nil(p.deleted_at) and p.is_active == true)
+    |> preload(:media)
+    |> Repo.all()
+    |> Map.new(&{&1.slug, &1})
   end
 
   def list_product_options_for_branch(branch_id) do
@@ -136,6 +250,12 @@ defmodule Delivest.Net.Products do
   end
 
   def soft_delete_product(staff, %Product{} = product) do
+    staff
+    |> do_soft_delete_product(product)
+    |> Audit.track(staff, "product.deleted")
+  end
+
+  defp do_soft_delete_product(staff, %Product{} = product) do
     if Identity.can?(staff, "products.delete") do
       with {:ok, deleted_product} <-
              product
@@ -171,11 +291,13 @@ defmodule Delivest.Net.Products do
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
     Cachex.del(:menu_cache, branch_id)
     Cachex.del(:stock_cache, branch_id)
+    Cachex.del(:promo_cache, branch_id)
     Cachex.clear(:cart_cache)
   end
 
   defp invalidate_menu_cache(_) do
     Cachex.clear(:stock_cache)
+    Cachex.clear(:promo_cache)
     Cachex.clear(:cart_cache)
   end
 

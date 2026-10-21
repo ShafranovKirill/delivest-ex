@@ -1,7 +1,9 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.{FrontpadSettings, YcartSettings}
+  alias Delivest.Identity.Branch.YcartSettings
+  alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Integrations.Frontpad
   alias Delivest.Identity
   alias Delivest.Repo
 
@@ -20,10 +22,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
-    field :frontpad_api_key, :string
-    field :frontpad_enabled, :boolean, default: false
 
-    embeds_one :frontpad_settings, FrontpadSettings, on_replace: :update
+    embeds_one :crm, BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
   end
 
@@ -40,12 +40,10 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :vk_url,
       :whatsapp_url,
       :instagram_url,
-      :frontpad_api_key,
-      :frontpad_enabled,
       :slug,
       :is_active
     ])
-    |> cast_embed(:frontpad_settings, with: &FrontpadSettings.changeset/2)
+    |> cast_embed(:crm, with: &BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
@@ -71,12 +69,23 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
-      frontpad_api_key: info && info.frontpad_api_key,
-      frontpad_enabled: if(info, do: info.frontpad_enabled, else: false),
-      frontpad_settings: info && info.frontpad_settings,
-      ycart_settings: info && info.ycart_settings
+      crm: prefill_crm(info && info.crm),
+      ycart_settings: (info && info.ycart_settings) || %YcartSettings{}
     }
   end
+
+  def new, do: %__MODULE__{crm: prefill_crm(nil), ycart_settings: %YcartSettings{}}
+
+  def for_branch(%{id: id} = branch) when not is_nil(id), do: from_branch(branch)
+  def for_branch(_branch), do: new()
+
+  defp prefill_crm(nil), do: prefill_crm(%BranchSettings{})
+  defp prefill_crm(%BranchSettings{} = crm), do: %{crm | frontpad: prefill_frontpad(crm.frontpad)}
+
+  defp prefill_frontpad(nil), do: prefill_frontpad(%Frontpad.Settings{})
+
+  defp prefill_frontpad(%Frontpad.Settings{} = settings),
+    do: %{settings | statuses: settings.statuses || %Frontpad.StatusCodes{}}
 
   defp normalize_working_hours_attrs(form, attrs) when is_map(attrs) do
     case Map.fetch(attrs, "working_hours") do
@@ -172,20 +181,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       |> Enum.reject(fn {_, v} -> is_nil(v) end)
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
 
-    frontpad_settings_param =
-      case data.frontpad_settings do
-        %FrontpadSettings{} = settings -> Map.from_struct(settings) |> Map.delete(:__struct__)
-        map when is_map(map) -> map
-        _ -> %{}
-      end
-
-    ycart_settings_param =
-      case data.ycart_settings do
-        %YcartSettings{} = settings -> Map.from_struct(settings) |> Map.delete(:__struct__)
-        map when is_map(map) -> map
-        _ -> %{}
-      end
-
     info_params =
       data
       |> Map.take([
@@ -195,14 +190,23 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :working_hours,
         :vk_url,
         :whatsapp_url,
-        :instagram_url,
-        :frontpad_api_key,
-        :frontpad_enabled
+        :instagram_url
       ])
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
-      |> Map.put("frontpad_settings", frontpad_settings_param)
-      |> Map.put("ycart_settings", ycart_settings_param)
+      |> Map.put("crm", embed_params(data.crm))
+      |> Map.put("ycart_settings", embed_params(data.ycart_settings))
 
     {branch_params, info_params}
   end
+
+  defp embed_params(nil), do: %{}
+  defp embed_params(embed), do: params_value(embed)
+
+  defp params_value(%_{} = embed) do
+    embed
+    |> Map.from_struct()
+    |> Map.new(fn {key, value} -> {Atom.to_string(key), params_value(value)} end)
+  end
+
+  defp params_value(value), do: value
 end

@@ -1,34 +1,95 @@
 defmodule DelivestWeb.StaffHeader do
   use DelivestWeb, :html
 
+  import Delivest.Identity.Acl
+
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
-  attr :drawer_id, :string, default: "staff-drawer"
+  attr :new_orders_count, :integer, default: 0
 
   def staff_header(assigns) do
     ~H"""
-    <header class="fixed top-0 left-0 right-0 z-50 bg-base-100 border-b border-base-300 px-4 sm:px-6 h-16 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-3">
-        <.drawer_toggle drawer_id={@drawer_id} />
-      </div>
+    <header class="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-2 border-b border-base-300 bg-base-100 px-3 sm:gap-3 sm:px-5">
+      <button
+        type="button"
+        phx-click={JS.dispatch("sidebar:toggle-open")}
+        class="btn btn-ghost btn-square btn-sm lg:hidden"
+        aria-label={gettext("Open menu")}
+      >
+        <.icon name="hero-bars-3" class="size-6" />
+      </button>
 
-      <div class="flex items-center gap-4">
-        <.branch_selector current_branch={@current_branch} />
-        <.staff_menu current_staff={@current_staff} />
-      </div>
+      <.link navigate={~p"/staff/dashboard"} class="flex items-center gap-2 shrink-0">
+        <img src={~p"/images/logo-dark.png"} alt="" class="size-8 object-contain dark:hidden" />
+        <img src={~p"/images/logo-white.png"} alt="" class="size-8 object-contain hidden dark:block" />
+        <span class="hidden sm:inline text-lg font-bold">Delivest</span>
+      </.link>
+
+      <div class="flex-1"></div>
+
+      <.new_orders
+        :if={@current_branch && can?(@current_staff, "orders.read")}
+        count={@new_orders_count}
+      />
+
+      <.link
+        :if={@current_branch && can?(@current_staff, "orders.create")}
+        navigate={~p"/staff/orders/new"}
+        class="btn btn-primary btn-sm"
+        title={gettext("New Order")}
+      >
+        <.icon name="hero-plus" class="size-4" />
+        <span class="hidden md:inline">{gettext("New Order")}</span>
+      </.link>
+
+      <.branch_selector current_branch={@current_branch} />
+      <.theme_switch />
+      <.staff_menu current_staff={@current_staff} />
     </header>
     """
   end
 
-  defp drawer_toggle(assigns) do
+  attr :count, :integer, required: true
+
+  defp new_orders(assigns) do
+    ~H"""
+    <.link
+      id="header-new-orders"
+      navigate={~p"/staff/orders?status=created"}
+      class="btn btn-ghost btn-sm btn-square relative"
+      title={gettext("Orders awaiting confirmation")}
+    >
+      <.icon name="hero-bell" class="size-5" />
+      <span
+        :if={@count > 0}
+        id="header-new-orders-count"
+        class="badge badge-error badge-xs absolute -top-1 -right-1 min-w-5 px-1 font-bold"
+      >
+        {@count}
+      </span>
+    </.link>
+    """
+  end
+
+  defp theme_switch(assigns) do
     ~H"""
     <button
       type="button"
-      phx-click={JS.toggle_class("is-mobile-open", to: "#main-sidebar")}
-      class="btn btn-ghost btn-square rounded-xl w-10 h-10 btn-sm border border-base-300 bg-base-100 shadow-sm hover:bg-base-200 lg:hidden"
-      aria-label={gettext("Open menu")}
+      phx-click={JS.dispatch("phx:set-theme")}
+      data-phx-theme="dark"
+      class="btn btn-ghost btn-sm btn-square dark:hidden"
+      title={gettext("Dark Mode")}
     >
-      <.icon name="hero-bars-3" class="h-5 w-5" />
+      <.icon name="hero-moon" class="size-5" />
+    </button>
+    <button
+      type="button"
+      phx-click={JS.dispatch("phx:set-theme")}
+      data-phx-theme="light"
+      class="btn btn-ghost btn-sm btn-square hidden dark:inline-flex"
+      title={gettext("Light Mode")}
+    >
+      <.icon name="hero-sun" class="size-5" />
     </button>
     """
   end
@@ -46,14 +107,14 @@ defmodule DelivestWeb.StaffHeader do
       <div
         tabindex="0"
         role="button"
-        class="flex items-center gap-3 cursor-pointer py-1 px-2 rounded-xl hover:bg-base-200 transition-colors"
+        class="flex items-center gap-3 cursor-pointer py-1 px-1 sm:px-2 rounded-xl hover:bg-base-200 transition-colors"
       >
         <div class="avatar placeholder">
           <div class="bg-primary text-primary-content rounded-xl w-10 h-10 flex items-center justify-center font-bold text-sm">
             <span>{initial}</span>
           </div>
         </div>
-        <div class="flex flex-col text-left">
+        <div class="hidden sm:flex flex-col text-left">
           <span class="text-sm font-semibold text-base-content leading-tight">{staff_name}</span>
           <span class="text-xs text-base-content/60 leading-tight mt-0.5">{@current_staff.role.name}</span>
         </div>
@@ -72,24 +133,6 @@ defmodule DelivestWeb.StaffHeader do
           <% else %>
             <.link href={~p"/locale/ru"} class="flex items-center justify-between"><span>🇷🇺 Русский</span></.link>
           <% end %>
-        </li>
-
-        <div class="divider my-1"></div>
-
-        <li class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
-          {gettext("Theme")}
-        </li>
-        <li>
-          <label class="flex items-center justify-between cursor-pointer">
-            <span>{gettext("Dark Mode")}</span>
-            <input
-              type="checkbox"
-              id="theme-toggle-dropdown"
-              phx-hook="ThemeToggle"
-              class="theme-controller toggle toggle-sm"
-              value="dark"
-            />
-          </label>
         </li>
 
         <div class="divider my-1"></div>
@@ -114,11 +157,11 @@ defmodule DelivestWeb.StaffHeader do
       <div
         tabindex="0"
         role="button"
-        class="flex items-center gap-2 h-10 cursor-pointer border border-base-300 py-1.5 px-3 rounded-xl hover:bg-base-200 transition-colors min-w-0"
+        class="flex items-center gap-2 h-10 cursor-pointer border border-base-300 py-1.5 px-2.5 sm:px-3 rounded-xl hover:bg-base-200 transition-colors min-w-0"
       >
         <.icon name="hero-building-storefront" class="h-4 w-4 text-base-content/70 shrink-0" />
         <span
-          class="text-sm font-medium text-base-content truncate max-w-37.5 sm:max-w-75 lg:max-w-none inline-block align-middle"
+          class="hidden sm:inline-block text-sm font-medium text-base-content truncate sm:max-w-75 lg:max-w-none align-middle"
           title={@current_branch && @current_branch.name}
         >
           <%= if @current_branch do %>

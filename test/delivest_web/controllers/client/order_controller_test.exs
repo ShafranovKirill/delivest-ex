@@ -4,16 +4,18 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Integrations.Frontpad
   alias Delivest.Oms.Order
   alias Delivest.Repo
+  alias DelivestWeb.ClientToken
 
   setup %{conn: conn} do
     branch = insert(:branch, is_active: true)
 
     Repo.insert!(%BranchInfo{
       branch_id: branch.id,
-      frontpad_api_key: "super-secret-key",
-      frontpad_enabled: false
+      crm: %BranchSettings{frontpad: %Frontpad.Settings{api_key: "super-secret-key"}}
     })
 
     product = insert_branch_product(branch.id, price: 300)
@@ -62,11 +64,10 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     )
   end
 
-  test "branch payload does not expose Frontpad credentials", %{conn: conn, branch: branch} do
+  test "branch payload does not expose CRM credentials", %{conn: conn, branch: branch} do
     body = conn |> post(~p"/client/branches/#{branch.id}/select") |> json_response(200)
 
-    refute Map.has_key?(body["data"]["branch_info"], "frontpad_api_key")
-    refute Map.has_key?(body["data"]["branch_info"], "frontpad_settings")
+    refute Map.has_key?(body["data"]["branch_info"], "crm")
     refute inspect(body) =~ "super-secret-key"
   end
 
@@ -174,7 +175,111 @@ defmodule DelivestWeb.Client.OrderControllerTest do
       |> json_response(422)
 
     assert body["error"] == "validation_failed"
-    assert body["details"]["phone"]
+    assert body["details"]["customer_phone"]
+  end
+
+  test "blocked clients cannot order", %{conn: conn, branch: branch, product: product} do
+    insert(:client, phone: "+79990001122", status: :blocked)
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    body =
+      conn
+      |> post(~p"/client/orders", order_params(branch, cart_id))
+      |> json_response(422)
+
+    assert body["error"] == "client_blocked"
+  end
+
+  describe "active orders" do
+    test "lists orders of the current session only", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+      conn = post(conn, ~p"/client/orders", order_params(branch, cart_id))
+      order_id = json_response(conn, 200)["data"]["id"]
+
+      body =
+        conn |> recycle_with_headers() |> get(~p"/client/orders/active") |> json_response(200)
+
+      assert [%{"id" => ^order_id, "status" => "created", "items" => [_]}] = body["data"]
+
+      other = build_conn() |> get(~p"/client/orders/active") |> json_response(200)
+      assert other["data"] == []
+    end
+
+    test "hides finished and stale orders", %{conn: conn, branch: branch, product: product} do
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+      conn = post(conn, ~p"/client/orders", order_params(branch, cart_id))
+      order = Repo.get!(Order, json_response(conn, 200)["data"]["id"])
+
+      order |> Ecto.Changeset.change(status: :completed) |> Repo.update!()
+
+      assert conn
+             |> recycle_with_headers()
+             |> get(~p"/client/orders/active")
+             |> json_response(200) == %{"data" => []}
+
+      stale = DateTime.add(DateTime.utc_now(:second), -8, :hour)
+      order |> Ecto.Changeset.change(status: :ready, inserted_at: stale) |> Repo.update!()
+
+      assert conn
+             |> recycle_with_headers()
+             |> get(~p"/client/orders/active")
+             |> json_response(200) == %{"data" => []}
+    end
+  end
+
+  describe "authenticated client" do
+    defp authorize(conn, client),
+      do:
+        put_req_header(
+          conn,
+          "authorization",
+          "Bearer " <> ClientToken.issue(client.id).access_token
+        )
+
+    test "orders are linked to the client and the address is remembered", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      client = insert(:client, phone: "+79995556677")
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+
+      params =
+        order_params(branch, cart_id, %{
+          "fulfillment_type" => "delivery",
+          "customer_phone" => "+79990001122",
+          "address" => %{"street" => "Ленина", "house" => "1"}
+        })
+
+      data =
+        conn |> authorize(client) |> post(~p"/client/orders", params) |> json_response(200)
+
+      order_id = data["data"]["id"]
+      assert Repo.get!(Order, order_id).client_id == client.id
+
+      assert [%{street: "Ленина", house: "1"}] =
+               Delivest.Identity.list_client_addresses(client.id)
+
+      other_device =
+        build_conn() |> put_req_header("x-forwarded-for", "203.0.113.9") |> authorize(client)
+
+      assert [%{"id" => ^order_id}] =
+               other_device
+               |> get(~p"/client/orders/active")
+               |> json_response(200)
+               |> Map.fetch!("data")
+
+      assert [%{"id" => ^order_id}] =
+               other_device |> get(~p"/client/orders") |> json_response(200) |> Map.fetch!("data")
+    end
   end
 
   test "order creation is rate limited per client IP", %{conn: conn} do

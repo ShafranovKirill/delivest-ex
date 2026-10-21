@@ -117,10 +117,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 p-6">
+    <div class="space-y-6 py-4 sm:p-6">
       <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-display font-bold text-base-content">{gettext("Statistics")}</h1>
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">
+            {gettext("Statistics")}
+          </h1>
           <p class="text-sm text-base-content/60">
             {@current_branch.name} · {format_period(@period)}
           </p>
@@ -185,10 +187,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             icon="hero-shopping-bag"
             label={gettext("Orders")}
             delta={delta(@summary.orders_count, @previous.orders_count)}
-            hint={
-              if @summary.cancelled_count > 0,
-                do: gettext("%{count} cancelled", count: @summary.cancelled_count)
-            }
+            hint={excluded_hint(@summary)}
           >
             {@summary.orders_count}
           </.stat_card>
@@ -346,5 +345,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       <% end %>
     </div>
     """
+  end
+
+  defp excluded_hint(%{cancelled_count: cancelled, lost_count: lost}) do
+    [
+      cancelled > 0 && gettext("%{count} cancelled", count: cancelled),
+      lost > 0 && gettext("%{count} not delivered to CRM", count: lost)
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(", ")
+    |> case do
+      "" -> nil
+      hint -> hint
+    end
   end
 end

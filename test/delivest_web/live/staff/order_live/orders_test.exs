@@ -71,6 +71,30 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       assert Delivest.Repo.reload!(order).status == :preparing
     end
 
+    test "a new order is confirmed with one click", %{conn: conn, branch: branch, order: order} do
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+
+      lv |> element("#order-confirm-#{order.id}") |> render_click()
+
+      assert Delivest.Repo.reload!(order).status == :preparing
+      refute has_element?(lv, "#order-confirm-#{order.id}")
+    end
+
+    test "an unmapped Frontpad status code is shown", %{conn: conn, branch: branch, order: order} do
+      order = order |> Ecto.Changeset.change(status: :crm) |> Delivest.Repo.update!()
+
+      {:ok, _order} =
+        Delivest.Oms.Orders.update_order_crm(order, %{
+          provider: "frontpad",
+          status: "sent",
+          remote_status_code: "4"
+        })
+
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+
+      assert has_element?(lv, "#order-unmapped-#{order.id}", "4")
+    end
+
     test "read-only staff cannot change orders", %{conn: conn, branch: branch, order: order} do
       {:ok, lv, _html} = live(login(conn, ["orders.read"], branch), ~p"/staff/orders")
 

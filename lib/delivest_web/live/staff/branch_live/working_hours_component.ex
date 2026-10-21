@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-4 pt-0 space-y-3 border-t border-base-200">
+    <div class="space-y-3">
       <%= for {day_key, day_label} <- @days do %>
         <% day_key_str = Atom.to_string(day_key) %>
         <% schedule = Map.get(@working_hours, day_key) || Map.get(@working_hours, day_key_str) || %{} %>

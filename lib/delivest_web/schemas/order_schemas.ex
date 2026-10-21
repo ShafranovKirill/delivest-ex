@@ -75,7 +75,14 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "Без лука",
           nullable: true
         },
-        address: AddressRequest
+        address: AddressRequest,
+        expected_total: %Schema{
+          type: :integer,
+          nullable: true,
+          example: 1500,
+          description:
+            "Сумма, которую видел клиент. Если итог после пересчёта акций окажется больше — вернётся `price_changed`"
+        }
       },
       required: [:cart_id, :branch_id]
     })
@@ -94,10 +101,31 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "c4a3b8e0-1234-5678-9abc-def012345678"
         },
         title: %Schema{type: :string, example: "Пицца Маргарита"},
-        price: %Schema{type: :integer, example: 590},
+        price: %Schema{
+          type: :integer,
+          example: 531,
+          description: "Цена за единицу с учётом скидок"
+        },
+        base_price: %Schema{type: :integer, example: 590, description: "Цена за единицу по меню"},
+        gift: %Schema{type: :boolean, example: false},
         quantity: %Schema{type: :integer, example: 2}
       },
-      required: [:product_id, :title, :price, :quantity]
+      required: [:product_id, :title, :price, :base_price, :gift, :quantity]
+    })
+  end
+
+  defmodule OrderPromotion do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "OrderPromotion",
+      type: :object,
+      properties: %{
+        name: %Schema{type: :string, example: "Летняя скидка"},
+        code: %Schema{type: :string, nullable: true, example: "SUMMER2025"},
+        discount: %Schema{type: :integer, example: 150}
+      },
+      required: [:name, :discount]
     })
   end
 
@@ -122,6 +150,16 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             fulfillment_type: %Schema{type: :string, example: "delivery"},
             payment_method: %Schema{type: :string, example: "cash"},
             total_amount: %Schema{type: :integer, example: 1180},
+            subtotal_amount: %Schema{
+              type: :integer,
+              example: 1330,
+              description: "Сумма без скидок"
+            },
+            discount_amount: %Schema{type: :integer, example: 150},
+            promotions: %Schema{
+              type: :array,
+              items: DelivestWeb.Schemas.OrderSchemas.OrderPromotion
+            },
             branch_id: %Schema{
               type: :string,
               format: :uuid,
@@ -153,6 +191,75 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           required: [:id, :number, :status, :total_amount, :branch_id, :cart_id, :items]
         }
       },
+      required: [:data]
+    })
+  end
+
+  defmodule ActiveOrder do
+    require OpenApiSpex
+    alias DelivestWeb.Schemas.OrderSchemas.OrderItemResponse
+
+    OpenApiSpex.schema(%{
+      title: "ActiveOrder",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        number: %Schema{type: :string, example: "A042"},
+        status: %Schema{
+          type: :string,
+          enum: ["created", "preparing", "ready", "delivering", "completed", "cancelled"],
+          example: "preparing"
+        },
+        fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
+        payment_method: %Schema{type: :string, enum: ["cash", "card_offline"]},
+        total_amount: %Schema{type: :integer, example: 1180},
+        subtotal_amount: %Schema{type: :integer, example: 1330, description: "Сумма без скидок"},
+        discount_amount: %Schema{type: :integer, example: 150},
+        promotions: %Schema{type: :array, items: DelivestWeb.Schemas.OrderSchemas.OrderPromotion},
+        branch_id: %Schema{type: :string, format: :uuid},
+        cook_by: %Schema{type: :string, format: :date_time, nullable: true},
+        comment: %Schema{type: :string, nullable: true},
+        address: %Schema{type: :object, nullable: true, additionalProperties: true},
+        inserted_at: %Schema{type: :string, format: :date_time},
+        items: %Schema{type: :array, items: OrderItemResponse}
+      },
+      required: [
+        :id,
+        :number,
+        :status,
+        :fulfillment_type,
+        :payment_method,
+        :total_amount,
+        :subtotal_amount,
+        :discount_amount,
+        :promotions,
+        :branch_id,
+        :inserted_at,
+        :items
+      ]
+    })
+  end
+
+  defmodule ActiveOrdersResponse do
+    require OpenApiSpex
+    alias DelivestWeb.Schemas.OrderSchemas.ActiveOrder
+
+    OpenApiSpex.schema(%{
+      title: "ActiveOrdersResponse",
+      type: :object,
+      properties: %{data: %Schema{type: :array, items: ActiveOrder}},
+      required: [:data]
+    })
+  end
+
+  defmodule ClientOrdersResponse do
+    require OpenApiSpex
+    alias DelivestWeb.Schemas.OrderSchemas.ActiveOrder
+
+    OpenApiSpex.schema(%{
+      title: "ClientOrdersResponse",
+      type: :object,
+      properties: %{data: %Schema{type: :array, items: ActiveOrder}},
       required: [:data]
     })
   end
