@@ -17,6 +17,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "bad_request",
             "branch_id_required",
             "branch_not_found",
+            "document_not_found",
             "cart_not_found",
             "cart_is_empty",
             "cart_already_ordered",

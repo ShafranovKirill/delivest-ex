@@ -118,7 +118,7 @@ msgid "Language"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:103
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:348
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:364
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr ""
@@ -276,6 +276,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:255
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:98
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:137
+#: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:81
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:91
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:309
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:244
@@ -532,6 +533,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branches.ex:95
 #: lib/delivest_web/live/staff/category_live/categories.ex:183
 #: lib/delivest_web/live/staff/client_live/show.ex:120
+#: lib/delivest_web/live/staff/franchise_live/index.ex:100
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:179
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:268
 #: lib/delivest_web/live/staff/role_live/roles.ex:152
@@ -699,6 +701,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:123
 #: lib/delivest_web/live/staff/client_live/clients.ex:289
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:62
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:256
 #: lib/delivest_web/live/staff/product_live/products.ex:415
@@ -902,6 +905,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:257
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:100
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:143
+#: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:315
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:246
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:496
@@ -915,6 +920,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:256
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:99
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:141
+#: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:149
 #: lib/delivest_web/live/staff/product_live/bulk.ex:361
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:313
 #: lib/delivest_web/live/staff/promotion_live/issued_codes_component.ex:112
@@ -1149,6 +1156,8 @@ msgstr ""
 msgid "You don't have permission to edit staff."
 msgstr ""
 
+#: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:43
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:39
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:161
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:51
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:61
@@ -1668,7 +1677,7 @@ msgstr ""
 msgid "Cart has been cleared"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:332
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:348
 #, elixir-autogen, elixir-format
 msgid "Change/Select branch"
 msgstr ""
@@ -2254,7 +2263,7 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:312
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:328
 #: lib/delivest_web/live/staff/log_live/index.ex:24
 #: lib/delivest_web/live/staff/log_live/index.ex:118
 #, elixir-autogen, elixir-format
@@ -2376,7 +2385,7 @@ msgstr ""
 msgid "Staff %{name}"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:296
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:312
 #: lib/delivest_web/live/staff/log_live/event_text.ex:22
 #, elixir-autogen, elixir-format
 msgid "System"
@@ -3949,4 +3958,176 @@ msgstr ""
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:132
 #, elixir-autogen, elixir-format
 msgid "Which products?"
+msgstr ""
+
+#: lib/delivest/franchise/settings.ex:40
+#, elixir-autogen, elixir-format
+msgid "10 or 12 digits"
+msgstr ""
+
+#: lib/delivest/franchise/settings.ex:41
+#, elixir-autogen, elixir-format
+msgid "13 or 15 digits"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:61
+#, elixir-autogen, elixir-format
+msgid "Brand"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/franchise_helpers.ex:5
+#, elixir-autogen, elixir-format
+msgid "Consent to personal data processing"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:94
+#, elixir-autogen, elixir-format
+msgid "Default template"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:73
+#, elixir-autogen, elixir-format
+msgid "Default templates already contain your details. Have a lawyer check them before publishing."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:47
+#, elixir-autogen, elixir-format
+msgid "Document saved"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:91
+#, elixir-autogen, elixir-format
+msgid "Edited %{date}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:136
+#, elixir-autogen, elixir-format
+msgid "Email for requests"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:301
+#: lib/delivest_web/live/staff/franchise_live/index.ex:19
+#: lib/delivest_web/live/staff/franchise_live/index.ex:58
+#, elixir-autogen, elixir-format
+msgid "Franchise settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:129
+#, elixir-autogen, elixir-format
+msgid "INN"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:118
+#, elixir-autogen, elixir-format
+msgid "LLC"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:143
+#, elixir-autogen, elixir-format
+msgid "Legal address"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:71
+#, elixir-autogen, elixir-format
+msgid "Legal documents"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:117
+#, elixir-autogen, elixir-format
+msgid "Legal form"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:124
+#, elixir-autogen, elixir-format
+msgid "Legal name"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:58
+#, elixir-autogen, elixir-format
+msgid "Lines starting with «## » become headings. Placeholders:"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:59
+#, elixir-autogen, elixir-format
+msgid "Name, brand color, seller details and legal documents for all branches."
+msgstr ""
+
+#: lib/delivest/franchise/settings.ex:42
+#, elixir-autogen, elixir-format
+msgid "Not an email"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:133
+#, elixir-autogen, elixir-format
+msgid "OGRN / OGRNIP"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/franchise_helpers.ex:4
+#, elixir-autogen, elixir-format
+msgid "Personal data policy"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:137
+#, elixir-autogen, elixir-format
+msgid "Phone for requests"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:87
+#, elixir-autogen, elixir-format
+msgid "Place order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:72
+#, elixir-autogen, elixir-format
+msgid "Primary color"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/franchise_helpers.ex:6
+#, elixir-autogen, elixir-format
+msgid "Public offer"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:76
+#, elixir-autogen, elixir-format
+msgid "Replace the text with the default template?"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:78
+#, elixir-autogen, elixir-format
+msgid "Restore template"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:108
+#, elixir-autogen, elixir-format
+msgid "Seller details"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:40
+#, elixir-autogen, elixir-format
+msgid "Settings saved"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:110
+#, elixir-autogen, elixir-format
+msgid "Shown in the site footer and inserted into the legal documents."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:67
+#, elixir-autogen, elixir-format
+msgid "Site description for search engines"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/franchise_helpers.ex:7
+#, elixir-autogen, elixir-format
+msgid "Terms of use"
+msgstr ""
+
+#: lib/delivest/franchise/settings.ex:39
+#, elixir-autogen, elixir-format
+msgid "Use the #RRGGBB format"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:95
+#, elixir-autogen, elixir-format
+msgid "White text is hard to read on this color. Choose a darker one."
 msgstr ""

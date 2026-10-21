@@ -72,6 +72,13 @@ defmodule DelivestWeb.Router do
     end
   end
 
+  scope "/client/franchise", DelivestWeb.Client.Franchise do
+    pipe_through :api
+
+    get "/", FranchiseController, :show
+    get "/documents/:kind", FranchiseController, :document
+  end
+
   scope "/client", DelivestWeb.Client do
     pipe_through [:client_api, :client_identity, :client_required]
 
@@ -178,6 +185,11 @@ defmodule DelivestWeb.Router do
         live "/", Staffs, :index
         live "/:id/edit", Staffs, :edit
         live "/new", Staffs, :new
+      end
+
+      scope "/franchise", FranchiseLive do
+        live "/", Index, :index
+        live "/documents/:kind", Index, :document
       end
 
       scope "/roles", RoleLive do

@@ -1,0 +1,80 @@
+defmodule DelivestWeb.Schemas.FranchiseSchemas do
+  alias OpenApiSpex.Schema
+
+  defmodule Legal do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "FranchiseLegal",
+      type: :object,
+      properties: %{
+        form: %Schema{type: :string, example: "ООО", nullable: true},
+        name: %Schema{type: :string, example: "Вкусная еда", nullable: true},
+        inn: %Schema{type: :string, example: "7700000000", nullable: true},
+        ogrn: %Schema{type: :string, example: "1027700000000", nullable: true},
+        address: %Schema{type: :string, example: "г. Москва, ул. Пушкина, д. 10", nullable: true},
+        email: %Schema{type: :string, example: "info@example.com", nullable: true},
+        phone: %Schema{type: :string, example: "+79990000000", nullable: true}
+      },
+      required: [:form, :name, :inn, :ogrn, :address, :email, :phone]
+    })
+  end
+
+  defmodule DocumentSummary do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "LegalDocumentSummary",
+      type: :object,
+      properties: %{
+        kind: %Schema{type: :string, enum: ["privacy", "consent", "offer", "terms"]},
+        updated_at: %Schema{type: :string, format: :"date-time", nullable: true}
+      },
+      required: [:kind, :updated_at]
+    })
+  end
+
+  defmodule FranchiseResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "FranchiseResponse",
+      type: :object,
+      properties: %{
+        data: %Schema{
+          type: :object,
+          properties: %{
+            name: %Schema{type: :string, example: "Sushi Like"},
+            description: %Schema{type: :string, nullable: true},
+            primary_color: %Schema{type: :string, example: "#462094"},
+            legal: Legal,
+            documents: %Schema{type: :array, items: DocumentSummary}
+          },
+          required: [:name, :description, :primary_color, :legal, :documents]
+        }
+      },
+      required: [:data]
+    })
+  end
+
+  defmodule DocumentResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "LegalDocumentResponse",
+      type: :object,
+      properties: %{
+        data: %Schema{
+          type: :object,
+          properties: %{
+            kind: %Schema{type: :string, enum: ["privacy", "consent", "offer", "terms"]},
+            body: %Schema{type: :string},
+            updated_at: %Schema{type: :string, format: :"date-time", nullable: true}
+          },
+          required: [:kind, :body, :updated_at]
+        }
+      },
+      required: [:data]
+    })
+  end
+end

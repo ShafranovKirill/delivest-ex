@@ -286,6 +286,22 @@ defmodule DelivestWeb.StaffSidebar do
                 </span>
               </.link>
             </li>
+
+            <li :if={can?(@current_staff, "admin")}>
+              <.link
+                navigate={~p"/staff/franchise"}
+                class={[
+                  "flex items-center gap-2 px-3 py-2",
+                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
+                  (@current_page == :franchise && "menu-active") || ""
+                ]}
+              >
+                <.icon name="hero-building-storefront" class="size-6 shrink-0" />
+                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
+                  {gettext("Franchise settings")}
+                </span>
+              </.link>
+            </li>
           </ul>
         <% end %>
 
