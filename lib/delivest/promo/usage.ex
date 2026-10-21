@@ -2,7 +2,7 @@ defmodule Delivest.Promo.Usage do
   import Ecto.Query, warn: false
 
   alias Delivest.Oms.{Order, OrderScopes}
-  alias Delivest.Promo.Redemption
+  alias Delivest.Promo.{PromoCode, Promotion, Redemption}
   alias Delivest.Repo
 
   @type t :: %__MODULE__{
@@ -13,7 +13,16 @@ defmodule Delivest.Promo.Usage do
 
   defstruct total: %{}, client: %{}, code: %{}
 
-  def load([], _client_id, _code_ids, _except_order_id), do: %__MODULE__{}
+  def load_limited(promotions, client_id, codes, except_order_id) do
+    load(
+      for(%Promotion{} = promotion <- promotions, limited?(promotion), do: promotion.id),
+      client_id,
+      for(%PromoCode{usage_limit: limit} = code <- codes, is_integer(limit), do: code.id),
+      except_order_id
+    )
+  end
+
+  def load([], _client_id, [], _except_order_id), do: %__MODULE__{}
 
   def load(promotion_ids, client_id, code_ids, except_order_id) do
     base = counted(except_order_id)
@@ -28,6 +37,9 @@ defmodule Delivest.Promo.Usage do
   def total(%__MODULE__{total: total}, promotion_id), do: Map.get(total, promotion_id, 0)
   def client(%__MODULE__{client: client}, promotion_id), do: Map.get(client, promotion_id, 0)
   def code(%__MODULE__{code: code}, code_id), do: Map.get(code, code_id, 0)
+
+  defp limited?(%Promotion{usage_limit: total, per_client_limit: per_client}),
+    do: is_integer(total) or is_integer(per_client)
 
   defp counted(except_order_id) do
     sold =

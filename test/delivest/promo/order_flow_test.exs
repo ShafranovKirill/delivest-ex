@@ -72,6 +72,18 @@ defmodule Delivest.Promo.OrderFlowTest do
              Orders.create_order(order_attrs(cart_with(branch, pizza, 1)))
   end
 
+  test "a single-use code of an unlimited promotion works once", %{branch: branch, pizza: pizza} do
+    promo = insert_promotion(branch.id, kind: :public_code, rules: "then discount 10 rub")
+    insert_code(promo, code: "ONE", usage_limit: 1)
+
+    first = cart_with(branch, pizza, 1)
+    {:ok, _} = Oms.apply_promo_code(first.id, "one")
+    assert {:ok, %{total_amount: 90}} = Orders.create_order(order_attrs(first))
+
+    second = cart_with(branch, pizza, 1)
+    assert {:error, {:promo, :code_used}} = Oms.apply_promo_code(second.id, "one")
+  end
+
   test "refuses a stale price when the client expects less", %{branch: branch, pizza: pizza} do
     cart = cart_with(branch, pizza, 1)
 

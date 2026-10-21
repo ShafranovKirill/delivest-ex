@@ -19,7 +19,9 @@ defmodule Delivest.Promo.Redemptions do
   defp record(order, applied) do
     promotions = lock_promotions(Enum.map(applied, & &1.promotion_id))
     codes = load_codes(applied)
-    usage = Usage.load(Map.keys(promotions), order.client_id, Map.keys(codes), order.id)
+
+    usage =
+      Usage.load_limited(Map.values(promotions), order.client_id, Map.values(codes), order.id)
 
     if Enum.all?(applied, &available?(&1, promotions, codes, order.client_id, usage)),
       do: {:ok, Enum.map(applied, &insert!(&1, order))},

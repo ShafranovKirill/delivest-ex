@@ -58,13 +58,10 @@ defmodule Delivest.Promo.Engine do
   end
 
   defp load_usage(automatic, code_entry, context) do
-    promotions = Enum.map(automatic, & &1.promotion) ++ code_promotions(code_entry)
-    code_ids = code_ids(code_entry)
-
-    Usage.load(
-      Enum.map(promotions, & &1.id),
+    Usage.load_limited(
+      Enum.map(automatic, & &1.promotion) ++ code_promotions(code_entry),
       context.client_id,
-      code_ids,
+      codes(code_entry),
       context.except_order_id
     )
   end
@@ -72,8 +69,8 @@ defmodule Delivest.Promo.Engine do
   defp code_promotions(nil), do: []
   defp code_promotions({entry, _code}), do: [entry.promotion]
 
-  defp code_ids(nil), do: []
-  defp code_ids({_entry, code}), do: [code.id]
+  defp codes(nil), do: []
+  defp codes({_entry, code}), do: [code]
 
   defp code_of(nil), do: nil
   defp code_of({_entry, code}), do: code

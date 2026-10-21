@@ -14,7 +14,7 @@ defmodule Delivest.Promo.MenuPrices do
       |> Enum.filter(&(Compiled.automatic?(&1) and Strategy.unconditional?(&1.strategy)))
 
     context = Context.new(branch_id: branch_id)
-    usage = Usage.load(Enum.map(candidates, & &1.promotion.id), nil, [], nil)
+    usage = Usage.load_limited(Enum.map(candidates, & &1.promotion), nil, [], nil)
 
     candidates
     |> Enum.filter(&(Eligibility.check(&1.promotion, nil, context, usage) == :ok))
