@@ -13,7 +13,7 @@ defmodule DelivestWeb.StaffSidebar do
       id="main-sidebar"
       phx-hook="Sidebar"
       class={[
-        "peer group/sidebar fixed inset-y-0 left-0 z-50 flex flex-col h-full border-r border-base-300 bg-base-100 transition-all duration-300 ease-in-out mt-16 lg:mt-0 pb-16 lg:pb-0 lg:static",
+        "peer group/sidebar fixed inset-y-0 left-0 z-50 flex flex-col h-full border-r border-base-300 bg-base-100 transition-all duration-300 ease-in-out mt-16 lg:mt-0 pb-16 lg:pb-0 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:self-start",
         "w-72 lg:[&.is-collapsed]:w-20",
         "-translate-x-full lg:translate-x-0 [&.is-mobile-open]:translate-x-0"
       ]}
@@ -50,7 +50,7 @@ defmodule DelivestWeb.StaffSidebar do
         </div>
       </div>
 
-      <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 mt-2 space-y-1">
+      <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 mt-2 space-y-1">
         <ul class="menu w-full p-0 gap-1">
           <li>
             <.link
