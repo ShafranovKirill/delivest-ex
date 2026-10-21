@@ -1,22 +1,21 @@
-<div class="drawer min-h-screen bg-base-200 text-base-content">
-  <input id="staff-drawer" type="checkbox" class="drawer-toggle" />
+<div class="min-h-screen bg-base-200 text-base-content">
+  <DelivestWeb.StaffHeader.staff_header
+    current_staff={@current_staff}
+    current_branch={assigns[:current_branch]}
+    new_orders_count={assigns[:new_orders_count] || 0}
+  />
 
-  <div class="drawer-content flex min-h-screen flex-col">
-    <DelivestWeb.StaffHeader.staff_header
-      current_staff={@current_staff}
-      current_branch={assigns[:current_branch]}
-    />
+  <DelivestWeb.StaffSidebar.staff_sidebar
+    current_staff={@current_staff}
+    current_page={assigns[:current_page]}
+  />
 
-    <main class="flex-1 px-2 sm:px-6 pt-16 pb-0 min-w-0">
+  <div class="flex min-h-screen flex-col pt-16 transition-[padding] duration-300 lg:pl-72 lg:sidebar-collapsed:pl-20">
+    <main class="flex-1 px-2 sm:px-6 min-w-0">
       <div class="max-w-7xl mx-auto">
         <.flash_group flash={@flash} />
         {@inner_content}
       </div>
     </main>
   </div>
-
-  <DelivestWeb.StaffSidebar.staff_sidebar
-    current_staff={@current_staff}
-    current_page={assigns[:current_page]}
-  />
 </div>

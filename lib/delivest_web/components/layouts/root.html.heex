@@ -23,8 +23,11 @@
             document.documentElement.setAttribute("data-theme-source", "user");
           }
         };
+        if (localStorage.getItem("sidebar_collapsed") === "true") {
+          document.documentElement.setAttribute("data-sidebar-collapsed", "");
+        }
         if (!document.documentElement.hasAttribute("data-theme")) {
-          setTheme(localStorage.getItem("phx:theme") || "system");
+          setTheme(localStorage.getItem("phx:theme") || localStorage.getItem("theme") || "system");
         }
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));

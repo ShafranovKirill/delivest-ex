@@ -5,72 +5,6 @@ import { hooks as colocatedHooks } from "phoenix-colocated/delivest";
 import topbar from "../vendor/topbar";
 import Sortable from "sortablejs";
 
-const Sidebar = {
-  mounted() {
-    const sidebar = this.el;
-    const isCollapsed = localStorage.getItem("sidebar_collapsed") === "true";
-    if (isCollapsed) {
-      sidebar.classList.add("is-collapsed");
-    }
-
-    const toggleBtn = sidebar.querySelector("button");
-    if (toggleBtn) {
-      toggleBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        sidebar.classList.toggle("is-collapsed");
-        localStorage.setItem(
-          "sidebar_collapsed",
-          sidebar.classList.contains("is-collapsed"),
-        );
-      });
-    }
-
-    sidebar.addEventListener("click", (e) => {});
-  },
-};
-
-const ThemeToggle = {
-  mounted() {
-    const currentTheme =
-      document.documentElement.getAttribute("data-theme") ||
-      localStorage.getItem("theme") ||
-      (window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light");
-
-    this.el.checked = currentTheme === "dark";
-
-    this.handleToggle = (e) => {
-      const newTheme = e.target.checked ? "dark" : "light";
-
-      document.documentElement.setAttribute("data-theme", newTheme);
-      localStorage.setItem("theme", newTheme);
-    };
-
-    this.el.addEventListener("change", this.handleToggle);
-  },
-
-  updated() {
-    const currentTheme =
-      document.documentElement.getAttribute("data-theme") ||
-      localStorage.getItem("theme");
-
-    this.el.checked = currentTheme === "dark";
-  },
-};
-
-const initTheme = () => {
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme) {
-    document.documentElement.setAttribute("data-theme", savedTheme);
-  } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-    document.documentElement.setAttribute("data-theme", "dark");
-  } else {
-    document.documentElement.setAttribute("data-theme", "light");
-  }
-};
-initTheme();
-
 let Uploaders = {};
 
 Uploaders.S3 = function (entries, onViewError) {
@@ -105,6 +39,23 @@ Uploaders.S3 = function (entries, onViewError) {
 
     xhr.send(entry.file);
   });
+};
+
+const ThemeToggle = {
+  mounted() {
+    this.el.checked = document.documentElement.getAttribute("data-theme") === "dark";
+
+    this.el.addEventListener("change", (e) => {
+      const theme = e.target.checked ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.setAttribute("data-theme-source", "user");
+      localStorage.setItem("phx:theme", theme);
+    });
+  },
+
+  updated() {
+    this.el.checked = document.documentElement.getAttribute("data-theme") === "dark";
+  },
 };
 
 export const SortableCategories = {
@@ -192,9 +143,24 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ThemeToggle,
     SortableCategories,
     SortableStocks,
-    Sidebar,
     BulkPaste,
   },
+});
+
+const root = document.documentElement;
+
+window.addEventListener("sidebar:toggle-collapse", () => {
+  const collapsed = root.toggleAttribute("data-sidebar-collapsed");
+  localStorage.setItem("sidebar_collapsed", collapsed);
+});
+
+window.addEventListener("sidebar:toggle-open", () =>
+  root.toggleAttribute("data-sidebar-open"),
+);
+
+window.addEventListener("phx:page-loading-start", (event) => {
+  if (["redirect", "patch"].includes(event.detail?.kind))
+    root.removeAttribute("data-sidebar-open");
 });
 
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });

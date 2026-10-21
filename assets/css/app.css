@@ -91,6 +91,8 @@
 @custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant sidebar-collapsed (&:where([data-sidebar-collapsed] *));
+@custom-variant sidebar-open (&:where([data-sidebar-open] *));
 
 [data-phx-session],
 [data-phx-teleported-src] {

@@ -1,373 +1,146 @@
 defmodule DelivestWeb.StaffSidebar do
-  alias Delivest.Identity
   use DelivestWeb, :html
-  import Identity.Acl
+
+  import Delivest.Identity.Acl
 
   attr :current_page, :atom, default: nil
   attr :current_staff, :map, default: nil
-  attr :drawer_id, :string, default: "staff-drawer", doc: "ID чекбокса для DaisyUI drawer"
 
   def staff_sidebar(assigns) do
+    assigns = assign(assigns, sections: sections(assigns.current_staff))
+
     ~H"""
     <aside
       id="main-sidebar"
-      phx-hook="Sidebar"
       class={[
-        "peer group/sidebar fixed inset-y-0 left-0 z-50 flex flex-col h-full border-r border-base-300 bg-base-100 transition-all duration-300 ease-in-out mt-16 lg:mt-0 pb-16 lg:pb-0 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:self-start",
-        "w-72 lg:[&.is-collapsed]:w-20",
-        "-translate-x-full lg:translate-x-0 [&.is-mobile-open]:translate-x-0"
+        "group/sidebar fixed left-0 top-16 bottom-0 z-40 flex w-72 flex-col",
+        "border-r border-base-300 bg-base-100 transition-[width,translate] duration-300",
+        "-translate-x-full sidebar-open:translate-x-0 lg:translate-x-0 lg:sidebar-collapsed:w-20"
       ]}
     >
-      <button
-        type="button"
-        class="absolute -right-3 top-10 z-60 hidden lg:flex btn btn-square btn-xs btn-primary border border-base-300 items-center justify-center cursor-pointer"
-      >
-        <.icon
-          name="hero-chevron-left"
-          class="size-3 transition-transform duration-300 lg:group-[.is-collapsed]/sidebar:rotate-180"
+      <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-3 [scrollbar-width:thin]">
+        <.nav_section
+          :for={{title, items} <- @sections}
+          title={title}
+          items={items}
+          current_page={@current_page}
         />
-      </button>
-
-      <div class="h-20 flex flex-col justify-center px-6 shrink-0">
-        <p class="text-xs uppercase tracking-[0.2em] text-base-content/50 lg:group-[.is-collapsed]/sidebar:hidden">
-          {gettext("Workspace")}
-        </p>
-        <h2 class="mt-1 text-lg font-bold text-base-content lg:group-[.is-collapsed]/sidebar:hidden truncate">
-          {gettext("Delivest")}
-        </h2>
-
-        <div class="hidden lg:group-[.is-collapsed]/sidebar:flex items-center justify-center w-full -ml-3">
-          <img
-            src={~p"/images/logo-dark.png"}
-            alt={gettext("Delivest")}
-            class="size-8 object-contain dark:hidden"
-          />
-          <img
-            src={~p"/images/logo-white.png"}
-            alt={gettext("Delivest")}
-            class="size-8 object-contain hidden dark:block"
-          />
-        </div>
-      </div>
-
-      <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 mt-2 space-y-1">
-        <ul class="menu w-full p-0 gap-1">
-          <li>
-            <.link
-              navigate={~p"/staff/dashboard"}
-              class={[
-                "flex items-center gap-2 px-3 py-2",
-                "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                (@current_page == :dashboard && "menu-active") || ""
-              ]}
-            >
-              <.icon name="hero-squares-2x2" class="size-6 shrink-0" />
-              <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                {gettext("Dashboard")}
-              </span>
-            </.link>
-          </li>
-        </ul>
-
-        <%= if can?(@current_staff, "statistics.read") do %>
-          <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
-            <div class="h-px bg-base-300 w-full"></div>
-            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
-              {gettext("Analytics")}
-            </div>
-          </div>
-
-          <ul class="menu w-full p-0 gap-1">
-            <li>
-              <.link
-                navigate={~p"/staff/statistics"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :statistics && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-chart-bar" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Statistics")}
-                </span>
-              </.link>
-            </li>
-          </ul>
-        <% end %>
-
-        <%= if can_any?(@current_staff, ["orders.read", "orders.create"]) do %>
-          <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
-            <div class="h-px bg-base-300 w-full"></div>
-            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
-              {gettext("OMS")}
-            </div>
-          </div>
-
-          <ul class="menu w-full p-0 gap-1">
-            <li :if={can?(@current_staff, "orders.create")}>
-              <.link
-                navigate={~p"/staff/orders/new"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :orders_new && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-plus-circle" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("New Order")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "orders.read")}>
-              <.link
-                navigate={~p"/staff/orders"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :orders && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-shopping-bag" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Orders")}
-                </span>
-              </.link>
-            </li>
-          </ul>
-        <% end %>
-
-        <%= if can_any?(@current_staff, ["categories.read", "products.read", "stocks.read", "promotions.read"]) do %>
-          <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
-            <div class="h-px bg-base-300 w-full"></div>
-            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
-              {gettext("Catalog")}
-            </div>
-          </div>
-
-          <ul class="menu w-full p-0 gap-1">
-            <li :if={can?(@current_staff, "categories.read")}>
-              <.link
-                navigate={~p"/staff/categories"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :categories && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-rectangle-stack" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Categories")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "products.read")}>
-              <.link
-                navigate={~p"/staff/products"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :products && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-cube" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Products")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "stocks.read")}>
-              <.link
-                navigate={~p"/staff/stocks"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :stocks && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-tag" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Promotions")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "promotions.read")}>
-              <.link
-                navigate={~p"/staff/promotions"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :promotions && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-receipt-percent" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Discounts & promo codes")}
-                </span>
-              </.link>
-            </li>
-          </ul>
-        <% end %>
-
-        <%= if can_any?(@current_staff, ["branches.read", "staff.read", "roles.read"]) do %>
-          <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
-            <div class="h-px bg-base-300 w-full"></div>
-            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
-              {gettext("Company")}
-            </div>
-          </div>
-
-          <ul class="menu w-full p-0 gap-1">
-            <li :if={can?(@current_staff, "branches.read")}>
-              <.link
-                navigate={~p"/staff/branches"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :branches && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-map-pin" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Branches")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "clients.read")}>
-              <.link
-                navigate={~p"/staff/clients"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :clients && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-users" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Clients")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "staff.read")}>
-              <.link
-                navigate={~p"/staff/employee"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :employee && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-user-group" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Staff")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "roles.read")}>
-              <.link
-                navigate={~p"/staff/roles"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :roles && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-shield-check" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Roles")}
-                </span>
-              </.link>
-            </li>
-
-            <li :if={can?(@current_staff, "admin")}>
-              <.link
-                navigate={~p"/staff/franchise"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :franchise && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-building-storefront" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Franchise settings")}
-                </span>
-              </.link>
-            </li>
-          </ul>
-        <% end %>
-
-        <%= if can?(@current_staff, "logs.read") do %>
-          <div class="py-4 overflow-hidden lg:group-[.is-collapsed]/sidebar:py-2">
-            <div class="h-px bg-base-300 w-full"></div>
-            <div class="mt-4 px-3 text-[10px] font-black text-base-content/50 uppercase tracking-widest lg:group-[.is-collapsed]/sidebar:hidden">
-              {gettext("System")}
-            </div>
-          </div>
-
-          <ul class="menu w-full p-0 gap-1">
-            <li>
-              <.link
-                navigate={~p"/staff/logs"}
-                class={[
-                  "flex items-center gap-2 px-3 py-2",
-                  "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2",
-                  (@current_page == :logs && "menu-active") || ""
-                ]}
-              >
-                <.icon name="hero-document-magnifying-glass" class="size-6 shrink-0" />
-                <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                  {gettext("Logs")}
-                </span>
-              </.link>
-            </li>
-          </ul>
-        <% end %>
       </nav>
 
-      <div class="p-3 border-t border-base-300 shrink-0 flex flex-col gap-1">
-        <ul class="menu p-0 w-full gap-1">
-          <li>
-            <.link
-              patch={~p"/staff/branches/select"}
-              class={[
-                "flex items-center gap-2 text-primary hover:bg-primary/10 px-3 py-2",
-                "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2"
-              ]}
-            >
-              <.icon name="hero-arrow-path-rounded-square" class="size-6 shrink-0" />
-              <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                {gettext("Change/Select branch")}
-              </span>
-            </.link>
-          </li>
-
-          <li>
-            <.link
-              href={~p"/staff/auth/log_out"}
-              method="delete"
-              class={[
-                "flex items-center gap-2 text-error hover:bg-error/10 hover:text-error px-3 py-2",
-                "lg:group-[.is-collapsed]/sidebar:justify-center lg:group-[.is-collapsed]/sidebar:px-2"
-              ]}
-            >
-              <.icon name="hero-arrow-right-start-on-rectangle" class="size-6 shrink-0" />
-              <span class="lg:group-[.is-collapsed]/sidebar:hidden font-bold truncate">
-                {gettext("Log out")}
-              </span>
-            </.link>
-          </li>
-        </ul>
-      </div>
+      <button
+        type="button"
+        phx-click={JS.dispatch("sidebar:toggle-collapse")}
+        class="hidden lg:flex shrink-0 items-center gap-2 border-t border-base-300 px-6 py-3 text-sm text-base-content/60 hover:text-base-content hover:bg-base-200 transition-colors cursor-pointer lg:sidebar-collapsed:justify-center lg:sidebar-collapsed:px-0"
+        title={gettext("Collapse menu")}
+      >
+        <.icon
+          name="hero-chevron-double-left"
+          class="size-5 shrink-0 transition-transform duration-300 lg:sidebar-collapsed:rotate-180"
+        />
+        <span class="lg:sidebar-collapsed:hidden">{gettext("Collapse menu")}</span>
+      </button>
     </aside>
+
+    <div
+      class="fixed inset-0 top-16 z-30 hidden bg-black/30 sidebar-open:block lg:sidebar-open:hidden"
+      phx-click={JS.dispatch("sidebar:toggle-open")}
+      aria-hidden="true"
+    >
+    </div>
     """
   end
+
+  attr :title, :string, default: nil
+  attr :items, :list, required: true
+  attr :current_page, :atom, default: nil
+
+  defp nav_section(assigns) do
+    ~H"""
+    <div :if={@title} class="pt-4 pb-1 first:pt-0">
+      <div class="hidden h-px bg-base-300 mx-2 lg:sidebar-collapsed:block"></div>
+      <p class="px-3 text-[10px] font-black uppercase tracking-widest text-base-content/50 lg:sidebar-collapsed:hidden">
+        {@title}
+      </p>
+    </div>
+    <ul class="menu w-full p-0 gap-1">
+      <li :for={item <- @items}>
+        <.link
+          navigate={item.path}
+          title={item.label}
+          class={[
+            "flex items-center gap-2 px-3 py-2",
+            "lg:sidebar-collapsed:justify-center lg:sidebar-collapsed:px-2",
+            @current_page == item.page && "menu-active"
+          ]}
+        >
+          <.icon name={item.icon} class="size-6 shrink-0" />
+          <span class="font-bold truncate lg:sidebar-collapsed:hidden">{item.label}</span>
+        </.link>
+      </li>
+    </ul>
+    """
+  end
+
+  defp sections(staff) do
+    [
+      {nil, [item(:dashboard, ~p"/staff/dashboard", "hero-squares-2x2", gettext("Dashboard"))]},
+      {gettext("Analytics"),
+       [
+         item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
+         |> allowed(staff, "statistics.read")
+       ]},
+      {gettext("OMS"),
+       [
+         item(:orders_new, ~p"/staff/orders/new", "hero-plus-circle", gettext("New Order"))
+         |> allowed(staff, "orders.create"),
+         item(:orders, ~p"/staff/orders", "hero-shopping-bag", gettext("Orders"))
+         |> allowed(staff, "orders.read")
+       ]},
+      {gettext("Catalog"),
+       [
+         item(:categories, ~p"/staff/categories", "hero-rectangle-stack", gettext("Categories"))
+         |> allowed(staff, "categories.read"),
+         item(:products, ~p"/staff/products", "hero-cube", gettext("Products"))
+         |> allowed(staff, "products.read"),
+         item(:stocks, ~p"/staff/stocks", "hero-tag", gettext("Promotions"))
+         |> allowed(staff, "stocks.read"),
+         item(
+           :promotions,
+           ~p"/staff/promotions",
+           "hero-receipt-percent",
+           gettext("Discounts & promo codes")
+         )
+         |> allowed(staff, "promotions.read")
+       ]},
+      {gettext("Company"),
+       [
+         item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
+         |> allowed(staff, "branches.read"),
+         item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
+         |> allowed(staff, "clients.read"),
+         item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
+         |> allowed(staff, "staff.read"),
+         item(:roles, ~p"/staff/roles", "hero-shield-check", gettext("Roles"))
+         |> allowed(staff, "roles.read"),
+         item(
+           :franchise,
+           ~p"/staff/franchise",
+           "hero-building-storefront",
+           gettext("Franchise settings")
+         )
+         |> allowed(staff, "admin")
+       ]},
+      {gettext("System"),
+       [
+         item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
+         |> allowed(staff, "logs.read")
+       ]}
+    ]
+    |> Enum.map(fn {title, items} -> {title, Enum.reject(items, &is_nil/1)} end)
+    |> Enum.reject(fn {_title, items} -> items == [] end)
+  end
+
+  defp item(page, path, icon, label), do: %{page: page, path: path, icon: icon, label: label}
+
+  defp allowed(item, staff, permission), do: if(can?(staff, permission), do: item)
 end
