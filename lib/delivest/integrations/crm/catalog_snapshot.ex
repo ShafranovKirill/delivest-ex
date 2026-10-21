@@ -10,7 +10,6 @@ defmodule Delivest.Integrations.Crm.CatalogSnapshot do
     field :branch_id, :binary_id
     field :provider, :string
     field :products, {:array, :map}, default: []
-    field :issues, {:array, :map}, default: []
     field :checked_at, :utc_datetime
   end
 end

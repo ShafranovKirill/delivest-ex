@@ -16,8 +16,7 @@ config :delivest, Oban,
   crontab: [
     {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker},
     {"5 * * * *", Delivest.Oms.Workers.StaleOrderWorker},
-    {"0 4 * * *", Delivest.Logs.PruneWorker},
-    {"15 * * * *", Delivest.Integrations.Crm.CatalogWorker}
+    {"0 4 * * *", Delivest.Logs.PruneWorker}
   ],
   repo: Delivest.Repo
 

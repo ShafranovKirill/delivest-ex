@@ -27,8 +27,5 @@ defmodule Delivest.Logs do
 
   defp scope(query, :raw), do: query
 
-  defp scope(query, :hints),
-    do: where(query, [e], e.level == "warning" and fragment("?->>'hint' IS NOT NULL", e.metadata))
-
   defp scope(query, scope), do: where(query, [e], e.level in ^Map.fetch!(@levels, scope))
 end

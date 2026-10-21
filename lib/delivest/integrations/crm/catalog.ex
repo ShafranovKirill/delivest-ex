@@ -1,79 +1,63 @@
 defmodule Delivest.Integrations.Crm.Catalog do
-  import Ecto.Query, warn: false
-
-  require Logger
-
-  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Identity
+  alias Delivest.Identity.Branch
   alias Delivest.Integrations.Crm
-  alias Delivest.Integrations.Crm.{CatalogCheck, CatalogHints, CatalogSnapshot}
+  alias Delivest.Integrations.Crm.{BranchSettings, CatalogCheck, CatalogSnapshot}
   alias Delivest.{Net, Repo}
 
-  def check_all do
-    sources()
-    |> Enum.group_by(&catalog_source/1)
-    |> Enum.each(fn {_source, sources} -> check_group(sources) end)
+  @refresh_interval_s 3600
+
+  def get_snapshot(branch_id, provider) do
+    Repo.get_by(CatalogSnapshot, branch_id: branch_id, provider: to_string(provider))
   end
 
-  def get_snapshot(branch_id), do: Repo.get_by(CatalogSnapshot, branch_id: branch_id)
+  def refresh_available_at(nil), do: nil
 
-  defp sources do
-    from(i in BranchInfo,
-      join: b in assoc(i, :branch),
-      where: is_nil(b.deleted_at),
-      where: fragment("(?->>'enabled')::boolean", i.crm),
-      preload: [branch: b]
-    )
-    |> Repo.all()
-    |> Enum.flat_map(&source/1)
+  def refresh_available_at(%CatalogSnapshot{checked_at: checked_at}),
+    do: DateTime.add(checked_at, @refresh_interval_s)
+
+  def refresh(branch_id, provider) do
+    snapshot = Repo.get_by(CatalogSnapshot, branch_id: branch_id)
+
+    with :ok <- ensure_refresh_available(snapshot, to_string(provider)),
+         {:ok, module, settings} <- source(branch_id, provider),
+         {:ok, catalog} <- module.fetch_catalog(settings) do
+      {:ok, save(snapshot, branch_id, provider, catalog)}
+    end
   end
 
-  defp source(%BranchInfo{crm: crm, branch: branch}) do
-    with name when not is_nil(name) <- crm.provider,
-         {:ok, _name, module} <- Crm.provider_module(name),
-         true <- Code.ensure_loaded?(module) and function_exported?(module, :fetch_catalog, 1),
+  def issues(_branch_id, nil), do: []
+
+  def issues(branch_id, %CatalogSnapshot{products: products}),
+    do: branch_id |> Net.list_branch_products() |> CatalogCheck.issues(products)
+
+  defp ensure_refresh_available(%CatalogSnapshot{provider: provider} = snapshot, provider) do
+    available_at = refresh_available_at(snapshot)
+
+    if DateTime.compare(DateTime.utc_now(), available_at) == :lt,
+      do: {:error, {:too_early, available_at}},
+      else: :ok
+  end
+
+  defp ensure_refresh_available(_snapshot, _name), do: :ok
+
+  defp source(branch_id, provider) do
+    with {:ok, name, module} <- Crm.provider_module(provider),
+         {:ok, %Branch{info: %{crm: %BranchSettings{} = crm}}} <-
+           Identity.get_branch(branch_id, preload: [:info]),
          %{} = settings <- Map.get(crm, name) do
-      [%{branch: branch, provider: name, module: module, settings: settings}]
+      {:ok, module, settings}
     else
-      _ -> []
+      {:error, :unknown_provider} -> {:error, :unknown_provider}
+      _ -> {:error, :missing_settings}
     end
   end
 
-  defp catalog_source(%{module: module, settings: settings}), do: module.catalog_source(settings)
-
-  defp check_group([%{module: module, settings: settings} | _] = sources) do
-    case module.fetch_catalog(settings) do
-      {:ok, catalog} ->
-        Enum.each(sources, &check_branch(&1, catalog))
-
-      {:error, reason} ->
-        Logger.warning("#{module.name()} catalog was not received: #{inspect(reason)}")
-    end
-  end
-
-  defp check_branch(%{branch: branch, provider: provider, module: module}, catalog) do
-    issues = branch.id |> Net.list_branch_products() |> CatalogCheck.issues(catalog)
-    previous = get_snapshot(branch.id)
-
-    issues
-    |> new_issues(previous)
-    |> CatalogHints.report(branch.name, module.name())
-
-    save(previous, branch.id, provider, catalog, issues)
-  end
-
-  defp new_issues(issues, nil), do: issues
-
-  defp new_issues(issues, %CatalogSnapshot{issues: previous}) do
-    known = MapSet.new(previous, &CatalogCheck.key/1)
-    Enum.reject(issues, &MapSet.member?(known, CatalogCheck.key(&1)))
-  end
-
-  defp save(previous, branch_id, provider, catalog, issues) do
+  defp save(snapshot, branch_id, provider, catalog) do
     Repo.insert_or_update!(
-      Ecto.Changeset.change(previous || %CatalogSnapshot{branch_id: branch_id}, %{
+      Ecto.Changeset.change(snapshot || %CatalogSnapshot{branch_id: branch_id}, %{
         provider: to_string(provider),
         products: Enum.map(catalog, &Map.new(&1, fn {key, value} -> {to_string(key), value} end)),
-        issues: issues,
         checked_at: DateTime.utc_now(:second)
       })
     )

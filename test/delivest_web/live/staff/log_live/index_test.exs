@@ -79,29 +79,15 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
     assert render(lv) =~ "Signed in"
   end
 
-  test "tabs split raw logs, errors and hints", %{conn: conn} do
+  test "tabs split raw logs and errors", %{conn: conn} do
     {conn, _staff} = login(conn, ["logs.read"])
     log("error", "database exploded")
     log("warning", "product.updated failed")
     log("info", "GET /staff/logs")
 
-    log("warning", "Frontpad · Main: product «Borsch» with CRM ID 7 is not found", %{
-      "hint" => "missing_in_crm",
-      "hint_provider" => "Frontpad",
-      "hint_branch" => "Main",
-      "hint_product" => "Borsch",
-      "hint_external_id" => "7"
-    })
-
     {:ok, _lv, errors} = live(conn, ~p"/staff/logs/errors")
     assert errors =~ "database exploded"
     refute errors =~ "product.updated failed"
-
-    {:ok, _lv, hints} = live(conn, ~p"/staff/logs/hints")
-    assert hints =~ "Borsch"
-    assert hints =~ "Frontpad"
-    refute hints =~ "product.updated failed"
-    refute hints =~ "database exploded"
 
     {:ok, lv, raw} = live(conn, ~p"/staff/logs/raw")
     assert raw =~ "GET /staff/logs"

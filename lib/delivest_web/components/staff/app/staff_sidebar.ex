@@ -132,6 +132,13 @@ defmodule DelivestWeb.StaffSidebar do
        ]},
       {gettext("System"),
        [
+         item(
+           :integrations,
+           ~p"/staff/integrations",
+           "hero-puzzle-piece",
+           gettext("Integrations")
+         )
+         |> allowed(staff, "branches.read"),
          item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
          |> allowed(staff, "logs.read")
        ]}

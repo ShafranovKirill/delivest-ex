@@ -89,7 +89,7 @@ msgstr ""
 msgid "login"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:255
+#: lib/delivest_web/controllers/page_html/home.html.heex:253
 #, elixir-autogen, elixir-format
 msgid "All rights reserved."
 msgstr ""
@@ -684,6 +684,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:123
 #: lib/delivest_web/live/staff/client_live/clients.ex:289
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:62
+#: lib/delivest_web/live/staff/integration_live/index.ex:393
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:256
 #: lib/delivest_web/live/staff/product_live/products.ex:415
@@ -751,6 +752,7 @@ msgstr ""
 msgid "Please check the fields below."
 msgstr ""
 
+#: lib/delivest_web/live/staff/integration_live/index.ex:394
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:23
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:273
 #: lib/delivest_web/live/staff/product_live/products.ex:423
@@ -2030,7 +2032,7 @@ msgid "Share of revenue"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:89
-#: lib/delivest_web/controllers/page_html/home.html.heex:175
+#: lib/delivest_web/controllers/page_html/home.html.heex:173
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:130
 #: lib/delivest_web/live/staff/statistics_live/index.ex:15
 #: lib/delivest_web/live/staff/statistics_live/index.ex:124
@@ -2145,12 +2147,12 @@ msgstr ""
 msgid "%{action}: %{subject}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:197
+#: lib/delivest_web/live/staff/log_live/index.ex:196
 #, elixir-autogen, elixir-format
 msgid "All levels"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:127
+#: lib/delivest_web/live/staff/log_live/index.ex:126
 #, elixir-autogen, elixir-format
 msgid "All sections"
 msgstr ""
@@ -2230,19 +2232,14 @@ msgstr ""
 msgid "Events"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/components/tabs_component.ex:12
-#, elixir-autogen, elixir-format
-msgid "Hints"
-msgstr ""
-
 #: lib/delivest_web/live/staff/log_live/components/entries_component.ex:16
 #, elixir-autogen, elixir-format
 msgid "Level"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:135
-#: lib/delivest_web/live/staff/log_live/index.ex:24
-#: lib/delivest_web/live/staff/log_live/index.ex:118
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:142
+#: lib/delivest_web/live/staff/log_live/index.ex:23
+#: lib/delivest_web/live/staff/log_live/index.ex:117
 #, elixir-autogen, elixir-format
 msgid "Logs"
 msgstr ""
@@ -2340,7 +2337,7 @@ msgstr ""
 msgid "Role «%{subject}» edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:191
+#: lib/delivest_web/live/staff/log_live/index.ex:190
 #, elixir-autogen, elixir-format
 msgid "Search in messages..."
 msgstr ""
@@ -2382,11 +2379,6 @@ msgstr ""
 #: lib/delivest_web/live/staff/log_live/components/events_component.ex:19
 #, elixir-autogen, elixir-format
 msgid "Who"
-msgstr ""
-
-#: lib/delivest_web/live/staff/log_live/index.ex:119
-#, elixir-autogen, elixir-format
-msgid "Who did what and when, application logs, errors and hints."
 msgstr ""
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:128
@@ -2517,7 +2509,7 @@ msgstr ""
 msgid "This client is blocked"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:212
+#: lib/delivest_web/controllers/page_html/home.html.heex:210
 #, elixir-autogen, elixir-format
 msgid "Accept orders"
 msgstr ""
@@ -2527,7 +2519,7 @@ msgstr ""
 msgid "Accepted"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:207
+#: lib/delivest_web/controllers/page_html/home.html.heex:205
 #, elixir-autogen, elixir-format
 msgid "Address, working hours, contacts and, if needed, the CRM connection."
 msgstr ""
@@ -2542,7 +2534,7 @@ msgstr ""
 msgid "Categories, product cards with photos, promotions and checkout with delivery, pickup or dine-in."
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:209
+#: lib/delivest_web/controllers/page_html/home.html.heex:207
 #, elixir-autogen, elixir-format
 msgid "Create categories and products, import them from CSV or copy from another branch."
 msgstr ""
@@ -2577,7 +2569,7 @@ msgstr ""
 msgid "Example order"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:208
+#: lib/delivest_web/controllers/page_html/home.html.heex:206
 #, elixir-autogen, elixir-format
 msgid "Fill in the menu"
 msgstr ""
@@ -2587,12 +2579,12 @@ msgstr ""
 msgid "Food ordering and delivery platform"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:201
+#: lib/delivest_web/controllers/page_html/home.html.heex:199
 #, elixir-autogen, elixir-format
 msgid "How to get started"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:180
+#: lib/delivest_web/controllers/page_html/home.html.heex:178
 #, elixir-autogen, elixir-format
 msgid "Load the whole menu from a CSV file instead of entering it by hand."
 msgstr ""
@@ -2604,7 +2596,7 @@ msgstr ""
 
 #: lib/delivest_web/controllers/page_html/home.html.heex:36
 #: lib/delivest_web/controllers/page_html/home.html.heex:63
-#: lib/delivest_web/controllers/page_html/home.html.heex:245
+#: lib/delivest_web/controllers/page_html/home.html.heex:243
 #, elixir-autogen, elixir-format
 msgid "Open control panel"
 msgstr ""
@@ -2614,12 +2606,12 @@ msgstr ""
 msgid "Order statuses for customers"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:181
+#: lib/delivest_web/controllers/page_html/home.html.heex:179
 #, elixir-autogen, elixir-format
 msgid "Orders from the admin panel"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:213
+#: lib/delivest_web/controllers/page_html/home.html.heex:211
 #, elixir-autogen, elixir-format
 msgid "Orders from the website and from staff appear in one list with live statuses."
 msgstr ""
@@ -2639,17 +2631,17 @@ msgstr ""
 msgid "Own menu, working hours, contacts and map for each branch. Products are copied between branches in a few clicks."
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:179
+#: lib/delivest_web/controllers/page_html/home.html.heex:177
 #, elixir-autogen, elixir-format
 msgid "Product import"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:235
+#: lib/delivest_web/controllers/page_html/home.html.heex:233
 #, elixir-autogen, elixir-format
 msgid "Ready to work?"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:176
+#: lib/delivest_web/controllers/page_html/home.html.heex:174
 #, elixir-autogen, elixir-format
 msgid "Revenue, average check, orders by day and hour, best-selling products and categories."
 msgstr ""
@@ -2659,7 +2651,7 @@ msgstr ""
 msgid "Roles and access"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:206
+#: lib/delivest_web/controllers/page_html/home.html.heex:204
 #, elixir-autogen, elixir-format
 msgid "Set up a branch"
 msgstr ""
@@ -2670,22 +2662,22 @@ msgid "Several branches"
 msgstr ""
 
 #: lib/delivest_web/controllers/page_html/home.html.heex:64
-#: lib/delivest_web/controllers/page_html/home.html.heex:246
+#: lib/delivest_web/controllers/page_html/home.html.heex:244
 #, elixir-autogen, elixir-format
 msgid "Sign in to the control panel"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:238
+#: lib/delivest_web/controllers/page_html/home.html.heex:236
 #, elixir-autogen, elixir-format
 msgid "Sign in with the login and password issued by your administrator."
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:256
+#: lib/delivest_web/controllers/page_html/home.html.heex:254
 #, elixir-autogen, elixir-format
 msgid "Staff sign in"
 msgstr ""
 
-#: lib/delivest_web/controllers/page_html/home.html.heex:182
+#: lib/delivest_web/controllers/page_html/home.html.heex:180
 #, elixir-autogen, elixir-format
 msgid "Staff take phone orders in the same system and edit them while they are open."
 msgstr ""
@@ -2698,11 +2690,6 @@ msgstr ""
 #: lib/delivest_web/controllers/page_html/home.html.heex:67
 #, elixir-autogen, elixir-format
 msgid "What it can do"
-msgstr ""
-
-#: lib/delivest_web/controllers/page_html/home.html.heex:172
-#, elixir-autogen, elixir-format
-msgid "Who did what and when, application logs, errors and hints in one section."
 msgstr ""
 
 #: lib/delivest_web/controllers/page_html/home.html.heex:71
@@ -3376,44 +3363,14 @@ msgstr ""
 msgid "%{count} not delivered to CRM"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/hint_text.ex:7
-#, elixir-autogen, elixir-format
-msgid "Hint"
-msgstr ""
-
-#: lib/delivest_web/live/staff/log_live/hint_text.ex:5
-#, elixir-autogen, elixir-format
-msgid "Missing in CRM"
-msgstr ""
-
-#: lib/delivest_web/live/staff/log_live/hint_text.ex:4
+#: lib/delivest_web/live/staff/integration_live/index.ex:329
 #, elixir-autogen, elixir-format
 msgid "No CRM ID"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/components/hints_component.ex:16
-#, elixir-autogen, elixir-format
-msgid "No hints: the catalog matches the CRM."
-msgstr ""
-
-#: lib/delivest_web/live/staff/log_live/hint_text.ex:6
+#: lib/delivest_web/live/staff/integration_live/index.ex:322
 #, elixir-autogen, elixir-format
 msgid "Price differs"
-msgstr ""
-
-#: lib/delivest_web/live/staff/log_live/hint_text.ex:25
-#, elixir-autogen, elixir-format
-msgid "Product «%{product}» (ID %{id}) costs %{app} ₽ in the app and %{crm} ₽ in %{provider}."
-msgstr ""
-
-#: lib/delivest_web/live/staff/log_live/hint_text.ex:10
-#, elixir-autogen, elixir-format
-msgid "Product «%{product}» has no CRM ID: orders with it will not reach %{provider}."
-msgstr ""
-
-#: lib/delivest_web/live/staff/log_live/hint_text.ex:17
-#, elixir-autogen, elixir-format
-msgid "Product «%{product}» with ID %{id} is not found in %{provider}."
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:155
@@ -3655,32 +3612,32 @@ msgstr ""
 msgid "to"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:162
+#: lib/delivest_web/live/staff/log_live/index.ex:161
 #, elixir-autogen, elixir-format
 msgid "All branches"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:151
+#: lib/delivest_web/live/staff/log_live/index.ex:150
 #, elixir-autogen, elixir-format
 msgid "All employees"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:138
+#: lib/delivest_web/live/staff/log_live/index.ex:137
 #, elixir-autogen, elixir-format
 msgid "All events"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:94
+#: lib/delivest_web/live/staff/log_live/index.ex:93
 #, elixir-autogen, elixir-format
 msgid "By branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:92
+#: lib/delivest_web/live/staff/log_live/index.ex:91
 #, elixir-autogen, elixir-format
 msgid "By employee"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:93
+#: lib/delivest_web/live/staff/log_live/index.ex:92
 #, elixir-autogen, elixir-format
 msgid "By event"
 msgstr ""
@@ -3710,7 +3667,7 @@ msgstr ""
 msgid "Edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:90
+#: lib/delivest_web/live/staff/log_live/index.ex:89
 #, elixir-autogen, elixir-format
 msgid "Newest first"
 msgstr ""
@@ -3720,7 +3677,7 @@ msgstr ""
 msgid "Not sent to CRM"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:91
+#: lib/delivest_web/live/staff/log_live/index.ex:90
 #, elixir-autogen, elixir-format
 msgid "Oldest first"
 msgstr ""
@@ -3730,7 +3687,7 @@ msgstr ""
 msgid "Password changed"
 msgstr ""
 
-#: lib/delivest_web/live/staff/log_live/index.ex:182
+#: lib/delivest_web/live/staff/log_live/index.ex:181
 #, elixir-autogen, elixir-format
 msgid "Reset"
 msgstr ""
@@ -4143,4 +4100,149 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_header.ex:107
 #, elixir-autogen, elixir-format
 msgid "Theme"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:308
+#, elixir-autogen, elixir-format
+msgid "All products with a CRM ID are found in Frontpad."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:187
+#, elixir-autogen, elixir-format
+msgid "Available in"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:227
+#, elixir-autogen, elixir-format
+msgid "Branch settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:244
+#, elixir-autogen, elixir-format
+msgid "Check"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:282
+#, elixir-autogen, elixir-format
+msgid "Connected"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:138
+#, elixir-autogen, elixir-format
+msgid "External services connected to the current branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:91
+#: lib/delivest_web/live/staff/integration_live/index.ex:94
+#: lib/delivest_web/live/staff/integration_live/index.ex:221
+#, elixir-autogen, elixir-format
+msgid "Frontpad API key is not set for this branch"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:97
+#, elixir-autogen, elixir-format
+msgid "Frontpad did not respond, try again later"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:96
+#, elixir-autogen, elixir-format
+msgid "Frontpad error: %{error}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:254
+#, elixir-autogen, elixir-format
+msgid "Frontpad products"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:183
+#, elixir-autogen, elixir-format
+msgid "Get products"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:139
+#: lib/delivest_web/live/staff/integration_live/index.ex:16
+#: lib/delivest_web/live/staff/integration_live/index.ex:137
+#: lib/delivest_web/live/staff/integration_live/index.ex:167
+#, elixir-autogen, elixir-format
+msgid "Integrations"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:181
+#, elixir-autogen, elixir-format
+msgid "Loading..."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:287
+#, elixir-autogen, elixir-format
+msgid "Not connected"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:314
+#, elixir-autogen, elixir-format
+msgid "Not found in Frontpad"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:404
+#, elixir-autogen, elixir-format
+msgid "Nothing found"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:277
+#, elixir-autogen, elixir-format
+msgid "Orders go to CRM"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:315
+#, elixir-autogen, elixir-format
+msgid "Orders with these products will not reach Frontpad."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:266
+#, elixir-autogen, elixir-format
+msgid "Products have not been received yet. Get them from Frontpad to check the menu."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:172
+#, elixir-autogen, elixir-format
+msgid "Products in Frontpad and their match with the app menu."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:154
+#, elixir-autogen, elixir-format
+msgid "Products in the CRM and their match with the app menu."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:36
+#, elixir-autogen, elixir-format
+msgid "Products received from Frontpad"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:233
+#, elixir-autogen, elixir-format
+msgid "Received from Frontpad"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:382
+#, elixir-autogen, elixir-format
+msgid "Search by name or CRM ID..."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:330
+#, elixir-autogen, elixir-format
+msgid "These products are not linked to Frontpad."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:39
+#, elixir-autogen, elixir-format
+msgid "Too early to update"
+msgstr ""
+
+#: lib/delivest_web/controllers/page_html/home.html.heex:172
+#, elixir-autogen, elixir-format
+msgid "Who did what and when, application logs and errors in one section."
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/index.ex:118
+#, elixir-autogen, elixir-format
+msgid "Who did what and when, application logs and errors."
 msgstr ""

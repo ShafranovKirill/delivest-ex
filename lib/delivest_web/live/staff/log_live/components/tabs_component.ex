@@ -8,8 +8,7 @@ defmodule DelivestWeb.Staff.LogLive.Components.TabsComponent do
       assign(assigns, :tabs, [
         {:events, ~p"/staff/logs", "hero-clock", gettext("Events")},
         {:raw, ~p"/staff/logs/raw", "hero-command-line", gettext("Raw logs")},
-        {:errors, ~p"/staff/logs/errors", "hero-exclamation-triangle", gettext("Errors")},
-        {:hints, ~p"/staff/logs/hints", "hero-light-bulb", gettext("Hints")}
+        {:errors, ~p"/staff/logs/errors", "hero-exclamation-triangle", gettext("Errors")}
       ])
 
     ~H"""

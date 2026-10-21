@@ -62,7 +62,6 @@ defmodule DelivestWeb.Staff.LogLive.Query do
   defp base(:events), do: ~p"/staff/logs"
   defp base(:raw), do: ~p"/staff/logs/raw"
   defp base(:errors), do: ~p"/staff/logs/errors"
-  defp base(:hints), do: ~p"/staff/logs/hints"
 
   defp query(filters) when map_size(filters) == 0, do: ""
   defp query(filters), do: "?" <> URI.encode_query(filters)

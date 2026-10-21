@@ -210,7 +210,6 @@ defmodule DelivestWeb.Router do
         live "/", Index, :events
         live "/raw", Index, :raw
         live "/errors", Index, :errors
-        live "/hints", Index, :hints
       end
     end
 
@@ -225,6 +224,11 @@ defmodule DelivestWeb.Router do
       ] do
       live "/dashboard", DashboardLive.Index, :index
       live "/statistics", StatisticsLive.Index, :index
+
+      scope "/integrations", IntegrationLive do
+        live "/", Index, :index
+        live "/frontpad", Index, :frontpad
+      end
 
       scope "/categories", CategoryLive do
         live "/", Categories, :index

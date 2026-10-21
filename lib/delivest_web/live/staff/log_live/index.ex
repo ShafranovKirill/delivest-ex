@@ -7,7 +7,6 @@ defmodule DelivestWeb.Staff.LogLive.Index do
   alias DelivestWeb.Staff.LogLive.Components.{
     EntriesComponent,
     EventsComponent,
-    HintsComponent,
     TabsComponent
   }
 
@@ -116,7 +115,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     <div class="space-y-6 py-4 sm:p-6">
       <.page_header
         title={gettext("Logs")}
-        subtitle={gettext("Who did what and when, application logs, errors and hints.")}
+        subtitle={gettext("Who did what and when, application logs and errors.")}
       />
 
       <TabsComponent.render_tabs active={@live_action} />
@@ -211,7 +210,6 @@ defmodule DelivestWeb.Staff.LogLive.Index do
         :if={@live_action in [:raw, :errors]}
         entries={@streams.rows}
       />
-      <HintsComponent.render_hints :if={@live_action == :hints} entries={@streams.rows} />
 
       <.pagination meta={@meta} path_fn={&Query.path(@live_action, Map.merge(@filters, &1))} />
     </div>

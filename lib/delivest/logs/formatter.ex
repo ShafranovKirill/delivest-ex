@@ -5,14 +5,7 @@ defmodule Delivest.Logs.Formatter do
     :crash_reason,
     :error_code,
     :worker,
-    :job_id,
-    :hint,
-    :hint_provider,
-    :hint_branch,
-    :hint_product,
-    :hint_external_id,
-    :hint_app_price,
-    :hint_crm_price
+    :job_id
   ]
 
   def to_entry(%{level: level, msg: msg, meta: meta}) do

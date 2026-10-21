@@ -14,17 +14,12 @@ defmodule Delivest.Integrations.Crm.CatalogCheckTest do
       product("unlinked", nil, 400)
     ]
 
-    catalog = [%{external_id: "1", price: 100}, %{external_id: "2", price: 250}]
+    catalog = [%{"external_id" => "1", "price" => 100}, %{"external_id" => "2", "price" => 250}]
 
     assert [
-             %{
-               "type" => "price_mismatch",
-               "product_id" => "pricey",
-               "app_price" => 200,
-               "crm_price" => 250
-             },
-             %{"type" => "missing_in_crm", "product_id" => "gone"},
-             %{"type" => "missing_crm_id", "product_id" => "unlinked"}
+             %{type: :price_mismatch, product_id: "pricey", app_price: 200, crm_price: 250},
+             %{type: :missing_in_crm, product_id: "gone"},
+             %{type: :missing_crm_id, product_id: "unlinked"}
            ] = CatalogCheck.issues(products, catalog)
   end
 end

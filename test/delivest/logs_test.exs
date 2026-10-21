@@ -8,16 +8,14 @@ defmodule Delivest.LogsTest do
     Repo.insert!(%Entry{level: level, message: message, inserted_at: at, metadata: metadata})
   end
 
-  test "scopes split errors, business hints and raw logs" do
+  test "scopes split errors and raw logs" do
     insert_entry("error", "boom")
     insert_entry("warning", "order.created failed")
-    insert_entry("warning", "price differs", DateTime.utc_now(), %{"hint" => "price_mismatch"})
     insert_entry("info", "hello")
 
     assert {:ok, {[%{message: "boom"}], _}} = Logs.list_entries(:errors)
-    assert {:ok, {[%{message: "price differs"}], _}} = Logs.list_entries(:hints)
     assert {:ok, {raw, _}} = Logs.list_entries(:raw)
-    assert length(raw) == 4
+    assert length(raw) == 3
   end
 
   test "prune removes entries older than the retention window" do
