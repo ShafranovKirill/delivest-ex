@@ -3,13 +3,12 @@ defmodule DelivestWeb.Staff.ProductLive.BulkRows do
 
   alias Delivest.Net.Product
 
-  @columns ~w(name price old_price weight quantity category external_id description)
+  @columns ~w(name price weight quantity category external_id description)
   @max_rows 300
 
   @aliases %{
     "name" => ~w(название наименование товар блюдо name title),
     "price" => ~w(цена стоимость price),
-    "old_price" => ["старая цена", "цена до скидки", "old price", "old_price"],
     "weight" => ~w(вес граммы weight),
     "quantity" => ["кол-во", "количество", "штук", "quantity", "qty"],
     "category" => ~w(категория раздел category),
@@ -22,7 +21,6 @@ defmodule DelivestWeb.Staff.ProductLive.BulkRows do
 
   def label("name"), do: gettext("Name")
   def label("price"), do: gettext("Price")
-  def label("old_price"), do: gettext("Old price")
   def label("weight"), do: gettext("Weight, g")
   def label("quantity"), do: gettext("Pieces")
   def label("category"), do: gettext("Category")
@@ -83,10 +81,9 @@ defmodule DelivestWeb.Staff.ProductLive.BulkRows do
   defp parse(column, "") when column in ~w(name price), do: {:error, gettext("Required")}
   defp parse(_column, ""), do: {:ok, nil}
 
-  defp parse(column, value) when column in ~w(price old_price) do
+  defp parse("price", value) do
     case money(value) do
       nil -> {:error, gettext("Not a price")}
-      amount when column == "old_price" -> {:ok, Integer.to_string(amount)}
       amount -> {:ok, amount}
     end
   end

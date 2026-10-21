@@ -77,8 +77,8 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
     assert [%{"name" => "Борщ", "price" => "350"}, %{"name" => "Щи"}] =
              BulkRows.paste("Борщ\t350\r\nЩи\n\n", "name")
 
-    assert [%{"old_price" => "500", "price" => "400"}] =
-             BulkRows.paste("Цена до скидки\tЦена\tНазвание\n500\t400\tПлов", "name")
+    assert [%{"price" => "400", "name" => "Плов"}] =
+             BulkRows.paste("Цена\tНазвание\n400\tПлов", "name")
 
     assert {%{"price" => 1500, "weight" => 300}, %{}} =
              BulkRows.validate(%{"name" => "Плов", "price" => "1 500 руб.", "weight" => "300гр"})
