@@ -24,6 +24,19 @@ defmodule DelivestWeb.Seo.SeoController do
     |> send_resp(200, SeoSite.sitemap(slugs))
   end
 
+  def manifest(conn, _params) do
+    conn
+    |> cached()
+    |> put_resp_content_type("application/manifest+json")
+    |> send_resp(200, Jason.encode!(SeoSite.manifest(Franchise.get_settings())))
+  end
+
+  def favicon(conn, _params) do
+    conn
+    |> cached()
+    |> redirect(external: SeoSite.favicon(Franchise.get_settings()))
+  end
+
   defp cached(conn), do: put_resp_header(conn, "cache-control", "public, max-age=300")
 
   defp original_path(conn) do

@@ -25,6 +25,38 @@ defmodule DelivestWeb.Seo.SeoSite do
     }
   end
 
+  def manifest(%Settings{} = settings) do
+    %{
+      name: settings.name,
+      short_name: settings.name,
+      description: settings.description,
+      lang: "ru",
+      start_url: "/",
+      scope: "/",
+      display: "standalone",
+      background_color: "#ffffff",
+      theme_color: settings.primary_color,
+      icons: manifest_icons(settings)
+    }
+    |> Map.reject(fn {_key, value} -> is_nil(value) end)
+  end
+
+  defp manifest_icons(%Settings{icon_key: nil}), do: []
+
+  defp manifest_icons(settings) do
+    for size <- [192, 512] do
+      %{
+        src: Franchise.icon_url(settings, "icon-#{size}.png"),
+        sizes: "#{size}x#{size}",
+        type: "image/png",
+        purpose: "any"
+      }
+    end
+  end
+
+  def favicon(settings),
+    do: Franchise.icon_url(settings, "favicon.ico") || origin() <> @default_icon
+
   def robots do
     """
     User-agent: *

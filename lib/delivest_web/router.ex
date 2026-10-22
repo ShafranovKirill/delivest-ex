@@ -271,6 +271,8 @@ defmodule DelivestWeb.Router do
     get "/head", SeoController, :head
     get "/robots.txt", SeoController, :robots
     get "/sitemap.xml", SeoController, :sitemap
+    get "/site.webmanifest", SeoController, :manifest
+    get "/favicon.ico", SeoController, :favicon
   end
 
   scope "/" do

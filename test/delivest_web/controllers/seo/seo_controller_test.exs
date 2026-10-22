@@ -78,4 +78,21 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
     assert body =~ "<loc>http://localhost:3000/center/promotions</loc>"
     refute body =~ "closed"
   end
+
+  test "manifest and favicon follow the uploaded icon", %{conn: conn, admin: admin} do
+    manifest = conn |> get(~p"/seo/site.webmanifest") |> response(200) |> Jason.decode!()
+    assert %{"name" => "Delivest", "theme_color" => "#462094", "icons" => []} = manifest
+
+    assert redirected_to(get(conn, ~p"/seo/favicon.ico")) ==
+             "http://localhost:3000/delivest-logo/logo-white.png"
+
+    {:ok, %{icon_key: icon}} = Franchise.update_icon(admin, Delivest.S3Stub.png(512, 512))
+
+    manifest = conn |> get(~p"/seo/site.webmanifest") |> response(200) |> Jason.decode!()
+    assert [%{"sizes" => "192x192"}, %{"sizes" => "512x512", "src" => src}] = manifest["icons"]
+    assert src == "http://s3.test:8333/delivest/#{icon}/icon-512.png"
+
+    assert redirected_to(get(conn, ~p"/seo/favicon.ico")) ==
+             "http://s3.test:8333/delivest/#{icon}/favicon.ico"
+  end
 end
