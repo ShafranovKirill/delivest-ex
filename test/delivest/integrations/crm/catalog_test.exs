@@ -54,6 +54,26 @@ defmodule Delivest.Integrations.Crm.CatalogTest do
            ] = Enum.sort_by(Catalog.issues(branch.id, snapshot), & &1.name)
   end
 
+  test "refresh accepts a catalog with list fields" do
+    branch = branch("key-list")
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      Req.Test.json(conn, %{
+        "result" => "success",
+        "product_id" => ["1", "2"],
+        "name" => ["Soup", "Pizza"],
+        "price" => ["100.00", 650]
+      })
+    end)
+
+    assert {:ok, snapshot} = Catalog.refresh(branch.id, :frontpad)
+
+    assert [
+             %{"external_id" => "1", "name" => "Soup", "price" => 100},
+             %{"external_id" => "2", "name" => "Pizza", "price" => 650}
+           ] = Enum.sort_by(snapshot.products, & &1["external_id"])
+  end
+
   test "refresh is allowed once per hour" do
     branch = branch("key-b")
     stub_catalog()

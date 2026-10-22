@@ -18,20 +18,29 @@ defmodule Delivest.Integrations.Frontpad.Api do
   end
 
   defp products({:ok, %{"result" => "success"} = body}) do
+    names = Map.new(indexed(body["name"]))
+    prices = Map.new(indexed(body["price"]))
+
     {:ok,
-     body
-     |> Map.get("product_id", %{})
+     body["product_id"]
+     |> indexed()
      |> Enum.map(fn {index, external_id} ->
        %{
          external_id: to_string(external_id),
-         name: get_in(body, ["name", index]),
-         price: parse_price(get_in(body, ["price", index]))
+         name: names[index],
+         price: parse_price(prices[index])
        }
      end)}
   end
 
   defp products({:ok, %{"result" => "error", "error" => "invalid_products"}}), do: {:ok, []}
   defp products(response), do: result(response)
+
+  defp indexed(values) when is_list(values),
+    do: values |> Enum.with_index(fn value, index -> {to_string(index), value} end)
+
+  defp indexed(values) when is_map(values), do: Enum.to_list(values)
+  defp indexed(_values), do: []
 
   defp parse_price(price) when is_number(price), do: round(price)
 
