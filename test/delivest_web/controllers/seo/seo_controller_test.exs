@@ -12,7 +12,7 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
   end
 
   describe "head" do
-    test "falls back to the default logo before images are uploaded", %{conn: conn} do
+    test "falls back to the Delivest images before the franchise uploads its own", %{conn: conn} do
       html =
         conn
         |> put_req_header("x-original-uri", "/center/promotions?utm_source=tg")
@@ -22,10 +22,12 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
       assert html =~ "<title>Delivest</title>"
       assert html =~ ~s(<link rel="canonical" href="http://localhost:3000/center/promotions">)
 
-      assert html =~
-               ~s(<meta property="og:image" content="http://localhost:3000/delivest-logo/logo-white.png">)
+      assert html =~ ~s(<link rel="icon" href="http://localhost:4000/images/seo/favicon.ico")
 
-      assert html =~ ~s(<meta name="twitter:card" content="summary">)
+      assert html =~
+               ~s(<meta property="og:image" content="http://localhost:4000/images/seo/og-image.png">)
+
+      assert html =~ ~s(<meta name="twitter:card" content="summary_large_image">)
       refute html =~ "description"
     end
 
@@ -81,10 +83,11 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
 
   test "manifest and favicon follow the uploaded icon", %{conn: conn, admin: admin} do
     manifest = conn |> get(~p"/seo/site.webmanifest") |> response(200) |> Jason.decode!()
-    assert %{"name" => "Delivest", "theme_color" => "#462094", "icons" => []} = manifest
+    assert %{"name" => "Delivest", "theme_color" => "#462094", "icons" => [_, default]} = manifest
+    assert default["src"] == "http://localhost:4000/images/seo/icon-512.png"
 
     assert redirected_to(get(conn, ~p"/seo/favicon.ico")) ==
-             "http://localhost:3000/delivest-logo/logo-white.png"
+             "http://localhost:4000/images/seo/favicon.ico"
 
     {:ok, %{icon_key: icon}} = Franchise.update_icon(admin, Delivest.S3Stub.png(512, 512))
 

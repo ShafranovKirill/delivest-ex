@@ -1,27 +1,32 @@
 defmodule DelivestWeb.Seo.SeoSite do
+  use DelivestWeb, :verified_routes
+
   alias Delivest.Franchise
   alias Delivest.Franchise.{Images, Settings}
 
-  @default_icon "/delivest-logo/logo-white.png"
   @sitemap_pages ["", "/promotions", "/contacts", "/branch-info"]
 
   def build(%Settings{} = settings, path) do
-    origin = origin()
-    icon = &Franchise.icon_url(settings, &1)
-    share_image = Franchise.share_image_url(settings)
     {width, height} = Images.share_size()
+
+    {image, large?} =
+      cond do
+        url = Franchise.share_image_url(settings) -> {url, true}
+        url = Franchise.icon_url(settings, "icon-512.png") -> {url, false}
+        true -> {url(~p"/images/seo/og-image.png"), true}
+      end
 
     %{
       name: settings.name,
       description: settings.description,
       color: settings.primary_color,
-      url: origin <> path,
-      favicon: icon.("favicon.ico"),
-      icon_32: icon.("icon-32.png") || @default_icon,
-      apple_touch_icon: icon.("apple-touch-icon.png") || @default_icon,
-      image: share_image || icon.("icon-512.png") || origin <> @default_icon,
-      image_size: if(share_image, do: %{width: width, height: height}),
-      card: if(share_image, do: "summary_large_image", else: "summary")
+      url: origin() <> path,
+      favicon: icon_url(settings, "favicon.ico"),
+      icon_32: icon_url(settings, "icon-32.png"),
+      apple_touch_icon: icon_url(settings, "apple-touch-icon.png"),
+      image: image,
+      image_size: if(large?, do: %{width: width, height: height}),
+      card: if(large?, do: "summary_large_image", else: "summary")
     }
   end
 
@@ -41,12 +46,10 @@ defmodule DelivestWeb.Seo.SeoSite do
     |> Map.reject(fn {_key, value} -> is_nil(value) end)
   end
 
-  defp manifest_icons(%Settings{icon_key: nil}), do: []
-
   defp manifest_icons(settings) do
     for size <- [192, 512] do
       %{
-        src: Franchise.icon_url(settings, "icon-#{size}.png"),
+        src: icon_url(settings, "icon-#{size}.png"),
         sizes: "#{size}x#{size}",
         type: "image/png",
         purpose: "any"
@@ -54,8 +57,10 @@ defmodule DelivestWeb.Seo.SeoSite do
     end
   end
 
-  def favicon(settings),
-    do: Franchise.icon_url(settings, "favicon.ico") || origin() <> @default_icon
+  def favicon(settings), do: icon_url(settings, "favicon.ico")
+
+  defp icon_url(settings, name),
+    do: Franchise.icon_url(settings, name) || url(~p"/images/seo/#{name}")
 
   def robots do
     """

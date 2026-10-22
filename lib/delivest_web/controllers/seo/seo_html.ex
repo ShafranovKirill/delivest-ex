@@ -9,7 +9,7 @@ defmodule DelivestWeb.Seo.SeoHTML do
       meta(name: "description", content: site.description),
       tag("link", rel: "canonical", href: site.url),
       meta(name: "theme-color", content: site.color),
-      site.favicon && tag("link", rel: "icon", href: site.favicon, sizes: "48x48"),
+      tag("link", rel: "icon", href: site.favicon, sizes: "48x48"),
       tag("link", rel: "icon", type: "image/png", sizes: "32x32", href: site.icon_32),
       tag("link", rel: "apple-touch-icon", href: site.apple_touch_icon),
       tag("link", rel: "manifest", href: "/site.webmanifest"),
