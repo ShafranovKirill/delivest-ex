@@ -22,6 +22,8 @@ defmodule Delivest.Franchise.Settings do
     field :legal_address, :string
     field :email, :string
     field :phone, :string
+    field :icon_key, :string
+    field :share_image_key, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -41,6 +43,8 @@ defmodule Delivest.Franchise.Settings do
     |> validate_format(:ogrn, ~r/^(\d{13}|\d{15})$/, message: gettext("13 or 15 digits"))
     |> validate_format(:email, @email_format, message: gettext("Not an email"))
   end
+
+  def images_changeset(settings, attrs), do: cast(settings, attrs, [:icon_key, :share_image_key])
 
   defp fields do
     [

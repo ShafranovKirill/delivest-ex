@@ -22,5 +22,14 @@ defmodule Delivest.Franchise.SettingsStore do
     |> tap(fn _result -> Cachex.del(@cache, @key) end)
   end
 
+  def save_images(attrs) do
+    load()
+    |> Settings.images_changeset(attrs)
+    |> Repo.insert_or_update()
+    |> tap(fn _result -> Cachex.del(@cache, @key) end)
+  end
+
+  def current(field), do: Map.fetch!(load(), field)
+
   defp load, do: Repo.one(Settings) || %Settings{}
 end

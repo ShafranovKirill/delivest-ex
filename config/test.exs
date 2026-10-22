@@ -50,7 +50,8 @@ config :phoenix,
 config :ex_aws,
   access_key_id: "test-access-key",
   secret_access_key: "test-secret-key",
-  s3: [scheme: "http://", host: "s3.test", port: 8333]
+  s3: [scheme: "http://", host: "s3.test", port: 8333],
+  http_client: Delivest.S3Stub
 
 config :delivest, Delivest.Media,
   public_bucket: "delivest",

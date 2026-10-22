@@ -1,6 +1,6 @@
 defmodule Delivest.Franchise do
   alias Delivest.Identity
-  alias Delivest.Franchise.{Documents, SettingsStore, Templates}
+  alias Delivest.Franchise.{Assets, Documents, SettingsStore, Templates}
 
   defdelegate get_settings, to: SettingsStore, as: :get
   defdelegate change_settings(settings, attrs \\ %{}), to: SettingsStore, as: :change
@@ -9,6 +9,20 @@ defmodule Delivest.Franchise do
   defdelegate placeholders, to: Templates
 
   def update_settings(staff, attrs), do: authorized(staff, fn -> SettingsStore.save(attrs) end)
+
+  def update_icon(staff, binary),
+    do: authorized(staff, fn -> replace_image(:icon_key, Assets.store_icon(binary)) end)
+
+  def remove_icon(staff), do: authorized(staff, fn -> replace_image(:icon_key, {:ok, nil}) end)
+
+  def update_share_image(staff, binary),
+    do:
+      authorized(staff, fn ->
+        replace_image(:share_image_key, Assets.store_share_image(binary))
+      end)
+
+  def remove_share_image(staff),
+    do: authorized(staff, fn -> replace_image(:share_image_key, {:ok, nil}) end)
 
   def update_document(staff, kind, body),
     do: authorized(staff, fn -> Documents.save(kind, body) end)
@@ -19,6 +33,20 @@ defmodule Delivest.Franchise do
     document = Documents.get(kind)
     %{document | body: Templates.render(document.body, get_settings())}
   end
+
+  defp replace_image(field, {:ok, value}) do
+    previous = SettingsStore.current(field)
+
+    with {:ok, settings} <- SettingsStore.save_images(%{field => value}) do
+      if previous != value, do: delete_image(field, previous)
+      {:ok, settings}
+    end
+  end
+
+  defp replace_image(_field, error), do: error
+
+  defp delete_image(:icon_key, dir), do: Assets.delete_icon(dir)
+  defp delete_image(:share_image_key, key), do: Assets.delete_share_image(key)
 
   defp authorized(staff, fun) do
     if Identity.can?(staff, "admin"), do: fun.(), else: {:error, :forbidden}

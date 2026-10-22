@@ -52,4 +52,47 @@ defmodule Delivest.FranchiseTest do
     {:ok, _} = Franchise.reset_document(admin, :privacy)
     assert %{custom: false} = Franchise.get_document(:privacy)
   end
+
+  describe "images" do
+    setup do
+      Delivest.S3Stub.record(self())
+      :ok
+    end
+
+    test "an icon is cut into favicon sizes and replaces the previous one", %{admin: admin} do
+      assert {:ok, %{icon_key: "franchise/icon/" <> _ = dir}} =
+               Franchise.update_icon(admin, Delivest.S3Stub.png(600, 400))
+
+      for name <- ~w(favicon.ico icon-32.png apple-touch-icon.png icon-192.png icon-512.png) do
+        assert_received {:s3, "PUT", "/delivest/" <> key, _body}
+        assert key == "#{dir}/#{name}"
+      end
+
+      assert %{icon_key: ^dir} = Franchise.get_settings()
+
+      assert {:ok, %{icon_key: nil}} = Franchise.remove_icon(admin)
+      assert_received {:s3, "DELETE", "/delivest/" <> deleted, ""}
+      assert deleted == "#{dir}/favicon.ico"
+    end
+
+    test "the link preview is cropped to 1200 by 630", %{admin: admin} do
+      assert {:ok, %{share_image_key: key}} =
+               Franchise.update_share_image(admin, Delivest.S3Stub.png(1600, 1600))
+
+      assert_received {:s3, "PUT", "/delivest/" <> ^key, jpeg}
+      {:ok, image} = Vix.Vips.Image.new_from_buffer(jpeg)
+      assert {1200, 630} == {Vix.Vips.Image.width(image), Vix.Vips.Image.height(image)}
+    end
+
+    test "rejects small and broken images and non admins", %{admin: admin, manager: manager} do
+      assert {:error, :too_small} = Franchise.update_icon(admin, Delivest.S3Stub.png(64, 64))
+
+      assert {:error, :too_small} =
+               Franchise.update_share_image(admin, Delivest.S3Stub.png(300, 200))
+
+      assert {:error, :invalid_image} = Franchise.update_icon(admin, "not an image")
+      assert {:error, :forbidden} = Franchise.update_icon(manager, Delivest.S3Stub.png(600, 600))
+      refute_received {:s3, _method, _path, _body}
+    end
+  end
 end
