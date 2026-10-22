@@ -17,7 +17,8 @@ defmodule Delivest.Media do
   @spec generate_public_url(String.t(), String.t()) :: {:ok, String.t()}
   def generate_public_url(bucket, key) do
     public_config = get_public_config()
-    url = "#{public_config.scheme}#{public_config.host}:#{public_config.port}/#{bucket}/#{key}"
+    port = if public_config.port in [nil, ""], do: "", else: ":#{public_config.port}"
+    url = "#{public_config.scheme}#{public_config.host}#{port}/#{bucket}/#{key}"
 
     {:ok, url}
   end
