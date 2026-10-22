@@ -102,7 +102,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
         <h2 class="font-bold">{gettext("Webhook for zvonok.com")}</h2>
         <p class="text-sm text-base-content/60">
           {gettext(
-            "In the zvonok.com campaign set a GET postback to this URL with the call_id and phone parameters of the confirmed call."
+            "Paste this URL as a whole into the postback of the zvonok.com campaign. {ct_call_id} and {ct_phone} are Zvonok macros, it fills them in by itself."
           )}
         </p>
         <code class="block break-all rounded bg-base-200 p-2 text-xs">

@@ -169,6 +169,28 @@ defmodule DelivestWeb.Client.AuthControllerTest do
              |> json_response(200)
   end
 
+  test "postback takes the zvonok macro names", %{conn: conn} do
+    start_call(conn, 2002)
+
+    assert %{"result" => "success"} =
+             conn
+             |> get("/integrations/zvonok/zvonok-token?ct_call_id=2002&ct_phone=79991234567")
+             |> json_response(200)
+  end
+
+  test "postback without the call parameters is logged with what came", %{conn: conn} do
+    start_call(conn, 3003)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        assert %{"result" => "ignored"} =
+                 conn |> get("/integrations/zvonok/zvonok-token?foo=bar") |> json_response(200)
+      end)
+
+    assert log =~ "zvonok webhook matched no pending sign-in"
+    assert log =~ ~s("foo" => "bar")
+  end
+
   test "unknown webhook token is rejected", %{conn: conn} do
     assert %{"result" => "error"} =
              conn |> get("/integrations/zvonok/wrong?call_id=1") |> json_response(404)

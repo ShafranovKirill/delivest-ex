@@ -31,7 +31,10 @@ defmodule Delivest.Integrations.Zvonok do
 
   def configured?, do: Settings.complete?(get_settings())
 
-  def webhook_url(token), do: DelivestWeb.Endpoint.url() <> "/integrations/zvonok/" <> token
+  def webhook_url(token),
+    do:
+      DelivestWeb.Endpoint.url() <>
+        "/integrations/zvonok/" <> token <> "?call_id={ct_call_id}&phone={ct_phone}"
 
   defp fetch_settings do
     settings = get_settings()

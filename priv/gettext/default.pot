@@ -4263,11 +4263,6 @@ msgstr ""
 msgid "External services connected to the app."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:104
-#, elixir-autogen, elixir-format
-msgid "In the zvonok.com campaign set a GET postback to this URL with the call_id and phone parameters of the confirmed call."
-msgstr ""
-
 #: lib/delivest_web/live/staff/integration_live/index.ex:74
 #, elixir-autogen, elixir-format
 msgid "Orders to the CRM and products matching with the app menu."
@@ -4304,4 +4299,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:82
 #, elixir-autogen, elixir-format
 msgid "Webhook token"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:104
+#, elixir-autogen, elixir-format
+msgid "Paste this URL as a whole into the postback of the zvonok.com campaign. {ct_call_id} and {ct_phone} are Zvonok macros, it fills them in by itself."
 msgstr ""
