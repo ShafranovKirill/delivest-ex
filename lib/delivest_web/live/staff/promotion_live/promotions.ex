@@ -35,8 +35,8 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
     if can?(socket, "promotions.create"),
       do:
         assign(socket,
-          page_title: gettext("New promotion"),
-          promotion: %Promotion{branch_id: socket.assigns.branch_id}
+          page_title: gettext("New promo code"),
+          promotion: %Promotion{branch_id: socket.assigns.branch_id, kind: :public_code}
         ),
       else: deny(socket)
   end
@@ -157,7 +157,42 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-5xl mx-auto">
+    <div
+      :if={@promotion && @live_action in [:new, :edit]}
+      id="promotion-editor"
+      class="space-y-6 py-4 sm:p-6 max-w-7xl mx-auto"
+    >
+      <div class="flex items-center gap-3">
+        <.link
+          patch={~p"/staff/promotions"}
+          class="btn btn-ghost btn-sm btn-square"
+          title={gettext("Back")}
+        >
+          <.icon name="hero-arrow-left" class="size-5" />
+        </.link>
+        <div>
+          <h1 class="text-2xl font-bold">{@page_title}</h1>
+          <p class="text-sm text-base-content/60">
+            {gettext("Discounts & promo codes")}
+          </p>
+        </div>
+      </div>
+
+      <.live_component
+        module={PromotionFormComponent}
+        id={@promotion.id || :new}
+        action={@live_action}
+        promotion={@promotion}
+        branch_id={@branch_id}
+        current_staff={@current_staff}
+        patch={~p"/staff/promotions"}
+      />
+    </div>
+
+    <div
+      :if={!(@promotion && @live_action in [:new, :edit])}
+      class="space-y-6 py-4 sm:p-6 max-w-5xl mx-auto"
+    >
       <.page_header
         title={gettext("Discounts & promo codes")}
         subtitle={gettext("Automatic promotions, sale prices, public and personal promo codes.")}
@@ -169,7 +204,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
             class="btn btn-outline"
             id="new-promotion"
           >
-            <.icon name="hero-plus" class="size-5" /> {gettext("New promotion")}
+            <.icon name="hero-plus" class="size-5" /> {gettext("Create promo code")}
           </.link>
           <.link
             :if={Identity.can?(@current_staff, "promotions.create")}
@@ -282,24 +317,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
           </div>
         </div>
       </div>
-
-      <.slide_over
-        id="promotion-slideover"
-        show={@live_action in [:new, :edit]}
-        title={@page_title}
-        on_close={JS.patch(~p"/staff/promotions")}
-      >
-        <.live_component
-          :if={@promotion && @live_action in [:new, :edit]}
-          module={PromotionFormComponent}
-          id={@promotion.id || :new}
-          action={@live_action}
-          promotion={@promotion}
-          branch_id={@branch_id}
-          current_staff={@current_staff}
-          patch={~p"/staff/promotions"}
-        />
-      </.slide_over>
 
       <.slide_over
         id="sale-slideover"

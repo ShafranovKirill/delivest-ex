@@ -10,7 +10,11 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionHelpers do
   def kind_label(:public_code), do: gettext("Public code")
   def kind_label(:personal_code), do: gettext("Personal codes")
 
-  def kind_options, do: Enum.map(Promotion.kinds(), &{kind_label(&1), &1})
+  def kinds, do: [:public_code, :personal_code, :automatic]
+
+  def kind_hint(:public_code), do: gettext("One code for everyone, entered in the cart")
+  def kind_hint(:personal_code), do: gettext("Unique codes issued to particular clients")
+  def kind_hint(:automatic), do: gettext("Applies by itself, no code needed")
 
   def kind_icon(:automatic), do: "hero-bolt"
   def kind_icon(:public_code), do: "hero-ticket"

@@ -246,18 +246,62 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     assigns = assign(assigns, errors: builder_errors(assigns))
 
     ~H"""
-    <div class="h-full flex flex-col">
+    <div>
       <.form
         for={@form}
         id="promotion-form"
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
-        class="flex flex-col h-full"
+        class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] items-start"
       >
-        <div class="flex-1 overflow-y-auto space-y-6">
+        <div class="space-y-4 min-w-0">
           <.step number={1} title={gettext("Basics")}>
-            <.input field={@form[:name]} type="text" label={gettext("Name")} maxlength="100" />
+            <div id="promotion-kind" class="grid gap-2 sm:grid-cols-3">
+              <label
+                :for={kind <- PromotionHelpers.kinds()}
+                class={[
+                  "rounded-box border p-3 flex flex-col gap-1 transition-colors",
+                  to_string(@form[:kind].value) == to_string(kind) &&
+                    "border-primary bg-primary/5 ring-1 ring-primary",
+                  to_string(@form[:kind].value) != to_string(kind) && "border-base-300",
+                  @action == :new && "cursor-pointer hover:border-primary/60",
+                  @action != :new && to_string(@form[:kind].value) != to_string(kind) &&
+                    "opacity-40"
+                ]}
+              >
+                <input
+                  type="radio"
+                  class="hidden"
+                  name={@form[:kind].name}
+                  value={kind}
+                  checked={to_string(@form[:kind].value) == to_string(kind)}
+                  disabled={@action != :new}
+                />
+                <span class="flex items-center gap-2 font-bold text-sm">
+                  <.icon name={PromotionHelpers.kind_icon(kind)} class="size-4 text-primary" />
+                  {PromotionHelpers.kind_label(kind)}
+                </span>
+                <span class="text-xs text-base-content/60">
+                  {PromotionHelpers.kind_hint(kind)}
+                </span>
+              </label>
+            </div>
+
+            <div class="grid gap-x-4 sm:grid-cols-2">
+              <.input field={@form[:name]} type="text" label={gettext("Name")} maxlength="100" />
+              <div :if={to_string(@form[:kind].value) == "public_code"}>
+                <.input
+                  field={@form[:code]}
+                  type="text"
+                  label={gettext("Promo code")}
+                  placeholder="SUMMER2026"
+                  maxlength="32"
+                  class="input w-full font-mono uppercase"
+                />
+              </div>
+            </div>
+
             <.input
               field={@form[:description]}
               type="textarea"
@@ -265,25 +309,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
               label={gettext("Description for customers")}
               maxlength="500"
             />
-
-            <.input
-              field={@form[:kind]}
-              type="select"
-              label={gettext("Type")}
-              options={PromotionHelpers.kind_options()}
-              disabled={@action != :new}
-            />
-
-            <div :if={to_string(@form[:kind].value) == "public_code"}>
-              <.input
-                field={@form[:code]}
-                type="text"
-                label={gettext("Promo code")}
-                placeholder="SUMMER2026"
-                maxlength="32"
-                class="input w-full font-mono uppercase"
-              />
-            </div>
 
             <p
               :if={to_string(@form[:kind].value) == "personal_code"}
@@ -320,7 +345,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
                 value={@builder.match}
               />
 
-              <div id="builder-conditions" class="space-y-2">
+              <div id="builder-conditions" class="grid gap-2 xl:grid-cols-2">
                 <.rule_card
                   :for={{row, index} <- Enum.with_index(@builder.conditions)}
                   id={"condition-#{index}"}
@@ -354,7 +379,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
             </.step>
 
             <.step number={3} title={gettext("What does the customer get?")}>
-              <div id="builder-effects" class="space-y-2">
+              <div id="builder-effects" class="grid gap-2 xl:grid-cols-2">
                 <.rule_card
                   :for={{row, index} <- Enum.with_index(@builder.effects)}
                   id={"effect-#{index}"}
@@ -387,17 +412,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
               />
             </.step>
 
-            <div
-              :if={@show_errors and (@errors != %{} or rules_errors(@form) != [])}
-              id="builder-errors"
-              class="rounded-box border border-error/40 bg-error/5 p-3 text-sm text-error space-y-1"
-            >
-              <p :if={@errors != %{}}>{gettext("Fill in the highlighted fields.")}</p>
-              <p :for={message <- rules_errors(@form)}>{message}</p>
-            </div>
-
-            <.rules_preview preview={@preview} rules={@rules} />
-
             <button
               type="button"
               class="btn btn-ghost btn-xs text-base-content/60"
@@ -411,13 +425,11 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
               <.input
                 field={@form[:rules]}
                 type="textarea"
-                rows="6"
+                rows="10"
                 class="textarea w-full font-mono text-sm"
                 spellcheck="false"
                 placeholder={rules_placeholder()}
               />
-
-              <.rules_preview preview={@preview} />
 
               <RulesHelp.render_help />
 
@@ -437,25 +449,33 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
               </div>
             </.step>
           <% end %>
+        </div>
+
+        <aside class="space-y-4 lg:sticky lg:top-4">
+          <.step title={gettext("Summary")}>
+            <.rules_preview preview={@preview} rules={@mode == :builder && @rules} />
+            <p :if={!@preview} class="text-sm text-base-content/60">
+              {gettext("Add a reward to see what the customer gets.")}
+            </p>
+          </.step>
 
           <.step
-            number={4}
             title={gettext("Limits")}
             hint={gettext("Leave empty for no limit. Per-client limits need the client's phone.")}
           >
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
-              <.input
-                field={@form[:starts_at]}
-                type="datetime-local"
-                label={gettext("Starts")}
-                value={PromotionHelpers.local_input(@form[:starts_at].value)}
-              />
-              <.input
-                field={@form[:ends_at]}
-                type="datetime-local"
-                label={gettext("Ends")}
-                value={PromotionHelpers.local_input(@form[:ends_at].value)}
-              />
+            <.input
+              field={@form[:starts_at]}
+              type="datetime-local"
+              label={gettext("Starts")}
+              value={PromotionHelpers.local_input(@form[:starts_at].value)}
+            />
+            <.input
+              field={@form[:ends_at]}
+              type="datetime-local"
+              label={gettext("Ends")}
+              value={PromotionHelpers.local_input(@form[:ends_at].value)}
+            />
+            <div class="grid grid-cols-2 gap-x-3">
               <.input
                 field={@form[:usage_limit]}
                 type="number"
@@ -472,7 +492,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
           </.step>
 
           <.step
-            number={5}
             title={gettext("Compatibility")}
             hint={
               gettext(
@@ -488,29 +507,45 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
             />
             <.input field={@form[:enabled]} type="checkbox" label={gettext("Enabled")} />
           </.step>
-        </div>
 
-        <div class="shrink-0 pt-4 mt-4 border-t border-base-200 flex justify-end gap-3">
-          <.link patch={@patch} class="btn btn-ghost">{gettext("Cancel")}</.link>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
-        </div>
+          <div
+            :if={@show_errors and (@errors != %{} or rules_errors(@form) != [])}
+            id="builder-errors"
+            class="rounded-box border border-error/40 bg-error/5 p-3 text-sm text-error space-y-1"
+          >
+            <p :if={@errors != %{}}>{gettext("Fill in the highlighted fields.")}</p>
+            <p :for={message <- rules_errors(@form)}>{message}</p>
+          </div>
+
+          <div class="flex gap-3">
+            <.link patch={@patch} class="btn btn-ghost flex-1">{gettext("Cancel")}</.link>
+            <button
+              type="submit"
+              class="btn btn-primary flex-1"
+              phx-disable-with={gettext("Saving...")}
+            >
+              {gettext("Save")}
+            </button>
+          </div>
+        </aside>
       </.form>
     </div>
     """
   end
 
-  attr :number, :integer, required: true
+  attr :number, :integer, default: nil
   attr :title, :string, required: true
   attr :hint, :string, default: nil
   slot :inner_block, required: true
 
   defp step(assigns) do
     ~H"""
-    <section class="space-y-3">
+    <section class="rounded-box border border-base-300 bg-base-100 p-4 sm:p-5 space-y-3">
       <div class="flex items-center gap-2">
-        <span class="size-6 rounded-full bg-primary text-primary-content text-xs font-bold flex items-center justify-center shrink-0">
+        <span
+          :if={@number}
+          class="size-6 rounded-full bg-primary text-primary-content text-xs font-bold flex items-center justify-center shrink-0"
+        >
           {@number}
         </span>
         <h3 class="font-bold">{@title}</h3>

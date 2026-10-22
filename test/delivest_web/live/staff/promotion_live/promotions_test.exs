@@ -16,6 +16,21 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     %{conn: conn, branch: branch}
   end
 
+  test "the editor opens on its own page with a promo code chosen", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/promotions")
+
+    lv |> element("#new-promotion", "Create promo code") |> render_click()
+    assert_patch(lv, ~p"/staff/promotions/new")
+
+    assert has_element?(lv, "#promotion-editor #promotion-form")
+    refute has_element?(lv, "#promotions")
+    assert has_element?(lv, "#promotion-kind input[value=public_code][checked]")
+
+    lv |> form("#promotion-form", promotion: %{kind: "automatic"}) |> render_change()
+    assert has_element?(lv, "#promotion-kind input[value=automatic][checked]")
+    refute has_element?(lv, "#promotion_code")
+  end
+
   test "creates a public promo code with the rules constructor", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/promotions/new")
 
