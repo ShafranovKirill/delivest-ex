@@ -31,6 +31,34 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
              Franchise.get_settings()
   end
 
+  test "uploads the icon and the link preview, then removes the icon", %{conn: conn} do
+    Delivest.S3Stub.record(self())
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
+
+    lv
+    |> file_input("#franchise-images-form", :icon, [
+      %{name: "logo.png", content: Delivest.S3Stub.png(512, 512), type: "image/png"}
+    ])
+    |> render_upload("logo.png")
+
+    assert %{icon_key: "franchise/icon/" <> _} = Franchise.get_settings()
+    assert has_element?(lv, "#franchise-icon-preview")
+
+    lv
+    |> file_input("#franchise-images-form", :share_image, [
+      %{name: "tiny.png", content: Delivest.S3Stub.png(100, 100), type: "image/png"}
+    ])
+    |> render_upload("tiny.png")
+
+    assert render(lv) =~ "at least 600 px wide"
+    refute has_element?(lv, "#franchise-share-preview")
+
+    lv |> element("button[phx-value-image=icon]") |> render_click()
+
+    assert %{icon_key: nil} = Franchise.get_settings()
+    refute has_element?(lv, "#franchise-icon-preview")
+  end
+
   test "edits and restores a document", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/documents/terms")
 

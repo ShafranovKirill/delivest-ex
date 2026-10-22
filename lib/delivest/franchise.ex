@@ -7,6 +7,8 @@ defmodule Delivest.Franchise do
   defdelegate list_documents, to: Documents, as: :list
   defdelegate parse_document_kind(value), to: Documents, as: :parse_kind
   defdelegate placeholders, to: Templates
+  defdelegate icon_url(settings, name), to: Assets
+  defdelegate share_image_url(settings), to: Assets
 
   def update_settings(staff, attrs), do: authorized(staff, fn -> SettingsStore.save(attrs) end)
 

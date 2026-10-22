@@ -517,7 +517,7 @@ msgstr "Перетаскивайте элементы для изменения 
 #: lib/delivest_web/live/staff/branch_live/branches.ex:95
 #: lib/delivest_web/live/staff/category_live/categories.ex:236
 #: lib/delivest_web/live/staff/client_live/show.ex:120
-#: lib/delivest_web/live/staff/franchise_live/index.ex:100
+#: lib/delivest_web/live/staff/franchise_live/index.ex:115
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:179
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:303
 #: lib/delivest_web/live/staff/role_live/roles.ex:152
@@ -619,6 +619,7 @@ msgid "Failed to save promotion:"
 msgstr "Не удалось сохранить акцию:"
 
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:93
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:106
 #: lib/delivest_web/live/staff/product_live/bulk.ex:417
 #, elixir-autogen, elixir-format
 msgid "File is too large"
@@ -1152,6 +1153,7 @@ msgid "You don't have permission to edit staff."
 msgstr "У вас нет прав для редактирования сотрудников."
 
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:43
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:102
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:39
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:161
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:51
@@ -3501,6 +3503,7 @@ msgstr "Скидка в процентах"
 msgid "Product in cart"
 msgstr "Товар в корзине"
 
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:217
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:591
 #, elixir-autogen, elixir-format
 msgid "Remove"
@@ -3798,11 +3801,13 @@ msgstr "Строка %{index}"
 msgid "Save all"
 msgstr "Сохранить все"
 
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:107
 #: lib/delivest_web/live/staff/product_live/bulk.ex:418
 #, elixir-autogen, elixir-format
 msgid "Unsupported file type"
 msgstr "Неподдерживаемый формат"
 
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:108
 #: lib/delivest_web/live/staff/product_live/bulk.ex:419
 #, elixir-autogen, elixir-format
 msgid "Upload failed"
@@ -3879,12 +3884,12 @@ msgstr "Какая скидка?"
 msgid "Which products?"
 msgstr "На какие товары?"
 
-#: lib/delivest/franchise/settings.ex:40
+#: lib/delivest/franchise/settings.ex:42
 #, elixir-autogen, elixir-format
 msgid "10 or 12 digits"
 msgstr "10 или 12 цифр"
 
-#: lib/delivest/franchise/settings.ex:41
+#: lib/delivest/franchise/settings.ex:43
 #, elixir-autogen, elixir-format
 msgid "13 or 15 digits"
 msgstr "13 или 15 цифр"
@@ -3899,22 +3904,22 @@ msgstr "Бренд"
 msgid "Consent to personal data processing"
 msgstr "Согласие на обработку персональных данных"
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:94
+#: lib/delivest_web/live/staff/franchise_live/index.ex:109
 #, elixir-autogen, elixir-format
 msgid "Default template"
 msgstr "Шаблон по умолчанию"
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:73
+#: lib/delivest_web/live/staff/franchise_live/index.ex:88
 #, elixir-autogen, elixir-format
 msgid "Default templates already contain your details. Have a lawyer check them before publishing."
 msgstr "Шаблоны по умолчанию уже содержат ваши реквизиты. Перед публикацией покажите их юристу."
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:47
+#: lib/delivest_web/live/staff/franchise_live/index.ex:55
 #, elixir-autogen, elixir-format
 msgid "Document saved"
 msgstr "Документ сохранён"
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:91
+#: lib/delivest_web/live/staff/franchise_live/index.ex:106
 #, elixir-autogen, elixir-format
 msgid "Edited %{date}"
 msgstr "Изменён %{date}"
@@ -3925,8 +3930,8 @@ msgid "Email for requests"
 msgstr "Email для обращений"
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:129
-#: lib/delivest_web/live/staff/franchise_live/index.ex:19
-#: lib/delivest_web/live/staff/franchise_live/index.ex:58
+#: lib/delivest_web/live/staff/franchise_live/index.ex:20
+#: lib/delivest_web/live/staff/franchise_live/index.ex:66
 #, elixir-autogen, elixir-format
 msgid "Franchise settings"
 msgstr "Настройки франшизы"
@@ -3946,7 +3951,7 @@ msgstr "ООО"
 msgid "Legal address"
 msgstr "Юридический адрес"
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:71
+#: lib/delivest_web/live/staff/franchise_live/index.ex:86
 #, elixir-autogen, elixir-format
 msgid "Legal documents"
 msgstr "Юридические документы"
@@ -3966,12 +3971,12 @@ msgstr "Наименование"
 msgid "Lines starting with «## » become headings. Placeholders:"
 msgstr "Строки, начинающиеся с «## », становятся заголовками. Подстановки:"
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:59
+#: lib/delivest_web/live/staff/franchise_live/index.ex:67
 #, elixir-autogen, elixir-format
 msgid "Name, brand color, seller details and legal documents for all branches."
 msgstr "Название, фирменный цвет, реквизиты продавца и юридические документы для всех филиалов."
 
-#: lib/delivest/franchise/settings.ex:42
+#: lib/delivest/franchise/settings.ex:44
 #, elixir-autogen, elixir-format
 msgid "Not an email"
 msgstr "Некорректный email"
@@ -4021,7 +4026,7 @@ msgstr "Вернуть шаблон"
 msgid "Seller details"
 msgstr "Реквизиты продавца"
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:40
+#: lib/delivest_web/live/staff/franchise_live/index.ex:41
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:67
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:30
 #, elixir-autogen, elixir-format
@@ -4043,7 +4048,7 @@ msgstr "Описание сайта для поисковиков"
 msgid "Terms of use"
 msgstr "Пользовательское соглашение"
 
-#: lib/delivest/franchise/settings.ex:39
+#: lib/delivest/franchise/settings.ex:41
 #, elixir-autogen, elixir-format
 msgid "Use the #RRGGBB format"
 msgstr "Формат #RRGGBB"
@@ -4373,3 +4378,73 @@ msgstr "Итог"
 #, elixir-autogen, elixir-format
 msgid "Unique codes issued to particular clients"
 msgstr "Уникальные коды для конкретных клиентов"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:215
+#, elixir-autogen, elixir-format
+msgid "Are you sure?"
+msgstr "Вы уверены?"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:99
+#, elixir-autogen, elixir-format
+msgid "Could not read the image"
+msgstr "Не удалось прочитать изображение"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:104
+#, elixir-autogen, elixir-format
+msgid "Could not save the image, try again"
+msgstr "Не удалось сохранить изображение, попробуйте ещё раз"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:182
+#, elixir-autogen, elixir-format
+msgid "Cropped to 1200×630 px from the center, keep the main thing in the middle"
+msgstr "Обрезается до 1200×630 px по центру, держите главное в середине"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:115
+#, elixir-autogen, elixir-format
+msgid "Icon and link preview"
+msgstr "Иконка и превью ссылки"
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:45
+#, elixir-autogen, elixir-format
+msgid "Image saved"
+msgstr "Изображение сохранено"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:154
+#, elixir-autogen, elixir-format
+msgid "Link preview"
+msgstr "Превью ссылки"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:206
+#, elixir-autogen, elixir-format
+msgid "Replace"
+msgstr "Заменить"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:117
+#, elixir-autogen, elixir-format
+msgid "Shown in the browser tab, on the phone home screen and when the link is shared."
+msgstr "Видны во вкладке браузера, на главном экране телефона и когда ссылкой делятся в мессенджерах."
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:128
+#, elixir-autogen, elixir-format
+msgid "Site icon"
+msgstr "Иконка сайта"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:146
+#, elixir-autogen, elixir-format
+msgid "Square PNG from %{size}×%{size} px, 512×512 is best"
+msgstr "Квадратный PNG от %{size}×%{size} px, лучше 512×512"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:94
+#, elixir-autogen, elixir-format
+msgid "The icon must be at least %{size}×%{size} px"
+msgstr "Иконка должна быть не меньше %{size}×%{size} px"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:97
+#, elixir-autogen, elixir-format
+msgid "The image must be at least %{width} px wide"
+msgstr "Изображение должно быть шириной не меньше %{width} px"
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:206
+#, elixir-autogen, elixir-format
+msgid "Upload"
+msgstr "Загрузить"

@@ -7,6 +7,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   alias DelivestWeb.Staff.FranchiseLive.{
     DocumentFormComponent,
     FranchiseHelpers,
+    ImagesComponent,
     SettingsFormComponent
   }
 
@@ -40,6 +41,13 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
      socket |> assign(settings: settings) |> put_flash(:info, gettext("Settings saved"))}
   end
 
+  def handle_info({ImagesComponent, {:saved, settings}}, socket) do
+    {:noreply, socket |> assign(settings: settings) |> put_flash(:info, gettext("Image saved"))}
+  end
+
+  def handle_info({ImagesComponent, {:error, message}}, socket),
+    do: {:noreply, put_flash(socket, :error, message)}
+
   def handle_info({DocumentFormComponent, :saved}, socket) do
     {:noreply,
      socket
@@ -62,6 +70,13 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       <.live_component
         module={SettingsFormComponent}
         id="franchise-settings"
+        settings={@settings}
+        current_staff={@current_staff}
+      />
+
+      <.live_component
+        module={ImagesComponent}
+        id="franchise-images"
         settings={@settings}
         current_staff={@current_staff}
       />

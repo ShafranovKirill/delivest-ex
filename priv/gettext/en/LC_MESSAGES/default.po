@@ -517,7 +517,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branches.ex:95
 #: lib/delivest_web/live/staff/category_live/categories.ex:236
 #: lib/delivest_web/live/staff/client_live/show.ex:120
-#: lib/delivest_web/live/staff/franchise_live/index.ex:100
+#: lib/delivest_web/live/staff/franchise_live/index.ex:115
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:179
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:303
 #: lib/delivest_web/live/staff/role_live/roles.ex:152
@@ -619,6 +619,7 @@ msgid "Failed to save promotion:"
 msgstr ""
 
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:93
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:106
 #: lib/delivest_web/live/staff/product_live/bulk.ex:417
 #, elixir-autogen, elixir-format
 msgid "File is too large"
@@ -1152,6 +1153,7 @@ msgid "You don't have permission to edit staff."
 msgstr ""
 
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:43
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:102
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:39
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:161
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:51
@@ -3500,6 +3502,7 @@ msgstr ""
 msgid "Product in cart"
 msgstr ""
 
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:217
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:591
 #, elixir-autogen, elixir-format
 msgid "Remove"
@@ -3797,11 +3800,13 @@ msgstr ""
 msgid "Save all"
 msgstr ""
 
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:107
 #: lib/delivest_web/live/staff/product_live/bulk.ex:418
 #, elixir-autogen, elixir-format
 msgid "Unsupported file type"
 msgstr ""
 
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:108
 #: lib/delivest_web/live/staff/product_live/bulk.ex:419
 #, elixir-autogen, elixir-format
 msgid "Upload failed"
@@ -3878,12 +3883,12 @@ msgstr ""
 msgid "Which products?"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:40
+#: lib/delivest/franchise/settings.ex:42
 #, elixir-autogen, elixir-format
 msgid "10 or 12 digits"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:41
+#: lib/delivest/franchise/settings.ex:43
 #, elixir-autogen, elixir-format
 msgid "13 or 15 digits"
 msgstr ""
@@ -3898,22 +3903,22 @@ msgstr ""
 msgid "Consent to personal data processing"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:94
+#: lib/delivest_web/live/staff/franchise_live/index.ex:109
 #, elixir-autogen, elixir-format
 msgid "Default template"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:73
+#: lib/delivest_web/live/staff/franchise_live/index.ex:88
 #, elixir-autogen, elixir-format
 msgid "Default templates already contain your details. Have a lawyer check them before publishing."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:47
+#: lib/delivest_web/live/staff/franchise_live/index.ex:55
 #, elixir-autogen, elixir-format
 msgid "Document saved"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:91
+#: lib/delivest_web/live/staff/franchise_live/index.ex:106
 #, elixir-autogen, elixir-format
 msgid "Edited %{date}"
 msgstr ""
@@ -3924,8 +3929,8 @@ msgid "Email for requests"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:129
-#: lib/delivest_web/live/staff/franchise_live/index.ex:19
-#: lib/delivest_web/live/staff/franchise_live/index.ex:58
+#: lib/delivest_web/live/staff/franchise_live/index.ex:20
+#: lib/delivest_web/live/staff/franchise_live/index.ex:66
 #, elixir-autogen, elixir-format
 msgid "Franchise settings"
 msgstr ""
@@ -3945,7 +3950,7 @@ msgstr ""
 msgid "Legal address"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:71
+#: lib/delivest_web/live/staff/franchise_live/index.ex:86
 #, elixir-autogen, elixir-format
 msgid "Legal documents"
 msgstr ""
@@ -3965,12 +3970,12 @@ msgstr ""
 msgid "Lines starting with «## » become headings. Placeholders:"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:59
+#: lib/delivest_web/live/staff/franchise_live/index.ex:67
 #, elixir-autogen, elixir-format
 msgid "Name, brand color, seller details and legal documents for all branches."
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:42
+#: lib/delivest/franchise/settings.ex:44
 #, elixir-autogen, elixir-format
 msgid "Not an email"
 msgstr ""
@@ -4020,7 +4025,7 @@ msgstr ""
 msgid "Seller details"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:40
+#: lib/delivest_web/live/staff/franchise_live/index.ex:41
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:67
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:30
 #, elixir-autogen, elixir-format
@@ -4042,7 +4047,7 @@ msgstr ""
 msgid "Terms of use"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:39
+#: lib/delivest/franchise/settings.ex:41
 #, elixir-autogen, elixir-format
 msgid "Use the #RRGGBB format"
 msgstr ""
@@ -4255,23 +4260,23 @@ msgid "Each branch has its own settings. Switch the branch to set up another one
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/index.ex:39
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "External services connected to the app."
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/index.ex:74
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Orders to the CRM and products matching with the app menu."
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:300
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Send orders to Frontpad"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:215
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:241
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr ""
 
@@ -4371,4 +4376,74 @@ msgstr ""
 #: lib/delivest_web/live/staff/promotion_live/promotion_helpers.ex:16
 #, elixir-autogen, elixir-format
 msgid "Unique codes issued to particular clients"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:215
+#, elixir-autogen, elixir-format
+msgid "Are you sure?"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:99
+#, elixir-autogen, elixir-format
+msgid "Could not read the image"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:104
+#, elixir-autogen, elixir-format
+msgid "Could not save the image, try again"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:182
+#, elixir-autogen, elixir-format
+msgid "Cropped to 1200×630 px from the center, keep the main thing in the middle"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:115
+#, elixir-autogen, elixir-format
+msgid "Icon and link preview"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:45
+#, elixir-autogen, elixir-format
+msgid "Image saved"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:154
+#, elixir-autogen, elixir-format
+msgid "Link preview"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:206
+#, elixir-autogen, elixir-format
+msgid "Replace"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:117
+#, elixir-autogen, elixir-format
+msgid "Shown in the browser tab, on the phone home screen and when the link is shared."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:128
+#, elixir-autogen, elixir-format
+msgid "Site icon"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:146
+#, elixir-autogen, elixir-format
+msgid "Square PNG from %{size}×%{size} px, 512×512 is best"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:94
+#, elixir-autogen, elixir-format
+msgid "The icon must be at least %{size}×%{size} px"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:97
+#, elixir-autogen, elixir-format
+msgid "The image must be at least %{width} px wide"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/images_component.ex:206
+#, elixir-autogen, elixir-format
+msgid "Upload"
 msgstr ""
