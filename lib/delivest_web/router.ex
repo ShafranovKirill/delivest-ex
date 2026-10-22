@@ -269,6 +269,8 @@ defmodule DelivestWeb.Router do
 
   scope "/seo", DelivestWeb.Seo do
     get "/head", SeoController, :head
+    get "/robots.txt", SeoController, :robots
+    get "/sitemap.xml", SeoController, :sitemap
   end
 
   scope "/" do

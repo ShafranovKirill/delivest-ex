@@ -58,4 +58,24 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
       assert html =~ ~s(<meta name="twitter:card" content="summary_large_image">)
     end
   end
+
+  test "robots.txt closes private pages and points to the sitemap", %{conn: conn} do
+    body = conn |> get(~p"/seo/robots.txt") |> text_response(200)
+
+    assert body =~ "Disallow: /*/checkout"
+    assert body =~ "Sitemap: http://localhost:3000/sitemap.xml"
+  end
+
+  test "sitemap.xml lists public pages of active branches", %{conn: conn} do
+    insert(:branch, slug: "center", is_active: true)
+    insert(:branch, slug: "closed", is_active: false)
+
+    conn = get(conn, ~p"/seo/sitemap.xml")
+    body = response(conn, 200)
+
+    assert response_content_type(conn, :xml)
+    assert body =~ "<loc>http://localhost:3000/center</loc>"
+    assert body =~ "<loc>http://localhost:3000/center/promotions</loc>"
+    refute body =~ "closed"
+  end
 end
