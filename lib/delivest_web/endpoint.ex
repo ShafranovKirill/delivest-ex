@@ -18,7 +18,7 @@ defmodule DelivestWeb.Endpoint do
 
   socket("/socket", DelivestWeb.ClientSocket,
     websocket: [check_origin: {__MODULE__, :allowed_socket_origin?, []}],
-    longpoll: false
+    longpoll: [check_origin: {__MODULE__, :allowed_socket_origin?, []}]
   )
 
   plug(CORSPlug,
