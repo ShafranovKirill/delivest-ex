@@ -149,4 +149,73 @@ defmodule Delivest.Net.ProductsTest do
       assert {:error, :forbidden} = Net.soft_delete_products(staff, branch.id, [product.id])
     end
   end
+
+  describe "product order" do
+    defp branch_product(branch, attrs) do
+      product = insert(:product, attrs)
+
+      assert {:ok, _} =
+               Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+
+      product
+    end
+
+    test "new products go to the end of their category" do
+      staff = staff_with_permissions(["products.create"])
+      branch = insert(:branch)
+      category = insert(:category)
+
+      assert {:ok, first} =
+               Net.create_product(staff, branch.id, %{
+                 "name" => "B",
+                 "price" => 1,
+                 "category_id" => category.id
+               })
+
+      assert {:ok, second} =
+               Net.create_product(staff, branch.id, %{
+                 "name" => "A",
+                 "price" => 1,
+                 "category_id" => category.id
+               })
+
+      assert second.order > first.order
+
+      assert Enum.map(Net.list_category_products(branch.id, category.id), & &1.id) ==
+               [first.id, second.id]
+    end
+
+    test "moving to another category puts the product at its end" do
+      staff = staff_with_permissions(["products.update"])
+      branch = insert(:branch)
+      from = insert(:category)
+      to = insert(:category)
+      product = branch_product(branch, %{name: "Moved", category_id: from.id, order: 1.0})
+      branch_product(branch, %{name: "There", category_id: to.id, order: 5.0})
+
+      assert {:ok, moved} = Net.update_product(staff, product, %{"category_id" => to.id})
+      assert moved.order == 6.0
+    end
+
+    test "update_product_order places the product between its neighbours" do
+      staff = staff_with_permissions(["products.update"])
+      branch = insert(:branch)
+      category = insert(:category)
+      a = branch_product(branch, %{name: "A", category_id: category.id, order: 1.0})
+      b = branch_product(branch, %{name: "B", category_id: category.id, order: 2.0})
+      c = branch_product(branch, %{name: "C", category_id: category.id, order: 3.0})
+
+      assert {:ok, _} = Net.update_product_order(staff, c, a.order, b.order)
+
+      assert Enum.map(Net.list_category_products(branch.id, category.id), & &1.id) ==
+               [a.id, c.id, b.id]
+    end
+
+    test "update_product_order requires products.update" do
+      staff = staff_with_permissions([])
+      product = insert_product()
+
+      assert {:error, :forbidden} = Net.update_product_order(staff, product, nil, nil)
+    end
+  end
 end

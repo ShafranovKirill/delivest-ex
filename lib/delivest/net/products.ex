@@ -80,7 +80,10 @@ defmodule Delivest.Net.Products do
   defp do_create_product(staff, branch_id, attrs) do
     if Identity.can?(staff, "products.create") do
       Multi.new()
-      |> Multi.insert(:product, %Product{} |> Product.changeset(attrs) |> put_slug())
+      |> Multi.insert(
+        :product,
+        %Product{} |> Product.changeset(attrs) |> put_slug() |> put_order()
+      )
       |> Multi.run(:relation_branch, fn repo, %{product: product} ->
         case Relations.create_relation(
                repo,
@@ -140,7 +143,8 @@ defmodule Delivest.Net.Products do
     {category_id, categories} = import_category(staff, branch_id, row["category"], categories)
     attrs = row |> Map.delete("category") |> Map.put("category_id", category_id)
 
-    with {:ok, product} <- %Product{} |> Product.changeset(attrs) |> put_slug() |> Repo.insert(),
+    with {:ok, product} <-
+           %Product{} |> Product.changeset(attrs) |> put_slug() |> put_order() |> Repo.insert(),
          {:ok, _relation} <-
            Relations.create_relation(Repo, "Branch", branch_id, "Product", product.id, %{}) do
       {product, categories}
@@ -178,6 +182,7 @@ defmodule Delivest.Net.Products do
       updateble_product
       |> Product.changeset(attrs)
       |> put_slug()
+      |> put_order()
       |> Repo.update()
       |> case do
         {:ok, updated_product} ->
@@ -248,6 +253,79 @@ defmodule Delivest.Net.Products do
     query = if own_id, do: where(query, [p], p.id != ^own_id), else: query
     Repo.exists?(query)
   end
+
+  def list_category_products(branch_id, category_id) do
+    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+
+    Product
+    |> where([p], p.id in ^product_ids and p.category_id == ^category_id)
+    |> where([p], is_nil(p.deleted_at))
+    |> order_by([p], asc_nulls_last: p.order, asc: p.name)
+    |> preload(:media)
+    |> Repo.all()
+  end
+
+  def update_product_order(staff, %Product{} = product, above_order, below_order) do
+    if Identity.can?(staff, "products.update") do
+      product
+      |> Ecto.Changeset.change(order: calculate_new_order(above_order, below_order))
+      |> Repo.update()
+      |> case do
+        {:ok, updated_product} ->
+          branch_id = get_product_branch_id(updated_product.id)
+          invalidate_menu_cache(branch_id)
+          broadcast_change(branch_id, {:product_updated, updated_product})
+          {:ok, updated_product}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  defp put_order(changeset) do
+    new? = is_nil(changeset.data.id)
+
+    if new? or Ecto.Changeset.changed?(changeset, :category_id) do
+      category_id = Ecto.Changeset.get_field(changeset, :category_id)
+      Ecto.Changeset.put_change(changeset, :order, next_order(category_id))
+    else
+      changeset
+    end
+  end
+
+  defp next_order(nil), do: nil
+
+  defp next_order(category_id) do
+    max_order =
+      Product
+      |> where([p], p.category_id == ^category_id and is_nil(p.deleted_at))
+      |> select([p], max(p.order))
+      |> Repo.one()
+
+    (max_order || 0.0) + 1.0
+  end
+
+  defp calculate_new_order(above_order, below_order)
+       when not is_nil(above_order) and not is_nil(below_order) do
+    (above_order + below_order) / 2.0
+  end
+
+  defp calculate_new_order(nil, below_order) when not is_nil(below_order) do
+    if below_order > 0.0 do
+      below_order / 2.0
+    else
+      below_order - 1.0
+    end
+  end
+
+  defp calculate_new_order(above_order, nil) when not is_nil(above_order) do
+    above_order + 1.0
+  end
+
+  defp calculate_new_order(nil, nil), do: 1.0
 
   def soft_delete_product(staff, %Product{} = product) do
     staff

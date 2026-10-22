@@ -22,6 +22,10 @@ defmodule Delivest.Net do
   defdelegate get_product(id, opts), to: Products
   defdelegate list_products_by_ids(ids, opts \\ []), to: Products
   defdelegate list_branch_products(branch_id), to: Products
+  defdelegate list_category_products(branch_id, category_id), to: Products
+
+  defdelegate update_product_order(staff, product, above_order, below_order),
+    to: Products
 
   defdelegate copy_products(staff, selection, from_branch_id, to_branch_id),
     to: ProductCopier,
