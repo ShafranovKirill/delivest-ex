@@ -20,7 +20,9 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
        branch_id: branch_id,
        categories: categories,
        category: nil,
-       category_to_delete: nil
+       category_to_delete: nil,
+       ordering_category: nil,
+       ordering_products: []
      )}
   end
 
@@ -32,7 +34,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
     categories =
       if branch_id, do: Net.list_staff_categories_for_branch(staff, branch_id), else: []
 
-    socket = assign(socket, categories: categories)
+    socket = assign(socket, categories: categories, ordering_category: nil, ordering_products: [])
 
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
@@ -63,6 +65,27 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
     end
   end
 
+  defp apply_action(socket, :products, %{"id" => id}) do
+    if Identity.can?(socket.assigns.current_staff, "products.update") do
+      case Net.get_category(id) do
+        {:ok, category} ->
+          assign(socket,
+            page_title: gettext("Products order"),
+            category: nil,
+            ordering_category: category,
+            ordering_products: Net.list_category_products(socket.assigns.branch_id, category.id)
+          )
+
+        _ ->
+          push_patch(socket, to: ~p"/staff/categories")
+      end
+    else
+      socket
+      |> put_flash(:error, gettext("You don't have permission to edit products."))
+      |> push_patch(to: ~p"/staff/categories")
+    end
+  end
+
   defp apply_action(socket, :index, _params) do
     assign(socket, page_title: gettext("Categories"), category: nil)
   end
@@ -85,6 +108,27 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
         {:noreply, put_flash(socket, :error, gettext("Failed to reorder category"))}
     end
   end
+
+  @impl true
+  def handle_event(
+        "reorder_product",
+        %{"id" => id, "above_order" => above_order, "below_order" => below_order},
+        %{assigns: %{ordering_category: %Category{} = category}} = socket
+      ) do
+    %{current_staff: staff, branch_id: branch_id} = socket.assigns
+
+    with %Net.Product{} = product <-
+           Enum.find(socket.assigns.ordering_products, &(&1.id == id)),
+         {:ok, _updated} <- Net.update_product_order(staff, product, above_order, below_order) do
+      {:noreply,
+       assign(socket, ordering_products: Net.list_category_products(branch_id, category.id))}
+    else
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to reorder product"))}
+    end
+  end
+
+  def handle_event("reorder_product", _params, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("delete_click", %{"id" => id}, socket) do
@@ -177,6 +221,15 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
 
             <div class="flex items-center gap-1">
               <.link
+                :if={Identity.can?(@current_staff, "products.update")}
+                patch={~p"/staff/categories/#{category.id}/products"}
+                class="btn btn-sm btn-ghost btn-square"
+                title={gettext("Products order")}
+              >
+                <.icon name="hero-queue-list" class="w-5 h-5" />
+              </.link>
+
+              <.link
                 :if={Identity.can?(@current_staff, "categories.update")}
                 patch={~p"/staff/categories/#{category.id}/edit"}
                 class="btn btn-sm btn-ghost btn-square text-info"
@@ -216,6 +269,59 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
           current_staff={@current_staff}
           patch={~p"/staff/categories"}
         />
+      </.slide_over>
+
+      <.slide_over
+        id="category-products-slideover"
+        show={@live_action == :products}
+        title={@ordering_category && @ordering_category.name}
+        on_close={JS.patch(~p"/staff/categories")}
+      >
+        <p class="text-sm text-base-content/60 mb-4">
+          {gettext("Drag products to set the order they appear in the menu.")}
+        </p>
+
+        <p :if={@ordering_category && @ordering_products == []} class="text-sm opacity-60">
+          {gettext("No products in this category yet.")}
+        </p>
+
+        <div
+          :if={@ordering_category && @ordering_products != []}
+          id={"category-products-#{@ordering_category.id}"}
+          phx-hook="SortableProducts"
+          class="space-y-2"
+        >
+          <div
+            :for={product <- @ordering_products}
+            id={"ordered-product-#{product.id}"}
+            class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-base-200"
+            data-id={product.id}
+            data-order={product.order}
+          >
+            <span class="drag-handle cursor-grab hover:text-primary text-base-content/50 p-1">
+              <.icon name="hero-bars-3" class="w-5 h-5" />
+            </span>
+            <img
+              :if={product.media}
+              src={Delivest.Media.get_url_from_file(product.media)}
+              class="size-10 rounded object-cover shrink-0"
+              alt=""
+            />
+            <div
+              :if={!product.media}
+              class="size-10 rounded bg-base-200 shrink-0 flex items-center justify-center"
+            >
+              <.icon name="hero-photo" class="size-5 opacity-40" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="font-medium truncate">{product.name}</div>
+              <div class="text-sm font-mono opacity-60">{product.price}</div>
+            </div>
+            <span :if={!product.is_active} class="badge badge-ghost badge-sm whitespace-nowrap">
+              {gettext("Inactive")}
+            </span>
+          </div>
+        </div>
       </.slide_over>
 
       <.modal

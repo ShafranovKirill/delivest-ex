@@ -114,6 +114,34 @@ export const SortableStocks = {
   },
 };
 
+export const SortableProducts = {
+  mounted() {
+    let hook = this;
+    let listEl = this.el;
+
+    new Sortable(listEl, {
+      animation: 150,
+      handle: ".drag-handle",
+      ghostClass: "bg-base-200",
+      onEnd(evt) {
+        let draggedId = evt.item.dataset.id;
+
+        let prevNode = evt.item.previousElementSibling;
+        let nextNode = evt.item.nextElementSibling;
+
+        let aboveOrder = prevNode ? parseFloat(prevNode.dataset.order) : null;
+        let belowOrder = nextNode ? parseFloat(nextNode.dataset.order) : null;
+
+        hook.pushEvent("reorder_product", {
+          id: draggedId,
+          above_order: aboveOrder,
+          below_order: belowOrder,
+        });
+      },
+    });
+  },
+};
+
 const BulkPaste = {
   mounted() {
     this.el.addEventListener("paste", (event) => {
@@ -143,6 +171,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ThemeToggle,
     SortableCategories,
     SortableStocks,
+    SortableProducts,
     BulkPaste,
   },
 });

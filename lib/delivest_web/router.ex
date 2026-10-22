@@ -234,6 +234,7 @@ defmodule DelivestWeb.Router do
       scope "/categories", CategoryLive do
         live "/", Categories, :index
         live "/:id/edit", Categories, :edit
+        live "/:id/products", Categories, :products
         live "/new", Categories, :new
       end
 
