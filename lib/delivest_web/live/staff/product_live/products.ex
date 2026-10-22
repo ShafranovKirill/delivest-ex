@@ -28,7 +28,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        selected_category_id: nil,
        selected_status: nil,
        selected_ids: [],
-       copy_open: false
+       copy_open: false,
+       bulk_delete_open: false
      )
      |> stream(:products, [])}
   end
@@ -181,6 +182,37 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     {:noreply, assign(socket, product_to_delete: nil)}
   end
 
+  def handle_event("bulk_delete_click", _, socket) do
+    {:noreply, assign(socket, bulk_delete_open: socket.assigns.selected_ids != [])}
+  end
+
+  def handle_event("cancel_bulk_delete", _, socket) do
+    {:noreply, assign(socket, bulk_delete_open: false)}
+  end
+
+  def handle_event("confirm_bulk_delete", _, socket) do
+    %{current_staff: staff, branch_id: branch_id, selected_ids: ids} = socket.assigns
+
+    case Net.soft_delete_products(staff, branch_id, ids) do
+      {:ok, deleted} ->
+        socket =
+          Enum.reduce(deleted, socket, fn product, acc ->
+            stream_delete(acc, :products, product)
+          end)
+
+        {:noreply,
+         socket
+         |> assign(selected_ids: [], bulk_delete_open: false)
+         |> put_flash(:info, gettext("Products deleted: %{count}", count: length(deleted)))}
+
+      {:error, :forbidden} ->
+        {:noreply,
+         socket
+         |> assign(bulk_delete_open: false)
+         |> put_flash(:error, gettext("You don't have permission to delete products."))}
+    end
+  end
+
   @impl true
   def handle_event("cancel_media_upload", _params, socket) do
     {:noreply, assign(socket, show_upload_modal: false)}
@@ -327,6 +359,16 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         subtitle={gettext("Manage branch products, prices, and categories.")}
       >
         <:actions>
+          <.button
+            :if={@selected_ids != [] and Identity.can?(@current_staff, "products.delete")}
+            phx-click="bulk_delete_click"
+            class="btn btn-outline btn-error"
+          >
+            <.icon name="hero-trash" class="size-5 mr-1" />
+            {gettext("Delete")}
+            <span class="badge badge-sm badge-error">{length(@selected_ids)}</span>
+          </.button>
+
           <.button
             :if={Identity.can?(@current_staff, "products.create")}
             phx-click="open_copy"
@@ -559,6 +601,21 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         danger={true}
         on_cancel={JS.push("cancel_delete")}
         on_confirm={JS.push("confirm_delete")}
+      />
+
+      <.modal
+        id="bulk-delete-products-modal"
+        show={@bulk_delete_open}
+        title={gettext("Delete selected products")}
+        description={
+          gettext("Delete %{count} selected products? This action cannot be easily undone.",
+            count: length(@selected_ids)
+          )
+        }
+        confirm_label={gettext("Delete")}
+        danger={true}
+        on_cancel={JS.push("cancel_bulk_delete")}
+        on_confirm={JS.push("confirm_bulk_delete")}
       />
     </div>
     """

@@ -271,6 +271,30 @@ defmodule Delivest.Net.Products do
     end
   end
 
+  def soft_delete_products(staff, branch_id, ids) when is_list(ids) do
+    if Identity.can?(staff, "products.delete") do
+      branch_product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+      now = DateTime.utc_now(:second)
+
+      {_count, deleted} =
+        Product
+        |> where([p], p.id in ^ids and p.id in ^branch_product_ids and is_nil(p.deleted_at))
+        |> select([p], p)
+        |> Repo.update_all(set: [deleted_at: now, updated_at: now])
+
+      invalidate_menu_cache(branch_id)
+
+      Enum.each(deleted, fn product ->
+        broadcast_change(branch_id, {:product_deleted, product})
+        Audit.record(staff, "product.deleted", product, branch_id: branch_id)
+      end)
+
+      {:ok, deleted}
+    else
+      {:error, :forbidden}
+    end
+  end
+
   def subscribe_branch(branch_id) when not is_nil(branch_id) do
     Phoenix.PubSub.subscribe(Delivest.PubSub, "branch_products:#{branch_id}")
   end

@@ -118,4 +118,35 @@ defmodule Delivest.Net.ProductsTest do
       assert {:error, :forbidden} = Net.soft_delete_product(staff, product)
     end
   end
+
+  describe "soft_delete_products/3" do
+    test "deletes only selected products of the branch" do
+      staff = staff_with_permissions(["products.delete"])
+      branch = insert(:branch)
+      selected = insert_product(%{name: "Selected"})
+      kept = insert_product(%{name: "Kept"})
+      foreign = insert_product(%{name: "Foreign"})
+
+      for product <- [selected, kept] do
+        assert {:ok, _} =
+                 Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+      end
+
+      assert {:ok, [deleted]} =
+               Net.soft_delete_products(staff, branch.id, [selected.id, foreign.id])
+
+      assert deleted.id == selected.id
+      assert %DateTime{} = Repo.get!(Product, selected.id).deleted_at
+      assert is_nil(Repo.get!(Product, kept.id).deleted_at)
+      assert is_nil(Repo.get!(Product, foreign.id).deleted_at)
+    end
+
+    test "returns forbidden without products.delete permission" do
+      staff = staff_with_permissions([])
+      branch = insert(:branch)
+      product = insert_product()
+
+      assert {:error, :forbidden} = Net.soft_delete_products(staff, branch.id, [product.id])
+    end
+  end
 end

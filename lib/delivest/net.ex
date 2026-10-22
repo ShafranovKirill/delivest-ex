@@ -18,6 +18,7 @@ defmodule Delivest.Net do
   defdelegate product_available_in_branch?(product_id, branch_id), to: Products
   defdelegate update_product(staff, product, attrs), to: Products
   defdelegate soft_delete_product(staff, product), to: Products
+  defdelegate soft_delete_products(staff, branch_id, ids), to: Products
   defdelegate get_product(id, opts), to: Products
   defdelegate list_products_by_ids(ids, opts \\ []), to: Products
   defdelegate list_branch_products(branch_id), to: Products
