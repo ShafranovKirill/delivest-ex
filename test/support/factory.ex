@@ -87,6 +87,14 @@ defmodule Delivest.Factory do
     }
   end
 
+  def zvonok_settings_factory do
+    %Delivest.Integrations.Zvonok.Settings{
+      public_key: "zvonok-public-key",
+      campaign_id: "123",
+      webhook_token: "zvonok-token"
+    }
+  end
+
   def insert_branch_product(branch_id, attrs \\ []) do
     product = insert(:product, attrs)
 

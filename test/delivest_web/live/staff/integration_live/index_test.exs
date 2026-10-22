@@ -18,6 +18,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     %{conn: conn, branch: branch}
   end
 
+  defp sign_in_editor(conn, branch) do
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.read", "branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+  end
+
   defp connect_frontpad(branch) do
     Repo.insert!(%BranchInfo{
       branch_id: branch.id,
@@ -42,14 +48,49 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/staff/integrations")
 
     assert has_element?(lv, "#integration-frontpad", "Frontpad")
+    assert has_element?(lv, "#integration-zvonok")
+    refute has_element?(lv, "a#integration-zvonok")
     assert has_element?(lv, "#main-sidebar a[href='/staff/integrations']")
   end
 
-  test "asks for an api key when frontpad is not set up", %{conn: conn} do
+  test "opens settings when frontpad is not set up", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/integrations/frontpad")
 
-    assert has_element?(lv, "#frontpad-not-configured")
+    assert has_element?(lv, "#frontpad-settings fieldset[disabled]")
     refute has_element?(lv, "#frontpad-refresh")
+
+    lv |> element("button[phx-value-tab=check]") |> render_click()
+    assert has_element?(lv, "#frontpad-not-configured")
+  end
+
+  test "saves frontpad settings of the branch", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(sign_in_editor(conn, branch), ~p"/staff/integrations/frontpad")
+
+    lv
+    |> form("#frontpad-settings",
+      crm: %{enabled: "true", frontpad: %{api_key: "secret", affiliate: "7"}}
+    )
+    |> render_submit()
+
+    assert has_element?(lv, "#frontpad-webhook")
+    assert has_element?(lv, "#frontpad-refresh")
+
+    {:ok, %{info: %{crm: crm}}} = Delivest.Identity.get_branch(branch.id, preload: [:info])
+    assert crm.enabled
+    assert crm.provider == :frontpad
+    assert crm.frontpad.api_key == "secret"
+    assert crm.frontpad.affiliate == "7"
+  end
+
+  test "enabled frontpad requires an api key", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(sign_in_editor(conn, branch), ~p"/staff/integrations/frontpad")
+
+    lv
+    |> form("#frontpad-settings", crm: %{enabled: "true", frontpad: %{api_key: ""}})
+    |> render_submit()
+
+    refute has_element?(lv, "#frontpad-webhook")
+    assert {:ok, %{info: nil}} = Delivest.Identity.get_branch(branch.id, preload: [:info])
   end
 
   test "gets products on demand, checks the menu and waits an hour", %{
@@ -63,6 +104,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
 
     {:ok, lv, _html} = live(conn, ~p"/staff/integrations/frontpad")
     assert has_element?(lv, "#frontpad-empty")
+    refute has_element?(lv, "#frontpad-settings")
 
     lv |> element("#frontpad-refresh") |> render_click()
 

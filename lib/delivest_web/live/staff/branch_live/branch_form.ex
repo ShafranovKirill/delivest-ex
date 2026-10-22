@@ -2,8 +2,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
   alias Delivest.Identity.Branch.YcartSettings
-  alias Delivest.Integrations.Crm.BranchSettings
-  alias Delivest.Integrations.Frontpad
   alias Delivest.Identity
   alias Delivest.Repo
 
@@ -23,7 +21,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :whatsapp_url, :string
     field :instagram_url, :string
 
-    embeds_one :crm, BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
   end
 
@@ -43,7 +40,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :slug,
       :is_active
     ])
-    |> cast_embed(:crm, with: &BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
@@ -69,23 +65,14 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
-      crm: prefill_crm(info && info.crm),
       ycart_settings: (info && info.ycart_settings) || %YcartSettings{}
     }
   end
 
-  def new, do: %__MODULE__{crm: prefill_crm(nil), ycart_settings: %YcartSettings{}}
+  def new, do: %__MODULE__{ycart_settings: %YcartSettings{}}
 
   def for_branch(%{id: id} = branch) when not is_nil(id), do: from_branch(branch)
   def for_branch(_branch), do: new()
-
-  defp prefill_crm(nil), do: prefill_crm(%BranchSettings{})
-  defp prefill_crm(%BranchSettings{} = crm), do: %{crm | frontpad: prefill_frontpad(crm.frontpad)}
-
-  defp prefill_frontpad(nil), do: prefill_frontpad(%Frontpad.Settings{})
-
-  defp prefill_frontpad(%Frontpad.Settings{} = settings),
-    do: %{settings | statuses: settings.statuses || %Frontpad.StatusCodes{}}
 
   defp normalize_working_hours_attrs(form, attrs) when is_map(attrs) do
     case Map.fetch(attrs, "working_hours") do
@@ -195,7 +182,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :instagram_url
       ])
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
-      |> Map.put("crm", embed_params(data.crm))
       |> Map.put("ycart_settings", embed_params(data.ycart_settings))
 
     {branch_params, info_params}

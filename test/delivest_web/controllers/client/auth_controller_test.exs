@@ -8,6 +8,7 @@ defmodule DelivestWeb.Client.AuthControllerTest do
   @phone "+79991234567"
 
   setup %{conn: conn} do
+    insert(:zvonok_settings)
     conn = put_req_header(conn, "x-forwarded-for", "auth-#{System.unique_integer([:positive])}")
     %{conn: with_session(conn)}
   end

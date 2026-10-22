@@ -16,6 +16,28 @@ defmodule Delivest.Integrations.Crm do
 
   def active_provider(_branch), do: nil
 
+  def get_branch_settings(branch_id) do
+    case Identity.get_branch(branch_id, preload: [:info]) do
+      {:ok, %Branch{info: %{crm: %BranchSettings{} = settings}}} -> settings
+      _ -> %BranchSettings{}
+    end
+  end
+
+  def change_branch_settings(%BranchSettings{} = settings, attrs \\ %{}),
+    do: BranchSettings.changeset(settings, attrs)
+
+  def update_branch_settings(staff, branch_id, attrs) do
+    with {:ok, branch} <- Identity.get_branch(branch_id, preload: [:info]),
+         {:ok, %Branch{info: %{crm: settings}}} <-
+           Identity.update_branch(staff, branch, %{}, %{"crm" => attrs}) do
+      {:ok, settings}
+    else
+      {:error, :info, changeset} -> {:error, Ecto.Changeset.get_change(changeset, :crm)}
+      {:error, _step, changeset} -> {:error, changeset}
+      error -> error
+    end
+  end
+
   def create_order(attrs, provider, opts \\ []) do
     opts =
       opts

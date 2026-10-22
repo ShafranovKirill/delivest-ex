@@ -2,9 +2,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   use DelivestWeb, :live_component
 
   alias Delivest.Identity
-  alias Delivest.Integrations.{Crm, Frontpad}
   alias DelivestWeb.Staff.BranchLive.{BranchForm, WorkingHoursComponent}
-  alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   @impl true
   def update(assigns, socket) do
@@ -101,8 +99,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
       {"branch-general", gettext("General")},
       {"branch-schedule", gettext("Working Hours")},
       {"branch-links", gettext("Social Links & Messengers")},
-      {"branch-map", gettext("YCart Settings")},
-      {"branch-crm", gettext("CRM Integration")}
+      {"branch-map", gettext("YCart Settings")}
     ]
   end
 
@@ -176,78 +173,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                 label={gettext("Longitude")}
               />
             </div>
-          </.inputs_for>
-        </.section>
-
-        <.section id="branch-crm" title={gettext("CRM Integration")}>
-          <.inputs_for :let={crm} field={@form[:crm]}>
-            <.input field={crm[:enabled]} type="checkbox" label={gettext("Send orders to CRM")} />
-            <.input
-              field={crm[:provider]}
-              type="select"
-              label={gettext("CRM")}
-              prompt={gettext("Choose CRM")}
-              options={Enum.map(Crm.providers(), fn {value, label} -> {label, value} end)}
-            />
-
-            <.inputs_for
-              :let={frontpad}
-              :if={to_string(crm[:provider].value) == "frontpad"}
-              field={crm[:frontpad]}
-            >
-              <div class="grid gap-4 sm:grid-cols-2">
-                <.input
-                  field={frontpad[:api_key]}
-                  type="password"
-                  value={frontpad[:api_key].value}
-                  label={gettext("Frontpad API Key")}
-                />
-                <.input
-                  field={frontpad[:affiliate]}
-                  type="text"
-                  label={gettext("Frontpad Branch ID")}
-                />
-              </div>
-
-              <div class="space-y-1">
-                <.input
-                  field={frontpad[:price_override]}
-                  type="checkbox"
-                  label={gettext("Send discounted prices to Frontpad")}
-                />
-                <p class="text-xs text-base-content/60">
-                  {gettext(
-                    "Enable only when «price change on order» is turned on for products in Frontpad. Otherwise the order discount is sent as a single amount."
-                  )}
-                </p>
-              </div>
-
-              <div class="space-y-2">
-                <p class="text-sm font-medium">{gettext("Frontpad status codes")}</p>
-                <p class="text-xs text-base-content/60">
-                  {gettext(
-                    "Codes from the Frontpad status reference. Customers see the matching status of their order."
-                  )}
-                </p>
-                <.inputs_for :let={codes} field={frontpad[:statuses]}>
-                  <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    <.input
-                      :for={status <- Frontpad.StatusCodes.statuses()}
-                      field={codes[status]}
-                      type="text"
-                      label={OrderHelpers.status_label(status)}
-                    />
-                  </div>
-                </.inputs_for>
-              </div>
-
-              <div :if={frontpad[:webhook_token].value} class="space-y-1">
-                <p class="text-sm font-medium">{gettext("Webhook URL for Frontpad API settings")}</p>
-                <code class="block break-all rounded bg-base-200 p-2 text-xs">
-                  {Frontpad.webhook_url(frontpad[:webhook_token].value)}
-                </code>
-              </div>
-            </.inputs_for>
           </.inputs_for>
         </.section>
 

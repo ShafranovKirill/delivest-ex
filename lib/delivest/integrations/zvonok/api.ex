@@ -1,13 +1,13 @@
 defmodule Delivest.Integrations.Zvonok.Api do
   alias Delivest.HTTP.Client
-  alias Delivest.Integrations.Zvonok.Config
+  alias Delivest.Integrations.Zvonok.Settings
 
   @base_url "https://zvonok.com"
   @confirm_path "/manager/cabapi_external/api/v1/phones/confirm/"
 
-  @spec confirm(Config.t(), String.t()) ::
+  @spec confirm(Settings.t(), String.t()) ::
           {:ok, %{call_id: String.t(), call_number: String.t()}} | {:error, term()}
-  def confirm(%Config{} = config, phone) do
+  def confirm(%Settings{} = config, phone) do
     @confirm_path
     |> Client.get(
       [public_key: config.public_key, campaign_id: config.campaign_id, phone: phone],

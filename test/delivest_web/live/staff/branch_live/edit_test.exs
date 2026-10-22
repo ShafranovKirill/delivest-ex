@@ -16,7 +16,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     branch = insert(:branch, name: "Old name", slug: "old-name")
 
     {:ok, lv, html} = live(conn, ~p"/staff/branches/old-name/edit")
-    assert html =~ "CRM"
+    refute html =~ "branch-crm"
 
     assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
              lv

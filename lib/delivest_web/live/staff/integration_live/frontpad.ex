@@ -1,0 +1,485 @@
+defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
+  use DelivestWeb, :live_view
+
+  alias Delivest.Identity
+  alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.Crm.{BranchSettings, Catalog}
+  alias Delivest.Integrations.Frontpad
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
+
+  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(
+       page_title: "Frontpad",
+       can_edit_branch: Identity.can?(socket.assigns.current_staff, "branches.update"),
+       query: "",
+       refresh_timer: nil
+     )
+     |> load_settings()
+     |> load_catalog()
+     |> then(&assign(&1, tab: if(api_key?(&1.assigns.crm), do: :check, else: :settings)))}
+  end
+
+  @impl true
+  def handle_event("refresh", _params, socket) do
+    case Catalog.refresh(socket.assigns.current_branch.id, :frontpad) do
+      {:ok, _snapshot} ->
+        {:noreply,
+         socket |> load_catalog() |> put_flash(:info, gettext("Products received from Frontpad"))}
+
+      {:error, {:too_early, _available_at}} ->
+        {:noreply, socket |> load_catalog() |> put_flash(:error, gettext("Too early to update"))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, refresh_error(reason))}
+    end
+  end
+
+  def handle_event("tab", %{"tab" => tab}, socket) when tab in ~w(settings check products),
+    do: {:noreply, assign(socket, tab: String.to_existing_atom(tab))}
+
+  def handle_event("search", %{"q" => query}, socket),
+    do: {:noreply, assign(socket, query: query)}
+
+  def handle_event("validate", %{"crm" => params}, socket) do
+    changeset =
+      socket.assigns.crm
+      |> Crm.change_branch_settings(settings_params(params))
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, form: to_form(changeset, as: "crm"))}
+  end
+
+  def handle_event("save", %{"crm" => params}, socket) do
+    case Crm.update_branch_settings(
+           socket.assigns.current_staff,
+           socket.assigns.current_branch.id,
+           settings_params(params)
+         ) do
+      {:ok, crm} ->
+        {:noreply,
+         socket
+         |> assign_settings(crm)
+         |> put_flash(:info, gettext("Settings saved"))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, form: to_form(Map.put(changeset, :action, :update), as: "crm"))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Please check the highlighted fields"))}
+    end
+  end
+
+  @impl true
+  def handle_info(:refresh_available, socket),
+    do: {:noreply, socket |> assign(refresh_timer: nil) |> assign_available_at()}
+
+  def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp load_settings(socket),
+    do: assign_settings(socket, Crm.get_branch_settings(socket.assigns.current_branch.id))
+
+  defp assign_settings(socket, crm) do
+    crm = prefill(crm)
+    assign(socket, crm: crm, form: to_form(Crm.change_branch_settings(crm), as: "crm"))
+  end
+
+  defp prefill(%BranchSettings{} = crm),
+    do: %{crm | provider: :frontpad, frontpad: prefill_frontpad(crm.frontpad)}
+
+  defp prefill_frontpad(nil), do: prefill_frontpad(%Frontpad.Settings{})
+
+  defp prefill_frontpad(%Frontpad.Settings{} = settings),
+    do: %{settings | statuses: settings.statuses || %Frontpad.StatusCodes{}}
+
+  defp settings_params(params), do: Map.put(params, "provider", "frontpad")
+
+  defp load_catalog(socket) do
+    branch_id = socket.assigns.current_branch.id
+    snapshot = Catalog.get_snapshot(branch_id, :frontpad)
+
+    socket
+    |> assign(snapshot: snapshot, issues: Catalog.issues(branch_id, snapshot))
+    |> assign_available_at()
+  end
+
+  defp assign_available_at(socket) do
+    available_at = Catalog.refresh_available_at(socket.assigns.snapshot)
+    wait_ms = if available_at, do: DateTime.diff(available_at, DateTime.utc_now(), :millisecond)
+
+    if socket.assigns.refresh_timer, do: Process.cancel_timer(socket.assigns.refresh_timer)
+
+    if wait_ms && wait_ms > 0 do
+      timer = Process.send_after(self(), :refresh_available, wait_ms)
+      assign(socket, available_at: available_at, refresh_timer: timer)
+    else
+      assign(socket, available_at: nil, refresh_timer: nil)
+    end
+  end
+
+  defp refresh_error(:missing_api_key), do: gettext("Frontpad API key is not set for this branch")
+
+  defp refresh_error(:missing_settings),
+    do: gettext("Frontpad API key is not set for this branch")
+
+  defp refresh_error({:frontpad, error}), do: gettext("Frontpad error: %{error}", error: error)
+  defp refresh_error(_reason), do: gettext("Frontpad did not respond, try again later")
+
+  defp api_key?(crm), do: crm.frontpad && crm.frontpad.api_key not in [nil, ""]
+
+  defp issues_of(issues, type), do: Enum.filter(issues, &(&1.type == type))
+
+  defp filter_products(products, ""), do: products
+
+  defp filter_products(products, query) do
+    query = String.downcase(String.trim(query))
+
+    Enum.filter(products, fn product ->
+      String.contains?(String.downcase(product["name"] || ""), query) or
+        String.contains?(product["external_id"] || "", query)
+    end)
+  end
+
+  defp seconds_left(available_at), do: max(DateTime.diff(available_at, DateTime.utc_now()), 0)
+
+  defp countdown(seconds),
+    do:
+      "#{div(seconds, 60)}:#{seconds |> rem(60) |> Integer.to_string() |> String.pad_leading(2, "0")}"
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="space-y-6 py-4 sm:p-6">
+      <.link navigate={~p"/staff/integrations"} class="btn btn-ghost btn-sm -ml-2">
+        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
+      </.link>
+
+      <.page_header
+        title="Frontpad"
+        subtitle={gettext("Products in Frontpad and their match with the app menu.")}
+      >
+        <:actions :if={api_key?(@crm)}>
+          <button
+            :if={is_nil(@available_at)}
+            id="frontpad-refresh"
+            type="button"
+            class="btn btn-primary"
+            phx-click="refresh"
+            phx-disable-with={gettext("Loading...")}
+          >
+            <.icon name="hero-arrow-path" class="size-4" /> {gettext("Get products")}
+          </button>
+          <button :if={@available_at} id="frontpad-refresh" type="button" class="btn" disabled>
+            <.icon name="hero-clock" class="size-4" />
+            {gettext("Available in")}
+            <span
+              id="frontpad-countdown"
+              phx-hook=".Countdown"
+              data-until={DateTime.to_iso8601(@available_at)}
+              class="tabular-nums"
+            >
+              {countdown(seconds_left(@available_at))}
+            </span>
+          </button>
+        </:actions>
+      </.page_header>
+
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".Countdown">
+        export default {
+          mounted() {
+            this.tick()
+            this.timer = setInterval(() => this.tick(), 1000)
+          },
+          updated() {
+            this.tick()
+          },
+          destroyed() {
+            clearInterval(this.timer)
+          },
+          tick() {
+            const left = Math.max(0, Math.round((Date.parse(this.el.dataset.until) - Date.now()) / 1000))
+            this.el.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`
+          }
+        }
+      </script>
+
+      <div role="tablist" class="tabs tabs-boxed w-fit max-w-full overflow-x-auto">
+        <.tab_button tab={:settings} current={@tab} icon="hero-cog-6-tooth">
+          {gettext("Settings")}
+        </.tab_button>
+        <.tab_button tab={:check} current={@tab} icon="hero-check-badge">
+          {gettext("Check")}
+        </.tab_button>
+        <.tab_button tab={:products} current={@tab} icon="hero-cube">
+          {gettext("Frontpad products")}
+          <span :if={@snapshot}>({length(@snapshot.products)})</span>
+        </.tab_button>
+      </div>
+
+      <.settings_form
+        :if={@tab == :settings}
+        form={@form}
+        crm={@crm}
+        can_edit={@can_edit_branch}
+      />
+
+      <div
+        :if={@tab != :settings and !api_key?(@crm)}
+        id="frontpad-not-configured"
+        class="alert"
+      >
+        <.icon name="hero-information-circle" class="size-5" />
+        <span>{gettext("Frontpad API key is not set for this branch")}</span>
+        <button type="button" class="btn btn-sm" phx-click="tab" phx-value-tab="settings">
+          {gettext("Settings")}
+        </button>
+      </div>
+
+      <%= if @tab != :settings and api_key?(@crm) do %>
+        <%= if @snapshot do %>
+          <p class="text-sm text-base-content/60">
+            {gettext("Received from Frontpad")}: {OrderHelpers.local_datetime(@snapshot.checked_at)}
+          </p>
+
+          <.check_results :if={@tab == :check} issues={@issues} />
+          <.crm_products
+            :if={@tab == :products}
+            products={filter_products(@snapshot.products, @query)}
+            query={@query}
+          />
+        <% else %>
+          <div id="frontpad-empty" class="text-center text-base-content/60 py-10">
+            {gettext("Products have not been received yet. Get them from Frontpad to check the menu.")}
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+    """
+  end
+
+  attr :tab, :atom, required: true
+  attr :current, :atom, required: true
+  attr :icon, :string, required: true
+  slot :inner_block, required: true
+
+  defp tab_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      role="tab"
+      phx-click="tab"
+      phx-value-tab={@tab}
+      class={["tab gap-2 whitespace-nowrap", @tab == @current && "tab-active font-bold"]}
+    >
+      <.icon name={@icon} class="size-4" /> {render_slot(@inner_block)}
+    </button>
+    """
+  end
+
+  attr :form, Phoenix.HTML.Form, required: true
+  attr :crm, BranchSettings, required: true
+  attr :can_edit, :boolean, required: true
+
+  defp settings_form(assigns) do
+    ~H"""
+    <.form
+      for={@form}
+      id="frontpad-settings"
+      phx-change="validate"
+      phx-submit="save"
+      class="rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
+    >
+      <fieldset disabled={!@can_edit} class="space-y-4">
+        <.input field={@form[:enabled]} type="checkbox" label={gettext("Send orders to Frontpad")} />
+
+        <.inputs_for :let={frontpad} field={@form[:frontpad]}>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <.input
+              field={frontpad[:api_key]}
+              type="password"
+              value={frontpad[:api_key].value}
+              label={gettext("Frontpad API Key")}
+            />
+            <.input field={frontpad[:affiliate]} type="text" label={gettext("Frontpad Branch ID")} />
+          </div>
+
+          <div class="space-y-1">
+            <.input
+              field={frontpad[:price_override]}
+              type="checkbox"
+              label={gettext("Send discounted prices to Frontpad")}
+            />
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Enable only when «price change on order» is turned on for products in Frontpad. Otherwise the order discount is sent as a single amount."
+              )}
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-sm font-medium">{gettext("Frontpad status codes")}</p>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Codes from the Frontpad status reference. Customers see the matching status of their order."
+              )}
+            </p>
+            <.inputs_for :let={codes} field={frontpad[:statuses]}>
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <.input
+                  :for={status <- Frontpad.StatusCodes.statuses()}
+                  field={codes[status]}
+                  type="text"
+                  label={OrderHelpers.status_label(status)}
+                />
+              </div>
+            </.inputs_for>
+          </div>
+        </.inputs_for>
+
+        <div :if={@crm.frontpad.webhook_token} id="frontpad-webhook" class="space-y-1">
+          <p class="text-sm font-medium">{gettext("Webhook URL for Frontpad API settings")}</p>
+          <code class="block break-all rounded bg-base-200 p-2 text-xs">
+            {Frontpad.webhook_url(@crm.frontpad.webhook_token)}
+          </code>
+        </div>
+
+        <div :if={@can_edit} class="flex justify-end">
+          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
+            {gettext("Save")}
+          </button>
+        </div>
+      </fieldset>
+    </.form>
+    """
+  end
+
+  attr :issues, :list, required: true
+
+  defp check_results(assigns) do
+    assigns =
+      assign(assigns,
+        missing: issues_of(assigns.issues, :missing_in_crm),
+        mismatched: issues_of(assigns.issues, :price_mismatch),
+        unlinked: issues_of(assigns.issues, :missing_crm_id)
+      )
+
+    ~H"""
+    <div id="frontpad-check" class="space-y-4">
+      <div
+        :if={@missing == [] and @mismatched == []}
+        id="frontpad-check-ok"
+        class="alert alert-success"
+      >
+        <.icon name="hero-check-circle" class="size-5" />
+        <span>{gettext("All products with a CRM ID are found in Frontpad.")}</span>
+      </div>
+
+      <.issue_list
+        :if={@missing != []}
+        id="frontpad-missing"
+        title={gettext("Not found in Frontpad")}
+        hint={gettext("Orders with these products will not reach Frontpad.")}
+        issues={@missing}
+      />
+
+      <.issue_list
+        :if={@mismatched != []}
+        id="frontpad-price-mismatch"
+        title={gettext("Price differs")}
+        issues={@mismatched}
+      />
+
+      <.issue_list
+        :if={@unlinked != []}
+        id="frontpad-unlinked"
+        title={gettext("No CRM ID")}
+        hint={gettext("These products are not linked to Frontpad.")}
+        issues={@unlinked}
+      />
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  attr :hint, :string, default: nil
+  attr :issues, :list, required: true
+
+  defp issue_list(assigns) do
+    ~H"""
+    <section id={@id} class="card bg-base-100 border border-base-300">
+      <div class="card-body gap-3 p-4 sm:p-6">
+        <div>
+          <h2 class="font-bold">{@title} ({length(@issues)})</h2>
+          <p :if={@hint} class="text-sm text-base-content/60">{@hint}</p>
+        </div>
+        <ul class="divide-y divide-base-300">
+          <li
+            :for={issue <- @issues}
+            class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+          >
+            <.link navigate={~p"/staff/products/#{issue.product_id}/edit"} class="link link-hover">
+              {issue.name}
+            </.link>
+            <span class="flex items-center gap-3 text-base-content/60">
+              <span :if={issue.external_id not in [nil, ""]}>CRM ID {issue.external_id}</span>
+              <span :if={issue.type == :price_mismatch} class="tabular-nums">
+                {OrderHelpers.money(issue.app_price)} → {OrderHelpers.money(issue.crm_price)}
+              </span>
+            </span>
+          </li>
+        </ul>
+      </div>
+    </section>
+    """
+  end
+
+  attr :products, :list, required: true
+  attr :query, :string, required: true
+
+  defp crm_products(assigns) do
+    ~H"""
+    <div class="space-y-3">
+      <form id="frontpad-search" phx-change="search" phx-submit="search">
+        <input
+          type="text"
+          name="q"
+          value={@query}
+          placeholder={gettext("Search by name or CRM ID...")}
+          class="input input-bordered w-full sm:max-w-sm"
+          phx-debounce="300"
+        />
+      </form>
+
+      <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+        <table id="frontpad-products" class="table">
+          <thead>
+            <tr>
+              <th>CRM ID</th>
+              <th>{gettext("Name")}</th>
+              <th class="text-right">{gettext("Price")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={product <- @products}>
+              <td class="tabular-nums">{product["external_id"]}</td>
+              <td>{product["name"]}</td>
+              <td class="text-right tabular-nums">{OrderHelpers.money(product["price"])}</td>
+            </tr>
+            <tr :if={@products == []}>
+              <td colspan="3" class="text-center text-base-content/60">{gettext("Nothing found")}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    """
+  end
+end
