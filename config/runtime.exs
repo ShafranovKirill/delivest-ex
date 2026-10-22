@@ -28,6 +28,8 @@ config :delivest,
 
 client_origin = System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"
 
+config :delivest, :client_origin, String.trim_trailing(client_origin, "/")
+
 config :cors_plug,
   origin: [client_origin],
   credentials: true,

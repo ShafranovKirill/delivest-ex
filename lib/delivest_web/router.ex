@@ -267,6 +267,10 @@ defmodule DelivestWeb.Router do
     end
   end
 
+  scope "/seo", DelivestWeb.Seo do
+    get "/head", SeoController, :head
+  end
+
   scope "/" do
     pipe_through :staff_browser
 
