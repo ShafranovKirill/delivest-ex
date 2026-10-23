@@ -19,18 +19,14 @@ defmodule Delivest.Application do
       # Start a worker by calling: Delivest.Worker.start_link(arg)
       # {Delivest.Worker, arg},
       # Start to serve requests, typically the last entry
-      Supervisor.child_spec({Cachex, name: :staff_cache}, id: :staff_cache),
-      Supervisor.child_spec({Cachex, name: :branch_cache}, id: :branch_cache),
-      Supervisor.child_spec({Cachex, name: :menu_cache}, id: :menu_cache),
-      Supervisor.child_spec({Cachex, name: :stock_cache}, id: :stock_cache),
-      Supervisor.child_spec(
-        {Cachex,
-         name: :cart_cache, hooks: [hook(module: Cachex.Limit.Scheduled, args: {10_000, [], []})]},
-        id: :cart_cache
-      ),
-      Supervisor.child_spec({Cachex, name: :promo_cache}, id: :promo_cache),
-      Supervisor.child_spec({Cachex, name: :franchise_cache}, id: :franchise_cache),
-      Supervisor.child_spec({Cachex, name: :rate_limit_cache}, id: :rate_limit_cache),
+      cache(:staff_cache),
+      cache(:branch_cache),
+      cache(:menu_cache),
+      cache(:stock_cache),
+      cache(:cart_cache, limit: 10_000),
+      cache(:promo_cache),
+      cache(:franchise_cache),
+      cache(:rate_limit_cache, limit: 100_000),
       DelivestWeb.Endpoint
     ]
 
@@ -40,6 +36,16 @@ defmodule Delivest.Application do
 
     Delivest.Logs.ObanErrors.attach()
     Supervisor.start_link(Enum.reject(children, &is_nil/1), opts)
+  end
+
+  defp cache(name, opts \\ []) do
+    hooks =
+      case Keyword.fetch(opts, :limit) do
+        {:ok, limit} -> [hook(module: Cachex.Limit.Scheduled, args: {limit, [], []})]
+        :error -> []
+      end
+
+    Supervisor.child_spec({Cachex, name: name, hooks: hooks}, id: name)
   end
 
   defp log_buffer do
