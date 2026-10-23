@@ -17,7 +17,9 @@ defmodule Delivest.Oms.OrderScopes do
     )
   end
 
-  def sold(query), do: where(query, ^dynamic(not (^cancelled()) and not (^lost())))
+  def sold, do: dynamic(not (^cancelled()) and not (^lost()))
+
+  def sold(query), do: where(query, ^sold())
 
   def effective_status do
     dynamic(

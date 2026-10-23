@@ -48,25 +48,15 @@ defmodule Delivest.Analytics do
 
   @spec summary(binary(), period()) :: map()
   def summary(branch_id, period) do
-    %{revenue: revenue, orders_count: orders_count} =
-      branch_id
-      |> sales_orders(period)
-      |> select([o], %{
-        revenue: coalesce(sum(o.total_amount), 0),
-        orders_count: count(o.id)
-      })
-      |> Repo.one()
+    totals = branch_id |> period_orders(period) |> select(^period_totals()) |> Repo.one()
 
     items_sold =
       branch_id
-      |> sales_orders(period)
-      |> join(:inner, [o], i in OrderItem, on: i.order_id == o.id)
+      |> items_query(period)
       |> select([_o, i], coalesce(sum(i.quantity), 0))
       |> Repo.one()
 
-    cancelled_count = branch_id |> period_orders(period) |> count_where(OrderScopes.cancelled())
-    lost_count = branch_id |> period_orders(period) |> count_where(OrderScopes.lost())
-
+    %{revenue: revenue, orders_count: orders_count} = totals
     revenue = to_int(revenue)
 
     %{
@@ -74,8 +64,8 @@ defmodule Delivest.Analytics do
       orders_count: orders_count,
       avg_check: if(orders_count > 0, do: round(revenue / orders_count), else: 0),
       items_sold: to_int(items_sold),
-      cancelled_count: cancelled_count,
-      lost_count: lost_count
+      cancelled_count: totals.cancelled_count,
+      lost_count: totals.lost_count
     }
   end
 
@@ -257,8 +247,16 @@ defmodule Delivest.Analytics do
     |> OrderScopes.sold()
   end
 
-  defp count_where(query, condition),
-    do: query |> where(^condition) |> select([o], count(o.id)) |> Repo.one()
+  defp period_totals do
+    sold = OrderScopes.sold()
+
+    %{
+      revenue: dynamic([o], coalesce(filter(sum(o.total_amount), ^sold), 0)),
+      orders_count: dynamic([o], filter(count(o.id), ^sold)),
+      cancelled_count: dynamic([o], filter(count(o.id), ^OrderScopes.cancelled())),
+      lost_count: dynamic([o], filter(count(o.id), ^OrderScopes.lost()))
+    }
+  end
 
   defp items_query(branch_id, period) do
     branch_id
