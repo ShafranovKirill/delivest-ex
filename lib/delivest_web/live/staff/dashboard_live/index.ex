@@ -14,9 +14,10 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: Orders.subscribe()
-
     staff = socket.assigns.current_staff
+    branch_id = socket.assigns.current_branch.id
+
+    if connected?(socket), do: Orders.subscribe(branch_id)
 
     {:ok,
      socket
@@ -32,11 +33,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   end
 
   @impl true
-  def handle_info({Orders, _event, %{branch_id: branch_id}}, socket) do
-    if branch_id == socket.assigns.current_branch.id,
-      do: {:noreply, schedule_reload(socket)},
-      else: {:noreply, socket}
-  end
+  def handle_info({Orders, _event, _order}, socket), do: {:noreply, schedule_reload(socket)}
 
   def handle_info(:reload, socket) do
     {:noreply, socket |> assign(reload_scheduled: false) |> load()}
@@ -76,10 +73,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         counts = Analytics.status_counts(branch_id, today_period)
 
         latest =
-          %{branch_id: branch_id, date_from: today, date_to: today}
-          |> Orders.list_orders()
-          |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
-          |> Enum.take(8)
+          Orders.list_latest_orders(%{branch_id: branch_id, date_from: today, date_to: today}, 8)
 
         assign(socket,
           status_counts: counts,

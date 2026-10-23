@@ -9,10 +9,13 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   on_mount {DelivestWeb.Hooks.Permission, "orders.read"}
 
+  @page_size 20
+  @query_keys ["period", "status", "date_from", "date_to", "page", "page_size"]
+
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      Orders.subscribe()
+      Orders.subscribe(socket.assigns.current_branch.id)
     end
 
     {:ok,
@@ -29,37 +32,52 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     custom_to = Map.get(params, "date_to", "")
 
     {date_from, date_to} = resolve_date_range(period, custom_from, custom_to)
-    branch_id = socket.assigns[:current_branch] && socket.assigns.current_branch.id
 
-    orders =
-      Orders.list_orders(%{
-        branch_id: branch_id,
-        status: status,
-        date_from: date_from,
-        date_to: date_to,
-        sort_by: :inserted_at,
-        sort_dir: :desc
-      })
+    filters = %{
+      branch_id: socket.assigns.current_branch.id,
+      status: status,
+      date_from: date_from,
+      date_to: date_to
+    }
 
-    {:noreply,
-     socket
-     |> assign(
-       selected_period: period,
-       custom_date_from: custom_from,
-       custom_date_to: custom_to,
-       selected_status: status
-     )
-     |> stream(:orders, orders, reset: true)}
+    page = %{
+      page: Map.get(params, "page", 1),
+      page_size: Map.get(params, "page_size", @page_size)
+    }
+
+    case Orders.paginate_orders(filters, page) do
+      {:ok, {orders, meta}} ->
+        {:noreply,
+         socket
+         |> assign(
+           selected_period: period,
+           custom_date_from: custom_from,
+           custom_date_to: custom_to,
+           selected_status: status,
+           query: query_params(params),
+           meta: meta
+         )
+         |> stream(:orders, orders, reset: true)}
+
+      {:error, _meta} ->
+        {:noreply, push_patch(socket, to: ~p"/staff/orders")}
+    end
   end
 
   @impl true
   def handle_event("filter", params, socket) do
-    query_params =
-      params
-      |> Map.take(["period", "status", "date_from", "date_to"])
-      |> Enum.reject(fn {_, v} -> v in [nil, ""] end)
+    query =
+      socket.assigns.query
+      |> Map.take(["page_size"])
+      |> Map.merge(query_params(params))
+      |> Map.delete("page")
 
-    {:noreply, push_patch(socket, to: ~p"/staff/orders?#{query_params}")}
+    {:noreply, push_patch(socket, to: orders_path(query))}
+  end
+
+  def handle_event("update_page_size", %{"page_size" => size}, socket) do
+    query = socket.assigns.query |> Map.put("page_size", size) |> Map.delete("page")
+    {:noreply, push_patch(socket, to: orders_path(query))}
   end
 
   @impl true
@@ -114,12 +132,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: {:noreply, assign(socket, order_to_delete: nil)}
 
   @impl true
-  def handle_info({Delivest.Oms.Orders, _event, order}, socket)
-      when order.branch_id != socket.assigns.current_branch.id,
-      do: {:noreply, socket}
-
   def handle_info({Delivest.Oms.Orders, [:order, :created], order}, socket) do
-    {:noreply, stream_insert(socket, :orders, order, at: 0)}
+    %{current_page: page, page_size: size} = socket.assigns.meta
+
+    if page == 1,
+      do: {:noreply, stream_insert(socket, :orders, order, at: 0, limit: size)},
+      else: {:noreply, socket}
   end
 
   def handle_info({Delivest.Oms.Orders, [:order, :updated], order}, socket) do
@@ -149,6 +167,14 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       _ -> {:error, :not_found}
     end
   end
+
+  defp query_params(params) do
+    params
+    |> Map.take(@query_keys)
+    |> Map.reject(fn {_key, value} -> value in [nil, ""] end)
+  end
+
+  defp orders_path(query), do: ~p"/staff/orders?#{query}"
 
   defp resolve_date_range("today", _, _),
     do: {Delivest.LocalTime.today(), Delivest.LocalTime.today()}
@@ -265,6 +291,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_staff={@current_staff}
         />
       </div>
+
+      <.pagination meta={@meta} path_fn={&orders_path(Map.merge(@query, &1))} />
 
       <.modal
         id="delete-order-modal"

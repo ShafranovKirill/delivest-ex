@@ -6,7 +6,7 @@ defmodule Delivest.Oms.Orders do
   alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, Update}
   alias Delivest.Repo
 
-  defdelegate subscribe, to: Notifier
+  defdelegate subscribe(branch_id), to: Notifier
   defdelegate subscribe_owner(kind, id), to: Notifier
   defdelegate subscribe_branch(branch_id), to: Notifier
   defdelegate create_order(attrs, opts \\ []), to: Create, as: :run
@@ -14,12 +14,26 @@ defmodule Delivest.Oms.Orders do
   defdelegate create_draft_cart(order), to: DraftCart, as: :create
   defdelegate populate_cart_from_order(order, cart_id), to: DraftCart, as: :populate
 
-  def list_orders(params \\ %{}) do
+  def paginate_orders(params, page_params) do
+    with {:ok, {orders, meta}} <-
+           params |> filtered() |> Flop.validate_and_run(page_params, for: Order) do
+      {:ok, {Repo.preload(orders, [:items, :client]), meta}}
+    end
+  end
+
+  def list_latest_orders(params, limit) do
+    params
+    |> filtered()
+    |> order_by([o], desc: o.inserted_at, desc: o.id)
+    |> limit(^limit)
+    |> preload([:items, :client])
+    |> Repo.all()
+  end
+
+  defp filtered(params) do
     Order
     |> where([o], is_nil(o.deleted_at))
     |> Filter.apply_filters(Filter.normalize_params(params))
-    |> preload([:items, :client])
-    |> Repo.all()
   end
 
   def count_unconfirmed(branch_id) do
@@ -37,7 +51,7 @@ defmodule Delivest.Oms.Orders do
         ids -> where(query, [o], o.branch_id in ^ids)
       end
     end)
-    |> order_by([o], desc: o.inserted_at)
+    |> order_by([o], desc: o.inserted_at, desc: o.id)
     |> limit(^limit)
     |> preload(:items)
     |> Repo.all()

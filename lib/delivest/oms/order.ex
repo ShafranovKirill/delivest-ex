@@ -20,10 +20,10 @@ defmodule Delivest.Oms.Order do
   @derive {
     Flop.Schema,
     filterable: [:status, :fulfillment_type, :payment_method, :inserted_at, :number],
-    sortable: [:inserted_at, :number, :status, :total_amount],
+    sortable: [:inserted_at, :id, :number, :status, :total_amount],
     default_order: %{
-      order_by: [:inserted_at],
-      order_directions: [:desc]
+      order_by: [:inserted_at, :id],
+      order_directions: [:desc, :desc]
     }
   }
 

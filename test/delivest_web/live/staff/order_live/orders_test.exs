@@ -119,6 +119,23 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       assert has_element?(lv, "#orders-#{own_order.id}")
     end
 
+    test "orders are split into pages", %{conn: conn, branch: branch, order: first} do
+      first
+      |> Ecto.Changeset.change(inserted_at: DateTime.add(first.inserted_at, -60))
+      |> Delivest.Repo.update!()
+
+      second = create_order(branch.id)
+      conn = login(conn, ["admin"], branch)
+
+      {:ok, lv, _html} = live(conn, ~p"/staff/orders?page_size=1")
+      assert has_element?(lv, "#orders-#{second.id}")
+      refute has_element?(lv, "#orders-#{first.id}")
+
+      {:ok, lv, _html} = live(conn, ~p"/staff/orders?page_size=1&page=2")
+      assert has_element?(lv, "#orders-#{first.id}")
+      refute has_element?(lv, "#orders-#{second.id}")
+    end
+
     test "orders of another branch cannot be edited", %{conn: conn, branch: branch} do
       other_order = create_order(insert(:branch).id)
 

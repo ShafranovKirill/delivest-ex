@@ -2,9 +2,9 @@ defmodule Delivest.Oms.Orders.Notifier do
   alias Delivest.Repo
 
   @source Delivest.Oms.Orders
-  @topic inspect(@source)
 
-  def subscribe, do: Phoenix.PubSub.subscribe(Delivest.PubSub, @topic)
+  def subscribe(branch_id),
+    do: Phoenix.PubSub.subscribe(Delivest.PubSub, events_topic(branch_id))
 
   def subscribe_branch(branch_id),
     do: Phoenix.PubSub.subscribe(Delivest.PubSub, branch_topic(branch_id))
@@ -16,7 +16,12 @@ defmodule Delivest.Oms.Orders.Notifier do
 
   def publish({:ok, order}, event) do
     order = Repo.preload(order, [:items, :client], force: true)
-    Phoenix.PubSub.broadcast(Delivest.PubSub, @topic, {@source, event, order})
+
+    Phoenix.PubSub.broadcast(
+      Delivest.PubSub,
+      events_topic(order.branch_id),
+      {@source, event, order}
+    )
 
     Phoenix.PubSub.broadcast(
       Delivest.PubSub,
@@ -33,6 +38,8 @@ defmodule Delivest.Oms.Orders.Notifier do
   end
 
   def publish(error, _event), do: error
+
+  defp events_topic(branch_id), do: "orders:events:#{branch_id}"
 
   defp branch_topic(branch_id), do: "orders:branch:#{branch_id}"
 
