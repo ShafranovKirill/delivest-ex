@@ -195,7 +195,7 @@ defmodule Delivest.Oms.Carts do
               view_item = %{
                 product_id: item.product_id,
                 name: product.name,
-                image_url: Delivest.Media.get_url_from_file(product.media),
+                image_url: Delivest.Media.thumb_url_from_file(product.media),
                 price: product.price,
                 quantity: item.quantity,
                 total_price: item_total

@@ -227,7 +227,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
               <div class="w-16 h-12 rounded-lg bg-base-200 overflow-hidden shrink-0 border border-base-300 flex items-center justify-center">
                 <%= if stock.media do %>
                   <img
-                    src={Delivest.Media.get_url_from_file(stock.media)}
+                    src={Delivest.Media.thumb_url_from_file(stock.media)}
                     alt=""
                     class="w-full h-full object-cover"
                   />

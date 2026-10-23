@@ -48,7 +48,7 @@ defmodule Delivest.Net.MenuView do
       quantity: Map.get(product, :quantity),
       weight: Map.get(product, :weight),
       is_active: Map.get(product, :is_active),
-      photo_url: Delivest.Media.get_url_from_file(product.media),
+      photo_url: Delivest.Media.thumb_url_from_file(product.media),
       external_id: Map.get(product, :external_id)
     }
   end

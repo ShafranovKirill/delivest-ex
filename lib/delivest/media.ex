@@ -1,5 +1,5 @@
 defmodule Delivest.Media do
-  alias Delivest.Media.File
+  alias Delivest.Media.{File, Thumbnails}
   alias Delivest.Repo
 
   @spec generate_upload_url(String.t(), String.t()) :: {:ok, String.t()} | {:error, term()}
@@ -75,6 +75,16 @@ defmodule Delivest.Media do
 
   def get_url_from_file(_), do: nil
 
+  @spec thumb_url_from_file(File.t() | term()) :: String.t() | nil
+  def thumb_url_from_file(%File{thumb_key: key, bucket: bucket} = file) when is_binary(key) do
+    case generate_url_by_flag(bucket, key, file.is_private) do
+      {:ok, url} -> url
+      {:error, _reason} -> nil
+    end
+  end
+
+  def thumb_url_from_file(file), do: get_url_from_file(file)
+
   defp generate_url_by_flag(bucket, key, true = _is_private),
     do: generate_download_url(bucket, key)
 
@@ -107,15 +117,17 @@ defmodule Delivest.Media do
 
   @spec create_file(map()) :: {:ok, File.t()} | {:error, Ecto.Changeset.t()}
   def create_file(attrs) do
-    %File{}
-    |> File.changeset(attrs)
-    |> Repo.insert()
+    with {:ok, file} <- %File{} |> File.changeset(attrs) |> Repo.insert() do
+      Thumbnails.enqueue(file)
+      {:ok, file}
+    end
   end
 
   @spec delete_file(File.t()) :: {:ok, File.t()} | {:error, term()}
   def delete_file(%File{} = file) do
     case ExAws.S3.delete_object(file.bucket, file.key) |> ExAws.request() do
       {:ok, _} ->
+        Thumbnails.delete(file)
         Repo.delete(file)
 
       error ->

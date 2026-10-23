@@ -40,7 +40,7 @@ defmodule Delivest.Promo.Line do
       key: "gift:#{promotion_id}:#{product.id}",
       product_id: product.id,
       name: product.name,
-      image_url: Delivest.Media.get_url_from_file(product.media),
+      image_url: Delivest.Media.thumb_url_from_file(product.media),
       base_price: product.price,
       quantity: quantity,
       total: 0,

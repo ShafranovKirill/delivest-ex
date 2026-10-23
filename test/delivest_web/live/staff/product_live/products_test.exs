@@ -47,7 +47,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
     _ = render(lv)
     assert render(lv) =~ "Change Image"
-    assert Oban.Testing.all_enqueued(Delivest.Repo, []) == []
+
+    assert [%{worker: "Delivest.Media.Workers.ThumbnailWorker"}] =
+             Oban.Testing.all_enqueued(Delivest.Repo, [])
   end
 
   describe "copying products" do

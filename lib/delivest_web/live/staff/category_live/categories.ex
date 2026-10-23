@@ -303,7 +303,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
             </span>
             <img
               :if={product.media}
-              src={Delivest.Media.get_url_from_file(product.media)}
+              src={Delivest.Media.thumb_url_from_file(product.media)}
               class="size-10 rounded object-cover shrink-0"
               alt=""
             />

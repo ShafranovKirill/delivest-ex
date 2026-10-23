@@ -18,6 +18,7 @@ defmodule Delivest.Media.File do
     field :context, Ecto.Enum, values: [:product, :stock]
 
     field :owner_id, :binary_id
+    field :thumb_key, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -40,4 +41,7 @@ defmodule Delivest.Media.File do
     |> validate_number(:size, greater_than: 0)
     |> unique_constraint([:bucket, :key])
   end
+
+  @spec thumb_changeset(t(), String.t()) :: Ecto.Changeset.t()
+  def thumb_changeset(file, key), do: change(file, thumb_key: key)
 end

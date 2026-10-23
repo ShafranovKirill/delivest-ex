@@ -21,6 +21,6 @@ defmodule DelivestWeb.Client.Stock.StockJSON do
   defp render_media(nil), do: nil
 
   defp render_media(media) do
-    Delivest.Media.get_url_from_file(media)
+    Delivest.Media.thumb_url_from_file(media)
   end
 end
