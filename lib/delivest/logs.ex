@@ -12,7 +12,9 @@ defmodule Delivest.Logs do
 
   def level, do: Keyword.get(config(), :level, :info)
 
-  def retention_days, do: Keyword.get(config(), :retention_days, 14)
+  def retention_days, do: Keyword.get(config(), :retention_days, 7)
+
+  def error_retention_days, do: Keyword.get(config(), :error_retention_days, 30)
 
   def list_entries(scope, params \\ %{}) do
     Entry
@@ -20,9 +22,15 @@ defmodule Delivest.Logs do
     |> Flop.validate_and_run(params, for: Entry)
   end
 
-  def prune(days) do
+  def prune(days, error_days) do
+    {raw, _} = Entry |> where([e], e.level not in ^@levels.errors) |> delete_before(days)
+    {errors, _} = Entry |> scope(:errors) |> delete_before(error_days)
+    raw + errors
+  end
+
+  defp delete_before(query, days) do
     cutoff = DateTime.add(DateTime.utc_now(), -days, :day)
-    Repo.delete_all(from(e in Entry, where: e.inserted_at < ^cutoff))
+    query |> where([e], e.inserted_at < ^cutoff) |> Repo.delete_all()
   end
 
   defp scope(query, :raw), do: query

@@ -22,7 +22,13 @@ config :delivest, Oban,
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
-config :delivest, Delivest.Logs, enabled: true, level: :info, retention_days: 14
+config :delivest, Delivest.Logs,
+  enabled: true,
+  level: :info,
+  retention_days: 7,
+  error_retention_days: 30
+
+config :delivest, Delivest.Audit, retention_days: 180
 
 config :delivest,
   ecto_repos: [Delivest.Repo],

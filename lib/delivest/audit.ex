@@ -7,6 +7,15 @@ defmodule Delivest.Audit do
   alias Delivest.Identity.Branch
   alias Delivest.Repo
 
+  def retention_days,
+    do: :delivest |> Application.get_env(__MODULE__, []) |> Keyword.get(:retention_days, 180)
+
+  def prune(days) do
+    cutoff = DateTime.add(DateTime.utc_now(), -days, :day)
+    {count, _} = Repo.delete_all(from(e in Event, where: e.inserted_at < ^cutoff))
+    count
+  end
+
   def subscribe, do: Phoenix.PubSub.subscribe(Delivest.PubSub, Recorder.topic())
 
   def list_events(params \\ %{}) do

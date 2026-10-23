@@ -18,12 +18,17 @@ defmodule Delivest.LogsTest do
     assert length(raw) == 3
   end
 
-  test "prune removes entries older than the retention window" do
-    insert_entry("info", "old", DateTime.add(DateTime.utc_now(), -20, :day))
-    insert_entry("info", "fresh")
+  test "prune keeps errors longer than raw logs" do
+    days_ago = &DateTime.add(DateTime.utc_now(), -&1, :day)
+    insert_entry("info", "old info", days_ago.(10))
+    insert_entry("info", "fresh info")
+    insert_entry("error", "recent error", days_ago.(10))
+    insert_entry("error", "old error", days_ago.(40))
 
-    assert {1, _} = Logs.prune(14)
-    assert [%{message: "fresh"}] = Repo.all(Entry)
+    assert Logs.prune(7, 30) == 2
+
+    assert ["fresh info", "recent error"] =
+             Entry |> Repo.all() |> Enum.map(& &1.message) |> Enum.sort()
   end
 
   describe "formatter" do

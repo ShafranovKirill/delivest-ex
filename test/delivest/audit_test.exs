@@ -49,4 +49,18 @@ defmodule Delivest.AuditTest do
     assert {:ok, {[latest, _first], _meta}} = Audit.list_events(%{})
     assert latest.action == "product.updated"
   end
+
+  test "prune removes events older than the retention window" do
+    product = insert(:product)
+    {:ok, old} = Audit.record(:system, "product.created", product)
+    {:ok, fresh} = Audit.record(:system, "product.updated", product)
+
+    old
+    |> Ecto.Changeset.change(inserted_at: DateTime.add(DateTime.utc_now(), -200, :day))
+    |> Repo.update!()
+
+    assert Audit.prune(180) == 1
+    assert [%Event{id: id}] = Repo.all(Event)
+    assert id == fresh.id
+  end
 end
