@@ -73,6 +73,17 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
+  def add_items(cart_id, lines) do
+    with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found} do
+      Enum.each(lines, fn {product_id, quantity} ->
+        with {:ok, uuid} <- available_product(product_id, cart.branch_id),
+             do: upsert_item(cart.id, uuid, quantity)
+      end)
+
+      {:ok, recalculate_and_cache(cart)}
+    end
+  end
+
   defp available_product(product_id, branch_id) do
     with {:ok, uuid} <- Ecto.UUID.cast(product_id),
          true <- Net.product_available_in_branch?(uuid, branch_id) do

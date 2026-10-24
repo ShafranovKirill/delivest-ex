@@ -42,6 +42,19 @@ defmodule Delivest.Oms.Orders do
     |> Repo.aggregate(:count)
   end
 
+  def get_client_order(nil, _order_id), do: nil
+
+  def get_client_order(client_id, order_id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(order_id) do
+      Order
+      |> where([o], o.id == ^uuid and o.client_id == ^client_id and is_nil(o.deleted_at))
+      |> preload(:items)
+      |> Repo.one()
+    else
+      :error -> nil
+    end
+  end
+
   def list_client_orders(client_id, branch_scope, limit \\ 50) do
     Order
     |> where([o], o.client_id == ^client_id and is_nil(o.deleted_at))

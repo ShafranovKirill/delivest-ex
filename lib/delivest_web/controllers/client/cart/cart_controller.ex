@@ -174,6 +174,34 @@ defmodule DelivestWeb.Client.Cart.CartController do
     ]
   )
 
+  operation(:repeat,
+    summary: "Повторить заказ",
+    description:
+      "Добавляет в корзину позиции прошлого заказа клиента. Недоступные сейчас товары пропускаются.",
+    tags: ["Cart"],
+    parameters: [
+      cart_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true],
+      order_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true]
+    ],
+    responses: [
+      ok: {"Обновленная корзина", "application/json", CartResponse},
+      not_found: {"Корзина или заказ не найдены", "application/json", ErrorResponse}
+    ]
+  )
+
+  def repeat(conn, %{"cart_id" => cart_id, "order_id" => order_id}) do
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, cart_view} <- Oms.repeat_order(cart_id, current_client_id(conn), order_id) do
+      render(conn, :show, cart: cart_view)
+    else
+      {:error, :order_not_found} ->
+        ApiError.send_error(conn, :not_found, :order_not_found, "Order not found")
+
+      _ ->
+        cart_not_found(conn)
+    end
+  end
+
   def clear(conn, %{"cart_id" => cart_id}) do
     with :ok <- authorize_cart(conn, cart_id),
          {:ok, cart_view} <- Carts.clear_cart(cart_id) do

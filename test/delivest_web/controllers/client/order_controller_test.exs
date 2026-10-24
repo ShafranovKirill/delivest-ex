@@ -280,6 +280,49 @@ defmodule DelivestWeb.Client.OrderControllerTest do
       assert [%{"id" => ^order_id}] =
                other_device |> get(~p"/client/orders") |> json_response(200) |> Map.fetch!("data")
     end
+
+    test "a past order is repeated into the cart without unavailable products", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      client = insert(:client, phone: "+79995556678")
+      retired = insert_branch_product(branch.id, price: 100)
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+      conn = post(conn, ~p"/client/cart/#{cart_id}/items/#{product.id}")
+      conn = post(recycle_with_headers(conn), ~p"/client/cart/#{cart_id}/items/#{retired.id}")
+
+      order_id =
+        conn
+        |> recycle_with_headers()
+        |> authorize(client)
+        |> post(~p"/client/orders", order_params(branch, cart_id))
+        |> json_response(200)
+        |> get_in(["data", "id"])
+
+      retired |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
+
+      conn = conn |> recycle_with_headers() |> get(~p"/client/cart?branch_id=#{branch.id}")
+      new_cart_id = json_response(conn, 200)["data"]["id"]
+
+      assert %{"items" => [%{"product_id" => product_id, "quantity" => 2}]} =
+               conn
+               |> recycle_with_headers()
+               |> authorize(client)
+               |> post(~p"/client/cart/#{new_cart_id}/repeat/#{order_id}")
+               |> json_response(200)
+               |> Map.fetch!("data")
+
+      assert product_id == product.id
+
+      assert %{"error" => "order_not_found"} =
+               conn
+               |> recycle_with_headers()
+               |> authorize(insert(:client, phone: "+79995556679"))
+               |> post(~p"/client/cart/#{new_cart_id}/repeat/#{order_id}")
+               |> json_response(404)
+    end
   end
 
   test "order creation is rate limited per client IP", %{conn: conn} do
