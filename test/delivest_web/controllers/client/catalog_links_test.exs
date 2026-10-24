@@ -46,16 +46,19 @@ defmodule DelivestWeb.Client.CatalogLinksTest do
     assert [%{"products" => [%{"slug" => "hinkali"}]}] = body["data"]
   end
 
-  test "menu exposes product labels", %{
+  test "menu exposes product labels and the cart suggestion flag", %{
     conn: conn,
     staff: staff,
     branch: branch,
     product: product
   } do
-    {:ok, _} = Net.update_product(staff, product, %{"tags" => ["new", "vegetarian"]})
+    {:ok, _} =
+      Net.update_product(staff, product, %{"tags" => ["new", "vegetarian"], "suggested" => true})
 
     body = conn |> get(~p"/client/branches/#{branch.id}/menu") |> json_response(200)
-    assert [%{"products" => [%{"tags" => ["new", "vegetarian"]}]}] = body["data"]
+
+    assert [%{"products" => [%{"tags" => ["new", "vegetarian"], "suggested" => true}]}] =
+             body["data"]
   end
 
   test "a promotion links to its product while the product is available", ctx do

@@ -29,6 +29,7 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
       weight: Map.get(product, :weight),
       is_active: Map.get(product, :is_active),
       tags: Map.get(product, :tags, []),
+      suggested: Map.get(product, :suggested, false),
       photo_url: Map.get(product, :photo_url),
       external_id: Map.get(product, :external_id)
     }

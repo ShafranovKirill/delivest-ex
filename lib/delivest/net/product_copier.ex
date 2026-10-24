@@ -13,7 +13,8 @@ defmodule Delivest.Net.ProductCopier do
     :weight,
     :media_id,
     :is_active,
-    :tags
+    :tags,
+    :suggested
   ]
 
   def copy(staff, selection, from_branch_id, to_branch_id) do

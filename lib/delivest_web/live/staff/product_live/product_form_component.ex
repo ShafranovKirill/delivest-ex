@@ -200,7 +200,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :category_id,
       :media_id,
       :slug,
-      :tags
+      :tags,
+      :suggested
     ])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
   end
@@ -309,6 +310,17 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           />
 
           <.tag_checkboxes field={@form[:tags]} />
+
+          <div>
+            <.input
+              field={@form[:suggested]}
+              type="checkbox"
+              label={gettext("Suggest in the cart")}
+            />
+            <p class="text-xs text-base-content/60 mt-1">
+              {gettext("Offered in the «Add to your order» block when it is not in the cart yet.")}
+            </p>
+          </div>
 
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>

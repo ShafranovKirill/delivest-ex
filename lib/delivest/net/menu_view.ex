@@ -10,6 +10,7 @@ defmodule Delivest.Net.MenuView do
           weight: integer() | nil,
           is_active: boolean() | nil,
           tags: [atom()],
+          suggested: boolean(),
           photo_url: String.t() | nil,
           external_id: String.t() | nil
         }
@@ -50,6 +51,7 @@ defmodule Delivest.Net.MenuView do
       weight: Map.get(product, :weight),
       is_active: Map.get(product, :is_active),
       tags: Map.get(product, :tags, []),
+      suggested: Map.get(product, :suggested, false),
       photo_url: Delivest.Media.thumb_url_from_file(product.media),
       external_id: Map.get(product, :external_id)
     }

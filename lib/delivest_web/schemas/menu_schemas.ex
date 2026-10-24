@@ -40,6 +40,10 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           items: %Schema{type: :string, enum: Delivest.Net.Product.tags()},
           description: "Метки товара: хит, новинка, острое, вегетарианское"
         },
+        suggested: %Schema{
+          type: :boolean,
+          description: "Предлагать в корзине в блоке «Добавить к заказу»"
+        },
         photo_url: %Schema{
           type: :string,
           format: :uri,

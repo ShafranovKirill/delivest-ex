@@ -28,6 +28,7 @@ defmodule Delivest.Net.Product do
     field :weight, :integer
     field :is_active, :boolean, default: true
     field :tags, {:array, Ecto.Enum}, values: @tags, default: []
+    field :suggested, :boolean, default: false
     field :order, :float
     belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
     field :external_id, :string
@@ -55,7 +56,8 @@ defmodule Delivest.Net.Product do
       :category_id,
       :deleted_at,
       :slug,
-      :tags
+      :tags,
+      :suggested
     ])
     |> validate_required([:name, :price])
     |> validate_number(:price, greater_than_or_equal_to: 0)
