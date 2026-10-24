@@ -4523,3 +4523,38 @@ msgstr "Показывается в блоке «Добавить к заказ�
 #, elixir-autogen, elixir-format
 msgid "Suggest in the cart"
 msgstr "Предлагать в корзине"
+
+#: lib/delivest/push/order_message.ex:25
+#, elixir-autogen, elixir-format
+msgid "Order %{number} is being prepared"
+msgstr "Заказ %{number} готовится"
+
+#: lib/delivest/push/order_message.ex:39
+#, elixir-autogen, elixir-format
+msgid "Order %{number} is completed. Enjoy your meal!"
+msgstr "Заказ %{number} выполнен. Приятного аппетита!"
+
+#: lib/delivest/push/order_message.ex:33
+#, elixir-autogen, elixir-format
+msgid "Order %{number} is ready"
+msgstr "Заказ %{number} готов"
+
+#: lib/delivest/push/order_message.ex:28
+#, elixir-autogen, elixir-format
+msgid "Order %{number} is ready and will be on its way soon"
+msgstr "Заказ %{number} собран и скоро поедет к вам"
+
+#: lib/delivest/push/order_message.ex:31
+#, elixir-autogen, elixir-format
+msgid "Order %{number} is ready, you can pick it up"
+msgstr "Заказ %{number} готов, можно забирать"
+
+#: lib/delivest/push/order_message.ex:41
+#, elixir-autogen, elixir-format
+msgid "Order %{number} was cancelled"
+msgstr "Заказ %{number} отменён"
+
+#: lib/delivest/push/order_message.ex:36
+#, elixir-autogen, elixir-format
+msgid "The courier is on the way with order %{number}"
+msgstr "Курьер уже везёт заказ %{number}"

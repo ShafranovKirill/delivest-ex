@@ -34,6 +34,7 @@ defmodule Delivest.Oms.Orders.Notifier do
         do:
           Phoenix.PubSub.broadcast(Delivest.PubSub, owner_topic(kind, id), {:client_order, order})
 
+    Delivest.Push.order_changed(order)
     {:ok, order}
   end
 

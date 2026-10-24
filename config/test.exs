@@ -7,6 +7,9 @@ config :delivest, Delivest.Integrations.Frontpad, request_interval_ms: 0
 config :delivest, Delivest.HTTP.Client,
   req_options: [plug: {Req.Test, Delivest.HTTP.Client}, retry: false]
 
+config :delivest, Delivest.Push.Sender,
+  req_options: [plug: {Req.Test, Delivest.Push.Sender}, retry: false]
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

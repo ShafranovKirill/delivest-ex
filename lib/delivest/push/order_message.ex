@@ -1,0 +1,42 @@
+defmodule Delivest.Push.OrderMessage do
+  use Gettext, backend: DelivestWeb.Gettext
+
+  alias Delivest.Franchise
+
+  @notified [:preparing, :ready, :delivering, :completed, :cancelled]
+
+  def notified?(status), do: status in @notified
+
+  def build(order, status, nil), do: message(order, status)
+
+  def build(order, status, locale),
+    do: Gettext.with_locale(DelivestWeb.Gettext, locale, fn -> message(order, status) end)
+
+  defp message(order, status) do
+    %{
+      title: Franchise.get_settings().name,
+      body: body(status, order),
+      tag: "order-#{order.id}",
+      url: "/"
+    }
+  end
+
+  defp body(:preparing, order),
+    do: gettext("Order %{number} is being prepared", number: order.number)
+
+  defp body(:ready, %{fulfillment_type: :delivery} = order),
+    do: gettext("Order %{number} is ready and will be on its way soon", number: order.number)
+
+  defp body(:ready, %{fulfillment_type: :pickup} = order),
+    do: gettext("Order %{number} is ready, you can pick it up", number: order.number)
+
+  defp body(:ready, order), do: gettext("Order %{number} is ready", number: order.number)
+
+  defp body(:delivering, order),
+    do: gettext("The courier is on the way with order %{number}", number: order.number)
+
+  defp body(:completed, order),
+    do: gettext("Order %{number} is completed. Enjoy your meal!", number: order.number)
+
+  defp body(:cancelled, order), do: gettext("Order %{number} was cancelled", number: order.number)
+end

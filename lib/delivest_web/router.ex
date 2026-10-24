@@ -122,6 +122,8 @@ defmodule DelivestWeb.Router do
     end
 
     get "/socket_token", Socket.SocketController, :token
+    get "/push/key", Push.PushController, :key
+    post "/orders/:order_id/push", Push.PushController, :subscribe
 
     scope "/orders", Order do
       get "/active", OrderController, :active
