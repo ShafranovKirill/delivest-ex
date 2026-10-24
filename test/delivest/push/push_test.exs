@@ -69,7 +69,8 @@ defmodule Delivest.PushTest do
   end
 
   test "a finished order forgets its subscriptions", %{order: order, subscription: subscription} do
-    {:ok, order} = Oms.update_order_details(order, %{"status" => "cancelled"})
+    {:ok, order} =
+      Oms.update_order_details(order, %{"status" => "cancelled", "cancel_reason" => "other"})
 
     assert :ok = perform_job(Worker, %{"order_id" => order.id})
     assert_received {:push, _headers, _body}

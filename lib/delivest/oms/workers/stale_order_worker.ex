@@ -64,7 +64,8 @@ defmodule Delivest.Oms.Workers.StaleOrderWorker do
   defp close(%Order{} = order, status) do
     Orders.update_order_details(order, %{
       "status" => to_string(status),
-      "payment_method" => to_string(order.payment_method)
+      "payment_method" => to_string(order.payment_method),
+      "cancel_reason" => "not_confirmed"
     })
   end
 end

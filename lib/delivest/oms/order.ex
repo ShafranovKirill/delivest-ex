@@ -13,6 +13,7 @@ defmodule Delivest.Oms.Order do
   @statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled, :crm]
   @progress_statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled]
   @payment_methods [:cash, :card_offline]
+  @cancel_reasons [:customer_refused, :out_of_stock, :unreachable, :other, :not_confirmed]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -50,6 +51,8 @@ defmodule Delivest.Oms.Order do
     embeds_many :promotions, AppliedPromotion, on_replace: :delete
     field :cook_by, :naive_datetime
     field :comment, :string
+    field :cancel_reason, Ecto.Enum, values: @cancel_reasons
+    field :cancel_note, :string
     field :deleted_at, :utc_datetime
 
     embeds_one :address, Address, on_replace: :update
@@ -114,11 +117,32 @@ defmodule Delivest.Oms.Order do
     |> cast_embed(:crm, required: true)
   end
 
+  def cancel_reasons, do: @cancel_reasons
+
   def details_changeset(order, attrs) do
     order
-    |> cast(attrs, [:status, :payment_method])
+    |> cast(attrs, [:status, :payment_method, :cancel_reason, :cancel_note])
     |> validate_required([:status, :payment_method])
     |> validate_status_for_fulfillment()
+    |> validate_cancellation()
+  end
+
+  defp validate_cancellation(changeset) do
+    case get_field(changeset, :status) do
+      :cancelled ->
+        changeset
+        |> validate_required_on_change(:cancel_reason)
+        |> validate_length(:cancel_note, max: 300)
+
+      _status ->
+        change(changeset, cancel_reason: nil, cancel_note: nil)
+    end
+  end
+
+  defp validate_required_on_change(changeset, field) do
+    if get_change(changeset, :status) == :cancelled,
+      do: validate_required(changeset, [field]),
+      else: changeset
   end
 
   defp settle_delivering_status(changeset) do

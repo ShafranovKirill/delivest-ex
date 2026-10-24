@@ -98,7 +98,11 @@ defmodule Delivest.Oms.Orders do
     do: Audit.track({:error, :order_locked}, actor, "order.details_changed")
 
   def update_order_details(%Order{} = order, attrs, actor) do
-    attrs = attrs |> Filter.normalize_params() |> Map.take(["status", "payment_method"])
+    attrs =
+      attrs
+      |> Filter.normalize_params()
+      |> Map.take(["status", "payment_method", "cancel_reason", "cancel_note"])
+
     changeset = Order.details_changeset(order, attrs)
 
     changeset

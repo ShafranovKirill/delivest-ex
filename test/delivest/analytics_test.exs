@@ -43,7 +43,12 @@ defmodule Delivest.AnalyticsTest do
     order!(@branch_id, [{ctx.khinkali, 2}], ~U[2026-10-19 12:00:00Z])
 
     cancelled = order!(@branch_id, [{ctx.tea, 5}], ~U[2026-10-19 13:00:00Z])
-    {:ok, _} = Orders.update_order_details(cancelled, %{"status" => "cancelled"})
+
+    {:ok, _} =
+      Orders.update_order_details(cancelled, %{
+        "status" => "cancelled",
+        "cancel_reason" => "other"
+      })
 
     deleted = order!(@branch_id, [{ctx.tea, 7}], ~U[2026-10-19 14:00:00Z])
     {:ok, _} = Orders.soft_delete_order(deleted)

@@ -117,7 +117,11 @@ defmodule Delivest.Promo.OrderFlowTest do
     {:ok, order} = Orders.create_order(order_attrs(cart_with(branch, pizza, 1)))
 
     {:ok, _} =
-      Orders.update_order_details(order, %{"status" => "cancelled", "payment_method" => "cash"})
+      Orders.update_order_details(order, %{
+        "status" => "cancelled",
+        "payment_method" => "cash",
+        "cancel_reason" => "other"
+      })
 
     assert {:ok, %{total_amount: 90}} =
              Orders.create_order(order_attrs(cart_with(branch, pizza, 1)))

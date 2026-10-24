@@ -27,7 +27,7 @@ defmodule Delivest.Oms.Workers.StaleOrderWorkerTest do
 
     assert Repo.reload!(ready).status == :completed
     assert Repo.reload!(delivering).status == :completed
-    assert Repo.reload!(created).status == :cancelled
+    assert %{status: :cancelled, cancel_reason: :not_confirmed} = Repo.reload!(created)
     assert Repo.reload!(today).status == :ready
     assert Repo.reload!(done).status == :completed
   end

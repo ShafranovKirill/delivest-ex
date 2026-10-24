@@ -423,6 +423,37 @@ defmodule Delivest.Oms.OrderTest do
       assert updated.total_amount == 240
       assert length(updated.items) == 1
     end
+
+    test "cancelling needs a reason that is dropped when the order comes back" do
+      product = insert_branch_product(@branch_id, price: 120)
+      {:ok, cart} = Carts.create_cart(%{session_id: "cancel-reason", branch_id: @branch_id})
+      {:ok, _, _cart} = Carts.add_item(cart.id, product.id, 1)
+
+      {:ok, order} =
+        Orders.create_order(%{
+          "cart_id" => cart.id,
+          "fulfillment_type" => "pickup",
+          "payment_method" => "cash"
+        })
+
+      assert {:error, changeset} = Orders.update_order_details(order, %{"status" => "cancelled"})
+      assert %{cancel_reason: _} = errors_on(changeset)
+
+      assert {:ok,
+              %{status: :cancelled, cancel_reason: :out_of_stock, cancel_note: "Нет сыра"} =
+                cancelled} =
+               Orders.update_order_details(order, %{
+                 "status" => "cancelled",
+                 "cancel_reason" => "out_of_stock",
+                 "cancel_note" => "Нет сыра"
+               })
+
+      assert {:ok, %{payment_method: :card_offline, cancel_reason: :out_of_stock}} =
+               Orders.update_order_details(cancelled, %{"payment_method" => "card_offline"})
+
+      assert {:ok, %{status: :preparing, cancel_reason: nil, cancel_note: nil}} =
+               Orders.update_order_details(Repo.reload!(cancelled), %{"status" => "preparing"})
+    end
   end
 
   defp draft_cart_for(order) do
