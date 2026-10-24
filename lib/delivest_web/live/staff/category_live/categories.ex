@@ -51,7 +51,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "categories.update") do
-      case Net.get_category(id) do
+      case Net.get_branch_category(socket.assigns.branch_id, id) do
         {:ok, category} ->
           assign(socket, page_title: gettext("Edit category"), category: category)
 
@@ -67,7 +67,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
 
   defp apply_action(socket, :products, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "products.update") do
-      case Net.get_category(id) do
+      case Net.get_branch_category(socket.assigns.branch_id, id) do
         {:ok, category} ->
           assign(socket,
             page_title: gettext("Products order"),
@@ -99,7 +99,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
     staff = socket.assigns.current_staff
     branch_id = socket.assigns.branch_id
 
-    with {:ok, category} <- Net.get_category(id),
+    with {:ok, category} <- Net.get_branch_category(socket.assigns.branch_id, id),
          {:ok, _updated} <- Net.update_category_order(staff, category, above_order, below_order) do
       categories = Net.list_staff_categories_for_branch(staff, branch_id)
       {:noreply, assign(socket, categories: categories)}
@@ -135,7 +135,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
     staff = socket.assigns.current_staff
 
     if Identity.can?(staff, "categories.delete") do
-      case Net.get_category(id) do
+      case Net.get_branch_category(socket.assigns.branch_id, id) do
         {:ok, category} -> {:noreply, assign(socket, category_to_delete: category)}
         _ -> {:noreply, socket}
       end

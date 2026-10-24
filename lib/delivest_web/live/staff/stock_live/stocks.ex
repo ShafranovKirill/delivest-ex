@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.StockLive.Stocks do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Identity, Repo, Net}
+  alias Delivest.{Identity, Net}
   alias Delivest.Net.Stock
   alias DelivestWeb.Staff.StockLive.StockFormComponent
 
@@ -55,8 +55,8 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "stocks.update") do
-      case Repo.get(Stock, id) |> Repo.preload(:media) do
-        %Stock{} = stock ->
+      case Net.get_branch_stock(socket.assigns.branch_id, id, preload: [:media]) do
+        {:ok, stock} ->
           assign(socket, page_title: gettext("Edit promotion"), stock: stock)
 
         _ ->
@@ -78,7 +78,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
     staff = socket.assigns.current_staff
     branch_id = socket.assigns.branch_id
 
-    with %Stock{} = stock <- Repo.get(Stock, id),
+    with {:ok, stock} <- Net.get_branch_stock(branch_id, id),
          {:ok, _updated} <- Net.update_stock_order(staff, stock, above_order, below_order) do
       stocks = Net.list_staff_stocks_for_branch(staff, branch_id)
       {:noreply, assign(socket, stocks: stocks)}
@@ -90,14 +90,15 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
 
   @impl true
   def handle_event("delete_click", %{"id" => id}, socket) do
-    if Identity.can?(socket.assigns.current_staff, "stocks.delete") do
-      stock = Repo.get(Stock, id)
+    with true <- Identity.can?(socket.assigns.current_staff, "stocks.delete"),
+         {:ok, stock} <- Net.get_branch_stock(socket.assigns.branch_id, id) do
       {:noreply, assign(socket, stock_to_delete: stock)}
     else
-      {:noreply,
-       socket
-       |> put_flash(:error, gettext("You don't have permission to delete promotions."))
-       |> push_patch(to: ~p"/staff/stocks")}
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("You don't have permission to delete promotions."))
+         |> push_patch(to: ~p"/staff/stocks")}
     end
   end
 

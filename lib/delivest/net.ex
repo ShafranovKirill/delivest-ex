@@ -3,6 +3,7 @@ defmodule Delivest.Net do
 
   defdelegate list_category_for_branch(branch_id, opts \\ []), to: Categories
   defdelegate list_staff_categories_for_branch(staff, branch_id, opts \\ []), to: Categories
+  defdelegate list_branch_categories(branch_id), to: Categories
   defdelegate get_category(id, opts \\ []), to: Categories
   defdelegate create_category(staff, branch_id, attrs), to: Categories
 
@@ -43,5 +44,15 @@ defmodule Delivest.Net do
   defdelegate delete_stock(staff, stock), to: Stocks
 
   defdelegate get_menu_for_branch(branch_id), to: Catalogs
+
+  def get_branch_product(branch_id, id, opts \\ []),
+    do: Delivest.Net.BranchScope.fetch(Delivest.Net.Product, branch_id, id, opts)
+
+  def get_branch_category(branch_id, id, opts \\ []),
+    do: Delivest.Net.BranchScope.fetch(Delivest.Net.Category, branch_id, id, opts)
+
+  def get_branch_stock(branch_id, id, opts \\ []),
+    do: Delivest.Net.BranchScope.fetch(Delivest.Net.Stock, branch_id, id, opts)
+
   defdelegate clear_menu_cache(branch_id), to: Catalogs
 end

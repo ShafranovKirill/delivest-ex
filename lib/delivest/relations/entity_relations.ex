@@ -26,6 +26,14 @@ defmodule Delivest.Relations.EntityRelations do
     |> Repo.delete_all()
   end
 
+  def related?(from_type, from_id, to_type, to_id) do
+    from(er in EntityRelation,
+      where: er.from_entity_type == ^from_type and er.from_id == ^from_id,
+      where: er.to_entity_type == ^to_type and er.to_id == ^to_id
+    )
+    |> Repo.exists?()
+  end
+
   def list_target_ids(from_type, from_id, target_type) do
     from(er in EntityRelation,
       where: er.from_entity_type == ^from_type and er.from_id == ^from_id,

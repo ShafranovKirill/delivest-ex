@@ -3,7 +3,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   alias Delivest.{Identity, Repo, Net}
   alias Delivest.Net.Product
-  alias Delivest.Net.Category
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.CopyComponent
 
@@ -12,7 +11,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def mount(_params, _session, socket) do
     branch_id = socket.assigns.current_branch.id
-    categories = Repo.all(Category)
+    categories = Net.list_branch_categories(branch_id)
 
     if connected?(socket) and branch_id do
       Delivest.Net.Products.subscribe_branch(branch_id)
@@ -101,8 +100,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "products.update") do
-      case Repo.get(Product, id) |> Repo.preload([:category]) do
-        %Product{} = product ->
+      case Net.get_branch_product(socket.assigns.branch_id, id, preload: [:category]) do
+        {:ok, product} ->
           assign(socket, page_title: gettext("Edit product"), product: product)
 
         _ ->
@@ -153,14 +152,15 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   def handle_event("delete_click", %{"id" => id}, socket) do
-    if Identity.can?(socket.assigns.current_staff, "products.delete") do
-      product = Repo.get(Product, id)
+    with true <- Identity.can?(socket.assigns.current_staff, "products.delete"),
+         {:ok, product} <- Net.get_branch_product(socket.assigns.branch_id, id) do
       {:noreply, assign(socket, product_to_delete: product)}
     else
-      {:noreply,
-       socket
-       |> put_flash(:error, gettext("You don't have permission to delete products."))
-       |> push_patch(to: ~p"/staff/products")}
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("You don't have permission to delete products."))
+         |> push_patch(to: ~p"/staff/products")}
     end
   end
 

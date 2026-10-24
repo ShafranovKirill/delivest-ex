@@ -25,6 +25,15 @@ defmodule Delivest.Net.Categories do
     |> Repo.all()
   end
 
+  def list_branch_categories(branch_id) do
+    category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
+
+    Category
+    |> where([c], c.id in ^category_ids)
+    |> order_by([c], asc: c.order)
+    |> Repo.all()
+  end
+
   @spec list_staff_categories_for_branch(Staff.t(), binary(), keyword()) ::
           [Category.t()] | {:error, :forbidden}
   def list_staff_categories_for_branch(staff, branch_id, opts \\ []) do
