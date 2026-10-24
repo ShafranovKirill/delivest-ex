@@ -5,6 +5,7 @@ defmodule Delivest.Net.Product do
 
   @type t :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: true}
+  @tags [:hit, :new, :spicy, :vegetarian]
 
   @derive {
     Flop.Schema,
@@ -26,6 +27,7 @@ defmodule Delivest.Net.Product do
     field :quantity, :integer
     field :weight, :integer
     field :is_active, :boolean, default: true
+    field :tags, {:array, Ecto.Enum}, values: @tags, default: []
     field :order, :float
     belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
     field :external_id, :string
@@ -35,6 +37,8 @@ defmodule Delivest.Net.Product do
     field :deleted_at, :utc_datetime
     timestamps(type: :utc_datetime)
   end
+
+  def tags, do: @tags
 
   def changeset(product, attrs) do
     product
@@ -50,7 +54,8 @@ defmodule Delivest.Net.Product do
       :external_id,
       :category_id,
       :deleted_at,
-      :slug
+      :slug,
+      :tags
     ])
     |> validate_required([:name, :price])
     |> validate_number(:price, greater_than_or_equal_to: 0)

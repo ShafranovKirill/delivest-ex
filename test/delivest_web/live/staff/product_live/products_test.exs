@@ -52,6 +52,28 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
              Oban.Testing.all_enqueued(Delivest.Repo, [])
   end
 
+  test "labels are picked from the fixed set and can be cleared", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/products/new")
+
+    lv
+    |> form("#product-form", product: %{name: "Том ям", price: 450, tags: ["", "spicy", "hit"]})
+    |> render_submit()
+
+    {:ok, {[product], _meta}} =
+      Delivest.Net.Products.list_staff_products_for_branch(staff, branch.id)
+
+    assert Enum.sort(product.tags) == [:hit, :spicy]
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/products/#{product.id}/edit")
+    lv |> form("#product-form", product: %{tags: [""]}) |> render_submit()
+
+    assert %{tags: []} = Delivest.Net.Products.get_product(product.id)
+  end
+
   describe "copying products" do
     setup %{conn: conn} do
       branch = insert(:branch, name: "Source")

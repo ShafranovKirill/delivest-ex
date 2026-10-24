@@ -35,6 +35,11 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           description: "Вес товара (в граммах)"
         },
         is_active: %Schema{type: :boolean, example: true},
+        tags: %Schema{
+          type: :array,
+          items: %Schema{type: :string, enum: Delivest.Net.Product.tags()},
+          description: "Метки товара: хит, новинка, острое, вегетарианское"
+        },
         photo_url: %Schema{
           type: :string,
           format: :uri,

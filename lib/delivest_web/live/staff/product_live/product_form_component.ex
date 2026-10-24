@@ -5,6 +5,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   alias Delivest.Net.Product
 
   import Ecto.Changeset
+  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tag_checkboxes: 1]
+
+  alias DelivestWeb.Staff.ProductLive.ProductTags
 
   @impl true
   def update(assigns, socket) do
@@ -97,6 +100,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   defp normalize_params(params) do
+    params = ProductTags.without_blank(params)
+
     case params["category_id"] do
       "" -> Map.put(params, "category_id", nil)
       _ -> params
@@ -194,7 +199,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :external_id,
       :category_id,
       :media_id,
-      :slug
+      :slug,
+      :tags
     ])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
   end
@@ -301,6 +307,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             label={gettext("Description")}
             placeholder={gettext("Enter product description...")}
           />
+
+          <.tag_checkboxes field={@form[:tags]} />
 
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
         </div>
