@@ -44,7 +44,7 @@ defmodule Delivest.PushTest do
     assert_received {:push, headers, body}
 
     assert {"authorization", "vapid t=" <> _rest} = List.keyfind(headers, "authorization", 0)
-    assert %{"body" => text, "tag" => tag} = PushClient.decrypt(client, body)
+    assert %{"body" => text, "tag" => tag, "icon" => nil} = PushClient.decrypt(client, body)
     assert text == "Order #{order.number} is being prepared"
     assert tag == "order-#{order.id}"
 

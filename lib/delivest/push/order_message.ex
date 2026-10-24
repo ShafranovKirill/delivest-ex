@@ -13,9 +13,12 @@ defmodule Delivest.Push.OrderMessage do
     do: Gettext.with_locale(DelivestWeb.Gettext, locale, fn -> message(order, status) end)
 
   defp message(order, status) do
+    settings = Franchise.get_settings()
+
     %{
-      title: Franchise.get_settings().name,
+      title: settings.name,
       body: body(status, order),
+      icon: Franchise.icon_url(settings, "icon-192.png"),
       tag: "order-#{order.id}",
       url: "/"
     }
