@@ -1,6 +1,8 @@
 defmodule Delivest.Oms.Orders.Filter do
   import Ecto.Query, warn: false
 
+  alias Delivest.Oms.OrderScopes
+
   def normalize_params(params) when is_map(params) do
     Map.new(params, fn
       {k, v} when is_atom(k) -> {Atom.to_string(k), v}
@@ -12,7 +14,7 @@ defmodule Delivest.Oms.Orders.Filter do
     Enum.reduce(params, query, fn
       {_key, val}, q when val in [nil, ""] -> q
       {"branch_id", val}, q -> where(q, [o], o.branch_id == ^val)
-      {"status", val}, q -> where(q, [o], o.status == ^val)
+      {"status", val}, q -> where(q, ^dynamic(^OrderScopes.effective_status() == ^val))
       {"date_from", val}, q -> filter_date_from(q, val)
       {"date_to", val}, q -> filter_date_to(q, val)
       {"sort_by", val}, q -> apply_sort(q, val, params["sort_dir"])

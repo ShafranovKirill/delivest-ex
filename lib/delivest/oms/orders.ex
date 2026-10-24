@@ -2,7 +2,7 @@ defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
 
   alias Delivest.Audit
-  alias Delivest.Oms.{Order, OrderStatus}
+  alias Delivest.Oms.{Order, OrderDeadline, OrderScopes, OrderStatus}
   alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, Update}
   alias Delivest.Repo
 
@@ -16,7 +16,10 @@ defmodule Delivest.Oms.Orders do
 
   def paginate_orders(params, page_params) do
     with {:ok, {orders, meta}} <-
-           params |> filtered() |> Flop.validate_and_run(page_params, for: Order) do
+           params
+           |> filtered()
+           |> sorted(Filter.normalize_params(params))
+           |> Flop.validate_and_run(page_params, for: Order) do
       {:ok, {Repo.preload(orders, [:items, :client]), meta}}
     end
   end
@@ -35,6 +38,25 @@ defmodule Delivest.Oms.Orders do
     |> where([o], is_nil(o.deleted_at))
     |> Filter.apply_filters(Filter.normalize_params(params))
   end
+
+  def count_by_status(params) do
+    statuses =
+      params
+      |> Map.drop([:status, "status"])
+      |> filtered()
+      |> select(^%{status: OrderScopes.effective_status()})
+
+    from(s in subquery(statuses), group_by: s.status, select: {s.status, count()})
+    |> Repo.all()
+    |> Map.new(fn {status, count} -> {String.to_existing_atom(status), count} end)
+  end
+
+  defp sorted(query, %{"sort" => "time"}), do: query
+
+  defp sorted(query, %{"branch_id" => branch_id}) when is_binary(branch_id),
+    do: OrderDeadline.by_urgency(query, OrderDeadline.delivery_minutes(branch_id))
+
+  defp sorted(query, _params), do: query
 
   def count_unconfirmed(branch_id) do
     Order
