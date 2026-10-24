@@ -10,7 +10,8 @@ defmodule DelivestWeb.Client.Franchise.FranchiseController do
 
   operation(:show,
     summary: "Настройки франшизы",
-    description: "Название, описание, основной цвет, реквизиты продавца и список документов.",
+    description:
+      "Название, описание, основной цвет, логотипы, реквизиты продавца и список документов.",
     tags: ["Franchise"],
     responses: [ok: {"Настройки франшизы", "application/json", FranchiseResponse}]
   )
