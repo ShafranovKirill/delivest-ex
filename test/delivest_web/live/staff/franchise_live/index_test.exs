@@ -59,6 +59,38 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     refute has_element?(lv, "#franchise-icon-preview")
   end
 
+  test "uploads a logo for each theme and falls back to the name", %{conn: conn} do
+    Delivest.S3Stub.record(self())
+    {:ok, lv, html} = live(conn, ~p"/staff/franchise")
+
+    assert html =~ "Delivest"
+    refute has_element?(lv, "#franchise-logo-preview")
+
+    lv
+    |> file_input("#franchise-logo-form", :logo, [
+      %{name: "logo.png", content: Delivest.S3Stub.png(800, 200), type: "image/png"}
+    ])
+    |> render_upload("logo.png")
+
+    assert %{logo_key: "franchise/logo/" <> _} = Franchise.get_settings()
+    assert has_element?(lv, "#franchise-logo-preview")
+    assert has_element?(lv, "#franchise-logo-dark-preview")
+
+    lv
+    |> file_input("#franchise-logo-form", :logo_dark, [
+      %{name: "flat.png", content: Delivest.S3Stub.png(400, 20), type: "image/png"}
+    ])
+    |> render_upload("flat.png")
+
+    assert render(lv) =~ "at least 48 px high"
+    assert %{logo_dark_key: nil} = Franchise.get_settings()
+
+    lv |> element("button[phx-value-image=logo]") |> render_click()
+
+    assert %{logo_key: nil} = Franchise.get_settings()
+    refute has_element?(lv, "#franchise-logo-preview")
+  end
+
   test "edits and restores a document", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/documents/terms")
 
