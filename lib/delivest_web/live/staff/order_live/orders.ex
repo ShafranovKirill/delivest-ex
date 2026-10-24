@@ -2,61 +2,59 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
   alias Delivest.Identity
-  alias Delivest.Oms.{Order, Orders}
-  alias DelivestWeb.Staff.OrderLive.Components.OrderCardComponent
+  alias Delivest.Oms.{Order, OrderDeadline, Orders}
+  alias DelivestWeb.Staff.OrderLive.OrdersQuery
+
+  alias DelivestWeb.Staff.OrderLive.Components.{
+    CancelOrderModal,
+    OrderCardComponent,
+    OrdersToolbar,
+    StatusTabs
+  }
 
   use Gettext, backend: DelivestWeb.Gettext
 
   on_mount {DelivestWeb.Hooks.Permission, "orders.read"}
 
-  @page_size 20
-  @query_keys ["period", "status", "date_from", "date_to", "page", "page_size"]
-
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket) do
-      Orders.subscribe(socket.assigns.current_branch.id)
-    end
+    branch_id = socket.assigns.current_branch.id
+    if connected?(socket), do: Orders.subscribe(branch_id)
 
     {:ok,
      socket
-     |> assign(order_to_delete: nil)
+     |> assign(
+       order_to_delete: nil,
+       order_to_cancel: nil,
+       delivery_minutes: OrderDeadline.delivery_minutes(branch_id)
+     )
      |> stream(:orders, [])}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    period = Map.get(params, "period", "today")
-    status = Map.get(params, "status", "")
-    custom_from = Map.get(params, "date_from", "")
-    custom_to = Map.get(params, "date_to", "")
+    parsed = OrdersQuery.parse(params, socket.assigns.current_branch.id)
 
-    {date_from, date_to} = resolve_date_range(period, custom_from, custom_to)
+    socket
+    |> assign(
+      selected: parsed.selected,
+      filters: parsed.filters,
+      page: parsed.page,
+      query: parsed.query
+    )
+    |> load()
+  end
 
-    filters = %{
-      branch_id: socket.assigns.current_branch.id,
-      status: status,
-      date_from: date_from,
-      date_to: date_to
-    }
-
-    page = %{
-      page: Map.get(params, "page", 1),
-      page_size: Map.get(params, "page_size", @page_size)
-    }
+  defp load(socket) do
+    %{filters: filters, page: page} = socket.assigns
 
     case Orders.paginate_orders(filters, page) do
       {:ok, {orders, meta}} ->
+        counts = Orders.count_by_status(filters)
+
         {:noreply,
          socket
-         |> assign(
-           selected_period: period,
-           custom_date_from: custom_from,
-           custom_date_to: custom_to,
-           selected_status: status,
-           query: query_params(params),
-           meta: meta
-         )
+         |> assign(meta: meta, counts: counts, page_title: page_title(counts))
          |> stream(:orders, orders, reset: true)}
 
       {:error, _meta} ->
@@ -64,41 +62,63 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
+  defp page_title(%{created: count}) when count > 0, do: "(#{count}) " <> gettext("Orders")
+  defp page_title(_counts), do: gettext("Orders")
+
   @impl true
   def handle_event("filter", params, socket) do
-    query =
-      socket.assigns.query
-      |> Map.take(["page_size"])
-      |> Map.merge(query_params(params))
-      |> Map.delete("page")
+    socket.assigns.query
+    |> Map.take(["page_size", "status", "sort"])
+    |> Map.merge(OrdersQuery.clean(params))
+    |> patch(socket)
+  end
 
-    {:noreply, push_patch(socket, to: orders_path(query))}
+  def handle_event("sort", %{"sort" => sort}, socket) do
+    socket.assigns.query |> Map.put("sort", sort) |> Map.delete("page") |> patch(socket)
   end
 
   def handle_event("update_page_size", %{"page_size" => size}, socket) do
-    query = socket.assigns.query |> Map.put("page_size", size) |> Map.delete("page")
-    {:noreply, push_patch(socket, to: orders_path(query))}
+    socket.assigns.query |> Map.put("page_size", size) |> Map.delete("page") |> patch(socket)
   end
 
-  @impl true
+  def handle_event("update_order", %{"order-id" => id, "status" => "cancelled"} = params, socket)
+      when not is_map_key(params, "cancel_reason") do
+    with :ok <- authorize(socket, "orders.update"),
+         {:ok, order} <- fetch_branch_order(socket, id) do
+      {:noreply, assign(socket, order_to_cancel: order)}
+    else
+      error -> failed(socket, error)
+    end
+  end
+
   def handle_event("update_order", %{"order-id" => id} = params, socket) do
     attrs = Map.drop(params, ["order-id", "_target"])
 
     with :ok <- authorize(socket, "orders.update"),
          {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, updated_order} <-
-           Orders.update_order_details(order, attrs, socket.assigns.current_staff) do
-      {:noreply,
-       socket
-       |> put_flash(:info, gettext("Order updated successfully"))
-       |> stream_insert(:orders, updated_order)}
+         {:ok, _order} <- Orders.update_order_details(order, attrs, socket.assigns.current_staff) do
+      load(socket)
     else
-      {:error, :forbidden} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
-      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to update order"))}
+      error -> failed(socket, error)
     end
   end
 
-  @impl true
+  def handle_event("confirm_cancel", %{"cancel" => cancel}, socket) do
+    %Order{id: id} = socket.assigns.order_to_cancel
+
+    params = %{
+      "order-id" => id,
+      "status" => "cancelled",
+      "cancel_reason" => cancel["reason"],
+      "cancel_note" => cancel["note"]
+    }
+
+    handle_event("update_order", params, assign(socket, order_to_cancel: nil))
+  end
+
+  def handle_event("dismiss_cancel", _params, socket),
+    do: socket |> assign(order_to_cancel: nil) |> load()
+
   def handle_event("delete_click", %{"id" => id}, socket) do
     case fetch_branch_order(socket, id) do
       {:ok, order} -> {:noreply, assign(socket, order_to_delete: order)}
@@ -106,15 +126,13 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
-  @impl true
   def handle_event("confirm_delete", _, %{assigns: %{order_to_delete: %Order{} = order}} = socket) do
     with :ok <- authorize(socket, "orders.delete"),
          {:ok, _} <- Orders.soft_delete_order(order, socket.assigns.current_staff) do
-      {:noreply,
-       socket
-       |> put_flash(:info, gettext("Order deleted successfully"))
-       |> stream_delete(:orders, order)
-       |> assign(order_to_delete: nil)}
+      socket
+      |> put_flash(:info, gettext("Order deleted successfully"))
+      |> assign(order_to_delete: nil)
+      |> load()
     else
       {:error, :forbidden} ->
         {:noreply,
@@ -127,30 +145,22 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("confirm_delete", _, socket), do: {:noreply, socket}
 
-  @impl true
   def handle_event("cancel_delete", _, socket),
     do: {:noreply, assign(socket, order_to_delete: nil)}
 
   @impl true
-  def handle_info({Delivest.Oms.Orders, [:order, :created], order}, socket) do
-    %{current_page: page, page_size: size} = socket.assigns.meta
+  def handle_info({Orders, [:order, :created], _order}, socket),
+    do: socket |> push_event("orders:new", %{}) |> load()
 
-    if page == 1,
-      do: {:noreply, stream_insert(socket, :orders, order, at: 0, limit: size)},
-      else: {:noreply, socket}
-  end
+  def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
 
-  def handle_info({Delivest.Oms.Orders, [:order, :updated], order}, socket) do
-    if order.deleted_at do
-      {:noreply, stream_delete(socket, :orders, order)}
-    else
-      {:noreply, stream_insert(socket, :orders, order)}
-    end
-  end
+  defp failed(socket, {:error, :forbidden}),
+    do: socket |> put_flash(:error, gettext("Permission denied")) |> load()
 
-  def handle_info({Delivest.Oms.Orders, [:order, :deleted], order}, socket) do
-    {:noreply, stream_delete(socket, :orders, order)}
-  end
+  defp failed(socket, _error),
+    do: socket |> put_flash(:error, gettext("Failed to update order")) |> load()
+
+  defp patch(query, socket), do: {:noreply, push_patch(socket, to: orders_path(query))}
 
   defp authorize(socket, permission) do
     if Identity.can?(socket.assigns.current_staff, permission),
@@ -168,41 +178,24 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
-  defp query_params(params) do
-    params
-    |> Map.take(@query_keys)
-    |> Map.reject(fn {_key, value} -> value in [nil, ""] end)
-  end
-
   defp orders_path(query), do: ~p"/staff/orders?#{query}"
 
-  defp resolve_date_range("today", _, _),
-    do: {Delivest.LocalTime.today(), Delivest.LocalTime.today()}
-
-  defp resolve_date_range("tomorrow", _, _),
-    do: {Date.add(Delivest.LocalTime.today(), 1), Date.add(Delivest.LocalTime.today(), 1)}
-
-  defp resolve_date_range("yesterday", _, _),
-    do: {Date.add(Delivest.LocalTime.today(), -1), Date.add(Delivest.LocalTime.today(), -1)}
-
-  defp resolve_date_range("week", _, _), do: {Date.add(Delivest.LocalTime.today(), -7), nil}
-  defp resolve_date_range("month", _, _), do: {Date.add(Delivest.LocalTime.today(), -30), nil}
-  defp resolve_date_range("custom", from, to), do: {parse_date(from), parse_date(to)}
-  defp resolve_date_range(_, _, _), do: {nil, nil}
-
-  defp parse_date(str) when is_binary(str) and str != "" do
-    case Date.from_iso8601(str) do
-      {:ok, date} -> date
-      _ -> nil
-    end
+  defp tab_path(query, change) do
+    query
+    |> Map.merge(change)
+    |> Map.delete("page")
+    |> OrdersQuery.clean()
+    |> orders_path()
   end
-
-  defp parse_date(_), do: nil
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-4 sm:space-y-6 py-4 sm:p-6">
+    <div
+      id="orders-page"
+      phx-hook=".NewOrderSound"
+      class="space-y-4 sm:space-y-5 py-4 sm:p-6"
+    >
       <.page_header
         title={gettext("Orders")}
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
@@ -215,84 +208,35 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </:actions>
       </.page_header>
 
-      <div class="bg-base-100 p-4 rounded-box border border-base-200 shadow-sm space-y-4">
-        <.form
-          for={%{}}
-          id="orders-filter"
-          phx-change="filter"
-          class="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-stretch sm:items-center"
-        >
-          <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase text-base-content/50 shrink-0">{gettext(
-                "Period:"
-              )}</span>
-              <select name="period" class="select select-bordered select-sm w-full sm:w-48">
-                <%= for {val, label} <- [
-                  {"all", gettext("All")},
-                  {"today", gettext("Today")},
-                  {"tomorrow", gettext("Tomorrow")},
-                  {"yesterday", gettext("Yesterday")},
-                  {"week", gettext("Week")},
-                  {"month", gettext("Month")},
-                  {"custom", gettext("Custom")}
-                ] do %>
-                  <option value={val} selected={@selected_period == val}>{label}</option>
-                <% end %>
-              </select>
-            </div>
-
-            <%= if @selected_period == "custom" do %>
-              <div class="flex items-center gap-1">
-                <input
-                  type="date"
-                  name="date_from"
-                  value={@custom_date_from}
-                  class="input input-bordered input-sm w-full sm:w-auto"
-                />
-                <span class="text-base-content/40">-</span>
-                <input
-                  type="date"
-                  name="date_to"
-                  value={@custom_date_to}
-                  class="input input-bordered input-sm w-full sm:w-auto"
-                />
-              </div>
-            <% end %>
-          </div>
-
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <span class="text-xs font-bold uppercase text-base-content/50 shrink-0">{gettext(
-              "Status:"
-            )}</span>
-            <select name="status" class="select select-bordered select-sm w-full sm:w-48">
-              <option value="">{gettext("All Statuses")}</option>
-              <%= for {val, label} <- [
-                {"created", gettext("Created")},
-                {"preparing", gettext("Preparing")},
-                {"ready", gettext("Ready")},
-                {"delivering", gettext("Delivering")},
-                {"completed", gettext("Completed")},
-                {"cancelled", gettext("Cancelled")},
-                {"crm", gettext("Sent to CRM")}
-              ] do %>
-                <option value={val} selected={@selected_status == val}>{label}</option>
-              <% end %>
-            </select>
-          </div>
-        </.form>
+      <div class="bg-base-100 p-3 sm:p-4 rounded-box border border-base-200 shadow-sm space-y-3">
+        <StatusTabs.status_tabs
+          counts={@counts}
+          selected={@selected.status}
+          path_fn={&tab_path(@query, &1)}
+        />
+        <OrdersToolbar.orders_toolbar selected={@selected} />
       </div>
 
       <div id="orders" phx-update="stream" class="space-y-3">
+        <div
+          id="orders-empty"
+          class="hidden only:flex flex-col items-center gap-2 py-16 text-base-content/40"
+        >
+          <.icon name="hero-inbox" class="size-12 stroke-1" />
+          <p class="text-sm">{gettext("No orders here yet")}</p>
+        </div>
         <OrderCardComponent.render_card
           :for={{id, order} <- @streams.orders}
           id={id}
           order={order}
           current_staff={@current_staff}
+          delivery_minutes={@delivery_minutes}
         />
       </div>
 
       <.pagination meta={@meta} path_fn={&orders_path(Map.merge(@query, &1))} />
+
+      <CancelOrderModal.cancel_order_modal order={@order_to_cancel} />
 
       <.modal
         id="delete-order-modal"
@@ -306,6 +250,35 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         on_cancel={JS.push("cancel_delete")}
         on_confirm={JS.push("confirm_delete")}
       />
+
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".NewOrderSound">
+        export default {
+          mounted() {
+            const unlock = () => {
+              this.audio ??= new AudioContext()
+              this.audio.resume()
+            }
+            window.addEventListener("pointerdown", unlock, { once: true })
+            this.handleEvent("orders:new", () => this.chime())
+          },
+          chime() {
+            if (localStorage.getItem("orders-sound") === "off" || !this.audio) return
+            const now = this.audio.currentTime
+            ;[880, 1320].forEach((frequency, index) => {
+              const oscillator = this.audio.createOscillator()
+              const gain = this.audio.createGain()
+              const start = now + index * 0.18
+              oscillator.frequency.value = frequency
+              gain.gain.setValueAtTime(0.0001, start)
+              gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02)
+              gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16)
+              oscillator.connect(gain).connect(this.audio.destination)
+              oscillator.start(start)
+              oscillator.stop(start + 0.17)
+            })
+          }
+        }
+      </script>
     </div>
     """
   end

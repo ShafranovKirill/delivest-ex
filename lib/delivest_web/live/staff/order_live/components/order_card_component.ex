@@ -5,20 +5,44 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   alias Delivest.Identity
   alias Delivest.Oms.OrderStatus
-  alias DelivestWeb.Staff.OrderLive.OrderHelpers
+  alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
+  alias DelivestWeb.Staff.OrderLive.Components.OrderClock
 
   attr :id, :string, required: true
   attr :order, :map, required: true
   attr :current_staff, :map, required: true
+  attr :delivery_minutes, :integer, required: true
 
   def render_card(assigns) do
+    assigns = assign(assigns, status: OrderStatus.current(assigns.order))
+
     ~H"""
-    <article id={@id} class="bg-base-100 rounded-box border border-base-200 shadow-sm overflow-hidden">
-      <header class="px-3 sm:px-4 py-2.5 bg-base-200/40 border-b border-base-200 flex items-center gap-3">
-        <span class="font-mono font-bold text-base text-primary">#{@order.number}</span>
-        <span class="text-xs text-base-content/50 tabular-nums">
-          {OrderHelpers.local_datetime(@order.inserted_at)}
+    <article
+      id={@id}
+      class={[
+        "bg-base-100 rounded-box border shadow-sm overflow-hidden transition-colors",
+        @status == :created && "border-info ring-2 ring-info/30",
+        @status in [:completed, :cancelled] && "border-base-200 opacity-75",
+        @status not in [:created, :completed, :cancelled] && "border-base-200"
+      ]}
+    >
+      <header class={[
+        "px-3 sm:px-4 py-2.5 border-b border-base-200 flex flex-wrap items-center gap-x-3 gap-y-1.5",
+        if(@status == :created, do: "bg-info/10", else: "bg-base-200/40")
+      ]}>
+        <span :if={@status == :created} class="relative flex size-2.5">
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-info opacity-75" />
+          <span class="relative inline-flex size-2.5 rounded-full bg-info" />
         </span>
+        <span class="font-mono font-bold text-base text-primary">#{@order.number}</span>
+        <span class="badge badge-sm badge-ghost gap-1 font-medium">
+          <.icon name={fulfillment_icon(@order.fulfillment_type)} class="size-3.5" />
+          {OrderHelpers.fulfillment_label(@order.fulfillment_type)}
+        </span>
+        <span class="text-xs text-base-content/50 tabular-nums">
+          {OrderHelpers.local_time(@order.inserted_at)}
+        </span>
+        <OrderClock.order_clock order={@order} status={@status} delivery_minutes={@delivery_minutes} />
         <div class="ml-auto text-right leading-tight">
           <p class="font-mono font-bold text-base whitespace-nowrap">
             {OrderHelpers.money(@order.total_amount)}
@@ -32,11 +56,20 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </div>
       </header>
 
-      <div class="p-3 sm:p-4 grid gap-3 text-sm lg:grid-cols-[1fr_1.4fr_1fr]">
+      <div class="p-3 sm:p-4 grid gap-3 text-sm lg:grid-cols-[1fr_1.4fr_1.2fr]">
         <.customer order={@order} current_staff={@current_staff} />
         <.fulfillment order={@order} />
         <.items order={@order} />
       </div>
+
+      <p
+        :if={@status == :cancelled and @order.cancel_reason}
+        id={"order-cancel-reason-#{@order.id}"}
+        class="mx-3 sm:mx-4 mb-3 rounded-box bg-error/10 px-3 py-2 text-sm text-error"
+      >
+        <.icon name="hero-x-circle" class="size-4" />
+        {CancelReasons.label(@order.cancel_reason)}<span :if={@order.cancel_note}>: {@order.cancel_note}</span>
+      </p>
 
       <footer class="px-3 sm:px-4 py-2.5 border-t border-base-200 flex flex-wrap items-center gap-2">
         <.status_control order={@order} />
@@ -86,6 +119,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     """
   end
 
+  defp fulfillment_icon(:delivery), do: "hero-truck"
+  defp fulfillment_icon(:pickup), do: "hero-shopping-bag"
+  defp fulfillment_icon(_type), do: "hero-building-storefront"
+
   attr :order, :map, required: true
   attr :current_staff, :map, required: true
 
@@ -125,10 +162,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   defp fulfillment(assigns) do
     ~H"""
-    <div class="min-w-0 space-y-1">
-      <span class="badge badge-sm badge-ghost font-medium uppercase">
-        {OrderHelpers.fulfillment_label(@order.fulfillment_type)}
-      </span>
+    <div class="min-w-0 space-y-1.5">
       <p :if={@order.fulfillment_type == :delivery} class="flex gap-1.5 text-base-content/80">
         <.icon name="hero-map-pin" class="size-4 shrink-0 text-base-content/40" />
         <span class="break-words">{OrderHelpers.format_address(@order.address)}</span>
@@ -137,8 +171,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         <.icon name="hero-clock" class="size-4 shrink-0 text-base-content/40" />
         {gettext("Prepare by:")} {Calendar.strftime(@order.cook_by, "%d.%m %H:%M")}
       </p>
-      <p :if={@order.comment not in [nil, ""]} class="flex gap-1.5 text-base-content/80">
-        <.icon name="hero-chat-bubble-left" class="size-4 shrink-0 text-base-content/40" />
+      <p
+        :if={@order.comment not in [nil, ""]}
+        class="flex gap-1.5 rounded-box bg-warning/15 px-2.5 py-1.5 text-base-content"
+      >
+        <.icon name="hero-chat-bubble-left" class="size-4 shrink-0 text-warning" />
         <span class="break-words">{@order.comment}</span>
       </p>
     </div>
@@ -149,22 +186,18 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   defp items(assigns) do
     ~H"""
-    <details class="group min-w-0">
-      <summary class="cursor-pointer select-none text-primary font-medium flex items-center gap-1 list-none">
-        <.icon name="hero-shopping-bag" class="size-4" />
-        {ngettext("%{count} item", "%{count} items", length(@order.items))}
-        <.icon name="hero-chevron-down" class="size-4 transition-transform group-open:rotate-180" />
-      </summary>
-      <ul class="mt-2 space-y-1 pt-2 border-t border-base-200">
-        <li :for={item <- @order.items} class="flex justify-between gap-2 text-xs">
-          <span class="truncate text-base-content/80">
-            <.icon :if={item.gift} name="hero-gift" class="size-3 text-success" />
-            {item.title} × {item.quantity}
-          </span>
-          <span class="font-mono shrink-0">{OrderHelpers.money(item.price * item.quantity)}</span>
-        </li>
-      </ul>
-    </details>
+    <ul class="min-w-0 space-y-1 lg:border-l lg:border-base-200 lg:pl-3">
+      <li :for={item <- @order.items} class="flex justify-between gap-2">
+        <span class="min-w-0 text-base-content/90">
+          <span class="font-mono font-bold">{item.quantity}×</span>
+          <.icon :if={item.gift} name="hero-gift" class="size-3.5 text-success" />
+          {item.title}
+        </span>
+        <span class="font-mono text-xs text-base-content/60 shrink-0 pt-0.5">
+          {OrderHelpers.money(item.price * item.quantity)}
+        </span>
+      </li>
+    </ul>
     """
   end
 
@@ -200,7 +233,20 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   end
 
   defp status_control(assigns) do
+    assigns = assign(assigns, next: NextStep.for_order(assigns.order))
+
     ~H"""
+    <button
+      :if={@next}
+      type="button"
+      id={"order-next-#{@order.id}"}
+      class="btn btn-sm btn-primary"
+      phx-click="update_order"
+      phx-value-order-id={@order.id}
+      phx-value-status={elem(@next, 0)}
+    >
+      <.icon name="hero-arrow-right-circle" class="size-4" /> {elem(@next, 1)}
+    </button>
     <form id={"order-status-#{@order.id}"} phx-change="update_order" phx-value-order-id={@order.id}>
       <select
         name="status"
@@ -216,17 +262,6 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </option>
       </select>
     </form>
-    <button
-      :if={@order.status == :created}
-      type="button"
-      id={"order-confirm-#{@order.id}"}
-      class="btn btn-sm btn-primary"
-      phx-click="update_order"
-      phx-value-order-id={@order.id}
-      phx-value-status="preparing"
-    >
-      <.icon name="hero-check" class="size-4" /> {gettext("Confirm")}
-    </button>
     """
   end
 
