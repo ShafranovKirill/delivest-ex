@@ -34,9 +34,14 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "roles.update") do
-      case Identity.get_role(socket.assigns.current_staff, id) do
-        {:ok, role} -> assign(socket, page_title: gettext("Edit role"), role: role)
-        _ -> push_patch(socket, to: ~p"/staff/roles")
+      with {:ok, role} <- Identity.get_role(socket.assigns.current_staff, id),
+           true <- Identity.manages_role?(socket.assigns.current_staff, role) do
+        assign(socket, page_title: gettext("Edit role"), role: role)
+      else
+        _ ->
+          socket
+          |> put_flash(:error, gettext("You don't have permission to edit role."))
+          |> push_patch(to: ~p"/staff/roles")
       end
     else
       socket
@@ -71,14 +76,14 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
 
   @impl true
   def handle_event("delete_click", %{"id" => id}, socket) do
-    if Identity.can?(socket.assigns.current_staff, "roles.delete") do
-      {:ok, role} = Identity.get_role(socket.assigns.current_staff, id)
+    with true <- Identity.can?(socket.assigns.current_staff, "roles.delete"),
+         {:ok, role} <- Identity.get_role(socket.assigns.current_staff, id),
+         true <- Identity.manages_role?(socket.assigns.current_staff, role) do
       {:noreply, assign(socket, role_to_delete: role)}
     else
-      {:noreply,
-       socket
-       |> put_flash(:error, gettext("You don't have permission to delete role."))
-       |> push_patch(to: ~p"/staff/roles")}
+      _ ->
+        {:noreply,
+         put_flash(socket, :error, gettext("You don't have permission to delete role."))}
     end
   end
 
@@ -146,7 +151,10 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
 
               <div class="flex flex-col items-center gap-1 shrink-0">
                 <.link
-                  :if={Identity.can?(@current_staff, "roles.update")}
+                  :if={
+                    Identity.can?(@current_staff, "roles.update") and
+                      Identity.manages_role?(@current_staff, role)
+                  }
                   patch={~p"/staff/roles/#{role.id}/edit"}
                   class="btn btn-sm btn-ghost btn-square text-info"
                   title={gettext("Edit")}
@@ -155,7 +163,10 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
                 </.link>
 
                 <button
-                  :if={Identity.can?(@current_staff, "roles.delete")}
+                  :if={
+                    Identity.can?(@current_staff, "roles.delete") and
+                      Identity.manages_role?(@current_staff, role)
+                  }
                   type="button"
                   phx-click="delete_click"
                   phx-value-id={role.id}

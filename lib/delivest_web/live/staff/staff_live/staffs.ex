@@ -61,9 +61,14 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "staff.update") do
-      case Identity.get_staff(id, preload: [:role, :branches]) do
-        {:ok, staff} -> assign(socket, page_title: gettext("Edit staff"), staff: staff)
-        _ -> push_patch(socket, to: ~p"/staff/employee")
+      with {:ok, %Staff{} = staff} <- Identity.get_staff(id, preload: [:role, :branches]),
+           true <- Identity.manages_staff?(socket.assigns.current_staff, staff) do
+        assign(socket, page_title: gettext("Edit staff"), staff: staff)
+      else
+        _ ->
+          socket
+          |> put_flash(:error, gettext("You don't have permission to edit staff."))
+          |> push_patch(to: ~p"/staff/employee")
       end
     else
       socket
@@ -84,14 +89,14 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
   end
 
   def handle_event("delete_click", %{"id" => id}, socket) do
-    if Identity.can?(socket.assigns.current_staff, "staff.delete") do
-      {:ok, staff} = Identity.get_staff(id)
+    with true <- Identity.can?(socket.assigns.current_staff, "staff.delete"),
+         {:ok, %Staff{} = staff} <- Identity.get_staff(id, preload: [:role, :branches]),
+         true <- manages?(socket.assigns.current_staff, staff) do
       {:noreply, assign(socket, staff_to_delete: staff)}
     else
-      {:noreply,
-       socket
-       |> put_flash(:error, gettext("You don't have permission to delete staff."))
-       |> push_patch(to: ~p"/staff/employee")}
+      _ ->
+        {:noreply,
+         put_flash(socket, :error, gettext("You don't have permission to delete staff."))}
     end
   end
 
@@ -163,6 +168,8 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
     |> Map.new()
   end
 
+  defp manages?(actor, staff), do: actor.id != staff.id and Identity.manages_staff?(actor, staff)
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -228,14 +235,17 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
         <:action :let={{_id, stf}}>
           <div class="flex justify-end gap-2">
             <.button
-              :if={Identity.can?(@current_staff, "staff.update")}
+              :if={
+                Identity.can?(@current_staff, "staff.update") and
+                  Identity.manages_staff?(@current_staff, stf)
+              }
               patch={~p"/staff/employee/#{stf.id}/edit?#{build_query_params(assigns, %{})}"}
               class="btn btn-ghost btn-xs btn-square"
             >
               <.icon name="hero-pencil-square" class="size-4" />
             </.button>
             <.button
-              :if={Identity.can?(@current_staff, "staff.delete")}
+              :if={Identity.can?(@current_staff, "staff.delete") and manages?(@current_staff, stf)}
               phx-click="delete_click"
               phx-value-id={stf.id}
               class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"

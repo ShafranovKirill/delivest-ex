@@ -9,7 +9,8 @@ defmodule Delivest.Identity do
     Branches,
     Clients,
     ClientAuth,
-    ClientAddresses
+    ClientAddresses,
+    Delegation
   }
 
   defdelegate list_staff(staff, params \\ %{}, opts \\ []), to: Staffs
@@ -66,6 +67,10 @@ defmodule Delivest.Identity do
   defdelegate has_branch_access?(staff, branch_id), to: Acl
 
   defdelegate list_all_roles(user), to: Roles
+  defdelegate list_assignable_roles(user), to: Roles
+  defdelegate manages_staff?(actor, target), to: Delegation, as: :staff?
+  defdelegate manages_role?(actor, role), to: Delegation, as: :role?
+  defdelegate grants_permissions?(actor, permissions), to: Delegation, as: :grants?
   defdelegate get_role(user, id), to: Roles
   defdelegate get_role_by_name(name), to: Roles
   defdelegate create_role(user, attrs), to: Roles

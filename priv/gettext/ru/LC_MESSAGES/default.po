@@ -128,7 +128,7 @@ msgstr "Войти"
 #: lib/delivest_web/components/staff/app/staff_header.ex:69
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:121
 #: lib/delivest_web/live/staff/log_live/event_text.ex:32
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:171
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:178
 #, elixir-autogen, elixir-format
 msgid "Staff"
 msgstr "Персонал"
@@ -185,12 +185,12 @@ msgstr "Вы уверены, что хотите удалить этот тов�
 msgid "Are you sure you want to delete this promotion? This action cannot be undone."
 msgstr "Вы уверены, что хотите удалить эту акцию? Это действие нельзя будет отменить."
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:195
+#: lib/delivest_web/live/staff/role_live/roles.ex:206
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this role? This action cannot be undone."
 msgstr "Вы уверены, что хотите удалить эту роль? Это действие нельзя будет отменить."
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:275
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:285
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this staff member? This will revoke their access."
 msgstr "Вы уверены, что хотите удалить этого сотрудника? Это отзыв всех его прав доступа."
@@ -237,7 +237,7 @@ msgstr "Филиал успешно сохранен"
 #: lib/delivest_web/live/staff/branch_live/edit.ex:48
 #: lib/delivest_web/live/staff/log_live/event_text.ex:34
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:193
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:220
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:227
 #, elixir-autogen, elixir-format
 msgid "Branches"
 msgstr "Филиалы"
@@ -263,14 +263,14 @@ msgstr "Управление филиалами"
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:329
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:244
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:521
-#: lib/delivest_web/live/staff/role_live/role_form_component.ex:150
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:151
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:229
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:244
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr "Отмена"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:100
+#: lib/delivest_web/live/staff/role_live/roles.ex:105
 #, elixir-autogen, elixir-format
 msgid "Cannot delete role because it is assigned to staff members."
 msgstr "Невозможно удалить роль, так как она назначена сотрудникам."
@@ -389,12 +389,12 @@ msgstr "Создать товар"
 msgid "Create Promotion"
 msgstr "Создать акцию"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:131
+#: lib/delivest_web/live/staff/role_live/roles.ex:136
 #, elixir-autogen, elixir-format
 msgid "Create Role"
 msgstr "Создать роль"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:181
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:188
 #, elixir-autogen, elixir-format
 msgid "Create Staff"
 msgstr "Создать сотрудника"
@@ -431,7 +431,7 @@ msgstr "Создать сотрудника"
 
 #: lib/delivest_web/live/staff/client_live/clients.ex:319
 #: lib/delivest_web/live/staff/product_live/products.ex:523
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:225
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:232
 #, elixir-autogen, elixir-format
 msgid "Created At"
 msgstr "Дата создания"
@@ -452,9 +452,9 @@ msgstr "Текущий филиал"
 #: lib/delivest_web/live/staff/product_live/products.ex:615
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:313
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:357
-#: lib/delivest_web/live/staff/role_live/roles.ex:163
-#: lib/delivest_web/live/staff/role_live/roles.ex:197
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:277
+#: lib/delivest_web/live/staff/role_live/roles.ex:174
+#: lib/delivest_web/live/staff/role_live/roles.ex:208
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:287
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:282
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:328
 #, elixir-autogen, elixir-format
@@ -481,12 +481,12 @@ msgstr "Удалить товар"
 msgid "Delete Promotion"
 msgstr "Удалить акцию"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:193
+#: lib/delivest_web/live/staff/role_live/roles.ex:204
 #, elixir-autogen, elixir-format
 msgid "Delete Role"
 msgstr "Удалить роль"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:273
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:283
 #, elixir-autogen, elixir-format
 msgid "Delete Staff"
 msgstr "Удалить сотрудника"
@@ -520,7 +520,7 @@ msgstr "Перетаскивайте элементы для изменения 
 #: lib/delivest_web/live/staff/franchise_live/index.ex:125
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:179
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:303
-#: lib/delivest_web/live/staff/role_live/roles.ex:152
+#: lib/delivest_web/live/staff/role_live/roles.ex:160
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:271
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -541,12 +541,12 @@ msgstr "Редактировать товар"
 msgid "Edit promotion"
 msgstr "Редактировать акцию"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:38
+#: lib/delivest_web/live/staff/role_live/roles.ex:39
 #, elixir-autogen, elixir-format
 msgid "Edit role"
 msgstr "Редактировать роль"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:65
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:66
 #, elixir-autogen, elixir-format
 msgid "Edit staff"
 msgstr "Редактировать сотрудника"
@@ -588,12 +588,12 @@ msgstr "Не удалось удалить товар"
 msgid "Failed to delete promotion"
 msgstr "Не удалось удалить акцию"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:107
+#: lib/delivest_web/live/staff/role_live/roles.ex:112
 #, elixir-autogen, elixir-format
 msgid "Failed to delete role"
 msgstr "Не удалось удалить роль"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:108
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:113
 #, elixir-autogen, elixir-format
 msgid "Failed to delete staff"
 msgstr "Не удалось удалить сотрудника"
@@ -659,13 +659,13 @@ msgstr "Ссылка на Instagram"
 msgid "List of available company branches"
 msgstr "Список доступных филиалов компании"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:123
+#: lib/delivest_web/live/staff/role_live/roles.ex:128
 #, elixir-autogen, elixir-format
 msgid "List of available company roles"
 msgstr "Список доступных ролей компании"
 
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:147
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:211
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:218
 #, elixir-autogen, elixir-format
 msgid "Login"
 msgstr "Логин"
@@ -675,7 +675,7 @@ msgstr "Логин"
 msgid "Manage branch products, prices, and categories."
 msgstr "Управление товарами филиала, ценами и категориями."
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:172
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:179
 #, elixir-autogen, elixir-format
 msgid "Manage system staff accounts and branches access."
 msgstr "Управление учетными записями сотрудников и доступом к филиалам."
@@ -695,7 +695,7 @@ msgstr "Медиа"
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:235
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:292
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:172
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:214
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:221
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Название"
@@ -741,7 +741,7 @@ msgstr "Страница %{current} из %{total}"
 msgid "Permission denied"
 msgstr "Доступ запрещен"
 
-#: lib/delivest_web/live/staff/role_live/role_form_component.ex:117
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:118
 #, elixir-autogen, elixir-format
 msgid "Permissions"
 msgstr "Права доступа"
@@ -850,44 +850,44 @@ msgid "Repeat password"
 msgstr "Повторите пароль"
 
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:178
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:217
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:224
 #, elixir-autogen, elixir-format
 msgid "Role"
 msgstr "Роль"
 
-#: lib/delivest_web/live/staff/role_live/role_form_component.ex:111
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:112
 #, elixir-autogen, elixir-format
 msgid "Role Name"
 msgstr "Название роли"
 
-#: lib/delivest_web/live/staff/role_live/role_form_component.ex:69
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:70
 #, elixir-autogen, elixir-format
 msgid "Role created successfully"
 msgstr "Роль успешно создана"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:92
+#: lib/delivest_web/live/staff/role_live/roles.ex:97
 #, elixir-autogen, elixir-format
 msgid "Role deleted successfully"
 msgstr "Роль успешно удалена"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:56
+#: lib/delivest_web/live/staff/role_live/roles.ex:61
 #, elixir-autogen, elixir-format
 msgid "Role saved successfully"
 msgstr "Роль успешно сохранена"
 
-#: lib/delivest_web/live/staff/role_live/role_form_component.ex:54
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:55
 #, elixir-autogen, elixir-format
 msgid "Role updated successfully"
 msgstr "Роль успешно обновлена"
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:123
 #: lib/delivest_web/live/staff/log_live/event_text.ex:33
-#: lib/delivest_web/live/staff/role_live/roles.ex:49
+#: lib/delivest_web/live/staff/role_live/roles.ex:54
 #, elixir-autogen, elixir-format
 msgid "Roles"
 msgstr "Роли"
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:122
+#: lib/delivest_web/live/staff/role_live/roles.ex:127
 #, elixir-autogen, elixir-format
 msgid "Roles Management"
 msgstr "Управление ролями"
@@ -902,7 +902,7 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:335
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:246
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:527
-#: lib/delivest_web/live/staff/role_live/role_form_component.ex:152
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:153
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:231
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:250
 #, elixir-autogen, elixir-format
@@ -921,7 +921,7 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/promotion_live/issued_codes_component.ex:112
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:245
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:525
-#: lib/delivest_web/live/staff/role_live/role_form_component.ex:151
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:152
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:230
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:248
 #, elixir-autogen, elixir-format
@@ -933,7 +933,7 @@ msgstr "Сохранение..."
 msgid "Search products..."
 msgstr "Поиск товаров..."
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:197
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:204
 #, elixir-autogen, elixir-format
 msgid "Search staff..."
 msgstr "Поиск сотрудников..."
@@ -969,12 +969,12 @@ msgstr "Указано"
 msgid "Staff Account"
 msgstr "Учетная запись сотрудника"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:124
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:129
 #, elixir-autogen, elixir-format
 msgid "Staff created successfully"
 msgstr "Сотрудник успешно создан"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:103
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:108
 #, elixir-autogen, elixir-format
 msgid "Staff deleted successfully"
 msgstr "Сотрудник успешно удален"
@@ -984,12 +984,12 @@ msgstr "Сотрудник успешно удален"
 msgid "Staff list"
 msgstr "Список сотрудников"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:126
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:131
 #, elixir-autogen, elixir-format
 msgid "Staff saved successfully"
 msgstr "Сотрудник успешно сохранен"
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:125
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:130
 #, elixir-autogen, elixir-format
 msgid "Staff updated successfully"
 msgstr "Сотрудник успешно обновлен"
@@ -1111,12 +1111,12 @@ msgstr "У вас нет прав для удаления товаров."
 msgid "You don't have permission to delete promotions."
 msgstr "У вас нет прав для удаления акций."
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:80
+#: lib/delivest_web/live/staff/role_live/roles.ex:86
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to delete role."
 msgstr "У вас нет прав для удаления ролей."
 
-#: lib/delivest_web/live/staff/staff_live/staffs.ex:93
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:99
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to delete staff."
 msgstr "У вас нет прав для удаления сотрудников."
@@ -1143,11 +1143,13 @@ msgid "You don't have permission to edit promotions."
 msgstr "У вас нет прав для редактирования акций."
 
 #: lib/delivest_web/live/staff/role_live/roles.ex:43
+#: lib/delivest_web/live/staff/role_live/roles.ex:48
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to edit role."
 msgstr "У вас нет прав для редактирования роли."
 
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:70
+#: lib/delivest_web/live/staff/staff_live/staffs.ex:75
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to edit staff."
 msgstr "У вас нет прав для редактирования сотрудников."

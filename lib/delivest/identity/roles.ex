@@ -1,5 +1,6 @@
 defmodule Delivest.Identity.Roles do
   alias Delivest.Repo
+  alias Delivest.Identity.Delegation
   alias Delivest.Identity.{Role, Staff, Acl}
   import Ecto.Query
   alias Delivest.Audit
@@ -13,13 +14,18 @@ defmodule Delivest.Identity.Roles do
     end
   end
 
+  def list_assignable_roles(user),
+    do: Role |> Repo.all() |> Enum.filter(&Delegation.role?(user, &1))
+
   @spec get_role(map(), String.t()) ::
           {:ok, Role.t()} | {:error, :not_found} | {:error, :forbidden}
   def get_role(user, id) do
     if Acl.can?(user, "roles.read") do
-      case Repo.get(Role, id) do
-        nil -> {:error, :not_found}
-        role -> {:ok, role}
+      with {:ok, uuid} <- Ecto.UUID.cast(id),
+           %Role{} = role <- Repo.get(Role, uuid) do
+        {:ok, role}
+      else
+        _ -> {:error, :not_found}
       end
     else
       {:error, :forbidden}
@@ -43,7 +49,7 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_create_role(user, attrs) do
-    if Acl.can?(user, "roles.create") do
+    if Acl.can?(user, "roles.create") and Delegation.grants?(user, permissions(attrs, [])) do
       system_create_role(attrs)
     else
       {:error, :forbidden}
@@ -65,7 +71,8 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_update_role(user, %Role{} = role, attrs) do
-    if Acl.can?(user, "roles.update") do
+    if Acl.can?(user, "roles.update") and Delegation.role?(user, role) and
+         Delegation.grants?(user, permissions(attrs, role.permissions)) do
       role
       |> Role.changeset(attrs)
       |> Repo.update()
@@ -96,13 +103,20 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_delete_role(user, %Role{} = role) do
-    if Acl.can?(user, "roles.delete") do
+    if Acl.can?(user, "roles.delete") and Delegation.role?(user, role) do
       role
       |> role_delete_changeset()
       |> Repo.delete()
       |> finalize_delete()
     else
       {:error, :forbidden}
+    end
+  end
+
+  defp permissions(attrs, default) do
+    case Map.get(attrs, "permissions") || Map.get(attrs, :permissions) do
+      nil -> default
+      permissions -> permissions |> List.wrap() |> Enum.reject(&(&1 == ""))
     end
   end
 

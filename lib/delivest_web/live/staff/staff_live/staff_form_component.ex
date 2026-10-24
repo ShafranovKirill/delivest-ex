@@ -30,7 +30,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
       changeset = Staff.changeset(form_data, initial_params)
 
       role_options =
-        Identity.list_all_roles(current_staff)
+        Identity.list_assignable_roles(current_staff)
         |> Enum.map(&{&1.name, &1.id})
 
       branch_options =

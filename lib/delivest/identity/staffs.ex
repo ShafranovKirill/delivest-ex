@@ -2,7 +2,7 @@ defmodule Delivest.Identity.Staffs do
   import Ecto.Query
   alias Delivest.Repo
   alias Delivest.Identity.Branch
-  alias Delivest.Identity.{Staff, Acl, StaffBranch}
+  alias Delivest.Identity.{Staff, Acl, Delegation, StaffBranch}
   alias Delivest.Audit
 
   @spec list_staff(Delivest.Identity.Staff.t(), map(), keyword()) ::
@@ -39,7 +39,7 @@ defmodule Delivest.Identity.Staffs do
   end
 
   defp do_create_staff(staff, attrs) do
-    if Acl.can?(staff, "staff.create") do
+    if Acl.can?(staff, "staff.create") and Delegation.assignment?(staff, attrs) do
       insert_staff_with_branches(attrs)
     else
       {:error, :forbidden}
@@ -73,7 +73,8 @@ defmodule Delivest.Identity.Staffs do
   end
 
   defp do_update_staff(staff, %Staff{} = updatable_staff, attrs) do
-    if Acl.can?(staff, "staff.update") do
+    if Acl.can?(staff, "staff.update") and Delegation.staff?(staff, updatable_staff) and
+         Delegation.assignment?(staff, attrs) do
       updatable_staff
       |> Repo.preload(:branches)
       |> Staff.changeset(attrs)
@@ -167,7 +168,8 @@ defmodule Delivest.Identity.Staffs do
   end
 
   defp do_soft_delete_staff(staff, %Staff{} = removable_staff) do
-    if Acl.can?(staff, "staff.delete") do
+    if Acl.can?(staff, "staff.delete") and staff.id != removable_staff.id and
+         Delegation.staff?(staff, removable_staff) do
       with {:ok, deleted_staff} <-
              removable_staff
              |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
@@ -252,14 +254,13 @@ defmodule Delivest.Identity.Staffs do
   end
 
   defp fetch_from_db_and_cache(id, opts) do
-    case Repo.get(Staff, id) do
-      nil ->
-        {:error, :not_found}
-
-      staff ->
-        staff = maybe_preload_staff(staff, opts)
-        cache_staff(id, staff)
-        {:ok, staff}
+    with {:ok, uuid} <- Ecto.UUID.cast(id),
+         %Staff{} = staff <- Repo.get(Staff, uuid) do
+      staff = maybe_preload_staff(staff, opts)
+      cache_staff(id, staff)
+      {:ok, staff}
+    else
+      _ -> {:error, :not_found}
     end
   end
 

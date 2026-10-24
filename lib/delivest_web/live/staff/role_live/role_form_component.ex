@@ -13,6 +13,7 @@ defmodule DelivestWeb.Staff.RoleLive.RoleFormComponent do
 
     grouped_permissions =
       Definitions.permissions()
+      |> Enum.filter(&Delivest.Identity.grants_permissions?(assigns.current_staff, [&1]))
       |> Enum.group_by(fn perm ->
         parts = String.split(perm, ".")
         if length(parts) == 1, do: "system", else: hd(parts)

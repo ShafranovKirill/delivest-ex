@@ -7,7 +7,7 @@ defmodule Delivest.Identity.RolesTest do
   setup do
     admin_role =
       insert(:role,
-        permissions: ["roles.read", "roles.create", "roles.update", "roles.delete"]
+        permissions: ["roles.read", "roles.create", "roles.update", "roles.delete", "admin"]
       )
 
     admin = insert(:staff, role: admin_role)
