@@ -133,6 +133,7 @@ defmodule DelivestWeb.Router do
     end
 
     get "/:branch_id/stocks", Stock.StockController, :index
+    get "/:branch_id/promotions", Promotion.PromotionController, :index
     get "/branches/:branch_id/menu", Menu.MenuController, :index
   end
 

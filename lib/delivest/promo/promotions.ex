@@ -31,6 +31,17 @@ defmodule Delivest.Promo.Promotions do
     |> Repo.all()
   end
 
+  def list_running(branch_id, now \\ DateTime.utc_now()) do
+    from(p in Promotion,
+      where:
+        p.branch_id == ^branch_id and p.kind == :automatic and p.enabled and
+          is_nil(p.deleted_at) and (is_nil(p.starts_at) or p.starts_at <= ^now) and
+          (is_nil(p.ends_at) or p.ends_at > ^now),
+      order_by: [desc: p.priority, asc: p.name]
+    )
+    |> Repo.all()
+  end
+
   def get(staff, branch_id, id) do
     with true <- Identity.can?(staff, "promotions.read") || {:error, :forbidden},
          {:ok, uuid} <- Ecto.UUID.cast(id),

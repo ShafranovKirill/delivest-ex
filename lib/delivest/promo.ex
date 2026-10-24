@@ -15,6 +15,7 @@ defmodule Delivest.Promo do
   defdelegate redeem(order, result), to: Redemptions, as: :replace
 
   defdelegate list_promotions(staff, branch_id), to: Promotions, as: :list
+  defdelegate list_running_promotions(branch_id), to: Promotions, as: :list_running
   defdelegate list_personal_promotions(branch_id), to: Promotions, as: :list_personal
   defdelegate promotions_usage(promotions), to: Promotions, as: :usage
   defdelegate get_promotion(staff, branch_id, id), to: Promotions, as: :get
