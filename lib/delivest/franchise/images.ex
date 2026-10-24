@@ -6,10 +6,14 @@ defmodule Delivest.Franchise.Images do
   @share_width 1200
   @share_height 630
   @share_min_width 600
+  @logo_height 160
+  @logo_max_width 640
+  @logo_min_height 48
 
   def icon_min, do: @icon_min
   def share_size, do: {@share_width, @share_height}
   def share_min_width, do: @share_min_width
+  def logo_min_height, do: @logo_min_height
 
   def icon(binary) do
     with {:ok, image} <- load(binary),
@@ -49,6 +53,13 @@ defmodule Delivest.Franchise.Images do
     end
   end
 
+  def logo(binary) do
+    with {:ok, image} <- load(binary),
+         :ok <- at_least(image, 1, @logo_min_height) do
+      fitted_png(binary, @logo_max_width, @logo_height)
+    end
+  end
+
   defp load(binary) do
     case Image.new_from_buffer(binary) do
       {:ok, image} -> {:ok, image}
@@ -71,6 +82,16 @@ defmodule Delivest.Franchise.Images do
            ),
          {:ok, image} <- if(opts[:flatten], do: flatten(thumb), else: {:ok, thumb}),
          {:ok, png} <- Image.write_to_buffer(image, ".png[strip]") do
+      {:ok, png}
+    else
+      {:error, _reason} -> {:error, :invalid_image}
+    end
+  end
+
+  defp fitted_png(binary, width, height) do
+    with {:ok, thumb} <-
+           Operation.thumbnail_buffer(binary, width, height: height, size: :VIPS_SIZE_DOWN),
+         {:ok, png} <- Image.write_to_buffer(thumb, ".png[strip]") do
       {:ok, png}
     else
       {:error, _reason} -> {:error, :invalid_image}

@@ -84,8 +84,40 @@ defmodule Delivest.FranchiseTest do
       assert {1200, 630} == {Vix.Vips.Image.width(image), Vix.Vips.Image.height(image)}
     end
 
+    test "a logo keeps its proportions and is never upscaled", %{admin: admin} do
+      assert {:ok, %{logo_key: "franchise/logo/" <> _ = key}} =
+               Franchise.update_logo(admin, :light, Delivest.S3Stub.png(1200, 300))
+
+      assert_received {:s3, "PUT", "/delivest/" <> ^key, png}
+      assert {640, 160} == size(png)
+
+      assert {:ok, %{logo_dark_key: dark_key, logo_key: ^key}} =
+               Franchise.update_logo(admin, :dark, Delivest.S3Stub.png(300, 80))
+
+      assert_received {:s3, "PUT", "/delivest/" <> ^dark_key, dark_png}
+      assert {300, 80} == size(dark_png)
+    end
+
+    test "a new logo replaces the previous one", %{admin: admin} do
+      {:ok, %{logo_key: first}} =
+        Franchise.update_logo(admin, :light, Delivest.S3Stub.png(400, 100))
+
+      {:ok, %{logo_key: second}} =
+        Franchise.update_logo(admin, :light, Delivest.S3Stub.png(400, 100))
+
+      assert_received {:s3, "DELETE", "/delivest/" <> ^first, ""}
+
+      assert {:ok, %{logo_key: nil}} = Franchise.remove_logo(admin, :light)
+      assert_received {:s3, "DELETE", "/delivest/" <> ^second, ""}
+    end
+
     test "rejects small and broken images and non admins", %{admin: admin, manager: manager} do
       assert {:error, :too_small} = Franchise.update_icon(admin, Delivest.S3Stub.png(64, 64))
+
+      assert {:error, :too_small} =
+               Franchise.update_logo(admin, :light, Delivest.S3Stub.png(400, 20))
+
+      assert {:error, :forbidden} = Franchise.remove_logo(manager, :dark)
 
       assert {:error, :too_small} =
                Franchise.update_share_image(admin, Delivest.S3Stub.png(300, 200))
@@ -94,5 +126,10 @@ defmodule Delivest.FranchiseTest do
       assert {:error, :forbidden} = Franchise.update_icon(manager, Delivest.S3Stub.png(600, 600))
       refute_received {:s3, _method, _path, _body}
     end
+  end
+
+  defp size(binary) do
+    {:ok, image} = Vix.Vips.Image.new_from_buffer(binary)
+    {Vix.Vips.Image.width(image), Vix.Vips.Image.height(image)}
   end
 end

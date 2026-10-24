@@ -30,6 +30,14 @@ defmodule Delivest.Franchise.Assets do
     end
   end
 
+  def store_logo(binary) do
+    with {:ok, png} <- Images.logo(binary),
+         key = "franchise/logo/#{Ecto.UUID.generate()}.png",
+         :ok <- put(key, png, "image/png") do
+      {:ok, key}
+    end
+  end
+
   def delete_icon(nil), do: :ok
 
   def delete_icon(dir) do
@@ -42,11 +50,20 @@ defmodule Delivest.Franchise.Assets do
   def delete_share_image(nil), do: :ok
   def delete_share_image(key), do: delete(key)
 
+  def delete_logo(nil), do: :ok
+  def delete_logo(key), do: delete(key)
+
   def icon_url(%Settings{icon_key: nil}, _name), do: nil
   def icon_url(%Settings{icon_key: dir}, name), do: url("#{dir}/#{name}")
 
   def share_image_url(%Settings{share_image_key: nil}), do: nil
   def share_image_url(%Settings{share_image_key: key}), do: url(key)
+
+  def logo_url(%Settings{logo_key: key}), do: optional_url(key)
+  def logo_dark_url(%Settings{logo_dark_key: key}), do: optional_url(key)
+
+  defp optional_url(nil), do: nil
+  defp optional_url(key), do: url(key)
 
   defp url(key) do
     {:ok, url} = Media.generate_public_url(Media.public_bucket(), key)

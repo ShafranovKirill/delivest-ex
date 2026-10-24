@@ -9,6 +9,10 @@ defmodule Delivest.Franchise do
   defdelegate placeholders, to: Templates
   defdelegate icon_url(settings, name), to: Assets
   defdelegate share_image_url(settings), to: Assets
+  defdelegate logo_url(settings), to: Assets
+  defdelegate logo_dark_url(settings), to: Assets
+
+  @logo_fields %{light: :logo_key, dark: :logo_dark_key}
 
   def update_settings(staff, attrs), do: authorized(staff, fn -> SettingsStore.save(attrs) end)
 
@@ -25,6 +29,12 @@ defmodule Delivest.Franchise do
 
   def remove_share_image(staff),
     do: authorized(staff, fn -> replace_image(:share_image_key, {:ok, nil}) end)
+
+  def update_logo(staff, variant, binary),
+    do: authorized(staff, fn -> replace_image(logo_field(variant), Assets.store_logo(binary)) end)
+
+  def remove_logo(staff, variant),
+    do: authorized(staff, fn -> replace_image(logo_field(variant), {:ok, nil}) end)
 
   def update_document(staff, kind, body),
     do: authorized(staff, fn -> Documents.save(kind, body) end)
@@ -49,6 +59,9 @@ defmodule Delivest.Franchise do
 
   defp delete_image(:icon_key, dir), do: Assets.delete_icon(dir)
   defp delete_image(:share_image_key, key), do: Assets.delete_share_image(key)
+  defp delete_image(_logo_field, key), do: Assets.delete_logo(key)
+
+  defp logo_field(variant), do: Map.fetch!(@logo_fields, variant)
 
   defp authorized(staff, fun) do
     if Identity.can?(staff, "admin"), do: fun.(), else: {:error, :forbidden}
