@@ -8,6 +8,7 @@ defmodule Delivest.Oms do
   defdelegate create_draft_cart(order), to: Orders
   defdelegate list_active_orders(session_id, client_id \\ nil), to: Orders
   defdelegate list_client_orders(client_id, branch_scope, limit \\ 50), to: Orders
+  defdelegate count_client_orders(client_id), to: Orders
 
   defdelegate get_or_create_cart(opts), to: Carts
   defdelegate get_cart(opts), to: Carts

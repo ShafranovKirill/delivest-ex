@@ -20,14 +20,36 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
             class="absolute left-3 top-2.5 size-4 text-base-content/40 z-10 pointer-events-none"
           />
           <input
+            id="catalog-search"
             type="text"
             name="search[query]"
             value={@search_query}
             placeholder={gettext("Search products by name...")}
-            class="input input-bordered input-sm w-full pl-9"
+            class="input input-bordered input-sm w-full pl-9 pr-10"
             autocomplete="off"
+            phx-debounce="150"
+            phx-hook=".SearchHotkey"
           />
+          <kbd class="kbd kbd-xs absolute right-2.5 top-1.5 hidden lg:inline-flex">/</kbd>
         </form>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".SearchHotkey">
+          export default {
+            mounted() {
+              this.onKey = (event) => {
+                const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)
+                if (event.key === "/" && !typing) {
+                  event.preventDefault()
+                  this.el.focus()
+                  this.el.select()
+                }
+              }
+              window.addEventListener("keydown", this.onKey)
+            },
+            destroyed() {
+              window.removeEventListener("keydown", this.onKey)
+            }
+          }
+        </script>
 
         <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <button
@@ -68,34 +90,43 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
             <p class="text-sm">{gettext("No products found")}</p>
           </div>
         <% else %>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
             <%= for prod <- products do %>
               <% qty = get_cart_quantity(@cart, prod.id) %>
-              <div
+              <button
+                type="button"
+                id={"catalog-product-#{prod.id}"}
                 phx-click="add_item"
                 phx-value-product-id={prod.id}
                 class={[
-                  "relative cursor-pointer select-none rounded-lg p-2.5 border transition-all flex flex-col justify-between h-24 hover:shadow-md active:scale-95",
+                  "relative flex items-center gap-2.5 text-left cursor-pointer select-none rounded-box p-2 border transition-all hover:shadow-md active:scale-[0.98]",
                   qty > 0 && "border-primary bg-primary/5 ring-1 ring-primary",
                   qty == 0 && "border-base-200 hover:border-primary/50 bg-base-100"
                 ]}
               >
-                <div class="font-medium text-xs leading-snug line-clamp-2 text-base-content">
-                  {prod.name}
-                </div>
-
-                <div class="flex items-end justify-between mt-1">
-                  <span class="font-mono font-bold text-xs sm:text-sm text-base-content">
+                <span class="size-14 shrink-0 overflow-hidden rounded-field bg-base-200 grid place-items-center">
+                  <img
+                    :if={prod.photo_url}
+                    src={prod.photo_url}
+                    alt=""
+                    loading="lazy"
+                    class="size-full object-cover"
+                  />
+                  <.icon :if={!prod.photo_url} name="hero-photo" class="size-6 text-base-content/25" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-medium text-sm leading-snug line-clamp-2">{prod.name}</span>
+                  <span class="block font-mono font-bold text-sm mt-0.5">
                     {OrderHelpers.money(prod.price)}
                   </span>
-
-                  <%= if qty > 0 do %>
-                    <span class="badge badge-primary badge-sm font-bold font-mono">
-                      {qty}
-                    </span>
-                  <% end %>
-                </div>
-              </div>
+                </span>
+                <span
+                  :if={qty > 0}
+                  class="badge badge-primary badge-sm font-bold font-mono absolute -top-1.5 -right-1.5"
+                >
+                  {qty}
+                </span>
+              </button>
             <% end %>
           </div>
         <% end %>

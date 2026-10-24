@@ -58,6 +58,13 @@ defmodule Delivest.Oms.Orders do
 
   defp sorted(query, _params), do: query
 
+  def count_client_orders(client_id) do
+    Order
+    |> where([o], o.client_id == ^client_id and is_nil(o.deleted_at))
+    |> where(^OrderScopes.sold())
+    |> Repo.aggregate(:count)
+  end
+
   def count_unconfirmed(branch_id) do
     Order
     |> where([o], o.branch_id == ^branch_id and o.status == :created and is_nil(o.deleted_at))
