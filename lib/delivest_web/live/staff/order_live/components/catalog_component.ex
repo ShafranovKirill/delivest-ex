@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
 
   def render_catalog(assigns) do
     ~H"""
-    <div>
+    <div class="flex flex-col flex-1 min-h-0">
       <div class="p-3 border-b border-base-200 space-y-2 shrink-0 bg-base-100">
         <form
           id="catalog-search-form"
@@ -51,7 +51,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
           }
         </script>
 
-        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div
+          id="catalog-categories"
+          phx-hook=".WheelScroll"
+          class="flex gap-2 overflow-x-auto overscroll-x-contain pb-1"
+        >
           <button
             type="button"
             phx-click="select_category"
@@ -81,7 +85,21 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
         </div>
       </div>
 
-      <div class="flex-1 lg:overflow-y-auto p-3">
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".WheelScroll">
+        export default {
+          mounted() {
+            this.el.addEventListener("wheel", (event) => {
+              const overflows = this.el.scrollWidth > this.el.clientWidth
+              if (overflows && Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+                event.preventDefault()
+                this.el.scrollLeft += event.deltaY
+              }
+            }, { passive: false })
+          }
+        }
+      </script>
+
+      <div class="flex-1 min-h-0 lg:overflow-y-auto p-3">
         <% products = filtered_products(@categories, @selected_category_id, @search_query) %>
 
         <%= if Enum.empty?(products) do %>
