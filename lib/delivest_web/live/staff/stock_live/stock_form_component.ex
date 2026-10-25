@@ -142,7 +142,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
                 Stock.changeset(socket.assigns.stock || %Stock{}, params)
                 |> Map.put(:action, :insert)
 
-              {cs, "#{gettext("Failed to save promotion:")} #{inspect(other_error)}"}
+              {cs, "#{gettext("Failed to save banner:")} #{inspect(other_error)}"}
           end
 
         {:noreply,
@@ -180,7 +180,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
       >
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
           <div class="divider text-xs font-bold uppercase text-base-content/50">
-            {gettext("Promotion Information")}
+            {gettext("Banner")}
           </div>
 
           <input type="hidden" name={@form[:media_id].name} value={@form[:media_id].value} />
@@ -222,7 +222,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
             field={@form[:text]}
             type="textarea"
             label={gettext("Description")}
-            placeholder={gettext("Enter promotion details...")}
+            placeholder={gettext("Text on the banner...")}
           />
 
           <div>
@@ -233,7 +233,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
               options={@product_options}
             />
             <p class="text-xs text-base-content/60 mt-1">
-              {gettext("On the website the promotion opens this product card.")}
+              {gettext("On the website the banner opens this product card.")}
             </p>
           </div>
 

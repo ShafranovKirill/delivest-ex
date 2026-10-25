@@ -39,16 +39,16 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   end
 
   defp apply_action(socket, :index, _params) do
-    assign(socket, page_title: gettext("Promotions"), stock: nil)
+    assign(socket, page_title: gettext("Banners"), stock: nil)
   end
 
   defp apply_action(socket, :new, _params) do
     if Identity.can?(socket.assigns.current_staff, "categories.create") or
          Identity.can?(socket.assigns.current_staff, "stocks.create") do
-      assign(socket, page_title: gettext("Create promotion"), stock: %Stock{})
+      assign(socket, page_title: gettext("Create banner"), stock: %Stock{})
     else
       socket
-      |> put_flash(:error, gettext("You don't have permission to create promotions."))
+      |> put_flash(:error, gettext("You don't have permission to create banners."))
       |> push_patch(to: ~p"/staff/stocks")
     end
   end
@@ -57,14 +57,14 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
     if Identity.can?(socket.assigns.current_staff, "stocks.update") do
       case Net.get_branch_stock(socket.assigns.branch_id, id, preload: [:media]) do
         {:ok, stock} ->
-          assign(socket, page_title: gettext("Edit promotion"), stock: stock)
+          assign(socket, page_title: gettext("Edit banner"), stock: stock)
 
         _ ->
           push_patch(socket, to: ~p"/staff/stocks")
       end
     else
       socket
-      |> put_flash(:error, gettext("You don't have permission to edit promotions."))
+      |> put_flash(:error, gettext("You don't have permission to edit banners."))
       |> push_patch(to: ~p"/staff/stocks")
     end
   end
@@ -84,7 +84,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
       {:noreply, assign(socket, stocks: stocks)}
     else
       _ ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to reorder promotion"))}
+        {:noreply, put_flash(socket, :error, gettext("Failed to reorder banner"))}
     end
   end
 
@@ -97,7 +97,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
       _ ->
         {:noreply,
          socket
-         |> put_flash(:error, gettext("You don't have permission to delete promotions."))
+         |> put_flash(:error, gettext("You don't have permission to delete banners."))
          |> push_patch(to: ~p"/staff/stocks")}
     end
   end
@@ -114,11 +114,11 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
 
         {:noreply,
          socket
-         |> put_flash(:info, gettext("Promotion deleted successfully"))
+         |> put_flash(:info, gettext("Banner deleted"))
          |> assign(stocks: stocks, stock_to_delete: nil)}
 
       {:error, _} ->
-        {:noreply, socket |> put_flash(:error, gettext("Failed to delete promotion"))}
+        {:noreply, socket |> put_flash(:error, gettext("Failed to delete banner"))}
     end
   end
 
@@ -139,7 +139,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
 
     {:noreply,
      socket
-     |> put_flash(:info, gettext("Promotion saved successfully"))
+     |> put_flash(:info, gettext("Banner saved"))
      |> assign(stocks: stocks)
      |> push_patch(to: ~p"/staff/stocks")}
   end
@@ -198,8 +198,8 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
       <.page_header
-        title={gettext("Promotions")}
-        subtitle={gettext("Drag and drop items to reorder promotions.")}
+        title={gettext("Banners")}
+        subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
       >
         <:actions>
           <.link
@@ -208,7 +208,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
             class="btn btn-primary"
           >
             <.icon name="hero-plus" class="size-5" />
-            {gettext("Create Promotion")}
+            {gettext("Create Banner")}
           </.link>
         </:actions>
       </.page_header>
@@ -322,9 +322,9 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
       <.modal
         id="delete-stock-modal"
         show={@stock_to_delete != nil}
-        title={gettext("Delete Promotion")}
+        title={gettext("Delete Banner")}
         description={
-          gettext("Are you sure you want to delete this promotion? This action cannot be undone.")
+          gettext("Are you sure you want to delete this banner? This action cannot be undone.")
         }
         confirm_label={gettext("Delete")}
         danger={true}

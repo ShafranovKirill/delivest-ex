@@ -22,7 +22,7 @@ msgid "products"
 msgstr "Products"
 
 msgid "stocks"
-msgstr "Stocks"
+msgstr "Banners"
 
 msgid "promotions"
 msgstr "Discounts & promo codes"

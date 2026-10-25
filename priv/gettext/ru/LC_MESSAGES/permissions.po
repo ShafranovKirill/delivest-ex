@@ -22,7 +22,7 @@ msgid "products"
 msgstr "Товары"
 
 msgid "stocks"
-msgstr "Акции"
+msgstr "Баннеры"
 
 msgid "promotions"
 msgstr "Скидки и промокоды"

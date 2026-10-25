@@ -102,7 +102,7 @@ defmodule DelivestWeb.StaffSidebar do
          |> allowed(staff, "categories.read"),
          item(:products, ~p"/staff/products", "hero-cube", gettext("Products"))
          |> allowed(staff, "products.read"),
-         item(:stocks, ~p"/staff/stocks", "hero-tag", gettext("Promotions"))
+         item(:stocks, ~p"/staff/stocks", "hero-photo", gettext("Banners"))
          |> allowed(staff, "stocks.read"),
          item(
            :promotions,
