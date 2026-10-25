@@ -2,10 +2,63 @@ defmodule Delivest.ExampleSeed do
   import Ecto.Query
 
   alias Delivest.{Media, Relations, Repo}
+  alias Delivest.Franchise.Settings
   alias Delivest.Identity.Branch
+  alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Media.File, as: MediaFile
   alias Delivest.Media.Thumbnails
   alias Delivest.Net.{Category, Product, Stock}
+
+  @working_hours Map.new(
+                   ~w(monday tuesday wednesday thursday friday saturday sunday),
+                   &{&1, %{"open" => "10:00", "close" => "23:00", "enabled" => true}}
+                 )
+
+  def seed_branch do
+    branch = Repo.preload(branch(), :info)
+
+    if branch.info do
+      info("Branch #{branch.name} already has its info")
+    else
+      %BranchInfo{}
+      |> BranchInfo.changeset(%{
+        branch_id: branch.id,
+        address: "Москва, Тверская улица, 7",
+        phone_number: "+74951234567",
+        delivery_time: 45,
+        working_hours: @working_hours,
+        ycart_settings: %{
+          enabled: true,
+          latitude: 55.757718,
+          longitude: 37.611347,
+          address: "Москва, Тверская улица, 7"
+        }
+      })
+      |> Repo.insert!()
+
+      info("Filled info of branch #{branch.name}")
+    end
+
+    if Repo.one(Settings) do
+      info("Franchise settings already exist")
+    else
+      {:ok, _} =
+        Delivest.Franchise.SettingsStore.save(%{
+          name: "Delivest Pizza",
+          description:
+            "Готовим пиццу, комбо, завтраки и кофе из свежих продуктов и привозим горячими за 45 минут. Работаем каждый день с 10:00 до 23:00.",
+          legal_form: "ООО",
+          legal_name: "Деливест",
+          inn: "7701234567",
+          ogrn: "1027700123456",
+          legal_address: "Москва, Тверская улица, 7",
+          email: "hello@delivest.example",
+          phone: "+74951234567"
+        })
+
+      info("Filled franchise settings")
+    end
+  end
 
   def seed_catalog do
     branch = branch()
