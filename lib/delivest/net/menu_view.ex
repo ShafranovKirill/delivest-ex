@@ -9,7 +9,7 @@ defmodule Delivest.Net.MenuView do
           quantity: integer() | nil,
           weight: integer() | nil,
           is_active: boolean() | nil,
-          tags: [atom()],
+          tags: [%{id: binary(), name: String.t(), icon_url: String.t() | nil}],
           suggested: boolean(),
           photo_url: String.t() | nil,
           external_id: String.t() | nil
@@ -25,21 +25,21 @@ defmodule Delivest.Net.MenuView do
 
   @type t :: [category()]
 
-  def build(categories) when is_list(categories) do
-    Enum.map(categories, &build_category/1)
+  def build(categories, tags \\ %{}) when is_list(categories) do
+    Enum.map(categories, &build_category(&1, tags))
   end
 
-  defp build_category(category) do
+  defp build_category(category, tags) do
     %{
       id: category.id,
       name: category.name,
       order: Map.get(category, :order),
       is_active: Map.get(category, :is_active),
-      products: Enum.map(category.products || [], &build_product/1)
+      products: Enum.map(category.products || [], &build_product(&1, tags))
     }
   end
 
-  defp build_product(product) do
+  defp build_product(product, tags) do
     %{
       id: product.id,
       name: product.name,
@@ -50,7 +50,7 @@ defmodule Delivest.Net.MenuView do
       quantity: Map.get(product, :quantity),
       weight: Map.get(product, :weight),
       is_active: Map.get(product, :is_active),
-      tags: Map.get(product, :tags, []),
+      tags: product |> Map.get(:tags, []) |> Enum.flat_map(&List.wrap(tags[&1])),
       suggested: Map.get(product, :suggested, false),
       photo_url: Delivest.Media.thumb_url_from_file(product.media),
       external_id: Map.get(product, :external_id)

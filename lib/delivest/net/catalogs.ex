@@ -28,6 +28,6 @@ defmodule Delivest.Net.Catalogs do
   defp build(branch_id) do
     branch_id
     |> Net.list_category_for_branch(preload: [products: :media])
-    |> MenuView.build()
+    |> MenuView.build(Delivest.Net.ProductTags.menu_tags())
   end
 end

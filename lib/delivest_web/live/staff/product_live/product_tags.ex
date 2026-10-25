@@ -1,26 +1,56 @@
 defmodule DelivestWeb.Staff.ProductLive.ProductTags do
   use DelivestWeb, :html
 
-  alias Delivest.Net.Product
-
-  def label(:hit), do: gettext("Hit")
-  def label(:new), do: gettext("New")
-  def label(:spicy), do: gettext("Spicy")
-  def label(:vegetarian), do: gettext("Vegetarian")
+  alias Delivest.Net
 
   def without_blank(%{"tags" => tags} = params) when is_list(tags),
     do: %{params | "tags" => Enum.reject(tags, &(&1 == ""))}
 
   def without_blank(params), do: params
 
+  attr :current, :atom, required: true
+
+  def tabs(assigns) do
+    ~H"""
+    <div role="tablist" class="tabs tabs-boxed w-fit max-w-full overflow-x-auto">
+      <.link
+        navigate={~p"/staff/products"}
+        role="tab"
+        class={["tab gap-2 whitespace-nowrap", @current == :products && "tab-active font-bold"]}
+      >
+        <.icon name="hero-cube" class="size-4" /> {gettext("Products")}
+      </.link>
+      <.link
+        navigate={~p"/staff/products/tags"}
+        role="tab"
+        class={["tab gap-2 whitespace-nowrap", @current == :tags && "tab-active font-bold"]}
+      >
+        <.icon name="hero-tag" class="size-4" /> {gettext("Tags")}
+      </.link>
+    </div>
+    """
+  end
+
+  attr :tag, :any, required: true
+  attr :class, :string, default: "size-5"
+
+  def tag_icon(assigns) do
+    assigns = assign(assigns, :url, Net.product_tag_icon_url(assigns.tag))
+
+    ~H"""
+    <img :if={@url} src={@url} alt="" class={["object-contain", @class]} />
+    """
+  end
+
   attr :field, Phoenix.HTML.FormField, required: true
+  attr :tags, :list, required: true
 
   def tag_checkboxes(assigns) do
-    assigns = assign(assigns, tags: Product.tags(), selected: selected(assigns.field.value))
+    assigns = assign(assigns, selected: selected(assigns.field.value))
 
     ~H"""
     <fieldset class="space-y-2">
-      <legend class="label-text font-bold">{gettext("Labels")}</legend>
+      <legend class="label-text font-bold">{gettext("Tags")}</legend>
       <input type="hidden" name={@field.name <> "[]"} value="" />
       <div class="flex flex-wrap gap-2">
         <label
@@ -30,15 +60,19 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
           <input
             type="checkbox"
             name={@field.name <> "[]"}
-            value={tag}
-            checked={to_string(tag) in @selected}
+            value={tag.id}
+            checked={tag.id in @selected}
             class="checkbox checkbox-xs checkbox-primary"
           />
-          <span class="text-sm">{label(tag)}</span>
+          <.tag_icon tag={tag} class="size-4" />
+          <span class="text-sm">{tag.name}</span>
         </label>
       </div>
       <p class="text-xs text-base-content/60">
-        {gettext("Shown on the product card on the website with a matching icon.")}
+        {gettext("Shown on the product card on the website.")}
+        <.link navigate={~p"/staff/products/tags"} class="link">
+          {gettext("Manage tags")}
+        </.link>
       </p>
     </fieldset>
     """

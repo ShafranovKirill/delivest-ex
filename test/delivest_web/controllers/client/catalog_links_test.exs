@@ -46,19 +46,26 @@ defmodule DelivestWeb.Client.CatalogLinksTest do
     assert [%{"products" => [%{"slug" => "hinkali"}]}] = body["data"]
   end
 
-  test "menu exposes product labels and the cart suggestion flag", %{
+  test "menu exposes product tags with icons and the cart suggestion flag", %{
     conn: conn,
     staff: staff,
     branch: branch,
     product: product
   } do
+    tag = Delivest.Repo.get_by!(Delivest.Net.ProductTag, name: "Новинка")
+
     {:ok, _} =
-      Net.update_product(staff, product, %{"tags" => ["new", "vegetarian"], "suggested" => true})
+      Net.update_product(staff, product, %{
+        "tags" => [tag.id, Ecto.UUID.generate()],
+        "suggested" => true
+      })
 
     body = conn |> get(~p"/client/branches/#{branch.id}/menu") |> json_response(200)
 
-    assert [%{"products" => [%{"tags" => ["new", "vegetarian"], "suggested" => true}]}] =
-             body["data"]
+    assert [%{"products" => [%{"tags" => [json_tag], "suggested" => true}]}] = body["data"]
+    assert json_tag["id"] == tag.id
+    assert json_tag["name"] == "Новинка"
+    assert json_tag["icon_url"] =~ "/images/tag-icons/sparkles.svg"
   end
 
   test "a promotion links to its product while the product is available", ctx do

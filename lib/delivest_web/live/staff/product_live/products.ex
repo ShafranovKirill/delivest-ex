@@ -6,6 +6,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.CopyComponent
 
+  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
+
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
   @impl true
@@ -400,6 +402,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </.button>
         </:actions>
       </.page_header>
+
+      <.tabs current={:products} />
 
       <.form
         for={nil}

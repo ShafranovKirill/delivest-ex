@@ -245,6 +245,9 @@ defmodule DelivestWeb.Router do
       scope "/products", ProductLive do
         live "/", Products, :index
         live "/bulk", Bulk, :index
+        live "/tags", Tags, :index
+        live "/tags/new", Tags, :new
+        live "/tags/:id/edit", Tags, :edit
         live "/:id/edit", Products, :edit
         live "/new", Products, :new
       end

@@ -52,21 +52,24 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
              Oban.Testing.all_enqueued(Delivest.Repo, [])
   end
 
-  test "labels are picked from the fixed set and can be cleared", %{conn: conn} do
+  test "tags are picked from the configured tags and can be cleared", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    hit = Delivest.Repo.get_by!(Delivest.Net.ProductTag, name: "Хит")
+    spicy = Delivest.Repo.get_by!(Delivest.Net.ProductTag, name: "Острое")
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/new")
+    {:ok, lv, html} = live(conn, ~p"/staff/products/new")
+    assert html =~ "Острое"
 
     lv
-    |> form("#product-form", product: %{name: "Том ям", price: 450, tags: ["", "spicy", "hit"]})
+    |> form("#product-form", product: %{name: "Том ям", price: 450, tags: ["", spicy.id, hit.id]})
     |> render_submit()
 
     {:ok, {[product], _meta}} =
       Delivest.Net.Products.list_staff_products_for_branch(staff, branch.id)
 
-    assert Enum.sort(product.tags) == [:hit, :spicy]
+    assert Enum.sort(product.tags) == Enum.sort([hit.id, spicy.id])
 
     {:ok, lv, _html} = live(conn, ~p"/staff/products/#{product.id}/edit")
     lv |> form("#product-form", product: %{tags: [""]}) |> render_submit()

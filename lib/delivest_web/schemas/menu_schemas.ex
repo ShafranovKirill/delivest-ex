@@ -37,8 +37,21 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
         is_active: %Schema{type: :boolean, example: true},
         tags: %Schema{
           type: :array,
-          items: %Schema{type: :string, enum: Delivest.Net.Product.tags()},
-          description: "Метки товара: хит, новинка, острое, вегетарианское"
+          items: %Schema{
+            type: :object,
+            required: [:id, :name, :icon_url],
+            properties: %{
+              id: %Schema{type: :string, format: :uuid},
+              name: %Schema{type: :string, example: "Хит"},
+              icon_url: %Schema{
+                type: :string,
+                format: :uri,
+                nullable: true,
+                description: "Иконка тега: SVG из библиотеки или загруженный PNG 64×64"
+              }
+            }
+          },
+          description: "Теги товара, которые админ настраивает во вкладке «Теги»"
         },
         suggested: %Schema{
           type: :boolean,

@@ -53,6 +53,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           socket
           |> assign(:form, to_form(changeset))
           |> assign(:category_options, category_options)
+          |> assign(:product_tags, Net.list_product_tags())
           |> assign(:current_media, current_media)
           |> assign(:show_upload_modal, false)
 
@@ -309,7 +310,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             placeholder={gettext("Enter product description...")}
           />
 
-          <.tag_checkboxes field={@form[:tags]} />
+          <.tag_checkboxes field={@form[:tags]} tags={@product_tags} />
 
           <div>
             <.input
