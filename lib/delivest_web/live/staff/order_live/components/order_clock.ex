@@ -15,7 +15,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderClock do
       phx-hook=".OrderClock"
       data-mode="waiting"
       data-at={DateTime.to_iso8601(@order.inserted_at)}
-      data-text={gettext("waiting %{minutes} min")}
+      data-text={gettext("waiting %{minutes} min", minutes: "%{minutes}")}
       class={clock_class()}
     ></span>
     """
@@ -34,8 +34,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderClock do
       phx-hook=".OrderClock"
       data-mode="deadline"
       data-at={DateTime.to_iso8601(@deadline)}
-      data-text={gettext("%{minutes} min left")}
-      data-late-text={gettext("%{minutes} min late")}
+      data-text={gettext("%{minutes} min left", minutes: "%{minutes}")}
+      data-late-text={gettext("%{minutes} min late", minutes: "%{minutes}")}
       class={clock_class()}
     ></span>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".OrderClock">
