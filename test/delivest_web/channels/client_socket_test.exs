@@ -96,7 +96,7 @@ defmodule DelivestWeb.ClientSocketTest do
     assert_push "order", %{order: %{status: :preparing}}, 1_000
   end
 
-  test "auth channel sends tokens once the call is confirmed" do
+  test "auth channel signals the confirmation and leaves it for the http exchange" do
     {:ok, confirmation} =
       PhoneConfirmations.create(%{phone: @phone, session_id: "sess-a", call_id: "777"})
 
@@ -110,10 +110,7 @@ defmodule DelivestWeb.ClientSocketTest do
 
     assert :ok = ClientAuth.confirm_call("777", @phone)
 
-    assert_push "confirmed",
-                %{status: "confirmed", access_token: token, client: %{phone: @phone}},
-                1_000
-
-    assert {:ok, _client_id} = ClientToken.verify_access(token)
+    assert_push "confirmed", %{}, 1_000
+    assert {:ok, @phone} = PhoneConfirmations.consume(confirmation.id, "sess-a")
   end
 end

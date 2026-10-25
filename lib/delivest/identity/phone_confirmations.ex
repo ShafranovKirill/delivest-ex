@@ -36,6 +36,19 @@ defmodule Delivest.Identity.PhoneConfirmations do
 
   def pending?(_id, _session_id), do: false
 
+  @spec confirmed?(String.t(), String.t() | nil) :: boolean()
+  def confirmed?(id, session_id) when is_binary(session_id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, id} ->
+        id |> owned(session_id) |> where([c], not is_nil(c.confirmed_at)) |> Repo.exists?()
+
+      :error ->
+        false
+    end
+  end
+
+  def confirmed?(_id, _session_id), do: false
+
   def topic(id), do: "phone_confirmation:#{id}"
 
   @spec consume(String.t(), String.t() | nil) ::

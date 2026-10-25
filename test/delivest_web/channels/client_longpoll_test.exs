@@ -33,10 +33,8 @@ defmodule DelivestWeb.ClientLongPollTest do
     messages = receive_messages(params, [])
     assert Enum.any?(messages, &match?([_, _, _, "phx_reply", %{"status" => "ok"}], &1))
 
-    assert [_, _, _, "confirmed", %{"status" => "confirmed", "access_token" => access}] =
-             Enum.find(messages, &match?([_, _, _, "confirmed", _], &1))
-
-    assert {:ok, _client_id} = ClientToken.verify_access(access)
+    assert Enum.any?(messages, &match?([_, _, _, "confirmed", _], &1))
+    assert {:ok, @phone} = PhoneConfirmations.consume(confirmation.id, "sess-lp")
   end
 
   test "long polling from a foreign origin is refused" do

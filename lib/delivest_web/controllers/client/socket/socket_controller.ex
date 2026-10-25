@@ -9,7 +9,7 @@ defmodule DelivestWeb.Client.Socket.SocketController do
   operation(:token,
     summary: "Токен для подключения к сокету",
     description:
-      "Подключение: `/socket/websocket?token=...`. Каналы `orders` (событие `order`) и `auth:<confirmation_id>` (события `confirmed`, `failed`).",
+      "Подключение: `/socket/websocket?token=...`. Каналы `orders` (событие `order`) и `auth:<confirmation_id>` (событие `confirmed`, после него токены забираются через `/client/auth/call/{id}/complete`).",
     tags: ["Socket"],
     responses: [ok: {"Токен", "application/json", SocketTokenResponse}]
   )
