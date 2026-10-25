@@ -148,6 +148,7 @@ defmodule Delivest.ExampleSeed do
               external_id: row["external_id"],
               category_id: category.id,
               slug: unique_slug(row["name"]),
+              tags: tag_ids(row["tags"]),
               is_active: true
             })
             |> Repo.insert!()
@@ -222,6 +223,12 @@ defmodule Delivest.ExampleSeed do
       Thumbnails.store(file)
       file.id
     end
+  end
+
+  defp tag_ids(nil), do: []
+
+  defp tag_ids(names) do
+    Repo.all(from t in Delivest.Net.ProductTag, where: t.name in ^names, select: t.id)
   end
 
   defp unique_slug(name) do
