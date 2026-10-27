@@ -7,6 +7,7 @@ defmodule Delivest.Integrations.YandexEda do
   alias Delivest.Integrations.YandexEda.{
     BranchSettings,
     Menu,
+    MenuReloadWorker,
     OrderEvents,
     OrderIntake,
     OrderLookup,
@@ -31,6 +32,9 @@ defmodule Delivest.Integrations.YandexEda do
   @impl true
   def configured?(%BranchSettings{enabled: enabled}), do: enabled
   def configured?(_settings), do: false
+
+  @impl true
+  def stops_changed(branch_id), do: reload_menu(branch_id, "menu_stop_list")
 
   def get_branch_settings(branch_id) do
     case Identity.get_branch(branch_id, preload: [:info]) do
@@ -139,6 +143,16 @@ defmodule Delivest.Integrations.YandexEda do
   end
 
   def base_url, do: DelivestWeb.Endpoint.url() <> "/integrations/yandex-eda"
+
+  defp reload_menu(branch_id, operation) do
+    if get_branch_settings(branch_id).enabled,
+      do:
+        %{"branch_id" => branch_id, "operation" => operation}
+        |> MenuReloadWorker.new()
+        |> Oban.insert()
+
+    :ok
+  end
 
   defp rotate({:ok, settings}), do: settings |> Settings.rotate() |> Repo.update()
   defp rotate(error), do: error

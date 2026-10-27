@@ -2,6 +2,7 @@ defmodule Delivest.Net.Stops do
   import Ecto.Query
 
   alias Delivest.{Audit, Identity, Repo}
+  alias Delivest.Integrations.Channels
   alias Delivest.Net.{Product, ProductStop, StopPeriod}
 
   @cache :stop_cache
@@ -148,5 +149,6 @@ defmodule Delivest.Net.Stops do
   defp changed(branch_id) do
     Cachex.del(@cache, branch_id)
     Phoenix.PubSub.broadcast(Delivest.PubSub, "branch_products:#{branch_id}", :stops_changed)
+    Channels.stops_changed(branch_id)
   end
 end

@@ -447,21 +447,16 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 # TODO
 
-Сделано, но не проверено: тестов нет, `mix precommit` не запускался.
+Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» в карточке заказа, push стоп-листа (`Channels.stops_changed/1` → `MenuReloadWorker` с `menu_stop_list`), русские переводы. Всё покрыто тестами.
 
-Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» в карточке заказа.
-
-1. **Тесты**: токен и плаг авторизации, `Price`, `Schedule` (переход через полночь), `OrderRequest` и `OrderItems`, `OrderIntake` (идемпотентность по `eatsId`, `406`, ручной и автоматический режим, маршрут в CRM), `OrderStatus` (только вперёд), `OrderEvents` (отмена, статусы, курьер), контроллеры, LiveView-страница.
-2. **Gettext**: `mix gettext.extract --merge` и русские переводы новых строк (страница интеграции, карточка заказа, `OrderComment`, `OrderEvents`, «Paid online», «Unit», «ml»).
-3. **Push стоп-листа**: `PushApi` и `MenuReloadWorker` написаны, но не подключены. Нужно добавить `Channels.stops_changed/1` (обходит каналы реестра), вызвать его из `Net.Stops.changed/1` и сделать `YandexEda.stops_changed/1`, который ставит воркер с `menu_stop_list`, если филиал включён.
-4. **Push меню**: `operationType: "menu"` при изменении товаров, категорий и `channel_products`.
-5. **Стоп-лист в `availability`** отдаёт все остановленные товары филиала, без фильтра по меню канала. Можно оставить так.
-6. **Ручное подтверждение**: сейчас только бейдж с дедлайном. Нужна тревога (звук или уведомление) по истечении `accept_minutes` и решение, что делать с заказом после таймаута.
-7. **Курьер Яндекса** (`details.courier`) сохраняется, но не показывается в карточке заказа.
-8. **Frontpad**: `:online` отправляется как `pay=2` (карта). Проверить коды оплаты в Frontpad.
-9. **Клиентский API**: отдавать `measure_unit` в меню (`MenuView` и схема OpenAPI) и показывать «мл» в клиенте.
-10. **Корзина**: `CartItem` ограничен 99 штуками, дробное количество округляется вверх.
-11. **Меню**: `nutrients`, `vat`, `excise`, `adult_info` и маркировка не отдаются.
-12. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/feedback`, push `/block` и `/unblock`, `/v1/orders-history`, проверка кода курьера.
-13. **Документация**: обновить раздел «Каналы продаж» в `integrations/README.md`.
-14. **Вопросы к менеджеру Яндекса** — список выше.
+1. **Push меню**: `operationType: "menu"` при изменении товаров, категорий и `channel_products`.
+2. **Стоп-лист в `availability`** отдаёт все остановленные товары филиала, без фильтра по меню канала. Можно оставить так.
+3. **Ручное подтверждение**: сейчас только бейдж с дедлайном. Нужна тревога (звук или уведомление) по истечении `accept_minutes` и решение, что делать с заказом после таймаута.
+4. **Курьер Яндекса** (`details.courier`) сохраняется, но не показывается в карточке заказа.
+5. **Frontpad**: `:online` отправляется как `pay=2` (карта). Проверить коды оплаты в Frontpad.
+6. **Клиентский API**: отдавать `measure_unit` в меню (`MenuView` и схема OpenAPI) и показывать «мл» в клиенте.
+7. **Корзина**: `CartItem` ограничен 99 штуками, дробное количество округляется вверх.
+8. **Меню**: `nutrients`, `vat`, `excise`, `adult_info` и маркировка не отдаются.
+9. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/feedback`, push `/block` и `/unblock`, `/v1/orders-history`, проверка кода курьера.
+10. **Документация**: обновить раздел «Каналы продаж» в `integrations/README.md`.
+11. **Вопросы к менеджеру Яндекса** — список выше.
