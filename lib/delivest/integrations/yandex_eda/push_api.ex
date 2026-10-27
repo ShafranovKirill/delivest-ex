@@ -6,11 +6,32 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
   @cache :crm_cache
   @token_margin 60
 
-  def reload_menu(%Settings{} = settings, restaurant_id, operation) do
+  def reload_menu(%Settings{} = settings, restaurant_id, operation),
+    do:
+      call(settings, "/menu/import/initiation", %{
+        restaurantId: restaurant_id,
+        operationType: operation
+      })
+
+  def block(%Settings{} = settings, vendors, attrs),
+    do: call(settings, "/block", Map.put(attrs, :vendorInfo, vendors))
+
+  def unblock(%Settings{} = settings, vendors, block_ids),
+    do: call(settings, "/unblock", %{vendorInfo: vendors, blockIds: block_ids})
+
+  def blocks(%Settings{} = settings, vendors) do
+    with {:ok, %{"items" => items}} <-
+           call(settings, "/v2/status", %{vendorInfo: vendors, statuses: ["enabled"]}) do
+      {:ok, items}
+    else
+      {:ok, body} -> {:error, {:yandex_eda, body}}
+      error -> error
+    end
+  end
+
+  defp call(settings, path, body) do
     with {:ok, token} <- token(settings) do
-      Client.post(
-        "/menu/import/initiation",
-        %{restaurantId: restaurant_id, operationType: operation},
+      Client.post(path, body,
         base_url: @base_url,
         headers: [{"authorization", "Bearer " <> token}, {"partner-name", settings.partner_name}]
       )

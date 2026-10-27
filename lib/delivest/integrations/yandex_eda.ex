@@ -14,7 +14,9 @@ defmodule Delivest.Integrations.YandexEda do
     OrderLookup,
     OrderRequest,
     OrderStatus,
+    Pause,
     Places,
+    PushApi,
     Schedule,
     Settings,
     StopList,
@@ -84,6 +86,27 @@ defmodule Delivest.Integrations.YandexEda do
   end
 
   def get_settings, do: Repo.one(Settings) || %Settings{}
+
+  def pause_available?, do: PushApi.configured?(get_settings())
+
+  def pauses(branch_id), do: with_push(&Pause.list(&1, branch_id))
+
+  def pause(staff, branch_id, minutes, tag) do
+    if Identity.can?(staff, "branches.update"),
+      do: with_push(&Pause.start(&1, branch_id, minutes, tag)),
+      else: {:error, :forbidden}
+  end
+
+  def resume(staff, branch_id, block_ids) do
+    if Identity.can?(staff, "branches.update"),
+      do: with_push(&Pause.stop(&1, branch_id, block_ids)),
+      else: {:error, :forbidden}
+  end
+
+  defp with_push(fun) do
+    settings = get_settings()
+    if PushApi.configured?(settings), do: fun.(settings), else: {:error, :push_not_configured}
+  end
 
   def change_settings(%Settings{} = settings, attrs \\ %{}),
     do: Settings.changeset(settings, attrs)

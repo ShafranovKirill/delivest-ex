@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   alias Delivest.Identity
   alias Delivest.Integrations.YandexEda
   alias Delivest.Integrations.YandexEda.BranchSettings
-  alias DelivestWeb.Staff.IntegrationLive.{YandexEdaAccess, YandexEdaMenu}
+  alias DelivestWeb.Staff.IntegrationLive.{YandexEdaAccess, YandexEdaMenu, YandexEdaPause}
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
 
@@ -18,11 +18,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
        page_title: gettext("Yandex Eda"),
        can_edit_shared: Identity.can?(staff, "admin"),
        can_edit_branch: Identity.can?(staff, "branches.update"),
-       can_edit_products: Identity.can?(staff, "products.update")
+       can_edit_products: Identity.can?(staff, "products.update"),
+       pause_available: YandexEda.pause_available?()
      )
      |> assign_shared(YandexEda.get_settings())
      |> assign_branch(YandexEda.get_branch_settings(socket.assigns.current_branch.id))
-     |> load_menu()}
+     |> load_menu()
+     |> load_pauses()}
   end
 
   @impl true
@@ -44,6 +46,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
          socket
          |> assign_branch(settings)
          |> load_menu()
+         |> load_pauses()
          |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -81,6 +84,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
     end
   end
 
+  def handle_event("pause", %{"minutes" => minutes, "tag" => tag}, socket) do
+    socket.assigns.current_staff
+    |> YandexEda.pause(socket.assigns.current_branch.id, parse_minutes(minutes), tag)
+    |> pause_result(socket, gettext("The branch is paused in Yandex Eda"))
+  end
+
+  def handle_event("resume", %{"id" => id}, socket) do
+    socket.assigns.current_staff
+    |> YandexEda.resume(socket.assigns.current_branch.id, [id])
+    |> pause_result(socket, gettext("The pause is lifted"))
+  end
+
   def handle_event("product", %{"product_id" => product_id} = params, socket) do
     attrs = Map.take(params, ["enabled", "price"])
 
@@ -111,6 +126,34 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
     case YandexEda.menu(socket.assigns.current_branch.id) do
       {:ok, menu} -> assign(socket, menu: menu)
       {:error, _reason} -> assign(socket, menu: [])
+    end
+  end
+
+  defp load_pauses(
+         %{assigns: %{pause_available: true, branch_settings: %{enabled: true}}} = socket
+       ) do
+    branch_id = socket.assigns.current_branch.id
+
+    assign_async(socket, :pauses, fn ->
+      with {:ok, list} <- YandexEda.pauses(branch_id), do: {:ok, %{pauses: list}}
+    end)
+  end
+
+  defp load_pauses(socket), do: assign(socket, pauses: Phoenix.LiveView.AsyncResult.ok([]))
+
+  defp pause_result({:ok, _body}, socket, message),
+    do: {:noreply, socket |> load_pauses() |> put_flash(:info, message)}
+
+  defp pause_result({:error, :forbidden}, socket, _message),
+    do: {:noreply, put_flash(socket, :error, error_message(:forbidden))}
+
+  defp pause_result({:error, _reason}, socket, _message),
+    do: {:noreply, put_flash(socket, :error, gettext("Yandex Eda did not accept the request"))}
+
+  defp parse_minutes(minutes) do
+    case Integer.parse(minutes) do
+      {value, ""} when value > 0 -> value
+      _other -> nil
     end
   end
 
@@ -219,6 +262,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
           </button>
         </div>
       </.form>
+
+      <YandexEdaPause.pause
+        :if={@pause_available and @branch_settings.enabled}
+        pauses={@pauses}
+        can_edit={@can_edit_branch}
+      />
 
       <YandexEdaMenu.menu
         menu={@menu}

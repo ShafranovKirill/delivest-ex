@@ -693,7 +693,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:89
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:117
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:160
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:36
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:27
 #: lib/delivest_web/live/staff/order_live/orders.ex:139
@@ -842,7 +842,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:84
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:450
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:218
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:261
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:92
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:386
@@ -863,8 +863,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:149
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:83
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:449
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:217
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:260
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:67
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:91
 #: lib/delivest_web/live/staff/product_live/bulk.ex:374
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:384
@@ -2313,7 +2314,7 @@ msgid "All products of this branch"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/index.ex:70
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:161
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:204
 #: lib/delivest_web/live/staff/log_live/components/events_component.ex:38
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:61
 #, elixir-autogen, elixir-format
@@ -3894,8 +3895,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/index.ex:42
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:83
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:47
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:61
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:50
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:64
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:30
 #, elixir-autogen, elixir-format
 msgid "Settings saved"
@@ -4000,7 +4001,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/index.ex:14
 #: lib/delivest_web/live/staff/integration_live/index.ex:38
 #: lib/delivest_web/live/staff/integration_live/routes.ex:67
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:135
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:178
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:52
 #, elixir-autogen, elixir-format
 msgid "Integrations"
@@ -4008,6 +4009,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:201
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:560
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:22
 #, elixir-autogen, elixir-format
 msgid "Loading..."
 msgstr ""
@@ -4870,6 +4872,7 @@ msgstr ""
 msgid "In the Frontpad stop list but not linked to products"
 msgstr ""
 
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:53
 #: lib/delivest_web/live/staff/product_live/stop_control.ex:40
 #, elixir-autogen, elixir-format
 msgid "Lift"
@@ -4930,6 +4933,7 @@ msgstr ""
 msgid "Until end of day"
 msgstr ""
 
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:98
 #: lib/delivest_web/live/staff/product_live/stop_control.ex:60
 #, elixir-autogen, elixir-format
 msgid "Until lifted"
@@ -4990,7 +4994,7 @@ msgid "Connect a CRM in integrations"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:118
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:161
 #, elixir-autogen, elixir-format
 msgid "Failed to save"
 msgstr ""
@@ -5048,7 +5052,7 @@ msgstr ""
 msgid "Access for Yandex"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:121
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:164
 #, elixir-autogen, elixir-format
 msgid "Automatically"
 msgstr ""
@@ -5098,7 +5102,7 @@ msgstr ""
 msgid "Generate access"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:121
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:164
 #, elixir-autogen, elixir-format
 msgid "Manually by staff"
 msgstr ""
@@ -5108,22 +5112,22 @@ msgstr ""
 msgid "Menu in Yandex Eda"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:188
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:231
 #, elixir-autogen, elixir-format
 msgid "Minutes to confirm"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:77
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:80
 #, elixir-autogen, elixir-format
 msgid "New access for Yandex Eda is generated"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:180
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:223
 #, elixir-autogen, elixir-format
 msgid "Order confirmation"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:141
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:184
 #, elixir-autogen, elixir-format
 msgid "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
 msgstr ""
@@ -5149,12 +5153,12 @@ msgstr ""
 msgid "Price in Yandex Eda"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:197
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:240
 #, elixir-autogen, elixir-format
 msgid "Price markup, %"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:203
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:246
 #, elixir-autogen, elixir-format
 msgid "Round marked up prices up to"
 msgstr ""
@@ -5164,7 +5168,7 @@ msgstr ""
 msgid "Shared by every branch. Give the address, the client id and the secret to the Yandex Eda manager."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:172
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:215
 #, elixir-autogen, elixir-format
 msgid "Take orders from Yandex Eda"
 msgstr ""
@@ -5174,7 +5178,7 @@ msgstr ""
 msgid "Takes orders"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:163
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:206
 #, elixir-autogen, elixir-format
 msgid "The branch is a separate restaurant in Yandex Eda, its id is %{id}."
 msgstr ""
@@ -5191,7 +5195,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/index.ex:86
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:18
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:139
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:182
 #, elixir-autogen, elixir-format
 msgid "Yandex Eda"
 msgstr ""
@@ -5357,7 +5361,7 @@ msgstr ""
 msgid "Fats"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:127
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:170
 #, elixir-autogen, elixir-format
 msgid "No VAT"
 msgstr ""
@@ -5387,7 +5391,102 @@ msgstr ""
 msgid "Sugary drink"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:210
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:253
 #, elixir-autogen, elixir-format, fuzzy
 msgid "VAT in the menu"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:105
+#, elixir-autogen, elixir-format
+msgid "%{from} – %{to}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:95
+#, elixir-autogen, elixir-format
+msgid "1 hour"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:93
+#, elixir-autogen, elixir-format
+msgid "15 minutes"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:96
+#, elixir-autogen, elixir-format
+msgid "2 hours"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:94
+#, elixir-autogen, elixir-format
+msgid "30 minutes"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:97
+#, elixir-autogen, elixir-format
+msgid "4 hours"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:68
+#, elixir-autogen, elixir-format
+msgid "Duration"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:29
+#, elixir-autogen, elixir-format
+msgid "No active pauses"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:84
+#, elixir-autogen, elixir-format
+msgid "Pause"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:14
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Pause in Yandex Eda"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:75
+#, elixir-autogen, elixir-format
+msgid "Reason"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:102
+#, elixir-autogen, elixir-format
+msgid "Since %{from}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:79
+#, elixir-autogen, elixir-format
+msgid "Technical problem"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:90
+#, elixir-autogen, elixir-format
+msgid "The branch is paused in Yandex Eda"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:96
+#, elixir-autogen, elixir-format
+msgid "The pause is lifted"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:78
+#, elixir-autogen, elixir-format
+msgid "Too busy"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:151
+#, elixir-autogen, elixir-format
+msgid "Yandex Eda did not accept the request"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:25
+#, elixir-autogen, elixir-format
+msgid "Yandex did not return the pauses"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:16
+#, elixir-autogen, elixir-format
+msgid "Yandex stops taking orders for the branch until the pause ends or is lifted."
 msgstr ""

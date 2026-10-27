@@ -36,6 +36,33 @@ defmodule Delivest.YandexEdaFixtures do
   def menu_product(branch, category, attrs \\ []),
     do: insert_branch_product(branch.id, Keyword.put(attrs, :category_id, category.id))
 
+  def push_credentials do
+    Repo.insert!(%Settings{
+      client_id: "ours",
+      client_secret: "secret",
+      partner_name: "delivest",
+      push_client_id: "push-#{System.unique_integer([:positive])}",
+      push_client_secret: "push-secret"
+    })
+  end
+
+  def stub_push(routes) do
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+      case conn.request_path do
+        "/oauth2/token" ->
+          Req.Test.json(conn, %{"access_token" => "push", "expires_in" => 3600})
+
+        path ->
+          send(test_pid, {:push, path, Jason.decode!(body)})
+          Req.Test.json(conn, Map.get(routes, path, %{}))
+      end
+    end)
+  end
+
   def credentials do
     {:ok, settings} = %Settings{} |> Settings.changeset(%{}) |> Repo.insert()
     settings

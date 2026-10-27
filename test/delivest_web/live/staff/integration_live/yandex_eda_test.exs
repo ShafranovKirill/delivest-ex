@@ -64,4 +64,46 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     assert has_element?(lv, "#yandex_eda_enabled[disabled]")
   end
+
+  test "a branch editor pauses the branch and lifts the pause", %{conn: conn} do
+    push_credentials()
+    branch = yandex_branch()
+
+    stub_push(%{
+      "/v2/status" => %{
+        "items" => [
+          %{
+            "vendorId" => branch.id,
+            "blockId" => "7",
+            "deliveryType" => "ddc",
+            "from" => "2026-10-27T12:00:00+03:00",
+            "availableToCancel" => true
+          }
+        ]
+      }
+    })
+
+    {:ok, lv, _html} =
+      live(
+        sign_in(conn, branch, ["branches.read", "branches.update"]),
+        ~p"/staff/integrations/yandex-eda"
+      )
+
+    assert render_async(lv) =~ "27.10 12:00"
+
+    lv |> form("#yandex-eda-pause-form", minutes: "60", tag: "too_busy") |> render_submit()
+    assert_received {:push, "/block", %{"tag" => "too_busy"}}
+
+    lv |> element("#yandex-eda-pause-7 button") |> render_click()
+    assert_received {:push, "/unblock", %{"blockIds" => ["7"]}}
+  end
+
+  test "without push access the pause is hidden", %{conn: conn} do
+    branch = yandex_branch()
+
+    {:ok, lv, _html} =
+      live(sign_in(conn, branch, ["branches.read"]), ~p"/staff/integrations/yandex-eda")
+
+    refute has_element?(lv, "#yandex-eda-pause")
+  end
 end
