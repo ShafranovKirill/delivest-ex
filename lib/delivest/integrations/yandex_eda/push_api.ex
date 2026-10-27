@@ -32,6 +32,15 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
   def validate_code(%Settings{} = settings, order_id, code),
     do: call(settings, "/platform/orders/#{URI.encode(order_id)}/codes/validate", %{code: code})
 
+  def orders_history(%Settings{} = settings, filter) do
+    with {:ok, %{"orders" => orders}} <- call(settings, "/v1/orders-history", filter) do
+      {:ok, orders}
+    else
+      {:ok, body} -> {:error, {:yandex_eda, body}}
+      error -> error
+    end
+  end
+
   defp call(settings, path, body) do
     with {:ok, token} <- token(settings) do
       Client.post(path, body,

@@ -38,6 +38,7 @@
 | Отмена Яндексом при Frontpad | У Frontpad нет API отмены: заказ отменяем у нас, в админке тревога «отмените вручную во Frontpad №…» |
 | Адрес `marketplace` | `full` → `formatted`, координаты как есть, улицу и дом достаём DaData `geolocate` по координатам |
 | Журнал | Все запросы Яндекса и наши ответы пишем в лог интеграции |
+| Сверка | По дню, только расхождения, нужен доступ к push-API и право `orders.read` |
 | Пауза | Блок «Пауза в Яндекс Еде» на странице интеграции, нужен доступ к push-API. `/block` шлём сразу для `ddc` и `marketplace`, срок 15 мин – 4 ч или до снятия, причина `too_busy` / `technical_problem`. Активные паузы читаем через `/v2/status`, снимаем `/unblock` |
 
 ## Общие правила API
@@ -422,6 +423,8 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 История заказов за 180 дней, до 1000 в ответе. Фильтры: `origin_ids` (`[{origin_id, delivery_type}]`), `service` (`YE`, `MD`), `from`, `to`, `status` (`NEW`, `CANCELLED`, `DELIVERED`), `pagination` (`limit`, `offset`). Ответ: `eats_id`, `order_id`, `created_at`, `status`, `service`, `delivery_type` (`native` / `marketplace`), `origin_id`, `items_cost`, `cancel_reason {code, message}`.
 
+У нас — блок «Сверка заказов с Яндексом» на странице интеграции: берём историю филиала за выбранный день (страницами по 1000) и сравниваем с нашими заказами по `eatsId`. Показываем только расхождения: заказа нет у нас; наш заказ за день не попал в историю Яндекса; отменён в Яндексе, а у нас нет; доставлен в Яндексе, а у нас отменён.
+
 ## POST `/v1/get-orders-details`
 
 До 100 заказов: `{"eats_ids": [...]}` → `orders` (`eats_id`, `order_id`, `status`, `items` с `price`, `original_price`, `weight`, `modifications`, `items_cost`, `cancel_reason`) и `not_found_eats_ids`.
@@ -451,7 +454,7 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 # TODO
 
-Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), КБЖУ и акциз у товара, НДС филиала, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, пауза ресторана (`/block`, `/unblock`, `/v2/status`), проверка кода курьера, отзывы `/v1/feedback` в карточке заказа, русские переводы. Всё покрыто тестами.
+Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), КБЖУ и акциз у товара, НДС филиала, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, пауза ресторана (`/block`, `/unblock`, `/v2/status`), проверка кода курьера, отзывы `/v1/feedback` в карточке заказа, сверка заказов по `/v1/orders-history`, русские переводы. Всё покрыто тестами.
 
-1. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/orders-history`.
+1. Не сделано: `/places/{id}/zones`, `/zone/meta` — у нас нет своих зон доставки (полигонов, стоимости, минимальной суммы), отдавать нечего.
 2. **Вопросы к менеджеру Яндекса** — список выше. Особенно п.5: через сколько Яндекс сам отменяет неподтверждённый заказ и шлёт ли предзаказы ночью.

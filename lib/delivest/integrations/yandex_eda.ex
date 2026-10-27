@@ -18,6 +18,7 @@ defmodule Delivest.Integrations.YandexEda do
     Pause,
     Places,
     PushApi,
+    Reconciliation,
     Schedule,
     Settings,
     StopList,
@@ -88,7 +89,7 @@ defmodule Delivest.Integrations.YandexEda do
 
   def get_settings, do: Repo.one(Settings) || %Settings{}
 
-  def pause_available?, do: PushApi.configured?(get_settings())
+  def push_available?, do: PushApi.configured?(get_settings())
 
   def pauses(branch_id), do: with_push(&Pause.list(&1, branch_id))
 
@@ -101,6 +102,12 @@ defmodule Delivest.Integrations.YandexEda do
   def resume(staff, branch_id, block_ids) do
     if Identity.can?(staff, "branches.update"),
       do: with_push(&Pause.stop(&1, branch_id, block_ids)),
+      else: {:error, :forbidden}
+  end
+
+  def reconcile(staff, branch_id, date) do
+    if Identity.can?(staff, "orders.read"),
+      do: with_push(&Reconciliation.run(&1, branch_id, date)),
       else: {:error, :forbidden}
   end
 

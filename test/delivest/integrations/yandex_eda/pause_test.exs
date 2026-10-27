@@ -69,7 +69,7 @@ defmodule Delivest.Integrations.YandexEda.PauseTest do
 
   test "without push access there are no pauses", %{staff: staff} do
     Repo.delete_all(YandexEda.Settings)
-    refute YandexEda.pause_available?()
+    refute YandexEda.push_available?()
     assert {:error, :push_not_configured} = YandexEda.pause(staff, "b1", 30, "too_busy")
   end
 end

@@ -4,7 +4,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   alias Delivest.Identity
   alias Delivest.Integrations.YandexEda
   alias Delivest.Integrations.YandexEda.BranchSettings
-  alias DelivestWeb.Staff.IntegrationLive.{YandexEdaAccess, YandexEdaMenu, YandexEdaPause}
+  alias Delivest.LocalTime
+
+  alias DelivestWeb.Staff.IntegrationLive.{
+    YandexEdaAccess,
+    YandexEdaMenu,
+    YandexEdaPause,
+    YandexEdaReconciliation
+  }
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
 
@@ -19,7 +26,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
        can_edit_shared: Identity.can?(staff, "admin"),
        can_edit_branch: Identity.can?(staff, "branches.update"),
        can_edit_products: Identity.can?(staff, "products.update"),
-       pause_available: YandexEda.pause_available?()
+       push_available: YandexEda.push_available?(),
+       can_reconcile: Identity.can?(staff, "orders.read"),
+       reconcile_date: LocalTime.today(),
+       reconciliation: nil
      )
      |> assign_shared(YandexEda.get_settings())
      |> assign_branch(YandexEda.get_branch_settings(socket.assigns.current_branch.id))
@@ -96,6 +106,25 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
     |> pause_result(socket, gettext("The pause is lifted"))
   end
 
+  def handle_event("reconcile", %{"date" => value}, socket) do
+    case Date.from_iso8601(value) do
+      {:ok, date} ->
+        staff = socket.assigns.current_staff
+        branch_id = socket.assigns.current_branch.id
+
+        {:noreply,
+         socket
+         |> assign(reconcile_date: date)
+         |> assign_async(:reconciliation, fn ->
+           with {:ok, result} <- YandexEda.reconcile(staff, branch_id, date),
+                do: {:ok, %{reconciliation: result}}
+         end)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Pick a day"))}
+    end
+  end
+
   def handle_event("product", %{"product_id" => product_id} = params, socket) do
     attrs = Map.take(params, ["enabled", "price"])
 
@@ -130,7 +159,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   end
 
   defp load_pauses(
-         %{assigns: %{pause_available: true, branch_settings: %{enabled: true}}} = socket
+         %{assigns: %{push_available: true, branch_settings: %{enabled: true}}} = socket
        ) do
     branch_id = socket.assigns.current_branch.id
 
@@ -264,9 +293,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
       </.form>
 
       <YandexEdaPause.pause
-        :if={@pause_available and @branch_settings.enabled}
+        :if={@push_available and @branch_settings.enabled}
         pauses={@pauses}
         can_edit={@can_edit_branch}
+      />
+
+      <YandexEdaReconciliation.reconciliation
+        :if={@push_available and @can_reconcile}
+        date={@reconcile_date}
+        result={@reconciliation}
       />
 
       <YandexEdaMenu.menu

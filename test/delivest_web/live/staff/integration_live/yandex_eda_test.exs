@@ -106,4 +106,30 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     refute has_element?(lv, "#yandex-eda-pause")
   end
+
+  test "orders are reconciled with the yandex history", %{conn: conn} do
+    push_credentials()
+    branch = yandex_branch()
+
+    stub_push(%{
+      "/v1/orders-history" => %{
+        "orders" => [%{"eats_id" => "260427-lost", "status" => "NEW", "items_cost" => 450}]
+      }
+    })
+
+    {:ok, lv, _html} =
+      live(
+        sign_in(conn, branch, ["branches.read", "orders.read"]),
+        ~p"/staff/integrations/yandex-eda"
+      )
+
+    lv
+    |> form("#yandex-eda-reconcile", date: Date.to_iso8601(Date.utc_today()))
+    |> render_submit()
+
+    html = render_async(lv)
+
+    assert html =~ "Orders in Yandex: 1, differences: 1"
+    assert has_element?(lv, "#yandex-eda-reconciliation-260427-lost", "No such order here")
+  end
 end
