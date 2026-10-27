@@ -2,7 +2,14 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
   import Delivest.Integrations.Frontpad.Fields
 
   alias Delivest.Integrations.Crm.OrderNotes
-  alias Delivest.Integrations.Frontpad.{AddressFields, Settings, StatusCodes}
+
+  alias Delivest.Integrations.Frontpad.{
+    AddressFields,
+    PaymentCodes,
+    Settings,
+    StatusCodes,
+    TagCodes
+  }
 
   @type product_item :: %{
           external_id: String.t(),
@@ -26,6 +33,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
           datetime: String.t() | nil,
           hook_url: String.t() | nil,
           hook_status: [String.t()],
+          tags: [String.t()],
           sale_amount: String.t() | nil,
           products: [product_item()]
         }
@@ -46,6 +54,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     :hook_url,
     :sale_amount,
     hook_status: [],
+    tags: [],
     products: []
   ]
 
@@ -60,7 +69,8 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
           phone: text(customer_phone(order), 50),
           name: text(customer_name(order), 50),
           descr: OrderNotes.text(order, 100),
-          pay: map_payment_method(order.payment_method),
+          pay: PaymentCodes.code_for(settings.payments, order.payment_method),
+          tags: TagCodes.codes(settings.tags, order),
           datetime: format_cook_by(order.cook_by),
           sale_amount: sale_amount(order.items, settings),
           products: formatted_products
@@ -111,7 +121,12 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
       |> Enum.with_index()
       |> Enum.map(fn {code, index} -> {"hook_status[#{index}]", code} end)
 
-    base_params ++ products_params ++ hook_params
+    tag_params =
+      view.tags
+      |> Enum.with_index()
+      |> Enum.map(fn {code, index} -> {"tags[#{index}]", code} end)
+
+    base_params ++ products_params ++ hook_params ++ tag_params
   end
 
   defp put_hooks(view, %Settings{webhook_token: token, statuses: statuses}) do
@@ -186,11 +201,6 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
       list -> {:ok, Enum.reverse(list)}
     end
   end
-
-  defp map_payment_method(:cash), do: "1"
-  defp map_payment_method(:card_offline), do: "2"
-  defp map_payment_method(:online), do: "2"
-  defp map_payment_method(_), do: "1"
 
   defp format_cook_by(%NaiveDateTime{} = cook_by),
     do: Calendar.strftime(cook_by, "%Y-%m-%d %H:%M:%S")

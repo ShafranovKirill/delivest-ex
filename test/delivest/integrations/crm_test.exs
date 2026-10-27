@@ -207,8 +207,8 @@ defmodule Delivest.Integrations.CrmTest do
       :ok = sync(order)
 
       assert_receive {:params, params}
-      assert params["hook_status[0]"] == "2"
-      assert params["hook_status[2]"] == "5"
+      hooks = for {"hook_status[" <> _, code} <- params, do: code
+      assert Enum.sort(hooks) == ["2", "4", "5"]
       assert params["hook_url"] =~ "/integrations/crm/frontpad/token-#{branch.id}"
     end
   end

@@ -120,4 +120,64 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
   test "requires an api key" do
     assert {:error, :missing_api_key} = OrderPayload.build(%Order{items: []}, %Settings{}, %{})
   end
+
+  describe "payment and order marks" do
+    alias Delivest.Integrations.Frontpad.{PaymentCodes, StatusCodes, TagCodes}
+
+    defp params(order, settings) do
+      {:ok, payload} = OrderPayload.build(%{order | items: []}, settings, %{})
+      OrderPayload.to_form_params(payload)
+    end
+
+    test "default payment codes are cash 1 and card 2, online falls back to card" do
+      settings = %Settings{api_key: "secret"}
+
+      assert {"pay", "1"} in params(%Order{payment_method: :cash}, settings)
+      assert {"pay", "2"} in params(%Order{payment_method: :card_offline}, settings)
+      assert {"pay", "2"} in params(%Order{payment_method: :online}, settings)
+    end
+
+    test "configured payment codes are sent" do
+      settings = %Settings{
+        api_key: "secret",
+        payments: %PaymentCodes{cash: "1", card_offline: "", online: "317"}
+      }
+
+      assert {"pay", "317"} in params(%Order{payment_method: :online}, settings)
+      assert {"pay", "2"} in params(%Order{payment_method: :card_offline}, settings)
+    end
+
+    test "the source and online payment become order marks" do
+      settings = %Settings{
+        api_key: "secret",
+        tags: %TagCodes{app: "1500", yandex_eda: "1363", paid_online: "1291"}
+      }
+
+      params = params(%Order{source: "yandex_eda", payment_method: :online}, settings)
+      assert {"tags[0]", "1363"} in params
+      assert {"tags[1]", "1291"} in params
+
+      params = params(%Order{source: "staff", payment_method: :cash}, settings)
+      refute Enum.any?(params, fn {key, _value} -> String.starts_with?(key, "tags") end)
+    end
+
+    test "no more than five status hooks, the least needed is dropped" do
+      codes = %StatusCodes{
+        accepted: "1",
+        preparing: "2",
+        ready: "3",
+        delivering: "4",
+        completed: "5",
+        cancelled: "6"
+      }
+
+      assert Enum.sort(StatusCodes.codes(codes)) == ["2", "3", "4", "5", "6"]
+    end
+
+    test "codes are digits only" do
+      refute PaymentCodes.changeset(%PaymentCodes{}, %{"online" => "abc"}).valid?
+      refute TagCodes.changeset(%TagCodes{}, %{"app" => "1 2"}).valid?
+      assert TagCodes.changeset(%TagCodes{}, %{"app" => "1500", "staff" => ""}).valid?
+    end
+  end
 end

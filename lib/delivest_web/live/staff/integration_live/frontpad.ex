@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   alias Delivest.Identity
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Catalog, StopSync}
-  alias Delivest.Integrations.Frontpad
+  alias Delivest.Integrations.{Channels, Frontpad}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
@@ -113,7 +113,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   defp prefill_frontpad(nil), do: prefill_frontpad(%Frontpad.Settings{})
 
   defp prefill_frontpad(%Frontpad.Settings{} = settings),
-    do: %{settings | statuses: settings.statuses || %Frontpad.StatusCodes{}}
+    do: %{
+      settings
+      | statuses: settings.statuses || %Frontpad.StatusCodes{},
+        payments: settings.payments || %Frontpad.PaymentCodes{},
+        tags: settings.tags || %Frontpad.TagCodes{}
+    }
 
   defp settings_params(params), do: Map.put(params, "provider", "frontpad")
 
@@ -147,6 +152,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   defp refresh_error({:frontpad, error}), do: gettext("Frontpad error: %{error}", error: error)
   defp refresh_error(_reason), do: gettext("Frontpad did not respond, try again later")
+
+  defp mark_label(:paid_online), do: gettext("Paid online")
+  defp mark_label(:app), do: gettext("App")
+  defp mark_label(:staff), do: gettext("Admin")
+  defp mark_label(source), do: Channels.name(source)
 
   defp api_key?(crm), do: crm.frontpad && crm.frontpad.api_key not in [nil, ""]
 
@@ -238,6 +248,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
           <span :if={@snapshot}>({length(@snapshot.products)})</span>
         </.tab_button>
       </div>
+
+      <.guide :if={@tab == :settings} crm={@crm} />
 
       <.settings_form
         :if={@tab == :settings}
@@ -366,12 +378,60 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
               )}
             </p>
             <.inputs_for :let={codes} field={frontpad[:statuses]}>
-              <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
                 <.input
                   :for={status <- Frontpad.StatusCodes.statuses()}
                   field={codes[status]}
                   type="text"
+                  inputmode="numeric"
                   label={OrderHelpers.status_label(status)}
+                />
+              </div>
+            </.inputs_for>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Frontpad reports at most %{count} statuses per order. If all are filled, «Confirmed» is not reported: the app marks the order confirmed once Frontpad takes it.",
+                count: Frontpad.StatusCodes.hook_limit()
+              )}
+            </p>
+          </div>
+
+          <div id="frontpad-payments" class="space-y-2">
+            <p class="text-sm font-medium">{gettext("Frontpad payment codes")}</p>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Codes from the Frontpad «Payment options» reference. Empty: cash is 1, card is 2, online payment goes as card."
+              )}
+            </p>
+            <.inputs_for :let={codes} field={frontpad[:payments]}>
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
+                <.input
+                  :for={method <- Frontpad.PaymentCodes.methods()}
+                  field={codes[method]}
+                  type="text"
+                  inputmode="numeric"
+                  placeholder={Frontpad.PaymentCodes.default(method)}
+                  label={OrderHelpers.payment_label(method)}
+                />
+              </div>
+            </.inputs_for>
+          </div>
+
+          <div id="frontpad-tags" class="space-y-2">
+            <p class="text-sm font-medium">{gettext("Frontpad order marks")}</p>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Codes from the Frontpad «Order marks» reference. The order gets the mark of its source and, if paid online, the paid mark. Leave empty to send no mark."
+              )}
+            </p>
+            <.inputs_for :let={codes} field={frontpad[:tags]}>
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
+                <.input
+                  :for={mark <- Frontpad.TagCodes.marks()}
+                  field={codes[mark]}
+                  type="text"
+                  inputmode="numeric"
+                  label={mark_label(mark)}
                 />
               </div>
             </.inputs_for>
@@ -392,6 +452,82 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         </div>
       </fieldset>
     </.form>
+    """
+  end
+
+  attr :crm, BranchSettings, required: true
+
+  defp guide(assigns) do
+    ~H"""
+    <details
+      id="frontpad-guide"
+      class="group rounded-box border border-base-300 bg-base-100"
+      open={!api_key?(@crm)}
+    >
+      <summary class="flex cursor-pointer items-center gap-2 p-4 font-bold sm:px-6">
+        <.icon name="hero-book-open" class="size-5 text-primary" />
+        {gettext("How to connect Frontpad")}
+        <.icon
+          name="hero-chevron-down"
+          class="ml-auto size-4 transition-transform group-open:rotate-180"
+        />
+      </summary>
+      <ol class="list-decimal space-y-3 px-4 pb-5 pl-10 text-sm sm:px-6 sm:pl-12">
+        <li>
+          {gettext(
+            "Frontpad: «Settings» → «General» → turn the API on. Copy the secret into «Frontpad API Key» below."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "If Frontpad has several branches, put the code of this one into «Frontpad Branch ID»."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "Give every product sold in the app a unique numeric article in Frontpad and enter it in the product card of the app, field «Frontpad ID». The «Check» tab shows what is missing."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "Reference «Order statuses»: you need statuses for preparing, ready, on the way, completed and cancelled. Enter their API codes in «Frontpad status codes»."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "Reference «Payment options»: create «Cash», «Card on delivery» and «Paid online». Enter their API codes in «Frontpad payment codes»."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "Reference «Order marks»: create «App», «Admin», «Yandex Eda» and «Paid online». Enter their API codes in «Frontpad order marks», so the cashier sees where the order came from."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "Save the settings, copy the webhook URL below into the Frontpad API settings and restart the Frontpad program. Without it order statuses do not come back."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "Turn on «Send orders to Frontpad». On the «Order routes» page choose which sources go to Frontpad: the app and the admin by default, Yandex Eda only if it is not connected to Frontpad directly."
+          )}
+          <.link navigate={~p"/staff/integrations/routes"} class="link link-primary">
+            {gettext("Order routes")}
+          </.link>
+        </li>
+        <li>
+          {gettext(
+            "Optional: «Take the stop list from Frontpad» to hide products stopped in Frontpad from the app and Yandex Eda."
+          )}
+        </li>
+        <li>
+          {gettext(
+            "Place a test order in the app: it should appear in Frontpad with the right payment and mark, and its status should change here when changed in Frontpad."
+          )}
+        </li>
+      </ol>
+    </details>
     """
   end
 

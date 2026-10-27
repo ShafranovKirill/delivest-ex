@@ -2,7 +2,7 @@ defmodule Delivest.Integrations.Frontpad.Settings do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Delivest.Integrations.Frontpad.StatusCodes
+  alias Delivest.Integrations.Frontpad.{PaymentCodes, StatusCodes, TagCodes}
 
   @type t :: %__MODULE__{}
 
@@ -14,12 +14,16 @@ defmodule Delivest.Integrations.Frontpad.Settings do
     field :price_override, :boolean, default: false
     field :sync_stops, :boolean, default: false
     embeds_one :statuses, StatusCodes, on_replace: :update
+    embeds_one :payments, PaymentCodes, on_replace: :update
+    embeds_one :tags, TagCodes, on_replace: :update
   end
 
   def changeset(settings, attrs, required? \\ false) do
     settings
     |> cast(attrs, [:api_key, :affiliate, :price_override, :sync_stops])
     |> cast_embed(:statuses)
+    |> cast_embed(:payments)
+    |> cast_embed(:tags)
     |> put_webhook_token()
     |> then(&if(required?, do: validate_required(&1, [:api_key]), else: &1))
   end

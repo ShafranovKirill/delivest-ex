@@ -3,6 +3,8 @@ defmodule Delivest.Integrations.Frontpad.StatusCodes do
   import Ecto.Changeset
 
   @statuses [:accepted, :preparing, :ready, :delivering, :completed, :cancelled]
+  @hook_priority [:cancelled, :completed, :delivering, :ready, :preparing, :accepted]
+  @hook_limit 5
 
   @type t :: %__MODULE__{}
 
@@ -18,10 +20,13 @@ defmodule Delivest.Integrations.Frontpad.StatusCodes do
   def codes(nil), do: []
 
   def codes(%__MODULE__{} = codes) do
-    @statuses
+    @hook_priority
     |> Enum.map(&Map.get(codes, &1))
     |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.take(@hook_limit)
   end
+
+  def hook_limit, do: @hook_limit
 
   def status_for(nil, _code), do: nil
 
