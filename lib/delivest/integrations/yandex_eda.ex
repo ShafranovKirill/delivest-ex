@@ -8,6 +8,7 @@ defmodule Delivest.Integrations.YandexEda do
     BranchSettings,
     Menu,
     MenuReloadWorker,
+    OrderConfirmation,
     OrderEvents,
     OrderIntake,
     OrderLookup,
@@ -151,6 +152,17 @@ defmodule Delivest.Integrations.YandexEda do
   def update_courier(order_id, params) do
     with {:ok, order} <- OrderLookup.fetch(order_id), do: OrderEvents.courier(order, params)
   end
+
+  def overdue_orders(branch_id), do: OrderConfirmation.overdue(branch_id)
+
+  def keep_unconfirmed(staff, branch_id, order_id),
+    do: OrderConfirmation.keep(staff, branch_id, order_id)
+
+  def confirm_unconfirmed(staff, branch_id, order_id),
+    do: OrderConfirmation.accept(staff, branch_id, order_id)
+
+  def cancel_unconfirmed(staff, branch_id, order_id),
+    do: OrderConfirmation.cancel(staff, branch_id, order_id)
 
   def base_url, do: DelivestWeb.Endpoint.url() <> "/integrations/yandex-eda"
 

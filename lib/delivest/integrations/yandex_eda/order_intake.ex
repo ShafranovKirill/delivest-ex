@@ -2,6 +2,7 @@ defmodule Delivest.Integrations.YandexEda.OrderIntake do
   alias Delivest.Integrations.YandexEda.{
     Menu,
     OrderAttrs,
+    OrderConfirmation,
     OrderLookup,
     OrderRequest,
     Places,
@@ -24,8 +25,9 @@ defmodule Delivest.Integrations.YandexEda.OrderIntake do
          {:ok, cart} <- fill_cart(branch.id, request.items) do
       request
       |> OrderAttrs.build(cart, branch, settings)
-      |> Oms.create_order(OrderAttrs.opts(request, settings))
+      |> Oms.create_order(OrderAttrs.opts(request, branch, settings))
       |> settle(request)
+      |> tap(&watch_deadline/1)
     end
   end
 
@@ -49,6 +51,9 @@ defmodule Delivest.Integrations.YandexEda.OrderIntake do
         else: {:error, {:unavailable, items}}
     end
   end
+
+  defp watch_deadline({:ok, %Order{status: :created} = order}), do: OrderConfirmation.watch(order)
+  defp watch_deadline(_result), do: :ok
 
   defp settle({:ok, order}, _request), do: {:ok, order}
 

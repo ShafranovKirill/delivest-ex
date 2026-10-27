@@ -1,5 +1,6 @@
 defmodule Delivest.Integrations.YandexEda.OrderAttrs do
   alias Delivest.Integrations.YandexEda.{
+    AcceptDeadline,
     BranchSettings,
     Clock,
     OrderAddress,
@@ -21,10 +22,10 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
     }
   end
 
-  def opts(%OrderRequest{} = request, %BranchSettings{} = settings) do
+  def opts(%OrderRequest{} = request, branch, %BranchSettings{} = settings) do
     [
       source: "yandex_eda",
-      channel: channel(request, settings),
+      channel: channel(request, branch, settings),
       pricing: OrderPricing.fixed(request),
       paid_online: request.paid
     ]
@@ -44,7 +45,7 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
 
   defp cook_by(%OrderRequest{target_at: at}, _info), do: Clock.local(at)
 
-  defp channel(request, settings) do
+  defp channel(request, branch, settings) do
     %{
       provider: "yandex_eda",
       external_id: request.eats_id,
@@ -56,15 +57,15 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
           "client_name" => request.client_name,
           "phone" => request.phone,
           "delivery_fee" => request.delivery_fee,
-          "accept_by" => accept_by(settings),
+          "accept_by" => accept_by(settings, branch.info),
           "request" => request.raw
         }
         |> Map.reject(fn {_key, value} -> is_nil(value) end)
     }
   end
 
-  defp accept_by(%BranchSettings{accept_mode: :manual, accept_minutes: minutes}),
-    do: DateTime.utc_now(:second) |> DateTime.add(minutes, :minute) |> DateTime.to_iso8601()
+  defp accept_by(%BranchSettings{accept_mode: :manual, accept_minutes: minutes}, info),
+    do: (info && info.working_hours) |> AcceptDeadline.at(minutes) |> DateTime.to_iso8601()
 
-  defp accept_by(_settings), do: nil
+  defp accept_by(_settings, _info), do: nil
 end

@@ -5,6 +5,8 @@
     new_orders_count={assigns[:new_orders_count] || 0}
   />
 
+  <DelivestWeb.OverdueOrdersAlert.overdue_orders_alert orders={assigns[:overdue_orders] || []} />
+
   <DelivestWeb.StaffSidebar.staff_sidebar
     current_staff={@current_staff}
     current_page={assigns[:current_page]}

@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   alias Delivest.Identity
   alias Delivest.Integrations.{Channels, Crm}
+  alias Delivest.Integrations.YandexEda.OrderConfirmation
   alias Delivest.Oms.OrderStatus
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
@@ -344,14 +345,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp channel_detail(%{channel: %{details: details}}, key) when is_map(details), do: details[key]
   defp channel_detail(_order, _key), do: nil
 
-  defp accept_by(order) do
-    with value when is_binary(value) <- channel_detail(order, "accept_by"),
-         {:ok, datetime, _offset} <- DateTime.from_iso8601(value) do
-      datetime
-    else
-      _ -> nil
-    end
-  end
+  defp accept_by(order), do: OrderConfirmation.accept_by(order)
 
   defp courier_info(%{"courier" => %{"name" => name} = courier}) when is_binary(name),
     do: courier

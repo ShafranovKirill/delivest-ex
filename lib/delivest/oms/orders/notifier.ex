@@ -40,6 +40,14 @@ defmodule Delivest.Oms.Orders.Notifier do
 
   def publish(error, _event), do: error
 
+  def branch_changed(branch_id),
+    do:
+      Phoenix.PubSub.broadcast(
+        Delivest.PubSub,
+        branch_topic(branch_id),
+        {:branch_orders_changed, branch_id}
+      )
+
   defp events_topic(branch_id), do: "orders:events:#{branch_id}"
 
   defp branch_topic(branch_id), do: "orders:branch:#{branch_id}"
