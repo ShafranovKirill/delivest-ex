@@ -93,9 +93,20 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         >
           {source_label(@order.source)}
         </span>
+        <span
+          :if={@status == :created and accept_by(@order)}
+          id={"order-accept-by-#{@order.id}"}
+          class={[
+            "badge badge-sm",
+            if(overdue?(accept_by(@order)), do: "badge-error", else: "badge-warning")
+          ]}
+        >
+          <.icon name="hero-clock" class="size-3.5" />
+          {gettext("Confirm by %{time}", time: OrderHelpers.local_time(accept_by(@order)))}
+        </span>
         <.status_control order={@order} />
         <form
-          :if={@order.status != :crm}
+          :if={@order.status != :crm and @order.payment_method != :online}
           id={"order-payment-#{@order.id}"}
           phx-change="update_order"
           phx-value-order-id={@order.id}
@@ -151,8 +162,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     assigns =
       assign(assigns,
         phone:
-          (assigns.order.client && assigns.order.client.phone) || assigns.order.customer_phone,
-        name: (assigns.order.client && assigns.order.client.name) || assigns.order.customer_name,
+          (assigns.order.client && assigns.order.client.phone) || assigns.order.customer_phone ||
+            channel_detail(assigns.order, "phone"),
+        name:
+          (assigns.order.client && assigns.order.client.name) || assigns.order.customer_name ||
+            channel_detail(assigns.order, "client_name"),
         linked?: assigns.order.client_id && Identity.can?(assigns.current_staff, "clients.read")
       )
 
@@ -294,6 +308,20 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
        do: code
 
   defp unmapped_crm_code(_order), do: nil
+
+  defp channel_detail(%{channel: %{details: details}}, key) when is_map(details), do: details[key]
+  defp channel_detail(_order, _key), do: nil
+
+  defp accept_by(order) do
+    with value when is_binary(value) <- channel_detail(order, "accept_by"),
+         {:ok, datetime, _offset} <- DateTime.from_iso8601(value) do
+      datetime
+    else
+      _ -> nil
+    end
+  end
+
+  defp overdue?(datetime), do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
 
   defp source_label("staff"), do: gettext("Admin")
   defp source_label(source), do: Channels.name(source)

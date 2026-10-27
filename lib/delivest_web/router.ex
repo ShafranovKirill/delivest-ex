@@ -161,6 +161,39 @@ defmodule DelivestWeb.Router do
     get "/zvonok/:token", ZvonokWebhookController, :create
   end
 
+  pipeline :yandex_eda do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :yandex_eda, limit: 600, period: :timer.minutes(1)
+    plug DelivestWeb.Plugs.YandexEdaJournal
+  end
+
+  pipeline :yandex_eda_auth do
+    plug DelivestWeb.Plugs.YandexEdaAuth
+  end
+
+  scope "/integrations/yandex-eda", DelivestWeb.Integrations.YandexEda do
+    pipe_through :yandex_eda
+
+    post "/security/oauth/token", TokenController, :create
+
+    scope "/" do
+      pipe_through :yandex_eda_auth
+
+      get "/restaurants", RestaurantController, :index
+      get "/restaurants/availability", RestaurantController, :availability
+      get "/places/:restaurant_id/schedule", RestaurantController, :schedule
+      get "/menu/:restaurant_id/composition", MenuController, :composition
+      get "/menu/:restaurant_id/availability", MenuController, :availability
+
+      post "/order", OrderController, :create
+      get "/order/:id", OrderController, :show
+      put "/order/:id", OrderController, :update
+      delete "/order/:id", OrderController, :delete
+      get "/order/:id/status", OrderController, :status
+      put "/order/:id/status", OrderController, :update_status
+      put "/order/:id/courier", OrderController, :courier
+    end
+  end
+
   scope "/staff", DelivestWeb.Staff do
     pipe_through :staff_browser
 
@@ -246,6 +279,7 @@ defmodule DelivestWeb.Router do
         live "/routes", Routes, :index
         live "/zvonok", Zvonok, :index
         live "/dadata", Dadata, :index
+        live "/yandex-eda", YandexEda, :index
       end
 
       scope "/categories", CategoryLive do

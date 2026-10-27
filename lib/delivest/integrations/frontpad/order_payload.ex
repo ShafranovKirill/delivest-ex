@@ -126,10 +126,12 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
 
   defp customer_phone(%{customer_phone: phone}) when is_binary(phone) and phone != "", do: phone
   defp customer_phone(%{client: %{phone: phone}}), do: phone
+  defp customer_phone(%{channel: %{details: %{"phone" => phone}}}), do: phone
   defp customer_phone(_), do: nil
 
   defp customer_name(%{customer_name: name}) when is_binary(name) and name != "", do: name
   defp customer_name(%{client: %{name: name}}), do: name
+  defp customer_name(%{channel: %{details: %{"client_name" => name}}}), do: name
   defp customer_name(_), do: nil
 
   defp extract_secret(%Settings{api_key: secret}) when is_binary(secret) and secret != "",
@@ -187,6 +189,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
 
   defp map_payment_method(:cash), do: "1"
   defp map_payment_method(:card_offline), do: "2"
+  defp map_payment_method(:online), do: "2"
   defp map_payment_method(_), do: "1"
 
   defp format_cook_by(%NaiveDateTime{} = cook_by),

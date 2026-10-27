@@ -145,6 +145,12 @@ defmodule Delivest.Oms.Orders do
     |> persist([:order, :updated])
   end
 
+  def update_order_channel(%Order{} = order, attrs) do
+    order
+    |> Order.channel_changeset(attrs)
+    |> persist([:order, :updated])
+  end
+
   def soft_delete_order(%Order{} = order, actor \\ :system) do
     order
     |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})

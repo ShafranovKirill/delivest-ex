@@ -36,6 +36,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
 
   def payment_label("cash"), do: gettext("Cash")
   def payment_label("card_offline"), do: gettext("Card Offline")
+  def payment_label("online"), do: gettext("Paid online")
   def payment_label(_), do: "—"
 
   def format_address(%Delivest.Oms.Order.Address{} = addr) do

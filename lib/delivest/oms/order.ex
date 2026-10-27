@@ -21,6 +21,7 @@ defmodule Delivest.Oms.Order do
     :cancelled
   ]
   @payment_methods [:cash, :card_offline]
+  @channel_payment_methods [:online]
   @cancel_reasons [:customer_refused, :out_of_stock, :unreachable, :other, :not_confirmed]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -49,7 +50,10 @@ defmodule Delivest.Oms.Order do
 
     field :status, Ecto.Enum, values: @statuses, default: :created
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
-    field :payment_method, Ecto.Enum, values: @payment_methods, default: :cash
+
+    field :payment_method, Ecto.Enum,
+      values: @payment_methods ++ @channel_payment_methods,
+      default: :cash
 
     embeds_one :crm, CrmSync, on_replace: :update
     field :source, :string, default: "app"
@@ -135,6 +139,8 @@ defmodule Delivest.Oms.Order do
     |> cast_embed(:channel, required: true)
     |> unique_constraint(:channel, name: :orders_channel_external_id_index)
   end
+
+  def paid_online_changeset(changeset), do: put_change(changeset, :payment_method, :online)
 
   def crm_changeset(order, attrs) do
     order

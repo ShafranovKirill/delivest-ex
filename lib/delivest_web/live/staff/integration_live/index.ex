@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.Identity
-  alias Delivest.Integrations.{Crm, Dadata, Zvonok}
+  alias Delivest.Integrations.{Crm, Dadata, YandexEda, Zvonok}
   alias Delivest.Integrations.Crm.BranchSettings
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
@@ -13,6 +13,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
      assign(socket,
        page_title: gettext("Integrations"),
        crm: Crm.get_branch_settings(socket.assigns.current_branch.id),
+       yandex_eda: YandexEda.get_branch_settings(socket.assigns.current_branch.id),
        zvonok_configured: Zvonok.configured?(),
        dadata_active: Dadata.active?(),
        can_edit_shared: Identity.can?(socket.assigns.current_staff, "admin")
@@ -81,6 +82,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={~p"/staff/integrations/routes"}
           />
           <.integration_card
+            id="integration-yandex-eda"
+            title={gettext("Yandex Eda")}
+            description={gettext("Orders from Yandex Eda and Delivery Club.")}
+            status={if @yandex_eda.enabled, do: :receiving, else: :off}
+            path={~p"/staff/integrations/yandex-eda"}
+          />
+          <.integration_card
             :for={{provider, name} <- Crm.providers()}
             id={"integration-#{provider}"}
             title={name}
@@ -141,6 +149,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   defp status_badge(%{status: :active} = assigns),
     do: ~H"""
     <span class="badge badge-success">{gettext("Orders go to CRM")}</span>
+    """
+
+  defp status_badge(%{status: :receiving} = assigns),
+    do: ~H"""
+    <span class="badge badge-success">{gettext("Takes orders")}</span>
     """
 
   defp status_badge(%{status: :configured} = assigns),

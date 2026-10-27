@@ -5,6 +5,7 @@ defmodule Delivest.Net.Product do
 
   @type t :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: true}
+  @measure_units [:g, :ml]
 
   @derive {
     Flop.Schema,
@@ -25,6 +26,7 @@ defmodule Delivest.Net.Product do
     field :description, :string
     field :quantity, :integer
     field :weight, :integer
+    field :measure_unit, Ecto.Enum, values: @measure_units, default: :g
     field :is_active, :boolean, default: true
     field :tags, {:array, :string}, default: []
     field :suggested, :boolean, default: false
@@ -39,6 +41,8 @@ defmodule Delivest.Net.Product do
     timestamps(type: :utc_datetime)
   end
 
+  def measure_units, do: @measure_units
+
   def changeset(product, attrs) do
     product
     |> cast(attrs, [
@@ -48,6 +52,7 @@ defmodule Delivest.Net.Product do
       :description,
       :quantity,
       :weight,
+      :measure_unit,
       :media_id,
       :is_active,
       :crm_ids,

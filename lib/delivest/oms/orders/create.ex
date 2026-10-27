@@ -21,11 +21,12 @@ defmodule Delivest.Oms.Orders.Create do
     attrs = Attrs.normalize(attrs)
     after_insert = Keyword.get(opts, :after_insert, & &1)
     client_opts = [update_existing: Keyword.get(opts, :update_client, true)]
+    pricing = Keyword.get(opts, :pricing, &Pricing.run/3)
 
     Multi.new()
     |> Multi.run(:client_id, fn _, _ -> ClientResolver.resolve(attrs, client_opts) end)
     |> Multi.run(:cart, fn _, _ -> CartGuard.acquire(attrs["cart_id"], attrs["branch_id"]) end)
-    |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> Pricing.run(cart, attrs, id) end)
+    |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> pricing.(cart, attrs, id) end)
     |> Multi.run(:stops, fn _, %{pricing: pricing, cart: cart} ->
       StopGuard.check(cart.branch_id, pricing)
     end)
@@ -59,6 +60,7 @@ defmodule Delivest.Oms.Orders.Create do
     |> Order.source_changeset(Keyword.get(opts, :source, "app"))
     |> then(&if(opts[:channel], do: Order.channel_changeset(&1, opts[:channel]), else: &1))
     |> then(&if(opts[:crm], do: Order.crm_changeset(&1, opts[:crm]), else: &1))
+    |> then(&if(opts[:paid_online], do: Order.paid_online_changeset(&1), else: &1))
   end
 
   defp own_attrs(attrs, %{number: number, cart: cart}) do

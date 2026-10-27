@@ -5,6 +5,7 @@ defmodule Delivest.Oms.OrderScopes do
     dynamic(
       [o],
       o.status == :cancelled or
+        fragment("coalesce(?->>'remote_status', '') = 'cancelled'", o.channel) or
         (o.status == :crm and
            fragment("coalesce(?->>'remote_status', '') = 'cancelled'", o.crm))
     )

@@ -534,7 +534,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         <:col :let={{_id, prod}} label={gettext("Weight")} secondary>
           <span class="font-mono">
             <%= if prod.weight do %>
-              {prod.weight} {gettext("g")}
+              {prod.weight} {if prod.measure_unit == :ml, do: gettext("ml"), else: gettext("g")}
             <% else %>
               —
             <% end %>

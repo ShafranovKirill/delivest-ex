@@ -198,6 +198,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :description,
       :quantity,
       :weight,
+      :measure_unit,
       :is_active,
       :crm_ids,
       :category_id,
@@ -290,7 +291,15 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input field={@form[:quantity]} type="number" label={gettext("Quantity")} />
 
-            <.input field={@form[:weight]} type="number" label={gettext("Weight")} />
+            <div class="grid grid-cols-[1fr_6rem] gap-2">
+              <.input field={@form[:weight]} type="number" label={gettext("Weight")} />
+              <.input
+                field={@form[:measure_unit]}
+                type="select"
+                label={gettext("Unit")}
+                options={[{gettext("g"), "g"}, {gettext("ml"), "ml"}]}
+              />
+            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

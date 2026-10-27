@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.Channels.Registry do
-  @modules []
+  @modules [Delivest.Integrations.YandexEda]
 
   def modules, do: @modules
 
