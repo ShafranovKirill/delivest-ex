@@ -5,6 +5,7 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
   import Delivest.Factory
   import Delivest.YandexEdaFixtures
 
+  alias Delivest.Integrations.YandexEda
   alias Delivest.Integrations.YandexEda.{MenuReloadWorker, Settings}
   alias Delivest.Net.Stops
 
@@ -29,6 +30,48 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
     stop(branch)
 
     refute_enqueued(worker: MenuReloadWorker)
+  end
+
+  test "a product change asks yandex to reload the menu of the branch" do
+    branch = yandex_branch()
+    product = menu_product(branch, menu_category(branch))
+    staff = insert(:staff, role: build(:role, permissions: ["products.update"]))
+
+    {:ok, _} = Delivest.Net.update_product(staff, product, %{"name" => "Новый борщ"})
+
+    assert_enqueued(
+      worker: MenuReloadWorker,
+      args: %{"branch_id" => branch.id, "operation" => "menu"}
+    )
+  end
+
+  test "a channel price change reloads the menu of every enabled branch" do
+    first = yandex_branch()
+    second = yandex_branch()
+    off = yandex_branch(enabled: false)
+    product = menu_product(first, menu_category(first))
+    staff = insert(:staff, role: build(:role, permissions: ["products.update"]))
+
+    {:ok, _} = YandexEda.update_product(staff, product.id, %{"price" => "500"})
+
+    for branch <- [first, second],
+        do: assert_enqueued(worker: MenuReloadWorker, args: %{"branch_id" => branch.id})
+
+    refute_enqueued(worker: MenuReloadWorker, args: %{"branch_id" => off.id})
+  end
+
+  test "new branch settings reload the menu" do
+    branch = yandex_branch()
+    admin = insert(:staff, role: build(:role, permissions: ["branches.update"]))
+    insert(:staff_branch, staff: admin, branch: branch)
+
+    assert {:ok, %{markup_percent: 20}} =
+             YandexEda.update_branch_settings(admin, branch.id, %{"markup_percent" => "20"})
+
+    assert_enqueued(
+      worker: MenuReloadWorker,
+      args: %{"branch_id" => branch.id, "operation" => "menu"}
+    )
   end
 
   test "the worker posts the reload with a push token" do

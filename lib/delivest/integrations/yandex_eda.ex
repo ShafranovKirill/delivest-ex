@@ -20,6 +20,8 @@ defmodule Delivest.Integrations.YandexEda do
     Token
   }
 
+  @menu_delay 10
+
   @impl true
   def key, do: :yandex_eda
 
@@ -36,6 +38,9 @@ defmodule Delivest.Integrations.YandexEda do
   @impl true
   def stops_changed(branch_id), do: reload_menu(branch_id, "menu_stop_list")
 
+  @impl true
+  def menu_changed(branch_id), do: reload_menu(branch_id, "menu", schedule_in: @menu_delay)
+
   def get_branch_settings(branch_id) do
     case Identity.get_branch(branch_id, preload: [:info]) do
       {:ok, branch} -> Places.settings(branch) || %BranchSettings{}
@@ -50,6 +55,7 @@ defmodule Delivest.Integrations.YandexEda do
     with {:ok, branch} <- Identity.get_branch(branch_id, preload: [:info]),
          {:ok, branch} <-
            Identity.update_branch(staff, branch, %{}, %{"channels" => %{"yandex_eda" => attrs}}) do
+      menu_changed(branch.id)
       {:ok, Places.settings(branch)}
     else
       {:error, :info, changeset} -> {:error, nested_changeset(changeset)}
@@ -69,8 +75,12 @@ defmodule Delivest.Integrations.YandexEda do
          do: {:ok, Menu.catalog(branch, get_branch_settings(branch_id))}
   end
 
-  def update_product(staff, product_id, attrs),
-    do: Products.update(staff, key(), product_id, attrs)
+  def update_product(staff, product_id, attrs) do
+    with {:ok, channel_product} <- Products.update(staff, key(), product_id, attrs) do
+      Enum.each(Places.list(), &menu_changed(&1.id))
+      {:ok, channel_product}
+    end
+  end
 
   def get_settings, do: Repo.one(Settings) || %Settings{}
 
@@ -144,11 +154,11 @@ defmodule Delivest.Integrations.YandexEda do
 
   def base_url, do: DelivestWeb.Endpoint.url() <> "/integrations/yandex-eda"
 
-  defp reload_menu(branch_id, operation) do
+  defp reload_menu(branch_id, operation, opts \\ []) do
     if get_branch_settings(branch_id).enabled,
       do:
         %{"branch_id" => branch_id, "operation" => operation}
-        |> MenuReloadWorker.new()
+        |> MenuReloadWorker.new(opts)
         |> Oban.insert()
 
     :ok

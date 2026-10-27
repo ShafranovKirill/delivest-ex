@@ -5,6 +5,8 @@ defmodule Delivest.Integrations.Channels do
 
   def stops_changed(branch_id), do: Enum.each(Registry.modules(), & &1.stops_changed(branch_id))
 
+  def menu_changed(branch_id), do: Enum.each(Registry.modules(), & &1.menu_changed(branch_id))
+
   def name("app"), do: "app"
   def name("staff"), do: "staff"
 

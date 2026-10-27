@@ -5,6 +5,7 @@ defmodule Delivest.Net.Products do
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Audit
+  alias Delivest.Integrations.Channels
   alias Delivest.Relations.EntityRelation
 
   def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
@@ -404,6 +405,7 @@ defmodule Delivest.Net.Products do
   end
 
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
+    Channels.menu_changed(branch_id)
     Cachex.del(:menu_cache, branch_id)
     Cachex.del(:stock_cache, branch_id)
     Cachex.del(:promo_cache, branch_id)

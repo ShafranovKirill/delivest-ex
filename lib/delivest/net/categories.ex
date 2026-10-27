@@ -6,6 +6,7 @@ defmodule Delivest.Net.Categories do
   alias Delivest.Net.Category
   alias Delivest.Identity.Staff
   alias Delivest.Audit
+  alias Delivest.Integrations.Channels
 
   @spec list_category_for_branch(binary(), keyword()) :: [Category.t()]
   def list_category_for_branch(branch_id, _opts \\ []) do
@@ -229,6 +230,7 @@ defmodule Delivest.Net.Categories do
   end
 
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
+    Channels.menu_changed(branch_id)
     Cachex.del(:menu_cache, branch_id)
   end
 
