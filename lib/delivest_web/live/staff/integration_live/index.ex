@@ -74,6 +74,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <.integration_card
+            id="integration-routes"
+            title={gettext("Order routes")}
+            description={gettext("Which orders go further to the CRM.")}
+            status={if BranchSettings.active_provider(@crm), do: :active, else: :off}
+            path={~p"/staff/integrations/routes"}
+          />
+          <.integration_card
             :for={{provider, name} <- Crm.providers()}
             id={"integration-#{provider}"}
             title={name}

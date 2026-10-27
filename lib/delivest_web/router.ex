@@ -243,6 +243,7 @@ defmodule DelivestWeb.Router do
       scope "/integrations", IntegrationLive do
         live "/", Index, :index
         live "/frontpad", Frontpad, :index
+        live "/routes", Routes, :index
         live "/zvonok", Zvonok, :index
         live "/dadata", Dadata, :index
       end
