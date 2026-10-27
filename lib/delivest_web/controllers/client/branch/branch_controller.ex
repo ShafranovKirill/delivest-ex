@@ -25,7 +25,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
 
   def index(conn, _params) do
     try do
-      branches = Identity.list_branches()
+      branches = Identity.list_branches(preload: [:info])
       render(conn, :index, branches: branches)
     rescue
       _ ->
