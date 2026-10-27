@@ -20,11 +20,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   end
 
   defp provider_status(crm, provider) do
-    settings = Map.get(crm, provider)
-
     cond do
       BranchSettings.active_provider(crm) == provider -> :active
-      settings && settings.api_key not in [nil, ""] -> :configured
+      Crm.configured?(crm, provider) -> :configured
       true -> :off
     end
   end

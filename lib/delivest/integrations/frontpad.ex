@@ -8,7 +8,17 @@ defmodule Delivest.Integrations.Frontpad do
   @snooze %{"requests_limit" => 60, "cash_close" => 600}
 
   @impl true
+  def key, do: :frontpad
+
+  @impl true
   def name, do: "Frontpad"
+
+  @impl true
+  def settings_schema, do: Delivest.Integrations.Frontpad.Settings
+
+  @impl true
+  def configured?(%{api_key: api_key}), do: api_key not in [nil, ""]
+  def configured?(_settings), do: false
 
   def webhook_url(token), do: DelivestWeb.Endpoint.url() <> "/integrations/frontpad/" <> token
 

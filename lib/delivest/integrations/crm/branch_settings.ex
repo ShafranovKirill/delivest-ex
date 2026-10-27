@@ -2,15 +2,18 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Delivest.Integrations.Frontpad
+  alias Delivest.Integrations.Crm.Registry
 
-  @providers [:frontpad]
+  @providers Registry.keys()
 
   @primary_key false
   embedded_schema do
     field :enabled, :boolean, default: false
     field :provider, Ecto.Enum, values: @providers
-    embeds_one :frontpad, Frontpad.Settings, on_replace: :update
+
+    for module <- Registry.modules() do
+      embeds_one module.key(), module.settings_schema(), on_replace: :update
+    end
   end
 
   def providers, do: @providers
@@ -18,15 +21,19 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
   def changeset(settings, attrs) do
     changeset = cast(settings, attrs, [:enabled, :provider])
 
-    changeset
-    |> cast_embed(:frontpad,
-      with: &Frontpad.Settings.changeset(&1, &2, active?(changeset, :frontpad))
-    )
+    Registry.modules()
+    |> Enum.reduce(changeset, &cast_provider(&2, &1, active?(changeset, &1.key())))
     |> validate_active_provider()
   end
 
   def active_provider(%__MODULE__{enabled: true, provider: provider}), do: provider
   def active_provider(_settings), do: nil
+
+  defp cast_provider(changeset, module, required?) do
+    cast_embed(changeset, module.key(),
+      with: &module.settings_schema().changeset(&1, &2, required?)
+    )
+  end
 
   defp validate_active_provider(changeset) do
     case get_field(changeset, :enabled) && get_field(changeset, :provider) do

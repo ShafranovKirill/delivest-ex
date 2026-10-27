@@ -1,15 +1,33 @@
 defmodule Delivest.Integrations.Crm do
   alias Delivest.Identity
   alias Delivest.Identity.Branch
-  alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker, Throttle}
-  alias Delivest.Integrations.Frontpad
+  alias Delivest.Integrations.Crm.{BranchSettings, Registry, SyncWorker, Throttle}
   alias Delivest.Oms.{Order, Orders}
 
-  @providers %{frontpad: Frontpad}
   @permanent_errors [:branch_not_found, :unknown_provider, :missing_settings]
 
-  def providers,
-    do: Enum.map(BranchSettings.providers(), &{&1, Map.fetch!(@providers, &1).name()})
+  def providers, do: Enum.map(Registry.modules(), &{&1.key(), &1.name()})
+
+  def provider_name(provider) do
+    case Registry.fetch(provider) do
+      {:ok, module} -> module.name()
+      error -> error
+    end
+  end
+
+  def configured?(%BranchSettings{} = crm, provider) do
+    case Registry.fetch(provider) do
+      {:ok, module} -> module.configured?(Map.get(crm, module.key()))
+      _ -> false
+    end
+  end
+
+  def handle_webhook(provider, token, params) do
+    with {:ok, module} <- Registry.fetch(provider),
+         true <- function_exported?(module, :handle_webhook, 2) || {:error, :unknown_provider} do
+      module.handle_webhook(token, params)
+    end
+  end
 
   def active_provider(%Branch{info: %{crm: %BranchSettings{} = settings}}),
     do: BranchSettings.active_provider(settings)
@@ -75,10 +93,7 @@ defmodule Delivest.Integrations.Crm do
   end
 
   def provider_module(provider) do
-    case Enum.find(@providers, fn {name, _module} -> to_string(name) == to_string(provider) end) do
-      {name, module} -> {:ok, name, module}
-      nil -> {:error, :unknown_provider}
-    end
+    with {:ok, module} <- Registry.fetch(provider), do: {:ok, module.key(), module}
   end
 
   defp branch_settings(branch_id, name) do
