@@ -92,6 +92,23 @@ defmodule Delivest.Delivery do
     Quote.run(get_settings(branch_id), list_zones(branch_id), point, subtotal)
   end
 
+  def check(branch_id, point, subtotal) do
+    case quote(branch_id, point, subtotal) do
+      {:ok, quote} ->
+        Map.merge(%{status: :ok}, Map.take(quote, [:price, :min_order, :free_from, :minutes]))
+
+      {:error, {:below_minimum, min_order}} ->
+        {:ok, quote} = quote(branch_id, point, min_order)
+
+        quote
+        |> Map.take([:price, :min_order, :free_from, :minutes])
+        |> Map.put(:status, :below_minimum)
+
+      {:error, reason} ->
+        %{status: reason, price: nil, min_order: nil, free_from: nil, minutes: nil}
+    end
+  end
+
   defp authorize(staff, branch_id) do
     if Identity.can?(staff, "branches.update") and Identity.has_branch_access?(staff, branch_id),
       do: :ok,

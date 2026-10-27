@@ -83,6 +83,12 @@ defmodule DelivestWeb.Router do
     get "/reverse", GeoController, :reverse
   end
 
+  scope "/client/delivery", DelivestWeb.Client.Delivery do
+    pipe_through [:api, :geo_rate_limit]
+
+    get "/quote", DeliveryController, :quote
+  end
+
   scope "/client/franchise", DelivestWeb.Client.Franchise do
     pipe_through :api
 
