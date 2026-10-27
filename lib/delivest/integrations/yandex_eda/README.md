@@ -447,16 +447,12 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 # TODO
 
-Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» в карточке заказа, push стоп-листа (`Channels.stops_changed/1` → `MenuReloadWorker` с `menu_stop_list`), русские переводы. Всё покрыто тестами.
+Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), русские переводы. Всё покрыто тестами.
 
-1. **Push меню**: `operationType: "menu"` при изменении товаров, категорий и `channel_products`.
-2. **Стоп-лист в `availability`** отдаёт все остановленные товары филиала, без фильтра по меню канала. Можно оставить так.
-3. **Ручное подтверждение**: сейчас только бейдж с дедлайном. Нужна тревога (звук или уведомление) по истечении `accept_minutes` и решение, что делать с заказом после таймаута.
-4. **Курьер Яндекса** (`details.courier`) сохраняется, но не показывается в карточке заказа.
-5. **Frontpad**: `:online` отправляется как `pay=2` (карта). Проверить коды оплаты в Frontpad.
-6. **Клиентский API**: отдавать `measure_unit` в меню (`MenuView` и схема OpenAPI) и показывать «мл» в клиенте.
-7. **Корзина**: `CartItem` ограничен 99 штуками, дробное количество округляется вверх.
-8. **Меню**: `nutrients`, `vat`, `excise`, `adult_info` и маркировка не отдаются.
-9. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/feedback`, push `/block` и `/unblock`, `/v1/orders-history`, проверка кода курьера.
-10. **Документация**: обновить раздел «Каналы продаж» в `integrations/README.md`.
-11. **Вопросы к менеджеру Яндекса** — список выше.
+1. **Ручное подтверждение**: сейчас только бейдж с дедлайном. Нужна тревога (звук или уведомление) по истечении `accept_minutes` и решение, что делать с заказом после таймаута.
+2. **Frontpad**: `:online` отправляется как `pay=2` (карта). Проверить коды оплаты в Frontpad.
+3. **Корзина**: `CartItem` ограничен 99 штуками, дробное количество округляется вверх.
+4. **Стоп-лист в `availability`** отдаёт все остановленные товары филиала, без фильтра по меню канала. Можно оставить так.
+5. **Меню**: `nutrients`, `vat`, `excise`, `adult_info` и маркировка не отдаются.
+6. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/feedback`, push `/block` и `/unblock`, `/v1/orders-history`, проверка кода курьера.
+7. **Вопросы к менеджеру Яндекса** — список выше.
