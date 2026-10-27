@@ -139,9 +139,9 @@ msgstr "Персонал"
 #: lib/delivest_web/live/staff/client_live/clients.ex:277
 #: lib/delivest_web/live/staff/client_live/clients.ex:307
 #: lib/delivest_web/live/staff/client_live/show.ex:108
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:326
-#: lib/delivest_web/live/staff/product_live/products.ex:439
-#: lib/delivest_web/live/staff/product_live/products.ex:495
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:336
+#: lib/delivest_web/live/staff/product_live/products.ex:442
+#: lib/delivest_web/live/staff/product_live/products.ex:498
 #: lib/delivest_web/live/staff/promotion_live/promotion_helpers.ex:33
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:240
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:251
@@ -155,13 +155,13 @@ msgstr "Активен"
 msgid "Address"
 msgstr "Адрес"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:431
+#: lib/delivest_web/live/staff/product_live/products.ex:434
 #, elixir-autogen, elixir-format
 msgid "All categories"
 msgstr "Все категории"
 
 #: lib/delivest_web/live/staff/client_live/clients.ex:272
-#: lib/delivest_web/live/staff/product_live/products.ex:438
+#: lib/delivest_web/live/staff/product_live/products.ex:441
 #, elixir-autogen, elixir-format
 msgid "All statuses"
 msgstr "Все статусы"
@@ -176,7 +176,7 @@ msgstr "Вы уверены, что хотите удалить этот фил�
 msgid "Are you sure you want to delete this category?"
 msgstr "Вы уверены, что хотите удалить эту категорию?"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:600
+#: lib/delivest_web/live/staff/product_live/products.ex:603
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this product? This action cannot be easily undone."
 msgstr "Вы уверены, что хотите удалить этот товар? Это действие нельзя будет отменить."
@@ -256,7 +256,7 @@ msgstr "Управление филиалами"
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:137
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:81
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:91
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:330
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:340
 #: lib/delivest_web/live/staff/product_live/tags.ex:258
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:244
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:521
@@ -291,8 +291,8 @@ msgid "Categories Management"
 msgstr "Управление категориями"
 
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:26
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:298
-#: lib/delivest_web/live/staff/product_live/products.ex:465
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:300
+#: lib/delivest_web/live/staff/product_live/products.ex:468
 #: lib/delivest_web/live/staff/statistics_live/index.ex:288
 #: lib/delivest_web/live/staff/statistics_live/index.ex:320
 #, elixir-autogen, elixir-format
@@ -324,7 +324,7 @@ msgstr "Категория успешно сохранена"
 msgid "Category updated successfully"
 msgstr "Категория успешно обновлена"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:255
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:257
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:212
 #, elixir-autogen, elixir-format
 msgid "Change Image"
@@ -361,7 +361,7 @@ msgid "Company"
 msgstr "Компания"
 
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:39
-#: lib/delivest_web/live/staff/product_live/bulk.ex:204
+#: lib/delivest_web/live/staff/product_live/bulk.ex:217
 #, elixir-autogen, elixir-format
 msgid "Could not generate upload URL"
 msgstr "Не удалось сгенерировать URL для загрузки"
@@ -376,7 +376,7 @@ msgstr "Создать филиал"
 msgid "Create Category"
 msgstr "Создать категорию"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:401
+#: lib/delivest_web/live/staff/product_live/products.ex:404
 #, elixir-autogen, elixir-format
 msgid "Create Product"
 msgstr "Создать товар"
@@ -417,7 +417,7 @@ msgid "Create staff"
 msgstr "Создать сотрудника"
 
 #: lib/delivest_web/live/staff/client_live/clients.ex:319
-#: lib/delivest_web/live/staff/product_live/products.ex:527
+#: lib/delivest_web/live/staff/product_live/products.ex:530
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:232
 #, elixir-autogen, elixir-format
 msgid "Created At"
@@ -434,9 +434,9 @@ msgstr "Текущий филиал"
 #: lib/delivest_web/live/staff/category_live/categories.ex:332
 #: lib/delivest_web/live/staff/client_live/clients.ex:381
 #: lib/delivest_web/live/staff/order_live/orders.ex:248
-#: lib/delivest_web/live/staff/product_live/products.ex:370
-#: lib/delivest_web/live/staff/product_live/products.ex:604
-#: lib/delivest_web/live/staff/product_live/products.ex:619
+#: lib/delivest_web/live/staff/product_live/products.ex:373
+#: lib/delivest_web/live/staff/product_live/products.ex:607
+#: lib/delivest_web/live/staff/product_live/products.ex:622
 #: lib/delivest_web/live/staff/product_live/tags.ex:272
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:313
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:357
@@ -459,7 +459,7 @@ msgstr "Удалить филиал"
 msgid "Delete Category"
 msgstr "Удалить категорию"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:598
+#: lib/delivest_web/live/staff/product_live/products.ex:601
 #, elixir-autogen, elixir-format
 msgid "Delete Product"
 msgstr "Удалить товар"
@@ -480,8 +480,8 @@ msgid "Delete failed"
 msgstr "Ошибка удаления"
 
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:28
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:309
-#: lib/delivest_web/live/staff/product_live/products.ex:503
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:319
+#: lib/delivest_web/live/staff/product_live/products.ex:506
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:224
 #, elixir-autogen, elixir-format
 msgid "Description"
@@ -509,7 +509,7 @@ msgstr "Редактировать"
 msgid "Edit category"
 msgstr "Редактировать категорию"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:107
+#: lib/delivest_web/live/staff/product_live/products.ex:108
 #, elixir-autogen, elixir-format
 msgid "Edit product"
 msgstr "Редактировать товар"
@@ -529,7 +529,7 @@ msgstr "Редактировать сотрудника"
 msgid "Enter password"
 msgstr "Введите пароль"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:310
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:320
 #, elixir-autogen, elixir-format
 msgid "Enter product description..."
 msgstr "Введите описание товара..."
@@ -539,13 +539,12 @@ msgstr "Введите описание товара..."
 msgid "Enter to edit"
 msgstr "Введите для редактирования"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:303
-#: lib/delivest_web/live/staff/product_live/products.ex:519
+#: lib/delivest_web/live/staff/product_live/products.ex:522
 #, elixir-autogen, elixir-format
 msgid "External ID"
 msgstr "Внешний ID"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:179
+#: lib/delivest_web/live/staff/product_live/products.ex:182
 #, elixir-autogen, elixir-format
 msgid "Failed to delete product"
 msgstr "Не удалось удалить товар"
@@ -570,25 +569,25 @@ msgstr "Не удалось удалить сотрудника"
 msgid "Failed to reorder category"
 msgstr "Не удалось изменить порядок категорий"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:174
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:176
 #, elixir-autogen, elixir-format
 msgid "Failed to save product:"
 msgstr "Не удалось сохранить товар:"
 
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:93
 #: lib/delivest_web/live/staff/franchise_live/image_uploads.ex:46
-#: lib/delivest_web/live/staff/product_live/bulk.ex:417
+#: lib/delivest_web/live/staff/product_live/bulk.ex:430
 #: lib/delivest_web/live/staff/product_live/tags.ex:281
 #, elixir-autogen, elixir-format
 msgid "File is too large"
 msgstr "Файл слишком большой"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:513
+#: lib/delivest_web/live/staff/product_live/products.ex:516
 #, elixir-autogen, elixir-format
 msgid "Has photo"
 msgstr "С фото"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:265
+#: lib/delivest_web/live/staff/product_live/products.ex:268
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:192
 #, elixir-autogen, elixir-format
 msgid "Image uploaded successfully"
@@ -600,8 +599,8 @@ msgid "Images: JPG, PNG, WEBP (Max 10MB)"
 msgstr "Изображения: JPG, PNG, WEBP (Макс. 10МБ)"
 
 #: lib/delivest_web/live/staff/category_live/categories.ex:321
-#: lib/delivest_web/live/staff/product_live/products.ex:440
-#: lib/delivest_web/live/staff/product_live/products.ex:497
+#: lib/delivest_web/live/staff/product_live/products.ex:443
+#: lib/delivest_web/live/staff/product_live/products.ex:500
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:253
 #, elixir-autogen, elixir-format
 msgid "Inactive"
@@ -628,7 +627,7 @@ msgstr "Список доступных ролей компании"
 msgid "Login"
 msgstr "Логин"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:361
+#: lib/delivest_web/live/staff/product_live/products.ex:364
 #, elixir-autogen, elixir-format
 msgid "Manage branch products, prices, and categories."
 msgstr "Управление товарами филиала, ценами и категориями."
@@ -638,7 +637,7 @@ msgstr "Управление товарами филиала, ценами и к
 msgid "Manage system staff accounts and branches access."
 msgstr "Управление учетными записями сотрудников и доступом к филиалам."
 
-#: lib/delivest_web/live/staff/product_live/products.ex:511
+#: lib/delivest_web/live/staff/product_live/products.ex:514
 #, elixir-autogen, elixir-format
 msgid "Media"
 msgstr "Медиа"
@@ -648,8 +647,8 @@ msgstr "Медиа"
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:62
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:466
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:264
-#: lib/delivest_web/live/staff/product_live/products.ex:461
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:266
+#: lib/delivest_web/live/staff/product_live/products.ex:464
 #: lib/delivest_web/live/staff/product_live/tags.ex:197
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:235
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:292
@@ -670,13 +669,13 @@ msgstr "Филиал не выбран"
 msgid "No description"
 msgstr "Без описания"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:242
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:244
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:199
 #, elixir-autogen, elixir-format
 msgid "No image"
 msgstr "Нет изображения"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:258
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:260
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:215
 #, elixir-autogen, elixir-format
 msgid "PNG, JPG, WEBP up to 5MB"
@@ -695,7 +694,7 @@ msgstr "Страница %{current} из %{total}"
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:27
 #: lib/delivest_web/live/staff/order_live/orders.ex:139
 #: lib/delivest_web/live/staff/order_live/orders.ex:158
-#: lib/delivest_web/live/staff/product_live/bulk.ex:107
+#: lib/delivest_web/live/staff/product_live/bulk.ex:120
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:27
 #, elixir-autogen, elixir-format
 msgid "Permission denied"
@@ -712,7 +711,7 @@ msgstr "Права доступа"
 msgid "Phone Number"
 msgstr "Номер телефона"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:160
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:162
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:131
 #, elixir-autogen, elixir-format
 msgid "Please check the fields below."
@@ -720,38 +719,38 @@ msgstr "Пожалуйста, проверьте поля ниже."
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:467
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:23
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:281
-#: lib/delivest_web/live/staff/product_live/products.ex:469
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:283
+#: lib/delivest_web/live/staff/product_live/products.ex:472
 #, elixir-autogen, elixir-format
 msgid "Price"
 msgstr "Цена"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:233
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:235
 #, elixir-autogen, elixir-format
 msgid "Product Image"
 msgstr "Изображение товара"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:226
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:228
 #, elixir-autogen, elixir-format
 msgid "Product Information"
 msgstr "Информация о товаре"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:230
+#: lib/delivest_web/live/staff/product_live/products.ex:233
 #, elixir-autogen, elixir-format
 msgid "Product created successfully"
 msgstr "Товар успешно создан"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:174
+#: lib/delivest_web/live/staff/product_live/products.ex:177
 #, elixir-autogen, elixir-format
 msgid "Product deleted successfully"
 msgstr "Товар успешно удален"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:232
+#: lib/delivest_web/live/staff/product_live/products.ex:235
 #, elixir-autogen, elixir-format
 msgid "Product saved successfully"
 msgstr "Товар успешно сохранен"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:231
+#: lib/delivest_web/live/staff/product_live/products.ex:234
 #, elixir-autogen, elixir-format
 msgid "Product updated successfully"
 msgstr "Товар успешно обновлен"
@@ -759,7 +758,7 @@ msgstr "Товар успешно обновлен"
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:103
 #: lib/delivest_web/live/staff/log_live/event_text.ex:27
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:21
-#: lib/delivest_web/live/staff/product_live/products.ex:360
+#: lib/delivest_web/live/staff/product_live/products.ex:363
 #: lib/delivest_web/live/staff/product_live/tags.ex:131
 #: lib/delivest_web/live/staff/statistics_live/index.ex:164
 #: lib/delivest_web/live/staff/statistics_live/index.ex:321
@@ -772,8 +771,8 @@ msgstr "Товары"
 msgid "Products list"
 msgstr "Список товаров"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:289
-#: lib/delivest_web/live/staff/product_live/products.ex:473
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:291
+#: lib/delivest_web/live/staff/product_live/products.ex:476
 #, elixir-autogen, elixir-format
 msgid "Quantity"
 msgstr "Количество"
@@ -839,7 +838,7 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:84
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:355
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:92
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:336
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:346
 #: lib/delivest_web/live/staff/product_live/tags.ex:261
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:246
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:527
@@ -858,8 +857,8 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:83
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:354
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:91
-#: lib/delivest_web/live/staff/product_live/bulk.ex:361
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:334
+#: lib/delivest_web/live/staff/product_live/bulk.ex:374
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:344
 #: lib/delivest_web/live/staff/product_live/tags.ex:260
 #: lib/delivest_web/live/staff/promotion_live/issued_codes_component.ex:112
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:245
@@ -871,7 +870,7 @@ msgstr "Сохранить"
 msgid "Saving..."
 msgstr "Сохранение..."
 
-#: lib/delivest_web/live/staff/product_live/products.ex:423
+#: lib/delivest_web/live/staff/product_live/products.ex:426
 #, elixir-autogen, elixir-format
 msgid "Search products..."
 msgstr "Поиск товаров..."
@@ -886,7 +885,7 @@ msgstr "Поиск сотрудников..."
 msgid "Select a branch"
 msgstr "Выберите филиал"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:300
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:302
 #, elixir-autogen, elixir-format
 msgid "Select a category..."
 msgstr "Выберите категорию..."
@@ -901,8 +900,8 @@ msgstr "Выберите роль..."
 msgid "Show"
 msgstr "Показать"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:505
-#: lib/delivest_web/live/staff/product_live/products.ex:521
+#: lib/delivest_web/live/staff/product_live/products.ex:508
+#: lib/delivest_web/live/staff/product_live/products.ex:524
 #, elixir-autogen, elixir-format
 msgid "Specified"
 msgstr "Указано"
@@ -939,7 +938,7 @@ msgstr "Сотрудник успешно обновлен"
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:130
 #: lib/delivest_web/live/staff/client_live/clients.ex:304
-#: lib/delivest_web/live/staff/product_live/products.ex:493
+#: lib/delivest_web/live/staff/product_live/products.ex:496
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr "Статус"
@@ -959,7 +958,7 @@ msgstr "Недопустимый тип файла"
 msgid "Upload Files"
 msgstr "Загрузить файлы"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:255
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:257
 #: lib/delivest_web/live/staff/stock_live/stock_form_component.ex:212
 #, elixir-autogen, elixir-format
 msgid "Upload Image"
@@ -985,8 +984,8 @@ msgstr "Загрузка..."
 msgid "VK Link"
 msgstr "Ссылка на VK"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:291
-#: lib/delivest_web/live/staff/product_live/products.ex:483
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:293
+#: lib/delivest_web/live/staff/product_live/products.ex:486
 #, elixir-autogen, elixir-format
 msgid "Weight"
 msgstr "Вес"
@@ -996,8 +995,8 @@ msgstr "Вес"
 msgid "WhatsApp Link"
 msgstr "Ссылка на WhatsApp"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:42
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:47
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:43
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:48
 #: lib/delivest_web/live/staff/statistics_live/index.ex:330
 #, elixir-autogen, elixir-format
 msgid "Without category"
@@ -1038,8 +1037,8 @@ msgstr "У вас нет прав для создания сотрудников
 msgid "You don't have permission to delete branches."
 msgstr "У вас нет прав для удаления филиалов."
 
-#: lib/delivest_web/live/staff/product_live/products.ex:164
-#: lib/delivest_web/live/staff/product_live/products.ex:214
+#: lib/delivest_web/live/staff/product_live/products.ex:167
+#: lib/delivest_web/live/staff/product_live/products.ex:217
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to delete products."
 msgstr "У вас нет прав для удаления товаров."
@@ -1065,7 +1064,7 @@ msgid "You don't have permission to edit category."
 msgstr "У вас нет прав для редактирования категории."
 
 #: lib/delivest_web/live/staff/category_live/categories.ex:84
-#: lib/delivest_web/live/staff/product_live/products.ex:114
+#: lib/delivest_web/live/staff/product_live/products.ex:117
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to edit products."
 msgstr "У вас нет прав для редактирования товаров."
@@ -1085,7 +1084,7 @@ msgstr "У вас нет прав для редактирования сотру
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:43
 #: lib/delivest_web/live/staff/franchise_live/image_uploads.ex:43
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:39
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:167
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:169
 #: lib/delivest_web/live/staff/product_live/tags.ex:39
 #: lib/delivest_web/live/staff/product_live/tags.ex:95
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:51
@@ -1096,12 +1095,12 @@ msgstr "У вас нет прав для редактирования сотру
 msgid "You don't have permission to perform this action."
 msgstr "У вас нет прав для выполнения этого действия."
 
-#: lib/delivest_web/live/staff/product_live/products.ex:486
+#: lib/delivest_web/live/staff/product_live/products.ex:489
 #, elixir-autogen, elixir-format
 msgid "g"
 msgstr "г"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:476
+#: lib/delivest_web/live/staff/product_live/products.ex:479
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:683
 #, elixir-autogen, elixir-format
 msgid "pcs"
@@ -1950,12 +1949,12 @@ msgstr "Всего потрачено"
 msgid "Tue"
 msgstr "Вт"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:270
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:272
 #, elixir-autogen, elixir-format
 msgid "URL slug"
 msgstr "Адрес в URL (slug)"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:274
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:276
 #, elixir-autogen, elixir-format
 msgid "Used in the product link on the website. Leave empty to generate it from the name."
 msgstr "Используется в ссылке на товар на сайте. Оставьте пустым — сгенерируется из названия."
@@ -2320,7 +2319,7 @@ msgstr "Копировать"
 msgid "Copy products to another branch"
 msgstr "Копирование товаров в другой филиал"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:380
+#: lib/delivest_web/live/staff/product_live/products.ex:383
 #, elixir-autogen, elixir-format
 msgid "Copy to branch"
 msgstr "Копировать в филиал"
@@ -2335,7 +2334,7 @@ msgstr "Копирование..."
 msgid "Photos and categories are copied, CRM IDs are not."
 msgstr "Фото и категории копируются, CRM ID — нет."
 
-#: lib/delivest_web/live/staff/product_live/products.ex:247
+#: lib/delivest_web/live/staff/product_live/products.ex:250
 #, elixir-autogen, elixir-format
 msgid "Products copied: %{count}"
 msgstr "Скопировано товаров: %{count}"
@@ -2345,7 +2344,7 @@ msgstr "Скопировано товаров: %{count}"
 msgid "Products were not copied"
 msgstr "Товары не скопированы"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:457
+#: lib/delivest_web/live/staff/product_live/products.ex:460
 #, elixir-autogen, elixir-format
 msgid "Select %{name}"
 msgstr "Выбрать %{name}"
@@ -2697,7 +2696,7 @@ msgstr "Скидка"
 msgid "Discounts & promo codes"
 msgstr "Скидки и промокоды"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:284
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:286
 #, elixir-autogen, elixir-format
 msgid "Discounts are set in «Discounts & promo codes» by the product URL slug."
 msgstr "Скидки задаются в разделе «Скидки и промокоды» по URL-слагу товара."
@@ -3543,28 +3542,28 @@ msgstr "Показать события сотрудника"
 msgid "Status changed in CRM"
 msgstr "Смена статуса в CRM"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:345
+#: lib/delivest_web/live/staff/product_live/bulk.ex:358
 #, elixir-autogen, elixir-format
 msgid "+10 rows"
 msgstr "+10 строк"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:342
+#: lib/delivest_web/live/staff/product_live/bulk.ex:355
 #, elixir-autogen, elixir-format
 msgid "Add row"
 msgstr "Добавить строку"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:265
+#: lib/delivest_web/live/staff/product_live/bulk.ex:278
 #, elixir-autogen, elixir-format
 msgid "Back to products"
 msgstr "К товарам"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:392
+#: lib/delivest_web/live/staff/product_live/products.ex:395
 #, elixir-autogen, elixir-format
 msgid "Bulk add"
 msgstr "Добавить таблицей"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:16
-#: lib/delivest_web/live/staff/product_live/bulk.ex:256
+#: lib/delivest_web/live/staff/product_live/bulk.ex:17
+#: lib/delivest_web/live/staff/product_live/bulk.ex:269
 #, elixir-autogen, elixir-format
 msgid "Bulk add products"
 msgstr "Добавление товаров таблицей"
@@ -3574,22 +3573,22 @@ msgstr "Добавление товаров таблицей"
 msgid "CRM ID"
 msgstr "ID в CRM"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:110
+#: lib/delivest_web/live/staff/product_live/bulk.ex:123
 #, elixir-autogen, elixir-format
 msgid "Failed to add products"
 msgstr "Не удалось добавить товары"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:268
+#: lib/delivest_web/live/staff/product_live/products.ex:271
 #, elixir-autogen, elixir-format
 msgid "Failed to upload image"
 msgstr "Не удалось загрузить изображение"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:78
+#: lib/delivest_web/live/staff/product_live/bulk.ex:79
 #, elixir-autogen, elixir-format
 msgid "Fill in at least one product"
 msgstr "Заполните хотя бы один товар"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:81
+#: lib/delivest_web/live/staff/product_live/bulk.ex:82
 #, elixir-autogen, elixir-format
 msgid "Fix the highlighted cells"
 msgstr "Исправьте выделенные ячейки"
@@ -3604,12 +3603,12 @@ msgstr "Не число"
 msgid "Not a price"
 msgstr "Не похоже на цену"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:258
+#: lib/delivest_web/live/staff/product_live/bulk.ex:271
 #, elixir-autogen, elixir-format
 msgid "Paste a table from Excel or Google Sheets into any cell (Ctrl+V) or fill it in by hand. Add a photo with the button in the last column."
 msgstr "Вставьте таблицу из Excel или Google Таблиц в любую ячейку (Ctrl+V) или заполните вручную. Фото добавляется кнопкой в последнем столбце."
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:289
+#: lib/delivest_web/live/staff/product_live/bulk.ex:302
 #, elixir-autogen, elixir-format
 msgid "Photo"
 msgstr "Фото"
@@ -3619,22 +3618,22 @@ msgstr "Фото"
 msgid "Pieces"
 msgstr "Кол-во, шт"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:103
+#: lib/delivest_web/live/staff/product_live/bulk.ex:116
 #, elixir-autogen, elixir-format
 msgid "Products added: %{count}"
 msgstr "Добавлено товаров: %{count}"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:359
+#: lib/delivest_web/live/staff/product_live/bulk.ex:372
 #, elixir-autogen, elixir-format
 msgid "Products to add: %{count}"
 msgstr "Товаров к добавлению: %{count}"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:393
+#: lib/delivest_web/live/staff/product_live/bulk.ex:406
 #, elixir-autogen, elixir-format
 msgid "Remove photo"
 msgstr "Удалить фото"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:325
+#: lib/delivest_web/live/staff/product_live/bulk.ex:338
 #, elixir-autogen, elixir-format
 msgid "Remove row"
 msgstr "Удалить строку"
@@ -3644,36 +3643,36 @@ msgstr "Удалить строку"
 msgid "Required"
 msgstr "Обязательно"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:241
+#: lib/delivest_web/live/staff/product_live/bulk.ex:254
 #, elixir-autogen, elixir-format
 msgid "Row %{index}"
 msgstr "Строка %{index}"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:362
+#: lib/delivest_web/live/staff/product_live/bulk.ex:375
 #, elixir-autogen, elixir-format
 msgid "Save all"
 msgstr "Сохранить все"
 
 #: lib/delivest_web/live/staff/franchise_live/image_uploads.ex:47
-#: lib/delivest_web/live/staff/product_live/bulk.ex:418
+#: lib/delivest_web/live/staff/product_live/bulk.ex:431
 #: lib/delivest_web/live/staff/product_live/tags.ex:282
 #, elixir-autogen, elixir-format
 msgid "Unsupported file type"
 msgstr "Неподдерживаемый формат"
 
 #: lib/delivest_web/live/staff/franchise_live/image_uploads.ex:48
-#: lib/delivest_web/live/staff/product_live/bulk.ex:419
+#: lib/delivest_web/live/staff/product_live/bulk.ex:432
 #: lib/delivest_web/live/staff/product_live/tags.ex:283
 #, elixir-autogen, elixir-format
 msgid "Upload failed"
 msgstr "Ошибка загрузки"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:409
+#: lib/delivest_web/live/staff/product_live/bulk.ex:422
 #, elixir-autogen, elixir-format
 msgid "Upload photo"
 msgstr "Загрузить фото"
 
-#: lib/delivest_web/live/staff/product_live/bulk.ex:84
+#: lib/delivest_web/live/staff/product_live/bulk.ex:85
 #, elixir-autogen, elixir-format
 msgid "Wait until the photos finish uploading"
 msgstr "Дождитесь окончания загрузки фото"
@@ -4151,17 +4150,17 @@ msgstr "Токен вебхука"
 msgid "Paste this URL as a whole into the postback of the zvonok.com campaign. {ct_call_id} and {ct_phone} are Zvonok macros, it fills them in by itself."
 msgstr "Вставьте этот адрес целиком в постбэк кампании на zvonok.com. {ct_call_id} и {ct_phone} — макросы Zvonok, он подставит их сам."
 
-#: lib/delivest_web/live/staff/product_live/products.ex:615
+#: lib/delivest_web/live/staff/product_live/products.ex:618
 #, elixir-autogen, elixir-format
 msgid "Delete %{count} selected products? This action cannot be easily undone."
 msgstr "Удалить выбранные товары (%{count})? Это действие сложно отменить."
 
-#: lib/delivest_web/live/staff/product_live/products.ex:613
+#: lib/delivest_web/live/staff/product_live/products.ex:616
 #, elixir-autogen, elixir-format
 msgid "Delete selected products"
 msgstr "Удалить выбранные товары"
 
-#: lib/delivest_web/live/staff/product_live/products.ex:208
+#: lib/delivest_web/live/staff/product_live/products.ex:211
 #, elixir-autogen, elixir-format
 msgid "Products deleted: %{count}"
 msgstr "Удалено товаров: %{count}"
@@ -4329,12 +4328,12 @@ msgstr "Логотип должен быть не ниже %{height} px"
 msgid "Transparent PNG, from %{height} px high, wide logos fit best"
 msgstr "PNG с прозрачным фоном, высотой от %{height} px, лучше всего горизонтальный"
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:322
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:332
 #, elixir-autogen, elixir-format
 msgid "Offered in the «Add to your order» block when it is not in the cart yet."
 msgstr "Показывается в блоке «Добавить к заказу», если его ещё нет в корзине."
 
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:319
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:329
 #, elixir-autogen, elixir-format
 msgid "Suggest in the cart"
 msgstr "Предлагать в корзине"
@@ -4825,3 +4824,13 @@ msgstr "Укажите этот код в настройках %{crm} филиа
 #, elixir-autogen, elixir-format
 msgid "Intercom %{code}"
 msgstr "Домофон %{code}"
+
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:311
+#, elixir-autogen, elixir-format
+msgid "%{crm} ID"
+msgstr "Артикул %{crm}"
+
+#: lib/delivest/net/product_external_id.ex:26
+#, elixir-autogen, elixir-format
+msgid "is already used by another product"
+msgstr "уже указан у другого товара"

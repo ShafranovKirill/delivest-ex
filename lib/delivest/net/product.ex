@@ -30,7 +30,8 @@ defmodule Delivest.Net.Product do
     field :suggested, :boolean, default: false
     field :order, :float
     belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
-    field :external_id, :string
+    field :crm_ids, :map, virtual: true, default: %{}
+    has_many :external_ids, Delivest.Net.ProductExternalId, on_replace: :delete
 
     belongs_to :category, Category, type: :binary_id
 
@@ -49,7 +50,7 @@ defmodule Delivest.Net.Product do
       :weight,
       :media_id,
       :is_active,
-      :external_id,
+      :crm_ids,
       :category_id,
       :deleted_at,
       :slug,

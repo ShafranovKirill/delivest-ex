@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Repo, Net}
-  alias Delivest.Net.Product
+  alias Delivest.Net.{Product, ProductCrmIds}
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.CopyComponent
 
@@ -44,7 +44,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
            socket.assigns.current_staff,
            branch_id,
            flop_params,
-           preload: [:category]
+           preload: [:category, :external_ids]
          ) do
       {:ok, {products, meta}} ->
         socket =
@@ -102,9 +102,14 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     if Identity.can?(socket.assigns.current_staff, "products.update") do
-      case Net.get_branch_product(socket.assigns.branch_id, id, preload: [:category]) do
+      case Net.get_branch_product(socket.assigns.branch_id, id,
+             preload: [:category, :external_ids]
+           ) do
         {:ok, product} ->
-          assign(socket, page_title: gettext("Edit product"), product: product)
+          assign(socket,
+            page_title: gettext("Edit product"),
+            product: ProductCrmIds.load(product)
+          )
 
         _ ->
           push_patch(socket, to: ~p"/staff/products")
@@ -517,7 +522,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("External ID")} secondary>
-          <%= if prod.external_id && prod.external_id != "" do %>
+          <%= if prod.external_ids != [] do %>
             <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
           <% else %>
             <span class="text-xs opacity-40">—</span>

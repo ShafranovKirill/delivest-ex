@@ -7,7 +7,7 @@ defmodule Delivest.ExampleSeed do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Media.File, as: MediaFile
   alias Delivest.Media.Thumbnails
-  alias Delivest.Net.{Category, Product, Stock}
+  alias Delivest.Net.{Category, Product, ProductCrmIds, ProductExternalId, Stock}
 
   @working_hours Map.new(
                    ~w(monday tuesday wednesday thursday friday saturday sunday),
@@ -130,7 +130,10 @@ defmodule Delivest.ExampleSeed do
   end
 
   defp product(branch_id, category, row, order) do
-    if Repo.exists?(from p in Product, where: p.external_id == ^row["external_id"]) do
+    if Repo.exists?(
+         from e in ProductExternalId,
+           where: e.branch_id == ^branch_id and e.external_id == ^row["external_id"]
+       ) do
       info("  #{row["name"]} already exists")
     else
       {:ok, product} =
@@ -143,12 +146,13 @@ defmodule Delivest.ExampleSeed do
               weight: row["weight"],
               quantity: row["quantity"],
               description: row["description"],
-              external_id: row["external_id"],
+              crm_ids: %{"frontpad" => row["external_id"]},
               category_id: category.id,
               slug: unique_slug(row["name"]),
               tags: tag_ids(row["tags"]),
               is_active: true
             })
+            |> ProductCrmIds.put(branch_id)
             |> Repo.insert!()
 
           {:ok, _} =

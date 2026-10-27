@@ -4,6 +4,7 @@ defmodule Delivest.Integrations.Crm.Catalog do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, CatalogCheck, CatalogSnapshot}
   alias Delivest.{Net, Repo}
+  alias Delivest.Net.ProductCrmIds
 
   @refresh_interval_s 3600
 
@@ -28,8 +29,21 @@ defmodule Delivest.Integrations.Crm.Catalog do
 
   def issues(_branch_id, nil), do: []
 
-  def issues(branch_id, %CatalogSnapshot{products: products}),
-    do: branch_id |> Net.list_branch_products() |> CatalogCheck.issues(products)
+  def issues(branch_id, %CatalogSnapshot{provider: provider, products: crm_products}) do
+    branch_id
+    |> Net.list_branch_products()
+    |> with_crm_ids(provider)
+    |> CatalogCheck.issues(crm_products)
+  end
+
+  defp with_crm_ids(products, provider) do
+    crm_ids = products |> Enum.map(& &1.id) |> ProductCrmIds.by_product(provider)
+
+    Enum.map(
+      products,
+      &%{id: &1.id, name: &1.name, price: &1.price, external_id: crm_ids[&1.id]}
+    )
+  end
 
   defp ensure_refresh_available(%CatalogSnapshot{provider: provider} = snapshot, provider) do
     available_at = refresh_available_at(snapshot)

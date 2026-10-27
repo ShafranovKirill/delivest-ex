@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   use DelivestWeb, :live_component
 
   alias Delivest.{Net, Media}
+  alias Delivest.Integrations.Crm
   alias Delivest.Net.Product
 
   import Ecto.Changeset
@@ -54,6 +55,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           |> assign(:form, to_form(changeset))
           |> assign(:category_options, category_options)
           |> assign(:product_tags, Net.list_product_tags())
+          |> assign(:crm_providers, Crm.providers())
           |> assign(:current_media, current_media)
           |> assign(:show_upload_modal, false)
 
@@ -197,7 +199,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :quantity,
       :weight,
       :is_active,
-      :external_id,
+      :crm_ids,
       :category_id,
       :media_id,
       :slug,
@@ -300,7 +302,15 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
               prompt={gettext("Select a category...")}
             />
 
-            <.input field={@form[:external_id]} type="text" label={gettext("External ID")} />
+            <.input
+              :for={{provider, name} <- @crm_providers}
+              id={"product-crm-id-#{provider}"}
+              name={"product[crm_ids][#{provider}]"}
+              value={Map.get(@form[:crm_ids].value || %{}, to_string(provider))}
+              type="text"
+              label={gettext("%{crm} ID", crm: name)}
+              errors={Enum.map(@form[:crm_ids].errors, &translate_error/1)}
+            />
           </div>
 
           <.input

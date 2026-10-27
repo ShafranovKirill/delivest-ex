@@ -3,7 +3,7 @@ defmodule Delivest.Integrations.Frontpad do
 
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Frontpad.{Api, OrderPayload, Webhook}
-  alias Delivest.Net
+  alias Delivest.Net.ProductCrmIds
 
   @permanent_errors ~w(invalid_secret api_off invalid_plant invalid_product_keys invalid_certificate)
   @snooze %{"requests_limit" => 60, "cash_close" => 600}
@@ -28,7 +28,11 @@ defmodule Delivest.Integrations.Frontpad do
 
   @impl true
   def deliver_order(order, settings) do
-    products = Net.list_products_by_ids(Enum.map(order.items, & &1.product_id))
+    products =
+      order.items
+      |> Enum.map(& &1.product_id)
+      |> ProductCrmIds.by_product(key())
+      |> Map.new(fn {product_id, external_id} -> {product_id, %{external_id: external_id}} end)
 
     with {:ok, payload} <- OrderPayload.build(order, settings, products) do
       payload |> OrderPayload.to_form_params() |> Api.new_order()

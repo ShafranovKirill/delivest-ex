@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
   use DelivestWeb, :live_view
 
   alias Delivest.{Media, Net}
+  alias Delivest.Integrations.Crm
   alias DelivestWeb.Staff.ProductLive.BulkRows
 
   on_mount {DelivestWeb.Hooks.Permission, "products.create"}
@@ -88,13 +89,25 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
     end
   end
 
+  defp with_crm_id(attrs, provider) do
+    case Map.pop(attrs, "external_id") do
+      {nil, attrs} -> attrs
+      {crm_id, attrs} -> Map.put(attrs, "crm_ids", %{to_string(provider) => crm_id})
+    end
+  end
+
   defp create(socket, rows) do
     staff = socket.assigns.current_staff
+
+    provider = Crm.default_provider(socket.assigns.branch_id)
 
     products =
       Enum.map(rows, fn row ->
         {attrs, _errors} = BulkRows.validate(row.values)
-        Map.put(attrs, "media_id", consume_photo(socket, row, staff))
+
+        attrs
+        |> with_crm_id(provider)
+        |> Map.put("media_id", consume_photo(socket, row, staff))
       end)
 
     case Net.import_products(staff, socket.assigns.branch_id, products) do

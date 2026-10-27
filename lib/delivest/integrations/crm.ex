@@ -8,6 +8,11 @@ defmodule Delivest.Integrations.Crm do
 
   def providers, do: Enum.map(Registry.modules(), &{&1.key(), &1.name()})
 
+  def default_provider(branch_id) do
+    branch_id |> get_branch_settings() |> BranchSettings.active_provider() ||
+      hd(Registry.keys())
+  end
+
   def provider_name(provider) do
     case Registry.fetch(provider) do
       {:ok, module} -> module.name()

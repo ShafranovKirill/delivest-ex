@@ -218,4 +218,46 @@ defmodule Delivest.Net.ProductsTest do
       assert {:error, :forbidden} = Net.update_product_order(staff, product, nil, nil)
     end
   end
+
+  describe "crm ids" do
+    alias Delivest.Net.ProductCrmIds
+
+    setup do
+      staff = staff_with_permissions(["products.create", "products.update"])
+      %{staff: staff, branch: insert(:branch)}
+    end
+
+    defp crm_ids(product),
+      do: product.id |> List.wrap() |> ProductCrmIds.by_product(:frontpad)
+
+    test "are stored per provider and updated in place", %{staff: staff, branch: branch} do
+      {:ok, product} =
+        Net.create_product(staff, branch.id, %{
+          "name" => "Soup",
+          "price" => 100,
+          "crm_ids" => %{"frontpad" => " 101 "}
+        })
+
+      assert crm_ids(product) == %{product.id => "101"}
+
+      {:ok, product} = Net.update_product(staff, product, %{"crm_ids" => %{"frontpad" => "102"}})
+      assert crm_ids(product) == %{product.id => "102"}
+
+      {:ok, product} = Net.update_product(staff, product, %{"name" => "Borsch"})
+      assert crm_ids(product) == %{product.id => "102"}
+
+      {:ok, product} = Net.update_product(staff, product, %{"crm_ids" => %{"frontpad" => ""}})
+      assert crm_ids(product) == %{}
+    end
+
+    test "cannot repeat inside a branch but can across branches", %{staff: staff, branch: branch} do
+      attrs = %{"name" => "Soup", "price" => 100, "crm_ids" => %{"frontpad" => "7"}}
+
+      {:ok, _first} = Net.create_product(staff, branch.id, attrs)
+      assert {:error, changeset} = Net.create_product(staff, branch.id, attrs)
+      assert %{crm_ids: [_message]} = errors_on(changeset)
+
+      assert {:ok, _other} = Net.create_product(staff, insert(:branch).id, attrs)
+    end
+  end
 end

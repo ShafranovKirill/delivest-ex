@@ -1,7 +1,7 @@
 defmodule Delivest.Net.Products do
   import Ecto.Query
 
-  alias Delivest.Net.Product
+  alias Delivest.Net.{Product, ProductCrmIds}
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Audit
@@ -82,7 +82,11 @@ defmodule Delivest.Net.Products do
       Multi.new()
       |> Multi.insert(
         :product,
-        %Product{} |> Product.changeset(attrs) |> put_slug() |> put_order()
+        %Product{}
+        |> Product.changeset(attrs)
+        |> ProductCrmIds.put(branch_id)
+        |> put_slug()
+        |> put_order()
       )
       |> Multi.run(:relation_branch, fn repo, %{product: product} ->
         case Relations.create_relation(
@@ -105,7 +109,7 @@ defmodule Delivest.Net.Products do
           {:ok, created_product}
 
         {:error, _failed_operation, error, _changes_so_far} ->
-          {:error, error}
+          {:error, ProductCrmIds.lift_errors(error)}
       end
     else
       {:error, :forbidden}
@@ -144,7 +148,12 @@ defmodule Delivest.Net.Products do
     attrs = row |> Map.delete("category") |> Map.put("category_id", category_id)
 
     with {:ok, product} <-
-           %Product{} |> Product.changeset(attrs) |> put_slug() |> put_order() |> Repo.insert(),
+           %Product{}
+           |> Product.changeset(attrs)
+           |> ProductCrmIds.put(branch_id)
+           |> put_slug()
+           |> put_order()
+           |> Repo.insert(),
          {:ok, _relation} <-
            Relations.create_relation(Repo, "Branch", branch_id, "Product", product.id, %{}) do
       {product, categories}
@@ -179,20 +188,23 @@ defmodule Delivest.Net.Products do
 
   defp do_update_product(staff, %Product{} = updateble_product, attrs) do
     if Identity.can?(staff, "products.update") do
+      branch_id = get_product_branch_id(updateble_product.id)
+
       updateble_product
+      |> Repo.preload(:external_ids)
       |> Product.changeset(attrs)
+      |> ProductCrmIds.put(branch_id)
       |> put_slug()
       |> put_order()
       |> Repo.update()
       |> case do
         {:ok, updated_product} ->
-          branch_id = get_product_branch_id(updated_product.id)
           invalidate_menu_cache(branch_id)
           broadcast_change(branch_id, {:product_updated, updated_product})
           {:ok, updated_product}
 
         {:error, changeset} ->
-          {:error, changeset}
+          {:error, ProductCrmIds.lift_errors(changeset)}
       end
     else
       {:error, :forbidden}

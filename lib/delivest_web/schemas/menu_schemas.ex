@@ -64,7 +64,6 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           example: "https://storage.example.com/images/pepperoni.jpg",
           description: "Ссылка на изображение товара"
         },
-        external_id: %Schema{type: :string, nullable: true},
         slug: %Schema{
           type: :string,
           nullable: true,

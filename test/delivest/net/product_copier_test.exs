@@ -35,7 +35,8 @@ defmodule Delivest.Net.ProductCopierTest do
     assert {:ok, 2} = Net.copy_products(ctx.staff, :all, ctx.from.id, ctx.to.id)
 
     assert [borsch, tea] = branch_products(ctx.to.id)
-    assert %{name: "Borsch", price: 300, external_id: nil, media_id: ^media_id} = borsch
+    assert %{name: "Borsch", price: 300, media_id: ^media_id} = borsch
+    assert Repo.preload(borsch, :external_ids).external_ids == []
     assert borsch.category.name == "Soups"
     assert borsch.category.id != category.id
     assert tea.category == nil

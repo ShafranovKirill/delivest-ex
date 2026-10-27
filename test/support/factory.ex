@@ -96,6 +96,7 @@ defmodule Delivest.Factory do
   end
 
   def insert_branch_product(branch_id, attrs \\ []) do
+    {external_id, attrs} = Keyword.pop(attrs, :external_id)
     product = insert(:product, attrs)
 
     {:ok, _relation} =
@@ -106,6 +107,15 @@ defmodule Delivest.Factory do
         "Product",
         product.id
       )
+
+    if external_id do
+      Delivest.Repo.insert!(%Delivest.Net.ProductExternalId{
+        product_id: product.id,
+        branch_id: branch_id,
+        provider: "frontpad",
+        external_id: external_id
+      })
+    end
 
     product
   end
