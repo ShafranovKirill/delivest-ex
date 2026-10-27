@@ -3,6 +3,8 @@ import maplibregl from "maplibre-gl";
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const FALLBACK = [37.6176, 55.7558];
 
+const BLANK_IMAGE = { width: 1, height: 1, data: new Uint8Array(4) };
+
 const HOUSE_NUMBERS = {
   id: "house-numbers",
   type: "symbol",
@@ -35,6 +37,7 @@ export const LocationMap = {
     });
 
     this.map.on("load", () => this.map.addLayer(HOUSE_NUMBERS));
+    this.map.on("styleimagemissing", ({ id }) => this.map.addImage(id, BLANK_IMAGE));
 
     this.marker = new maplibregl.Marker({ draggable: true })
       .setLngLat(point || FALLBACK)
