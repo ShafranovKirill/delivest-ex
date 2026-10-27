@@ -116,6 +116,8 @@ defmodule DelivestWeb.StaffSidebar do
        [
          item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
          |> allowed(staff, "branches.read"),
+         item(:delivery, ~p"/staff/delivery", "hero-truck", gettext("Delivery"))
+         |> allowed(staff, "branches.read"),
          item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
          |> allowed(staff, "clients.read"),
          item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))

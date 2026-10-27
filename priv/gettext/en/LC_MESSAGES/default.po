@@ -126,7 +126,7 @@ msgid "Sign In"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:69
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:121
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:123
 #: lib/delivest_web/live/staff/log_live/event_text.ex:33
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:178
 #, elixir-autogen, elixir-format
@@ -434,6 +434,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/category_live/categories.ex:247
 #: lib/delivest_web/live/staff/category_live/categories.ex:332
 #: lib/delivest_web/live/staff/client_live/clients.ex:381
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:93
 #: lib/delivest_web/live/staff/order_live/orders.ex:281
 #: lib/delivest_web/live/staff/product_live/products.ex:420
 #: lib/delivest_web/live/staff/product_live/products.ex:663
@@ -645,6 +646,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:123
 #: lib/delivest_web/live/staff/client_live/clients.ex:289
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:62
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:62
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:678
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
@@ -690,6 +692,7 @@ msgstr ""
 #: lib/delivest_web/hooks/new_orders.ex:52
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
+#: lib/delivest_web/live/staff/delivery_live/index.ex:168
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:89
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
@@ -824,7 +827,7 @@ msgstr ""
 msgid "Role updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:123
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:125
 #: lib/delivest_web/live/staff/log_live/event_text.ex:34
 #: lib/delivest_web/live/staff/role_live/roles.ex:54
 #, elixir-autogen, elixir-format
@@ -839,6 +842,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:225
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:100
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:143
+#: lib/delivest_web/live/staff/delivery_live/index.ex:230
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:96
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:84
@@ -860,6 +865,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:224
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:99
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:141
+#: lib/delivest_web/live/staff/delivery_live/index.ex:229
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:95
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:149
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:83
@@ -1240,7 +1247,7 @@ msgstr ""
 msgid "Client updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:119
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:121
 #: lib/delivest_web/live/staff/client_live/clients.ex:235
 #: lib/delivest_web/live/staff/log_live/event_text.ex:32
 #, elixir-autogen, elixir-format
@@ -1297,6 +1304,9 @@ msgstr ""
 msgid "Delivering"
 msgstr ""
 
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:119
+#: lib/delivest_web/live/staff/delivery_live/index.ex:19
+#: lib/delivest_web/live/staff/delivery_live/index.ex:183
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:38
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:29
 #, elixir-autogen, elixir-format
@@ -2125,7 +2135,7 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:142
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:144
 #: lib/delivest_web/live/staff/log_live/index.ex:23
 #: lib/delivest_web/live/staff/log_live/index.ex:117
 #, elixir-autogen, elixir-format
@@ -2244,7 +2254,7 @@ msgstr ""
 msgid "Staff %{name}"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:133
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:135
 #: lib/delivest_web/live/staff/log_live/event_text.ex:22
 #, elixir-autogen, elixir-format
 msgid "System"
@@ -3796,7 +3806,7 @@ msgstr ""
 msgid "Email for requests"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:129
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:131
 #: lib/delivest_web/live/staff/franchise_live/index.ex:21
 #: lib/delivest_web/live/staff/franchise_live/index.ex:69
 #, elixir-autogen, elixir-format
@@ -3893,6 +3903,7 @@ msgstr ""
 msgid "Seller details"
 msgstr ""
 
+#: lib/delivest_web/live/staff/delivery_live/index.ex:41
 #: lib/delivest_web/live/staff/franchise_live/index.ex:42
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:83
@@ -3996,7 +4007,7 @@ msgstr ""
 msgid "Get products"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:139
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:141
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:52
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:187
 #: lib/delivest_web/live/staff/integration_live/index.ex:14
@@ -4996,6 +5007,7 @@ msgstr ""
 msgid "Connect a CRM in integrations"
 msgstr ""
 
+#: lib/delivest_web/live/staff/delivery_live/index.ex:170
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:190
 #, elixir-autogen, elixir-format
@@ -5619,4 +5631,99 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:60
 #, elixir-autogen, elixir-format, fuzzy
 msgid "ours"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:271
+#, elixir-autogen, elixir-format
+msgid "By zones on the map"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:253
+#, elixir-autogen, elixir-format
+msgid "Click a zone to edit its points: drag a point, drag a midpoint to add one, right click a point to delete it."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:26
+#, elixir-autogen, elixir-format
+msgid "Click the map to put the points, click the first point to close the zone."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:66
+#, elixir-autogen, elixir-format
+msgid "Color"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:90
+#, elixir-autogen, elixir-format
+msgid "Delete the zone?"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:73
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Delivers"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:185
+#, elixir-autogen, elixir-format
+msgid "Delivery price for the site and Yandex Eda. Addresses outside the zones are not accepted."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:291
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Delivery price, ₽"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:81
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Delivery time, min"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:23
+#, elixir-autogen, elixir-format
+msgid "Draw a zone"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:299
+#, elixir-autogen, elixir-format
+msgid "Free from, ₽"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:283
+#, elixir-autogen, elixir-format
+msgid "Minimum order, ₽"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:30
+#, elixir-autogen, elixir-format
+msgid "No zones yet, every delivery address is refused"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:217
+#, elixir-autogen, elixir-format
+msgid "One price for any address. Leave the price empty for free delivery, set «free from» for free delivery from a sum."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:225
+#, elixir-autogen, elixir-format
+msgid "The price depends on the zone of the address. Draw the zones on the map below."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:271
+#, elixir-autogen, elixir-format
+msgid "Without zones"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:96
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Zone saved"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:115
+#, elixir-autogen, elixir-format
+msgid "free"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:109
+#, elixir-autogen, elixir-format
+msgid "from %{sum} ₽"
 msgstr ""

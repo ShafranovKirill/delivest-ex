@@ -5,6 +5,7 @@ import { hooks as colocatedHooks } from "phoenix-colocated/delivest";
 import topbar from "../vendor/topbar";
 import Sortable from "sortablejs";
 import { LocationMap } from "./hooks/location_map";
+import { ZoneMap } from "./hooks/zone_map";
 
 let Uploaders = {};
 
@@ -175,6 +176,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     SortableProducts,
     BulkPaste,
     LocationMap,
+    ZoneMap,
   },
 });
 
