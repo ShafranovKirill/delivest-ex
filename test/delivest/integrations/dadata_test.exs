@@ -49,10 +49,10 @@ defmodule Delivest.Integrations.DadataTest do
       }
     ]
 
-    assert {:ok, ^expected} = Dadata.suggest(query, "Тюмень")
+    assert {:ok, ^expected} = Dadata.suggest(query, "г. Тюмень")
     assert_received {:request, ["Token key"], %{"locations" => [%{"city" => "Тюмень"}]}}
 
-    assert {:ok, ^expected} = Dadata.suggest(query, "Тюмень")
+    assert {:ok, ^expected} = Dadata.suggest(query, "г. Тюмень")
     refute_received {:request, _, _}
   end
 

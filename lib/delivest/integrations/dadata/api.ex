@@ -30,7 +30,11 @@ defmodule Delivest.Integrations.Dadata.Api do
   defp city_filter(nil), do: %{}
 
   defp city_filter(city),
-    do: %{locations: [%{city: city}], restrict_value: true, from_bound: %{value: "street"}}
+    do: %{
+      locations: [%{city: String.replace(city, ~r/^г\.?\s+/u, "")}],
+      restrict_value: true,
+      from_bound: %{value: "street"}
+    }
 
   defp addresses({:ok, %{"suggestions" => suggestions}}) when is_list(suggestions),
     do: {:ok, Enum.map(suggestions, &Address.from_suggestion/1)}
