@@ -4,9 +4,14 @@ defmodule DelivestWeb.Client.Address.AddressController do
 
   alias Delivest.Identity
   alias DelivestWeb.Helpers.ApiError
-  alias DelivestWeb.Schemas.AddressSchemas.{AddressListResponse, AddressResponse}
+
+  alias DelivestWeb.Schemas.AddressSchemas.{
+    AddressListResponse,
+    AddressResponse,
+    ClientAddressRequest
+  }
+
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
-  alias DelivestWeb.Schemas.OrderSchemas.AddressRequest
 
   @id_param [id: [in: :path, type: :string, description: "UUID адреса"]]
 
@@ -28,7 +33,7 @@ defmodule DelivestWeb.Client.Address.AddressController do
     summary: "Добавить адрес",
     tags: ["Addresses"],
     security: [%{"bearer" => []}],
-    request_body: {"Адрес", "application/json", AddressRequest},
+    request_body: {"Адрес", "application/json", ClientAddressRequest},
     responses: [
       ok: {"Адрес", "application/json", AddressResponse},
       unprocessable_entity: {"Ошибка валидации", "application/json", ErrorResponse}
@@ -44,7 +49,7 @@ defmodule DelivestWeb.Client.Address.AddressController do
     tags: ["Addresses"],
     security: [%{"bearer" => []}],
     parameters: @id_param,
-    request_body: {"Адрес", "application/json", AddressRequest},
+    request_body: {"Адрес", "application/json", ClientAddressRequest},
     responses: [
       ok: {"Адрес", "application/json", AddressResponse},
       not_found: {"Адрес не найден", "application/json", ErrorResponse},

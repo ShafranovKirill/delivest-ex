@@ -17,7 +17,11 @@ defmodule Delivest.Integrations.DadataTest do
         "block_type" => "к",
         "block" => "2",
         "geo_lat" => "57.153",
-        "geo_lon" => "65.534"
+        "geo_lon" => "65.534",
+        "house_fias_id" => "6f3d1b6a-2b4e-4c1e-9a3f-0d8c5e7b9a11",
+        "postal_code" => "625000",
+        "city_district_with_type" => "Центральный р-н",
+        "qc_geo" => "0"
       }
     }
   end
@@ -45,7 +49,11 @@ defmodule Delivest.Integrations.DadataTest do
         street: "ул Республики",
         house: "10 к 2",
         latitude: 57.153,
-        longitude: 65.534
+        longitude: 65.534,
+        fias_id: "6f3d1b6a-2b4e-4c1e-9a3f-0d8c5e7b9a11",
+        postal_code: "625000",
+        district: "Центральный р-н",
+        geo_precision: 0
       }
     ]
 

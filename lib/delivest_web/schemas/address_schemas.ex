@@ -18,9 +18,37 @@ defmodule DelivestWeb.Schemas.AddressSchemas do
         intercom: %Schema{type: :string, nullable: true},
         comment: %Schema{type: :string, nullable: true, example: "Вход со двора"},
         latitude: %Schema{type: :number, format: :float, nullable: true, example: 57.153},
-        longitude: %Schema{type: :number, format: :float, nullable: true, example: 65.534}
+        longitude: %Schema{type: :number, format: :float, nullable: true, example: 65.534},
+        label: %Schema{type: :string, nullable: true, maxLength: 30, example: "Дом"},
+        formatted: %Schema{
+          type: :string,
+          nullable: true,
+          example: "г Тюмень, ул Республики, д 10"
+        },
+        fias_id: %Schema{type: :string, nullable: true, description: "ФИАС дома"},
+        postal_code: %Schema{type: :string, nullable: true, example: "625000"},
+        district: %Schema{type: :string, nullable: true, example: "Центральный р-н"},
+        geo_precision: %Schema{type: :integer, nullable: true, minimum: 0, maximum: 5}
       },
       required: [:id, :street]
+    })
+  end
+
+  defmodule ClientAddressRequest do
+    require OpenApiSpex
+    alias DelivestWeb.Schemas.OrderSchemas.AddressRequest
+
+    OpenApiSpex.schema(%{
+      title: "ClientAddressRequest",
+      allOf: [
+        AddressRequest,
+        %Schema{
+          type: :object,
+          properties: %{
+            label: %Schema{type: :string, nullable: true, maxLength: 30, example: "Дом"}
+          }
+        }
+      ]
     })
   end
 

@@ -2,6 +2,8 @@ defmodule Delivest.Oms.Order.Address do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Delivest.Geo.NormalizedAddress
+
   @primary_key false
   embedded_schema do
     field :city, :string
@@ -14,6 +16,11 @@ defmodule Delivest.Oms.Order.Address do
     field :comment, :string
     field :latitude, :float
     field :longitude, :float
+    field :formatted, :string
+    field :fias_id, :string
+    field :postal_code, :string
+    field :district, :string
+    field :geo_precision, :integer
   end
 
   def changeset(address, attrs) do
@@ -29,6 +36,7 @@ defmodule Delivest.Oms.Order.Address do
       :comment,
       :latitude,
       :longitude
+      | NormalizedAddress.fields()
     ])
     |> validate_length(:city, max: 100)
     |> validate_length(:street, max: 150)
@@ -38,5 +46,6 @@ defmodule Delivest.Oms.Order.Address do
     |> validate_length(:entrance, max: 2)
     |> validate_length(:intercom, max: 50)
     |> validate_length(:comment, max: 255)
+    |> NormalizedAddress.validate()
   end
 end

@@ -24,4 +24,20 @@ defmodule Delivest.Identity.ClientAddressesTest do
     {:ok, other} = Identity.remember_client_address(client.id, %{flat | apartment: "6"})
     refute other.id == first.id
   end
+
+  test "remembering from an order keeps the label and stores normalized data" do
+    client = insert(:client)
+    flat = %{street: "ул Ленина", house: "1", apartment: "5"}
+
+    {:ok, labeled} = Identity.remember_client_address(client.id, Map.put(flat, :label, "Дом"))
+
+    {:ok, remembered} =
+      Identity.remember_client_address(
+        client.id,
+        Map.merge(flat, %{formatted: "г Тюмень, ул Ленина, д 1", district: "Центральный р-н"})
+      )
+
+    assert remembered.id == labeled.id
+    assert %{label: "Дом", formatted: "г Тюмень, ул Ленина, д 1"} = remembered
+  end
 end

@@ -5,7 +5,11 @@ defmodule Delivest.Integrations.Dadata.Address do
           street: String.t() | nil,
           house: String.t() | nil,
           latitude: float() | nil,
-          longitude: float() | nil
+          longitude: float() | nil,
+          fias_id: String.t() | nil,
+          postal_code: String.t() | nil,
+          district: String.t() | nil,
+          geo_precision: integer() | nil
         }
 
   @spec from_suggestion(map()) :: t()
@@ -16,9 +20,24 @@ defmodule Delivest.Integrations.Dadata.Address do
       street: data["street_with_type"] || data["settlement_with_type"],
       house: house(data),
       latitude: coordinate(data["geo_lat"]),
-      longitude: coordinate(data["geo_lon"])
+      longitude: coordinate(data["geo_lon"]),
+      fias_id: data["house_fias_id"] || data["fias_id"],
+      postal_code: data["postal_code"],
+      district: data["city_district_with_type"],
+      geo_precision: precision(data["qc_geo"])
     }
   end
+
+  defp precision(value) when is_integer(value), do: value
+
+  defp precision(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {number, _rest} -> number
+      :error -> nil
+    end
+  end
+
+  defp precision(_value), do: nil
 
   defp house(data) do
     [data["house"], data["block_type"], data["block"]]

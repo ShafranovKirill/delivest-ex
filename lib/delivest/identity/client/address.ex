@@ -2,20 +2,23 @@ defmodule Delivest.Identity.Client.Address do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Delivest.Geo.NormalizedAddress
+
   @type t :: %__MODULE__{}
 
   @fields [
-    :city,
-    :street,
-    :house,
-    :apartment,
-    :floor,
-    :entrance,
-    :intercom,
-    :comment,
-    :latitude,
-    :longitude
-  ]
+            :city,
+            :street,
+            :house,
+            :apartment,
+            :floor,
+            :entrance,
+            :intercom,
+            :comment,
+            :latitude,
+            :longitude,
+            :label
+          ] ++ NormalizedAddress.fields()
 
   @identity_fields [:city, :street, :house, :apartment]
 
@@ -34,6 +37,12 @@ defmodule Delivest.Identity.Client.Address do
     field :comment, :string
     field :latitude, :float
     field :longitude, :float
+    field :label, :string
+    field :formatted, :string
+    field :fias_id, :string
+    field :postal_code, :string
+    field :district, :string
+    field :geo_precision, :integer
 
     timestamps(type: :utc_datetime)
   end
@@ -52,6 +61,8 @@ defmodule Delivest.Identity.Client.Address do
     |> validate_length(:comment, max: 255)
     |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)
     |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)
+    |> validate_length(:label, max: 30)
+    |> NormalizedAddress.validate()
   end
 
   def fields, do: @fields
