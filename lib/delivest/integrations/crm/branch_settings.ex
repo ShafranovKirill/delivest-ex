@@ -10,6 +10,7 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
   embedded_schema do
     field :enabled, :boolean, default: false
     field :provider, Ecto.Enum, values: @providers
+    field :sources, {:array, :string}, default: ~w(app staff)
 
     for module <- Registry.modules() do
       embeds_one module.key(), module.settings_schema(), on_replace: :update
@@ -19,7 +20,10 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
   def providers, do: @providers
 
   def changeset(settings, attrs) do
-    changeset = cast(settings, attrs, [:enabled, :provider])
+    changeset =
+      settings
+      |> cast(attrs, [:enabled, :provider, :sources])
+      |> validate_subset(:sources, Delivest.Oms.OrderSource.all())
 
     Registry.modules()
     |> Enum.reduce(changeset, &cast_provider(&2, &1, active?(changeset, &1.key())))
@@ -28,6 +32,10 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
 
   def active_provider(%__MODULE__{enabled: true, provider: provider}), do: provider
   def active_provider(_settings), do: nil
+
+  def provider_for(%__MODULE__{} = settings, source) do
+    if to_string(source) in (settings.sources || []), do: active_provider(settings)
+  end
 
   defp cast_provider(changeset, module, required?) do
     cast_embed(changeset, module.key(),

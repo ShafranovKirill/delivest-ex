@@ -52,6 +52,8 @@ defmodule Delivest.Oms.Order do
     field :payment_method, Ecto.Enum, values: @payment_methods, default: :cash
 
     embeds_one :crm, CrmSync, on_replace: :update
+    field :source, :string, default: "app"
+    embeds_one :channel, Delivest.Oms.Order.ChannelSync, on_replace: :update
 
     field :total_amount, :integer, default: 0
     field :subtotal_amount, :integer
@@ -118,6 +120,21 @@ defmodule Delivest.Oms.Order do
     do: @progress_statuses
 
   def statuses_for(_fulfillment_type), do: List.delete(@progress_statuses, :delivering)
+
+  def source_changeset(changeset, source) do
+    changeset
+    |> put_change(:source, to_string(source))
+    |> validate_change(:source, fn :source, value ->
+      if Delivest.Oms.OrderSource.valid?(value), do: [], else: [source: "is invalid"]
+    end)
+  end
+
+  def channel_changeset(order, attrs) do
+    order
+    |> cast(%{channel: attrs}, [])
+    |> cast_embed(:channel, required: true)
+    |> unique_constraint(:channel, name: :orders_channel_external_id_index)
+  end
 
   def crm_changeset(order, attrs) do
     order

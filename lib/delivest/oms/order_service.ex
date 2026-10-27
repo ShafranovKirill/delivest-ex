@@ -4,8 +4,10 @@ defmodule Delivest.Oms.OrderService do
   alias Delivest.Oms.Orders
 
   def create_order(attrs, opts \\ []) do
+    opts = Keyword.put_new(opts, :source, "app")
+
     with {:ok, branch} <- fetch_branch(attrs) do
-      case Crm.active_provider(branch) do
+      case Crm.provider_for(branch, opts[:source]) do
         nil -> Orders.create_order(attrs, opts)
         provider -> Crm.create_order(attrs, provider, opts)
       end

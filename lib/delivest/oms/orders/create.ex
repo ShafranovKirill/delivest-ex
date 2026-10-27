@@ -31,7 +31,7 @@ defmodule Delivest.Oms.Orders.Create do
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn _, _ -> OrderNumber.generate() end)
-    |> Multi.insert(:order, &build(attrs, &1, opts[:crm]))
+    |> Multi.insert(:order, &build(attrs, &1, opts))
     |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
       Promo.redeem(order, pricing)
     end)
@@ -53,10 +53,12 @@ defmodule Delivest.Oms.Orders.Create do
   defp customer({:ok, %Order{client: client}}), do: client
   defp customer(_result), do: nil
 
-  defp build(attrs, changes, crm) do
+  defp build(attrs, changes, opts) do
     %Order{}
     |> Assembler.changeset(own_attrs(attrs, changes), changes)
-    |> then(&if(crm, do: Order.crm_changeset(&1, crm), else: &1))
+    |> Order.source_changeset(Keyword.get(opts, :source, "app"))
+    |> then(&if(opts[:channel], do: Order.channel_changeset(&1, opts[:channel]), else: &1))
+    |> then(&if(opts[:crm], do: Order.crm_changeset(&1, opts[:crm]), else: &1))
   end
 
   defp own_attrs(attrs, %{number: number, cart: cart}) do

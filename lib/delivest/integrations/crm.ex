@@ -42,6 +42,11 @@ defmodule Delivest.Integrations.Crm do
 
   def active_provider(_branch), do: nil
 
+  def provider_for(%Branch{info: %{crm: %BranchSettings{} = settings}}, source),
+    do: BranchSettings.provider_for(settings, source)
+
+  def provider_for(_branch, _source), do: nil
+
   def get_branch_settings(branch_id) do
     case Identity.get_branch(branch_id, preload: [:info]) do
       {:ok, %Branch{info: %{crm: %BranchSettings{} = settings}}} -> settings
