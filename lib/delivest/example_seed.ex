@@ -24,6 +24,7 @@ defmodule Delivest.ExampleSeed do
       |> BranchInfo.changeset(%{
         branch_id: branch.id,
         address: "Москва, Тверская улица, 7",
+        city: "Москва",
         phone_number: "+74951234567",
         delivery_time: 45,
         working_hours: @working_hours,
