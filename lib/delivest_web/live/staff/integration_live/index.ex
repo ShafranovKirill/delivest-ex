@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.Identity
-  alias Delivest.Integrations.{Crm, Zvonok}
+  alias Delivest.Integrations.{Crm, Dadata, Zvonok}
   alias Delivest.Integrations.Crm.BranchSettings
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
@@ -14,7 +14,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
        page_title: gettext("Integrations"),
        crm: Crm.get_branch_settings(socket.assigns.current_branch.id),
        zvonok_configured: Zvonok.configured?(),
-       can_edit_zvonok: Identity.can?(socket.assigns.current_staff, "admin")
+       dadata_active: Dadata.active?(),
+       can_edit_shared: Identity.can?(socket.assigns.current_staff, "admin")
      )}
   end
 
@@ -53,7 +54,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Sign-in by phone number")}
             description={gettext("Customers confirm the phone number with a call via zvonok.com.")}
             status={if @zvonok_configured, do: :configured, else: :off}
-            path={@can_edit_zvonok && ~p"/staff/integrations/zvonok"}
+            path={@can_edit_shared && ~p"/staff/integrations/zvonok"}
+          />
+          <.integration_card
+            id="integration-dadata"
+            title={gettext("Delivery address on the map")}
+            description={gettext("Address suggestions and the map via dadata.ru.")}
+            status={if @dadata_active, do: :configured, else: :off}
+            path={@can_edit_shared && ~p"/staff/integrations/dadata"}
           />
         </div>
       </section>

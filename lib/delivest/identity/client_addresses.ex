@@ -44,7 +44,7 @@ defmodule Delivest.Identity.ClientAddresses do
     changeset = Address.changeset(%Address{client_id: client_id}, attrs)
 
     case find_same(client_id, changeset) do
-      %Address{} = address -> address |> Ecto.Changeset.change() |> Repo.update(force: true)
+      %Address{} = address -> address |> Address.changeset(attrs) |> Repo.update(force: true)
       nil -> Repo.insert(changeset)
     end
   end
@@ -52,7 +52,7 @@ defmodule Delivest.Identity.ClientAddresses do
   defp find_same(_client_id, %Ecto.Changeset{valid?: false}), do: nil
 
   defp find_same(client_id, changeset) do
-    Address.fields()
+    Address.identity_fields()
     |> Enum.reduce(where(Address, [a], a.client_id == ^client_id), fn field, query ->
       match_field(query, field, Ecto.Changeset.get_field(changeset, field))
     end)

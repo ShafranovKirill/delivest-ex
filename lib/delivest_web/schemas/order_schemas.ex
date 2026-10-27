@@ -14,7 +14,10 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         apartment: %Schema{type: :string, example: "12", nullable: true},
         floor: %Schema{type: :string, example: "3", nullable: true},
         entrance: %Schema{type: :string, example: "2", nullable: true},
-        intercom: %Schema{type: :string, example: "42", nullable: true}
+        intercom: %Schema{type: :string, example: "42", nullable: true},
+        comment: %Schema{type: :string, nullable: true, example: "Вход со двора"},
+        latitude: %Schema{type: :number, format: :float, nullable: true, example: 57.153},
+        longitude: %Schema{type: :number, format: :float, nullable: true, example: 65.534}
       }
     })
   end

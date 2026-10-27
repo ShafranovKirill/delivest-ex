@@ -50,6 +50,10 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             logo_url: %Schema{type: :string, format: :uri, nullable: true},
             logo_dark_url: %Schema{type: :string, format: :uri, nullable: true},
             legal: Legal,
+            address_map: %Schema{
+              type: :boolean,
+              description: "Адрес выбирается на карте с подсказками DaData"
+            },
             documents: %Schema{type: :array, items: DocumentSummary}
           },
           required: [
@@ -58,6 +62,7 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             :primary_color,
             :logo_url,
             :logo_dark_url,
+            :address_map,
             :legal,
             :documents
           ]

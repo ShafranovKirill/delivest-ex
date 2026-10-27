@@ -44,7 +44,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
       addr.entrance && "#{gettext("ent.")} #{addr.entrance}",
       addr.floor && "#{gettext("fl.")} #{addr.floor}",
       addr.apartment && "#{gettext("apt.")} #{addr.apartment}",
-      addr.intercom && "#{gettext("code")} #{addr.intercom}"
+      addr.intercom && "#{gettext("code")} #{addr.intercom}",
+      addr.comment
     ]
     |> Enum.reject(&(is_nil(&1) or &1 == ""))
     |> Enum.join(", ")

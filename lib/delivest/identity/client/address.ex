@@ -4,7 +4,20 @@ defmodule Delivest.Identity.Client.Address do
 
   @type t :: %__MODULE__{}
 
-  @fields [:city, :street, :house, :apartment, :floor, :entrance, :intercom]
+  @fields [
+    :city,
+    :street,
+    :house,
+    :apartment,
+    :floor,
+    :entrance,
+    :intercom,
+    :comment,
+    :latitude,
+    :longitude
+  ]
+
+  @identity_fields [:city, :street, :house, :apartment]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -18,6 +31,9 @@ defmodule Delivest.Identity.Client.Address do
     field :floor, :string
     field :entrance, :string
     field :intercom, :string
+    field :comment, :string
+    field :latitude, :float
+    field :longitude, :float
 
     timestamps(type: :utc_datetime)
   end
@@ -33,7 +49,12 @@ defmodule Delivest.Identity.Client.Address do
     |> validate_length(:floor, max: 2)
     |> validate_length(:entrance, max: 2)
     |> validate_length(:intercom, max: 50)
+    |> validate_length(:comment, max: 255)
+    |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)
+    |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)
   end
 
   def fields, do: @fields
+
+  def identity_fields, do: @identity_fields
 end

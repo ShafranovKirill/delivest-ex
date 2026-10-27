@@ -47,6 +47,10 @@ defmodule DelivestWeb.Router do
     plug DelivestWeb.Plugs.RateLimit, bucket: :cart, limit: 300, period: :timer.minutes(1)
   end
 
+  pipeline :geo_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :geo, limit: 120, period: :timer.minutes(1)
+  end
+
   pipeline :promo_rate_limit do
     plug DelivestWeb.Plugs.RateLimit, bucket: :promo_codes, limit: 10, period: :timer.minutes(1)
   end
@@ -70,6 +74,13 @@ defmodule DelivestWeb.Router do
 
       post "/call", AuthController, :start
     end
+  end
+
+  scope "/client/geo", DelivestWeb.Client.Geo do
+    pipe_through [:api, :geo_rate_limit]
+
+    get "/suggest", GeoController, :suggest
+    get "/reverse", GeoController, :reverse
   end
 
   scope "/client/franchise", DelivestWeb.Client.Franchise do
@@ -233,6 +244,7 @@ defmodule DelivestWeb.Router do
         live "/", Index, :index
         live "/frontpad", Frontpad, :index
         live "/zvonok", Zvonok, :index
+        live "/dadata", Dadata, :index
       end
 
       scope "/categories", CategoryLive do

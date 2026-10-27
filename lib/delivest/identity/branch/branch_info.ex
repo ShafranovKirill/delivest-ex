@@ -14,6 +14,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
 
   schema "branch_info" do
     field :address, :string
+    field :city, :string
     field :phone_number, :string
     field :delivery_time, :integer
     field :working_hours, :map, default: %{}
@@ -31,6 +32,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     branch_info
     |> cast(attrs, [
       :address,
+      :city,
       :phone_number,
       :delivery_time,
       :working_hours,
@@ -42,6 +44,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> cast_embed(:crm, with: &BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> validate_required([:branch_id])
+    |> validate_length(:city, max: 100)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(

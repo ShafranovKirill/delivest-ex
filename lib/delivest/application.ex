@@ -27,6 +27,7 @@ defmodule Delivest.Application do
       cache(:promo_cache),
       cache(:franchise_cache),
       cache(:rate_limit_cache, limit: 100_000),
+      cache(:geo_cache, limit: 50_000),
       DelivestWeb.Endpoint
     ]
 

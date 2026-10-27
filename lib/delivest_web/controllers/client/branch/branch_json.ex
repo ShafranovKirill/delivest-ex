@@ -24,6 +24,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     %{
       id: info.id,
       address: info.address,
+      city: info.city,
       phone_number: info.phone_number,
       delivery_time: info.delivery_time,
       working_hours: info.working_hours || %{},

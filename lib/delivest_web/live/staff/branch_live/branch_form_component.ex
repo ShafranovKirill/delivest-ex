@@ -127,6 +127,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           <div class="grid gap-4 sm:grid-cols-2">
             <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
             <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
+            <.input field={@form[:city]} type="text" label={gettext("Delivery city")} />
             <.input field={@form[:address]} type="text" label={gettext("Address")} />
             <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
             <.input

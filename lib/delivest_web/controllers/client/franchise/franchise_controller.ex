@@ -3,6 +3,7 @@ defmodule DelivestWeb.Client.Franchise.FranchiseController do
   use OpenApiSpex.ControllerSpecs
 
   alias Delivest.Franchise
+  alias Delivest.Integrations.Dadata
   alias DelivestWeb.Helpers.ApiError
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias DelivestWeb.Schemas.FranchiseSchemas.{DocumentResponse, FranchiseResponse}
@@ -19,7 +20,8 @@ defmodule DelivestWeb.Client.Franchise.FranchiseController do
   def show(conn, _params) do
     render(conn, :show,
       settings: Franchise.get_settings(),
-      documents: Franchise.list_documents()
+      documents: Franchise.list_documents(),
+      address_map: Dadata.active?()
     )
   end
 

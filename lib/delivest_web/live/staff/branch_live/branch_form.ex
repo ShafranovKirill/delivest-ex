@@ -14,6 +14,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :is_active, :boolean
 
     field :address, :string
+    field :city, :string
     field :phone_number, :string
     field :delivery_time, :integer
     field :working_hours, :map, default: %{}
@@ -31,6 +32,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     |> cast(attrs, [
       :name,
       :address,
+      :city,
       :phone_number,
       :delivery_time,
       :working_hours,
@@ -59,6 +61,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       slug: branch.slug,
       is_active: branch.is_active,
       address: info && info.address,
+      city: info && info.city,
       phone_number: info && info.phone_number,
       delivery_time: info && info.delivery_time,
       working_hours: (info && info.working_hours) || %{},
@@ -174,6 +177,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       data
       |> Map.take([
         :address,
+        :city,
         :phone_number,
         :delivery_time,
         :working_hours,

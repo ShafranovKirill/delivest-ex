@@ -11,11 +11,25 @@ defmodule Delivest.Oms.Order.Address do
     field :floor, :string
     field :entrance, :string
     field :intercom, :string
+    field :comment, :string
+    field :latitude, :float
+    field :longitude, :float
   end
 
   def changeset(address, attrs) do
     address
-    |> cast(attrs, [:city, :street, :house, :apartment, :floor, :entrance, :intercom])
+    |> cast(attrs, [
+      :city,
+      :street,
+      :house,
+      :apartment,
+      :floor,
+      :entrance,
+      :intercom,
+      :comment,
+      :latitude,
+      :longitude
+    ])
     |> validate_length(:city, max: 100)
     |> validate_length(:street, max: 150)
     |> validate_length(:house, max: 20)
@@ -23,5 +37,6 @@ defmodule Delivest.Oms.Order.Address do
     |> validate_length(:floor, max: 2)
     |> validate_length(:entrance, max: 2)
     |> validate_length(:intercom, max: 50)
+    |> validate_length(:comment, max: 255)
   end
 end
