@@ -180,6 +180,11 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               description: "Сумма без скидок"
             },
             discount_amount: %Schema{type: :integer, example: 150},
+            delivery_amount: %Schema{
+              type: :integer,
+              example: 200,
+              description: "Стоимость доставки, входит в total_amount"
+            },
             promotions: %Schema{
               type: :array,
               items: DelivestWeb.Schemas.OrderSchemas.OrderPromotion
@@ -221,6 +226,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             :total_amount,
             :subtotal_amount,
             :discount_amount,
+            :delivery_amount,
             :promotions,
             :branch_id,
             :cart_id,
@@ -260,6 +266,11 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         total_amount: %Schema{type: :integer, example: 1180},
         subtotal_amount: %Schema{type: :integer, example: 1330, description: "Сумма без скидок"},
         discount_amount: %Schema{type: :integer, example: 150},
+        delivery_amount: %Schema{
+          type: :integer,
+          example: 200,
+          description: "Стоимость доставки, входит в total_amount"
+        },
         promotions: %Schema{type: :array, items: DelivestWeb.Schemas.OrderSchemas.OrderPromotion},
         branch_id: %Schema{type: :string, format: :uuid},
         cook_by: %Schema{type: :string, format: :date_time, nullable: true},
@@ -277,6 +288,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         :total_amount,
         :subtotal_amount,
         :discount_amount,
+        :delivery_amount,
         :promotions,
         :branch_id,
         :inserted_at,

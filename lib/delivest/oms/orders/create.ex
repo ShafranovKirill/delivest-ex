@@ -8,6 +8,7 @@ defmodule Delivest.Oms.Orders.Create do
     Attrs,
     CartGuard,
     ClientResolver,
+    DeliveryFee,
     Lines,
     Notifier,
     Pricing,
@@ -29,6 +30,9 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> pricing.(cart, attrs, id) end)
     |> Multi.run(:stops, fn _, %{pricing: pricing, cart: cart} ->
       StopGuard.check(cart.branch_id, pricing)
+    end)
+    |> Multi.run(:delivery, fn _, %{pricing: pricing, cart: cart} ->
+      DeliveryFee.run(cart.branch_id, attrs, pricing, opts)
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn _, _ -> OrderNumber.generate() end)

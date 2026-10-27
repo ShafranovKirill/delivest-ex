@@ -55,6 +55,13 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           >
             {OrderHelpers.money(@order.subtotal_amount)}
           </p>
+          <p
+            :if={@order.delivery_amount > 0}
+            id={"order-delivery-#{@order.id}"}
+            class="text-[11px] text-base-content/60 whitespace-nowrap"
+          >
+            {gettext("incl. delivery %{amount}", amount: OrderHelpers.money(@order.delivery_amount))}
+          </p>
         </div>
       </header>
 

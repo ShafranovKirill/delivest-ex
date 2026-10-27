@@ -42,6 +42,24 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     assert {"name", "Иван"} in params
   end
 
+  test "delivery goes as the delivery product line or into the description" do
+    order = %Order{items: [], delivery_amount: 150, comment: "Без лука"}
+
+    assert {:ok, view} =
+             OrderPayload.build(order, %Settings{api_key: "secret", delivery_article: "900"}, %{})
+
+    params = OrderPayload.to_form_params(view)
+    assert {"product[0]", "900"} in params
+    assert {"product_kol[0]", "1"} in params
+    assert {"product_price[0]", "150"} in params
+    assert {"descr", "Без лука"} in params
+
+    assert {:ok, view} = OrderPayload.build(order, %Settings{api_key: "secret"}, %{})
+    params = OrderPayload.to_form_params(view)
+    refute Enum.any?(params, fn {key, _value} -> key == "product[0]" end)
+    assert {"descr", "Delivery 150 ₽. Без лука"} in params
+  end
+
   test "sends the Frontpad branch as affiliate" do
     settings = %Settings{api_key: "secret", affiliate: "7"}
 

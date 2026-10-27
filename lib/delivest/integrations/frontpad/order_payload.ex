@@ -1,4 +1,6 @@
 defmodule Delivest.Integrations.Frontpad.OrderPayload do
+  use Gettext, backend: DelivestWeb.Gettext
+
   import Delivest.Integrations.Frontpad.Fields
 
   alias Delivest.Integrations.Crm.OrderNotes
@@ -68,12 +70,12 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
           affiliate: text(settings.affiliate, 50),
           phone: text(customer_phone(order), 50),
           name: text(customer_name(order), 50),
-          descr: OrderNotes.text(order, 100),
+          descr: descr(order, settings),
           pay: PaymentCodes.code_for(settings.payments, order.payment_method),
           tags: TagCodes.codes(settings.tags, order),
           datetime: format_cook_by(order.cook_by),
           sale_amount: sale_amount(order.items, settings),
-          products: formatted_products
+          products: formatted_products ++ delivery_line(order, settings)
         }
         |> struct!(AddressFields.build(order.address))
         |> put_hooks(settings)
@@ -199,6 +201,26 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     case result do
       {:error, _} = err -> err
       list -> {:ok, Enum.reverse(list)}
+    end
+  end
+
+  defp delivery_line(%{delivery_amount: amount}, %Settings{delivery_article: article})
+       when is_integer(amount) and amount > 0 and article not in [nil, ""],
+       do: [%{external_id: article, quantity: 1, mod: nil, price: to_string(amount)}]
+
+  defp delivery_line(_order, _settings), do: []
+
+  defp descr(order, settings) do
+    case {order, delivery_line(order, settings)} do
+      {%{delivery_amount: amount}, []} when is_integer(amount) and amount > 0 ->
+        note = gettext("Delivery %{amount} ₽", amount: amount)
+
+        [note | OrderNotes.lines(order)]
+        |> Enum.join(". ")
+        |> String.slice(0, 100)
+
+      _sent_as_product ->
+        OrderNotes.text(order, 100)
     end
   end
 

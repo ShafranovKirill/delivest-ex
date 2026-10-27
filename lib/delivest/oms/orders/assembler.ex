@@ -2,20 +2,22 @@ defmodule Delivest.Oms.Orders.Assembler do
   alias Delivest.Oms.Order
   alias Delivest.Oms.Order.AppliedPromotion
 
-  def changeset(%Order{} = order, attrs, %{
-        cart: cart,
-        lines: lines,
-        client_id: client_id,
-        pricing: pricing
-      }) do
+  def changeset(
+        %Order{} = order,
+        attrs,
+        %{cart: cart, lines: lines, client_id: client_id, pricing: pricing} = changes
+      ) do
+    delivery = Map.get(changes, :delivery, 0)
+
     params =
       Map.merge(attrs, %{
         "cart_id" => cart.id,
         "branch_id" => cart.branch_id,
         "client_id" => client_id,
-        "total_amount" => lines.total_amount,
+        "total_amount" => lines.total_amount + delivery,
         "subtotal_amount" => pricing.subtotal,
-        "discount_amount" => pricing.discount
+        "discount_amount" => pricing.discount,
+        "delivery_amount" => delivery
       })
 
     order

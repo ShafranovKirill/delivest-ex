@@ -94,10 +94,17 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
       branch
       |> order_params([soup])
       |> marketplace()
-      |> Map.put("paymentInfo", %{"paymentType" => "CASH", "itemsCost" => 300, "change" => 500})
+      |> Map.put("paymentInfo", %{
+        "paymentType" => "CASH",
+        "itemsCost" => 300,
+        "deliveryFee" => 99,
+        "change" => 500
+      })
 
     assert {:ok, %Order{} = order} = YandexEda.create_order(params)
     assert order.fulfillment_type == :delivery
+    assert order.delivery_amount == 99
+    assert order.total_amount == 399
     assert order.payment_method == :cash
     assert order.address.formatted == "Москва, Тверская улица, 1"
     assert order.address.latitude == 55.757

@@ -123,6 +123,34 @@ defmodule DelivestWeb.Client.Order.OrderController do
     )
   end
 
+  defp render_error(conn, {:below_minimum, min_order}) do
+    ApiError.send_error(
+      conn,
+      :unprocessable_entity,
+      :delivery_below_minimum,
+      "Delivery needs an order from #{min_order}",
+      %{min_order: min_order}
+    )
+  end
+
+  defp render_error(conn, :outside_zones),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :delivery_outside_zones,
+        "No delivery to this address"
+      )
+
+  defp render_error(conn, :no_coordinates),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :delivery_no_coordinates,
+        "Pick the address on the map"
+      )
+
   defp render_error(conn, reason)
        when reason in [
               :branch_id_required,

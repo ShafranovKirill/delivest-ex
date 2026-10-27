@@ -359,6 +359,20 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
           <div class="space-y-1">
             <.input
+              field={frontpad[:delivery_article]}
+              type="text"
+              inputmode="numeric"
+              label={gettext("Delivery article")}
+            />
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Article of the «Delivery» product in Frontpad with «price change on order» turned on. The delivery price goes as its line. Without it the price is written into the order note."
+              )}
+            </p>
+          </div>
+
+          <div class="space-y-1">
+            <.input
               field={frontpad[:sync_stops]}
               type="checkbox"
               label={gettext("Take the stop list from Frontpad")}

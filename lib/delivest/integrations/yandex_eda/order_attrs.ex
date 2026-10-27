@@ -27,9 +27,16 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
       source: "yandex_eda",
       channel: channel(request, branch, settings),
       pricing: OrderPricing.fixed(request),
+      delivery_amount: delivery_amount(request),
       paid_online: request.paid
     ]
   end
+
+  defp delivery_amount(%OrderRequest{discriminator: "marketplace", delivery_fee: fee})
+       when is_integer(fee),
+       do: fee
+
+  defp delivery_amount(_request), do: 0
 
   defp fulfillment("marketplace"), do: "delivery"
   defp fulfillment(_discriminator), do: "pickup"

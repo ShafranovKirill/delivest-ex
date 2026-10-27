@@ -9,6 +9,7 @@ defmodule Delivest.Oms.Orders.Update do
     Attrs,
     CartGuard,
     ClientResolver,
+    DeliveryFee,
     Lines,
     Notifier,
     Pricing
@@ -30,6 +31,9 @@ defmodule Delivest.Oms.Orders.Update do
     end)
     |> Multi.run(:pricing, fn _, %{cart: cart, client_id: client_id} ->
       Pricing.run(cart, attrs, client_id, order)
+    end)
+    |> Multi.run(:delivery, fn _, %{pricing: pricing} ->
+      DeliveryFee.run(order.branch_id, attrs, pricing, [source: "staff"], order)
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.update(:order, &Assembler.changeset(order, attrs, &1))
