@@ -4818,3 +4818,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Set this code in the branch %{crm} settings"
 msgstr ""
+
+#: lib/delivest/integrations/crm/order_notes.ex:18
+#, elixir-autogen, elixir-format
+msgid "Intercom %{code}"
+msgstr ""

@@ -1,7 +1,7 @@
-defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
+defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
   use ExUnit.Case, async: true
 
-  alias Delivest.Integrations.Frontpad.{FrontpadView, Settings}
+  alias Delivest.Integrations.Frontpad.{OrderPayload, Settings}
   alias Delivest.Oms.{Order, OrderItem}
 
   test "maps cook_by to Frontpad datetime using the required format" do
@@ -13,18 +13,18 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
     settings = %Settings{api_key: "secret"}
     products_map = %{"product-1" => %{external_id: "frontpad-product-1"}}
 
-    assert {:ok, view} = FrontpadView.build(order, settings, products_map)
+    assert {:ok, view} = OrderPayload.build(order, settings, products_map)
 
-    assert {"datetime", "2026-10-15 15:30:00"} in FrontpadView.to_form_params(view)
+    assert {"datetime", "2026-10-15 15:30:00"} in OrderPayload.to_form_params(view)
   end
 
   test "omits Frontpad datetime when cook_by is empty" do
     order = %Order{items: []}
     settings = %Settings{api_key: "secret"}
 
-    assert {:ok, view} = FrontpadView.build(order, settings, %{})
+    assert {:ok, view} = OrderPayload.build(order, settings, %{})
 
-    refute Enum.any?(FrontpadView.to_form_params(view), fn {key, _value} -> key == "datetime" end)
+    refute Enum.any?(OrderPayload.to_form_params(view), fn {key, _value} -> key == "datetime" end)
   end
 
   test "takes phone and name from the linked client once the order is reloaded" do
@@ -35,9 +35,9 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
 
     settings = %Settings{api_key: "secret"}
 
-    assert {:ok, view} = FrontpadView.build(order, settings, %{})
+    assert {:ok, view} = OrderPayload.build(order, settings, %{})
 
-    params = FrontpadView.to_form_params(view)
+    params = OrderPayload.to_form_params(view)
     assert {"phone", "+79991234567"} in params
     assert {"name", "Иван"} in params
   end
@@ -45,8 +45,34 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
   test "sends the Frontpad branch as affiliate" do
     settings = %Settings{api_key: "secret", affiliate: "7"}
 
-    assert {:ok, view} = FrontpadView.build(%Order{items: []}, settings, %{})
-    assert {"affiliate", "7"} in FrontpadView.to_form_params(view)
+    assert {:ok, view} = OrderPayload.build(%Order{items: []}, settings, %{})
+    assert {"affiliate", "7"} in OrderPayload.to_form_params(view)
+  end
+
+  test "maps the unified address and puts courier notes into the description" do
+    order = %Order{
+      items: [],
+      comment: "Без лука",
+      address: %Delivest.Oms.Order.Address{
+        street: "ул Ленина",
+        house: "10 к 2",
+        entrance: "п.3",
+        floor: "12",
+        apartment: "45",
+        intercom: "45В",
+        comment: "Вход со двора"
+      }
+    }
+
+    assert {:ok, payload} = OrderPayload.build(order, %Settings{api_key: "secret"}, %{})
+    params = OrderPayload.to_form_params(payload)
+
+    assert {"street", "ул Ленина"} in params
+    assert {"home", "10 к 2"} in params
+    assert {"pod", "3"} in params
+    assert {"et", "12"} in params
+    assert {"apart", "45"} in params
+    assert {"descr", "Intercom 45В. Вход со двора. Без лука"} in params
   end
 
   describe "discounts" do
@@ -71,8 +97,8 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
     test "forces discounted prices when price override is enabled", ctx do
       settings = %Settings{api_key: "secret", price_override: true}
 
-      assert {:ok, view} = FrontpadView.build(ctx.order, settings, ctx.products)
-      params = FrontpadView.to_form_params(view)
+      assert {:ok, view} = OrderPayload.build(ctx.order, settings, ctx.products)
+      params = OrderPayload.to_form_params(view)
 
       assert {"product_price[0]", "80"} in params
       refute Enum.any?(params, fn {key, _} -> key == "product_price[1]" end)
@@ -82,9 +108,9 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
 
     test "sends the whole discount as sale_amount otherwise", ctx do
       assert {:ok, view} =
-               FrontpadView.build(ctx.order, %Settings{api_key: "secret"}, ctx.products)
+               OrderPayload.build(ctx.order, %Settings{api_key: "secret"}, ctx.products)
 
-      params = FrontpadView.to_form_params(view)
+      params = OrderPayload.to_form_params(view)
 
       assert {"sale_amount", "130"} in params
       refute Enum.any?(params, fn {key, _} -> String.starts_with?(key, "product_price") end)
@@ -92,6 +118,6 @@ defmodule Delivest.Integrations.Frontpad.FrontpadViewTest do
   end
 
   test "requires an api key" do
-    assert {:error, :missing_api_key} = FrontpadView.build(%Order{items: []}, %Settings{}, %{})
+    assert {:error, :missing_api_key} = OrderPayload.build(%Order{items: []}, %Settings{}, %{})
   end
 end

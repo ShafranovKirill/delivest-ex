@@ -2,7 +2,7 @@ defmodule Delivest.Integrations.Frontpad do
   @behaviour Delivest.Integrations.Crm.Provider
 
   alias Delivest.Integrations.Crm
-  alias Delivest.Integrations.Frontpad.{Api, FrontpadView, Webhook}
+  alias Delivest.Integrations.Frontpad.{Api, OrderPayload, Webhook}
   alias Delivest.Net
 
   @permanent_errors ~w(invalid_secret api_off invalid_plant invalid_product_keys invalid_certificate)
@@ -30,8 +30,8 @@ defmodule Delivest.Integrations.Frontpad do
   def deliver_order(order, settings) do
     products = Net.list_products_by_ids(Enum.map(order.items, & &1.product_id))
 
-    with {:ok, view} <- FrontpadView.build(order, settings, products) do
-      view |> FrontpadView.to_form_params() |> Api.new_order()
+    with {:ok, payload} <- OrderPayload.build(order, settings, products) do
+      payload |> OrderPayload.to_form_params() |> Api.new_order()
     end
   end
 
