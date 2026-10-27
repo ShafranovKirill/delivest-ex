@@ -1,6 +1,7 @@
 defmodule Delivest.Delivery.Geometry do
   @min_points 3
   @max_points 499
+  @km_per_degree 111.32
 
   def normalize(%{"type" => "Polygon", "coordinates" => [ring | _holes]}),
     do: normalize_ring(ring)
@@ -37,6 +38,19 @@ defmodule Delivest.Delivery.Geometry do
   end
 
   defp drop_closing(points), do: points
+
+  def circle({lat, lng}, radius_km, points \\ 64) do
+    lat_step = radius_km / @km_per_degree
+    lng_step = radius_km / (@km_per_degree * :math.cos(lat * :math.pi() / 180))
+
+    ring =
+      for i <- 0..(points - 1) do
+        angle = 2 * :math.pi() * i / points
+        [lng + lng_step * :math.sin(angle), lat + lat_step * :math.cos(angle)]
+      end
+
+    %{"type" => "Polygon", "coordinates" => [ring]}
+  end
 
   def ring(%{"coordinates" => [ring | _holes]}), do: ring
 

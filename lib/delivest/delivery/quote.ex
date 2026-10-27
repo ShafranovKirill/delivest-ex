@@ -21,8 +21,9 @@ defmodule Delivest.Delivery.Quote do
 
   def run(%Settings{mode: :zones}, _zones, nil, _subtotal), do: {:error, :no_coordinates}
 
-  def run(%Settings{mode: :zones}, zones, point, subtotal) do
+  def run(%Settings{mode: :zones} = settings, zones, point, subtotal) do
     case find_zone(zones, point) do
+      nil when settings.outside_zones -> price(settings.thresholds, subtotal, nil, nil)
       nil -> {:error, :outside_zones}
       zone -> price(zone.thresholds, subtotal, zone, zone.delivery_minutes)
     end

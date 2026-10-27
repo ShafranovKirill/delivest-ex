@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.IndexTest do
   import Delivest.Factory
 
   alias Delivest.Delivery
+  alias Delivest.Identity.Branch.BranchInfo
 
   @square %{
     "type" => "Polygon",
@@ -75,6 +76,38 @@ defmodule DelivestWeb.Staff.DeliveryLive.IndexTest do
 
     lv |> element("#delivery-zone-form button[phx-click=delete_zone]") |> render_click()
     assert [] = Delivery.list_zones(branch.id)
+  end
+
+  test "zones are shown to customers, deliver outside and grow by radius", %{conn: conn} do
+    branch = insert(:branch)
+    Delivest.Repo.insert!(%BranchInfo{branch_id: branch.id, latitude: 52.97, longitude: 36.06})
+    Cachex.clear(:branch_cache)
+
+    {:ok, lv, _html} =
+      live(sign_in(conn, branch, ["branches.read", "branches.update"]), ~p"/staff/delivery")
+
+    lv |> form("#delivery-settings", delivery: %{mode: "zones"}) |> render_change()
+    refute has_element?(lv, "#delivery-settings input[name='delivery[price]']")
+
+    lv
+    |> form("#delivery-settings", delivery: %{mode: "zones", outside_zones: "true"})
+    |> render_change()
+
+    lv
+    |> form("#delivery-settings",
+      delivery: %{mode: "zones", show_zones: "true", outside_zones: "true", price: "300"}
+    )
+    |> render_submit()
+
+    assert %{mode: :zones, show_zones: true, outside_zones: true, thresholds: [%{price: 300}]} =
+             Delivery.get_settings(branch.id)
+
+    lv |> form("#delivery-radius-zone", %{radius: "5"}) |> render_submit()
+    assert [%{radius_km: 5.0} = zone] = Delivery.list_zones(branch.id)
+
+    lv |> form("#delivery-zone-form", zone: %{radius_km: "8"}) |> render_submit()
+    assert [%{id: id, radius_km: 8.0}] = Delivery.list_zones(branch.id)
+    assert id == zone.id
   end
 
   test "staff without branch editing only looks", %{conn: conn} do

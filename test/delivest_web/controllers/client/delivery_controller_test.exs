@@ -63,6 +63,34 @@ defmodule DelivestWeb.Client.DeliveryControllerTest do
     refute Map.has_key?(fetch_quote(conn, Map.put(inside, :subtotal, 800))["data"], "zone")
   end
 
+  test "zones are shown to customers only when allowed", %{
+    conn: conn,
+    branch: branch,
+    admin: admin
+  } do
+    {:ok, _} = Delivery.update_settings(admin, branch.id, %{"mode" => "zones"})
+    {:ok, zone} = Delivery.create_zone(admin, branch.id, @square)
+
+    fetch = fn ->
+      conn |> get(~p"/client/delivery/zones", %{branch_id: branch.id}) |> json_response(200)
+    end
+
+    assert %{"data" => []} = fetch.()
+
+    {:ok, _} = Delivery.update_settings(admin, branch.id, %{"show_zones" => true})
+
+    assert %{
+             "data" => [
+               %{"id" => id, "color" => _, "name" => _, "polygon" => %{"type" => "Polygon"}} =
+                 shown
+             ]
+           } =
+             fetch.()
+
+    assert id == zone.id
+    refute Map.has_key?(shown, "thresholds")
+  end
+
   test "an unknown branch is 404", %{conn: conn} do
     assert %{"error" => "branch_not_found"} =
              conn |> get(~p"/client/delivery/quote", %{branch_id: "nope"}) |> json_response(404)

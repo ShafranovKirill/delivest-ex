@@ -8,6 +8,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
   attr :selected_id, :string, default: nil
   attr :form, :any, default: nil
   attr :can_edit, :boolean, required: true
+  attr :branch_point?, :boolean, default: false
 
   def panel(assigns) do
     ~H"""
@@ -24,6 +25,35 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
       </button>
       <p :if={@can_edit} class="text-xs text-base-content/60">
         {gettext("Click the map to put the points, click the first point to close the zone.")}
+      </p>
+
+      <form
+        :if={@can_edit}
+        id="delivery-radius-zone"
+        phx-submit="add_radius_zone"
+        class="flex items-end gap-2"
+      >
+        <label class="flex-1">
+          <span class="label mb-1 text-sm">{gettext("Radius around the branch, km")}</span>
+          <input
+            type="number"
+            name="radius"
+            min="0.1"
+            max="100"
+            step="0.1"
+            placeholder="5"
+            required
+            class="input w-full"
+            disabled={not @branch_point?}
+          />
+        </label>
+        <button type="submit" class="btn" disabled={not @branch_point?}>
+          <.icon name="hero-plus" class="size-4" />
+          {gettext("Add")}
+        </button>
+      </form>
+      <p :if={@can_edit and not @branch_point?} class="text-xs text-warning">
+        {gettext("Set the branch address on the map first, the radius is counted from it")}
       </p>
 
       <p :if={@zones == []} class="text-sm text-base-content/50 italic">
@@ -67,6 +97,16 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
             disabled={not @can_edit}
           />
         </div>
+        <.input
+          :if={@form[:radius_km].value}
+          field={@form[:radius_km]}
+          type="number"
+          min="0.1"
+          max="100"
+          step="0.1"
+          label={gettext("Radius around the branch, km")}
+          disabled={not @can_edit}
+        />
         <.input
           field={@form[:enabled]}
           type="checkbox"

@@ -4,14 +4,14 @@ defmodule DelivestWeb.Client.Delivery.DeliveryController do
 
   alias Delivest.{Delivery, Identity}
   alias DelivestWeb.Helpers.ApiError
-  alias DelivestWeb.Schemas.DeliverySchemas.DeliveryQuoteResponse
+  alias DelivestWeb.Schemas.DeliverySchemas.{DeliveryQuoteResponse, DeliveryZonesResponse}
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias OpenApiSpex.Schema
 
   operation(:quote,
     summary: "Стоимость доставки",
     description:
-      "Стоимость доставки по точке адреса и сумме корзины. Зоны клиенту не отдаются, только итог: " <>
+      "Стоимость доставки по точке адреса и сумме корзины: " <>
         "`ok` — доставляем, `below_minimum` — сумма меньше минимальной, `outside_zones` — сюда не доставляем, " <>
         "`no_coordinates` — у адреса нет точки на карте.",
     tags: ["Delivery"],
@@ -36,6 +36,29 @@ defmodule DelivestWeb.Client.Delivery.DeliveryController do
       {:ok, %{is_active: true} = branch} ->
         quote = Delivery.check(branch.id, point(params), integer(params["subtotal"]))
         render(conn, :quote, quote: quote)
+
+      _ ->
+        ApiError.send_error(conn, :not_found, :branch_not_found, "Branch not found")
+    end
+  end
+
+  operation(:zones,
+    summary: "Зоны доставки",
+    description:
+      "Зоны доставки филиала для показа на карте. Пустой список, если доставка без зон " <>
+        "или в админке не стоит галочка показывать зоны клиенту.",
+    tags: ["Delivery"],
+    parameters: [branch_id: [in: :query, type: :string, required: true]],
+    responses: [
+      ok: {"Зоны", "application/json", DeliveryZonesResponse},
+      not_found: {"Нет филиала", "application/json", ErrorResponse}
+    ]
+  )
+
+  def zones(conn, params) do
+    case Identity.get_branch(params["branch_id"] || "") do
+      {:ok, %{is_active: true} = branch} ->
+        render(conn, :zones, zones: Delivery.list_public_zones(branch.id))
 
       _ ->
         ApiError.send_error(conn, :not_found, :branch_not_found, "Branch not found")

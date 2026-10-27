@@ -87,6 +87,7 @@ defmodule DelivestWeb.Router do
     pipe_through [:api, :geo_rate_limit]
 
     get "/quote", DeliveryController, :quote
+    get "/zones", DeliveryController, :zones
   end
 
   scope "/client/franchise", DelivestWeb.Client.Franchise do

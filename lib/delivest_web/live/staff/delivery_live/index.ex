@@ -18,7 +18,6 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
      |> assign(
        page_title: gettext("Delivery"),
        can_edit: Identity.can?(socket.assigns.current_staff, "branches.update"),
-       mode: settings.mode,
        branch_point: branch_point(branch_id),
        address_map: Delivest.Integrations.Dadata.active?()
      )
@@ -27,19 +26,33 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
   end
 
   @impl true
-  def handle_event("mode", %{"delivery" => %{"mode" => mode}}, socket),
-    do: {:noreply, assign(socket, mode: String.to_existing_atom(mode))}
+  def handle_event("mode", %{"delivery" => params}, socket),
+    do: {:noreply, assign_settings_form(socket, params)}
 
   def handle_event("save_settings", %{"delivery" => params}, socket) do
-    attrs = %{"mode" => params["mode"], "thresholds" => Conditions.to_thresholds(params)}
+    attrs = Map.take(params, ["mode", "show_zones", "outside_zones"])
+
+    attrs =
+      if Map.has_key?(params, "price"),
+        do: Map.put(attrs, "thresholds", Conditions.to_thresholds(params)),
+        else: attrs
 
     case Delivery.update_settings(socket.assigns.current_staff, branch_id(socket), attrs) do
       {:ok, settings} ->
         {:noreply,
          socket
-         |> assign(mode: settings.mode)
          |> assign_settings(settings)
          |> put_flash(:info, gettext("Settings saved"))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, error_message(reason))}
+    end
+  end
+
+  def handle_event("add_radius_zone", %{"radius" => radius}, socket) do
+    case Delivery.create_radius_zone(socket.assigns.current_staff, branch_id(socket), radius) do
+      {:ok, zone} ->
+        {:noreply, socket |> reload_zones(zone.id) |> push_zones()}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, error_message(reason))}
@@ -83,7 +96,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
   def handle_event("save_zone", %{"zone" => params}, socket) do
     attrs =
       params
-      |> Map.take(["name", "color", "enabled", "delivery_minutes"])
+      |> Map.take(["name", "color", "enabled", "delivery_minutes", "radius_km"])
       |> Map.put("thresholds", Conditions.to_thresholds(params))
 
     staff = socket.assigns.current_staff
@@ -114,15 +127,33 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
   defp branch_id(socket), do: socket.assigns.current_branch.id
 
   defp branch_point(branch_id) do
-    case Identity.get_branch(branch_id, preload: [:info]) do
-      {:ok, %{info: %{latitude: lat, longitude: lng}}} -> %{lat: lat, lng: lng}
-      _ -> %{lat: nil, lng: nil}
+    case Delivery.branch_point(branch_id) do
+      {lat, lng} -> %{lat: lat, lng: lng}
+      nil -> %{lat: nil, lng: nil}
     end
   end
 
   defp assign_settings(socket, settings) do
-    params = Map.put(Conditions.from_thresholds(settings.thresholds), "mode", settings.mode)
-    assign(socket, settings: settings, settings_form: to_form(params, as: "delivery"))
+    params =
+      settings.thresholds
+      |> Conditions.from_thresholds()
+      |> Map.merge(%{
+        "mode" => to_string(settings.mode),
+        "show_zones" => settings.show_zones,
+        "outside_zones" => settings.outside_zones
+      })
+
+    socket
+    |> assign(settings: settings)
+    |> assign_settings_form(params)
+  end
+
+  defp assign_settings_form(socket, params) do
+    assign(socket,
+      mode: String.to_existing_atom(params["mode"] || "flat"),
+      outside_zones: params["outside_zones"] in [true, "true"],
+      settings_form: to_form(params, as: "delivery")
+    )
   end
 
   defp reload_zones(socket, selected_id) do
@@ -150,7 +181,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
 
   defp zone_form(zone) do
     zone
-    |> Map.take([:name, :color, :enabled, :delivery_minutes])
+    |> Map.take([:name, :color, :enabled, :delivery_minutes, :radius_km])
     |> Map.new(fn {key, value} -> {to_string(key), value} end)
     |> Map.merge(Conditions.from_thresholds(zone.thresholds))
     |> to_form(as: "zone")
@@ -167,6 +198,10 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
     do: %{id: zone.id, color: zone.color, enabled: zone.enabled, polygon: zone.polygon}
 
   defp error_message(:forbidden), do: gettext("Permission denied")
+
+  defp error_message(:no_branch_point),
+    do: gettext("Set the branch address on the map first, the radius is counted from it")
+
   defp error_message(%Ecto.Changeset{} = changeset), do: changeset_message(changeset)
   defp error_message(_reason), do: gettext("Failed to save")
 
@@ -182,11 +217,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
     <div class="space-y-6 py-4 sm:p-6 max-w-6xl">
       <.page_header
         title={gettext("Delivery")}
-        subtitle={
-          gettext(
-            "Delivery price for the site and Yandex Eda. Addresses outside the zones are not accepted."
-          )
-        }
+        subtitle={gettext("Delivery price for the site and Yandex Eda.")}
       />
 
       <.form
@@ -222,9 +253,36 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
           <.conditions form={@settings_form} disabled={not @can_edit} />
         </div>
 
-        <p :if={@mode == :zones} class="text-sm text-base-content/60">
-          {gettext("The price depends on the zone of the address. Draw the zones on the map below.")}
-        </p>
+        <div :if={@mode == :zones} class="space-y-3">
+          <p class="text-sm text-base-content/60">
+            {gettext(
+              "The price depends on the zone of the address. Draw the zones on the map below or add a zone by radius around the branch."
+            )}
+          </p>
+          <.input
+            field={@settings_form[:show_zones]}
+            type="checkbox"
+            label={gettext("Show the delivery zones to customers on the address map")}
+            disabled={not @can_edit}
+          />
+          <.input
+            field={@settings_form[:outside_zones]}
+            type="checkbox"
+            label={gettext("Deliver outside the zones")}
+            disabled={not @can_edit}
+          />
+          <div :if={@outside_zones} class="space-y-2 pl-7">
+            <p class="text-sm text-base-content/60">
+              {gettext("Conditions for addresses outside every zone.")}
+            </p>
+            <.conditions form={@settings_form} disabled={not @can_edit} />
+          </div>
+          <p :if={not @outside_zones} class="text-sm text-base-content/60 pl-7">
+            {gettext(
+              "Addresses outside the zones are refused, the customer sees «Sorry, we do not deliver here»."
+            )}
+          </p>
+        </div>
 
         <div
           :if={@mode == :zones and not @address_map}
@@ -272,6 +330,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
 
         <ZonePanel.panel
           zones={@zones}
+          branch_point?={not is_nil(@branch_point.lat)}
           selected_id={@selected_id}
           form={@zone_form}
           can_edit={@can_edit}

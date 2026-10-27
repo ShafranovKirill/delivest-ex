@@ -13,6 +13,8 @@ defmodule Delivest.Delivery.Settings do
 
   schema "delivery_settings" do
     field :mode, Ecto.Enum, values: @modes, default: :flat
+    field :show_zones, :boolean, default: false
+    field :outside_zones, :boolean, default: false
     embeds_many :thresholds, Threshold, on_replace: :delete
     belongs_to :branch, Delivest.Identity.Branch
 
@@ -23,7 +25,7 @@ defmodule Delivest.Delivery.Settings do
 
   def changeset(settings, attrs) do
     settings
-    |> cast(attrs, [:mode])
+    |> cast(attrs, [:mode, :show_zones, :outside_zones])
     |> cast_embed(:thresholds, sort_param: :thresholds_sort, drop_param: :thresholds_drop)
     |> validate_required([:mode])
     |> Threshold.validate_list(:thresholds)

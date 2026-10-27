@@ -434,7 +434,7 @@ msgstr "Текущий филиал"
 #: lib/delivest_web/live/staff/category_live/categories.ex:247
 #: lib/delivest_web/live/staff/category_live/categories.ex:332
 #: lib/delivest_web/live/staff/client_live/clients.ex:381
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:93
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:133
 #: lib/delivest_web/live/staff/order_live/orders.ex:281
 #: lib/delivest_web/live/staff/product_live/products.ex:420
 #: lib/delivest_web/live/staff/product_live/products.ex:663
@@ -646,7 +646,7 @@ msgstr "Медиа"
 
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:123
 #: lib/delivest_web/live/staff/client_live/clients.ex:289
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:62
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:92
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:62
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:692
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
@@ -692,7 +692,7 @@ msgstr "Страница %{current} из %{total}"
 #: lib/delivest_web/hooks/new_orders.ex:52
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
-#: lib/delivest_web/live/staff/delivery_live/index.ex:169
+#: lib/delivest_web/live/staff/delivery_live/index.ex:200
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:89
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
@@ -842,8 +842,8 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:225
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:100
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:143
-#: lib/delivest_web/live/staff/delivery_live/index.ex:244
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:96
+#: lib/delivest_web/live/staff/delivery_live/index.ex:302
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:136
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:84
@@ -865,8 +865,8 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:224
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:99
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:141
-#: lib/delivest_web/live/staff/delivery_live/index.ex:243
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:95
+#: lib/delivest_web/live/staff/delivery_live/index.ex:301
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:135
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:149
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:83
@@ -1306,7 +1306,7 @@ msgstr "Доставляется"
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:119
 #: lib/delivest_web/live/staff/delivery_live/index.ex:19
-#: lib/delivest_web/live/staff/delivery_live/index.ex:184
+#: lib/delivest_web/live/staff/delivery_live/index.ex:219
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:38
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:29
 #, elixir-autogen, elixir-format
@@ -3903,7 +3903,7 @@ msgstr "Вернуть шаблон"
 msgid "Seller details"
 msgstr "Реквизиты продавца"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:42
+#: lib/delivest_web/live/staff/delivery_live/index.ex:45
 #: lib/delivest_web/live/staff/franchise_live/index.ex:42
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:83
@@ -5009,7 +5009,7 @@ msgstr "Приложение"
 msgid "Connect a CRM in integrations"
 msgstr "Подключите CRM в интеграциях"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:171
+#: lib/delivest_web/live/staff/delivery_live/index.ex:206
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:190
 #, elixir-autogen, elixir-format
@@ -5635,97 +5635,87 @@ msgstr "Яндекс не вернул историю заказов"
 msgid "ours"
 msgstr "у нас"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:285
+#: lib/delivest_web/live/staff/delivery_live/index.ex:344
 #, elixir-autogen, elixir-format
 msgid "By zones on the map"
 msgstr "По зонам на карте"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:267
+#: lib/delivest_web/live/staff/delivery_live/index.ex:325
 #, elixir-autogen, elixir-format
 msgid "Click a zone to edit its points: drag a point, drag a midpoint to add one, right click a point to delete it."
 msgstr "Нажмите на зону, чтобы править её точки: тяните точку, тяните середину стороны, чтобы добавить точку, правый клик по точке удаляет её."
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:26
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:27
 #, elixir-autogen, elixir-format
 msgid "Click the map to put the points, click the first point to close the zone."
 msgstr "Ставьте точки кликами по карте, клик по первой точке замыкает зону."
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:66
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:96
 #, elixir-autogen, elixir-format
 msgid "Color"
 msgstr "Цвет"
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:90
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:130
 #, elixir-autogen, elixir-format
 msgid "Delete the zone?"
 msgstr "Удалить зону?"
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:73
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:113
 #, elixir-autogen, elixir-format
 msgid "Delivers"
 msgstr "Доставляем"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:186
-#, elixir-autogen, elixir-format
-msgid "Delivery price for the site and Yandex Eda. Addresses outside the zones are not accepted."
-msgstr "Стоимость доставки для сайта и Яндекс Еды. Адреса вне зон не принимаются."
-
-#: lib/delivest_web/live/staff/delivery_live/index.ex:305
+#: lib/delivest_web/live/staff/delivery_live/index.ex:364
 #, elixir-autogen, elixir-format
 msgid "Delivery price, ₽"
 msgstr "Стоимость доставки, ₽"
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:81
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:121
 #, elixir-autogen, elixir-format
 msgid "Delivery time, min"
 msgstr "Время доставки, мин"
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:23
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:24
 #, elixir-autogen, elixir-format
 msgid "Draw a zone"
 msgstr "Нарисовать зону"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:313
+#: lib/delivest_web/live/staff/delivery_live/index.ex:372
 #, elixir-autogen, elixir-format
 msgid "Free from, ₽"
 msgstr "Бесплатно от, ₽"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:297
+#: lib/delivest_web/live/staff/delivery_live/index.ex:356
 #, elixir-autogen, elixir-format
 msgid "Minimum order, ₽"
 msgstr "Минимальный заказ, ₽"
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:30
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:60
 #, elixir-autogen, elixir-format
 msgid "No zones yet, every delivery address is refused"
 msgstr "Зон пока нет — доставка не принимается ни по какому адресу"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:218
+#: lib/delivest_web/live/staff/delivery_live/index.ex:249
 #, elixir-autogen, elixir-format
 msgid "One price for any address. Leave the price empty for free delivery, set «free from» for free delivery from a sum."
 msgstr "Одна цена для любого адреса. Пустая цена — доставка бесплатна, «бесплатно от» — бесплатно от суммы заказа."
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:226
-#, elixir-autogen, elixir-format
-msgid "The price depends on the zone of the address. Draw the zones on the map below."
-msgstr "Цена зависит от зоны, в которую попал адрес. Нарисуйте зоны на карте ниже."
-
-#: lib/delivest_web/live/staff/delivery_live/index.ex:285
+#: lib/delivest_web/live/staff/delivery_live/index.ex:344
 #, elixir-autogen, elixir-format
 msgid "Without zones"
 msgstr "Без зон"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:97
+#: lib/delivest_web/live/staff/delivery_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Zone saved"
 msgstr "Зона сохранена"
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:115
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:155
 #, elixir-autogen, elixir-format
 msgid "free"
 msgstr "бесплатно"
 
-#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:109
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:149
 #, elixir-autogen, elixir-format
 msgid "from %{sum} ₽"
 msgstr "от %{sum} ₽"
@@ -5750,7 +5740,54 @@ msgstr "Артикул доставки"
 msgid "incl. delivery %{amount}"
 msgstr "в т.ч. доставка %{amount}"
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:236
+#: lib/delivest_web/live/staff/delivery_live/index.ex:294
 #, elixir-autogen, elixir-format
 msgid "Zones need DaData: without it the site has no address map, addresses have no point and delivery orders are refused."
 msgstr "Для зон нужна DaData: без неё на сайте нет карты адреса, у адресов нет точки, и заказы на доставку не принимаются."
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:52
+#, elixir-autogen, elixir-format
+msgid "Add"
+msgstr "Добавить"
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:281
+#, elixir-autogen, elixir-format
+msgid "Addresses outside the zones are refused, the customer sees «Sorry, we do not deliver here»."
+msgstr "Адреса вне зон не принимаются, клиент видит «Извините, сюда не доставляем»."
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:276
+#, elixir-autogen, elixir-format
+msgid "Conditions for addresses outside every zone."
+msgstr "Условия для адресов, которые не попали ни в одну зону."
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:271
+#, elixir-autogen, elixir-format
+msgid "Deliver outside the zones"
+msgstr "Доставлять за пределами зон"
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:220
+#, elixir-autogen, elixir-format
+msgid "Delivery price for the site and Yandex Eda."
+msgstr "Стоимость доставки для сайта и Яндекс Еды."
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:37
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:107
+#, elixir-autogen, elixir-format
+msgid "Radius around the branch, km"
+msgstr "Радиус вокруг филиала, км"
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:203
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:56
+#, elixir-autogen, elixir-format
+msgid "Set the branch address on the map first, the radius is counted from it"
+msgstr "Сначала укажите адрес филиала на карте, радиус считается от него"
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:265
+#, elixir-autogen, elixir-format
+msgid "Show the delivery zones to customers on the address map"
+msgstr "Показывать клиентам зоны доставки на карте адреса"
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:258
+#, elixir-autogen, elixir-format
+msgid "The price depends on the zone of the address. Draw the zones on the map below or add a zone by radius around the branch."
+msgstr "Цена зависит от зоны, в которую попал адрес. Нарисуйте зоны на карте ниже или добавьте зону радиусом вокруг филиала."

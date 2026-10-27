@@ -31,4 +31,45 @@ defmodule DelivestWeb.Schemas.DeliverySchemas do
       required: [:data]
     })
   end
+
+  defmodule DeliveryZone do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "DeliveryZone",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        name: %Schema{type: :string, example: "Центр"},
+        color: %Schema{type: :string, example: "#2563eb"},
+        polygon: %Schema{
+          type: :object,
+          description: "GeoJSON Polygon, точки [долгота, широта]",
+          properties: %{
+            type: %Schema{type: :string, enum: ["Polygon"]},
+            coordinates: %Schema{
+              type: :array,
+              items: %Schema{
+                type: :array,
+                items: %Schema{type: :array, items: %Schema{type: :number}}
+              }
+            }
+          },
+          required: [:type, :coordinates]
+        }
+      },
+      required: [:id, :name, :color, :polygon]
+    })
+  end
+
+  defmodule DeliveryZonesResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "DeliveryZonesResponse",
+      type: :object,
+      properties: %{data: %Schema{type: :array, items: DeliveryZone}},
+      required: [:data]
+    })
+  end
 end
