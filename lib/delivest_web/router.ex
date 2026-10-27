@@ -187,6 +187,8 @@ defmodule DelivestWeb.Router do
       get "/restaurants", RestaurantController, :index
       get "/restaurants/availability", RestaurantController, :availability
       get "/places/:restaurant_id/schedule", RestaurantController, :schedule
+      get "/places/:restaurant_id/zones", RestaurantController, :zones
+      get "/places/:restaurant_id/zone/meta", RestaurantController, :zone_meta
       get "/menu/:restaurant_id/composition", MenuController, :composition
       get "/menu/:restaurant_id/availability", MenuController, :availability
 

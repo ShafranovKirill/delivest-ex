@@ -1,6 +1,6 @@
 # Яндекс Еда
 
-Входящий канал продаж: заказы из Яндекс Еды (и Delivery Club по тому же протоколу) приходят к нам, а мы — основная система ресторана. Модуль в разработке, что осталось — в разделе «TODO» в конце файла.
+Входящий канал продаж: заказы из Яндекс Еды (и Delivery Club по тому же протоколу) приходят к нам, а мы — основная система ресторана. Что осталось — в разделе «TODO» в конце файла.
 
 - Источник: OpenAPI «API для интеграции сервиса Яндекс Еда» v1.0-oas3, https://yandex.ru/dev/eda-vendor/doc/ru/ref/
 - Ключ канала: `:yandex_eda`
@@ -381,6 +381,8 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 | `thresholds` | 1–10 условий `{orderCost: Money, deliveryCost: Money}`; `Money` = `{currency: "RUB", value}` |
 | `courierType` | `pedestrian`, `bicycle`, `vehicle`, `motorcycle` |
 
+У нас (`YandexEda.Zones`): зоны берём со страницы `/staff/delivery`. `zones` отдаёт включённые неудалённые зоны, только если у филиала режим «по зонам»; при фиксированной доставке — `[]`. Координаты — замкнутое кольцо полигона. `zoneId` = `<id зоны>-v<geometry_version>`: при изменении формы версия растёт, и Яндекс создаёт новую зону. `zone/meta` отдаёт все версии всех зон (включая удалённые): `enabled: true` только у текущей версии включённой зоны в режиме «по зонам». `intervals` — график филиала, `averageDeliveryTime` — время зоны или время доставки филиала (иначе 60), `thresholds` — пороги зоны по возрастанию суммы, без порогов — `{0, 0}`. `courierType` не отдаём.
+
 ## POST `/v1/feedback` (по подписке)
 
 Отзыв клиента: `feedback` (`id`, `eatsId`, `orderId`, `restaurantId`, `rating` 1–5, `comment`, `predefinedComment`, `createdAt`, `takenAt`, `deliveredAt`) и `orderInfo` (схема доставки, состав, итог). Ответ `200 {"result": "OK"}`.
@@ -454,7 +456,6 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 # TODO
 
-Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), КБЖУ и акциз у товара, НДС филиала, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, пауза ресторана (`/block`, `/unblock`, `/v2/status`), проверка кода курьера, отзывы `/v1/feedback` в карточке заказа, сверка заказов по `/v1/orders-history`, русские переводы. Всё покрыто тестами.
+Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, зоны `/places/{id}/zones` и `/zone/meta`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), КБЖУ и акциз у товара, НДС филиала, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, пауза ресторана (`/block`, `/unblock`, `/v2/status`), проверка кода курьера, отзывы `/v1/feedback` в карточке заказа, сверка заказов по `/v1/orders-history`, русские переводы. Всё покрыто тестами.
 
-1. Не сделано: `/places/{id}/zones`, `/zone/meta` — у нас нет своих зон доставки (полигонов, стоимости, минимальной суммы), отдавать нечего.
-2. **Вопросы к менеджеру Яндекса** — список выше. Особенно п.5: через сколько Яндекс сам отменяет неподтверждённый заказ и шлёт ли предзаказы ночью.
+1. **Вопросы к менеджеру Яндекса** — список выше. Особенно п.5: через сколько Яндекс сам отменяет неподтверждённый заказ и шлёт ли предзаказы ночью.

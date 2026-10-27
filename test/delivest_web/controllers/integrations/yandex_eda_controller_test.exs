@@ -76,6 +76,9 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
 
       assert %{"mon" => []} =
                conn |> get(@base <> "/places/#{branch.id}/schedule") |> json_response(200)
+
+      assert [] = conn |> get(@base <> "/places/#{branch.id}/zones") |> json_response(200)
+      assert [] = conn |> get(@base <> "/places/#{branch.id}/zone/meta") |> json_response(200)
     end
 
     test "the menu is typed", %{conn: conn, branch: branch, product: product} do

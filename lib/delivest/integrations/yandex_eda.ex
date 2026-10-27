@@ -22,7 +22,8 @@ defmodule Delivest.Integrations.YandexEda do
     Schedule,
     Settings,
     StopList,
-    Token
+    Token,
+    Zones
   }
 
   @menu_delay 10
@@ -163,6 +164,14 @@ defmodule Delivest.Integrations.YandexEda do
   def schedule(restaurant_id) do
     with {:ok, branch, _settings} <- Places.fetch(restaurant_id),
          do: {:ok, Schedule.build(branch.info.working_hours)}
+  end
+
+  def zones(restaurant_id) do
+    with {:ok, branch, _settings} <- Places.fetch(restaurant_id), do: {:ok, Zones.list(branch)}
+  end
+
+  def zone_metas(restaurant_id) do
+    with {:ok, branch, _settings} <- Places.fetch(restaurant_id), do: {:ok, Zones.metas(branch)}
   end
 
   def create_order(params) do

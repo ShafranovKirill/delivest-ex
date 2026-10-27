@@ -14,4 +14,11 @@ defmodule DelivestWeb.Integrations.YandexEda.RestaurantController do
       {:error, reason} -> Reply.failure(conn, reason)
     end
   end
+
+  def zones(conn, %{"restaurant_id" => id}), do: reply(conn, YandexEda.zones(id))
+
+  def zone_meta(conn, %{"restaurant_id" => id}), do: reply(conn, YandexEda.zone_metas(id))
+
+  defp reply(conn, {:ok, body}), do: json(conn, body)
+  defp reply(conn, {:error, reason}), do: Reply.failure(conn, reason)
 end
