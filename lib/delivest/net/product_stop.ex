@@ -9,7 +9,7 @@ defmodule Delivest.Net.ProductStop do
     field :branch_id, :binary_id
     field :source, :string
     field :until, :utc_datetime
-    field :staff_id, :binary_id
+    belongs_to :staff, Delivest.Identity.Staff
 
     timestamps(type: :utc_datetime)
   end

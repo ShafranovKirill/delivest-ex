@@ -2,11 +2,12 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Repo, Net}
-  alias Delivest.Net.{Product, ProductCrmIds}
+  alias Delivest.Net.{Product, ProductCrmIds, Stops}
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.CopyComponent
 
   import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
+  import DelivestWeb.Staff.ProductLive.StopControl, only: [stop_control: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
@@ -30,7 +31,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        selected_status: nil,
        selected_ids: [],
        copy_open: false,
-       bulk_delete_open: false
+       bulk_delete_open: false,
+       stops: Stops.by_product(branch_id),
+       stopped_filter: false,
+       params: %{}
      )
      |> stream(:products, [])}
   end
@@ -39,17 +43,21 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   def handle_params(params, _url, socket) do
     branch_id = socket.assigns.branch_id
     flop_params = prepare_flop_params(params)
+    stopped_filter = params["stopped"] == "true"
 
     case Net.list_staff_products_for_branch(
            socket.assigns.current_staff,
            branch_id,
            flop_params,
-           preload: [:category, :external_ids]
+           preload: [:category, :external_ids],
+           only_ids: if(stopped_filter, do: MapSet.to_list(Stops.stopped_ids(branch_id)))
          ) do
       {:ok, {products, meta}} ->
         socket =
           socket
           |> assign(
+            params: params,
+            stopped_filter: stopped_filter,
             meta: meta,
             selected_ids: [],
             search: Map.get(params, "search", ""),
@@ -135,6 +143,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     search = params["search"]
     category_id = params["category_id"]
     is_active = parse_boolean_status(params["is_active"])
+    stopped = if params["is_active"] == "stopped", do: "true"
 
     filters =
       []
@@ -147,10 +156,29 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       build_query_params(socket.assigns, %{
         "search" => search,
         "filters" => filters,
+        "stopped" => stopped,
         "page" => 1
       })
 
     {:noreply, push_patch(socket, to: ~p"/staff/products?#{query_params}")}
+  end
+
+  def handle_event("stop", %{"id" => id, "period" => period}, socket)
+      when period in ~w(today until_resumed) do
+    with_branch_product(socket, id, fn product ->
+      Stops.stop(
+        socket.assigns.current_staff,
+        socket.assigns.branch_id,
+        product,
+        String.to_existing_atom(period)
+      )
+    end)
+  end
+
+  def handle_event("resume", %{"id" => id}, socket) do
+    with_branch_product(socket, id, fn product ->
+      Stops.resume(socket.assigns.current_staff, socket.assigns.branch_id, product)
+    end)
   end
 
   def handle_event("update_page_size", %{"page_size" => size}, socket) do
@@ -275,14 +303,20 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
+  def handle_info(:stops_changed, socket) do
+    socket = assign(socket, stops: Stops.by_product(socket.assigns.branch_id))
+    handle_params(socket.assigns.params, nil, socket)
+  end
+
+  @impl true
   def handle_info({:product_created, product}, socket) do
-    product_with_assoc = Repo.preload(product, [:category])
+    product_with_assoc = Repo.preload(product, [:category, :external_ids])
     {:noreply, stream_insert(socket, :products, product_with_assoc, at: 0)}
   end
 
   @impl true
   def handle_info({:product_updated, product}, socket) do
-    product_with_assoc = Repo.preload(product, [:category])
+    product_with_assoc = Repo.preload(product, [:category, :external_ids])
     {:noreply, stream_insert(socket, :products, product_with_assoc)}
   end
 
@@ -306,6 +340,16 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     list_of_filters
     |> Enum.with_index()
     |> Map.new(fn {filter, idx} -> {to_string(idx), filter} end)
+  end
+
+  defp with_branch_product(socket, id, action) do
+    with {:ok, product} <- Net.get_branch_product(socket.assigns.branch_id, id),
+         {:ok, _result} <- action.(product) do
+      {:noreply, socket}
+    else
+      {:error, :forbidden} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+      _error -> {:noreply, put_flash(socket, :error, gettext("Failed to update the stop list"))}
+    end
   end
 
   defp parse_boolean_status("true"), do: true
@@ -350,7 +394,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       "page_size" => meta.page_size,
       "order_by" => order_by,
       "order_directions" => order_directions,
-      "filters" => filters_for_query
+      "filters" => filters_for_query,
+      "stopped" => if(assigns.stopped_filter, do: "true")
     }
     |> Map.merge(overrides)
     |> Enum.reject(fn {_, v} -> is_nil(v) or v == "" or v == [] or v == %{} end)
@@ -443,6 +488,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             <option value="">{gettext("All statuses")}</option>
             <option value="true" selected={@selected_status == true}>{gettext("Active")}</option>
             <option value="false" selected={@selected_status == false}>{gettext("Inactive")}</option>
+            <option value="stopped" selected={@stopped_filter}>{gettext("In stop list")}</option>
           </select>
         </div>
       </.form>
@@ -503,6 +549,14 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
               "Inactive"
             )}</span>
           <% end %>
+        </:col>
+
+        <:col :let={{_id, prod}} label={gettext("Stop list")}>
+          <.stop_control
+            product={prod}
+            stops={Map.get(@stops, prod.id, [])}
+            can_edit={Identity.can?(@current_staff, "products.update")}
+          />
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Description")} secondary>

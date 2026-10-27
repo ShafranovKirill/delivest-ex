@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   alias Delivest.Identity
   alias Delivest.Integrations.Crm
-  alias Delivest.Integrations.Crm.{BranchSettings, Catalog}
+  alias Delivest.Integrations.Crm.{BranchSettings, Catalog, StopSync}
   alias Delivest.Integrations.Frontpad
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -17,7 +17,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
        page_title: "Frontpad",
        can_edit_branch: Identity.can?(socket.assigns.current_staff, "branches.update"),
        query: "",
-       refresh_timer: nil
+       refresh_timer: nil,
+       stop_sync: StopSync.last(socket.assigns.current_branch.id)
      )
      |> load_settings()
      |> load_catalog()
@@ -33,6 +34,21 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
       {:error, {:too_early, _available_at}} ->
         {:noreply, socket |> load_catalog() |> put_flash(:error, gettext("Too early to update"))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, refresh_error(reason))}
+    end
+  end
+
+  def handle_event("sync_stops", _params, socket) do
+    case StopSync.sync(socket.assigns.current_branch.id) do
+      {:ok, :disabled} ->
+        {:noreply,
+         socket |> assign(stop_sync: nil) |> put_flash(:info, gettext("Stop list sync is off"))}
+
+      {:ok, result} ->
+        {:noreply,
+         socket |> assign(stop_sync: result) |> put_flash(:info, gettext("Stop list updated"))}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, refresh_error(reason))}
@@ -230,6 +246,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         can_edit={@can_edit_branch}
       />
 
+      <.stop_sync_panel
+        :if={@tab == :settings and @crm.frontpad.sync_stops}
+        result={@stop_sync}
+        can_edit={@can_edit_branch}
+      />
+
       <div
         :if={@tab != :settings and !api_key?(@crm)}
         id="frontpad-not-configured"
@@ -323,6 +345,19 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             </p>
           </div>
 
+          <div class="space-y-1">
+            <.input
+              field={frontpad[:sync_stops]}
+              type="checkbox"
+              label={gettext("Take the stop list from Frontpad")}
+            />
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Every 10 minutes products from the Frontpad stop list become unavailable in the app. They are lifted in Frontpad."
+              )}
+            </p>
+          </div>
+
           <div class="space-y-2">
             <p class="text-sm font-medium">{gettext("Frontpad status codes")}</p>
             <p class="text-xs text-base-content/60">
@@ -357,6 +392,47 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         </div>
       </fieldset>
     </.form>
+    """
+  end
+
+  attr :result, :map, default: nil
+  attr :can_edit, :boolean, required: true
+
+  defp stop_sync_panel(assigns) do
+    ~H"""
+    <section id="frontpad-stops" class="card bg-base-100 border border-base-300">
+      <div class="card-body gap-3 p-4 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="font-bold">{gettext("Stop list from Frontpad")}</h2>
+            <p :if={@result} class="text-sm text-base-content/60">
+              {gettext("Updated %{time}, products in stop: %{count}",
+                time: OrderHelpers.local_datetime(@result.synced_at),
+                count: @result.stopped
+              )}
+            </p>
+            <p :if={is_nil(@result)} class="text-sm text-base-content/60">
+              {gettext("Not received yet")}
+            </p>
+          </div>
+          <button
+            :if={@can_edit}
+            id="frontpad-sync-stops"
+            type="button"
+            class="btn btn-sm"
+            phx-click="sync_stops"
+            phx-disable-with={gettext("Loading...")}
+          >
+            <.icon name="hero-arrow-path" class="size-4" /> {gettext("Update now")}
+          </button>
+        </div>
+
+        <div :if={@result && @result.unlinked != []} id="frontpad-stops-unlinked" class="text-sm">
+          <p class="font-medium">{gettext("In the Frontpad stop list but not linked to products")}</p>
+          <p class="text-base-content/60">{Enum.join(@result.unlinked, ", ")}</p>
+        </div>
+      </div>
+    </section>
     """
   end
 

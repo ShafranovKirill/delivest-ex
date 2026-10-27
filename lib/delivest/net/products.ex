@@ -14,6 +14,7 @@ defmodule Delivest.Net.Products do
       Product
       |> where([p], p.id in ^product_ids)
       |> where([p], is_nil(p.deleted_at))
+      |> only_ids(Keyword.get(opts, :only_ids))
       |> maybe_preload_query(opts)
       |> Flop.validate_and_run(params, for: Product)
     else
@@ -414,6 +415,9 @@ defmodule Delivest.Net.Products do
     Cachex.clear(:promo_cache)
     Cachex.clear(:cart_cache)
   end
+
+  defp only_ids(query, nil), do: query
+  defp only_ids(query, ids), do: where(query, [p], p.id in ^ids)
 
   defp maybe_preload_query(query, opts) do
     case Keyword.get(opts, :preload) do

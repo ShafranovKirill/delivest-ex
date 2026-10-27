@@ -120,4 +120,41 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert length(Delivest.Relations.list_target_ids("Branch", target.id, "Product")) == 2
     end
   end
+
+  describe "stop list" do
+    setup %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+      %{conn: conn, branch: branch}
+    end
+
+    test "staff stops a product for today and lifts it", %{conn: conn, branch: branch} do
+      soup = insert_branch_product(branch.id, name: "Soup")
+      insert_branch_product(branch.id, name: "Tea")
+      {:ok, lv, _html} = live(conn, ~p"/staff/products")
+
+      lv
+      |> element("#product-stop-#{soup.id} button[phx-value-period=today]")
+      |> render_click()
+
+      assert render(lv) =~ "Stop until"
+      assert Delivest.Net.Stops.stopped?(branch.id, soup.id)
+
+      lv |> element("#product-stop-#{soup.id} button[phx-click=resume]") |> render_click()
+      refute Delivest.Net.Stops.stopped?(branch.id, soup.id)
+    end
+
+    test "the stop list filter shows only stopped products", %{conn: conn, branch: branch} do
+      soup = insert_branch_product(branch.id, name: "Soup")
+      insert_branch_product(branch.id, name: "Tea")
+      {:ok, _} = Delivest.Net.Stops.replace_external(branch.id, :frontpad, [soup.id])
+
+      {:ok, _lv, html} = live(conn, ~p"/staff/products?stopped=true")
+
+      assert html =~ "Soup"
+      refute html =~ "Tea"
+      assert html =~ "Stop in Frontpad"
+    end
+  end
 end

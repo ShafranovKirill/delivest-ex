@@ -28,6 +28,7 @@ defmodule Delivest.Net.Stops do
   def by_product(branch_id, now \\ DateTime.utc_now()) do
     branch_id
     |> active_query(now)
+    |> preload(:staff)
     |> Repo.all()
     |> Enum.group_by(& &1.product_id)
   end
