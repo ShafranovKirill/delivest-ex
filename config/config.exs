@@ -33,7 +33,8 @@ config :delivest, Delivest.Audit, retention_days: 180
 
 config :delivest,
   ecto_repos: [Delivest.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  auto_confirm_phone: false
 
 # Configure the endpoint
 config :delivest, DelivestWeb.Endpoint,

@@ -1,14 +1,16 @@
 defmodule Delivest.Identity.ClientAuth do
   alias Delivest.Identity.{Client, Clients, Phone, PhoneConfirmation, PhoneConfirmations}
-  alias Delivest.Integrations.Zvonok
+
+  @auto_confirm Application.compile_env(:delivest, :auto_confirm_phone, false)
 
   @spec start(term(), String.t() | nil) ::
           {:ok, PhoneConfirmation.t(), String.t()} | {:error, term()}
   def start(phone, session_id) do
     with {:ok, phone} <- validate_phone(phone),
-         {:ok, %{call_id: call_id, call_number: call_number}} <- Zvonok.request_call(phone),
+         {:ok, %{call_id: call_id, call_number: call_number}} <- request_call(phone),
          {:ok, confirmation} <-
-           PhoneConfirmations.create(%{phone: phone, session_id: session_id, call_id: call_id}) do
+           PhoneConfirmations.create(%{phone: phone, session_id: session_id, call_id: call_id}),
+         :ok <- auto_confirm(call_id, phone) do
       {:ok, confirmation, call_number}
     end
   end
@@ -48,6 +50,17 @@ defmodule Delivest.Identity.ClientAuth do
 
   defp notify_confirmed(id),
     do: Phoenix.PubSub.broadcast(Delivest.PubSub, PhoneConfirmations.topic(id), :phone_confirmed)
+
+  if @auto_confirm do
+    defp request_call(_phone),
+      do: {:ok, %{call_id: Ecto.UUID.generate(), call_number: "70000000000"}}
+
+    defp auto_confirm(call_id, phone), do: confirm_call(call_id, phone)
+  else
+    defp request_call(phone), do: Delivest.Integrations.Zvonok.request_call(phone)
+
+    defp auto_confirm(_call_id, _phone), do: :ok
+  end
 
   defp validate_phone(phone) do
     case Phone.normalize(phone) do
