@@ -17,6 +17,20 @@ defmodule Delivest.Integrations.Frontpad.Api do
     |> products()
   end
 
+  def get_stops(secret) do
+    "/api/index.php?get_stops"
+    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, decode_json: true)
+    |> decode()
+    |> stops()
+  end
+
+  defp stops({:ok, %{"result" => "success", "error" => "no_stops"}}), do: {:ok, []}
+
+  defp stops({:ok, %{"result" => "success"} = body}),
+    do: {:ok, body["product_id"] |> indexed() |> Enum.map(fn {_index, id} -> to_string(id) end)}
+
+  defp stops(response), do: result(response)
+
   defp products({:ok, %{"result" => "success"} = body}) do
     names = Map.new(indexed(body["name"]))
     prices = Map.new(indexed(body["price"]))

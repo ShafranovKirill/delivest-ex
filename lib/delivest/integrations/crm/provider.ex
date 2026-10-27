@@ -28,5 +28,12 @@ defmodule Delivest.Integrations.Crm.Provider do
 
   @callback handle_webhook(token :: String.t(), params :: map()) :: webhook_reply()
 
-  @optional_callbacks catalog_source: 1, fetch_catalog: 1, handle_webhook: 2
+  @callback stops_enabled?(settings :: struct()) :: boolean()
+  @callback fetch_stops(settings :: struct()) :: {:ok, [String.t()]} | {:error, term()}
+
+  @optional_callbacks catalog_source: 1,
+                      fetch_catalog: 1,
+                      handle_webhook: 2,
+                      stops_enabled?: 1,
+                      fetch_stops: 1
 end

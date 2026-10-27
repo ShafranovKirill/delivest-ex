@@ -16,6 +16,11 @@ defmodule Delivest.Integrations.Crm.Lookup do
 
   def branch_info_by_webhook_token(_provider, _token), do: {:error, :not_found}
 
+  def crm_branch_ids do
+    from(i in BranchInfo, where: fragment("?->>'enabled' = 'true'", i.crm), select: i.branch_id)
+    |> Repo.all()
+  end
+
   def order_by_external_id(branch_id, provider, external_id) do
     query =
       from(o in Order,

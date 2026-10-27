@@ -52,6 +52,15 @@ defmodule Delivest.Integrations.Frontpad do
   def fetch_catalog(_settings), do: {:error, :missing_api_key}
 
   @impl true
+  def stops_enabled?(%{sync_stops: true} = settings), do: configured?(settings)
+  def stops_enabled?(_settings), do: false
+
+  @impl true
+  def fetch_stops(%{api_key: api_key} = settings) do
+    Crm.Throttle.run(rate_limit(settings), fn -> Api.get_stops(api_key) end)
+  end
+
+  @impl true
   def rate_limit(%{api_key: api_key}), do: {{:frontpad, api_key}, request_interval_ms()}
 
   @impl true
