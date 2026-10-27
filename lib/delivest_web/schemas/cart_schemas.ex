@@ -221,7 +221,8 @@ defmodule DelivestWeb.Schemas.CartSchemas do
           example: false,
           description: "Подарок по акции: количество менять нельзя"
         },
-        promotion_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}}
+        promotion_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
+        stopped: %Schema{type: :boolean, description: "Товар в стоп-листе: заказать нельзя"}
       },
       required: [
         :key,

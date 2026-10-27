@@ -29,6 +29,7 @@ defmodule Delivest.Application do
       cache(:rate_limit_cache, limit: 100_000),
       cache(:geo_cache, limit: 50_000),
       cache(:crm_cache),
+      cache(:stop_cache),
       DelivestWeb.Endpoint
     ]
 

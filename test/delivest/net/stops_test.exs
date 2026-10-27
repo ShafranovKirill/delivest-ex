@@ -16,6 +16,7 @@ defmodule Delivest.Net.StopsTest do
   describe "manual stops" do
     test "stop until resumed and resume", %{staff: staff, branch: branch} do
       product = insert_branch_product(branch.id)
+      refute Stops.stopped?(branch.id, product.id)
 
       assert {:ok, %ProductStop{until: nil}} =
                Stops.stop(staff, branch.id, product, :until_resumed)
@@ -77,6 +78,9 @@ defmodule Delivest.Net.StopsTest do
       {:ok, _} = Stops.stop(staff, branch.id, product, :today)
 
       assert {:error, :product_unavailable} = Carts.add_item(cart.id, product.id, 1)
+
+      assert %{data: %{items: [%{stopped: true}]}} =
+               DelivestWeb.Client.Cart.CartJSON.show(%{cart: Carts.get_cart_by_id(cart.id)})
 
       assert {:error, :stops, :product_unavailable} =
                Oms.create_order(%{

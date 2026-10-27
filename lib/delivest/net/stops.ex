@@ -4,20 +4,18 @@ defmodule Delivest.Net.Stops do
   alias Delivest.{Audit, Identity, Repo}
   alias Delivest.Net.{Product, ProductStop, StopPeriod}
 
+  @cache :stop_cache
+  @ttl :timer.seconds(60)
+
   def stopped_ids(branch_id, now \\ DateTime.utc_now()) do
-    branch_id
-    |> active_query(now)
-    |> select([s], s.product_id)
-    |> Repo.all()
-    |> MapSet.new()
+    for stop <- cached(branch_id),
+        StopPeriod.active?(stop, now),
+        into: MapSet.new(),
+        do: stop.product_id
   end
 
-  def stopped?(branch_id, product_id, now \\ DateTime.utc_now()) do
-    branch_id
-    |> active_query(now)
-    |> where([s], s.product_id == ^product_id)
-    |> Repo.exists?()
-  end
+  def stopped?(branch_id, product_id, now \\ DateTime.utc_now()),
+    do: branch_id |> stopped_ids(now) |> MapSet.member?(product_id)
 
   def ensure_available(branch_id, product_ids) do
     if MapSet.disjoint?(stopped_ids(branch_id), MapSet.new(product_ids)),
@@ -130,6 +128,25 @@ defmodule Delivest.Net.Stops do
     from(s in ProductStop, where: s.branch_id == ^branch_id and s.source == ^to_string(source))
   end
 
-  defp changed(branch_id),
-    do: Phoenix.PubSub.broadcast(Delivest.PubSub, "branch_products:#{branch_id}", :stops_changed)
+  defp cached(branch_id) do
+    case Cachex.fetch(@cache, branch_id, &{:commit, load(&1), ttl: @ttl}) do
+      {:ok, stops} -> stops
+      {:commit, stops} -> stops
+      {:commit, stops, _opts} -> stops
+      {:error, _reason} -> load(branch_id)
+    end
+  end
+
+  defp load(branch_id) do
+    from(s in ProductStop,
+      where: s.branch_id == ^branch_id,
+      select: %{product_id: s.product_id, until: s.until}
+    )
+    |> Repo.all()
+  end
+
+  defp changed(branch_id) do
+    Cachex.del(@cache, branch_id)
+    Phoenix.PubSub.broadcast(Delivest.PubSub, "branch_products:#{branch_id}", :stops_changed)
+  end
 end
