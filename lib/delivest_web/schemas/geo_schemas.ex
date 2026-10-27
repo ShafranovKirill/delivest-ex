@@ -20,7 +20,7 @@ defmodule DelivestWeb.Schemas.GeoSchemas do
         geo_precision: %Schema{
           type: :integer,
           nullable: true,
-          description: "Точность координат DaData qc_geo: 0 — дом, 5 — не определены"
+          description: "Точность координат DaData qc_geo: 0 — точные, 5 — не определены"
         }
       },
       required: [
