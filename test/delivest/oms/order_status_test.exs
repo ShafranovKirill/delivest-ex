@@ -28,4 +28,10 @@ defmodule Delivest.Oms.OrderStatusTest do
     assert OrderStatus.forward?(nil, :created)
     refute OrderStatus.forward?(:ready, :preparing)
   end
+
+  test "a channel cancellation needs a manual cancel in the crm" do
+    assert Delivest.Integrations.Crm.manual_cancel_required?(crm_order("preparing", "cancelled"))
+    refute Delivest.Integrations.Crm.manual_cancel_required?(crm_order("cancelled", "cancelled"))
+    refute Delivest.Integrations.Crm.manual_cancel_required?(crm_order("preparing"))
+  end
 end

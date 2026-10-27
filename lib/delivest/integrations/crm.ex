@@ -47,6 +47,14 @@ defmodule Delivest.Integrations.Crm do
 
   def provider_for(_branch, _source), do: nil
 
+  def manual_cancel_required?(%Order{
+        channel: %{remote_status: "cancelled"},
+        crm: %{status: "sent", remote_status: remote}
+      }),
+      do: remote != "cancelled"
+
+  def manual_cancel_required?(_order), do: false
+
   def get_branch_settings(branch_id) do
     case Identity.get_branch(branch_id, preload: [:info]) do
       {:ok, %Branch{info: %{crm: %BranchSettings{} = settings}}} -> settings

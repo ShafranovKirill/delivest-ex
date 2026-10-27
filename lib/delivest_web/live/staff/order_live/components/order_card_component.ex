@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   use Gettext, backend: DelivestWeb.Gettext
 
   alias Delivest.Identity
-  alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Oms.OrderStatus
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
@@ -72,7 +72,27 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         {CancelReasons.label(@order.cancel_reason)}<span :if={@order.cancel_note}>: {@order.cancel_note}</span>
       </p>
 
+      <p
+        :if={Crm.manual_cancel_required?(@order)}
+        id={"order-crm-cancel-#{@order.id}"}
+        class="mx-3 sm:mx-4 mb-3 rounded-box bg-error/10 px-3 py-2 text-sm font-semibold text-error"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-4" />
+        {gettext("Cancelled in %{channel}. Cancel order %{number} in %{crm} manually",
+          channel: Channels.name(@order.source),
+          number: @order.crm.external_number || @order.crm.external_id,
+          crm: crm_name(@order)
+        )}
+      </p>
+
       <footer class="px-3 sm:px-4 py-2.5 border-t border-base-200 flex flex-wrap items-center gap-2">
+        <span
+          :if={@order.source != "app"}
+          id={"order-source-#{@order.id}"}
+          class="badge badge-sm badge-outline"
+        >
+          {source_label(@order.source)}
+        </span>
         <.status_control order={@order} />
         <form
           :if={@order.status != :crm}
@@ -274,6 +294,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
        do: code
 
   defp unmapped_crm_code(_order), do: nil
+
+  defp source_label("staff"), do: gettext("Admin")
+  defp source_label(source), do: Channels.name(source)
 
   defp crm_name(%{crm: %{provider: provider}}) do
     case Crm.provider_name(provider) do
