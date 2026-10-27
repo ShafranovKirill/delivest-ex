@@ -11,12 +11,12 @@ CRM для доставки. Принимает заказы, присылает
 | Модуль | Что делает |
 |---|---|
 | `Frontpad` | Реализация `Crm.Provider`: отправка заказа, ошибки, лимиты, каталог, вебхук |
-| `Frontpad.Api` | HTTP-запросы `new_order` и `get_products`, разбор ответов |
+| `Frontpad.Api` | HTTP-запросы `new_order`, `get_products` и `get_stops`, разбор ответов |
 | `Frontpad.OrderPayload` | Заказ приложения → поля `new_order` |
 | `Frontpad.AddressFields` | Единый адрес → `street`, `home`, `pod`, `et`, `apart` |
 | `Frontpad.Fields` | Обрезка строк под лимиты Frontpad |
 | `Frontpad.Webhook` | Обработка `change_status` |
-| `Frontpad.Settings` | Ключ API, филиал Frontpad, токен вебхука, режим цен |
+| `Frontpad.Settings` | Ключ API, филиал Frontpad, токен вебхука, режим цен, `sync_stops` |
 | `Frontpad.StatusCodes` | Коды статусов Frontpad ↔ статусы приложения |
 
 ## Подключение
@@ -95,7 +95,7 @@ CRM для доставки. Принимает заказы, присылает
 |---|---|---|
 | `new_order` | Создать заказ | да |
 | `get_products` | Список товаров с артикулами | да |
-| `get_stops` | Стоп-лист | нет |
+| `get_stops` | Стоп-лист | да, при включённой опции «Получать стоп-лист из Frontpad» |
 | `get_client` | Клиент по телефону | нет |
 | `get_certificate` | Проверка сертификата | нет |
 
