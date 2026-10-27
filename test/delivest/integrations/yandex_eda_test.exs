@@ -60,7 +60,7 @@ defmodule Delivest.Integrations.YandexEdaTest do
 
   describe "menu" do
     setup do
-      branch = yandex_branch(markup_percent: 10, round_to: 10)
+      branch = yandex_branch(markup_percent: 10, round_to: 10, vat: 10)
       category = menu_category(branch, name: "Супы")
       %{branch: branch, category: category}
     end
@@ -69,8 +69,26 @@ defmodule Delivest.Integrations.YandexEdaTest do
       branch: branch,
       category: category
     } do
-      soup = menu_product(branch, category, name: "Борщ", price: 300, weight: 350)
-      tea = menu_product(branch, category, name: "Морс", price: 100, measure_unit: :ml)
+      soup =
+        menu_product(branch, category,
+          name: "Борщ",
+          price: 300,
+          weight: 350,
+          calories: 52.5,
+          proteins: 3.1,
+          fats: 2.0,
+          carbohydrates: 6.4
+        )
+
+      tea =
+        menu_product(branch, category,
+          name: "Морс",
+          price: 100,
+          measure_unit: :ml,
+          calories: 40.0,
+          excise: :sugary_drink
+        )
+
       hidden = menu_product(branch, category, price: 100)
       staff = insert(:staff, role: build(:role, permissions: ["products.update"]))
 
@@ -84,8 +102,17 @@ defmodule Delivest.Integrations.YandexEdaTest do
 
       items = Map.new(menu.items, &{&1.id, &1})
       refute Map.has_key?(items, hidden.id)
-      assert %{price: 330, measure: 350, measureUnit: "г", name: "Борщ"} = items[soup.id]
-      assert %{price: 150, measureUnit: "мл"} = items[tea.id]
+      assert %{price: 330, measure: 350, measureUnit: "г", name: "Борщ", vat: 10} = items[soup.id]
+
+      assert items[soup.id].nutrients == %{
+               calories: 52.5,
+               proteins: 3.1,
+               fats: 2.0,
+               carbohydrates: 6.4
+             }
+
+      assert %{price: 150, measureUnit: "мл", excise: "sugary_drink"} = items[tea.id]
+      refute Map.has_key?(items[tea.id], :nutrients)
     end
 
     test "only staff with product rights changes the channel menu", %{

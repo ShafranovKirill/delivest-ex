@@ -199,6 +199,11 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :quantity,
       :weight,
       :measure_unit,
+      :calories,
+      :proteins,
+      :fats,
+      :carbohydrates,
+      :excise,
       :is_active,
       :crm_ids,
       :category_id,
@@ -301,6 +306,32 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
               />
             </div>
           </div>
+
+          <div>
+            <span class="label-text font-bold">{gettext("Nutrition per 100 g")}</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <.input field={@form[:calories]} type="number" step="any" label={gettext("Calories")} />
+              <.input field={@form[:proteins]} type="number" step="any" label={gettext("Proteins")} />
+              <.input field={@form[:fats]} type="number" step="any" label={gettext("Fats")} />
+              <.input
+                field={@form[:carbohydrates]}
+                type="number"
+                step="any"
+                label={gettext("Carbohydrates")}
+              />
+            </div>
+          </div>
+
+          <.input
+            field={@form[:excise]}
+            type="select"
+            label={gettext("Excise")}
+            options={[
+              {gettext("Sugary drink"), "sugary_drink"},
+              {gettext("Other excise goods"), "other"}
+            ]}
+            prompt={gettext("No excise")}
+          />
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input

@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
 
   alias Delivest.Identity
   alias Delivest.Integrations.YandexEda
+  alias Delivest.Integrations.YandexEda.BranchSettings
   alias DelivestWeb.Staff.IntegrationLive.{YandexEdaAccess, YandexEdaMenu}
 
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
@@ -121,6 +122,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
 
   defp round_options, do: [{"1 ₽", 1}, {"5 ₽", 5}, {"10 ₽", 10}]
 
+  defp vat_options do
+    for rate <- BranchSettings.vat_rates(),
+        do: {if(rate == 0, do: gettext("No VAT"), else: "#{rate}%"), rate}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -196,6 +202,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
             type="select"
             label={gettext("Round marked up prices up to")}
             options={round_options()}
+            disabled={not @can_edit_branch}
+          />
+          <.input
+            field={@form[:vat]}
+            type="select"
+            label={gettext("VAT in the menu")}
+            options={vat_options()}
             disabled={not @can_edit_branch}
           />
         </div>

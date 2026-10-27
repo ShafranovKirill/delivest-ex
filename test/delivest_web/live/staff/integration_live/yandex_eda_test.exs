@@ -29,11 +29,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     lv
     |> form("#yandex-eda-branch",
-      yandex_eda: %{enabled: "true", accept_mode: "manual", markup_percent: "15"}
+      yandex_eda: %{enabled: "true", accept_mode: "manual", markup_percent: "15", vat: "22"}
     )
     |> render_submit()
 
-    assert %{enabled: true, accept_mode: :manual, markup_percent: 15} =
+    assert %{enabled: true, accept_mode: :manual, markup_percent: 15, vat: 22} =
              YandexEda.get_branch_settings(branch.id)
   end
 

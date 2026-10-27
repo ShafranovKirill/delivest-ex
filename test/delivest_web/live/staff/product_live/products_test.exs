@@ -77,6 +77,34 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     assert %{tags: []} = Delivest.Net.Products.get_product(product.id)
   end
 
+  test "nutrition and excise are saved with the product", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/products/new")
+
+    lv
+    |> form("#product-form",
+      product: %{
+        name: "Морс",
+        price: 120,
+        calories: "45.5",
+        proteins: "0",
+        fats: "0",
+        carbohydrates: "11.2",
+        excise: "sugary_drink"
+      }
+    )
+    |> render_submit()
+
+    {:ok, {[product], _meta}} =
+      Delivest.Net.Products.list_staff_products_for_branch(staff, branch.id)
+
+    assert %{calories: 45.5, proteins: +0.0, carbohydrates: 11.2, excise: :sugary_drink} =
+             Delivest.Net.Products.get_product(product.id)
+  end
+
   describe "copying products" do
     setup %{conn: conn} do
       branch = insert(:branch, name: "Source")
@@ -90,7 +118,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     end
 
     test "copies the selected products", %{conn: conn, branch: branch, target: target} do
-      chosen = insert_branch_product(branch.id, name: "Chosen")
+      chosen =
+        insert_branch_product(branch.id,
+          name: "Chosen",
+          measure_unit: :ml,
+          calories: 40.0,
+          excise: :sugary_drink
+        )
+
       insert_branch_product(branch.id, name: "Skipped")
 
       {:ok, lv, _html} = live(conn, ~p"/staff/products")
@@ -103,7 +138,10 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       |> render_submit()
 
       assert render(lv) =~ "Products copied: 1"
-      assert [_] = Delivest.Relations.list_target_ids("Branch", target.id, "Product")
+      assert [copy_id] = Delivest.Relations.list_target_ids("Branch", target.id, "Product")
+
+      assert %{measure_unit: :ml, calories: 40.0, excise: :sugary_drink} =
+               Delivest.Net.Products.get_product(copy_id)
     end
 
     test "copies every product of the branch", %{conn: conn, branch: branch, target: target} do

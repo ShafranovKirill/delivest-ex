@@ -144,17 +144,17 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 | `measure` | да | `product.weight` |
 | `measureUnit` | да | `г` / `мл` (`g` / `ml` тоже можно) |
 | `description` | | `product.description` |
-| `vat` | | НДС в процентах, по умолчанию 0 |
+| `vat` | | НДС в процентах, по умолчанию 0. У нас — настройка филиала «НДС в меню»: 0, 5, 7, 10, 22. 0 не отдаём |
 | `images` | | `[{hash, url}]`: SHA1 содержимого файла и публичная ссылка. Новый хэш — Яндекс перекачивает фото. Ответ по ссылке — сами байты, `Content-Type` `image/png`, `image/jpeg`, `image/jpg`, `image/webp` или `image/avif`, до 24 МиБ |
-| `nutrients` | | КБЖУ на 100 г: `calories`, `proteins`, `fats`, `carbohydrates` — все четыре обязательны, если блок есть |
+| `nutrients` | | КБЖУ на 100 г: `calories`, `proteins`, `fats`, `carbohydrates` — все четыре обязательны, если блок есть. Поля товара, отдаём только если заполнены все четыре |
 | `sortOrder` | | По возрастанию, по умолчанию 100 |
 | `shippingType` | | `delivery` или `pickup`; не указан — доступно для обоих |
 | `isCatchweight`, `weightQuantum` | | Весовой товар и минимальный шаг — не используем |
-| `excise` | | `sugary_drink` / `other`, или метка `[AT]` в названии |
+| `excise` | | `sugary_drink` / `other`, или метка `[AT]` в названии. Поле товара «Акциз» |
 | `modifierGroups` | | Модификаторы — не отдаём |
 | `additional_descriptions` | | `consisting_ingredients` (до 100 строк по 100 символов) и `badges`: `food_specifics` (`halal`, `meat_free`), `food_spiciness` (`spicy`), `cooking_method` (`fried`, `baked`, `grilled`, `not_cooked`), `food_portion` (`portion_for_several_people`, `big_portion`, `combo`) |
-| `adult_info` | | `age_group` 18 / 21, `alcohol_percentage` |
-| `needMarking`, `legalInfo` | | Маркировка по закону о платформенной экономике: при `needMarking: true` обязателен `legalInfo.gtin`. Остальное: `classificationCodes` (ТН ВЭД / ОКПД 2), `conformityInfo`, `governmentRegistrationInfo` |
+| `adult_info` | | `age_group` 18 / 21, `alcohol_percentage` — не отдаём: алкоголь не продаём |
+| `needMarking`, `legalInfo` | | Маркировка по закону о платформенной экономике: при `needMarking: true` обязателен `legalInfo.gtin`. Остальное: `classificationCodes` (ТН ВЭД / ОКПД 2), `conformityInfo`, `governmentRegistrationInfo` — не отдаём: блюда собственного производства маркировке не подлежат |
 | `onlyForCombo` | | Только для комбо |
 
 ### Модификаторы (для справки, не используем)
@@ -447,8 +447,7 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 # TODO
 
-Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, русские переводы. Всё покрыто тестами.
+Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), КБЖУ и акциз у товара, НДС филиала, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, русские переводы. Всё покрыто тестами.
 
-1. **Меню**: `nutrients`, `vat`, `excise`, `adult_info` и маркировка не отдаются.
-2. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/feedback`, push `/block` и `/unblock`, `/v1/orders-history`, проверка кода курьера.
-3. **Вопросы к менеджеру Яндекса** — список выше. Особенно п.5: через сколько Яндекс сам отменяет неподтверждённый заказ и шлёт ли предзаказы ночью.
+1. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/feedback`, push `/block` и `/unblock`, `/v1/orders-history`, проверка кода курьера.
+2. **Вопросы к менеджеру Яндекса** — список выше. Особенно п.5: через сколько Яндекс сам отменяет неподтверждённый заказ и шлёт ли предзаказы ночью.

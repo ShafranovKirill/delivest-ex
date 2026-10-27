@@ -1,7 +1,8 @@
 defmodule Delivest.Integrations.YandexEda.MenuItem do
   alias Delivest.Media
+  alias Delivest.Net.Product
 
-  def build({category, product, index, price}) do
+  def build({category, product, index, price}, settings) do
     %{
       id: product.id,
       categoryId: category.id,
@@ -13,6 +14,9 @@ defmodule Delivest.Integrations.YandexEda.MenuItem do
     }
     |> put_optional(:description, product.description)
     |> put_optional(:images, images(product.media))
+    |> put_optional(:nutrients, nutrients(product))
+    |> put_optional(:excise, product.excise && to_string(product.excise))
+    |> put_optional(:vat, settings.vat > 0 && settings.vat)
   end
 
   defp measure_unit(:ml), do: "мл"
@@ -27,6 +31,11 @@ defmodule Delivest.Integrations.YandexEda.MenuItem do
 
   defp images(_media), do: nil
 
-  defp put_optional(map, _key, value) when value in [nil, ""], do: map
+  defp nutrients(product) do
+    values = Map.take(product, Product.nutrients())
+    if Enum.all?(values, fn {_field, value} -> is_number(value) end), do: values
+  end
+
+  defp put_optional(map, _key, value) when value in [nil, false, ""], do: map
   defp put_optional(map, key, value), do: Map.put(map, key, value)
 end

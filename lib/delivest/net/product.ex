@@ -6,6 +6,8 @@ defmodule Delivest.Net.Product do
   @type t :: %__MODULE__{}
   @primary_key {:id, :binary_id, autogenerate: true}
   @measure_units [:g, :ml]
+  @excises [:sugary_drink, :other]
+  @nutrients [:calories, :proteins, :fats, :carbohydrates]
 
   @derive {
     Flop.Schema,
@@ -27,6 +29,11 @@ defmodule Delivest.Net.Product do
     field :quantity, :integer
     field :weight, :integer
     field :measure_unit, Ecto.Enum, values: @measure_units, default: :g
+    field :calories, :float
+    field :proteins, :float
+    field :fats, :float
+    field :carbohydrates, :float
+    field :excise, Ecto.Enum, values: @excises
     field :is_active, :boolean, default: true
     field :tags, {:array, :string}, default: []
     field :suggested, :boolean, default: false
@@ -42,6 +49,8 @@ defmodule Delivest.Net.Product do
   end
 
   def measure_units, do: @measure_units
+  def excises, do: @excises
+  def nutrients, do: @nutrients
 
   def changeset(product, attrs) do
     product
@@ -60,12 +69,21 @@ defmodule Delivest.Net.Product do
       :deleted_at,
       :slug,
       :tags,
-      :suggested
+      :suggested,
+      :excise
+      | @nutrients
     ])
     |> validate_required([:name, :price])
     |> validate_number(:price, greater_than_or_equal_to: 0)
+    |> validate_nutrients()
     |> update_change(:slug, &Delivest.Slug.slugify/1)
     |> validate_length(:slug, max: 80)
     |> unique_constraint(:slug)
+  end
+
+  defp validate_nutrients(changeset) do
+    Enum.reduce(@nutrients, changeset, fn field, acc ->
+      validate_number(acc, field, greater_than_or_equal_to: 0, less_than: 10_000)
+    end)
   end
 end

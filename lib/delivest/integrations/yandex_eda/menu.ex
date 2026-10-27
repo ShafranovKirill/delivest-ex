@@ -38,7 +38,7 @@ defmodule Delivest.Integrations.YandexEda.Menu do
 
     %{
       categories: categories |> Enum.with_index() |> Enum.map(&category/1),
-      items: Enum.map(offer, &MenuItem.build/1),
+      items: Enum.map(offer, &MenuItem.build(&1, settings)),
       lastChange: offer |> last_change(categories, branch) |> Clock.format()
     }
   end
