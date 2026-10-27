@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   use Gettext, backend: DelivestWeb.Gettext
 
   alias Delivest.Identity
+  alias Delivest.Integrations.Crm
   alias Delivest.Oms.OrderStatus
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
@@ -225,9 +226,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       :if={unmapped_crm_code(@order)}
       id={"order-unmapped-#{@order.id}"}
       class="badge badge-warning badge-sm"
-      title={gettext("Set this code in the branch Frontpad settings")}
+      title={gettext("Set this code in the branch %{crm} settings", crm: crm_name(@order))}
     >
-      {gettext("Frontpad status %{code} is not mapped", code: unmapped_crm_code(@order))}
+      {gettext("%{crm} status %{code} is not mapped",
+        crm: crm_name(@order),
+        code: unmapped_crm_code(@order)
+      )}
     </span>
     """
   end
@@ -270,4 +274,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
        do: code
 
   defp unmapped_crm_code(_order), do: nil
+
+  defp crm_name(%{crm: %{provider: provider}}) do
+    case Crm.provider_name(provider) do
+      {:error, _reason} -> provider
+      name -> name
+    end
+  end
 end

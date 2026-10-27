@@ -1,46 +1,21 @@
 defmodule Delivest.Integrations.Frontpad.Webhook do
-  import Ecto.Query, warn: false
-
-  alias Delivest.Identity.Branch.BranchInfo
-  alias Delivest.Integrations.Crm.SyncState
+  alias Delivest.Integrations.Crm.{Lookup, SyncState}
   alias Delivest.Integrations.Frontpad.StatusCodes
-  alias Delivest.Oms.Order
-  alias Delivest.Repo
+
+  def handle(token, %{"action" => "change_status", "order_id" => order_id} = params) do
+    with {:ok, _order} <- change_status(token, order_id, params["status"], params["datetime"]) do
+      {:ok, %{result: "success"}}
+    end
+  end
+
+  def handle(_token, _params), do: {:ok, %{result: "ignored"}}
 
   def change_status(token, external_id, code, datetime) do
-    with {:ok, info} <- fetch_branch_info(token),
-         {:ok, order} <- fetch_order(info.branch_id, to_string(external_id)) do
+    with {:ok, info} <- Lookup.branch_info_by_webhook_token(:frontpad, token),
+         {:ok, order} <- Lookup.order_by_external_id(info.branch_id, :frontpad, external_id) do
       code = to_string(code)
       status = StatusCodes.status_for(info.crm.frontpad.statuses, code)
       SyncState.remote_status(order, status, code, parse_datetime(datetime))
-    end
-  end
-
-  defp fetch_branch_info(token) when is_binary(token) and token != "" do
-    query =
-      from(i in BranchInfo,
-        where: fragment("?->'frontpad'->>'webhook_token' = ?", i.crm, ^token)
-      )
-
-    case Repo.one(query) do
-      nil -> {:error, :not_found}
-      info -> {:ok, info}
-    end
-  end
-
-  defp fetch_branch_info(_token), do: {:error, :not_found}
-
-  defp fetch_order(branch_id, external_id) do
-    query =
-      from(o in Order,
-        where: o.branch_id == ^branch_id and is_nil(o.deleted_at),
-        where: fragment("?->>'provider' = 'frontpad'", o.crm),
-        where: fragment("?->>'external_id' = ?", o.crm, ^external_id)
-      )
-
-    case Repo.one(query) do
-      nil -> {:error, :not_found}
-      order -> {:ok, order}
     end
   end
 

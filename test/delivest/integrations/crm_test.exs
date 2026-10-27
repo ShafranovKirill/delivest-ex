@@ -186,7 +186,7 @@ defmodule Delivest.Integrations.CrmTest do
       assert_receive {:params, params}
       assert params["hook_status[0]"] == "2"
       assert params["hook_status[2]"] == "5"
-      assert params["hook_url"] =~ "/integrations/frontpad/token-#{branch.id}"
+      assert params["hook_url"] =~ "/integrations/crm/frontpad/token-#{branch.id}"
     end
   end
 end

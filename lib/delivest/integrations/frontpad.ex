@@ -1,7 +1,8 @@
 defmodule Delivest.Integrations.Frontpad do
   @behaviour Delivest.Integrations.Crm.Provider
 
-  alias Delivest.Integrations.Frontpad.{Api, FrontpadView}
+  alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.Frontpad.{Api, FrontpadView, Webhook}
   alias Delivest.Net
 
   @permanent_errors ~w(invalid_secret api_off invalid_plant invalid_product_keys invalid_certificate)
@@ -20,7 +21,10 @@ defmodule Delivest.Integrations.Frontpad do
   def configured?(%{api_key: api_key}), do: api_key not in [nil, ""]
   def configured?(_settings), do: false
 
-  def webhook_url(token), do: DelivestWeb.Endpoint.url() <> "/integrations/frontpad/" <> token
+  def webhook_url(token), do: Crm.webhook_url(key(), token)
+
+  @impl true
+  def handle_webhook(token, params), do: Webhook.handle(token, params)
 
   @impl true
   def deliver_order(order, settings) do
@@ -36,7 +40,7 @@ defmodule Delivest.Integrations.Frontpad do
 
   @impl true
   def fetch_catalog(%{api_key: api_key} = settings) when is_binary(api_key) and api_key != "" do
-    Delivest.Integrations.Crm.Throttle.run(rate_limit(settings), fn ->
+    Crm.Throttle.run(rate_limit(settings), fn ->
       Api.get_products(api_key)
     end)
   end

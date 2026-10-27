@@ -154,7 +154,7 @@ defmodule DelivestWeb.Router do
   scope "/integrations", DelivestWeb.Integrations do
     pipe_through :api
 
-    post "/frontpad/:token", FrontpadWebhookController, :create
+    post "/crm/:provider/:token", CrmWebhookController, :create
   end
 
   scope "/integrations", DelivestWeb.Integrations do

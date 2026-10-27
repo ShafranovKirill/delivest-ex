@@ -22,6 +22,9 @@ defmodule Delivest.Integrations.Crm do
     end
   end
 
+  def webhook_url(provider, token),
+    do: DelivestWeb.Endpoint.url() <> "/integrations/crm/#{provider}/" <> token
+
   def handle_webhook(provider, token, params) do
     with {:ok, module} <- Registry.fetch(provider),
          true <- function_exported?(module, :handle_webhook, 2) || {:error, :unknown_provider} do
