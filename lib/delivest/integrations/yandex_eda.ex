@@ -6,6 +6,7 @@ defmodule Delivest.Integrations.YandexEda do
 
   alias Delivest.Integrations.YandexEda.{
     BranchSettings,
+    CourierCode,
     Menu,
     MenuReloadWorker,
     OrderConfirmation,
@@ -102,6 +103,9 @@ defmodule Delivest.Integrations.YandexEda do
       do: with_push(&Pause.stop(&1, branch_id, block_ids)),
       else: {:error, :forbidden}
   end
+
+  def validate_courier_code(staff, branch_id, order_id, code),
+    do: with_push(&CourierCode.validate(&1, staff, branch_id, order_id, code))
 
   defp with_push(fun) do
     settings = get_settings()

@@ -29,6 +29,9 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     end
   end
 
+  def validate_code(%Settings{} = settings, order_id, code),
+    do: call(settings, "/platform/orders/#{URI.encode(order_id)}/codes/validate", %{code: code})
+
   defp call(settings, path, body) do
     with {:ok, token} <- token(settings) do
       Client.post(path, body,

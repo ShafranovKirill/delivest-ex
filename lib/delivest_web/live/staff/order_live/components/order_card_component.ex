@@ -60,7 +60,13 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
       <div class="p-3 sm:p-4 grid gap-3 text-sm lg:grid-cols-[1fr_1.4fr_1.2fr]">
         <.customer order={@order} current_staff={@current_staff} />
-        <.fulfillment order={@order} />
+        <.fulfillment
+          order={@order}
+          can_check_code={
+            @status not in [:completed, :cancelled] and
+              Identity.can?(@current_staff, "orders.update")
+          }
+        />
         <.items order={@order} />
       </div>
 
@@ -195,6 +201,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   end
 
   attr :order, :map, required: true
+  attr :can_check_code, :boolean, default: false
 
   defp fulfillment(assigns) do
     courier = channel_detail(assigns.order, "courier")
@@ -235,6 +242,26 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           {gettext("arrives by %{time}", time: OrderHelpers.local_time(@courier_eta))}
         </span>
       </p>
+      <form
+        :if={@courier != nil and @can_check_code and @order.source == "yandex_eda"}
+        id={"order-courier-code-#{@order.id}"}
+        phx-submit="courier_code"
+        class="flex items-center gap-1.5"
+      >
+        <input type="hidden" name="order-id" value={@order.id} />
+        <input
+          type="text"
+          name="code"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder={gettext("Courier code")}
+          aria-label={gettext("Courier code")}
+          class="input input-xs w-32 font-mono"
+        />
+        <button type="submit" class="btn btn-xs" phx-disable-with="…">
+          {gettext("Check the code")}
+        </button>
+      </form>
       <p :if={@order.cook_by} class="flex gap-1.5 text-base-content/80">
         <.icon name="hero-clock" class="size-4 shrink-0 text-base-content/40" />
         {gettext("Prepare by:")} {Calendar.strftime(@order.cook_by, "%d.%m %H:%M")}

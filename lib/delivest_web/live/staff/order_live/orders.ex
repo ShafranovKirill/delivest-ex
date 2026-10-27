@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
   alias Delivest.Identity
+  alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias DelivestWeb.Staff.OrderLive.OrdersQuery
 
@@ -119,6 +120,29 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("dismiss_cancel", _params, socket),
     do: socket |> assign(order_to_cancel: nil) |> load()
 
+  def handle_event("courier_code", %{"order-id" => id, "code" => code}, socket) do
+    socket.assigns.current_staff
+    |> YandexEda.validate_courier_code(socket.assigns.current_branch.id, id, code)
+    |> case do
+      {:ok, %{valid: true}} ->
+        {:noreply, put_flash(socket, :info, gettext("The courier code is correct"))}
+
+      {:ok, %{attempts_left: left}} when is_integer(left) ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Wrong courier code, attempts left: %{count}", count: left)
+         )}
+
+      {:ok, _result} ->
+        {:noreply, put_flash(socket, :error, gettext("Wrong courier code"))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, courier_code_error(reason))}
+    end
+  end
+
   def handle_event("delete_click", %{"id" => id}, socket) do
     case fetch_branch_order(socket, id) do
       {:ok, order} -> {:noreply, assign(socket, order_to_delete: order)}
@@ -153,6 +177,15 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: socket |> push_event("orders:new", %{}) |> load()
 
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
+
+  defp courier_code_error(:forbidden), do: gettext("Permission denied")
+  defp courier_code_error(:empty_code), do: gettext("Enter the courier code")
+  defp courier_code_error(:no_attempts), do: gettext("No attempts left to check the courier code")
+
+  defp courier_code_error(:push_not_configured),
+    do: gettext("Yandex Eda push access is not set up")
+
+  defp courier_code_error(_reason), do: gettext("Yandex Eda did not accept the request")
 
   defp failed(socket, {:error, :forbidden}),
     do: socket |> put_flash(:error, gettext("Permission denied")) |> load()
