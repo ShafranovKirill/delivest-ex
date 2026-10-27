@@ -16,6 +16,8 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           nullable: true,
           description: "Город доставки, в нём ищутся адреса"
         },
+        latitude: %Schema{type: :number, format: :float, example: 55.7558, nullable: true},
+        longitude: %Schema{type: :number, format: :float, example: 37.6173, nullable: true},
         phone_number: %Schema{type: :string, example: "+79990000000", nullable: true},
         delivery_time: %Schema{type: :integer, example: "30", nullable: true},
         working_hours: %Schema{
@@ -38,10 +40,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           type: :object,
           properties: %{
             enabled: %Schema{type: :boolean, example: true, nullable: true},
-            yandex_org_id: %Schema{type: :string, example: "123456789", nullable: true},
-            latitude: %Schema{type: :number, example: 55.7558, nullable: true},
-            longitude: %Schema{type: :number, example: 37.6173, nullable: true},
-            address: %Schema{type: :string, example: "Москва, Красная площадь", nullable: true}
+            yandex_org_id: %Schema{type: :string, example: "123456789", nullable: true}
           },
           additionalProperties: true,
           nullable: true

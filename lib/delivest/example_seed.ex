@@ -25,15 +25,12 @@ defmodule Delivest.ExampleSeed do
         branch_id: branch.id,
         address: "Москва, Тверская улица, 7",
         city: "Москва",
+        latitude: 55.757718,
+        longitude: 37.611347,
         phone_number: "+74951234567",
         delivery_time: 45,
         working_hours: @working_hours,
-        ycart_settings: %{
-          enabled: true,
-          latitude: 55.757718,
-          longitude: 37.611347,
-          address: "Москва, Тверская улица, 7"
-        }
+        ycart_settings: %{enabled: true}
       })
       |> Repo.insert!()
 

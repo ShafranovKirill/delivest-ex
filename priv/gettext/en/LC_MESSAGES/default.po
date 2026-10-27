@@ -133,7 +133,7 @@ msgstr ""
 msgid "Staff"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:144
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:179
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:94
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:91
 #: lib/delivest_web/live/staff/client_live/clients.ex:277
@@ -149,7 +149,8 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:136
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:55
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:72
 #, elixir-autogen, elixir-format
 msgid "Address"
 msgstr ""
@@ -195,12 +196,12 @@ msgstr ""
 msgid "Banner Image"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:128
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:170
 #, elixir-autogen, elixir-format
 msgid "Branch Name"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:129
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:171
 #, elixir-autogen, elixir-format
 msgid "Branch Slug"
 msgstr ""
@@ -222,7 +223,7 @@ msgstr ""
 msgid "Branch not found."
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:48
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:89
 #, elixir-autogen, elixir-format
 msgid "Branch saved successfully"
 msgstr ""
@@ -250,7 +251,7 @@ msgstr ""
 #: lib/delivest_web/components/core_components.ex:573
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:173
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:203
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:186
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:223
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:98
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:137
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:81
@@ -606,7 +607,7 @@ msgstr ""
 msgid "Inactive"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:159
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:209
 #, elixir-autogen, elixir-format
 msgid "Instagram Link"
 msgstr ""
@@ -686,7 +687,7 @@ msgstr ""
 msgid "Page %{current} of %{total}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:58
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:73
@@ -705,7 +706,7 @@ msgstr ""
 msgid "Permissions"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:137
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:172
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:115
 #, elixir-autogen, elixir-format
 msgid "Phone Number"
@@ -830,7 +831,7 @@ msgstr ""
 msgid "Roles Management"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:188
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:225
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:100
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:143
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
@@ -849,7 +850,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:187
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:224
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:99
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:141
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
@@ -979,7 +980,7 @@ msgstr ""
 msgid "Uploading..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:157
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:207
 #, elixir-autogen, elixir-format
 msgid "VK Link"
 msgstr ""
@@ -990,7 +991,7 @@ msgstr ""
 msgid "Weight"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:158
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:208
 #, elixir-autogen, elixir-format
 msgid "WhatsApp Link"
 msgstr ""
@@ -1567,7 +1568,7 @@ msgstr ""
 msgid "Customer not specified"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:141
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:176
 #, elixir-autogen, elixir-format
 msgid "Delivery Time (minutes)"
 msgstr ""
@@ -1598,12 +1599,12 @@ msgstr ""
 msgid "Items in Cart"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:173
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:73
 #, elixir-autogen, elixir-format
 msgid "Latitude"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:179
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:74
 #, elixir-autogen, elixir-format
 msgid "Longitude"
 msgstr ""
@@ -1613,8 +1614,8 @@ msgstr ""
 msgid "Prepare by:"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:101
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:155
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:143
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:205
 #, elixir-autogen, elixir-format
 msgid "Social Links & Messengers"
 msgstr ""
@@ -1624,23 +1625,18 @@ msgstr ""
 msgid "Validation error"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:168
-#, elixir-autogen, elixir-format
-msgid "YCart Address"
-msgstr ""
-
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:165
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:215
 #, elixir-autogen, elixir-format
 msgid "YCart Enabled"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:102
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:163
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:144
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:213
 #, elixir-autogen, elixir-format
 msgid "YCart Settings"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:167
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:217
 #, elixir-autogen, elixir-format
 msgid "Yandex Org ID"
 msgstr ""
@@ -1975,8 +1971,8 @@ msgstr ""
 msgid "Welcome! Use the menu on the left to get started."
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:100
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:147
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:142
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:197
 #, elixir-autogen, elixir-format
 msgid "Working Hours"
 msgstr ""
@@ -2290,13 +2286,13 @@ msgstr ""
 msgid "Order %{subject} status changed in CRM: %{changes}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:126
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:140
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:168
 #, elixir-autogen, elixir-format
 msgid "General"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:54
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:95
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:76
 #, elixir-autogen, elixir-format
 msgid "Please check the highlighted fields"
@@ -4786,7 +4782,8 @@ msgstr ""
 msgid "Delivery address on the map"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:133
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:54
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:69
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Delivery city"
 msgstr ""
@@ -4796,7 +4793,28 @@ msgstr ""
 msgid "Set the delivery city of each branch so suggestions stay inside it."
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:134
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:70
 #, elixir-autogen, elixir-format
 msgid "For example, Tyumen"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:50
+#, elixir-autogen, elixir-format
+msgid "Drag the pin or click the map to set the exact point."
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/location_fields.ex:19
+#, elixir-autogen, elixir-format
+msgid "Find the branch address"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:141
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:184
+#, elixir-autogen, elixir-format
+msgid "Location"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:186
+#, elixir-autogen, elixir-format
+msgid "The address and the point of the branch for customers and the pickup map."
 msgstr ""

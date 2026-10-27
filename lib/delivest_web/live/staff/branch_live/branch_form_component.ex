@@ -1,18 +1,30 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   use DelivestWeb, :live_component
 
+  import DelivestWeb.Staff.BranchLive.LocationFields
+
   alias Delivest.Identity
-  alias DelivestWeb.Staff.BranchLive.{BranchForm, WorkingHoursComponent}
+  alias Delivest.Integrations.Dadata
+  alias DelivestWeb.Staff.BranchLive.{BranchForm, Location, WorkingHoursComponent}
 
   @impl true
   def update(assigns, socket) do
     socket = assign(socket, assigns)
     changeset = BranchForm.changeset(BranchForm.for_branch(socket.assigns.branch), %{})
 
-    {:ok, assign(socket, :form, to_form(changeset))}
+    {:ok,
+     assign(socket,
+       form: to_form(changeset),
+       address_map: Dadata.active?(),
+       location_suggestions: []
+     )}
   end
 
   @impl true
+  def handle_event("validate", %{"_target" => ["location_query"]} = params, socket) do
+    {:noreply, assign(socket, location_suggestions: Location.suggest(params["location_query"]))}
+  end
+
   def handle_event("validate", %{"branch_form" => params}, socket) do
     changeset =
       socket.assigns.branch
@@ -23,12 +35,41 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
+  def handle_event("pick_location", %{"index" => index}, socket) do
+    case Enum.at(socket.assigns.location_suggestions, String.to_integer(index)) do
+      nil ->
+        {:noreply, socket}
+
+      address ->
+        changes = Location.changes(address)
+
+        {:noreply,
+         socket
+         |> put_location(changes)
+         |> assign(location_suggestions: [])
+         |> center_map(changes)}
+    end
+  end
+
+  def handle_event("location_moved", %{"lat" => lat, "lng" => lng}, socket) do
+    {:noreply, put_location(socket, Location.at(lat / 1, lng / 1))}
+  end
+
   def handle_event("save", %{"branch_form" => params}, socket) do
     socket.assigns.branch
     |> BranchForm.for_branch()
     |> BranchForm.changeset(with_working_hours(params, socket))
     |> save(socket)
   end
+
+  defp put_location(socket, changes) do
+    assign(socket, form: to_form(Ecto.Changeset.change(socket.assigns.form.source, changes)))
+  end
+
+  defp center_map(socket, %{latitude: lat, longitude: lng}) when is_float(lat) and is_float(lng),
+    do: push_event(socket, "location:center", %{lat: lat, lng: lng})
+
+  defp center_map(socket, _changes), do: socket
 
   defp with_working_hours(params, socket) do
     current = Ecto.Changeset.get_field(socket.assigns.form.source, :working_hours) || %{}
@@ -97,6 +138,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   defp sections do
     [
       {"branch-general", gettext("General")},
+      {"branch-location", gettext("Location")},
       {"branch-schedule", gettext("Working Hours")},
       {"branch-links", gettext("Social Links & Messengers")},
       {"branch-map", gettext("YCart Settings")}
@@ -127,13 +169,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           <div class="grid gap-4 sm:grid-cols-2">
             <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
             <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
-            <.input
-              field={@form[:city]}
-              type="text"
-              label={gettext("Delivery city")}
-              placeholder={gettext("For example, Tyumen")}
-            />
-            <.input field={@form[:address]} type="text" label={gettext("Address")} />
             <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
             <.input
               field={@form[:delivery_time]}
@@ -142,6 +177,21 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             />
           </div>
           <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
+        </.section>
+
+        <.section
+          id="branch-location"
+          title={gettext("Location")}
+          description={
+            gettext("The address and the point of the branch for customers and the pickup map.")
+          }
+        >
+          <.location_fields
+            form={@form}
+            map={@address_map}
+            suggestions={@location_suggestions}
+            target={@myself}
+          />
         </.section>
 
         <.section id="branch-schedule" title={gettext("Working Hours")}>
@@ -165,19 +215,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             <.input field={ycart[:enabled]} type="checkbox" label={gettext("YCart Enabled")} />
             <div class="grid gap-4 sm:grid-cols-2">
               <.input field={ycart[:yandex_org_id]} type="text" label={gettext("Yandex Org ID")} />
-              <.input field={ycart[:address]} type="text" label={gettext("YCart Address")} />
-              <.input
-                field={ycart[:latitude]}
-                type="number"
-                step="0.000001"
-                label={gettext("Latitude")}
-              />
-              <.input
-                field={ycart[:longitude]}
-                type="number"
-                step="0.000001"
-                label={gettext("Longitude")}
-              />
             </div>
           </.inputs_for>
         </.section>

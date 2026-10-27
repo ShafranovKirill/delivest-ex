@@ -15,6 +15,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     field :address, :string
     field :city, :string
+    field :latitude, :float
+    field :longitude, :float
     field :phone_number, :string
     field :delivery_time, :integer
     field :working_hours, :map, default: %{}
@@ -33,6 +35,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :name,
       :address,
       :city,
+      :latitude,
+      :longitude,
       :phone_number,
       :delivery_time,
       :working_hours,
@@ -62,6 +66,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       is_active: branch.is_active,
       address: info && info.address,
       city: info && info.city,
+      latitude: info && info.latitude,
+      longitude: info && info.longitude,
       phone_number: info && info.phone_number,
       delivery_time: info && info.delivery_time,
       working_hours: (info && info.working_hours) || %{},
@@ -178,6 +184,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       |> Map.take([
         :address,
         :city,
+        :latitude,
+        :longitude,
         :phone_number,
         :delivery_time,
         :working_hours,
