@@ -1620,7 +1620,7 @@ msgstr ""
 msgid "Longitude"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:267
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:283
 #, elixir-autogen, elixir-format
 msgid "Prepare by:"
 msgstr ""
@@ -1652,12 +1652,12 @@ msgstr ""
 msgid "Yandex Org ID"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:314
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:330
 #, elixir-autogen, elixir-format
 msgid "error"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:316
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:332
 #, elixir-autogen, elixir-format
 msgid "sending"
 msgstr ""
@@ -4823,12 +4823,12 @@ msgstr ""
 msgid "The address and the point of the branch for customers and the pickup map."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:325
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:341
 #, elixir-autogen, elixir-format
 msgid "%{crm} status %{code} is not mapped"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:323
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:339
 #, elixir-autogen, elixir-format
 msgid "Set this code in the branch %{crm} settings"
 msgstr ""
@@ -4973,7 +4973,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:158
 #: lib/delivest_web/live/staff/integration_live/routes.ex:55
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:393
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:409
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr ""
@@ -5058,12 +5058,12 @@ msgstr ""
 msgid "Automatically"
 msgstr ""
 
-#: lib/delivest/integrations/yandex_eda/order_events.ex:63
+#: lib/delivest/integrations/yandex_eda/order_events.ex:75
 #, elixir-autogen, elixir-format
 msgid "Cancelled in Yandex Eda"
 msgstr ""
 
-#: lib/delivest/integrations/yandex_eda/order_events.ex:61
+#: lib/delivest/integrations/yandex_eda/order_events.ex:73
 #, elixir-autogen, elixir-format
 msgid "Cancelled in Yandex Eda: %{comment}"
 msgstr ""
@@ -5217,17 +5217,17 @@ msgstr ""
 msgid "ml"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:227
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:228
 #, elixir-autogen, elixir-format
 msgid "Courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:242
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:243
 #, elixir-autogen, elixir-format
 msgid "arrives by %{time}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:236
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:237
 #, elixir-autogen, elixir-format
 msgid "at the restaurant"
 msgstr ""
@@ -5493,8 +5493,8 @@ msgstr ""
 msgid "Yandex stops taking orders for the branch until the pause ends or is lifted."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:257
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:258
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:259
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Courier code"
 msgstr ""
@@ -5529,7 +5529,12 @@ msgstr ""
 msgid "Yandex Eda push access is not set up"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:262
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:263
 #, elixir-autogen, elixir-format
 msgid "Check the code"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:272
+#, elixir-autogen, elixir-format
+msgid "Review"
 msgstr ""

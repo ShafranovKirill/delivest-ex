@@ -27,6 +27,15 @@ defmodule DelivestWeb.Staff.OrderLive.YandexEdaOrderTest do
     assert has_element?(lv, "#order-courier-#{order.id}", "+79031111111")
     assert has_element?(lv, "#order-courier-#{order.id}", "12:10")
     assert has_element?(lv, "#order-source-#{order.id}")
+    refute has_element?(lv, "#order-feedback-#{order.id}")
+
+    {:ok, _} =
+      YandexEda.save_feedback(%{
+        "feedback" => %{"orderId" => order.id, "rating" => 2, "comment" => "Холодный суп"}
+      })
+
+    assert has_element?(lv, "#order-feedback-#{order.id}", "2/5")
+    assert has_element?(lv, "#order-feedback-#{order.id}", "Холодный суп")
   end
 
   test "staff checks the yandex courier code", %{conn: conn} do

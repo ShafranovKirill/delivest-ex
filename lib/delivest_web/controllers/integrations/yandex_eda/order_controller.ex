@@ -50,4 +50,11 @@ defmodule DelivestWeb.Integrations.YandexEda.OrderController do
       {:error, reason} -> Reply.failure(conn, reason)
     end
   end
+
+  def feedback(conn, params) do
+    case YandexEda.save_feedback(params) do
+      {:ok, _order} -> json(conn, %{result: "OK"})
+      {:error, reason} -> Reply.failure(conn, reason)
+    end
+  end
 end

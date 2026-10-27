@@ -209,7 +209,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     assigns =
       assign(assigns,
         courier: courier_info(courier),
-        courier_eta: courier_eta(courier)
+        courier_eta: courier_eta(courier),
+        feedback: channel_detail(assigns.order, "feedback")
       )
 
     ~H"""
@@ -262,6 +263,21 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           {gettext("Check the code")}
         </button>
       </form>
+      <p
+        :if={@feedback}
+        id={"order-feedback-#{@order.id}"}
+        class="flex flex-wrap items-center gap-x-1.5 text-base-content/80"
+      >
+        <.icon name="hero-star-solid" class="size-4 shrink-0 text-warning" />
+        <span class="font-medium">{gettext("Review")}: {@feedback["rating"]}/5</span>
+        <span
+          :for={text <- [@feedback["predefined_comment"], @feedback["comment"]]}
+          :if={text not in [nil, ""]}
+          class="text-base-content/60 break-words"
+        >
+          {text}
+        </span>
+      </p>
       <p :if={@order.cook_by} class="flex gap-1.5 text-base-content/80">
         <.icon name="hero-clock" class="size-4 shrink-0 text-base-content/40" />
         {gettext("Prepare by:")} {Calendar.strftime(@order.cook_by, "%d.%m %H:%M")}

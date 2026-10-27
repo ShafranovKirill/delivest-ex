@@ -191,6 +191,7 @@ defmodule DelivestWeb.Router do
       get "/order/:id/status", OrderController, :status
       put "/order/:id/status", OrderController, :update_status
       put "/order/:id/courier", OrderController, :courier
+      post "/v1/feedback", OrderController, :feedback
     end
   end
 

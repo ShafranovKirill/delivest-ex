@@ -180,6 +180,22 @@ defmodule Delivest.Integrations.YandexEda do
     with {:ok, order} <- OrderLookup.fetch(order_id), do: OrderEvents.courier(order, params)
   end
 
+  def save_feedback(%{"feedback" => %{"rating" => rating} = feedback})
+      when rating in 1..5 do
+    with {:ok, order} <- feedback_order(feedback), do: OrderEvents.feedback(order, feedback)
+  end
+
+  def save_feedback(_params), do: {:error, "feedback.rating must be from 1 to 5"}
+
+  defp feedback_order(feedback) do
+    with {:error, :order_not_found} <- OrderLookup.fetch(feedback["orderId"]) do
+      case OrderLookup.by_eats_id(feedback["eatsId"]) do
+        nil -> {:error, :order_not_found}
+        order -> {:ok, order}
+      end
+    end
+  end
+
   def overdue_orders(branch_id), do: OrderConfirmation.overdue(branch_id)
 
   def keep_unconfirmed(staff, branch_id, order_id),

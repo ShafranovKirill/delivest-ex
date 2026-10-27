@@ -29,6 +29,18 @@ defmodule Delivest.Integrations.YandexEda.OrderEvents do
     Orders.update_order_channel(order, %{details: Map.put(channel.details, "courier", courier)})
   end
 
+  def feedback(%Order{channel: channel} = order, feedback) do
+    review = %{
+      "id" => feedback["id"],
+      "rating" => feedback["rating"],
+      "comment" => feedback["comment"],
+      "predefined_comment" => feedback["predefinedComment"],
+      "created_at" => feedback["createdAt"]
+    }
+
+    Orders.update_order_channel(order, %{details: Map.put(channel.details, "feedback", review)})
+  end
+
   defp remote_status(%Order{channel: channel} = order, status, details) do
     if forward?(channel.remote_status, status),
       do:

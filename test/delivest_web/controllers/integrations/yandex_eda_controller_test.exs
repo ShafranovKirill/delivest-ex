@@ -183,4 +183,52 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
                conn |> get(@base <> "/order/#{Ecto.UUID.generate()}/status") |> json_response(404)
     end
   end
+
+  describe "feedback" do
+    test "a review is saved on the order", %{conn: conn, branch: branch, product: product} do
+      params = order_params(branch, [product])
+      {:ok, order} = YandexEda.create_order(params)
+
+      feedback = %{
+        "id" => "f1",
+        "eatsId" => params["eatsId"],
+        "restaurantId" => branch.id,
+        "rating" => 4,
+        "comment" => "Остыло",
+        "predefinedComment" => "Долго",
+        "createdAt" => "2026-10-27T13:00:00.000000+03:00"
+      }
+
+      assert %{"result" => "OK"} =
+               conn
+               |> post(@base <> "/v1/feedback", %{"feedback" => feedback})
+               |> json_response(200)
+
+      assert {:ok, %{channel: %{details: %{"feedback" => saved}}}} =
+               YandexEda.get_order(order.id)
+
+      assert %{"rating" => 4, "comment" => "Остыло", "predefined_comment" => "Долго"} = saved
+
+      assert %{"result" => "OK"} =
+               conn
+               |> post(@base <> "/v1/feedback", %{
+                 "feedback" => Map.put(feedback, "orderId", order.id)
+               })
+               |> json_response(200)
+    end
+
+    test "a review of an unknown order is 404 and a broken one is 400", %{conn: conn} do
+      feedback = %{"orderId" => Ecto.UUID.generate(), "eatsId" => "nope", "rating" => 5}
+
+      assert [%{"code" => 103}] =
+               conn
+               |> post(@base <> "/v1/feedback", %{"feedback" => feedback})
+               |> json_response(404)
+
+      assert [%{"code" => 100}] =
+               conn
+               |> post(@base <> "/v1/feedback", %{"feedback" => %{feedback | "rating" => 7}})
+               |> json_response(400)
+    end
+  end
 end

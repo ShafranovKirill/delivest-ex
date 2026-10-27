@@ -70,7 +70,7 @@
 | GET | `/places/{restaurantId}/schedule` | да | График работы |
 | GET | `/places/{restaurantId}/zones` | по подписке | Зоны доставки |
 | GET | `/places/{restaurantId}/zone/meta` | по подписке | Обновление зон |
-| POST | `/v1/feedback` | по подписке | Отзыв клиента |
+| POST | `/v1/feedback` | по подписке | Отзыв клиента — сделан |
 
 ## POST `/security/oauth/token`
 
@@ -384,6 +384,8 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 Отзыв клиента: `feedback` (`id`, `eatsId`, `orderId`, `restaurantId`, `rating` 1–5, `comment`, `predefinedComment`, `createdAt`, `takenAt`, `deliveredAt`) и `orderInfo` (схема доставки, состав, итог). Ответ `200 {"result": "OK"}`.
 
+У нас: заказ ищем по `orderId`, затем по `eatsId`, отзыв кладём в `channel.details["feedback"]` и показываем в карточке заказа. Не нашли заказ — `404` (код 103), оценка не 1–5 — `400`. `orderInfo` не читаем.
+
 ---
 
 # Push: методы Яндекса
@@ -449,7 +451,7 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 
 # TODO
 
-Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), КБЖУ и акциз у товара, НДС филиала, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, пауза ресторана (`/block`, `/unblock`, `/v2/status`), проверка кода курьера, русские переводы. Всё покрыто тестами.
+Готово: OAuth-токен, `/restaurants`, `/restaurants/availability`, `/menu/{id}/composition`, `/menu/{id}/availability`, `/places/{id}/schedule`, все методы `/order`, журнал запросов (`YandexEdaJournal`), таблица `channel_products`, единица измерения у товара (и в клиентском меню), КБЖУ и акциз у товара, НДС филиала, оплата `online`, страница `/staff/integrations/yandex-eda`, бейдж «Подтвердите до» и курьер Яндекса в карточке заказа, push стоп-листа и меню (`Channels.stops_changed/1`, `Channels.menu_changed/1` → `MenuReloadWorker`), ручное подтверждение с тревогой, коды оплаты и отметки Frontpad, пауза ресторана (`/block`, `/unblock`, `/v2/status`), проверка кода курьера, отзывы `/v1/feedback` в карточке заказа, русские переводы. Всё покрыто тестами.
 
-1. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/feedback`, `/v1/orders-history`.
+1. Не сделано: `/places/{id}/zones`, `/zone/meta`, `/v1/orders-history`.
 2. **Вопросы к менеджеру Яндекса** — список выше. Особенно п.5: через сколько Яндекс сам отменяет неподтверждённый заказ и шлёт ли предзаказы ночью.
