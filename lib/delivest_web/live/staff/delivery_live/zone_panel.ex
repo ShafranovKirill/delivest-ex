@@ -88,7 +88,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
         phx-submit="save_zone"
         class="space-y-3 rounded-box border border-base-300 bg-base-100 p-4"
       >
-        <div class="grid grid-cols-[1fr_4rem] gap-2">
+        <div class="space-y-3">
           <.input field={@form[:name]} type="text" label={gettext("Name")} disabled={not @can_edit} />
           <.input
             field={@form[:color]}
@@ -113,7 +113,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
           label={gettext("Delivers")}
           disabled={not @can_edit}
         />
-        <Index.conditions form={@form} disabled={not @can_edit} />
+        <Index.conditions form={@form} disabled={not @can_edit} stacked />
         <.input
           field={@form[:delivery_minutes]}
           type="number"

@@ -345,10 +345,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
 
   attr :form, Phoenix.HTML.Form, required: true
   attr :disabled, :boolean, default: false
+  attr :stacked, :boolean, default: false
 
   def conditions(assigns) do
     ~H"""
-    <div class="grid gap-3 sm:grid-cols-3">
+    <div class={["grid gap-3", not @stacked && "sm:grid-cols-3"]}>
       <.input
         field={@form[:min_order]}
         type="number"
