@@ -149,9 +149,13 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               example: "8f3b2c10-91ab-4cd2-81e2-123456789abc"
             },
             number: %Schema{type: :string, example: "ORD-1001"},
-            status: %Schema{type: :string, example: "created"},
-            fulfillment_type: %Schema{type: :string, example: "delivery"},
-            payment_method: %Schema{type: :string, example: "cash"},
+            status: %Schema{
+              type: :string,
+              enum: ["created", "preparing", "ready", "delivering", "completed", "cancelled"],
+              example: "created"
+            },
+            fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
+            payment_method: %Schema{type: :string, enum: ["cash", "card_offline"]},
             total_amount: %Schema{type: :integer, example: 1180},
             subtotal_amount: %Schema{
               type: :integer,
@@ -191,7 +195,20 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             address: %Schema{type: :object, nullable: true, additionalProperties: true},
             items: %Schema{type: :array, items: OrderItemResponse}
           },
-          required: [:id, :number, :status, :total_amount, :branch_id, :cart_id, :items]
+          required: [
+            :id,
+            :number,
+            :status,
+            :fulfillment_type,
+            :payment_method,
+            :total_amount,
+            :subtotal_amount,
+            :discount_amount,
+            :promotions,
+            :branch_id,
+            :cart_id,
+            :items
+          ]
         }
       },
       required: [:data]
