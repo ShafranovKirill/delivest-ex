@@ -2,7 +2,7 @@ defmodule Delivest.Integrations.Crm.SyncState do
   require Logger
 
   alias Delivest.Audit
-  alias Delivest.Oms.Orders
+  alias Delivest.Oms.{Orders, OrderStatus}
 
   def sent(order, delivery, attempt) do
     warnings = Map.get(delivery, :warnings)
@@ -29,6 +29,8 @@ defmodule Delivest.Integrations.Crm.SyncState do
     if is_nil(status),
       do: Logger.warning("crm order #{order.number} got unmapped status code #{code}")
 
+    status = forward_only(order, status)
+
     Audit.record(:system, "order.crm_status_changed", order,
       metadata: %{status: status, code: code}
     )
@@ -39,6 +41,22 @@ defmodule Delivest.Integrations.Crm.SyncState do
       remote_status_at: at
     })
   end
+
+  defp forward_only(%{crm: %{remote_status: current}}, nil) when is_binary(current),
+    do: String.to_existing_atom(current)
+
+  defp forward_only(_order, nil), do: nil
+
+  defp forward_only(%{crm: %{remote_status: current}} = order, status) when is_binary(current) do
+    if OrderStatus.forward?(String.to_existing_atom(current), status) do
+      status
+    else
+      Logger.warning("crm order #{order.number} tried to move back from #{current} to #{status}")
+      String.to_existing_atom(current)
+    end
+  end
+
+  defp forward_only(_order, status), do: status
 
   def retrying(order, error, attempt),
     do: Orders.update_order_crm(order, %{status: "pending", attempts: attempt, last_error: error})

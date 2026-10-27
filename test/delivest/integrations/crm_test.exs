@@ -175,6 +175,19 @@ defmodule Delivest.Integrations.CrmTest do
       assert updated.crm.remote_status_code == "99"
     end
 
+    test "crm statuses never move back and unmapped codes keep the status" do
+      branch = branch(frontpad(true))
+      sent_order(branch)
+      token = "token-#{branch.id}"
+
+      {:ok, _} = Webhook.change_status(token, "900", "4", nil)
+      {:ok, updated} = Webhook.change_status(token, "900", "2", nil)
+      assert OrderStatus.current(updated) == :delivering
+
+      {:ok, updated} = Webhook.change_status(token, "900", "99", nil)
+      assert OrderStatus.current(updated) == :delivering
+    end
+
     test "a wrong token finds nothing" do
       sent_order(branch(frontpad(true)))
       assert {:error, :not_found} = Webhook.change_status("wrong", "900", "4", nil)
