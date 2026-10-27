@@ -98,14 +98,22 @@ defmodule Delivest.Integrations.YandexEdaTest do
                YandexEda.update_product(insert(:staff), soup.id, %{"enabled" => "false"})
     end
 
-    test "the stop list lists stopped products", %{branch: branch, category: category} do
+    test "the stop list lists stopped products of the channel menu", %{
+      branch: branch,
+      category: category
+    } do
       soup = menu_product(branch, category)
+      hidden = menu_product(branch, category)
+      staff = insert(:staff, role: build(:role, permissions: ["products.update"]))
+      {:ok, _} = YandexEda.update_product(staff, hidden.id, %{"enabled" => "false"})
 
-      Repo.insert!(%Delivest.Net.ProductStop{
-        branch_id: branch.id,
-        product_id: soup.id,
-        source: Delivest.Net.ProductStop.manual()
-      })
+      for product <- [soup, hidden] do
+        Repo.insert!(%Delivest.Net.ProductStop{
+          branch_id: branch.id,
+          product_id: product.id,
+          source: Delivest.Net.ProductStop.manual()
+        })
+      end
 
       Cachex.del(:stop_cache, branch.id)
 

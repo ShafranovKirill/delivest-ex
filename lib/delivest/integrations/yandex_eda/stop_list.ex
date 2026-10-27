@@ -1,12 +1,17 @@
 defmodule Delivest.Integrations.YandexEda.StopList do
   alias Delivest.Integrations.Crm.StopSync
+  alias Delivest.Integrations.YandexEda.Menu
   alias Delivest.Net.Stops
 
   @fresh_timeout 2_000
 
-  def availability(branch_id) do
+  def availability(branch, settings) do
     %{
-      items: branch_id |> Stops.stopped_ids() |> Enum.map(&%{itemId: &1, stock: 0}),
+      items:
+        branch
+        |> Menu.product_ids(settings)
+        |> unavailable_in(Stops.stopped_ids(branch.id))
+        |> Enum.map(&%{itemId: &1, stock: 0}),
       modifiers: []
     }
   end
@@ -20,8 +25,9 @@ defmodule Delivest.Integrations.YandexEda.StopList do
     end
   end
 
-  def unavailable(branch_id, product_ids) do
-    stopped = Stops.stopped_ids(branch_id)
-    Enum.filter(product_ids, &MapSet.member?(stopped, &1))
-  end
+  def unavailable(branch_id, product_ids),
+    do: unavailable_in(product_ids, Stops.stopped_ids(branch_id))
+
+  defp unavailable_in(product_ids, stopped),
+    do: Enum.filter(product_ids, &MapSet.member?(stopped, &1))
 end

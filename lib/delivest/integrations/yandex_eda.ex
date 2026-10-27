@@ -122,8 +122,8 @@ defmodule Delivest.Integrations.YandexEda do
   end
 
   def availability(restaurant_id) do
-    with {:ok, branch, _settings} <- Places.fetch(restaurant_id),
-         do: {:ok, StopList.availability(branch.id)}
+    with {:ok, branch, settings} <- Places.fetch(restaurant_id),
+         do: {:ok, StopList.availability(branch, settings)}
   end
 
   def schedule(restaurant_id) do
