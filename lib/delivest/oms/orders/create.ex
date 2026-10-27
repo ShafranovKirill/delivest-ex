@@ -10,7 +10,8 @@ defmodule Delivest.Oms.Orders.Create do
     ClientResolver,
     Lines,
     Notifier,
-    Pricing
+    Pricing,
+    StopGuard
   }
 
   alias Delivest.{Promo, Repo}
@@ -25,6 +26,9 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:client_id, fn _, _ -> ClientResolver.resolve(attrs, client_opts) end)
     |> Multi.run(:cart, fn _, _ -> CartGuard.acquire(attrs["cart_id"], attrs["branch_id"]) end)
     |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> Pricing.run(cart, attrs, id) end)
+    |> Multi.run(:stops, fn _, %{pricing: pricing, cart: cart} ->
+      StopGuard.check(cart.branch_id, pricing)
+    end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn _, _ -> OrderNumber.generate() end)
     |> Multi.insert(:order, &build(attrs, &1, opts[:crm]))

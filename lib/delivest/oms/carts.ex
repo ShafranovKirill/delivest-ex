@@ -84,9 +84,13 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
+  defp stopped?(nil, _product_id), do: false
+  defp stopped?(branch_id, product_id), do: Net.Stops.stopped?(branch_id, product_id)
+
   defp available_product(product_id, branch_id) do
     with {:ok, uuid} <- Ecto.UUID.cast(product_id),
-         true <- Net.product_available_in_branch?(uuid, branch_id) do
+         true <- Net.product_available_in_branch?(uuid, branch_id),
+         false <- stopped?(branch_id, uuid) do
       {:ok, uuid}
     else
       _ -> {:error, :product_unavailable}

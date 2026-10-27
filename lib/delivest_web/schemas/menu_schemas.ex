@@ -57,6 +57,10 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           type: :boolean,
           description: "Предлагать в корзине в блоке «Добавить к заказу»"
         },
+        stopped: %Schema{
+          type: :boolean,
+          description: "Товар в стоп-листе: показывать, но не давать заказать"
+        },
         photo_url: %Schema{
           type: :string,
           format: :uri,
