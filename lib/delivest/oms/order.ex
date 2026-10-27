@@ -10,8 +10,16 @@ defmodule Delivest.Oms.Order do
   @type t :: %__MODULE__{}
 
   @fulfillment_types [:dine_in, :delivery, :pickup]
-  @statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled, :crm]
-  @progress_statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled]
+  @statuses [:created, :accepted, :preparing, :ready, :delivering, :completed, :cancelled, :crm]
+  @progress_statuses [
+    :created,
+    :accepted,
+    :preparing,
+    :ready,
+    :delivering,
+    :completed,
+    :cancelled
+  ]
   @payment_methods [:cash, :card_offline]
   @cancel_reasons [:customer_refused, :out_of_stock, :unreachable, :other, :not_confirmed]
 

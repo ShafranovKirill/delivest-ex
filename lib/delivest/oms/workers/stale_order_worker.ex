@@ -9,7 +9,7 @@ defmodule Delivest.Oms.Workers.StaleOrderWorker do
   alias Delivest.Oms.{Order, Orders}
   alias Delivest.Repo
 
-  @open_statuses [:created, :preparing, :ready, :delivering]
+  @open_statuses [:created, :accepted, :preparing, :ready, :delivering]
   @handed_over [:ready, :delivering]
   @grace_hours 3
 

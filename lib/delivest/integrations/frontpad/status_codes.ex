@@ -2,7 +2,7 @@ defmodule Delivest.Integrations.Frontpad.StatusCodes do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @statuses [:preparing, :ready, :delivering, :completed, :cancelled]
+  @statuses [:accepted, :preparing, :ready, :delivering, :completed, :cancelled]
 
   @type t :: %__MODULE__{}
 

@@ -21,7 +21,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderClock do
     """
   end
 
-  def order_clock(%{status: status} = assigns) when status in [:preparing, :ready, :delivering] do
+  def order_clock(%{status: status} = assigns)
+      when status in [:accepted, :preparing, :ready, :delivering] do
     deadline = OrderDeadline.at(assigns.order, assigns.delivery_minutes)
     assigns = assign(assigns, deadline: deadline)
 

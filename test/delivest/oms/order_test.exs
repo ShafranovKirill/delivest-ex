@@ -26,7 +26,15 @@ defmodule Delivest.Oms.OrderTest do
     end
 
     test "pickup orders cannot be delivering" do
-      assert Order.statuses_for(:pickup) == [:created, :preparing, :ready, :completed, :cancelled]
+      assert Order.statuses_for(:pickup) == [
+               :created,
+               :accepted,
+               :preparing,
+               :ready,
+               :completed,
+               :cancelled
+             ]
+
       assert :delivering in Order.statuses_for(:delivery)
 
       order = %Order{status: :ready, fulfillment_type: :pickup, payment_method: :cash}

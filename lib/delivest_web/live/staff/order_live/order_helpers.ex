@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
 
   def status_color(status) when is_atom(status), do: status_color(Atom.to_string(status))
   def status_color("created"), do: "bg-info/10 text-info border-info/20"
+  def status_color("accepted"), do: "bg-primary/10 text-primary border-primary/20"
   def status_color("preparing"), do: "bg-warning/10 text-warning border-warning/20"
   def status_color("ready"), do: "bg-accent/10 text-accent border-accent/20"
   def status_color("delivering"), do: "bg-secondary/10 text-secondary border-secondary/20"
@@ -13,6 +14,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
 
   def status_label(status) when is_atom(status), do: status_label(Atom.to_string(status))
   def status_label("created"), do: gettext("Created")
+  def status_label("accepted"), do: gettext("Confirmed")
   def status_label("preparing"), do: gettext("Preparing")
   def status_label("ready"), do: gettext("Ready")
   def status_label("delivering"), do: gettext("Delivering")

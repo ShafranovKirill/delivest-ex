@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
 
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
-  @statuses [:created, :preparing, :ready, :delivering, :completed, :cancelled]
+  @statuses [:created, :accepted, :preparing, :ready, :delivering, :completed, :cancelled]
 
   attr :counts, :map, required: true
   attr :selected, :string, required: true

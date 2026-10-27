@@ -78,7 +78,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
     } do
       {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
 
-      for status <- [:preparing, :ready, :completed] do
+      for status <- [:accepted, :preparing, :ready, :completed] do
         lv |> element("#order-next-#{order.id}") |> render_click()
         assert Delivest.Repo.reload!(order).status == status
       end

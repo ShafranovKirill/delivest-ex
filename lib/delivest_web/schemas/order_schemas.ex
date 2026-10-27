@@ -160,7 +160,15 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             number: %Schema{type: :string, example: "ORD-1001"},
             status: %Schema{
               type: :string,
-              enum: ["created", "preparing", "ready", "delivering", "completed", "cancelled"],
+              enum: [
+                "created",
+                "accepted",
+                "preparing",
+                "ready",
+                "delivering",
+                "completed",
+                "cancelled"
+              ],
               example: "created"
             },
             fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
@@ -236,7 +244,15 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         number: %Schema{type: :string, example: "A042"},
         status: %Schema{
           type: :string,
-          enum: ["created", "preparing", "ready", "delivering", "completed", "cancelled"],
+          enum: [
+            "created",
+            "accepted",
+            "preparing",
+            "ready",
+            "delivering",
+            "completed",
+            "cancelled"
+          ],
           example: "preparing"
         },
         fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},

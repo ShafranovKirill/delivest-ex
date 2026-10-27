@@ -145,7 +145,17 @@ defmodule Delivest.Integrations.CrmTest do
       assert [%Event{}] =
                Repo.all(from(e in Event, where: e.action == "order.crm_status_changed"))
 
+      assert OrderStatus.current(order) == :accepted
+    end
+
+    test "an order handed to the crm counts as confirmed" do
+      branch = branch(frontpad(true))
+      {:ok, order} = place_order(branch)
       assert OrderStatus.current(order) == :created
+
+      stub_frontpad(%{"result" => "success", "order_id" => "900"})
+      :ok = sync(order)
+      assert OrderStatus.current(Repo.reload!(order)) == :accepted
     end
 
     test "completed crm orders stop being active" do
@@ -161,7 +171,7 @@ defmodule Delivest.Integrations.CrmTest do
       sent_order(branch)
 
       assert {:ok, updated} = Webhook.change_status("token-#{branch.id}", "900", "99", nil)
-      assert OrderStatus.current(updated) == :created
+      assert OrderStatus.current(updated) == :accepted
       assert updated.crm.remote_status_code == "99"
     end
 

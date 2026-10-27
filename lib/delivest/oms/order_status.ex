@@ -6,6 +6,7 @@ defmodule Delivest.Oms.OrderStatus do
   def current(%Order{status: :crm, crm: %{remote_status: status}}) when is_binary(status),
     do: String.to_existing_atom(status)
 
+  def current(%Order{status: :crm, crm: %{status: "sent"}}), do: :accepted
   def current(%Order{status: :crm}), do: :created
   def current(%Order{status: status}), do: status
 

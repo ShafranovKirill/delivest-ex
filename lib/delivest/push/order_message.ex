@@ -3,7 +3,7 @@ defmodule Delivest.Push.OrderMessage do
 
   alias Delivest.Franchise
 
-  @notified [:preparing, :ready, :delivering, :completed, :cancelled]
+  @notified [:accepted, :preparing, :ready, :delivering, :completed, :cancelled]
 
   def notified?(status), do: status in @notified
 
@@ -23,6 +23,9 @@ defmodule Delivest.Push.OrderMessage do
       url: "/"
     }
   end
+
+  defp body(:accepted, order),
+    do: gettext("Order %{number} is confirmed", number: order.number)
 
   defp body(:preparing, order),
     do: gettext("Order %{number} is being prepared", number: order.number)

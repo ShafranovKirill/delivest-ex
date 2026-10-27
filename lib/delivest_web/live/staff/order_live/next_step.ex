@@ -1,7 +1,8 @@
 defmodule DelivestWeb.Staff.OrderLive.NextStep do
   use Gettext, backend: DelivestWeb.Gettext
 
-  def for_order(%{status: :created}), do: {:preparing, gettext("Accept")}
+  def for_order(%{status: :created}), do: {:accepted, gettext("Confirm")}
+  def for_order(%{status: :accepted}), do: {:preparing, gettext("Start cooking")}
   def for_order(%{status: :preparing}), do: {:ready, gettext("Ready")}
 
   def for_order(%{status: :ready, fulfillment_type: :delivery}),

@@ -9,7 +9,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
   import DelivestWeb.Staff.StatsComponents
 
-  @active_statuses [:created, :preparing, :ready, :delivering, :crm]
+  @active_statuses [:created, :accepted, :preparing, :ready, :delivering, :crm]
   @reload_delay :timer.seconds(2)
 
   @impl true
@@ -174,7 +174,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             <h2 class="font-bold">{gettext("Latest orders")}</h2>
             <div class="flex flex-wrap gap-1.5">
               <span
-                :for={status <- [:created, :preparing, :ready, :delivering, :completed]}
+                :for={status <- [:created, :accepted, :preparing, :ready, :delivering, :completed]}
                 :if={Map.get(@status_counts, status, 0) > 0}
                 class={["badge badge-sm border", OrderHelpers.status_color(status)]}
               >
