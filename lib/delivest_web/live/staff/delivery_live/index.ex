@@ -19,7 +19,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
        page_title: gettext("Delivery"),
        can_edit: Identity.can?(socket.assigns.current_staff, "branches.update"),
        mode: settings.mode,
-       branch_point: branch_point(branch_id)
+       branch_point: branch_point(branch_id),
+       address_map: Delivest.Integrations.Dadata.active?()
      )
      |> assign_settings(settings)
      |> assign_zones(zones, zones |> List.first() |> then(&(&1 && &1.id)))}
@@ -224,6 +225,19 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
         <p :if={@mode == :zones} class="text-sm text-base-content/60">
           {gettext("The price depends on the zone of the address. Draw the zones on the map below.")}
         </p>
+
+        <div
+          :if={@mode == :zones and not @address_map}
+          role="alert"
+          class="alert alert-warning text-sm"
+        >
+          <.icon name="hero-exclamation-triangle" class="size-5" />
+          <span>
+            {gettext(
+              "Zones need DaData: without it the site has no address map, addresses have no point and delivery orders are refused."
+            )}
+          </span>
+        </div>
 
         <div :if={@can_edit} class="flex justify-end">
           <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>

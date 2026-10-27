@@ -692,7 +692,7 @@ msgstr ""
 #: lib/delivest_web/hooks/new_orders.ex:52
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
-#: lib/delivest_web/live/staff/delivery_live/index.ex:168
+#: lib/delivest_web/live/staff/delivery_live/index.ex:169
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:89
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
@@ -842,7 +842,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:225
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:100
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:143
-#: lib/delivest_web/live/staff/delivery_live/index.ex:230
+#: lib/delivest_web/live/staff/delivery_live/index.ex:244
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:96
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150
@@ -865,7 +865,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:224
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:99
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:141
-#: lib/delivest_web/live/staff/delivery_live/index.ex:229
+#: lib/delivest_web/live/staff/delivery_live/index.ex:243
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:95
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:149
@@ -1306,7 +1306,7 @@ msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:119
 #: lib/delivest_web/live/staff/delivery_live/index.ex:19
-#: lib/delivest_web/live/staff/delivery_live/index.ex:183
+#: lib/delivest_web/live/staff/delivery_live/index.ex:184
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:38
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:29
 #, elixir-autogen, elixir-format
@@ -3903,7 +3903,7 @@ msgstr ""
 msgid "Seller details"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:41
+#: lib/delivest_web/live/staff/delivery_live/index.ex:42
 #: lib/delivest_web/live/staff/franchise_live/index.ex:42
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:83
@@ -5007,7 +5007,7 @@ msgstr ""
 msgid "Connect a CRM in integrations"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:170
+#: lib/delivest_web/live/staff/delivery_live/index.ex:171
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:190
 #, elixir-autogen, elixir-format
@@ -5633,12 +5633,12 @@ msgstr ""
 msgid "ours"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:271
+#: lib/delivest_web/live/staff/delivery_live/index.ex:285
 #, elixir-autogen, elixir-format
 msgid "By zones on the map"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:253
+#: lib/delivest_web/live/staff/delivery_live/index.ex:267
 #, elixir-autogen, elixir-format
 msgid "Click a zone to edit its points: drag a point, drag a midpoint to add one, right click a point to delete it."
 msgstr ""
@@ -5663,12 +5663,12 @@ msgstr ""
 msgid "Delivers"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:185
+#: lib/delivest_web/live/staff/delivery_live/index.ex:186
 #, elixir-autogen, elixir-format
 msgid "Delivery price for the site and Yandex Eda. Addresses outside the zones are not accepted."
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:291
+#: lib/delivest_web/live/staff/delivery_live/index.ex:305
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Delivery price, ₽"
 msgstr ""
@@ -5683,12 +5683,12 @@ msgstr ""
 msgid "Draw a zone"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:299
+#: lib/delivest_web/live/staff/delivery_live/index.ex:313
 #, elixir-autogen, elixir-format
 msgid "Free from, ₽"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:283
+#: lib/delivest_web/live/staff/delivery_live/index.ex:297
 #, elixir-autogen, elixir-format
 msgid "Minimum order, ₽"
 msgstr ""
@@ -5698,22 +5698,22 @@ msgstr ""
 msgid "No zones yet, every delivery address is refused"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:217
+#: lib/delivest_web/live/staff/delivery_live/index.ex:218
 #, elixir-autogen, elixir-format
 msgid "One price for any address. Leave the price empty for free delivery, set «free from» for free delivery from a sum."
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:225
+#: lib/delivest_web/live/staff/delivery_live/index.ex:226
 #, elixir-autogen, elixir-format
 msgid "The price depends on the zone of the address. Draw the zones on the map below."
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:271
+#: lib/delivest_web/live/staff/delivery_live/index.ex:285
 #, elixir-autogen, elixir-format
 msgid "Without zones"
 msgstr ""
 
-#: lib/delivest_web/live/staff/delivery_live/index.ex:96
+#: lib/delivest_web/live/staff/delivery_live/index.ex:97
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Zone saved"
 msgstr ""
@@ -5746,4 +5746,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:63
 #, elixir-autogen, elixir-format
 msgid "incl. delivery %{amount}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:236
+#, elixir-autogen, elixir-format
+msgid "Zones need DaData: without it the site has no address map, addresses have no point and delivery orders are refused."
 msgstr ""
