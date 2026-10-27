@@ -46,6 +46,21 @@ defmodule DelivestWeb.Client.CatalogLinksTest do
     assert [%{"products" => [%{"slug" => "hinkali"}]}] = body["data"]
   end
 
+  test "menu exposes the measure unit", %{
+    conn: conn,
+    staff: staff,
+    branch: branch,
+    product: product
+  } do
+    body = conn |> get(~p"/client/branches/#{branch.id}/menu") |> json_response(200)
+    assert [%{"products" => [%{"measure_unit" => "g"}]}] = body["data"]
+
+    {:ok, _} = Net.update_product(staff, product, %{"measure_unit" => "ml", "weight" => 500})
+
+    body = build_conn() |> get(~p"/client/branches/#{branch.id}/menu") |> json_response(200)
+    assert [%{"products" => [%{"measure_unit" => "ml", "weight" => 500}]}] = body["data"]
+  end
+
   test "menu exposes product tags with icons and the cart suggestion flag", %{
     conn: conn,
     staff: staff,

@@ -34,6 +34,12 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           example: 450,
           description: "Вес товара (в граммах)"
         },
+        measure_unit: %Schema{
+          type: :string,
+          enum: ["g", "ml"],
+          example: "g",
+          description: "Единица измерения веса: граммы или миллилитры"
+        },
         is_active: %Schema{type: :boolean, example: true},
         tags: %Schema{
           type: :array,
