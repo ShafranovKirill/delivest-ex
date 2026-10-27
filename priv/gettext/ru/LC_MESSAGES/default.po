@@ -1617,7 +1617,7 @@ msgstr "Широта"
 msgid "Longitude"
 msgstr "Долгота"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:207
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:239
 #, elixir-autogen, elixir-format
 msgid "Prepare by:"
 msgstr "Готовить к:"
@@ -1649,12 +1649,12 @@ msgstr "Настройки YCart"
 msgid "Yandex Org ID"
 msgstr "Yandex Org ID"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:254
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:286
 #, elixir-autogen, elixir-format
 msgid "error"
 msgstr "ошибка"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:256
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:288
 #, elixir-autogen, elixir-format
 msgid "sending"
 msgstr "отправка"
@@ -4820,12 +4820,12 @@ msgstr "Местоположение"
 msgid "The address and the point of the branch for customers and the pickup map."
 msgstr "Адрес и точка филиала: их видят клиенты и карта самовывоза."
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:265
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:297
 #, elixir-autogen, elixir-format
 msgid "%{crm} status %{code} is not mapped"
 msgstr "Статус %{crm} %{code} не сопоставлен"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:263
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:295
 #, elixir-autogen, elixir-format
 msgid "Set this code in the branch %{crm} settings"
 msgstr "Укажите этот код в настройках %{crm} филиала"
@@ -4966,7 +4966,7 @@ msgid "Start cooking"
 msgstr "Готовить"
 
 #: lib/delivest_web/live/staff/integration_live/routes.ex:55
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:326
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:372
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr "Админка"
@@ -5206,3 +5206,18 @@ msgstr "Яндекс потеряет доступ, пока не получит
 #, elixir-autogen, elixir-format
 msgid "ml"
 msgstr "мл"
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:219
+#, elixir-autogen, elixir-format
+msgid "Courier"
+msgstr "Курьер"
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:234
+#, elixir-autogen, elixir-format
+msgid "arrives by %{time}"
+msgstr "прибудет к %{time}"
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:228
+#, elixir-autogen, elixir-format
+msgid "at the restaurant"
+msgstr "в ресторане"

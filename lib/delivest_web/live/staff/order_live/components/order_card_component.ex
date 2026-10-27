@@ -196,11 +196,43 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :order, :map, required: true
 
   defp fulfillment(assigns) do
+    courier = channel_detail(assigns.order, "courier")
+
+    assigns =
+      assign(assigns,
+        courier: courier_info(courier),
+        courier_eta: courier_eta(courier)
+      )
+
     ~H"""
     <div class="min-w-0 space-y-1.5">
       <p :if={@order.fulfillment_type == :delivery} class="flex gap-1.5 text-base-content/80">
         <.icon name="hero-map-pin" class="size-4 shrink-0 text-base-content/40" />
         <span class="break-words">{OrderHelpers.format_address(@order.address)}</span>
+      </p>
+      <p
+        :if={@courier}
+        id={"order-courier-#{@order.id}"}
+        class="flex flex-wrap items-center gap-x-1.5 text-base-content/80"
+      >
+        <.icon name="hero-truck" class="size-4 shrink-0 text-base-content/40" />
+        <span>{gettext("Courier")}: {@courier["name"]}</span>
+        <a
+          :if={@courier["phone"]}
+          href={"tel:#{@courier["phone"]}"}
+          class="font-mono hover:text-primary"
+        >
+          {@courier["phone"]}
+        </a>
+        <span :if={@courier["status"] == "arrived_to_source"} class="badge badge-sm badge-success">
+          {gettext("at the restaurant")}
+        </span>
+        <span
+          :if={@courier["status"] != "arrived_to_source" and @courier_eta}
+          class="text-base-content/60"
+        >
+          {gettext("arrives by %{time}", time: OrderHelpers.local_time(@courier_eta))}
+        </span>
       </p>
       <p :if={@order.cook_by} class="flex gap-1.5 text-base-content/80">
         <.icon name="hero-clock" class="size-4 shrink-0 text-base-content/40" />
@@ -320,6 +352,20 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       _ -> nil
     end
   end
+
+  defp courier_info(%{"courier" => %{"name" => name} = courier}) when is_binary(name),
+    do: courier
+
+  defp courier_info(_courier), do: nil
+
+  defp courier_eta(%{"maxPlaceArrivalTime" => value}) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} -> datetime
+      _error -> nil
+    end
+  end
+
+  defp courier_eta(_courier), do: nil
 
   defp overdue?(datetime), do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
 
