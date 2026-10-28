@@ -13,6 +13,7 @@ defmodule Delivest.Couriers do
   @permission "orders.deliver"
   @before_pickup [:accepted, :preparing, :ready]
   @rank %{preparing: 1, ready: 2}
+  @handed_over [:picked_up, :delivered]
 
   def permission, do: @permission
 
@@ -44,6 +45,12 @@ defmodule Delivest.Couriers do
     do: deliveries |> Enum.filter(&Delivery.active?/1) |> List.last()
 
   def current(%Order{id: order_id}), do: active(order_id)
+
+  def handed_over?(%Order{deliveries: deliveries}) when is_list(deliveries),
+    do: Enum.any?(deliveries, &(&1.status in @handed_over))
+
+  def handed_over?(%Order{id: order_id}),
+    do: Repo.exists?(where(Delivery, [d], d.order_id == ^order_id and d.status in ^@handed_over))
 
   def active(order_id) do
     Delivery

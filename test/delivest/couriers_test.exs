@@ -186,6 +186,33 @@ defmodule Delivest.CouriersTest do
     end
   end
 
+  describe "revert" do
+    test "is allowed until the courier picks the order up" do
+      branch = branch()
+      admin = staff(["orders.update", "orders.revert"], branch)
+      courier = courier(branch)
+      order = order(branch) |> advance([:accepted, :preparing, :ready], admin)
+      delivery = Couriers.active(order.id)
+      {:ok, _delivery} = Couriers.take(courier, branch.id, delivery.id)
+
+      assert {:ok, %Order{status: :preparing}} =
+               Orders.revert_order_status(Repo.reload!(order), admin, "too early")
+
+      advance(Repo.reload!(order), [:ready], admin)
+      {:ok, _order} = Couriers.pick_up(courier, branch.id, delivery.id)
+
+      assert {:error, :handed_to_courier} =
+               Orders.revert_order_status(Repo.reload!(order), admin, "mistake")
+
+      {:ok, _order} = Couriers.hand_over(courier, branch.id, delivery.id)
+
+      assert {:error, :handed_to_courier} =
+               Orders.revert_order_status(Repo.reload!(order), admin, "mistake")
+
+      assert Repo.reload!(order).status == :completed
+    end
+  end
+
   describe "operator assignment" do
     test "assigns, replaces and removes a courier before pickup" do
       branch = branch(%{search: :manual})

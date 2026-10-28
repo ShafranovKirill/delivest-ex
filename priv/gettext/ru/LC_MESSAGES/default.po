@@ -256,7 +256,7 @@ msgstr "Управление филиалами"
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:98
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:137
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:81
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:428
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:430
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:91
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:380
 #: lib/delivest_web/live/staff/product_live/tags.ex:258
@@ -1340,8 +1340,8 @@ msgstr "Не удалось удалить клиента"
 msgid "Failed to delete order"
 msgstr "Не удалось удалить заказ"
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:36
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:39
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:40
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:43
 #, elixir-autogen, elixir-format
 msgid "Failed to update order"
 msgstr "Не удалось обновить заказ"
@@ -1643,12 +1643,12 @@ msgstr "Настройки YCart"
 msgid "Yandex Org ID"
 msgstr "Yandex Org ID"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:542
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:544
 #, elixir-autogen, elixir-format
 msgid "error"
 msgstr "ошибка"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:544
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:546
 #, elixir-autogen, elixir-format
 msgid "sending"
 msgstr "отправка"
@@ -2234,7 +2234,7 @@ msgid "Staff %{name}"
 msgstr "Сотрудник %{name}"
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:22
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:586
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:588
 #, elixir-autogen, elixir-format
 msgid "System"
 msgstr "Система"
@@ -4817,12 +4817,12 @@ msgstr "Местоположение"
 msgid "The address and the point of the branch for customers and the pickup map."
 msgstr "Адрес и точка филиала: их видят клиенты и карта самовывоза."
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:553
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:555
 #, elixir-autogen, elixir-format
 msgid "%{crm} status %{code} is not mapped"
 msgstr "Статус %{crm} %{code} не сопоставлен"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:551
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:553
 #, elixir-autogen, elixir-format
 msgid "Set this code in the branch %{crm} settings"
 msgstr "Укажите этот код в настройках %{crm} филиала"
@@ -4972,7 +4972,7 @@ msgstr "Готовить"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:158
 #: lib/delivest_web/live/staff/integration_live/routes.ex:55
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:616
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:618
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr "Админка"
@@ -5219,7 +5219,7 @@ msgid "ml"
 msgstr "мл"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:300
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:585
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:587
 #, elixir-autogen, elixir-format
 msgid "Courier"
 msgstr "Курьер"
@@ -6038,7 +6038,7 @@ msgstr "Отменён: %{channel}"
 msgid "Cancelled in CRM"
 msgstr "Отменён в CRM"
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:35
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:39
 #, elixir-autogen, elixir-format
 msgid "Enter the reason for reverting"
 msgstr "Укажите причину отката"
@@ -6078,7 +6078,7 @@ msgstr "Откатить"
 msgid "Revert the status of order #%{number}"
 msgstr "Откатить статус заказа №%{number}"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:437
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:439
 #, elixir-autogen, elixir-format
 msgid "Revert to «%{status}»"
 msgstr "Откатить на «%{status}»"
@@ -6118,7 +6118,7 @@ msgstr "Последний шаг «%{status}» будет снят. Причи�
 msgid "The order is managed by the CRM"
 msgstr "Заказ ведёт CRM"
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:31
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:35
 #, elixir-autogen, elixir-format
 msgid "The order status has already changed, refresh the page"
 msgstr "Статус заказа уже изменился, обновите страницу"
@@ -6237,7 +6237,7 @@ msgid "Couriers"
 msgstr "Курьеры"
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:259
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:480
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:482
 #, elixir-autogen, elixir-format
 msgid "Find a courier"
 msgstr "Найти курьера"
@@ -6278,23 +6278,23 @@ msgstr "Курьер уже ищется"
 msgid "Another courier has already taken this order"
 msgstr "Заказ уже взял другой курьер"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:491
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:494
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:493
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:496
 #, elixir-autogen, elixir-format
 msgid "Assign a courier"
 msgstr "Назначить курьера"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:522
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:524
 #, elixir-autogen, elixir-format
 msgid "Courier assigned"
 msgstr "Курьер назначен"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:523
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:525
 #, elixir-autogen, elixir-format
 msgid "Courier is on the way"
 msgstr "Курьер в пути"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:521
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:523
 #, elixir-autogen, elixir-format
 msgid "Looking for a courier"
 msgstr "Ищем курьера"
@@ -6304,12 +6304,12 @@ msgstr "Ищем курьера"
 msgid "No courier is assigned"
 msgstr "Курьер не назначен"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:520
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:522
 #, elixir-autogen, elixir-format
 msgid "No courier yet"
 msgstr "Курьера нет"
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:513
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:515
 #, elixir-autogen, elixir-format
 msgid "Remove the courier"
 msgstr "Снять курьера"
@@ -6319,7 +6319,7 @@ msgstr "Снять курьера"
 msgid "The courier has already picked up the order"
 msgstr "Курьер уже забрал заказ"
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:28
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:32
 #, elixir-autogen, elixir-format
 msgid "The order is not ready yet"
 msgstr "Заказ ещё не готов"
@@ -6344,7 +6344,7 @@ msgstr "Это не ваш заказ"
 msgid "Deliver to"
 msgstr "Куда везти"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:251
+#: lib/delivest_web/live/staff/courier_live/index.ex:263
 #, elixir-autogen, elixir-format
 msgid "Delivered, payment received"
 msgstr "Вручил, оплату получил"
@@ -6361,7 +6361,7 @@ msgstr "Доставки"
 msgid "My orders"
 msgstr "Мои заказы"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:198
+#: lib/delivest_web/live/staff/courier_live/index.ex:210
 #, elixir-autogen, elixir-format
 msgid "Navigator"
 msgstr "Навигатор"
@@ -6381,7 +6381,7 @@ msgstr "Новых заявок нет"
 msgid "Paid"
 msgstr "Оплачен"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:247
+#: lib/delivest_web/live/staff/courier_live/index.ex:259
 #, elixir-autogen, elixir-format
 msgid "Payment received from the customer?"
 msgstr "Оплата от клиента получена?"
@@ -6391,32 +6391,32 @@ msgstr "Оплата от клиента получена?"
 msgid "Pick up"
 msgstr "Откуда забрать"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:237
+#: lib/delivest_web/live/staff/courier_live/index.ex:249
 #, elixir-autogen, elixir-format
 msgid "Picked up"
 msgstr "Забрал"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:227
+#: lib/delivest_web/live/staff/courier_live/index.ex:239
 #, elixir-autogen, elixir-format
 msgid "Refuse"
 msgstr "Отказаться"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:224
+#: lib/delivest_web/live/staff/courier_live/index.ex:236
 #, elixir-autogen, elixir-format
 msgid "Refuse this order?"
 msgstr "Отказаться от заказа?"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:237
+#: lib/delivest_web/live/staff/courier_live/index.ex:249
 #, elixir-autogen, elixir-format
 msgid "Still cooking"
 msgstr "Ещё готовится"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:215
+#: lib/delivest_web/live/staff/courier_live/index.ex:227
 #, elixir-autogen, elixir-format
 msgid "Take"
 msgstr "Взять"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:201
+#: lib/delivest_web/live/staff/courier_live/index.ex:213
 #, elixir-autogen, elixir-format
 msgid "Yandex Maps"
 msgstr "Яндекс Карты"
@@ -6446,7 +6446,12 @@ msgstr "этаж"
 msgid "intercom"
 msgstr "домофон"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:252
+#: lib/delivest_web/live/staff/courier_live/index.ex:264
 #, elixir-autogen, elixir-format
 msgid "Handed to the customer"
 msgstr "Вручил"
+
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:30
+#, elixir-autogen, elixir-format
+msgid "The courier has picked up the order, its status cannot be reverted"
+msgstr "Курьер уже забрал заказ, статус откатить нельзя"

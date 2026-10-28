@@ -395,7 +395,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       assign(assigns,
         next: NextStep.for_order(order, staff),
         can_cancel: OrderFlow.can?(order, :cancelled, {:staff, staff}),
-        can_revert: assigns.last != nil and OrderFlow.can_revert?(staff, order)
+        can_revert:
+          assigns.last != nil and OrderFlow.can_revert?(staff, order) and
+            not Couriers.handed_over?(order)
       )
 
     ~H"""

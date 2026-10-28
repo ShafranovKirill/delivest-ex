@@ -69,6 +69,27 @@ defmodule DelivestWeb.Staff.CourierLive.OperatorTest do
     assert %Delivery{status: :searching} = Couriers.active(ctx.order.id)
   end
 
+  test "an order picked up by the courier has no revert button", ctx do
+    admin = staff(["orders.read", "orders.update", "orders.revert"], ctx.branch)
+    conn = init_test_session(build_conn(), %{"staff_id" => admin.id})
+    courier = Repo.preload(ctx.courier, [:role, :branches])
+    admin = Repo.preload(admin, [:role, :branches])
+
+    {:ok, order} = Delivest.Oms.Orders.advance_order(ctx.order, :preparing, {:staff, admin})
+    {:ok, _delivery} = Couriers.find(admin, order)
+    {:ok, _delivery} = Couriers.assign(admin, order, courier.id)
+
+    {:ok, lv, _html} = orders_page(conn, ctx.branch)
+    assert has_element?(lv, "#order-revert-#{order.id}")
+
+    {:ok, order} = Delivest.Oms.Orders.advance_order(order, :ready, {:staff, admin})
+    {:ok, _order} = Couriers.pick_up(courier, ctx.branch.id, Couriers.active(order.id).id)
+
+    {:ok, lv, _html} = orders_page(conn, ctx.branch)
+    assert has_element?(lv, "#order-status-#{order.id}", "Delivering")
+    refute has_element?(lv, "#order-revert-#{order.id}")
+  end
+
   test "pickup orders have no courier panel", ctx do
     pickup =
       ctx.branch.id

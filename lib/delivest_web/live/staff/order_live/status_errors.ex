@@ -25,6 +25,10 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
   def message(:picked_up), do: gettext("The courier has already picked up the order")
   def message(:taken), do: gettext("Another courier has already taken this order")
   def message(:not_yours), do: gettext("This order is not yours")
+
+  def message(:handed_to_courier),
+    do: gettext("The courier has picked up the order, its status cannot be reverted")
+
   def message(:not_ready), do: gettext("The order is not ready yet")
 
   def message(reason) when reason in [:finished, :backward, :skipped_step, :unreachable],

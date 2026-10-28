@@ -35,34 +35,38 @@ defmodule Delivest.Oms.Orders.StatusChange do
   end
 
   def revert(%Order{} = order, %Staff{} = staff, reason) do
-    if OrderFlow.can_revert?(staff, order) do
-      Multi.new()
-      |> Multi.run(:locked, fn repo, _ -> lock_order(repo, order.id) end)
-      |> Multi.run(:transition, fn repo, %{locked: locked} -> last_transition(repo, locked) end)
-      |> Multi.update(:reverted, fn %{transition: transition} ->
-        OrderTransition.revert_changeset(transition, staff.id, reason)
-      end)
-      |> Multi.update(:order, fn %{locked: locked, transition: transition} ->
-        Order.status_changeset(locked, transition.from)
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{order: order, reverted: transition}} ->
-          {:ok, order}
-          |> Notifier.publish([:order, :updated])
-          |> Audit.track(staff, "order.status_reverted",
-            metadata: %{
-              from: transition.to,
-              to: transition.from,
-              reason: transition.revert_reason
-            }
-          )
+    cond do
+      not OrderFlow.can_revert?(staff, order) -> {:error, :forbidden}
+      Couriers.handed_over?(order) -> {:error, :handed_to_courier}
+      true -> do_revert(order, staff, reason)
+    end
+  end
 
-        {:error, _step, reason, _changes} ->
-          {:error, reason}
-      end
-    else
-      {:error, :forbidden}
+  defp do_revert(order, staff, reason) do
+    Multi.new()
+    |> Multi.run(:locked, fn repo, _ -> lock_order(repo, order.id) end)
+    |> Multi.run(:transition, fn repo, %{locked: locked} -> last_transition(repo, locked) end)
+    |> Multi.update(:reverted, fn %{transition: transition} ->
+      OrderTransition.revert_changeset(transition, staff.id, reason)
+    end)
+    |> Multi.update(:order, fn %{locked: locked, transition: transition} ->
+      Order.status_changeset(locked, transition.from)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{order: order, reverted: transition}} ->
+        {:ok, order}
+        |> Notifier.publish([:order, :updated])
+        |> Audit.track(staff, "order.status_reverted",
+          metadata: %{
+            from: transition.to,
+            to: transition.from,
+            reason: transition.revert_reason
+          }
+        )
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
