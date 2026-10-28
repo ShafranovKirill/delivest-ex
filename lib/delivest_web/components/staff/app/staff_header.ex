@@ -30,7 +30,9 @@ defmodule DelivestWeb.StaffHeader do
         <span class="text-lg font-bold">Delivest</span>
       </.link>
 
-      <div class="hidden sm:block flex-1"></div>
+      <div class="flex flex-1 justify-end sm:justify-center">
+        <DelivestWeb.CommandPalette.command_palette_trigger />
+      </div>
 
       <DelivestWeb.NewOrdersBell.new_orders_bell
         :if={@current_branch && can?(@current_staff, "orders.read")}

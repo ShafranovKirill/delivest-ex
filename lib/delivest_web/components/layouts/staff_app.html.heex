@@ -7,6 +7,11 @@
     new_orders_count={assigns[:new_orders_count] || 0}
   />
 
+  <DelivestWeb.CommandPalette.command_palette
+    query={assigns[:command_query] || ""}
+    groups={assigns[:command_groups] || []}
+  />
+
   <DelivestWeb.OverdueOrdersAlert.overdue_orders_alert orders={assigns[:overdue_orders] || []} />
 
   <DelivestWeb.StaffSidebar.staff_sidebar
