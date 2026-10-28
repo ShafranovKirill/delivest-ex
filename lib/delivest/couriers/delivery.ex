@@ -18,7 +18,8 @@ defmodule Delivest.Couriers.Delivery do
     :not_found,
     :order_cancelled,
     :order_completed,
-    :handed_over
+    :handed_over,
+    :provider_error
   ]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -45,11 +46,13 @@ defmodule Delivest.Couriers.Delivery do
 
   def active?(%__MODULE__{status: status}), do: status in @active
 
-  def new(%Order{} = order, provider) do
-    %__MODULE__{order_id: order.id, branch_id: order.branch_id, provider: provider}
+  def new(order_id, branch_id, provider) do
+    %__MODULE__{order_id: order_id, branch_id: branch_id, provider: provider}
     |> change()
     |> unique_constraint(:order_id, name: :deliveries_active_order_index)
   end
+
+  def provider_changeset(delivery, attrs), do: cast(delivery, attrs, [:external_id, :details])
 
   def assign_changeset(delivery, %Staff{} = courier, assigned_by) do
     delivery

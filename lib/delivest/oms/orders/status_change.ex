@@ -3,7 +3,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
 
   require Logger
 
-  alias Delivest.{Audit, Repo}
+  alias Delivest.{Audit, Couriers, Repo}
   alias Delivest.Identity.Staff
   alias Delivest.Oms.{Kitchen, Order, OrderFlow, OrderTransition}
   alias Delivest.Oms.Orders.Notifier
@@ -140,6 +140,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
   defp finish(%{order: order, steps: steps}, by, opts) do
     {:ok, order} = Notifier.publish({:ok, order}, [:order, :updated])
     audit(order, steps, by, opts)
+    {:ok, order} = Couriers.order_moved(order)
     {:ok, order} = Kitchen.order_accepted(order)
     order
   end
