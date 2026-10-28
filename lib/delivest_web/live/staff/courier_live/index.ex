@@ -193,6 +193,18 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
           </span>
         </div>
 
+        <div
+          :if={@mine and located?(@address)}
+          id={"delivery-map-#{@delivery.id}"}
+          phx-hook="CourierMap"
+          phx-update="ignore"
+          data-from-lat={@pickup && @pickup.latitude}
+          data-from-lng={@pickup && @pickup.longitude}
+          data-to-lat={@address.latitude}
+          data-to-lng={@address.longitude}
+          class="h-48 overflow-hidden rounded-box border border-base-200"
+        />
+
         <div :if={@mine} class="grid grid-cols-2 gap-2">
           <a href={navigator_url(@address)} class="btn btn-outline">
             <.icon name="hero-map" class="size-4" /> {gettext("Navigator")}
@@ -286,6 +298,9 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     do: "#{lat},#{lng}"
 
   defp point(_pickup), do: ""
+
+  defp located?(%{latitude: lat, longitude: lng}), do: is_float(lat) and is_float(lng)
+  defp located?(_address), do: false
 
   defp present?(value), do: value not in [nil, ""]
 end

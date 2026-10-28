@@ -8,6 +8,7 @@ import { LocationMap } from "./hooks/location_map";
 import { ZoneMap } from "./hooks/zone_map";
 import { Alarm, ring } from "./hooks/alarm";
 import { KitchenScreen } from "./hooks/kitchen_screen";
+import { CourierMap } from "./hooks/courier_map";
 
 let Uploaders = {};
 
@@ -181,6 +182,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ZoneMap,
     Alarm,
     KitchenScreen,
+    CourierMap,
   },
 });
 

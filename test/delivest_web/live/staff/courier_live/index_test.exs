@@ -76,6 +76,7 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
     assert card =~ "Tverskaya"
     assert card =~ "42K"
     assert card =~ "yandexnavi://build_route_on_map?lat_to=55.76&amp;lon_to=37.6"
+    assert has_element?(lv, "#delivery-map-#{ctx.delivery.id}[data-from-lat='55.75']")
 
     ctx.order |> Ecto.Changeset.change(status: :ready) |> Repo.update!()
     Couriers.subscribe(ctx.branch.id)
