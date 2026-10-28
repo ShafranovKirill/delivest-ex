@@ -10,7 +10,8 @@ defmodule Delivest.Integrations.YandexEda.MenuItem do
       price: price,
       measure: product.weight || 0,
       measureUnit: measure_unit(product.measure_unit),
-      sortOrder: index
+      sortOrder: index,
+      modifierGroups: []
     }
     |> put_optional(:description, product.description)
     |> put_optional(:images, images(product.media))

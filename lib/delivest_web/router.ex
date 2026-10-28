@@ -171,6 +171,7 @@ defmodule DelivestWeb.Router do
   pipeline :yandex_eda do
     plug DelivestWeb.Plugs.RateLimit, bucket: :yandex_eda, limit: 600, period: :timer.minutes(1)
     plug DelivestWeb.Plugs.YandexEdaJournal
+    plug DelivestWeb.Plugs.YandexEdaContentType
   end
 
   pipeline :yandex_eda_auth do

@@ -67,7 +67,7 @@ defmodule DelivestWeb.Integrations.YandexEda.Reply do
 
   def typed(conn, type, body) do
     conn
-    |> put_resp_content_type("application/#{type}+json")
+    |> put_resp_content_type("application/#{type}+json", nil)
     |> send_resp(200, Jason.encode_to_iodata!(body))
   end
 end
