@@ -9,7 +9,7 @@ defmodule Delivest.Identity.Definitions do
   stocks.create stocks.read stocks.update stocks.delete
   promotions.create promotions.read promotions.update promotions.delete
   clients.create clients.read clients.update clients.delete
-  orders.create orders.read orders.update orders.delete
+  orders.create orders.read orders.update orders.delete orders.cook orders.revert
   delivery.read delivery.update
   integrations.read integrations.update
   franchise.update

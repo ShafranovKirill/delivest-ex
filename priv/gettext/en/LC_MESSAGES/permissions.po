@@ -51,6 +51,12 @@ msgstr "Update"
 msgid "delete"
 msgstr "Delete"
 
+msgid "cook"
+msgstr "Kitchen"
+
+msgid "revert"
+msgstr "Revert status"
+
 msgid "admin"
 msgstr "Full access (administrator)"
 

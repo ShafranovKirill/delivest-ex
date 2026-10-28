@@ -12,6 +12,8 @@ defmodule Delivest.Identity.RolePresets do
     categories.read products.read stops.update
   )
 
+  @cook ~w(orders.read orders.cook)
+
   @catalog ~w(
     categories.create categories.read categories.update categories.delete
     products.create products.read products.update products.delete
@@ -35,6 +37,7 @@ defmodule Delivest.Identity.RolePresets do
       %{name: "Управляющий", permissions: Definitions.grantable()},
       %{name: "Менеджер филиала", permissions: @branch_manager},
       %{name: "Оператор", permissions: @operator},
+      %{name: "Повар", permissions: @cook},
       %{name: "Контент-менеджер", permissions: @catalog}
     ]
   end

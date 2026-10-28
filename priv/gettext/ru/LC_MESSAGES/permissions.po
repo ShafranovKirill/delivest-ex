@@ -51,6 +51,12 @@ msgstr "Изменение"
 msgid "delete"
 msgstr "Удаление"
 
+msgid "cook"
+msgstr "Кухня"
+
+msgid "revert"
+msgstr "Откат статуса"
+
 msgid "admin"
 msgstr "Полный доступ (администратор)"
 

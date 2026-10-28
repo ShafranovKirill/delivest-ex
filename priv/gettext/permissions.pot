@@ -49,6 +49,12 @@ msgstr ""
 msgid "delete"
 msgstr ""
 
+msgid "cook"
+msgstr ""
+
+msgid "revert"
+msgstr ""
+
 msgid "admin"
 msgstr ""
 
