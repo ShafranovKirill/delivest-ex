@@ -40,9 +40,29 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
     end
   end
 
+  def handle_event("custom_dark_color", _params, socket),
+    do: {:noreply, put_dark_color(socket, socket.assigns.color)}
+
+  def handle_event("auto_dark_color", _params, socket),
+    do: {:noreply, put_dark_color(socket, "")}
+
+  defp put_dark_color(socket, value) do
+    params = Map.put(socket.assigns.form.params, "dark_primary_color", value)
+
+    changeset =
+      socket.assigns.settings
+      |> Franchise.change_settings(params)
+      |> Map.put(:action, :validate)
+
+    assign_form(socket, changeset)
+  end
+
   defp assign_form(socket, changeset) do
-    color = Ecto.Changeset.get_field(changeset, :primary_color)
-    assign(socket, form: to_form(changeset, as: "settings"), color: color)
+    assign(socket,
+      form: to_form(changeset, as: "settings"),
+      color: Ecto.Changeset.get_field(changeset, :primary_color),
+      dark_color: Ecto.Changeset.get_field(changeset, :dark_primary_color)
+    )
   end
 
   @impl true
@@ -96,6 +116,69 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
             </p>
             <p
               :for={error <- @form[:primary_color].errors}
+              class="text-xs text-error"
+            >
+              {translate_error(error)}
+            </p>
+          </div>
+
+          <div id="franchise-dark-color" class="space-y-2">
+            <span class="text-sm font-medium">{gettext("Color in the dark theme")}</span>
+            <div :if={is_nil(@dark_color)} class="flex flex-wrap items-center gap-3">
+              <input type="hidden" name="settings[dark_primary_color]" value="" />
+              <span class="text-sm text-base-content/60">
+                {gettext("Picked automatically from the primary color so it reads well.")}
+              </span>
+              <button
+                type="button"
+                id="franchise-dark-color-custom"
+                phx-click="custom_dark_color"
+                phx-target={@myself}
+                class="btn btn-sm btn-ghost"
+              >
+                {gettext("Choose my own")}
+              </button>
+            </div>
+            <div :if={@dark_color} class="flex flex-wrap items-center gap-3">
+              <input
+                type="color"
+                name="settings[dark_primary_color]"
+                id="franchise-dark-color-input"
+                value={@dark_color}
+                class="h-10 w-16 cursor-pointer rounded-lg border border-base-300 bg-base-100 p-1"
+              />
+              <span class="font-mono text-sm uppercase">{@dark_color}</span>
+              <span
+                id="franchise-dark-color-preview"
+                class="flex items-center gap-3 rounded-full bg-[#17171b] py-1 pl-4 pr-1"
+              >
+                <span class="text-sm font-semibold" style={"color: #{@dark_color}"}>
+                  {gettext("Delivery")}
+                </span>
+                <span
+                  class="rounded-full px-4 py-1.5 text-sm font-semibold text-white"
+                  style={"background-color: #{@dark_color}"}
+                >
+                  {gettext("Place order")}
+                </span>
+              </span>
+              <button
+                type="button"
+                id="franchise-dark-color-auto"
+                phx-click="auto_dark_color"
+                phx-target={@myself}
+                class="btn btn-sm btn-ghost"
+              >
+                {gettext("Pick automatically")}
+              </button>
+            </div>
+            <p :if={@dark_color} class="text-xs text-base-content/60">
+              {gettext(
+                "If the color is hard to read on a dark background, the site makes it lighter."
+              )}
+            </p>
+            <p
+              :for={error <- @form[:dark_primary_color].errors}
               class="text-xs text-error"
             >
               {translate_error(error)}

@@ -31,6 +31,27 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
              Franchise.get_settings()
   end
 
+  test "the dark theme color is automatic until a custom one is chosen", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
+
+    refute has_element?(lv, "#franchise-dark-color-input")
+
+    lv |> element("#franchise-dark-color-custom") |> render_click()
+    assert has_element?(lv, "#franchise-dark-color-preview")
+
+    lv
+    |> form("#franchise-settings-form", settings: %{dark_primary_color: "#e06b7d"})
+    |> render_submit()
+
+    assert %{dark_primary_color: "#e06b7d"} = Franchise.get_settings()
+
+    lv |> element("#franchise-dark-color-auto") |> render_click()
+    refute has_element?(lv, "#franchise-dark-color-input")
+
+    lv |> form("#franchise-settings-form") |> render_submit()
+    assert %{dark_primary_color: nil} = Franchise.get_settings()
+  end
+
   test "uploads the icon and the link preview, then removes the icon", %{conn: conn} do
     Delivest.S3Stub.record(self())
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise")

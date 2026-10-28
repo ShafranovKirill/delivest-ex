@@ -642,7 +642,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:123
 #: lib/delivest_web/live/staff/client_live/clients.ex:289
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:92
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:62
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:82
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:707
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:272
@@ -842,7 +842,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/index.ex:302
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:136
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:233
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:467
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:294
@@ -865,7 +865,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/index.ex:301
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:135
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:149
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:232
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:86
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:466
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:293
@@ -1306,6 +1306,7 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:233
 #: lib/delivest_web/live/staff/delivery_live/index.ex:19
 #: lib/delivest_web/live/staff/delivery_live/index.ex:219
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:156
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:38
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:29
 #, elixir-autogen, elixir-format
@@ -3750,17 +3751,17 @@ msgstr ""
 msgid "Which products?"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:44
+#: lib/delivest/franchise/settings.ex:49
 #, elixir-autogen, elixir-format
 msgid "10 or 12 digits"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:45
+#: lib/delivest/franchise/settings.ex:50
 #, elixir-autogen, elixir-format
 msgid "13 or 15 digits"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:61
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:81
 #, elixir-autogen, elixir-format
 msgid "Brand"
 msgstr ""
@@ -3790,7 +3791,7 @@ msgstr ""
 msgid "Edited %{date}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:136
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:219
 #, elixir-autogen, elixir-format
 msgid "Email for requests"
 msgstr ""
@@ -3802,17 +3803,17 @@ msgstr ""
 msgid "Franchise settings"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:129
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:212
 #, elixir-autogen, elixir-format
 msgid "INN"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:118
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:201
 #, elixir-autogen, elixir-format
 msgid "LLC"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:143
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:226
 #, elixir-autogen, elixir-format
 msgid "Legal address"
 msgstr ""
@@ -3822,12 +3823,12 @@ msgstr ""
 msgid "Legal documents"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:117
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:200
 #, elixir-autogen, elixir-format
 msgid "Legal form"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:124
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:207
 #, elixir-autogen, elixir-format
 msgid "Legal name"
 msgstr ""
@@ -3842,12 +3843,12 @@ msgstr ""
 msgid "Name, brand color, seller details and legal documents for all branches."
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:46
+#: lib/delivest/franchise/settings.ex:51
 #, elixir-autogen, elixir-format
 msgid "Not an email"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:133
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:216
 #, elixir-autogen, elixir-format
 msgid "OGRN / OGRNIP"
 msgstr ""
@@ -3857,17 +3858,18 @@ msgstr ""
 msgid "Personal data policy"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:137
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:220
 #, elixir-autogen, elixir-format
 msgid "Phone for requests"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:87
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:107
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:162
 #, elixir-autogen, elixir-format
 msgid "Place order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:72
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:92
 #, elixir-autogen, elixir-format
 msgid "Primary color"
 msgstr ""
@@ -3887,7 +3889,7 @@ msgstr ""
 msgid "Restore template"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:108
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:191
 #, elixir-autogen, elixir-format
 msgid "Seller details"
 msgstr ""
@@ -3903,12 +3905,12 @@ msgstr ""
 msgid "Settings saved"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:110
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:193
 #, elixir-autogen, elixir-format
 msgid "Shown in the site footer and inserted into the legal documents."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:67
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:87
 #, elixir-autogen, elixir-format
 msgid "Site description for search engines"
 msgstr ""
@@ -3918,12 +3920,13 @@ msgstr ""
 msgid "Terms of use"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:43
+#: lib/delivest/franchise/settings.ex:45
+#: lib/delivest/franchise/settings.ex:47
 #, elixir-autogen, elixir-format
 msgid "Use the #RRGGBB format"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:95
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:115
 #, elixir-autogen, elixir-format
 msgid "White text is hard to read on this color. Choose a darker one."
 msgstr ""
@@ -5853,4 +5856,29 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:77
 #, elixir-autogen, elixir-format
 msgid "When off, the site has no sign-in at all: everyone orders as a guest, signed in customers are signed out."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:139
+#, elixir-autogen, elixir-format
+msgid "Choose my own"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:126
+#, elixir-autogen, elixir-format
+msgid "Color in the dark theme"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:176
+#, elixir-autogen, elixir-format
+msgid "If the color is hard to read on a dark background, the site makes it lighter."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:172
+#, elixir-autogen, elixir-format
+msgid "Pick automatically"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:130
+#, elixir-autogen, elixir-format
+msgid "Picked automatically from the primary color so it reads well."
 msgstr ""

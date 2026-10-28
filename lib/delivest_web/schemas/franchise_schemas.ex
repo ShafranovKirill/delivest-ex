@@ -47,6 +47,12 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             name: %Schema{type: :string, example: "Sushi Like"},
             description: %Schema{type: :string, nullable: true},
             primary_color: %Schema{type: :string, example: "#48010c"},
+            dark_primary_color: %Schema{
+              type: :string,
+              nullable: true,
+              example: "#b86a69",
+              description: "Цвет для тёмной темы; если пусто, подбирается из основного"
+            },
             logo_url: %Schema{type: :string, format: :uri, nullable: true},
             logo_dark_url: %Schema{type: :string, format: :uri, nullable: true},
             legal: Legal,
@@ -64,6 +70,7 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             :name,
             :description,
             :primary_color,
+            :dark_primary_color,
             :logo_url,
             :logo_dark_url,
             :address_map,

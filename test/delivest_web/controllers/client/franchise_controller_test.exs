@@ -22,6 +22,7 @@ defmodule DelivestWeb.Client.FranchiseControllerTest do
     assert %{
              "name" => "Sushi Like",
              "primary_color" => "#123456",
+             "dark_primary_color" => nil,
              "logo_url" => nil,
              "logo_dark_url" => nil,
              "legal" => %{"form" => "ООО", "name" => "Суши"},

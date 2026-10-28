@@ -25,6 +25,19 @@ defmodule Delivest.FranchiseTest do
     assert %{name: "Pizza", primary_color: "#ff0000"} = Franchise.get_settings()
   end
 
+  test "the dark theme color is optional and cleared by an empty value", %{admin: admin} do
+    assert {:ok, %{dark_primary_color: "#b86a69"}} =
+             Franchise.update_settings(admin, %{"dark_primary_color" => "#B86A69"})
+
+    assert {:error, changeset} =
+             Franchise.update_settings(admin, %{"dark_primary_color" => "red"})
+
+    assert %{dark_primary_color: _} = errors_on(changeset)
+
+    assert {:ok, %{dark_primary_color: nil}} =
+             Franchise.update_settings(admin, %{"dark_primary_color" => ""})
+  end
+
   test "validates color and requisites", %{admin: admin} do
     assert {:error, changeset} =
              Franchise.update_settings(admin, %{

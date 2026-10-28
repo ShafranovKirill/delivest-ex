@@ -12,6 +12,7 @@ defmodule DelivestWeb.Client.Franchise.FranchiseJSON do
         name: settings.name,
         description: settings.description,
         primary_color: settings.primary_color,
+        dark_primary_color: settings.dark_primary_color,
         logo_url: Franchise.logo_url(settings),
         logo_dark_url: Franchise.logo_dark_url(settings),
         legal: legal(settings),

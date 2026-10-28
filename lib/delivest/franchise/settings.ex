@@ -15,6 +15,7 @@ defmodule Delivest.Franchise.Settings do
     field :name, :string, default: "Delivest"
     field :description, :string
     field :primary_color, :string, default: "#48010c"
+    field :dark_primary_color, :string
     field :legal_form, :string
     field :legal_name, :string
     field :inn, :string
@@ -33,7 +34,8 @@ defmodule Delivest.Franchise.Settings do
   def changeset(settings, attrs) do
     settings
     |> cast(attrs, fields(), empty_values: [nil, ""])
-    |> update_change(:primary_color, &String.downcase/1)
+    |> update_change(:primary_color, &downcase/1)
+    |> update_change(:dark_primary_color, &downcase/1)
     |> validate_required([:name, :primary_color])
     |> validate_length(:name, max: 60)
     |> validate_length(:description, max: 300)
@@ -41,6 +43,9 @@ defmodule Delivest.Franchise.Settings do
     |> validate_length(:legal_name, max: 200)
     |> validate_length(:legal_address, max: 300)
     |> validate_format(:primary_color, @color_format, message: gettext("Use the #RRGGBB format"))
+    |> validate_format(:dark_primary_color, @color_format,
+      message: gettext("Use the #RRGGBB format")
+    )
     |> validate_format(:inn, ~r/^(\d{10}|\d{12})$/, message: gettext("10 or 12 digits"))
     |> validate_format(:ogrn, ~r/^(\d{13}|\d{15})$/, message: gettext("13 or 15 digits"))
     |> validate_format(:email, @email_format, message: gettext("Not an email"))
@@ -49,11 +54,15 @@ defmodule Delivest.Franchise.Settings do
   def images_changeset(settings, attrs),
     do: cast(settings, attrs, [:icon_key, :share_image_key, :logo_key, :logo_dark_key])
 
+  defp downcase(nil), do: nil
+  defp downcase(value), do: String.downcase(value)
+
   defp fields do
     [
       :name,
       :description,
       :primary_color,
+      :dark_primary_color,
       :legal_form,
       :legal_name,
       :inn,
