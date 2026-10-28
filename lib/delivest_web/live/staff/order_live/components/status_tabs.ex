@@ -14,7 +14,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
       assign(assigns, statuses: @statuses, total: assigns.counts |> Map.values() |> Enum.sum())
 
     ~H"""
-    <nav id="order-status-tabs" class="flex gap-1.5 overflow-x-auto pb-1 -mb-1">
+    <nav id="order-status-tabs" class="flex gap-1.5 overflow-x-auto pb-1">
       <.tab
         label={gettext("All")}
         count={@total}

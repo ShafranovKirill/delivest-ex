@@ -257,7 +257,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </:actions>
       </.page_header>
 
-      <.card class="p-3 sm:p-4 space-y-3">
+      <.card class="flex flex-col gap-4 p-3 sm:p-4">
         <StatusTabs.status_tabs
           counts={@counts}
           selected={@selected.status}
