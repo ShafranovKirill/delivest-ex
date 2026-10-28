@@ -8,9 +8,11 @@ defmodule Delivest.Net.StopsTest do
   alias Delivest.Oms.Carts
 
   setup do
-    role = insert(:role, permissions: ["products.update"])
+    role = insert(:role, permissions: ["stops.update"])
     branch = insert(:branch, is_active: true)
-    %{staff: insert(:staff, role: role), branch: branch}
+    staff = insert(:staff, role: role)
+    insert(:staff_branch, staff: staff, branch: branch)
+    %{staff: staff, branch: branch}
   end
 
   describe "manual stops" do

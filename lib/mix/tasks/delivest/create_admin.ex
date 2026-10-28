@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Delivest.CreateAdmin do
   use Mix.Task
 
   alias Delivest.Repo
-  alias Delivest.Identity.{Staff, Staffs, Role}
+  alias Delivest.Identity.{RolePresets, Staff, Staffs}
 
   @shortdoc "Creates default admin role and staff if not exists"
 
@@ -38,28 +38,14 @@ defmodule Mix.Tasks.Delivest.CreateAdmin do
   end
 
   defp get_or_create_admin_role do
-    case Repo.get_by(Role, name: "admin") || Repo.get_by(Role, name: "Admin") do
-      %Role{} = role ->
+    case RolePresets.ensure_admin_role() do
+      {:ok, role} ->
         role
 
-      nil ->
-        role_params = %{
-          name: "Admin",
-          permissions: ["admin"]
-        }
-
-        changeset = Role.changeset(%Role{}, role_params)
-
-        case Repo.insert(changeset) do
-          {:ok, role} ->
-            Mix.shell().info("Created 'admin' role in DB (ID: #{role.id})")
-            role
-
-          {:error, changeset} ->
-            Mix.shell().error("Failed to create 'admin' role:")
-            IO.inspect(changeset.errors)
-            raise "Cannot proceed without admin role"
-        end
+      {:error, changeset} ->
+        Mix.shell().error("Failed to create admin role:")
+        IO.inspect(changeset.errors)
+        raise "Cannot proceed without admin role"
     end
   end
 end

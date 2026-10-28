@@ -2,7 +2,7 @@ defmodule Delivest.Identity.Staffs do
   import Ecto.Query
   alias Delivest.Repo
   alias Delivest.Identity.Branch
-  alias Delivest.Identity.{Staff, Acl, Delegation, StaffBranch}
+  alias Delivest.Identity.{Staff, Acl, Delegation}
   alias Delivest.Audit
 
   @spec list_staff(Delivest.Identity.Staff.t(), map(), keyword()) ::
@@ -74,7 +74,7 @@ defmodule Delivest.Identity.Staffs do
 
   defp do_update_staff(staff, %Staff{} = updatable_staff, attrs) do
     if Acl.can?(staff, "staff.update") and Delegation.staff?(staff, updatable_staff) and
-         Delegation.assignment?(staff, attrs) do
+         Delegation.assignment?(staff, attrs, updatable_staff) do
       updatable_staff
       |> Repo.preload(:branches)
       |> Staff.changeset(attrs)
@@ -124,7 +124,7 @@ defmodule Delivest.Identity.Staffs do
   end
 
   defp do_change_password(staff, %Staff{} = updatable_staff, attrs) do
-    if Acl.can?(staff, "admin") do
+    if Delegation.password?(staff, updatable_staff) do
       with {:ok, updated_staff} <-
              updatable_staff |> Staff.password_changeset(attrs) |> Repo.update() do
         Cachex.del(:staff_cache, updated_staff.id)
@@ -153,7 +153,7 @@ defmodule Delivest.Identity.Staffs do
 
   @spec get_staff_by_login(String.t()) :: {:ok, Staff.t()} | {:error, :not_found}
   def get_staff_by_login(login) do
-    case Repo.get_by(Staff, login: login) do
+    case Repo.one(from s in active(), where: s.login == ^login) do
       nil -> {:error, :not_found}
       staff -> {:ok, staff}
     end
@@ -175,6 +175,13 @@ defmodule Delivest.Identity.Staffs do
              |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
              |> Repo.update() do
         Cachex.del(:staff_cache, deleted_staff.id)
+
+        Phoenix.PubSub.broadcast(
+          Delivest.PubSub,
+          "staff_updates:#{deleted_staff.id}",
+          :staff_updated
+        )
+
         {:ok, deleted_staff}
       end
     else
@@ -185,7 +192,7 @@ defmodule Delivest.Identity.Staffs do
   @spec authenticate(any(), any()) ::
           {:error, :invalid_credentials} | {:ok, Staff.t()}
   def authenticate(login, password) do
-    staff = Repo.get_by(Staff, login: login)
+    staff = Repo.one(from s in active(), where: s.login == ^login)
 
     if staff do
       valid_pass? = Argon2.verify_pass(password, staff.password_hash)
@@ -203,51 +210,6 @@ defmodule Delivest.Identity.Staffs do
     end
   end
 
-  def assign_branch_to_staff(admin, staff_id, branch_id) do
-    if Acl.can?(admin, "admin") do
-      changeset =
-        %StaffBranch{}
-        |> StaffBranch.changeset(%{staff_id: staff_id, branch_id: branch_id})
-
-      try do
-        changeset
-        |> Repo.insert()
-        |> case do
-          {:ok, staff_branch} ->
-            Cachex.del(:staff_cache, staff_id)
-            {:ok, staff_branch}
-
-          {:error, %Ecto.Changeset{} = changeset} ->
-            {:error, changeset}
-        end
-      rescue
-        Ecto.ConstraintError ->
-          {:error,
-           changeset
-           |> Ecto.Changeset.add_error(:staff_id, "has already been taken")
-           |> Ecto.Changeset.add_error(:branch_id, "has already been taken")}
-      end
-    else
-      {:error, :forbidden}
-    end
-  end
-
-  def revoke_branch_from_staff(staff_id, branch_id) do
-    query =
-      from sb in StaffBranch,
-        where: sb.staff_id == ^staff_id and sb.branch_id == ^branch_id
-
-    case Repo.delete_all(query) do
-      {0, _} ->
-        {:error, :not_found}
-
-      {_count, _} ->
-        Cachex.del(:staff_cache, staff_id)
-        Phoenix.PubSub.broadcast(Delivest.PubSub, "staff_updates:#{staff_id}", :staff_updated)
-        :ok
-    end
-  end
-
   @spec system_create_staff(map()) :: {:ok, Staff.t()} | {:error, Ecto.Changeset.t()}
   def system_create_staff(attrs) do
     insert_staff_with_branches(attrs)
@@ -255,7 +217,7 @@ defmodule Delivest.Identity.Staffs do
 
   defp fetch_from_db_and_cache(id, opts) do
     with {:ok, uuid} <- Ecto.UUID.cast(id),
-         %Staff{} = staff <- Repo.get(Staff, uuid) do
+         %Staff{} = staff <- Repo.one(from s in active(), where: s.id == ^uuid) do
       staff = maybe_preload_staff(staff, opts)
       cache_staff(id, staff)
       {:ok, staff}
@@ -263,6 +225,8 @@ defmodule Delivest.Identity.Staffs do
       _ -> {:error, :not_found}
     end
   end
+
+  defp active, do: from(s in Staff, where: is_nil(s.deleted_at))
 
   defp cache_staff(id, staff) do
     Cachex.put(:staff_cache, id, staff, ttl: :timer.minutes(5))

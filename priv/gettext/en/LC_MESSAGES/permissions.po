@@ -53,3 +53,15 @@ msgstr "Delete"
 
 msgid "admin"
 msgstr "Full access (administrator)"
+
+msgid "stops"
+msgstr "Stop list"
+
+msgid "delivery"
+msgstr "Delivery"
+
+msgid "integrations"
+msgstr "Integrations"
+
+msgid "franchise"
+msgstr "Franchise"

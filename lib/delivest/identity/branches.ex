@@ -5,6 +5,8 @@ defmodule Delivest.Identity.Branches do
   alias Delivest.{Repo, Identity}
   alias Delivest.Audit
 
+  @integrations ["crm", "channels", :crm, :channels]
+
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
     permissions = staff.role.permissions || []
@@ -71,12 +73,23 @@ defmodule Delivest.Identity.Branches do
 
   def update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
     staff
-    |> do_update_branch(branch, branch_attrs, info_attrs)
+    |> do_update_branch(
+      "branches.update",
+      branch,
+      branch_attrs,
+      Map.drop(info_attrs, @integrations)
+    )
     |> Audit.track(staff, "branch.updated")
   end
 
-  defp do_update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
-    if Identity.can?(staff, "branches.update") do
+  def update_integrations(staff, %Branch{} = branch, info_attrs) do
+    staff
+    |> do_update_branch("integrations.update", branch, %{}, Map.take(info_attrs, @integrations))
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  defp do_update_branch(staff, permission, %Branch{} = branch, branch_attrs, info_attrs) do
+    with :ok <- Identity.authorize(staff, permission, branch.id) do
       branch = Repo.preload(branch, :info)
 
       Ecto.Multi.new()
@@ -93,8 +106,6 @@ defmodule Delivest.Identity.Branches do
         {:error, failed_operation, changeset, _changes} ->
           {:error, failed_operation, changeset}
       end
-    else
-      {:error, :forbidden}
     end
   end
 
@@ -149,7 +160,7 @@ defmodule Delivest.Identity.Branches do
   end
 
   defp do_soft_delete_branch(staff, %Branch{} = branch) do
-    if Identity.can?(staff, "branches.delete") do
+    if Identity.authorize(staff, "branches.delete", branch.id) == :ok do
       Ecto.Multi.new()
       |> Ecto.Multi.delete_all(
         :delete_staff_branches,

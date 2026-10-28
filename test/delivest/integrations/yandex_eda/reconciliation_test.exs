@@ -12,6 +12,7 @@ defmodule Delivest.Integrations.YandexEda.ReconciliationTest do
     branch = yandex_branch()
     product = menu_product(branch, menu_category(branch))
     staff = insert(:staff, role: build(:role, permissions: ["orders.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
     %{branch: branch, product: product, staff: staff}
   end
 

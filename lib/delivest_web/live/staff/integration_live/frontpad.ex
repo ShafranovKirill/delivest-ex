@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   alias Delivest.Integrations.{Channels, Frontpad}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
-  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
+  on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -15,7 +15,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
      socket
      |> assign(
        page_title: "Frontpad",
-       can_edit_branch: Identity.can?(socket.assigns.current_staff, "branches.update"),
+       can_edit_branch: Identity.can?(socket.assigns.current_staff, "integrations.update"),
        query: "",
        refresh_timer: nil,
        stop_sync: StopSync.last(socket.assigns.current_branch.id)

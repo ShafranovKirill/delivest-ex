@@ -555,7 +555,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <.stop_control
             product={prod}
             stops={Map.get(@stops, prod.id, [])}
-            can_edit={Identity.can?(@current_staff, "products.update")}
+            can_edit={Identity.can?(@current_staff, "stops.update")}
           />
         </:col>
 

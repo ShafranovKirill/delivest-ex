@@ -117,7 +117,7 @@ defmodule DelivestWeb.StaffSidebar do
          item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
          |> allowed(staff, "branches.read"),
          item(:delivery, ~p"/staff/delivery", "hero-truck", gettext("Delivery"))
-         |> allowed(staff, "branches.read"),
+         |> allowed(staff, "delivery.read"),
          item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
          |> allowed(staff, "clients.read"),
          item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
@@ -130,7 +130,7 @@ defmodule DelivestWeb.StaffSidebar do
            "hero-building-storefront",
            gettext("Franchise settings")
          )
-         |> allowed(staff, "admin")
+         |> allowed(staff, "franchise.update")
        ]},
       {gettext("System"),
        [
@@ -140,7 +140,7 @@ defmodule DelivestWeb.StaffSidebar do
            "hero-puzzle-piece",
            gettext("Integrations")
          )
-         |> allowed(staff, "branches.read"),
+         |> allowed(staff, "integrations.read"),
          item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
          |> allowed(staff, "logs.read")
        ]}

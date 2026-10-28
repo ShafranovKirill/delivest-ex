@@ -11,7 +11,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
 
   setup %{conn: conn} do
     branch = insert(:branch)
-    staff = insert(:staff, role: insert(:role, permissions: ["branches.read"]))
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))
     insert(:staff_branch, staff: staff, branch: branch)
 
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
@@ -19,7 +19,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
   end
 
   defp sign_in_editor(conn, branch) do
-    staff = insert(:staff, role: insert(:role, permissions: ["branches.read", "branches.update"]))
+    staff =
+      insert(:staff,
+        role: insert(:role, permissions: ["integrations.read", "integrations.update"])
+      )
+
     insert(:staff_branch, staff: staff, branch: branch)
     init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
   end

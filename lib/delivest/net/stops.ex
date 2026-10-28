@@ -34,7 +34,7 @@ defmodule Delivest.Net.Stops do
 
   def stop(staff, branch_id, %Product{} = product, period)
       when period in [:today, :until_resumed] do
-    if Identity.can?(staff, "products.update") do
+    if Identity.authorize(staff, "stops.update", branch_id) == :ok do
       with {:ok, stop} <- insert_manual(staff, branch_id, product, period) do
         changed(branch_id)
 
@@ -66,7 +66,7 @@ defmodule Delivest.Net.Stops do
   end
 
   def resume(staff, branch_id, %Product{} = product) do
-    if Identity.can?(staff, "products.update") do
+    if Identity.authorize(staff, "stops.update", branch_id) == :ok do
       from(s in ProductStop,
         where: s.product_id == ^product.id and s.source == ^ProductStop.manual()
       )

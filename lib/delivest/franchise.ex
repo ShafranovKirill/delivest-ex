@@ -64,6 +64,6 @@ defmodule Delivest.Franchise do
   defp logo_field(variant), do: Map.fetch!(@logo_fields, variant)
 
   defp authorized(staff, fun) do
-    if Identity.can?(staff, "admin"), do: fun.(), else: {:error, :forbidden}
+    if Identity.can?(staff, "franchise.update"), do: fun.(), else: {:error, :forbidden}
   end
 end

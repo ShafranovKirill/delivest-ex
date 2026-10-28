@@ -6,7 +6,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Oms.{OrderSource, SourceStats}
 
-  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
+  on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -16,7 +16,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
      socket
      |> assign(
        page_title: gettext("Order routes"),
-       can_edit: Identity.can?(socket.assigns.current_staff, "branches.update"),
+       can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update"),
        stats: SourceStats.today(branch_id)
      )
      |> assign_crm(Crm.get_branch_settings(branch_id))}

@@ -30,7 +30,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.RoutesTest do
 
     {:ok, lv, html} =
       live(
-        sign_in(conn, branch, ["branches.read", "branches.update"]),
+        sign_in(conn, branch, ["integrations.read", "integrations.update"]),
         ~p"/staff/integrations/routes"
       )
 
@@ -47,7 +47,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.RoutesTest do
     branch = insert(:branch)
 
     {:ok, lv, _html} =
-      live(sign_in(conn, branch, ["branches.read"]), ~p"/staff/integrations/routes")
+      live(sign_in(conn, branch, ["integrations.read"]), ~p"/staff/integrations/routes")
 
     assert has_element?(lv, "#routes-no-crm")
     assert has_element?(lv, "#route-toggle-app[disabled]")

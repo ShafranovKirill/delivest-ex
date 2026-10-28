@@ -10,7 +10,8 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
   alias Delivest.Net.Stops
 
   defp stop(branch) do
-    staff = insert(:staff, role: build(:role, permissions: ["products.update"]))
+    staff = insert(:staff, role: build(:role, permissions: ["stops.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
     product = menu_product(branch, menu_category(branch))
     {:ok, _stop} = Stops.stop(staff, branch.id, product, :today)
   end
@@ -62,7 +63,7 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
 
   test "new branch settings reload the menu" do
     branch = yandex_branch()
-    admin = insert(:staff, role: build(:role, permissions: ["branches.update"]))
+    admin = insert(:staff, role: build(:role, permissions: ["integrations.update"]))
     insert(:staff_branch, staff: admin, branch: branch)
 
     assert {:ok, %{markup_percent: 20}} =

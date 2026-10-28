@@ -68,7 +68,7 @@ defmodule Delivest.Integrations.Crm do
   def update_branch_settings(staff, branch_id, attrs) do
     with {:ok, branch} <- Identity.get_branch(branch_id, preload: [:info]),
          {:ok, %Branch{info: %{crm: settings}}} <-
-           Identity.update_branch(staff, branch, %{}, %{"crm" => attrs}) do
+           Identity.update_integrations(staff, branch, %{"crm" => attrs}) do
       {:ok, settings}
     else
       {:error, :info, changeset} -> {:error, Ecto.Changeset.get_change(changeset, :crm)}

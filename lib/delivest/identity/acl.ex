@@ -26,6 +26,12 @@ defmodule Delivest.Identity.Acl do
     end
   end
 
+  def authorize(staff, permission, branch_id) do
+    if can?(staff, permission) and has_branch_access?(staff, branch_id),
+      do: :ok,
+      else: {:error, :forbidden}
+  end
+
   def has_branch_access?(nil, _branch_id), do: false
 
   def has_branch_access?(staff, branch_id) do

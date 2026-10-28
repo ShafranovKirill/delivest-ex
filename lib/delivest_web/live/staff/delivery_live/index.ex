@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
   alias Delivest.Delivery.Conditions
   alias DelivestWeb.Staff.DeliveryLive.ZonePanel
 
-  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
+  on_mount {DelivestWeb.Hooks.Permission, "delivery.read"}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,7 +17,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
      socket
      |> assign(
        page_title: gettext("Delivery"),
-       can_edit: Identity.can?(socket.assigns.current_staff, "branches.update"),
+       can_edit: Identity.can?(socket.assigns.current_staff, "delivery.update"),
        branch_point: branch_point(branch_id),
        address_map: Delivest.Integrations.Dadata.active?()
      )

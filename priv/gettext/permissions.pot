@@ -51,3 +51,15 @@ msgstr ""
 
 msgid "admin"
 msgstr ""
+
+msgid "stops"
+msgstr ""
+
+msgid "delivery"
+msgstr ""
+
+msgid "integrations"
+msgstr ""
+
+msgid "franchise"
+msgstr ""

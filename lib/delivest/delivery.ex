@@ -158,8 +158,6 @@ defmodule Delivest.Delivery do
   defp resize(zone, _branch_id, _attrs), do: Ecto.Changeset.change(zone)
 
   defp authorize(staff, branch_id) do
-    if Identity.can?(staff, "branches.update") and Identity.has_branch_access?(staff, branch_id),
-      do: :ok,
-      else: {:error, :forbidden}
+    Identity.authorize(staff, "delivery.update", branch_id)
   end
 end

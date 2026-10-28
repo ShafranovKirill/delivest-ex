@@ -22,7 +22,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.IndexTest do
     branch = insert(:branch)
 
     {:ok, lv, _html} =
-      live(sign_in(conn, branch, ["branches.read", "branches.update"]), ~p"/staff/delivery")
+      live(sign_in(conn, branch, ["delivery.read", "delivery.update"]), ~p"/staff/delivery")
 
     lv
     |> form("#delivery-settings",
@@ -38,7 +38,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.IndexTest do
     branch = insert(:branch)
 
     {:ok, lv, _html} =
-      live(sign_in(conn, branch, ["branches.read", "branches.update"]), ~p"/staff/delivery")
+      live(sign_in(conn, branch, ["delivery.read", "delivery.update"]), ~p"/staff/delivery")
 
     lv |> form("#delivery-settings", delivery: %{mode: "zones"}) |> render_change()
     assert has_element?(lv, "#delivery-zone-map")
@@ -84,7 +84,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.IndexTest do
     Cachex.clear(:branch_cache)
 
     {:ok, lv, _html} =
-      live(sign_in(conn, branch, ["branches.read", "branches.update"]), ~p"/staff/delivery")
+      live(sign_in(conn, branch, ["delivery.read", "delivery.update"]), ~p"/staff/delivery")
 
     lv |> form("#delivery-settings", delivery: %{mode: "zones"}) |> render_change()
     refute has_element?(lv, "#delivery-settings input[name='delivery[price]']")
@@ -120,7 +120,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.IndexTest do
         %{"mode" => "zones"}
       )
 
-    {:ok, lv, _html} = live(sign_in(conn, branch, ["branches.read"]), ~p"/staff/delivery")
+    {:ok, lv, _html} = live(sign_in(conn, branch, ["delivery.read"]), ~p"/staff/delivery")
 
     refute has_element?(lv, "#delivery-draw-zone")
     render_hook(lv, "zone_drawn", %{"polygon" => @square})

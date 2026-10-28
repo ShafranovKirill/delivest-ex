@@ -63,7 +63,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
 
   defp can_edit_order?(assigns, order) do
     order.branch_id == assigns.active_branch_id and
-      Identity.can?(assigns.current_staff, "orders.update")
+      Identity.authorize(assigns.current_staff, "orders.update", order.branch_id) == :ok
   end
 
   defp items_summary(items) do

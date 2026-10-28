@@ -93,7 +93,70 @@ defmodule Delivest.Identity.DelegationTest do
   test "an admin keeps full control but cannot delete themselves", ctx do
     admin = staff_in(ctx.own, ctx.admin_role)
 
-    assert {:ok, _} = Identity.update_staff(admin, ctx.manager, %{"role_id" => ctx.admin_role.id})
+    assert {:ok, _} =
+             Identity.update_staff(admin, ctx.manager, %{"role_id" => ctx.cashier_role.id})
+
     assert {:error, :forbidden} = Identity.soft_delete_staff(admin, admin)
+  end
+
+  describe "the admin is untouchable" do
+    setup ctx do
+      director_role = insert(:role, permissions: Delivest.Identity.Definitions.grantable())
+      %{admin: staff_in(ctx.own, ctx.admin_role), director: staff_in(ctx.own, director_role)}
+    end
+
+    test "nobody makes a second admin", ctx do
+      assert {:error, :forbidden} =
+               Identity.update_staff(ctx.admin, ctx.manager, %{"role_id" => ctx.admin_role.id})
+
+      assert {:error, :forbidden} =
+               Identity.create_role(ctx.admin, %{"name" => "Root", "permissions" => ["admin"]})
+
+      refute ctx.admin_role.id in Enum.map(Identity.list_assignable_roles(ctx.admin), & &1.id)
+    end
+
+    test "the admin role is neither edited nor deleted", ctx do
+      for actor <- [ctx.admin, ctx.director] do
+        assert {:error, :forbidden} =
+                 Identity.update_role(actor, ctx.admin_role, %{"permissions" => ["orders.read"]})
+
+        assert {:error, :forbidden} = Identity.delete_role(actor, ctx.admin_role)
+      end
+    end
+
+    test "others cannot edit, delete or change the password of the admin", ctx do
+      assert {:error, :forbidden} =
+               Identity.update_staff(ctx.director, ctx.admin, %{"name" => "x"})
+
+      assert {:error, :forbidden} = Identity.soft_delete_staff(ctx.director, ctx.admin)
+
+      assert {:error, :forbidden} =
+               Identity.change_password(ctx.director, ctx.admin, %{password: "NewStrongPass1!"})
+    end
+
+    test "the admin changes own password and name but keeps the role", ctx do
+      assert {:ok, _} =
+               Identity.change_password(ctx.admin, ctx.admin, %{password: "NewStrongPass1!"})
+
+      assert {:ok, %{name: "Owner"}} =
+               Identity.update_staff(ctx.admin, ctx.admin, %{
+                 "name" => "Owner",
+                 "role_id" => ctx.admin_role.id
+               })
+
+      assert {:error, :forbidden} =
+               Identity.update_staff(ctx.admin, ctx.admin, %{"role_id" => ctx.cashier_role.id})
+    end
+
+    test "a deleted staff member cannot sign in", ctx do
+      staff = staff_in(ctx.own, ctx.cashier_role)
+      {:ok, _} = Identity.change_password(ctx.admin, staff, %{password: "NewStrongPass1!"})
+      {:ok, _} = Identity.soft_delete_staff(ctx.admin, staff)
+
+      assert {:error, :invalid_credentials} =
+               Identity.authenticate(staff.login, "NewStrongPass1!")
+
+      assert {:error, :not_found} = Identity.get_staff(staff.id)
+    end
   end
 end

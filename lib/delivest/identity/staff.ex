@@ -48,7 +48,6 @@ defmodule Delivest.Identity.Staff do
       :password,
       :name,
       :role_id,
-      :deleted_at,
       :branch_ids,
       :password_confirmation
     ])

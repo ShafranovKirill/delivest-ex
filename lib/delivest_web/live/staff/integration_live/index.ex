@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   alias Delivest.Integrations.{Crm, Dadata, YandexEda, Zvonok}
   alias Delivest.Integrations.Crm.BranchSettings
 
-  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
+  on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
   @impl true
   def mount(_params, _session, socket) do

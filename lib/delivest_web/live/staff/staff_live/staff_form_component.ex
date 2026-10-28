@@ -40,6 +40,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
       {:ok,
        socket
        |> assign(:form, to_form(changeset))
+       |> assign(:admin_target, staff && staff.id && Identity.admin_staff?(staff))
        |> assign(:role_options, role_options)
        |> assign(:branch_options, branch_options)}
     else
@@ -171,7 +172,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
           </div>
           <.input field={@form[:name]} type="text" label={gettext("Name")} required />
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div :if={!@admin_target} class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input
               field={@form[:role_id]}
               type="select"
@@ -183,11 +184,14 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
             />
           </div>
 
-          <div class="divider text-xs font-bold uppercase text-base-content/50">
+          <div
+            :if={!@admin_target}
+            class="divider text-xs font-bold uppercase text-base-content/50"
+          >
             {gettext("Branches Access")}
           </div>
 
-          <div class="space-y-2">
+          <div :if={!@admin_target} class="space-y-2">
             <div class="flex items-center justify-between">
               <label class="label">
                 <span class="label-text font-bold">{gettext("Branches")}</span>

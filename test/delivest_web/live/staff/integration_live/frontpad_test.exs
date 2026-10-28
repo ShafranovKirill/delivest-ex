@@ -17,7 +17,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
 
     {:ok, lv, _html} =
       live(
-        sign_in(conn, branch, ["branches.read", "branches.update"]),
+        sign_in(conn, branch, ["integrations.read", "integrations.update"]),
         ~p"/staff/integrations/frontpad"
       )
 
@@ -45,7 +45,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
 
     {:ok, lv, _html} =
       live(
-        sign_in(conn, branch, ["branches.read", "branches.update"]),
+        sign_in(conn, branch, ["integrations.read", "integrations.update"]),
         ~p"/staff/integrations/frontpad"
       )
 

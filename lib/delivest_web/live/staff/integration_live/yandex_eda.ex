@@ -13,7 +13,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
     YandexEdaReconciliation
   }
 
-  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
+  on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -24,10 +24,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
      |> assign(
        page_title: gettext("Yandex Eda"),
        can_edit_shared: Identity.can?(staff, "admin"),
-       can_edit_branch: Identity.can?(staff, "branches.update"),
+       can_edit_branch: Identity.can?(staff, "integrations.update"),
        can_edit_products: Identity.can?(staff, "products.update"),
        push_available: YandexEda.push_available?(),
        can_reconcile: Identity.can?(staff, "orders.read"),
+       can_pause: Identity.can?(staff, "stops.update"),
        reconcile_date: LocalTime.today(),
        reconciliation: nil
      )
@@ -295,7 +296,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
       <YandexEdaPause.pause
         :if={@push_available and @branch_settings.enabled}
         pauses={@pauses}
-        can_edit={@can_edit_branch}
+        can_edit={@can_pause}
       />
 
       <YandexEdaReconciliation.reconciliation

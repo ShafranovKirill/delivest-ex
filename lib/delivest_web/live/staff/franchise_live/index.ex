@@ -12,7 +12,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
     SettingsFormComponent
   }
 
-  on_mount {DelivestWeb.Hooks.Permission, "admin"}
+  on_mount {DelivestWeb.Hooks.Permission, "franchise.update"}
 
   @impl true
   def mount(_params, _session, socket) do

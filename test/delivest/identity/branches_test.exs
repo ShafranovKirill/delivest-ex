@@ -351,6 +351,42 @@ defmodule Delivest.Identity.BranchesTest do
       assert {:error, :forbidden} =
                Branches.update_branch(staff, branch, %{name: "New Name"}, %{})
     end
+
+    test "an editor of one branch cannot change or delete another" do
+      editor =
+        insert(:staff,
+          role: insert(:role, permissions: ["branches.update", "branches.delete"])
+        )
+
+      own = insert(:branch)
+      foreign = insert(:branch)
+      insert(:staff_branch, staff: editor, branch: own)
+      editor = Repo.preload(editor, [:role, :branches], force: true)
+
+      assert {:ok, _} = Branches.update_branch(editor, own, %{name: "Own"}, %{})
+      assert {:error, :forbidden} = Branches.update_branch(editor, foreign, %{name: "X"}, %{})
+      assert {:error, :forbidden} = Branches.soft_delete_branch(editor, foreign)
+    end
+
+    test "the branch form does not touch integrations", %{admin: admin} do
+      branch = insert(:branch)
+
+      crm = %{
+        "crm" => %{"enabled" => true, "provider" => "frontpad", "frontpad" => %{"api_key" => "k"}}
+      }
+
+      assert {:ok, %{info: info}} = Branches.update_branch(admin, branch, %{}, crm)
+      refute info.crm
+
+      editor = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+      insert(:staff_branch, staff: editor, branch: branch)
+      editor = Repo.preload(editor, [:role, :branches], force: true)
+
+      assert {:error, :forbidden} = Branches.update_integrations(editor, branch, crm)
+
+      assert {:ok, %{info: %{crm: %{enabled: true}}}} =
+               Branches.update_integrations(admin, branch, crm)
+    end
   end
 
   describe "branches - cache integration" do

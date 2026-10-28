@@ -2,7 +2,7 @@ defmodule Delivest.Release do
   @app :delivest
 
   alias Delivest.Repo
-  alias Delivest.Identity.{Staff, Staffs, Role}
+  alias Delivest.Identity.{RolePresets, Staff, Staffs}
   import Ecto.Query
 
   def migrate do
@@ -38,26 +38,8 @@ defmodule Delivest.Release do
   end
 
   defp ensure_admin_role do
-    case Repo.get_by(Role, name: "admin") || Repo.get_by(Role, name: "Admin") do
-      %Role{} = role ->
-        role
-
-      nil ->
-        create_default_admin_role()
-    end
-  end
-
-  defp create_default_admin_role do
-    role_params = %{
-      name: "Admin",
-      permissions: ["admin"]
-    }
-
-    changeset = Role.changeset(%Role{}, role_params)
-
-    case Repo.insert(changeset) do
+    case RolePresets.ensure_admin_role() do
       {:ok, role} ->
-        IO.puts("Created 'Admin' role in DB (ID: #{role.id})")
         role
 
       {:error, changeset} ->
@@ -68,7 +50,9 @@ defmodule Delivest.Release do
   end
 
   defp insert_admin_staff(login, password, role_id) do
-    case Repo.get_by(Staff, login: login) do
+    case Repo.one(
+           from s in Staff, where: s.role_id == ^role_id and is_nil(s.deleted_at), limit: 1
+         ) do
       nil ->
         params = %{
           login: login,
@@ -94,8 +78,8 @@ defmodule Delivest.Release do
             Repo.rollback("failed to create admin staff")
         end
 
-      _staff ->
-        IO.puts("Admin staff '#{login}' already exists.")
+      staff ->
+        IO.puts("Admin staff '#{staff.login}' already exists.")
     end
   end
 
@@ -103,133 +87,9 @@ defmodule Delivest.Release do
     load_app()
 
     Ecto.Migrator.with_repo(Repo, fn _repo ->
-      roles = [
-        %{
-          name: "admin",
-          permissions: ["admin"]
-        },
-        %{
-          name: "cashier",
-          permissions: [
-            "clients.create",
-            "clients.read",
-            "clients.update",
-            "clients.delete",
-            "orders.create",
-            "orders.read",
-            "orders.update",
-            "orders.delete"
-          ]
-        },
-        %{
-          name: "catalog_manager",
-          permissions: [
-            "categories.create",
-            "categories.read",
-            "categories.update",
-            "categories.delete",
-            "products.create",
-            "products.read",
-            "products.update",
-            "products.delete",
-            "stocks.create",
-            "stocks.read",
-            "stocks.update",
-            "stocks.delete",
-            "orders.create",
-            "orders.read",
-            "orders.update",
-            "orders.delete"
-          ]
-        },
-        %{
-          name: "manager",
-          permissions: [
-            "branches.create",
-            "branches.read",
-            "branches.update",
-            "branches.delete",
-            "categories.create",
-            "categories.read",
-            "categories.update",
-            "categories.delete",
-            "products.create",
-            "products.read",
-            "products.update",
-            "products.delete",
-            "stocks.create",
-            "stocks.read",
-            "stocks.update",
-            "stocks.delete",
-            "orders.create",
-            "orders.read",
-            "orders.update",
-            "orders.delete",
-            "clients.create",
-            "clients.read",
-            "clients.update",
-            "clients.delete"
-          ]
-        },
-        %{
-          name: "director",
-          permissions: [
-            "staff.create",
-            "staff.read",
-            "staff.update",
-            "staff.delete",
-            "roles.create",
-            "roles.read",
-            "roles.update",
-            "roles.delete",
-            "branches.create",
-            "branches.read",
-            "branches.update",
-            "branches.delete",
-            "categories.create",
-            "categories.read",
-            "categories.update",
-            "categories.delete",
-            "products.create",
-            "products.read",
-            "products.update",
-            "products.delete",
-            "stocks.create",
-            "stocks.read",
-            "stocks.update",
-            "stocks.delete",
-            "clients.create",
-            "clients.read",
-            "clients.update",
-            "clients.delete"
-          ]
-        }
-      ]
-
-      Enum.each(roles, &upsert_role/1)
+      Enum.each(RolePresets.seed(), fn {result, name} -> IO.puts("-> #{result}: #{name}") end)
       IO.puts("Roles seeding completed.")
     end)
-  end
-
-  defp upsert_role(%{name: name, permissions: permissions}) do
-    existing_role =
-      Repo.one(from(r in Role, where: fragment("lower(?) = lower(?)", r.name, ^name)))
-
-    case existing_role do
-      nil ->
-        %Role{}
-        |> Role.changeset(%{name: name, permissions: permissions})
-        |> Repo.insert()
-
-        IO.puts("-> Created role: #{name}")
-
-      role ->
-        role
-        |> Role.changeset(%{permissions: permissions})
-        |> Repo.update()
-
-        IO.puts("-> Updated role: #{name}")
-    end
   end
 
   def storage_setup do

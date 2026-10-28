@@ -60,7 +60,7 @@ defmodule Delivest.Integrations.YandexEda do
   def update_branch_settings(staff, branch_id, attrs) do
     with {:ok, branch} <- Identity.get_branch(branch_id, preload: [:info]),
          {:ok, branch} <-
-           Identity.update_branch(staff, branch, %{}, %{"channels" => %{"yandex_eda" => attrs}}) do
+           Identity.update_integrations(staff, branch, %{"channels" => %{"yandex_eda" => attrs}}) do
       menu_changed(branch.id)
       {:ok, Places.settings(branch)}
     else
@@ -95,19 +95,19 @@ defmodule Delivest.Integrations.YandexEda do
   def pauses(branch_id), do: with_push(&Pause.list(&1, branch_id))
 
   def pause(staff, branch_id, minutes, tag) do
-    if Identity.can?(staff, "branches.update"),
+    if Identity.authorize(staff, "stops.update", branch_id) == :ok,
       do: with_push(&Pause.start(&1, branch_id, minutes, tag)),
       else: {:error, :forbidden}
   end
 
   def resume(staff, branch_id, block_ids) do
-    if Identity.can?(staff, "branches.update"),
+    if Identity.authorize(staff, "stops.update", branch_id) == :ok,
       do: with_push(&Pause.stop(&1, branch_id, block_ids)),
       else: {:error, :forbidden}
   end
 
   def reconcile(staff, branch_id, date) do
-    if Identity.can?(staff, "orders.read"),
+    if Identity.authorize(staff, "orders.read", branch_id) == :ok,
       do: with_push(&Reconciliation.run(&1, branch_id, date)),
       else: {:error, :forbidden}
   end

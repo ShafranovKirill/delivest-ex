@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     {:ok, lv, _html} =
       live(
-        sign_in(conn, branch, ["admin", "branches.read", "branches.update"]),
+        sign_in(conn, branch, ["admin", "integrations.read", "integrations.update"]),
         ~p"/staff/integrations/yandex-eda"
       )
 
@@ -43,7 +43,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     {:ok, lv, _html} =
       live(
-        sign_in(conn, branch, ["branches.read", "products.update"]),
+        sign_in(conn, branch, ["integrations.read", "products.update"]),
         ~p"/staff/integrations/yandex-eda"
       )
 
@@ -60,7 +60,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
     branch = yandex_branch()
 
     {:ok, lv, _html} =
-      live(sign_in(conn, branch, ["branches.read"]), ~p"/staff/integrations/yandex-eda")
+      live(sign_in(conn, branch, ["integrations.read"]), ~p"/staff/integrations/yandex-eda")
 
     assert has_element?(lv, "#yandex_eda_enabled[disabled]")
   end
@@ -85,7 +85,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     {:ok, lv, _html} =
       live(
-        sign_in(conn, branch, ["branches.read", "branches.update"]),
+        sign_in(conn, branch, ["integrations.read", "stops.update"]),
         ~p"/staff/integrations/yandex-eda"
       )
 
@@ -102,7 +102,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
     branch = yandex_branch()
 
     {:ok, lv, _html} =
-      live(sign_in(conn, branch, ["branches.read"]), ~p"/staff/integrations/yandex-eda")
+      live(sign_in(conn, branch, ["integrations.read"]), ~p"/staff/integrations/yandex-eda")
 
     refute has_element?(lv, "#yandex-eda-pause")
   end
@@ -119,7 +119,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     {:ok, lv, _html} =
       live(
-        sign_in(conn, branch, ["branches.read", "orders.read"]),
+        sign_in(conn, branch, ["integrations.read", "orders.read"]),
         ~p"/staff/integrations/yandex-eda"
       )
 

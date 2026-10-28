@@ -53,3 +53,15 @@ msgstr "Удаление"
 
 msgid "admin"
 msgstr "Полный доступ (администратор)"
+
+msgid "stops"
+msgstr "Стоп-лист"
+
+msgid "delivery"
+msgstr "Доставка"
+
+msgid "integrations"
+msgstr "Интеграции"
+
+msgid "franchise"
+msgstr "Франшиза"
