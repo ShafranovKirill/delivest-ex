@@ -1,14 +1,14 @@
 defmodule Delivest.Push do
   import Ecto.Query
 
-  alias Delivest.Oms.{Order, OrderStatus}
+  alias Delivest.Oms.Order
   alias Delivest.Push.{Subscription, Vapid, Worker}
   alias Delivest.Repo
 
   defdelegate public_key, to: Vapid
 
   def subscribe(%Order{} = order, attrs) do
-    %Subscription{order_id: order.id, notified_status: to_string(OrderStatus.current(order))}
+    %Subscription{order_id: order.id, notified_status: to_string(order.status)}
     |> Subscription.changeset(attrs)
     |> Repo.insert(
       on_conflict: {:replace, [:p256dh, :auth, :locale, :updated_at]},

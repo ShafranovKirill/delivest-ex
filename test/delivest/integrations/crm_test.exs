@@ -56,7 +56,7 @@ defmodule Delivest.Integrations.CrmTest do
   end
 
   test "crm branch hands the order to the chosen crm in the same transaction" do
-    assert {:ok, %Order{status: :crm} = order} = place_order(branch(frontpad(true)))
+    assert {:ok, %Order{status: :created} = order} = place_order(branch(frontpad(true)))
     assert %{provider: "frontpad", status: "pending"} = order.crm
     assert_enqueued(worker: SyncWorker, queue: :crm, args: %{"order_id" => order.id})
   end
@@ -122,7 +122,7 @@ defmodule Delivest.Integrations.CrmTest do
 
   describe "status webhook" do
     alias Delivest.Integrations.Frontpad.Webhook
-    alias Delivest.Oms.OrderStatus
+    alias Delivest.Oms.{OrderFlow, OrderTransition}
 
     defp sent_order(branch) do
       {:ok, order} = place_order(branch)
@@ -138,24 +138,37 @@ defmodule Delivest.Integrations.CrmTest do
       assert {:ok, updated} =
                Webhook.change_status("token-#{branch.id}", 900, 4, "2026-10-20 12:03:00")
 
-      assert OrderStatus.current(updated) == :delivering
+      assert updated.status == :ready
       assert updated.crm.remote_status_code == "4"
       assert updated.crm.remote_status_at == ~U[2026-10-20 09:03:00Z]
 
       assert [%Event{}] =
                Repo.all(from(e in Event, where: e.action == "order.crm_status_changed"))
 
-      assert OrderStatus.current(order) == :accepted
+      assert order.status == :accepted
+
+      assert [
+               {:created, :accepted, :crm},
+               {:accepted, :preparing, :crm},
+               {:preparing, :ready, :crm}
+             ] =
+               Repo.all(
+                 from(t in OrderTransition,
+                   where: t.order_id == ^order.id,
+                   order_by: t.id,
+                   select: {t.from, t.to, t.source}
+                 )
+               )
     end
 
     test "an order handed to the crm counts as confirmed" do
       branch = branch(frontpad(true))
       {:ok, order} = place_order(branch)
-      assert OrderStatus.current(order) == :created
+      assert order.status == :created
 
       stub_frontpad(%{"result" => "success", "order_id" => "900"})
       :ok = sync(order)
-      assert OrderStatus.current(Repo.reload!(order)) == :accepted
+      assert Repo.reload!(order).status == :accepted
     end
 
     test "completed crm orders stop being active" do
@@ -163,7 +176,8 @@ defmodule Delivest.Integrations.CrmTest do
       sent_order(branch)
 
       {:ok, updated} = Webhook.change_status("token-#{branch.id}", "900", "5", nil)
-      refute OrderStatus.active?(updated)
+      refute OrderFlow.active?(updated)
+      assert updated.status == :completed
     end
 
     test "unknown codes keep the previous status" do
@@ -171,7 +185,7 @@ defmodule Delivest.Integrations.CrmTest do
       sent_order(branch)
 
       assert {:ok, updated} = Webhook.change_status("token-#{branch.id}", "900", "99", nil)
-      assert OrderStatus.current(updated) == :accepted
+      assert updated.status == :accepted
       assert updated.crm.remote_status_code == "99"
     end
 
@@ -182,10 +196,11 @@ defmodule Delivest.Integrations.CrmTest do
 
       {:ok, _} = Webhook.change_status(token, "900", "4", nil)
       {:ok, updated} = Webhook.change_status(token, "900", "2", nil)
-      assert OrderStatus.current(updated) == :delivering
+      assert updated.status == :ready
+      assert updated.crm.remote_status == "delivering"
 
       {:ok, updated} = Webhook.change_status(token, "900", "99", nil)
-      assert OrderStatus.current(updated) == :delivering
+      assert updated.status == :ready
     end
 
     test "a wrong token finds nothing" do

@@ -21,7 +21,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
     with true <- Identity.can?(staff, "orders.update"),
          {:ok, uuid} <- Ecto.UUID.cast(id),
          %Order{branch_id: ^branch_id} = order <- Orders.get_order(uuid),
-         false <- order.status == :crm do
+         false <- Order.crm_managed?(order) do
       {:ok, order}
     else
       false -> {:error, gettext("Permission denied")}

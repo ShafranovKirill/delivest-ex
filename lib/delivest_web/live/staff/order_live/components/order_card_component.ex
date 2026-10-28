@@ -6,7 +6,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   alias Delivest.Identity
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
-  alias Delivest.Oms.OrderStatus
+  alias Delivest.Oms.OrderFlow
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
 
@@ -17,7 +17,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :delivery_minutes, :integer, required: true
 
   def render_card(assigns) do
-    assigns = assign(assigns, status: OrderStatus.current(assigns.order))
+    assigns =
+      assign(assigns,
+        status: assigns.order.status,
+        history: history(assigns.order),
+        last: last_transition(assigns.order)
+      )
 
     ~H"""
     <article
@@ -87,6 +92,26 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         {CancelReasons.label(@order.cancel_reason)}<span :if={@order.cancel_note}>: {@order.cancel_note}</span>
       </p>
 
+      <div
+        :if={channel_cancel_unseen?(@order, @last)}
+        id={"order-channel-cancel-#{@order.id}"}
+        class="mx-3 sm:mx-4 mb-3 flex flex-wrap items-center gap-2 rounded-box border border-error/40 bg-error/10 px-3 py-2 text-sm text-error"
+      >
+        <.icon name="hero-bell-alert" class="size-4" />
+        <span class="font-semibold">
+          {gettext("Cancelled by %{channel}", channel: Channels.name(@order.source))}
+        </span>
+        <button
+          id={"order-acknowledge-cancel-#{@order.id}"}
+          type="button"
+          class="btn btn-error btn-xs ml-auto"
+          phx-click="acknowledge_cancel"
+          phx-value-id={@order.id}
+        >
+          {gettext("Got it")}
+        </button>
+      </div>
+
       <p
         :if={Crm.manual_cancel_required?(@order)}
         id={"order-crm-cancel-#{@order.id}"}
@@ -119,11 +144,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <.icon name="hero-clock" class="size-3.5" />
           {gettext("Confirm by %{time}", time: OrderHelpers.local_time(accept_by(@order)))}
         </span>
-        <.status_control order={@order} />
+        <.status_control order={@order} current_staff={@current_staff} last={@last} />
         <form
-          :if={@order.status != :crm and @order.payment_method != :online}
+          :if={is_nil(@order.crm) and @order.payment_method != :online}
           id={"order-payment-#{@order.id}"}
-          phx-change="update_order"
+          phx-change="update_payment"
           phx-value-order-id={@order.id}
         >
           <select name="payment_method" class="select select-sm select-bordered font-medium">
@@ -144,7 +169,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </span>
         <div class="ml-auto flex items-center gap-1">
           <.link
-            :if={@order.status != :crm}
+            :if={is_nil(@order.crm)}
             navigate={~p"/staff/b/#{@current_branch}/orders/#{@order.id}/edit"}
             class="btn btn-ghost btn-sm btn-square"
             title={gettext("Edit Order")}
@@ -162,6 +187,30 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           </button>
         </div>
       </footer>
+
+      <ol
+        :if={@history != []}
+        id={"order-history-#{@order.id}"}
+        class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-wrap gap-x-4 gap-y-1 text-xs text-base-content/60"
+        aria-label={gettext("Who handled the order")}
+      >
+        <li
+          :for={transition <- @history}
+          id={"order-transition-#{transition.id}"}
+          class={["flex items-center gap-1", transition.reverted_at && "line-through opacity-60"]}
+          title={
+            transition.revert_reason &&
+              gettext("Reverted: %{reason}", reason: transition.revert_reason)
+          }
+        >
+          <span class={["size-1.5 rounded-full", OrderHelpers.status_dot(transition.to)]} />
+          <span class="font-medium text-base-content/80">
+            {OrderHelpers.status_label(transition.to)}
+          </span>
+          <span>{actor_label(@order, transition)}</span>
+          <span class="tabular-nums">{OrderHelpers.local_time(transition.inserted_at)}</span>
+        </li>
+      </ol>
     </article>
     """
   end
@@ -321,15 +370,69 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   end
 
   attr :order, :map, required: true
+  attr :current_staff, :map, required: true
+  attr :last, :map, default: nil
 
-  defp status_control(%{order: %{status: :crm}} = assigns) do
+  defp status_control(assigns) do
+    %{order: order, current_staff: staff} = assigns
+
+    assigns =
+      assign(assigns,
+        next: NextStep.for_order(order, staff),
+        can_cancel: OrderFlow.can?(order, :cancelled, {:staff, staff}),
+        can_revert: assigns.last != nil and OrderFlow.can_revert?(staff, order)
+      )
+
     ~H"""
-    <span class={["badge badge-sm border", OrderHelpers.status_color(OrderStatus.current(@order))]}>
-      {OrderHelpers.status_label(OrderStatus.current(@order))}
+    <span
+      id={"order-status-#{@order.id}"}
+      class={["badge badge-sm border font-medium", OrderHelpers.status_color(@order.status)]}
+    >
+      {OrderHelpers.status_label(@order.status)}
     </span>
+    <.crm_state :if={@order.crm} order={@order} />
+    <button
+      :if={@next}
+      type="button"
+      id={"order-next-#{@order.id}"}
+      class="btn btn-sm btn-primary"
+      phx-click="advance"
+      phx-value-order-id={@order.id}
+      phx-value-to={elem(@next, 0)}
+    >
+      <.icon name="hero-arrow-right-circle" class="size-4" /> {elem(@next, 1)}
+    </button>
+    <button
+      :if={@can_cancel}
+      type="button"
+      id={"order-cancel-#{@order.id}"}
+      class="btn btn-sm btn-ghost text-error hover:bg-error/10"
+      phx-click="cancel_click"
+      phx-value-order-id={@order.id}
+    >
+      <.icon name="hero-x-circle" class="size-4" /> {gettext("Cancel")}
+    </button>
+    <button
+      :if={@can_revert}
+      type="button"
+      id={"order-revert-#{@order.id}"}
+      class="btn btn-sm btn-ghost btn-square"
+      phx-click="revert_click"
+      phx-value-order-id={@order.id}
+      title={gettext("Revert to «%{status}»", status: OrderHelpers.status_label(@last.from))}
+    >
+      <.icon name="hero-arrow-uturn-left" class="size-4" />
+    </button>
+    """
+  end
+
+  attr :order, :map, required: true
+
+  defp crm_state(assigns) do
+    ~H"""
     <span class="text-xs text-base-content/60">
       CRM:
-      <%= case @order.crm && @order.crm.status do %>
+      <%= case @order.crm.status do %>
         <% "sent" -> %>
           <span :if={@order.crm.external_number} class="font-mono font-bold">
             #{@order.crm.external_number}
@@ -354,38 +457,33 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     """
   end
 
-  defp status_control(assigns) do
-    assigns = assign(assigns, next: NextStep.for_order(assigns.order))
+  defp history(%{transitions: transitions}) when is_list(transitions), do: transitions
+  defp history(_order), do: []
 
-    ~H"""
-    <button
-      :if={@next}
-      type="button"
-      id={"order-next-#{@order.id}"}
-      class="btn btn-sm btn-primary"
-      phx-click="update_order"
-      phx-value-order-id={@order.id}
-      phx-value-status={elem(@next, 0)}
-    >
-      <.icon name="hero-arrow-right-circle" class="size-4" /> {elem(@next, 1)}
-    </button>
-    <form id={"order-status-#{@order.id}"} phx-change="update_order" phx-value-order-id={@order.id}>
-      <select
-        name="status"
-        class={["select select-sm font-medium border", OrderHelpers.status_color(@order.status)]}
-      >
-        <option
-          :for={status <- Delivest.Oms.Order.statuses_for(@order.fulfillment_type)}
-          value={status}
-          selected={@order.status == status}
-          class="bg-base-100 text-base-content"
-        >
-          {OrderHelpers.status_label(status)}
-        </option>
-      </select>
-    </form>
-    """
+  defp last_transition(order) do
+    order
+    |> history()
+    |> Enum.reject(& &1.reverted_at)
+    |> List.last()
+    |> case do
+      %{to: to} = transition when to == order.status -> transition
+      _other -> nil
+    end
   end
+
+  defp channel_cancel_unseen?(%{status: :cancelled, cancel_acknowledged_at: nil}, %{
+         source: :channel
+       }),
+       do: true
+
+  defp channel_cancel_unseen?(_order, _last), do: false
+
+  defp actor_label(_order, %{staff: %{} = staff}), do: staff.name || staff.login
+  defp actor_label(order, %{source: :crm}), do: crm_name(order)
+  defp actor_label(order, %{source: :channel}), do: Channels.name(order.source)
+  defp actor_label(_order, %{source: :courier}), do: gettext("Courier")
+  defp actor_label(_order, %{source: :system}), do: gettext("System")
+  defp actor_label(_order, _transition), do: "—"
 
   defp unmapped_crm_code(%{crm: %{remote_status: nil, remote_status_code: code}})
        when is_binary(code),
@@ -423,4 +521,6 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       name -> name
     end
   end
+
+  defp crm_name(_order), do: "CRM"
 end

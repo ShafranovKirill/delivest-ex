@@ -1,8 +1,10 @@
 defmodule Delivest.Oms.Orders.Filter do
   import Ecto.Query, warn: false
 
-  alias Delivest.Oms.OrderScopes
+  alias Delivest.Oms.Order
   alias Delivest.Oms.Orders.Search
+
+  @statuses Enum.map(Order.statuses(), &to_string/1)
 
   def normalize_params(params) when is_map(params) do
     Map.new(params, fn
@@ -15,7 +17,7 @@ defmodule Delivest.Oms.Orders.Filter do
     Enum.reduce(params, query, fn
       {_key, val}, q when val in [nil, ""] -> q
       {"branch_id", val}, q -> where(q, [o], o.branch_id == ^val)
-      {"status", val}, q -> where(q, ^dynamic(^OrderScopes.effective_status() == ^val))
+      {"status", val}, q -> filter_status(q, val)
       {"date_from", val}, q -> filter_date_from(q, val)
       {"date_to", val}, q -> filter_date_to(q, val)
       {"search", val}, q -> Search.apply(q, val)
@@ -23,6 +25,13 @@ defmodule Delivest.Oms.Orders.Filter do
       _, q -> q
     end)
   end
+
+  defp filter_status(q, status) when is_atom(status), do: filter_status(q, to_string(status))
+
+  defp filter_status(q, status) when status in @statuses,
+    do: where(q, [o], o.status == ^String.to_existing_atom(status))
+
+  defp filter_status(q, _status), do: where(q, false)
 
   defp filter_date_from(q, %Date{} = date) do
     where(q, [o], o.inserted_at >= ^Delivest.LocalTime.start_of_day_utc(date))

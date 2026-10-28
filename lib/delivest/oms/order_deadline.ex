@@ -2,7 +2,7 @@ defmodule Delivest.Oms.OrderDeadline do
   import Ecto.Query
 
   alias Delivest.{Identity, LocalTime}
-  alias Delivest.Oms.{Order, OrderScopes}
+  alias Delivest.Oms.Order
 
   @default_delivery_minutes 60
   @min_kitchen_minutes 20
@@ -34,9 +34,8 @@ defmodule Delivest.Oms.OrderDeadline do
       )
 
   def by_urgency(query, delivery_minutes) do
-    status = OrderScopes.effective_status()
-    finished = dynamic(fragment("? IN ('completed', 'cancelled')", ^status))
-    unconfirmed = dynamic(fragment("? = 'created'", ^status))
+    finished = dynamic([o], o.status in [:completed, :cancelled])
+    unconfirmed = dynamic([o], o.status == :created)
 
     deadline =
       dynamic(

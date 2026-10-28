@@ -41,15 +41,27 @@ defmodule Delivest.AuditTrackingTest do
     assert created.branch_id == @branch_id
   end
 
-  test "status change keeps the changed fields" do
+  test "status change records the step and who made it" do
     order = order_fixture(@branch_id)
     staff = admin()
 
-    {:ok, _} = Oms.update_order_details(order, %{"status" => "ready"}, staff)
+    {:ok, _} = Oms.advance_order(order, :accepted, {:staff, staff})
+
+    assert %Event{action: "order.status_changed", actor_type: :staff, metadata: metadata} =
+             List.last(events())
+
+    assert metadata == %{"from" => "created", "to" => "accepted", "source" => "staff"}
+  end
+
+  test "payment change keeps the changed fields" do
+    order = order_fixture(@branch_id)
+    staff = admin()
+
+    {:ok, _} = Oms.update_payment_method(order, %{"payment_method" => "card_offline"}, staff)
 
     assert %Event{action: "order.details_changed", actor_type: :staff, metadata: metadata} =
              List.last(events())
 
-    assert metadata == %{"status" => "ready"}
+    assert metadata == %{"payment_method" => "card_offline"}
   end
 end

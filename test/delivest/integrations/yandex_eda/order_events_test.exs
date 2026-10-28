@@ -1,6 +1,7 @@
 defmodule Delivest.Integrations.YandexEda.OrderEventsTest do
   use Delivest.DataCase, async: true
 
+  import Delivest.Factory
   import Delivest.YandexEdaFixtures
 
   alias Delivest.Integrations.YandexEda
@@ -21,23 +22,45 @@ defmodule Delivest.Integrations.YandexEda.OrderEventsTest do
 
     assert updated_at =~ ~r/\.\d{6}\+03:00$/
 
-    {:ok, _} = Orders.update_order_details(reload(order), %{"status" => "ready"})
+    {:ok, _} = Orders.advance_order(reload(order), :ready, :system)
     assert {:ok, %{status: "READY"}} = YandexEda.order_status(order.id)
 
-    {:ok, _} = Orders.update_order_details(reload(order), %{"status" => "preparing"})
+    admin = insert(:staff, role: build(:role, permissions: ["admin"]))
+    {:ok, reverted} = Orders.revert_order_status(reload(order), admin, "Ещё не готов")
+    assert reverted.status == :preparing
     assert {:ok, %{status: "READY"}} = YandexEda.order_status(order.id)
   end
 
-  test "yandex moves the courier statuses", %{order: order} do
+  test "yandex moves the courier statuses", %{order: pickup} do
+    branch = Repo.get!(Delivest.Identity.Branch, pickup.branch_id)
+    product = menu_product(branch, menu_category(branch))
+
+    {:ok, order} =
+      YandexEda.create_order(
+        order_params(branch, [product], %{
+          "discriminator" => "yandex",
+          "deliveryInfo" => %{
+            "clientName" => "Анна",
+            "phoneNumber" => "+79990001122",
+            "courierArrivementDate" => "2026-10-27T12:30:00.000000+03:00"
+          }
+        })
+      )
+
     assert {:ok, _} =
              YandexEda.update_order_status(order.id, %{"status" => "TAKEN_BY_COURIER"})
 
-    assert reload(order).channel.remote_status == "delivering"
+    assert %{status: :delivering, channel: %{remote_status: "delivering"}} = reload(order)
     assert {:ok, %{status: "TAKEN_BY_COURIER"}} = YandexEda.order_status(order.id)
 
     assert {:ok, _} = YandexEda.update_order_status(order.id, %{"status" => "DELIVERED"})
     assert {:ok, _} = YandexEda.update_order_status(order.id, %{"status" => "TAKEN_BY_COURIER"})
-    assert reload(order).channel.remote_status == "completed"
+    assert %{status: :completed, channel: %{remote_status: "completed"}} = reload(order)
+
+    assert {:ok, _} =
+             YandexEda.update_order_status(pickup.id, %{"status" => "TAKEN_BY_COURIER"})
+
+    assert reload(pickup).status == :ready
 
     assert {:error, :invalid_status} =
              YandexEda.update_order_status(order.id, %{"status" => "COOKING"})

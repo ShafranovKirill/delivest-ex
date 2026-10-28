@@ -4,11 +4,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   alias Delivest.Identity
   alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
-  alias DelivestWeb.Staff.OrderLive.OrdersQuery
+  alias DelivestWeb.Staff.OrderLive.{OrdersQuery, StatusErrors}
 
   alias DelivestWeb.Staff.OrderLive.Components.{
     CancelOrderModal,
     OrderCardComponent,
+    RevertStatusModal,
     OrdersToolbar,
     StatusTabs
   }
@@ -27,6 +28,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
      |> assign(
        order_to_delete: nil,
        order_to_cancel: nil,
+       order_to_revert: nil,
        shown_id: nil,
        shown_order: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id)
@@ -104,43 +106,71 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     socket.assigns.query |> Map.put("page_size", size) |> Map.delete("page") |> patch(socket)
   end
 
-  def handle_event("update_order", %{"order-id" => id, "status" => "cancelled"} = params, socket)
-      when not is_map_key(params, "cancel_reason") do
-    with :ok <- authorize(socket, "orders.update"),
-         {:ok, order} <- fetch_branch_order(socket, id) do
-      {:noreply, assign(socket, order_to_cancel: order)}
-    else
-      error -> failed(socket, error)
-    end
-  end
-
-  def handle_event("update_order", %{"order-id" => id} = params, socket) do
-    attrs = Map.drop(params, ["order-id", "_target"])
-
-    with :ok <- authorize(socket, "orders.update"),
+  def handle_event("advance", %{"order-id" => id, "to" => to}, socket) do
+    with {:ok, to} <- StatusErrors.parse_status(to),
          {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, _order} <- Orders.update_order_details(order, attrs, socket.assigns.current_staff) do
+         {:ok, _order} <- Orders.advance_order(order, to, staff(socket)) do
       load(socket)
     else
       error -> failed(socket, error)
     end
   end
 
+  def handle_event("cancel_click", %{"order-id" => id}, socket) do
+    case fetch_branch_order(socket, id) do
+      {:ok, order} -> {:noreply, assign(socket, order_to_cancel: order)}
+      error -> failed(socket, error)
+    end
+  end
+
   def handle_event("confirm_cancel", %{"cancel" => cancel}, socket) do
-    %Order{id: id} = socket.assigns.order_to_cancel
+    attrs = %{"cancel_reason" => cancel["reason"], "cancel_note" => cancel["note"]}
 
-    params = %{
-      "order-id" => id,
-      "status" => "cancelled",
-      "cancel_reason" => cancel["reason"],
-      "cancel_note" => cancel["note"]
-    }
-
-    handle_event("update_order", params, assign(socket, order_to_cancel: nil))
+    with %Order{} = order <- socket.assigns.order_to_cancel,
+         {:ok, _order} <- Orders.cancel_order(order, staff(socket), attrs) do
+      socket |> assign(order_to_cancel: nil) |> load()
+    else
+      error -> socket |> assign(order_to_cancel: nil) |> failed(error)
+    end
   end
 
   def handle_event("dismiss_cancel", _params, socket),
-    do: socket |> assign(order_to_cancel: nil) |> load()
+    do: {:noreply, assign(socket, order_to_cancel: nil)}
+
+  def handle_event("revert_click", %{"order-id" => id}, socket) do
+    case fetch_branch_order(socket, id) do
+      {:ok, order} -> {:noreply, assign(socket, order_to_revert: order)}
+      error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("confirm_revert", %{"revert" => %{"reason" => reason}}, socket) do
+    with %Order{} = order <- socket.assigns.order_to_revert,
+         {:ok, _order} <-
+           Orders.revert_order_status(order, socket.assigns.current_staff, reason) do
+      socket |> assign(order_to_revert: nil) |> load()
+    else
+      error -> socket |> assign(order_to_revert: nil) |> failed(error)
+    end
+  end
+
+  def handle_event("dismiss_revert", _params, socket),
+    do: {:noreply, assign(socket, order_to_revert: nil)}
+
+  def handle_event("update_payment", %{"order-id" => id} = params, socket) do
+    with :ok <- authorize(socket, "orders.update"),
+         {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, _order} <-
+           Orders.update_payment_method(
+             order,
+             Map.take(params, ["payment_method"]),
+             socket.assigns.current_staff
+           ) do
+      load(socket)
+    else
+      error -> failed(socket, error)
+    end
+  end
 
   def handle_event("courier_code", %{"order-id" => id, "code" => code}, socket) do
     socket.assigns.current_staff
@@ -206,11 +236,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   defp courier_code_error(_reason), do: gettext("Yandex Eda did not accept the request")
 
-  defp failed(socket, {:error, :forbidden}),
-    do: socket |> put_flash(:error, gettext("Permission denied")) |> load()
+  defp failed(socket, error),
+    do: socket |> put_flash(:error, StatusErrors.message(error)) |> load()
 
-  defp failed(socket, _error),
-    do: socket |> put_flash(:error, gettext("Failed to update order")) |> load()
+  defp staff(socket), do: {:staff, socket.assigns.current_staff}
 
   defp patch(query, socket),
     do: {:noreply, push_patch(socket, to: orders_path(socket.assigns.current_branch, query))}
@@ -300,6 +329,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       </.slide_over>
 
       <CancelOrderModal.cancel_order_modal order={@order_to_cancel} />
+      <RevertStatusModal.revert_status_modal order={@order_to_revert} />
 
       <.modal
         id="delete-order-modal"

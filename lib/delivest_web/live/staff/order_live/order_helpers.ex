@@ -9,8 +9,17 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
   def status_color("delivering"), do: "bg-secondary/10 text-secondary border-secondary/20"
   def status_color("completed"), do: "bg-success/10 text-success border-success/20"
   def status_color("cancelled"), do: "bg-error/10 text-error border-error/20"
-  def status_color("crm"), do: "bg-purple-500/10 text-purple-600 border-purple-500/20"
   def status_color(_), do: "bg-base-200 text-base-content border-base-300"
+
+  def status_dot(status) when is_atom(status), do: status_dot(Atom.to_string(status))
+  def status_dot("created"), do: "bg-info"
+  def status_dot("accepted"), do: "bg-primary"
+  def status_dot("preparing"), do: "bg-warning"
+  def status_dot("ready"), do: "bg-accent"
+  def status_dot("delivering"), do: "bg-secondary"
+  def status_dot("completed"), do: "bg-success"
+  def status_dot("cancelled"), do: "bg-error"
+  def status_dot(_), do: "bg-base-300"
 
   def status_label(status) when is_atom(status), do: status_label(Atom.to_string(status))
   def status_label("created"), do: gettext("Created")
@@ -20,7 +29,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
   def status_label("delivering"), do: gettext("Delivering")
   def status_label("completed"), do: gettext("Completed")
   def status_label("cancelled"), do: gettext("Cancelled")
-  def status_label("crm"), do: gettext("Crm")
   def status_label(other), do: to_string(other)
 
   def fulfillment_label(type) when is_atom(type) and not is_nil(type),

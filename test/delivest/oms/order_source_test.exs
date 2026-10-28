@@ -66,7 +66,7 @@ defmodule Delivest.Oms.OrderSourceTest do
 
     branch = branch(crm)
 
-    assert {:ok, %Order{status: :crm}} = order(branch)
+    assert {:ok, %Order{status: :created, crm: %{provider: "frontpad"}}} = order(branch)
     assert {:ok, %Order{status: :created, crm: nil}} = order(branch, %{}, source: "staff")
   end
 end

@@ -52,9 +52,13 @@ defmodule Delivest.Oms.Workers.StaleOrderWorkerTest do
   end
 
   test "leaves crm orders to the crm" do
-    crm = order_at(~U[2026-10-18 10:00:00Z], status: :crm)
+    crm =
+      ~U[2026-10-18 10:00:00Z]
+      |> order_at(status: :accepted)
+      |> Order.crm_changeset(%{provider: "frontpad", status: "sent"})
+      |> Repo.update!()
 
     assert StaleOrderWorker.close_past_days(@now) == %{completed: 0, cancelled: 0}
-    assert Repo.reload!(crm).status == :crm
+    assert Repo.reload!(crm).status == :accepted
   end
 end

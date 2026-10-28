@@ -85,7 +85,6 @@ defmodule Delivest.Integrations.Crm do
 
     attrs
     |> Map.new(fn {key, value} -> {to_string(key), value} end)
-    |> Map.put("status", "crm")
     |> Orders.create_order(opts)
   end
 

@@ -184,14 +184,12 @@ defmodule Delivest.Analytics do
 
   @spec status_counts(binary(), period()) :: %{atom() => non_neg_integer()}
   def status_counts(branch_id, period) do
-    status = OrderScopes.effective_status()
-
     branch_id
     |> period_orders(period)
-    |> group_by(^[status])
-    |> select(^%{status: status, count: dynamic([o], count(o.id))})
+    |> group_by([o], o.status)
+    |> select([o], {o.status, count(o.id)})
     |> Repo.all()
-    |> Map.new(&{String.to_existing_atom(&1.status), &1.count})
+    |> Map.new()
   end
 
   @spec client_summary(binary(), [binary()] | :all) :: map()

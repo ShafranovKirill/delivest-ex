@@ -37,7 +37,7 @@ defmodule Delivest.PushTest do
   end
 
   test "a status change sends an encrypted message once", %{order: order, client: client} do
-    {:ok, order} = Oms.update_order_details(order, %{"status" => "preparing"})
+    {:ok, order} = Oms.advance_order(order, :preparing, :system)
     assert_enqueued(worker: Worker, args: %{"order_id" => order.id})
 
     assert :ok = perform_job(Worker, %{"order_id" => order.id})
@@ -58,7 +58,7 @@ defmodule Delivest.PushTest do
 
   test "a gone subscription is dropped", %{order: order, subscription: subscription} do
     Req.Test.stub(Delivest.Push.Sender, &Plug.Conn.send_resp(&1, 410, ""))
-    {:ok, order} = Oms.update_order_details(order, %{"status" => "ready"})
+    {:ok, order} = Oms.advance_order(order, :ready, :system)
 
     assert :ok = perform_job(Worker, %{"order_id" => order.id})
     refute Repo.get(Subscription, subscription.id)
@@ -66,7 +66,7 @@ defmodule Delivest.PushTest do
 
   test "a failed delivery is retried later", %{order: order, subscription: subscription} do
     Req.Test.stub(Delivest.Push.Sender, &Plug.Conn.send_resp(&1, 500, ""))
-    {:ok, order} = Oms.update_order_details(order, %{"status" => "ready"})
+    {:ok, order} = Oms.advance_order(order, :ready, :system)
 
     assert {:error, :push_failed} = perform_job(Worker, %{"order_id" => order.id})
     assert %{notified_status: "created"} = Repo.get(Subscription, subscription.id)
@@ -74,7 +74,7 @@ defmodule Delivest.PushTest do
 
   test "a finished order forgets its subscriptions", %{order: order, subscription: subscription} do
     {:ok, order} =
-      Oms.update_order_details(order, %{"status" => "cancelled", "cancel_reason" => "other"})
+      Oms.cancel_order(order, :system, %{"cancel_reason" => "other"})
 
     assert :ok = perform_job(Worker, %{"order_id" => order.id})
     assert_received {:push, _headers, _body}

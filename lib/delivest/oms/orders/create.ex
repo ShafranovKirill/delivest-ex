@@ -12,6 +12,7 @@ defmodule Delivest.Oms.Orders.Create do
     Lines,
     Notifier,
     Pricing,
+    StatusChange,
     StopGuard
   }
 
@@ -37,6 +38,7 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn _, _ -> OrderNumber.generate() end)
     |> Multi.insert(:order, &build(attrs, &1, opts))
+    |> Multi.run(:advanced, fn repo, %{order: order} -> advance(repo, order, opts[:advance]) end)
     |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
       Promo.redeem(order, pricing)
     end)
@@ -44,10 +46,16 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{order: order}} -> Notifier.publish({:ok, order}, [:order, :created])
+      {:ok, %{advanced: order}} -> Notifier.publish({:ok, order}, [:order, :created])
       {:error, step, reason, _} -> {:error, step, reason}
     end
     |> track(opts)
+  end
+
+  defp advance(_repo, order, nil), do: {:ok, order}
+
+  defp advance(repo, order, {to, by}) do
+    with {:ok, %{order: order}} <- StatusChange.apply(repo, order, to, by), do: {:ok, order}
   end
 
   defp track(result, opts) do

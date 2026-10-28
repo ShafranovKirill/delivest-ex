@@ -1,7 +1,7 @@
 defmodule DelivestWeb.OrdersChannel do
   use DelivestWeb, :channel
 
-  alias Delivest.Oms.{OrderStatus, Orders}
+  alias Delivest.Oms.{OrderFlow, Orders}
   alias DelivestWeb.Client.Order.OrderJSON
 
   @impl true
@@ -13,7 +13,7 @@ defmodule DelivestWeb.OrdersChannel do
 
   @impl true
   def handle_info({:client_order, order}, socket) do
-    payload = %{order: OrderJSON.active_order_data(order), active: OrderStatus.active?(order)}
+    payload = %{order: OrderJSON.active_order_data(order), active: OrderFlow.active?(order)}
 
     if payload == socket.assigns.last_pushed do
       {:noreply, socket}

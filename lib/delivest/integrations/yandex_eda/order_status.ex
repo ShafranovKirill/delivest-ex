@@ -1,11 +1,11 @@
 defmodule Delivest.Integrations.YandexEda.OrderStatus do
   alias Delivest.Integrations.YandexEda.{Clock, Statuses}
   alias Delivest.Oms.{Order, Orders}
-  alias Delivest.Oms.OrderStatus, as: Progress
+  alias Delivest.Oms.OrderFlow
 
   def report(%Order{} = order) do
     reported = reported(order)
-    status = reported |> settle(Progress.current(order))
+    status = settle(reported, order.status)
 
     if status != reported,
       do:
@@ -26,6 +26,6 @@ defmodule Delivest.Integrations.YandexEda.OrderStatus do
   defp reported(_order), do: nil
 
   defp settle(reported, current) do
-    if is_nil(reported) or Progress.forward?(reported, current), do: current, else: reported
+    if OrderFlow.ahead?(reported, current), do: current, else: reported
   end
 end

@@ -63,14 +63,70 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
     end
 
-    test "status can be changed from the list", %{conn: conn, branch: branch, order: order} do
+    test "staff cannot jump over a step", %{conn: conn, branch: branch, order: order} do
       {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
-      lv
-      |> element(~s{form[phx-value-order-id="#{order.id}"]:has(select[name="status"])})
-      |> render_change(%{"status" => "preparing"})
+      refute has_element?(lv, ~s{select[name="status"]})
+
+      html = render_click(lv, "advance", %{"order-id" => order.id, "to" => "ready"})
+
+      assert html =~ "The order status has already changed"
+      assert Delivest.Repo.reload!(order).status == :created
+    end
+
+    test "the cook moves only kitchen steps", %{conn: conn, branch: branch, order: order} do
+      conn = login(conn, ["orders.read", "orders.cook"], branch)
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
+
+      refute has_element?(lv, "#order-next-#{order.id}")
+      refute has_element?(lv, "#order-cancel-#{order.id}")
+
+      {:ok, _} = Delivest.Oms.Orders.advance_order(order, :accepted, :system)
+
+      lv |> element("#order-next-#{order.id}") |> render_click()
+      lv |> element("#order-next-#{order.id}") |> render_click()
+      assert Delivest.Repo.reload!(order).status == :ready
+      refute has_element?(lv, "#order-next-#{order.id}")
+
+      assert [_, %{source: :staff, staff_id: staff_id}, %{to: :ready}] =
+               Delivest.Repo.preload(Delivest.Repo.reload!(order), :transitions).transitions
+
+      assert has_element?(lv, "#order-history-#{order.id}")
+      assert staff_id
+    end
+
+    test "an admin reverts the last step with a reason", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      {:ok, _} = Delivest.Oms.Orders.advance_order(order, :ready, :system)
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
+
+      lv |> element("#order-revert-#{order.id}") |> render_click()
+      assert has_element?(lv, "#revert-status-form")
+
+      lv |> form("#revert-status-form", revert: %{reason: "  "}) |> render_submit()
+      assert Delivest.Repo.reload!(order).status == :ready
+
+      lv |> element("#order-revert-#{order.id}") |> render_click()
+      lv |> form("#revert-status-form", revert: %{reason: "Нажали по ошибке"}) |> render_submit()
 
       assert Delivest.Repo.reload!(order).status == :preparing
+      assert has_element?(lv, "#order-history-#{order.id} .line-through")
+    end
+
+    test "operators without the revert right see no revert", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      {:ok, _} = Delivest.Oms.Orders.advance_order(order, :accepted, :system)
+      conn = login(conn, ["orders.read", "orders.update"], branch)
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
+
+      assert has_element?(lv, "#order-next-#{order.id}")
+      refute has_element?(lv, "#order-revert-#{order.id}")
     end
 
     test "the next step button walks the order to completion", %{
@@ -128,9 +184,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
     test "cancelling asks for a reason", %{conn: conn, branch: branch, order: order} do
       {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
-      lv
-      |> element(~s{form[phx-value-order-id="#{order.id}"]:has(select[name="status"])})
-      |> render_change(%{"status" => "cancelled"})
+      lv |> element("#order-cancel-#{order.id}") |> render_click()
 
       assert Delivest.Repo.reload!(order).status == :created
       assert has_element?(lv, "#cancel-order-form")
@@ -144,8 +198,6 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
     end
 
     test "an unmapped Frontpad status code is shown", %{conn: conn, branch: branch, order: order} do
-      order = order |> Ecto.Changeset.change(status: :crm) |> Delivest.Repo.update!()
-
       {:ok, _order} =
         Delivest.Oms.Orders.update_order_crm(order, %{
           provider: "frontpad",
@@ -161,10 +213,10 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
     test "read-only staff cannot change orders", %{conn: conn, branch: branch, order: order} do
       {:ok, lv, _html} = live(login(conn, ["orders.read"], branch), ~p"/staff/b/#{branch}/orders")
 
-      html =
-        lv
-        |> element(~s{form[phx-value-order-id="#{order.id}"]:has(select[name="status"])})
-        |> render_change(%{"status" => "cancelled"})
+      refute has_element?(lv, "#order-next-#{order.id}")
+      refute has_element?(lv, "#order-cancel-#{order.id}")
+
+      html = render_click(lv, "advance", %{"order-id" => order.id, "to" => "accepted"})
 
       assert html =~ "Permission denied"
       assert Delivest.Repo.reload!(order).status == :created

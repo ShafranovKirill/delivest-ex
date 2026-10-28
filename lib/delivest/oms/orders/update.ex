@@ -54,13 +54,13 @@ defmodule Delivest.Oms.Orders.Update do
       from(o in Order,
         where: o.id == ^id and is_nil(o.deleted_at),
         lock: "FOR UPDATE",
-        select: o.status
+        select: is_nil(o.crm)
       )
 
     case Repo.one(query) do
       nil -> {:error, :order_not_found}
-      :crm -> {:error, :order_locked}
-      _status -> {:ok, :locked}
+      false -> {:error, :order_locked}
+      true -> {:ok, :locked}
     end
   end
 end

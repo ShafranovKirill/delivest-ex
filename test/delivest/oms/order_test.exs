@@ -25,25 +25,22 @@ defmodule Delivest.Oms.OrderTest do
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
     end
 
-    test "pickup orders cannot be delivering" do
-      assert Order.statuses_for(:pickup) == [
-               :created,
-               :accepted,
-               :preparing,
-               :ready,
-               :completed,
-               :cancelled
-             ]
-
-      assert :delivering in Order.statuses_for(:delivery)
-
-      order = %Order{status: :ready, fulfillment_type: :pickup, payment_method: :cash}
-      refute Order.details_changeset(order, %{status: :delivering}).valid?
-      assert Order.details_changeset(order, %{status: :completed}).valid?
-
-      delivering = %Order{order | fulfillment_type: :delivery, status: :delivering}
+    test "an order on the way keeps its courier fulfillment" do
+      delivering = %Order{status: :delivering, fulfillment_type: :delivery, payment_method: :cash}
       changeset = Order.changeset(delivering, %{fulfillment_type: :pickup})
-      assert Ecto.Changeset.get_field(changeset, :status) == :ready
+      assert %{fulfillment_type: [_]} = errors_on(changeset)
+
+      ready = %Order{delivering | status: :ready}
+
+      refute Map.has_key?(
+               errors_on(Order.changeset(ready, %{fulfillment_type: :pickup})),
+               :fulfillment_type
+             )
+    end
+
+    test "the status is not cast from attrs" do
+      changeset = Order.changeset(%Order{}, %{status: :completed})
+      assert Ecto.Changeset.get_field(changeset, :status) == :created
     end
 
     test "requires an address when fulfillment type is delivery" do
@@ -300,13 +297,21 @@ defmodule Delivest.Oms.OrderTest do
     end
 
     test "crm orders cannot be changed" do
-      order = order_fixture(@branch_id, attrs: %{"status" => "crm"})
+      order =
+        @branch_id
+        |> order_fixture()
+        |> Order.crm_changeset(%{provider: "frontpad"})
+        |> Repo.update!()
+
+      admin = insert(:staff, role: build(:role, permissions: ["admin"]))
 
       assert {:error, :lock, :order_locked} =
                Orders.update_order(order, %{"cart_id" => order.cart_id})
 
+      assert {:error, :order_locked} = Orders.advance_order(order, :accepted, {:staff, admin})
+
       assert {:error, :order_locked} =
-               Orders.update_order_details(order, %{"status" => "completed"})
+               Orders.update_payment_method(order, %{"payment_method" => "card_offline"})
     end
 
     test "soft_delete_order marks the order as deleted" do
@@ -406,7 +411,7 @@ defmodule Delivest.Oms.OrderTest do
       assert Repo.aggregate(from(o in Order, where: o.number == "A000"), :count) == 2
     end
 
-    test "update_order_details changes status and payment without a cart" do
+    test "update_payment_method changes only the payment without a cart" do
       product = insert_branch_product(@branch_id, price: 120)
 
       {:ok, cart} = Carts.create_cart(%{session_id: "details-update", branch_id: @branch_id})
@@ -420,13 +425,13 @@ defmodule Delivest.Oms.OrderTest do
         })
 
       assert {:ok, updated} =
-               Orders.update_order_details(order, %{
+               Orders.update_payment_method(order, %{
                  "status" => "preparing",
                  "payment_method" => "card_offline",
                  "total_amount" => 1
                })
 
-      assert updated.status == :preparing
+      assert updated.status == :created
       assert updated.payment_method == :card_offline
       assert updated.total_amount == 240
       assert length(updated.items) == 1
@@ -444,23 +449,25 @@ defmodule Delivest.Oms.OrderTest do
           "payment_method" => "cash"
         })
 
-      assert {:error, changeset} = Orders.update_order_details(order, %{"status" => "cancelled"})
+      admin = insert(:staff, role: build(:role, permissions: ["admin"]))
+      {:ok, order} = Orders.advance_order(order, :accepted, {:staff, admin})
+
+      assert {:error, changeset} = Orders.cancel_order(order, {:staff, admin}, %{})
       assert %{cancel_reason: _} = errors_on(changeset)
 
       assert {:ok,
               %{status: :cancelled, cancel_reason: :out_of_stock, cancel_note: "Нет сыра"} =
                 cancelled} =
-               Orders.update_order_details(order, %{
-                 "status" => "cancelled",
+               Orders.cancel_order(order, {:staff, admin}, %{
                  "cancel_reason" => "out_of_stock",
                  "cancel_note" => "Нет сыра"
                })
 
       assert {:ok, %{payment_method: :card_offline, cancel_reason: :out_of_stock}} =
-               Orders.update_order_details(cancelled, %{"payment_method" => "card_offline"})
+               Orders.update_payment_method(cancelled, %{"payment_method" => "card_offline"})
 
-      assert {:ok, %{status: :preparing, cancel_reason: nil, cancel_note: nil}} =
-               Orders.update_order_details(Repo.reload!(cancelled), %{"status" => "preparing"})
+      assert {:ok, %{status: :accepted, cancel_reason: nil, cancel_note: nil}} =
+               Orders.revert_order_status(Repo.reload!(cancelled), admin, "Клиент вернулся")
     end
   end
 

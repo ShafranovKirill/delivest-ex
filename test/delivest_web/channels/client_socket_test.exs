@@ -34,13 +34,13 @@ defmodule DelivestWeb.ClientSocketTest do
     {:ok, _reply, _socket} = "sess-1" |> connect_as() |> subscribe_and_join("orders", %{})
     {:ok, _reply, _other} = "sess-2" |> connect_as() |> subscribe_and_join("orders", %{})
 
-    {:ok, _} = Orders.update_order_details(order, %{"status" => "ready"})
+    {:ok, _} = Orders.advance_order(order, :ready, :system)
 
     assert_push "order", %{order: %{id: id, status: :ready}, active: true}, 1_000
     assert id == order.id
     refute_push "order", _
 
-    {:ok, _} = Orders.update_order_details(Repo.reload!(order), %{"status" => "completed"})
+    {:ok, _} = Orders.advance_order(Repo.reload!(order), :completed, :system)
     assert_push "order", %{order: %{status: :completed}, active: false}, 1_000
   end
 
@@ -64,7 +64,6 @@ defmodule DelivestWeb.ClientSocketTest do
       branch.id
       |> order_fixture(attrs: %{"session_id" => "crm-sess"})
       |> Ecto.Changeset.change(
-        status: :crm,
         crm: %CrmSync{provider: "frontpad", external_id: "900", status: "sent"}
       )
       |> Repo.update!()
@@ -91,7 +90,7 @@ defmodule DelivestWeb.ClientSocketTest do
     {:ok, _reply, _socket} =
       "laptop" |> connect_as(client.id) |> subscribe_and_join("orders", %{})
 
-    {:ok, _} = Orders.update_order_details(order, %{"status" => "preparing"})
+    {:ok, _} = Orders.advance_order(order, :preparing, :system)
 
     assert_push "order", %{order: %{status: :preparing}}, 1_000
   end

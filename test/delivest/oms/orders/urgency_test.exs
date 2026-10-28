@@ -56,11 +56,11 @@ defmodule Delivest.Oms.Orders.UrgencyTest do
     order(ctx, 0, status: :preparing)
 
     crm =
-      order(ctx, 0, status: :crm)
-      |> Ecto.Changeset.change(
-        crm: %{provider: "frontpad", status: "sent", remote_status: "preparing"}
-      )
+      order(ctx, 0, [])
+      |> Ecto.Changeset.change(crm: %{provider: "frontpad", status: "sent", remote_status: nil})
       |> Repo.update!()
+
+    {:ok, crm} = Delivest.Integrations.Crm.SyncState.remote_status(crm, :preparing, "3", nil)
 
     assert %{created: 1, preparing: 2} = Orders.count_by_status(%{branch_id: ctx.branch.id})
 

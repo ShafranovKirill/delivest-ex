@@ -2,8 +2,8 @@ defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
 
   alias Delivest.Audit
-  alias Delivest.Oms.{Order, OrderDeadline, OrderScopes, OrderStatus}
-  alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, Update}
+  alias Delivest.Oms.{Order, OrderDeadline, OrderFlow, OrderScopes, OrderTransition}
+  alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, StatusChange, Update}
   alias Delivest.Repo
 
   defdelegate subscribe(branch_id), to: Notifier
@@ -13,6 +13,9 @@ defmodule Delivest.Oms.Orders do
   defdelegate update_order(order, attrs, opts \\ []), to: Update, as: :run
   defdelegate create_draft_cart(order), to: DraftCart, as: :create
   defdelegate populate_cart_from_order(order, cart_id), to: DraftCart, as: :populate
+  defdelegate advance_order(order, to, by, opts \\ []), to: StatusChange, as: :run
+  defdelegate revert_order_status(order, staff, reason), to: StatusChange, as: :revert
+  defdelegate acknowledge_cancel(order, staff), to: StatusChange
 
   def paginate_orders(params, page_params) do
     with {:ok, {orders, meta}} <-
@@ -20,7 +23,7 @@ defmodule Delivest.Oms.Orders do
            |> filtered()
            |> sorted(Filter.normalize_params(params))
            |> Flop.validate_and_run(page_params, for: Order) do
-      {:ok, {Repo.preload(orders, [:items, :client]), meta}}
+      {:ok, {Repo.preload(orders, [:items, :client, transitions: [:staff]]), meta}}
     end
   end
 
@@ -40,15 +43,14 @@ defmodule Delivest.Oms.Orders do
   end
 
   def count_by_status(params) do
-    statuses =
-      params
-      |> Map.drop([:status, "status"])
-      |> filtered()
-      |> select(^%{status: OrderScopes.effective_status()})
-
-    from(s in subquery(statuses), group_by: s.status, select: {s.status, count()})
+    params
+    |> Map.drop([:status, "status"])
+    |> filtered()
+    |> exclude(:order_by)
+    |> group_by([o], o.status)
+    |> select([o], {o.status, count()})
     |> Repo.all()
-    |> Map.new(fn {status, count} -> {String.to_existing_atom(status), count} end)
+    |> Map.new()
   end
 
   defp sorted(query, %{"sort" => "time"}), do: query
@@ -108,35 +110,65 @@ defmodule Delivest.Oms.Orders do
     Order
     |> where(^owned_by(session_id, client_id))
     |> where([o], is_nil(o.deleted_at))
-    |> where([o], o.inserted_at >= ^since and o.status not in ^OrderStatus.final())
+    |> where([o], o.inserted_at >= ^since and o.status not in ^OrderFlow.final())
     |> order_by([o], desc: o.inserted_at)
     |> preload(:items)
     |> Repo.all()
-    |> Enum.filter(&OrderStatus.active?/1)
   end
 
   def get_order(id) do
     Order
     |> Repo.get(id)
-    |> Repo.preload([:client, :items])
+    |> Repo.preload([:client, :items, transitions: [:staff]])
   end
 
-  def update_order_details(order, attrs, actor \\ :system)
+  def cancel_order(%Order{} = order, by, attrs) do
+    attrs = Filter.normalize_params(attrs)
 
-  def update_order_details(%Order{status: :crm}, _attrs, actor),
+    advance_order(order, :cancelled, by,
+      attrs: Map.take(attrs, ["cancel_reason", "cancel_note"]),
+      reason: blank_to_nil(attrs["cancel_note"])
+    )
+  end
+
+  def update_payment_method(order, attrs, actor \\ :system)
+
+  def update_payment_method(%Order{crm: %{}}, _attrs, actor),
     do: Audit.track({:error, :order_locked}, actor, "order.details_changed")
 
-  def update_order_details(%Order{} = order, attrs, actor) do
-    attrs =
-      attrs
-      |> Filter.normalize_params()
-      |> Map.take(["status", "payment_method", "cancel_reason", "cancel_note"])
-
-    changeset = Order.details_changeset(order, attrs)
+  def update_payment_method(%Order{} = order, attrs, actor) do
+    changeset = Order.payment_changeset(order, Filter.normalize_params(attrs))
 
     changeset
     |> persist([:order, :updated])
     |> Audit.track(actor, "order.details_changed", metadata: changeset.changes)
+  end
+
+  def acknowledge_branch_cancel(staff, branch_id, order_id) do
+    with :ok <- Delivest.Identity.authorize(staff, "orders.update", branch_id),
+         {:ok, uuid} <- Ecto.UUID.cast(order_id),
+         %Order{} = order <- Repo.get_by(Order, id: uuid, branch_id: branch_id) do
+      acknowledge_cancel(order, staff)
+    else
+      {:error, :forbidden} -> {:error, :forbidden}
+      _ -> {:error, :order_not_found}
+    end
+  end
+
+  def list_unacknowledged_cancellations(branch_id) do
+    since = DateTime.add(DateTime.utc_now(), -1, :day)
+
+    Order
+    |> where([o], o.branch_id == ^branch_id and o.status == :cancelled and is_nil(o.deleted_at))
+    |> where([o], is_nil(o.cancel_acknowledged_at) and o.updated_at >= ^since)
+    |> join(:inner, [o], t in OrderTransition,
+      on:
+        t.order_id == o.id and t.to == :cancelled and t.source == :channel and
+          is_nil(t.reverted_at)
+    )
+    |> distinct(true)
+    |> order_by([o], asc: o.updated_at)
+    |> Repo.all()
   end
 
   def update_order_crm(%Order{} = order, attrs) do
@@ -163,6 +195,15 @@ defmodule Delivest.Oms.Orders do
 
   defp owned_by(session_id, client_id),
     do: dynamic([o], o.session_id == ^session_id or o.client_id == ^client_id)
+
+  defp blank_to_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp blank_to_nil(_value), do: nil
 
   defp active_hours, do: Application.get_env(:delivest, :active_order_hours, 7)
 

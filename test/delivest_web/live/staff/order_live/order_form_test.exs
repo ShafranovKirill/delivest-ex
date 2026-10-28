@@ -64,7 +64,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
   end
 
   test "crm orders cannot be opened for edit", %{conn: conn, branch: branch} do
-    order = order_fixture(branch.id, attrs: %{"status" => "crm"})
+    order =
+      branch.id
+      |> order_fixture()
+      |> Delivest.Oms.Order.crm_changeset(%{provider: "frontpad"})
+      |> Repo.update!()
 
     orders = ~p"/staff/b/#{branch}/orders"
 

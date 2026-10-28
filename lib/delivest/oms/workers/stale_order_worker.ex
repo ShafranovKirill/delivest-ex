@@ -52,7 +52,7 @@ defmodule Delivest.Oms.Workers.StaleOrderWorker do
     local_cutoff = NaiveDateTime.add(local_now, -@grace_hours, :hour)
 
     from(o in Order,
-      where: o.status in ^@open_statuses and is_nil(o.deleted_at),
+      where: o.status in ^@open_statuses and is_nil(o.deleted_at) and is_nil(o.crm),
       where: o.inserted_at < ^day_start and o.inserted_at < ^cutoff,
       where: is_nil(o.cook_by) or (o.cook_by < ^local_day_start and o.cook_by < ^local_cutoff)
     )
@@ -61,11 +61,6 @@ defmodule Delivest.Oms.Workers.StaleOrderWorker do
   defp final_status(%Order{status: status}) when status in @handed_over, do: :completed
   defp final_status(_order), do: :cancelled
 
-  defp close(%Order{} = order, status) do
-    Orders.update_order_details(order, %{
-      "status" => to_string(status),
-      "payment_method" => to_string(order.payment_method),
-      "cancel_reason" => "not_confirmed"
-    })
-  end
+  defp close(%Order{} = order, status),
+    do: Orders.advance_order(order, status, :system, attrs: %{cancel_reason: :not_confirmed})
 end

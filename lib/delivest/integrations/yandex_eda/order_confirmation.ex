@@ -38,14 +38,13 @@ defmodule Delivest.Integrations.YandexEda.OrderConfirmation do
 
   def accept(staff, branch_id, order_id) do
     with {:ok, order} <- fetch(staff, branch_id, order_id) do
-      Orders.update_order_details(order, details(order, "accepted"), staff)
+      Orders.advance_order(order, :accepted, {:staff, staff})
     end
   end
 
   def cancel(staff, branch_id, order_id) do
     with {:ok, order} <- fetch(staff, branch_id, order_id) do
-      attrs = order |> details("cancelled") |> Map.put("cancel_reason", "not_confirmed")
-      Orders.update_order_details(order, attrs, staff)
+      Orders.cancel_order(order, {:staff, staff}, %{"cancel_reason" => "not_confirmed"})
     end
   end
 
@@ -57,9 +56,6 @@ defmodule Delivest.Integrations.YandexEda.OrderConfirmation do
   end
 
   def accept_by(_order), do: nil
-
-  defp details(order, status),
-    do: %{"status" => status, "payment_method" => to_string(order.payment_method)}
 
   defp fetch(staff, branch_id, order_id) do
     with true <-

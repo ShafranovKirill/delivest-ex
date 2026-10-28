@@ -5,21 +5,14 @@ defmodule Delivest.Oms.Order do
   alias Delivest.Oms.Order.Address
   alias Delivest.Oms.Order.AppliedPromotion
   alias Delivest.Oms.Order.CrmSync
-  alias Delivest.Oms.OrderItem
+  alias Delivest.Oms.{OrderItem, OrderTransition}
 
   @type t :: %__MODULE__{}
+  @type status ::
+          :created | :accepted | :preparing | :ready | :delivering | :completed | :cancelled
 
   @fulfillment_types [:dine_in, :delivery, :pickup]
-  @statuses [:created, :accepted, :preparing, :ready, :delivering, :completed, :cancelled, :crm]
-  @progress_statuses [
-    :created,
-    :accepted,
-    :preparing,
-    :ready,
-    :delivering,
-    :completed,
-    :cancelled
-  ]
+  @statuses [:created, :accepted, :preparing, :ready, :delivering, :completed, :cancelled]
   @payment_methods [:cash, :card_offline]
   @channel_payment_methods [:online]
   @cancel_reasons [:customer_refused, :out_of_stock, :unreachable, :other, :not_confirmed]
@@ -68,10 +61,12 @@ defmodule Delivest.Oms.Order do
     field :comment, :string
     field :cancel_reason, Ecto.Enum, values: @cancel_reasons
     field :cancel_note, :string
+    field :cancel_acknowledged_at, :utc_datetime
     field :deleted_at, :utc_datetime
 
     embeds_one :address, Address, on_replace: :update
     has_many :items, OrderItem, on_delete: :delete_all, on_replace: :delete
+    has_many :transitions, OrderTransition, preload_order: [asc: :id]
 
     timestamps(type: :utc_datetime)
   end
@@ -87,7 +82,6 @@ defmodule Delivest.Oms.Order do
       :session_id,
       :customer_phone,
       :customer_name,
-      :status,
       :fulfillment_type,
       :payment_method,
       :total_amount,
@@ -102,7 +96,6 @@ defmodule Delivest.Oms.Order do
     |> cast_assoc(:items)
     |> validate_required([
       :branch_id,
-      :status,
       :fulfillment_type,
       :payment_method,
       :cart_id
@@ -110,22 +103,22 @@ defmodule Delivest.Oms.Order do
     |> validate_length(:customer_name, max: 100)
     |> validate_length(:comment, max: 500)
     |> validate_phone()
-    |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
     |> validate_inclusion(:payment_method, @payment_methods)
     |> validate_number(:total_amount, greater_than_or_equal_to: 0)
     |> validate_number(:discount_amount, greater_than_or_equal_to: 0)
     |> validate_cook_by_range()
     |> validate_address_if_delivery()
-    |> settle_delivering_status()
+    |> validate_fulfillment_for_status()
   end
 
-  def progress_statuses, do: @progress_statuses
+  def statuses, do: @statuses
 
-  def statuses_for(fulfillment_type) when fulfillment_type in [:delivery, "delivery"],
-    do: @progress_statuses
+  def crm_managed?(%__MODULE__{crm: crm}), do: not is_nil(crm)
 
-  def statuses_for(_fulfillment_type), do: List.delete(@progress_statuses, :delivering)
+  def courier_leg?(%__MODULE__{fulfillment_type: :delivery}), do: true
+  def courier_leg?(%__MODULE__{channel: %{delivery: "yandex"}}), do: true
+  def courier_leg?(%__MODULE__{}), do: false
 
   def source_changeset(changeset, source) do
     changeset
@@ -152,45 +145,39 @@ defmodule Delivest.Oms.Order do
 
   def cancel_reasons, do: @cancel_reasons
 
-  def details_changeset(order, attrs) do
+  def payment_changeset(order, attrs) do
     order
-    |> cast(attrs, [:status, :payment_method, :cancel_reason, :cancel_note])
-    |> validate_required([:status, :payment_method])
-    |> validate_status_for_fulfillment()
-    |> validate_cancellation()
+    |> cast(attrs, [:payment_method])
+    |> validate_required([:payment_method])
+    |> validate_inclusion(:payment_method, @payment_methods)
   end
 
-  defp validate_cancellation(changeset) do
+  def status_changeset(order_or_changeset, status, attrs \\ %{}) do
+    order_or_changeset
+    |> cast(attrs, [:cancel_reason, :cancel_note])
+    |> put_change(:status, status)
+    |> settle_cancellation()
+  end
+
+  def acknowledge_cancel_changeset(order),
+    do: change(order, cancel_acknowledged_at: DateTime.utc_now(:second))
+
+  defp settle_cancellation(changeset) do
     case get_field(changeset, :status) do
       :cancelled ->
         changeset
-        |> validate_required_on_change(:cancel_reason)
+        |> validate_required([:cancel_reason])
         |> validate_length(:cancel_note, max: 300)
 
       _status ->
-        change(changeset, cancel_reason: nil, cancel_note: nil)
+        change(changeset, cancel_reason: nil, cancel_note: nil, cancel_acknowledged_at: nil)
     end
   end
 
-  defp validate_required_on_change(changeset, field) do
-    if get_change(changeset, :status) == :cancelled,
-      do: validate_required(changeset, [field]),
-      else: changeset
-  end
-
-  defp settle_delivering_status(changeset) do
-    if get_field(changeset, :status) == :delivering and
-         get_field(changeset, :fulfillment_type) != :delivery,
-       do: put_change(changeset, :status, :ready),
-       else: changeset
-  end
-
-  defp validate_status_for_fulfillment(changeset) do
-    status = get_field(changeset, :status)
-
-    if status in @progress_statuses and
-         status not in statuses_for(get_field(changeset, :fulfillment_type)),
-       do: add_error(changeset, :status, "is not available for this fulfillment type"),
+  defp validate_fulfillment_for_status(changeset) do
+    if get_field(changeset, :status) == :delivering and changed?(changeset, :fulfillment_type) and
+         not courier_leg?(apply_changes(changeset)),
+       do: add_error(changeset, :fulfillment_type, "cannot change while the order is on the way"),
        else: changeset
   end
 

@@ -3,13 +3,13 @@ defmodule Delivest.Push.Dispatch do
 
   require Logger
 
-  alias Delivest.Oms.{Order, OrderStatus}
+  alias Delivest.Oms.{Order, OrderFlow}
   alias Delivest.Push.{OrderMessage, Sender, Subscription}
   alias Delivest.Repo
 
   def run(order_id) do
     case Repo.get(Order, order_id) do
-      %Order{} = order -> notify_all(order, OrderStatus.current(order))
+      %Order{} = order -> notify_all(order, order.status)
       nil -> :ok
     end
   end
@@ -48,7 +48,7 @@ defmodule Delivest.Push.Dispatch do
   end
 
   defp finish(order_id, status) do
-    if status in OrderStatus.final(), do: Repo.delete_all(subscriptions_query(order_id))
+    if status in OrderFlow.final(), do: Repo.delete_all(subscriptions_query(order_id))
     :ok
   end
 

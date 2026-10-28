@@ -9,9 +9,8 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
     OrderRequest
   }
 
-  def build(%OrderRequest{} = request, cart, branch, settings) do
+  def build(%OrderRequest{} = request, cart, branch, _settings) do
     %{
-      "status" => status(settings),
       "cart_id" => cart.id,
       "branch_id" => branch.id,
       "fulfillment_type" => fulfillment(request.discriminator),
@@ -28,7 +27,8 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
       channel: channel(request, branch, settings),
       pricing: OrderPricing.fixed(request),
       delivery_amount: delivery_amount(request),
-      paid_online: request.paid
+      paid_online: request.paid,
+      advance: advance(settings)
     ]
   end
 
@@ -41,8 +41,8 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
   defp fulfillment("marketplace"), do: "delivery"
   defp fulfillment(_discriminator), do: "pickup"
 
-  defp status(%BranchSettings{accept_mode: :manual}), do: "created"
-  defp status(_settings), do: "accepted"
+  defp advance(%BranchSettings{accept_mode: :manual}), do: nil
+  defp advance(_settings), do: {:accepted, :channel}
 
   defp cook_by(%OrderRequest{discriminator: "marketplace", target_at: at}, %{
          delivery_time: minutes

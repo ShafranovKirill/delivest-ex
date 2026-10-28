@@ -44,11 +44,7 @@ defmodule Delivest.AnalyticsTest do
 
     cancelled = order!(@branch_id, [{ctx.tea, 5}], ~U[2026-10-19 13:00:00Z])
 
-    {:ok, _} =
-      Orders.update_order_details(cancelled, %{
-        "status" => "cancelled",
-        "cancel_reason" => "other"
-      })
+    {:ok, _} = Orders.cancel_order(cancelled, :system, %{"cancel_reason" => "other"})
 
     deleted = order!(@branch_id, [{ctx.tea, 7}], ~U[2026-10-19 14:00:00Z])
     {:ok, _} = Orders.soft_delete_order(deleted)
@@ -171,10 +167,14 @@ defmodule Delivest.AnalyticsTest do
 
   defp crm!(order, crm) do
     order
-    |> Ecto.Changeset.change(status: :crm)
+    |> Ecto.Changeset.change(status: crm_status(crm))
     |> Order.crm_changeset(Map.put(crm, :provider, "frontpad"))
     |> Repo.update!()
   end
+
+  defp crm_status(%{remote_status: status}), do: String.to_existing_atom(status)
+  defp crm_status(%{status: "sent"}), do: :accepted
+  defp crm_status(_crm), do: :created
 
   test "crm orders cancelled remotely or never delivered are not sales", ctx do
     period = {~D[2026-10-19], ~D[2026-10-19]}
@@ -194,6 +194,7 @@ defmodule Delivest.AnalyticsTest do
     assert %{revenue: 500, orders_count: 2, cancelled_count: 1, lost_count: 1} =
              Analytics.summary(@branch_id, period)
 
-    assert %{completed: 1, cancelled: 1, created: 2} = Analytics.status_counts(@branch_id, period)
+    assert %{completed: 1, cancelled: 1, created: 1, accepted: 1} =
+             Analytics.status_counts(@branch_id, period)
   end
 end

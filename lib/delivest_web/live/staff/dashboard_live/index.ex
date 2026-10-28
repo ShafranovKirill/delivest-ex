@@ -1,8 +1,6 @@
 defmodule DelivestWeb.Staff.DashboardLive.Index do
   use DelivestWeb, :live_view
 
-  alias Delivest.Oms.OrderStatus
-
   alias Delivest.{Analytics, Identity, LocalTime}
   alias Delivest.Oms.Orders
   alias DelivestWeb.Staff.DashboardLive.DayLabel
@@ -10,7 +8,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
   import DelivestWeb.Staff.StatsComponents
 
-  @active_statuses [:created, :accepted, :preparing, :ready, :delivering, :crm]
+  @active_statuses [:created, :accepted, :preparing, :ready, :delivering]
   @reload_delay :timer.seconds(2)
 
   @impl true
@@ -203,9 +201,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
                 </span>
                 <span class={[
                   "badge badge-sm border",
-                  OrderHelpers.status_color(OrderStatus.current(order))
+                  OrderHelpers.status_color(order.status)
                 ]}>
-                  {OrderHelpers.status_label(OrderStatus.current(order))}
+                  {OrderHelpers.status_label(order.status)}
                 </span>
                 <span class="ml-auto font-mono font-bold whitespace-nowrap">
                   {OrderHelpers.money(order.total_amount)}

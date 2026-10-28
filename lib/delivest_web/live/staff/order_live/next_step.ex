@@ -1,14 +1,21 @@
 defmodule DelivestWeb.Staff.OrderLive.NextStep do
   use Gettext, backend: DelivestWeb.Gettext
 
-  def for_order(%{status: :created}), do: {:accepted, gettext("Confirm")}
-  def for_order(%{status: :accepted}), do: {:preparing, gettext("Start cooking")}
-  def for_order(%{status: :preparing}), do: {:ready, gettext("Ready")}
+  alias Delivest.Oms.OrderFlow
 
-  def for_order(%{status: :ready, fulfillment_type: :delivery}),
-    do: {:delivering, gettext("Hand to courier")}
+  def for_order(order, staff) do
+    with to when not is_nil(to) <- OrderFlow.next(order),
+         true <- OrderFlow.can?(order, to, {:staff, staff}) do
+      {to, label(order, to)}
+    else
+      _ -> nil
+    end
+  end
 
-  def for_order(%{status: :ready}), do: {:completed, gettext("Handed over")}
-  def for_order(%{status: :delivering}), do: {:completed, gettext("Delivered")}
-  def for_order(_order), do: nil
+  def label(_order, :accepted), do: gettext("Confirm")
+  def label(_order, :preparing), do: gettext("Start cooking")
+  def label(_order, :ready), do: gettext("Ready")
+  def label(_order, :delivering), do: gettext("Hand to courier")
+  def label(%{status: :ready}, :completed), do: gettext("Handed over")
+  def label(_order, :completed), do: gettext("Delivered")
 end

@@ -124,7 +124,8 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
 
     product = menu_product(branch, menu_category(branch), price: soup.price)
 
-    assert {:ok, %Order{status: :crm}} = YandexEda.create_order(order_params(branch, [product]))
+    assert {:ok, %Order{status: :accepted, crm: %{provider: "frontpad"}}} =
+             YandexEda.create_order(order_params(branch, [product]))
   end
 
   defp pay(cost), do: %{"paymentType" => "CARD", "itemsCost" => cost}
