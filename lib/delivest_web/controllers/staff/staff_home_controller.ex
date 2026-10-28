@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.StaffHomeController do
   use DelivestWeb, :controller
 
-  alias Delivest.Identity
+  alias Delivest.{Couriers, Identity}
   alias Delivest.Oms.Kitchen
   alias DelivestWeb.Hooks.StaffActiveBranch
 
@@ -22,9 +22,11 @@ defmodule DelivestWeb.Staff.StaffHomeController do
   end
 
   defp branch_home(staff, branch) do
-    if Kitchen.account?(staff),
-      do: ~p"/staff/b/#{branch}/kitchen",
-      else: ~p"/staff/b/#{branch}/dashboard"
+    cond do
+      Kitchen.account?(staff) -> ~p"/staff/b/#{branch}/kitchen"
+      Couriers.account?(staff) -> ~p"/staff/b/#{branch}/deliveries"
+      true -> ~p"/staff/b/#{branch}/dashboard"
+    end
   end
 
   defp only_branch(%{branches: [branch]}), do: ~p"/staff/branches/select/#{branch.id}"

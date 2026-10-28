@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.StaffActiveBranchController do
   use DelivestWeb, :controller
 
-  alias Delivest.Identity
+  alias Delivest.{Couriers, Identity}
   alias Delivest.Oms.Kitchen
   alias DelivestWeb.Hooks.StaffActiveBranch
   alias DelivestWeb.StaffBranchPath
@@ -25,6 +25,7 @@ defmodule DelivestWeb.Staff.StaffActiveBranchController do
     cond do
       StaffBranchPath.valid_section?(to) -> to
       Kitchen.account?(staff) -> "/kitchen"
+      Couriers.account?(staff) -> "/deliveries"
       true -> "/dashboard"
     end
   end

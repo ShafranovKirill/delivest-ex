@@ -57,7 +57,14 @@ defmodule DelivestWeb.StaffNav do
           "hero-fire",
           gettext("Kitchen")
         )
-        |> allowed(staff, "orders.cook")
+        |> allowed(staff, "orders.cook"),
+        item(
+          :deliveries,
+          branch && ~p"/staff/b/#{branch}/deliveries",
+          "hero-map",
+          gettext("Deliveries")
+        )
+        |> allowed(staff, "orders.deliver")
       ]),
       group(:menu, "hero-book-open", gettext("Menu"), [
         item(
