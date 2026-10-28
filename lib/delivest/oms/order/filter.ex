@@ -2,6 +2,7 @@ defmodule Delivest.Oms.Orders.Filter do
   import Ecto.Query, warn: false
 
   alias Delivest.Oms.OrderScopes
+  alias Delivest.Oms.Orders.Search
 
   def normalize_params(params) when is_map(params) do
     Map.new(params, fn
@@ -17,6 +18,7 @@ defmodule Delivest.Oms.Orders.Filter do
       {"status", val}, q -> where(q, ^dynamic(^OrderScopes.effective_status() == ^val))
       {"date_from", val}, q -> filter_date_from(q, val)
       {"date_to", val}, q -> filter_date_to(q, val)
+      {"search", val}, q -> Search.apply(q, val)
       {"sort_by", val}, q -> apply_sort(q, val, params["sort_dir"])
       _, q -> q
     end)

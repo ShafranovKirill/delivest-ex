@@ -1139,7 +1139,7 @@ msgstr ""
 msgid "2. Checkout"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:100
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:113
 #: lib/delivest_web/live/staff/order_live/components/status_tabs.ex:19
 #, elixir-autogen, elixir-format
 msgid "All"
@@ -1280,7 +1280,7 @@ msgstr ""
 msgid "Created"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:101
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:114
 #: lib/delivest_web/live/staff/statistics_live/index.ex:104
 #, elixir-autogen, elixir-format
 msgid "Custom"
@@ -1373,7 +1373,7 @@ msgstr ""
 msgid "Manage system clients, status, and information."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:99
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:112
 #, elixir-autogen, elixir-format
 msgid "Month"
 msgstr ""
@@ -1481,23 +1481,23 @@ msgid "Submit Order"
 msgstr ""
 
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:106
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:95
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:108
 #: lib/delivest_web/live/staff/statistics_live/index.ex:99
 #, elixir-autogen, elixir-format
 msgid "Today"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:96
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:109
 #, elixir-autogen, elixir-format
 msgid "Tomorrow"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:98
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:111
 #, elixir-autogen, elixir-format
 msgid "Week"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:97
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:110
 #: lib/delivest_web/live/staff/statistics_live/index.ex:100
 #, elixir-autogen, elixir-format
 msgid "Yesterday"
@@ -4408,12 +4408,12 @@ msgid "%{minutes} min left"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:118
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:108
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:121
 #, elixir-autogen, elixir-format
 msgid "By time"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:107
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:120
 #, elixir-autogen, elixir-format
 msgid "By urgency"
 msgstr ""
@@ -4484,12 +4484,12 @@ msgstr ""
 msgid "Out of stock"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:42
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:55
 #, elixir-autogen, elixir-format
 msgid "Sort"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:63
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:76
 #, elixir-autogen, elixir-format
 msgid "Sound for new orders"
 msgstr ""
@@ -5881,4 +5881,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:130
 #, elixir-autogen, elixir-format
 msgid "Picked automatically from the primary color so it reads well."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:22
+#, elixir-autogen, elixir-format
+msgid "Number, phone, name or address"
 msgstr ""

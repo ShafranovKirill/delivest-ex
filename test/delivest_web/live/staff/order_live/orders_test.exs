@@ -21,6 +21,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       assert html =~ "Orders"
       assert html =~ "By urgency"
       assert html =~ "order-status-tab-created"
+      assert html =~ "orders-search"
     end
   end
 

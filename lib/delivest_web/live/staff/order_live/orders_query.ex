@@ -1,11 +1,12 @@
 defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
   alias Delivest.LocalTime
 
-  @keys ["period", "status", "sort", "date_from", "date_to", "page", "page_size"]
+  @keys ["search", "period", "status", "sort", "date_from", "date_to", "page", "page_size"]
   @page_size 20
 
   def parse(params, branch_id) do
     selected = %{
+      search: Map.get(params, "search", ""),
       period: Map.get(params, "period", "today"),
       status: Map.get(params, "status", ""),
       sort: Map.get(params, "sort", "urgency"),
@@ -19,6 +20,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
       selected: selected,
       filters: %{
         branch_id: branch_id,
+        search: selected.search,
         status: selected.status,
         sort: selected.sort,
         date_from: date_from,

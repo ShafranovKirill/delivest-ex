@@ -12,6 +12,19 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
         phx-change="filter"
         class="flex flex-wrap items-center gap-2"
       >
+        <label class="input input-sm w-full sm:w-72">
+          <.icon name="hero-magnifying-glass" class="size-4 text-base-content/50" />
+          <input
+            id="orders-search"
+            type="search"
+            name="search"
+            value={@selected.search}
+            placeholder={gettext("Number, phone, name or address")}
+            phx-debounce="300"
+            autocomplete="off"
+            class="grow"
+          />
+        </label>
         <select name="period" class="select select-bordered select-sm w-full sm:w-44">
           <option
             :for={{value, label} <- periods()}

@@ -1139,7 +1139,7 @@ msgstr "1. Меню и корзина"
 msgid "2. Checkout"
 msgstr "2. Оформление"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:100
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:113
 #: lib/delivest_web/live/staff/order_live/components/status_tabs.ex:19
 #, elixir-autogen, elixir-format
 msgid "All"
@@ -1280,7 +1280,7 @@ msgstr "Создать клиента"
 msgid "Created"
 msgstr "Новый"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:101
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:114
 #: lib/delivest_web/live/staff/statistics_live/index.ex:104
 #, elixir-autogen, elixir-format
 msgid "Custom"
@@ -1373,7 +1373,7 @@ msgstr "Управляйте заказами клиентов, отслежив
 msgid "Manage system clients, status, and information."
 msgstr "Управление клиентами системы, их статусами и информацией."
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:99
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:112
 #, elixir-autogen, elixir-format
 msgid "Month"
 msgstr "Месяц"
@@ -1481,23 +1481,23 @@ msgid "Submit Order"
 msgstr "Оформить заказ"
 
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:106
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:95
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:108
 #: lib/delivest_web/live/staff/statistics_live/index.ex:99
 #, elixir-autogen, elixir-format
 msgid "Today"
 msgstr "Сегодня"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:96
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:109
 #, elixir-autogen, elixir-format
 msgid "Tomorrow"
 msgstr "Завтра"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:98
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:111
 #, elixir-autogen, elixir-format
 msgid "Week"
 msgstr "Неделя"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:97
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:110
 #: lib/delivest_web/live/staff/statistics_live/index.ex:100
 #, elixir-autogen, elixir-format
 msgid "Yesterday"
@@ -4408,12 +4408,12 @@ msgid "%{minutes} min left"
 msgstr "ещё %{minutes} мин"
 
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:118
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:108
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:121
 #, elixir-autogen, elixir-format
 msgid "By time"
 msgstr "По времени"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:107
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:120
 #, elixir-autogen, elixir-format
 msgid "By urgency"
 msgstr "По срочности"
@@ -4484,12 +4484,12 @@ msgstr "Другое"
 msgid "Out of stock"
 msgstr "Нет продуктов"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:42
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:55
 #, elixir-autogen, elixir-format
 msgid "Sort"
 msgstr "Сортировка"
 
-#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:63
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:76
 #, elixir-autogen, elixir-format
 msgid "Sound for new orders"
 msgstr "Звук новых заказов"
@@ -5884,3 +5884,8 @@ msgstr "Подбирать автоматически"
 #, elixir-autogen, elixir-format
 msgid "Picked automatically from the primary color so it reads well."
 msgstr "Подбирается из основного цвета так, чтобы хорошо читался."
+
+#: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:22
+#, elixir-autogen, elixir-format
+msgid "Number, phone, name or address"
+msgstr "Номер, телефон, имя или адрес"
