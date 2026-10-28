@@ -5,6 +5,7 @@
     staff_branches={assigns[:staff_branches] || []}
     current_path={assigns[:current_path]}
     new_orders_count={assigns[:new_orders_count] || 0}
+    kitchen_status={assigns[:kitchen_status]}
   />
 
   <DelivestWeb.CommandPalette.command_palette
@@ -13,6 +14,7 @@
   />
 
   <DelivestWeb.OverdueOrdersAlert.overdue_orders_alert orders={assigns[:overdue_orders] || []} />
+  <DelivestWeb.KitchenControl.kitchen_late_alert orders={assigns[:kitchen_late_orders] || []} />
   <DelivestWeb.ChannelCancelAlert.channel_cancel_alert orders={
     assigns[:channel_cancelled_orders] || []
   } />

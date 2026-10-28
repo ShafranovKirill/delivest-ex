@@ -6,7 +6,7 @@ import topbar from "../vendor/topbar";
 import Sortable from "sortablejs";
 import { LocationMap } from "./hooks/location_map";
 import { ZoneMap } from "./hooks/zone_map";
-import { Alarm } from "./hooks/alarm";
+import { Alarm, ring } from "./hooks/alarm";
 import { KitchenScreen } from "./hooks/kitchen_screen";
 
 let Uploaders = {};
@@ -203,6 +203,7 @@ window.addEventListener("phx:page-loading-start", (event) => {
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
 window.addEventListener("phx:page-loading-stop", (_info) => topbar.hide());
+window.addEventListener("phx:kitchen:ready", () => ring([660, 880, 1320]));
 window.addEventListener("phx:force_staff_logout", (e) => {
   let csrfToken = document
     .querySelector("meta[name='csrf-token']")

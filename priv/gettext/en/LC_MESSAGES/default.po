@@ -94,7 +94,7 @@ msgstr ""
 msgid "All rights reserved."
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:118
+#: lib/delivest_web/components/staff/app/staff_header.ex:121
 #, elixir-autogen, elixir-format
 msgid "Dark Mode"
 msgstr ""
@@ -105,17 +105,17 @@ msgstr ""
 msgid "Dashboard"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:84
+#: lib/delivest_web/components/staff/app/staff_header.ex:87
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:140
+#: lib/delivest_web/components/staff/app/staff_header.ex:143
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:19
+#: lib/delivest_web/components/staff/app/staff_header.ex:20
 #, elixir-autogen, elixir-format
 msgid "Open menu"
 msgstr ""
@@ -125,7 +125,7 @@ msgstr ""
 msgid "Sign In"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:59
+#: lib/delivest_web/components/staff/app/staff_header.ex:62
 #: lib/delivest_web/components/staff/app/staff_nav.ex:122
 #: lib/delivest_web/live/staff/log_live/event_text.ex:33
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:178
@@ -256,7 +256,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:98
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:137
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:81
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:413
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:418
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:91
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:380
 #: lib/delivest_web/live/staff/product_live/tags.ex:258
@@ -669,8 +669,8 @@ msgstr ""
 msgid "Page %{current} of %{total}"
 msgstr ""
 
-#: lib/delivest_web/hooks/new_orders.ex:60
-#: lib/delivest_web/hooks/new_orders.ex:73
+#: lib/delivest_web/hooks/new_orders.ex:112
+#: lib/delivest_web/hooks/new_orders.ex:125
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
 #: lib/delivest_web/live/staff/delivery_live/index.ex:200
@@ -1174,7 +1174,7 @@ msgid "Cancelled"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:138
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:157
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:162
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:46
 #, elixir-autogen, elixir-format
 msgid "Card Offline"
@@ -1193,7 +1193,7 @@ msgid "Cart is empty"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:137
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:155
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:160
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:45
 #, elixir-autogen, elixir-format
 msgid "Cash"
@@ -1281,7 +1281,7 @@ msgstr ""
 msgid "Delete Client"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:184
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:189
 #: lib/delivest_web/live/staff/order_live/orders.ex:337
 #, elixir-autogen, elixir-format
 msgid "Delete Order"
@@ -1314,7 +1314,7 @@ msgid "Edit Client"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/show.ex:262
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:175
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:180
 #, elixir-autogen, elixir-format
 msgid "Edit Order"
 msgstr ""
@@ -1435,7 +1435,7 @@ msgstr ""
 msgid "Proceed to Checkout"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/next_step.ex:17
+#: lib/delivest_web/live/staff/order_live/next_step.ex:21
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:28
 #, elixir-autogen, elixir-format
 msgid "Ready"
@@ -1565,7 +1565,7 @@ msgstr ""
 msgid "Clear Cart"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:254
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:259
 #, elixir-autogen, elixir-format
 msgid "Customer not specified"
 msgstr ""
@@ -1611,7 +1611,7 @@ msgstr ""
 msgid "Longitude"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:340
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:345
 #, elixir-autogen, elixir-format
 msgid "Prepare by:"
 msgstr ""
@@ -1643,12 +1643,12 @@ msgstr ""
 msgid "Yandex Org ID"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:441
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:446
 #, elixir-autogen, elixir-format
 msgid "error"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:443
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:448
 #, elixir-autogen, elixir-format
 msgid "sending"
 msgstr ""
@@ -1823,7 +1823,7 @@ msgstr ""
 msgid "Open"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:249
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:254
 #, elixir-autogen, elixir-format
 msgid "Open client card"
 msgstr ""
@@ -2234,7 +2234,7 @@ msgid "Staff %{name}"
 msgstr ""
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:22
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:485
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:490
 #, elixir-autogen, elixir-format
 msgid "System"
 msgstr ""
@@ -3927,7 +3927,7 @@ msgstr ""
 msgid "Collapse menu"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:128
+#: lib/delivest_web/components/staff/app/staff_header.ex:131
 #, elixir-autogen, elixir-format
 msgid "Light Mode"
 msgstr ""
@@ -3937,7 +3937,7 @@ msgstr ""
 msgid "Orders awaiting confirmation"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:109
+#: lib/delivest_web/components/staff/app/staff_header.ex:112
 #, elixir-autogen, elixir-format
 msgid "Theme"
 msgstr ""
@@ -4435,17 +4435,17 @@ msgstr ""
 msgid "Customer refused"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/next_step.ex:20
+#: lib/delivest_web/live/staff/order_live/next_step.ex:24
 #, elixir-autogen, elixir-format
 msgid "Delivered"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/next_step.ex:18
+#: lib/delivest_web/live/staff/order_live/next_step.ex:22
 #, elixir-autogen, elixir-format
 msgid "Hand to courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/next_step.ex:19
+#: lib/delivest_web/live/staff/order_live/next_step.ex:23
 #, elixir-autogen, elixir-format
 msgid "Handed over"
 msgstr ""
@@ -4485,6 +4485,7 @@ msgstr ""
 msgid "Why is the order cancelled?"
 msgstr ""
 
+#: lib/delivest_web/components/staff/app/kitchen_control.ex:43
 #: lib/delivest_web/live/staff/order_live/components/order_clock.ex:31
 #, elixir-autogen, elixir-format
 msgid "due %{time}"
@@ -4814,12 +4815,12 @@ msgstr ""
 msgid "The address and the point of the branch for customers and the pickup map."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:452
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:457
 #, elixir-autogen, elixir-format
 msgid "%{crm} status %{code} is not mapped"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:450
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:455
 #, elixir-autogen, elixir-format
 msgid "Set this code in the branch %{crm} settings"
 msgstr ""
@@ -4962,19 +4963,19 @@ msgstr ""
 msgid "Order %{number} is confirmed"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/next_step.ex:16
+#: lib/delivest_web/live/staff/order_live/next_step.ex:19
 #, elixir-autogen, elixir-format
 msgid "Start cooking"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:158
 #: lib/delivest_web/live/staff/integration_live/routes.ex:55
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:515
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:520
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:121
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:126
 #, elixir-autogen, elixir-format
 msgid "Cancelled in %{channel}. Cancel order %{number} in %{crm} manually"
 msgstr ""
@@ -5071,7 +5072,7 @@ msgstr ""
 msgid "Change from %{amount} ₽"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:145
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:150
 #, elixir-autogen, elixir-format
 msgid "Confirm by %{time}"
 msgstr ""
@@ -5215,18 +5216,18 @@ msgstr ""
 msgid "ml"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:285
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:484
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:290
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:489
 #, elixir-autogen, elixir-format
 msgid "Courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:300
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:305
 #, elixir-autogen, elixir-format
 msgid "arrives by %{time}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:294
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:299
 #, elixir-autogen, elixir-format
 msgid "at the restaurant"
 msgstr ""
@@ -5316,8 +5317,8 @@ msgstr ""
 msgid "Cancel the order? The aggregator will see it cancelled."
 msgstr ""
 
-#: lib/delivest_web/hooks/new_orders.ex:61
-#: lib/delivest_web/hooks/new_orders.ex:74
+#: lib/delivest_web/hooks/new_orders.ex:113
+#: lib/delivest_web/hooks/new_orders.ex:126
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:37
 #, elixir-autogen, elixir-format
 msgid "Failed to update the order"
@@ -5494,8 +5495,8 @@ msgstr ""
 msgid "Yandex stops taking orders for the branch until the pause ends or is lifted."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:315
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:316
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:320
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:321
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Courier code"
 msgstr ""
@@ -5530,12 +5531,12 @@ msgstr ""
 msgid "Yandex Eda push access is not set up"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:320
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:325
 #, elixir-autogen, elixir-format
 msgid "Check the code"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:329
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:334
 #, elixir-autogen, elixir-format
 msgid "Review"
 msgstr ""
@@ -5720,7 +5721,7 @@ msgstr ""
 msgid "Delivery article"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:69
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:74
 #, elixir-autogen, elixir-format
 msgid "incl. delivery %{amount}"
 msgstr ""
@@ -5880,7 +5881,7 @@ msgstr ""
 msgid "New order"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:100
+#: lib/delivest_web/components/staff/app/staff_header.ex:103
 #, elixir-autogen, elixir-format
 msgid "New orders"
 msgstr ""
@@ -6025,7 +6026,7 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:102
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:107
 #, elixir-autogen, elixir-format
 msgid "Cancelled by %{channel}"
 msgstr ""
@@ -6041,7 +6042,7 @@ msgid "Enter the reason for reverting"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/channel_cancel_alert.ex:50
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:111
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:116
 #, elixir-autogen, elixir-format
 msgid "Got it"
 msgstr ""
@@ -6075,12 +6076,12 @@ msgstr ""
 msgid "Revert the status of order #%{number}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:422
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:427
 #, elixir-autogen, elixir-format
 msgid "Revert to «%{status}»"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:203
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:208
 #, elixir-autogen, elixir-format
 msgid "Reverted: %{reason}"
 msgstr ""
@@ -6125,7 +6126,7 @@ msgstr ""
 msgid "There is no step to revert"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:195
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:200
 #, elixir-autogen, elixir-format
 msgid "Who handled the order"
 msgstr ""
@@ -6140,8 +6141,8 @@ msgstr ""
 msgid "Coming to the kitchen"
 msgstr ""
 
-#: lib/delivest_web/live/staff/kitchen_live/index.ex:253
-#: lib/delivest_web/live/staff/kitchen_live/index.ex:257
+#: lib/delivest_web/live/staff/kitchen_live/index.ex:255
+#: lib/delivest_web/live/staff/kitchen_live/index.ex:259
 #, elixir-autogen, elixir-format
 msgid "Done"
 msgstr ""
@@ -6176,17 +6177,52 @@ msgstr ""
 msgid "The order is already ready"
 msgstr ""
 
-#: lib/delivest_web/live/staff/kitchen_live/index.ex:266
+#: lib/delivest_web/live/staff/kitchen_live/index.ex:268
 #, elixir-autogen, elixir-format
 msgid "Undo"
 msgstr ""
 
-#: lib/delivest_web/live/staff/kitchen_live/index.ex:222
+#: lib/delivest_web/live/staff/kitchen_live/index.ex:224
 #, elixir-autogen, elixir-format
 msgid "cooking %{minutes} min"
 msgstr ""
 
-#: lib/delivest_web/live/staff/kitchen_live/index.ex:232
+#: lib/delivest_web/live/staff/kitchen_live/index.ex:234
 #, elixir-autogen, elixir-format, fuzzy
 msgid "gift"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/kitchen_control.ex:52
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Kitchen offline"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/kitchen_control.ex:56
+#, elixir-autogen, elixir-format
+msgid "Kitchen offline %{minutes} min"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/kitchen_control.ex:51
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Kitchen online"
+msgstr ""
+
+#: lib/delivest_web/hooks/new_orders.ex:95
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Order #%{number} is ready"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/next_step.ex:18
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Send to the kitchen"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/kitchen_control.ex:37
+#, elixir-autogen, elixir-format
+msgid "The kitchen is late"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/order_clock.ex:89
+#, elixir-autogen, elixir-format
+msgid "in the kitchen %{minutes} min"
 msgstr ""

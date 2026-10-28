@@ -8,6 +8,7 @@ defmodule DelivestWeb.StaffHeader do
   attr :staff_branches, :list, default: []
   attr :current_path, :string, default: nil
   attr :new_orders_count, :integer, default: 0
+  attr :kitchen_status, :any, default: nil
 
   def staff_header(assigns) do
     ~H"""
@@ -33,6 +34,8 @@ defmodule DelivestWeb.StaffHeader do
       <div class="flex flex-1 justify-end sm:justify-center">
         <DelivestWeb.CommandPalette.command_palette_trigger />
       </div>
+
+      <DelivestWeb.KitchenControl.kitchen_indicator status={@kitchen_status} />
 
       <DelivestWeb.NewOrdersBell.new_orders_bell
         :if={@current_branch && can?(@current_staff, "orders.read")}

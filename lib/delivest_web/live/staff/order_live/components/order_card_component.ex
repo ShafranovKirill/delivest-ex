@@ -51,6 +51,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           {OrderHelpers.local_time(@order.inserted_at)}
         </span>
         <OrderClock.order_clock order={@order} status={@status} delivery_minutes={@delivery_minutes} />
+        <OrderClock.kitchen_clock
+          :if={@status == :preparing and @last != nil}
+          order={@order}
+          since={@last.inserted_at}
+        />
         <div class="ml-auto text-right leading-tight">
           <p class="font-mono font-bold text-base whitespace-nowrap">
             {OrderHelpers.money(@order.total_amount)}

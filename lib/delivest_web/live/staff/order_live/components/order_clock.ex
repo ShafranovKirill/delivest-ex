@@ -55,6 +55,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderClock do
           const { mode, at, text, lateText } = this.el.dataset
           const minutes = Math.round((Date.parse(at) - Date.now()) / 60000)
 
+          if (mode === "since") {
+            this.el.textContent = text.replace("%{minutes}", Math.max(0, -minutes))
+            return
+          }
+
           if (mode === "waiting") {
             const waited = Math.max(0, -minutes)
             this.el.dataset.tone = waited >= 7 ? "late" : waited >= 3 ? "warn" : "ok"
@@ -70,6 +75,22 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderClock do
   end
 
   def order_clock(assigns), do: ~H""
+
+  attr :order, :map, required: true
+  attr :since, DateTime, required: true
+
+  def kitchen_clock(assigns) do
+    ~H"""
+    <span
+      id={"order-kitchen-clock-#{@order.id}"}
+      phx-hook=".OrderClock"
+      data-mode="since"
+      data-at={DateTime.to_iso8601(@since)}
+      data-text={gettext("in the kitchen %{minutes} min", minutes: "%{minutes}")}
+      class="badge badge-sm badge-ghost tabular-nums"
+    ></span>
+    """
+  end
 
   defp clock_class do
     "badge badge-sm font-semibold tabular-nums border-0 " <>

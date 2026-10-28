@@ -6,18 +6,26 @@ defmodule DelivestWeb.Hooks.NewOrders do
 
   alias Delivest.Identity
   alias Delivest.Integrations.YandexEda
-  alias Delivest.Oms.Orders
+  alias Delivest.Oms.{Kitchen, Orders}
+  alias DelivestWeb.KitchenPresence
 
   @overdue_events ~w(overdue_keep overdue_confirm overdue_cancel)
+  @kitchen_tick :timer.minutes(1)
 
   def on_mount(:default, _params, _session, socket) do
     case watched_branch(socket) do
       nil ->
         {:cont,
-         assign(socket, new_orders_count: 0, overdue_orders: [], channel_cancelled_orders: [])}
+         assign(socket,
+           new_orders_count: 0,
+           overdue_orders: [],
+           channel_cancelled_orders: [],
+           kitchen_status: nil,
+           kitchen_late_orders: []
+         )}
 
       branch_id ->
-        if connected?(socket), do: Orders.subscribe_branch(branch_id)
+        if connected?(socket), do: watch(socket, branch_id)
 
         {:cont,
          socket
@@ -32,13 +40,40 @@ defmodule DelivestWeb.Hooks.NewOrders do
 
   defp watched_branch(_socket), do: nil
 
-  defp assign_counts(socket, branch_id),
-    do:
-      assign(socket,
-        new_orders_count: Orders.count_unconfirmed(branch_id),
-        overdue_orders: YandexEda.overdue_orders(branch_id),
-        channel_cancelled_orders: channel_cancelled(socket.assigns.current_staff, branch_id)
-      )
+  defp watch(socket, branch_id) do
+    Orders.subscribe_branch(branch_id)
+
+    if operator?(socket.assigns.current_staff, branch_id) do
+      Kitchen.subscribe(branch_id)
+      KitchenPresence.subscribe(branch_id)
+      Process.send_after(self(), :kitchen_tick, @kitchen_tick)
+    end
+  end
+
+  defp assign_counts(socket, branch_id) do
+    staff = socket.assigns.current_staff
+
+    socket
+    |> assign(
+      new_orders_count: Orders.count_unconfirmed(branch_id),
+      overdue_orders: YandexEda.overdue_orders(branch_id),
+      channel_cancelled_orders: channel_cancelled(staff, branch_id)
+    )
+    |> assign_kitchen(branch_id)
+  end
+
+  defp assign_kitchen(socket, branch_id) do
+    if operator?(socket.assigns.current_staff, branch_id) and Kitchen.working?(branch_id),
+      do:
+        assign(socket,
+          kitchen_status: KitchenPresence.status(branch_id),
+          kitchen_late_orders: Kitchen.list_late(branch_id)
+        ),
+      else: assign(socket, kitchen_status: nil, kitchen_late_orders: [])
+  end
+
+  defp operator?(staff, branch_id),
+    do: Identity.authorize(staff, "orders.update", branch_id) == :ok
 
   defp channel_cancelled(staff, branch_id) do
     if Identity.authorize(staff, "orders.update", branch_id) == :ok,
@@ -48,6 +83,23 @@ defmodule DelivestWeb.Hooks.NewOrders do
 
   defp handle_info({:branch_orders_changed, branch_id}, socket),
     do: {:halt, assign_counts(socket, branch_id)}
+
+  defp handle_info({:kitchen_presence, branch_id}, socket),
+    do: {:halt, assign_kitchen(socket, branch_id)}
+
+  defp handle_info({:kitchen_changed, _branch_id}, socket), do: {:halt, socket}
+
+  defp handle_info({:kitchen_order_ready, order}, socket) do
+    {:halt,
+     socket
+     |> put_flash(:info, gettext("Order #%{number} is ready", number: order.number))
+     |> push_event("kitchen:ready", %{number: order.number})}
+  end
+
+  defp handle_info(:kitchen_tick, socket) do
+    Process.send_after(self(), :kitchen_tick, @kitchen_tick)
+    {:halt, assign_kitchen(socket, socket.assigns.current_branch.id)}
+  end
 
   defp handle_info(_message, socket), do: {:cont, socket}
 
