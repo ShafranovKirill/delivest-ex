@@ -390,6 +390,33 @@ defmodule DelivestWeb.CoreComponents do
     """
   end
 
+  attr :count, :integer, required: true
+  attr :form, :string, required: true
+  attr :on_clear, :any, required: true
+  slot :inner_block, required: true
+
+  def selection_bar(assigns) do
+    ~H"""
+    <div :if={@count > 0} id={"#{@form}-bar"} class="sticky bottom-4 z-20 flex justify-center">
+      <div class="flex items-center gap-2 rounded-box border border-base-300 bg-base-100 py-2 pl-4 pr-2 shadow-lg">
+        <span class="whitespace-nowrap text-sm font-medium">
+          {gettext("Selected: %{count}", count: @count)}
+        </span>
+        {render_slot(@inner_block)}
+        <button
+          type="reset"
+          form={@form}
+          phx-click={@on_clear}
+          class="btn btn-ghost btn-sm btn-square"
+          title={gettext("Clear selection")}
+        >
+          <.icon name="hero-x-mark" class="size-4" />
+        </button>
+      </div>
+    </div>
+    """
+  end
+
   attr :class, :any, default: nil
   attr :rest, :global
   slot :inner_block, required: true

@@ -134,6 +134,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     {:noreply, assign(socket, selected_ids: Map.get(params, "ids", []))}
   end
 
+  def handle_event("clear_selection", _params, socket),
+    do: {:noreply, assign(socket, selected_ids: [])}
+
   def handle_event("open_copy", _params, socket), do: {:noreply, assign(socket, copy_open: true)}
 
   def handle_event("close_copy", _params, socket),
@@ -420,25 +423,12 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       >
         <:actions>
           <.button
-            :if={@selected_ids != [] and Identity.can?(@current_staff, "products.delete")}
-            phx-click="bulk_delete_click"
-            class="btn btn-outline btn-error"
-          >
-            <.icon name="hero-trash" class="size-5 mr-1" />
-            {gettext("Delete")}
-            <span class="badge badge-sm badge-error">{length(@selected_ids)}</span>
-          </.button>
-
-          <.button
             :if={Identity.can?(@current_staff, "products.create")}
             phx-click="open_copy"
             class="btn btn-outline"
           >
             <.icon name="hero-document-duplicate" class="size-5 mr-1" />
             {gettext("Copy to branch")}
-            <span :if={@selected_ids != []} class="badge badge-sm badge-primary">
-              {length(@selected_ids)}
-            </span>
           </.button>
 
           <.link
@@ -623,6 +613,29 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       <div class="flex justify-end">
         <.pagination meta={@meta} path_fn={path_fn} />
       </div>
+
+      <.selection_bar
+        count={length(@selected_ids)}
+        form="product-selection"
+        on_clear={JS.push("clear_selection")}
+      >
+        <.button
+          :if={Identity.can?(@current_staff, "products.create")}
+          phx-click="open_copy"
+          class="btn btn-ghost btn-sm"
+        >
+          <.icon name="hero-document-duplicate" class="size-4" />
+          {gettext("Copy")}
+        </.button>
+        <.button
+          :if={Identity.can?(@current_staff, "products.delete")}
+          phx-click="bulk_delete_click"
+          class="btn btn-ghost btn-sm text-error hover:bg-error/10"
+        >
+          <.icon name="hero-trash" class="size-4" />
+          {gettext("Delete")}
+        </.button>
+      </.selection_bar>
 
       <.live_component
         module={CopyComponent}
