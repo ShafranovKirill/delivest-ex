@@ -97,7 +97,7 @@ defmodule DelivestWeb.CommandPalette do
       export default {
         mounted() {
           this.onShortcut = (event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+            if ((event.metaKey || event.ctrlKey) && event.code === "KeyK") {
               event.preventDefault()
               this.open()
             }
