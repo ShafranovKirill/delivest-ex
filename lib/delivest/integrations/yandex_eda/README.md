@@ -160,7 +160,7 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 | `measureUnit` | да | `г` / `мл` (`g` / `ml` тоже можно) |
 | `description` | | `product.description` |
 | `vat` | | НДС в процентах, по умолчанию 0. У нас — настройка филиала «НДС в меню»: 0, 5, 7, 10, 22. 0 не отдаём |
-| `images` | | `[{hash, url}]`: SHA1 содержимого файла и публичная ссылка. Новый хэш — Яндекс перекачивает фото. Ответ по ссылке — сами байты, `Content-Type` `image/png`, `image/jpeg`, `image/jpg`, `image/webp` или `image/avif`, до 24 МиБ |
+| `images` | | `[{hash, url}]`: SHA1 ключа файла в хранилище и публичная ссылка. Ключ уникален для каждой загрузки, поэтому новое фото — новый хэш, и Яндекс его перекачивает. Ответ по ссылке — сами байты, `Content-Type` `image/png`, `image/jpeg`, `image/jpg`, `image/webp` или `image/avif`, до 24 МиБ |
 | `nutrients` | | КБЖУ на 100 г: `calories`, `proteins`, `fats`, `carbohydrates` — все четыре обязательны, если блок есть. Поля товара, отдаём только если заполнены все четыре |
 | `sortOrder` | | По возрастанию, по умолчанию 100 |
 | `shippingType` | | `delivery` или `pickup`; не указан — доступно для обоих |
