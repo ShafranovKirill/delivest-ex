@@ -29,8 +29,15 @@ defmodule Delivest.Couriers do
 
   def settings(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
-      {:ok, branch} -> if Crm.active_provider(branch), do: nil, else: branch_settings(branch)
+      {:ok, branch} -> branch_settings(branch)
       _error -> nil
+    end
+  end
+
+  def automatic?(branch_id) do
+    case Identity.get_branch(branch_id, preload: :info) do
+      {:ok, branch} -> is_nil(Crm.active_provider(branch))
+      _error -> false
     end
   end
 
@@ -296,6 +303,7 @@ defmodule Delivest.Couriers do
 
   defp auto_start(%Order{} = order) do
     with true <- eligible?(order),
+         true <- automatic?(order.branch_id),
          %CourierSettings{search: search, source: source} when search != :manual <-
            settings(order.branch_id),
          true <- @rank[order.status] >= @rank[search],

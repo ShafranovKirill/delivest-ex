@@ -77,12 +77,14 @@ defmodule Delivest.CouriersTest do
       assert {:error, :already_searching} = Couriers.find(operator, order)
     end
 
-    test "pickup orders and frontpad branches get no courier" do
+    test "pickup orders get no courier" do
       branch = branch()
       pickup = order(branch, fulfillment_type: :pickup)
       advance(pickup, [:accepted, :preparing], operator(branch))
       assert deliveries(pickup) == []
+    end
 
+    test "a frontpad branch searches only when the operator asks and only outside the crm" do
       frontpad = insert(:branch)
 
       Repo.insert!(%BranchInfo{
@@ -90,9 +92,19 @@ defmodule Delivest.CouriersTest do
         crm: %{enabled: true, provider: :frontpad, frontpad: %{api_key: "key"}}
       })
 
-      assert Couriers.settings(frontpad.id) == nil
-      order = order(frontpad, status: :accepted)
-      assert {:error, :not_available} = Couriers.find(operator(frontpad), order)
+      operator = operator(frontpad)
+      order = order(frontpad) |> advance([:accepted, :preparing], operator)
+      assert deliveries(order) == []
+
+      assert {:ok, %Delivery{status: :searching}} = Couriers.find(operator, Repo.reload!(order))
+
+      in_crm =
+        order(frontpad,
+          status: :accepted,
+          crm: %Order.CrmSync{provider: "frontpad", status: "sent"}
+        )
+
+      assert {:error, :not_available} = Couriers.find(operator, in_crm)
     end
   end
 

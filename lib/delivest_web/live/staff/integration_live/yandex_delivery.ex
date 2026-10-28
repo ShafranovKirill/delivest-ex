@@ -16,7 +16,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
      |> assign(
        page_title: gettext("Yandex Delivery"),
        can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update"),
-       couriers: Couriers.settings(branch_id)
+       couriers: Couriers.settings(branch_id),
+       automatic: Couriers.automatic?(branch_id)
      )
      |> assign_settings(YandexDelivery.settings(branch_id))}
   end
@@ -107,9 +108,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
         </span>
       </div>
 
-      <div :if={is_nil(@couriers)} id="yandex-delivery-crm" class="alert alert-info text-sm">
+      <div :if={not @automatic} id="yandex-delivery-crm" class="alert alert-info text-sm">
         <.icon name="hero-information-circle" class="size-5" />
-        <span>{gettext("The branch works through a CRM, the delivery stays in the CRM.")}</span>
+        <span>
+          {gettext(
+            "The branch works through a CRM, the courier is not searched automatically. For orders that did not go to the CRM the operator calls a courier with the Find a courier button."
+          )}
+        </span>
       </div>
 
       <.form

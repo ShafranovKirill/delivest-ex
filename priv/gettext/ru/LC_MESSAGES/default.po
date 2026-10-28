@@ -677,7 +677,7 @@ msgstr "Страница %{current} из %{total}"
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:89
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:51
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:52
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:190
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:36
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:36
@@ -835,7 +835,7 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:233
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:467
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:186
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:191
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:294
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:104
@@ -859,7 +859,7 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:232
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:86
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:466
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:185
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:190
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:293
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:67
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
@@ -1415,7 +1415,7 @@ msgid "Orders"
 msgstr "Заказы"
 
 #: lib/delivest_web/live/staff/client_live/clients.ex:298
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:145
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:150
 #: lib/delivest_web/live/staff/order_live/components/client_panel.ex:19
 #, elixir-autogen, elixir-format
 msgid "Phone"
@@ -2298,7 +2298,7 @@ msgstr "Основное"
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:95
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:92
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:54
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:55
 #, elixir-autogen, elixir-format
 msgid "Please check the highlighted fields"
 msgstr "Проверьте отмеченные поля"
@@ -3893,7 +3893,7 @@ msgstr "Реквизиты продавца"
 #: lib/delivest_web/live/staff/franchise_live/index.ex:42
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:83
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:42
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:43
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:61
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:75
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:30
@@ -4001,7 +4001,7 @@ msgstr "Получить товары"
 #: lib/delivest_web/live/staff/integration_live/index.ex:14
 #: lib/delivest_web/live/staff/integration_live/index.ex:49
 #: lib/delivest_web/live/staff/integration_live/routes.ex:70
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:84
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:85
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:211
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:55
 #, elixir-autogen, elixir-format
@@ -5373,7 +5373,7 @@ msgstr "Акциз"
 msgid "Fats"
 msgstr "Жиры"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:70
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:71
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:200
 #, elixir-autogen, elixir-format
 msgid "No VAT"
@@ -6474,22 +6474,22 @@ msgstr "%{number} доб. %{ext}"
 msgid "A Yandex courier for the delivery orders."
 msgstr "Курьер Яндекса на заказы с доставкой."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:90
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:91
 #, elixir-autogen, elixir-format
 msgid "A Yandex courier is called for the delivery orders of the branch. The search starts as set in the branch couriers."
 msgstr "На заказы филиала с доставкой вызывается курьер Яндекса. Поиск начинается, как задано в курьерах филиала."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:179
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:184
 #, elixir-autogen, elixir-format
 msgid "A Yandex courier takes payment by card only. A cash order switches to card to the courier when the courier is called."
 msgstr "Курьер Яндекса принимает оплату только картой. Заказ за наличные при вызове курьера переводится на «Картой курьеру»."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:146
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:151
 #, elixir-autogen, elixir-format
 msgid "Branch phone"
 msgstr "Телефон филиала"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:105
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:106
 #, elixir-autogen, elixir-format
 msgid "Branch settings"
 msgstr "Настройки филиала"
@@ -6499,27 +6499,27 @@ msgstr "Настройки филиала"
 msgid "Calls couriers"
 msgstr "Вызывает курьеров"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:174
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:179
 #, elixir-autogen, elixir-format
 msgid "Confirm the pickup and the handover with SMS codes"
 msgstr "Подтверждать получение и вручение кодом из СМС"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:138
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:143
 #, elixir-autogen, elixir-format
 msgid "Contact at the branch"
 msgstr "Контакт в филиале"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:66
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:67
 #, elixir-autogen, elixir-format
 msgid "Courier, up to 10 kg"
 msgstr "Курьер, до 10 кг"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:152
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:157
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr "Email"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:66
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:67
 #, elixir-autogen, elixir-format
 msgid "Express, up to 20 kg"
 msgstr "Экспресс, до 20 кг"
@@ -6529,17 +6529,17 @@ msgstr "Экспресс, до 20 кг"
 msgid "Looking for a Yandex courier"
 msgstr "Ищем курьера Яндекса"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:126
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:131
 #, elixir-autogen, elixir-format
 msgid "OAuth token"
 msgstr "OAuth-токен"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:131
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:136
 #, elixir-autogen, elixir-format
 msgid "Personal account dostavka.yandex.ru, the Integrations tab."
 msgstr "Личный кабинет dostavka.yandex.ru, вкладка «Интеграции»."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:127
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:132
 #, elixir-autogen, elixir-format
 msgid "Saved, enter a new one to replace it"
 msgstr "Сохранён, введите новый, чтобы заменить"
@@ -6554,20 +6554,15 @@ msgstr "Укажите адрес и координаты филиала, что
 msgid "Set the branch phone to call a Yandex courier"
 msgstr "Укажите телефон филиала, чтобы вызвать курьера Яндекса"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:158
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:163
 #, elixir-autogen, elixir-format
 msgid "Tariff"
 msgstr "Тариф"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:103
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:104
 #, elixir-autogen, elixir-format
 msgid "The branch uses its own couriers. Choose Yandex Delivery in the branch couriers."
 msgstr "Филиал работает со своими курьерами. Выберите Яндекс Доставку в курьерах филиала."
-
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:112
-#, elixir-autogen, elixir-format
-msgid "The branch works through a CRM, the delivery stays in the CRM."
-msgstr "Филиал работает через CRM, доставку ведёт CRM."
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:572
 #, elixir-autogen, elixir-format
@@ -6589,7 +6584,7 @@ msgstr "У заказа нет адреса доставки"
 msgid "Tracking"
 msgstr "Отслеживание"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:165
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:170
 #, elixir-autogen, elixir-format
 msgid "VAT for the payment to the courier"
 msgstr "НДС при оплате курьеру"
@@ -6601,7 +6596,7 @@ msgstr "Яндекс"
 
 #: lib/delivest_web/live/staff/integration_live/index.ex:104
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:17
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:88
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:89
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:659
 #, elixir-autogen, elixir-format
 msgid "Yandex Delivery"
@@ -6626,3 +6621,8 @@ msgstr "Яндекс Доставка не настроена для филиа�
 #, elixir-autogen, elixir-format
 msgid "Yandex Delivery refused: %{code}"
 msgstr "Яндекс Доставка отказала: %{code}"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:114
+#, elixir-autogen, elixir-format
+msgid "The branch works through a CRM, the courier is not searched automatically. For orders that did not go to the CRM the operator calls a courier with the Find a courier button."
+msgstr "Филиал работает через CRM, курьер автоматически не ищется. Для заказов, которые не ушли в CRM, оператор вызывает курьера кнопкой «Найти курьера»."
