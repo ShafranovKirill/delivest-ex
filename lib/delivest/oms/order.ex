@@ -67,6 +67,7 @@ defmodule Delivest.Oms.Order do
     embeds_one :address, Address, on_replace: :update
     has_many :items, OrderItem, on_delete: :delete_all, on_replace: :delete
     has_many :transitions, OrderTransition, preload_order: [asc: :id]
+    has_many :deliveries, Delivest.Couriers.Delivery, preload_order: [asc: :inserted_at]
 
     timestamps(type: :utc_datetime)
   end

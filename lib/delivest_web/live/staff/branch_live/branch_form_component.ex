@@ -141,8 +141,19 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
       {"branch-location", gettext("Location")},
       {"branch-schedule", gettext("Working Hours")},
       {"branch-kitchen", gettext("Kitchen")},
+      {"branch-couriers", gettext("Couriers")},
       {"branch-links", gettext("Social Links & Messengers")},
       {"branch-map", gettext("YCart Settings")}
+    ]
+  end
+
+  defp courier_sources, do: [{gettext("Own couriers"), :staff}]
+
+  defp courier_searches do
+    [
+      {gettext("Manually"), :manual},
+      {gettext("When cooking starts"), :preparing},
+      {gettext("When the order is ready"), :ready}
     ]
   end
 
@@ -220,6 +231,33 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                 type="number"
                 min="0"
                 label={gettext("Send to the kitchen, minutes before the time")}
+              />
+            </div>
+          </.inputs_for>
+        </.section>
+
+        <.section
+          id="branch-couriers"
+          title={gettext("Couriers")}
+          description={
+            gettext(
+              "Who delivers the orders and when the courier search starts. With Frontpad the delivery stays in Frontpad."
+            )
+          }
+        >
+          <.inputs_for :let={couriers} field={@form[:couriers]}>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <.input
+                field={couriers[:source]}
+                type="select"
+                label={gettext("Couriers")}
+                options={courier_sources()}
+              />
+              <.input
+                field={couriers[:search]}
+                type="select"
+                label={gettext("Find a courier")}
+                options={courier_searches()}
               />
             </div>
           </.inputs_for>

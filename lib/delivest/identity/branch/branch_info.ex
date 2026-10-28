@@ -1,7 +1,7 @@
 defmodule Delivest.Identity.Branch.BranchInfo do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.{KitchenSettings, YcartSettings}
+  alias Delivest.Identity.Branch.{CourierSettings, KitchenSettings, YcartSettings}
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Identity
 
@@ -27,6 +27,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     embeds_one :channels, Delivest.Integrations.Channels.BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update, defaults_to_struct: true
+    embeds_one :couriers, CourierSettings, on_replace: :update, defaults_to_struct: true
     belongs_to :branch, Delivest.Identity.Branch
 
     timestamps()
@@ -51,6 +52,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> cast_embed(:channels, with: &Delivest.Integrations.Channels.BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
+    |> cast_embed(:couriers, with: &CourierSettings.changeset/2)
     |> validate_required([:branch_id])
     |> validate_length(:city, max: 100)
     |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)

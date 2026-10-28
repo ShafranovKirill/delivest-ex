@@ -54,6 +54,9 @@ msgstr "Delete"
 msgid "cook"
 msgstr "Kitchen"
 
+msgid "deliver"
+msgstr "Deliver orders"
+
 msgid "revert"
 msgstr "Revert status"
 

@@ -52,6 +52,9 @@ msgstr ""
 msgid "cook"
 msgstr ""
 
+msgid "deliver"
+msgstr ""
+
 msgid "revert"
 msgstr ""
 

@@ -182,6 +182,31 @@ defmodule Delivest.Identity.BranchesTest do
       assert %{kitchen: %{lead_minutes: [_]}} = errors_on(changeset)
     end
 
+    test "courier settings default to own couriers found when cooking starts", %{admin: admin} do
+      assert {:ok, branch} =
+               Branches.create_branch(
+                 admin,
+                 %{name: "Courier Branch", slug: "courier-branch"},
+                 %{}
+               )
+
+      assert %{source: :staff, search: :preparing} = branch.info.couriers
+
+      assert {:ok, branch} =
+               Branches.create_branch(admin, %{name: "Manual Branch", slug: "manual-branch"}, %{
+                 couriers: %{search: "manual"}
+               })
+
+      assert %{source: :staff, search: :manual} = branch.info.couriers
+
+      assert {:error, :branch_info, changeset} =
+               Branches.create_branch(admin, %{name: "Bad Couriers", slug: "bad-couriers"}, %{
+                 couriers: %{search: "never"}
+               })
+
+      assert %{couriers: %{search: [_]}} = errors_on(changeset)
+    end
+
     test "should persist working hours in branch info", %{admin: admin} do
       attrs = %{name: "Schedule Branch", slug: "schedule-branch"}
 

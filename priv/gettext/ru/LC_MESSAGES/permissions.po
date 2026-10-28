@@ -54,6 +54,9 @@ msgstr "Удаление"
 msgid "cook"
 msgstr "Кухня"
 
+msgid "deliver"
+msgstr "Доставка заказов"
+
 msgid "revert"
 msgstr "Откат статуса"
 

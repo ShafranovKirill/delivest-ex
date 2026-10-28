@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.{KitchenSettings, YcartSettings}
+  alias Delivest.Identity.Branch.{CourierSettings, KitchenSettings, YcartSettings}
   alias Delivest.Identity
   alias Delivest.Repo
 
@@ -26,6 +26,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update
+    embeds_one :couriers, CourierSettings, on_replace: :update
   end
 
   def changeset(form, attrs) do
@@ -49,6 +50,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     ])
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
+    |> cast_embed(:couriers, with: &CourierSettings.changeset/2)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(
@@ -77,11 +79,17 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
       ycart_settings: (info && info.ycart_settings) || %YcartSettings{},
-      kitchen: (info && info.kitchen) || %KitchenSettings{}
+      kitchen: (info && info.kitchen) || %KitchenSettings{},
+      couriers: (info && info.couriers) || %CourierSettings{}
     }
   end
 
-  def new, do: %__MODULE__{ycart_settings: %YcartSettings{}, kitchen: %KitchenSettings{}}
+  def new,
+    do: %__MODULE__{
+      ycart_settings: %YcartSettings{},
+      kitchen: %KitchenSettings{},
+      couriers: %CourierSettings{}
+    }
 
   def for_branch(%{id: id} = branch) when not is_nil(id), do: from_branch(branch)
   def for_branch(_branch), do: new()
@@ -199,6 +207,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
       |> Map.put("ycart_settings", embed_params(data.ycart_settings))
       |> Map.put("kitchen", embed_params(data.kitchen))
+      |> Map.put("couriers", embed_params(data.couriers))
 
     {branch_params, info_params}
   end
