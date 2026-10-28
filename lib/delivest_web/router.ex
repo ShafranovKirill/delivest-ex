@@ -276,6 +276,17 @@ defmodule DelivestWeb.Router do
     end
 
     scope "/b/:branch_slug" do
+      live_session :kitchen,
+        layout: {DelivestWeb.Layouts, :kitchen},
+        on_mount: [
+          {DelivestWeb.Hooks.StaffAuth, :default},
+          {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+          {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.Permission, "orders.cook"}
+        ] do
+        live "/kitchen", KitchenLive.Index, :index
+      end
+
       live_session :staff_need_branch,
         layout: {DelivestWeb.Layouts, :staff_app},
         on_mount: [

@@ -16,6 +16,11 @@ defmodule Delivest.Oms.Kitchen do
 
   def undo_seconds, do: @undo_seconds
 
+  def account?(%Staff{} = staff),
+    do: Identity.can?(staff, "orders.cook") and not Identity.can?(staff, "orders.update")
+
+  def account?(_staff), do: false
+
   def subscribe(branch_id), do: Phoenix.PubSub.subscribe(Delivest.PubSub, topic(branch_id))
 
   def working(branch_id) do

@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.StaffSessionController do
   require Logger
 
   alias Delivest.{Audit, Identity}
+  alias DelivestWeb.KitchenSession
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"user" => %{"login" => login, "password" => password}}) do
@@ -13,6 +14,7 @@ defmodule DelivestWeb.Staff.StaffSessionController do
 
         conn
         |> put_session(:staff_id, account.id)
+        |> KitchenSession.remember(account)
         |> put_flash(:info, gettext("Successfully logged in!"))
         |> redirect(to: ~p"/staff")
 
@@ -31,6 +33,7 @@ defmodule DelivestWeb.Staff.StaffSessionController do
 
     conn
     |> clear_session()
+    |> KitchenSession.forget()
     |> put_flash(:info, gettext("Logged out successfully."))
     |> redirect(to: "/staff/auth/login")
   end

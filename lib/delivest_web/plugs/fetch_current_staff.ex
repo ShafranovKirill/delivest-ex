@@ -2,6 +2,7 @@ defmodule DelivestWeb.Plugs.FetchCurrentStaff do
   @behaviour Plug
   import Plug.Conn
   alias Delivest.Identity
+  alias DelivestWeb.KitchenSession
 
   @impl Plug
   def init(opts), do: opts
@@ -10,7 +11,10 @@ defmodule DelivestWeb.Plugs.FetchCurrentStaff do
   def call(conn, _opts) do
     case get_session(conn, :staff_id) do
       nil ->
-        assign(conn, :current_staff, nil)
+        case KitchenSession.restore(conn) do
+          {:ok, conn, staff} -> assign(conn, :current_staff, staff)
+          :error -> assign(conn, :current_staff, nil)
+        end
 
       staff_id ->
         case Identity.get_staff(staff_id, preload: [:role, :branches]) do

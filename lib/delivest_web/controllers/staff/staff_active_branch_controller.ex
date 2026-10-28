@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.StaffActiveBranchController do
   use DelivestWeb, :controller
 
   alias Delivest.Identity
+  alias Delivest.Oms.Kitchen
   alias DelivestWeb.Hooks.StaffActiveBranch
   alias DelivestWeb.StaffBranchPath
 
@@ -11,7 +12,7 @@ defmodule DelivestWeb.Staff.StaffActiveBranchController do
          {:ok, branch} <- StaffActiveBranch.accessible(staff, branch_id) do
       conn
       |> put_session(:active_branch_id, branch.id)
-      |> redirect(to: "/staff/b/#{branch.slug}" <> section(params["to"]))
+      |> redirect(to: "/staff/b/#{branch.slug}" <> section(params["to"], staff))
     else
       _ ->
         conn
@@ -20,5 +21,11 @@ defmodule DelivestWeb.Staff.StaffActiveBranchController do
     end
   end
 
-  defp section(to), do: if(StaffBranchPath.valid_section?(to), do: to, else: "/dashboard")
+  defp section(to, staff) do
+    cond do
+      StaffBranchPath.valid_section?(to) -> to
+      Kitchen.account?(staff) -> "/kitchen"
+      true -> "/dashboard"
+    end
+  end
 end

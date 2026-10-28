@@ -1,7 +1,7 @@
 const tones = (el) =>
   (el.dataset.tones || "660,880,660,880").split(",").map(Number).filter(Boolean);
 
-const ring = (frequencies) => {
+export const ring = (frequencies) => {
   if (localStorage.getItem("orders-sound") === "off") return;
   try {
     const audio = new AudioContext();

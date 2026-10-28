@@ -30,6 +30,7 @@ defmodule Delivest.Application do
       cache(:geo_cache, limit: 50_000),
       cache(:crm_cache),
       cache(:stop_cache),
+      DelivestWeb.KitchenPresence,
       DelivestWeb.Endpoint
     ]
 

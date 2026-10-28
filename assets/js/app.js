@@ -7,6 +7,7 @@ import Sortable from "sortablejs";
 import { LocationMap } from "./hooks/location_map";
 import { ZoneMap } from "./hooks/zone_map";
 import { Alarm } from "./hooks/alarm";
+import { KitchenScreen } from "./hooks/kitchen_screen";
 
 let Uploaders = {};
 
@@ -179,6 +180,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     LocationMap,
     ZoneMap,
     Alarm,
+    KitchenScreen,
   },
 });
 

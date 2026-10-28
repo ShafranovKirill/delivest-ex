@@ -180,7 +180,7 @@ msgstr "не совпадает с паролем"
 msgid "Access to this branch has been revoked."
 msgstr "Доступ к этому филиалу закрыт."
 
-#: lib/delivest_web/controllers/staff/staff_active_branch_controller.ex:18
+#: lib/delivest_web/controllers/staff/staff_active_branch_controller.ex:19
 #: lib/delivest_web/hooks/staff_active_branch.ex:32
 #, elixir-autogen, elixir-format
 msgid "Branch not found or access denied."
