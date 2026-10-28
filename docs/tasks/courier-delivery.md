@@ -105,6 +105,20 @@
 - Провайдер — behaviour с реестром по образцу `Crm.Provider`: `:staff` (свои курьеры), `:yandex` ([integrations/yandex_delivery](../../lib/delivest/integrations/yandex_delivery/README.md)).
 - Запуск поиска — по событию перехода заказа, неважно, сделал его повар или CRM.
 
+### Как сделано
+
+| Что | Как |
+|---|---|
+| Где | Контекст `Delivest.Couriers`, схема `Couriers.Delivery`, провайдеры в `Couriers.Registry` |
+| Настройки филиала | `branch_info.couriers`: `source` (`staff`, `yandex`), `search` (`manual`, `preparing`, `ready`) |
+| Автозапуск | Только если у заказа ещё не было попыток. Ручной режим и Frontpad — без автозапуска |
+| Одна активная попытка | Частичный уникальный индекс по `order_id` для `searching`, `assigned`, `picked_up` |
+| Причины закрытия | `refused`, `unassigned`, `reassigned`, `not_found`, `order_cancelled`, `order_completed`, `handed_over`, `provider_error` |
+| «Забрал», «Вручил» | Курьер двигает заказ с источником `courier`, попытка идёт следом за заказом. «Забрал» доступно, когда заказ готов |
+| Оператор сам | «Передать курьеру» без курьера закрывает поиск (`handed_over`). «Доставлен» закрывает попытку как `delivered` |
+| Страница курьера | `/staff/b/:slug/deliveries`. Аккаунт с `orders.deliver` без `orders.update` после входа попадает сразу туда |
+| Телефон клиента | Курьер видит только в своих заказах, в новых заявках — адрес и сумма |
+
 ## Роль курьера
 
 - Права: `orders.cook` (переходы кухни), `orders.deliver` (страница доставки), `orders.revert`. Роли собираются из прав.
