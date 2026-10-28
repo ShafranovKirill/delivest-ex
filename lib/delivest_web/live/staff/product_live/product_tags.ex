@@ -11,21 +11,25 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
   attr :current, :atom, required: true
 
   def tabs(assigns) do
+    assigns =
+      assign(assigns,
+        tabs: [
+          {:products, ~p"/staff/products", "hero-cube", gettext("Products")},
+          {:stops, ~p"/staff/products/stops", "hero-no-symbol", gettext("Stop list")},
+          {:tags, ~p"/staff/products/tags", "hero-tag", gettext("Tags")},
+          {:suggested, ~p"/staff/products/suggested", "hero-sparkles", gettext("Recommended")}
+        ]
+      )
+
     ~H"""
     <div role="tablist" class="tabs tabs-boxed w-fit max-w-full overflow-x-auto">
       <.link
-        navigate={~p"/staff/products"}
+        :for={{key, path, icon, label} <- @tabs}
+        navigate={path}
         role="tab"
-        class={["tab gap-2 whitespace-nowrap", @current == :products && "tab-active font-bold"]}
+        class={["tab gap-2 whitespace-nowrap", @current == key && "tab-active font-bold"]}
       >
-        <.icon name="hero-cube" class="size-4" /> {gettext("Products")}
-      </.link>
-      <.link
-        navigate={~p"/staff/products/tags"}
-        role="tab"
-        class={["tab gap-2 whitespace-nowrap", @current == :tags && "tab-active font-bold"]}
-      >
-        <.icon name="hero-tag" class="size-4" /> {gettext("Tags")}
+        <.icon name={icon} class="size-4" /> {label}
       </.link>
     </div>
     """

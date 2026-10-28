@@ -185,13 +185,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
     test "the stop list filter shows only stopped products", %{conn: conn, branch: branch} do
       soup = insert_branch_product(branch.id, name: "Soup")
-      insert_branch_product(branch.id, name: "Tea")
+      insert_branch_product(branch.id, name: "Kompot")
       {:ok, _} = Delivest.Net.Stops.replace_external(branch.id, :frontpad, [soup.id])
 
       {:ok, _lv, html} = live(conn, ~p"/staff/products?stopped=true")
 
       assert html =~ "Soup"
-      refute html =~ "Tea"
+      refute html =~ "Kompot"
       assert html =~ "Stop in Frontpad"
     end
   end
