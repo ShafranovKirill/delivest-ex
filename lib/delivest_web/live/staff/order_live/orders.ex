@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
-  alias Delivest.Identity
+  alias Delivest.{Couriers, Identity}
   alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias DelivestWeb.Staff.OrderLive.{OrdersQuery, StatusErrors}
@@ -21,7 +21,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   @impl true
   def mount(_params, _session, socket) do
     branch_id = socket.assigns.current_branch.id
-    if connected?(socket), do: Orders.subscribe(branch_id)
+
+    if connected?(socket) do
+      Orders.subscribe(branch_id)
+      Couriers.subscribe(branch_id)
+    end
 
     {:ok,
      socket
@@ -31,7 +35,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        order_to_revert: nil,
        shown_id: nil,
        shown_order: nil,
-       delivery_minutes: OrderDeadline.delivery_minutes(branch_id)
+       delivery_minutes: OrderDeadline.delivery_minutes(branch_id),
+       couriers: Couriers.list_couriers(branch_id)
      )
      |> stream(:orders, [])}
   end
@@ -110,6 +115,33 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     with {:ok, to} <- StatusErrors.parse_status(to),
          {:ok, order} <- fetch_branch_order(socket, id),
          {:ok, _order} <- Orders.advance_order(order, to, staff(socket)) do
+      load(socket)
+    else
+      error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("find_courier", %{"order-id" => id}, socket) do
+    with {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, _delivery} <- Couriers.find(socket.assigns.current_staff, order) do
+      load(socket)
+    else
+      error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("assign_courier", %{"order-id" => id, "courier_id" => courier_id}, socket) do
+    with {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, _delivery} <- Couriers.assign(socket.assigns.current_staff, order, courier_id) do
+      load(socket)
+    else
+      error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("unassign_courier", %{"order-id" => id}, socket) do
+    with {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, _delivery} <- Couriers.unassign(socket.assigns.current_staff, order) do
       load(socket)
     else
       error -> failed(socket, error)
@@ -226,6 +258,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   @impl true
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
+  def handle_info({:deliveries_changed, _branch_id}, socket), do: load(socket)
 
   defp courier_code_error(:forbidden), do: gettext("Permission denied")
   defp courier_code_error(:empty_code), do: gettext("Enter the courier code")
@@ -306,6 +339,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_staff={@current_staff}
           current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
+          couriers={@couriers}
         />
       </div>
 
@@ -325,6 +359,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_staff={@current_staff}
           current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
+          couriers={@couriers}
         />
       </.slide_over>
 

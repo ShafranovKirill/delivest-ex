@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
-  alias Delivest.Identity
+  alias Delivest.{Couriers, Identity}
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
   alias Delivest.Oms.OrderFlow
@@ -15,11 +15,13 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :current_staff, :map, required: true
   attr :current_branch, :map, required: true
   attr :delivery_minutes, :integer, required: true
+  attr :couriers, :list, default: []
 
   def render_card(assigns) do
     assigns =
       assign(assigns,
         status: assigns.order.status,
+        delivery: Couriers.current(assigns.order),
         history: history(assigns.order),
         last: last_transition(assigns.order)
       )
@@ -87,6 +89,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         />
         <.items order={@order} />
       </div>
+
+      <.courier_panel
+        :if={@delivery != nil or Couriers.assignable?(@order)}
+        order={@order}
+        delivery={@delivery}
+        couriers={@couriers}
+        can_manage={Identity.can?(@current_staff, "orders.update")}
+      />
 
       <p
         :if={@status == :cancelled and @order.cancel_reason}
@@ -430,6 +440,92 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     </button>
     """
   end
+
+  attr :order, :map, required: true
+  attr :delivery, :map, default: nil
+  attr :couriers, :list, default: []
+  attr :can_manage, :boolean, default: false
+
+  defp courier_panel(assigns) do
+    assigns =
+      assign(assigns,
+        assignable: assigns.can_manage and Couriers.assignable?(assigns.order),
+        courier_id: assigns.delivery && assigns.delivery.courier_id
+      )
+
+    ~H"""
+    <div
+      id={"order-delivery-panel-#{@order.id}"}
+      class="mx-3 sm:mx-4 mb-3 flex flex-wrap items-center gap-2 rounded-box border border-base-200 bg-base-200/40 px-3 py-2 text-sm"
+    >
+      <.icon name="hero-truck" class="size-4 text-base-content/50" />
+      <span
+        id={"order-delivery-state-#{@order.id}"}
+        class={["badge badge-sm font-medium", delivery_badge(@delivery)]}
+      >
+        {delivery_label(@delivery)}
+      </span>
+      <span :if={@delivery && @delivery.courier} class="font-medium">
+        {@delivery.courier.name || @delivery.courier.login}
+      </span>
+      <div :if={@assignable} class="ml-auto flex flex-wrap items-center gap-2">
+        <button
+          :if={is_nil(@delivery)}
+          type="button"
+          id={"order-find-courier-#{@order.id}"}
+          class="btn btn-xs btn-primary"
+          phx-click="find_courier"
+          phx-value-order-id={@order.id}
+        >
+          <.icon name="hero-magnifying-glass" class="size-3.5" /> {gettext("Find a courier")}
+        </button>
+        <form
+          :if={@couriers != [] and (is_nil(@delivery) or @delivery.status != :picked_up)}
+          id={"order-assign-courier-#{@order.id}"}
+          phx-change="assign_courier"
+          phx-value-order-id={@order.id}
+        >
+          <select
+            name="courier_id"
+            class="select select-xs select-bordered"
+            aria-label={gettext("Assign a courier")}
+          >
+            <option value="" disabled selected={is_nil(@courier_id)}>
+              {gettext("Assign a courier")}
+            </option>
+            <option
+              :for={courier <- @couriers}
+              value={courier.id}
+              selected={courier.id == @courier_id}
+            >
+              {courier.name || courier.login}
+            </option>
+          </select>
+        </form>
+        <button
+          :if={@delivery && @delivery.status == :assigned}
+          type="button"
+          id={"order-unassign-courier-#{@order.id}"}
+          class="btn btn-xs btn-ghost text-error hover:bg-error/10"
+          phx-click="unassign_courier"
+          phx-value-order-id={@order.id}
+        >
+          {gettext("Remove the courier")}
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  defp delivery_label(nil), do: gettext("No courier yet")
+  defp delivery_label(%{status: :searching}), do: gettext("Looking for a courier")
+  defp delivery_label(%{status: :assigned}), do: gettext("Courier assigned")
+  defp delivery_label(%{status: :picked_up}), do: gettext("Courier is on the way")
+
+  defp delivery_badge(nil), do: "badge-ghost"
+  defp delivery_badge(%{status: :searching}), do: "badge-warning"
+  defp delivery_badge(%{status: :assigned}), do: "badge-info"
+  defp delivery_badge(%{status: :picked_up}), do: "badge-success"
 
   attr :order, :map, required: true
 

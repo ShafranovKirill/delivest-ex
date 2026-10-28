@@ -23,7 +23,9 @@ defmodule Delivest.Oms.Orders do
            |> filtered()
            |> sorted(Filter.normalize_params(params))
            |> Flop.validate_and_run(page_params, for: Order) do
-      {:ok, {Repo.preload(orders, [:items, :client, transitions: [:staff]]), meta}}
+      {:ok,
+       {Repo.preload(orders, [:items, :client, transitions: [:staff], deliveries: [:courier]]),
+        meta}}
     end
   end
 
@@ -119,7 +121,7 @@ defmodule Delivest.Oms.Orders do
   def get_order(id) do
     Order
     |> Repo.get(id)
-    |> Repo.preload([:client, :items, transitions: [:staff]])
+    |> Repo.preload([:client, :items, transitions: [:staff], deliveries: [:courier]])
   end
 
   def cancel_order(%Order{} = order, by, attrs) do
