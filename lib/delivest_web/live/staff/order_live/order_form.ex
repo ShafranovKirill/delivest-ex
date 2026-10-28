@@ -257,7 +257,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       </div>
 
       <div class={[
-        "w-full lg:w-7/12 xl:w-8/12 flex flex-col bg-base-100 rounded-box border border-base-200 lg:overflow-hidden shadow-sm",
+        "w-full lg:w-7/12 xl:w-8/12 flex flex-col bg-base-100 rounded-box border border-base-300 lg:overflow-hidden shadow-sm",
         @active_tab != :cart && "hidden lg:flex"
       ]}>
         <CatalogComponent.render_catalog
@@ -270,7 +270,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       </div>
 
       <div class={[
-        "w-full lg:w-5/12 xl:w-4/12 flex flex-col bg-base-100 rounded-box border border-base-200 lg:overflow-hidden shadow-sm",
+        "w-full lg:w-5/12 xl:w-4/12 flex flex-col bg-base-100 rounded-box border border-base-300 lg:overflow-hidden shadow-sm",
         @active_tab != :details && "hidden lg:flex"
       ]}>
         <div class="flex-1 lg:overflow-y-auto p-3 lg:p-4">

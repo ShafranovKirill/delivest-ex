@@ -144,7 +144,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
             branch_id={@active_branch_id}
             current_staff={@current_staff}
           />
-          <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-3">
+          <.card class="p-4 space-y-3">
             <h2 class="font-bold">{gettext("Favourite products")}</h2>
             <ul :if={@summary.favourites != []} class="space-y-2">
               <li
@@ -170,10 +170,10 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                 <dd>{OrderHelpers.local_datetime(@summary.first_order_at)}</dd>
               </div>
             </dl>
-          </div>
+          </.card>
         </div>
 
-        <div class="lg:col-span-2 bg-base-100 rounded-box border border-base-200 shadow-sm">
+        <.card class="lg:col-span-2">
           <div class="p-4 border-b border-base-200 flex items-center justify-between">
             <h2 class="font-bold">{gettext("Order history")}</h2>
             <span class="text-xs text-base-content/50">{gettext("Last 50 orders")}</span>
@@ -183,9 +183,10 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
             {gettext("You don't have permission to view orders.")}
           </p>
 
-          <p :if={@can_see_orders and @orders == []} class="p-6 text-sm text-base-content/60">
-            {gettext("The client has no orders yet.")}
-          </p>
+          <.empty_state
+            :if={@can_see_orders and @orders == []}
+            title={gettext("The client has no orders yet.")}
+          />
 
           <ul :if={@orders != []} class="divide-y divide-base-200">
             <li :for={order <- @orders} id={"client-order-#{order.id}"}>
@@ -271,7 +272,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
               </p>
             </li>
           </ul>
-        </div>
+        </.card>
       </div>
     </div>
     """

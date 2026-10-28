@@ -699,7 +699,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         />
       </form>
 
-      <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+      <.card class="overflow-x-auto">
         <table id="frontpad-products" class="table">
           <thead>
             <tr>
@@ -719,7 +719,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             </tr>
           </tbody>
         </table>
-      </div>
+      </.card>
     </div>
     """
   end

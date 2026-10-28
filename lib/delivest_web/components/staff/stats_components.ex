@@ -14,7 +14,7 @@ defmodule DelivestWeb.Staff.StatsComponents do
   def stat_card(assigns) do
     ~H"""
     <div class={[
-      "bg-base-100 rounded-box border border-base-200 shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row items-start gap-2 sm:gap-3",
+      "bg-base-100 rounded-box border border-base-300 p-3 sm:p-4 flex flex-col sm:flex-row items-start gap-2 sm:gap-3",
       @class
     ]}>
       <div class="bg-primary/10 text-primary rounded-field p-2 shrink-0">

@@ -54,7 +54,7 @@ defmodule DelivestWeb.Staff.ProductLive.BranchProducts do
 
     ~H"""
     <div id={@id} class="space-y-4">
-      <p :if={@products == []} class="py-10 text-center text-base-content/60">{@empty}</p>
+      <.empty_state :if={@products == []} title={@empty} />
 
       <section
         :for={{category, products} <- Enum.sort_by(@groups, &elem(&1, 0))}

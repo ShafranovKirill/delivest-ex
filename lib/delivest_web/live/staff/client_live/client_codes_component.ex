@@ -50,7 +50,7 @@ defmodule DelivestWeb.Staff.ClientLive.ClientCodesComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-3">
+    <div class="bg-base-100 rounded-box border border-base-300 p-4 space-y-3">
       <h2 class="font-bold">{gettext("Personal promo codes")}</h2>
 
       <p :if={@promotions == []} class="text-sm text-base-content/60">

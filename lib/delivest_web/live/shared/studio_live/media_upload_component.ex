@@ -119,7 +119,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
           <form id="upload-form" phx-submit="save" phx-change="validate" phx-target={@myself}>
             <div
               class={[
-                "relative border-2 border-dashed rounded-sm transition-all duration-200 group flex flex-col items-center justify-center p-10 text-center",
+                "relative border-2 border-dashed rounded-box transition-all duration-200 group flex flex-col items-center justify-center p-10 text-center",
                 if(has_entries,
                   do: "hidden",
                   else: "border-base-300 hover:border-primary/50 hover:bg-base-200/50 bg-base-100"
@@ -131,7 +131,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
                 upload={@uploads.media}
                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
-              <div class="flex items-center justify-center w-16 h-16 bg-primary/10 border border-primary/20 text-primary rounded-sm mb-4 group-hover:scale-105 transition-transform">
+              <div class="flex items-center justify-center w-16 h-16 bg-primary/10 border border-primary/20 text-primary rounded-field mb-4 group-hover:scale-105 transition-transform">
                 <.icon name="hero-cloud-arrow-up" class="size-8" />
               </div>
               <h4 class="font-black text-lg text-base-content mb-1">
@@ -143,11 +143,11 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
             <div :if={has_entries} class="space-y-3 max-h-64 overflow-y-auto">
               <div
                 :for={entry <- @uploads.media.entries}
-                class="flex flex-col gap-3 p-4 bg-base-200/50 rounded-sm border border-base-300"
+                class="flex flex-col gap-3 p-4 bg-base-200/50 rounded-field border border-base-300"
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3 min-w-0">
-                    <div class="p-2 bg-base-100 rounded-sm border border-base-200 text-base-content/50 shrink-0">
+                    <div class="p-2 bg-base-100 rounded-field border border-base-200 text-base-content/50 shrink-0">
                       <.icon name="hero-photo" class="size-5" />
                     </div>
                     <div class="truncate">
@@ -177,7 +177,7 @@ defmodule DelivestWeb.StudioLive.MediaUploadComponent do
                   </div>
                 </div>
 
-                <div class="w-full bg-base-300 rounded-sm h-2 overflow-hidden">
+                <div class="w-full bg-base-300 rounded-field h-2 overflow-hidden">
                   <div
                     class={[
                       "h-full transition-all duration-300",

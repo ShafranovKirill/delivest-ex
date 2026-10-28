@@ -287,10 +287,10 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
         phx-submit="save"
         class="space-y-4"
       >
-        <div
+        <.card
           id="bulk-table"
           phx-hook="BulkPaste"
-          class="overflow-x-auto rounded-box border border-base-300 bg-base-100"
+          class="overflow-x-auto"
         >
           <table class="table table-sm">
             <thead>
@@ -343,7 +343,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
               </tr>
             </tbody>
           </table>
-        </div>
+        </.card>
 
         <div class="flex flex-wrap items-center gap-2">
           <button
@@ -390,10 +390,10 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
     <div class="flex justify-center">
       <.live_file_input upload={@upload} class="hidden" />
       <div :if={@entry} class="relative size-12">
-        <.live_img_preview entry={@entry} class="size-12 rounded-lg object-cover" />
+        <.live_img_preview entry={@entry} class="size-12 rounded-field object-cover" />
         <div
           :if={!@entry.done?}
-          class="absolute inset-0 rounded-lg bg-base-100/70 flex items-center justify-center text-xs font-bold"
+          class="absolute inset-0 rounded-field bg-base-100/70 flex items-center justify-center text-xs font-bold"
         >
           {@entry.progress}%
         </div>
@@ -418,7 +418,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
       <label
         :if={!@entry}
         for={@upload.ref}
-        class="size-12 rounded-lg border-2 border-dashed border-base-300 flex items-center justify-center cursor-pointer text-base-content/40 hover:border-primary hover:text-primary transition-colors"
+        class="size-12 rounded-field border-2 border-dashed border-base-300 flex items-center justify-center cursor-pointer text-base-content/40 hover:border-primary hover:text-primary transition-colors"
         title={gettext("Upload photo")}
       >
         <.icon name="hero-camera" class="size-5" />

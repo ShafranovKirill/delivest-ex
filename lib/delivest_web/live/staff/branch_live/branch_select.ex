@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
           :for={branch <- @branches}
           href={~p"/staff/branches/select/#{branch.id}?#{%{to: @to}}"}
           method="get"
-          class="block p-6 rounded-2xl border border-base-300 bg-base-100 shadow-sm hover:border-base-content/30 hover:shadow-md transition-all group"
+          class="block p-6 rounded-box border border-base-300 bg-base-100 shadow-sm hover:border-base-content/30 hover:shadow-md transition-all group"
         >
           <h2 class="text-lg font-semibold tracking-tight text-base-content group-hover:text-primary transition-colors">
             {branch.name}
@@ -37,7 +37,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
 
       <div
         :if={@branches == []}
-        class="mt-6 p-6 rounded-2xl border border-base-300 bg-base-100 shadow-sm"
+        class="mt-6 p-6 rounded-box border border-base-300 bg-base-100 shadow-sm"
       >
         <p class="text-sm text-base-content/70">
           {gettext(

@@ -16,7 +16,7 @@ defmodule DelivestWeb.OverdueOrdersAlert do
       phx-hook=".OverdueAlarm"
       data-count={length(@orders)}
     >
-      <div class="modal-box max-w-lg rounded-sm border border-error/40">
+      <div class="modal-box max-w-lg border border-error/40">
         <h3 class="flex items-center gap-2 text-lg font-bold text-error">
           <.icon name="hero-bell-alert" class="size-6" />
           {gettext("Orders are not confirmed in time")}

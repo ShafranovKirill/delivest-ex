@@ -59,10 +59,10 @@ defmodule DelivestWeb.StaffHeader do
       <div
         tabindex="0"
         role="button"
-        class="flex items-center gap-3 cursor-pointer py-1 px-1 sm:px-2 rounded-xl hover:bg-base-200 transition-colors"
+        class="flex items-center gap-3 cursor-pointer py-1 px-1 sm:px-2 rounded-field hover:bg-base-200 transition-colors"
       >
         <div class="avatar placeholder">
-          <div class="bg-primary text-primary-content rounded-xl w-10 h-10 flex items-center justify-center font-bold text-sm">
+          <div class="bg-primary text-primary-content rounded-field w-10 h-10 flex items-center justify-center font-bold text-sm">
             <span>{initial}</span>
           </div>
         </div>
@@ -147,7 +147,7 @@ defmodule DelivestWeb.StaffHeader do
       <div
         tabindex="0"
         role="button"
-        class="flex items-center gap-2 h-10 cursor-pointer border border-base-300 py-1.5 px-2.5 sm:px-3 rounded-xl hover:bg-base-200 transition-colors min-w-0"
+        class="flex items-center gap-2 h-10 cursor-pointer border border-base-300 py-1.5 px-2.5 sm:px-3 rounded-field hover:bg-base-200 transition-colors min-w-0"
       >
         <.icon name="hero-building-storefront" class="h-4 w-4 text-base-content/70 shrink-0" />
         <span

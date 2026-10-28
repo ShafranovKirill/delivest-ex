@@ -11,13 +11,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
 
   def render_items(assigns) do
     ~H"""
-    <div
+    <.empty_state
       :if={@cart.items == []}
-      class="h-64 flex flex-col items-center justify-center text-base-content/40 space-y-2"
-    >
-      <.icon name="hero-shopping-cart" class="size-12 stroke-1" />
-      <p class="text-sm font-medium">{gettext("Cart is empty")}</p>
-    </div>
+      icon="hero-shopping-cart"
+      title={gettext("Cart is empty")}
+      class="h-64"
+    />
 
     <div :if={@cart.items != []}>
       <div class="flex justify-between items-center mb-3 pb-2 border-b border-base-200">

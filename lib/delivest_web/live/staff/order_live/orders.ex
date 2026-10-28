@@ -257,22 +257,18 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </:actions>
       </.page_header>
 
-      <div class="bg-base-100 p-3 sm:p-4 rounded-box border border-base-200 shadow-sm space-y-3">
+      <.card class="p-3 sm:p-4 space-y-3">
         <StatusTabs.status_tabs
           counts={@counts}
           selected={@selected.status}
           path_fn={&tab_path(@current_branch, @query, &1)}
         />
         <OrdersToolbar.orders_toolbar selected={@selected} />
-      </div>
+      </.card>
 
       <div id="orders" phx-update="stream" class="space-y-3">
-        <div
-          id="orders-empty"
-          class="hidden only:flex flex-col items-center gap-2 py-16 text-base-content/40"
-        >
-          <.icon name="hero-inbox" class="size-12 stroke-1" />
-          <p class="text-sm">{gettext("No orders here yet")}</p>
+        <div id="orders-empty" class="hidden only:block">
+          <.empty_state title={gettext("No orders here yet")} class="py-16" />
         </div>
         <OrderCardComponent.render_card
           :for={{id, order} <- @streams.orders}

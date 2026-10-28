@@ -209,7 +209,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-4">
+          <.card class="p-4 space-y-4">
             <h2 class="font-bold">{gettext("Revenue by day")}</h2>
             <.bar_chart
               rows={@daily}
@@ -220,9 +220,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               }
               label_every={label_every(@daily)}
             />
-          </div>
+          </.card>
 
-          <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-4">
+          <.card class="p-4 space-y-4">
             <h2 class="font-bold">{gettext("Orders by hour")}</h2>
             <.bar_chart
               rows={@hourly}
@@ -233,7 +233,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               }
               label_every={2}
             />
-          </div>
+          </.card>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -244,7 +244,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
                 {:payment_method, gettext("By payment method"), @by_payment}
               ]
             }
-            class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-3"
+            class="bg-base-100 rounded-box border border-base-300 p-4 space-y-3"
           >
             <h2 class="font-bold">{title}</h2>
             <p :if={rows == []} class="text-sm text-base-content/50">{gettext("No sales")}</p>
@@ -262,7 +262,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       <% end %>
 
       <%= if @tab == "products" do %>
-        <div class="bg-base-100 rounded-box border border-base-200 shadow-sm overflow-x-auto">
+        <.card class="overflow-x-auto">
           <div class="p-4 flex items-center justify-between gap-3 border-b border-base-200">
             <h2 class="font-bold">{gettext("Products sold")}</h2>
             <div class="join">
@@ -310,11 +310,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               </tr>
             </tbody>
           </table>
-        </div>
+        </.card>
       <% end %>
 
       <%= if @tab == "categories" do %>
-        <div class="bg-base-100 rounded-box border border-base-200 shadow-sm overflow-x-auto">
+        <.card class="overflow-x-auto">
           <table class="table table-sm">
             <thead>
               <tr>
@@ -342,7 +342,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               </tr>
             </tbody>
           </table>
-        </div>
+        </.card>
       <% end %>
     </div>
     """

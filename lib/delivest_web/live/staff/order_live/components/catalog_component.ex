@@ -103,10 +103,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
         <% products = filtered_products(@categories, @selected_category_id, @search_query) %>
 
         <%= if Enum.empty?(products) do %>
-          <div class="h-64 lg:h-full flex flex-col items-center justify-center text-base-content/40 space-y-2">
-            <.icon name="hero-inbox" class="size-12 stroke-1" />
-            <p class="text-sm">{gettext("No products found")}</p>
-          </div>
+          <.empty_state title={gettext("No products found")} class="h-64 lg:h-full" />
         <% else %>
           <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
             <%= for prod <- products do %>
@@ -192,7 +189,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
               </div>
 
               <%= for item <- @cart.items do %>
-                <div class="flex items-center justify-between p-2 rounded-lg bg-base-200/60 text-xs">
+                <div class="flex items-center justify-between p-2 rounded-field bg-base-200/60 text-xs">
                   <div class="flex-1 truncate pr-2">
                     <p class="font-medium truncate">{item.name}</p>
                     <p :if={Map.get(item, :gift)} class="text-success font-medium">

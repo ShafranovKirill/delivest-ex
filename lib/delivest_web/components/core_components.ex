@@ -355,6 +355,40 @@ defmodule DelivestWeb.CoreComponents do
     """
   end
 
+  attr :icon, :string, default: "hero-inbox"
+  attr :title, :string, required: true
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block
+
+  def empty_state(assigns) do
+    ~H"""
+    <div
+      class={[
+        "flex flex-col items-center justify-center gap-2 py-12 text-center text-base-content/50",
+        @class
+      ]}
+      {@rest}
+    >
+      <.icon name={@icon} class="size-10 stroke-1" />
+      <p class="text-sm font-medium">{@title}</p>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  def card(assigns) do
+    ~H"""
+    <div class={["rounded-box border border-base-300 bg-base-100", @class]} {@rest}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
   @doc """
   Renders a table with generic styling.
 
@@ -391,7 +425,7 @@ defmodule DelivestWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-x-auto overflow-y-visible sm:border sm:border-base-300 rounded-sm">
+    <div class="overflow-x-auto overflow-y-visible sm:border sm:border-base-300 rounded-box">
       <table class="table table-zebra table-sm max-sm:block">
         <thead class="max-sm:hidden">
           <tr>
@@ -562,7 +596,7 @@ defmodule DelivestWeb.CoreComponents do
       phx-window-keydown={@show && @on_cancel}
       phx-key="escape"
     >
-      <div class="modal-box rounded-sm border border-base-300">
+      <div class="modal-box border border-base-300">
         <h3 :if={@title} class="font-bold text-lg">{@title}</h3>
         <p :if={@description} class="py-4 text-base-content/70">{@description}</p>
 

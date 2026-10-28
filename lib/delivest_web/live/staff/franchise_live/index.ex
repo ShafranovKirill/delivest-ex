@@ -91,7 +91,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
         current_staff={@current_staff}
       />
 
-      <section class="p-5 bg-base-100 rounded-box border border-base-200 shadow-sm space-y-3">
+      <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-3">
         <div>
           <h2 class="font-bold text-lg">{gettext("Legal documents")}</h2>
           <p class="text-sm text-base-content/60">

@@ -208,7 +208,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
       <div id="categories-list" phx-hook="SortableCategories" class="space-y-2">
         <%= for category <- @categories do %>
           <div
-            class="flex items-center justify-between p-4 bg-base-100 shadow rounded-lg border border-base-200 cursor-default"
+            class="flex items-center justify-between p-4 bg-base-100 rounded-box border border-base-300 cursor-default"
             data-id={category.id}
             data-order={category.order}
           >
@@ -294,7 +294,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
           <div
             :for={product <- @ordering_products}
             id={"ordered-product-#{product.id}"}
-            class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-base-200"
+            class="flex items-center gap-3 p-3 bg-base-100 rounded-box border border-base-300"
             data-id={product.id}
             data-order={product.order}
           >

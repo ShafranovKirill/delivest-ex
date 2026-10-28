@@ -121,13 +121,13 @@ defmodule DelivestWeb.Staff.RoleLive.RoleFormComponent do
           <div class="space-y-6">
             <input type="hidden" name="role[permissions][]" value="" />
 
-            <div :for={{group, perms} <- @grouped_permissions} class="bg-base-200/50 p-4 rounded-lg">
+            <div :for={{group, perms} <- @grouped_permissions} class="bg-base-200/50 p-4 rounded-box">
               <div class="text-xs font-bold text-base-content/50 uppercase mb-3">
                 {Gettext.dgettext(DelivestWeb.Gettext, "permissions", group)}
               </div>
 
               <div class="grid grid-cols-1 gap-3">
-                <div :for={perm <- perms} class="flex items-center justify-between p-1 rounded-md">
+                <div :for={perm <- perms} class="flex items-center justify-between p-1 rounded-field">
                   <label class="label cursor-pointer justify-start gap-3">
                     <input
                       type="checkbox"

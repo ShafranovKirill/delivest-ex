@@ -174,9 +174,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
       </div>
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div
+        <.card
           :if={@can_orders}
-          class="xl:col-span-2 bg-base-100 rounded-box border border-base-200 shadow-sm"
+          class="xl:col-span-2"
         >
           <div class="p-4 border-b border-base-200 flex flex-wrap items-center justify-between gap-3">
             <h2 class="font-bold">{gettext("Latest orders")}</h2>
@@ -191,9 +191,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             </div>
           </div>
 
-          <p :if={@latest_orders == []} class="p-8 text-center text-sm text-base-content/50">
-            {gettext("No orders yet today")}
-          </p>
+          <.empty_state :if={@latest_orders == []} title={gettext("No orders yet today")} />
 
           <ul :if={@latest_orders != []} class="divide-y divide-base-200">
             <li
@@ -239,10 +237,10 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
               </div>
             </li>
           </ul>
-        </div>
+        </.card>
 
         <div :if={@can_stats} class="space-y-6">
-          <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-3">
+          <.card class="p-4 space-y-3">
             <h2 class="font-bold">{gettext("Best sellers today")}</h2>
             <p :if={@top_products == []} class="text-sm text-base-content/50">
               {gettext("No sales yet today")}
@@ -256,9 +254,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
               </div>
               <.share_bar value={row.share} />
             </div>
-          </div>
+          </.card>
 
-          <div class="bg-base-100 rounded-box border border-base-200 shadow-sm p-4 space-y-3">
+          <.card class="p-4 space-y-3">
             <h2 class="font-bold">{gettext("Orders by hour")}</h2>
             <.bar_chart
               rows={@hourly}
@@ -268,16 +266,16 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
               height="h-28"
               label_every={3}
             />
-          </div>
+          </.card>
         </div>
       </div>
 
-      <div
+      <.card
         :if={!@can_stats and !@can_orders}
-        class="bg-base-100 rounded-box border border-base-200 shadow-sm p-8 text-center text-base-content/60"
+        class="p-8 text-center text-base-content/60"
       >
         {gettext("Welcome! Use the menu on the left to get started.")}
-      </div>
+      </.card>
     </div>
     """
   end

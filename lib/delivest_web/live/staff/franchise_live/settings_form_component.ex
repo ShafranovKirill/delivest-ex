@@ -77,7 +77,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         phx-submit="save"
         class="space-y-6"
       >
-        <section class="p-5 bg-base-100 rounded-box border border-base-200 shadow-sm space-y-4">
+        <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4">
           <h2 class="font-bold text-lg">{gettext("Brand")}</h2>
           <.input field={@form[:name]} type="text" label={gettext("Name")} maxlength="60" />
           <.input
@@ -96,7 +96,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
                 name="settings[primary_color]"
                 id="franchise-color"
                 value={@color}
-                class="h-10 w-16 cursor-pointer rounded-lg border border-base-300 bg-base-100 p-1"
+                class="h-10 w-16 cursor-pointer rounded-field border border-base-300 bg-base-100 p-1"
               />
               <span class="font-mono text-sm uppercase">{@color}</span>
               <span
@@ -145,7 +145,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
                 name="settings[dark_primary_color]"
                 id="franchise-dark-color-input"
                 value={@dark_color}
-                class="h-10 w-16 cursor-pointer rounded-lg border border-base-300 bg-base-100 p-1"
+                class="h-10 w-16 cursor-pointer rounded-field border border-base-300 bg-base-100 p-1"
               />
               <span class="font-mono text-sm uppercase">{@dark_color}</span>
               <span
@@ -186,7 +186,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           </div>
         </section>
 
-        <section class="p-5 bg-base-100 rounded-box border border-base-200 shadow-sm space-y-4">
+        <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4">
           <div>
             <h2 class="font-bold text-lg">{gettext("Seller details")}</h2>
             <p class="text-sm text-base-content/60">

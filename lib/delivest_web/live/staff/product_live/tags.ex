@@ -201,7 +201,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
             <div class="grid grid-cols-8 gap-1.5">
               <label
                 :for={icon <- TagIcons.names()}
-                class="grid aspect-square place-items-center rounded-lg border border-base-300 cursor-pointer has-checked:border-primary has-checked:bg-primary/10 has-checked:ring-1 has-checked:ring-primary"
+                class="grid aspect-square place-items-center rounded-field border border-base-300 cursor-pointer has-checked:border-primary has-checked:bg-primary/10 has-checked:ring-1 has-checked:ring-primary"
                 title={icon}
               >
                 <input

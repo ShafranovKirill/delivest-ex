@@ -216,7 +216,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
       <div id="stocks-list" phx-hook="SortableStocks" class="space-y-3">
         <%= for stock <- @stocks do %>
           <div
-            class="flex items-center justify-between p-3 bg-base-100 shadow rounded-xl border border-base-200 cursor-default"
+            class="flex items-center justify-between p-3 bg-base-100 rounded-box border border-base-300 cursor-default"
             data-id={stock.id}
             data-order={stock.order}
           >
@@ -225,7 +225,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
                 <.icon name="hero-bars-3" class="w-5 h-5" />
               </span>
 
-              <div class="w-16 h-12 rounded-lg bg-base-200 overflow-hidden shrink-0 border border-base-300 flex items-center justify-center">
+              <div class="w-16 h-12 rounded-field bg-base-200 overflow-hidden shrink-0 border border-base-300 flex items-center justify-center">
                 <%= if stock.media do %>
                   <img
                     src={Delivest.Media.thumb_url_from_file(stock.media)}

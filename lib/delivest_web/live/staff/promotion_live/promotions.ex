@@ -232,7 +232,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         <div
           :for={promotion <- @promotions}
           id={"promotion-#{promotion.id}"}
-          class="p-4 bg-base-100 rounded-box border border-base-200 shadow-sm flex flex-col sm:flex-row sm:items-center gap-3"
+          class="p-4 bg-base-100 rounded-box border border-base-300 flex flex-col sm:flex-row sm:items-center gap-3"
         >
           <div class="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <.icon name={PromotionHelpers.kind_icon(promotion.kind)} class="size-5" />

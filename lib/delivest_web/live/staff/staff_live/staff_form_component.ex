@@ -211,7 +211,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
                   id in current_values or to_string(id) in Enum.map(current_values, &to_string/1) %>
 
                 <label class={[
-                  "label cursor-pointer justify-start gap-3 p-2.5 rounded-lg transition-all border",
+                  "label cursor-pointer justify-start gap-3 p-2.5 rounded-field transition-all border",
                   checked && "bg-primary/5 border-primary/20",
                   !checked && "border-transparent hover:bg-base-200/50"
                 ]}>
