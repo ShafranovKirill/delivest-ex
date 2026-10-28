@@ -173,9 +173,13 @@ defmodule Delivest.Couriers do
   end
 
   defp put_details(delivery, details) do
-    delivery
-    |> Delivery.provider_changeset(%{details: Map.merge(delivery.details, details)})
-    |> Repo.update!()
+    merged = Map.merge(delivery.details, details)
+    updated = delivery |> Delivery.provider_changeset(%{details: merged}) |> Repo.update!()
+
+    if Map.delete(merged, "synced_at") != Map.delete(delivery.details, "synced_at"),
+      do: broadcast({:ok, updated}, updated.branch_id)
+
+    updated
   end
 
   defp reported(%Delivery{status: :searching} = delivery, state)
@@ -217,7 +221,7 @@ defmodule Delivest.Couriers do
   defp reported(%Delivery{} = delivery, :cancelled),
     do: close(delivery, :cancelled, :provider_cancelled)
 
-  defp reported(%Delivery{} = delivery, _state), do: changed({:ok, delivery})
+  defp reported(%Delivery{} = delivery, _state), do: {:ok, delivery}
 
   defp advance(%Delivery{order_id: order_id}, to) do
     case Repo.get(Order, order_id) do

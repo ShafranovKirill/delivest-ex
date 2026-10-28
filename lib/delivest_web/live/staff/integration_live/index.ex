@@ -1,8 +1,8 @@
 defmodule DelivestWeb.Staff.IntegrationLive.Index do
   use DelivestWeb, :live_view
 
-  alias Delivest.Identity
-  alias Delivest.Integrations.{Crm, Dadata, YandexEda, Zvonok}
+  alias Delivest.{Couriers, Identity}
+  alias Delivest.Integrations.{Crm, Dadata, YandexDelivery, YandexEda, Zvonok}
   alias Delivest.Integrations.Crm.BranchSettings
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
@@ -14,6 +14,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
        page_title: gettext("Integrations"),
        crm: Crm.get_branch_settings(socket.assigns.current_branch.id),
        yandex_eda: YandexEda.get_branch_settings(socket.assigns.current_branch.id),
+       yandex_delivery: yandex_delivery_status(socket.assigns.current_branch.id),
        zvonok_configured: Zvonok.configured?(),
        dadata_active: Dadata.active?(),
        can_edit_shared: Identity.can?(socket.assigns.current_staff, "admin")
@@ -25,6 +26,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
       BranchSettings.active_provider(crm) == provider -> :active
       Crm.configured?(crm, provider) -> :configured
       true -> :off
+    end
+  end
+
+  defp yandex_delivery_status(branch_id) do
+    configured? = YandexDelivery.Settings.configured?(YandexDelivery.settings(branch_id))
+
+    case Couriers.settings(branch_id) do
+      %{source: :yandex} when configured? -> :calling
+      _settings when configured? -> :configured
+      _settings -> :off
     end
   end
 
@@ -87,6 +98,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             description={gettext("Orders from Yandex Eda and Delivery Club.")}
             status={if @yandex_eda.enabled, do: :receiving, else: :off}
             path={~p"/staff/b/#{@current_branch}/integrations/yandex-eda"}
+          />
+          <.integration_card
+            id="integration-yandex-delivery"
+            title={gettext("Yandex Delivery")}
+            description={gettext("A Yandex courier for the delivery orders.")}
+            status={@yandex_delivery}
+            path={~p"/staff/b/#{@current_branch}/integrations/yandex-delivery"}
           />
           <.integration_card
             :for={{provider, name} <- Crm.providers()}
@@ -154,6 +172,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   defp status_badge(%{status: :receiving} = assigns),
     do: ~H"""
     <span class="badge badge-success">{gettext("Takes orders")}</span>
+    """
+
+  defp status_badge(%{status: :calling} = assigns),
+    do: ~H"""
+    <span class="badge badge-success">{gettext("Calls couriers")}</span>
     """
 
   defp status_badge(%{status: :configured} = assigns),

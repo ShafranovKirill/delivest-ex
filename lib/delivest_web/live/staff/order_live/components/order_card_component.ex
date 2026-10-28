@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   use Gettext, backend: DelivestWeb.Gettext
 
   alias Delivest.{Couriers, Identity}
+  alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
   alias Delivest.Oms.OrderFlow
@@ -470,6 +471,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       <span :if={@delivery && @delivery.courier} class="font-medium">
         {@delivery.courier.name || @delivery.courier.login}
       </span>
+      <.yandex_courier :if={@delivery && @delivery.provider == :yandex} delivery={@delivery} />
+      <span
+        :if={is_nil(@delivery) and provider_failed?(@order)}
+        id={"order-delivery-failed-#{@order.id}"}
+        class="text-xs text-error"
+      >
+        {gettext("Yandex Delivery did not take the last request")}
+      </span>
       <div :if={@assignable} class="ml-auto flex flex-wrap items-center gap-2">
         <button
           :if={is_nil(@delivery)}
@@ -519,7 +528,69 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     """
   end
 
+  attr :delivery, :map, required: true
+
+  defp yandex_courier(assigns) do
+    assigns =
+      assign(assigns,
+        details: assigns.delivery.details || %{},
+        returning: YandexDelivery.returning?(assigns.delivery)
+      )
+
+    ~H"""
+    <span class="badge badge-sm badge-ghost">{gettext("Yandex")}</span>
+    <span :if={@details["performer"]} id={"order-yandex-courier-#{@delivery.order_id}"}>
+      <span class="font-medium">{@details["performer"]["name"]}</span>
+      <span :if={@details["performer"]["car"]} class="text-base-content/60">
+        · {@details["performer"]["car"]}
+      </span>
+    </span>
+    <a
+      :if={@details["phone"]}
+      href={"tel:#{@details["phone"]}"}
+      class="link link-hover inline-flex items-center gap-1"
+    >
+      <.icon name="hero-phone" class="size-3.5" /> {courier_phone(@details["phone"])}
+    </a>
+    <span :if={@details["price"]} class="text-base-content/60">
+      {@details["price"]} ₽
+    </span>
+    <a
+      :if={@details["tracking_url"]}
+      href={@details["tracking_url"]}
+      target="_blank"
+      rel="noopener"
+      class="link link-primary"
+    >
+      {gettext("Tracking")}
+    </a>
+    <span
+      :if={@returning}
+      id={"order-yandex-returning-#{@delivery.order_id}"}
+      class="badge badge-sm badge-error"
+    >
+      {gettext("The courier is bringing the order back")}
+    </span>
+    """
+  end
+
+  defp courier_phone(phone) do
+    case String.split(phone, ",,", parts: 2) do
+      [number, ext] -> gettext("%{number} ext. %{ext}", number: number, ext: ext)
+      [number] -> number
+    end
+  end
+
+  defp provider_failed?(%{deliveries: deliveries}) when is_list(deliveries),
+    do: match?(%{provider: :yandex, close_reason: :provider_error}, List.last(deliveries))
+
+  defp provider_failed?(_order), do: false
+
   defp delivery_label(nil), do: gettext("No courier yet")
+
+  defp delivery_label(%{status: :searching, provider: :yandex}),
+    do: gettext("Looking for a Yandex courier")
+
   defp delivery_label(%{status: :searching}), do: gettext("Looking for a courier")
   defp delivery_label(%{status: :assigned}), do: gettext("Courier assigned")
   defp delivery_label(%{status: :picked_up}), do: gettext("Courier is on the way")
