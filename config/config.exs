@@ -18,7 +18,8 @@ config :delivest, Oban,
     {"5 * * * *", Delivest.Oms.Workers.StaleOrderWorker},
     {"0 4 * * *", Delivest.Logs.PruneWorker},
     {"30 4 * * *", Delivest.Media.Workers.ThumbnailBackfillWorker},
-    {"*/10 * * * *", Delivest.Integrations.Crm.StopSyncWorker}
+    {"*/10 * * * *", Delivest.Integrations.Crm.StopSyncWorker},
+    {"* * * * *", Delivest.Oms.Kitchen.DispatchWorker}
   ],
   repo: Delivest.Repo
 

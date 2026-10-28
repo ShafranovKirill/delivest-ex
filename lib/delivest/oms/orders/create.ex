@@ -1,6 +1,6 @@
 defmodule Delivest.Oms.Orders.Create do
   alias Delivest.Audit
-  alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Oms.{Carts, Kitchen, Order}
   alias Delivest.Oms.Order.OrderNumber
 
   alias Delivest.Oms.Orders.{
@@ -46,8 +46,12 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{advanced: order}} -> Notifier.publish({:ok, order}, [:order, :created])
-      {:error, step, reason, _} -> {:error, step, reason}
+      {:ok, %{advanced: order}} ->
+        {:ok, order} = Notifier.publish({:ok, order}, [:order, :created])
+        Kitchen.order_accepted(order)
+
+      {:error, step, reason, _} ->
+        {:error, step, reason}
     end
     |> track(opts)
   end

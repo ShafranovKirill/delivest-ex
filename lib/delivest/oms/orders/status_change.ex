@@ -5,7 +5,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
 
   alias Delivest.{Audit, Repo}
   alias Delivest.Identity.Staff
-  alias Delivest.Oms.{Order, OrderFlow, OrderTransition}
+  alias Delivest.Oms.{Kitchen, Order, OrderFlow, OrderTransition}
   alias Delivest.Oms.Orders.Notifier
   alias Ecto.Multi
 
@@ -140,6 +140,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
   defp finish(%{order: order, steps: steps}, by, opts) do
     {:ok, order} = Notifier.publish({:ok, order}, [:order, :updated])
     audit(order, steps, by, opts)
+    {:ok, order} = Kitchen.order_accepted(order)
     order
   end
 
