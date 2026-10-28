@@ -83,4 +83,27 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
     refute html =~ ~s(id="nav-group-orders")
     assert html =~ ~s(href="/staff/b/#{ctx.branch.slug}/orders")
   end
+
+  test "the sidebar splits branch pages from network pages", ctx do
+    {:ok, lv, _html} =
+      live(
+        sign_in(ctx.conn, ctx.branch, ["products.read", "clients.read"]),
+        ~p"/staff/b/#{ctx.branch}/products/tags"
+      )
+
+    assert has_element?(lv, "#nav-section-branch", ctx.branch.name)
+
+    assert has_element?(
+             lv,
+             ~s(#nav-section-branch a[href="/staff/b/#{ctx.branch.slug}/products/stops"])
+           )
+
+    assert has_element?(lv, ~s(#nav-section-network a[href="/staff/clients"]))
+    refute has_element?(lv, ~s(#main-sidebar a[href="/staff/b/#{ctx.branch.slug}/products/tags"]))
+
+    assert has_element?(
+             lv,
+             ~s(#main-sidebar a.menu-active[href="/staff/b/#{ctx.branch.slug}/products"])
+           )
+  end
 end

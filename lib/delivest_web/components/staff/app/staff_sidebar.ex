@@ -20,8 +20,20 @@ defmodule DelivestWeb.StaffSidebar do
       ]}
     >
       <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-3 [scrollbar-width:thin]">
-        <div class="flex flex-col gap-1">
-          <%= for entry <- @entries do %>
+        <div
+          :for={section <- @entries}
+          id={"nav-section-#{section.id}"}
+          class="flex flex-col gap-1 pb-3"
+        >
+          <p
+            :if={section.label}
+            class="truncate px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wider text-base-content/50 lg:sidebar-collapsed:hidden"
+            title={section.label}
+          >
+            {section.label}
+          </p>
+          <div class="hidden h-px bg-base-300 mx-2 mb-1 lg:sidebar-collapsed:block"></div>
+          <%= for entry <- section.entries do %>
             <ul :if={entry.kind == :item} class="menu w-full p-0">
               <li><.nav_link item={entry} current_page={@current_page} /></li>
             </ul>
@@ -64,7 +76,7 @@ defmodule DelivestWeb.StaffSidebar do
 
   defp nav_group(assigns) do
     assigns =
-      assign(assigns, active: Enum.any?(assigns.group.items, &(&1.page == assigns.current_page)))
+      assign(assigns, active: Enum.any?(assigns.group.items, &(assigns.current_page in &1.pages)))
 
     ~H"""
     <div
@@ -140,7 +152,7 @@ defmodule DelivestWeb.StaffSidebar do
       class={[
         "flex items-center gap-2 px-3 py-2",
         "lg:sidebar-collapsed:justify-center lg:sidebar-collapsed:px-2",
-        @current_page == @item.page && "menu-active"
+        @current_page in @item.pages && "menu-active"
       ]}
     >
       <.icon name={@item.icon} class="size-6 shrink-0" />
@@ -150,6 +162,14 @@ defmodule DelivestWeb.StaffSidebar do
   end
 
   defp entries(staff, branch) do
+    [
+      section(:branch, branch && branch.name, branch_entries(staff, branch)),
+      section(:network, gettext("Network"), network_entries(staff))
+    ]
+    |> Enum.reject(&(&1.entries == []))
+  end
+
+  defp branch_entries(staff, branch) do
     [
       item(
         :dashboard,
@@ -194,21 +214,13 @@ defmodule DelivestWeb.StaffSidebar do
           "hero-cube",
           gettext("Products")
         )
+        |> covering([:tags, :suggested])
         |> allowed(staff, "products.read"),
         item(
           :stops,
           branch && ~p"/staff/b/#{branch}/products/stops",
           "hero-no-symbol",
           gettext("Stop list")
-        )
-        |> allowed(staff, "products.read"),
-        item(:tags, branch && ~p"/staff/b/#{branch}/products/tags", "hero-tag", gettext("Tags"))
-        |> allowed(staff, "products.read"),
-        item(
-          :suggested,
-          branch && ~p"/staff/b/#{branch}/products/suggested",
-          "hero-sparkles",
-          gettext("Recommended")
         )
         |> allowed(staff, "products.read")
       ]),
@@ -223,47 +235,50 @@ defmodule DelivestWeb.StaffSidebar do
         )
         |> allowed(staff, "promotions.read")
       ]),
-      group(:company, "hero-building-office-2", gettext("Company"), [
-        item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
-        |> allowed(staff, "branches.read"),
-        item(
-          :delivery,
-          branch && ~p"/staff/b/#{branch}/delivery",
-          "hero-truck",
-          gettext("Delivery")
-        )
-        |> allowed(staff, "delivery.read"),
-        item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
-        |> allowed(staff, "clients.read"),
-        item(
-          :franchise,
-          ~p"/staff/franchise",
-          "hero-building-storefront",
-          gettext("Franchise settings")
-        )
-        |> allowed(staff, "franchise.update")
-      ]),
+      item(
+        :delivery,
+        branch && ~p"/staff/b/#{branch}/delivery",
+        "hero-truck",
+        gettext("Delivery")
+      )
+      |> allowed(staff, "delivery.read"),
+      item(
+        :integrations,
+        branch && ~p"/staff/b/#{branch}/integrations",
+        "hero-puzzle-piece",
+        gettext("Integrations")
+      )
+      |> allowed(staff, "integrations.read")
+    ]
+    |> compact_all()
+  end
+
+  defp network_entries(staff) do
+    [
+      item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
+      |> allowed(staff, "branches.read"),
+      item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
+      |> allowed(staff, "clients.read"),
       group(:people, "hero-user-group", gettext("Team"), [
         item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
         |> allowed(staff, "staff.read"),
         item(:roles, ~p"/staff/roles", "hero-shield-check", gettext("Roles"))
         |> allowed(staff, "roles.read")
       ]),
-      group(:system, "hero-cog-6-tooth", gettext("System"), [
-        item(
-          :integrations,
-          branch && ~p"/staff/b/#{branch}/integrations",
-          "hero-puzzle-piece",
-          gettext("Integrations")
-        )
-        |> allowed(staff, "integrations.read"),
-        item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
-        |> allowed(staff, "logs.read")
-      ])
+      item(
+        :franchise,
+        ~p"/staff/franchise",
+        "hero-building-storefront",
+        gettext("Franchise settings")
+      )
+      |> allowed(staff, "franchise.update"),
+      item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
+      |> allowed(staff, "logs.read")
     ]
-    |> Enum.map(&compact/1)
-    |> Enum.reject(&is_nil/1)
+    |> compact_all()
   end
+
+  defp compact_all(entries), do: entries |> Enum.map(&compact/1) |> Enum.reject(&is_nil/1)
 
   defp compact(%{kind: :group, items: items} = group) do
     case Enum.reject(items, &is_nil/1) do
@@ -278,7 +293,12 @@ defmodule DelivestWeb.StaffSidebar do
   defp item(_page, nil, _icon, _label), do: nil
 
   defp item(page, path, icon, label),
-    do: %{kind: :item, page: page, path: path, icon: icon, label: label}
+    do: %{kind: :item, page: page, pages: [page], path: path, icon: icon, label: label}
+
+  defp covering(nil, _pages), do: nil
+  defp covering(item, pages), do: %{item | pages: [item.page | pages]}
+
+  defp section(id, label, entries), do: %{id: id, label: label, entries: entries}
 
   defp group(id, icon, label, items),
     do: %{kind: :group, id: id, icon: icon, label: label, items: items}

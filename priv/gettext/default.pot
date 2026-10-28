@@ -99,7 +99,7 @@ msgstr ""
 msgid "Dark Mode"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:158
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:178
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:26
 #, elixir-autogen, elixir-format
 msgid "Dashboard"
@@ -126,7 +126,7 @@ msgid "Sign In"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:55
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:247
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:263
 #: lib/delivest_web/live/staff/log_live/event_text.ex:33
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:178
 #, elixir-autogen, elixir-format
@@ -229,7 +229,7 @@ msgstr ""
 msgid "Branch saved successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:227
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:258
 #: lib/delivest_web/live/staff/branch_live/branches.ex:15
 #: lib/delivest_web/live/staff/branch_live/edit.ex:43
 #: lib/delivest_web/live/staff/log_live/event_text.ex:35
@@ -273,7 +273,7 @@ msgstr ""
 msgid "Cannot delete role because it is assigned to staff members."
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:188
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:208
 #: lib/delivest_web/live/staff/category_live/categories.ex:90
 #: lib/delivest_web/live/staff/log_live/event_text.ex:28
 #: lib/delivest_web/live/staff/statistics_live/index.ex:166
@@ -349,11 +349,6 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_select.ex:33
 #, elixir-autogen, elixir-format
 msgid "Click to activate this branch"
-msgstr ""
-
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:226
-#, elixir-autogen, elixir-format
-msgid "Company"
 msgstr ""
 
 #: lib/delivest_web/live/shared/studio_live/media_upload_component.ex:39
@@ -761,7 +756,7 @@ msgstr ""
 msgid "Product updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:195
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:215
 #: lib/delivest_web/live/staff/log_live/event_text.ex:27
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:18
 #: lib/delivest_web/live/staff/product_live/products.ex:418
@@ -824,7 +819,7 @@ msgstr ""
 msgid "Role updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:249
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:265
 #: lib/delivest_web/live/staff/log_live/event_text.ex:34
 #: lib/delivest_web/live/staff/role_live/roles.ex:54
 #, elixir-autogen, elixir-format
@@ -1246,7 +1241,7 @@ msgstr ""
 msgid "Client updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:236
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:260
 #: lib/delivest_web/live/staff/client_live/clients.ex:235
 #: lib/delivest_web/live/staff/log_live/event_text.ex:32
 #, elixir-autogen, elixir-format
@@ -1303,7 +1298,7 @@ msgstr ""
 msgid "Delivering"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:233
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:242
 #: lib/delivest_web/live/staff/delivery_live/index.ex:19
 #: lib/delivest_web/live/staff/delivery_live/index.ex:219
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:156
@@ -1378,7 +1373,7 @@ msgstr ""
 msgid "Month"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:172
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:192
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:108
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:9
 #: lib/delivest_web/live/staff/order_live/orders.ex:255
@@ -1406,7 +1401,7 @@ msgstr ""
 msgid "Order updated successfully"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:167
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:187
 #: lib/delivest_web/live/staff/client_live/show.ex:123
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:116
 #: lib/delivest_web/live/staff/log_live/event_text.ex:26
@@ -1919,7 +1914,7 @@ msgstr ""
 msgid "Share of revenue"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:164
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:184
 #: lib/delivest_web/controllers/page_html/home.html.heex:173
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:124
 #: lib/delivest_web/live/staff/statistics_live/index.ex:15
@@ -2125,7 +2120,7 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:260
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:275
 #: lib/delivest_web/live/staff/log_live/index.ex:23
 #: lib/delivest_web/live/staff/log_live/index.ex:117
 #, elixir-autogen, elixir-format
@@ -2244,7 +2239,6 @@ msgstr ""
 msgid "Staff %{name}"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:252
 #: lib/delivest_web/live/staff/log_live/event_text.ex:22
 #, elixir-autogen, elixir-format
 msgid "System"
@@ -2700,7 +2694,7 @@ msgstr ""
 msgid "Discount"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:222
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:234
 #: lib/delivest_web/live/staff/log_live/event_text.ex:31
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:32
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:167
@@ -3796,7 +3790,7 @@ msgstr ""
 msgid "Email for requests"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:242
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:272
 #: lib/delivest_web/live/staff/franchise_live/index.ex:21
 #: lib/delivest_web/live/staff/franchise_live/index.ex:69
 #, elixir-autogen, elixir-format
@@ -3931,8 +3925,8 @@ msgstr ""
 msgid "White text is hard to read on this color. Choose a darker one."
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:37
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:43
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:49
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:55
 #, elixir-autogen, elixir-format
 msgid "Collapse menu"
 msgstr ""
@@ -3999,7 +3993,7 @@ msgstr ""
 msgid "Get products"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:257
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:249
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:55
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:190
 #: lib/delivest_web/live/staff/integration_live/index.ex:14
@@ -4635,7 +4629,6 @@ msgstr ""
 msgid "Tag «%{subject}» edited"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:205
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:21
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:61
 #, elixir-autogen, elixir-format
@@ -4697,7 +4690,7 @@ msgstr ""
 msgid "Banner «%{subject}» edited"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:216
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:228
 #: lib/delivest_web/live/staff/log_live/event_text.ex:30
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:42
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:201
@@ -4901,7 +4894,7 @@ msgstr ""
 msgid "Stop in %{crm}"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:202
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:223
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:20
 #: lib/delivest_web/live/staff/product_live/products.ex:564
 #: lib/delivest_web/live/staff/product_live/stop_list.ex:21
@@ -5784,7 +5777,7 @@ msgstr ""
 msgid "The price depends on the zone of the address. Draw the zones on the map below or add a zone by radius around the branch."
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:179
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:199
 #, elixir-autogen, elixir-format
 msgid "All orders"
 msgstr ""
@@ -5794,12 +5787,12 @@ msgstr ""
 msgid "Customer sign-in"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:215
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:227
 #, elixir-autogen, elixir-format
 msgid "Marketing"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:183
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:203
 #, elixir-autogen, elixir-format
 msgid "Menu"
 msgstr ""
@@ -5830,7 +5823,6 @@ msgstr ""
 msgid "Recommend %{name}"
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:211
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:23
 #: lib/delivest_web/live/staff/product_live/suggested.ex:19
 #: lib/delivest_web/live/staff/product_live/suggested.ex:65
@@ -5843,7 +5835,7 @@ msgstr ""
 msgid "Recommended products are offered in the cart on the site."
 msgstr ""
 
-#: lib/delivest_web/components/staff/app/staff_sidebar.ex:246
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:262
 #, elixir-autogen, elixir-format
 msgid "Team"
 msgstr ""
@@ -5988,4 +5980,9 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "day of"
 msgid "September"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:167
+#, elixir-autogen, elixir-format
+msgid "Network"
 msgstr ""
