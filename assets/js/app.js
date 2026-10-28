@@ -6,6 +6,7 @@ import topbar from "../vendor/topbar";
 import Sortable from "sortablejs";
 import { LocationMap } from "./hooks/location_map";
 import { ZoneMap } from "./hooks/zone_map";
+import { Alarm } from "./hooks/alarm";
 
 let Uploaders = {};
 
@@ -177,6 +178,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     BulkPaste,
     LocationMap,
     ZoneMap,
+    Alarm,
   },
 });
 

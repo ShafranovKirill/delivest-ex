@@ -13,7 +13,7 @@ defmodule DelivestWeb.OverdueOrdersAlert do
       :if={@orders != []}
       id="overdue-orders"
       class="modal modal-open"
-      phx-hook=".OverdueAlarm"
+      phx-hook="Alarm"
       data-count={length(@orders)}
     >
       <div class="modal-box max-w-lg border border-error/40">
@@ -79,39 +79,6 @@ defmodule DelivestWeb.OverdueOrdersAlert do
       </div>
       <div class="modal-backdrop bg-black/50"></div>
     </div>
-
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".OverdueAlarm">
-      export default {
-        mounted() {
-          this.ring()
-        },
-        updated() {
-          const count = Number(this.el.dataset.count)
-          if (count > (this.count ?? 0)) this.ring()
-          this.count = count
-        },
-        ring() {
-          this.count = Number(this.el.dataset.count)
-          if (localStorage.getItem("orders-sound") === "off") return
-          try {
-            const audio = new AudioContext()
-            const now = audio.currentTime
-            ;[660, 880, 660, 880].forEach((frequency, index) => {
-              const oscillator = audio.createOscillator()
-              const gain = audio.createGain()
-              const start = now + index * 0.22
-              oscillator.frequency.value = frequency
-              gain.gain.setValueAtTime(0.0001, start)
-              gain.gain.exponentialRampToValueAtTime(0.3, start + 0.02)
-              gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2)
-              oscillator.connect(gain).connect(audio.destination)
-              oscillator.start(start)
-              oscillator.stop(start + 0.21)
-            })
-          } catch (_error) {}
-        }
-      }
-    </script>
     """
   end
 end

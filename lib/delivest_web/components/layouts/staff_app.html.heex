@@ -13,6 +13,9 @@
   />
 
   <DelivestWeb.OverdueOrdersAlert.overdue_orders_alert orders={assigns[:overdue_orders] || []} />
+  <DelivestWeb.ChannelCancelAlert.channel_cancel_alert orders={
+    assigns[:channel_cancelled_orders] || []
+  } />
 
   <DelivestWeb.StaffSidebar.staff_sidebar
     current_staff={@current_staff}

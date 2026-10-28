@@ -13,7 +13,8 @@ defmodule DelivestWeb.Hooks.NewOrders do
   def on_mount(:default, _params, _session, socket) do
     case watched_branch(socket) do
       nil ->
-        {:cont, assign(socket, new_orders_count: 0, overdue_orders: [])}
+        {:cont,
+         assign(socket, new_orders_count: 0, overdue_orders: [], channel_cancelled_orders: [])}
 
       branch_id ->
         if connected?(socket), do: Orders.subscribe_branch(branch_id)
@@ -35,8 +36,15 @@ defmodule DelivestWeb.Hooks.NewOrders do
     do:
       assign(socket,
         new_orders_count: Orders.count_unconfirmed(branch_id),
-        overdue_orders: YandexEda.overdue_orders(branch_id)
+        overdue_orders: YandexEda.overdue_orders(branch_id),
+        channel_cancelled_orders: channel_cancelled(socket.assigns.current_staff, branch_id)
       )
+
+  defp channel_cancelled(staff, branch_id) do
+    if Identity.authorize(staff, "orders.update", branch_id) == :ok,
+      do: Orders.list_unacknowledged_cancellations(branch_id),
+      else: []
+  end
 
   defp handle_info({:branch_orders_changed, branch_id}, socket),
     do: {:halt, assign_counts(socket, branch_id)}
@@ -48,6 +56,19 @@ defmodule DelivestWeb.Hooks.NewOrders do
 
     socket =
       case overdue_action(event, staff, branch.id, order_id) do
+        {:ok, _order} -> socket
+        {:error, :forbidden} -> put_flash(socket, :error, gettext("Permission denied"))
+        {:error, _reason} -> put_flash(socket, :error, gettext("Failed to update the order"))
+      end
+
+    {:halt, assign_counts(socket, branch.id)}
+  end
+
+  defp handle_event("acknowledge_cancel", %{"id" => order_id}, socket) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+
+    socket =
+      case Orders.acknowledge_branch_cancel(staff, branch.id, order_id) do
         {:ok, _order} -> socket
         {:error, :forbidden} -> put_flash(socket, :error, gettext("Permission denied"))
         {:error, _reason} -> put_flash(socket, :error, gettext("Failed to update the order"))
