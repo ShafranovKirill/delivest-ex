@@ -2,7 +2,7 @@ defmodule Delivest.ExampleSeed do
   import Ecto.Query
 
   alias Delivest.{Media, Relations, Repo}
-  alias Delivest.Franchise.Settings
+  alias Delivest.Franchise.{Assets, Settings, SettingsStore}
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Media.File, as: MediaFile
@@ -13,6 +13,8 @@ defmodule Delivest.ExampleSeed do
                    ~w(monday tuesday wednesday thursday friday saturday sunday),
                    &{&1, %{"open" => "10:00", "close" => "23:00", "enabled" => true}}
                  )
+
+  @logos [logo_key: "brand/logo.png", logo_dark_key: "brand/logo-dark.png"]
 
   def seed_branch do
     branch = Repo.preload(branch(), :info)
@@ -42,7 +44,8 @@ defmodule Delivest.ExampleSeed do
     else
       {:ok, _} =
         Delivest.Franchise.SettingsStore.save(%{
-          name: "Delivest Pizza",
+          name: "Delivest",
+          primary_color: "#48010c",
           description:
             "Готовим пиццу, комбо, завтраки и кофе из свежих продуктов и привозим горячими за 45 минут. Работаем каждый день с 10:00 до 23:00.",
           legal_form: "ООО",
@@ -55,6 +58,18 @@ defmodule Delivest.ExampleSeed do
         })
 
       info("Filled franchise settings")
+    end
+
+    Enum.each(@logos, &seed_logo/1)
+  end
+
+  defp seed_logo({field, file}) do
+    if SettingsStore.current(field) do
+      info("Franchise #{field} already exists")
+    else
+      {:ok, key} = images_dir() |> Path.join(file) |> File.read!() |> Assets.store_logo()
+      {:ok, _} = SettingsStore.save_images(%{field => key})
+      info("Uploaded franchise #{field}")
     end
   end
 

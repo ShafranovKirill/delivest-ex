@@ -83,7 +83,7 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
 
   test "manifest and favicon follow the uploaded icon", %{conn: conn, admin: admin} do
     manifest = conn |> get(~p"/seo/site.webmanifest") |> response(200) |> Jason.decode!()
-    assert %{"name" => "Delivest", "theme_color" => "#462094", "icons" => [_, default]} = manifest
+    assert %{"name" => "Delivest", "theme_color" => "#48010c", "icons" => [_, default]} = manifest
     assert default["src"] == "http://localhost:4000/images/seo/icon-512.png"
 
     assert redirected_to(get(conn, ~p"/seo/favicon.ico")) ==

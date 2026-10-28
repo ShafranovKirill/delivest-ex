@@ -14,7 +14,7 @@ defmodule Delivest.Franchise.Settings do
   schema "franchise_settings" do
     field :name, :string, default: "Delivest"
     field :description, :string
-    field :primary_color, :string, default: "#462094"
+    field :primary_color, :string, default: "#48010c"
     field :legal_form, :string
     field :legal_name, :string
     field :inn, :string

@@ -13,7 +13,7 @@ defmodule Delivest.FranchiseTest do
   end
 
   test "returns defaults until settings are saved" do
-    assert %{name: "Delivest", primary_color: "#462094"} = Franchise.get_settings()
+    assert %{name: "Delivest", primary_color: "#48010c"} = Franchise.get_settings()
   end
 
   test "only an admin updates settings and the cache follows", %{admin: admin, manager: manager} do
