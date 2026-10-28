@@ -11,14 +11,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.DadataTest do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     insert(:staff_branch, staff: staff, branch: branch)
 
-    %{conn: init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})}
+    %{
+      conn: init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id}),
+      branch: branch
+    }
   end
 
-  test "saves the key and turns the map on", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations")
+  test "saves the key and turns the map on", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
     assert has_element?(lv, "a#integration-dadata")
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations/dadata")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/dadata")
 
     lv
     |> form("#dadata-settings", dadata: %{api_key: " key ", enabled: "true"})
@@ -31,10 +34,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.DadataTest do
              conn |> get(~p"/client/franchise") |> json_response(200)
   end
 
-  test "is closed without the admin permission", %{conn: conn} do
+  test "is closed without the admin permission", %{conn: conn, branch: branch} do
     staff = insert(:staff, role: insert(:role, permissions: ["branches.read"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
-    assert {:error, _redirect} = live(conn, ~p"/staff/integrations/dadata")
+    assert {:error, _redirect} = live(conn, ~p"/staff/b/#{branch}/integrations/dadata")
   end
 end

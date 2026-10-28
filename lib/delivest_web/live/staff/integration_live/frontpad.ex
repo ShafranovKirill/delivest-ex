@@ -183,7 +183,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6">
-      <.link navigate={~p"/staff/integrations"} class="btn btn-ghost btn-sm -ml-2">
+      <.link
+        navigate={~p"/staff/b/#{@current_branch}/integrations"}
+        class="btn btn-ghost btn-sm -ml-2"
+      >
         <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
       </.link>
 
@@ -249,7 +252,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         </.tab_button>
       </div>
 
-      <.guide :if={@tab == :settings} crm={@crm} />
+      <.guide :if={@tab == :settings} crm={@crm} branch={@current_branch} />
 
       <.settings_form
         :if={@tab == :settings}
@@ -282,7 +285,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             {gettext("Received from Frontpad")}: {OrderHelpers.local_datetime(@snapshot.checked_at)}
           </p>
 
-          <.check_results :if={@tab == :check} issues={@issues} />
+          <.check_results :if={@tab == :check} issues={@issues} branch={@current_branch} />
           <.crm_products
             :if={@tab == :products}
             products={filter_products(@snapshot.products, @query)}
@@ -470,6 +473,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   end
 
   attr :crm, BranchSettings, required: true
+  attr :branch, :map, required: true
 
   defp guide(assigns) do
     ~H"""
@@ -526,7 +530,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
           {gettext(
             "Turn on «Send orders to Frontpad». On the «Order routes» page choose which sources go to Frontpad: the app and the admin by default, Yandex Eda only if it is not connected to Frontpad directly."
           )}
-          <.link navigate={~p"/staff/integrations/routes"} class="link link-primary">
+          <.link
+            navigate={~p"/staff/b/#{@branch}/integrations/routes"}
+            class="link link-primary"
+          >
             {gettext("Order routes")}
           </.link>
         </li>
@@ -587,6 +594,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   end
 
   attr :issues, :list, required: true
+  attr :branch, :map, required: true
 
   defp check_results(assigns) do
     assigns =
@@ -613,6 +621,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         title={gettext("Not found in Frontpad")}
         hint={gettext("Orders with these products will not reach Frontpad.")}
         issues={@missing}
+        branch={@branch}
       />
 
       <.issue_list
@@ -620,6 +629,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         id="frontpad-price-mismatch"
         title={gettext("Price differs")}
         issues={@mismatched}
+        branch={@branch}
       />
 
       <.issue_list
@@ -628,6 +638,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         title={gettext("No CRM ID")}
         hint={gettext("These products are not linked to Frontpad.")}
         issues={@unlinked}
+        branch={@branch}
       />
     </div>
     """
@@ -637,6 +648,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   attr :title, :string, required: true
   attr :hint, :string, default: nil
   attr :issues, :list, required: true
+  attr :branch, :map, required: true
 
   defp issue_list(assigns) do
     ~H"""
@@ -651,7 +663,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             :for={issue <- @issues}
             class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
           >
-            <.link navigate={~p"/staff/products/#{issue.product_id}/edit"} class="link link-hover">
+            <.link
+              navigate={~p"/staff/b/#{@branch}/products/#{issue.product_id}/edit"}
+              class="link link-hover"
+            >
               {issue.name}
             </.link>
             <span class="flex items-center gap-3 text-base-content/60">

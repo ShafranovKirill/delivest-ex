@@ -36,7 +36,7 @@ defmodule DelivestWeb.Staff.ClientLive.ShowTest do
   test "orders list links to the client card", %{conn: conn, branch: branch} do
     order = order_fixture(branch.id, attrs: %{"customer_phone" => "+79991112244"})
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
     assert has_element?(lv, ~s{a[href="/staff/clients/#{order.client_id}"]})
   end
 

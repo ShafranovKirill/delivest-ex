@@ -41,7 +41,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       }
       |> maybe_put_custom(params, socket.assigns.period)
 
-    {:noreply, push_patch(socket, to: ~p"/staff/statistics?#{query}")}
+    {:noreply,
+     push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/statistics?#{query}")}
   end
 
   defp maybe_put_custom(query, %{"period" => "custom"} = params, {from, to}) do
@@ -92,7 +93,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       end)
       |> Map.merge(overrides)
 
-    ~p"/staff/statistics?#{query}"
+    ~p"/staff/b/#{assigns.current_branch}/statistics?#{query}"
   end
 
   defp preset_label("today"), do: gettext("Today")

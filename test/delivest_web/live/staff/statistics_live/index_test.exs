@@ -22,7 +22,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     order_fixture(branch.id, product: product, quantity: 2)
 
-    {:ok, lv, html} = live(conn, ~p"/staff/statistics?period=today")
+    {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
     assert html =~ "Statistics"
     assert html =~ "600 ₽"
 
@@ -34,8 +34,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
   end
 
   test "custom period comes from the filter form", %{conn: conn} do
-    {conn, _branch} = login(conn, ["statistics.read"])
-    {:ok, lv, _html} = live(conn, ~p"/staff/statistics")
+    {conn, branch} = login(conn, ["statistics.read"])
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics")
 
     lv
     |> form("#statistics-filter", %{"period" => "custom"})
@@ -53,13 +53,15 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
       "to" => to
     }
 
-    assert_patch(lv, ~p"/staff/statistics?#{query}")
+    assert_patch(lv, ~p"/staff/b/#{branch}/statistics?#{query}")
     assert has_element?(lv, ~s{input[name="from"][value="#{from}"]})
   end
 
   test "requires the statistics.read permission", %{conn: conn} do
-    {conn, _branch} = login(conn, ["orders.read"])
+    {conn, branch} = login(conn, ["orders.read"])
+    dashboard = ~p"/staff/b/#{branch}/dashboard"
 
-    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} = live(conn, ~p"/staff/statistics")
+    assert {:error, {:redirect, %{to: ^dashboard}}} =
+             live(conn, ~p"/staff/b/#{branch}/statistics")
   end
 end

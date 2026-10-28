@@ -10,7 +10,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
   on_mount {DelivestWeb.Hooks.Permission, "clients.read"}
 
   @impl true
-  def mount(%{"id" => id}, session, socket) do
+  def mount(%{"id" => id}, _session, socket) do
     staff = socket.assigns.current_staff
 
     case Identity.get_client(staff, id) do
@@ -26,8 +26,8 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
            can_see_orders: can_see_orders,
            summary: Analytics.client_summary(client.id, scope),
            orders: if(can_see_orders, do: Orders.list_client_orders(client.id, scope), else: []),
-           branch_names: branch_names(staff),
-           active_branch_id: session["active_branch_id"],
+           branches: branches(staff),
+           active_branch_id: socket.assigns[:active_branch_id],
            expanded: MapSet.new()
          )}
 
@@ -57,12 +57,10 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
       else: Enum.map(staff.branches || [], & &1.id)
   end
 
-  defp branch_names(staff) do
-    staff |> Identity.list_branch_for_staff() |> Map.new(&{&1.id, &1.name})
-  end
+  defp branches(staff), do: staff |> Identity.list_branch_for_staff() |> Map.new(&{&1.id, &1})
 
   defp can_edit_order?(assigns, order) do
-    order.branch_id == assigns.active_branch_id and
+    Map.has_key?(assigns.branches, order.branch_id) and
       Identity.authorize(assigns.current_staff, "orders.update", order.branch_id) == :ok
   end
 
@@ -208,7 +206,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                   {OrderHelpers.status_label(order.status)}
                 </span>
                 <span class="text-xs text-base-content/60 truncate">
-                  {Map.get(@branch_names, order.branch_id, "—")} · {OrderHelpers.fulfillment_label(
+                  {(@branches[order.branch_id] && @branches[order.branch_id].name) || "—"} · {OrderHelpers.fulfillment_label(
                     order.fulfillment_type
                   )}
                 </span>
@@ -247,7 +245,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                   </span>
                   <.link
                     :if={can_edit_order?(assigns, order)}
-                    navigate={~p"/staff/orders/#{order.id}/edit"}
+                    navigate={~p"/staff/b/#{@branches[order.branch_id]}/orders/#{order.id}/edit"}
                     class="btn btn-ghost btn-xs"
                   >
                     <.icon name="hero-pencil-square" class="size-4" />

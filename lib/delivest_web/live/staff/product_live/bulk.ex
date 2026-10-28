@@ -114,7 +114,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
       {:ok, created} ->
         socket
         |> put_flash(:info, gettext("Products added: %{count}", count: length(created)))
-        |> push_navigate(to: ~p"/staff/products")
+        |> push_navigate(to: ~p"/staff/b/#{socket.assigns.current_branch}/products")
 
       {:error, :forbidden} ->
         put_flash(socket, :error, gettext("Permission denied"))
@@ -274,7 +274,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
         }
       >
         <:actions>
-          <.link navigate={~p"/staff/products"} class="btn btn-ghost">
+          <.link navigate={~p"/staff/b/#{@current_branch}/products"} class="btn btn-ghost">
             <.icon name="hero-arrow-left" class="size-5" /> {gettext("Back to products")}
           </.link>
         </:actions>

@@ -28,7 +28,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     end
   end
 
-  defp provider_path(:frontpad), do: ~p"/staff/integrations/frontpad"
+  defp provider_path(branch, :frontpad), do: ~p"/staff/b/#{branch}/integrations/frontpad"
 
   @impl true
   def render(assigns) do
@@ -53,14 +53,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Sign-in by phone number")}
             description={gettext("Customers confirm the phone number with a call via zvonok.com.")}
             status={if @zvonok_configured, do: :configured, else: :off}
-            path={@can_edit_shared && ~p"/staff/integrations/zvonok"}
+            path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/zvonok"}
           />
           <.integration_card
             id="integration-dadata"
             title={gettext("Delivery address on the map")}
             description={gettext("Address suggestions and the map via dadata.ru.")}
             status={if @dadata_active, do: :configured, else: :off}
-            path={@can_edit_shared && ~p"/staff/integrations/dadata"}
+            path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/dadata"}
           />
         </div>
       </section>
@@ -79,14 +79,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Order routes")}
             description={gettext("Which orders go further to the CRM.")}
             status={if BranchSettings.active_provider(@crm), do: :active, else: :off}
-            path={~p"/staff/integrations/routes"}
+            path={~p"/staff/b/#{@current_branch}/integrations/routes"}
           />
           <.integration_card
             id="integration-yandex-eda"
             title={gettext("Yandex Eda")}
             description={gettext("Orders from Yandex Eda and Delivery Club.")}
             status={if @yandex_eda.enabled, do: :receiving, else: :off}
-            path={~p"/staff/integrations/yandex-eda"}
+            path={~p"/staff/b/#{@current_branch}/integrations/yandex-eda"}
           />
           <.integration_card
             :for={{provider, name} <- Crm.providers()}
@@ -94,7 +94,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={name}
             description={gettext("Orders to the CRM and products matching with the app menu.")}
             status={provider_status(@crm, provider)}
-            path={provider_path(provider)}
+            path={provider_path(@current_branch, provider)}
           />
         </div>
       </section>

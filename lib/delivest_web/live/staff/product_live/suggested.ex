@@ -66,7 +66,7 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
         subtitle={gettext("Recommended products are offered in the cart on the site.")}
       />
 
-      <.tabs current={:suggested} />
+      <.tabs current={:suggested} branch={@current_branch} />
 
       <BranchProducts.filter_form
         id="suggested-filter"

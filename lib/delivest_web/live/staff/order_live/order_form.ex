@@ -28,7 +28,10 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
         {:ok, init(socket, OrderDraft.edit(order, connected?(socket)))}
 
       {:error, message} ->
-        {:ok, socket |> put_flash(:error, message) |> redirect(to: ~p"/staff/orders")}
+        {:ok,
+         socket
+         |> put_flash(:error, message)
+         |> redirect(to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
     end
   end
 
@@ -217,7 +220,10 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
         do: gettext("Order updated successfully"),
         else: gettext("Order created successfully")
 
-    {:noreply, socket |> put_flash(:info, message) |> push_navigate(to: ~p"/staff/orders")}
+    {:noreply,
+     socket
+     |> put_flash(:info, message)
+     |> push_navigate(to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
   end
 
   defp handle_saved({:error, _step, %Ecto.Changeset{data: %Order{}} = changeset}, socket) do

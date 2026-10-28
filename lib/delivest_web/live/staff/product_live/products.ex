@@ -70,7 +70,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         {:noreply, socket}
 
       {:error, _meta} ->
-        {:noreply, push_patch(socket, to: ~p"/staff/products")}
+        {:noreply, push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/products")}
     end
   end
 
@@ -104,7 +104,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     else
       socket
       |> put_flash(:error, gettext("You don't have permission to create products."))
-      |> push_patch(to: ~p"/staff/products")
+      |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/products")
     end
   end
 
@@ -120,12 +120,12 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           )
 
         _ ->
-          push_patch(socket, to: ~p"/staff/products")
+          push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/products")
       end
     else
       socket
       |> put_flash(:error, gettext("You don't have permission to edit products."))
-      |> push_patch(to: ~p"/staff/products")
+      |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/products")
     end
   end
 
@@ -160,7 +160,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         "page" => 1
       })
 
-    {:noreply, push_patch(socket, to: ~p"/staff/products?#{query_params}")}
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/staff/b/#{socket.assigns.current_branch}/products?#{query_params}"
+     )}
   end
 
   def handle_event("stop", %{"id" => id, "period" => period}, socket)
@@ -183,7 +186,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   def handle_event("update_page_size", %{"page_size" => size}, socket) do
     params = build_query_params(socket.assigns, %{"page_size" => size, "page" => 1})
-    {:noreply, push_patch(socket, to: ~p"/staff/products?#{params}")}
+
+    {:noreply,
+     push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/products?#{params}")}
   end
 
   def handle_event("delete_click", %{"id" => id}, socket) do
@@ -195,7 +200,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         {:noreply,
          socket
          |> put_flash(:error, gettext("You don't have permission to delete products."))
-         |> push_patch(to: ~p"/staff/products")}
+         |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/products")}
     end
   end
 
@@ -269,7 +274,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
      socket
      |> put_flash(:info, msg)
      |> stream_insert(:products, product_with_assoc)
-     |> push_patch(to: ~p"/staff/products?#{build_query_params(socket.assigns, %{})}")}
+     |> push_patch(
+       to:
+         ~p"/staff/b/#{socket.assigns.current_branch}/products?#{build_query_params(socket.assigns, %{})}"
+     )}
   end
 
   @impl true
@@ -435,7 +443,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <.link
             :if={Identity.can?(@current_staff, "products.create")}
-            navigate={~p"/staff/products/bulk"}
+            navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
             class="btn btn-outline"
           >
             <.icon name="hero-table-cells" class="size-5 mr-1" />
@@ -444,7 +452,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <.button
             :if={Identity.can?(@current_staff, "products.create")}
-            patch={~p"/staff/products/new?#{build_query_params(assigns, %{})}"}
+            patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
             class="btn btn-primary"
           >
             <.icon name="hero-plus" class="size-5" />
@@ -453,7 +461,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </:actions>
       </.page_header>
 
-      <.tabs current={:products} />
+      <.tabs current={:products} branch={@current_branch} />
 
       <.form
         for={nil}
@@ -493,7 +501,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </div>
       </.form>
 
-      <% path_fn = fn overrides -> ~p"/staff/products?#{build_query_params(assigns, overrides)}" end %>
+      <% path_fn = fn overrides ->
+        ~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, overrides)}"
+      end %>
 
       <form id="product-selection" phx-change="select_products"></form>
 
@@ -591,7 +601,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <div class="flex justify-end gap-2">
             <.button
               :if={Identity.can?(@current_staff, "products.update")}
-              patch={~p"/staff/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"}
+              patch={
+                ~p"/staff/b/#{@current_branch}/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"
+              }
               class="btn btn-ghost btn-xs btn-square"
             >
               <.icon name="hero-pencil-square" class="size-4" />
@@ -625,7 +637,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         id="product-slideover"
         show={@live_action in [:new, :edit]}
         title={@page_title}
-        on_close={JS.patch(~p"/staff/products?#{build_query_params(assigns, %{})}")}
+        on_close={
+          JS.patch(~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, %{})}")
+        }
       >
         <.live_component
           :if={@product}
@@ -634,8 +648,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           action={@live_action}
           product={@product}
           branch_id={@branch_id}
+          current_branch={@current_branch}
           current_staff={@current_staff}
-          patch={~p"/staff/products?#{build_query_params(assigns, %{})}"}
+          patch={~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, %{})}"}
         />
       </.slide_over>
 

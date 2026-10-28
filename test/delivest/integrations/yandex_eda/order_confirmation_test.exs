@@ -14,6 +14,7 @@ defmodule Delivest.Integrations.YandexEda.OrderConfirmationTest do
     product = menu_product(branch, menu_category(branch))
     {:ok, order} = YandexEda.create_order(order_params(branch, [product]))
     staff = insert(:staff, role: build(:role, permissions: ["orders.read", "orders.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
     %{branch: branch, order: order, staff: staff}
   end
 
@@ -80,7 +81,7 @@ defmodule Delivest.Integrations.YandexEda.OrderConfirmationTest do
     assert {:error, :forbidden} =
              YandexEda.confirm_unconfirmed(reader, ctx.branch.id, ctx.order.id)
 
-    assert {:error, :order_not_found} =
+    assert {:error, :forbidden} =
              YandexEda.confirm_unconfirmed(ctx.staff, Ecto.UUID.generate(), ctx.order.id)
 
     {:ok, _} = YandexEda.confirm_unconfirmed(ctx.staff, ctx.branch.id, ctx.order.id)

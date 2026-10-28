@@ -2,6 +2,7 @@
   <DelivestWeb.StaffHeader.staff_header
     current_staff={@current_staff}
     current_branch={assigns[:current_branch]}
+    current_path={assigns[:current_path]}
     new_orders_count={assigns[:new_orders_count] || 0}
   />
 
@@ -9,6 +10,7 @@
 
   <DelivestWeb.StaffSidebar.staff_sidebar
     current_staff={@current_staff}
+    current_branch={assigns[:current_branch]}
     current_page={assigns[:current_page]}
   />
 

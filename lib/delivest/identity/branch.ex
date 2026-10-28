@@ -8,6 +8,8 @@ defmodule Delivest.Identity.Branch do
 
   @type t :: %__MODULE__{}
 
+  @derive {Phoenix.Param, key: :slug}
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 

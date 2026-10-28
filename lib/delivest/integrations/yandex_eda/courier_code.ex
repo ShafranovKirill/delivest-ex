@@ -7,7 +7,7 @@ defmodule Delivest.Integrations.YandexEda.CourierCode do
   @no_attempts 1001
 
   def validate(settings, staff, branch_id, order_id, code) do
-    with :ok <- authorize(staff),
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id),
          {:ok, order} <- fetch(branch_id, order_id),
          {:ok, code} <- normalize(code) do
       settings
@@ -15,9 +15,6 @@ defmodule Delivest.Integrations.YandexEda.CourierCode do
       |> result()
     end
   end
-
-  defp authorize(staff),
-    do: if(Identity.can?(staff, "orders.update"), do: :ok, else: {:error, :forbidden})
 
   defp fetch(branch_id, order_id) do
     with {:ok, uuid} <- Ecto.UUID.cast(order_id),

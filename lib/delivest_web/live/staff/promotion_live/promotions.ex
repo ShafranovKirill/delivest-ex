@@ -99,7 +99,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
      socket
      |> put_flash(:info, gettext("Promotion saved"))
      |> load()
-     |> push_patch(to: ~p"/staff/promotions")}
+     |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/promotions")}
   end
 
   defp with_promotion(socket, id, fun) do
@@ -149,7 +149,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   defp deny(socket) do
     socket
     |> put_flash(:error, gettext("You don't have permission to perform this action."))
-    |> push_patch(to: ~p"/staff/promotions")
+    |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/promotions")
   end
 
   defp can?(socket, permission), do: Identity.can?(socket.assigns.current_staff, permission)
@@ -164,7 +164,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
     >
       <div class="flex items-center gap-3">
         <.link
-          patch={~p"/staff/promotions"}
+          patch={~p"/staff/b/#{@current_branch}/promotions"}
           class="btn btn-ghost btn-sm btn-square"
           title={gettext("Back")}
         >
@@ -185,7 +185,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         promotion={@promotion}
         branch_id={@branch_id}
         current_staff={@current_staff}
-        patch={~p"/staff/promotions"}
+        patch={~p"/staff/b/#{@current_branch}/promotions"}
       />
     </div>
 
@@ -200,7 +200,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "promotions.create")}
-            patch={~p"/staff/promotions/new"}
+            patch={~p"/staff/b/#{@current_branch}/promotions/new"}
             class="btn btn-outline"
             id="new-promotion"
           >
@@ -208,7 +208,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
           </.link>
           <.link
             :if={Identity.can?(@current_staff, "promotions.create")}
-            patch={~p"/staff/promotions/sale"}
+            patch={~p"/staff/b/#{@current_branch}/promotions/sale"}
             class="btn btn-primary"
             id="new-sale"
           >
@@ -290,7 +290,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
                 promotion.kind == :personal_code and
                   Identity.can?(@current_staff, "promotions.update")
               }
-              patch={~p"/staff/promotions/#{promotion.id}/codes"}
+              patch={~p"/staff/b/#{@current_branch}/promotions/#{promotion.id}/codes"}
               class="btn btn-sm btn-ghost btn-square text-primary"
               title={gettext("Personal codes")}
             >
@@ -298,7 +298,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
             </.link>
             <.link
               :if={Identity.can?(@current_staff, "promotions.update")}
-              patch={~p"/staff/promotions/#{promotion.id}/edit"}
+              patch={~p"/staff/b/#{@current_branch}/promotions/#{promotion.id}/edit"}
               class="btn btn-sm btn-ghost btn-square text-info"
               title={gettext("Edit")}
             >
@@ -322,7 +322,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         id="sale-slideover"
         show={@live_action == :sale}
         title={@page_title}
-        on_close={JS.patch(~p"/staff/promotions")}
+        on_close={JS.patch(~p"/staff/b/#{@current_branch}/promotions")}
       >
         <.live_component
           :if={@live_action == :sale}
@@ -330,7 +330,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
           id="product-sale"
           branch_id={@branch_id}
           current_staff={@current_staff}
-          patch={~p"/staff/promotions"}
+          patch={~p"/staff/b/#{@current_branch}/promotions"}
         />
       </.slide_over>
 
@@ -338,7 +338,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         id="codes-slideover"
         show={@live_action == :codes}
         title={@page_title}
-        on_close={JS.patch(~p"/staff/promotions")}
+        on_close={JS.patch(~p"/staff/b/#{@current_branch}/promotions")}
       >
         <.live_component
           :if={@promotion && @live_action == :codes}

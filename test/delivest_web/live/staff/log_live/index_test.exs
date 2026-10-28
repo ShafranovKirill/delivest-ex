@@ -101,6 +101,6 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
   test "staff without permission is redirected", %{conn: conn} do
     {conn, _staff} = login(conn, ["orders.read"])
 
-    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} = live(conn, ~p"/staff/logs")
+    assert {:error, {:redirect, %{to: "/staff"}}} = live(conn, ~p"/staff/logs")
   end
 end

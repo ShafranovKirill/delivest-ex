@@ -15,7 +15,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
   end
 
   test "pasted table with a header becomes products", %{conn: conn, branch: branch} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/bulk")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/bulk")
 
     text =
       "Название\tЦена\tКатегория\tВес, г\n" <>
@@ -33,7 +33,9 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
     assert has_element?(lv, "#bulk-row-6")
     assert has_element?(lv, "#bulk-1-price[value='1 590,00 ₽']")
 
-    assert {:error, {:live_redirect, %{to: "/staff/products"}}} =
+    products = ~p"/staff/b/#{branch}/products"
+
+    assert {:error, {:live_redirect, %{to: ^products}}} =
              lv |> form("#bulk-products") |> render_submit()
 
     products = branch.id |> Net.list_branch_products() |> Map.new(&{&1.name, &1})
@@ -44,7 +46,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
   end
 
   test "photo from the last column is attached to the product", %{conn: conn, branch: branch} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/bulk")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/bulk")
 
     photo =
       file_input(lv, "#bulk-products", :bulk_photo_2, [
@@ -62,7 +64,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
   end
 
   test "invalid rows block saving and are highlighted", %{conn: conn, branch: branch} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/bulk")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/bulk")
 
     lv
     |> form("#bulk-products", rows: %{"1" => %{name: "Борщ", price: "дорого"}})

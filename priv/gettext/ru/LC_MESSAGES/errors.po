@@ -165,7 +165,7 @@ msgstr "Сотрудник не существует"
 msgid "You don't have permission to access this page."
 msgstr "У вас нет прав для доступа к этой странице."
 
-#: lib/delivest/identity/branch.ex:42
+#: lib/delivest/identity/branch.ex:44
 #, elixir-autogen, elixir-format
 msgid "can only contain lowercase letters, numbers, and hyphens"
 msgstr "может содержать только строчные буквы, цифры и дефисы"
@@ -174,3 +174,14 @@ msgstr "может содержать только строчные буквы, 
 #, elixir-autogen, elixir-format
 msgid "does not match password"
 msgstr "не совпадает с паролем"
+
+#: lib/delivest_web/hooks/staff_active_branch.ex:51
+#, elixir-autogen, elixir-format
+msgid "Access to this branch has been revoked."
+msgstr "Доступ к этому филиалу закрыт."
+
+#: lib/delivest_web/controllers/staff/staff_active_branch_controller.ex:18
+#: lib/delivest_web/hooks/staff_active_branch.ex:32
+#, elixir-autogen, elixir-format
+msgid "Branch not found or access denied."
+msgstr "Филиал не найден или нет доступа."

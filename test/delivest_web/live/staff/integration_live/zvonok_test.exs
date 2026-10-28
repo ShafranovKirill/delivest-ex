@@ -11,14 +11,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.ZvonokTest do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     insert(:staff_branch, staff: staff, branch: branch)
 
-    %{conn: init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})}
+    %{
+      conn: init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id}),
+      branch: branch
+    }
   end
 
-  test "saves the settings and shows the webhook url", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations")
+  test "saves the settings and shows the webhook url", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
     assert has_element?(lv, "a#integration-zvonok")
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations/zvonok")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/zvonok")
     refute has_element?(lv, "#zvonok-webhook")
     refute Zvonok.configured?()
 
@@ -34,8 +37,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.ZvonokTest do
     refute Zvonok.valid_webhook_token?("other")
   end
 
-  test "an empty token is replaced with a random one", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations/zvonok")
+  test "an empty token is replaced with a random one", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/zvonok")
 
     lv
     |> form("#zvonok-settings",
@@ -47,10 +50,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.ZvonokTest do
     assert byte_size(token) >= 8
   end
 
-  test "is closed without the admin permission", %{conn: conn} do
+  test "is closed without the admin permission", %{conn: conn, branch: branch} do
     staff = insert(:staff, role: insert(:role, permissions: ["branches.read"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
-    assert {:error, _redirect} = live(conn, ~p"/staff/integrations/zvonok")
+    assert {:error, _redirect} = live(conn, ~p"/staff/b/#{branch}/integrations/zvonok")
   end
 end

@@ -16,7 +16,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
           "active_branch_id" => branch.id
         })
 
-      {:ok, _lv, html} = live(conn, ~p"/staff/orders")
+      {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/orders")
 
       assert html =~ "Orders"
       assert html =~ "By urgency"
@@ -62,7 +62,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
     end
 
     test "status can be changed from the list", %{conn: conn, branch: branch, order: order} do
-      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
       lv
       |> element(~s{form[phx-value-order-id="#{order.id}"]:has(select[name="status"])})
@@ -76,7 +76,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       branch: branch,
       order: order
     } do
-      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
       for status <- [:accepted, :preparing, :ready, :completed] do
         lv |> element("#order-next-#{order.id}") |> render_click()
@@ -91,7 +91,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       |> Ecto.Changeset.change(status: :preparing)
       |> Delivest.Repo.update!()
 
-      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
       assert has_element?(lv, "#order-status-tab-created", "1")
       assert has_element?(lv, "#order-status-tab-preparing", "1")
@@ -99,11 +99,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       lv |> element("#order-status-tab-preparing") |> render_click()
 
       refute has_element?(lv, "#orders-#{order.id}")
-      assert_patch(lv, ~p"/staff/orders?status=preparing")
+      assert_patch(lv, ~p"/staff/b/#{branch}/orders?status=preparing")
     end
 
     test "cancelling asks for a reason", %{conn: conn, branch: branch, order: order} do
-      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
       lv
       |> element(~s{form[phx-value-order-id="#{order.id}"]:has(select[name="status"])})
@@ -130,13 +130,13 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
           remote_status_code: "4"
         })
 
-      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
       assert has_element?(lv, "#order-unmapped-#{order.id}", "4")
     end
 
     test "read-only staff cannot change orders", %{conn: conn, branch: branch, order: order} do
-      {:ok, lv, _html} = live(login(conn, ["orders.read"], branch), ~p"/staff/orders")
+      {:ok, lv, _html} = live(login(conn, ["orders.read"], branch), ~p"/staff/b/#{branch}/orders")
 
       html =
         lv
@@ -148,7 +148,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
     end
 
     test "orders of other branches do not appear live", %{conn: conn, branch: branch} do
-      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/orders")
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
       other_branch = insert(:branch)
       foreign_order = create_order(other_branch.id)
@@ -167,23 +167,28 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       second = create_order(branch.id)
       conn = login(conn, ["admin"], branch)
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/orders?page_size=1")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?page_size=1")
       assert has_element?(lv, "#orders-#{first.id}")
       refute has_element?(lv, "#orders-#{second.id}")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/orders?page_size=1&page=2")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?page_size=1&page=2")
       assert has_element?(lv, "#orders-#{second.id}")
       refute has_element?(lv, "#orders-#{first.id}")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/orders?page_size=1&sort=time")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?page_size=1&sort=time")
       assert has_element?(lv, "#orders-#{second.id}")
     end
 
     test "orders of another branch cannot be edited", %{conn: conn, branch: branch} do
       other_order = create_order(insert(:branch).id)
 
-      assert {:error, {:redirect, %{to: "/staff/orders"}}} =
-               live(login(conn, ["admin"], branch), ~p"/staff/orders/#{other_order.id}/edit")
+      orders = ~p"/staff/b/#{branch}/orders"
+
+      assert {:error, {:redirect, %{to: ^orders}}} =
+               live(
+                 login(conn, ["admin"], branch),
+                 ~p"/staff/b/#{branch}/orders/#{other_order.id}/edit"
+               )
     end
   end
 end

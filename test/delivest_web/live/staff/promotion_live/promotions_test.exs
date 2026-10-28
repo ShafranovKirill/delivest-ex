@@ -16,11 +16,11 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     %{conn: conn, branch: branch}
   end
 
-  test "the editor opens on its own page with a promo code chosen", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions")
+  test "the editor opens on its own page with a promo code chosen", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions")
 
     lv |> element("#new-promotion", "Create promo code") |> render_click()
-    assert_patch(lv, ~p"/staff/promotions/new")
+    assert_patch(lv, ~p"/staff/b/#{branch}/promotions/new")
 
     assert has_element?(lv, "#promotion-editor #promotion-form")
     refute has_element?(lv, "#promotions")
@@ -32,7 +32,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   end
 
   test "creates a public promo code with the rules constructor", %{conn: conn, branch: branch} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/new")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/new")
 
     lv |> element("#add-condition button[phx-value-type=subtotal]") |> render_click()
     lv |> element("#effect-0 button[phx-click=remove_effect]") |> render_click()
@@ -70,7 +70,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   end
 
   test "puts a product on sale from the quick form", %{conn: conn, branch: branch} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/sale")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/sale")
 
     lv
     |> form("#sale-form", sale: %{add: "cola", mode: "percent", value: "20"})
@@ -90,8 +90,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     assert promotion.name =~ "Cola"
   end
 
-  test "rejects a sale price that is not lower", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/sale")
+  test "rejects a sale price that is not lower", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/sale")
 
     lv
     |> form("#sale-form", sale: %{add: "cola", mode: "price", value: "150"})
@@ -101,8 +101,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     refute Repo.get_by(Promotion, kind: :automatic)
   end
 
-  test "highlights incomplete constructor rows", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/new")
+  test "highlights incomplete constructor rows", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/new")
 
     lv
     |> form("#promotion-form", promotion: %{name: "Empty"})
@@ -119,7 +119,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
         rules: "when weekday in (sat, sun) and fulfillment in (pickup)\nthen discount 15% max 300"
       )
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/#{promotion.id}/edit")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/#{promotion.id}/edit")
 
     assert has_element?(lv, "#builder-c0-sat[checked]")
     assert has_element?(lv, "#builder-c1-pickup[checked]")
@@ -129,15 +129,15 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   test "falls back to text for rules the constructor cannot show", %{conn: conn, branch: branch} do
     promotion = insert_promotion(branch.id, rules: "when not subtotal < 500 then discount 5%")
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/#{promotion.id}/edit")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/#{promotion.id}/edit")
 
     assert has_element?(lv, "textarea[name='promotion[rules]']")
     lv |> element("button[phx-click=builder_mode]") |> render_click()
     assert render(lv) =~ "too complex"
   end
 
-  test "shows DSL errors and unknown products in text mode", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/new")
+  test "shows DSL errors and unknown products in text mode", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/new")
 
     lv |> element("button[phx-click=text_mode]") |> render_click()
 
@@ -160,7 +160,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   test "issues a personal code by phone", %{conn: conn, branch: branch} do
     promotion = insert_promotion(branch.id, kind: :personal_code, rules: "then discount 100 rub")
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/promotions/#{promotion.id}/codes")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/#{promotion.id}/codes")
 
     lv
     |> form("#issue-code-form", issue: %{phone: "+79991234567", uses: "2"})

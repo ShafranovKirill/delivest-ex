@@ -163,7 +163,7 @@ msgstr ""
 msgid "You don't have permission to access this page."
 msgstr ""
 
-#: lib/delivest/identity/branch.ex:42
+#: lib/delivest/identity/branch.ex:44
 #, elixir-autogen, elixir-format
 msgid "can only contain lowercase letters, numbers, and hyphens"
 msgstr ""
@@ -171,4 +171,15 @@ msgstr ""
 #: lib/delivest/identity/staff.ex:56
 #, elixir-autogen, elixir-format
 msgid "does not match password"
+msgstr ""
+
+#: lib/delivest_web/hooks/staff_active_branch.ex:51
+#, elixir-autogen, elixir-format
+msgid "Access to this branch has been revoked."
+msgstr ""
+
+#: lib/delivest_web/controllers/staff/staff_active_branch_controller.ex:18
+#: lib/delivest_web/hooks/staff_active_branch.ex:32
+#, elixir-autogen, elixir-format
+msgid "Branch not found or access denied."
 msgstr ""

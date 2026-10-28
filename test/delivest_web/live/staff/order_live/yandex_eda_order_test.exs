@@ -21,7 +21,7 @@ defmodule DelivestWeb.Staff.OrderLive.YandexEdaOrderTest do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
 
     assert has_element?(lv, "#order-courier-#{order.id}", "Василий")
     assert has_element?(lv, "#order-courier-#{order.id}", "+79031111111")
@@ -74,7 +74,7 @@ defmodule DelivestWeb.Staff.OrderLive.YandexEdaOrderTest do
 
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
     form = "#order-courier-code-#{order.id}"
 
     assert lv |> form(form, code: " 1234 ") |> render_submit() =~ "The courier code is correct"

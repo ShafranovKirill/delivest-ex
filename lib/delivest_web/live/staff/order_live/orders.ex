@@ -59,7 +59,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
          |> stream(:orders, orders, reset: true)}
 
       {:error, _meta} ->
-        {:noreply, push_patch(socket, to: ~p"/staff/orders")}
+        {:noreply, push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
     end
   end
 
@@ -193,7 +193,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   defp failed(socket, _error),
     do: socket |> put_flash(:error, gettext("Failed to update order")) |> load()
 
-  defp patch(query, socket), do: {:noreply, push_patch(socket, to: orders_path(query))}
+  defp patch(query, socket),
+    do: {:noreply, push_patch(socket, to: orders_path(socket.assigns.current_branch, query))}
 
   defp authorize(socket, permission) do
     if Identity.can?(socket.assigns.current_staff, permission),
@@ -211,14 +212,14 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
-  defp orders_path(query), do: ~p"/staff/orders?#{query}"
+  defp orders_path(branch, query), do: ~p"/staff/b/#{branch}/orders?#{query}"
 
-  defp tab_path(query, change) do
+  defp tab_path(branch, query, change) do
     query
     |> Map.merge(change)
     |> Map.delete("page")
     |> OrdersQuery.clean()
-    |> orders_path()
+    |> then(&orders_path(branch, &1))
   end
 
   @impl true
@@ -234,7 +235,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
       >
         <:actions>
-          <.link navigate={~p"/staff/orders/new"} class="btn btn-primary">
+          <.link navigate={~p"/staff/b/#{@current_branch}/orders/new"} class="btn btn-primary">
             <.icon name="hero-plus" class="size-5" />
             {gettext("New Order")}
           </.link>
@@ -245,7 +246,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         <StatusTabs.status_tabs
           counts={@counts}
           selected={@selected.status}
-          path_fn={&tab_path(@query, &1)}
+          path_fn={&tab_path(@current_branch, @query, &1)}
         />
         <OrdersToolbar.orders_toolbar selected={@selected} />
       </div>
@@ -263,11 +264,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           id={id}
           order={order}
           current_staff={@current_staff}
+          current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
         />
       </div>
 
-      <.pagination meta={@meta} path_fn={&orders_path(Map.merge(@query, &1))} />
+      <.pagination meta={@meta} path_fn={&orders_path(@current_branch, Map.merge(@query, &1))} />
 
       <CancelOrderModal.cancel_order_modal order={@order_to_cancel} />
 

@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoriesTest do
     b = branch_product(branch, %{name: "Pepperoni", category_id: category.id, order: 2.0})
     c = branch_product(branch, %{name: "Hawaii", category_id: category.id, order: 3.0})
 
-    {:ok, lv, html} = live(conn, ~p"/staff/categories/#{category.id}/products")
+    {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/categories/#{category.id}/products")
 
     assert html =~ "Margherita"
     assert html =~ "Hawaii"
@@ -57,7 +57,7 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoriesTest do
     foreign = branch_product(branch, %{name: "Cola", category_id: other.id, order: 1.0})
     branch_product(branch, %{name: "Margherita", category_id: category.id, order: 1.0})
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/categories/#{category.id}/products")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/categories/#{category.id}/products")
 
     lv
     |> element("#category-products-#{category.id}")

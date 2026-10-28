@@ -18,7 +18,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     {:ok, lv, _html} =
       live(
         sign_in(conn, branch, ["integrations.read", "integrations.update"]),
-        ~p"/staff/integrations/frontpad"
+        ~p"/staff/b/#{branch}/integrations/frontpad"
       )
 
     assert has_element?(lv, "#frontpad-guide[open]")
@@ -46,7 +46,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     {:ok, lv, _html} =
       live(
         sign_in(conn, branch, ["integrations.read", "integrations.update"]),
-        ~p"/staff/integrations/frontpad"
+        ~p"/staff/b/#{branch}/integrations/frontpad"
       )
 
     html =

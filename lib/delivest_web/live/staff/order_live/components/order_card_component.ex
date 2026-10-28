@@ -13,6 +13,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :id, :string, required: true
   attr :order, :map, required: true
   attr :current_staff, :map, required: true
+  attr :current_branch, :map, required: true
   attr :delivery_minutes, :integer, required: true
 
   def render_card(assigns) do
@@ -144,7 +145,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         <div class="ml-auto flex items-center gap-1">
           <.link
             :if={@order.status != :crm}
-            navigate={~p"/staff/orders/#{@order.id}/edit"}
+            navigate={~p"/staff/b/#{@current_branch}/orders/#{@order.id}/edit"}
             class="btn btn-ghost btn-sm btn-square"
             title={gettext("Edit Order")}
           >

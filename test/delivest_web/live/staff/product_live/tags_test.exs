@@ -15,17 +15,17 @@ defmodule DelivestWeb.Staff.ProductLive.TagsTest do
     %{conn: conn, staff: staff, branch: branch}
   end
 
-  test "default tags are created with library icons", %{conn: conn} do
+  test "default tags are created with library icons", %{conn: conn, branch: branch} do
     names = Enum.map(Net.list_product_tags(), & &1.name)
     assert names == ["Хит", "Новинка", "Острое", "Вегетарианское", "Детям", "Выгодно"]
 
-    {:ok, _lv, html} = live(conn, ~p"/staff/products/tags")
+    {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/products/tags")
     assert html =~ "Вегетарианское"
     assert html =~ "/images/tag-icons/leaf.svg"
   end
 
-  test "a tag is created with a picked icon and edited", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/tags/new")
+  test "a tag is created with a picked icon and edited", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/tags/new")
 
     lv
     |> form("#product-tag-form", product_tag: %{name: "Без глютена", icon: "wheat-off"})
@@ -35,7 +35,7 @@ defmodule DelivestWeb.Staff.ProductLive.TagsTest do
     assert tag.icon == "wheat-off"
     assert render(lv) =~ "Без глютена"
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/tags/#{tag.id}/edit")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/tags/#{tag.id}/edit")
 
     lv
     |> form("#product-tag-form", product_tag: %{name: "Без лактозы", icon: "milk-off"})
@@ -44,8 +44,8 @@ defmodule DelivestWeb.Staff.ProductLive.TagsTest do
     assert %{name: "Без лактозы", icon: "milk-off"} = Repo.get!(ProductTag, tag.id)
   end
 
-  test "a tag needs a name and a known icon", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/tags/new")
+  test "a tag needs a name and a known icon", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/tags/new")
 
     html =
       lv
@@ -71,7 +71,7 @@ defmodule DelivestWeb.Staff.ProductLive.TagsTest do
         "tags" => [tag.id, keep.id]
       })
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/tags")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/tags")
     lv |> element("#product-tag-#{tag.id} button[phx-click=delete_click]") |> render_click()
     lv |> element("#delete-product-tag-modal button.btn-error") |> render_click()
 
@@ -84,9 +84,9 @@ defmodule DelivestWeb.Staff.ProductLive.TagsTest do
     insert(:staff_branch, staff: staff, branch: branch)
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
-    {:ok, _lv, html} = live(conn, ~p"/staff/products/tags")
+    {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/products/tags")
     refute html =~ "Add tag"
-    assert {:error, {:live_redirect, _}} = live(conn, ~p"/staff/products/tags/new")
+    assert {:error, {:live_redirect, _}} = live(conn, ~p"/staff/b/#{branch}/products/tags/new")
     assert {:error, :forbidden} = Net.create_product_tag(staff, %{name: "X", icon: "star"})
   end
 

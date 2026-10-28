@@ -9,15 +9,18 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
   def without_blank(params), do: params
 
   attr :current, :atom, required: true
+  attr :branch, :any, required: true
 
   def tabs(assigns) do
     assigns =
       assign(assigns,
         tabs: [
-          {:products, ~p"/staff/products", "hero-cube", gettext("Products")},
-          {:stops, ~p"/staff/products/stops", "hero-no-symbol", gettext("Stop list")},
-          {:tags, ~p"/staff/products/tags", "hero-tag", gettext("Tags")},
-          {:suggested, ~p"/staff/products/suggested", "hero-sparkles", gettext("Recommended")}
+          {:products, ~p"/staff/b/#{assigns.branch}/products", "hero-cube", gettext("Products")},
+          {:stops, ~p"/staff/b/#{assigns.branch}/products/stops", "hero-no-symbol",
+           gettext("Stop list")},
+          {:tags, ~p"/staff/b/#{assigns.branch}/products/tags", "hero-tag", gettext("Tags")},
+          {:suggested, ~p"/staff/b/#{assigns.branch}/products/suggested", "hero-sparkles",
+           gettext("Recommended")}
         ]
       )
 
@@ -48,6 +51,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
 
   attr :field, Phoenix.HTML.FormField, required: true
   attr :tags, :list, required: true
+  attr :branch, :any, required: true
 
   def tag_checkboxes(assigns) do
     assigns = assign(assigns, selected: selected(assigns.field.value))
@@ -74,7 +78,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
       </div>
       <p class="text-xs text-base-content/60">
         {gettext("Shown on the product card on the website.")}
-        <.link navigate={~p"/staff/products/tags"} class="link">
+        <.link navigate={~p"/staff/b/#{@branch}/products/tags"} class="link">
           {gettext("Manage tags")}
         </.link>
       </p>

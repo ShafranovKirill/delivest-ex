@@ -360,7 +360,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             placeholder={gettext("Enter product description...")}
           />
 
-          <.tag_checkboxes field={@form[:tags]} tags={@product_tags} />
+          <.tag_checkboxes field={@form[:tags]} tags={@product_tags} branch={@current_branch} />
 
           <div>
             <.input

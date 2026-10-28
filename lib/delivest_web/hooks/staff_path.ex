@@ -14,7 +14,10 @@ defmodule DelivestWeb.Hooks.StaffPath do
     socket =
       socket
       |> assign(:current_path, path)
-      |> assign(:current_page, determine_page_by_path(path))
+      |> assign(
+        :current_page,
+        path |> DelivestWeb.StaffBranchPath.strip() |> determine_page_by_path()
+      )
 
     {:cont, socket}
   end

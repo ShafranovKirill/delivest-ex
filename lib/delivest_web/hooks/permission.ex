@@ -21,7 +21,7 @@ defmodule DelivestWeb.Hooks.Permission do
            "You don't have permission to access this page."
          )
        )
-       |> redirect(to: "/staff/dashboard")}
+       |> redirect(to: DelivestWeb.StaffBranchPath.home(socket.assigns[:current_branch]))}
     end
   end
 end

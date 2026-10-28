@@ -1,110 +1,61 @@
 defmodule DelivestWeb.Hooks.StaffActiveBranch do
   import Phoenix.LiveView
   import Phoenix.Component
+  use Gettext, backend: DelivestWeb.Gettext
   alias Delivest.Identity
 
   def on_mount(:optional, _params, session, socket) do
-    staff = socket.assigns[:current_staff]
-    branch_id = session["active_branch_id"]
+    case accessible(socket.assigns[:current_staff], session["active_branch_id"]) do
+      {:ok, branch} ->
+        {:cont, socket |> assign(:active_branch_id, branch.id) |> assign(:current_branch, branch)}
 
-    with true <- not is_nil(branch_id),
-         true <- Identity.has_branch_access?(staff, branch_id),
-         {:ok, branch} <- Identity.get_branch(branch_id) do
-      {:cont, socket |> assign(:active_branch_id, branch_id) |> assign(:current_branch, branch)}
-    else
-      _ -> {:cont, socket}
-    end
-  end
-
-  def on_mount(:default, _params, session, socket) do
-    current_staff = socket.assigns[:current_staff]
-    active_branch_id = session["active_branch_id"]
-
-    cond do
-      is_nil(active_branch_id) ->
-        case current_staff.branches do
-          [branch] ->
-            {:halt, redirect(socket, to: "/staff/branches/select/#{branch.id}")}
-
-          _ ->
-            {:halt,
-             socket
-             |> put_flash(
-               :info,
-               Gettext.dgettext(
-                 DelivestWeb.Gettext,
-                 "info",
-                 "Please select a branch to continue."
-               )
-             )
-             |> redirect(to: "/staff/branches/select")}
-        end
-
-      not Identity.has_branch_access?(current_staff, active_branch_id) ->
-        {:halt,
-         socket
-         |> put_flash(
-           :error,
-           Gettext.dgettext(
-             DelivestWeb.Gettext,
-             "error",
-             "Access to this branch has been revoked."
-           )
-         )
-         |> redirect(to: "/staff/branches/select")}
-
-      true ->
-        case Identity.get_branch(active_branch_id) do
-          {:ok, branch} ->
-            socket =
-              socket
-              |> assign(:active_branch_id, active_branch_id)
-              |> assign(:current_branch, branch)
-              |> attach_hook(
-                :staff_active_branch_reloaded,
-                :handle_info,
-                &check_branch_access_on_event/2
-              )
-
-            {:cont, socket}
-
-          _ ->
-            {:halt,
-             socket
-             |> put_flash(
-               :error,
-               Gettext.dgettext(DelivestWeb.Gettext, "error", "Branch not selected.")
-             )
-             |> redirect(to: "/staff/branches/select")}
-        end
-    end
-  end
-
-  defp check_branch_access_on_event(event, socket)
-       when event in [:staff_updated] do
-    current_staff = socket.assigns[:current_staff]
-    active_branch_id = socket.assigns[:active_branch_id]
-
-    if current_staff && active_branch_id do
-      if Identity.has_branch_access?(current_staff, active_branch_id) do
+      :error ->
         {:cont, socket}
-      else
-        {:halt,
-         socket
-         |> put_flash(
-           :error,
-           Gettext.dgettext(
-             DelivestWeb.Gettext,
-             "error",
-             "Access to this branch has been revoked."
-           )
-         )
-         |> redirect(to: "/staff/branches/select")}
-      end
-    else
-      {:cont, socket}
     end
+  end
+
+  def on_mount(:default, %{"branch_slug" => slug}, _session, socket) do
+    staff = socket.assigns[:current_staff]
+
+    with {:ok, branch} <- Identity.get_branch_by_slug(slug),
+         true <- Identity.has_branch_access?(staff, branch.id) do
+      {:cont,
+       socket
+       |> assign(:active_branch_id, branch.id)
+       |> assign(:current_branch, branch)
+       |> attach_hook(
+         :staff_active_branch_reloaded,
+         :handle_info,
+         &check_branch_access_on_event/2
+       )}
+    else
+      _ -> {:halt, to_select(socket, dgettext("errors", "Branch not found or access denied."))}
+    end
+  end
+
+  def accessible(staff, branch_id) when is_binary(branch_id) do
+    with true <- Identity.has_branch_access?(staff, branch_id),
+         {:ok, branch} <- Identity.get_branch(branch_id) do
+      {:ok, branch}
+    else
+      _ -> :error
+    end
+  end
+
+  def accessible(_staff, _branch_id), do: :error
+
+  defp check_branch_access_on_event(:staff_updated, socket) do
+    if Identity.has_branch_access?(socket.assigns.current_staff, socket.assigns.active_branch_id),
+      do: {:cont, socket},
+      else:
+        {:halt, to_select(socket, dgettext("errors", "Access to this branch has been revoked."))}
   end
 
   defp check_branch_access_on_event(_message, socket), do: {:cont, socket}
+
+  defp to_select(socket, message) do
+    socket
+    |> put_flash(:error, message)
+    |> redirect(to: "/staff/branches/select")
+  end
 end

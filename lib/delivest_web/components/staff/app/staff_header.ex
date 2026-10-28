@@ -5,6 +5,7 @@ defmodule DelivestWeb.StaffHeader do
 
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
+  attr :current_path, :string, default: nil
   attr :new_orders_count, :integer, default: 0
 
   def staff_header(assigns) do
@@ -19,7 +20,10 @@ defmodule DelivestWeb.StaffHeader do
         <.icon name="hero-bars-3" class="size-6" />
       </button>
 
-      <.link navigate={~p"/staff/dashboard"} class="hidden sm:flex items-center gap-2 shrink-0">
+      <.link
+        navigate={DelivestWeb.StaffBranchPath.home(@current_branch)}
+        class="hidden sm:flex items-center gap-2 shrink-0"
+      >
         <img src={~p"/images/logo-dark.png"} alt="" class="size-8 object-contain dark:hidden" />
         <img src={~p"/images/logo-white.png"} alt="" class="size-8 object-contain hidden dark:block" />
         <span class="text-lg font-bold">Delivest</span>
@@ -30,21 +34,26 @@ defmodule DelivestWeb.StaffHeader do
       <.new_orders
         :if={@current_branch && can?(@current_staff, "orders.read")}
         count={@new_orders_count}
+        branch={@current_branch}
       />
 
-      <.branch_selector current_branch={@current_branch} />
+      <.branch_selector
+        current_branch={@current_branch}
+        section={DelivestWeb.StaffBranchPath.section(@current_path)}
+      />
       <.staff_menu current_staff={@current_staff} />
     </header>
     """
   end
 
   attr :count, :integer, required: true
+  attr :branch, :map, required: true
 
   defp new_orders(assigns) do
     ~H"""
     <.link
       id="header-new-orders"
-      navigate={~p"/staff/orders?status=created"}
+      navigate={~p"/staff/b/#{@branch}/orders?status=created"}
       class="hidden sm:inline-flex btn btn-ghost btn-sm btn-square relative"
       title={gettext("Orders awaiting confirmation")}
     >
@@ -181,7 +190,7 @@ defmodule DelivestWeb.StaffHeader do
         <div class="divider my-1"></div>
         <li>
           <.link
-            patch={~p"/staff/branches/select"}
+            navigate={~p"/staff/branches/select?#{%{to: @section || "/dashboard"}}"}
             class="flex items-center gap-2 font-medium text-primary hover:bg-primary/10"
           >
             <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4 shrink-0" />

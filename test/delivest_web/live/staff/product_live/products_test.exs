@@ -16,7 +16,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
           "active_branch_id" => branch.id
         })
 
-      {:ok, _lv, html} = live(conn, ~p"/staff/products")
+      {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/products")
 
       assert html =~ "Products"
       assert html =~ "Create Product"
@@ -42,7 +42,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
         "owner_id" => staff.id
       })
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/new")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/new")
     send(lv.pid, {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, [{:ok, media}]}})
 
     _ = render(lv)
@@ -59,7 +59,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     hit = Delivest.Repo.get_by!(Delivest.Net.ProductTag, name: "Хит")
     spicy = Delivest.Repo.get_by!(Delivest.Net.ProductTag, name: "Острое")
 
-    {:ok, lv, html} = live(conn, ~p"/staff/products/new")
+    {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/products/new")
     assert html =~ "Острое"
 
     lv
@@ -71,7 +71,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
     assert Enum.sort(product.tags) == Enum.sort([hit.id, spicy.id])
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/#{product.id}/edit")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/#{product.id}/edit")
     lv |> form("#product-form", product: %{tags: [""]}) |> render_submit()
 
     assert %{tags: []} = Delivest.Net.Products.get_product(product.id)
@@ -82,7 +82,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/products/new")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/new")
 
     lv
     |> form("#product-form",
@@ -128,7 +128,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       insert_branch_product(branch.id, name: "Skipped")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/products")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products")
 
       lv |> element("#product-selection") |> render_change(%{"ids" => [chosen.id]})
       render_click(lv, "open_copy")
@@ -148,7 +148,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       insert_branch_product(branch.id, name: "One")
       insert_branch_product(branch.id, name: "Two")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/products")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products")
       render_click(lv, "open_copy")
 
       lv
@@ -170,7 +170,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     test "staff stops a product for today and lifts it", %{conn: conn, branch: branch} do
       soup = insert_branch_product(branch.id, name: "Soup")
       insert_branch_product(branch.id, name: "Tea")
-      {:ok, lv, _html} = live(conn, ~p"/staff/products")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products")
 
       lv
       |> element("#product-stop-#{soup.id} button[phx-value-period=today]")
@@ -188,7 +188,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       insert_branch_product(branch.id, name: "Kompot")
       {:ok, _} = Delivest.Net.Stops.replace_external(branch.id, :frontpad, [soup.id])
 
-      {:ok, _lv, html} = live(conn, ~p"/staff/products?stopped=true")
+      {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/products?stopped=true")
 
       assert html =~ "Soup"
       refute html =~ "Kompot"

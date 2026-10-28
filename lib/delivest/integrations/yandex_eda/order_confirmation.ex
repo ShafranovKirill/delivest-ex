@@ -62,7 +62,8 @@ defmodule Delivest.Integrations.YandexEda.OrderConfirmation do
     do: %{"status" => status, "payment_method" => to_string(order.payment_method)}
 
   defp fetch(staff, branch_id, order_id) do
-    with true <- Identity.can?(staff, "orders.update") || {:error, :forbidden},
+    with true <-
+           Identity.authorize(staff, "orders.update", branch_id) == :ok || {:error, :forbidden},
          {:ok, uuid} <- Ecto.UUID.cast(order_id),
          %Order{status: :created} = order <-
            Repo.get_by(Order, id: uuid, branch_id: branch_id, source: @provider) do

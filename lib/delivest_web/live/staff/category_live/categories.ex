@@ -45,7 +45,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
     else
       socket
       |> put_flash(:error, gettext("You don't have permission to create category."))
-      |> push_patch(to: ~p"/staff/categories")
+      |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/categories")
     end
   end
 
@@ -56,12 +56,12 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
           assign(socket, page_title: gettext("Edit category"), category: category)
 
         _ ->
-          push_patch(socket, to: ~p"/staff/categories")
+          push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/categories")
       end
     else
       socket
       |> put_flash(:error, gettext("You don't have permission to edit category."))
-      |> push_patch(to: ~p"/staff/categories")
+      |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/categories")
     end
   end
 
@@ -77,12 +77,12 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
           )
 
         _ ->
-          push_patch(socket, to: ~p"/staff/categories")
+          push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/categories")
       end
     else
       socket
       |> put_flash(:error, gettext("You don't have permission to edit products."))
-      |> push_patch(to: ~p"/staff/categories")
+      |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/categories")
     end
   end
 
@@ -197,7 +197,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "categories.create")}
-            patch={~p"/staff/categories/new"}
+            patch={~p"/staff/b/#{@current_branch}/categories/new"}
             class="btn btn-primary"
           >
             {gettext("Create Category")}
@@ -222,7 +222,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
             <div class="flex items-center gap-1">
               <.link
                 :if={Identity.can?(@current_staff, "products.update")}
-                patch={~p"/staff/categories/#{category.id}/products"}
+                patch={~p"/staff/b/#{@current_branch}/categories/#{category.id}/products"}
                 class="btn btn-sm btn-ghost btn-square"
                 title={gettext("Products order")}
               >
@@ -231,7 +231,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
 
               <.link
                 :if={Identity.can?(@current_staff, "categories.update")}
-                patch={~p"/staff/categories/#{category.id}/edit"}
+                patch={~p"/staff/b/#{@current_branch}/categories/#{category.id}/edit"}
                 class="btn btn-sm btn-ghost btn-square text-info"
                 title={gettext("Edit")}
               >
@@ -257,7 +257,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
         id="category-slideover"
         show={@live_action in [:new, :edit]}
         title={@page_title}
-        on_close={JS.patch(~p"/staff/categories")}
+        on_close={JS.patch(~p"/staff/b/#{@current_branch}/categories")}
       >
         <.live_component
           :if={@category}
@@ -267,7 +267,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
           category={@category}
           branch_id={@branch_id}
           current_staff={@current_staff}
-          patch={~p"/staff/categories"}
+          patch={~p"/staff/b/#{@current_branch}/categories"}
         />
       </.slide_over>
 
@@ -275,7 +275,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
         id="category-products-slideover"
         show={@live_action == :products}
         title={@ordering_category && @ordering_category.name}
-        on_close={JS.patch(~p"/staff/categories")}
+        on_close={JS.patch(~p"/staff/b/#{@current_branch}/categories")}
       >
         <p class="text-sm text-base-content/60 mb-4">
           {gettext("Drag products to set the order they appear in the menu.")}

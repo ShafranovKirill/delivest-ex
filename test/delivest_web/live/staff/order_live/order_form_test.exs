@@ -18,31 +18,31 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     %{conn: conn, branch: branch, staff: staff, product: insert_branch_product(branch.id)}
   end
 
-  test "cart survives a remount", %{conn: conn, product: product} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders/new")
+  test "cart survives a remount", %{conn: conn, branch: branch, product: product} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
     render_click(lv, "add_item", %{"product-id" => product.id})
 
-    {:ok, _lv, html} = live(conn, ~p"/staff/orders/new")
+    {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
 
     assert html =~ product.name
   end
 
   test "order without phone is created", %{conn: conn, branch: branch, product: product} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders/new")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
     render_click(lv, "add_item", %{"product-id" => product.id})
 
     lv
     |> form("#order-details-form", order: %{customer_phone: "+7"})
     |> render_submit()
 
-    assert_redirect(lv, ~p"/staff/orders")
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
     assert [%Order{client_id: nil}] = Repo.all(Order) |> Enum.filter(&(&1.branch_id == branch.id))
   end
 
   test "unsaved edits do not touch the order", %{conn: conn, branch: branch, product: product} do
     order = order_fixture(branch.id, product: product)
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders/#{order.id}/edit")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/#{order.id}/edit")
     render_click(lv, "add_item", %{"product-id" => product.id})
 
     assert Carts.get_cart_by_id(order.cart_id).total_quantity == 1
@@ -52,22 +52,24 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
   test "edit saves the cart into the order", %{conn: conn, branch: branch, product: product} do
     order = order_fixture(branch.id, product: product)
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders/#{order.id}/edit")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/#{order.id}/edit")
     render_click(lv, "add_item", %{"product-id" => product.id})
 
     lv
     |> form("#order-details-form")
     |> render_submit()
 
-    assert_redirect(lv, ~p"/staff/orders")
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
     assert [%{quantity: 2}] = Repo.preload(Repo.reload!(order), :items, force: true).items
   end
 
   test "crm orders cannot be opened for edit", %{conn: conn, branch: branch} do
     order = order_fixture(branch.id, attrs: %{"status" => "crm"})
 
-    assert {:error, {:redirect, %{to: "/staff/orders"}}} =
-             live(conn, ~p"/staff/orders/#{order.id}/edit")
+    orders = ~p"/staff/b/#{branch}/orders"
+
+    assert {:error, {:redirect, %{to: ^orders}}} =
+             live(conn, ~p"/staff/b/#{branch}/orders/#{order.id}/edit")
   end
 
   test "a known client is recognised and their address is one click away", %{
@@ -84,7 +86,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
         "house" => "5"
       })
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders/new")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
     render_click(lv, "add_item", %{"product-id" => product.id})
 
     lv
@@ -118,7 +120,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     order = order_fixture(branch.id, product: product, attrs: %{"cook_by" => tomorrow})
     assert Repo.reload!(order).cook_by
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/orders/#{order.id}/edit")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/#{order.id}/edit")
     lv |> form("#order-details-form", order: %{timing: "asap"}) |> render_submit()
 
     assert Repo.reload!(order).cook_by == nil

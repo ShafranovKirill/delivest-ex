@@ -21,6 +21,6 @@ defmodule DelivestWeb.PageControllerTest do
 
     assert html =~ "Open control panel"
     assert html =~ "You are signed in as Ivan"
-    assert html =~ ~s(href="/staff/dashboard")
+    assert html =~ ~s(href="/staff")
   end
 end

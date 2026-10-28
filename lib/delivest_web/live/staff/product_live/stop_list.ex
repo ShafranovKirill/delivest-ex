@@ -90,7 +90,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
         subtitle={gettext("Products in the stop list are not sold on the site and in the channels.")}
       />
 
-      <.tabs current={:stops} />
+      <.tabs current={:stops} branch={@current_branch} />
 
       <BranchProducts.filter_form
         id="stop-list-filter"

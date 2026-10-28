@@ -204,7 +204,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6 max-w-5xl">
-      <.link navigate={~p"/staff/integrations"} class="btn btn-ghost btn-sm -ml-2">
+      <.link
+        navigate={~p"/staff/b/#{@current_branch}/integrations"}
+        class="btn btn-ghost btn-sm -ml-2"
+      >
         <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
       </.link>
 

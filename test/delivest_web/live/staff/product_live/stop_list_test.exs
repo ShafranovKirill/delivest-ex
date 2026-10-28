@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
     {:ok, lv, html} =
       live(
         sign_in(ctx.conn, ctx.branch, ["products.read", "stops.update"]),
-        ~p"/staff/products/stops"
+        ~p"/staff/b/#{ctx.branch}/products/stops"
       )
 
     assert html =~ "Борщ"
@@ -46,7 +46,10 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
 
   test "without stops.update the list is read only", ctx do
     {:ok, lv, _html} =
-      live(sign_in(ctx.conn, ctx.branch, ["products.read"]), ~p"/staff/products/stops")
+      live(
+        sign_in(ctx.conn, ctx.branch, ["products.read"]),
+        ~p"/staff/b/#{ctx.branch}/products/stops"
+      )
 
     refute has_element?(lv, "#product-stop-#{ctx.soup.id} button")
   end
@@ -57,7 +60,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
     {:ok, lv, _html} =
       live(
         sign_in(ctx.conn, ctx.branch, ["products.read", "products.update"]),
-        ~p"/staff/products/suggested"
+        ~p"/staff/b/#{ctx.branch}/products/suggested"
       )
 
     lv |> element("#suggested-list-#{ctx.soup.id} input") |> render_click()
@@ -72,12 +75,12 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
     {:ok, _lv, html} =
       live(
         sign_in(ctx.conn, ctx.branch, ["products.read", "orders.read"]),
-        ~p"/staff/products/stops"
+        ~p"/staff/b/#{ctx.branch}/products/stops"
       )
 
     assert html =~ ~s(id="nav-group-menu")
-    assert html =~ ~s(href="/staff/products/suggested")
+    assert html =~ ~s(href="/staff/b/#{ctx.branch.slug}/products/suggested")
     refute html =~ ~s(id="nav-group-orders")
-    assert html =~ ~s(href="/staff/orders")
+    assert html =~ ~s(href="/staff/b/#{ctx.branch.slug}/orders")
   end
 end

@@ -14,7 +14,7 @@ defmodule DelivestWeb.Staff.StaffSessionController do
         conn
         |> put_session(:staff_id, account.id)
         |> put_flash(:info, gettext("Successfully logged in!"))
-        |> redirect(to: "/staff/dashboard")
+        |> redirect(to: ~p"/staff")
 
       {:error, :invalid_credentials} ->
         Logger.warning("staff.login_failed login=#{inspect(login)} ip=#{remote_ip(conn)}")

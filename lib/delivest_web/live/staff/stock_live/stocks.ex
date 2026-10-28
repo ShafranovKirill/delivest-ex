@@ -34,7 +34,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         {:noreply, socket}
 
       {:error, _reason} ->
-        {:noreply, push_patch(socket, to: ~p"/staff/stocks")}
+        {:noreply, push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/stocks")}
     end
   end
 
@@ -49,7 +49,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
     else
       socket
       |> put_flash(:error, gettext("You don't have permission to create banners."))
-      |> push_patch(to: ~p"/staff/stocks")
+      |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/stocks")
     end
   end
 
@@ -60,12 +60,12 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
           assign(socket, page_title: gettext("Edit banner"), stock: stock)
 
         _ ->
-          push_patch(socket, to: ~p"/staff/stocks")
+          push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/stocks")
       end
     else
       socket
       |> put_flash(:error, gettext("You don't have permission to edit banners."))
-      |> push_patch(to: ~p"/staff/stocks")
+      |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/stocks")
     end
   end
 
@@ -98,7 +98,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         {:noreply,
          socket
          |> put_flash(:error, gettext("You don't have permission to delete banners."))
-         |> push_patch(to: ~p"/staff/stocks")}
+         |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/stocks")}
     end
   end
 
@@ -141,7 +141,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
      socket
      |> put_flash(:info, gettext("Banner saved"))
      |> assign(stocks: stocks)
-     |> push_patch(to: ~p"/staff/stocks")}
+     |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/stocks")}
   end
 
   @impl true
@@ -204,7 +204,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "stocks.create")}
-            patch={~p"/staff/stocks/new"}
+            patch={~p"/staff/b/#{@current_branch}/stocks/new"}
             class="btn btn-primary"
           >
             <.icon name="hero-plus" class="size-5" />
@@ -267,7 +267,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
             <div class="flex items-center gap-1 shrink-0">
               <.link
                 :if={Identity.can?(@current_staff, "stocks.update")}
-                patch={~p"/staff/stocks/#{stock.id}/edit"}
+                patch={~p"/staff/b/#{@current_branch}/stocks/#{stock.id}/edit"}
                 class="btn btn-sm btn-ghost btn-square text-info"
                 title={gettext("Edit")}
               >
@@ -293,7 +293,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         id="stock-slideover"
         show={@live_action in [:new, :edit]}
         title={@page_title}
-        on_close={JS.patch(~p"/staff/stocks")}
+        on_close={JS.patch(~p"/staff/b/#{@current_branch}/stocks")}
       >
         <.live_component
           :if={@stock}
@@ -303,7 +303,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
           stock={@stock}
           branch_id={@branch_id}
           current_staff={@current_staff}
-          patch={~p"/staff/stocks"}
+          patch={~p"/staff/b/#{@current_branch}/stocks"}
         />
       </.slide_over>
 

@@ -2,12 +2,13 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   use DelivestWeb, :live_view
   alias Delivest.Identity
 
-  def mount(_params, _session, socket) do
+  alias DelivestWeb.StaffBranchPath
+
+  def mount(params, _session, socket) do
     staff = socket.assigns[:current_staff]
+    to = if StaffBranchPath.valid_section?(params["to"]), do: params["to"], else: "/dashboard"
 
-    branches = Identity.list_branch_for_staff(staff)
-
-    {:ok, assign(socket, branches: branches)}
+    {:ok, assign(socket, branches: Identity.list_branch_for_staff(staff), to: to)}
   end
 
   def render(assigns) do
@@ -21,7 +22,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
       <div class="space-y-4">
         <.link
           :for={branch <- @branches}
-          href={~p"/staff/branches/select/#{branch.id}"}
+          href={~p"/staff/branches/select/#{branch.id}?#{%{to: @to}}"}
           method="get"
           class="block p-6 rounded-2xl border border-base-300 bg-base-100 shadow-sm hover:border-base-content/30 hover:shadow-md transition-all group"
         >

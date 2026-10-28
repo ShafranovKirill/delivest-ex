@@ -109,17 +109,25 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         <div class="flex flex-wrap gap-2">
           <.link
             :if={@can_create_order}
-            navigate={~p"/staff/orders/new"}
+            navigate={~p"/staff/b/#{@current_branch}/orders/new"}
             class="btn btn-primary btn-sm"
           >
             <.icon name="hero-plus" class="size-4" />
             {gettext("New Order")}
           </.link>
-          <.link :if={@can_orders} navigate={~p"/staff/orders"} class="btn btn-outline btn-sm">
+          <.link
+            :if={@can_orders}
+            navigate={~p"/staff/b/#{@current_branch}/orders"}
+            class="btn btn-outline btn-sm"
+          >
             <.icon name="hero-shopping-bag" class="size-4" />
             {gettext("Orders")}
           </.link>
-          <.link :if={@can_stats} navigate={~p"/staff/statistics"} class="btn btn-outline btn-sm">
+          <.link
+            :if={@can_stats}
+            navigate={~p"/staff/b/#{@current_branch}/statistics"}
+            class="btn btn-outline btn-sm"
+          >
             <.icon name="hero-chart-bar" class="size-4" />
             {gettext("Statistics")}
           </.link>

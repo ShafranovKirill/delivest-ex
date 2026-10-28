@@ -29,7 +29,7 @@ defmodule DelivestWeb.Staff.OverdueOrdersAlertTest do
   end
 
   test "the alert pops up on any page once the deadline passes", ctx do
-    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/integrations")
+    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/integrations")
     refute has_element?(lv, "#overdue-orders")
 
     overdue!(ctx.order)
@@ -40,7 +40,7 @@ defmodule DelivestWeb.Staff.OverdueOrdersAlertTest do
 
   test "confirm from the alert accepts the order", ctx do
     overdue!(ctx.order)
-    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/orders")
+    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/orders")
 
     lv |> element("#overdue-confirm-#{ctx.order.id}") |> render_click()
 
@@ -50,7 +50,7 @@ defmodule DelivestWeb.Staff.OverdueOrdersAlertTest do
 
   test "cancel from the alert cancels the order", ctx do
     overdue!(ctx.order)
-    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/orders")
+    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/orders")
 
     lv |> element("#overdue-cancel-#{ctx.order.id}") |> render_click()
 
@@ -60,7 +60,7 @@ defmodule DelivestWeb.Staff.OverdueOrdersAlertTest do
 
   test "let it wait closes the alert and keeps the order new", ctx do
     overdue!(ctx.order)
-    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/integrations")
+    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/integrations")
 
     lv |> element("#overdue-keep-#{ctx.order.id}") |> render_click()
 

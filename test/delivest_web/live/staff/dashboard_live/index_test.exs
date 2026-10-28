@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
   describe "dashboard page" do
     test "redirects unauthenticated staff to login", %{conn: conn} do
       assert {:error, {:redirect, %{to: "/staff/auth/login"}}} =
-               live(conn, ~p"/staff/dashboard")
+               live(conn, ~p"/staff/b/#{insert(:branch)}/dashboard")
     end
 
     test "renders dashboard for authenticated staff in an active branch", %{conn: conn} do
@@ -21,7 +21,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
           "active_branch_id" => branch.id
         })
 
-      {:ok, _lv, html} = live(conn, ~p"/staff/dashboard")
+      {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
       assert html =~ "Dashboard"
       assert html =~ "Log out"
@@ -36,7 +36,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       conn =
         init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
-      {:ok, lv, html} = live(conn, ~p"/staff/dashboard")
+      {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
       assert html =~ "450 ₽"
       assert has_element?(lv, "#dashboard-order-#{order.id}")
@@ -64,7 +64,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
 
     test "counts orders awaiting confirmation live", %{conn: conn, branch: branch} do
       Delivest.OrderFixtures.order_fixture(branch.id, price: 100)
-      {:ok, lv, _html} = live(conn, ~p"/staff/dashboard")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
       assert has_element?(lv, "#header-new-orders-count", "1")
 
@@ -72,16 +72,19 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       assert has_element?(lv, "#header-new-orders-count", "2")
     end
 
-    test "log out lives in the header, not the sidebar", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/staff/dashboard")
+    test "log out lives in the header, not the sidebar", %{conn: conn, branch: branch} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
       assert has_element?(lv, "header a[href='/staff/auth/log_out']")
       refute has_element?(lv, "#main-sidebar a[href='/staff/auth/log_out']")
       refute has_element?(lv, "#main-sidebar a[href='/staff/branches/select']")
     end
 
-    test "theme switch lives in the user menu and new order is not in the header", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/staff/dashboard")
+    test "theme switch lives in the user menu and new order is not in the header", %{
+      conn: conn,
+      branch: branch
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
       assert has_element?(lv, "header .dropdown #header-theme-dark")
       assert has_element?(lv, "header .dropdown #header-theme-light")

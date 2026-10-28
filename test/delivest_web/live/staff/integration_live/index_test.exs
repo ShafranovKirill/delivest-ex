@@ -49,16 +49,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
   test "lists frontpad among integrations", %{conn: conn, branch: branch} do
     connect_frontpad(branch)
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
 
     assert has_element?(lv, "#integration-frontpad", "Frontpad")
     assert has_element?(lv, "#integration-zvonok")
     refute has_element?(lv, "a#integration-zvonok")
-    assert has_element?(lv, "#main-sidebar a[href='/staff/integrations']")
+    assert has_element?(lv, "#main-sidebar a[href='/staff/b/#{branch.slug}/integrations']")
   end
 
-  test "opens settings when frontpad is not set up", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations/frontpad")
+  test "opens settings when frontpad is not set up", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
 
     assert has_element?(lv, "#frontpad-settings fieldset[disabled]")
     refute has_element?(lv, "#frontpad-refresh")
@@ -68,7 +68,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
   end
 
   test "saves frontpad settings of the branch", %{conn: conn, branch: branch} do
-    {:ok, lv, _html} = live(sign_in_editor(conn, branch), ~p"/staff/integrations/frontpad")
+    {:ok, lv, _html} =
+      live(sign_in_editor(conn, branch), ~p"/staff/b/#{branch}/integrations/frontpad")
 
     lv
     |> form("#frontpad-settings",
@@ -87,7 +88,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
   end
 
   test "enabled frontpad requires an api key", %{conn: conn, branch: branch} do
-    {:ok, lv, _html} = live(sign_in_editor(conn, branch), ~p"/staff/integrations/frontpad")
+    {:ok, lv, _html} =
+      live(sign_in_editor(conn, branch), ~p"/staff/b/#{branch}/integrations/frontpad")
 
     lv
     |> form("#frontpad-settings", crm: %{enabled: "true", frontpad: %{api_key: ""}})
@@ -106,7 +108,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     insert_branch_product(branch.id, name: "Tea", external_id: "9", price: 50)
     stub_catalog()
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations/frontpad")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
     assert has_element?(lv, "#frontpad-empty")
     refute has_element?(lv, "#frontpad-settings")
 

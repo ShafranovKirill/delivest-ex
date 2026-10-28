@@ -213,6 +213,7 @@ defmodule DelivestWeb.Router do
     end
 
     delete "/auth/log_out", StaffSessionController, :delete
+    get "/", StaffHomeController, :show
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
 
     live_session :staff_public,
@@ -271,65 +272,67 @@ defmodule DelivestWeb.Router do
       end
     end
 
-    live_session :staff_need_branch,
-      layout: {DelivestWeb.Layouts, :staff_app},
-      on_mount: [
-        {DelivestWeb.Hooks.StaffAuth, :default},
-        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
-        {DelivestWeb.Hooks.StaffActiveBranch, :default},
-        {DelivestWeb.Hooks.NewOrders, :default},
-        {DelivestWeb.Hooks.StaffPath, :default}
-      ] do
-      live "/dashboard", DashboardLive.Index, :index
-      live "/statistics", StatisticsLive.Index, :index
-      live "/delivery", DeliveryLive.Index, :index
+    scope "/b/:branch_slug" do
+      live_session :staff_need_branch,
+        layout: {DelivestWeb.Layouts, :staff_app},
+        on_mount: [
+          {DelivestWeb.Hooks.StaffAuth, :default},
+          {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+          {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.NewOrders, :default},
+          {DelivestWeb.Hooks.StaffPath, :default}
+        ] do
+        live "/dashboard", DashboardLive.Index, :index
+        live "/statistics", StatisticsLive.Index, :index
+        live "/delivery", DeliveryLive.Index, :index
 
-      scope "/integrations", IntegrationLive do
-        live "/", Index, :index
-        live "/frontpad", Frontpad, :index
-        live "/routes", Routes, :index
-        live "/zvonok", Zvonok, :index
-        live "/dadata", Dadata, :index
-        live "/yandex-eda", YandexEda, :index
-      end
+        scope "/integrations", IntegrationLive do
+          live "/", Index, :index
+          live "/frontpad", Frontpad, :index
+          live "/routes", Routes, :index
+          live "/zvonok", Zvonok, :index
+          live "/dadata", Dadata, :index
+          live "/yandex-eda", YandexEda, :index
+        end
 
-      scope "/categories", CategoryLive do
-        live "/", Categories, :index
-        live "/:id/edit", Categories, :edit
-        live "/:id/products", Categories, :products
-        live "/new", Categories, :new
-      end
+        scope "/categories", CategoryLive do
+          live "/", Categories, :index
+          live "/:id/edit", Categories, :edit
+          live "/:id/products", Categories, :products
+          live "/new", Categories, :new
+        end
 
-      scope "/products", ProductLive do
-        live "/", Products, :index
-        live "/bulk", Bulk, :index
-        live "/stops", StopList, :index
-        live "/suggested", Suggested, :index
-        live "/tags", Tags, :index
-        live "/tags/new", Tags, :new
-        live "/tags/:id/edit", Tags, :edit
-        live "/:id/edit", Products, :edit
-        live "/new", Products, :new
-      end
+        scope "/products", ProductLive do
+          live "/", Products, :index
+          live "/bulk", Bulk, :index
+          live "/stops", StopList, :index
+          live "/suggested", Suggested, :index
+          live "/tags", Tags, :index
+          live "/tags/new", Tags, :new
+          live "/tags/:id/edit", Tags, :edit
+          live "/:id/edit", Products, :edit
+          live "/new", Products, :new
+        end
 
-      scope "/stocks", StockLive do
-        live "/", Stocks, :index
-        live "/:id/edit", Stocks, :edit
-        live "/new", Stocks, :new
-      end
+        scope "/stocks", StockLive do
+          live "/", Stocks, :index
+          live "/:id/edit", Stocks, :edit
+          live "/new", Stocks, :new
+        end
 
-      scope "/promotions", PromotionLive do
-        live "/", Promotions, :index
-        live "/new", Promotions, :new
-        live "/sale", Promotions, :sale
-        live "/:id/edit", Promotions, :edit
-        live "/:id/codes", Promotions, :codes
-      end
+        scope "/promotions", PromotionLive do
+          live "/", Promotions, :index
+          live "/new", Promotions, :new
+          live "/sale", Promotions, :sale
+          live "/:id/edit", Promotions, :edit
+          live "/:id/codes", Promotions, :codes
+        end
 
-      scope "/orders", OrderLive do
-        live "/", Orders, :index
-        live "/new", OrderForm, :new
-        live "/:id/edit", OrderForm, :edit
+        scope "/orders", OrderLive do
+          live "/", Orders, :index
+          live "/new", OrderForm, :new
+          live "/:id/edit", OrderForm, :edit
+        end
       end
     end
   end

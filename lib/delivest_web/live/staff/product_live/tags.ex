@@ -37,10 +37,10 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
       !can_edit?(socket) ->
         socket
         |> put_flash(:error, gettext("You don't have permission to perform this action."))
-        |> push_patch(to: ~p"/staff/products/tags")
+        |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/products/tags")
 
       is_nil(tag) ->
-        push_patch(socket, to: ~p"/staff/products/tags")
+        push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/products/tags")
 
       true ->
         title = if action == :new, do: gettext("New tag"), else: gettext("Edit tag")
@@ -85,7 +85,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
          socket
          |> put_flash(:info, gettext("Tag saved"))
          |> load_tags()
-         |> push_patch(to: ~p"/staff/products/tags")}
+         |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/products/tags")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -134,7 +134,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
         <:actions>
           <.button
             :if={Identity.can?(@current_staff, "products.update")}
-            patch={~p"/staff/products/tags/new"}
+            patch={~p"/staff/b/#{@current_branch}/products/tags/new"}
             class="btn btn-primary"
           >
             <.icon name="hero-plus" class="size-5" />
@@ -143,7 +143,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
         </:actions>
       </.page_header>
 
-      <.tabs current={:tags} />
+      <.tabs current={:tags} branch={@current_branch} />
 
       <div id="product-tags" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div
@@ -162,7 +162,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
           </div>
           <div :if={Identity.can?(@current_staff, "products.update")} class="flex gap-1">
             <.button
-              patch={~p"/staff/products/tags/#{tag.id}/edit"}
+              patch={~p"/staff/b/#{@current_branch}/products/tags/#{tag.id}/edit"}
               class="btn btn-ghost btn-xs btn-square"
             >
               <.icon name="hero-pencil-square" class="size-4" />
@@ -184,7 +184,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
         id="product-tag-slideover"
         show={@live_action in [:new, :edit]}
         title={@page_title}
-        on_close={JS.patch(~p"/staff/products/tags")}
+        on_close={JS.patch(~p"/staff/b/#{@current_branch}/products/tags")}
       >
         <.form
           :if={@form}
@@ -254,7 +254,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
           </div>
 
           <div class="flex justify-end gap-2">
-            <.link patch={~p"/staff/products/tags"} class="btn btn-ghost">
+            <.link patch={~p"/staff/b/#{@current_branch}/products/tags"} class="btn btn-ghost">
               {gettext("Cancel")}
             </.link>
             <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>

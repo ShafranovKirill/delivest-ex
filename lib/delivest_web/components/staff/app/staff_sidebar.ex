@@ -5,9 +5,10 @@ defmodule DelivestWeb.StaffSidebar do
 
   attr :current_page, :atom, default: nil
   attr :current_staff, :map, default: nil
+  attr :current_branch, :map, default: nil
 
   def staff_sidebar(assigns) do
-    assigns = assign(assigns, entries: entries(assigns.current_staff))
+    assigns = assign(assigns, entries: entries(assigns.current_staff, assigns.current_branch))
 
     ~H"""
     <aside
@@ -148,35 +149,75 @@ defmodule DelivestWeb.StaffSidebar do
     """
   end
 
-  defp entries(staff) do
+  defp entries(staff, branch) do
     [
-      item(:dashboard, ~p"/staff/dashboard", "hero-squares-2x2", gettext("Dashboard")),
-      item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
+      item(
+        :dashboard,
+        branch && ~p"/staff/b/#{branch}/dashboard",
+        "hero-squares-2x2",
+        gettext("Dashboard")
+      ),
+      item(
+        :statistics,
+        branch && ~p"/staff/b/#{branch}/statistics",
+        "hero-chart-bar",
+        gettext("Statistics")
+      )
       |> allowed(staff, "statistics.read"),
       group(:orders, "hero-shopping-bag", gettext("Orders"), [
-        item(:orders_new, ~p"/staff/orders/new", "hero-plus-circle", gettext("New Order"))
+        item(
+          :orders_new,
+          branch && ~p"/staff/b/#{branch}/orders/new",
+          "hero-plus-circle",
+          gettext("New Order")
+        )
         |> allowed(staff, "orders.create"),
-        item(:orders, ~p"/staff/orders", "hero-queue-list", gettext("All orders"))
+        item(
+          :orders,
+          branch && ~p"/staff/b/#{branch}/orders",
+          "hero-queue-list",
+          gettext("All orders")
+        )
         |> allowed(staff, "orders.read")
       ]),
       group(:menu, "hero-book-open", gettext("Menu"), [
-        item(:categories, ~p"/staff/categories", "hero-rectangle-stack", gettext("Categories"))
+        item(
+          :categories,
+          branch && ~p"/staff/b/#{branch}/categories",
+          "hero-rectangle-stack",
+          gettext("Categories")
+        )
         |> allowed(staff, "categories.read"),
-        item(:products, ~p"/staff/products", "hero-cube", gettext("Products"))
+        item(
+          :products,
+          branch && ~p"/staff/b/#{branch}/products",
+          "hero-cube",
+          gettext("Products")
+        )
         |> allowed(staff, "products.read"),
-        item(:stops, ~p"/staff/products/stops", "hero-no-symbol", gettext("Stop list"))
+        item(
+          :stops,
+          branch && ~p"/staff/b/#{branch}/products/stops",
+          "hero-no-symbol",
+          gettext("Stop list")
+        )
         |> allowed(staff, "products.read"),
-        item(:tags, ~p"/staff/products/tags", "hero-tag", gettext("Tags"))
+        item(:tags, branch && ~p"/staff/b/#{branch}/products/tags", "hero-tag", gettext("Tags"))
         |> allowed(staff, "products.read"),
-        item(:suggested, ~p"/staff/products/suggested", "hero-sparkles", gettext("Recommended"))
+        item(
+          :suggested,
+          branch && ~p"/staff/b/#{branch}/products/suggested",
+          "hero-sparkles",
+          gettext("Recommended")
+        )
         |> allowed(staff, "products.read")
       ]),
       group(:marketing, "hero-megaphone", gettext("Marketing"), [
-        item(:stocks, ~p"/staff/stocks", "hero-photo", gettext("Banners"))
+        item(:stocks, branch && ~p"/staff/b/#{branch}/stocks", "hero-photo", gettext("Banners"))
         |> allowed(staff, "stocks.read"),
         item(
           :promotions,
-          ~p"/staff/promotions",
+          branch && ~p"/staff/b/#{branch}/promotions",
           "hero-receipt-percent",
           gettext("Discounts & promo codes")
         )
@@ -185,7 +226,12 @@ defmodule DelivestWeb.StaffSidebar do
       group(:company, "hero-building-office-2", gettext("Company"), [
         item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
         |> allowed(staff, "branches.read"),
-        item(:delivery, ~p"/staff/delivery", "hero-truck", gettext("Delivery"))
+        item(
+          :delivery,
+          branch && ~p"/staff/b/#{branch}/delivery",
+          "hero-truck",
+          gettext("Delivery")
+        )
         |> allowed(staff, "delivery.read"),
         item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
         |> allowed(staff, "clients.read"),
@@ -206,7 +252,7 @@ defmodule DelivestWeb.StaffSidebar do
       group(:system, "hero-cog-6-tooth", gettext("System"), [
         item(
           :integrations,
-          ~p"/staff/integrations",
+          branch && ~p"/staff/b/#{branch}/integrations",
           "hero-puzzle-piece",
           gettext("Integrations")
         )
@@ -228,6 +274,8 @@ defmodule DelivestWeb.StaffSidebar do
   end
 
   defp compact(entry), do: entry
+
+  defp item(_page, nil, _icon, _label), do: nil
 
   defp item(page, path, icon, label),
     do: %{kind: :item, page: page, path: path, icon: icon, label: label}
