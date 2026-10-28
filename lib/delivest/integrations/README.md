@@ -8,6 +8,7 @@
 | Zvonok | `zvonok/` | Вход клиента по звонку | общие, таблица `zvonok_settings` | [zvonok/README.md](zvonok/README.md) |
 | DaData | `dadata/` | Подсказки адресов, геокодинг | общие, таблица `dadata_settings` | [dadata/README.md](dadata/README.md) |
 | Яндекс Еда | `yandex_eda/` | Входящий канал: заказы из Яндекс Еды и Delivery Club (в разработке) | на филиал | [yandex_eda/README.md](yandex_eda/README.md) |
+| Яндекс Доставка | `yandex_delivery/` | Курьерский провайдер: вызов курьера на заказ (не реализован) | на филиал | [yandex_delivery/README.md](yandex_delivery/README.md) |
 
 Все HTTP-запросы идут через `Delivest.HTTP.Client`. В тестах он подменяется через `Req.Test.stub(Delivest.HTTP.Client, ...)`.
 
