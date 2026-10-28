@@ -40,6 +40,12 @@ defmodule DelivestWeb.StaffSidebar do
           class="size-5 shrink-0 transition-transform duration-300 lg:sidebar-collapsed:rotate-180"
         />
         <span class="lg:sidebar-collapsed:hidden">{gettext("Collapse menu")}</span>
+        <span
+          id="app-version"
+          class="ml-auto font-mono text-xs text-base-content/40 lg:sidebar-collapsed:hidden"
+        >
+          v{Application.get_env(:delivest, :version, "dev")}
+        </span>
       </button>
     </aside>
 

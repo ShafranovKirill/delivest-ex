@@ -26,6 +26,8 @@ config :delivest,
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 
+config :delivest, :version, System.get_env("APP_VERSION") || "dev"
+
 client_origin = System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"
 
 config :delivest, :client_origin, String.trim_trailing(client_origin, "/")
