@@ -38,7 +38,7 @@ defmodule Delivest.Net.Categories do
   @spec list_staff_categories_for_branch(Staff.t(), binary(), keyword()) ::
           [Category.t()] | {:error, :forbidden}
   def list_staff_categories_for_branch(staff, branch_id, opts \\ []) do
-    if Identity.can?(staff, "categories.read") do
+    if Identity.authorize(staff, "categories.read", branch_id) == :ok do
       category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
 
       Category
@@ -72,7 +72,7 @@ defmodule Delivest.Net.Categories do
   end
 
   defp do_create_category(staff, branch_id, attrs) do
-    if Identity.can?(staff, "categories.create") do
+    if Identity.authorize(staff, "categories.create", branch_id) == :ok do
       next_order = calculate_next_order(branch_id)
 
       attrs_with_order =
@@ -136,7 +136,11 @@ defmodule Delivest.Net.Categories do
   end
 
   defp do_update_category(staff, %Category{} = updateble_category, attrs) do
-    if Identity.can?(staff, "categories.update") do
+    if Identity.authorize(
+         staff,
+         "categories.update",
+         get_category_branch_id(updateble_category.id)
+       ) == :ok do
       updateble_category
       |> Category.changeset(attrs)
       |> Repo.update()
@@ -163,7 +167,7 @@ defmodule Delivest.Net.Categories do
   end
 
   defp do_delete_category(staff, %Category{} = category) do
-    if Identity.can?(staff, "categories.delete") do
+    if Identity.authorize(staff, "categories.delete", get_category_branch_id(category.id)) == :ok do
       case Repo.delete(category) do
         {:ok, deleted_category} ->
           branch_id = get_category_branch_id(deleted_category.id)
@@ -182,7 +186,7 @@ defmodule Delivest.Net.Categories do
   @spec update_category_order(Staff.t(), Category.t(), float() | nil, float() | nil) ::
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def update_category_order(staff, %Category{} = category, above_order, below_order) do
-    if Identity.can?(staff, "categories.update") do
+    if Identity.authorize(staff, "categories.update", get_category_branch_id(category.id)) == :ok do
       new_order = calculate_new_order(above_order, below_order)
 
       category

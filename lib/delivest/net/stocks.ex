@@ -7,7 +7,7 @@ defmodule Delivest.Net.Stocks do
   alias Delivest.Audit
 
   def list_staff_stocks_for_branch(staff, branch_id) when not is_nil(branch_id) do
-    if Identity.can?(staff, "stocks.read") do
+    if Identity.authorize(staff, "stocks.read", branch_id) == :ok do
       stock_ids = Relations.list_target_ids("Branch", branch_id, "Stock")
 
       if stock_ids != [] do
@@ -46,7 +46,7 @@ defmodule Delivest.Net.Stocks do
   end
 
   defp do_create_stock(staff, branch_id, attrs) do
-    if Identity.can?(staff, "stocks.create") do
+    if Identity.authorize(staff, "stocks.create", branch_id) == :ok do
       next_order = calculate_next_order(branch_id)
 
       attrs_with_order = Map.put(attrs, "order", next_order)
@@ -84,7 +84,7 @@ defmodule Delivest.Net.Stocks do
   end
 
   defp do_update_stock(staff, %Stock{} = updatable_stock, attrs) do
-    if Identity.can?(staff, "stocks.update") do
+    if Identity.authorize(staff, "stocks.update", get_stock_branch_id(updatable_stock.id)) == :ok do
       updatable_stock
       |> Stock.changeset(attrs)
       |> Repo.update()
@@ -103,7 +103,7 @@ defmodule Delivest.Net.Stocks do
   end
 
   def update_stock_order(staff, %Stock{} = stock, above_order, below_order) do
-    if Identity.can?(staff, "stocks.update") do
+    if Identity.authorize(staff, "stocks.update", get_stock_branch_id(stock.id)) == :ok do
       new_order = calculate_new_order(above_order, below_order)
 
       stock
@@ -131,7 +131,7 @@ defmodule Delivest.Net.Stocks do
   end
 
   defp do_delete_stock(staff, %Stock{} = stock) do
-    if Identity.can?(staff, "stocks.delete") do
+    if Identity.authorize(staff, "stocks.delete", get_stock_branch_id(stock.id)) == :ok do
       branch_id = get_stock_branch_id(stock.id)
 
       case Repo.delete(stock) do

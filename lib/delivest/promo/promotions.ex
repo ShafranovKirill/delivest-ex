@@ -6,7 +6,7 @@ defmodule Delivest.Promo.Promotions do
   alias Ecto.Multi
 
   def list(staff, branch_id) do
-    if Identity.can?(staff, "promotions.read") do
+    if Identity.authorize(staff, "promotions.read", branch_id) == :ok do
       promotions =
         from(p in Promotion,
           where: p.branch_id == ^branch_id and is_nil(p.deleted_at),
@@ -43,7 +43,8 @@ defmodule Delivest.Promo.Promotions do
   end
 
   def get(staff, branch_id, id) do
-    with true <- Identity.can?(staff, "promotions.read") || {:error, :forbidden},
+    with true <-
+           Identity.authorize(staff, "promotions.read", branch_id) == :ok || {:error, :forbidden},
          {:ok, uuid} <- Ecto.UUID.cast(id),
          %Promotion{} = promotion <- Repo.get_by(Promotion, id: uuid, branch_id: branch_id),
          nil <- promotion.deleted_at do
@@ -57,7 +58,7 @@ defmodule Delivest.Promo.Promotions do
   def change(%Promotion{} = promotion, attrs \\ %{}), do: Promotion.changeset(promotion, attrs)
 
   def create(staff, branch_id, attrs) do
-    authorized(staff, "promotions.create", fn ->
+    authorized(staff, "promotions.create", branch_id, fn ->
       %Promotion{branch_id: branch_id}
       |> Promotion.changeset(attrs)
       |> References.validate(branch_id)
@@ -67,7 +68,7 @@ defmodule Delivest.Promo.Promotions do
   end
 
   def update(staff, %Promotion{} = promotion, attrs) do
-    authorized(staff, "promotions.update", fn ->
+    authorized(staff, "promotions.update", promotion.branch_id, fn ->
       promotion
       |> Promotion.changeset(attrs)
       |> References.validate(promotion.branch_id)
@@ -77,14 +78,14 @@ defmodule Delivest.Promo.Promotions do
   end
 
   def toggle(staff, %Promotion{} = promotion) do
-    authorized(staff, "promotions.update", fn ->
+    authorized(staff, "promotions.update", promotion.branch_id, fn ->
       promotion |> Promotion.toggle_changeset() |> Repo.update() |> invalidated()
     end)
     |> Audit.track(staff, "promotion.updated", branch_id: promotion.branch_id)
   end
 
   def delete(staff, %Promotion{} = promotion) do
-    authorized(staff, "promotions.delete", fn ->
+    authorized(staff, "promotions.delete", promotion.branch_id, fn ->
       promotion |> Promotion.delete_changeset() |> Repo.update() |> invalidated()
     end)
     |> Audit.track(staff, "promotion.deleted", branch_id: promotion.branch_id)
@@ -145,7 +146,9 @@ defmodule Delivest.Promo.Promotions do
 
   defp invalidated(error), do: error
 
-  defp authorized(staff, permission, fun) do
-    if Identity.can?(staff, permission), do: fun.(), else: {:error, :forbidden}
+  defp authorized(staff, permission, branch_id, fun) do
+    if Identity.authorize(staff, permission, branch_id) == :ok,
+      do: fun.(),
+      else: {:error, :forbidden}
   end
 end

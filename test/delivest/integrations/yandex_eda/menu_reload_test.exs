@@ -37,6 +37,7 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
     branch = yandex_branch()
     product = menu_product(branch, menu_category(branch))
     staff = insert(:staff, role: build(:role, permissions: ["products.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
 
     {:ok, _} = Delivest.Net.update_product(staff, product, %{"name" => "Новый борщ"})
 

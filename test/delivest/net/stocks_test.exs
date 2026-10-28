@@ -54,6 +54,7 @@ defmodule Delivest.Net.StocksTest do
     test "returns active stocks ordered by order and includes inactive for authorized staff" do
       staff = staff_with_permissions(["stocks.read"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       first_media = create_media_file(staff.id)
       second_media = create_media_file(staff.id)
@@ -85,6 +86,7 @@ defmodule Delivest.Net.StocksTest do
     test "returns {:error, :forbidden} when staff lacks read permission" do
       staff = staff_with_permissions(["other.permission"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:error, :forbidden} = Net.list_staff_stocks_for_branch(staff, branch.id)
     end
@@ -127,6 +129,7 @@ defmodule Delivest.Net.StocksTest do
     test "creates stock, assigns next order and links it to branch" do
       staff = staff_with_permissions(["stocks.create"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       media = create_media_file(staff.id)
 
       assert {:ok, %Stock{} = stock} =
@@ -140,6 +143,7 @@ defmodule Delivest.Net.StocksTest do
     test "returns {:error, :forbidden} without permission" do
       staff = staff_with_permissions([])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       media = create_media_file(insert(:staff).id)
 
       assert {:error, :forbidden} =
@@ -149,6 +153,7 @@ defmodule Delivest.Net.StocksTest do
     test "returns validation errors when media_id is missing" do
       staff = staff_with_permissions(["stocks.create"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:error, changeset} =
                Net.create_stock(staff, branch.id, %{"text" => "Missing media"})
@@ -162,6 +167,7 @@ defmodule Delivest.Net.StocksTest do
       staff = staff_with_permissions(["stocks.update"])
       stock = insert_stock(%{"text" => "Old"})
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:ok, _relation} =
                Relations.create_relation(Repo, "Branch", branch.id, "Stock", stock.id, %{})
@@ -185,6 +191,7 @@ defmodule Delivest.Net.StocksTest do
       staff = staff_with_permissions(["stocks.update"])
       stock = insert_stock(%{"order" => 2.0})
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:ok, _relation} =
                Relations.create_relation(Repo, "Branch", branch.id, "Stock", stock.id, %{})
@@ -206,6 +213,7 @@ defmodule Delivest.Net.StocksTest do
       staff = staff_with_permissions(["stocks.delete"])
       stock = insert_stock(%{"text" => "Delete me"})
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:ok, _relation} =
                Relations.create_relation(Repo, "Branch", branch.id, "Stock", stock.id, %{})

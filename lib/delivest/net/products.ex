@@ -9,7 +9,7 @@ defmodule Delivest.Net.Products do
   alias Delivest.Relations.EntityRelation
 
   def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
-    if Identity.can?(staff, "products.read") do
+    if Identity.authorize(staff, "products.read", branch_id) == :ok do
       product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
 
       Product
@@ -80,7 +80,7 @@ defmodule Delivest.Net.Products do
   end
 
   defp do_create_product(staff, branch_id, attrs) do
-    if Identity.can?(staff, "products.create") do
+    if Identity.authorize(staff, "products.create", branch_id) == :ok do
       Multi.new()
       |> Multi.insert(
         :product,
@@ -119,7 +119,7 @@ defmodule Delivest.Net.Products do
   end
 
   def import_products(staff, branch_id, rows) do
-    if Identity.can?(staff, "products.create") do
+    if Identity.authorize(staff, "products.create", branch_id) == :ok do
       Repo.transaction(fn ->
         {products, _categories} =
           Enum.map_reduce(rows, %{}, &import_row(staff, branch_id, &1, &2))
@@ -189,7 +189,8 @@ defmodule Delivest.Net.Products do
   end
 
   defp do_update_product(staff, %Product{} = updateble_product, attrs) do
-    if Identity.can?(staff, "products.update") do
+    if Identity.authorize(staff, "products.update", get_product_branch_id(updateble_product.id)) ==
+         :ok do
       branch_id = get_product_branch_id(updateble_product.id)
 
       updateble_product
@@ -280,7 +281,7 @@ defmodule Delivest.Net.Products do
   end
 
   def update_product_order(staff, %Product{} = product, above_order, below_order) do
-    if Identity.can?(staff, "products.update") do
+    if Identity.authorize(staff, "products.update", get_product_branch_id(product.id)) == :ok do
       product
       |> Ecto.Changeset.change(order: calculate_new_order(above_order, below_order))
       |> Repo.update()
@@ -348,7 +349,7 @@ defmodule Delivest.Net.Products do
   end
 
   defp do_soft_delete_product(staff, %Product{} = product) do
-    if Identity.can?(staff, "products.delete") do
+    if Identity.authorize(staff, "products.delete", get_product_branch_id(product.id)) == :ok do
       with {:ok, deleted_product} <-
              product
              |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
@@ -364,7 +365,7 @@ defmodule Delivest.Net.Products do
   end
 
   def soft_delete_products(staff, branch_id, ids) when is_list(ids) do
-    if Identity.can?(staff, "products.delete") do
+    if Identity.authorize(staff, "products.delete", branch_id) == :ok do
       branch_product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
       now = DateTime.utc_now(:second)
 

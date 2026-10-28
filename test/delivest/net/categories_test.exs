@@ -35,6 +35,7 @@ defmodule Delivest.Net.CategoriesTest do
     test "returns all categories (including inactive) if staff has permission" do
       staff = staff_with_permissions(["categories.read"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       cat1 = insert(:category, order: 1.0, is_active: true)
       cat2 = insert(:category, order: 2.0, is_active: false)
 
@@ -49,6 +50,7 @@ defmodule Delivest.Net.CategoriesTest do
     test "returns {:error, :forbidden} if staff lacks permission" do
       staff = staff_with_permissions(["some.other.permission"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:error, :forbidden} = Categories.list_staff_categories_for_branch(staff, branch.id)
     end
@@ -71,6 +73,7 @@ defmodule Delivest.Net.CategoriesTest do
     test "successfully creates category, calculates order and links to branch if permitted" do
       staff = staff_with_permissions(["categories.create"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       existing_cat = insert(:category, order: 1.0)
       Relations.create_relation(Repo, "Branch", branch.id, "Category", existing_cat.id)
@@ -88,6 +91,7 @@ defmodule Delivest.Net.CategoriesTest do
     test "returns {:error, :forbidden} if staff lacks permission" do
       staff = staff_with_permissions([])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:error, :forbidden} =
                Categories.create_category(staff, branch.id, %{"name" => "Test"})
@@ -96,6 +100,7 @@ defmodule Delivest.Net.CategoriesTest do
     test "returns validation errors on invalid attributes" do
       staff = staff_with_permissions(["categories.create"])
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
 
       assert {:error, changeset} = Categories.create_category(staff, branch.id, %{"name" => nil})
       assert "can't be blank" in errors_on(changeset).name
@@ -107,6 +112,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category, name: "Old Name")
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} =
@@ -129,6 +135,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.delete"])
       category = insert(:category)
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, deleted} = Categories.delete_category(staff, category)
@@ -148,6 +155,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category, order: 1.0)
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} = Categories.update_category_order(staff, category, 1.0, 3.0)
@@ -158,6 +166,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category)
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} = Categories.update_category_order(staff, category, nil, 4.0)
@@ -168,6 +177,7 @@ defmodule Delivest.Net.CategoriesTest do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category)
       branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
       Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
 
       assert {:ok, updated} = Categories.update_category_order(staff, category, 5.0, nil)

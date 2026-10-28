@@ -8,7 +8,7 @@ defmodule Delivest.Promo.Issuing do
   @default_uses 1
 
   def issue(staff, %Promotion{kind: :personal_code} = promotion, %Client{} = client, uses) do
-    if Identity.can?(staff, "promotions.update") do
+    if Identity.authorize(staff, "promotions.update", promotion.branch_id) == :ok do
       Codes.insert_unique(&build(promotion, client, staff, uses, &1))
       |> preload_client()
     else
@@ -26,7 +26,11 @@ defmodule Delivest.Promo.Issuing do
   end
 
   def revoke(staff, %PromoCode{} = code) do
-    if Identity.can?(staff, "promotions.update") do
+    if Identity.authorize(
+         staff,
+         "promotions.update",
+         Repo.preload(code, :promotion).promotion.branch_id
+       ) == :ok do
       Repo.delete(code)
     else
       {:error, :forbidden}
