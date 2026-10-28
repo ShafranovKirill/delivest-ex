@@ -88,6 +88,27 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       refute has_element?(lv, "#order-next-#{order.id}")
     end
 
+    test "an order opens in the side panel", %{conn: conn, branch: branch, order: order} do
+      {:ok, lv, _html} =
+        live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders/#{order.id}")
+
+      assert has_element?(lv, "#order-slideover-toggle[checked]")
+      assert has_element?(lv, "#shown-order #order-next-#{order.id}")
+      refute has_element?(lv, "#orders-#{order.id}")
+
+      lv |> element("#order-next-#{order.id}") |> render_click()
+      assert Delivest.Repo.reload!(order).status == :accepted
+    end
+
+    test "a missing order goes back to the list", %{conn: conn, branch: branch} do
+      conn = login(conn, ["admin"], branch)
+
+      assert {:error, {:live_redirect, %{to: path}}} =
+               live(conn, ~p"/staff/b/#{branch}/orders/#{Ecto.UUID.generate()}")
+
+      assert path == ~p"/staff/b/#{branch}/orders"
+    end
+
     test "tabs count orders and filter by status", %{conn: conn, branch: branch, order: order} do
       create_order(branch.id)
       |> Ecto.Changeset.change(status: :preparing)

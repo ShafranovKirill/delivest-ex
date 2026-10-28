@@ -332,6 +332,7 @@ defmodule DelivestWeb.Router do
           live "/", Orders, :index
           live "/new", OrderForm, :new
           live "/:id/edit", OrderForm, :edit
+          live "/:id", Orders, :show
         end
       end
     end

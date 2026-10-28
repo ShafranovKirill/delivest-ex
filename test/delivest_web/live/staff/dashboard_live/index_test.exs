@@ -41,6 +41,11 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       assert html =~ "450 ₽"
       assert has_element?(lv, "#dashboard-order-#{order.id}")
 
+      assert has_element?(
+               lv,
+               ~s{#dashboard-order-#{order.id} a[href="/staff/b/#{branch.slug}/orders/#{order.id}"]}
+             )
+
       second = Delivest.OrderFixtures.order_fixture(branch.id, price: 50)
       refute has_element?(lv, "#dashboard-order-#{second.id}")
 

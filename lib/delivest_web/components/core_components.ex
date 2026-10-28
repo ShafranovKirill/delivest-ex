@@ -504,6 +504,7 @@ defmodule DelivestWeb.CoreComponents do
   attr :show, :boolean, default: false
   attr :title, :string, required: true
   attr :on_close, JS, required: true
+  attr :wide, :boolean, default: false
   slot :inner_block, required: true
 
   def slide_over(assigns) do
@@ -521,7 +522,10 @@ defmodule DelivestWeb.CoreComponents do
       />
       <div class="drawer-side" style="pointer-events: auto;">
         <label for={"#{@id}-toggle"} class="drawer-overlay" phx-click={@on_close}></label>
-        <div class="bg-base-100 text-base-content h-dvh w-full max-w-md p-0 flex flex-col border-l border-base-300">
+        <div class={[
+          "bg-base-100 text-base-content h-dvh w-full p-0 flex flex-col border-l border-base-300",
+          if(@wide, do: "max-w-2xl", else: "max-w-md")
+        ]}>
           <div class="p-6 border-b border-base-300 flex items-center justify-between shrink-0">
             <h2 class="text-xl font-display font-bold">{@title}</h2>
             <button type="button" class="btn btn-ghost btn-square btn-sm" phx-click={@on_close}>

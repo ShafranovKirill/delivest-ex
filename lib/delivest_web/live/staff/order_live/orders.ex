@@ -27,6 +27,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
      |> assign(
        order_to_delete: nil,
        order_to_cancel: nil,
+       shown_id: nil,
+       shown_order: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id)
      )
      |> stream(:orders, [])}
@@ -41,7 +43,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       selected: parsed.selected,
       filters: parsed.filters,
       page: parsed.page,
-      query: parsed.query
+      query: parsed.query,
+      shown_id: params["id"]
     )
     |> load()
   end
@@ -56,11 +59,33 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         {:noreply,
          socket
          |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
-         |> stream(:orders, orders, reset: true)}
+         |> stream(:orders, Enum.reject(orders, &(&1.id == socket.assigns.shown_id)), reset: true)
+         |> assign_shown()}
 
       {:error, _meta} ->
         {:noreply, push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
     end
+  end
+
+  defp assign_shown(%{assigns: %{shown_id: nil}} = socket), do: assign(socket, shown_order: nil)
+
+  defp assign_shown(socket) do
+    case fetch_branch_order(socket, socket.assigns.shown_id) do
+      {:ok, %Order{deleted_at: nil} = order} ->
+        assign(socket, shown_order: order)
+
+      {:ok, %Order{}} ->
+        close_shown(socket)
+
+      {:error, :not_found} ->
+        socket |> put_flash(:error, gettext("Order not found")) |> close_shown()
+    end
+  end
+
+  defp close_shown(socket) do
+    socket
+    |> assign(shown_id: nil, shown_order: nil)
+    |> push_patch(to: orders_path(socket.assigns.current_branch, socket.assigns.query))
   end
 
   @impl true
@@ -260,6 +285,23 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       </div>
 
       <.pagination meta={@meta} path_fn={&orders_path(@current_branch, Map.merge(@query, &1))} />
+
+      <.slide_over
+        id="order-slideover"
+        show={@shown_order != nil}
+        wide
+        title={@shown_order && gettext("Order #%{number}", number: @shown_order.number)}
+        on_close={JS.patch(orders_path(@current_branch, @query))}
+      >
+        <OrderCardComponent.render_card
+          :if={@shown_order}
+          id="shown-order"
+          order={@shown_order}
+          current_staff={@current_staff}
+          current_branch={@current_branch}
+          delivery_minutes={@delivery_minutes}
+        />
+      </.slide_over>
 
       <CancelOrderModal.cancel_order_modal order={@order_to_cancel} />
 

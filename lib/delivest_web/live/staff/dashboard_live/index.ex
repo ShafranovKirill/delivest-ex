@@ -199,10 +199,15 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             <li
               :for={order <- @latest_orders}
               id={"dashboard-order-#{order.id}"}
-              class="p-3 sm:p-4 space-y-1"
+              class="relative p-3 sm:p-4 space-y-1 hover:bg-base-200/60 transition-colors"
             >
               <div class="flex items-center gap-2 sm:gap-4">
-                <span class="font-mono font-bold">#{order.number}</span>
+                <.link
+                  navigate={~p"/staff/b/#{@current_branch}/orders/#{order.id}"}
+                  class="font-mono font-bold after:absolute after:inset-0"
+                >
+                  #{order.number}
+                </.link>
                 <span class="text-sm text-base-content/60 tabular-nums">
                   {OrderHelpers.local_time(order.inserted_at)}
                 </span>
@@ -223,7 +228,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
                   <.link
                     :if={@can_clients}
                     navigate={~p"/staff/clients/#{order.client_id}"}
-                    class="text-sm text-base-content hover:text-primary hover:underline truncate"
+                    class="relative text-sm text-base-content hover:text-primary hover:underline truncate"
                   >
                     {order.client.name || order.client.phone}
                   </.link>

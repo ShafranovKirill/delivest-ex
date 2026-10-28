@@ -23,7 +23,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     <article
       id={@id}
       class={[
-        "bg-base-100 rounded-box border shadow-sm overflow-hidden transition-colors",
+        "@container bg-base-100 rounded-box border shadow-sm overflow-hidden transition-colors",
         @status == :created && "border-info ring-2 ring-info/30",
         @status in [:completed, :cancelled] && "border-base-200 opacity-75",
         @status not in [:created, :completed, :cancelled] && "border-base-200"
@@ -66,7 +66,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </div>
       </header>
 
-      <div class="p-3 sm:p-4 grid gap-3 text-sm lg:grid-cols-[1fr_1.4fr_1.2fr]">
+      <div class="p-3 sm:p-4 grid gap-3 text-sm @3xl:grid-cols-[1fr_1.4fr_1.2fr]">
         <.customer order={@order} current_staff={@current_staff} />
         <.fulfillment
           order={@order}
@@ -305,7 +305,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   defp items(assigns) do
     ~H"""
-    <ul class="min-w-0 space-y-1 lg:border-l lg:border-base-200 lg:pl-3">
+    <ul class="min-w-0 space-y-1 @3xl:border-l @3xl:border-base-200 @3xl:pl-3">
       <li :for={item <- @order.items} class="flex justify-between gap-2">
         <span class="min-w-0 text-base-content/90">
           <span class="font-mono font-bold">{item.quantity}×</span>

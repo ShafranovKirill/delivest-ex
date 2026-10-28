@@ -244,6 +244,15 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                     <span :if={order.comment}> · {order.comment}</span>
                   </span>
                   <.link
+                    :if={Map.has_key?(@branches, order.branch_id)}
+                    id={"client-order-open-#{order.id}"}
+                    navigate={~p"/staff/b/#{@branches[order.branch_id]}/orders/#{order.id}"}
+                    class="btn btn-ghost btn-xs ml-auto"
+                  >
+                    <.icon name="hero-arrow-top-right-on-square" class="size-4" />
+                    {gettext("Open order")}
+                  </.link>
+                  <.link
                     :if={can_edit_order?(assigns, order)}
                     navigate={~p"/staff/b/#{@branches[order.branch_id]}/orders/#{order.id}/edit"}
                     class="btn btn-ghost btn-xs"
