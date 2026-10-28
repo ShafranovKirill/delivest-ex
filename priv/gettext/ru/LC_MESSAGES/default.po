@@ -94,7 +94,7 @@ msgstr "логин"
 msgid "All rights reserved."
 msgstr "Все права защищены."
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:114
+#: lib/delivest_web/components/staff/app/staff_header.ex:116
 #, elixir-autogen, elixir-format
 msgid "Dark Mode"
 msgstr "Темная тема"
@@ -105,17 +105,17 @@ msgstr "Темная тема"
 msgid "Dashboard"
 msgstr "Дашборд"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:80
+#: lib/delivest_web/components/staff/app/staff_header.ex:82
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr "Язык"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:136
+#: lib/delivest_web/components/staff/app/staff_header.ex:138
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Выйти"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:18
+#: lib/delivest_web/components/staff/app/staff_header.ex:19
 #, elixir-autogen, elixir-format
 msgid "Open menu"
 msgstr "Открыть меню"
@@ -125,7 +125,7 @@ msgstr "Открыть меню"
 msgid "Sign In"
 msgstr "Войти"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:55
+#: lib/delivest_web/components/staff/app/staff_header.ex:57
 #: lib/delivest_web/components/staff/app/staff_sidebar.ex:263
 #: lib/delivest_web/live/staff/log_live/event_text.ex:33
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:178
@@ -326,11 +326,6 @@ msgstr "Категория успешно обновлена"
 msgid "Change Image"
 msgstr "Изменить изображение"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:186
-#, elixir-autogen, elixir-format
-msgid "Change branch"
-msgstr "Сменить филиал"
-
 #: lib/delivest_web/live/staff/branch_live/branch_select.ex:19
 #, elixir-autogen, elixir-format
 msgid "Choose a branch to continue working in the system"
@@ -413,11 +408,6 @@ msgstr "Создать сотрудника"
 #, elixir-autogen, elixir-format
 msgid "Created At"
 msgstr "Дата создания"
-
-#: lib/delivest_web/components/staff/app/staff_header.ex:170
-#, elixir-autogen, elixir-format
-msgid "Current Branch"
-msgstr "Текущий филиал"
 
 #: lib/delivest_web/live/staff/branch_live/branches.ex:106
 #: lib/delivest_web/live/staff/branch_live/branches.ex:121
@@ -651,8 +641,7 @@ msgstr "Медиа"
 msgid "Name"
 msgstr "Название"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:160
-#: lib/delivest_web/components/staff/app/staff_header.ex:176
+#: lib/delivest_web/components/staff/app/branch_switcher.ex:32
 #, elixir-autogen, elixir-format
 msgid "No branch selected"
 msgstr "Филиал не выбран"
@@ -3931,7 +3920,7 @@ msgstr "Белый текст плохо читается на этом цвет
 msgid "Collapse menu"
 msgstr "Свернуть меню"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:124
+#: lib/delivest_web/components/staff/app/staff_header.ex:126
 #, elixir-autogen, elixir-format
 msgid "Light Mode"
 msgstr "Светлая тема"
@@ -3941,7 +3930,7 @@ msgstr "Светлая тема"
 msgid "Orders awaiting confirmation"
 msgstr "Заказы ждут подтверждения"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:105
+#: lib/delivest_web/components/staff/app/staff_header.ex:107
 #, elixir-autogen, elixir-format
 msgid "Theme"
 msgstr "Тема"
@@ -5882,7 +5871,7 @@ msgstr "Номер, телефон, имя или адрес"
 msgid "New order"
 msgstr "Новый заказ"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:96
+#: lib/delivest_web/components/staff/app/staff_header.ex:98
 #, elixir-autogen, elixir-format
 msgid "New orders"
 msgstr "Новые заказы"
@@ -5988,3 +5977,13 @@ msgstr "сентября"
 #, elixir-autogen, elixir-format
 msgid "Network"
 msgstr "Сеть"
+
+#: lib/delivest_web/components/staff/app/branch_switcher.ex:49
+#, elixir-autogen, elixir-format
+msgid "Find a branch"
+msgstr "Найти филиал"
+
+#: lib/delivest_web/components/staff/app/branch_switcher.ex:71
+#, elixir-autogen, elixir-format
+msgid "No branches available"
+msgstr "Нет доступных филиалов"

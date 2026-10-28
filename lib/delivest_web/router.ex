@@ -231,6 +231,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
         {DelivestWeb.Hooks.StaffActiveBranch, :optional},
         {DelivestWeb.Hooks.NewOrders, :default},
+        {DelivestWeb.Hooks.StaffBranches, :default},
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/branches/select", BranchLive.BranchSelect, :index
@@ -280,6 +281,7 @@ defmodule DelivestWeb.Router do
           {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
           {DelivestWeb.Hooks.StaffActiveBranch, :default},
           {DelivestWeb.Hooks.NewOrders, :default},
+          {DelivestWeb.Hooks.StaffBranches, :default},
           {DelivestWeb.Hooks.StaffPath, :default}
         ] do
         live "/dashboard", DashboardLive.Index, :index

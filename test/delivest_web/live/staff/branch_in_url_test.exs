@@ -31,6 +31,19 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
              live(ctx.conn, "/staff/b/no-such-branch/orders")
   end
 
+  test "the header switches between accessible branches in place", ctx do
+    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.own}/products")
+
+    assert has_element?(lv, "#header-branch-#{ctx.own.id}.menu-active")
+
+    assert has_element?(
+             lv,
+             ~s(#header-branch-#{ctx.second.id}[href="/staff/branches/select/#{ctx.second.id}?to=%2Fproducts"])
+           )
+
+    refute has_element?(lv, "#header-branch-#{ctx.foreign.id}")
+  end
+
   test "two tabs with different branches do not affect each other", ctx do
     {:ok, own_tab, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.own}/orders")
     {:ok, second_tab, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.second}/orders")

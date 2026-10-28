@@ -5,6 +5,7 @@ defmodule DelivestWeb.StaffHeader do
 
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
+  attr :staff_branches, :list, default: []
   attr :current_path, :string, default: nil
   attr :new_orders_count, :integer, default: 0
 
@@ -37,8 +38,9 @@ defmodule DelivestWeb.StaffHeader do
         branch={@current_branch}
       />
 
-      <.branch_selector
+      <DelivestWeb.BranchSwitcher.branch_switcher
         current_branch={@current_branch}
+        branches={@staff_branches}
         section={DelivestWeb.StaffBranchPath.section(@current_path)}
       />
       <.staff_menu current_staff={@current_staff} />
@@ -134,56 +136,6 @@ defmodule DelivestWeb.StaffHeader do
             class="text-error hover:bg-error/10 font-medium"
           >
             {gettext("Log out")}
-          </.link>
-        </li>
-      </ul>
-    </div>
-    """
-  end
-
-  defp branch_selector(assigns) do
-    ~H"""
-    <div id="header-branch" class="dropdown dropdown-end flex-1 min-w-0 sm:flex-none">
-      <div
-        tabindex="0"
-        role="button"
-        class="flex items-center gap-2 h-10 cursor-pointer border border-base-300 py-1.5 px-2.5 sm:px-3 rounded-field hover:bg-base-200 transition-colors min-w-0"
-      >
-        <.icon name="hero-building-storefront" class="h-4 w-4 text-base-content/70 shrink-0" />
-        <span
-          class="text-sm font-medium text-base-content truncate sm:max-w-75 lg:max-w-none"
-          title={@current_branch && @current_branch.name}
-        >
-          <%= if @current_branch do %>
-            {@current_branch.name}
-          <% else %>
-            <span class="font-semibold">{gettext("No branch selected")}</span>
-          <% end %>
-        </span>
-      </div>
-
-      <ul
-        tabindex="0"
-        class="dropdown-content z-1 menu p-2 shadow-lg bg-base-100 rounded-box w-56 border border-base-300 mt-2"
-      >
-        <li class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
-          {gettext("Current Branch")}
-        </li>
-        <li class="px-4 py-1 text-xs text-base-content/70 wrap-break-word">
-          <%= if @current_branch do %>
-            {@current_branch.name}
-          <% else %>
-            {gettext("No branch selected")}
-          <% end %>
-        </li>
-        <div class="divider my-1"></div>
-        <li>
-          <.link
-            navigate={~p"/staff/branches/select?#{%{to: @section || "/dashboard"}}"}
-            class="flex items-center gap-2 font-medium text-primary hover:bg-primary/10"
-          >
-            <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4 shrink-0" />
-            {gettext("Change branch")}
           </.link>
         </li>
       </ul>
