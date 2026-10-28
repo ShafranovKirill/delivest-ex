@@ -25,7 +25,7 @@
 | Состав меню | Таблица `channel_products` (канал, товар, `enabled`, `price`) — настраивается на странице интеграции, не в товаре |
 | Цена | своя цена товара для канала → иначе базовая × (1 + наценка филиала) с округлением → иначе базовая |
 | Копейки | В меню отдаём целые рубли. Цены позиций из заказа округляем вниз до рубля, итог берём из `itemsCost` |
-| Комбо, промо, модификаторы | Не поддерживаем: `combos`, `/promos`, `modifierGroups` не отдаём |
+| Комбо, промо, модификаторы | Не поддерживаем: `combos` и `/promos` не отдаём, `modifierGroups` всегда пустой |
 | Единица измерения | Поле у товара: `г` или `мл`, по умолчанию `г` |
 | Схемы доставки | Все три: `yandex` (курьер Яндекса), `marketplace` (наш курьер), `pickup` (самовывоз) |
 | Подтверждение | Наш статус `accepted` ↔ `ACCEPTED_BY_RESTAURANT`. Режим канала: автоматически или вручную. Вручную: срок `accept_minutes` (по умолчанию 10) считается от прихода заказа, а если филиал закрыт — от ближайшего открытия по графику (`AcceptDeadline`). В момент срока `AcceptDeadlineWorker` будит админку, и на любой её странице всплывает тревога со звуком: «Подтвердить», «Отменить» (причина «Не подтверждён вовремя») или «Пусть висит». Сами мы заказ после срока не трогаем |
@@ -48,6 +48,19 @@
 - Ошибки pull-методов: `400`, `404`, `500` — тело **массив** `[{"code": <int>, "description": "..."}]`. Коды согласуются с Яндексом.
 - Версии моделей передаются в типе содержимого: меню `application/vnd.eats.menu.composition.v2+json`, стоп-лист `application/vnd.eats.menu.availability.v2+json`, заказ `application/vnd.eats.order.v2+json`.
 - Телефоны: `+<код страны><номер>`, может быть `доб. <номер>`.
+
+## Проверки Яндекса
+
+Яндекс публикует Postman-коллекцию с проверками нашего pull-API: https://yastatic.net/s3/doc-binary/src/dev/eda-vendor/Rest_for_partners.postman_collection.json. Копия лежит в `test/support/yandex_eda_contract/`.
+
+Запуск: `make yandex-contract` или `mix test --only yandex_contract`. Тест поднимает наш сервер на свободном порту поверх тестовой базы в песочнице, заводит филиал с товаром и прогоняет коллекцию через `npx newman`. Dev-база и внешние сервисы не затрагиваются. Нужен Node, при первом запуске newman скачивается. В обычный `mix test` проверка не входит.
+
+Перед запуском коллекция исправляется (`YandexEdaContract.Collection`):
+
+- запросы выстраиваются по порядку: токен, рестораны, меню, создание, просмотр, изменение, статус и отмена заказа; `/promos` убран, промо мы не поддерживаем;
+- авторизация oauth2 из коллекции не передаёт токен, она заменена на `Bearer {{access_token}}`;
+- в заказах подставляются наш филиал и товар;
+- в скриптах убраны опечатки (`A`, `; a`), проверка картинок не падает на товаре без фото.
 
 ---
 
@@ -153,7 +166,7 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 | `shippingType` | | `delivery` или `pickup`; не указан — доступно для обоих |
 | `isCatchweight`, `weightQuantum` | | Весовой товар и минимальный шаг — не используем |
 | `excise` | | `sugary_drink` / `other`, или метка `[AT]` в названии. Поле товара «Акциз» |
-| `modifierGroups` | | Модификаторы — не отдаём |
+| `modifierGroups` | | Модификаторы — всегда `[]`: проверки Яндекса падают, если поля нет |
 | `additional_descriptions` | | `consisting_ingredients` (до 100 строк по 100 символов) и `badges`: `food_specifics` (`halal`, `meat_free`), `food_spiciness` (`spicy`), `cooking_method` (`fried`, `baked`, `grilled`, `not_cooked`), `food_portion` (`portion_for_several_people`, `big_portion`, `combo`) |
 | `adult_info` | | `age_group` 18 / 21, `alcohol_percentage` — не отдаём: алкоголь не продаём |
 | `needMarking`, `legalInfo` | | Маркировка по закону о платформенной экономике: при `needMarking: true` обязателен `legalInfo.gtin`. Остальное: `classificationCodes` (ТН ВЭД / ОКПД 2), `conformityInfo`, `governmentRegistrationInfo` — не отдаём: блюда собственного производства маркировке не подлежат |

@@ -1,0 +1,3121 @@
+{
+	"info": {
+		"_postman_id": "06a71a32-7338-401b-ac1d-a5a510f2acc0",
+		"name": "Rest_for_partners",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "24517258"
+	},
+	"item": [
+		{
+			"name": "Menu",
+			"item": [
+				{
+					"name": "Выгрузка меню",
+					"item": [
+						{
+							"name": "Выдача актуального на текущий момент каталога торгового объекта",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    let code = pm.response.code",
+											"    if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/vnd.eats.menu.composition.v2+json\");",
+											"    }",
+											"    else if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const schema = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"categories\",",
+											"        \"items\",",
+											"        \"lastChange\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"categories\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"required\": [",
+											"                    \"id\",",
+											"                    \"name\"",
+											"                ],",
+											"                \"properties\": {",
+											"                    \"id\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"parentId\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"name\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"sortOrder\": {",
+											"                        \"type\": \"integer\"",
+											"                    },",
+											"                    \"images\": {",
+											"                        \"type\": \"array\",",
+											"                        \"items\": {",
+											"                            \"type\": \"object\",",
+											"                            \"required\": [",
+											"                                \"url\",",
+											"                                \"updatedAt\"",
+											"                            ],",
+											"                            \"properties\": {",
+											"                                \"url\": {",
+											"                                    \"type\": \"string\",",
+											"                                },",
+											"                                \"updatedAt\": {",
+											"                                    \"type\": \"string\",",
+											"                                }",
+											"                            }",
+											"                        }",
+											"                    }",
+											"                }",
+											"            }",
+											"        },",
+											"        \"items\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"required\": [",
+											"                    \"id\",",
+											"                    \"categoryId\",",
+											"                    \"name\",",
+											"                    \"price\",",
+											"                    \"measure\",",
+											"                    \"measureUnit\",",
+											"                ],",
+											"                \"properties\": {",
+											"                    \"id\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"categoryId\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"name\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"description\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"price\": {",
+											"                        \"type\": \"integer\"",
+											"                    },",
+											"                    \"vat\": {",
+											"                        \"type\": \"integer\"",
+											"                    },",
+											"                    \"isCatchweight\": {",
+											"                        \"type\": \"boolean\"",
+											"                    },",
+											"                    \"measure\": {",
+											"                        \"type\": \"integer\"",
+											"                    },",
+											"                    \"weightQuantum\": {",
+											"                        \"type\": \"number\"",
+											"                    },",
+											"                    \"measureUnit\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"sortOrder\": {",
+											"                        \"type\": \"integer\"",
+											"                    },",
+											"                    \"modifierGroups\": {",
+											"                        \"type\": \"array\",",
+											"                        \"items\": {",
+											"                            \"type\": \"object\",",
+											"                            \"required\": [",
+											"                                \"id\",",
+											"                                \"name\",",
+											"                                \"minSelectedModifiers\",",
+											"                                \"maxSelectedModifiers\"",
+											"                            ],",
+											"                            \"properties\": {",
+											"                                \"id\": {",
+											"                                    \"type\": \"string\"",
+											"                                },",
+											"                                \"name\": {",
+											"                                    \"type\": \"string\"",
+											"                                },",
+											"                                \"modifiers\": {",
+											"                                    \"type\": \"array\",",
+											"                                    \"items\": {",
+											"                                        \"type\": \"object\",",
+											"                                        \"required\": [",
+											"                                            \"id\",",
+											"                                            \"name\",",
+											"                                            \"price\",",
+											"                                            \"minAmount\",",
+											"                                            \"maxAmount\"",
+											"                                        ],",
+											"                                        \"properties\": {",
+											"                                            \"id\": {",
+											"                                                \"type\": \"string\"",
+											"                                            },",
+											"                                            \"name\": {",
+											"                                                \"type\": \"string\"",
+											"                                            },",
+											"                                            \"price\": {",
+											"                                                \"type\": \"integer\"",
+											"                                            },",
+											"                                            \"vat\": {",
+											"                                                \"type\": \"integer\"",
+											"                                            },",
+											"                                            \"minAmount\": {",
+											"                                                \"type\": \"integer\"",
+											"                                            },",
+											"                                            \"maxAmount\": {",
+											"                                                \"type\": \"integer\"",
+											"                                            }",
+											"                                        }",
+											"                                    }",
+											"                                },",
+											"                                \"minSelectedModifiers\": {",
+											"                                    \"type\": \"integer\"",
+											"                                },",
+											"                                \"maxSelectedModifiers\": {",
+											"                                    \"type\": \"integer\"",
+											"                                },",
+											"                                \"sortOrder\": {",
+											"                                    \"type\": \"integer\"",
+											"                                }",
+											"                            }",
+											"                        }",
+											"                    },",
+											"                    \"images\": {",
+											"                        \"type\": \"array\",",
+											"                        \"items\": {",
+											"                            \"type\": \"object\",",
+											"                            \"required\": [",
+											"                                \"hash\",",
+											"                                \"url\"",
+											"                            ],",
+											"                            \"properties\": {",
+											"                                \"hash\": {",
+											"                                    \"type\": \"string\"",
+											"                                },",
+											"                                \"url\": {",
+											"                                    \"type\": \"string\"",
+											"                                }",
+											"                            }",
+											"                        }",
+											"                    }",
+											"                }",
+											"            }",
+											"        },",
+											"        \"lastChange\": {",
+											"            \"type\": \"string\"",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"      \"type\": \"object\",",
+											"      \"properties\": {",
+											"        \"code\": {",
+											"          \"type\": \"integer\"",
+											"        },",
+											"        \"description\": {",
+											"          \"type\": \"string\"",
+											"        }",
+											"      }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"      \"reason\": {",
+											"        \"type\": \"string\"",
+											"      }",
+											"    },",
+											"    \"required\": [",
+											"      \"reason\"",
+											"    ]",
+											"};",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let code_status = pm.response.code;",
+											"    if (code_status => 200 && code_status <= 299) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else if (code_status == 401) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											"",
+											"let jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Date in lastChange is present in correct format\", function () {",
+											"    pm.expect(jsonData.lastChange).to.match(/^\\d{4}(\\-\\d{2}){2}T\\d{2}(:\\d{2}){2}\\.\\d{6}\\+\\d{2}:\\d{2}$/);",
+											"});",
+											"",
+											"pm.test(\"The price should not be <= 0\", function () {",
+											"    const price = jsonData.items.find(m => m.price <= 0);",
+											"    pm.expect(price).equal(undefined)",
+											"});",
+											"",
+											"pm.test(\"Id in modifier groups are unique\", function() {",
+											"    let items_array = jsonData.items;",
+											"    items_array.forEach(function(item){",
+											"        let moifier_groups_array = item.modifierGroups",
+											"        pm.expect(moifier_groups_array.reduce(function(arr, b) {",
+											"            if (!arr.includes(b.id)) {",
+											"            arr.push(b.id);",
+											"            }",
+											"            return arr;",
+											"        }, []).length).to.eql(moifier_groups_array.length);",
+											"    })",
+											"});",
+											"",
+											"pm.test(\"Id in modifiers are unique\", function() {",
+											"    let items_array = jsonData.items;",
+											"    items_array.forEach(function(item){",
+											"        let moifier_groups_array = item.modifierGroups",
+											"        moifier_groups_array.forEach(function(group){",
+											"            let cur_modifiers_array = group.modifiers",
+											"            pm.expect(cur_modifiers_array.reduce(function(arr, b) {",
+											"                if (!arr.includes(b.id)) {",
+											"                arr.push(b.id);",
+											"                }",
+											"                return arr;",
+											"            }, []).length).to.eql(cur_modifiers_array.length);",
+											"        })",
+											"    })",
+											"});",
+											"",
+											"pm.test(\"The measureUnit one of [г, мл]\", function () {",
+											"    const units_gramm = jsonData.items.filter(((items) => items.measureUnit == \"г\"));",
+											"    const units_ml = jsonData.items.filter(((items) => items.measureUnit == \"мл\"));",
+											"    const units = jsonData.items.filter(((items) => items.measureUnit));",
+											"    const result = units_gramm.length + units_ml.length;",
+											"    pm.expect(units.length).equal(result)",
+											"});",
+											"",
+											"pm.test(\"Id in items are unique\", function() {",
+											"  let items_array = jsonData.items   ",
+											"  pm.expect(items_array.reduce(function(arr, b) {",
+											"    if (!arr.includes(b.id)) {",
+											"      arr.push(b.id);",
+											"    }",
+											"    return arr;",
+											"  }, []).length).to.eql(items_array.length);",
+											"});",
+											"",
+											"pm.test(\"Images links lead to picture\", function () {",
+											"    let img_cor = jsonData.items.filter(item => item.images[0].url.includes('png') || item.images[0].url.includes('jpeg') || item.images[0].url.includes('gif') || item.images[0].url.includes('jpg') || item.images[0].url == undefined);",
+											"    pm.expect(img_cor.length).equal(jsonData.items.length)",
+											"});",
+											"",
+											"pm.test(\"All categoryId of items exist in categories id\", function(){",
+											"    let all_categories_id = []",
+											"    let all_items_category_id = []",
+											"    let categories_array = jsonData.categories",
+											"    let items_array = jsonData.items",
+											"    items_array.forEach(function(g){",
+											"        all_items_category_id.push(g.categoryId)",
+											"    })",
+											"    categories_array.forEach(function(g){",
+											"        all_categories_id.push(g.id)",
+											"    })",
+											"",
+											"    let result = all_items_category_id.every( ai => all_categories_id.includes(ai) );",
+											"    let difference = all_items_category_id.filter(x => !all_categories_id.includes(x));",
+											"  console.error(difference)",
+											"    pm.expect(result).equal(true)",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "tokenName",
+											"value": "{{access_token}}",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "{{client_secret}}",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "{{client_id}}",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.eats.menu.composition.v2+json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": []
+								},
+								"url": {
+									"raw": "{{host}}/menu/{{restaurant_id}}/composition",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"menu",
+										"{{restaurant_id}}",
+										"composition"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "401 no auth",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    let code = pm.response.code",
+											"    if (code == 401) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"    }",
+											"    ",
+											"    else if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/vnd.eats.menu.composition.v2+json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const schema = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"reason\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"reason\": {",
+											"            \"type\": \"string\"",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"let jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let code_status = pm.response.code;",
+											"if (code_status == 401) {",
+											"    pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"        \"type\": \"object\",",
+											"        \"required\": [],",
+											"        \"properties\": {",
+											"            \"code\": {",
+											"                \"type\": \"integer\"",
+											"            },",
+											"            \"description\": {",
+											"                \"type\": \"string\"",
+											"            }",
+											"        }",
+											"    }",
+											"};",
+											" "
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.eats.menu.composition.v2+json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": []
+								},
+								"url": {
+									"raw": "{{host}}/menu/{{restaurant_id}}/composition",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"menu",
+										"{{restaurant_id}}",
+										"composition"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "404",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    let code = pm.response.code",
+											"    if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"    }",
+											"    else if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/vnd.eats.menu.composition.v2+json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"",
+											"const schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"        \"type\": \"object\",",
+											"        \"required\": [],",
+											"        \"properties\": {",
+											"            \"code\": {",
+											"                \"type\": \"integer\"",
+											"            },",
+											"            \"description\": {",
+											"                \"type\": \"string\"",
+											"            }",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"reason\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"reason\": {",
+											"            \"type\": \"string\"",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"let jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let code_status = pm.response.code;",
+											"    if (code_status == 400) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"",
+											"    else if (code_status == 401) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else if (code_status => 402 && code_status <= 499) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											"",
+											"",
+											" "
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "tokenName",
+											"value": "{{access_token}}",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "{{client_secret}}",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "{{client_id}}",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/vnd.eats.menu.composition.v2+json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": []
+								},
+								"url": {
+									"raw": "{{host}}/menu/0000/composition",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"menu",
+										"0000",
+										"composition"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Стоки",
+					"item": [
+						{
+							"name": "Выдача позиций меню недоступных для заказа на текущий момент",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"let jsonData = pm.response.json();",
+											"",
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    let code = pm.response.code",
+											"    if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/vnd.eats.menu.availability.v2+json\");",
+											"    }",
+											"    else if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json; charset=utf-8\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const schema = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"items\",",
+											"        \"modifiers\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"items\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"required\": [",
+											"                    \"itemId\"",
+											"                ],",
+											"                \"properties\": {",
+											"                    \"itemId\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"stock\": {",
+											"                        \"type\": \"number\"",
+											"                    }",
+											"                }",
+											"            }",
+											"        },",
+											"        \"modifiers\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"required\": [",
+											"                    \"modifierId\"",
+											"                ],",
+											"                \"properties\": {",
+											"                    \"modifierId\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"stock\": {",
+											"                        \"type\": \"integer\"",
+											"                    }",
+											"                }",
+											"            }",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"      \"type\": \"object\",",
+											"      \"properties\": {",
+											"        \"code\": {",
+											"          \"type\": \"integer\"",
+											"        },",
+											"        \"description\": {",
+											"          \"type\": \"string\"",
+											"        }",
+											"      }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"      \"reason\": {",
+											"        \"type\": \"string\"",
+											"      }",
+											"    },",
+											"    \"required\": [",
+											"      \"reason\"",
+											"    ]",
+											"};",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let code = pm.response.code",
+											"    if (code >= 200 && code <= 299) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else if  (code == 401) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											"",
+											"pm.test(\"itemId in items are unique\", function() {",
+											"  let items_array = jsonData.items;",
+											"  pm.expect(items_array.reduce(function(arr, b) {",
+											"    if (!arr.includes(b.itemId)) {",
+											"      arr.push(b.itemId);",
+											"    }",
+											"    return arr;",
+											"  }, []).length).to.eql(items_array.length);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "tokenName",
+											"value": "{{access_token}}",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "{{client_secret}}",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "{{client_id}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/menu/{{restaurant_id}}/availability",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"menu",
+										"{{restaurant_id}}",
+										"availability"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "401 no auth",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    let code = pm.response.code",
+											"    if (code == 401) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"    }",
+											"    ",
+											"    else if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/vnd.eats.menu.composition.v2+json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const schema = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"reason\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"reason\": {",
+											"            \"type\": \"string\"",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"let jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let code_status = pm.response.code;",
+											"if (code_status == 401) {",
+											"    pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"        \"type\": \"object\",",
+											"        \"required\": [],",
+											"        \"properties\": {",
+											"            \"code\": {",
+											"                \"type\": \"integer\"",
+											"            },",
+											"            \"description\": {",
+											"                \"type\": \"string\"",
+											"            }",
+											"        }",
+											"    }",
+											"};",
+											" "
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/menu/{{restaurant_id}}/availability",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"menu",
+										"{{restaurant_id}}",
+										"availability"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "404",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    let code = pm.response.code",
+											"    if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"    }",
+											"    else if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/vnd.eats.menu.composition.v2+json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\" || \"application/json; charset=utf-8\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"",
+											"const schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"        \"type\": \"object\",",
+											"        \"required\": [],",
+											"        \"properties\": {",
+											"            \"code\": {",
+											"                \"type\": \"integer\"",
+											"            },",
+											"            \"description\": {",
+											"                \"type\": \"string\"",
+											"            }",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"reason\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"reason\": {",
+											"            \"type\": \"string\"",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"let jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let code_status = pm.response.code;",
+											"    if (code_status == 400) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"",
+											"    else if (code_status == 401) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else if (code_status => 402 && code_status <= 499) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											"",
+											"",
+											" "
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "tokenName",
+											"value": "{{access_token}}",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "{{client_secret}}",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "{{client_id}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/menu/00000/availability",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"menu",
+										"00000",
+										"availability"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Promo",
+					"item": [
+						{
+							"name": "Выдача акционных блюд в связке с меню",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"let code = pm.response.code",
+											"",
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const schema = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"promoItems\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"promoItems\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"required\": [",
+											"                    \"id\",",
+											"                    \"promoId\"",
+											"                ],",
+											"                \"properties\": {",
+											"                    \"id\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"promoId\": {",
+											"                        \"type\": \"string\"",
+											"                    }",
+											"                }",
+											"            }",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"      \"type\": \"object\",",
+											"      \"properties\": {",
+											"        \"code\": {",
+											"          \"type\": \"integer\"",
+											"        },",
+											"        \"description\": {",
+											"          \"type\": \"string\"",
+											"        }",
+											"      }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"      \"reason\": {",
+											"        \"type\": \"string\"",
+											"      }",
+											"    },",
+											"    \"required\": [",
+											"      \"reason\"",
+											"    ]",
+											"};",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    if (code >= 200 && code <= 299) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else if (code == 401) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "tokenName",
+											"value": "{{access_token}}",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "{{client_secret}}",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "{{client_id}}",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{host}}/menu/{{restaurant_id}}/promos",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"menu",
+										"{{restaurant_id}}",
+										"promos"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "order",
+			"item": [
+				{
+					"name": "{orderID}",
+					"item": [
+						{
+							"name": "Выдача актуальной информации о заказе",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"let jsonData = pm.response.json();",
+											"let code = pm.response.code",
+											"",
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/vnd.eats.order.v2+json\");",
+											"    }",
+											"    else if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const yandex_schema = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"        \"discriminator\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"eatsId\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"restaurantId\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"deliveryInfo\": {",
+											"            \"type\": \"object\",",
+											"            \"properties\": {",
+											"                \"clientName\": {",
+											"                    \"type\": \"string\"",
+											"                },",
+											"                \"phoneNumber\": {",
+											"                    \"type\": \"string\"",
+											"                },",
+											"                \"courierArrivementDate\": {",
+											"                    \"type\": \"string\"",
+											"                }",
+											"            },",
+											"            \"required\": [",
+											"                \"courierArrivementDate\"",
+											"            ]",
+											"        },",
+											"        \"paymentInfo\": {",
+											"            \"type\": \"object\",",
+											"            \"properties\": {",
+											"                \"itemsCost\": {",
+											"                    \"type\": \"number\"",
+											"                },",
+											"                \"paymentType\": {",
+											"                    \"type\": \"string\",",
+											"                    \"enum\": [",
+											"                        \"CARD\",",
+											"                        \"CASH\"",
+											"                    ]",
+											"                }",
+											"            },",
+											"            \"required\": [",
+											"                \"itemsCost\",",
+											"                \"paymentType\"",
+											"            ]",
+											"        },",
+											"        \"items\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"properties\": {",
+											"                    \"id\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"name\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"quantity\": {",
+											"                        \"type\": \"number\"",
+											"                    },",
+											"                    \"price\": {",
+											"                        \"type\": \"number\"",
+											"                    },",
+											"                    \"modifications\": {",
+											"                        \"type\": \"array\",",
+											"                        \"items\": {",
+											"                            \"type\": \"object\",",
+											"                            \"properties\": {",
+											"                                \"id\": {",
+											"                                    \"type\": \"string\"",
+											"                                },",
+											"                                \"name\": {",
+											"                                    \"type\": \"string\"",
+											"                                },",
+											"                                \"quantity\": {",
+											"                                    \"type\": \"integer\"",
+											"                                },",
+											"                                \"price\": {",
+											"                                    \"type\": \"number\"",
+											"                                }",
+											"                            },",
+											"                            \"required\": [",
+											"                                \"id\",",
+											"                                \"price\",",
+											"                                \"quantity\"",
+											"                            ]",
+											"                        }",
+											"                    },",
+											"                    \"promos\": {",
+											"                        \"type\": \"array\",",
+											"                        \"items\": {",
+											"                            \"type\": \"object\",",
+											"                            \"properties\": {",
+											"                                \"type\": {",
+											"                                    \"type\": \"string\",",
+											"                                    \"enum\": [",
+											"                                        \"GIFT\",",
+											"                                        \"PERCENTAGE\",",
+											"                                        \"FIXED\"",
+											"                                    ]",
+											"                                },",
+											"                                \"discount\": {",
+											"                                    \"type\": \"number\"",
+											"                                }",
+											"                            },",
+											"                            \"required\": [",
+											"                                \"type\",",
+											"                                \"discount\"",
+											"                            ]",
+											"                        }",
+											"                    }",
+											"                },",
+											"                \"required\": [",
+											"                    \"id\",",
+											"                    \"modifications\",",
+											"                    \"price\",",
+											"                    \"quantity\",",
+											"                    \"promos\"",
+											"                ]",
+											"            }",
+											"        },",
+											"        \"persons\": {",
+											"            \"type\": \"integer\"",
+											"        },",
+											"        \"comment\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"promos\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"properties\": {",
+											"                    \"type\": {",
+											"                        \"type\": \"string\",",
+											"                        \"enum\": [",
+											"                            \"GIFT\",",
+											"                            \"PERCENTAGE\",",
+											"                            \"FIXED\"",
+											"                        ]",
+											"                    },",
+											"                    \"discount\": {",
+											"                        \"type\": \"number\"",
+											"                    }",
+											"                },",
+											"                \"required\": [",
+											"                    \"type\",",
+											"                    \"discount\"",
+											"                ]",
+											"            }",
+											"        }",
+											"    },",
+											"    \"required\": [",
+											"        \"discriminator\",",
+											"        \"comment\",",
+											"        \"eatsId\",",
+											"        \"items\",",
+											"        \"promos\"",
+											"    ]",
+											"};",
+											"",
+											"const marketplace_schema = {",
+											"  \"type\": \"object\",",
+											"  \"properties\": {",
+											"      \"discriminator\": {",
+											"          \"type\": \"string\"",
+											"      },",
+											"      \"eatsId\": {",
+											"          \"type\": \"string\"",
+											"      },",
+											"      \"restaurantId\": {",
+											"          \"type\": \"string\"",
+											"      },",
+											"      \"deliveryInfo\": {",
+											"          \"type\": \"object\",",
+											"          \"properties\": {",
+											"              \"clientName\": {",
+											"                  \"type\": \"string\"",
+											"              },",
+											"              \"phoneNumber\": {",
+											"                  \"type\": \"string\"",
+											"              },",
+											"              \"deliveryDate\": {",
+											"                  \"type\": \"string\"",
+											"              },",
+											"              \"deliveryAddress\": {",
+											"                  \"type\": \"object\",",
+											"                  \"properties\": {",
+											"                      \"full\": {",
+											"                          \"type\": \"string\"",
+											"                      },",
+											"                      \"latitude\": {",
+											"                          \"type\": \"string\"",
+											"                      },",
+											"                      \"longitude\": {",
+											"                          \"type\": \"string\"",
+											"                      }",
+											"                  },",
+											"                  \"required\": [",
+											"                      \"full\",",
+											"                      \"latitude\",",
+											"                      \"longitude\"",
+											"                  ]",
+											"              }",
+											"          },",
+											"          \"required\": [",
+											"              \"clientName\",",
+											"              \"deliveryAddress\",",
+											"              \"deliveryDate\",",
+											"              \"phoneNumber\"",
+											"          ]",
+											"      },",
+											"      \"paymentInfo\": {",
+											"          \"type\": \"object\",",
+											"          \"properties\": {",
+											"              \"paymentType\": {",
+											"                  \"type\": \"string\",",
+											"                  \"enum\": [",
+											"                      \"CARD\",",
+											"                      \"CASH\"",
+											"                  ]",
+											"              },",
+											"              \"itemsCost\": {",
+											"                  \"type\": \"number\"",
+											"              },",
+											"              \"deliveryFee\": {",
+											"                  \"type\": \"number\"",
+											"              },",
+											"              \"total\": {",
+											"                  \"type\": \"number\"",
+											"              },",
+											"              \"change\": {",
+											"                  \"type\": \"number\"",
+											"              }",
+											"          },",
+											"          \"required\": [",
+											"              \"change\",",
+											"              \"deliveryFee\",",
+											"              \"itemsCost\",",
+											"              \"paymentType\"",
+											"          ]",
+											"      },",
+											"      \"items\": {",
+											"          \"type\": \"array\",",
+											"          \"items\": {",
+											"              \"type\": \"object\",",
+											"              \"properties\": {",
+											"                  \"id\": {",
+											"                      \"type\": \"string\"",
+											"                  },",
+											"                  \"name\": {",
+											"                      \"type\": \"string\"",
+											"                  },",
+											"                  \"quantity\": {",
+											"                      \"type\": \"number\"",
+											"                  },",
+											"                  \"price\": {",
+											"                      \"type\": \"number\"",
+											"                  },",
+											"                  \"modifications\": {",
+											"                      \"type\": \"array\",",
+											"                      \"items\": {",
+											"                          \"type\": \"object\",",
+											"                          \"properties\": {",
+											"                              \"id\": {",
+											"                                  \"type\": \"string\"",
+											"                              },",
+											"                              \"name\": {",
+											"                                  \"type\": \"string\"",
+											"                              },",
+											"                              \"quantity\": {",
+											"                                  \"type\": \"integer\"",
+											"                              },",
+											"                              \"price\": {",
+											"                                  \"type\": \"number\"",
+											"                              }",
+											"                          },",
+											"                          \"required\": [",
+											"                              \"id\",",
+											"                              \"price\",",
+											"                              \"quantity\"",
+											"                          ]",
+											"                      }",
+											"                  },",
+											"                  \"promos\": {",
+											"                      \"type\": \"array\",",
+											"                      \"items\": {",
+											"                        \"type\": \"object\",",
+											"                        \"properties\": {",
+											"                            \"type\": {",
+											"                                \"type\": \"string\",",
+											"                                \"enum\": [",
+											"                                    \"GIFT\",",
+											"                                    \"PERCENTAGE\",",
+											"                                    \"FIXED\"",
+											"                                ]",
+											"                            },",
+											"                            \"discount\": {",
+											"                                \"type\": \"number\"",
+											"                            }",
+											"                        },",
+											"                        \"required\": [",
+											"                            \"type\",",
+											"                            \"discount\"",
+											"                        ]",
+											"                    }",
+											"                  }",
+											"              },",
+											"              \"required\": [",
+											"                  \"id\",",
+											"                  \"modifications\",",
+											"                  \"price\",",
+											"                  \"quantity\",",
+											"                  \"promos\"",
+											"              ]",
+											"          }",
+											"      },",
+											"      \"persons\": {",
+											"          \"type\": \"integer\"",
+											"      },",
+											"      \"comment\": {",
+											"          \"type\": \"string\"",
+											"      },",
+											"      \"promos\": {",
+											"          \"type\": \"array\",",
+											"          \"items\": {",
+											"              \"type\": \"object\",",
+											"              \"properties\": {",
+											"                  \"type\": {",
+											"                      \"type\": \"string\",",
+											"                      \"enum\": [",
+											"                          \"GIFT\",",
+											"                          \"PERCENTAGE\",",
+											"                          \"FIXED\"",
+											"                      ]",
+											"                  },",
+											"                  \"discount\": {",
+											"                      \"type\": \"number\"",
+											"                  }",
+											"              },",
+											"              \"required\": [",
+											"                  \"type\",",
+											"                  \"discount\"",
+											"              ]",
+											"          }",
+											"      }",
+											"  },",
+											"  \"required\": [",
+											"      \"discriminator\",",
+											"      \"comment\",",
+											"      \"eatsId\",",
+											"      \"items\",",
+											"      \"promos\"",
+											"  ]",
+											"};",
+											"",
+											"const pickup_schema = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"        \"discriminator\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"eatsId\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"restaurantId\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"deliveryInfo\": {",
+											"            \"type\": \"object\",",
+											"            \"properties\": {",
+											"                \"clientName\": {",
+											"                    \"type\": \"string\"",
+											"                },",
+											"                \"phoneNumber\": {",
+											"                    \"type\": \"string\"",
+											"                },",
+											"                \"clientArrivementDate\": {",
+											"                    \"type\": \"string\"",
+											"                }",
+											"            },",
+											"            \"required\": [",
+											"                \"clientName\",",
+											"                \"phoneNumber\",",
+											"                \"clientArrivementDate\"",
+											"            ]",
+											"        },",
+											"        \"paymentInfo\": {",
+											"            \"type\": \"object\",",
+											"            \"properties\": {",
+											"                \"paymentType\": {",
+											"                    \"type\": \"string\",",
+											"                    \"enum\": [",
+											"                        \"CARD\",",
+											"                        \"CASH\"",
+											"                    ]",
+											"                },",
+											"                \"itemsCost\": {",
+											"                    \"type\": \"number\"",
+											"                },",
+											"                \"total\": {",
+											"                    \"type\": \"number\"",
+											"                },",
+											"                \"change\": {",
+											"                    \"type\": \"number\"",
+											"                }",
+											"            },",
+											"            \"required\": [",
+											"                \"change\",",
+											"                \"itemsCost\",",
+											"                \"paymentType\"",
+											"            ]",
+											"        },",
+											"        \"items\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"properties\": {",
+											"                    \"id\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"name\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"quantity\": {",
+											"                        \"type\": \"number\"",
+											"                    },",
+											"                    \"price\": {",
+											"                        \"type\": \"number\"",
+											"                    },",
+											"                    \"modifications\": {",
+											"                        \"type\": \"array\",",
+											"                        \"items\": {",
+											"                            \"type\": \"object\",",
+											"                            \"properties\": {",
+											"                                \"id\": {",
+											"                                    \"type\": \"string\"",
+											"                                },",
+											"                                \"name\": {",
+											"                                    \"type\": \"string\"",
+											"                                },",
+											"                                \"quantity\": {",
+											"                                    \"type\": \"integer\"",
+											"                                },",
+											"                                \"price\": {",
+											"                                    \"type\": \"number\"",
+											"                                }",
+											"                            },",
+											"                            \"required\": [",
+											"                                \"id\",",
+											"                                \"price\",",
+											"                                \"quantity\"",
+											"                            ]",
+											"                        }",
+											"                    },",
+											"                    \"promos\": {",
+											"                        \"type\": \"array\",",
+											"                        \"items\": {",
+											"                            \"type\": \"object\",",
+											"                            \"properties\": {",
+											"                                \"type\": {",
+											"                                    \"type\": \"string\",",
+											"                                    \"enum\": [",
+											"                                        \"GIFT\",",
+											"                                        \"PERCENTAGE\",",
+											"                                        \"FIXED\"",
+											"                                    ]",
+											"                                },",
+											"                                \"discount\": {",
+											"                                    \"type\": \"number\"",
+											"                                }",
+											"                            },",
+											"                            \"required\": [",
+											"                                \"type\",",
+											"                                \"discount\"",
+											"                            ]",
+											"                        }",
+											"                    }",
+											"                },",
+											"                \"required\": [",
+											"                    \"id\",",
+											"                    \"modifications\",",
+											"                    \"price\",",
+											"                    \"quantity\",",
+											"                    \"promos\"",
+											"                ]",
+											"            }",
+											"        },",
+											"        \"persons\": {",
+											"            \"type\": \"integer\"",
+											"        },",
+											"        \"comment\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"promos\": {",
+											"            \"type\": \"array\",",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"properties\": {",
+											"                    \"type\": {",
+											"                        \"type\": \"string\",",
+											"                        \"enum\": [",
+											"                            \"GIFT\",",
+											"                            \"PERCENTAGE\",",
+											"                            \"FIXED\"",
+											"                        ]",
+											"                    },",
+											"                    \"discount\": {",
+											"                        \"type\": \"number\"",
+											"                    }",
+											"                },",
+											"                \"required\": [",
+											"                    \"type\",",
+											"                    \"discount\"",
+											"                ]",
+											"            }",
+											"        }",
+											"    },",
+											"    \"required\": [",
+											"        \"discriminator\",",
+											"        \"comment\",",
+											"        \"deliveryInfo\",",
+											"        \"eatsId\",",
+											"        \"items\",",
+											"        \"paymentInfo\",",
+											"        \"promos\"",
+											"    ]",
+											"};",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"      \"type\": \"object\",",
+											"      \"properties\": {",
+											"        \"code\": {",
+											"          \"type\": \"integer\"",
+											"        },",
+											"        \"description\": {",
+											"          \"type\": \"string\"",
+											"        }",
+											"      }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"      \"reason\": {",
+											"        \"type\": \"string\"",
+											"      }",
+											"    },",
+											"    \"required\": [",
+											"      \"reason\"",
+											"    ]",
+											"};",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let delivery_type = jsonData.discriminator",
+											"    if (code >= 200 && code <= 299) {",
+											"        if (delivery_type == 'yandex') {",
+											"            pm.response.to.have.jsonSchema(yandex_schema);",
+											"        }",
+											"        else if (delivery_type == 'marketplace') {",
+											"            pm.response.to.have.jsonSchema(marketplace_schema);",
+											"        }",
+											"        else {",
+											"            pm.response.to.have.jsonSchema(pickup_schema);",
+											"        }",
+											"    }",
+											"    else if (code == 401) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											"",
+											"pm.test(\"The price should not be <= 0\", function () {",
+											"    const price = jsonData.items.find(m => m.price <= 0);",
+											"    pm.expect(price).equal(undefined)",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "clientSecret",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "tokenName",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/vnd.eats.order.v2+json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{host}}/order/{{order_id}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"order",
+										"{{order_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Отмена заказа в системе ресторана",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"let code = pm.response.code",
+											"",
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"      \"type\": \"object\",",
+											"      \"properties\": {",
+											"        \"code\": {",
+											"          \"type\": \"integer\"",
+											"        },",
+											"        \"description\": {",
+											"          \"type\": \"string\"",
+											"        }",
+											"      }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"      \"reason\": {",
+											"        \"type\": \"string\"",
+											"      }",
+											"    },",
+											"    \"required\": [",
+											"      \"reason\"",
+											"    ]",
+											"};",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    let body = pm.response.body",
+											"    if (code >= 200 && code <= 299) {",
+											"        pm.expect(body).equal(undefined);",
+											"    }",
+											"    else if (code == 401) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    }",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "clientSecret",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "tokenName",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"eatsId\": \"230125-5002603\",\n  \"comment\": \"Отказ клиента\"\n}"
+								},
+								"url": {
+									"raw": "{{host}}/order/{{order_id}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"order",
+										"{{order_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Обновление заказа в системе ресторана",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"let code = pm.response.code",
+											"",
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"",
+											"    };",
+											"});",
+											"",
+											"const schema = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"result\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"result\": {",
+											"            \"type\": \"string\"",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"      \"type\": \"object\",",
+											"      \"properties\": {",
+											"        \"code\": {",
+											"          \"type\": \"integer\"",
+											"        },",
+											"        \"description\": {",
+											"          \"type\": \"string\"",
+											"        }",
+											"      }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"      \"reason\": {",
+											"        \"type\": \"string\"",
+											"      }",
+											"    },",
+											"    \"required\": [",
+											"      \"reason\"",
+											"    ]",
+											"};",
+											"",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    if (code >= 200 && code <= 299) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else if (401 == code) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    };",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "clientSecret",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "tokenName",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/vnd.eats.order.v2+json",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"discriminator\": \"yandex\",\n  \"eatsId\": \"240419-8224809\",\n  \"items\": [\n    {\n      \"id\": \"123\",\n      \"quantity\": 1,\n      \"price\": 23000,\n      \"modifications\": [],\n      \"promos\": [],\n      \"name\": \"Лаваш с курицей Мини\"\n    }\n  ],\n  \"comment\": \"ТЕСТОВЫЙ ЗАКАЗ\",\n  \"promos\": [],\n  \"restaurantId\": \"53\",\n  \"deliveryInfo\": {\n    \"courierArrivementDate\": \"2024-04-19T13:28:02.000000+05:00\",\n    \"clientName\": \"Яндекс.Еда\",\n    \"phoneNumber\": \"+998712055734\"\n  },\n  \"paymentInfo\": {\n    \"itemsCost\": 23000,\n    \"paymentType\": \"CARD\"\n  },\n  \"persons\": 1,\n  \"orderId\": 83651901\n}"
+								},
+								"url": {
+									"raw": "{{host}}/order/{{order_id}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"order",
+										"{{order_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Выдача актуального статуса заказа в системе ресторана",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"let code = pm.response.code",
+											"",
+											"pm.test('Content-Type is present and correct value', () => {",
+											"    if(code >= 200 && code <= 299) {",
+											"        pm.response.to.have.header(\"Content-Type\"); a",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else if(code >= 400 && code <= 499) {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.header(\"Content-Type\");",
+											"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+											"",
+											"    };",
+											"});",
+											"A",
+											"const schema = {",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"status\"",
+											"    ],",
+											"    \"properties\": {",
+											"        \"status\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"comment\": {",
+											"            \"type\": \"string\"",
+											"        },",
+											"        \"updatedAt\": {",
+											"            \"type\": \"string\"",
+											"        }",
+											"    }",
+											"};",
+											"",
+											"const error_schema = {",
+											"    \"type\": \"array\",",
+											"    \"items\": {",
+											"      \"type\": \"object\",",
+											"      \"properties\": {",
+											"        \"code\": {",
+											"          \"type\": \"integer\"",
+											"        },",
+											"        \"description\": {",
+											"          \"type\": \"string\"",
+											"        }",
+											"      }",
+											"    }",
+											"};",
+											"",
+											"const auth_schema_error = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"      \"reason\": {",
+											"        \"type\": \"string\"",
+											"      }",
+											"    },",
+											"    \"required\": [",
+											"      \"reason\"",
+											"    ]",
+											"};",
+											"",
+											"pm.test(\"Validate JSON schema\", () => {",
+											"    if (code >= 200 && code <= 299) {",
+											"        pm.response.to.have.jsonSchema(schema);",
+											"    }",
+											"    else if (401 == code) {",
+											"        pm.response.to.have.jsonSchema(auth_schema_error);",
+											"    }",
+											"    else {",
+											"        pm.response.to.have.jsonSchema(error_schema);",
+											"    };",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "clientSecret",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "tokenName",
+											"value": "",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "read write",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "headerPrefix",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "/security/oauth/token",
+											"type": "string"
+										},
+										{
+											"key": "grant_type",
+											"value": "client_credentials",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{host}}/order/{{order_id}}/status",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"order",
+										"{{order_id}}",
+										"status"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Создание заказа в системе ресторана",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"let code = pm.response.code",
+									"postman.setEnvironmentVariable(\"order_id\", jsonData.orderId);",
+									"",
+									"",
+									"pm.test('Content-Type is present and correct value', () => {",
+									"    if(code >= 200 && code <= 299) {",
+									"        pm.response.to.have.header(\"Content-Type\");",
+									"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+									"    }",
+									"    else if(code >= 400 && code <= 499) {",
+									"        pm.response.to.have.header(\"Content-Type\");",
+									"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+									"    }",
+									"    else {",
+									"        pm.response.to.have.header(\"Content-Type\");",
+									"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+									"",
+									"    };",
+									"});",
+									"",
+									"const schema = {",
+									"    \"type\": \"object\",",
+									"    \"required\": [",
+									"        \"result\",",
+									"        \"orderId\"",
+									"    ],",
+									"    \"properties\": {",
+									"        \"result\": {",
+									"            \"type\": \"string\"",
+									"        },",
+									"        \"orderId\": {",
+									"            \"type\": \"string\"",
+									"        }",
+									"    }",
+									"};",
+									"",
+									"const error_schema = {",
+									"    \"type\": \"array\",",
+									"    \"items\": {",
+									"      \"type\": \"object\",",
+									"      \"properties\": {",
+									"        \"code\": {",
+									"          \"type\": \"integer\"",
+									"        },",
+									"        \"description\": {",
+									"          \"type\": \"string\"",
+									"        }",
+									"      }",
+									"    }",
+									"};",
+									"",
+									"const auth_schema_error = {",
+									"    \"type\": \"object\",",
+									"    \"properties\": {",
+									"      \"reason\": {",
+									"        \"type\": \"string\"",
+									"      }",
+									"    },",
+									"    \"required\": [",
+									"      \"reason\"",
+									"    ]",
+									"};",
+									"",
+									"",
+									"pm.test(\"Validate JSON schema\", () => {",
+									"    if (code >= 200 && code <= 299) {",
+									"        pm.response.to.have.jsonSchema(schema);",
+									"    }",
+									"    else if (401 == code) {",
+									"        pm.response.to.have.jsonSchema(auth_schema_error);",
+									"    }",
+									"    else {",
+									"        pm.response.to.have.jsonSchema(error_schema);",
+									"    };",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "clientSecret",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "clientId",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "tokenName",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "scope",
+									"value": "read write",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "client_authentication",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "headerPrefix",
+									"value": "Bearer",
+									"type": "string"
+								},
+								{
+									"key": "accessTokenUrl",
+									"value": "/security/oauth/token",
+									"type": "string"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/vnd.eats.order.v2+json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"discriminator\": \"yandex\",\n  \"eatsId\": \"240417-36294192\",\n  \"items\": [\n    {\n      \"id\": \"i17-2\",\n      \"quantity\": 2,\n      \"price\": 0,\n      \"modifications\": [\n        {\n          \"id\": \"m6-3\",\n          \"quantity\": 1,\n          \"price\": 0,\n          \"name\": \"Толл (354 мл)\"\n        },\n        {\n          \"id\": \"60067\",\n          \"quantity\": 1,\n          \"price\": 500,\n          \"name\": \"Овсяная основа\"\n        }\n      ],\n      \"promos\": [\n        {\n          \"type\": \"GIFT\",\n          \"discount\": 1300\n        }\n      ],\n      \"name\": \"Колд Брю\"\n    },\n    {\n      \"id\": \"800070\",\n      \"quantity\": 1,\n      \"price\": 950,\n      \"modifications\": [],\n      \"promos\": [],\n      \"name\": \"Вода с газом Перье 0,5 л\"\n    }\n  ],\n  \"comment\": \"Возможно, приедет ровер.\",\n  \"promos\": [],\n  \"restaurantId\": \"test\",\n  \"deliveryInfo\": {\n    \"courierArrivementDate\": \"2024-04-17T17:31:31.000000+03:00\",\n    \"clientName\": \"Yandex.Eda\",\n    \"phoneNumber\": \"88006001210\"\n  },\n  \"paymentInfo\": {\n    \"itemsCost\": 2250,\n    \"paymentType\": \"CARD\"\n  },\n  \"persons\": 1\n}"
+						},
+						"url": {
+							"raw": "{{host}}/order",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"order"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Авторизация",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Content-Type is present and correct value', () => {",
+							"    if(200 <= pm.response.code <= 299) {",
+							"        pm.response.to.have.header(\"Content-Type\");",
+							"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+							"    }",
+							"    else if(400 <= pm.response.code <= 499) {",
+							"        pm.response.to.have.header(\"Content-Type\");",
+							"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+							"    }",
+							"    else {",
+							"        pm.response.to.have.header(\"Content-Type\");",
+							"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+							"",
+							"    };",
+							"});",
+							"",
+							"const schema = {",
+							"\"type\": \"object\",",
+							"\"required\": [",
+							"                    \"access_token\"",
+							"                ],",
+							"\"properties\": {",
+							"        \"access_token\": { \"type\" : \"string\" }",
+							"    }",
+							"};            ",
+							" ",
+							"pm.test(\"Validate JSON schema\", () => {",
+							"    if (200 <= pm.response.code <= 299) {",
+							"        pm.response.to.have.jsonSchema(schema);",
+							"    }",
+							"});",
+							"let responseData = pm.response.json();",
+							"pm.environment.set(\"access_token\", responseData.access_token);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"content-type": true
+				},
+				"followRedirects": false
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "X-CSRFToken",
+						"value": "I7xAAM95YqPlQols1pmWiqy3d9boKG5vPt8OeIwCsygrNnc3MntU5RQhxQVNnVBJ",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "client_id",
+							"value": "{{client_id}}",
+							"description": "(Required)",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "{{client_secret}}",
+							"description": "(Required)",
+							"type": "text"
+						},
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"description": "(Required)",
+							"type": "text"
+						},
+						{
+							"key": "scope",
+							"value": "read write",
+							"description": "(Required)",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{host}}/security/oauth/token",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"security",
+						"oauth",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Выдача списка заведений партнера",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let code = pm.response.code",
+							"",
+							"pm.test('Content-Type is present and correct value', () => {",
+							"    if(code >= 200 && code <= 299) {",
+							"        pm.response.to.have.header(\"Content-Type\");",
+							"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+							"    }",
+							"    else if(code >= 400 && code <= 499) {",
+							"        pm.response.to.have.header(\"Content-Type\");",
+							"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+							"    }",
+							"    else {",
+							"        pm.response.to.have.header(\"Content-Type\");",
+							"        pm.response.to.be.header(\"Content-Type\", \"application/json\");",
+							"",
+							"    };",
+							"});",
+							"",
+							"",
+							"const schema = {",
+							"\"type\": \"object\",",
+							"\"properties\": {",
+							"        \"places\": {",
+							"            \"type\": \"array\",",
+							"            \"items\": {",
+							"                \"type\": \"object\",",
+							"                \"required\": [",
+							"                    \"id\",",
+							"                    \"title\",",
+							"                    \"address\"",
+							"                ],",
+							"                \"properties\": {",
+							"                    \"id\": {",
+							"                        \"type\": \"string\",",
+							"                    },",
+							"                    \"title\": {",
+							"                        \"type\": \"string\",",
+							"                    },",
+							"                    \"address\": {",
+							"                        \"type\": \"string\",",
+							"                    }",
+							"                },",
+							"            },",
+							"        },",
+							"    },    ",
+							"};          ",
+							"",
+							"const error_schema = {",
+							"    \"type\": \"array\",",
+							"    \"items\": {",
+							"      \"type\": \"object\",",
+							"      \"properties\": {",
+							"        \"code\": {",
+							"          \"type\": \"integer\"",
+							"        },",
+							"        \"description\": {",
+							"          \"type\": \"string\"",
+							"        }",
+							"      }",
+							"    }",
+							"};",
+							"",
+							"const auth_schema_error = {",
+							"    \"type\": \"object\",",
+							"    \"properties\": {",
+							"      \"reason\": {",
+							"        \"type\": \"string\"",
+							"      }",
+							"    },",
+							"    \"required\": [",
+							"      \"reason\"",
+							"    ]",
+							"};",
+							" ",
+							"pm.test(\"Validate JSON schema\", () => {",
+							"    if (code >= 200 && code <= 299) {",
+							"        pm.response.to.have.jsonSchema(schema);",
+							"    }",
+							"    else if (401 == code) {",
+							"        pm.response.to.have.jsonSchema(auth_schema_error);",
+							"    }",
+							"    else {",
+							"        pm.response.to.have.jsonSchema(error_schema);",
+							"    };",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "oauth2",
+					"oauth2": [
+						{
+							"key": "scope",
+							"value": "read write",
+							"type": "string"
+						},
+						{
+							"key": "addTokenTo",
+							"value": "header",
+							"type": "string"
+						},
+						{
+							"key": "client_authentication",
+							"value": "header",
+							"type": "string"
+						},
+						{
+							"key": "tokenName",
+							"value": "{{access_token}}",
+							"type": "string"
+						},
+						{
+							"key": "headerPrefix",
+							"value": "Bearer",
+							"type": "string"
+						},
+						{
+							"key": "accessTokenUrl",
+							"value": "/security/oauth/token",
+							"type": "string"
+						},
+						{
+							"key": "clientSecret",
+							"value": "{{client_secret}}",
+							"type": "string"
+						},
+						{
+							"key": "clientId",
+							"value": "{{client_id}}",
+							"type": "string"
+						},
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{host}}/restaurants",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"restaurants"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "oauth2",
+		"oauth2": [
+			{
+				"key": "scope",
+				"value": "read write",
+				"type": "string"
+			},
+			{
+				"key": "accessTokenUrl",
+				"value": "/security/oauth/token",
+				"type": "string"
+			},
+			{
+				"key": "grant_type",
+				"value": "client_credentials",
+				"type": "string"
+			},
+			{
+				"key": "client_authentication",
+				"value": "header",
+				"type": "string"
+			},
+			{
+				"key": "clientSecret",
+				"value": "{{client_secret}}",
+				"type": "string"
+			},
+			{
+				"key": "clientId",
+				"value": "{{client_id}}",
+				"type": "string"
+			},
+			{
+				"key": "tokenName",
+				"value": "{{access_token}}",
+				"type": "string"
+			},
+			{
+				"key": "addTokenTo",
+				"value": "header",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
