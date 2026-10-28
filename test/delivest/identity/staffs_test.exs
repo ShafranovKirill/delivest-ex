@@ -9,9 +9,6 @@ defmodule Delivest.Identity.StaffsTest do
   @invalid_password "invalid"
 
   setup do
-    start_supervised({Cachex, name: :staff_cache})
-    Cachex.clear(:staff_cache)
-
     admin_role =
       insert(:role,
         permissions: ["staff.read", "staff.create", "staff.update", "staff.delete", "admin"]
