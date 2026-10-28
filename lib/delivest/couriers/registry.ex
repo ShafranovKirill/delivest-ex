@@ -1,5 +1,5 @@
 defmodule Delivest.Couriers.Registry do
-  @modules [Delivest.Couriers.StaffProvider]
+  @modules [Delivest.Couriers.StaffProvider, Delivest.Integrations.YandexDelivery]
 
   def modules, do: @modules
 

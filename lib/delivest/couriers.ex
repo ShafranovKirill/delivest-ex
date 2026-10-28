@@ -14,6 +14,7 @@ defmodule Delivest.Couriers do
   @before_pickup [:accepted, :preparing, :ready]
   @rank %{preparing: 1, ready: 2}
   @handed_over [:picked_up, :delivered]
+  @lost_limit 3
 
   def permission, do: @permission
 
@@ -159,6 +160,79 @@ defmodule Delivest.Couriers do
   def hand_over(%Staff{} = courier, branch_id, delivery_id),
     do: move(courier, branch_id, delivery_id, :picked_up, :completed)
 
+  def report(%Delivery{id: id}, state, details) do
+    case Repo.get(Delivery, id) do
+      %Delivery{} = delivery ->
+        if Delivery.active?(delivery),
+          do: delivery |> put_details(details) |> reported(state),
+          else: {:ok, delivery}
+
+      nil ->
+        {:error, :not_found}
+    end
+  end
+
+  defp put_details(delivery, details) do
+    delivery
+    |> Delivery.provider_changeset(%{details: Map.merge(delivery.details, details)})
+    |> Repo.update!()
+  end
+
+  defp reported(%Delivery{status: :searching} = delivery, state)
+       when state in [:assigned, :picked_up, :delivered] do
+    delivery
+    |> Delivery.provider_assign_changeset()
+    |> Repo.update!()
+    |> reported(state)
+  end
+
+  defp reported(%Delivery{status: :assigned} = delivery, state)
+       when state in [:picked_up, :delivered] do
+    with {:ok, _order} <- advance(delivery, :delivering) do
+      delivery
+      |> Repo.reload!()
+      |> then(fn
+        %Delivery{status: :assigned} = left ->
+          left |> Delivery.pick_up_changeset() |> Repo.update!()
+
+        moved ->
+          moved
+      end)
+      |> reported(state)
+    end
+  end
+
+  defp reported(%Delivery{status: :picked_up} = delivery, :delivered) do
+    with {:ok, _order} <- advance(delivery, :completed), do: {:ok, Repo.reload!(delivery)}
+  end
+
+  defp reported(%Delivery{} = delivery, :lost) do
+    if lost_count(delivery.order_id) + 1 < @lost_limit,
+      do: restart(delivery, :not_found),
+      else: close(delivery, :failed, :not_found)
+  end
+
+  defp reported(%Delivery{} = delivery, :failed), do: close(delivery, :failed, :provider_error)
+
+  defp reported(%Delivery{} = delivery, :cancelled),
+    do: close(delivery, :cancelled, :provider_cancelled)
+
+  defp reported(%Delivery{} = delivery, _state), do: changed({:ok, delivery})
+
+  defp advance(%Delivery{order_id: order_id}, to) do
+    case Repo.get(Order, order_id) do
+      nil -> {:error, :order_not_found}
+      order -> Orders.advance_order(order, to, :delivery)
+    end
+  end
+
+  defp lost_count(order_id) do
+    Delivery
+    |> where([d], d.order_id == ^order_id and d.close_reason == :not_found)
+    |> select([d], count(d.id))
+    |> Repo.one()
+  end
+
   defp move(courier, branch_id, delivery_id, from, to) do
     with :ok <- Identity.authorize(courier, @permission, branch_id),
          {:ok, delivery} <- fetch(branch_id, delivery_id),
@@ -203,9 +277,16 @@ defmodule Delivest.Couriers do
     |> Repo.insert()
   end
 
-  defp restart(%Delivery{} = delivery, reason) do
+  defp restart(%Delivery{provider: :staff} = delivery, reason) do
     with {:ok, _closed} <- close(delivery, :failed, reason) do
       delivery.order_id |> Delivery.new(delivery.branch_id, delivery.provider) |> Repo.insert()
+    end
+  end
+
+  defp restart(%Delivery{} = delivery, reason) do
+    with {:ok, _closed} <- close(delivery, :failed, reason),
+         %Order{} = order <- Repo.get(Order, delivery.order_id) || {:error, :order_not_found} do
+      if assignable?(order), do: start(order, delivery.provider), else: {:ok, delivery}
     end
   end
 

@@ -1,0 +1,251 @@
+defmodule Delivest.Integrations.YandexDelivery do
+  @behaviour Delivest.Couriers.Provider
+
+  import Ecto.Query
+
+  require Logger
+
+  alias Delivest.{Couriers, Identity, Repo}
+  alias Delivest.Couriers.Delivery
+  alias Delivest.Identity.Branch
+  alias Delivest.Integrations.YandexDelivery.{Api, Claim, Journal, JournalWorker, Settings}
+  alias Delivest.Oms.{Order, Orders}
+
+  @searching ~w(new estimating ready_for_approval accepted performer_lookup performer_draft)
+  @assigned ~w(performer_found pickup_arrived ready_for_pickup_confirmation)
+  @picked_up ~w(pickuped delivery_arrived ready_for_delivery_confirmation pay_waiting delivered)
+  @lost ~w(performer_not_found cancelled_by_taxi)
+  @failed ~w(failed estimating_failed)
+  @cancelled ~w(cancelled cancelled_with_payment cancelled_with_items_on_hands)
+  @returning ~w(returning return_arrived ready_for_return_confirmation returned returned_finish)
+  @final ["delivered_finish", "returned_finish" | @lost ++ @failed ++ @cancelled]
+  @stale_seconds 60
+
+  @impl true
+  def key, do: :yandex
+
+  @impl true
+  def name, do: "Яндекс Доставка"
+
+  def settings(branch_id) do
+    case Identity.get_branch(branch_id, preload: :info) do
+      {:ok, %Branch{info: %{yandex_delivery: %Settings{} = settings}}} -> settings
+      _other -> %Settings{}
+    end
+  end
+
+  def change_settings(%Settings{} = settings, attrs \\ %{}),
+    do: Settings.changeset(settings, attrs)
+
+  def update_settings(staff, branch_id, attrs) do
+    with {:ok, branch} <- Identity.get_branch(branch_id, preload: :info),
+         {:ok, branch} <-
+           Identity.update_integrations(staff, branch, %{"yandex_delivery" => attrs}) do
+      {:ok, branch.info.yandex_delivery}
+    else
+      {:error, :info, changeset} ->
+        {:error, Ecto.Changeset.get_change(changeset, :yandex_delivery)}
+
+      {:error, _step, changeset} ->
+        {:error, changeset}
+
+      error ->
+        error
+    end
+  end
+
+  def state(status) when status in @searching, do: :searching
+  def state(status) when status in @assigned, do: :assigned
+  def state(status) when status in @picked_up, do: :picked_up
+  def state("delivered_finish"), do: :delivered
+  def state(status) when status in @lost, do: :lost
+  def state(status) when status in @failed, do: :failed
+  def state(status) when status in @cancelled, do: :cancelled
+  def state(status) when status in @returning, do: :returning
+  def state(_status), do: :searching
+
+  def returning?(%Delivery{provider: :yandex, details: %{"status" => status}}),
+    do: status in @returning
+
+  def returning?(_delivery), do: false
+
+  @impl true
+  def start(%Delivery{} = delivery, %Order{} = order) do
+    order = Repo.preload(order, [:items, :client])
+
+    with {:ok, branch} <- Identity.get_branch(order.branch_id, preload: :info),
+         %Settings{} = settings <- configured(branch),
+         {:ok, body} <- Claim.build(order, branch, settings),
+         {:ok, %{"id" => claim_id} = claim} <- Api.create(settings.token, delivery.id, body) do
+      switch_to_card(order)
+      JournalWorker.enqueue(order.branch_id)
+      {:ok, %{external_id: claim_id, details: details(claim)}}
+    end
+  end
+
+  @impl true
+  def cancel(%Delivery{external_id: nil}), do: :ok
+  def cancel(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
+
+  def cancel(%Delivery{external_id: claim_id} = delivery) do
+    token = settings(delivery.branch_id).token
+
+    with {:ok, %{"cancel_state" => cancel_state}} <- Api.cancel_info(token, claim_id),
+         {:ok, %{"version" => version}} <- Api.info(token, claim_id),
+         {:ok, _response} <- Api.cancel(token, claim_id, version, cancel_state) do
+      :ok
+    else
+      {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
+      error -> error
+    end
+  end
+
+  def poll(branch_id) do
+    settings = settings(branch_id)
+
+    case active(branch_id) do
+      [] ->
+        :done
+
+      deliveries ->
+        if Settings.configured?(settings),
+          do: poll(branch_id, settings, deliveries),
+          else: :done
+    end
+  end
+
+  defp poll(branch_id, settings, deliveries) do
+    journal = Repo.get(Journal, branch_id) || %Journal{branch_id: branch_id}
+
+    with {:ok, %{"cursor" => cursor} = response} <- Api.journal(settings.token, journal.cursor) do
+      changed = response |> Map.get("events", []) |> MapSet.new(& &1["claim_id"])
+
+      deliveries
+      |> Enum.filter(&(MapSet.member?(changed, &1.external_id) or stale?(&1)))
+      |> Enum.each(&sync(&1, settings))
+
+      journal |> Ecto.Changeset.change(cursor: cursor) |> Repo.insert_or_update!()
+      if active(branch_id) == [], do: :done, else: :more
+    end
+  end
+
+  def sync(%Delivery{external_id: claim_id} = delivery, %Settings{token: token}) do
+    with {:ok, %{"status" => status} = claim} <- Api.info(token, claim_id) do
+      if status == "ready_for_approval", do: accept(token, claim)
+
+      details =
+        claim
+        |> details()
+        |> Map.merge(courier_details(token, claim, delivery.details))
+
+      Couriers.report(delivery, state(status), details)
+    else
+      {:error, reason} = error ->
+        Logger.warning("delivery #{delivery.id}: yandex claim sync failed (#{inspect(reason)})")
+        error
+    end
+  end
+
+  defp accept(token, %{"id" => claim_id, "version" => version}) do
+    with {:error, reason} <- Api.accept(token, claim_id, version) do
+      Logger.warning("yandex claim #{claim_id}: accept failed (#{inspect(reason)})")
+    end
+  end
+
+  defp details(claim) do
+    %{
+      "status" => claim["status"],
+      "price" => price(claim["pricing"]),
+      "eta" => claim["eta"],
+      "performer" => performer(claim["performer_info"]),
+      "synced_at" => DateTime.to_iso8601(DateTime.utc_now())
+    }
+    |> Map.reject(fn {_key, value} -> is_nil(value) end)
+  end
+
+  defp courier_details(token, %{"status" => status} = claim, known)
+       when status in @assigned or status in @picked_up do
+    performer = performer(claim["performer_info"])
+
+    if performer == known["performer"] and known["phone"],
+      do: Map.take(known, ["phone", "tracking_url"]),
+      else: %{"phone" => phone(token, claim), "tracking_url" => tracking_url(token, claim)}
+  end
+
+  defp courier_details(_token, _claim, known), do: Map.take(known, ["phone", "tracking_url"])
+
+  defp phone(token, %{"id" => claim_id} = claim) do
+    with %{"id" => point_id} <- point(claim, "source"),
+         {:ok, %{"phone" => phone} = response} <- Api.courier_phone(token, claim_id, point_id) do
+      if response["ext"] in [nil, ""], do: phone, else: "#{phone},,#{response["ext"]}"
+    else
+      _other -> nil
+    end
+  end
+
+  defp tracking_url(token, %{"id" => claim_id}) do
+    with {:ok, %{"route_points" => points}} <- Api.tracking_links(token, claim_id),
+         %{"sharing_link" => link} <- Enum.find(points, &(&1["type"] == "destination")) do
+      link
+    else
+      _other -> nil
+    end
+  end
+
+  defp point(%{"route_points" => points}, type) when is_list(points),
+    do: Enum.find(points, &(&1["type"] == type))
+
+  defp point(_claim, _type), do: nil
+
+  defp performer(%{"courier_name" => name} = info) do
+    car =
+      Enum.reject([info["car_model"], info["car_color"], info["car_number"]], &(&1 in [nil, ""]))
+
+    %{"name" => name, "car" => if(car != [], do: Enum.join(car, ", "))}
+  end
+
+  defp performer(_info), do: nil
+
+  defp price(%{"final_price" => price}) when is_binary(price), do: price
+  defp price(%{"offer" => %{"price" => price}}) when is_binary(price), do: price
+  defp price(_pricing), do: nil
+
+  defp configured(%Branch{info: %{yandex_delivery: %Settings{} = settings}}) do
+    if Settings.configured?(settings), do: settings, else: {:error, :not_configured}
+  end
+
+  defp configured(_branch), do: {:error, :not_configured}
+
+  defp switch_to_card(%Order{payment_method: :cash} = order) do
+    with {:error, reason} <-
+           Orders.update_payment_method(order, %{"payment_method" => "card_offline"}) do
+      Logger.warning("order #{order.number}: cash to card switch failed (#{inspect(reason)})")
+    end
+  end
+
+  defp switch_to_card(_order), do: :ok
+
+  defp stale?(%Delivery{details: %{"synced_at" => synced_at}}) do
+    case DateTime.from_iso8601(synced_at) do
+      {:ok, at, _offset} -> DateTime.diff(DateTime.utc_now(), at) >= @stale_seconds
+      _error -> true
+    end
+  end
+
+  defp stale?(_delivery), do: true
+
+  def active(branch_id) do
+    Delivery
+    |> where([d], d.branch_id == ^branch_id and d.provider == :yandex)
+    |> where([d], d.status in ^Delivery.active() and not is_nil(d.external_id))
+    |> Repo.all()
+  end
+
+  def active_branches do
+    Delivery
+    |> where([d], d.provider == :yandex and d.status in ^Delivery.active())
+    |> distinct(true)
+    |> select([d], d.branch_id)
+    |> Repo.all()
+  end
+end

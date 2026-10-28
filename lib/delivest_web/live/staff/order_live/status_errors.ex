@@ -30,6 +30,22 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
     do: gettext("The courier has picked up the order, its status cannot be reverted")
 
   def message(:not_ready), do: gettext("The order is not ready yet")
+  def message(:not_configured), do: gettext("Yandex Delivery is not set up for this branch")
+
+  def message(:branch_address_missing),
+    do: gettext("Set the branch address and coordinates to call a Yandex courier")
+
+  def message(:branch_phone_missing),
+    do: gettext("Set the branch phone to call a Yandex courier")
+
+  def message(:address_missing), do: gettext("The order has no delivery address")
+  def message(:customer_phone_missing), do: gettext("The order has no customer phone")
+
+  def message({:yandex_delivery, _status, code}) when is_binary(code),
+    do: gettext("Yandex Delivery refused: %{code}", code: code)
+
+  def message({:yandex_delivery, _status, _code}),
+    do: gettext("Yandex Delivery is not responding, try again later")
 
   def message(reason) when reason in [:finished, :backward, :skipped_step, :unreachable],
     do: gettext("The order status has already changed, refresh the page")

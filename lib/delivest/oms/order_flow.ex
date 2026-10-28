@@ -3,13 +3,13 @@ defmodule Delivest.Oms.OrderFlow do
   alias Delivest.Identity.Staff
   alias Delivest.Oms.Order
 
-  @type source :: :staff | :courier | :crm | :channel | :system
-  @type by :: {:staff | :courier, Staff.t()} | :crm | :channel | :system
+  @type source :: :staff | :courier | :crm | :channel | :delivery | :system
+  @type by :: {:staff | :courier, Staff.t()} | :crm | :channel | :delivery | :system
   @type step :: {Order.status(), Order.status()}
 
   @path [:created, :accepted, :preparing, :ready, :delivering, :completed]
   @final [:completed, :cancelled]
-  @leaping [:crm, :channel, :system]
+  @leaping [:crm, :channel, :delivery, :system]
   @rank @path |> Enum.with_index() |> Map.new() |> Map.put(:cancelled, length(@path))
 
   @staff_permissions %{

@@ -19,7 +19,8 @@ defmodule Delivest.Couriers.Delivery do
     :order_cancelled,
     :order_completed,
     :handed_over,
-    :provider_error
+    :provider_error,
+    :provider_cancelled
   ]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -64,6 +65,9 @@ defmodule Delivest.Couriers.Delivery do
     )
     |> unique_constraint(:order_id, name: :deliveries_active_order_index)
   end
+
+  def provider_assign_changeset(delivery),
+    do: change(delivery, status: :assigned, assigned_at: DateTime.utc_now())
 
   def pick_up_changeset(delivery),
     do: change(delivery, status: :picked_up, picked_up_at: DateTime.utc_now())

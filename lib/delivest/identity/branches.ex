@@ -5,7 +5,7 @@ defmodule Delivest.Identity.Branches do
   alias Delivest.{Repo, Identity}
   alias Delivest.Audit
 
-  @integrations ["crm", "channels", :crm, :channels]
+  @integrations ["crm", "channels", "yandex_delivery", :crm, :channels, :yandex_delivery]
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
