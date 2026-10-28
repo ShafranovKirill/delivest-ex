@@ -33,7 +33,12 @@ defmodule Delivest.Push.Vapid do
     "#{scheme}://#{host}"
   end
 
-  defp subject, do: Application.get_env(:delivest, :client_origin, "https://delivest.app")
+  defp subject do
+    case Application.get_env(:delivest, :client_origin) do
+      "https://" <> _host = origin -> origin
+      _other -> "https://delivest.shafranov.tech"
+    end
+  end
 
   defp keys do
     case :persistent_term.get(__MODULE__, nil) do

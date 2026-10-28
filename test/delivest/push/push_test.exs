@@ -44,7 +44,11 @@ defmodule Delivest.PushTest do
     assert_received {:push, headers, body}
 
     assert {"authorization", "vapid t=" <> _rest} = List.keyfind(headers, "authorization", 0)
-    assert %{"body" => text, "tag" => tag, "icon" => nil} = PushClient.decrypt(client, body)
+
+    assert %{"body" => text, "tag" => tag, "icon" => nil, "url" => url} =
+             PushClient.decrypt(client, body)
+
+    assert url == "/" <> Repo.get!(Delivest.Identity.Branch, order.branch_id).slug
     assert text == "Order #{order.number} is being prepared"
     assert tag == "order-#{order.id}"
 
@@ -82,6 +86,12 @@ defmodule Delivest.PushTest do
              Push.subscribe(order, %{endpoint: "http://x", p256dh: "short", auth: "!"})
 
     assert %{endpoint: _, p256dh: _, auth: _} = errors_on(changeset)
+
+    attrs =
+      Map.put(PushClient.subscription_attrs(PushClient.new()), :endpoint, "https://10.0.0.1/x")
+
+    assert {:error, changeset} = Push.subscribe(order, attrs)
+    assert %{endpoint: ["is not a known push service"]} = errors_on(changeset)
   end
 
   test "the vapid token is signed for the push service origin" do

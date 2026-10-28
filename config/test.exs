@@ -10,6 +10,8 @@ config :delivest, Delivest.HTTP.Client,
 config :delivest, Delivest.Push.Sender,
   req_options: [plug: {Req.Test, Delivest.Push.Sender}, retry: false]
 
+config :delivest, Delivest.Push.Subscription, hosts: ["push.example.com"]
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

@@ -1,7 +1,7 @@
 defmodule Delivest.Push.OrderMessage do
   use Gettext, backend: DelivestWeb.Gettext
 
-  alias Delivest.Franchise
+  alias Delivest.{Franchise, Identity}
 
   @notified [:accepted, :preparing, :ready, :delivering, :completed, :cancelled]
 
@@ -20,8 +20,15 @@ defmodule Delivest.Push.OrderMessage do
       body: body(status, order),
       icon: Franchise.icon_url(settings, "icon-192.png"),
       tag: "order-#{order.id}",
-      url: "/"
+      url: url(order)
     }
+  end
+
+  defp url(order) do
+    case Identity.get_branch(order.branch_id) do
+      {:ok, branch} -> "/" <> branch.slug
+      _ -> "/"
+    end
   end
 
   defp body(:accepted, order),
