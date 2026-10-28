@@ -55,16 +55,13 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
         {:noreply,
          socket
-         |> assign(meta: meta, counts: counts, page_title: page_title(counts))
+         |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
          |> stream(:orders, orders, reset: true)}
 
       {:error, _meta} ->
         {:noreply, push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
     end
   end
-
-  defp page_title(%{created: count}) when count > 0, do: "(#{count}) " <> gettext("Orders")
-  defp page_title(_counts), do: gettext("Orders")
 
   @impl true
   def handle_event("filter", params, socket) do
@@ -173,9 +170,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: {:noreply, assign(socket, order_to_delete: nil)}
 
   @impl true
-  def handle_info({Orders, [:order, :created], _order}, socket),
-    do: socket |> push_event("orders:new", %{}) |> load()
-
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
 
   defp courier_code_error(:forbidden), do: gettext("Permission denied")
@@ -225,11 +219,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   @impl true
   def render(assigns) do
     ~H"""
-    <div
-      id="orders-page"
-      phx-hook=".NewOrderSound"
-      class="space-y-4 sm:space-y-5 py-4 sm:p-6"
-    >
+    <div id="orders-page" class="space-y-4 sm:space-y-5 py-4 sm:p-6">
       <.page_header
         title={gettext("Orders")}
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
@@ -285,35 +275,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         on_cancel={JS.push("cancel_delete")}
         on_confirm={JS.push("confirm_delete")}
       />
-
-      <script :type={Phoenix.LiveView.ColocatedHook} name=".NewOrderSound">
-        export default {
-          mounted() {
-            const unlock = () => {
-              this.audio ??= new AudioContext()
-              this.audio.resume()
-            }
-            window.addEventListener("pointerdown", unlock, { once: true })
-            this.handleEvent("orders:new", () => this.chime())
-          },
-          chime() {
-            if (localStorage.getItem("orders-sound") === "off" || !this.audio) return
-            const now = this.audio.currentTime
-            ;[880, 1320].forEach((frequency, index) => {
-              const oscillator = this.audio.createOscillator()
-              const gain = this.audio.createGain()
-              const start = now + index * 0.18
-              oscillator.frequency.value = frequency
-              gain.gain.setValueAtTime(0.0001, start)
-              gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02)
-              gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16)
-              oscillator.connect(gain).connect(this.audio.destination)
-              oscillator.start(start)
-              oscillator.stop(start + 0.17)
-            })
-          }
-        }
-      </script>
     </div>
     """
   end

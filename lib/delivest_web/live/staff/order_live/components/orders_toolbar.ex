@@ -66,39 +66,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             <.icon name={icon} class="size-4" /> {label}
           </button>
         </div>
-
-        <button
-          id="orders-sound-toggle"
-          type="button"
-          phx-hook=".SoundToggle"
-          phx-update="ignore"
-          class="btn btn-sm btn-ghost btn-square"
-          title={gettext("Sound for new orders")}
-        >
-          <.icon name="hero-speaker-wave" class="size-5 sound-on" />
-          <.icon name="hero-speaker-x-mark" class="size-5 sound-off hidden" />
-        </button>
       </div>
-
-      <script :type={Phoenix.LiveView.ColocatedHook} name=".SoundToggle">
-        export default {
-          mounted() {
-            this.render()
-            this.el.addEventListener("click", () => {
-              localStorage.setItem("orders-sound", this.enabled() ? "off" : "on")
-              this.render()
-            })
-          },
-          enabled() {
-            return localStorage.getItem("orders-sound") !== "off"
-          },
-          render() {
-            this.el.querySelector(".sound-on").classList.toggle("hidden", !this.enabled())
-            this.el.querySelector(".sound-off").classList.toggle("hidden", this.enabled())
-            this.el.setAttribute("aria-pressed", String(this.enabled()))
-          }
-        }
-      </script>
     </div>
     """
   end

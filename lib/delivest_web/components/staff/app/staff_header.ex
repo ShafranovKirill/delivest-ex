@@ -31,7 +31,7 @@ defmodule DelivestWeb.StaffHeader do
 
       <div class="hidden sm:block flex-1"></div>
 
-      <.new_orders
+      <DelivestWeb.NewOrdersBell.new_orders_bell
         :if={@current_branch && can?(@current_staff, "orders.read")}
         count={@new_orders_count}
         branch={@current_branch}
@@ -43,29 +43,6 @@ defmodule DelivestWeb.StaffHeader do
       />
       <.staff_menu current_staff={@current_staff} />
     </header>
-    """
-  end
-
-  attr :count, :integer, required: true
-  attr :branch, :map, required: true
-
-  defp new_orders(assigns) do
-    ~H"""
-    <.link
-      id="header-new-orders"
-      navigate={~p"/staff/b/#{@branch}/orders?status=created"}
-      class="hidden sm:inline-flex btn btn-ghost btn-sm btn-square relative"
-      title={gettext("Orders awaiting confirmation")}
-    >
-      <.icon name="hero-bell" class="size-5" />
-      <span
-        :if={@count > 0}
-        id="header-new-orders-count"
-        class="badge badge-error badge-xs absolute -top-1 -right-1 min-w-5 px-1 font-bold"
-      >
-        {@count}
-      </span>
-    </.link>
     """
   end
 
@@ -108,6 +85,18 @@ defmodule DelivestWeb.StaffHeader do
           <% else %>
             <.link href={~p"/locale/ru"} class="flex items-center justify-between"><span>🇷🇺 Русский</span></.link>
           <% end %>
+        </li>
+
+        <div :if={can?(@current_staff, "orders.read")} class="divider my-1"></div>
+
+        <li
+          :if={can?(@current_staff, "orders.read")}
+          class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider"
+        >
+          {gettext("New orders")}
+        </li>
+        <li :if={can?(@current_staff, "orders.read")}>
+          <DelivestWeb.OrderSoundToggle.order_sound_toggle />
         </li>
 
         <div class="divider my-1"></div>
