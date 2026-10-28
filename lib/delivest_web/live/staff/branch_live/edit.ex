@@ -40,18 +40,11 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-6xl space-y-6 p-6">
-      <div class="flex flex-wrap items-center gap-4">
-        <.link navigate={~p"/staff/branches"} class="btn btn-ghost btn-sm btn-square">
-          <.icon name="hero-arrow-left" class="size-5" />
-        </.link>
-        <div class="min-w-0 flex-1">
-          <p class="text-xs uppercase tracking-wider text-base-content/50">{gettext("Branches")}</p>
-          <h1 class="truncate text-2xl sm:text-3xl font-bold">{@page_title}</h1>
-        </div>
-        <span :if={@branch.id && !@branch.is_active} class="badge badge-error badge-soft">
-          {gettext("Branch is not active")}
-        </span>
-      </div>
+      <.page_header title={@page_title} subtitle={gettext("Branches")} back={~p"/staff/branches"}>
+        <:actions :if={@branch.id && !@branch.is_active}>
+          <span class="badge badge-error badge-soft">{gettext("Branch is not active")}</span>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={BranchFormComponent}

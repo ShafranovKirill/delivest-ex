@@ -336,14 +336,27 @@ defmodule DelivestWeb.CoreComponents do
   """
   attr :title, :string, required: true
   attr :subtitle, :string, default: nil
+  attr :back, :string, default: nil
   slot :actions
 
   def page_header(assigns) do
     ~H"""
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div class="min-w-0">
-        <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">{@title}</h1>
-        <p :if={@subtitle} class="text-sm text-base-content/60">{@subtitle}</p>
+      <div class="flex min-w-0 items-center gap-3">
+        <.link
+          :if={@back}
+          navigate={@back}
+          class="btn btn-ghost btn-sm btn-square shrink-0"
+          title={gettext("Back")}
+        >
+          <.icon name="hero-arrow-left" class="size-5" />
+        </.link>
+        <div class="min-w-0">
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content break-words">
+            {@title}
+          </h1>
+          <p :if={@subtitle} class="text-sm text-base-content/60">{@subtitle}</p>
+        </div>
       </div>
       <div
         :if={@actions != []}

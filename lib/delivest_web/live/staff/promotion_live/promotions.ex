@@ -162,21 +162,11 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       id="promotion-editor"
       class="space-y-6 py-4 sm:p-6 max-w-7xl mx-auto"
     >
-      <div class="flex items-center gap-3">
-        <.link
-          patch={~p"/staff/b/#{@current_branch}/promotions"}
-          class="btn btn-ghost btn-sm btn-square"
-          title={gettext("Back")}
-        >
-          <.icon name="hero-arrow-left" class="size-5" />
-        </.link>
-        <div>
-          <h1 class="text-2xl font-bold">{@page_title}</h1>
-          <p class="text-sm text-base-content/60">
-            {gettext("Discounts & promo codes")}
-          </p>
-        </div>
-      </div>
+      <.page_header
+        title={@page_title}
+        subtitle={gettext("Discounts & promo codes")}
+        back={~p"/staff/b/#{@current_branch}/promotions"}
+      />
 
       <.live_component
         module={PromotionFormComponent}

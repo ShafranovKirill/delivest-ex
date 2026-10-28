@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
   alias Delivest.{Analytics, Identity, LocalTime}
   alias Delivest.Oms.Orders
+  alias DelivestWeb.Staff.DashboardLive.DayLabel
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   import DelivestWeb.Staff.StatsComponents
@@ -86,15 +87,6 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
     end)
   end
 
-  defp today_label(date) do
-    months =
-      ~w(января февраля марта апреля мая июня июля августа сентября октября ноября декабря)
-
-    if Gettext.get_locale(DelivestWeb.Gettext) == "ru",
-      do: "#{date.day} #{Enum.at(months, date.month - 1)}",
-      else: Calendar.strftime(date, "%B %-d")
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -103,7 +95,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         <div>
           <p class="text-sm text-base-content/60">{@current_branch.name}</p>
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">
-            {gettext("Today")}, {today_label(@today)}
+            {gettext("Today")}, {DayLabel.format(@today)}
           </h1>
         </div>
         <div class="flex flex-wrap gap-2">
