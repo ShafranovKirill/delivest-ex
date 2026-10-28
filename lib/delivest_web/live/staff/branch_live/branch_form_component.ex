@@ -140,6 +140,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
       {"branch-general", gettext("General")},
       {"branch-location", gettext("Location")},
       {"branch-schedule", gettext("Working Hours")},
+      {"branch-kitchen", gettext("Kitchen")},
       {"branch-links", gettext("Social Links & Messengers")},
       {"branch-map", gettext("YCart Settings")}
     ]
@@ -200,6 +201,28 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             id="working-hours-editor"
             working_hours={Ecto.Changeset.get_field(@form.source, :working_hours) || %{}}
           />
+        </.section>
+
+        <.section
+          id="branch-kitchen"
+          title={gettext("Kitchen")}
+          description={
+            gettext(
+              "The kitchen screen shows orders being cooked. Without it, or with Frontpad, the operator marks orders ready."
+            )
+          }
+        >
+          <.inputs_for :let={kitchen} field={@form[:kitchen]}>
+            <.input field={kitchen[:enabled]} type="checkbox" label={gettext("Kitchen works")} />
+            <div class="grid gap-4 sm:grid-cols-2">
+              <.input
+                field={kitchen[:lead_minutes]}
+                type="number"
+                min="0"
+                label={gettext("Send to the kitchen, minutes before the time")}
+              />
+            </div>
+          </.inputs_for>
         </.section>
 
         <.section id="branch-links" title={gettext("Social Links & Messengers")}>

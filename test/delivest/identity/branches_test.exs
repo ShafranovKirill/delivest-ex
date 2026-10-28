@@ -161,6 +161,27 @@ defmodule Delivest.Identity.BranchesTest do
       assert branch.info.address == "Москва, Красная площадь"
     end
 
+    test "kitchen settings default to off with 90 minutes and persist", %{admin: admin} do
+      assert {:ok, branch} =
+               Branches.create_branch(admin, %{name: "Plain Branch", slug: "plain-branch"}, %{})
+
+      assert %{enabled: false, lead_minutes: 90} = branch.info.kitchen
+
+      assert {:ok, branch} =
+               Branches.create_branch(admin, %{name: "Kitchen Branch", slug: "kitchen-branch"}, %{
+                 kitchen: %{enabled: true, lead_minutes: 45}
+               })
+
+      assert %{enabled: true, lead_minutes: 45} = branch.info.kitchen
+
+      assert {:error, :branch_info, changeset} =
+               Branches.create_branch(admin, %{name: "Bad Kitchen", slug: "bad-kitchen"}, %{
+                 kitchen: %{lead_minutes: -1}
+               })
+
+      assert %{kitchen: %{lead_minutes: [_]}} = errors_on(changeset)
+    end
+
     test "should persist working hours in branch info", %{admin: admin} do
       attrs = %{name: "Schedule Branch", slug: "schedule-branch"}
 
