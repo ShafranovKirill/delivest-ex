@@ -31,6 +31,8 @@ defmodule Delivest.Integrations.Zvonok do
 
   def configured?, do: Settings.complete?(get_settings())
 
+  def enabled?, do: get_settings().enabled
+
   def webhook_url(token),
     do:
       DelivestWeb.Endpoint.url() <>

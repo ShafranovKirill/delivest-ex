@@ -6,7 +6,8 @@ defmodule Delivest.Identity.ClientAuth do
   @spec start(term(), String.t() | nil) ::
           {:ok, PhoneConfirmation.t(), String.t()} | {:error, term()}
   def start(phone, session_id) do
-    with {:ok, phone} <- validate_phone(phone),
+    with :ok <- ensure_enabled(),
+         {:ok, phone} <- validate_phone(phone),
          {:ok, %{call_id: call_id, call_number: call_number}} <- request_call(phone),
          {:ok, confirmation} <-
            PhoneConfirmations.create(%{phone: phone, session_id: session_id, call_id: call_id}),
@@ -31,7 +32,8 @@ defmodule Delivest.Identity.ClientAuth do
           {:ok, Client.t()}
           | {:error, :pending | :not_found | :client_blocked | Ecto.Changeset.t()}
   def complete(confirmation_id, session_id) do
-    with {:ok, phone} <- PhoneConfirmations.consume(confirmation_id, session_id),
+    with :ok <- ensure_enabled(),
+         {:ok, phone} <- PhoneConfirmations.consume(confirmation_id, session_id),
          {:ok, client} <- Clients.fetch_or_create_by_phone(phone) do
       ensure_active(client)
     end
@@ -39,11 +41,17 @@ defmodule Delivest.Identity.ClientAuth do
 
   @spec fetch_client(String.t()) :: {:ok, Client.t()} | {:error, :not_found | :client_blocked}
   def fetch_client(client_id) do
-    case Clients.get_active_client(client_id) do
-      nil -> {:error, :not_found}
-      client -> ensure_active(client)
+    with :ok <- ensure_enabled() do
+      case Clients.get_active_client(client_id) do
+        nil -> {:error, :not_found}
+        client -> ensure_active(client)
+      end
     end
   end
+
+  def enabled?, do: Delivest.Integrations.Zvonok.enabled?()
+
+  defp ensure_enabled, do: if(enabled?(), do: :ok, else: {:error, :auth_disabled})
 
   def subscribe(confirmation_id),
     do: Phoenix.PubSub.subscribe(Delivest.PubSub, PhoneConfirmations.topic(confirmation_id))

@@ -14,18 +14,19 @@ defmodule Delivest.Integrations.Zvonok.Settings do
     field :public_key, :string, redact: true
     field :campaign_id, :string
     field :webhook_token, :string, redact: true
+    field :enabled, :boolean, default: true
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(settings, attrs) do
     settings
-    |> cast(attrs, @fields, empty_values: [nil, ""])
+    |> cast(attrs, [:enabled | @fields], empty_values: [nil, ""])
     |> update_change(:public_key, &String.trim/1)
     |> update_change(:campaign_id, &String.trim/1)
     |> update_change(:webhook_token, &String.trim/1)
     |> put_webhook_token()
-    |> validate_required(@fields)
+    |> validate_required_when_enabled()
     |> validate_format(:webhook_token, ~r/^[A-Za-z0-9_-]{8,}$/,
       message: gettext("At least 8 latin letters, digits, - or _")
     )
@@ -33,6 +34,12 @@ defmodule Delivest.Integrations.Zvonok.Settings do
 
   def complete?(%__MODULE__{} = settings),
     do: Enum.all?(@fields, &(Map.get(settings, &1) not in [nil, ""]))
+
+  defp validate_required_when_enabled(changeset) do
+    if get_field(changeset, :enabled),
+      do: validate_required(changeset, @fields),
+      else: changeset
+  end
 
   defp put_webhook_token(changeset) do
     if get_field(changeset, :webhook_token),

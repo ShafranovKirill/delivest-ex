@@ -2,7 +2,7 @@ defmodule DelivestWeb.Client.Franchise.FranchiseController do
   use DelivestWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Delivest.Franchise
+  alias Delivest.{Franchise, Identity}
   alias Delivest.Integrations.Dadata
   alias DelivestWeb.Helpers.ApiError
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
@@ -21,7 +21,8 @@ defmodule DelivestWeb.Client.Franchise.FranchiseController do
     render(conn, :show,
       settings: Franchise.get_settings(),
       documents: Franchise.list_documents(),
-      address_map: Dadata.active?()
+      address_map: Dadata.active?(),
+      client_auth: Identity.client_auth_enabled?()
     )
   end
 

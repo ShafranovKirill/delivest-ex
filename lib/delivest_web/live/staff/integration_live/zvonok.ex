@@ -68,6 +68,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
+        <div class="space-y-1">
+          <.input field={@form[:enabled]} type="checkbox" label={gettext("Customer sign-in")} />
+          <p class="text-xs text-base-content/60">
+            {gettext(
+              "When off, the site has no sign-in at all: everyone orders as a guest, signed in customers are signed out."
+            )}
+          </p>
+        </div>
+
         <div class="grid gap-4 sm:grid-cols-2">
           <.input
             field={@form[:public_key]}

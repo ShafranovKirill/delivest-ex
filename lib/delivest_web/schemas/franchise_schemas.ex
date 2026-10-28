@@ -54,6 +54,10 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
               type: :boolean,
               description: "Адрес выбирается на карте с подсказками DaData"
             },
+            client_auth: %Schema{
+              type: :boolean,
+              description: "Клиенты могут войти по звонку; иначе все заказывают как гости"
+            },
             documents: %Schema{type: :array, items: DocumentSummary}
           },
           required: [
@@ -63,6 +67,7 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             :logo_url,
             :logo_dark_url,
             :address_map,
+            :client_auth,
             :legal,
             :documents
           ]

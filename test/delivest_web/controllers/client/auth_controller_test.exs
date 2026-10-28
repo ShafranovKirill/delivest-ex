@@ -229,6 +229,29 @@ defmodule DelivestWeb.Client.AuthControllerTest do
              conn |> post(~p"/client/auth/refresh", %{refresh_token: token}) |> json_response(403)
   end
 
+  test "turned off sign-in leaves everyone a guest", %{conn: conn} do
+    client = insert(:client)
+    %{access_token: access, refresh_token: refresh} = ClientToken.issue(client.id)
+    Delivest.Repo.update_all(Delivest.Integrations.Zvonok.Settings, set: [enabled: false])
+
+    assert %{"data" => %{"client_auth" => false}} =
+             conn |> get(~p"/client/franchise") |> json_response(200)
+
+    assert %{"error" => "auth_disabled"} =
+             conn |> post(~p"/client/auth/call", %{phone: @phone}) |> json_response(403)
+
+    assert %{"error" => "auth_disabled"} =
+             conn
+             |> post(~p"/client/auth/refresh", %{refresh_token: refresh})
+             |> json_response(403)
+
+    assert %{"error" => "unauthorized"} =
+             build_conn()
+             |> put_req_header("authorization", "Bearer " <> access)
+             |> get(~p"/client/me")
+             |> json_response(401)
+  end
+
   test "invalid tokens are rejected", %{conn: conn} do
     assert %{"error" => "invalid_refresh_token"} =
              conn

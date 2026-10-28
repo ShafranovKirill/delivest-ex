@@ -1,7 +1,12 @@
 defmodule DelivestWeb.Client.Franchise.FranchiseJSON do
   alias Delivest.Franchise
 
-  def show(%{settings: settings, documents: documents, address_map: address_map}) do
+  def show(%{
+        settings: settings,
+        documents: documents,
+        address_map: address_map,
+        client_auth: client_auth
+      }) do
     %{
       data: %{
         name: settings.name,
@@ -11,6 +16,7 @@ defmodule DelivestWeb.Client.Franchise.FranchiseJSON do
         logo_dark_url: Franchise.logo_dark_url(settings),
         legal: legal(settings),
         address_map: address_map,
+        client_auth: client_auth,
         documents: Enum.map(documents, &Map.take(&1, [:kind, :updated_at]))
       }
     }

@@ -81,8 +81,11 @@ defmodule DelivestWeb.Client.Auth.AuthController do
          {:ok, client} <- Identity.fetch_authenticated_client(client_id) do
       render(conn, :session, client: client, tokens: ClientToken.issue(client.id))
     else
-      {:error, :client_blocked} -> render_error(conn, :client_blocked)
-      _ -> render_error(conn, :invalid_refresh_token)
+      {:error, reason} when reason in [:client_blocked, :auth_disabled] ->
+        render_error(conn, reason)
+
+      _ ->
+        render_error(conn, :invalid_refresh_token)
     end
   end
 
@@ -93,6 +96,9 @@ defmodule DelivestWeb.Client.Auth.AuthController do
 
   defp render_error(conn, :not_found),
     do: ApiError.send_error(conn, :not_found, :confirmation_not_found, "Confirmation not found")
+
+  defp render_error(conn, :auth_disabled),
+    do: ApiError.send_error(conn, :forbidden, :auth_disabled, "Sign in is turned off")
 
   defp render_error(conn, :client_blocked),
     do: ApiError.send_error(conn, :forbidden, :client_blocked, "Client blocked")

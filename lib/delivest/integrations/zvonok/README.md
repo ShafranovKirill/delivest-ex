@@ -5,6 +5,7 @@
 - Модуль: `Delivest.Integrations.Zvonok`
 - Настройки: общие для всех филиалов, таблица `zvonok_settings`, менять может только `admin`
 - Админка: `/staff/integrations/zvonok`
+- Галочка «Вход клиентов» (`enabled`). Когда она снята, входа на сайте нет совсем: `POST /client/auth/*` отвечает `403 auth_disabled`, токены клиентов не принимаются, все заказывают как гости. Сайт узнаёт об этом по полю `client_auth` в `GET /client/franchise`.
 
 ## Модули
 
@@ -12,7 +13,7 @@
 |---|---|
 | `Zvonok` | Фасад: запрос звонка, проверка токена вебхука, настройки |
 | `Zvonok.Api` | Запрос подтверждения номера и разбор ответа |
-| `Zvonok.Settings` | `public_key`, `campaign_id`, `webhook_token` |
+| `Zvonok.Settings` | `enabled`, `public_key`, `campaign_id`, `webhook_token` |
 | `DelivestWeb.Integrations.ZvonokWebhookController` | Приём вебхука о звонке |
 
 Логика входа живёт не здесь, а в `Delivest.Identity.ClientAuth`. Zvonok только запрашивает звонок и сообщает, что он был.

@@ -11,9 +11,11 @@ defmodule DelivestWeb.Plugs.FetchCurrentClient do
 
   @impl Plug
   def call(conn, _opts) do
-    case bearer_token(conn) do
-      nil -> assign(conn, :current_client, nil)
-      token -> authenticate(conn, token)
+    with token when is_binary(token) <- bearer_token(conn),
+         true <- Identity.client_auth_enabled?() do
+      authenticate(conn, token)
+    else
+      _ -> assign(conn, :current_client, nil)
     end
   end
 

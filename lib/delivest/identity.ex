@@ -50,6 +50,7 @@ defmodule Delivest.Identity do
   defdelegate confirm_client_call(call_id, phone), to: ClientAuth, as: :confirm_call
   defdelegate complete_client_auth(confirmation_id, session_id), to: ClientAuth, as: :complete
   defdelegate fetch_authenticated_client(client_id), to: ClientAuth, as: :fetch_client
+  defdelegate client_auth_enabled?, to: ClientAuth, as: :enabled?
 
   defdelegate list_client_addresses(client_id), to: ClientAddresses, as: :list
   defdelegate get_client_address(client_id, id), to: ClientAddresses, as: :get
