@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
 
   alias Delivest.{Couriers, Identity}
   alias Delivest.Oms.{OrderDeadline, Orders}
+  alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.OrderLive.{OrderHelpers, StatusErrors}
 
   on_mount {DelivestWeb.Hooks.Permission, "orders.deliver"}
@@ -14,6 +15,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     if connected?(socket) do
       Couriers.subscribe(branch_id)
       Orders.subscribe(branch_id)
+      CourierPresence.track_courier(self(), branch_id, socket.assigns.current_staff)
     end
 
     {:ok, branch} = Identity.get_branch(branch_id, preload: :info)
@@ -29,6 +31,15 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
   end
 
   @impl true
+  def handle_event("location", %{"lat" => lat, "lng" => lng}, socket)
+      when is_number(lat) and is_number(lng) and abs(lat) <= 90 and abs(lng) <= 180 do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+    CourierPresence.locate(self(), branch.id, staff, %{lat: lat / 1, lng: lng / 1})
+    {:noreply, socket}
+  end
+
+  def handle_event("location", _params, socket), do: {:noreply, socket}
+
   def handle_event(action, %{"id" => id}, socket)
       when action in ~w(take refuse pick_up hand_over) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
@@ -67,6 +78,25 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     ~H"""
     <div id="courier-page" class="mx-auto max-w-2xl space-y-6 py-4 sm:p-6">
       <.page_header title={gettext("Deliveries")} subtitle={@current_branch.name} />
+
+      <p
+        id="courier-location"
+        phx-hook="CourierLocation"
+        phx-update="ignore"
+        class="group -mt-4 text-sm"
+      >
+        <span class="hidden items-center gap-1 text-success group-data-[state=on]:flex">
+          <.icon name="hero-map-pin" class="size-4" /> {gettext("The operator sees you on the map")}
+        </span>
+        <span class="hidden items-center gap-1 text-error group-data-[state=denied]:flex">
+          <.icon name="hero-exclamation-triangle" class="size-4" />
+          {gettext("Allow access to the location so the operator sees you on the map")}
+        </span>
+        <span class="hidden items-center gap-1 text-warning group-data-[state=unavailable]:flex group-data-[state=unsupported]:flex">
+          <.icon name="hero-exclamation-triangle" class="size-4" />
+          {gettext("The location is not available on this device")}
+        </span>
+      </p>
 
       <.cash_summary balance={@balance} />
 

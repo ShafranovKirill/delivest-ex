@@ -31,6 +31,7 @@ defmodule Delivest.Application do
       cache(:crm_cache),
       cache(:stop_cache),
       DelivestWeb.KitchenPresence,
+      DelivestWeb.CourierPresence,
       DelivestWeb.Endpoint
     ]
 

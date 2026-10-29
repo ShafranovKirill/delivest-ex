@@ -20,6 +20,7 @@ defmodule Delivest.Couriers do
 
   defdelegate balance(branch_id, courier_id), to: Cash
   defdelegate balances(branch_id, courier_ids), to: Cash
+  defdelegate empty_balance, to: Cash, as: :empty
 
   def settle(%Staff{} = staff, branch_id, courier_id) do
     with {:ok, _settlement} = result <- Cash.settle(staff, branch_id, courier_id),
@@ -104,6 +105,14 @@ defmodule Delivest.Couriers do
     |> deliveries()
     |> where([d], d.courier_id == ^courier_id and d.status in [:assigned, :picked_up])
     |> Repo.all()
+  end
+
+  def list_carrying(branch_id) do
+    branch_id
+    |> deliveries()
+    |> where([d], d.provider == :staff and d.status in [:assigned, :picked_up])
+    |> Repo.all()
+    |> Enum.group_by(& &1.courier_id)
   end
 
   def order_moved(%Order{} = order) do

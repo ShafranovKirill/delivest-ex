@@ -9,6 +9,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   alias Delivest.Integrations.YandexEda.OrderConfirmation
   alias Delivest.Oms.OrderFlow
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
+  alias DelivestWeb.Staff.CourierLive.LocationComponents
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
 
   attr :id, :string, required: true
@@ -17,6 +18,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :current_branch, :map, required: true
   attr :delivery_minutes, :integer, required: true
   attr :couriers, :list, default: []
+  attr :positions, :list, default: nil
+  attr :pickup, :map, default: nil
 
   def render_card(assigns) do
     assigns =
@@ -97,6 +100,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         delivery={@delivery}
         couriers={@couriers}
         can_manage={Identity.can?(@current_staff, "orders.update")}
+      />
+
+      <.courier_location
+        :if={@positions && tracked?(@delivery)}
+        order={@order}
+        delivery={@delivery}
+        positions={@positions}
+        pickup={@pickup}
       />
 
       <p
@@ -527,6 +538,46 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     </div>
     """
   end
+
+  attr :order, :map, required: true
+  attr :delivery, :map, required: true
+  attr :positions, :list, required: true
+  attr :pickup, :map, default: nil
+
+  defp courier_location(assigns) do
+    assigns =
+      assign(assigns,
+        position: Enum.find(assigns.positions, &(&1.id == assigns.delivery.courier_id))
+      )
+
+    ~H"""
+    <div id={"order-courier-location-#{@order.id}"} class="mx-3 sm:mx-4 mb-3 space-y-1">
+      <p :if={is_nil(@position)} class="text-xs text-base-content/60">
+        {gettext(
+          "The courier location is not known: the courier page is closed or the location is off"
+        )}
+      </p>
+      <LocationComponents.location_age :if={@position} at={@position.at} />
+      <LocationComponents.couriers_map
+        :if={@position}
+        id={"order-courier-map-#{@order.id}"}
+        from={@pickup}
+        to={located(@order.address)}
+        positions={[@position]}
+        courier_id={@delivery.courier_id}
+        class="h-56"
+      />
+    </div>
+    """
+  end
+
+  defp tracked?(%{provider: :staff, status: status}), do: status in [:assigned, :picked_up]
+  defp tracked?(_delivery), do: false
+
+  defp located(%{latitude: lat, longitude: lng} = address) when is_float(lat) and is_float(lng),
+    do: address
+
+  defp located(_address), do: nil
 
   attr :delivery, :map, required: true
 

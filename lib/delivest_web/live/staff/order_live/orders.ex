@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   alias Delivest.{Couriers, Identity}
   alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
+  alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.OrderLive.{OrdersQuery, StatusErrors}
 
   alias DelivestWeb.Staff.OrderLive.Components.{
@@ -25,7 +26,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     if connected?(socket) do
       Orders.subscribe(branch_id)
       Couriers.subscribe(branch_id)
+      CourierPresence.subscribe(branch_id)
     end
+
+    {:ok, branch} = Identity.get_branch(branch_id, preload: :info)
+    couriers = Couriers.list_couriers(branch_id)
 
     {:ok,
      socket
@@ -36,7 +41,9 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        shown_id: nil,
        shown_order: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id),
-       couriers: Couriers.list_couriers(branch_id)
+       couriers: couriers,
+       pickup: branch.info,
+       positions: CourierPresence.positions(branch_id, couriers)
      )
      |> stream(:orders, [])}
   end
@@ -260,6 +267,15 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
   def handle_info({:deliveries_changed, _branch_id}, socket), do: load(socket)
 
+  def handle_info({:courier_presence, branch_id}, socket) do
+    positions = CourierPresence.positions(branch_id, socket.assigns.couriers)
+
+    {:noreply,
+     socket
+     |> assign(positions: positions)
+     |> push_event("courier_positions", %{positions: positions})}
+  end
+
   defp courier_code_error(:forbidden), do: gettext("Permission denied")
   defp courier_code_error(:empty_code), do: gettext("Enter the courier code")
   defp courier_code_error(:no_attempts), do: gettext("No attempts left to check the courier code")
@@ -360,6 +376,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
+          positions={@positions}
+          pickup={@pickup}
         />
       </.slide_over>
 
