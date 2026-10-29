@@ -2,7 +2,7 @@ defmodule Delivest.Oms.Orders.Update do
   import Ecto.Query, warn: false
 
   alias Delivest.Audit
-  alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Oms.{Carts, Order, OrderEvents}
 
   alias Delivest.Oms.Orders.{
     Assembler,
@@ -37,6 +37,9 @@ defmodule Delivest.Oms.Orders.Update do
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.update(:order, &Assembler.changeset(order, attrs, &1))
+    |> Multi.run(:event, fn repo, %{order: updated} ->
+      OrderEvents.updated(repo, order, updated, Keyword.get(opts, :actor, :system))
+    end)
     |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
       Promo.redeem(order, pricing)
     end)

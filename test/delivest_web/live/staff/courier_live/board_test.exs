@@ -103,6 +103,7 @@ defmodule DelivestWeb.Staff.CourierLive.BoardTest do
 
     {:ok, order} = Delivest.Oms.Orders.advance_order(ctx.order, :preparing, {:staff, operator})
     {:ok, _order} = Delivest.Oms.Orders.advance_order(order, :ready, {:staff, operator})
+    deliver_events()
     {:ok, _order} = Couriers.pick_up(courier, ctx.branch.id, delivery.id)
     {:ok, _order} = Couriers.hand_over(courier, ctx.branch.id, delivery.id)
 

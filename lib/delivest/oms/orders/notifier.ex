@@ -40,6 +40,7 @@ defmodule Delivest.Oms.Orders.Notifier do
     case Repo.get(Order, order_id) do
       %Order{} = order ->
         order |> Repo.preload([:items, deliveries: :courier]) |> publish_client()
+        Delivest.Push.order_changed(order)
 
       nil ->
         :ok
@@ -52,7 +53,7 @@ defmodule Delivest.Oms.Orders.Notifier do
         do:
           Phoenix.PubSub.broadcast(Delivest.PubSub, owner_topic(kind, id), {:client_order, order})
 
-    Delivest.Push.order_changed(order)
+    :ok
   end
 
   def branch_changed(branch_id),

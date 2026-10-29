@@ -60,9 +60,11 @@ defmodule Delivest.Integrations.CrmTest do
     refute_enqueued(worker: SyncWorker)
   end
 
-  test "crm branch hands the order to the chosen crm in the same transaction" do
+  test "crm branch hands the order to the chosen crm through the created event" do
     assert {:ok, %Order{status: :created} = order} = place_order(branch(frontpad(true)))
     assert %{provider: "frontpad", status: "pending"} = order.crm
+    refute_enqueued(worker: SyncWorker)
+    deliver_events()
     assert_enqueued(worker: SyncWorker, queue: :crm, args: %{"order_id" => order.id})
   end
 

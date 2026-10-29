@@ -51,6 +51,7 @@ defmodule Delivest.Push.CourierPushTest do
   defp advance(order, statuses, operator) do
     Enum.reduce(statuses, order, fn to, order ->
       {:ok, order} = Orders.advance_order(order, to, {:staff, operator})
+      deliver_events()
       order
     end)
   end
@@ -88,6 +89,7 @@ defmodule Delivest.Push.CourierPushTest do
     pushed(ctx)
 
     {:ok, _order} = Couriers.pick_up(ctx.courier, ctx.branch.id, delivery.id)
+    deliver_events()
     assert pushed(ctx) == ["Courier Иван is on the way with order #{order.daily_number}"]
   end
 

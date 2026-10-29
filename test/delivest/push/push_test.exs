@@ -38,6 +38,7 @@ defmodule Delivest.PushTest do
 
   test "a status change sends an encrypted message once", %{order: order, client: client} do
     {:ok, order} = Oms.advance_order(order, :preparing, :system)
+    deliver_events()
     assert_enqueued(worker: Worker, args: %{"order_id" => order.id})
 
     assert :ok = perform_job(Worker, %{"order_id" => order.id})

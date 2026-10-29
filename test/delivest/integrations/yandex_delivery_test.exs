@@ -156,11 +156,16 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   defp cooking(order, operator) do
     Enum.reduce([:accepted, :preparing], order, fn to, order ->
       {:ok, order} = Orders.advance_order(order, to, {:staff, operator})
+      deliver_events()
       order
     end)
   end
 
-  defp poll(branch), do: perform_job(JournalWorker, %{branch_id: branch.id})
+  defp poll(branch) do
+    result = perform_job(JournalWorker, %{branch_id: branch.id})
+    deliver_events()
+    result
+  end
 
   describe "calling a courier" do
     test "creates a claim when cooking begins and switches cash to card" do
@@ -343,6 +348,8 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
         Orders.cancel_order(Repo.reload!(ctx.order), {:staff, ctx.operator}, %{
           "cancel_reason" => "other"
         })
+
+      deliver_events()
 
       assert_received {:yandex, "/claims/cancel", _query,
                        %{"cancel_state" => "free", "version" => 3}}

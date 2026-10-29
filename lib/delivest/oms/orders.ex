@@ -2,7 +2,7 @@ defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
 
   alias Delivest.Audit
-  alias Delivest.Oms.{Order, OrderDeadline, OrderFlow, OrderScopes, OrderTransition}
+  alias Delivest.Oms.{Order, OrderDeadline, OrderEvents, OrderFlow, OrderScopes, OrderTransition}
   alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, StatusChange, Update}
   alias Delivest.Repo
 
@@ -143,7 +143,7 @@ defmodule Delivest.Oms.Orders do
     changeset = Order.payment_changeset(order, Filter.normalize_params(attrs))
 
     changeset
-    |> persist([:order, :updated])
+    |> persist([:order, :updated], &OrderEvents.updated(&1, order, &2, actor))
     |> Audit.track(actor, "order.details_changed", metadata: changeset.changes)
   end
 
@@ -189,7 +189,7 @@ defmodule Delivest.Oms.Orders do
   def soft_delete_order(%Order{} = order, actor \\ :system) do
     order
     |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})
-    |> persist([:order, :deleted])
+    |> persist([:order, :deleted], &OrderEvents.deleted(&1, &2, actor))
     |> Audit.track(actor, "order.deleted")
   end
 
@@ -213,6 +213,18 @@ defmodule Delivest.Oms.Orders do
   defp persist(changeset, event) do
     changeset
     |> Repo.update()
+    |> Notifier.publish(event)
+  end
+
+  defp persist(changeset, event, emit) do
+    Repo.transaction(fn ->
+      with {:ok, order} <- Repo.update(changeset),
+           {:ok, _event} <- emit.(Repo, order) do
+        order
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
     |> Notifier.publish(event)
   end
 end

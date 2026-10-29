@@ -78,10 +78,7 @@ defmodule Delivest.Integrations.Crm do
   end
 
   def create_order(attrs, provider, opts \\ []) do
-    opts =
-      opts
-      |> Keyword.put(:crm, %{provider: to_string(provider), status: "pending"})
-      |> Keyword.put(:after_insert, &enqueue_sync/1)
+    opts = Keyword.put(opts, :crm, %{provider: to_string(provider), status: "pending"})
 
     attrs
     |> Map.new(fn {key, value} -> {to_string(key), value} end)
@@ -106,10 +103,10 @@ defmodule Delivest.Integrations.Crm do
     end
   end
 
-  defp enqueue_sync(multi) do
-    Oban.insert(multi, :crm_job, fn %{order: order} ->
-      SyncWorker.new(%{"order_id" => order.id, "branch_id" => order.branch_id})
-    end)
+  def enqueue_sync(%Order{} = order) do
+    %{"order_id" => order.id, "branch_id" => order.branch_id}
+    |> SyncWorker.new()
+    |> Oban.insert()
   end
 
   def provider_module(provider) do

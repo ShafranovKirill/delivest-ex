@@ -273,7 +273,7 @@ defmodule Delivest.Couriers do
          true <- mine?(delivery, courier, from) || {:error, :not_yours},
          %Order{} = order <- Repo.get(Order, delivery.order_id) || {:error, :order_not_found} do
       case Orders.advance_order(order, to, {:courier, courier}) do
-        {:ok, order} -> {:ok, order}
+        {:ok, order} -> order_moved(order)
         {:error, :skipped_step} -> {:error, :not_ready}
         error -> error
       end

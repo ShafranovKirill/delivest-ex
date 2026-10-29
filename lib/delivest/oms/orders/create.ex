@@ -1,6 +1,6 @@
 defmodule Delivest.Oms.Orders.Create do
   alias Delivest.Audit
-  alias Delivest.Oms.{Carts, Kitchen, Order}
+  alias Delivest.Oms.{Carts, Order, OrderEvents}
   alias Delivest.Oms.Order.OrderNumber
 
   alias Delivest.Oms.Orders.{
@@ -16,12 +16,11 @@ defmodule Delivest.Oms.Orders.Create do
     StopGuard
   }
 
-  alias Delivest.{Promo, Push, Repo}
+  alias Delivest.{Promo, Repo}
   alias Ecto.Multi
 
   def run(attrs, opts \\ []) do
     attrs = Attrs.normalize(attrs)
-    after_insert = Keyword.get(opts, :after_insert, & &1)
     client_opts = [update_existing: Keyword.get(opts, :update_client, true)]
     pricing = Keyword.get(opts, :pricing, &Pricing.run/3)
 
@@ -38,18 +37,18 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn repo, %{cart: cart} -> OrderNumber.next(repo, cart.branch_id) end)
     |> Multi.insert(:order, &build(attrs, &1, opts))
+    |> Multi.run(:created, fn repo, %{order: order} ->
+      OrderEvents.created(repo, order, opts[:actor] || if(opts[:channel], do: :channel))
+    end)
     |> Multi.run(:advanced, fn repo, %{order: order} -> advance(repo, order, opts[:advance]) end)
     |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
       Promo.redeem(order, pricing)
     end)
-    |> after_insert.()
     |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{advanced: order}} ->
-        {:ok, order} = Notifier.publish({:ok, order}, [:order, :created])
-        if order.status == :created, do: Push.notify_staff(:order_created, order.id)
-        Kitchen.order_accepted(order)
+        Notifier.publish({:ok, order}, [:order, :created])
 
       {:error, step, reason, _} ->
         {:error, step, reason}

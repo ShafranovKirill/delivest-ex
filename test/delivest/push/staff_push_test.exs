@@ -56,6 +56,7 @@ defmodule Delivest.Push.StaffPushTest do
   end
 
   defp run_jobs do
+    deliver_events()
     for job <- all_enqueued(worker: StaffWorker), do: perform_job(StaffWorker, job.args)
   end
 

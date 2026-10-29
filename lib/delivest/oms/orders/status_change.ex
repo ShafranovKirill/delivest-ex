@@ -3,9 +3,9 @@ defmodule Delivest.Oms.Orders.StatusChange do
 
   require Logger
 
-  alias Delivest.{Audit, Couriers, Push, Repo}
+  alias Delivest.{Audit, Couriers, Repo}
   alias Delivest.Identity.Staff
-  alias Delivest.Oms.{Kitchen, Order, OrderFlow, OrderTransition}
+  alias Delivest.Oms.{Order, OrderEvents, OrderFlow, OrderTransition}
   alias Delivest.Oms.Orders.Notifier
   alias Ecto.Multi
 
@@ -52,6 +52,9 @@ defmodule Delivest.Oms.Orders.StatusChange do
     |> Multi.update(:order, fn %{locked: locked, transition: transition} ->
       Order.status_changeset(locked, transition.from)
     end)
+    |> Multi.run(:event, fn repo, %{order: order, reverted: transition} ->
+      OrderEvents.reverted(repo, order, transition.to, transition.from, staff, reason)
+    end)
     |> Repo.transaction()
     |> case do
       {:ok, %{order: order, reverted: transition}} ->
@@ -97,8 +100,11 @@ defmodule Delivest.Oms.Orders.StatusChange do
       |> extra(Keyword.get(opts, :with))
       |> status(steps, Keyword.get(opts, :attrs, %{}))
 
-    with {:ok, updated} <- repo.update(changeset) do
-      record(repo, updated, steps, by, Keyword.get(opts, :reason))
+    reason = Keyword.get(opts, :reason)
+
+    with {:ok, updated} <- repo.update(changeset),
+         :ok <- record(repo, updated, steps, by, reason),
+         {:ok, _event} <- OrderEvents.status_changed(repo, updated, steps, by, reason) do
       {:ok, %{order: updated, steps: steps, changed?: changeset.changes != %{}}}
     end
   end
@@ -144,16 +150,8 @@ defmodule Delivest.Oms.Orders.StatusChange do
   defp finish(%{order: order, steps: steps}, by, opts) do
     {:ok, order} = Notifier.publish({:ok, order}, [:order, :updated])
     audit(order, steps, by, opts)
-    {:ok, order} = Couriers.order_moved(order)
-    {:ok, order} = Kitchen.order_accepted(order)
-    alert(order, by)
     order
   end
-
-  defp alert(%Order{status: :cancelled} = order, :channel),
-    do: Push.notify_staff(:channel_cancelled, order.id)
-
-  defp alert(_order, _by), do: :ok
 
   defp audit(_order, [], _by, _opts), do: :ok
 

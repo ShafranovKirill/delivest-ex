@@ -38,11 +38,15 @@ defmodule Delivest.Couriers.CashTest do
         order
       end)
 
+    deliver_events()
+
     delivery = Couriers.active(order.id)
     {:ok, _} = Couriers.take(ctx.courier, ctx.branch.id, delivery.id)
     {:ok, _} = Orders.advance_order(Repo.reload!(order), :ready, {:staff, ctx.operator})
     {:ok, _} = Couriers.pick_up(ctx.courier, ctx.branch.id, delivery.id)
+    deliver_events()
     {:ok, _} = Couriers.hand_over(ctx.courier, ctx.branch.id, delivery.id)
+    deliver_events()
   end
 
   test "the courier owes the cash and the terminal of handed orders", ctx do

@@ -44,8 +44,11 @@ defmodule Delivest.Oms.KitchenTest do
       branch = kitchen_branch()
       order = order(branch, [])
 
-      assert {:ok, %Order{status: :preparing}} =
+      assert {:ok, %Order{status: :accepted}} =
                Orders.advance_order(order, :accepted, operator(branch))
+
+      deliver_events()
+      assert Repo.reload!(order).status == :preparing
 
       assert [{:created, :accepted, :staff}, {:accepted, :preparing, :system}] =
                transitions(order)
@@ -59,8 +62,12 @@ defmodule Delivest.Oms.KitchenTest do
       assert {:ok, %Order{status: :accepted}} =
                Orders.advance_order(later, :accepted, operator(branch))
 
-      assert {:ok, %Order{status: :preparing}} =
+      assert {:ok, %Order{status: :accepted}} =
                Orders.advance_order(soon, :accepted, operator(branch))
+
+      deliver_events()
+      assert Repo.reload!(later).status == :accepted
+      assert Repo.reload!(soon).status == :preparing
 
       Kitchen.dispatch_due(DateTime.add(DateTime.utc_now(), 29, :minute))
       assert Repo.reload!(later).status == :accepted
