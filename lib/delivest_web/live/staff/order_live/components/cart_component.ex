@@ -50,6 +50,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
               <.icon :if={gift?(item)} name="hero-gift" class="size-4 text-success" />
               {item.name}
             </p>
+            <p :if={Map.get(item, :modifiers, []) != []} class="text-xs text-base-content/60 truncate">
+              {Enum.map_join(item.modifiers, ", ", & &1.name)}
+            </p>
             <p :if={gift?(item)} class="text-xs text-success font-medium mt-0.5">
               {gettext("Gift × %{count}", count: item.quantity)}
             </p>
@@ -64,7 +67,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
             <button
               type="button"
               phx-click="remove_item"
-              phx-value-product-id={item.product_id}
+              phx-value-product-id={Map.get(item, :key, item.product_id)}
               class="btn btn-xs btn-square btn-ghost"
             >
               <.icon name="hero-minus" class="size-3" />
@@ -73,7 +76,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
             <button
               type="button"
               phx-click="add_item"
-              phx-value-product-id={item.product_id}
+              phx-value-product-id={Map.get(item, :key, item.product_id)}
               class="btn btn-xs btn-square btn-ghost"
             >
               <.icon name="hero-plus" class="size-3" />
@@ -81,7 +84,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
             <button
               type="button"
               phx-click="delete_item"
-              phx-value-product-id={item.product_id}
+              phx-value-product-id={Map.get(item, :key, item.product_id)}
               class="btn btn-xs btn-square btn-ghost text-error"
             >
               <.icon name="hero-trash" class="size-3.5" />

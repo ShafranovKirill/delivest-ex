@@ -351,6 +351,7 @@ defmodule DelivestWeb.Router do
           live "/", Products, :index
           live "/bulk", Bulk, :index
           live "/stops", StopList, :index
+          live "/modifiers", Modifiers, :index
           live "/suggested", Suggested, :index
           live "/tags", Tags, :index
           live "/tags/new", Tags, :new

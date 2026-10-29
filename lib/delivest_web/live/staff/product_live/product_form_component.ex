@@ -55,6 +55,11 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           |> assign(:form, to_form(changeset))
           |> assign(:category_options, category_options)
           |> assign(:product_tags, Net.list_product_tags())
+          |> assign(:modifier_groups, Delivest.Net.Modifiers.list_groups())
+          |> assign(
+            :modifier_group_ids,
+            if(product && product.id, do: Delivest.Net.Modifiers.group_ids(product.id), else: [])
+          )
           |> assign(:crm_providers, Crm.providers())
           |> assign(:current_media, current_media)
           |> assign(:show_upload_modal, false)
@@ -93,7 +98,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   @impl true
-  def handle_event("save", %{"product" => params}, socket) do
+  def handle_event("save", %{"product" => params} = event, socket) do
+    socket =
+      assign(
+        socket,
+        :modifier_group_ids,
+        Enum.reject(List.wrap(event["modifier_group_ids"]), &(&1 == ""))
+      )
+
     params =
       params
       |> Map.put_new("category_id", nil)
@@ -134,6 +146,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
            params
          ) do
       {:ok, product} ->
+        Delivest.Net.Modifiers.attach(
+          socket.assigns.current_staff,
+          product.id,
+          socket.assigns.modifier_group_ids
+        )
+
         notify_parent({:saved, product})
         {:noreply, socket}
 
@@ -152,6 +170,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
            params
          ) do
       {:ok, product} ->
+        Delivest.Net.Modifiers.attach(
+          socket.assigns.current_staff,
+          product.id,
+          socket.assigns.modifier_group_ids
+        )
+
         notify_parent({:saved, product})
         {:noreply, socket}
 
@@ -368,6 +392,26 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           />
 
           <.tag_checkboxes field={@form[:tags]} tags={@product_tags} branch={@current_branch} />
+
+          <fieldset :if={@modifier_groups != []} class="space-y-2">
+            <legend class="label-text font-bold">{gettext("Modifiers")}</legend>
+            <input type="hidden" name="modifier_group_ids[]" value="" />
+            <div class="flex flex-wrap gap-2">
+              <label
+                :for={group <- @modifier_groups}
+                class="flex items-center gap-2 rounded-full border border-base-300 px-3 py-1.5 cursor-pointer has-checked:border-primary has-checked:bg-primary/10"
+              >
+                <input
+                  type="checkbox"
+                  name="modifier_group_ids[]"
+                  value={group.id}
+                  checked={group.id in @modifier_group_ids}
+                  class="checkbox checkbox-xs checkbox-primary"
+                />
+                <span class="text-sm">{group.name}</span>
+              </label>
+            </div>
+          </fieldset>
 
           <div>
             <.input

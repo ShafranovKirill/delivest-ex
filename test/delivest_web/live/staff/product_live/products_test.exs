@@ -77,6 +77,28 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     assert %{tags: []} = Delivest.Net.Products.get_product(product.id)
   end
 
+  test "modifier groups are attached to the product", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    group = Delivest.Repo.insert!(%Delivest.Net.ModifierGroup{name: "Размер", min: 1, max: 1})
+
+    {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/products/new")
+    assert html =~ "Размер"
+
+    lv
+    |> form("#product-form",
+      product: %{name: "Пицца", price: 450},
+      modifier_group_ids: ["", group.id]
+    )
+    |> render_submit()
+
+    {:ok, {[product], _meta}} =
+      Delivest.Net.Products.list_staff_products_for_branch(staff, branch.id)
+
+    assert Delivest.Net.Modifiers.group_ids(product.id) == [group.id]
+  end
+
   test "nutrition and excise are saved with the product", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))

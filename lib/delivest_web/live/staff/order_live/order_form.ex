@@ -58,6 +58,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       params: %{},
       timing: if(order.cook_by, do: "scheduled", else: "asap"),
       known_client: KnownClient.find(order.customer_phone),
+      picker: nil,
       form: to_form(Order.changeset(order, cook_by_input(order, branch_id)))
     )
   end
@@ -92,15 +93,36 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     {:noreply, assign(socket, search_query: query)}
   end
 
-  def handle_event("add_item", %{"product-id" => product_id}, socket) do
-    case Oms.add_item(socket.assigns.cart.id, product_id) do
-      {:ok, _item, cart} ->
-        {:noreply, assign(socket, cart: cart)}
+  def handle_event("add_item", %{"product-id" => key}, socket) do
+    {product_id, modifier_key} = Oms.Carts.parse_item_key(key)
+    groups = Map.get(Delivest.Net.Modifiers.for_products([product_id]), product_id, [])
 
-      {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to add product to cart."))}
+    cond do
+      modifier_key != "" ->
+        add(socket, product_id, selection(socket.assigns.cart, key))
+
+      groups != [] ->
+        {:noreply, assign(socket, picker: %{product_id: product_id, groups: groups})}
+
+      true ->
+        add(socket, product_id, nil)
     end
   end
+
+  def handle_event("pick_modifiers", params, socket) do
+    %{product_id: product_id} = socket.assigns.picker
+
+    chosen =
+      params
+      |> Map.get("modifiers", %{})
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.reject(&(&1 == ""))
+
+    socket |> assign(picker: nil) |> add(product_id, chosen)
+  end
+
+  def handle_event("close_picker", _params, socket), do: {:noreply, assign(socket, picker: nil)}
 
   def handle_event("remove_item", %{"product-id" => product_id}, socket) do
     socket.assigns.cart.id |> Oms.remove_item(product_id) |> assign_cart(socket)
@@ -196,6 +218,23 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   defp fill_name(params, _known_client), do: params
 
+  defp add(socket, product_id, selection) do
+    case Oms.Carts.add_item(socket.assigns.cart.id, product_id, 1, selection) do
+      {:ok, _item, cart} ->
+        {:noreply, assign(socket, cart: cart)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to add product to cart."))}
+    end
+  end
+
+  defp selection(cart, key) do
+    case Enum.find(cart.items, &(Map.get(&1, :key) == key)) do
+      %{modifiers: modifiers} -> Enum.map(modifiers, &%{"id" => &1.id, "quantity" => &1.quantity})
+      _missing -> nil
+    end
+  end
+
   defp assign_cart({:ok, _status, cart}, socket), do: {:noreply, assign(socket, cart: cart)}
   defp assign_cart({:error, _reason}, socket), do: {:noreply, socket}
 
@@ -289,6 +328,39 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
         </div>
 
         <FooterComponent.render_footer cart={@cart} is_edit={@is_edit} />
+      </div>
+
+      <div :if={@picker} id="modifier-picker" class="modal modal-open">
+        <form phx-submit="pick_modifiers" class="modal-box space-y-4">
+          <fieldset :for={group <- @picker.groups} class="space-y-1">
+            <legend class="font-bold">
+              {group.name}
+              <span class="text-xs font-normal text-base-content/60">
+                {gettext("from %{min} to %{max}", min: group.min, max: group.max)}
+              </span>
+            </legend>
+            <input type="hidden" name={"modifiers[#{group.id}][]"} value="" />
+            <label :for={modifier <- group.modifiers} class="flex items-center gap-2">
+              <input
+                type={if group.max == 1, do: "radio", else: "checkbox"}
+                name={"modifiers[#{group.id}][]"}
+                value={modifier.id}
+                checked={modifier.is_default}
+                class={if group.max == 1, do: "radio radio-sm", else: "checkbox checkbox-sm"}
+              />
+              <span class="flex-1">{modifier.name}</span>
+              <span :if={modifier.price > 0} class="font-mono text-sm">
+                +{Delivest.Money.format(modifier.price)}
+              </span>
+            </label>
+          </fieldset>
+          <div class="modal-action">
+            <button type="button" phx-click="close_picker" class="btn btn-ghost">
+              {gettext("Cancel")}
+            </button>
+            <button class="btn btn-primary">{gettext("Add")}</button>
+          </div>
+        </form>
       </div>
     </div>
     """

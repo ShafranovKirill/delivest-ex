@@ -27,6 +27,33 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     assert html =~ product.name
   end
 
+  test "a product with modifiers asks for the choice", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Добавки", min: 0, max: 2})
+    cheese = Repo.insert!(%Delivest.Net.Modifier{group_id: group.id, name: "Сыр", price: 5_000})
+    Repo.insert!(%Delivest.Net.ProductModifierGroup{product_id: product.id, group_id: group.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
+    assert render_click(lv, "add_item", %{"product-id" => product.id}) =~ "modifier-picker"
+
+    html =
+      lv
+      |> form("#modifier-picker form", %{"modifiers" => %{group.id => [cheese.id]}})
+      |> render_submit()
+
+    refute html =~ "modifier-picker"
+    assert html =~ "Сыр"
+
+    [item] = Repo.all(Delivest.Oms.CartItem) |> Enum.filter(&(&1.product_id == product.id))
+    assert item.modifiers == [%{"id" => cheese.id, "quantity" => 1}]
+
+    render_click(lv, "add_item", %{"product-id" => product.id <> "~" <> item.modifier_key})
+    assert Repo.reload!(item).quantity == 2
+  end
+
   test "order without phone is created", %{conn: conn, branch: branch, product: product} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
     render_click(lv, "add_item", %{"product-id" => product.id})
