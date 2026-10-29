@@ -7,6 +7,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   alias Delivest.LocalTime
 
   alias DelivestWeb.Staff.IntegrationLive.{
+    HealthComponent,
     JournalComponent,
     YandexEdaAccess,
     YandexEdaMenu,
@@ -219,6 +220,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
             "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
           )
         }
+      />
+
+      <.live_component
+        :if={@push_available}
+        module={HealthComponent}
+        id="yandex-eda-health"
+        provider={:yandex_eda}
+        branch_id={@current_branch.id}
+        scope={nil}
       />
 
       <YandexEdaAccess.access

@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Catalog, StopSync}
   alias Delivest.Integrations.{Channels, Frontpad}
-  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
@@ -256,6 +256,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
           {gettext("Request journal")}
         </.tab_button>
       </div>
+
+      <.live_component
+        :if={@tab == :settings and api_key?(@crm)}
+        module={HealthComponent}
+        id="frontpad-health"
+        provider={:frontpad}
+        branch_id={@current_branch.id}
+        scope={@current_branch.id}
+      />
 
       <.guide :if={@tab == :settings} crm={@crm} branch={@current_branch} />
 

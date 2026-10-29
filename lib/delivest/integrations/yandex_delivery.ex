@@ -9,7 +9,7 @@ defmodule Delivest.Integrations.YandexDelivery do
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Journal, as: RequestJournal
-  alias Delivest.Integrations.Poller
+  alias Delivest.Integrations.{Error, Poller}
   alias Delivest.Integrations.YandexDelivery.{Api, Claim, Journal, Settings}
   alias Delivest.Oms.{Order, Orders}
 
@@ -28,6 +28,19 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   @impl true
   def name, do: "Яндекс Доставка"
+
+  @impl true
+  def health_check(%Settings{} = settings) do
+    if Settings.configured?(settings),
+      do: with({:ok, _journal} <- Api.journal(settings.token, nil), do: :ok),
+      else: {:error, :not_configured}
+  end
+
+  @impl true
+  def classify_error({:yandex_delivery, status, code}) when is_integer(status),
+    do: Error.classify({:http_error, status, code})
+
+  def classify_error(reason), do: Error.classify(reason)
 
   def settings(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do

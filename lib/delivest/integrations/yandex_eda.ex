@@ -48,6 +48,11 @@ defmodule Delivest.Integrations.YandexEda do
   @impl true
   def menu_changed(branch_id), do: reload_menu(branch_id, "menu", schedule_in: @menu_delay)
 
+  @impl true
+  def health_check(%Settings{} = settings) do
+    if PushApi.configured?(settings), do: PushApi.check(settings), else: {:error, :not_configured}
+  end
+
   def get_branch_settings(branch_id) do
     case Identity.get_branch(branch_id, preload: [:info]) do
       {:ok, branch} -> Places.settings(branch) || %BranchSettings{}

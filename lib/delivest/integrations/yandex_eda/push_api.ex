@@ -51,6 +51,10 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     end)
   end
 
+  def check(%Settings{} = settings) do
+    with {:ok, _token, _ttl} <- issue(settings), do: :ok
+  end
+
   def configured?(%Settings{} = settings),
     do:
       Enum.all?(

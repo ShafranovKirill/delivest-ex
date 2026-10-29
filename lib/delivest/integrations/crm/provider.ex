@@ -7,7 +7,7 @@ defmodule Delivest.Integrations.Crm.Provider do
           optional(:warnings) => map()
         }
 
-  @type error_kind :: :permanent | :retry | {:snooze, pos_integer()}
+  @type error_kind :: Delivest.Integrations.Error.kind()
 
   @type catalog_item :: %{external_id: String.t(), name: String.t(), price: integer()}
 
@@ -20,6 +20,7 @@ defmodule Delivest.Integrations.Crm.Provider do
 
   @callback deliver_order(Order.t(), settings :: struct()) :: {:ok, delivery()} | {:error, term()}
   @callback classify_error(reason :: term()) :: error_kind()
+  @callback health_check(settings :: struct() | nil) :: :ok | {:error, term()}
   @callback rate_limit(settings :: struct()) ::
               {key :: term(), interval_ms :: pos_integer()} | nil
 

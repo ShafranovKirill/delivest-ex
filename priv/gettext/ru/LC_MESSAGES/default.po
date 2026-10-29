@@ -630,7 +630,7 @@ msgstr "Медиа"
 #: lib/delivest_web/live/staff/client_live/clients.ex:289
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:93
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:84
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:720
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:729
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:272
 #: lib/delivest_web/live/staff/product_live/products.ex:512
@@ -681,7 +681,7 @@ msgstr "Страница %{current} из %{total}"
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:91
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:53
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:191
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:192
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:37
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:38
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:52
@@ -715,7 +715,7 @@ msgstr "Номер телефона"
 msgid "Please check the fields below."
 msgstr "Пожалуйста, проверьте поля ниже."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:721
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:730
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:23
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:294
 #: lib/delivest_web/live/staff/product_live/products.ex:520
@@ -838,9 +838,9 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:232
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:480
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:204
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:295
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:489
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:213
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:305
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:105
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:393
@@ -863,9 +863,9 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:231
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:86
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:479
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:203
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:294
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:488
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:212
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:304
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:67
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:104
@@ -1422,7 +1422,7 @@ msgid "Orders"
 msgstr "Заказы"
 
 #: lib/delivest_web/live/staff/client_live/clients.ex:298
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:151
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:160
 #: lib/delivest_web/live/staff/order_live/components/client_panel.ex:19
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:178
 #, elixir-autogen, elixir-format
@@ -1592,12 +1592,12 @@ msgstr "Время доставки (мин.)"
 msgid "Failed to clear cart"
 msgstr "Не удалось очистить корзину"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:358
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:367
 #, elixir-autogen, elixir-format
 msgid "Frontpad API Key"
 msgstr "API-ключ Frontpad"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:360
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:369
 #, elixir-autogen, elixir-format
 msgid "Frontpad Branch ID"
 msgstr "ID филиала Frontpad"
@@ -2275,17 +2275,17 @@ msgstr "оплата → %{value}"
 msgid "status → %{value}"
 msgstr "статус → %{value}"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:406
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:415
 #, elixir-autogen, elixir-format
 msgid "Codes from the Frontpad status reference. Customers see the matching status of their order."
 msgstr "ID статусов из справочника Frontpad. Статус «Новый» указывать не нужно: новый заказ ждёт подтверждения, пока его не переведут в производство. Клиент увидит соответствующий статус своего заказа."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:404
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:413
 #, elixir-autogen, elixir-format
 msgid "Frontpad status codes"
 msgstr "Коды статусов Frontpad"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:472
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:481
 #, elixir-autogen, elixir-format
 msgid "Webhook URL for Frontpad API settings"
 msgstr "Адрес вебхука для настроек API во Frontpad"
@@ -2312,8 +2312,8 @@ msgstr "Проверьте отмеченные поля"
 msgid "All products of this branch"
 msgstr "Все товары этого филиала"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:81
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:238
+#: lib/delivest_web/live/staff/integration_live/index.ex:82
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:248
 #: lib/delivest_web/live/staff/log_live/components/events_component.ex:38
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:61
 #, elixir-autogen, elixir-format
@@ -2723,7 +2723,7 @@ msgstr "Редактировать «%{name}»"
 msgid "Effects"
 msgstr "Эффекты"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:370
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:379
 #, elixir-autogen, elixir-format
 msgid "Enable only when «price change on order» is turned on for products in Frontpad. Otherwise the order discount is sent as a single amount."
 msgstr "Включайте, только если в Frontpad у товаров стоит галочка «изменение цены при заказе». Иначе скидка заказа передаётся одной суммой."
@@ -2976,7 +2976,7 @@ msgstr "Скидки на товары, видны в меню"
 msgid "Scheduled"
 msgstr "Запланирована"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:367
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:376
 #, elixir-autogen, elixir-format
 msgid "Send discounted prices to Frontpad"
 msgstr "Передавать в Frontpad цены со скидкой"
@@ -3221,12 +3221,12 @@ msgstr "«subtotal» — сумма корзины по ценам меню. Б�
 msgid "%{count} not delivered to CRM"
 msgstr "%{count} не доставлено в CRM"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:651
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:660
 #, elixir-autogen, elixir-format
 msgid "No CRM ID"
 msgstr "Нет ID в CRM"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:643
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:652
 #, elixir-autogen, elixir-format
 msgid "Price differs"
 msgstr "Цена отличается"
@@ -3463,7 +3463,7 @@ msgstr "без ограничения"
 msgid "to"
 msgstr "до"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:55
+#: lib/delivest_web/live/staff/integration_live/index.ex:56
 #: lib/delivest_web/live/staff/log_live/index.ex:161
 #, elixir-autogen, elixir-format
 msgid "All branches"
@@ -3900,8 +3900,8 @@ msgstr "Реквизиты продавца"
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:85
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:44
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:62
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:76
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:63
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:77
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:31
 #, elixir-autogen, elixir-format
 msgid "Settings saved"
@@ -3954,7 +3954,7 @@ msgstr "Заказы ждут подтверждения"
 msgid "Theme"
 msgstr "Тема"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:628
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:637
 #, elixir-autogen, elixir-format
 msgid "All products with a CRM ID are found in Frontpad."
 msgstr "Все товары с CRM ID есть во Frontpad."
@@ -3969,14 +3969,15 @@ msgstr "Доступно через"
 msgid "Check"
 msgstr "Сверка"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:184
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:69
+#: lib/delivest_web/live/staff/integration_live/index.ex:209
 #, elixir-autogen, elixir-format
 msgid "Connected"
 msgstr "Подключено"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:150
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:153
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:281
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:290
 #, elixir-autogen, elixir-format
 msgid "Frontpad API key is not set for this branch"
 msgstr "Для этого филиала не указан API-ключ Frontpad"
@@ -4005,17 +4006,17 @@ msgstr "Получить товары"
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:55
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:192
 #: lib/delivest_web/live/staff/integration_live/index.ex:14
-#: lib/delivest_web/live/staff/integration_live/index.ex:49
+#: lib/delivest_web/live/staff/integration_live/index.ex:50
 #: lib/delivest_web/live/staff/integration_live/routes.ex:70
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:86
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:212
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:213
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:56
 #, elixir-autogen, elixir-format
 msgid "Integrations"
 msgstr "Интеграции"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:206
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:594
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:603
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:22
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:27
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:35
@@ -4023,33 +4024,33 @@ msgstr "Интеграции"
 msgid "Loading..."
 msgstr "Загрузка..."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:189
+#: lib/delivest_web/live/staff/integration_live/index.ex:214
 #, elixir-autogen, elixir-format
 msgid "Not connected"
 msgstr "Не подключено"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:634
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:643
 #, elixir-autogen, elixir-format
 msgid "Not found in Frontpad"
 msgstr "Нет во Frontpad"
 
 #: lib/delivest_web/components/staff/app/command_palette.ex:90
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:731
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:740
 #, elixir-autogen, elixir-format
 msgid "Nothing found"
 msgstr "Ничего не найдено"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:169
+#: lib/delivest_web/live/staff/integration_live/index.ex:194
 #, elixir-autogen, elixir-format
 msgid "Orders go to CRM"
 msgstr "Заказы уходят в CRM"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:635
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:644
 #, elixir-autogen, elixir-format
 msgid "Orders with these products will not reach Frontpad."
 msgstr "Заказы с этими товарами не попадут во Frontpad."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:309
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:318
 #, elixir-autogen, elixir-format
 msgid "Products have not been received yet. Get them from Frontpad to check the menu."
 msgstr "Товары ещё не получены. Получите их из Frontpad, чтобы сверить меню."
@@ -4064,17 +4065,17 @@ msgstr "Товары во Frontpad и их соответствие меню п�
 msgid "Products received from Frontpad"
 msgstr "Товары получены из Frontpad"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:298
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:307
 #, elixir-autogen, elixir-format
 msgid "Received from Frontpad"
 msgstr "Получено из Frontpad"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:709
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:718
 #, elixir-autogen, elixir-format
 msgid "Search by name or CRM ID..."
 msgstr "Поиск по названию или CRM ID..."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:652
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:661
 #, elixir-autogen, elixir-format
 msgid "These products are not linked to Frontpad."
 msgstr "Эти товары не связаны с Frontpad."
@@ -4115,7 +4116,7 @@ msgstr "Не меньше 8 символов: латинские буквы, ц�
 msgid "Campaign ID"
 msgstr "ID кампании"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:65
+#: lib/delivest_web/live/staff/integration_live/index.ex:66
 #, elixir-autogen, elixir-format
 msgid "Customers confirm the phone number with a call via zvonok.com."
 msgstr "Клиенты подтверждают номер звонком через zvonok.com."
@@ -4125,40 +4126,40 @@ msgstr "Клиенты подтверждают номер звонком чер
 msgid "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
 msgstr "Клиенты входят по звонку через zvonok.com. Настройки общие для всех филиалов."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:83
+#: lib/delivest_web/live/staff/integration_live/index.ex:84
 #, elixir-autogen, elixir-format
 msgid "Each branch has its own settings. Switch the branch to set up another one."
 msgstr "У каждого филиала свои настройки. Чтобы настроить другой, переключите филиал."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:50
+#: lib/delivest_web/live/staff/integration_live/index.ex:51
 #, elixir-autogen, elixir-format
 msgid "External services connected to the app."
 msgstr "Внешние сервисы, подключённые к приложению."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:113
+#: lib/delivest_web/live/staff/integration_live/index.ex:116
 #, elixir-autogen, elixir-format
 msgid "Orders to the CRM and products matching with the app menu."
 msgstr "Передача заказов в CRM и сверка товаров с меню приложения."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:350
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:359
 #, elixir-autogen, elixir-format
 msgid "Send orders to Frontpad"
 msgstr "Передавать заказы во Frontpad"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:246
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:283
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:292
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Настройки"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:64
+#: lib/delivest_web/live/staff/integration_live/index.ex:65
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:13
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:60
 #, elixir-autogen, elixir-format
 msgid "Sign-in by phone number"
 msgstr "Вход по номеру телефона"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:57
+#: lib/delivest_web/live/staff/integration_live/index.ex:58
 #, elixir-autogen, elixir-format
 msgid "These settings are shared by every branch."
 msgstr "Эти настройки общие для всех филиалов."
@@ -4776,7 +4777,7 @@ msgstr "У вас нет прав на удаление баннеров."
 msgid "You don't have permission to edit banners."
 msgstr "У вас нет прав на изменение баннеров."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:72
+#: lib/delivest_web/live/staff/integration_live/index.ex:73
 #, elixir-autogen, elixir-format
 msgid "Address suggestions and the map via dadata.ru."
 msgstr "Подсказки адресов и карта через dadata.ru."
@@ -4788,7 +4789,7 @@ msgstr "Клиенты выбирают адрес на карте с подск
 
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:12
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:59
-#: lib/delivest_web/live/staff/integration_live/index.ex:71
+#: lib/delivest_web/live/staff/integration_live/index.ex:72
 #, elixir-autogen, elixir-format
 msgid "Delivery address on the map"
 msgstr "Адрес доставки на карте"
@@ -4854,7 +4855,7 @@ msgstr "Артикул %{crm}"
 msgid "is already used by another product"
 msgstr "уже указан у другого товара"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:397
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:406
 #, elixir-autogen, elixir-format
 msgid "Every 10 minutes products from the Frontpad stop list become unavailable in the app. They are lifted in Frontpad."
 msgstr "Раз в 10 минут товары из стоп-листа Frontpad становятся недоступны в приложении. Снимаются они во Frontpad."
@@ -4875,7 +4876,7 @@ msgstr "В стопе"
 msgid "In stop list"
 msgstr "В стоп-листе"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:601
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:610
 #, elixir-autogen, elixir-format
 msgid "In the Frontpad stop list but not linked to products"
 msgstr "В стоп-листе Frontpad, но не связаны с товарами"
@@ -4891,7 +4892,7 @@ msgstr "Снять"
 msgid "Lifted in %{crm}"
 msgstr "Снимается в %{crm}"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:585
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:594
 #, elixir-autogen, elixir-format
 msgid "Not received yet"
 msgstr "Ещё не получен"
@@ -4915,7 +4916,7 @@ msgstr "Стоп в %{crm}"
 msgid "Stop list"
 msgstr "Стоп-лист"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:577
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:586
 #, elixir-autogen, elixir-format
 msgid "Stop list from Frontpad"
 msgstr "Стоп-лист из Frontpad"
@@ -4935,7 +4936,7 @@ msgstr "Стоп-лист обновлён"
 msgid "Stop until %{time}"
 msgstr "Стоп до %{time}"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:394
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:403
 #, elixir-autogen, elixir-format
 msgid "Take the stop list from Frontpad"
 msgstr "Получать стоп-лист из Frontpad"
@@ -4951,12 +4952,12 @@ msgstr "До конца дня"
 msgid "Until lifted"
 msgstr "До снятия"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:596
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:605
 #, elixir-autogen, elixir-format
 msgid "Update now"
 msgstr "Обновить сейчас"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:579
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:588
 #, elixir-autogen, elixir-format
 msgid "Updated %{time}, products in stop: %{count}"
 msgstr "Обновлён %{time}, товаров в стопе: %{count}"
@@ -5008,7 +5009,7 @@ msgstr "Подключите CRM в интеграциях"
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:36
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:206
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:192
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:193
 #: lib/delivest_web/live/staff/product_live/suggested.ex:43
 #, elixir-autogen, elixir-format
 msgid "Failed to save"
@@ -5024,8 +5025,8 @@ msgstr "Нет CRM"
 msgid "No CRM is connected to this branch. All orders stay in the app."
 msgstr "К филиалу не подключена CRM. Все заказы остаются в приложении."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:550
-#: lib/delivest_web/live/staff/integration_live/index.ex:90
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:559
+#: lib/delivest_web/live/staff/integration_live/index.ex:91
 #: lib/delivest_web/live/staff/integration_live/routes.ex:18
 #: lib/delivest_web/live/staff/integration_live/routes.ex:74
 #, elixir-autogen, elixir-format
@@ -5052,7 +5053,7 @@ msgstr "Сегодня: %{count}"
 msgid "Where orders come from and which of them go further to the CRM."
 msgstr "Откуда приходят заказы и какие из них передаются дальше в CRM."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:91
+#: lib/delivest_web/live/staff/integration_live/index.ex:92
 #, elixir-autogen, elixir-format
 msgid "Which orders go further to the CRM."
 msgstr "Какие заказы передаются дальше в CRM."
@@ -5067,7 +5068,7 @@ msgstr "ошибок: %{count}"
 msgid "Access for Yandex"
 msgstr "Доступ для Яндекса"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:195
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:196
 #, elixir-autogen, elixir-format
 msgid "Automatically"
 msgstr "Автоматически"
@@ -5112,7 +5113,7 @@ msgstr "Сгенерировать новый секрет"
 msgid "Generate access"
 msgstr "Сгенерировать доступ"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:195
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:196
 #, elixir-autogen, elixir-format
 msgid "Manually by staff"
 msgstr "Вручную сотрудником"
@@ -5122,27 +5123,27 @@ msgstr "Вручную сотрудником"
 msgid "Menu in Yandex Eda"
 msgstr "Меню в Яндекс Еде"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:265
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:275
 #, elixir-autogen, elixir-format
 msgid "Minutes to confirm"
 msgstr "Минут на подтверждение"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:92
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:93
 #, elixir-autogen, elixir-format
 msgid "New access for Yandex Eda is generated"
 msgstr "Новый доступ для Яндекс Еды сгенерирован"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:257
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:267
 #, elixir-autogen, elixir-format
 msgid "Order confirmation"
 msgstr "Подтверждение заказа"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:218
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:219
 #, elixir-autogen, elixir-format
 msgid "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
 msgstr "Заказы из Яндекс Еды и Delivery Club приходят в приложение. Яндекс сам забирает у нас меню, стоп-лист и статусы заказов."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:98
+#: lib/delivest_web/live/staff/integration_live/index.ex:99
 #, elixir-autogen, elixir-format
 msgid "Orders from Yandex Eda and Delivery Club."
 msgstr "Заказы из Яндекс Еды и Delivery Club."
@@ -5163,12 +5164,12 @@ msgstr "Оплачено онлайн"
 msgid "Price in Yandex Eda"
 msgstr "Цена в Яндекс Еде"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:274
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:284
 #, elixir-autogen, elixir-format
 msgid "Price markup, %"
 msgstr "Наценка, %"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:280
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:290
 #, elixir-autogen, elixir-format
 msgid "Round marked up prices up to"
 msgstr "Округлять цены с наценкой вверх до"
@@ -5178,17 +5179,17 @@ msgstr "Округлять цены с наценкой вверх до"
 msgid "Shared by every branch. Give the address, the client id and the secret to the Yandex Eda manager."
 msgstr "Общий для всех филиалов. Передайте адрес, client_id и секрет менеджеру Яндекс Еды."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:249
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:259
 #, elixir-autogen, elixir-format
 msgid "Take orders from Yandex Eda"
 msgstr "Принимать заказы из Яндекс Еды"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:174
+#: lib/delivest_web/live/staff/integration_live/index.ex:199
 #, elixir-autogen, elixir-format
 msgid "Takes orders"
 msgstr "Принимает заказы"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:240
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:250
 #, elixir-autogen, elixir-format
 msgid "The branch is a separate restaurant in Yandex Eda, its id is %{id}."
 msgstr "Филиал — отдельный ресторан в Яндекс Еде, его id: %{id}."
@@ -5203,9 +5204,9 @@ msgstr "Меню филиала пусто"
 msgid "Unit"
 msgstr "Единица"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:97
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:26
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:216
+#: lib/delivest_web/live/staff/integration_live/index.ex:98
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:27
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:217
 #, elixir-autogen, elixir-format
 msgid "Yandex Eda"
 msgstr "Яндекс Еда"
@@ -5242,82 +5243,82 @@ msgstr "прибудет к %{time}"
 msgid "at the restaurant"
 msgstr "в ресторане"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:453
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:462
 #, elixir-autogen, elixir-format
 msgid "Codes from the Frontpad «Order marks» reference. The order gets the mark of its source and, if paid online, the paid mark. Leave empty to send no mark."
 msgstr "Коды из справочника Frontpad «Отметки заказов». Заказ получает отметку своего источника, а при онлайн-оплате ещё и отметку «Оплачен». Пустое поле — отметка не ставится."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:432
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:441
 #, elixir-autogen, elixir-format
 msgid "Codes from the Frontpad «Payment options» reference. Empty: cash is 1, card is 2, online payment goes as card."
 msgstr "Коды из справочника Frontpad «Варианты оплаты». Если пусто: наличные — 1, карта — 2, онлайн-оплата уходит как карта."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:451
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:460
 #, elixir-autogen, elixir-format
 msgid "Frontpad order marks"
 msgstr "Отметки заказов Frontpad"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:430
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:439
 #, elixir-autogen, elixir-format
 msgid "Frontpad payment codes"
 msgstr "Коды оплаты Frontpad"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:422
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:431
 #, elixir-autogen, elixir-format
 msgid "Frontpad reports at most %{count} statuses per order. If all are filled, «Confirmed» is not reported: the app marks the order confirmed once Frontpad takes it."
 msgstr "Frontpad сообщает не больше %{count} статусов по заказу. Если заполнены все, «Подтверждён» не придёт: приложение и так считает заказ подтверждённым, как только Frontpad его принял."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:508
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:517
 #, elixir-autogen, elixir-format
 msgid "Frontpad: «Settings» → «General» → turn the API on. Copy the secret into «Frontpad API Key» below."
 msgstr "Во Frontpad: «Настройки» → «Общие» → включить API. Скопировать секрет в поле «API-ключ Frontpad» ниже."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:518
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:527
 #, elixir-autogen, elixir-format
 msgid "Give every product sold in the app a unique numeric article in Frontpad and enter it in the product card of the app, field «Frontpad ID». The «Check» tab shows what is missing."
 msgstr "Каждому товару, который продаётся в приложении, задать во Frontpad уникальный цифровой артикул и вписать его в карточку товара приложения, поле «Артикул Frontpad». Чего не хватает, видно на вкладке «Сверка»."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:500
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:509
 #, elixir-autogen, elixir-format
 msgid "How to connect Frontpad"
 msgstr "Как подключить Frontpad"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:513
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:522
 #, elixir-autogen, elixir-format
 msgid "If Frontpad has several branches, put the code of this one into «Frontpad Branch ID»."
 msgstr "Если во Frontpad несколько филиалов, вписать код этого в поле «ID филиала Frontpad»."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:554
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:563
 #, elixir-autogen, elixir-format
 msgid "Optional: «Take the stop list from Frontpad» to hide products stopped in Frontpad from the app and Yandex Eda."
 msgstr "По желанию: «Получать стоп-лист из Frontpad», чтобы товары на стопе во Frontpad пропадали из приложения и Яндекс Еды."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:559
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:568
 #, elixir-autogen, elixir-format
 msgid "Place a test order in the app: it should appear in Frontpad with the right payment and mark, and its status should change here when changed in Frontpad."
 msgstr "Сделать тестовый заказ в приложении: он должен появиться во Frontpad с правильной оплатой и отметкой, а смена статуса во Frontpad — дойти сюда."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:533
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:542
 #, elixir-autogen, elixir-format
 msgid "Reference «Order marks»: create «App», «Admin», «Yandex Eda» and «Paid online». Enter their API codes in «Frontpad order marks», so the cashier sees where the order came from."
 msgstr "Справочник «Отметки заказов»: создать «Приложение», «Админка», «Яндекс Еда» и «Оплачен онлайн». Их коды API вписать в «Отметки заказов Frontpad» — так кассир видит, откуда заказ."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:523
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:532
 #, elixir-autogen, elixir-format
 msgid "Reference «Order statuses»: you need statuses for preparing, ready, on the way, completed and cancelled. Enter their API codes in «Frontpad status codes»."
 msgstr "Справочник «Статусы заказов»: нужны статусы «Готовится», «Готов», «В пути», «Выполнен» и «Отменён». Их коды API вписать в «Коды статусов Frontpad»."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:528
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:537
 #, elixir-autogen, elixir-format
 msgid "Reference «Payment options»: create «Cash», «Card on delivery» and «Paid online». Enter their API codes in «Frontpad payment codes»."
 msgstr "Справочник «Варианты оплаты»: создать «Наличные», «Картой при получении» и «Оплачено онлайн». Их коды API вписать в «Коды оплаты Frontpad»."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:538
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:547
 #, elixir-autogen, elixir-format
 msgid "Save the settings, copy the webhook URL below into the Frontpad API settings and restart the Frontpad program. Without it order statuses do not come back."
 msgstr "Сохранить настройки, скопировать адрес вебхука ниже в настройки API Frontpad и перезапустить программу Frontpad. Без этого статусы заказов не вернутся."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:543
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:552
 #, elixir-autogen, elixir-format
 msgid "Turn on «Send orders to Frontpad». On the «Order routes» page choose which sources go to Frontpad: the app and the admin by default, Yandex Eda only if it is not connected to Frontpad directly."
 msgstr "Включить «Передавать заказы во Frontpad». На странице «Маршруты заказов» выбрать, какие источники идут во Frontpad: по умолчанию приложение и админка, Яндекс Еда — только если она не подключена к Frontpad напрямую."
@@ -5375,7 +5376,7 @@ msgid "Fats"
 msgstr "Жиры"
 
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:72
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:201
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:202
 #, elixir-autogen, elixir-format
 msgid "No VAT"
 msgstr "Без НДС"
@@ -5405,7 +5406,7 @@ msgstr "Белки"
 msgid "Sugary drink"
 msgstr "Сахаросодержащий напиток"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:287
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:297
 #, elixir-autogen, elixir-format
 msgid "VAT in the menu"
 msgstr "НДС в меню"
@@ -5475,12 +5476,12 @@ msgstr "С %{from}, до снятия"
 msgid "Technical problem"
 msgstr "Технические проблемы"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:102
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:103
 #, elixir-autogen, elixir-format
 msgid "The branch is paused in Yandex Eda"
 msgstr "Филиал поставлен на паузу в Яндекс Еде"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:108
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:109
 #, elixir-autogen, elixir-format
 msgid "The pause is lifted"
 msgstr "Пауза снята"
@@ -5490,7 +5491,7 @@ msgstr "Пауза снята"
 msgid "Too busy"
 msgstr "Высокая загрузка"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:182
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:183
 #: lib/delivest_web/live/staff/order_live/orders.ex:286
 #, elixir-autogen, elixir-format
 msgid "Yandex Eda did not accept the request"
@@ -5607,7 +5608,7 @@ msgstr "Заказов в Яндексе: %{total}, расхождений: %{pr
 msgid "Orders reconciliation"
 msgstr "Сверка заказов с Яндексом"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:126
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:127
 #, elixir-autogen, elixir-format
 msgid "Pick a day"
 msgstr "Выберите день"
@@ -5712,12 +5713,12 @@ msgstr "Зона сохранена"
 msgid "free"
 msgstr "бесплатно"
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:384
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:393
 #, elixir-autogen, elixir-format
 msgid "Article of the «Delivery» product in Frontpad with «price change on order» turned on. The delivery price goes as its line. Without it the price is written into the order note."
 msgstr "Артикул товара «Доставка» во Frontpad с включённым «Изменение цены при создании заказа». Стоимость доставки уйдёт его строкой. Без артикула стоимость пишется в примечание к заказу."
 
-#: lib/delivest_web/live/staff/integration_live/frontpad.ex:381
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:390
 #, elixir-autogen, elixir-format
 msgid "Delivery article"
 msgstr "Артикул доставки"
@@ -6460,7 +6461,7 @@ msgstr "Курьер уже забрал заказ, статус откатит
 msgid "%{number} ext. %{ext}"
 msgstr "%{number} доб. %{ext}"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:105
+#: lib/delivest_web/live/staff/integration_live/index.ex:107
 #, elixir-autogen, elixir-format
 msgid "A Yandex courier for the delivery orders."
 msgstr "Курьер Яндекса на заказы с доставкой."
@@ -6470,27 +6471,27 @@ msgstr "Курьер Яндекса на заказы с доставкой."
 msgid "A Yandex courier is called for the delivery orders of the branch. The search starts as set in the branch couriers."
 msgstr "На заказы филиала с доставкой вызывается курьер Яндекса. Поиск начинается, как задано в курьерах филиала."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:197
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:206
 #, elixir-autogen, elixir-format
 msgid "A Yandex courier takes payment by card only. A cash order switches to card to the courier when the courier is called."
 msgstr "Курьер Яндекса принимает оплату только картой. Заказ за наличные при вызове курьера переводится на «Картой курьеру»."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:152
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:161
 #, elixir-autogen, elixir-format
 msgid "Branch phone"
 msgstr "Телефон филиала"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:179
+#: lib/delivest_web/live/staff/integration_live/index.ex:204
 #, elixir-autogen, elixir-format
 msgid "Calls couriers"
 msgstr "Вызывает курьеров"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:180
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:189
 #, elixir-autogen, elixir-format
 msgid "Confirm the pickup and the handover with SMS codes"
 msgstr "Подтверждать получение и вручение кодом из СМС"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:144
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:153
 #, elixir-autogen, elixir-format
 msgid "Contact at the branch"
 msgstr "Контакт в филиале"
@@ -6500,7 +6501,7 @@ msgstr "Контакт в филиале"
 msgid "Courier, up to 10 kg"
 msgstr "Курьер, до 10 кг"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:158
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:167
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr "Email"
@@ -6515,17 +6516,17 @@ msgstr "Экспресс, до 20 кг"
 msgid "Looking for a Yandex courier"
 msgstr "Ищем курьера Яндекса"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:132
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:141
 #, elixir-autogen, elixir-format
 msgid "OAuth token"
 msgstr "OAuth-токен"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:137
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:146
 #, elixir-autogen, elixir-format
 msgid "Personal account dostavka.yandex.ru, the Integrations tab."
 msgstr "Личный кабинет dostavka.yandex.ru, вкладка «Интеграции»."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:133
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:142
 #, elixir-autogen, elixir-format
 msgid "Saved, enter a new one to replace it"
 msgstr "Сохранён, введите новый, чтобы заменить"
@@ -6540,7 +6541,7 @@ msgstr "Укажите адрес и координаты филиала, что
 msgid "Set the branch phone to call a Yandex courier"
 msgstr "Укажите телефон филиала, чтобы вызвать курьера Яндекса"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:164
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:173
 #, elixir-autogen, elixir-format
 msgid "Tariff"
 msgstr "Тариф"
@@ -6570,7 +6571,7 @@ msgstr "У заказа нет адреса доставки"
 msgid "Tracking"
 msgstr "Отслеживание"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:171
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:180
 #, elixir-autogen, elixir-format
 msgid "VAT for the payment to the courier"
 msgstr "НДС при оплате курьеру"
@@ -6580,7 +6581,7 @@ msgstr "НДС при оплате курьеру"
 msgid "Yandex"
 msgstr "Яндекс"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:104
+#: lib/delivest_web/live/staff/integration_live/index.ex:106
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:18
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:90
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:713
@@ -6661,7 +6662,7 @@ msgstr "Терминалом"
 msgid "Cash on hand"
 msgstr "Наличные на руках"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:187
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:196
 #, elixir-autogen, elixir-format
 msgid "Confirm the claim automatically"
 msgstr "Подтверждать заявку автоматически"
@@ -6701,7 +6702,7 @@ msgstr "Уведомления запрещены в настройках бра
 msgid "Notifications are on"
 msgstr "Уведомления включены"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:191
+#: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:200
 #, elixir-autogen, elixir-format
 msgid "Only if the Yandex manager has enabled auto accept for your contract, otherwise claims are not created. Without it the claim is confirmed by the next poll within 10 seconds."
 msgstr "Только если менеджер Яндекса подключил автоподтверждение для вашего договора, иначе заявки не создадутся. Без него заявку подтверждает опрос в течение 10 секунд."
@@ -6835,6 +6836,8 @@ msgid "New link created"
 msgstr "Новая ссылка создана"
 
 #: lib/delivest_web/live/board_live/index.ex:78
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:74
+#: lib/delivest_web/live/staff/integration_live/index.ex:184
 #, elixir-autogen, elixir-format
 msgid "No connection"
 msgstr "Нет связи"
@@ -6954,3 +6957,33 @@ msgstr "мс"
 #, elixir-autogen, elixir-format
 msgid "no response"
 msgstr "нет ответа"
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:72
+#, elixir-autogen, elixir-format
+msgid "Access denied, reconnect the integration"
+msgstr "Доступ отклонён, переподключите интеграцию"
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:47
+#, elixir-autogen, elixir-format
+msgid "Check the connection"
+msgstr "Проверить подключение"
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:34
+#, elixir-autogen, elixir-format
+msgid "Checked"
+msgstr "Проверено"
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:45
+#, elixir-autogen, elixir-format
+msgid "Checking..."
+msgstr "Проверяем..."
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:177
+#, elixir-autogen, elixir-format
+msgid "Reconnect"
+msgstr "Переподключите"
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:68
+#, elixir-autogen, elixir-format
+msgid "The connection has not been checked"
+msgstr "Подключение ещё не проверялось"

@@ -120,6 +120,19 @@ defmodule Delivest.Integrations.CrmTest do
     assert %{status: "failed"} = Repo.reload!(order).crm
   end
 
+  test "rejected credentials stop retries and ask to reconnect" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    stub_frontpad(%{"result" => "error", "error" => "invalid_secret"})
+
+    assert {:cancel, {:frontpad, "invalid_secret"}} = sync(order)
+    assert %{status: "failed"} = Repo.reload!(order).crm
+    assert %{status: :auth} = Delivest.Integrations.Health.get(:frontpad, order.branch_id)
+
+    stub_frontpad(%{"result" => "success", "order_id" => "901"})
+    assert :ok = sync(order)
+    assert %{status: :ok} = Delivest.Integrations.Health.get(:frontpad, order.branch_id)
+  end
+
   test "permanent crm errors stop retries" do
     {:ok, order} = place_order(branch(frontpad(true)), external_id: nil)
 

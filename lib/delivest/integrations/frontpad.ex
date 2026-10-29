@@ -5,7 +5,8 @@ defmodule Delivest.Integrations.Frontpad do
   alias Delivest.Integrations.Frontpad.{Api, OrderPayload, Webhook}
   alias Delivest.Net.ProductCrmIds
 
-  @permanent_errors ~w(invalid_secret api_off invalid_plant invalid_product_keys invalid_certificate)
+  @auth_errors ~w(invalid_secret api_off)
+  @permanent_errors ~w(invalid_plant invalid_product_keys invalid_certificate)
   @snooze %{"requests_limit" => 60, "cash_close" => 600}
 
   @impl true
@@ -66,12 +67,24 @@ defmodule Delivest.Integrations.Frontpad do
   @impl true
   def classify_error(:missing_api_key), do: :permanent
   def classify_error({:missing_external_id, _product_id}), do: :permanent
+  def classify_error({:frontpad, error}) when error in @auth_errors, do: :auth
   def classify_error({:frontpad, error}) when error in @permanent_errors, do: :permanent
 
   def classify_error({:frontpad, error}) when is_map_key(@snooze, error),
     do: {:snooze, @snooze[error]}
 
-  def classify_error(_reason), do: :retry
+  def classify_error(reason), do: Delivest.Integrations.Error.classify(reason)
+
+  @impl true
+  def health_check(settings) do
+    if configured?(settings) do
+      with {:ok, _stops} <-
+             Crm.Throttle.run(rate_limit(settings), fn -> Api.get_stops(settings.api_key) end),
+           do: :ok
+    else
+      {:error, :not_configured}
+    end
+  end
 
   defp request_interval_ms,
     do:

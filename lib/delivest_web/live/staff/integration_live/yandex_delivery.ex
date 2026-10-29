@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
   alias Delivest.{Couriers, Identity}
   alias Delivest.Identity.Branch.CourierSettings
   alias Delivest.Integrations.YandexDelivery
-  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -117,6 +117,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
           )}
         </span>
       </div>
+
+      <.live_component
+        :if={YandexDelivery.Settings.configured?(@settings)}
+        module={HealthComponent}
+        id="yandex-delivery-health"
+        provider={:yandex_delivery}
+        branch_id={@current_branch.id}
+        scope={@current_branch.id}
+      />
 
       <.form
         for={@form}
