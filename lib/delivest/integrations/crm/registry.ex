@@ -1,5 +1,6 @@
 defmodule Delivest.Integrations.Crm.Registry do
-  @modules [Delivest.Integrations.Frontpad]
+  @modules [Delivest.Integrations.Frontpad] ++
+             Application.compile_env(:delivest, :extra_crm_providers, [])
 
   def modules, do: @modules
 

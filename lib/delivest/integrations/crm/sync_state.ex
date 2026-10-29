@@ -27,6 +27,15 @@ defmodule Delivest.Integrations.Crm.SyncState do
     })
   end
 
+  def confirming(order, ref, attempt),
+    do:
+      Orders.update_order_crm(order, %{
+        status: "confirming",
+        ref: ref,
+        attempts: attempt,
+        last_error: nil
+      })
+
   def remote_status(order, status, code, at) do
     if is_nil(status),
       do: Logger.warning("crm order #{order.number} got unmapped status code #{code}")

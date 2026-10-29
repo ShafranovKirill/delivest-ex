@@ -31,6 +31,13 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
     :ok
   end
 
+  defp handle({:pending, ref}, order, attempt, _max_attempts) do
+    Logger.info("crm order #{order.number} awaits confirmation #{ref}")
+    SyncState.confirming(order, ref, attempt)
+    Crm.schedule_confirm_check(order)
+    :ok
+  end
+
   defp handle({:error, reason} = error, order, attempt, max_attempts) do
     message = inspect(reason)
 

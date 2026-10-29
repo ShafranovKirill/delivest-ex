@@ -1,11 +1,22 @@
 defmodule Delivest.Integrations.Crm do
   alias Delivest.Identity
   alias Delivest.Identity.Branch
-  alias Delivest.Integrations.Crm.{BranchSettings, Registry, SyncWorker, Throttle}
+
+  alias Delivest.Integrations.Crm.{
+    BranchSettings,
+    CommandWorker,
+    ConfirmWorker,
+    Registry,
+    SyncState,
+    SyncWorker,
+    Throttle
+  }
+
   alias Delivest.Integrations.Journal
   alias Delivest.Oms.{Order, Orders}
 
   @permanent_errors [:branch_not_found, :unknown_provider, :missing_settings]
+  @confirm_minutes 5
 
   def providers, do: Enum.map(Registry.modules(), &{&1.key(), &1.name()})
 
@@ -48,11 +59,13 @@ defmodule Delivest.Integrations.Crm do
 
   def provider_for(_branch, _source), do: nil
 
-  def manual_cancel_required?(%Order{
-        channel: %{remote_status: "cancelled"},
-        crm: %{status: "sent", remote_status: remote}
-      }),
-      do: remote != "cancelled"
+  def manual_cancel_required?(
+        %Order{
+          channel: %{remote_status: "cancelled"},
+          crm: %{status: "sent", remote_status: remote}
+        } = order
+      ),
+      do: remote != "cancelled" and not can?(order, :cancel)
 
   def manual_cancel_required?(_order), do: false
 
@@ -86,16 +99,99 @@ defmodule Delivest.Integrations.Crm do
     |> Orders.create_order(opts)
   end
 
-  def deliver(%Order{crm: %{provider: provider}} = order) do
+  def capabilities(provider) do
+    case Registry.fetch(provider) do
+      {:ok, module} -> optional(module, :capabilities, [], [])
+      _ -> []
+    end
+  end
+
+  def can?(%Order{crm: %{provider: provider}}, capability),
+    do: capability in capabilities(provider)
+
+  def can?(_order, _capability), do: false
+
+  def idempotent?(provider) do
+    case Registry.fetch(provider) do
+      {:ok, module} -> optional(module, :idempotent?, [], false)
+      _ -> false
+    end
+  end
+
+  def status_for(provider, settings, code) do
+    with {:ok, module} <- Registry.fetch(provider),
+         true <- exported?(module, :status_map, 1) do
+      Map.get(module.status_map(settings), to_string(code))
+    else
+      _ -> nil
+    end
+  end
+
+  def dictionaries(branch_id) do
+    with {:ok, name, module} <- branch_provider(branch_id),
+         true <- exported?(module, :dictionaries, 1) || {:ok, %{}},
+         {:ok, settings} <- branch_settings(branch_id, name) do
+      module.dictionaries(settings)
+    end
+  end
+
+  def deliver(%Order{} = order), do: call(order, & &1.deliver_order(order, &2))
+
+  def cancel(%Order{} = order, reason),
+    do: call(order, & &1.cancel_order(order, reason, &2))
+
+  def update(%Order{} = order, changes),
+    do: call(order, & &1.update_order(order, changes, &2))
+
+  def confirm_order(%Order{crm: %{status: "confirming"}} = order, delivery),
+    do: SyncState.sent(order, delivery, order.crm.attempts)
+
+  def confirm_order(%Order{}, _delivery), do: {:error, :not_confirming}
+
+  def reject_order(%Order{crm: %{status: "confirming"}} = order, error),
+    do: SyncState.failed(order, error, order.crm.attempts)
+
+  def reject_order(%Order{}, _error), do: {:error, :not_confirming}
+
+  def schedule_confirm_check(%Order{} = order) do
+    %{"order_id" => order.id, "ref" => order.crm && order.crm.ref}
+    |> ConfirmWorker.new(schedule_in: {@confirm_minutes, :minutes})
+    |> Oban.insert()
+  end
+
+  def enqueue_command(%Order{} = order, action, args \\ %{}) do
+    args
+    |> Map.merge(%{"order_id" => order.id, "branch_id" => order.branch_id, "action" => action})
+    |> CommandWorker.new()
+    |> Oban.insert()
+  end
+
+  defp call(%Order{crm: %{provider: provider}} = order, fun) do
     with {:ok, name, module} <- provider_module(provider),
          {:ok, settings} <- branch_settings(order.branch_id, name) do
       Journal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
-        Throttle.run(module.rate_limit(settings), fn -> module.deliver_order(order, settings) end)
+        Throttle.run(module.rate_limit(settings), fn -> fun.(module, settings) end)
       end)
     end
   end
 
-  def deliver(_order), do: {:error, :unknown_provider}
+  defp call(_order, _fun), do: {:error, :unknown_provider}
+
+  defp optional(module, function, args, default) do
+    if exported?(module, function, length(args)),
+      do: apply(module, function, args),
+      else: default
+  end
+
+  defp exported?(module, function, arity),
+    do: Code.ensure_loaded?(module) and function_exported?(module, function, arity)
+
+  defp branch_provider(branch_id) do
+    case branch_id |> get_branch_settings() |> BranchSettings.active_provider() do
+      nil -> {:error, :missing_settings}
+      provider -> provider_module(provider)
+    end
+  end
 
   def classify_error(_order, reason) when reason in @permanent_errors, do: :permanent
 

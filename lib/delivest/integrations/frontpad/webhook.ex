@@ -1,9 +1,9 @@
 defmodule Delivest.Integrations.Frontpad.Webhook do
   @behaviour Delivest.Integrations.Inbox.Handler
 
+  alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{Lookup, SyncState}
   alias Delivest.Integrations.{Inbox, Journal}
-  alias Delivest.Integrations.Frontpad.StatusCodes
 
   @fields ~w(order_id status datetime)
 
@@ -36,7 +36,7 @@ defmodule Delivest.Integrations.Frontpad.Webhook do
     with {:ok, order} <- Lookup.order_by_external_id(info.branch_id, :frontpad, external_id) do
       Journal.put_context(branch_id: order.branch_id, order_id: order.id)
       code = to_string(code)
-      status = StatusCodes.status_for(info.crm.frontpad.statuses, code)
+      status = Crm.status_for(:frontpad, info.crm.frontpad, code)
       SyncState.remote_status(order, status, code, parse_datetime(datetime, order.branch_id))
     end
   end

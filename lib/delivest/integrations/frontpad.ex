@@ -22,6 +22,16 @@ defmodule Delivest.Integrations.Frontpad do
   def configured?(%{api_key: api_key}), do: api_key not in [nil, ""]
   def configured?(_settings), do: false
 
+  @impl true
+  def idempotent?, do: false
+
+  @impl true
+  def capabilities, do: []
+
+  @impl true
+  def status_map(settings),
+    do: Delivest.Integrations.Frontpad.StatusCodes.to_map(settings.statuses)
+
   def webhook_url(token), do: Crm.webhook_url(key(), token)
 
   @impl true

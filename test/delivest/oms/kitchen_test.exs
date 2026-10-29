@@ -6,7 +6,6 @@ defmodule Delivest.Oms.KitchenTest do
   import Delivest.OrderFixtures
 
   alias Delivest.Identity.Branch.BranchInfo
-  alias Delivest.LocalTime
   alias Delivest.Oms.{Kitchen, Order, Orders, OrderTransition}
   alias Delivest.Oms.Kitchen.ReadyWorker
 

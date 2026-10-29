@@ -62,3 +62,5 @@ config :delivest, Delivest.Media,
   public_bucket: "delivest",
   private_bucket: "delivest-private",
   public_host: "s3.test"
+
+config :delivest, :extra_crm_providers, [Delivest.Integrations.TestCrm]
