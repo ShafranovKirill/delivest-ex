@@ -70,6 +70,13 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           nullable: true,
           description: "Количество приборов"
         },
+        cash_given: %Schema{
+          type: :integer,
+          minimum: 1,
+          example: 500_000,
+          nullable: true,
+          description: "Сдача с какой суммы, в копейках. Только для наличных"
+        },
         fulfillment_type: %Schema{
           type: :string,
           enum: ["dine_in", "delivery", "pickup"],

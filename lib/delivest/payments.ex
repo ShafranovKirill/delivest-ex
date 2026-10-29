@@ -175,7 +175,7 @@ defmodule Delivest.Payments do
       method: method,
       amount: order.total_amount,
       status: :pending,
-      cash_given: if(method == :cash, do: cash_given)
+      cash_given: if(method == :cash and (cash_given || 0) >= order.total_amount, do: cash_given)
     })
   end
 
