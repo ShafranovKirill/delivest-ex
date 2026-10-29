@@ -3,7 +3,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
 
   require Logger
 
-  alias Delivest.{Audit, Couriers, Repo}
+  alias Delivest.{Audit, Couriers, Push, Repo}
   alias Delivest.Identity.Staff
   alias Delivest.Oms.{Kitchen, Order, OrderFlow, OrderTransition}
   alias Delivest.Oms.Orders.Notifier
@@ -146,8 +146,14 @@ defmodule Delivest.Oms.Orders.StatusChange do
     audit(order, steps, by, opts)
     {:ok, order} = Couriers.order_moved(order)
     {:ok, order} = Kitchen.order_accepted(order)
+    alert(order, by)
     order
   end
+
+  defp alert(%Order{status: :cancelled} = order, :channel),
+    do: Push.notify_staff(:channel_cancelled, order.id)
+
+  defp alert(_order, _by), do: :ok
 
   defp audit(_order, [], _by, _opts), do: :ok
 

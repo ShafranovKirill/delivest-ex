@@ -192,6 +192,10 @@ const liveSocket = new LiveSocket("/live", Socket, {
 
 const root = document.documentElement;
 
+if ("serviceWorker" in navigator && location.pathname.startsWith("/staff")) {
+  navigator.serviceWorker.register("/staff/sw.js", { scope: "/staff/" }).catch(() => {});
+}
+
 window.addEventListener("sidebar:toggle-collapse", () => {
   const collapsed = root.toggleAttribute("data-sidebar-collapsed");
   localStorage.setItem("sidebar_collapsed", collapsed);

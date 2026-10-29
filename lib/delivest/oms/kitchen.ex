@@ -3,7 +3,7 @@ defmodule Delivest.Oms.Kitchen do
 
   require Logger
 
-  alias Delivest.{Identity, LocalTime, Repo}
+  alias Delivest.{Identity, LocalTime, Push, Repo}
   alias Delivest.Identity.{Branch, Staff}
   alias Delivest.Identity.Branch.{BranchInfo, KitchenSettings}
   alias Delivest.Integrations.Crm
@@ -175,8 +175,10 @@ defmodule Delivest.Oms.Kitchen do
       result = Orders.advance_order(order, :ready, {:staff, staff})
       changed(order.branch_id)
 
-      with {:ok, %Order{status: :ready} = ready} <- result,
-           do: broadcast(order.branch_id, {:kitchen_order_ready, ready})
+      with {:ok, %Order{status: :ready} = ready} <- result do
+        broadcast(order.branch_id, {:kitchen_order_ready, ready})
+        Push.notify_staff(:order_ready, ready.id)
+      end
 
       result
     else

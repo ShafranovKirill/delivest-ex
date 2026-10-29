@@ -16,7 +16,7 @@ defmodule Delivest.Oms.Orders.Create do
     StopGuard
   }
 
-  alias Delivest.{Promo, Repo}
+  alias Delivest.{Promo, Push, Repo}
   alias Ecto.Multi
 
   def run(attrs, opts \\ []) do
@@ -48,6 +48,7 @@ defmodule Delivest.Oms.Orders.Create do
     |> case do
       {:ok, %{advanced: order}} ->
         {:ok, order} = Notifier.publish({:ok, order}, [:order, :created])
+        if order.status == :created, do: Push.notify_staff(:order_created, order.id)
         Kitchen.order_accepted(order)
 
       {:error, step, reason, _} ->

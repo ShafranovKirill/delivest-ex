@@ -3,7 +3,7 @@ defmodule Delivest.Couriers do
 
   require Logger
 
-  alias Delivest.{Audit, Identity, Repo}
+  alias Delivest.{Audit, Identity, Push, Repo}
   alias Delivest.Couriers.{Cash, Contact, Delivery, Registry}
   alias Delivest.Identity.{Branch, Staff, StaffBranch}
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
@@ -147,6 +147,7 @@ defmodule Delivest.Couriers do
       order
       |> locked(&reassign(&1, order, courier, staff))
       |> audited(staff, "order.courier_assigned", order, %{courier: courier.name || courier.login})
+      |> notified(:delivery_assigned)
     end
   end
 
@@ -312,7 +313,10 @@ defmodule Delivest.Couriers do
 
   defp restart(%Delivery{provider: :staff} = delivery, reason) do
     with {:ok, _closed} <- close(delivery, :failed, reason) do
-      delivery.order_id |> Delivery.new(delivery.branch_id, delivery.provider) |> Repo.insert()
+      delivery.order_id
+      |> Delivery.new(delivery.branch_id, delivery.provider)
+      |> Repo.insert()
+      |> notified(:delivery_requested)
     end
   end
 
@@ -339,7 +343,11 @@ defmodule Delivest.Couriers do
          {:ok, delivery} <- order.id |> Delivery.new(order.branch_id, key) |> Repo.insert() do
       case provider.start(delivery, order) do
         {:ok, attrs} ->
-          delivery |> Delivery.provider_changeset(attrs) |> Repo.update() |> changed()
+          delivery
+          |> Delivery.provider_changeset(attrs)
+          |> Repo.update()
+          |> changed()
+          |> requested()
 
         {:error, reason} ->
           Logger.warning(
@@ -463,6 +471,18 @@ defmodule Delivest.Couriers do
   end
 
   defp audited(error, _staff, _action, _order, _metadata), do: error
+
+  defp requested({:ok, %Delivery{provider: :staff}} = result),
+    do: notified(result, :delivery_requested)
+
+  defp requested(result), do: result
+
+  defp notified({:ok, %Delivery{id: id}} = result, event) do
+    Push.notify_staff(event, id)
+    result
+  end
+
+  defp notified(result, _event), do: result
 
   defp unwrap({:ok, value}), do: value
   defp unwrap({:error, reason}), do: Repo.rollback(reason)

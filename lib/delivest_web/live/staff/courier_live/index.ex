@@ -98,6 +98,11 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
         </span>
       </p>
 
+      <DelivestWeb.StaffPushToggle.staff_push_toggle
+        id="courier-push-toggle"
+        class="btn btn-outline btn-block justify-center data-[state=on]:btn-ghost data-[state=on]:btn-sm data-[state=on]:text-success"
+      />
+
       <.cash_summary balance={@balance} />
 
       <section id="courier-mine" class="space-y-3">

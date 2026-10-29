@@ -206,7 +206,15 @@ defmodule DelivestWeb.Router do
   end
 
   scope "/staff", DelivestWeb.Staff do
+    get "/manifest.webmanifest", StaffPwaController, :manifest
+    get "/sw.js", StaffPwaController, :worker
+  end
+
+  scope "/staff", DelivestWeb.Staff do
     pipe_through :staff_browser
+
+    post "/push/subscriptions", StaffPushController, :subscribe
+    delete "/push/subscriptions", StaffPushController, :unsubscribe
 
     scope "/" do
       pipe_through :login_rate_limit
