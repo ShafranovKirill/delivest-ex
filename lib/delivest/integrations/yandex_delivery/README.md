@@ -71,8 +71,7 @@
 | `YandexDelivery.Api` | Методы `claims/*` и `driver-voiceforwarding`. Ошибка — `{:yandex_delivery, http_status, code}` |
 | `YandexDelivery.Claim` | Тело `claims/create` из заказа и филиала |
 | `YandexDelivery.Settings` | Настройки филиала, `branch_info.yandex_delivery` |
-| `YandexDelivery.JournalWorker` | Опрос журнала филиала раз в 10 с, пока есть активные заявки |
-| `YandexDelivery.PollWorker` | Раз в минуту ставит `JournalWorker` филиалам с активными заявками, если цепочка оборвалась |
+| `YandexDelivery.Poller` | `Integrations.Poller` `yandex_delivery`: журнал филиала раз в 10 с, пока есть активные заявки, на 429 пауза 30 с. Cron раз в минуту поднимает оборвавшиеся цепочки |
 | `YandexDelivery.Journal` | Курсор журнала филиала, таблица `yandex_delivery_journals` |
 
 ### Настройки филиала

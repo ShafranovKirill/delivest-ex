@@ -26,3 +26,16 @@
 ## Порядок
 
 После [событий и outbox](order-events.md): inbox и опрос опираются на них. Существующие Яндекс Еда, Яндекс Доставка и Frontpad переводятся на общий журнал и токены.
+
+## Сделано
+
+Описание и как пользоваться — в [README интеграций](../../lib/delivest/integrations/README.md#общий-набор).
+
+- `integration_requests` и `Journal`: исходящие через `Client` с `journal:`, входящие через plug `IntegrationJournal`. Подключены Frontpad, Яндекс Еда, Яндекс Доставка, Zvonok. `YandexEdaJournal` удалён. Вкладка или блок «Журнал запросов» на их страницах.
+- `TokenCache`: push API Яндекс Еды.
+- `Inbox`: вебхук статусов Frontpad. Яндекс Еда — наш API, а не вебхуки, Яндекс Доставка — опрос.
+- `Poller`: `PollWorker`, `JournalWorker` Яндекс Доставки и `Crm.StopSyncWorker` заменены.
+- `Error` с `:auth`, `Health` с `health_check/1` у Frontpad, Яндекс Еды и Яндекс Доставки.
+- Контрактные тесты: `:yandex_contract` → `:yandex_eda_contract`, общий `:contract` исключён в `test_helper.exs`, `make contract P=...`.
+
+Не сделано: DaData в журнал не пишется (запрос на каждую букву адреса), Zvonok обрабатывает вебхук сразу.
