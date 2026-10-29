@@ -53,7 +53,7 @@
 
 Яндекс публикует Postman-коллекцию с проверками нашего pull-API: https://yastatic.net/s3/doc-binary/src/dev/eda-vendor/Rest_for_partners.postman_collection.json. Копия лежит в `test/support/yandex_eda_contract/`.
 
-Запуск: `make yandex-contract` или `mix test --only yandex_contract`. Тест поднимает наш сервер на свободном порту поверх тестовой базы в песочнице, заводит филиал с товаром и прогоняет коллекцию через `npx newman`. Dev-база и внешние сервисы не затрагиваются. Нужен Node, при первом запуске newman скачивается. В обычный `mix test` проверка не входит.
+Запуск: `make contract P=yandex_eda` или `mix test --only yandex_eda_contract`. Тест поднимает наш сервер на свободном порту поверх тестовой базы в песочнице, заводит филиал с товаром и прогоняет коллекцию через `npx newman`. Dev-база и внешние сервисы не затрагиваются. Нужен Node, при первом запуске newman скачивается. В обычный `mix test` проверка не входит.
 
 Перед запуском коллекция исправляется (`YandexEdaContract.Collection`):
 
