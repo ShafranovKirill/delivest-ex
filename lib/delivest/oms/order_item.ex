@@ -30,6 +30,22 @@ defmodule Delivest.Oms.OrderItem do
     timestamps(type: :utc_datetime)
   end
 
+  def modifier_names(%{modifiers: modifiers}) when is_list(modifiers) do
+    Enum.map(modifiers, fn
+      %{quantity: quantity, name: name} when quantity > 1 -> "#{name} ×#{quantity}"
+      %{name: name} -> name
+    end)
+  end
+
+  def modifier_names(_item), do: []
+
+  def full_title(item) do
+    case modifier_names(item) do
+      [] -> item.title
+      names -> "#{item.title} (#{Enum.join(names, ", ")})"
+    end
+  end
+
   def selection(%__MODULE__{modifiers: modifiers}) when is_list(modifiers) do
     modifiers
     |> Enum.reject(&is_nil(&1.modifier_id))

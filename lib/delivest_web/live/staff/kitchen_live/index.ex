@@ -236,6 +236,12 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
           <span class="flex-1">
             {item.title}
             <span :if={item.gift} class="badge badge-accent align-middle">{gettext("gift")}</span>
+            <span
+              :for={name <- Delivest.Oms.OrderItem.modifier_names(item)}
+              class="block text-lg text-base-content/70"
+            >
+              + {name}
+            </span>
           </span>
         </li>
       </ul>

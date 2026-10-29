@@ -115,7 +115,15 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
   end
 
   defp items(order, settings) do
-    goods = Enum.map(order.items, &%{title: &1.title, quantity: &1.quantity, price: &1.price})
+    goods =
+      Enum.map(
+        order.items,
+        &%{
+          title: Delivest.Oms.OrderItem.full_title(&1),
+          quantity: &1.quantity,
+          price: &1.price
+        }
+      )
 
     lines =
       if collects_payment?(order),

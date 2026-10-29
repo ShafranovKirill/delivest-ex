@@ -396,6 +396,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <span class="font-mono font-bold">{item.quantity}×</span>
           <.icon :if={item.gift} name="hero-gift" class="size-3.5 text-success" />
           {item.title}
+          <span
+            :for={name <- Delivest.Oms.OrderItem.modifier_names(item)}
+            class="block pl-6 text-xs text-base-content/60"
+          >
+            + {name}
+          </span>
         </span>
         <span class="font-mono text-xs text-base-content/60 shrink-0 pt-0.5">
           {OrderHelpers.money(item.price * item.quantity)}
