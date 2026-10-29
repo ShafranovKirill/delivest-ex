@@ -4,9 +4,18 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
   alias Delivest.Audit.Event
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
+  def describe(%Event{action: "order.status_changed", metadata: metadata} = event) do
+    gettext("Order %{subject}: %{from} → %{to}",
+      subject: subject(event),
+      from: OrderHelpers.status_label(metadata["from"]),
+      to: OrderHelpers.status_label(metadata["to"])
+    )
+    |> with_reason(metadata["reason"])
+  end
+
   def describe(%Event{} = event) do
     text(event.action, %{
-      subject: event.subject_label || "—",
+      subject: subject(event),
       changes: changes(event.metadata),
       error: event.metadata["error"]
     })
@@ -58,6 +67,7 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
       "deleted" -> gettext("Deleted")
       "details_changed" -> gettext("Details changed")
       "sent_to_crm" -> gettext("Sent to CRM")
+      "status_changed" -> gettext("Status changed")
       "crm_status_changed" -> gettext("Status changed in CRM")
       "crm_failed" -> gettext("Not sent to CRM")
       "issued" -> gettext("Code issued")
@@ -122,6 +132,13 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
   defp text("branch.deleted", b), do: gettext("Branch «%{subject}» deleted", b)
 
   defp text(action, b), do: gettext("%{action}: %{subject}", Map.put(b, :action, action))
+
+  defp subject(event), do: event.subject_label || "—"
+
+  defp with_reason(text, nil), do: text
+
+  defp with_reason(text, reason),
+    do: gettext("%{text}, reason: %{reason}", text: text, reason: reason)
 
   defp changes(metadata) do
     metadata

@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
+  import Delivest.OrderFixtures
 
   alias Delivest.Audit
   alias Delivest.Logs.Entry
@@ -41,6 +42,24 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
 
     assert html =~ "Сотрудник Ivan"
     assert html =~ "Создан товар «Borsch»"
+  end
+
+  test "status change shows where the order went from and to", %{conn: conn} do
+    {conn, staff} = login(conn, ["logs.read"], %{"locale" => "ru"})
+    order = order_fixture(insert(:branch).id)
+
+    Audit.record(staff, "order.status_changed", order,
+      metadata: %{from: "accepted", to: "preparing"}
+    )
+
+    Audit.record(staff, "order.status_changed", order,
+      metadata: %{from: "preparing", to: "cancelled", reason: "Нет продуктов"}
+    )
+
+    {:ok, _lv, html} = live(conn, ~p"/staff/logs")
+
+    assert html =~ "Заказ ##{order.number}: Подтверждён → Готовится"
+    assert html =~ "причина: Нет продуктов"
   end
 
   test "events filter by employee, event and branch and sort by branch", %{conn: conn} do

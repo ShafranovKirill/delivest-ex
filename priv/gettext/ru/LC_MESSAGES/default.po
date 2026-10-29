@@ -127,7 +127,7 @@ msgstr "Войти"
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:62
 #: lib/delivest_web/components/staff/app/staff_nav.ex:136
-#: lib/delivest_web/live/staff/log_live/event_text.ex:33
+#: lib/delivest_web/live/staff/log_live/event_text.ex:42
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:178
 #, elixir-autogen, elixir-format
 msgid "Staff"
@@ -233,7 +233,7 @@ msgstr "Филиал успешно сохранен"
 #: lib/delivest_web/live/staff/branch_live/branches.ex:15
 #: lib/delivest_web/live/staff/branch_live/edit.ex:62
 #: lib/delivest_web/live/staff/branch_live/edit.ex:86
-#: lib/delivest_web/live/staff/log_live/event_text.ex:35
+#: lib/delivest_web/live/staff/log_live/event_text.ex:44
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:206
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:227
 #, elixir-autogen, elixir-format
@@ -277,7 +277,7 @@ msgstr "Невозможно удалить роль, так как она на�
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:81
 #: lib/delivest_web/live/staff/category_live/categories.ex:90
-#: lib/delivest_web/live/staff/log_live/event_text.ex:28
+#: lib/delivest_web/live/staff/log_live/event_text.ex:37
 #: lib/delivest_web/live/staff/statistics_live/index.ex:166
 #, elixir-autogen, elixir-format
 msgid "Categories"
@@ -755,7 +755,7 @@ msgstr "Товар успешно обновлен"
 
 #: lib/delivest_web/components/staff/app/command_search.ex:20
 #: lib/delivest_web/components/staff/app/staff_nav.ex:88
-#: lib/delivest_web/live/staff/log_live/event_text.ex:27
+#: lib/delivest_web/live/staff/log_live/event_text.ex:36
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:18
 #: lib/delivest_web/live/staff/product_live/products.ex:421
 #: lib/delivest_web/live/staff/product_live/tags.ex:131
@@ -818,7 +818,7 @@ msgid "Role updated successfully"
 msgstr "Роль успешно обновлена"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:138
-#: lib/delivest_web/live/staff/log_live/event_text.ex:34
+#: lib/delivest_web/live/staff/log_live/event_text.ex:43
 #: lib/delivest_web/live/staff/role_live/roles.ex:54
 #, elixir-autogen, elixir-format
 msgid "Roles"
@@ -1247,7 +1247,7 @@ msgstr "Клиент успешно обновлен"
 #: lib/delivest_web/components/staff/app/command_search.ex:19
 #: lib/delivest_web/components/staff/app/staff_nav.ex:133
 #: lib/delivest_web/live/staff/client_live/clients.ex:235
-#: lib/delivest_web/live/staff/log_live/event_text.ex:32
+#: lib/delivest_web/live/staff/log_live/event_text.ex:41
 #, elixir-autogen, elixir-format
 msgid "Clients"
 msgstr "Клиенты"
@@ -1273,7 +1273,7 @@ msgstr "Выполнен"
 msgid "Create Client"
 msgstr "Создать клиента"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:56
+#: lib/delivest_web/live/staff/log_live/event_text.ex:65
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:25
 #, elixir-autogen, elixir-format
 msgid "Created"
@@ -1358,7 +1358,7 @@ msgstr "Не удалось обновить заказ"
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:90
 #: lib/delivest_web/live/staff/client_live/clients.ex:274
 #: lib/delivest_web/live/staff/client_live/clients.ex:309
-#: lib/delivest_web/live/staff/log_live/event_text.ex:21
+#: lib/delivest_web/live/staff/log_live/event_text.ex:30
 #, elixir-autogen, elixir-format
 msgid "Guest"
 msgstr "Гость"
@@ -1408,10 +1408,10 @@ msgstr "Заказ успешно обновлен"
 
 #: lib/delivest_web/components/staff/app/command_search.ex:18
 #: lib/delivest_web/components/staff/app/staff_nav.ex:39
-#: lib/delivest_web/live/board_live/index.ex:21
+#: lib/delivest_web/live/board_live/index.ex:23
 #: lib/delivest_web/live/staff/client_live/show.ex:123
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:114
-#: lib/delivest_web/live/staff/log_live/event_text.ex:26
+#: lib/delivest_web/live/staff/log_live/event_text.ex:35
 #: lib/delivest_web/live/staff/order_live/orders.ex:75
 #: lib/delivest_web/live/staff/order_live/orders.ex:327
 #: lib/delivest_web/live/staff/statistics_live/index.ex:189
@@ -2028,7 +2028,7 @@ msgstr "Не удалось сохранить заказ"
 msgid "Some products are no longer available"
 msgstr "Некоторые товары больше недоступны"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:124
+#: lib/delivest_web/live/staff/log_live/event_text.ex:134
 #, elixir-autogen, elixir-format
 msgid "%{action}: %{subject}"
 msgstr "%{action}: %{subject}"
@@ -2043,67 +2043,67 @@ msgstr "Все уровни"
 msgid "All sections"
 msgstr "Все разделы"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:120
+#: lib/delivest_web/live/staff/log_live/event_text.ex:130
 #, elixir-autogen, elixir-format
 msgid "Branch «%{subject}» created"
 msgstr "Создан филиал «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:122
+#: lib/delivest_web/live/staff/log_live/event_text.ex:132
 #, elixir-autogen, elixir-format
 msgid "Branch «%{subject}» deleted"
 msgstr "Удалён филиал «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:121
+#: lib/delivest_web/live/staff/log_live/event_text.ex:131
 #, elixir-autogen, elixir-format
 msgid "Branch «%{subject}» edited"
 msgstr "Изменён филиал «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:91
+#: lib/delivest_web/live/staff/log_live/event_text.ex:101
 #, elixir-autogen, elixir-format
 msgid "Category «%{subject}» created"
 msgstr "Создана категория «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:93
+#: lib/delivest_web/live/staff/log_live/event_text.ex:103
 #, elixir-autogen, elixir-format
 msgid "Category «%{subject}» deleted"
 msgstr "Удалена категория «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:92
+#: lib/delivest_web/live/staff/log_live/event_text.ex:102
 #, elixir-autogen, elixir-format
 msgid "Category «%{subject}» edited"
 msgstr "Изменена категория «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:19
+#: lib/delivest_web/live/staff/log_live/event_text.ex:28
 #, elixir-autogen, elixir-format
 msgid "Client %{name}"
 msgstr "Клиент %{name}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:105
+#: lib/delivest_web/live/staff/log_live/event_text.ex:115
 #, elixir-autogen, elixir-format
 msgid "Client %{subject} added"
 msgstr "Добавлен клиент %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:107
+#: lib/delivest_web/live/staff/log_live/event_text.ex:117
 #, elixir-autogen, elixir-format
 msgid "Client %{subject} deleted"
 msgstr "Удалён клиент %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:106
+#: lib/delivest_web/live/staff/log_live/event_text.ex:116
 #, elixir-autogen, elixir-format
 msgid "Client %{subject} edited"
 msgstr "Изменён клиент %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:109
+#: lib/delivest_web/live/staff/log_live/event_text.ex:119
 #, elixir-autogen, elixir-format
 msgid "Employee %{subject} added"
 msgstr "Добавлен сотрудник %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:112
+#: lib/delivest_web/live/staff/log_live/event_text.ex:122
 #, elixir-autogen, elixir-format
 msgid "Employee %{subject} deleted"
 msgstr "Удалён сотрудник %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:110
+#: lib/delivest_web/live/staff/log_live/event_text.ex:120
 #, elixir-autogen, elixir-format
 msgid "Employee %{subject} edited"
 msgstr "Изменён сотрудник %{subject}"
@@ -2135,67 +2135,67 @@ msgstr "Журнал"
 msgid "Message"
 msgstr "Сообщение"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:74
+#: lib/delivest_web/live/staff/log_live/event_text.ex:84
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} changed: %{changes}"
 msgstr "Изменён заказ %{subject}: %{changes}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:72
+#: lib/delivest_web/live/staff/log_live/event_text.ex:82
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} created"
 msgstr "Создан заказ %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:75
+#: lib/delivest_web/live/staff/log_live/event_text.ex:85
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} deleted"
 msgstr "Удалён заказ %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:73
+#: lib/delivest_web/live/staff/log_live/event_text.ex:83
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} edited"
 msgstr "Изменён заказ %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:81
+#: lib/delivest_web/live/staff/log_live/event_text.ex:91
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} not sent to CRM: %{error}"
 msgstr "Заказ %{subject} не отправлен в CRM: %{error}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:76
+#: lib/delivest_web/live/staff/log_live/event_text.ex:86
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} sent to CRM"
 msgstr "Заказ %{subject} отправлен в CRM"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:111
+#: lib/delivest_web/live/staff/log_live/event_text.ex:121
 #, elixir-autogen, elixir-format
 msgid "Password of %{subject} changed"
 msgstr "Изменён пароль сотрудника %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:83
+#: lib/delivest_web/live/staff/log_live/event_text.ex:93
 #, elixir-autogen, elixir-format
 msgid "Product «%{subject}» created"
 msgstr "Создан товар «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:85
+#: lib/delivest_web/live/staff/log_live/event_text.ex:95
 #, elixir-autogen, elixir-format
 msgid "Product «%{subject}» deleted"
 msgstr "Удалён товар «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:84
+#: lib/delivest_web/live/staff/log_live/event_text.ex:94
 #, elixir-autogen, elixir-format
 msgid "Product «%{subject}» edited"
 msgstr "Изменён товар «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:99
+#: lib/delivest_web/live/staff/log_live/event_text.ex:109
 #, elixir-autogen, elixir-format
 msgid "Promotion «%{subject}» created"
 msgstr "Создана акция «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:101
+#: lib/delivest_web/live/staff/log_live/event_text.ex:111
 #, elixir-autogen, elixir-format
 msgid "Promotion «%{subject}» deleted"
 msgstr "Удалена акция «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:100
+#: lib/delivest_web/live/staff/log_live/event_text.ex:110
 #, elixir-autogen, elixir-format
 msgid "Promotion «%{subject}» edited"
 msgstr "Изменена акция «%{subject}»"
@@ -2205,17 +2205,17 @@ msgstr "Изменена акция «%{subject}»"
 msgid "Raw logs"
 msgstr "Логи приложения"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:116
+#: lib/delivest_web/live/staff/log_live/event_text.ex:126
 #, elixir-autogen, elixir-format
 msgid "Role «%{subject}» created"
 msgstr "Создана роль «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:118
+#: lib/delivest_web/live/staff/log_live/event_text.ex:128
 #, elixir-autogen, elixir-format
 msgid "Role «%{subject}» deleted"
 msgstr "Удалена роль «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:117
+#: lib/delivest_web/live/staff/log_live/event_text.ex:127
 #, elixir-autogen, elixir-format
 msgid "Role «%{subject}» edited"
 msgstr "Изменена роль «%{subject}»"
@@ -2225,24 +2225,24 @@ msgstr "Изменена роль «%{subject}»"
 msgid "Search in messages..."
 msgstr "Поиск по сообщениям..."
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:66
-#: lib/delivest_web/live/staff/log_live/event_text.ex:113
+#: lib/delivest_web/live/staff/log_live/event_text.ex:76
+#: lib/delivest_web/live/staff/log_live/event_text.ex:123
 #, elixir-autogen, elixir-format
 msgid "Signed in"
 msgstr "Вход в систему"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:67
-#: lib/delivest_web/live/staff/log_live/event_text.ex:114
+#: lib/delivest_web/live/staff/log_live/event_text.ex:77
+#: lib/delivest_web/live/staff/log_live/event_text.ex:124
 #, elixir-autogen, elixir-format
 msgid "Signed out"
 msgstr "Выход из системы"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:16
+#: lib/delivest_web/live/staff/log_live/event_text.ex:25
 #, elixir-autogen, elixir-format
 msgid "Staff %{name}"
 msgstr "Сотрудник %{name}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:22
+#: lib/delivest_web/live/staff/log_live/event_text.ex:31
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:711
 #, elixir-autogen, elixir-format
 msgid "System"
@@ -2265,12 +2265,12 @@ msgstr "Что произошло"
 msgid "Who"
 msgstr "Кто"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:133
+#: lib/delivest_web/live/staff/log_live/event_text.ex:150
 #, elixir-autogen, elixir-format
 msgid "payment → %{value}"
 msgstr "оплата → %{value}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:130
+#: lib/delivest_web/live/staff/log_live/event_text.ex:147
 #, elixir-autogen, elixir-format
 msgid "status → %{value}"
 msgstr "статус → %{value}"
@@ -2290,7 +2290,7 @@ msgstr "Коды статусов Frontpad"
 msgid "Webhook URL for Frontpad API settings"
 msgstr "Адрес вебхука для настроек API во Frontpad"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:79
+#: lib/delivest_web/live/staff/log_live/event_text.ex:89
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} status changed in CRM: %{changes}"
 msgstr "Заказ %{subject}: статус в CRM изменён, %{changes}"
@@ -2700,7 +2700,7 @@ msgid "Discount"
 msgstr "Скидка"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:107
-#: lib/delivest_web/live/staff/log_live/event_text.ex:31
+#: lib/delivest_web/live/staff/log_live/event_text.ex:40
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:32
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:167
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:187
@@ -2873,12 +2873,12 @@ msgstr "Товар «%{slug}» не найден в филиале"
 msgid "Promo code"
 msgstr "Промокод"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:102
+#: lib/delivest_web/live/staff/log_live/event_text.ex:112
 #, elixir-autogen, elixir-format
 msgid "Promo code %{subject} issued"
 msgstr "Выдан промокод %{subject}"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:103
+#: lib/delivest_web/live/staff/log_live/event_text.ex:113
 #, elixir-autogen, elixir-format
 msgid "Promo code %{subject} revoked"
 msgstr "Отозван промокод %{subject}"
@@ -3231,7 +3231,7 @@ msgstr "Нет ID в CRM"
 msgid "Price differs"
 msgstr "Цена отличается"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:60
+#: lib/delivest_web/live/staff/log_live/event_text.ex:69
 #, elixir-autogen, elixir-format
 msgid "Sent to CRM"
 msgstr "Отправлен в CRM"
@@ -3494,27 +3494,27 @@ msgstr "По сотруднику"
 msgid "By event"
 msgstr "По событию"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:63
+#: lib/delivest_web/live/staff/log_live/event_text.ex:73
 #, elixir-autogen, elixir-format
 msgid "Code issued"
 msgstr "Выдан код"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:64
+#: lib/delivest_web/live/staff/log_live/event_text.ex:74
 #, elixir-autogen, elixir-format
 msgid "Code revoked"
 msgstr "Код отозван"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:58
+#: lib/delivest_web/live/staff/log_live/event_text.ex:67
 #, elixir-autogen, elixir-format
 msgid "Deleted"
 msgstr "Удаление"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:59
+#: lib/delivest_web/live/staff/log_live/event_text.ex:68
 #, elixir-autogen, elixir-format
 msgid "Details changed"
 msgstr "Изменение данных"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:57
+#: lib/delivest_web/live/staff/log_live/event_text.ex:66
 #, elixir-autogen, elixir-format
 msgid "Edited"
 msgstr "Изменение"
@@ -3524,7 +3524,7 @@ msgstr "Изменение"
 msgid "Newest first"
 msgstr "Сначала новые"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:62
+#: lib/delivest_web/live/staff/log_live/event_text.ex:72
 #, elixir-autogen, elixir-format
 msgid "Not sent to CRM"
 msgstr "Ошибка отправки в CRM"
@@ -3534,7 +3534,7 @@ msgstr "Ошибка отправки в CRM"
 msgid "Oldest first"
 msgstr "Сначала старые"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:65
+#: lib/delivest_web/live/staff/log_live/event_text.ex:75
 #, elixir-autogen, elixir-format
 msgid "Password changed"
 msgstr "Смена пароля"
@@ -3549,7 +3549,7 @@ msgstr "Сбросить"
 msgid "Show events of this employee"
 msgstr "Показать события сотрудника"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:61
+#: lib/delivest_web/live/staff/log_live/event_text.ex:71
 #, elixir-autogen, elixir-format
 msgid "Status changed in CRM"
 msgstr "Смена статуса в CRM"
@@ -4606,7 +4606,7 @@ msgstr "Или загрузите свою"
 msgid "Pick an icon or upload your own"
 msgstr "Выберите иконку или загрузите свою"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:29
+#: lib/delivest_web/live/staff/log_live/event_text.ex:38
 #: lib/delivest_web/live/staff/product_live/tags.ex:30
 #, elixir-autogen, elixir-format
 msgid "Product tags"
@@ -4627,17 +4627,17 @@ msgstr "Тег удалён"
 msgid "Tag saved"
 msgstr "Тег сохранён"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:87
+#: lib/delivest_web/live/staff/log_live/event_text.ex:97
 #, elixir-autogen, elixir-format
 msgid "Tag «%{subject}» created"
 msgstr "Создан тег «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:89
+#: lib/delivest_web/live/staff/log_live/event_text.ex:99
 #, elixir-autogen, elixir-format
 msgid "Tag «%{subject}» deleted"
 msgstr "Удалён тег «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:88
+#: lib/delivest_web/live/staff/log_live/event_text.ex:98
 #, elixir-autogen, elixir-format
 msgid "Tag «%{subject}» edited"
 msgstr "Изменён тег «%{subject}»"
@@ -4688,23 +4688,23 @@ msgstr "Баннер удалён"
 msgid "Banner saved"
 msgstr "Баннер сохранён"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:95
+#: lib/delivest_web/live/staff/log_live/event_text.ex:105
 #, elixir-autogen, elixir-format
 msgid "Banner «%{subject}» created"
 msgstr "Создан баннер «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:97
+#: lib/delivest_web/live/staff/log_live/event_text.ex:107
 #, elixir-autogen, elixir-format
 msgid "Banner «%{subject}» deleted"
 msgstr "Удалён баннер «%{subject}»"
 
-#: lib/delivest_web/live/staff/log_live/event_text.ex:96
+#: lib/delivest_web/live/staff/log_live/event_text.ex:106
 #, elixir-autogen, elixir-format
 msgid "Banner «%{subject}» edited"
 msgstr "Изменён баннер «%{subject}»"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:101
-#: lib/delivest_web/live/staff/log_live/event_text.ex:30
+#: lib/delivest_web/live/staff/log_live/event_text.ex:39
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:42
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:201
 #, elixir-autogen, elixir-format
@@ -6849,7 +6849,7 @@ msgstr "Новая ссылка"
 msgid "New link created"
 msgstr "Новая ссылка создана"
 
-#: lib/delivest_web/live/board_live/index.ex:76
+#: lib/delivest_web/live/board_live/index.ex:78
 #, elixir-autogen, elixir-format
 msgid "No connection"
 msgstr "Нет связи"
@@ -6864,7 +6864,7 @@ msgstr "Откройте ссылку на экране в зале, вход н
 msgid "Pickup board"
 msgstr "Экран выдачи"
 
-#: lib/delivest_web/live/board_live/index.ex:85
+#: lib/delivest_web/live/board_live/index.ex:87
 #, elixir-autogen, elixir-format
 msgid "Sound and full screen"
 msgstr "Звук и на весь экран"
@@ -6874,12 +6874,27 @@ msgstr "Звук и на весь экран"
 msgid "The old link stops working. Continue?"
 msgstr "Старая ссылка перестанет работать. Продолжить?"
 
-#: lib/delivest_web/live/board_live/index.ex:89
+#: lib/delivest_web/live/board_live/index.ex:91
 #, elixir-autogen, elixir-format
 msgid "Being cooked"
 msgstr "Готовятся"
 
-#: lib/delivest_web/live/board_live/index.ex:99
+#: lib/delivest_web/live/board_live/index.ex:101
 #, elixir-autogen, elixir-format
 msgid "Ready to pick up"
 msgstr "Готовы"
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:141
+#, elixir-autogen, elixir-format
+msgid "%{text}, reason: %{reason}"
+msgstr "%{text}, причина: %{reason}"
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:8
+#, elixir-autogen, elixir-format
+msgid "Order %{subject}: %{from} → %{to}"
+msgstr "Заказ %{subject}: %{from} → %{to}"
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex:70
+#, elixir-autogen, elixir-format
+msgid "Status changed"
+msgstr "Смена статуса"
