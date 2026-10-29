@@ -16,6 +16,8 @@ defmodule Delivest.Integrations.Crm.Lookup do
 
   def branch_info_by_webhook_token(_provider, _token), do: {:error, :not_found}
 
+  def branch_info(branch_id), do: found(Repo.get_by(BranchInfo, branch_id: branch_id))
+
   def crm_branch_ids do
     from(i in BranchInfo, where: fragment("?->>'enabled' = 'true'", i.crm), select: i.branch_id)
     |> Repo.all()

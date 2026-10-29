@@ -227,6 +227,51 @@ defmodule Delivest.Integrations.CrmTest do
       assert updated.status == :ready
     end
 
+    test "a webhook goes through the inbox once and waits for the order" do
+      alias Delivest.Integrations.Inbox
+      alias Delivest.Integrations.Inbox.{Message, Worker}
+
+      branch = branch(frontpad(true))
+      token = "token-#{branch.id}"
+
+      params = %{
+        "action" => "change_status",
+        "order_id" => "900",
+        "status" => "4",
+        "datetime" => nil
+      }
+
+      assert {:ok, %{result: "success"}} = Webhook.handle(token, params)
+      assert {:ok, %{result: "success"}} = Webhook.handle(token, params)
+      assert [%Message{status: :pending} = message] = Inbox.list(:frontpad)
+      assert message.branch_id == branch.id
+      assert_enqueued(worker: Worker, args: %{id: message.id})
+
+      assert {:error, :not_found} = perform_job(Worker, %{id: message.id})
+      assert %Message{status: :pending, error: ":not_found"} = Repo.reload!(message)
+
+      order = sent_order(branch)
+      assert :ok = perform_job(Worker, %{id: message.id})
+      assert %Message{status: :processed, error: nil} = Repo.reload!(message)
+      assert Repo.reload!(order).status == :ready
+
+      assert :ok = perform_job(Worker, %{id: message.id})
+      assert {:error, :not_found} = Webhook.handle("wrong", params)
+    end
+
+    test "a webhook that keeps failing is marked failed on the last attempt" do
+      alias Delivest.Integrations.Inbox
+      alias Delivest.Integrations.Inbox.{Message, Worker}
+
+      branch = branch(frontpad(true))
+      params = %{"action" => "change_status", "order_id" => "901", "status" => "4"}
+      {:ok, _reply} = Webhook.handle("token-#{branch.id}", params)
+      [message] = Inbox.list(:frontpad)
+
+      assert {:error, :not_found} = perform_job(Worker, %{id: message.id}, attempt: 8)
+      assert %Message{status: :failed} = Repo.reload!(message)
+    end
+
     test "a wrong token finds nothing" do
       sent_order(branch(frontpad(true)))
       assert {:error, :not_found} = Webhook.change_status("wrong", "900", "4", nil)
