@@ -9,6 +9,7 @@
 | DaData | `dadata/` | Подсказки адресов, геокодинг | общие, таблица `dadata_settings` | [dadata/README.md](dadata/README.md) |
 | Яндекс Еда | `yandex_eda/` | Входящий канал: заказы из Яндекс Еды и Delivery Club (в разработке) | на филиал | [yandex_eda/README.md](yandex_eda/README.md) |
 | Яндекс Доставка | `yandex_delivery/` | Курьерский провайдер: вызов курьера на заказ | на филиал, `branch_info.yandex_delivery` | [yandex_delivery/README.md](yandex_delivery/README.md) |
+| АТОЛ Онлайн | `atol_online/` | Облачная касса: фискальные чеки 54-ФЗ (в разработке) | на филиал | [atol_online/README.md](atol_online/README.md) |
 
 Все HTTP-запросы идут через `Delivest.HTTP.Client`. В тестах он подменяется через `Req.Test.stub(Delivest.HTTP.Client, ...)`.
 
