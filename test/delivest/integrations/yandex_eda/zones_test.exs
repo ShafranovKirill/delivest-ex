@@ -42,8 +42,8 @@ defmodule Delivest.Integrations.YandexEda.ZonesTest do
     {:ok, _} =
       Delivery.update_zone(staff, branch.id, zone.id, %{
         "thresholds" => [
-          %{"order_from" => 2000, "price" => 0},
-          %{"order_from" => 500, "price" => 300}
+          %{"order_from" => 200_000, "price" => 0},
+          %{"order_from" => 50_000, "price" => 30_000}
         ]
       })
 

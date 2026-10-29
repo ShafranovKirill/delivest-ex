@@ -68,7 +68,7 @@ unless Repo.exists?(from c in Category, where: c.id in ^category_ids) do
 
     {:ok, _} = Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id, %{})
 
-    for {name, price, order} <- [{"Маргарита", 590, 1.0}, {"Пепперони", 690, 2.0}] do
+    for {name, price, order} <- [{"Маргарита", 59_000, 1.0}, {"Пепперони", 69_000, 2.0}] do
       product =
         %Product{order: order}
         |> Product.changeset(%{

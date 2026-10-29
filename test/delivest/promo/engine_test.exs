@@ -7,8 +7,8 @@ defmodule Delivest.Promo.EngineTest do
 
   setup do
     branch = insert(:branch)
-    pizza = insert_branch_product(branch.id, slug: "pizza", name: "Pizza", price: 500)
-    cola = insert_branch_product(branch.id, slug: "cola", name: "Cola", price: 90)
+    pizza = insert_branch_product(branch.id, slug: "pizza", name: "Pizza", price: 50_000)
+    cola = insert_branch_product(branch.id, slug: "cola", name: "Cola", price: 9000)
     %{branch: branch, pizza: pizza, cola: cola}
   end
 
@@ -27,13 +27,14 @@ defmodule Delivest.Promo.EngineTest do
   test "returns plain totals without promotions", %{branch: branch, pizza: pizza} do
     result = price(branch, [item(pizza, 2)])
 
-    assert %{subtotal: 1000, discount: 0, total: 1000, applied: [], hints: [], code: nil} = result
+    assert %{subtotal: 100_000, discount: 0, total: 100_000, applied: [], hints: [], code: nil} =
+             result
   end
 
   test "applies a percent discount with a cap", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, rules: "then discount 20% max 150")
 
-    assert %{subtotal: 1000, discount: 150, total: 850, applied: [%{discount: 150}]} =
+    assert %{subtotal: 100_000, discount: 15_000, total: 85_000, applied: [%{discount: 15_000}]} =
              price(branch, [item(pizza, 2)])
   end
 
@@ -42,8 +43,8 @@ defmodule Delivest.Promo.EngineTest do
 
     result = price(branch, [item(pizza, 1), item(cola, 1)])
 
-    assert result.total == 490
-    assert result.lines |> Enum.map(& &1.total) |> Enum.sum() == 490
+    assert result.total == 49_000
+    assert result.lines |> Enum.map(& &1.total) |> Enum.sum() == 49_000
   end
 
   test "adds a gift line once the subtotal is reached", %{branch: branch, pizza: pizza} do
@@ -53,7 +54,7 @@ defmodule Delivest.Promo.EngineTest do
         rules: ~s(when subtotal >= 1000 then gift "cola")
       )
 
-    assert %{hints: [%{name: "Free cola", reasons: [%{type: :subtotal, missing: 500}]}]} =
+    assert %{hints: [%{name: "Free cola", reasons: [%{type: :subtotal, missing: 50_000}]}]} =
              price(branch, [item(pizza, 1)])
 
     result = price(branch, [item(pizza, 2)])
@@ -61,27 +62,27 @@ defmodule Delivest.Promo.EngineTest do
     assert [%{gift: false}, %{gift: true, total: 0, quantity: 1, name: "Cola"}] = result.lines
     assert [%{promotion_id: id, gifts: [%{name: "Cola", quantity: 1}]}] = result.applied
     assert id == promotion.id
-    assert result.total == 1000
+    assert result.total == 100_000
   end
 
   test "requires selected products", %{branch: branch, pizza: pizza, cola: cola} do
     insert_promotion(branch.id, rules: ~s(when has "pizza" x2 then discount 10%))
 
-    assert %{hints: [%{reasons: [%{type: :product, missing: 1}]}], total: 590} =
+    assert %{hints: [%{reasons: [%{type: :product, missing: 1}]}], total: 59_000} =
              price(branch, [item(pizza, 1), item(cola, 1)])
 
-    assert %{total: 900} = price(branch, [item(pizza, 2)])
+    assert %{total: 90_000} = price(branch, [item(pizza, 2)])
   end
 
   test "waits for the fulfillment type", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, rules: "when fulfillment in (pickup) then discount 10%")
 
-    assert %{total: 500, hints: [%{reasons: [%{type: :fulfillment, allowed: [:pickup]}]}]} =
+    assert %{total: 50_000, hints: [%{reasons: [%{type: :fulfillment, allowed: [:pickup]}]}]} =
              price(branch, [item(pizza, 1)])
 
-    assert %{total: 450} = price(branch, [item(pizza, 1)], %{fulfillment_type: "pickup"})
+    assert %{total: 45_000} = price(branch, [item(pizza, 1)], %{fulfillment_type: "pickup"})
 
-    assert %{total: 500, hints: [_]} =
+    assert %{total: 50_000, hints: [_]} =
              price(branch, [item(pizza, 1)], %{fulfillment_type: "delivery"})
   end
 
@@ -91,9 +92,9 @@ defmodule Delivest.Promo.EngineTest do
     noon = DateTime.new!(~D[2026-10-20], ~T[12:00:00], Delivest.LocalTime.timezone())
     night = DateTime.new!(~D[2026-10-20], ~T[23:00:00], Delivest.LocalTime.timezone())
 
-    assert %{total: 450} = price(branch, [item(pizza, 1)], %{now: utc(noon)})
+    assert %{total: 45_000} = price(branch, [item(pizza, 1)], %{now: utc(noon)})
 
-    assert %{total: 500, hints: [%{reasons: [%{type: :time}]}]} =
+    assert %{total: 50_000, hints: [%{reasons: [%{type: :time}]}]} =
              price(branch, [item(pizza, 1)], %{now: utc(night)})
   end
 
@@ -103,22 +104,22 @@ defmodule Delivest.Promo.EngineTest do
 
     result = price(branch, [item(pizza, 2), item(cola, 1)])
 
-    assert result.total == 400 * 2 + 90
-    assert [%{discount: 200}] = result.applied
+    assert result.total == 40_000 * 2 + 9000
+    assert [%{discount: 20_000}] = result.applied
   end
 
   test "does not combine non-combinable promotions", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, priority: 10, rules: "then discount 10%")
     insert_promotion(branch.id, priority: 1, combinable: true, rules: "then discount 50 rub")
 
-    assert %{total: 450, applied: [_]} = price(branch, [item(pizza, 1)])
+    assert %{total: 45_000, applied: [_]} = price(branch, [item(pizza, 1)])
   end
 
   test "combines combinable promotions percent first", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, combinable: true, rules: "then discount 50 rub")
     insert_promotion(branch.id, combinable: true, rules: "then discount 10%")
 
-    assert %{total: 400, applied: [_, _]} = price(branch, [item(pizza, 1)])
+    assert %{total: 40_000, applied: [_, _]} = price(branch, [item(pizza, 1)])
   end
 
   test "an entered code beats automatic promotions", %{branch: branch, pizza: pizza} do
@@ -128,7 +129,7 @@ defmodule Delivest.Promo.EngineTest do
 
     result = price(branch, [item(pizza, 1)], %{code: " summer "})
 
-    assert %{total: 350, code: %{status: :applied, code: "SUMMER"}} = result
+    assert %{total: 35_000, code: %{status: :applied, code: "SUMMER"}} = result
     assert [%{promotion_id: id, code: "SUMMER"}] = result.applied
     assert id == code_promo.id
   end
@@ -142,10 +143,13 @@ defmodule Delivest.Promo.EngineTest do
 
     insert_code(promo, code: "BIG")
 
-    assert %{total: 500, code: %{status: :pending, reasons: [%{type: :subtotal, missing: 500}]}} =
+    assert %{
+             total: 50_000,
+             code: %{status: :pending, reasons: [%{type: :subtotal, missing: 50_000}]}
+           } =
              price(branch, [item(pizza, 1)], %{code: "BIG"})
 
-    assert %{total: 900, code: %{status: :applied}} =
+    assert %{total: 90_000, code: %{status: :applied}} =
              price(branch, [item(pizza, 2)], %{code: "BIG"})
   end
 
@@ -165,7 +169,7 @@ defmodule Delivest.Promo.EngineTest do
 
     insert_code(expired, code: "OLD")
 
-    assert %{code: %{reason: :expired}, total: 500} =
+    assert %{code: %{reason: :expired}, total: 50_000} =
              price(branch, [item(pizza, 1)], %{code: "OLD"})
 
     future =
@@ -189,23 +193,23 @@ defmodule Delivest.Promo.EngineTest do
     assert %{code: %{reason: :not_owner}} =
              price(branch, [item(pizza, 1)], %{code: "MINE", client_id: stranger.id})
 
-    assert %{total: 400, code: %{status: :applied}} =
+    assert %{total: 40_000, code: %{status: :applied}} =
              price(branch, [item(pizza, 1)], %{code: "MINE", client_id: owner.id})
   end
 
   test "asks to sign in for per-client automatic promotions", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, per_client_limit: 1, rules: "then discount 100 rub")
 
-    assert %{total: 500, hints: [%{reasons: [%{type: :requires_client}]}]} =
+    assert %{total: 50_000, hints: [%{reasons: [%{type: :requires_client}]}]} =
              price(branch, [item(pizza, 1)])
 
-    assert %{total: 400} = price(branch, [item(pizza, 1)], %{client_id: insert(:client).id})
+    assert %{total: 40_000} = price(branch, [item(pizza, 1)], %{client_id: insert(:client).id})
   end
 
   test "skips effects referencing missing products", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, rules: ~s(then gift "ghost"))
 
-    assert %{lines: [%{gift: false}], total: 500} = price(branch, [item(pizza, 1)])
+    assert %{lines: [%{gift: false}], total: 50_000} = price(branch, [item(pizza, 1)])
   end
 
   test "overlays unconditional sales on the menu", %{branch: branch, pizza: pizza, cola: cola} do
@@ -213,17 +217,50 @@ defmodule Delivest.Promo.EngineTest do
     insert_promotion(branch.id, rules: ~s(when subtotal >= 10 then price "cola" 1))
 
     menu = [
-      %{id: "c", name: "C", products: [%{id: pizza.id, price: 500}, %{id: cola.id, price: 90}]}
+      %{
+        id: "c",
+        name: "C",
+        products: [%{id: pizza.id, price: 50_000}, %{id: cola.id, price: 9000}]
+      }
     ]
 
-    assert [%{products: [%{price: 399, old_price: 500}, %{price: 90, old_price: nil}]}] =
+    assert [%{products: [%{price: 39_900, old_price: 50_000}, %{price: 9000, old_price: nil}]}] =
              Promo.overlay_menu(menu, branch.id)
   end
 
   test "does not report promotions without an effect on the cart", %{branch: branch, cola: cola} do
     insert_promotion(branch.id, rules: ~s(then price "pizza" 299))
 
-    assert %{applied: [], total: 90} = price(branch, [item(cola, 1)])
+    assert %{applied: [], total: 9000} = price(branch, [item(cola, 1)])
+  end
+
+  test "lines always add up to the total on random carts", %{branch: branch} do
+    products =
+      for index <- 1..5,
+          do: insert_branch_product(branch.id, slug: "p#{index}", price: Enum.random(1..99_999))
+
+    insert_promotion(branch.id, combinable: true, rules: "then discount 7% max 333.33")
+    insert_promotion(branch.id, combinable: true, rules: "then discount 99.99 rub")
+    insert_promotion(branch.id, combinable: true, rules: ~s[then discount 13% on ("p1", "p2")])
+
+    for _round <- 1..50 do
+      items =
+        products
+        |> Enum.take_random(Enum.random(1..5))
+        |> Enum.map(&item(&1, Enum.random(1..7)))
+
+      result = price(branch, items)
+      paid = Enum.reject(result.lines, & &1.gift)
+
+      assert paid |> Enum.map(& &1.total) |> Enum.sum() == result.total
+      assert result.subtotal - result.discount == result.total
+      assert result.applied |> Enum.map(& &1.discount) |> Enum.sum() == result.discount
+
+      for line <- paid do
+        units = Delivest.Money.split_unit_price(line.total, line.quantity)
+        assert units |> Enum.map(fn {unit, count} -> unit * count end) |> Enum.sum() == line.total
+      end
+    end
   end
 
   defp utc(datetime), do: DateTime.shift_zone!(datetime, "Etc/UTC")

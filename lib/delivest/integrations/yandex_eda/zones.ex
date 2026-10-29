@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.YandexEda.Zones do
-  alias Delivest.Delivery
+  alias Delivest.{Delivery, Money}
   alias Delivest.Delivery.{Geometry, Threshold, Zone}
   alias Delivest.Integrations.YandexEda.Schedule
 
@@ -58,5 +58,5 @@ defmodule Delivest.Integrations.YandexEda.Zones do
   defp threshold(order_from, price),
     do: %{orderCost: money(order_from), deliveryCost: money(price)}
 
-  defp money(value), do: %{currency: "RUB", value: value}
+  defp money(value), do: %{currency: "RUB", value: Money.to_rubles(value)}
 end

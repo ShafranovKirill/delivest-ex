@@ -1,4 +1,5 @@
 defmodule Delivest.Promo.Effects.ProductPrices do
+  alias Delivest.Money
   alias Delivest.Promo.{Basket, Compiled, Line}
 
   def apply(%Basket{} = basket, selected) do
@@ -39,7 +40,10 @@ defmodule Delivest.Promo.Effects.ProductPrices do
   def slugs(_effect), do: []
 
   def unit_price({:price, _slug, price}, _base), do: price
-  def unit_price({:percent, percent, _target, _cap}, base), do: base - div(base * percent, 100)
+
+  def unit_price({:percent, percent, _target, _cap}, base),
+    do: base - Money.percent(base, percent)
+
   def unit_price({:amount, amount, _target}, base), do: max(base - amount, 0)
 
   defp offers(%Compiled{strategy: strategy} = compiled),

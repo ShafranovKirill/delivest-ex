@@ -1,6 +1,6 @@
 defmodule Delivest.Oms.Orders.Lines do
-  alias Delivest.Net
-  alias Delivest.Promo.{Allocation, Line, Result}
+  alias Delivest.{Money, Net}
+  alias Delivest.Promo.{Line, Result}
 
   def from_pricing(%Result{lines: lines, total: total}) do
     products = Net.list_products_by_ids(Enum.map(lines, & &1.product_id), preload: [:category])
@@ -13,7 +13,7 @@ defmodule Delivest.Oms.Orders.Lines do
   defp split(%Line{} = line, products) do
     product = Map.fetch!(products, line.product_id)
 
-    for {price, quantity} <- Allocation.split_unit_price(line.total, line.quantity) do
+    for {price, quantity} <- Money.split_unit_price(line.total, line.quantity) do
       %{
         product_id: product.id,
         title: product.name,

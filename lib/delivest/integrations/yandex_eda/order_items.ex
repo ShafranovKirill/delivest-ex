@@ -1,4 +1,6 @@
 defmodule Delivest.Integrations.YandexEda.OrderItems do
+  alias Delivest.Money
+
   def parse([_ | _] = items) do
     items
     |> Enum.reduce_while({:ok, []}, fn item, {:ok, acc} ->
@@ -21,7 +23,7 @@ defmodule Delivest.Integrations.YandexEda.OrderItems do
             product_id: id,
             name: item["name"] || id,
             quantity: ceil(quantity),
-            total: floor(price) * ceil(quantity)
+            total: Money.from_rubles(price) * ceil(quantity)
           }}
 
   defp item(_item), do: {:error, "every item needs id, quantity and price"}

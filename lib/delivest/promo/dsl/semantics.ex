@@ -45,7 +45,7 @@ defmodule Delivest.Promo.Dsl.Semantics do
   end
 
   defp effect({:amount, {value, location}, target}) do
-    map(positive(value, location), &{:amount, &1, target(target)})
+    map(sum(value, location), &{:amount, &1, target(target)})
   end
 
   defp effect({:gift, {slug, location}, quantity}),
@@ -55,7 +55,7 @@ defmodule Delivest.Promo.Dsl.Semantics do
 
   defp cap(nil, _target), do: {:ok, nil}
 
-  defp cap({value, location}, :cart), do: positive(value, location)
+  defp cap({value, location}, :cart), do: sum(value, location)
 
   defp cap({_value, location}, _target),
     do: {:error, [Error.at(location, gettext("«max» works only for a cart discount"))]}
@@ -68,8 +68,8 @@ defmodule Delivest.Promo.Dsl.Semantics do
   defp quantity(quantity, location),
     do: range(quantity, 1..@max_quantity, location, gettext("Quantity must be from 1 to 99"))
 
-  defp positive(value, location),
-    do: range(value, 1..1_000_000, location, gettext("Value must be positive"))
+  defp sum(value, location),
+    do: range(value, 1..100_000_000, location, gettext("Value must be positive"))
 
   defp range(value, range, location, message) do
     if value in range, do: {:ok, value}, else: {:error, [Error.at(location, message)]}

@@ -2,6 +2,7 @@ defmodule Delivest.Integrations.YandexEda.OrderComment do
   use Gettext, backend: DelivestWeb.Gettext
 
   alias Delivest.Integrations.YandexEda.OrderRequest
+  alias Delivest.Money
 
   @max_length 500
 
@@ -18,7 +19,7 @@ defmodule Delivest.Integrations.YandexEda.OrderComment do
   end
 
   defp change(%OrderRequest{paid: false, change: change}) when is_integer(change),
-    do: gettext("Change from %{amount} ₽", amount: change)
+    do: gettext("Change from %{amount}", amount: Money.format(change))
 
   defp change(_request), do: nil
 

@@ -29,11 +29,11 @@ defmodule Delivest.Integrations.YandexEda.OrderRequestTest do
     assert request.comment == "Без лука"
     assert request.phone == "+79990003344"
     assert request.paid == false
-    assert request.items_cost == 380
-    assert request.change == 1000
+    assert request.items_cost == 38_050
+    assert request.change == 100_000
     assert request.address == nil
     assert request.target_at == ~U[2026-10-27 09:30:00Z]
-    assert [%{product_id: "soup", quantity: 2, total: 398}] = request.items
+    assert [%{product_id: "soup", quantity: 2, total: 39_980}] = request.items
   end
 
   test "a marketplace order needs the address and its coordinates" do
@@ -78,8 +78,8 @@ defmodule Delivest.Integrations.YandexEda.OrderRequestTest do
                %{"id" => "soup", "quantity" => 1, "price" => 99.99}
              ])
 
-    assert %{product_id: "soup", name: "soup", quantity: 3, total: 297} = soup
-    assert %{product_id: "tea", quantity: 1, total: 50} = tea
+    assert %{product_id: "soup", name: "soup", quantity: 3, total: 29_997} = soup
+    assert %{product_id: "tea", quantity: 1, total: 5000} = tea
 
     assert {:error, _} = OrderItems.parse([%{"id" => "soup", "quantity" => 0, "price" => 1}])
   end

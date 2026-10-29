@@ -1,5 +1,6 @@
 defmodule Delivest.Integrations.Frontpad.Api do
   alias Delivest.HTTP.Client
+  alias Delivest.Money
 
   @base_url "https://app.frontpad.ru"
 
@@ -56,11 +57,11 @@ defmodule Delivest.Integrations.Frontpad.Api do
   defp indexed(values) when is_map(values), do: Enum.to_list(values)
   defp indexed(_values), do: []
 
-  defp parse_price(price) when is_number(price), do: round(price)
+  defp parse_price(price) when is_number(price), do: Money.from_rubles(price)
 
   defp parse_price(price) when is_binary(price) do
     case Float.parse(price) do
-      {value, _rest} -> round(value)
+      {value, _rest} -> Money.from_rubles(value)
       :error -> nil
     end
   end

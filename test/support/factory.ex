@@ -38,7 +38,7 @@ defmodule Delivest.Factory do
   def product_factory do
     %Product{
       name: sequence(:product_name, &"Product #{&1}"),
-      price: 100,
+      price: 10_000,
       is_active: true
     }
   end

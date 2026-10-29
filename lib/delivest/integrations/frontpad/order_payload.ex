@@ -4,6 +4,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
   import Delivest.Integrations.Frontpad.Fields
 
   alias Delivest.Integrations.Crm.OrderNotes
+  alias Delivest.Money
 
   alias Delivest.Integrations.Frontpad.{
     AddressFields,
@@ -161,12 +162,12 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
   defp sale_amount(items, _settings) do
     case items |> Enum.map(&(discount_per_unit(&1) * &1.quantity)) |> Enum.sum() do
       0 -> nil
-      amount -> to_string(amount)
+      amount -> rubles(amount)
     end
   end
 
   defp forced_price(item, %Settings{price_override: true}) do
-    if discount_per_unit(item) > 0, do: to_string(item.price)
+    if discount_per_unit(item) > 0, do: rubles(item.price)
   end
 
   defp forced_price(_item, _settings), do: nil
@@ -206,14 +207,16 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
 
   defp delivery_line(%{delivery_amount: amount}, %Settings{delivery_article: article})
        when is_integer(amount) and amount > 0 and article not in [nil, ""],
-       do: [%{external_id: article, quantity: 1, mod: nil, price: to_string(amount)}]
+       do: [%{external_id: article, quantity: 1, mod: nil, price: rubles(amount)}]
 
   defp delivery_line(_order, _settings), do: []
+
+  defp rubles(amount), do: amount |> Money.to_rubles() |> to_string()
 
   defp descr(order, settings) do
     case {order, delivery_line(order, settings)} do
       {%{delivery_amount: amount}, []} when is_integer(amount) and amount > 0 ->
-        note = gettext("Delivery %{amount} ₽", amount: amount)
+        note = gettext("Delivery %{amount}", amount: Money.format(amount))
 
         [note | OrderNotes.lines(order)]
         |> Enum.join(". ")

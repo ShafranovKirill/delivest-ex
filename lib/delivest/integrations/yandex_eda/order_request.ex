@@ -1,5 +1,6 @@
 defmodule Delivest.Integrations.YandexEda.OrderRequest do
   alias Delivest.Integrations.YandexEda.{Clock, OrderItems}
+  alias Delivest.Money
 
   @discriminators ~w(yandex marketplace pickup)
   @target_fields %{
@@ -75,10 +76,12 @@ defmodule Delivest.Integrations.YandexEda.OrderRequest do
   defp paid("CASH"), do: {:ok, false}
   defp paid(_type), do: {:error, "paymentInfo.paymentType must be CARD or CASH"}
 
-  defp money(value, _field) when is_number(value) and value >= 0, do: {:ok, floor(value)}
+  defp money(value, _field) when is_number(value) and value >= 0,
+    do: {:ok, Money.from_rubles(value)}
+
   defp money(_value, field), do: {:error, "#{field} is required"}
 
-  defp optional_money(value) when is_number(value) and value > 0, do: floor(value)
+  defp optional_money(value) when is_number(value) and value > 0, do: Money.from_rubles(value)
   defp optional_money(_value), do: nil
 
   defp target_at(delivery, discriminator) do

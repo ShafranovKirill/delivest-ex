@@ -1,5 +1,6 @@
 defmodule Delivest.Delivery.Conditions do
   alias Delivest.Delivery.Threshold
+  alias Delivest.Money
 
   def from_thresholds([]), do: %{"min_order" => nil, "price" => nil, "free_from" => nil}
 
@@ -29,8 +30,8 @@ defmodule Delivest.Delivery.Conditions do
   defp number(value) when is_integer(value) and value >= 0, do: value
 
   defp number(value) when is_binary(value) do
-    case Integer.parse(String.trim(value)) do
-      {int, ""} when int >= 0 -> int
+    case Money.parse(value) do
+      {:ok, amount} when amount >= 0 -> amount
       _ -> nil
     end
   end

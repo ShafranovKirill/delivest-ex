@@ -80,13 +80,19 @@ defmodule Delivest.Couriers.Cash do
     |> group_by([d], d.courier_id)
     |> select([d, o], {
       d.courier_id,
-      sum(fragment("CASE WHEN ? = 'cash' THEN ? ELSE 0 END", o.payment_method, o.total_amount)),
-      sum(
-        fragment(
-          "CASE WHEN ? = 'card_offline' THEN ? ELSE 0 END",
-          o.payment_method,
-          o.total_amount
-        )
+      type(
+        sum(fragment("CASE WHEN ? = 'cash' THEN ? ELSE 0 END", o.payment_method, o.total_amount)),
+        :integer
+      ),
+      type(
+        sum(
+          fragment(
+            "CASE WHEN ? = 'card_offline' THEN ? ELSE 0 END",
+            o.payment_method,
+            o.total_amount
+          )
+        ),
+        :integer
       ),
       count(d.id)
     })

@@ -14,13 +14,13 @@ defmodule Delivest.Promo.DslTest do
     assert {:ok, %Strategy{} = strategy} = Dsl.parse(rules)
 
     assert strategy.condition ==
-             {:and, {:subtotal, :>=, 1500},
+             {:and, {:subtotal, :>=, 150_000},
               {:or, {:has, "pizza", 2}, {:fulfillment, [:delivery, :pickup]}}}
 
     assert strategy.effects == [
-             {:percent, 10, :cart, 500},
+             {:percent, 10, :cart, 50_000},
              {:gift, "cola", 1},
-             {:price, "margarita", 399}
+             {:price, "margarita", 39_900}
            ]
 
     assert Strategy.slugs(strategy) == ["pizza", "cola", "margarita"]
@@ -29,7 +29,15 @@ defmodule Delivest.Promo.DslTest do
   test "parses an unconditional product discount" do
     assert {:ok, strategy} = Dsl.parse(~s[then discount 50 rub on ("a", "b")])
     assert Strategy.unconditional?(strategy)
-    assert strategy.effects == [{:amount, 50, {:products, ["a", "b"]}}]
+    assert strategy.effects == [{:amount, 5000, {:products, ["a", "b"]}}]
+  end
+
+  test "reads sums in rubles with kopecks" do
+    assert {:ok, strategy} =
+             Dsl.parse(~s(when subtotal >= 999.9 then discount 49.99 rub, price "a" 0.5))
+
+    assert strategy.condition == {:subtotal, :>=, 99_990}
+    assert strategy.effects == [{:amount, 4999, :cart}, {:price, "a", 50}]
   end
 
   test "parses time windows and weekdays" do

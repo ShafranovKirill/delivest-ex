@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.YandexEda.MenuItem do
-  alias Delivest.Media
+  alias Delivest.{Media, Money}
   alias Delivest.Net.Product
 
   def build({category, product, index, price}, settings) do
@@ -7,7 +7,7 @@ defmodule Delivest.Integrations.YandexEda.MenuItem do
       id: product.id,
       categoryId: category.id,
       name: product.name,
-      price: price,
+      price: Money.to_rubles(price),
       measure: product.weight || 0,
       measureUnit: measure_unit(product.measure_unit),
       sortOrder: index,

@@ -128,13 +128,13 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     client = insert(:client, phone: "+79001112233", name: "Анна")
 
     branch.id
-    |> order_fixture(price: 300, quantity: 2)
+    |> order_fixture(price: 30_000, quantity: 2)
     |> Ecto.Changeset.change(
       Keyword.merge(
         [
           fulfillment_type: :delivery,
           client_id: client.id,
-          total_amount: 600,
+          total_amount: 60_000,
           address: %Order.Address{
             city: "Тюмень",
             street: "ул Республики",
@@ -220,12 +220,12 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
     test "fits the item prices to the total after a discount" do
       branch = branch()
-      order(branch, total_amount: 500, delivery_amount: 100) |> cooking(operator(branch))
+      order(branch, total_amount: 50_050, delivery_amount: 10_000) |> cooking(operator(branch))
 
       assert_received {:yandex, "/claims/create", _query, body}
 
       assert [goods, delivery] = body["items"]
-      assert goods["cost_value"] == "400.00" and goods["quantity"] == 1
+      assert goods["cost_value"] == "400.50" and goods["quantity"] == 1
       assert delivery["cost_value"] == "100.00"
       assert delivery["fiscalization"]["item_type"] == "service"
     end

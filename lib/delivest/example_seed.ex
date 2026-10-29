@@ -1,7 +1,7 @@
 defmodule Delivest.ExampleSeed do
   import Ecto.Query
 
-  alias Delivest.{Media, Relations, Repo}
+  alias Delivest.{Media, Money, Relations, Repo}
   alias Delivest.Franchise.{Assets, Settings, SettingsStore}
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
@@ -162,7 +162,7 @@ defmodule Delivest.ExampleSeed do
             %Product{order: order}
             |> Product.changeset(%{
               name: row["name"],
-              price: row["price"],
+              price: Money.from_rubles(row["price"]),
               weight: row["weight"],
               quantity: row["quantity"],
               description: row["description"],

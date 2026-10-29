@@ -23,8 +23,8 @@ defmodule Delivest.Net.Product do
   schema "products" do
     field :name, :string
     field :slug, :string
-    field :old_price, :string
-    field :price, :integer
+    field :old_price, Delivest.Money.Type
+    field :price, Delivest.Money.Type
     field :description, :string
     field :quantity, :integer
     field :weight, :integer
@@ -74,7 +74,8 @@ defmodule Delivest.Net.Product do
       | @nutrients
     ])
     |> validate_required([:name, :price])
-    |> validate_number(:price, greater_than_or_equal_to: 0)
+    |> validate_number(:price, greater_than_or_equal_to: 0, less_than: 100_000_000)
+    |> validate_number(:old_price, greater_than: 0, less_than: 100_000_000)
     |> validate_nutrients()
     |> update_change(:slug, &Delivest.Slug.slugify/1)
     |> validate_length(:slug, max: 80)

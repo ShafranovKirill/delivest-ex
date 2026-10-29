@@ -6,16 +6,16 @@ defmodule Delivest.Delivery.Threshold do
 
   @primary_key false
   embedded_schema do
-    field :order_from, :integer, default: 0
-    field :price, :integer, default: 0
+    field :order_from, Delivest.Money.Type, default: 0
+    field :price, Delivest.Money.Type, default: 0
   end
 
   def changeset(threshold, attrs) do
     threshold
     |> cast(attrs, [:order_from, :price])
     |> validate_required([:order_from, :price])
-    |> validate_number(:order_from, greater_than_or_equal_to: 0, less_than: 1_000_000)
-    |> validate_number(:price, greater_than_or_equal_to: 0, less_than: 100_000)
+    |> validate_number(:order_from, greater_than_or_equal_to: 0, less_than: 100_000_000)
+    |> validate_number(:price, greater_than_or_equal_to: 0, less_than: 10_000_000)
   end
 
   def validate_list(changeset, field) do

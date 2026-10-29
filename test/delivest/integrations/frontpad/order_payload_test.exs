@@ -43,7 +43,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
   end
 
   test "delivery goes as the delivery product line or into the description" do
-    order = %Order{items: [], delivery_amount: 150, comment: "Без лука"}
+    order = %Order{items: [], delivery_amount: 15_000, comment: "Без лука"}
 
     assert {:ok, view} =
              OrderPayload.build(order, %Settings{api_key: "secret", delivery_article: "900"}, %{})
@@ -97,9 +97,9 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     setup do
       order = %Order{
         items: [
-          %OrderItem{product_id: "p1", quantity: 2, price: 80, base_price: 100},
-          %OrderItem{product_id: "p2", quantity: 1, price: 50, base_price: 50},
-          %OrderItem{product_id: "p3", quantity: 1, price: 0, base_price: 90, gift: true}
+          %OrderItem{product_id: "p1", quantity: 2, price: 7950, base_price: 10_000},
+          %OrderItem{product_id: "p2", quantity: 1, price: 5000, base_price: 5000},
+          %OrderItem{product_id: "p3", quantity: 1, price: 0, base_price: 9000, gift: true}
         ]
       }
 
@@ -118,7 +118,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
       assert {:ok, view} = OrderPayload.build(ctx.order, settings, ctx.products)
       params = OrderPayload.to_form_params(view)
 
-      assert {"product_price[0]", "80"} in params
+      assert {"product_price[0]", "79.5"} in params
       refute Enum.any?(params, fn {key, _} -> key == "product_price[1]" end)
       assert {"product_price[2]", "0"} in params
       refute Enum.any?(params, fn {key, _} -> key == "sale_amount" end)
@@ -130,7 +130,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
 
       params = OrderPayload.to_form_params(view)
 
-      assert {"sale_amount", "130"} in params
+      assert {"sale_amount", "131"} in params
       refute Enum.any?(params, fn {key, _} -> String.starts_with?(key, "product_price") end)
     end
   end

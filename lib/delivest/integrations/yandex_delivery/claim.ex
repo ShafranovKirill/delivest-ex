@@ -187,7 +187,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
 
   defp coordinates(_address), do: nil
 
-  defp money(amount), do: :erlang.float_to_binary(amount / 1, decimals: 2)
+  defp money(amount), do: :erlang.float_to_binary(amount / 100, decimals: 2)
 
   defp compact(map), do: map |> Enum.reject(fn {_key, value} -> blank?(value) end) |> Map.new()
 

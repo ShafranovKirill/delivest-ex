@@ -39,9 +39,9 @@ defmodule Delivest.Integrations.Crm.CatalogTest do
 
   test "refresh saves the catalog and the check compares it with the menu" do
     branch = branch("key-a")
-    insert_branch_product(branch.id, name: "Soup", external_id: "1", price: 100)
-    insert_branch_product(branch.id, name: "Pizza", external_id: "2", price: 600)
-    insert_branch_product(branch.id, name: "Tea", external_id: "9", price: 50)
+    insert_branch_product(branch.id, name: "Soup", external_id: "1", price: 10_000)
+    insert_branch_product(branch.id, name: "Pizza", external_id: "2", price: 60_000)
+    insert_branch_product(branch.id, name: "Tea", external_id: "9", price: 5000)
     stub_catalog()
 
     assert {:ok, snapshot} = Catalog.refresh(branch.id, :frontpad)
@@ -49,7 +49,7 @@ defmodule Delivest.Integrations.Crm.CatalogTest do
     assert Catalog.get_snapshot(branch.id, :frontpad).id == snapshot.id
 
     assert [
-             %{type: :price_mismatch, name: "Pizza", crm_price: 650},
+             %{type: :price_mismatch, name: "Pizza", crm_price: 65_000},
              %{type: :missing_in_crm, name: "Tea"}
            ] = Enum.sort_by(Catalog.issues(branch.id, snapshot), & &1.name)
   end
@@ -69,8 +69,8 @@ defmodule Delivest.Integrations.Crm.CatalogTest do
     assert {:ok, snapshot} = Catalog.refresh(branch.id, :frontpad)
 
     assert [
-             %{"external_id" => "1", "name" => "Soup", "price" => 100},
-             %{"external_id" => "2", "name" => "Pizza", "price" => 650}
+             %{"external_id" => "1", "name" => "Soup", "price" => 10_000},
+             %{"external_id" => "2", "name" => "Pizza", "price" => 65_000}
            ] = Enum.sort_by(snapshot.products, & &1["external_id"])
   end
 

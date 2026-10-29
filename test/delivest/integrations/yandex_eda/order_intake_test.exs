@@ -13,8 +13,8 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
   setup do
     branch = yandex_branch()
     category = menu_category(branch)
-    soup = menu_product(branch, category, name: "Суп", price: 300)
-    tea = menu_product(branch, category, name: "Чай", price: 100)
+    soup = menu_product(branch, category, name: "Суп", price: 30_000)
+    tea = menu_product(branch, category, name: "Чай", price: 10_000)
     %{branch: branch, soup: soup, tea: tea}
   end
 
@@ -28,7 +28,7 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
     assert order.status == :accepted
     assert order.fulfillment_type == :pickup
     assert order.payment_method == :online
-    assert order.total_amount == 650
+    assert order.total_amount == 65_000
     assert order.channel.external_id == params["eatsId"]
     assert order.channel.platform == "YE"
     assert order.channel.details["phone"] == "+79990001122"
@@ -103,8 +103,8 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
 
     assert {:ok, %Order{} = order} = YandexEda.create_order(params)
     assert order.fulfillment_type == :delivery
-    assert order.delivery_amount == 99
-    assert order.total_amount == 399
+    assert order.delivery_amount == 9900
+    assert order.total_amount == 39_900
     assert order.payment_method == :cash
     assert order.address.formatted == "Москва, Тверская улица, 1"
     assert order.address.latitude == 55.757
