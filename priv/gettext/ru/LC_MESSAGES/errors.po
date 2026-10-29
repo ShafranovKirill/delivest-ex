@@ -145,7 +145,7 @@ msgstr "Филиал не существует"
 
 #: lib/delivest/identity/branch/branch_info.ex:76
 #: lib/delivest/identity/client.ex:43
-#: lib/delivest_web/live/staff/branch_live/branch_form.ex:54
+#: lib/delivest_web/live/staff/branch_live/branch_form.ex:56
 #, elixir-autogen, elixir-format
 msgid "The number must be in the format +7XXXXXXXXXX"
 msgstr "Номер должен быть в формате +7XXXXXXXXXX"
@@ -165,7 +165,7 @@ msgstr "Сотрудник не существует"
 msgid "You don't have permission to access this page."
 msgstr "У вас нет прав для доступа к этой странице."
 
-#: lib/delivest/identity/branch.ex:44
+#: lib/delivest/identity/branch.ex:50
 #, elixir-autogen, elixir-format
 msgid "can only contain lowercase letters, numbers, and hyphens"
 msgstr "может содержать только строчные буквы, цифры и дефисы"
@@ -185,3 +185,8 @@ msgstr "Доступ к этому филиалу закрыт."
 #, elixir-autogen, elixir-format
 msgid "Branch not found or access denied."
 msgstr "Филиал не найден или нет доступа."
+
+#: lib/delivest/identity/branch.ex:46
+#, elixir-autogen, elixir-format
+msgid "must be 2 to 6 latin letters or digits"
+msgstr "от 2 до 6 латинских букв или цифр"
