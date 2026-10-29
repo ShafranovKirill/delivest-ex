@@ -13,7 +13,8 @@ defmodule Delivest.Integrations.Channels.BranchSettings do
 
   def changeset(settings, attrs) do
     Enum.reduce(Registry.modules(), cast(settings, attrs, []), fn module, changeset ->
-      cast_embed(changeset, module.key(), with: &module.settings_schema().changeset/2)
+      schema = module.settings_schema()
+      cast_embed(changeset, module.key(), with: &schema.changeset/2)
     end)
   end
 end
