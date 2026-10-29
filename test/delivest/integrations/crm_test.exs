@@ -26,7 +26,12 @@ defmodule Delivest.Integrations.CrmTest do
         api_key: "key",
         affiliate: "3",
         webhook_token: "hook-token",
-        statuses: %Frontpad.StatusCodes{preparing: "2", delivering: "4", completed: "5"}
+        statuses: %Frontpad.StatusCodes{
+          preparing: "2",
+          delivering: "4",
+          completed: "5",
+          cancelled: "6"
+        }
       }
     }
   end
@@ -122,7 +127,7 @@ defmodule Delivest.Integrations.CrmTest do
 
   describe "status webhook" do
     alias Delivest.Integrations.Frontpad.Webhook
-    alias Delivest.Oms.{OrderFlow, OrderTransition}
+    alias Delivest.Oms.{OrderFlow, Orders, OrderTransition}
 
     defp sent_order(branch) do
       {:ok, order} = place_order(branch)
@@ -180,6 +185,23 @@ defmodule Delivest.Integrations.CrmTest do
       assert updated.status == :completed
     end
 
+    test "a crm cancel cancels the order without an operator alert" do
+      branch = branch(frontpad(true))
+      order = sent_order(branch)
+
+      {:ok, updated} = Webhook.change_status("token-#{branch.id}", "900", "6", nil)
+      assert updated.status == :cancelled
+      assert Orders.list_unacknowledged_cancellations(branch.id) == []
+
+      assert [{:accepted, :cancelled, :crm}] =
+               Repo.all(
+                 from(t in OrderTransition,
+                   where: t.order_id == ^order.id and t.to == :cancelled,
+                   select: {t.from, t.to, t.source}
+                 )
+               )
+    end
+
     test "unknown codes keep the previous status" do
       branch = branch(frontpad(true))
       sent_order(branch)
@@ -223,7 +245,7 @@ defmodule Delivest.Integrations.CrmTest do
 
       assert_receive {:params, params}
       hooks = for {"hook_status[" <> _, code} <- params, do: code
-      assert Enum.sort(hooks) == ["2", "4", "5"]
+      assert Enum.sort(hooks) == ["2", "4", "5", "6"]
       assert params["hook_url"] =~ "/integrations/crm/frontpad/token-#{branch.id}"
     end
   end
