@@ -79,6 +79,38 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           nullable: true,
           example: "hinkali",
           description: "Человекочитаемый идентификатор товара для URL (?product=hinkali)"
+        },
+        modifier_groups: %Schema{
+          type: :array,
+          description:
+            "Группы модификаторов. `min`/`max` — сколько выбрать в группе, `is_size` — размер (переключатель)",
+          items: %Schema{
+            type: :object,
+            properties: %{
+              id: %Schema{type: :string, format: :uuid},
+              name: %Schema{type: :string, example: "Размер"},
+              min: %Schema{type: :integer, example: 1},
+              max: %Schema{type: :integer, example: 1},
+              is_size: %Schema{type: :boolean},
+              modifiers: %Schema{
+                type: :array,
+                items: %Schema{
+                  type: :object,
+                  properties: %{
+                    id: %Schema{type: :string, format: :uuid},
+                    name: %Schema{type: :string, example: "35 см"},
+                    price: %Schema{type: :integer, example: 20_000},
+                    max_quantity: %Schema{type: :integer, example: 1},
+                    is_default: %Schema{type: :boolean},
+                    weight: %Schema{type: :integer, nullable: true},
+                    stopped: %Schema{type: :boolean}
+                  },
+                  required: [:id, :name, :price, :max_quantity, :is_default, :stopped]
+                }
+              }
+            },
+            required: [:id, :name, :min, :max, :is_size, :modifiers]
+          }
         }
       }
     })

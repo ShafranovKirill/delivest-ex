@@ -1,6 +1,20 @@
 defmodule DelivestWeb.Schemas.CartSchemas do
   alias OpenApiSpex.Schema
 
+  defmodule ModifierChoice do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ModifierChoice",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        quantity: %Schema{type: :integer, minimum: 1, default: 1}
+      },
+      required: [:id]
+    })
+  end
+
   defmodule AddItemRequest do
     require OpenApiSpex
 
@@ -8,13 +22,32 @@ defmodule DelivestWeb.Schemas.CartSchemas do
       title: "AddItemRequest",
       type: :object,
       properties: %{
-        product_id: %Schema{
-          type: :string,
-          format: :uuid,
-          example: "c4a3b8e0-1234-5678-9abc-def012345678"
+        quantity: %Schema{type: :integer, minimum: 1, default: 1},
+        modifiers: %Schema{
+          type: :array,
+          items: ModifierChoice,
+          nullable: true,
+          description:
+            "Выбранные модификаторы. Пусто — модификаторы по умолчанию. Тот же товар с другими модификаторами — отдельная строка"
         }
+      }
+    })
+  end
+
+  defmodule ItemModifier do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ItemModifier",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid, nullable: true},
+        group_name: %Schema{type: :string, nullable: true, example: "Размер"},
+        name: %Schema{type: :string, example: "35 см"},
+        price: %Schema{type: :integer, example: 20_000, description: "Цена за единицу, копейки"},
+        quantity: %Schema{type: :integer, example: 1}
       },
-      required: [:product_id]
+      required: [:name, :price, :quantity]
     })
   end
 
@@ -191,7 +224,8 @@ defmodule DelivestWeb.Schemas.CartSchemas do
       properties: %{
         key: %Schema{
           type: :string,
-          description: "Уникальный ключ строки: подарок и платный товар — разные строки"
+          description:
+            "Уникальный ключ строки: подарок, платный товар и товар с другими модификаторами — разные строки. Им же удаляется строка"
         },
         product_id: %Schema{
           type: :string,
@@ -222,7 +256,8 @@ defmodule DelivestWeb.Schemas.CartSchemas do
           description: "Подарок по акции: количество менять нельзя"
         },
         promotion_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
-        stopped: %Schema{type: :boolean, description: "Товар в стоп-листе: заказать нельзя"}
+        stopped: %Schema{type: :boolean, description: "Товар в стоп-листе: заказать нельзя"},
+        modifiers: %Schema{type: :array, items: ItemModifier}
       },
       required: [
         :key,

@@ -139,7 +139,8 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           description: "Цена за единицу по меню"
         },
         gift: %Schema{type: :boolean, example: false},
-        quantity: %Schema{type: :integer, example: 2}
+        quantity: %Schema{type: :integer, example: 2},
+        modifiers: %Schema{type: :array, items: DelivestWeb.Schemas.CartSchemas.ItemModifier}
       },
       required: [:product_id, :title, :price, :base_price, :gift, :quantity]
     })

@@ -5,7 +5,13 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
   def index(%{menu: categories} = assigns) when is_list(categories),
     do: %{data: for(category <- categories, do: category_data(category, stopped(assigns)))}
 
-  defp stopped(assigns), do: Map.get(assigns, :stopped, MapSet.new())
+  defp stopped(assigns) do
+    %{
+      products: Map.get(assigns, :stopped, MapSet.new()),
+      modifiers: Map.get(assigns, :stopped_modifiers, MapSet.new()),
+      groups: Map.get(assigns, :modifiers, %{})
+    }
+  end
 
   defp category_data(category, stopped) do
     %{
@@ -32,7 +38,31 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
       tags: Map.get(product, :tags, []),
       suggested: Map.get(product, :suggested, false),
       photo_url: Map.get(product, :photo_url),
-      stopped: MapSet.member?(stopped, product.id)
+      stopped: MapSet.member?(stopped.products, product.id),
+      modifier_groups:
+        for(group <- Map.get(stopped.groups, product.id, []), do: group_data(group, stopped))
+    }
+  end
+
+  defp group_data(group, stopped) do
+    %{
+      id: group.id,
+      name: group.name,
+      min: group.min,
+      max: group.max,
+      is_size: group.is_size,
+      modifiers:
+        for m <- group.modifiers do
+          %{
+            id: m.id,
+            name: m.name,
+            price: m.price,
+            max_quantity: m.max_quantity,
+            is_default: m.is_default,
+            weight: m.weight,
+            stopped: MapSet.member?(stopped.modifiers, m.id)
+          }
+        end
     }
   end
 end

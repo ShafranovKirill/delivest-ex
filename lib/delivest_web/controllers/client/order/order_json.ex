@@ -71,9 +71,15 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       price: item.price,
       base_price: item.base_price || item.price,
       gift: item.gift || false,
-      quantity: item.quantity
+      quantity: item.quantity,
+      modifiers: modifiers(item)
     }
   end
+
+  defp modifiers(%{modifiers: modifiers}) when is_list(modifiers),
+    do: Enum.map(modifiers, &DelivestWeb.Client.Cart.CartJSON.modifier/1)
+
+  defp modifiers(_item), do: []
 
   defp promotion_data(promotion) do
     %{name: promotion.name, code: promotion.code, discount: promotion.discount}

@@ -6,7 +6,12 @@ defmodule DelivestWeb.Client.Cart.CartController do
   alias Delivest.Oms.Carts
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
 
-  alias DelivestWeb.Schemas.CartSchemas.{CartContextRequest, CartResponse, PromoCodeRequest}
+  alias DelivestWeb.Schemas.CartSchemas.{
+    AddItemRequest,
+    CartContextRequest,
+    CartResponse,
+    PromoCodeRequest
+  }
 
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias OpenApiSpex.Schema
@@ -149,6 +154,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
         description: "UUID товара"
       ]
     ],
+    request_body: {"Количество и модификаторы", "application/json", AddItemRequest},
     responses: [
       ok: {"Обновленная корзина", "application/json", CartResponse},
       unprocessable_entity: {"Ошибка добавления товара", "application/json", ErrorResponse},
@@ -211,9 +217,15 @@ defmodule DelivestWeb.Client.Cart.CartController do
     end
   end
 
-  def add_item(conn, %{"cart_id" => cart_id, "product_id" => product_id}) do
+  def add_item(conn, %{"cart_id" => cart_id, "product_id" => product_id} = params) do
+    quantity =
+      if is_integer(params["quantity"]) and params["quantity"] > 0,
+        do: params["quantity"],
+        else: 1
+
     with :ok <- authorize_cart(conn, cart_id),
-         {:ok, _item, cart_view} <- Carts.add_item(cart_id, product_id) do
+         {:ok, _item, cart_view} <-
+           Carts.add_item(cart_id, product_id, quantity, params["modifiers"]) do
       render(conn, :show, cart: cart_view)
     else
       {:error, :cart_not_found} ->
@@ -226,6 +238,15 @@ defmodule DelivestWeb.Client.Cart.CartController do
           :product_unavailable,
           "Product is unavailable"
         )
+
+      {:error, reason}
+      when reason in [
+             :modifier_unavailable,
+             :modifiers_required,
+             :modifiers_limit,
+             :modifier_quantity
+           ] ->
+        ApiError.send_error(conn, :unprocessable_entity, reason, "Invalid modifiers")
 
       {:error, :quantity_limit_exceeded} ->
         ApiError.send_error(
@@ -253,9 +274,9 @@ defmodule DelivestWeb.Client.Cart.CartController do
       ],
       product_id: [
         in: :path,
-        schema: %Schema{type: :string, format: :uuid},
+        schema: %Schema{type: :string},
         required: true,
-        description: "UUID товара"
+        description: "UUID товара или `key` строки корзины"
       ],
       all: [
         in: :query,
@@ -279,8 +300,9 @@ defmodule DelivestWeb.Client.Cart.CartController do
       end
 
     with :ok <- authorize_cart(conn, cart_id),
-         {:ok, product_uuid} <- cast_uuid(product_id),
-         {:ok, _status, cart_view} <- Carts.remove_item(cart_id, product_uuid, opts) do
+         {product_part, _modifier_key} = Carts.parse_item_key(product_id),
+         {:ok, _uuid} <- cast_uuid(product_part),
+         {:ok, _status, cart_view} <- Carts.remove_item(cart_id, product_id, opts) do
       render(conn, :show, cart: cart_view)
     else
       {:error, :cart_not_found} ->
