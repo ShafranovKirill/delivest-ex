@@ -23,8 +23,20 @@ defmodule Delivest.Oms.OrderItem do
 
     belongs_to :order, Order
 
+    has_many :modifiers, Delivest.Oms.OrderItemModifier,
+      on_delete: :delete_all,
+      on_replace: :delete
+
     timestamps(type: :utc_datetime)
   end
+
+  def selection(%__MODULE__{modifiers: modifiers}) when is_list(modifiers) do
+    modifiers
+    |> Enum.reject(&is_nil(&1.modifier_id))
+    |> Enum.map(&%{"id" => &1.modifier_id, "quantity" => &1.quantity})
+  end
+
+  def selection(_item), do: []
 
   def changeset(order_item, attrs) do
     order_item
@@ -39,6 +51,7 @@ defmodule Delivest.Oms.OrderItem do
       :category_id,
       :category_name
     ])
+    |> cast_assoc(:modifiers)
     |> validate_required([:product_id, :title, :price, :quantity])
     |> validate_number(:quantity, greater_than: 0)
     |> validate_number(:price, greater_than_or_equal_to: 0)

@@ -421,7 +421,7 @@ defmodule Delivest.Couriers do
     |> join(:inner, [d], o in assoc(d, :order))
     |> where([d, o], d.branch_id == ^branch_id and is_nil(o.deleted_at))
     |> order_by([d], asc: d.inserted_at)
-    |> preload([_d, o], order: {o, [:items, :client]})
+    |> preload([_d, o], order: {o, [:client, items: :modifiers]})
   end
 
   defp fetch(branch_id, delivery_id) do

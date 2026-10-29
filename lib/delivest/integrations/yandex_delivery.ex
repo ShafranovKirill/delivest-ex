@@ -87,7 +87,7 @@ defmodule Delivest.Integrations.YandexDelivery do
   @impl true
   def start(%Delivery{} = delivery, %Order{} = order) do
     RequestJournal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
-      create_claim(delivery, Repo.preload(order, [:items, :client]))
+      create_claim(delivery, Repo.preload(order, [:client, items: :modifiers]))
     end)
   end
 

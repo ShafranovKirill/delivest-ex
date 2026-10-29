@@ -25,8 +25,12 @@ defmodule Delivest.Oms.Orders do
            |> sorted(Filter.normalize_params(params))
            |> Flop.validate_and_run(page_params, for: Order) do
       {:ok,
-       {Repo.preload(orders, [:items, :client, transitions: [:staff], deliveries: [:courier]]),
-        meta}}
+       {Repo.preload(orders, [
+          :client,
+          items: :modifiers,
+          transitions: [:staff],
+          deliveries: [:courier]
+        ]), meta}}
     end
   end
 
@@ -35,7 +39,7 @@ defmodule Delivest.Oms.Orders do
     |> filtered()
     |> order_by([o], desc: o.inserted_at, desc: o.id)
     |> limit(^limit)
-    |> preload([:items, :client])
+    |> preload([:client, items: :modifiers])
     |> Repo.all()
   end
 
@@ -82,7 +86,7 @@ defmodule Delivest.Oms.Orders do
     with {:ok, uuid} <- Ecto.UUID.cast(order_id) do
       Order
       |> where([o], o.id == ^uuid and o.client_id == ^client_id and is_nil(o.deleted_at))
-      |> preload(:items)
+      |> preload(items: :modifiers)
       |> Repo.one()
     else
       :error -> nil
@@ -100,7 +104,7 @@ defmodule Delivest.Oms.Orders do
     end)
     |> order_by([o], desc: o.inserted_at, desc: o.id)
     |> limit(^limit)
-    |> preload(:items)
+    |> preload(items: :modifiers)
     |> Repo.all()
   end
 
@@ -115,14 +119,14 @@ defmodule Delivest.Oms.Orders do
     |> where([o], is_nil(o.deleted_at))
     |> where([o], o.inserted_at >= ^since and o.status not in ^OrderFlow.final())
     |> order_by([o], desc: o.inserted_at)
-    |> preload([:items, deliveries: :courier])
+    |> preload(items: :modifiers, deliveries: :courier)
     |> Repo.all()
   end
 
   def get_order(id) do
     Order
     |> Repo.get(id)
-    |> Repo.preload([:client, :items, transitions: [:staff], deliveries: [:courier]])
+    |> Repo.preload([:client, items: :modifiers, transitions: [:staff], deliveries: [:courier]])
   end
 
   def cancel_order(%Order{} = order, by, attrs) do

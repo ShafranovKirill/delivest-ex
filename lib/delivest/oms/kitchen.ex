@@ -90,7 +90,7 @@ defmodule Delivest.Oms.Kitchen do
       Order
       |> where([o], o.branch_id == ^branch_id and o.status == :preparing)
       |> where([o], is_nil(o.crm) and is_nil(o.deleted_at))
-      |> preload(:items)
+      |> preload(items: :modifiers)
       |> Repo.all()
 
     started = started_at(Enum.map(orders, & &1.id))

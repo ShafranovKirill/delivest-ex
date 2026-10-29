@@ -22,9 +22,20 @@ defmodule Delivest.Oms.Orders.Lines do
         gift: line.gift,
         quantity: quantity,
         category_id: product.category_id,
-        category_name: category_name(product)
+        category_name: category_name(product),
+        modifiers: Enum.map(line.modifiers, &modifier/1)
       }
     end
+  end
+
+  defp modifier(choice) do
+    %{
+      modifier_id: choice.id,
+      group_name: choice.group_name,
+      name: choice.name,
+      price: choice.price,
+      quantity: choice.quantity
+    }
   end
 
   defp category_name(%{category: %{name: name}}), do: name

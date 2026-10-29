@@ -8,7 +8,8 @@ defmodule Delivest.Promo.Line do
           quantity: pos_integer(),
           total: non_neg_integer(),
           gift: boolean(),
-          promotion_ids: [binary()]
+          promotion_ids: [binary()],
+          modifiers: [map()]
         }
 
   defstruct [
@@ -20,13 +21,15 @@ defmodule Delivest.Promo.Line do
     quantity: 1,
     total: 0,
     gift: false,
-    promotion_ids: []
+    promotion_ids: [],
+    modifiers: []
   ]
 
   def paid(item) do
     %__MODULE__{
-      key: item.product_id,
+      key: Map.get(item, :key, item.product_id),
       product_id: item.product_id,
+      modifiers: Map.get(item, :modifiers, []),
       name: item.name,
       image_url: item.image_url,
       base_price: item.price,

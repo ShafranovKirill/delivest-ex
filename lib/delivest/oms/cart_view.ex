@@ -76,7 +76,8 @@ defmodule Delivest.Oms.CartView do
       total_price: line.total,
       base_total: Line.base_total(line),
       gift: line.gift,
-      promotion_ids: line.promotion_ids
+      promotion_ids: line.promotion_ids,
+      modifiers: line.modifiers
     }
   end
 end

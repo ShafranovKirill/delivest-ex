@@ -1,5 +1,5 @@
 defmodule Delivest.Oms.Orders.DraftCart do
-  alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Oms.{Carts, Order, OrderItem}
 
   def create(%Order{} = order) do
     with {:ok, cart} <- Carts.create_cart(%{branch_id: order.branch_id}) do
@@ -12,7 +12,7 @@ defmodule Delivest.Oms.Orders.DraftCart do
 
     order.items
     |> Enum.reject(& &1.gift)
-    |> Enum.each(&Carts.add_item(cart_id, &1.product_id, &1.quantity))
+    |> Enum.each(&Carts.add_item(cart_id, &1.product_id, &1.quantity, OrderItem.selection(&1)))
 
     {:ok, cart} = Carts.update_context(cart_id, context(order))
     cart
