@@ -51,7 +51,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
     [
       addr.city,
       addr.street,
-      addr.house && "#{gettext("d.")} #{addr.house}",
+      addr.house && "#{gettext("d.")} #{Delivest.Oms.Order.Address.house_line(addr)}",
       addr.entrance && "#{gettext("ent.")} #{addr.entrance}",
       addr.floor && "#{gettext("fl.")} #{addr.floor}",
       addr.apartment && "#{gettext("apt.")} #{addr.apartment}",

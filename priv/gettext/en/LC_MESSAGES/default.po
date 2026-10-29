@@ -1147,7 +1147,7 @@ msgstr ""
 msgid "All Categories"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:102
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:118
 #, elixir-autogen, elixir-format
 msgid "Apartment"
 msgstr ""
@@ -1181,7 +1181,7 @@ msgstr ""
 msgid "Cancelled"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:138
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:154
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:187
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:46
 #, elixir-autogen, elixir-format
@@ -1201,7 +1201,7 @@ msgid "Cart is empty"
 msgstr ""
 
 #: lib/delivest_web/live/staff/courier_live/board.ex:158
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:137
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:153
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:185
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:45
 #, elixir-autogen, elixir-format
@@ -1257,7 +1257,7 @@ msgstr ""
 msgid "Clients List"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:146
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:162
 #, elixir-autogen, elixir-format
 msgid "Comment"
 msgstr ""
@@ -1531,12 +1531,12 @@ msgstr ""
 msgid "Dine in"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:86
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:102
 #, elixir-autogen, elixir-format
 msgid "Entrance"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:94
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:110
 #, elixir-autogen, elixir-format
 msgid "Floor"
 msgstr ""
@@ -1863,7 +1863,7 @@ msgid "Orders today"
 msgstr ""
 
 #: lib/delivest_web/live/staff/client_live/show.ex:244
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:131
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:147
 #, elixir-autogen, elixir-format
 msgid "Payment"
 msgstr ""
@@ -2250,7 +2250,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/log_live/components/entries_component.ex:11
 #: lib/delivest_web/live/staff/log_live/components/events_component.ex:14
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:111
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:127
 #, elixir-autogen, elixir-format
 msgid "Time"
 msgstr ""
@@ -4412,7 +4412,7 @@ msgstr ""
 msgid "%{minutes} min left"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:118
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:134
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:89
 #, elixir-autogen, elixir-format
 msgid "By time"
@@ -4533,12 +4533,12 @@ msgstr ""
 msgid "New client"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:125
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:141
 #, elixir-autogen, elixir-format
 msgid "Prepare by"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/details_component.ex:117
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:133
 #, elixir-autogen, elixir-format
 msgid "Right away"
 msgstr ""
@@ -6983,4 +6983,14 @@ msgstr ""
 #: lib/delivest/integrations/crm/order_notes.ex:23
 #, elixir-autogen, elixir-format
 msgid "Phone extension %{ext}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:86
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Block"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/details_component.ex:94
+#, elixir-autogen, elixir-format
+msgid "Building"
 msgstr ""

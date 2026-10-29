@@ -6,7 +6,7 @@ defmodule Delivest.Integrations.Frontpad.AddressFields do
   def build(address) do
     %{
       street: text(address.street, 50),
-      home: text(address.house, 50),
+      home: text(Delivest.Geo.House.line(address), 50),
       pod: digits(address.entrance, 2),
       et: digits(address.floor, 2),
       apart: text(address.apartment, 50)

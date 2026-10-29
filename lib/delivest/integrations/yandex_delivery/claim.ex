@@ -78,6 +78,8 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
   defp destination_point(_order, _settings), do: {:error, :address_missing}
 
   defp destination(order, address, phone, settings) do
+    house = Address.house_line(address)
+
     %{
       point_id: @destination,
       visit_order: 2,
@@ -86,10 +88,10 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
       address:
         compact(%{
           fullname:
-            Enum.join(Enum.reject([address.city, address.street, address.house], &blank?/1), ", "),
+            Enum.join(Enum.reject([address.city, address.street, house], &blank?/1), ", "),
           city: address.city,
           street: address.street,
-          building: address.house,
+          building: house,
           coordinates: coordinates(address),
           porch: address.entrance,
           sfloor: address.floor,

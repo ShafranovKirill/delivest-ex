@@ -343,7 +343,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
   defp street_line(nil), do: "—"
 
   defp street_line(address) do
-    [address.city, address.street, address.house]
+    [address.city, address.street, Delivest.Geo.House.line(address)]
     |> Enum.filter(&present?/1)
     |> Enum.join(", ")
     |> case do
