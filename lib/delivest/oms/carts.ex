@@ -93,6 +93,8 @@ defmodule Delivest.Oms.Carts do
   defp line_parts({product_id, quantity}), do: {product_id, quantity, nil}
   defp line_parts({product_id, quantity, modifiers}), do: {product_id, quantity, modifiers}
 
+  defp choose(_product_id, _branch_id, :as_sold), do: {:ok, []}
+
   defp choose(product_id, branch_id, modifiers) do
     groups = Map.get(Modifiers.for_products([product_id]), product_id, [])
     stopped = if branch_id, do: Modifiers.stopped_ids(branch_id), else: MapSet.new()

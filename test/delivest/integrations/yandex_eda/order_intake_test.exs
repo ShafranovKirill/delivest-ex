@@ -44,6 +44,26 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
     assert Enum.sort(Enum.map(order.items, & &1.quantity)) == [1, 2]
   end
 
+  test "modifications of yandex become item modifiers", %{branch: branch, soup: soup} do
+    params = order_params(branch, [soup], %{"paymentInfo" => pay(350)})
+
+    params =
+      update_in(params, ["items", Access.at(0)], fn item ->
+        Map.merge(item, %{
+          "price" => 300,
+          "modifications" => [
+            %{"id" => "sour-cream", "name" => "Сметана", "quantity" => 1, "price" => 50}
+          ]
+        })
+      end)
+
+    assert {:ok, %Order{} = order} = YandexEda.create_order(params)
+    order = Repo.preload(order, items: :modifiers)
+
+    assert [%{price: 35_000, modifiers: [%{name: "Сметана", price: 5_000, modifier_id: nil}]}] =
+             order.items
+  end
+
   test "the same eatsId returns the same order", %{branch: branch, soup: soup} do
     params = order_params(branch, [soup])
 

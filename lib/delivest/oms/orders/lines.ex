@@ -30,12 +30,19 @@ defmodule Delivest.Oms.Orders.Lines do
 
   defp modifier(choice) do
     %{
-      modifier_id: choice.id,
+      modifier_id: uuid(choice.id),
       group_name: choice.group_name,
       name: choice.name,
       price: choice.price,
       quantity: choice.quantity
     }
+  end
+
+  defp uuid(id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, uuid} -> uuid
+      :error -> nil
+    end
   end
 
   defp category_name(%{category: %{name: name}}), do: name

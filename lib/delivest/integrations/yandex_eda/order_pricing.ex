@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.YandexEda.OrderPricing do
-  alias Delivest.Integrations.YandexEda.OrderRequest
+  alias Delivest.Integrations.YandexEda.{OrderItems, OrderRequest}
   alias Delivest.Promo.{Line, Result}
 
   def fixed(%OrderRequest{items: items, items_cost: items_cost}) do
@@ -18,8 +18,9 @@ defmodule Delivest.Integrations.YandexEda.OrderPricing do
 
   defp line(item) do
     %Line{
-      key: item.product_id,
+      key: OrderItems.key(item),
       product_id: item.product_id,
+      modifiers: item.modifiers,
       name: item.name,
       base_price: div(item.total, item.quantity),
       quantity: item.quantity,

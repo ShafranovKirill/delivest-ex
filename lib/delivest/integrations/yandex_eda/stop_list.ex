@@ -12,7 +12,11 @@ defmodule Delivest.Integrations.YandexEda.StopList do
         |> Menu.product_ids(settings)
         |> unavailable_in(Stops.stopped_ids(branch.id))
         |> Enum.map(&%{itemId: &1, stock: 0}),
-      modifiers: []
+      modifiers:
+        branch
+        |> Menu.modifier_ids(settings)
+        |> unavailable_in(Delivest.Net.Modifiers.stopped_ids(branch.id))
+        |> Enum.map(&%{modifierId: &1, stock: 0})
     }
   end
 

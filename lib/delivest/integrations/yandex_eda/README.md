@@ -25,7 +25,8 @@
 | Состав меню | Таблица `channel_products` (канал, товар, `enabled`, `price`) — настраивается на странице интеграции, не в товаре |
 | Цена | своя цена товара для канала → иначе базовая × (1 + наценка филиала) с округлением → иначе базовая |
 | Копейки | В меню отдаём целые рубли. Цены позиций из заказа округляем вниз до рубля, итог берём из `itemsCost` |
-| Комбо, промо, модификаторы | Не поддерживаем: `combos` и `/promos` не отдаём, `modifierGroups` всегда пустой |
+| Комбо, промо | Не поддерживаем: `combos` и `/promos` не отдаём |
+| Модификаторы | Группы товара уходят в `modifierGroups`, стоп модификаторов — в `availability.modifiers`, `items[].modifications` заказа — в модификаторы позиции |
 | Единица измерения | Поле у товара: `г` или `мл`, по умолчанию `г` |
 | Схемы доставки | Все три: `yandex` (курьер Яндекса), `marketplace` (наш курьер), `pickup` (самовывоз) |
 | Подтверждение | Наш статус `accepted` ↔ `ACCEPTED_BY_RESTAURANT`. Режим канала: автоматически или вручную. Вручную: срок `accept_minutes` (по умолчанию 10) считается от прихода заказа, а если филиал закрыт — от ближайшего открытия по графику (`AcceptDeadline`). В момент срока `AcceptDeadlineWorker` будит админку, и на любой её странице всплывает тревога со звуком: «Подтвердить», «Отменить» (причина «Не подтверждён вовремя») или «Пусть висит». Сами мы заказ после срока не трогаем |
@@ -166,13 +167,13 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 | `shippingType` | | `delivery` или `pickup`; не указан — доступно для обоих |
 | `isCatchweight`, `weightQuantum` | | Весовой товар и минимальный шаг — не используем |
 | `excise` | | `sugary_drink` / `other`, или метка `[AT]` в названии. Поле товара «Акциз» |
-| `modifierGroups` | | Модификаторы — всегда `[]`: проверки Яндекса падают, если поля нет |
+| `modifierGroups` | | Группы модификаторов товара, `[]` если их нет: проверки Яндекса падают, если поля нет |
 | `additional_descriptions` | | `consisting_ingredients` (до 100 строк по 100 символов) и `badges`: `food_specifics` (`halal`, `meat_free`), `food_spiciness` (`spicy`), `cooking_method` (`fried`, `baked`, `grilled`, `not_cooked`), `food_portion` (`portion_for_several_people`, `big_portion`, `combo`) |
 | `adult_info` | | `age_group` 18 / 21, `alcohol_percentage` — не отдаём: алкоголь не продаём |
 | `needMarking`, `legalInfo` | | Маркировка по закону о платформенной экономике: при `needMarking: true` обязателен `legalInfo.gtin`. Остальное: `classificationCodes` (ТН ВЭД / ОКПД 2), `conformityInfo`, `governmentRegistrationInfo` — не отдаём: блюда собственного производства маркировке не подлежат |
 | `onlyForCombo` | | Только для комбо |
 
-### Модификаторы (для справки, не используем)
+### Модификаторы
 
 `ModifierGroups`: `id`, `name`, `minSelectedModifiers`, `maxSelectedModifiers` (0–255), `sortOrder`, `modifiers`.
 `Modifiers`: `id`, `name`, `price`, `minAmount`, `maxAmount` (0–255), `originalPrice`, `vat`, `excise`. Некорректный модификатор отбрасывает и группу, и блюда, где она используется.
@@ -191,7 +192,7 @@ client_id=123123123&client_secret=ABCDEF&grant_type=client_credentials&scope=rea
 | Поле | Обязательное | Описание |
 |---|---|---|
 | `items` | да | `[{itemId, stock}]`. `stock` не передан — считается 0. При 0 блюдо пропадает из выдачи |
-| `modifiers` | да | `[{modifierId, stock}]`, у нас всегда пусто |
+| `modifiers` | да | `[{modifierId, stock}]` — модификаторы в стопе филиала |
 | `combos` | | `[{comboId, stock}]` |
 
 Позиция, которой нет в ответе, доступна. Остаток −10 и подобное Яндекс игнорирует.

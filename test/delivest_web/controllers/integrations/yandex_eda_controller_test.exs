@@ -91,6 +91,35 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
       assert id == product.id
     end
 
+    test "modifier groups go to the menu and stopped modifiers to the stop list", ctx do
+      group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Добавки", min: 0, max: 2})
+
+      cheese =
+        Repo.insert!(%Delivest.Net.Modifier{group_id: group.id, name: "Сыр", price: 5_000})
+
+      Repo.insert!(%Delivest.Net.ProductModifierGroup{
+        product_id: ctx.product.id,
+        group_id: group.id
+      })
+
+      Repo.insert!(%Delivest.Net.ModifierStop{modifier_id: cheese.id, branch_id: ctx.branch.id})
+
+      menu = ctx.conn |> get(@base <> "/menu/#{ctx.branch.id}/composition") |> Map.get(:resp_body)
+
+      assert %{"items" => [%{"modifierGroups" => [group_json]}]} = Jason.decode!(menu)
+
+      assert %{"maxSelectedModifiers" => 2, "modifiers" => [%{"name" => "Сыр", "price" => 50}]} =
+               group_json
+
+      stops =
+        ctx.conn |> get(@base <> "/menu/#{ctx.branch.id}/availability") |> Map.get(:resp_body)
+
+      cheese_id = cheese.id
+
+      assert %{"modifiers" => [%{"modifierId" => ^cheese_id, "stock" => 0}]} =
+               Jason.decode!(stops)
+    end
+
     test "the stop list is typed", %{conn: conn, branch: branch, product: product} do
       Repo.insert!(%ProductStop{
         branch_id: branch.id,
