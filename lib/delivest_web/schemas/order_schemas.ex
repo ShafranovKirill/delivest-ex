@@ -62,6 +62,14 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           nullable: true,
           description: "Имя клиента"
         },
+        persons: %Schema{
+          type: :integer,
+          minimum: 0,
+          maximum: 99,
+          example: 2,
+          nullable: true,
+          description: "Количество приборов"
+        },
         fulfillment_type: %Schema{
           type: :string,
           enum: ["dine_in", "delivery", "pickup"],
@@ -218,7 +226,9 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             },
             comment: %Schema{type: :string, nullable: true, example: "Без лука"},
             customer_phone: %Schema{type: :string, nullable: true, example: "+79990000000"},
+            customer_phone_ext: %Schema{type: :string, nullable: true, example: "1234"},
             customer_name: %Schema{type: :string, nullable: true, example: "Иван"},
+            persons: %Schema{type: :integer, nullable: true, example: 2},
             address: %Schema{type: :object, nullable: true, additionalProperties: true},
             items: %Schema{type: :array, items: OrderItemResponse}
           },

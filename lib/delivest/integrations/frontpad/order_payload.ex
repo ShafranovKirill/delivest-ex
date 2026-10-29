@@ -26,6 +26,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
           affiliate: String.t() | nil,
           phone: String.t() | nil,
           name: String.t() | nil,
+          person: String.t() | nil,
           street: String.t() | nil,
           home: String.t() | nil,
           pod: String.t() | nil,
@@ -46,6 +47,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     :affiliate,
     :phone,
     :name,
+    :person,
     :street,
     :home,
     :pod,
@@ -69,8 +71,9 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
         %__MODULE__{
           secret: secret,
           affiliate: text(settings.affiliate, 50),
-          phone: text(customer_phone(order), 50),
-          name: text(customer_name(order), 50),
+          phone: text(order.customer_phone, 50),
+          name: text(order.customer_name, 50),
+          person: person(order.persons),
           descr: descr(order, settings),
           pay: PaymentCodes.code_for(settings.payments, order.payment_method),
           tags: TagCodes.codes(settings.tags, order),
@@ -93,6 +96,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
         {"affiliate", view.affiliate},
         {"phone", view.phone},
         {"name", view.name},
+        {"person", view.person},
         {"street", view.street},
         {"home", view.home},
         {"pod", view.pod},
@@ -142,15 +146,8 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     end
   end
 
-  defp customer_phone(%{customer_phone: phone}) when is_binary(phone) and phone != "", do: phone
-  defp customer_phone(%{client: %{phone: phone}}), do: phone
-  defp customer_phone(%{channel: %{details: %{"phone" => phone}}}), do: phone
-  defp customer_phone(_), do: nil
-
-  defp customer_name(%{customer_name: name}) when is_binary(name) and name != "", do: name
-  defp customer_name(%{client: %{name: name}}), do: name
-  defp customer_name(%{channel: %{details: %{"client_name" => name}}}), do: name
-  defp customer_name(_), do: nil
+  defp person(count) when is_integer(count) and count > 0, do: Integer.to_string(count)
+  defp person(_count), do: nil
 
   defp extract_secret(%Settings{api_key: secret}) when is_binary(secret) and secret != "",
     do: {:ok, secret}

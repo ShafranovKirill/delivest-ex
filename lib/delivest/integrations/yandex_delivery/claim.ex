@@ -66,7 +66,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
   end
 
   defp destination_point(%Order{address: %Address{} = address} = order, settings) do
-    phone = order.client && order.client.phone
+    phone = order.customer_phone
 
     cond do
       blank?(address.street) or blank?(address.house) -> {:error, :address_missing}
@@ -82,7 +82,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
       point_id: @destination,
       visit_order: 2,
       type: "destination",
-      contact: %{name: (order.client && order.client.name) || "Клиент", phone: phone},
+      contact: %{name: order.customer_name || "Клиент", phone: phone},
       address:
         compact(%{
           fullname:

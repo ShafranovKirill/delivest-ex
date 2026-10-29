@@ -72,7 +72,7 @@ defmodule Delivest.Oms.OrderTest do
 
       changeset = Order.changeset(%Order{}, attrs)
       refute changeset.valid?
-      assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
+      assert "must be in E.164 format" in errors_on(changeset).customer_phone
     end
 
     test "accepts cook_by as a datetime value" do
@@ -146,6 +146,45 @@ defmodule Delivest.Oms.OrderTest do
       assert Repo.get!(Delivest.Oms.Cart, cart.id).staff_id == nil
     end
 
+    test "keeps the customer snapshot when the client renames" do
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "snapshot", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %Order{} = order} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "customer_phone" => "+79991230000",
+                 "customer_name" => "Иван",
+                 "persons" => 2,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+
+      Repo.update_all(Delivest.Identity.Client, set: [name: "Пётр"])
+      order = Repo.get!(Order, order.id)
+
+      assert order.customer_name == "Иван"
+      assert order.customer_phone == "+79991230000"
+      assert order.persons == 2
+    end
+
+    test "takes the missing name from the client" do
+      client = insert(:client, phone: "+79991230001", name: "Анна")
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "snapshot-client", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %Order{customer_phone: "+79991230001", customer_name: "Анна"}} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "client_id" => client.id,
+                 "customer_phone" => client.phone,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+    end
+
     test "treats a bare phone prefix as no phone" do
       product = insert_branch_product(@branch_id, price: 100)
       {:ok, cart} = Carts.create_cart(%{session_id: "bare-phone", branch_id: @branch_id})
@@ -173,7 +212,7 @@ defmodule Delivest.Oms.OrderTest do
                  "payment_method" => "cash"
                })
 
-      assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
+      assert "must be in E.164 format" in errors_on(changeset).customer_phone
     end
 
     test "rejects orders of a blocked client" do

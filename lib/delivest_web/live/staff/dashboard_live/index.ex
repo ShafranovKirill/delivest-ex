@@ -213,17 +213,17 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
               </div>
               <div class="flex items-center gap-2 text-xs text-base-content/60 min-w-0">
                 <span class="shrink-0">{OrderHelpers.fulfillment_label(order.fulfillment_type)}</span>
-                <%= if order.client do %>
+                <%= if order.client_id do %>
                   <span>·</span>
                   <.link
                     :if={@can_clients}
                     navigate={~p"/staff/clients/#{order.client_id}"}
                     class="relative text-sm text-base-content hover:text-primary hover:underline truncate"
                   >
-                    {order.client.name || order.client.phone}
+                    {order.customer_name || order.customer_phone}
                   </.link>
                   <span :if={!@can_clients} class="text-sm text-base-content truncate">
-                    {order.client.name || order.client.phone}
+                    {order.customer_name || order.customer_phone}
                   </span>
                 <% end %>
               </div>

@@ -33,7 +33,10 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
     assert order.channel.platform == "YE"
     assert order.channel.details["phone"] == "+79990001122"
     assert order.comment =~ "Без лука"
-    assert order.comment =~ "2"
+    refute order.comment =~ "Cutlery"
+    assert order.persons == 2
+    assert order.customer_name
+    assert order.customer_phone == "+79990001122"
     assert Enum.sort(Enum.map(order.items, & &1.quantity)) == [1, 2]
   end
 

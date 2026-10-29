@@ -74,6 +74,7 @@ defmodule Delivest.Oms.Orders.Create do
     %Order{}
     |> Assembler.changeset(own_attrs(attrs, changes), changes)
     |> Order.source_changeset(Keyword.get(opts, :source, "app"))
+    |> then(&if(opts[:customer], do: Order.customer_changeset(&1, opts[:customer]), else: &1))
     |> then(&if(opts[:channel], do: Order.channel_changeset(&1, opts[:channel]), else: &1))
     |> then(&if(opts[:crm], do: Order.crm_changeset(&1, opts[:crm]), else: &1))
     |> then(&if(opts[:paid_online], do: Order.paid_online_changeset(&1), else: &1))

@@ -255,12 +255,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp customer(assigns) do
     assigns =
       assign(assigns,
-        phone:
-          (assigns.order.client && assigns.order.client.phone) || assigns.order.customer_phone ||
-            channel_detail(assigns.order, "phone"),
-        name:
-          (assigns.order.client && assigns.order.client.name) || assigns.order.customer_name ||
-            channel_detail(assigns.order, "client_name"),
+        phone: phone_line(assigns.order),
+        tel:
+          Enum.join(
+            Enum.reject(
+              [assigns.order.customer_phone, assigns.order.customer_phone_ext],
+              &is_nil/1
+            ),
+            ","
+          ),
+        name: assigns.order.customer_name,
         linked?: assigns.order.client_id && Identity.can?(assigns.current_staff, "clients.read")
       )
 
@@ -268,7 +272,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     <div class="min-w-0 flex items-start gap-2">
       <.icon name="hero-user" class="size-4 mt-0.5 shrink-0 text-base-content/40" />
       <div :if={@phone || @name} class="min-w-0">
-        <a :if={@phone} href={"tel:#{@phone}"} class="font-mono font-semibold hover:text-primary">
+        <a :if={@phone} href={"tel:#{@tel}"} class="font-mono font-semibold hover:text-primary">
           {@phone}
         </a>
         <.link
@@ -719,6 +723,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
        do: code
 
   defp unmapped_crm_code(_order), do: nil
+
+  defp phone_line(%{customer_phone: phone, customer_phone_ext: ext})
+       when is_binary(phone) and is_binary(ext),
+       do: gettext("%{number} ext. %{ext}", number: phone, ext: ext)
+
+  defp phone_line(%{customer_phone: phone}), do: phone
 
   defp channel_detail(%{channel: %{details: details}}, key) when is_map(details), do: details[key]
   defp channel_detail(_order, _key), do: nil

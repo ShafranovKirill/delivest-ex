@@ -1,4 +1,6 @@
 defmodule Delivest.Integrations.YandexEda.OrderAttrs do
+  alias Delivest.Identity.Phone
+
   alias Delivest.Integrations.YandexEda.{
     AcceptDeadline,
     BranchSettings,
@@ -24,12 +26,24 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
   def opts(%OrderRequest{} = request, branch, %BranchSettings{} = settings) do
     [
       source: "yandex_eda",
+      customer: customer(request),
       channel: channel(request, branch, settings),
       pricing: OrderPricing.fixed(request),
       delivery_amount: delivery_amount(request),
       paid_online: request.paid,
       advance: advance(settings)
     ]
+  end
+
+  defp customer(%OrderRequest{} = request) do
+    {phone, ext} = Phone.split(request.phone)
+
+    %{
+      customer_name: request.client_name && String.slice(request.client_name, 0, 100),
+      customer_phone: phone,
+      customer_phone_ext: ext,
+      persons: request.persons
+    }
   end
 
   defp delivery_amount(%OrderRequest{discriminator: "marketplace", delivery_fee: fee})

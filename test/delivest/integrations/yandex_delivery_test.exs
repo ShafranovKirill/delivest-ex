@@ -135,6 +135,8 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
         [
           fulfillment_type: :delivery,
           client_id: client.id,
+          customer_phone: client.phone,
+          customer_name: client.name,
           total_amount: 60_000,
           address: %Order.Address{
             city: "Тюмень",

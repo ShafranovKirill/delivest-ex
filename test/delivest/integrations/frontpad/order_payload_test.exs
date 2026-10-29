@@ -27,10 +27,13 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     refute Enum.any?(OrderPayload.to_form_params(view), fn {key, _value} -> key == "datetime" end)
   end
 
-  test "takes phone and name from the linked client once the order is reloaded" do
+  test "takes phone, name and persons from the order snapshot" do
     order = %Order{
       items: [],
-      client: %Delivest.Identity.Client{phone: "+79991234567", name: "Иван"}
+      customer_phone: "+79991234567",
+      customer_phone_ext: "123",
+      customer_name: "Иван",
+      persons: 3
     }
 
     settings = %Settings{api_key: "secret"}
@@ -40,6 +43,8 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     params = OrderPayload.to_form_params(view)
     assert {"phone", "+79991234567"} in params
     assert {"name", "Иван"} in params
+    assert {"person", "3"} in params
+    assert {"descr", "Phone extension 123"} in params
   end
 
   test "delivery goes as the delivery product line or into the description" do

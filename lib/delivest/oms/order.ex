@@ -40,8 +40,11 @@ defmodule Delivest.Oms.Order do
     field :branch_id, :binary_id
     field :session_id, :string
 
-    field :customer_phone, :string, virtual: true
-    field :customer_name, :string, virtual: true
+    field :customer_phone, :string
+    field :customer_phone_ext, :string
+    field :customer_name, :string
+    field :customer_email, :string
+    field :persons, :integer
 
     field :status, Ecto.Enum, values: @statuses, default: :created
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
@@ -86,7 +89,10 @@ defmodule Delivest.Oms.Order do
       :cart_id,
       :session_id,
       :customer_phone,
+      :customer_phone_ext,
       :customer_name,
+      :customer_email,
+      :persons,
       :fulfillment_type,
       :payment_method,
       :total_amount,
@@ -105,9 +111,9 @@ defmodule Delivest.Oms.Order do
       :payment_method,
       :cart_id
     ])
-    |> validate_length(:customer_name, max: 100)
+    |> validate_customer()
+    |> validate_number(:persons, greater_than_or_equal_to: 0, less_than: 100)
     |> validate_length(:comment, max: 500)
-    |> validate_phone()
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
     |> validate_inclusion(:payment_method, @payment_methods)
     |> validate_number(:total_amount, greater_than_or_equal_to: 0)
@@ -136,6 +142,12 @@ defmodule Delivest.Oms.Order do
     |> validate_change(:source, fn :source, value ->
       if Delivest.Oms.OrderSource.valid?(value), do: [], else: [source: "is invalid"]
     end)
+  end
+
+  def customer_changeset(changeset, attrs) do
+    changeset
+    |> cast(attrs, [:customer_name, :customer_phone, :customer_phone_ext, :persons])
+    |> validate_customer()
   end
 
   def channel_changeset(order, attrs) do
@@ -202,20 +214,13 @@ defmodule Delivest.Oms.Order do
     end
   end
 
-  defp validate_phone(changeset) do
-    case get_field(changeset, :customer_phone) do
-      nil ->
-        changeset
-
-      "" ->
-        changeset
-
-      _phone ->
-        changeset
-        |> validate_format(:customer_phone, ~r/^\+7\d{10}$/,
-          message: "must be in format +7XXXXXXXXXX"
-        )
-    end
+  defp validate_customer(changeset) do
+    changeset
+    |> validate_length(:customer_name, max: 100)
+    |> validate_length(:customer_email, max: 160)
+    |> validate_format(:customer_phone, ~r/^\+\d{7,15}$/, message: "must be in E.164 format")
+    |> validate_format(:customer_phone_ext, ~r/^\d{1,10}$/)
+    |> validate_format(:customer_email, ~r/^[^\s@]+@[^\s@]+$/)
   end
 
   defp validate_cook_by_range(changeset) do

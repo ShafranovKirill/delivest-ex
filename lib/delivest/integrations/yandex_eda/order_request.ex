@@ -47,7 +47,7 @@ defmodule Delivest.Integrations.YandexEda.OrderRequest do
          discriminator: discriminator,
          platform: params["platform"],
          comment: text(params["comment"]),
-         persons: params["persons"],
+         persons: persons(params["persons"]),
          client_name: text(delivery["clientName"]),
          phone: delivery["realPhoneNumber"] || delivery["phoneNumber"],
          pickup_code: delivery["pickupCode"],
@@ -64,6 +64,9 @@ defmodule Delivest.Integrations.YandexEda.OrderRequest do
   end
 
   def parse(_params), do: {:error, "discriminator must be yandex, marketplace or pickup"}
+
+  defp persons(count) when is_integer(count) and count in 0..99, do: count
+  defp persons(_count), do: nil
 
   defp required(params, key) do
     case params[key] do
