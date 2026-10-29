@@ -14,7 +14,7 @@
 | id заказа | Наш `order.id` — повтор после таймаута не создаёт дубль |
 | Чеки | Пробивает iiko на кассе: `fiscalization: external`, онлайн-оплата — `isProcessedExternally`, чек ЮKassa — `isFiscalizedExternally` |
 | Доставка | Заказ в iiko доставляет iiko, как с Frontpad |
-| Меню | Основное — наше. Из iiko — сверка артикулов и стоп-лист |
+| Меню | Импорт из iiko, см. [menu-import.md](menu-import.md). Стоп-лист — из iiko |
 
 ## Что нужно от слоя CRM
 

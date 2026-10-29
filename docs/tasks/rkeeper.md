@@ -13,7 +13,7 @@
 | Подключение ресторана | Ресторан у себя в WS r_keeper подключает нас как агрегатора и сообщает `objectId` |
 | Чеки | Пробивает касса r_keeper: `fiscalization: external` |
 | Доставка | Везёт ресторан или наш курьер — `pickup.taker` и `pickup.courier` |
-| Меню | Основное — наше. Из r_keeper — сверка кодов блюд и стоп-лист |
+| Меню | Импорт из r_keeper, см. [menu-import.md](menu-import.md). Стоп-лист — из r_keeper |
 
 ## Что нужно от слоя CRM
 

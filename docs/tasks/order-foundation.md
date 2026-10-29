@@ -160,5 +160,5 @@
 | 9 | [Слой CRM](crm-layer.md) | Асинхронное создание, отмена и правка через API, опрос статусов |
 | 10 | [Когда заказ можно менять](order-changes.md) | Опирается на оплаты и возможности CRM |
 | 11 | [Касса](pos.md), [чеки](fiscal-receipts.md) | Уже на новой основе |
-| 12 | [iiko](iiko.md), [r_keeper](rkeeper.md) | На новом слое CRM |
+| 12 | [iiko](iiko.md), [r_keeper](rkeeper.md), [импорт меню](menu-import.md) | На новом слое CRM |
 | — | [Сборы](order-charges.md), [внешние связи](order-external-refs.md), [Delivery Club](delivery-club.md) | Когда понадобятся |
