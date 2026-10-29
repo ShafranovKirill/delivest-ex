@@ -238,6 +238,32 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
     })
   end
 
+  defmodule OrderCourier do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "OrderCourier",
+      type: :object,
+      nullable: true,
+      description: "Курьер, который взял заказ. Есть с назначения курьера до вручения",
+      properties: %{
+        name: %Schema{type: :string, nullable: true, example: "Иван"},
+        phone: %Schema{
+          type: :string,
+          nullable: true,
+          example: "+79001112233",
+          description: "У курьера Яндекса подменный номер, добавочный после ,,"
+        },
+        tracking_url: %Schema{
+          type: :string,
+          nullable: true,
+          description: "Ссылка отслеживания Яндекс Доставки"
+        }
+      },
+      required: [:name, :phone, :tracking_url]
+    })
+  end
+
   defmodule ActiveOrder do
     require OpenApiSpex
     alias DelivestWeb.Schemas.OrderSchemas.OrderItemResponse
@@ -277,6 +303,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         comment: %Schema{type: :string, nullable: true},
         address: %Schema{type: :object, nullable: true, additionalProperties: true},
         inserted_at: %Schema{type: :string, format: :date_time},
+        courier: DelivestWeb.Schemas.OrderSchemas.OrderCourier,
         items: %Schema{type: :array, items: OrderItemResponse}
       },
       required: [
@@ -292,6 +319,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         :promotions,
         :branch_id,
         :inserted_at,
+        :courier,
         :items
       ]
     })
