@@ -1,6 +1,8 @@
 defmodule Delivest.HTTP.Client do
   require Logger
 
+  alias Delivest.Integrations.Journal
+
   @default_timeout 15_000
 
   @type method :: :get | :post | :put | :delete | :patch
@@ -10,7 +12,8 @@ defmodule Delivest.HTTP.Client do
           headers: headers(),
           timeout: non_neg_integer(),
           decode_json: boolean(),
-          format: :json | :form | :multipart
+          format: :json | :form | :multipart,
+          journal: atom()
         ]
 
   @spec request(method(), String.t(), keyword() | map() | [{String.t(), String.t()}], options()) ::
@@ -47,7 +50,23 @@ defmodule Delivest.HTTP.Client do
 
     Logger.info("HTTP >>> #{String.upcase(to_string(method))} #{full_url}")
 
-    case Req.request(req_options) do
+    started_at = System.monotonic_time(:millisecond)
+    result = Req.request(req_options)
+
+    if provider = Keyword.get(opts, :journal) do
+      duration = System.monotonic_time(:millisecond) - started_at
+
+      Journal.outgoing(
+        provider,
+        method,
+        journal_url(full_url, method, body_or_params),
+        journal_body(method, body_or_params),
+        result,
+        duration
+      )
+    end
+
+    case result do
       {:ok, %{status: status, body: body}} when status in 200..299 ->
         Logger.info("HTTP <<< [#{status}] Success Response from #{full_url}")
 
@@ -73,6 +92,14 @@ defmodule Delivest.HTTP.Client do
   def post(url, body \\ [], opts \\ []), do: request(:post, url, body, opts)
   def put(url, body \\ [], opts \\ []), do: request(:put, url, body, opts)
   def delete(url, params \\ [], opts \\ []), do: request(:delete, url, params, opts)
+
+  defp journal_url(url, :get, params) when params not in [[], %{}],
+    do: url <> if(String.contains?(url, "?"), do: "&", else: "?") <> URI.encode_query(params)
+
+  defp journal_url(url, _method, _params), do: url
+
+  defp journal_body(:get, _params), do: nil
+  defp journal_body(_method, body), do: body
 
   defp config_options,
     do: :delivest |> Application.get_env(__MODULE__, []) |> Keyword.get(:req_options, [])

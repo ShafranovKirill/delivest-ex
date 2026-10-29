@@ -45,6 +45,7 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     with {:ok, token} <- token(settings) do
       Client.post(path, body,
         base_url: @base_url,
+        journal: :yandex_eda,
         headers: [{"authorization", "Bearer " <> token}, {"partner-name", settings.partner_name}]
       )
     end
@@ -69,7 +70,8 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     |> Client.post(
       [client_id: settings.push_client_id, client_secret: settings.push_client_secret],
       base_url: @base_url,
-      format: :form
+      format: :form,
+      journal: :yandex_eda
     )
     |> case do
       {:ok, %{"access_token" => token} = body} ->

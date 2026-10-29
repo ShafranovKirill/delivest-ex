@@ -2,6 +2,7 @@ defmodule Delivest.Integrations.Crm do
   alias Delivest.Identity
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Crm.{BranchSettings, Registry, SyncWorker, Throttle}
+  alias Delivest.Integrations.Journal
   alias Delivest.Oms.{Order, Orders}
 
   @permanent_errors [:branch_not_found, :unknown_provider, :missing_settings]
@@ -88,7 +89,9 @@ defmodule Delivest.Integrations.Crm do
   def deliver(%Order{crm: %{provider: provider}} = order) do
     with {:ok, name, module} <- provider_module(provider),
          {:ok, settings} <- branch_settings(order.branch_id, name) do
-      Throttle.run(module.rate_limit(settings), fn -> module.deliver_order(order, settings) end)
+      Journal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+        Throttle.run(module.rate_limit(settings), fn -> module.deliver_order(order, settings) end)
+      end)
     end
   end
 

@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Catalog, StopSync}
   alias Delivest.Integrations.{Channels, Frontpad}
+  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
@@ -55,8 +56,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     end
   end
 
-  def handle_event("tab", %{"tab" => tab}, socket) when tab in ~w(settings check products),
-    do: {:noreply, assign(socket, tab: String.to_existing_atom(tab))}
+  def handle_event("tab", %{"tab" => tab}, socket)
+      when tab in ~w(settings check products journal),
+      do: {:noreply, assign(socket, tab: String.to_existing_atom(tab))}
 
   def handle_event("search", %{"q" => query}, socket),
     do: {:noreply, assign(socket, query: query)}
@@ -250,6 +252,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
           {gettext("Frontpad products")}
           <span :if={@snapshot}>({length(@snapshot.products)})</span>
         </.tab_button>
+        <.tab_button tab={:journal} current={@tab} icon="hero-queue-list">
+          {gettext("Request journal")}
+        </.tab_button>
       </div>
 
       <.guide :if={@tab == :settings} crm={@crm} branch={@current_branch} />
@@ -268,7 +273,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
       />
 
       <div
-        :if={@tab != :settings and !api_key?(@crm)}
+        :if={@tab in [:check, :products] and !api_key?(@crm)}
         id="frontpad-not-configured"
         class="alert"
       >
@@ -279,7 +284,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         </button>
       </div>
 
-      <%= if @tab != :settings and api_key?(@crm) do %>
+      <.live_component
+        :if={@tab == :journal}
+        module={JournalComponent}
+        id="frontpad-journal"
+        provider={:frontpad}
+        branch_id={@current_branch.id}
+      />
+
+      <%= if @tab in [:check, :products] and api_key?(@crm) do %>
         <%= if @snapshot do %>
           <p class="text-sm text-base-content/60">
             {gettext("Received from Frontpad")}: {OrderHelpers.local_datetime(@snapshot.checked_at)}

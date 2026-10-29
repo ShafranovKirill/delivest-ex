@@ -158,19 +158,33 @@ defmodule DelivestWeb.Router do
     get "/branches/:branch_id/menu", Menu.MenuController, :index
   end
 
+  pipeline :integration_journal do
+    plug DelivestWeb.Plugs.IntegrationJournal
+  end
+
+  pipeline :zvonok_journal do
+    plug DelivestWeb.Plugs.IntegrationJournal, provider: :zvonok
+  end
+
   scope "/integrations", DelivestWeb.Integrations do
-    pipe_through :api
+    pipe_through [:api, :integration_journal]
 
     post "/crm/:provider/:token", CrmWebhookController, :create
   end
 
   scope "/integrations", DelivestWeb.Integrations do
+    pipe_through :zvonok_journal
+
     get "/zvonok/:token", ZvonokWebhookController, :create
   end
 
   pipeline :yandex_eda do
     plug DelivestWeb.Plugs.RateLimit, bucket: :yandex_eda, limit: 600, period: :timer.minutes(1)
-    plug DelivestWeb.Plugs.YandexEdaJournal
+
+    plug DelivestWeb.Plugs.IntegrationJournal,
+      provider: :yandex_eda,
+      branch_param: "restaurant_id"
+
     plug DelivestWeb.Plugs.YandexEdaContentType
   end
 

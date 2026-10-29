@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
   alias Delivest.{Couriers, Identity}
   alias Delivest.Identity.Branch.CourierSettings
   alias Delivest.Integrations.YandexDelivery
+  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -204,6 +205,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
           </button>
         </div>
       </.form>
+
+      <.live_component
+        module={JournalComponent}
+        id="yandex-delivery-journal"
+        provider={:yandex_delivery}
+        branch_id={@current_branch.id}
+      />
     </div>
     """
   end

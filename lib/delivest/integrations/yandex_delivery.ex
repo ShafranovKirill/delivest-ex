@@ -8,6 +8,7 @@ defmodule Delivest.Integrations.YandexDelivery do
   alias Delivest.{Couriers, Identity, Repo}
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
+  alias Delivest.Integrations.Journal, as: RequestJournal
   alias Delivest.Integrations.YandexDelivery.{Api, Claim, Journal, JournalWorker, Settings}
   alias Delivest.Oms.{Order, Orders}
 
@@ -71,8 +72,12 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   @impl true
   def start(%Delivery{} = delivery, %Order{} = order) do
-    order = Repo.preload(order, [:items, :client])
+    RequestJournal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+      create_claim(delivery, Repo.preload(order, [:items, :client]))
+    end)
+  end
 
+  defp create_claim(delivery, order) do
     with {:ok, branch} <- Identity.get_branch(order.branch_id, preload: :info),
          %Settings{} = settings <- configured(branch),
          {:ok, body} <- Claim.build(order, branch, settings),
@@ -87,7 +92,13 @@ defmodule Delivest.Integrations.YandexDelivery do
   def cancel(%Delivery{external_id: nil}), do: :ok
   def cancel(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
 
-  def cancel(%Delivery{external_id: claim_id} = delivery) do
+  def cancel(%Delivery{} = delivery) do
+    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+      cancel_claim(delivery)
+    end)
+  end
+
+  defp cancel_claim(%Delivery{external_id: claim_id} = delivery) do
     token = settings(delivery.branch_id).token
 
     with {:ok, %{"cancel_state" => cancel_state}} <- Api.cancel_info(token, claim_id),
@@ -109,7 +120,10 @@ defmodule Delivest.Integrations.YandexDelivery do
 
       deliveries ->
         if Settings.configured?(settings),
-          do: poll(branch_id, settings, deliveries),
+          do:
+            RequestJournal.scope([branch_id: branch_id], fn ->
+              poll(branch_id, settings, deliveries)
+            end),
           else: :done
     end
   end
@@ -129,7 +143,13 @@ defmodule Delivest.Integrations.YandexDelivery do
     end
   end
 
-  def sync(%Delivery{external_id: claim_id} = delivery, %Settings{token: token}) do
+  def sync(%Delivery{} = delivery, %Settings{} = settings) do
+    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+      sync_claim(delivery, settings)
+    end)
+  end
+
+  defp sync_claim(%Delivery{external_id: claim_id} = delivery, %Settings{token: token}) do
     with {:ok, %{"status" => status} = claim} <- Api.info(token, claim_id) do
       if status == "ready_for_approval", do: accept(token, claim)
 

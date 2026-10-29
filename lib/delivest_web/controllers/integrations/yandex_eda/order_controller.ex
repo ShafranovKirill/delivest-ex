@@ -1,14 +1,22 @@
 defmodule DelivestWeb.Integrations.YandexEda.OrderController do
   use DelivestWeb, :controller
 
-  alias Delivest.Integrations.YandexEda
+  alias Delivest.Integrations.{Journal, YandexEda}
   alias DelivestWeb.Integrations.YandexEda.Reply
+
+  plug :journal_order when action not in [:create, :feedback]
 
   def create(conn, params) do
     case YandexEda.create_order(params) do
-      {:ok, order} -> json(conn, %{result: "OK", orderId: order.id})
-      {:error, {:unavailable, items}} -> Reply.unavailable(conn, items)
-      {:error, reason} -> Reply.failure(conn, reason)
+      {:ok, order} ->
+        Journal.put_context(order_id: order.id, branch_id: order.branch_id)
+        json(conn, %{result: "OK", orderId: order.id})
+
+      {:error, {:unavailable, items}} ->
+        Reply.unavailable(conn, items)
+
+      {:error, reason} ->
+        Reply.failure(conn, reason)
     end
   end
 
@@ -56,5 +64,10 @@ defmodule DelivestWeb.Integrations.YandexEda.OrderController do
       {:ok, _order} -> json(conn, %{result: "OK"})
       {:error, reason} -> Reply.failure(conn, reason)
     end
+  end
+
+  defp journal_order(conn, _opts) do
+    Journal.put_context(order_id: conn.path_params["id"])
+    conn
   end
 end

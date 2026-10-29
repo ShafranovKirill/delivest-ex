@@ -91,4 +91,39 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDeliveryTest do
     assert panel =~ "https://track.example/1"
     assert has_element?(lv, "#order-yandex-returning-#{order.id}")
   end
+
+  test "the request journal shows the branch requests and filters errors",
+       %{conn: conn, branch: branch} do
+    journal = Delivest.Integrations.Journal
+
+    for {status, url} <- [{200, "/claims/info"}, {500, "/claims/create"}] do
+      journal.record(%{
+        provider: :yandex_delivery,
+        branch_id: branch.id,
+        direction: :out,
+        method: :post,
+        url: url,
+        status: status,
+        response: %{"code" => "x"}
+      })
+    end
+
+    journal.record(%{
+      provider: :yandex_delivery,
+      branch_id: Ecto.UUID.generate(),
+      direction: :out,
+      method: :post,
+      url: "/other-branch",
+      status: 200
+    })
+
+    {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/integrations/yandex-delivery")
+    assert html =~ "/claims/info"
+    assert html =~ "/claims/create"
+    refute html =~ "/other-branch"
+
+    html = lv |> element("#yandex-delivery-journal input[type=checkbox]") |> render_click()
+    refute html =~ "/claims/info"
+    assert html =~ "/claims/create"
+  end
 end

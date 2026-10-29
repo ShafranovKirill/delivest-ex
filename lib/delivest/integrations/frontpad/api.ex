@@ -6,21 +6,21 @@ defmodule Delivest.Integrations.Frontpad.Api do
 
   def new_order(form_params) do
     "/api/index.php?new_order"
-    |> Client.post(form_params, base_url: @base_url, format: :form, decode_json: true)
+    |> Client.post(form_params, base_url: @base_url, format: :form, journal: :frontpad)
     |> decode()
     |> result()
   end
 
   def get_products(secret) do
     "/api/index.php?get_products"
-    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, decode_json: true)
+    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, journal: :frontpad)
     |> decode()
     |> products()
   end
 
   def get_stops(secret) do
     "/api/index.php?get_stops"
-    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, decode_json: true)
+    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, journal: :frontpad)
     |> decode()
     |> stops()
   end

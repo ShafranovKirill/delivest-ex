@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Zvonok
+  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -121,6 +122,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
           {Zvonok.webhook_url(@settings.webhook_token)}
         </code>
       </section>
+
+      <.live_component
+        module={JournalComponent}
+        id="zvonok-journal"
+        provider={:zvonok}
+        branch_id={nil}
+      />
     </div>
     """
   end

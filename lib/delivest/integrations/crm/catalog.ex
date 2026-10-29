@@ -3,6 +3,7 @@ defmodule Delivest.Integrations.Crm.Catalog do
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, CatalogCheck, CatalogSnapshot}
+  alias Delivest.Integrations.Journal
   alias Delivest.{Net, Repo}
   alias Delivest.Net.ProductCrmIds
 
@@ -22,7 +23,8 @@ defmodule Delivest.Integrations.Crm.Catalog do
 
     with :ok <- ensure_refresh_available(snapshot, to_string(provider)),
          {:ok, module, settings} <- source(branch_id, provider),
-         {:ok, catalog} <- module.fetch_catalog(settings) do
+         {:ok, catalog} <-
+           Journal.scope([branch_id: branch_id], fn -> module.fetch_catalog(settings) end) do
       {:ok, save(snapshot, branch_id, provider, catalog)}
     end
   end

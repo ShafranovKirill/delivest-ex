@@ -43,6 +43,7 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
   defp options(token) do
     [
       base_url: base_url(),
+      journal: :yandex_delivery,
       headers: [{"authorization", "Bearer " <> token}, {"accept-language", "ru"}]
     ]
   end

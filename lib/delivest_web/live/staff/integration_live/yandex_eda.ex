@@ -7,6 +7,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   alias Delivest.LocalTime
 
   alias DelivestWeb.Staff.IntegrationLive.{
+    JournalComponent,
     YandexEdaAccess,
     YandexEdaMenu,
     YandexEdaPause,
@@ -312,6 +313,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         menu={@menu}
         enabled={@branch_settings.enabled}
         can_edit={@can_edit_products}
+      />
+
+      <.live_component
+        module={JournalComponent}
+        id="yandex-eda-journal"
+        provider={:yandex_eda}
+        branch_id={nil}
       />
     </div>
     """
