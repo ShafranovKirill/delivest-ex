@@ -119,15 +119,23 @@ SyncState.remote_status → статус заказа в приложении
    - `name/0` — название для админки;
    - `settings_schema/0` — embedded-схема настроек с `changeset(settings, attrs, required?)`;
    - `configured?/1` — подключена ли CRM (обычно задан ключ API);
-   - `deliver_order/2` — отправка заказа, `{:ok, %{external_id: ...}}`;
+   - `deliver_order/2` — отправка заказа, `{:ok, %{external_id: ...}}` или `{:pending, ref}`, если CRM подтверждает позже;
    - `classify_error/1` — какие ошибки повторять, `:auth` — неверный ключ;
    - `health_check/1` — дешёвый запрос на чтение для кнопки «Проверить подключение»;
    - `rate_limit/1` — `{ключ_аккаунта, интервал_мс}` или `nil`.
 3. Если CRM присылает статусы: `handle_webhook/2` проверяет токен и кладёт событие в `Inbox`, обработка — `handle_inbox/1`. Поле `webhook_token` в настройках находит `Crm.Lookup`, ссылка строится через `Crm.webhook_url(key(), token)`.
-4. Если CRM отдаёт меню: `catalog_source/1` и `fetch_catalog/1`.
-5. Добавить модуль в `@modules` в `crm/registry.ex`. Embed в настройках филиала, значение Enum и карточка на странице интеграций появятся сами.
-6. Админка: LiveView настроек в `lib/delivest_web/live/staff/integration_live/`, маршрут в `router.ex` и клауза `provider_path/1` в `integration_live/index.ex`.
-7. Написать `README.md` по образцу Frontpad: API, лимиты и таблица соответствия наших полей полям CRM.
+4. Необязательные колбэки:
+   - `idempotent?/0` — можно ли повторить создание с тем же id. Неподтверждённый за 5 минут заказ (`crm.status = confirming`) отправляется снова, иначе помечается ошибкой;
+   - `capabilities/0` — `:cancel`, `:update_items`, `:update_comment`, `:update_address`, `:update_time`, `:update_payments`;
+   - `cancel_order/3` и `update_order/3` — вызываются `Crm.CommandWorker` по событиям `order.cancelled` и `order.updated`, правка получает только разрешённые поля;
+   - `status_map/1` — код статуса CRM → наш статус, `Crm.status_for/3`;
+   - `dictionaries/1` — справочники CRM (типы оплат, заказа, причины отмены).
+
+   Подтверждение асинхронного создания — `Crm.confirm_order(order, %{external_id: ...})` или `Crm.reject_order(order, error)` из вебхука или опроса.
+5. Если CRM отдаёт меню: `catalog_source/1` и `fetch_catalog/1`.
+6. Добавить модуль в `@modules` в `crm/registry.ex`. Embed в настройках филиала, значение Enum и карточка на странице интеграций появятся сами.
+7. Админка: LiveView настроек в `lib/delivest_web/live/staff/integration_live/`, маршрут в `router.ex` и клауза `provider_path/1` в `integration_live/index.ex`.
+8. Написать `README.md` по образцу Frontpad: API, лимиты и таблица соответствия наших полей полям CRM.
 
 Новая CRM ничего не меняет у других. Её настройки лежат в отдельном embed, вебхук идёт на свой сегмент URL, а ошибки классифицирует она сама.
 
