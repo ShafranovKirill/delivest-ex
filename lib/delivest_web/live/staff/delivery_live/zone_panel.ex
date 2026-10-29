@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
   use DelivestWeb, :html
 
   alias Delivest.Delivery.Conditions
-  alias DelivestWeb.Staff.DeliveryLive.Index
+  alias DelivestWeb.Staff.DeliveryLive.Zones
 
   attr :zones, :list, required: true
   attr :selected_id, :string, default: nil
@@ -113,7 +113,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
           label={gettext("Delivers")}
           disabled={not @can_edit}
         />
-        <Index.conditions form={@form} disabled={not @can_edit} stacked />
+        <Zones.conditions form={@form} disabled={not @can_edit} stacked />
         <.input
           field={@form[:delivery_minutes]}
           type="number"

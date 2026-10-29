@@ -143,7 +143,7 @@ msgstr ""
 
 #: lib/delivest/identity/branch/branch_info.ex:69
 #: lib/delivest/identity/client.ex:43
-#: lib/delivest_web/live/staff/branch_live/branch_form.ex:56
+#: lib/delivest_web/live/staff/branch_live/branch_form.ex:54
 #, elixir-autogen, elixir-format
 msgid "The number must be in the format +7XXXXXXXXXX"
 msgstr ""

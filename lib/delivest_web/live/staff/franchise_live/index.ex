@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.FranchiseLive.Index do
   use DelivestWeb, :live_view
 
+  import DelivestWeb.Staff.SettingsComponents
+
   alias Delivest.Franchise
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -9,6 +11,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
     FranchiseHelpers,
     ImagesComponent,
     LogoComponent,
+    Sections,
     SettingsFormComponent
   }
 
@@ -24,8 +27,26 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, assign(socket, document: document(socket, params))}
+    case section(socket.assigns.live_action, params) do
+      {:ok, section} ->
+        {:noreply,
+         assign(socket,
+           section: section,
+           document: document(socket, params),
+           page_title: title(section)
+         )}
+
+      :error ->
+        {:noreply, push_navigate(socket, to: ~p"/staff/franchise")}
+    end
   end
+
+  defp section(:index, _params), do: {:ok, nil}
+  defp section(:document, _params), do: {:ok, Sections.describe(:documents)}
+  defp section(:section, %{"section" => section}), do: Sections.fetch(section)
+
+  defp title(nil), do: gettext("Franchise settings")
+  defp title(section), do: section.title
 
   defp document(socket, %{"kind" => kind}) do
     case Franchise.parse_document_kind(kind) do
@@ -56,28 +77,54 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
      socket
      |> load_documents()
      |> put_flash(:info, gettext("Document saved"))
-     |> push_patch(to: ~p"/staff/franchise")}
+     |> push_patch(to: ~p"/staff/franchise/documents")}
   end
 
   defp load_documents(socket), do: assign(socket, documents: Franchise.list_documents())
 
   @impl true
-  def render(assigns) do
+  def render(%{section: nil} = assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+    <div class="space-y-6 py-4 sm:p-6 max-w-6xl mx-auto">
       <.page_header
         title={gettext("Franchise settings")}
         subtitle={gettext("Name, brand color, seller details and legal documents for all branches.")}
       />
 
+      <.settings_cards>
+        <.settings_card
+          :for={section <- Sections.all()}
+          id={"franchise-section-#{section.id}"}
+          navigate={~p"/staff/franchise/#{section.id}"}
+          icon={section.icon}
+          title={section.title}
+          description={section.description}
+        />
+      </.settings_cards>
+    </div>
+    """
+  end
+
+  def render(assigns) do
+    ~H"""
+    <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+      <.page_header
+        title={@section.title}
+        subtitle={@section.description}
+        back={~p"/staff/franchise"}
+      />
+
       <.live_component
+        :if={@section.id in [:brand, :seller]}
         module={SettingsFormComponent}
         id="franchise-settings"
+        section={@section.id}
         settings={@settings}
         current_staff={@current_staff}
       />
 
       <.live_component
+        :if={@section.id == :logo}
         module={LogoComponent}
         id="franchise-logo"
         settings={@settings}
@@ -85,22 +132,17 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       />
 
       <.live_component
+        :if={@section.id == :images}
         module={ImagesComponent}
         id="franchise-images"
         settings={@settings}
         current_staff={@current_staff}
       />
 
-      <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-3">
-        <div>
-          <h2 class="font-bold text-lg">{gettext("Legal documents")}</h2>
-          <p class="text-sm text-base-content/60">
-            {gettext(
-              "Default templates already contain your details. Have a lawyer check them before publishing."
-            )}
-          </p>
-        </div>
-
+      <section
+        :if={@section.id == :documents}
+        class="p-5 bg-base-100 rounded-box border border-base-300"
+      >
         <div id="legal-documents" class="divide-y divide-base-200">
           <div
             :for={document <- @documents}
@@ -134,7 +176,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
         id="document-slideover"
         show={@document != nil}
         title={if @document, do: FranchiseHelpers.document_title(@document.kind), else: ""}
-        on_close={JS.patch(~p"/staff/franchise")}
+        on_close={JS.patch(~p"/staff/franchise/documents")}
       >
         <.live_component
           :if={@document}
@@ -142,7 +184,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
           id={"document-#{@document.kind}"}
           document={@document}
           current_staff={@current_staff}
-          patch={~p"/staff/franchise"}
+          patch={~p"/staff/franchise/documents"}
         />
       </.slide_over>
     </div>

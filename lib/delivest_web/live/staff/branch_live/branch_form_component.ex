@@ -83,11 +83,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
     {branch_params, info_params} = BranchForm.to_params(changeset)
 
     case persist(socket.assigns, branch_params, info_params) do
-      {:ok, _branch} ->
+      {:ok, branch} ->
         {:noreply,
          socket
          |> put_flash(:info, gettext("Branch saved successfully"))
-         |> push_navigate(to: ~p"/staff/branches")}
+         |> push_navigate(to: sections_path(branch))}
 
       {:error, _step, %Ecto.Changeset{} = error} ->
         {:noreply,
@@ -103,12 +103,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   defp persist(%{action: :new, current_staff: staff}, branch_params, info_params),
     do: Identity.create_branch(staff, branch_params, info_params)
 
-  defp persist(
-         %{action: :edit, current_staff: staff, branch: branch},
-         branch_params,
-         info_params
-       ),
-       do: Identity.update_branch(staff, branch, branch_params, info_params)
+  defp persist(%{current_staff: staff, branch: branch}, branch_params, info_params),
+    do: Identity.update_branch(staff, branch, branch_params, info_params)
 
   defp copy_errors(changeset, error) do
     error.errors
@@ -118,57 +114,15 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
     |> Map.put(:action, :insert)
   end
 
-  attr :id, :string, required: true
-  attr :title, :string, required: true
-  attr :description, :string, default: nil
-  slot :inner_block, required: true
+  defp sections_path(branch), do: ~p"/staff/branches/#{branch.slug}/edit"
 
-  defp section(assigns) do
-    ~H"""
-    <section id={@id} class="scroll-mt-24 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
-      <header class="mb-4">
-        <h2 class="text-lg font-bold">{@title}</h2>
-        <p :if={@description} class="text-sm text-base-content/60">{@description}</p>
-      </header>
-      <div class="space-y-4">{render_slot(@inner_block)}</div>
-    </section>
-    """
-  end
-
-  defp sections do
-    [
-      {"branch-general", gettext("General")},
-      {"branch-location", gettext("Location")},
-      {"branch-schedule", gettext("Working Hours")},
-      {"branch-kitchen", gettext("Kitchen")},
-      {"branch-couriers", gettext("Couriers")},
-      {"branch-links", gettext("Social Links & Messengers")},
-      {"branch-map", gettext("YCart Settings")}
-    ]
-  end
-
-  defp courier_sources, do: [{gettext("Own couriers"), :staff}]
-
-  defp courier_searches do
-    [
-      {gettext("Manually"), :manual},
-      {gettext("When cooking starts"), :preparing},
-      {gettext("When the order is ready"), :ready}
-    ]
-  end
+  defp cancel_path(%{action: :new}), do: ~p"/staff/branches"
+  defp cancel_path(%{branch: branch}), do: sections_path(branch)
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, :sections, sections())
-
     ~H"""
-    <div class="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <nav class="hidden lg:block">
-        <ul class="menu sticky top-24 w-full rounded-box border border-base-300 bg-base-100 p-2">
-          <li :for={{id, label} <- @sections}><a href={"##{id}"}>{label}</a></li>
-        </ul>
-      </nav>
-
+    <div>
       <.form
         for={@form}
         id="branch-form"
@@ -177,53 +131,41 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
         phx-submit="save"
         class="space-y-6"
       >
-        <.section id="branch-general" title={gettext("General")}>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
-            <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
-            <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
-            <.input
-              field={@form[:delivery_time]}
-              type="number"
-              label={gettext("Delivery Time (minutes)")}
-            />
-          </div>
-          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
-        </.section>
+        <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
+          <p :if={@section.description} class="text-sm text-base-content/60">
+            {@section.description}
+          </p>
 
-        <.section
-          id="branch-location"
-          title={gettext("Location")}
-          description={
-            gettext("The address and the point of the branch for customers and the pickup map.")
-          }
-        >
+          <div :if={@section.id == :general} class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
+              <.input field={@form[:slug]} type="text" label={gettext("Branch Slug")} required />
+              <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
+              <.input
+                field={@form[:delivery_time]}
+                type="number"
+                label={gettext("Delivery Time (minutes)")}
+              />
+            </div>
+            <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
+          </div>
+
           <.location_fields
+            :if={@section.id == :location}
             form={@form}
             map={@address_map}
             suggestions={@location_suggestions}
             target={@myself}
           />
-        </.section>
 
-        <.section id="branch-schedule" title={gettext("Working Hours")}>
           <.live_component
+            :if={@section.id == :hours}
             module={WorkingHoursComponent}
             id="working-hours-editor"
             working_hours={Ecto.Changeset.get_field(@form.source, :working_hours) || %{}}
           />
-        </.section>
 
-        <.section
-          id="branch-kitchen"
-          title={gettext("Kitchen")}
-          description={
-            gettext(
-              "The kitchen screen shows orders being cooked. Without it, or with Frontpad, the operator marks orders ready."
-            )
-          }
-        >
-          <.inputs_for :let={kitchen} field={@form[:kitchen]}>
+          <.inputs_for :let={kitchen} :if={@section.id == :kitchen} field={@form[:kitchen]}>
             <.input field={kitchen[:enabled]} type="checkbox" label={gettext("Kitchen works")} />
             <div class="grid gap-4 sm:grid-cols-2">
               <.input
@@ -234,54 +176,23 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
               />
             </div>
           </.inputs_for>
-        </.section>
 
-        <.section
-          id="branch-couriers"
-          title={gettext("Couriers")}
-          description={
-            gettext(
-              "Who delivers the orders and when the courier search starts. With Frontpad the delivery stays in Frontpad."
-            )
-          }
-        >
-          <.inputs_for :let={couriers} field={@form[:couriers]}>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <.input
-                field={couriers[:source]}
-                type="select"
-                label={gettext("Couriers")}
-                options={courier_sources()}
-              />
-              <.input
-                field={couriers[:search]}
-                type="select"
-                label={gettext("Find a courier")}
-                options={courier_searches()}
-              />
-            </div>
-          </.inputs_for>
-        </.section>
-
-        <.section id="branch-links" title={gettext("Social Links & Messengers")}>
-          <div class="grid gap-4 sm:grid-cols-3">
+          <div :if={@section.id == :links} class="grid gap-4 sm:grid-cols-3">
             <.input field={@form[:vk_url]} type="text" label={gettext("VK Link")} />
             <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
             <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
           </div>
-        </.section>
 
-        <.section id="branch-map" title={gettext("YCart Settings")}>
-          <.inputs_for :let={ycart} field={@form[:ycart_settings]}>
+          <.inputs_for :let={ycart} :if={@section.id == :ycart} field={@form[:ycart_settings]}>
             <.input field={ycart[:enabled]} type="checkbox" label={gettext("YCart Enabled")} />
             <div class="grid gap-4 sm:grid-cols-2">
               <.input field={ycart[:yandex_org_id]} type="text" label={gettext("Yandex Org ID")} />
             </div>
           </.inputs_for>
-        </.section>
+        </section>
 
-        <div class="sticky bottom-0 z-10 -mx-1 flex justify-end gap-3 border-t border-base-300 bg-base-200/90 px-1 py-4 backdrop-blur">
-          <.link navigate={~p"/staff/branches"} class="btn btn-ghost">{gettext("Cancel")}</.link>
+        <div class="flex justify-end gap-3">
+          <.link navigate={cancel_path(assigns)} class="btn btn-ghost">{gettext("Cancel")}</.link>
           <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
             {gettext("Save")}
           </button>

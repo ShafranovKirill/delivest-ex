@@ -12,8 +12,24 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     %{conn: init_test_session(conn, %{"staff_id" => staff.id})}
   end
 
-  test "saves brand and seller details", %{conn: conn} do
+  test "settings are split into sections", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
+
+    for section <- ~w(brand seller logo images documents) do
+      assert has_element?(
+               lv,
+               ~s(#franchise-section-#{section}[href="/staff/franchise/#{section}"])
+             )
+    end
+
+    refute has_element?(lv, "#franchise-settings-form")
+
+    assert {:error, {:live_redirect, %{to: "/staff/franchise"}}} =
+             live(conn, ~p"/staff/franchise/unknown")
+  end
+
+  test "saves brand and seller details", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/brand")
 
     lv
     |> form("#franchise-settings-form", settings: %{primary_color: "#eeeeee"})
@@ -22,9 +38,14 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     assert has_element?(lv, "#franchise-color-warning")
 
     lv
-    |> form("#franchise-settings-form",
-      settings: %{name: "Pizza", primary_color: "#aa0000", inn: "7700000000"}
-    )
+    |> form("#franchise-settings-form", settings: %{name: "Pizza", primary_color: "#aa0000"})
+    |> render_submit()
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/seller")
+    refute has_element?(lv, "#franchise-color")
+
+    lv
+    |> form("#franchise-settings-form", settings: %{inn: "7700000000"})
     |> render_submit()
 
     assert %{name: "Pizza", primary_color: "#aa0000", inn: "7700000000"} =
@@ -32,7 +53,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
   end
 
   test "the dark theme color is automatic until a custom one is chosen", %{conn: conn} do
-    {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/brand")
 
     refute has_element?(lv, "#franchise-dark-color-input")
 
@@ -54,7 +75,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
 
   test "uploads the icon and the link preview, then removes the icon", %{conn: conn} do
     Delivest.S3Stub.record(self())
-    {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/images")
 
     lv
     |> file_input("#franchise-images-form", :icon, [
@@ -82,7 +103,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
 
   test "uploads a logo for each theme and falls back to the name", %{conn: conn} do
     Delivest.S3Stub.record(self())
-    {:ok, lv, html} = live(conn, ~p"/staff/franchise")
+    {:ok, lv, html} = live(conn, ~p"/staff/franchise/logo")
 
     assert html =~ "Delivest"
     refute has_element?(lv, "#franchise-logo-preview")

@@ -6,6 +6,7 @@ defmodule Delivest.Identity.Branches do
   alias Delivest.Audit
 
   @integrations ["crm", "channels", "yandex_delivery", :crm, :channels, :yandex_delivery]
+  @own_settings @integrations ++ ["couriers", :couriers]
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
@@ -77,7 +78,7 @@ defmodule Delivest.Identity.Branches do
       "branches.update",
       branch,
       branch_attrs,
-      Map.drop(info_attrs, @integrations)
+      Map.drop(info_attrs, @own_settings)
     )
     |> Audit.track(staff, "branch.updated")
   end
@@ -85,6 +86,12 @@ defmodule Delivest.Identity.Branches do
   def update_integrations(staff, %Branch{} = branch, info_attrs) do
     staff
     |> do_update_branch("integrations.update", branch, %{}, Map.take(info_attrs, @integrations))
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  def update_couriers(staff, %Branch{} = branch, attrs) do
+    staff
+    |> do_update_branch("delivery.update", branch, %{}, %{"couriers" => attrs})
     |> Audit.track(staff, "branch.updated")
   end
 

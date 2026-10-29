@@ -77,8 +77,10 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         phx-submit="save"
         class="space-y-6"
       >
-        <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4">
-          <h2 class="font-bold text-lg">{gettext("Brand")}</h2>
+        <section
+          :if={@section == :brand}
+          class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
+        >
           <.input field={@form[:name]} type="text" label={gettext("Name")} maxlength="60" />
           <.input
             field={@form[:description]}
@@ -186,13 +188,10 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           </div>
         </section>
 
-        <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4">
-          <div>
-            <h2 class="font-bold text-lg">{gettext("Seller details")}</h2>
-            <p class="text-sm text-base-content/60">
-              {gettext("Shown in the site footer and inserted into the legal documents.")}
-            </p>
-          </div>
+        <section
+          :if={@section == :seller}
+          class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
+        >
           <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-x-3">
             <.input
               field={@form[:legal_form]}

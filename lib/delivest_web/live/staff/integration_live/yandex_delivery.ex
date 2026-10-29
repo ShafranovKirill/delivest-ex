@@ -102,8 +102,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
         <.icon name="hero-exclamation-triangle" class="size-5" />
         <span>
           {gettext("The branch uses its own couriers. Choose Yandex Delivery in the branch couriers.")}
-          <.link navigate={~p"/staff/branches/#{@current_branch.slug}/edit"} class="link">
-            {gettext("Branch settings")}
+          <.link navigate={~p"/staff/b/#{@current_branch}/delivery/couriers"} class="link">
+            {gettext("Branch couriers")}
           </.link>
         </span>
       </div>

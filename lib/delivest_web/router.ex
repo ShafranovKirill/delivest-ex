@@ -250,6 +250,7 @@ defmodule DelivestWeb.Router do
         live "/", Branches, :index
         live "/new", Edit, :new
         live "/:slug/edit", Edit, :edit
+        live "/:slug/edit/:section", Edit, :section
       end
 
       scope "/employee", StaffLive do
@@ -261,6 +262,7 @@ defmodule DelivestWeb.Router do
       scope "/franchise", FranchiseLive do
         live "/", Index, :index
         live "/documents/:kind", Index, :document
+        live "/:section", Index, :section
       end
 
       scope "/roles", RoleLive do
@@ -309,6 +311,8 @@ defmodule DelivestWeb.Router do
         live "/dashboard", DashboardLive.Index, :index
         live "/statistics", StatisticsLive.Index, :index
         live "/delivery", DeliveryLive.Index, :index
+        live "/delivery/zones", DeliveryLive.Zones, :index
+        live "/delivery/couriers", DeliveryLive.Couriers, :index
         live "/deliveries", CourierLive.Index, :index
         live "/couriers", CourierLive.Board, :index
 

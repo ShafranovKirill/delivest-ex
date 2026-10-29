@@ -30,6 +30,7 @@ defmodule Delivest.Identity do
   defdelegate get_branch_by_slug(slug, opts \\ []), to: Branches
   defdelegate update_branch(staff, branch, branch_attrs, info_attrs), to: Branches
   defdelegate update_integrations(staff, branch, info_attrs), to: Branches
+  defdelegate update_couriers(staff, branch, attrs), to: Branches
   defdelegate create_branch(staff, branch_attrs, info_attrs), to: Branches
   defdelegate soft_delete_branch(staff, branch), to: Branches
 

@@ -433,6 +433,25 @@ defmodule Delivest.Identity.BranchesTest do
       assert {:ok, %{info: %{crm: %{enabled: true}}}} =
                Branches.update_integrations(admin, branch, crm)
     end
+
+    test "couriers are set with delivery editing, not with the branch form", %{admin: admin} do
+      branch = insert(:branch)
+      couriers = %{"source" => "yandex", "search" => "manual"}
+
+      assert {:ok, %{info: info}} =
+               Branches.update_branch(admin, branch, %{}, %{"couriers" => couriers})
+
+      assert info.couriers.source == :staff
+
+      editor = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+      insert(:staff_branch, staff: editor, branch: branch)
+      editor = Repo.preload(editor, [:role, :branches], force: true)
+
+      assert {:error, :forbidden} = Branches.update_couriers(editor, branch, couriers)
+
+      assert {:ok, %{info: %{couriers: %{source: :yandex, search: :manual}}}} =
+               Branches.update_couriers(admin, branch, couriers)
+    end
   end
 
   describe "branches - cache integration" do
