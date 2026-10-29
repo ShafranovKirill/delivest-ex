@@ -7,8 +7,10 @@ defmodule Delivest.Net.ProductCrmIds do
 
   def by_product(product_ids, provider) do
     from(e in ProductExternalId,
-      where: e.product_id in ^product_ids and e.provider == ^to_string(provider),
-      select: {e.product_id, e.external_id}
+      where:
+        e.entity_type == "product" and e.entity_id in ^product_ids and
+          e.provider == ^to_string(provider),
+      select: {e.entity_id, e.external_id}
     )
     |> Repo.all()
     |> Map.new()
@@ -16,8 +18,10 @@ defmodule Delivest.Net.ProductCrmIds do
 
   def by_external_id(branch_id, provider) do
     from(e in ProductExternalId,
-      where: e.branch_id == ^branch_id and e.provider == ^to_string(provider),
-      select: {e.external_id, e.product_id}
+      where:
+        e.entity_type == "product" and e.branch_id == ^branch_id and
+          e.provider == ^to_string(provider),
+      select: {e.external_id, e.entity_id}
     )
     |> Repo.all()
     |> Map.new()

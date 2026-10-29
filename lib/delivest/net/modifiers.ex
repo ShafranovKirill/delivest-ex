@@ -2,7 +2,14 @@ defmodule Delivest.Net.Modifiers do
   import Ecto.Query
 
   alias Delivest.{Audit, Identity, Repo}
-  alias Delivest.Net.{Modifier, ModifierGroup, ModifierStop, ProductModifierGroup}
+
+  alias Delivest.Net.{
+    Modifier,
+    ModifierGroup,
+    ModifierStop,
+    ProductExternalId,
+    ProductModifierGroup
+  }
 
   @type choice :: %{
           id: binary(),
@@ -53,6 +60,44 @@ defmodule Delivest.Net.Modifiers do
   end
 
   def get_modifier(id), do: Repo.get(Modifier, id)
+
+  def crm_ids(modifier_ids, provider) do
+    Repo.all(
+      from(e in ProductExternalId,
+        where:
+          e.entity_type == "modifier" and e.entity_id in ^modifier_ids and
+            e.provider == ^to_string(provider),
+        select: {e.entity_id, e.external_id}
+      )
+    )
+    |> Map.new()
+  end
+
+  def put_crm_id(staff, %Modifier{} = modifier, branch_id, provider, value) do
+    with :ok <- authorize(staff) do
+      Repo.delete_all(
+        from(e in ProductExternalId,
+          where:
+            e.entity_type == "modifier" and e.entity_id == ^modifier.id and
+              e.provider == ^to_string(provider)
+        )
+      )
+
+      case value && String.trim(value) do
+        blank when blank in [nil, ""] ->
+          {:ok, nil}
+
+        external_id ->
+          %ProductExternalId{entity_type: "modifier", entity_id: modifier.id}
+          |> ProductExternalId.changeset(%{
+            branch_id: branch_id,
+            provider: to_string(provider),
+            external_id: external_id
+          })
+          |> Repo.insert()
+      end
+    end
+  end
 
   def group_ids(product_id) do
     Repo.all(

@@ -40,7 +40,11 @@ defmodule Delivest.Net.Product do
     field :order, :float
     belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
     field :crm_ids, :map, virtual: true, default: %{}
-    has_many :external_ids, Delivest.Net.ProductExternalId, on_replace: :delete
+
+    has_many :external_ids, Delivest.Net.ProductExternalId,
+      foreign_key: :entity_id,
+      where: [entity_type: "product"],
+      on_replace: :delete
 
     belongs_to :category, Category, type: :binary_id
 

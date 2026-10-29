@@ -111,7 +111,7 @@ defmodule Delivest.Factory do
 
     if external_id do
       Delivest.Repo.insert!(%Delivest.Net.ProductExternalId{
-        product_id: product.id,
+        entity_id: product.id,
         branch_id: branch_id,
         provider: "frontpad",
         external_id: external_id

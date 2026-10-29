@@ -27,6 +27,18 @@ defmodule Delivest.Integrations.Frontpad do
   @impl true
   def handle_webhook(token, params), do: Webhook.handle(token, params)
 
+  defp modifier_articles(order) do
+    order.items
+    |> Enum.flat_map(&modifiers/1)
+    |> Enum.map(& &1.modifier_id)
+    |> Enum.reject(&is_nil/1)
+    |> Delivest.Net.Modifiers.crm_ids(key())
+    |> Map.new(fn {modifier_id, external_id} -> {modifier_id, %{external_id: external_id}} end)
+  end
+
+  defp modifiers(%{modifiers: modifiers}) when is_list(modifiers), do: modifiers
+  defp modifiers(_item), do: []
+
   @impl true
   def deliver_order(order, settings) do
     products =
@@ -34,6 +46,7 @@ defmodule Delivest.Integrations.Frontpad do
       |> Enum.map(& &1.product_id)
       |> ProductCrmIds.by_product(key())
       |> Map.new(fn {product_id, external_id} -> {product_id, %{external_id: external_id}} end)
+      |> Map.merge(modifier_articles(order))
 
     with {:ok, payload} <- OrderPayload.build(order, settings, products) do
       payload |> OrderPayload.to_form_params() |> Api.new_order()

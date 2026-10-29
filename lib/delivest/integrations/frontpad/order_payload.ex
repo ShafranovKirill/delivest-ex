@@ -164,10 +164,15 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
   end
 
   defp forced_price(item, %Settings{price_override: true}) do
-    if discount_per_unit(item) > 0, do: rubles(item.price)
+    if discount_per_unit(item) > 0, do: rubles(item.price - modifiers_unit(item))
   end
 
   defp forced_price(_item, _settings), do: nil
+
+  defp modifiers_unit(%{modifiers: modifiers}) when is_list(modifiers),
+    do: modifiers |> Enum.map(&(&1.price * &1.quantity)) |> Enum.sum()
+
+  defp modifiers_unit(_item), do: 0
 
   defp discount_per_unit(%{base_price: base, price: price})
        when is_integer(base) and is_integer(price),
@@ -189,7 +194,10 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
               price: forced_price(item, settings)
             }
 
-            {:cont, [line | acc]}
+            case modifier_lines(item, length(acc), products_map) do
+              {:ok, extra} -> {:cont, Enum.reverse(extra) ++ [line | acc]}
+              error -> {:halt, error}
+            end
 
           _ ->
             {:halt, {:error, {:missing_external_id, item.product_id}}}
@@ -201,6 +209,31 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
       list -> {:ok, Enum.reverse(list)}
     end
   end
+
+  defp modifier_lines(%{modifiers: modifiers} = item, parent, products_map)
+       when is_list(modifiers) do
+    Enum.reduce_while(modifiers, {:ok, []}, fn modifier, {:ok, acc} ->
+      case products_map[modifier.modifier_id] do
+        %{external_id: ext_id} ->
+          line = %{
+            external_id: ext_id,
+            quantity: item.quantity * modifier.quantity,
+            mod: Integer.to_string(parent),
+            price: nil
+          }
+
+          {:cont, {:ok, acc ++ [line]}}
+
+        _missing when modifier.price == 0 ->
+          {:cont, {:ok, acc}}
+
+        _missing ->
+          {:halt, {:error, {:missing_external_id, modifier.modifier_id || modifier.name}}}
+      end
+    end)
+  end
+
+  defp modifier_lines(_item, _parent, _products_map), do: {:ok, []}
 
   defp delivery_line(%{delivery_amount: amount}, %Settings{delivery_article: article})
        when is_integer(amount) and amount > 0 and article not in [nil, ""],

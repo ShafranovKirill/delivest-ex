@@ -203,4 +203,56 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
       assert TagCodes.changeset(%TagCodes{}, %{"app" => "1500", "staff" => ""}).valid?
     end
   end
+
+  test "a modifier with an article goes as a product tied to its parent" do
+    order = %Order{
+      items: [
+        %OrderItem{
+          product_id: "pizza",
+          quantity: 2,
+          modifiers: [
+            %Delivest.Oms.OrderItemModifier{
+              modifier_id: "cheese",
+              name: "Сыр",
+              price: 5_000,
+              quantity: 1
+            },
+            %Delivest.Oms.OrderItemModifier{
+              modifier_id: "thin",
+              name: "Тонкое",
+              price: 0,
+              quantity: 1
+            }
+          ]
+        }
+      ]
+    }
+
+    products = %{"pizza" => %{external_id: "10"}, "cheese" => %{external_id: "77"}}
+    assert {:ok, view} = OrderPayload.build(order, %Settings{api_key: "secret"}, products)
+    params = OrderPayload.to_form_params(view)
+
+    assert {"product[0]", "10"} in params
+    assert {"product[1]", "77"} in params
+    assert {"product_kol[1]", "2"} in params
+    assert {"product_mod[1]", "0"} in params
+
+    paid_without_article =
+      put_in(order.items, [
+        %{
+          hd(order.items)
+          | modifiers: [
+              %Delivest.Oms.OrderItemModifier{
+                modifier_id: "bacon",
+                name: "Бекон",
+                price: 7_000,
+                quantity: 1
+              }
+            ]
+        }
+      ])
+
+    assert {:error, {:missing_external_id, "bacon"}} =
+             OrderPayload.build(paid_without_article, %Settings{api_key: "secret"}, products)
+  end
 end
