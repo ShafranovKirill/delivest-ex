@@ -16,6 +16,7 @@ defmodule Delivest.Oms.Orders do
   defdelegate advance_order(order, to, by, opts \\ []), to: StatusChange, as: :run
   defdelegate revert_order_status(order, staff, reason), to: StatusChange, as: :revert
   defdelegate acknowledge_cancel(order, staff), to: StatusChange
+  defdelegate courier_changed(order_id), to: Notifier
 
   def paginate_orders(params, page_params) do
     with {:ok, {orders, meta}} <-
@@ -114,7 +115,7 @@ defmodule Delivest.Oms.Orders do
     |> where([o], is_nil(o.deleted_at))
     |> where([o], o.inserted_at >= ^since and o.status not in ^OrderFlow.final())
     |> order_by([o], desc: o.inserted_at)
-    |> preload(:items)
+    |> preload([:items, deliveries: :courier])
     |> Repo.all()
   end
 

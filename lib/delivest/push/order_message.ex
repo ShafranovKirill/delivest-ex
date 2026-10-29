@@ -7,22 +7,41 @@ defmodule Delivest.Push.OrderMessage do
 
   def notified?(status), do: status in @notified
 
-  def build(order, status, nil), do: message(order, status)
+  def build(order, status, contact, locale),
+    do:
+      localized(locale, fn ->
+        message(order, body(status, order, contact), url(order, contact))
+      end)
 
-  def build(order, status, locale),
-    do: Gettext.with_locale(DelivestWeb.Gettext, locale, fn -> message(order, status) end)
+  def courier(order, contact, locale) do
+    localized(locale, fn ->
+      body =
+        gettext("Courier %{name} is heading to pick up order %{number}",
+          name: contact.name,
+          number: order.number
+        )
 
-  defp message(order, status) do
+      message(order, body, url(order, contact))
+    end)
+  end
+
+  defp localized(nil, fun), do: fun.()
+  defp localized(locale, fun), do: Gettext.with_locale(DelivestWeb.Gettext, locale, fun)
+
+  defp message(order, body, url) do
     settings = Franchise.get_settings()
 
     %{
       title: settings.name,
-      body: body(status, order),
+      body: body,
       icon: Franchise.icon_url(settings, "icon-192.png"),
       tag: "order-#{order.id}",
-      url: url(order)
+      url: url
     }
   end
+
+  defp url(_order, %{tracking_url: url}) when is_binary(url), do: url
+  defp url(order, _contact), do: url(order)
 
   defp url(order) do
     case Identity.get_branch(order.branch_id) do
@@ -30,6 +49,15 @@ defmodule Delivest.Push.OrderMessage do
       _ -> "/"
     end
   end
+
+  defp body(:delivering, order, %{name: name}) when is_binary(name),
+    do:
+      gettext("Courier %{name} is on the way with order %{number}",
+        name: name,
+        number: order.number
+      )
+
+  defp body(status, order, _contact), do: body(status, order)
 
   defp body(:accepted, order),
     do: gettext("Order %{number} is confirmed", number: order.number)

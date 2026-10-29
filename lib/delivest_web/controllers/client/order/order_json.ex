@@ -1,4 +1,6 @@
 defmodule DelivestWeb.Client.Order.OrderJSON do
+  alias Delivest.Couriers
+
   def create(%{order: order}) do
     %{data: order_data(order)}
   end
@@ -28,6 +30,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       comment: order.comment,
       address: serialize_address(order.address),
       inserted_at: order.inserted_at,
+      courier: Couriers.contact(order),
       items: Enum.map(order.items, &item_data/1)
     }
   end

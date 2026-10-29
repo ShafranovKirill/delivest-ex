@@ -13,6 +13,7 @@ defmodule Delivest.Push.Subscription do
     field :auth, :string
     field :locale, :string
     field :notified_status, :string
+    field :notified_courier, :string
 
     belongs_to :order, Delivest.Oms.Order
 
@@ -43,6 +44,6 @@ defmodule Delivest.Push.Subscription do
 
   defp hosts, do: :delivest |> Application.get_env(__MODULE__, []) |> Keyword.get(:hosts, @hosts)
 
-  def notified_changeset(subscription, status),
-    do: change(subscription, notified_status: to_string(status))
+  def notified_changeset(subscription, status, courier),
+    do: change(subscription, notified_status: to_string(status), notified_courier: courier)
 end

@@ -1,4 +1,5 @@
 defmodule Delivest.Oms.Orders.Notifier do
+  alias Delivest.Oms.Order
   alias Delivest.Repo
 
   @source Delivest.Oms.Orders
@@ -15,7 +16,7 @@ defmodule Delivest.Oms.Orders.Notifier do
   def subscribe_owner(_kind, _id), do: :ok
 
   def publish({:ok, order}, event) do
-    order = Repo.preload(order, [:items, :client], force: true)
+    order = Repo.preload(order, [:items, :client, deliveries: :courier], force: true)
 
     Phoenix.PubSub.broadcast(
       Delivest.PubSub,
@@ -29,16 +30,30 @@ defmodule Delivest.Oms.Orders.Notifier do
       {:branch_orders_changed, order.branch_id}
     )
 
+    publish_client(order)
+    {:ok, order}
+  end
+
+  def publish(error, _event), do: error
+
+  def courier_changed(order_id) do
+    case Repo.get(Order, order_id) do
+      %Order{} = order ->
+        order |> Repo.preload([:items, deliveries: :courier]) |> publish_client()
+
+      nil ->
+        :ok
+    end
+  end
+
+  defp publish_client(order) do
     for {kind, id} <- [session: order.session_id, client: order.client_id],
         is_binary(id),
         do:
           Phoenix.PubSub.broadcast(Delivest.PubSub, owner_topic(kind, id), {:client_order, order})
 
     Delivest.Push.order_changed(order)
-    {:ok, order}
   end
-
-  def publish(error, _event), do: error
 
   def branch_changed(branch_id),
     do:

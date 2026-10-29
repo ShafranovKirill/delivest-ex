@@ -4,7 +4,7 @@ defmodule Delivest.Couriers do
   require Logger
 
   alias Delivest.{Audit, Identity, Repo}
-  alias Delivest.Couriers.{Delivery, Registry}
+  alias Delivest.Couriers.{Contact, Delivery, Registry}
   alias Delivest.Identity.{Branch, Staff, StaffBranch}
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
   alias Delivest.Integrations.Crm
@@ -53,6 +53,11 @@ defmodule Delivest.Couriers do
     do: deliveries |> Enum.filter(&Delivery.active?/1) |> List.last()
 
   def current(%Order{id: order_id}), do: active(order_id)
+
+  def contact(%Order{deliveries: deliveries} = order) when is_list(deliveries),
+    do: order |> current() |> Contact.build()
+
+  def contact(_order), do: nil
 
   def handed_over?(%Order{deliveries: deliveries}) when is_list(deliveries),
     do: Enum.any?(deliveries, &(&1.status in @handed_over))
@@ -448,8 +453,9 @@ defmodule Delivest.Couriers do
   defp changed({:ok, %Delivery{branch_id: branch_id}} = result), do: broadcast(result, branch_id)
   defp changed(error), do: error
 
-  defp broadcast({:ok, _value} = result, branch_id) do
+  defp broadcast({:ok, value} = result, branch_id) do
     Phoenix.PubSub.broadcast(Delivest.PubSub, topic(branch_id), {:deliveries_changed, branch_id})
+    with %Delivery{order_id: order_id} <- value, do: Orders.courier_changed(order_id)
     result
   end
 
