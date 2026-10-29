@@ -29,6 +29,7 @@
 | `collected_by_id` | Курьер или кассир |
 | `cash_given` | Сколько дал клиент наличными, сдача = `cash_given − amount` |
 | `paid_at` | Момент расчёта |
+| `fiscalized_by` | Кто пробил чек по этой оплате: `us` (АТОЛ), `yookassa`, `crm` (касса iiko или r_keeper), `aggregator`, `yandex_delivery`, `none`. iiko принимает это как `isFiscalizedExternally` |
 | `details` | Ответ провайдера, маска карты |
 
 `order_refunds`: оплата, сумма, причина, статус, провайдер и внешний id, кто провёл.
@@ -44,6 +45,10 @@
 | `refunded` | Всё возвращено |
 
 `orders.payment_method` остаётся как способ, который выбрал клиент: по нему курьер знает, брать наличные или терминал.
+
+Чаевые — не оплата заказа: отдельная запись, не входят в итог и в чек. iiko принимает их отдельным `tips[]`, см. [order-charges.md](order-charges.md).
+
+Сопоставление нашего способа оплаты с кодом ресторана (Frontpad «Варианты оплаты», iiko `paymentTypeId`, r_keeper валюта) — у провайдера, общим механизмом справочников из [crm-layer.md](crm-layer.md).
 
 ## Сценарии
 

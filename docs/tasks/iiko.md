@@ -16,9 +16,9 @@
 | Доставка | Заказ в iiko доставляет iiko, как с Frontpad |
 | Меню | Основное — наше. Из iiko — сверка артикулов и стоп-лист |
 
-## Что добавить в слой CRM
+## Что нужно от слоя CRM
 
-Frontpad создаёт заказ сразу, iiko — асинхронно. Слой CRM учится:
+Делается заранее в [crm-layer.md](crm-layer.md). Для iiko из него:
 
 - Состояние `crm.status = confirming`: отправлено, ждём `creationStatus`. Подтверждение — вебхук `DeliveryOrderUpdate`/`DeliveryOrderError` или опрос `commands/status`. Не подтвердилось за N минут — ошибка и повтор с тем же id.
 - Необязательный колбэк `cancel_order/2`: у iiko отмена через API, тревога «отмените вручную» (`Crm.manual_cancel_required?/1`) не нужна.

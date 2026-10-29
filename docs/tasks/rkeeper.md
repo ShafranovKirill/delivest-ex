@@ -15,7 +15,9 @@
 | Доставка | Везёт ресторан или наш курьер — `pickup.taker` и `pickup.courier` |
 | Меню | Основное — наше. Из r_keeper — сверка кодов блюд и стоп-лист |
 
-## Что добавить в слой CRM
+## Что нужно от слоя CRM
+
+Общее — в [crm-layer.md](crm-layer.md), опрос — в [integration-kit.md](integration-kit.md). Для r_keeper:
 
 - **Опрос статусов.** Вебхуков у WS API нет. `Rkeeper.StatusPollWorker` раз в 30–60 с опрашивает `GetOrderState` по активным заказам филиала, найденное отдаёт в `Crm.handle_webhook`-подобный путь. Останавливается на финальном статусе.
 - **Ожидание ответа кассы.** `CreateOrder` с `sync.timeout`: ответ пришёл — `orderGuid` сразу; не пришёл — `taskGuid`, состояние `confirming`, как у iiko, и опрос `GetTaskResponse`.
