@@ -15,6 +15,7 @@ defmodule Delivest.Integrations.YandexDelivery.Settings do
     field :contact_phone, :string
     field :contact_email, :string
     field :confirm_codes, :boolean, default: false
+    field :auto_accept, :boolean, default: false
     field :vat, Ecto.Enum, values: @vat_codes, default: :vat_none
   end
 
@@ -30,6 +31,7 @@ defmodule Delivest.Integrations.YandexDelivery.Settings do
       :contact_phone,
       :contact_email,
       :confirm_codes,
+      :auto_accept,
       :vat
     ])
     |> update_change(:token, &String.trim/1)

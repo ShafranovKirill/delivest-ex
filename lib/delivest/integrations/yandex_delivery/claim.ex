@@ -23,7 +23,8 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
          client_requirements: %{taxi_class: to_string(settings.taxi_class)},
          comment: comment(order),
          referral_source: "delivest"
-       }}
+       }
+       |> put_auto_accept(settings)}
     end
   end
 
@@ -101,6 +102,9 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
     }
     |> put_payment(order)
   end
+
+  defp put_auto_accept(body, %Settings{auto_accept: true}), do: Map.put(body, :auto_accept, true)
+  defp put_auto_accept(body, _settings), do: body
 
   defp put_payment(point, order) do
     if collects_payment?(order),

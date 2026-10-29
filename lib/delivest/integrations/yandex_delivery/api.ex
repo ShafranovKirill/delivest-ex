@@ -22,7 +22,7 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
     do: call(token, "/claims/journal", [], if(cursor, do: %{cursor: cursor}, else: %{}))
 
   def tracking_links(token, claim_id),
-    do: call(token, "/claims/tracking-links", [claim_id: claim_id], %{})
+    do: fetch(token, "/claims/tracking-links", claim_id: claim_id)
 
   def courier_phone(token, claim_id, point_id),
     do: call(token, "/driver-voiceforwarding", [], %{claim_id: claim_id, point_id: point_id})
@@ -30,11 +30,25 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
   defp call(token, path, query, body) do
     path
     |> with_query(query)
-    |> Client.post(body,
+    |> Client.post(body, options(token))
+    |> handle()
+  end
+
+  defp fetch(token, path, query) do
+    path
+    |> Client.get(query, options(token))
+    |> handle()
+  end
+
+  defp options(token) do
+    [
       base_url: base_url(),
       headers: [{"authorization", "Bearer " <> token}, {"accept-language", "ru"}]
-    )
-    |> case do
+    ]
+  end
+
+  defp handle(result) do
+    case result do
       {:ok, %{} = response} ->
         {:ok, response}
 

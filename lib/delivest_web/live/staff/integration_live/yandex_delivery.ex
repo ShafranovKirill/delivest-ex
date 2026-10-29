@@ -180,6 +180,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
           disabled={not @can_edit}
         />
 
+        <.input
+          field={@form[:auto_accept]}
+          type="checkbox"
+          label={gettext("Confirm the claim automatically")}
+          disabled={not @can_edit}
+        />
+        <p class="-mt-2 text-xs text-base-content/60">
+          {gettext(
+            "Only if the Yandex manager has enabled auto accept for your contract, otherwise claims are not created. Without it the claim is confirmed by the next poll within 10 seconds."
+          )}
+        </p>
+
         <p class="text-xs text-base-content/60">
           {gettext(
             "A Yandex courier takes payment by card only. A cash order switches to card to the courier when the courier is called."

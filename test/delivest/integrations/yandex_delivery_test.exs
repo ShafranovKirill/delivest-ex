@@ -67,7 +67,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     Req.Test.json(conn, %{"id" => claim_id, "status" => "accepted"})
   end
 
-  defp respond(conn, _yandex, "/claims/tracking-links", _query, _body) do
+  defp respond(%{method: "GET"} = conn, _yandex, "/claims/tracking-links", _query, _body) do
     Req.Test.json(conn, %{
       "route_points" => [
         %{"id" => 11, "type" => "source", "visit_order" => 1, "sharing_link" => "https://a"},
@@ -191,6 +191,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert destination["external_order_id"] == order.number
       assert destination["payment_on_delivery"] == %{"payment_method" => "card"}
       assert body["client_requirements"] == %{"taxi_class" => "courier"}
+      refute Map.has_key?(body, "auto_accept")
 
       assert [%{"cost_value" => "300.00", "quantity" => 2, "fiscalization" => fiscal}] =
                body["items"]
@@ -199,6 +200,13 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
       assert Repo.reload!(order).payment_method == :card_offline
       assert_enqueued(worker: JournalWorker, args: %{branch_id: branch.id})
+    end
+
+    test "auto accept goes into the claim when it is enabled" do
+      branch = branch(%{@settings | auto_accept: true})
+      order(branch) |> cooking(operator(branch))
+
+      assert_received {:yandex, "/claims/create", _query, %{"auto_accept" => true}}
     end
 
     test "online orders are not paid to the courier" do
