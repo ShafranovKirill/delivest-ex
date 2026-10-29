@@ -87,6 +87,16 @@ defmodule Delivest.Identity.StaffsTest do
       assert updated_staff.login == "updated_login"
     end
 
+    test "keeps a valid phone and rejects a malformed one", %{admin: actor} do
+      target_staff = insert(:staff)
+
+      assert {:ok, %Staff{phone: "+79001112233"}} =
+               Staffs.update_staff(actor, target_staff, %{phone: "+79001112233"})
+
+      assert {:error, changeset} = Staffs.update_staff(actor, target_staff, %{phone: "8900"})
+      assert errors_on(changeset).phone != []
+    end
+
     test "should return error changeset with invalid data when permitted", %{admin: actor} do
       target_staff = insert(:staff)
       attrs = %{login: "inv@lid!"}
