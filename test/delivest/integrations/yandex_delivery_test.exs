@@ -9,7 +9,8 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.YandexDelivery
-  alias Delivest.Integrations.YandexDelivery.{Journal, JournalWorker, Settings}
+  alias Delivest.Integrations.Poller.Worker, as: PollWorker
+  alias Delivest.Integrations.YandexDelivery.{Journal, Settings}
   alias Delivest.Oms.{Order, Orders, OrderTransition}
 
   @settings %Settings{token: "y-token", contact_email: "kitchen@example.com"}
@@ -162,7 +163,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   end
 
   defp poll(branch) do
-    result = perform_job(JournalWorker, %{branch_id: branch.id})
+    result = perform_job(PollWorker, %{poller: "yandex_delivery", target: branch.id})
     deliver_events()
     result
   end
@@ -204,7 +205,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert fiscal == %{"vat_code_str" => "vat_none", "item_type" => "product"}
 
       assert Repo.reload!(order).payment_method == :card_offline
-      assert_enqueued(worker: JournalWorker, args: %{branch_id: branch.id})
+      assert_enqueued(worker: PollWorker, args: %{poller: "yandex_delivery", target: branch.id})
     end
 
     test "auto accept goes into the claim when it is enabled" do
@@ -268,6 +269,33 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
       assert :ok = poll(ctx.branch)
       assert_received {:yandex, "/claims/journal", _query, %{"cursor" => "cursor-1"}}
+    end
+
+    test "the poller keeps polling while claims are active and is started by cron", ctx do
+      assert :ok = poll(ctx.branch)
+
+      assert_enqueued(
+        worker: PollWorker,
+        args: %{poller: "yandex_delivery", target: ctx.branch.id}
+      )
+
+      Repo.delete_all(Oban.Job)
+      assert :ok = perform_job(PollWorker, %{poller: "yandex_delivery"})
+
+      assert_enqueued(
+        worker: PollWorker,
+        args: %{poller: "yandex_delivery", target: ctx.branch.id}
+      )
+
+      assert {:error, :unknown_poller} = perform_job(PollWorker, %{poller: "nope", target: "x"})
+    end
+
+    test "claim requests go to the journal with the branch and the order", ctx do
+      poll(ctx.branch)
+
+      requests = Delivest.Integrations.Journal.list(:yandex_delivery, ctx.branch.id)
+      assert Enum.any?(requests, &(&1.url =~ "/claims/create" and &1.order_id == ctx.order.id))
+      assert Enum.any?(requests, &(&1.url =~ "/claims/journal" and &1.status == 200))
     end
 
     test "shows the courier, then moves the order on pickup and handover", ctx do

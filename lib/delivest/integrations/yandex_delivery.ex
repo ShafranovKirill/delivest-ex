@@ -9,7 +9,8 @@ defmodule Delivest.Integrations.YandexDelivery do
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Journal, as: RequestJournal
-  alias Delivest.Integrations.YandexDelivery.{Api, Claim, Journal, JournalWorker, Settings}
+  alias Delivest.Integrations.Poller
+  alias Delivest.Integrations.YandexDelivery.{Api, Claim, Journal, Settings}
   alias Delivest.Oms.{Order, Orders}
 
   @searching ~w(new estimating ready_for_approval accepted performer_lookup performer_draft)
@@ -83,7 +84,7 @@ defmodule Delivest.Integrations.YandexDelivery do
          {:ok, body} <- Claim.build(order, branch, settings),
          {:ok, %{"id" => claim_id} = claim} <- Api.create(settings.token, delivery.id, body) do
       switch_to_card(order)
-      JournalWorker.enqueue(order.branch_id)
+      Poller.enqueue(__MODULE__.Poller, order.branch_id)
       {:ok, %{external_id: claim_id, details: details(claim)}}
     end
   end
