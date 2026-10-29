@@ -32,6 +32,8 @@ defmodule Delivest.Couriers.CashTest do
       |> Ecto.Changeset.change(fulfillment_type: :delivery, payment_method: payment_method)
       |> Repo.update!()
 
+    {:ok, _payments} = Delivest.Payments.sync(Repo, order)
+
     order =
       Enum.reduce([:accepted, :preparing], order, fn to, order ->
         {:ok, order} = Orders.advance_order(order, to, {:staff, ctx.operator})

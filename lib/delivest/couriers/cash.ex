@@ -2,7 +2,8 @@ defmodule Delivest.Couriers.Cash do
   import Ecto.Query
 
   alias Delivest.{Audit, Identity, Repo}
-  alias Delivest.Couriers.{Delivery, Settlement}
+  alias Delivest.Couriers.Settlement
+  alias Delivest.Payments.Payment
   alias Delivest.Identity.Staff
 
   @empty %{cash: 0, card: 0, orders: 0}
@@ -33,6 +34,21 @@ defmodule Delivest.Couriers.Cash do
   end
 
   defp insert(staff, branch_id, courier_id, balance, until) do
+    Repo.transaction(fn ->
+      with {:ok, settlement} <- insert_settlement(staff, branch_id, courier_id, balance, until) do
+        branch_id
+        |> open_payments([courier_id], until)
+        |> Repo.update_all(set: [settlement_id: settlement.id])
+
+        settlement
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+    |> audited(staff)
+  end
+
+  defp insert_settlement(staff, branch_id, courier_id, balance, until) do
     %Settlement{
       branch_id: branch_id,
       courier_id: courier_id,
@@ -43,7 +59,6 @@ defmodule Delivest.Couriers.Cash do
       until: until
     }
     |> Repo.insert()
-    |> audited(staff)
   end
 
   defp audited({:ok, settlement} = result, staff) do
@@ -62,42 +77,24 @@ defmodule Delivest.Couriers.Cash do
   defp audited(error, _staff), do: error
 
   defp collected(branch_id, courier_ids, until) do
-    last =
-      from(s in Settlement,
-        where: s.branch_id == ^branch_id,
-        group_by: s.courier_id,
-        select: %{courier_id: s.courier_id, until: max(s.until)}
-      )
-
-    Delivery
-    |> join(:inner, [d], o in assoc(d, :order))
-    |> join(:left, [d], s in subquery(last), on: s.courier_id == d.courier_id)
-    |> where([d], d.branch_id == ^branch_id and d.courier_id in ^courier_ids)
-    |> where([d], d.provider == :staff and d.status == :delivered)
-    |> where([d, _o, s], is_nil(s.until) or d.closed_at > s.until)
-    |> where([_d, o], o.payment_method in [:cash, :card_offline])
-    |> until(until)
-    |> group_by([d], d.courier_id)
-    |> select([d, o], {
-      d.courier_id,
-      type(
-        sum(fragment("CASE WHEN ? = 'cash' THEN ? ELSE 0 END", o.payment_method, o.total_amount)),
-        :integer
-      ),
-      type(
-        sum(
-          fragment(
-            "CASE WHEN ? = 'card_offline' THEN ? ELSE 0 END",
-            o.payment_method,
-            o.total_amount
-          )
-        ),
-        :integer
-      ),
-      count(d.id)
+    branch_id
+    |> open_payments(courier_ids, until)
+    |> group_by([p], p.collected_by_id)
+    |> select([p], {
+      p.collected_by_id,
+      type(sum(fragment("CASE WHEN ? = 'cash' THEN ? ELSE 0 END", p.method, p.amount)), :integer),
+      type(sum(fragment("CASE WHEN ? = 'card' THEN ? ELSE 0 END", p.method, p.amount)), :integer),
+      count(p.order_id, :distinct)
     })
   end
 
+  defp open_payments(branch_id, courier_ids, until) do
+    Payment
+    |> where([p], p.branch_id == ^branch_id and p.collected_by_id in ^courier_ids)
+    |> where([p], p.status == :paid and p.method in [:cash, :card] and is_nil(p.settlement_id))
+    |> until(until)
+  end
+
   defp until(query, nil), do: query
-  defp until(query, at), do: where(query, [d], d.closed_at <= ^at)
+  defp until(query, at), do: where(query, [p], p.paid_at <= ^at)
 end

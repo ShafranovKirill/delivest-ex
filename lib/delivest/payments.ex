@@ -1,6 +1,7 @@
 defmodule Delivest.Payments do
   import Ecto.Query
 
+  alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Staff
   alias Delivest.Oms.{Order, OrderEvents, OrderFlow}
   alias Delivest.Payments.{Payment, Refund}
@@ -123,9 +124,10 @@ defmodule Delivest.Payments do
   defp settle(repo, order, by) do
     payments = repo.all(from(p in Payment, where: p.order_id == ^order.id, preload: :refunds))
     open = Enum.filter(payments, &(&1.status in @open))
-    attrs = %{paid_at: DateTime.utc_now(:second), collected_by_id: staff_id(by)}
+    attrs = Map.put(collector(repo, order, by), :paid_at, DateTime.utc_now(:second))
+    move_attrs = Map.take(attrs, [:paid_at, :collected_by_id])
 
-    with {:ok, _moved} <- each(open, &move(repo, order, &1, :paid, by, attrs)) do
+    with {:ok, _moved} <- each(open, &move(repo, order, &1, :paid, by, move_attrs)) do
       due =
         order.total_amount - paid(payments) - Enum.sum(Enum.map(open, & &1.amount)) +
           refunded(payments)
@@ -137,6 +139,29 @@ defmodule Delivest.Payments do
         _none ->
           {:ok, nil}
       end
+    end
+  end
+
+  defp collector(repo, order, by) do
+    case staff_id(by) do
+      nil -> courier(repo, order.id)
+      id -> %{collected_by_id: id}
+    end
+  end
+
+  defp courier(repo, order_id) do
+    query =
+      from(d in Delivery,
+        where: d.order_id == ^order_id and d.status in [:picked_up, :delivered],
+        order_by: [desc: d.inserted_at],
+        limit: 1,
+        select: {d.provider, d.courier_id}
+      )
+
+    case repo.one(query) do
+      {:staff, courier_id} -> %{collected_by_id: courier_id}
+      {:yandex, _courier_id} -> %{collected_by_id: nil, provider: "yandex_delivery"}
+      _none -> %{collected_by_id: nil}
     end
   end
 

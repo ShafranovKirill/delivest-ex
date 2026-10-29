@@ -38,6 +38,7 @@ defmodule Delivest.PaymentsTest do
 
     assert [%Payment{status: :paid, paid_at: %DateTime{}, collected_by_id: ^staff_id}] =
              Payments.list(order.id)
+
     assert Payments.balance(order) == :paid
   end
 

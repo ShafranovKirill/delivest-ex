@@ -38,6 +38,7 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
 
     assert [%{method: :aggregator, status: :paid, amount: 65_000, fiscalized_by: :aggregator}] =
              Delivest.Payments.list(order.id)
+
     assert order.customer_name
     assert order.customer_phone == "+79990001122"
     assert Enum.sort(Enum.map(order.items, & &1.quantity)) == [1, 2]

@@ -31,6 +31,7 @@ defmodule Delivest.Payments.Payment do
     field :paid_at, :utc_datetime
     field :fiscalized_by, Ecto.Enum, values: @fiscalizers
     field :details, :map, default: %{}
+    belongs_to :settlement, Delivest.Couriers.Settlement
 
     has_many :refunds, Delivest.Payments.Refund
 
