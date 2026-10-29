@@ -6,6 +6,7 @@
 |---|---|---|---|---|
 | Frontpad | `frontpad/` | CRM: заказы, статусы, сверка меню | на филиал, `branch_info.crm.frontpad` | [frontpad/README.md](frontpad/README.md) |
 | iiko | `iiko/` | CRM и POS: заказы, статусы, стоп-лист, меню (не подключена) | на филиал | [iiko/README.md](iiko/README.md) |
+| r_keeper | `rkeeper/` | POS через облачный шлюз White Server: заказы, статусы опросом, стоп-лист (не подключена) | на филиал | [rkeeper/README.md](rkeeper/README.md) |
 | Zvonok | `zvonok/` | Вход клиента по звонку | общие, таблица `zvonok_settings` | [zvonok/README.md](zvonok/README.md) |
 | DaData | `dadata/` | Подсказки адресов, геокодинг | общие, таблица `dadata_settings` | [dadata/README.md](dadata/README.md) |
 | Яндекс Еда | `yandex_eda/` | Входящий канал: заказы из Яндекс Еды и Delivery Club (в разработке) | на филиал | [yandex_eda/README.md](yandex_eda/README.md) |
