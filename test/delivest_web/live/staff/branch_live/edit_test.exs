@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     refute html =~ "branch-form"
     refute html =~ "couriers"
 
-    for section <- ~w(general location hours kitchen links ycart) do
+    for section <- ~w(general location hours kitchen board links ycart) do
       assert has_element?(
                lv,
                ~s(#branch-section-#{section}[href="/staff/branches/split/edit/#{section}"])
@@ -121,6 +121,17 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
     assert %{latitude: 55.75} =
              Repo.get_by!(Branch, slug: "typed") |> Repo.preload(:info) |> Map.get(:info)
+  end
+
+  test "the pickup board link is created in its section", %{conn: conn} do
+    insert(:branch, slug: "board")
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/branches/board/edit/board")
+    refute has_element?(lv, "#board-url")
+
+    lv |> element("#board-reset") |> render_click()
+
+    assert lv |> element("#board-url") |> render() =~ "/board/"
   end
 
   test "unknown branch goes back to the list", %{conn: conn} do

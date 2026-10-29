@@ -63,6 +63,23 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   defp subtitle(branch), do: branch.name
 
   @impl true
+  def handle_event("reset_board_token", _params, socket) do
+    case Identity.reset_board_token(socket.assigns.current_staff, socket.assigns.branch) do
+      {:ok, branch} ->
+        {:noreply,
+         socket |> assign(branch: branch) |> put_flash(:info, gettext("New link created"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
+  defp board_url(%Branch{info: %{board_token: token}}) when is_binary(token),
+    do: url(~p"/board/#{token}")
+
+  defp board_url(_branch), do: nil
+
+  @impl true
   def render(%{section: nil} = assigns) do
     ~H"""
     <div class="mx-auto max-w-6xl space-y-6 p-6">
@@ -82,6 +99,48 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           description={section.description}
         />
       </.settings_cards>
+    </div>
+    """
+  end
+
+  def render(%{section: %{id: :board}} = assigns) do
+    assigns = assign(assigns, url: board_url(assigns.branch))
+
+    ~H"""
+    <div class="mx-auto max-w-3xl space-y-6 p-6">
+      <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
+
+      <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
+        <p class="text-sm text-base-content/60">{@section.description}</p>
+        <p class="text-sm text-base-content/60">
+          {gettext(
+            "Open the link on the screen in the hall, no sign-in is needed. Pickup and hall orders only, the number stays in «Ready» until the order is handed over or cancelled."
+          )}
+        </p>
+
+        <div :if={@url} class="join w-full">
+          <input
+            id="board-url"
+            type="text"
+            readonly
+            value={@url}
+            class="input join-item w-full font-mono text-sm"
+          />
+          <a href={@url} target="_blank" class="btn join-item">
+            <.icon name="hero-arrow-top-right-on-square" class="size-4" />
+          </a>
+        </div>
+
+        <button
+          id="board-reset"
+          type="button"
+          phx-click="reset_board_token"
+          data-confirm={@url && gettext("The old link stops working. Continue?")}
+          class="btn btn-primary"
+        >
+          {if @url, do: gettext("New link"), else: gettext("Create link")}
+        </button>
+      </section>
     </div>
     """
   end

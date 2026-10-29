@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.Sections do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @ids ~w(general location hours kitchen links ycart)a
+  @ids ~w(general location hours kitchen board links ycart)a
 
   def all, do: Enum.map(@ids, &describe/1)
 
@@ -35,6 +35,15 @@ defmodule DelivestWeb.Staff.BranchLive.Sections do
         gettext(
           "The kitchen screen shows orders being cooked. Without it, or with Frontpad, the operator marks orders ready."
         )
+      )
+
+  def describe(:board),
+    do:
+      section(
+        :board,
+        "hero-tv",
+        gettext("Pickup board"),
+        gettext("A screen in the hall with the numbers of orders being cooked and ready.")
       )
 
   def describe(:links),

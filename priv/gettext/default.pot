@@ -213,7 +213,7 @@ msgid "Branch deleted successfully"
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branches.ex:86
-#: lib/delivest_web/live/staff/branch_live/edit.ex:71
+#: lib/delivest_web/live/staff/branch_live/edit.ex:88
 #, elixir-autogen, elixir-format
 msgid "Branch is not active"
 msgstr ""
@@ -232,7 +232,7 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_nav.ex:131
 #: lib/delivest_web/live/staff/branch_live/branches.ex:15
 #: lib/delivest_web/live/staff/branch_live/edit.ex:62
-#: lib/delivest_web/live/staff/branch_live/edit.ex:69
+#: lib/delivest_web/live/staff/branch_live/edit.ex:86
 #: lib/delivest_web/live/staff/log_live/event_text.ex:35
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:206
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:227
@@ -673,6 +673,7 @@ msgstr ""
 #: lib/delivest_web/hooks/new_orders.ex:112
 #: lib/delivest_web/hooks/new_orders.ex:125
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
+#: lib/delivest_web/live/staff/branch_live/edit.ex:73
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:39
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:200
@@ -1407,6 +1408,7 @@ msgstr ""
 
 #: lib/delivest_web/components/staff/app/command_search.ex:18
 #: lib/delivest_web/components/staff/app/staff_nav.ex:39
+#: lib/delivest_web/live/board_live/index.ex:21
 #: lib/delivest_web/live/staff/client_live/show.ex:123
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:114
 #: lib/delivest_web/live/staff/log_live/event_text.ex:26
@@ -1626,7 +1628,7 @@ msgstr ""
 msgid "Prepare by:"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/sections.ex:41
+#: lib/delivest_web/live/staff/branch_live/sections.ex:50
 #, elixir-autogen, elixir-format
 msgid "Social Links & Messengers"
 msgstr ""
@@ -1641,7 +1643,7 @@ msgstr ""
 msgid "YCart Enabled"
 msgstr ""
 
-#: lib/delivest_web/live/staff/branch_live/sections.ex:43
+#: lib/delivest_web/live/staff/branch_live/sections.ex:52
 #, elixir-autogen, elixir-format
 msgid "YCart Settings"
 msgstr ""
@@ -6821,4 +6823,59 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/index.ex:31
 #, elixir-autogen, elixir-format
 msgid "Who delivers the orders and when the courier search starts."
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/sections.ex:46
+#, elixir-autogen, elixir-format
+msgid "A screen in the hall with the numbers of orders being cooked and ready."
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:141
+#, elixir-autogen, elixir-format
+msgid "Create link"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:141
+#, elixir-autogen, elixir-format
+msgid "New link"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:70
+#, elixir-autogen, elixir-format
+msgid "New link created"
+msgstr ""
+
+#: lib/delivest_web/live/board_live/index.ex:76
+#, elixir-autogen, elixir-format
+msgid "No connection"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:116
+#, elixir-autogen, elixir-format
+msgid "Open the link on the screen in the hall, no sign-in is needed. Pickup and hall orders only, the number stays in «Ready» until the order is handed over or cancelled."
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/sections.ex:45
+#, elixir-autogen, elixir-format
+msgid "Pickup board"
+msgstr ""
+
+#: lib/delivest_web/live/board_live/index.ex:85
+#, elixir-autogen, elixir-format
+msgid "Sound and full screen"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:138
+#, elixir-autogen, elixir-format
+msgid "The old link stops working. Continue?"
+msgstr ""
+
+#: lib/delivest_web/live/board_live/index.ex:89
+#, elixir-autogen, elixir-format
+msgid "Being cooked"
+msgstr ""
+
+#: lib/delivest_web/live/board_live/index.ex:99
+#, elixir-autogen, elixir-format
+msgid "Ready to pick up"
 msgstr ""

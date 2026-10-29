@@ -213,7 +213,7 @@ msgid "Branch deleted successfully"
 msgstr "Филиал успешно удален"
 
 #: lib/delivest_web/live/staff/branch_live/branches.ex:86
-#: lib/delivest_web/live/staff/branch_live/edit.ex:71
+#: lib/delivest_web/live/staff/branch_live/edit.ex:88
 #, elixir-autogen, elixir-format
 msgid "Branch is not active"
 msgstr "Филиал неактивен"
@@ -232,7 +232,7 @@ msgstr "Филиал успешно сохранен"
 #: lib/delivest_web/components/staff/app/staff_nav.ex:131
 #: lib/delivest_web/live/staff/branch_live/branches.ex:15
 #: lib/delivest_web/live/staff/branch_live/edit.ex:62
-#: lib/delivest_web/live/staff/branch_live/edit.ex:69
+#: lib/delivest_web/live/staff/branch_live/edit.ex:86
 #: lib/delivest_web/live/staff/log_live/event_text.ex:35
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:206
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:227
@@ -673,6 +673,7 @@ msgstr "Страница %{current} из %{total}"
 #: lib/delivest_web/hooks/new_orders.ex:112
 #: lib/delivest_web/hooks/new_orders.ex:125
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
+#: lib/delivest_web/live/staff/branch_live/edit.ex:73
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:39
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:200
@@ -1407,6 +1408,7 @@ msgstr "Заказ успешно обновлен"
 
 #: lib/delivest_web/components/staff/app/command_search.ex:18
 #: lib/delivest_web/components/staff/app/staff_nav.ex:39
+#: lib/delivest_web/live/board_live/index.ex:21
 #: lib/delivest_web/live/staff/client_live/show.ex:123
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:114
 #: lib/delivest_web/live/staff/log_live/event_text.ex:26
@@ -1626,7 +1628,7 @@ msgstr "Долгота"
 msgid "Prepare by:"
 msgstr "Готовить к:"
 
-#: lib/delivest_web/live/staff/branch_live/sections.ex:41
+#: lib/delivest_web/live/staff/branch_live/sections.ex:50
 #, elixir-autogen, elixir-format
 msgid "Social Links & Messengers"
 msgstr "Социальные ссылки и мессенджеры"
@@ -1641,7 +1643,7 @@ msgstr "Ошибка валидации"
 msgid "YCart Enabled"
 msgstr "YCart включён"
 
-#: lib/delivest_web/live/staff/branch_live/sections.ex:43
+#: lib/delivest_web/live/staff/branch_live/sections.ex:52
 #, elixir-autogen, elixir-format
 msgid "YCart Settings"
 msgstr "Настройки YCart"
@@ -6826,3 +6828,58 @@ msgstr "Раздел не найден"
 #, elixir-autogen, elixir-format
 msgid "Who delivers the orders and when the courier search starts."
 msgstr "Кто возит заказы и когда начинается поиск курьера."
+
+#: lib/delivest_web/live/staff/branch_live/sections.ex:46
+#, elixir-autogen, elixir-format
+msgid "A screen in the hall with the numbers of orders being cooked and ready."
+msgstr "Экран в зале с номерами заказов, которые готовятся и готовы."
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:141
+#, elixir-autogen, elixir-format
+msgid "Create link"
+msgstr "Создать ссылку"
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:141
+#, elixir-autogen, elixir-format
+msgid "New link"
+msgstr "Новая ссылка"
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:70
+#, elixir-autogen, elixir-format
+msgid "New link created"
+msgstr "Новая ссылка создана"
+
+#: lib/delivest_web/live/board_live/index.ex:76
+#, elixir-autogen, elixir-format
+msgid "No connection"
+msgstr "Нет связи"
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:116
+#, elixir-autogen, elixir-format
+msgid "Open the link on the screen in the hall, no sign-in is needed. Pickup and hall orders only, the number stays in «Ready» until the order is handed over or cancelled."
+msgstr "Откройте ссылку на экране в зале, вход не нужен. Показываются только заказы на самовывоз и в зал, номер висит в «Готовы», пока заказ не выдан или не отменён."
+
+#: lib/delivest_web/live/staff/branch_live/sections.ex:45
+#, elixir-autogen, elixir-format
+msgid "Pickup board"
+msgstr "Экран выдачи"
+
+#: lib/delivest_web/live/board_live/index.ex:85
+#, elixir-autogen, elixir-format
+msgid "Sound and full screen"
+msgstr "Звук и на весь экран"
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:138
+#, elixir-autogen, elixir-format
+msgid "The old link stops working. Continue?"
+msgstr "Старая ссылка перестанет работать. Продолжить?"
+
+#: lib/delivest_web/live/board_live/index.ex:89
+#, elixir-autogen, elixir-format
+msgid "Being cooked"
+msgstr "Готовятся"
+
+#: lib/delivest_web/live/board_live/index.ex:99
+#, elixir-autogen, elixir-format
+msgid "Ready to pick up"
+msgstr "Готовы"

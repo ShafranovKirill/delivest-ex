@@ -89,6 +89,41 @@ defmodule Delivest.Identity.Branches do
     |> Audit.track(staff, "branch.updated")
   end
 
+  def get_branch_by_board_token(token) when is_binary(token) and token != "" do
+    Branch
+    |> join(:inner, [b], i in assoc(b, :info))
+    |> where([b, i], i.board_token == ^token and is_nil(b.deleted_at))
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      branch -> {:ok, branch}
+    end
+  end
+
+  def get_branch_by_board_token(_token), do: {:error, :not_found}
+
+  def reset_board_token(staff, %Branch{} = branch) do
+    staff
+    |> do_reset_board_token(branch)
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  defp do_reset_board_token(staff, branch) do
+    with :ok <- Identity.authorize(staff, "branches.update", branch.id) do
+      branch = Repo.preload(branch, :info, force: true)
+
+      (branch.info || Ecto.build_assoc(branch, :info))
+      |> BranchInfo.board_token_changeset(new_board_token())
+      |> Repo.insert_or_update()
+      |> case do
+        {:ok, info} -> {:ok, %{branch | info: info}}
+        {:error, changeset} -> {:error, changeset}
+      end
+    end
+  end
+
+  defp new_board_token, do: 18 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
+
   def update_couriers(staff, %Branch{} = branch, attrs) do
     staff
     |> do_update_branch("delivery.update", branch, %{}, %{"couriers" => attrs})

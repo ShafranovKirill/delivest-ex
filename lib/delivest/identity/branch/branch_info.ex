@@ -23,6 +23,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
+    field :board_token, :string
     embeds_one :crm, BranchSettings, on_replace: :update
     embeds_one :channels, Delivest.Integrations.Channels.BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
@@ -35,6 +36,12 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     belongs_to :branch, Delivest.Identity.Branch
 
     timestamps()
+  end
+
+  def board_token_changeset(branch_info, token) do
+    branch_info
+    |> change(board_token: token)
+    |> unique_constraint(:board_token)
   end
 
   def changeset(branch_info, attrs) do

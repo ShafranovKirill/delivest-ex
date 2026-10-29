@@ -22,7 +22,7 @@ branch =
     |> Repo.insert!()
 
 Repo.get_by(BranchInfo, branch_id: branch.id) ||
-  %BranchInfo{}
+  %BranchInfo{board_token: "e2e-board"}
   |> BranchInfo.changeset(%{
     branch_id: branch.id,
     address: "Москва, Тверская улица, 7",

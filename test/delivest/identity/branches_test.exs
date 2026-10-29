@@ -434,6 +434,24 @@ defmodule Delivest.Identity.BranchesTest do
                Branches.update_integrations(admin, branch, crm)
     end
 
+    test "the pickup board link is created, replaced and found", %{admin: admin} do
+      branch = insert(:branch)
+
+      editor = insert(:staff, role: insert(:role, permissions: ["delivery.update"]))
+      insert(:staff_branch, staff: editor, branch: branch)
+      editor = Repo.preload(editor, [:role, :branches], force: true)
+      assert {:error, :forbidden} = Branches.reset_board_token(editor, branch)
+
+      assert {:ok, %{info: %{board_token: first}}} = Branches.reset_board_token(admin, branch)
+      assert {:ok, %{id: id}} = Branches.get_branch_by_board_token(first)
+      assert id == branch.id
+
+      assert {:ok, %{info: %{board_token: second}}} = Branches.reset_board_token(admin, branch)
+      refute second == first
+      assert {:error, :not_found} = Branches.get_branch_by_board_token(first)
+      assert {:error, :not_found} = Branches.get_branch_by_board_token("")
+    end
+
     test "couriers are set with delivery editing, not with the branch form", %{admin: admin} do
       branch = insert(:branch)
       couriers = %{"source" => "yandex", "search" => "manual"}

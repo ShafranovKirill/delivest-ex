@@ -383,6 +383,14 @@ defmodule DelivestWeb.Router do
     get "/", DelivestWeb.PageController, :home
   end
 
+  scope "/board", DelivestWeb do
+    pipe_through :browser
+
+    live_session :board, layout: {DelivestWeb.Layouts, :kitchen} do
+      live "/:token", BoardLive.Index, :index
+    end
+  end
+
   scope "/" do
     pipe_through :browser
 
