@@ -15,7 +15,7 @@ defmodule Delivest.Oms.Orders.Update do
     Pricing
   }
 
-  alias Delivest.{Promo, Repo}
+  alias Delivest.{Payments, Promo, Repo}
   alias Ecto.Multi
 
   @protected ["number", "staff_id", "branch_id"]
@@ -37,6 +37,7 @@ defmodule Delivest.Oms.Orders.Update do
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.update(:order, &Assembler.changeset(order, attrs, &1))
+    |> Multi.run(:payments, fn repo, %{order: updated} -> Payments.sync(repo, updated) end)
     |> Multi.run(:event, fn repo, %{order: updated} ->
       OrderEvents.updated(repo, order, updated, Keyword.get(opts, :actor, :system))
     end)

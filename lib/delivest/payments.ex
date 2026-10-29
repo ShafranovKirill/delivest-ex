@@ -1,0 +1,233 @@
+defmodule Delivest.Payments do
+  import Ecto.Query
+
+  alias Delivest.Identity.Staff
+  alias Delivest.Oms.{Order, OrderEvents, OrderFlow}
+  alias Delivest.Payments.{Payment, Refund}
+  alias Delivest.Repo
+
+  @offline %{cash: :cash, card_offline: :card}
+  @open [:pending, :authorized]
+
+  @type balance :: :unpaid | :partially_paid | :paid | :overpaid | :refunded
+
+  def list(order_id) do
+    Repo.all(
+      from(p in Payment,
+        where: p.order_id == ^order_id,
+        order_by: [asc: p.inserted_at],
+        preload: :refunds
+      )
+    )
+  end
+
+  @spec balance(Order.t()) :: balance()
+  def balance(%Order{} = order), do: balance(order.total_amount, list(order.id))
+
+  @spec balance(integer(), [Payment.t()]) :: balance()
+  def balance(total, payments) do
+    paid = paid(payments)
+    net = paid - refunded(payments)
+
+    cond do
+      paid == 0 and total > 0 -> :unpaid
+      net == 0 and paid > 0 -> :refunded
+      net < total -> :partially_paid
+      net == total -> :paid
+      true -> :overpaid
+    end
+  end
+
+  def due(%Order{} = order) do
+    payments = list(order.id)
+    order.total_amount - paid(payments) + refunded(payments)
+  end
+
+  def open(repo, %Order{} = order, opts \\ []) do
+    cond do
+      opts[:paid_online] && order.channel ->
+        insert(repo, order, :channel, %{
+          method: :aggregator,
+          amount: order.total_amount,
+          status: :paid,
+          provider: order.source,
+          fiscalized_by: :aggregator,
+          paid_at: DateTime.utc_now(:second)
+        })
+
+      method = @offline[order.payment_method] ->
+        expect(repo, order, method, opts[:cash_given])
+
+      true ->
+        {:ok, nil}
+    end
+  end
+
+  def sync(repo, %Order{} = order) do
+    payments = repo.all(from(p in Payment, where: p.order_id == ^order.id, preload: :refunds))
+    pending = Enum.find(payments, &(&1.status == :pending and &1.method in [:cash, :card]))
+    due = order.total_amount - paid(payments) + refunded(payments)
+    method = @offline[order.payment_method]
+
+    cond do
+      pending && (due <= 0 or is_nil(method)) ->
+        move(repo, order, pending, :cancelled, :system)
+
+      pending ->
+        cash_given =
+          if method == :cash and (pending.cash_given || 0) >= due, do: pending.cash_given
+
+        pending
+        |> Payment.amount_changeset(%{amount: due, method: method, cash_given: cash_given})
+        |> repo.update()
+
+      method && due > 0 && order.status not in [:completed, :cancelled] ->
+        expect(repo, order, method, nil)
+
+      true ->
+        {:ok, nil}
+    end
+  end
+
+  def on_status(_repo, _order, [], _by), do: {:ok, nil}
+
+  def on_status(repo, %Order{} = order, steps, by) do
+    case List.last(steps) do
+      {_from, :completed} -> settle(repo, order, by)
+      {_from, :cancelled} -> cancel_open(repo, order, by)
+      _step -> {:ok, nil}
+    end
+  end
+
+  def refund(payment, amount, attrs \\ %{}, by \\ :system)
+
+  def refund(%Payment{status: :paid} = payment, amount, attrs, by) do
+    Repo.transaction(fn ->
+      payment = Repo.one!(from(p in Payment, where: p.id == ^payment.id, lock: "FOR UPDATE"))
+      left = payment.amount - taken(payment.id)
+      instant? = payment.method in [:cash, :card]
+
+      with :ok <- check_amount(amount, left),
+           {:ok, refund} <- insert_refund(payment, amount, attrs, by, instant?),
+           order = Repo.get!(Order, payment.order_id),
+           {:ok, _event} <- event(Repo, order, payment, "refund", by) do
+        refund
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def refund(%Payment{}, _amount, _attrs, _by), do: {:error, :not_paid}
+
+  defp settle(repo, order, by) do
+    payments = repo.all(from(p in Payment, where: p.order_id == ^order.id, preload: :refunds))
+    open = Enum.filter(payments, &(&1.status in @open))
+    attrs = %{paid_at: DateTime.utc_now(:second), collected_by_id: staff_id(by)}
+
+    with {:ok, _moved} <- each(open, &move(repo, order, &1, :paid, by, attrs)) do
+      due =
+        order.total_amount - paid(payments) - Enum.sum(Enum.map(open, & &1.amount)) +
+          refunded(payments)
+
+      case @offline[order.payment_method] do
+        method when is_atom(method) and not is_nil(method) and due > 0 ->
+          insert(repo, order, by, Map.merge(attrs, %{method: method, amount: due, status: :paid}))
+
+        _none ->
+          {:ok, nil}
+      end
+    end
+  end
+
+  defp cancel_open(repo, order, by) do
+    repo.all(from(p in Payment, where: p.order_id == ^order.id and p.status in ^@open))
+    |> each(&move(repo, order, &1, :cancelled, by))
+  end
+
+  defp expect(repo, order, method, cash_given) do
+    insert(repo, order, :system, %{
+      method: method,
+      amount: order.total_amount,
+      status: :pending,
+      cash_given: if(method == :cash, do: cash_given)
+    })
+  end
+
+  defp insert(_repo, %Order{total_amount: total}, _by, _attrs) when total <= 0, do: {:ok, nil}
+
+  defp insert(repo, order, by, attrs) do
+    params = Map.merge(attrs, %{order_id: order.id, branch_id: order.branch_id})
+
+    with {:ok, payment} <- %Payment{} |> Payment.changeset(params) |> repo.insert(),
+         {:ok, _event} <- event(repo, order, payment, "created", by) do
+      {:ok, payment}
+    end
+  end
+
+  defp move(repo, order, payment, to, by, attrs \\ %{}) do
+    with {:ok, payment} <- payment |> Payment.move_changeset(to, attrs) |> repo.update(),
+         {:ok, _event} <- event(repo, order, payment, to, by) do
+      {:ok, payment}
+    end
+  end
+
+  defp insert_refund(payment, amount, attrs, by, instant?) do
+    %Refund{}
+    |> Refund.changeset(
+      Map.merge(attrs, %{
+        payment_id: payment.id,
+        order_id: payment.order_id,
+        amount: amount,
+        status: if(instant?, do: :succeeded, else: :pending),
+        refunded_at: if(instant?, do: DateTime.utc_now(:second)),
+        refunded_by_id: staff_id(by)
+      })
+    )
+    |> Repo.insert()
+  end
+
+  defp check_amount(amount, left) when is_integer(amount) and amount > 0 and amount <= left,
+    do: :ok
+
+  defp check_amount(_amount, _left), do: {:error, :refund_too_large}
+
+  defp taken(payment_id) do
+    Repo.one(
+      from(r in Refund,
+        where: r.payment_id == ^payment_id and r.status in [:pending, :succeeded],
+        select: coalesce(sum(r.amount), 0)
+      )
+    )
+  end
+
+  defp event(repo, order, payment, change, by) do
+    OrderEvents.payment_changed(repo, order, payment, change, OrderEvents.actor(by, order))
+  end
+
+  defp each(list, fun) do
+    Enum.reduce_while(list, {:ok, []}, fn item, {:ok, acc} ->
+      case fun.(item) do
+        {:ok, result} -> {:cont, {:ok, [result | acc]}}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp paid(payments),
+    do: payments |> Enum.filter(&(&1.status == :paid)) |> Enum.map(& &1.amount) |> Enum.sum()
+
+  defp refunded(payments) do
+    payments
+    |> Enum.flat_map(&loaded_refunds/1)
+    |> Enum.filter(&(&1.status == :succeeded))
+    |> Enum.map(& &1.amount)
+    |> Enum.sum()
+  end
+
+  defp loaded_refunds(%Payment{refunds: refunds}) when is_list(refunds), do: refunds
+  defp loaded_refunds(_payment), do: []
+
+  defp staff_id(%Staff{id: id}), do: id
+  defp staff_id(by), do: by |> OrderFlow.staff() |> then(&(&1 && &1.id))
+end

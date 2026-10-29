@@ -104,6 +104,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
 
     with {:ok, updated} <- repo.update(changeset),
          :ok <- record(repo, updated, steps, by, reason),
+         {:ok, _payments} <- Delivest.Payments.on_status(repo, updated, steps, by),
          {:ok, _event} <- OrderEvents.status_changed(repo, updated, steps, by, reason) do
       {:ok, %{order: updated, steps: steps, changed?: changeset.changes != %{}}}
     end

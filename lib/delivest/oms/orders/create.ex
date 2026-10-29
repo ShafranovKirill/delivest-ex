@@ -16,7 +16,7 @@ defmodule Delivest.Oms.Orders.Create do
     StopGuard
   }
 
-  alias Delivest.{Promo, Repo}
+  alias Delivest.{Payments, Promo, Repo}
   alias Ecto.Multi
 
   def run(attrs, opts \\ []) do
@@ -37,6 +37,9 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn repo, %{cart: cart} -> OrderNumber.next(repo, cart.branch_id) end)
     |> Multi.insert(:order, &build(attrs, &1, opts))
+    |> Multi.run(:payments, fn repo, %{order: order} ->
+      Payments.open(repo, order, paid_online: opts[:paid_online], cash_given: cash_given(attrs))
+    end)
     |> Multi.run(:created, fn repo, %{order: order} ->
       OrderEvents.created(repo, order, opts[:actor] || if(opts[:channel], do: :channel))
     end)
@@ -79,6 +82,17 @@ defmodule Delivest.Oms.Orders.Create do
     |> then(&if(opts[:crm], do: Order.crm_changeset(&1, opts[:crm]), else: &1))
     |> then(&if(opts[:paid_online], do: Order.paid_online_changeset(&1), else: &1))
   end
+
+  defp cash_given(%{"cash_given" => value}) when is_integer(value) and value > 0, do: value
+
+  defp cash_given(%{"cash_given" => value}) when is_binary(value) do
+    case Integer.parse(value) do
+      {amount, ""} when amount > 0 -> amount
+      _invalid -> nil
+    end
+  end
+
+  defp cash_given(_attrs), do: nil
 
   defp own_attrs(attrs, %{number: number, cart: cart}) do
     attrs

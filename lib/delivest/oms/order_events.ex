@@ -62,6 +62,18 @@ defmodule Delivest.Oms.OrderEvents do
     end
   end
 
+  def payment_changed(repo, %Order{} = order, payment, change, actor) do
+    payload = %{
+      payment_id: payment.id,
+      change: to_string(change),
+      method: payment.method,
+      status: payment.status,
+      amount: payment.amount
+    }
+
+    Events.record(repo, "order.payment_changed", order, payload, actor)
+  end
+
   def deleted(repo, %Order{} = order, actor),
     do: Events.record(repo, "order.deleted", order, %{}, actor(actor, order))
 

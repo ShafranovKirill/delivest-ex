@@ -143,7 +143,10 @@ defmodule Delivest.Oms.Orders do
     changeset = Order.payment_changeset(order, Filter.normalize_params(attrs))
 
     changeset
-    |> persist([:order, :updated], &OrderEvents.updated(&1, order, &2, actor))
+    |> persist([:order, :updated], fn repo, updated ->
+      with {:ok, _payments} <- Delivest.Payments.sync(repo, updated),
+           do: OrderEvents.updated(repo, order, updated, actor)
+    end)
     |> Audit.track(actor, "order.details_changed", metadata: changeset.changes)
   end
 
