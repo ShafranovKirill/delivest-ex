@@ -61,11 +61,13 @@ def handle(%Event{} = event), do: ...
 
 ## Перевод существующего
 
-1. `Events`, журнал, `DeliverWorker`, реестр.
-2. `StatusChange`, `Create`, `Update`, отмена и откат пишут события.
-3. `Couriers.order_moved`, `Kitchen.order_accepted`, push, тревоги — подписчики.
-4. CRM: `Crm.create_order` уже ставит задачу в транзакции — перевести на событие `order.created`.
-5. Вебхуки Frontpad, Яндекс Еды, Яндекс Доставки — через inbox.
+1. `Events`, журнал, `DeliverWorker`, реестр. Готово.
+2. `StatusChange`, `Create`, `Update`, отмена и откат пишут события. Готово: ещё смена оплаты и удаление (`order.deleted`).
+3. `Couriers.order_moved`, `Kitchen.order_accepted`, push, тревоги — подписчики. Готово. Действие самого курьера (забрал, вручил) двигает доставку сразу, подписчик потом ничего не меняет.
+4. CRM: `Crm.create_order` уже ставит задачу в транзакции — перевести на событие `order.created`. Готово.
+5. Вебхуки Frontpad, Яндекс Еды, Яндекс Доставки — через inbox. Перенесено в [набор для интеграций](integration-kit.md), вместе с общим журналом запросов.
+
+В тестах подписчики не работают сами: `deliver_events()` прогоняет очередь `events`.
 
 ## Тесты
 
