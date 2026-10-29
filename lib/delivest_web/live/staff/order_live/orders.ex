@@ -365,7 +365,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         id="order-slideover"
         show={@shown_order != nil}
         wide
-        title={@shown_order && gettext("Order #%{number}", number: @shown_order.number)}
+        title={@shown_order && gettext("Order #%{number}", number: Order.short_number(@shown_order))}
         on_close={JS.patch(orders_path(@current_branch, @query))}
       >
         <OrderCardComponent.render_card

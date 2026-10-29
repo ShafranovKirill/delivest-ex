@@ -157,7 +157,8 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               format: :uuid,
               example: "8f3b2c10-91ab-4cd2-81e2-123456789abc"
             },
-            number: %Schema{type: :string, example: "ORD-1001"},
+            number: %Schema{type: :string, example: "261029-MSK1-042"},
+            short_number: %Schema{type: :string, example: "42"},
             status: %Schema{
               type: :string,
               enum: [
@@ -220,6 +221,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           required: [
             :id,
             :number,
+            :short_number,
             :status,
             :fulfillment_type,
             :payment_method,
@@ -273,7 +275,8 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       type: :object,
       properties: %{
         id: %Schema{type: :string, format: :uuid},
-        number: %Schema{type: :string, example: "A042"},
+        number: %Schema{type: :string, example: "261029-MSK1-042"},
+        short_number: %Schema{type: :string, example: "42"},
         status: %Schema{
           type: :string,
           enum: [
@@ -309,6 +312,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       required: [
         :id,
         :number,
+        :short_number,
         :status,
         :fulfillment_type,
         :payment_method,

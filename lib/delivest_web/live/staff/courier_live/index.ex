@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.CourierLive.Index do
   use DelivestWeb, :live_view
 
+  alias Delivest.Oms.Order
+
   alias Delivest.{Couriers, Identity}
   alias Delivest.Oms.{OrderDeadline, Orders}
   alias DelivestWeb.CourierPresence
@@ -190,7 +192,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     >
       <header class="flex items-center justify-between gap-2 border-b border-base-200 bg-base-200/40 px-4 py-3">
         <div class="flex items-center gap-2">
-          <span class="font-mono text-xl font-black">#{@order.number}</span>
+          <span class="font-mono text-xl font-black">#{Order.short_number(@order)}</span>
           <span class={["badge badge-sm border font-medium", OrderHelpers.status_color(@order.status)]}>
             {OrderHelpers.status_label(@order.status)}
           </span>

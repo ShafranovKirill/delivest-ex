@@ -18,7 +18,7 @@ RolePresets.seed()
 branch =
   Repo.get_by(Branch, slug: "e2e") ||
     %Branch{}
-    |> Branch.changeset(%{name: "E2E", slug: "e2e", is_active: true})
+    |> Branch.changeset(%{name: "E2E", slug: "e2e", code: "E2E", is_active: true})
     |> Repo.insert!()
 
 Repo.get_by(BranchInfo, branch_id: branch.id) ||

@@ -1,6 +1,8 @@
 defmodule Delivest.Push.OrderMessage do
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias Delivest.Oms.Order
+
   alias Delivest.{Franchise, Identity}
 
   @notified [:accepted, :preparing, :ready, :delivering, :completed, :cancelled]
@@ -18,7 +20,7 @@ defmodule Delivest.Push.OrderMessage do
       body =
         gettext("Courier %{name} is heading to pick up order %{number}",
           name: contact.name,
-          number: order.number
+          number: Order.short_number(order)
         )
 
       message(order, body, url(order, contact))
@@ -54,30 +56,37 @@ defmodule Delivest.Push.OrderMessage do
     do:
       gettext("Courier %{name} is on the way with order %{number}",
         name: name,
-        number: order.number
+        number: Order.short_number(order)
       )
 
   defp body(status, order, _contact), do: body(status, order)
 
   defp body(:accepted, order),
-    do: gettext("Order %{number} is confirmed", number: order.number)
+    do: gettext("Order %{number} is confirmed", number: Order.short_number(order))
 
   defp body(:preparing, order),
-    do: gettext("Order %{number} is being prepared", number: order.number)
+    do: gettext("Order %{number} is being prepared", number: Order.short_number(order))
 
   defp body(:ready, %{fulfillment_type: :delivery} = order),
-    do: gettext("Order %{number} is ready and will be on its way soon", number: order.number)
+    do:
+      gettext("Order %{number} is ready and will be on its way soon",
+        number: Order.short_number(order)
+      )
 
   defp body(:ready, %{fulfillment_type: :pickup} = order),
-    do: gettext("Order %{number} is ready, you can pick it up", number: order.number)
+    do: gettext("Order %{number} is ready, you can pick it up", number: Order.short_number(order))
 
-  defp body(:ready, order), do: gettext("Order %{number} is ready", number: order.number)
+  defp body(:ready, order),
+    do: gettext("Order %{number} is ready", number: Order.short_number(order))
 
   defp body(:delivering, order),
-    do: gettext("The courier is on the way with order %{number}", number: order.number)
+    do:
+      gettext("The courier is on the way with order %{number}", number: Order.short_number(order))
 
   defp body(:completed, order),
-    do: gettext("Order %{number} is completed. Enjoy your meal!", number: order.number)
+    do:
+      gettext("Order %{number} is completed. Enjoy your meal!", number: Order.short_number(order))
 
-  defp body(:cancelled, order), do: gettext("Order %{number} was cancelled", number: order.number)
+  defp body(:cancelled, order),
+    do: gettext("Order %{number} was cancelled", number: Order.short_number(order))
 end

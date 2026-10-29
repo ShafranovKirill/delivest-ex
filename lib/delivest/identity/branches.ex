@@ -172,7 +172,7 @@ defmodule Delivest.Identity.Branches do
   defp do_create_branch(staff, branch_attrs, info_attrs) do
     if Identity.can?(staff, "branches.create") do
       Ecto.Multi.new()
-      |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, branch_attrs))
+      |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, with_code(branch_attrs)))
       |> Ecto.Multi.insert(:branch_info, fn %{branch: branch} ->
         branch
         |> Ecto.build_assoc(:info)
@@ -189,6 +189,22 @@ defmodule Delivest.Identity.Branches do
     else
       {:error, :forbidden}
     end
+  end
+
+  defp with_code(attrs) do
+    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+
+    case attrs["code"] do
+      code when is_binary(code) and code != "" -> attrs
+      _blank -> Map.put(attrs, "code", free_code(attrs["slug"] || attrs["name"]))
+    end
+  end
+
+  defp free_code(text) do
+    base = text |> Branch.code_from() |> String.pad_trailing(2, "0")
+
+    [base | Enum.map(2..99, &(String.slice(base, 0, 4) <> Integer.to_string(&1)))]
+    |> Enum.find(base, &(not Repo.exists?(from(b in Branch, where: b.code == ^&1))))
   end
 
   @spec soft_delete_branch(Delivest.Identity.Staff.t(), Branch.t()) ::

@@ -13,7 +13,12 @@ defmodule Delivest.Oms.PickupBoard do
       |> where([o], o.fulfillment_type in ^@fulfillment_types)
       |> where([o], o.status in [:preparing, :ready])
       |> order_by([o], asc: o.inserted_at)
-      |> select([o], %{id: o.id, number: o.number, status: o.status, updated_at: o.updated_at})
+      |> select([o], %{
+        id: o.id,
+        number: o.daily_number,
+        status: o.status,
+        updated_at: o.updated_at
+      })
       |> Repo.all()
 
     {ready, preparing} = Enum.split_with(orders, &(&1.status == :ready))

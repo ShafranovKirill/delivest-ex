@@ -13,7 +13,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
     %{
       order: with_customer(order),
       cart: edit_cart(order, connected?),
-      title: gettext("Edit Order #%{number}", number: order.number)
+      title: gettext("Edit Order #%{number}", number: Order.short_number(order))
     }
   end
 

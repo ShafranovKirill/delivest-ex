@@ -112,7 +112,12 @@ defmodule Delivest.ExampleSeed do
 
       nil ->
         %Branch{}
-        |> Branch.changeset(%{name: "Центральный филиал", slug: "central", is_active: true})
+        |> Branch.changeset(%{
+          name: "Центральный филиал",
+          slug: "central",
+          code: "CENTR",
+          is_active: true
+        })
         |> Repo.insert!()
         |> tap(&info("Created branch #{&1.name}"))
     end

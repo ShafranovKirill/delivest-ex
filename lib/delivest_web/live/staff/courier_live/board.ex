@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.CourierLive.Board do
   use DelivestWeb, :live_view
 
+  alias Delivest.Oms.Order
+
   alias Delivest.{Couriers, Identity}
   alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.CourierLive.LocationComponents
@@ -142,7 +144,7 @@ defmodule DelivestWeb.Staff.CourierLive.Board do
             "badge badge-sm border font-medium",
             OrderHelpers.status_color(delivery.order.status)
           ]}>
-            #{delivery.order.number} · {OrderHelpers.status_label(delivery.order.status)}
+            #{Order.short_number(delivery.order)} · {OrderHelpers.status_label(delivery.order.status)}
           </span>
         </li>
       </ul>

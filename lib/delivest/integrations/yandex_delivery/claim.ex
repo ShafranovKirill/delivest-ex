@@ -58,7 +58,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
                fullname: Enum.join(Enum.reject([info.city, info.address], &blank?/1), ", "),
                city: info.city,
                coordinates: [info.longitude, info.latitude],
-               comment: "Заказ №#{order.number}"
+               comment: label(order)
              }),
            skip_confirmation: not settings.confirm_codes
          }}
@@ -174,9 +174,12 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
     end
   end
 
-  defp comment(%Order{comment: comment, number: number}) do
-    Enum.join(Enum.reject(["Заказ №#{number}", comment], &blank?/1), ". ")
+  defp comment(%Order{comment: comment} = order) do
+    Enum.join(Enum.reject([label(order), comment], &blank?/1), ". ")
   end
+
+  defp label(%Order{number: number} = order),
+    do: "Заказ №#{Order.short_number(order)} (#{number})"
 
   defp coordinates(%Address{latitude: lat, longitude: lon})
        when is_number(lat) and is_number(lon),

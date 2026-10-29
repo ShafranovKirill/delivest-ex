@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.KitchenLive.Index do
   use DelivestWeb, :live_view
 
+  alias Delivest.Oms.Order
+
   alias Delivest.LocalTime
   alias Delivest.Oms.{Kitchen, Orders}
   alias DelivestWeb.KitchenPresence
@@ -175,7 +177,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
               id={"upcoming-#{order.id}"}
               class="flex items-baseline justify-between rounded-box bg-base-100 px-3 py-2"
             >
-              <span class="font-bold">#{order.number}</span>
+              <span class="font-bold">#{Order.short_number(order)}</span>
               <span class="font-mono text-base-content/70">{clock(sends_at)}</span>
             </li>
           </ul>
@@ -213,7 +215,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
         @late && "bg-error text-error-content"
       ]}>
         <div>
-          <p class="text-3xl font-black">#{@order.number}</p>
+          <p class="text-3xl font-black">#{Order.short_number(@order)}</p>
           <p class="text-lg font-semibold">
             {OrderHelpers.fulfillment_label(@order.fulfillment_type)}
           </p>

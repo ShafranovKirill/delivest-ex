@@ -36,7 +36,7 @@ defmodule Delivest.Oms.Orders.Create do
       DeliveryFee.run(cart.branch_id, attrs, pricing, opts)
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
-    |> Multi.run(:number, fn _, _ -> OrderNumber.generate() end)
+    |> Multi.run(:number, fn repo, %{cart: cart} -> OrderNumber.next(repo, cart.branch_id) end)
     |> Multi.insert(:order, &build(attrs, &1, opts))
     |> Multi.run(:advanced, fn repo, %{order: order} -> advance(repo, order, opts[:advance]) end)
     |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
@@ -82,7 +82,11 @@ defmodule Delivest.Oms.Orders.Create do
 
   defp own_attrs(attrs, %{number: number, cart: cart}) do
     attrs
-    |> Map.put("number", number)
+    |> Map.merge(%{
+      "number" => number.number,
+      "daily_number" => number.daily_number,
+      "business_date" => number.business_date
+    })
     |> Map.put_new("staff_id", cart.staff_id)
   end
 end

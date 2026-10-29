@@ -1,5 +1,6 @@
 defmodule Delivest.LocalTime do
   @default_timezone "Europe/Moscow"
+  @day_starts_at ~T[05:00:00]
 
   @spec timezone() :: String.t()
   def timezone, do: Application.get_env(:delivest, :timezone, @default_timezone)
@@ -7,6 +8,19 @@ defmodule Delivest.LocalTime do
   @spec today(String.t()) :: Date.t()
   def today(zone \\ timezone()) do
     DateTime.utc_now() |> DateTime.shift_zone!(zone) |> DateTime.to_date()
+  end
+
+  @spec day_starts_at() :: Time.t()
+  def day_starts_at, do: @day_starts_at
+
+  @spec business_date(DateTime.t(), String.t()) :: Date.t()
+  def business_date(%DateTime{} = datetime, zone \\ timezone()) do
+    local = DateTime.shift_zone!(datetime, zone)
+    date = DateTime.to_date(local)
+
+    if Time.before?(DateTime.to_time(local), @day_starts_at),
+      do: Date.add(date, -1),
+      else: date
   end
 
   @spec start_of_day_utc(Date.t(), String.t()) :: DateTime.t()

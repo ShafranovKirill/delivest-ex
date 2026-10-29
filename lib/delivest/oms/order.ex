@@ -32,6 +32,8 @@ defmodule Delivest.Oms.Order do
 
   schema "orders" do
     field :number, :string
+    field :daily_number, :integer
+    field :business_date, :date
     field :staff_id, :binary_id
     belongs_to :client, Delivest.Identity.Client
     belongs_to :cart, Delivest.Oms.Cart
@@ -76,6 +78,8 @@ defmodule Delivest.Oms.Order do
     order
     |> cast(attrs, [
       :number,
+      :daily_number,
+      :business_date,
       :staff_id,
       :client_id,
       :branch_id,
@@ -114,6 +118,11 @@ defmodule Delivest.Oms.Order do
   end
 
   def statuses, do: @statuses
+
+  def short_number(%__MODULE__{daily_number: number}) when is_integer(number),
+    do: Integer.to_string(number)
+
+  def short_number(%__MODULE__{number: number}), do: number
 
   def crm_managed?(%__MODULE__{crm: crm}), do: not is_nil(crm)
 

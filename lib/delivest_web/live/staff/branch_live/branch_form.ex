@@ -11,6 +11,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   embedded_schema do
     field :name, :string
     field :slug, :string
+    field :code, :string
     field :is_active, :boolean
 
     field :address, :string
@@ -45,6 +46,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :whatsapp_url,
       :instagram_url,
       :slug,
+      :code,
       :is_active
     ])
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
@@ -65,6 +67,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     %__MODULE__{
       name: branch.name,
       slug: branch.slug,
+      code: branch.code,
       is_active: branch.is_active,
       address: info && info.address,
       city: info && info.city,
@@ -182,7 +185,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     branch_params =
       data
-      |> Map.take([:name, :slug, :is_active])
+      |> Map.take([:name, :slug, :code, :is_active])
       |> Enum.reject(fn {_, v} -> is_nil(v) end)
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
 

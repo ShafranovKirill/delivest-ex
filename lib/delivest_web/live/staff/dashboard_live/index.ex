@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.DashboardLive.Index do
   use DelivestWeb, :live_view
 
+  alias Delivest.Oms.Order
+
   alias Delivest.{Analytics, Identity, LocalTime}
   alias Delivest.Oms.Orders
   alias DelivestWeb.Staff.DashboardLive.DayLabel
@@ -194,7 +196,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
                   navigate={~p"/staff/b/#{@current_branch}/orders/#{order.id}"}
                   class="font-mono font-bold after:absolute after:inset-0"
                 >
-                  #{order.number}
+                  #{Order.short_number(order)}
                 </.link>
                 <span class="text-sm text-base-content/60 tabular-nums">
                   {OrderHelpers.local_time(order.inserted_at)}

@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Client.Order.OrderJSON do
   alias Delivest.Couriers
+  alias Delivest.Oms.Order
 
   def create(%{order: order}) do
     %{data: order_data(order)}
@@ -17,6 +18,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
     %{
       id: order.id,
       number: order.number,
+      short_number: Order.short_number(order),
       status: order.status,
       fulfillment_type: order.fulfillment_type,
       payment_method: order.payment_method,
@@ -39,6 +41,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
     %{
       id: order.id,
       number: order.number,
+      short_number: Order.short_number(order),
       status: order.status,
       fulfillment_type: order.fulfillment_type,
       payment_method: order.payment_method,

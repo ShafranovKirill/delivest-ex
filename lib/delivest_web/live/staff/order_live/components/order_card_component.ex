@@ -48,7 +48,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <span class="absolute inline-flex size-full animate-ping rounded-full bg-info opacity-75" />
           <span class="relative inline-flex size-2.5 rounded-full bg-info" />
         </span>
-        <span class="font-mono font-bold text-base text-primary">#{@order.number}</span>
+        <span class="font-mono font-bold text-base text-primary">
+          #{Delivest.Oms.Order.short_number(@order)}
+        </span>
+        <span class="font-mono text-xs text-base-content/50">{@order.number}</span>
         <span class="badge badge-sm badge-ghost gap-1 font-medium">
           <.icon name={fulfillment_icon(@order.fulfillment_type)} class="size-3.5" />
           {OrderHelpers.fulfillment_label(@order.fulfillment_type)}

@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Hooks.NewOrders do
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias Delivest.Oms.Order
+
   import Phoenix.Component
   import Phoenix.LiveView
 
@@ -92,8 +94,8 @@ defmodule DelivestWeb.Hooks.NewOrders do
   defp handle_info({:kitchen_order_ready, order}, socket) do
     {:halt,
      socket
-     |> put_flash(:info, gettext("Order #%{number} is ready", number: order.number))
-     |> push_event("kitchen:ready", %{number: order.number})}
+     |> put_flash(:info, gettext("Order #%{number} is ready", number: Order.short_number(order)))
+     |> push_event("kitchen:ready", %{number: Order.short_number(order)})}
   end
 
   defp handle_info(:kitchen_tick, socket) do

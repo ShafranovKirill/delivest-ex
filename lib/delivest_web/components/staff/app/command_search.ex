@@ -2,6 +2,8 @@ defmodule DelivestWeb.CommandSearch do
   use DelivestWeb, :verified_routes
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias Delivest.Oms.Order
+
   import Delivest.Identity.Acl
 
   alias Delivest.{Identity, Net}
@@ -45,7 +47,7 @@ defmodule DelivestWeb.CommandSearch do
     do:
       item(
         "order-#{order.id}",
-        gettext("Order #%{number}", number: order.number),
+        gettext("Order #%{number}", number: Order.short_number(order)),
         order.client && join([order.client.name, order.client.phone]),
         "hero-shopping-bag",
         ~p"/staff/b/#{branch}/orders/#{order.id}"

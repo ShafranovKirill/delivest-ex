@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.OrderLive.Components.CancelOrderModal do
   use DelivestWeb, :html
 
+  alias Delivest.Oms.Order
+
   alias DelivestWeb.Staff.OrderLive.CancelReasons
 
   attr :order, :map, default: nil
@@ -12,7 +14,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CancelOrderModal do
     <.modal
       id="cancel-order-modal"
       show={@order != nil}
-      title={@order && gettext("Cancel order #%{number}", number: @order.number)}
+      title={@order && gettext("Cancel order #%{number}", number: Order.short_number(@order))}
       on_cancel={JS.push("dismiss_cancel")}
     >
       <.form
