@@ -11,9 +11,10 @@ defmodule Delivest.Analytics do
 
   def presets, do: @presets
 
-  @spec resolve_period(String.t() | nil, String.t() | nil, String.t() | nil) :: period()
-  def resolve_period(preset, from \\ nil, to \\ nil) do
-    today = LocalTime.today()
+  @spec resolve_period(String.t() | nil, String.t() | nil, String.t() | nil, binary() | nil) ::
+          period()
+  def resolve_period(preset, from \\ nil, to \\ nil, branch_id \\ nil) do
+    today = LocalTime.today(LocalTime.timezone(branch_id))
 
     case preset do
       "today" ->
@@ -71,7 +72,7 @@ defmodule Delivest.Analytics do
 
   @spec daily(binary(), period()) :: [%{date: Date.t(), revenue: integer(), orders: integer()}]
   def daily(branch_id, {from, to} = period) do
-    tz = LocalTime.timezone()
+    tz = LocalTime.timezone(branch_id)
 
     rows =
       branch_id
@@ -97,7 +98,7 @@ defmodule Delivest.Analytics do
 
   @spec hourly(binary(), period()) :: [%{hour: 0..23, revenue: integer(), orders: integer()}]
   def hourly(branch_id, period) do
-    tz = LocalTime.timezone()
+    tz = LocalTime.timezone(branch_id)
 
     rows =
       branch_id
@@ -234,8 +235,8 @@ defmodule Delivest.Analytics do
   defp period_orders(branch_id, {from, to}) do
     from(o in Order,
       where: o.branch_id == ^branch_id and is_nil(o.deleted_at),
-      where: o.inserted_at >= ^LocalTime.start_of_day_utc(from),
-      where: o.inserted_at <= ^LocalTime.end_of_day_utc(to)
+      where: o.inserted_at >= ^LocalTime.start_of_day_utc(from, LocalTime.timezone(branch_id)),
+      where: o.inserted_at <= ^LocalTime.end_of_day_utc(to, LocalTime.timezone(branch_id))
     )
   end
 

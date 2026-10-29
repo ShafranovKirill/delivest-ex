@@ -10,10 +10,12 @@ defmodule Delivest.Integrations.YandexEda.AcceptDeadlineTest do
     "wednesday" => %{"enabled" => true, "open" => "11:00", "close" => "22:00"}
   }
 
-  defp local(naive), do: LocalTime.naive_to_utc(naive)
+  @zone "Europe/Moscow"
+
+  defp local(naive), do: LocalTime.naive_to_utc(naive, @zone)
 
   defp deadline(naive, hours \\ @hours),
-    do: hours |> AcceptDeadline.at(10, local(naive)) |> LocalTime.utc_to_naive()
+    do: hours |> AcceptDeadline.at(10, @zone, local(naive)) |> LocalTime.utc_to_naive(@zone)
 
   test "during working hours the deadline is ten minutes from now" do
     assert deadline(~N[2026-10-26 15:00:00]) == ~N[2026-10-26 15:10:00]

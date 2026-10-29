@@ -6,8 +6,7 @@ end
 
 # Admin credentials: read directly from OS environment at runtime
 config :delivest,
-  default_locale: System.get_env("DEFAULT_LOCALE") || "en",
-  timezone: System.get_env("APP_TIMEZONE") || "Europe/Moscow"
+  default_locale: System.get_env("DEFAULT_LOCALE") || "en"
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the

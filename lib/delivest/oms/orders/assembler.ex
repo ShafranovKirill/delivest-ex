@@ -14,6 +14,7 @@ defmodule Delivest.Oms.Orders.Assembler do
     params =
       attrs
       |> snapshot(client_id, order)
+      |> local_cook_by(cart.branch_id)
       |> Map.merge(%{
         "cart_id" => cart.id,
         "branch_id" => cart.branch_id,
@@ -44,6 +45,11 @@ defmodule Delivest.Oms.Orders.Assembler do
         attrs
     end
   end
+
+  defp local_cook_by(%{"cook_by" => value} = attrs, branch_id),
+    do: Map.put(attrs, "cook_by", Delivest.LocalTime.parse(value, branch_id))
+
+  defp local_cook_by(attrs, _branch_id), do: attrs
 
   defp put_blank(attrs, key, value) do
     if attrs[key] in [nil, ""], do: Map.put(attrs, key, value), else: attrs

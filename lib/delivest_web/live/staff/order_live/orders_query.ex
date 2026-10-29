@@ -14,7 +14,10 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
       date_to: Map.get(params, "date_to", "")
     }
 
-    {date_from, date_to} = date_range(selected.period, selected.date_from, selected.date_to)
+    today = LocalTime.today(LocalTime.timezone(branch_id))
+
+    {date_from, date_to} =
+      date_range(selected.period, selected.date_from, selected.date_to, today)
 
     %{
       selected: selected,
@@ -40,16 +43,16 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
     |> Map.reject(fn {_key, value} -> value in [nil, ""] end)
   end
 
-  defp date_range("today", _from, _to), do: {LocalTime.today(), LocalTime.today()}
-  defp date_range("tomorrow", _from, _to), do: day(1)
-  defp date_range("yesterday", _from, _to), do: day(-1)
-  defp date_range("week", _from, _to), do: {Date.add(LocalTime.today(), -7), nil}
-  defp date_range("month", _from, _to), do: {Date.add(LocalTime.today(), -30), nil}
-  defp date_range("custom", from, to), do: {parse_date(from), parse_date(to)}
-  defp date_range(_period, _from, _to), do: {nil, nil}
+  defp date_range("today", _from, _to, today), do: {today, today}
+  defp date_range("tomorrow", _from, _to, today), do: day(today, 1)
+  defp date_range("yesterday", _from, _to, today), do: day(today, -1)
+  defp date_range("week", _from, _to, today), do: {Date.add(today, -7), nil}
+  defp date_range("month", _from, _to, today), do: {Date.add(today, -30), nil}
+  defp date_range("custom", from, to, _today), do: {parse_date(from), parse_date(to)}
+  defp date_range(_period, _from, _to, _today), do: {nil, nil}
 
-  defp day(offset) do
-    date = Date.add(LocalTime.today(), offset)
+  defp day(today, offset) do
+    date = Date.add(today, offset)
     {date, date}
   end
 

@@ -84,7 +84,7 @@ defmodule Delivest.Oms.OrderTest do
         cart_id: Ecto.UUID.generate(),
         customer_phone: "+79991234567",
         customer_name: "Иван",
-        cook_by: ~N[2026-10-05 18:30:00]
+        cook_by: ~U[2026-10-05 18:30:00Z]
       }
 
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
@@ -97,7 +97,7 @@ defmodule Delivest.Oms.OrderTest do
         fulfillment_type: :pickup,
         payment_method: :cash,
         cart_id: Ecto.UUID.generate(),
-        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 30), ~T[23:59:59])
+        cook_by: DateTime.new!(Date.add(Date.utc_today(), 30), ~T[23:59:59])
       }
 
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
@@ -110,7 +110,7 @@ defmodule Delivest.Oms.OrderTest do
         fulfillment_type: :pickup,
         payment_method: :cash,
         cart_id: Ecto.UUID.generate(),
-        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 31), ~T[00:00:00])
+        cook_by: DateTime.new!(Date.add(Date.utc_today(), 31), ~T[00:00:00])
       }
 
       changeset = Order.changeset(%Order{}, attrs)
@@ -270,7 +270,7 @@ defmodule Delivest.Oms.OrderTest do
                  "cook_by" => "2026-10-05T18:30"
                })
 
-      assert order.cook_by == ~N[2026-10-05 18:30:00]
+      assert order.cook_by == ~U[2026-10-05 15:30:00Z]
     end
 
     test "updates order values when the cart is changed" do

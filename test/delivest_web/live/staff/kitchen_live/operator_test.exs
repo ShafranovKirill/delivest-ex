@@ -53,12 +53,12 @@ defmodule DelivestWeb.Staff.KitchenLive.OperatorTest do
   end
 
   test "an order past cook_by still cooking raises the alarm", %{conn: conn, branch: branch} do
-    past = NaiveDateTime.add(NaiveDateTime.local_now(), -3, :hour)
+    past = DateTime.add(DateTime.utc_now(), -3, :hour)
 
     order =
       branch.id
       |> order_fixture()
-      |> Ecto.Changeset.change(status: :preparing, cook_by: NaiveDateTime.truncate(past, :second))
+      |> Ecto.Changeset.change(status: :preparing, cook_by: DateTime.truncate(past, :second))
       |> Repo.update!()
 
     {:ok, lv, _html} = orders_page(conn, branch)
@@ -70,12 +70,12 @@ defmodule DelivestWeb.Staff.KitchenLive.OperatorTest do
     conn: conn,
     branch: branch
   } do
-    later = NaiveDateTime.add(NaiveDateTime.local_now(), 5, :hour)
+    later = DateTime.add(DateTime.utc_now(), 5, :hour)
 
     order =
       order_fixture(branch.id,
         attrs: %{
-          "cook_by" => NaiveDateTime.truncate(later, :second) |> NaiveDateTime.to_iso8601()
+          "cook_by" => DateTime.truncate(later, :second) |> DateTime.to_iso8601()
         }
       )
 

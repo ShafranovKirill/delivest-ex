@@ -9,8 +9,9 @@ defmodule Delivest.Integrations.YandexEda.Reconciliation do
   @page 1000
 
   def run(settings, branch_id, %Date{} = date) do
-    from = LocalTime.start_of_day_utc(date)
-    to = DateTime.add(LocalTime.end_of_day_utc(date), 1, :second)
+    zone = LocalTime.timezone(branch_id)
+    from = LocalTime.start_of_day_utc(date, zone)
+    to = DateTime.add(LocalTime.end_of_day_utc(date, zone), 1, :second)
 
     with {:ok, remote} <- history(settings, branch_id, from, to, 0, []) do
       ours = ours(branch_id, from, to, Enum.map(remote, & &1["eats_id"]))

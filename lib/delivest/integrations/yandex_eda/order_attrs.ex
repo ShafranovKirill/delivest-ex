@@ -1,10 +1,10 @@
 defmodule Delivest.Integrations.YandexEda.OrderAttrs do
   alias Delivest.Identity.Phone
+  alias Delivest.LocalTime
 
   alias Delivest.Integrations.YandexEda.{
     AcceptDeadline,
     BranchSettings,
-    Clock,
     OrderAddress,
     OrderComment,
     OrderPricing,
@@ -62,9 +62,9 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
          delivery_time: minutes
        })
        when is_integer(minutes),
-       do: at |> DateTime.add(-minutes, :minute) |> Clock.local()
+       do: DateTime.add(at, -minutes, :minute)
 
-  defp cook_by(%OrderRequest{target_at: at}, _info), do: Clock.local(at)
+  defp cook_by(%OrderRequest{target_at: at}, _info), do: at
 
   defp channel(request, branch, settings) do
     %{
@@ -86,7 +86,10 @@ defmodule Delivest.Integrations.YandexEda.OrderAttrs do
   end
 
   defp accept_by(%BranchSettings{accept_mode: :manual, accept_minutes: minutes}, info),
-    do: (info && info.working_hours) |> AcceptDeadline.at(minutes) |> DateTime.to_iso8601()
+    do:
+      (info && info.working_hours)
+      |> AcceptDeadline.at(minutes, LocalTime.timezone(info))
+      |> DateTime.to_iso8601()
 
   defp accept_by(_settings, _info), do: nil
 end

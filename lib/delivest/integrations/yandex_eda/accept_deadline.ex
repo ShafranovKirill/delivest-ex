@@ -5,15 +5,15 @@ defmodule Delivest.Integrations.YandexEda.AcceptDeadline do
   @keys ~w(mon tue wed thu fri sat sun)
   @days_ahead 7
 
-  def at(working_hours, minutes, now \\ DateTime.utc_now()) do
+  def at(working_hours, minutes, zone, now \\ DateTime.utc_now()) do
     now
-    |> opening(Schedule.build(working_hours))
+    |> opening(Schedule.build(working_hours), zone)
     |> DateTime.add(minutes, :minute)
     |> DateTime.truncate(:second)
   end
 
-  defp opening(now, schedule) do
-    local = LocalTime.utc_to_naive(now)
+  defp opening(now, schedule, zone) do
+    local = LocalTime.utc_to_naive(now, zone)
 
     local
     |> NaiveDateTime.to_date()
@@ -22,7 +22,7 @@ defmodule Delivest.Integrations.YandexEda.AcceptDeadline do
       cond do
         NaiveDateTime.compare(local, finish) != :lt -> nil
         NaiveDateTime.compare(local, start) != :lt -> now
-        true -> LocalTime.naive_to_utc(start)
+        true -> LocalTime.naive_to_utc(start, zone)
       end
     end)
   end

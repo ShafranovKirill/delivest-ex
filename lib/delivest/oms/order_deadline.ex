@@ -1,7 +1,7 @@
 defmodule Delivest.Oms.OrderDeadline do
   import Ecto.Query
 
-  alias Delivest.{Identity, LocalTime}
+  alias Delivest.Identity
   alias Delivest.Oms.Order
 
   @default_delivery_minutes 60
@@ -22,8 +22,7 @@ defmodule Delivest.Oms.OrderDeadline do
   def lead_minutes(_type, delivery_minutes),
     do: max(@min_kitchen_minutes, round(delivery_minutes / 2))
 
-  def at(%Order{cook_by: %NaiveDateTime{} = cook_by}, _delivery_minutes),
-    do: LocalTime.naive_to_utc(cook_by)
+  def at(%Order{cook_by: %DateTime{} = cook_by}, _delivery_minutes), do: cook_by
 
   def at(%Order{} = order, delivery_minutes),
     do:
@@ -41,8 +40,7 @@ defmodule Delivest.Oms.OrderDeadline do
       dynamic(
         [o],
         fragment(
-          "coalesce(timezone(?, ?), timezone('UTC', ?) + make_interval(mins => CASE WHEN ? = 'delivery' THEN ?::integer ELSE ?::integer END))",
-          ^LocalTime.timezone(),
+          "coalesce(?, ? + make_interval(mins => CASE WHEN ? = 'delivery' THEN ?::integer ELSE ?::integer END))",
           o.cook_by,
           o.inserted_at,
           o.fulfillment_type,

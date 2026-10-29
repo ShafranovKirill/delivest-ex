@@ -34,8 +34,7 @@ defmodule Delivest.Oms.KitchenTest do
     do:
       DateTime.utc_now()
       |> DateTime.add(minutes, :minute)
-      |> LocalTime.utc_to_naive()
-      |> NaiveDateTime.truncate(:second)
+      |> DateTime.truncate(:second)
 
   defp operator(branch), do: {:staff, staff(["orders.update"], branch)}
 

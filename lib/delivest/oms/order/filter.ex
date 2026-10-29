@@ -18,8 +18,8 @@ defmodule Delivest.Oms.Orders.Filter do
       {_key, val}, q when val in [nil, ""] -> q
       {"branch_id", val}, q -> where(q, [o], o.branch_id == ^val)
       {"status", val}, q -> filter_status(q, val)
-      {"date_from", val}, q -> filter_date_from(q, val)
-      {"date_to", val}, q -> filter_date_to(q, val)
+      {"date_from", val}, q -> filter_date_from(q, val, zone(params))
+      {"date_to", val}, q -> filter_date_to(q, val, zone(params))
       {"search", val}, q -> Search.apply(q, val)
       {"sort_by", val}, q -> apply_sort(q, val, params["sort_dir"])
       _, q -> q
@@ -33,24 +33,29 @@ defmodule Delivest.Oms.Orders.Filter do
 
   defp filter_status(q, _status), do: where(q, false)
 
-  defp filter_date_from(q, %Date{} = date) do
-    where(q, [o], o.inserted_at >= ^Delivest.LocalTime.start_of_day_utc(date))
+  defp zone(params), do: Delivest.LocalTime.timezone(blank_to_nil(params["branch_id"]))
+
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(value), do: value
+
+  defp filter_date_from(q, %Date{} = date, zone) do
+    where(q, [o], o.inserted_at >= ^Delivest.LocalTime.start_of_day_utc(date, zone))
   end
 
-  defp filter_date_from(q, str) when is_binary(str) do
+  defp filter_date_from(q, str, zone) when is_binary(str) do
     case Date.from_iso8601(str) do
-      {:ok, d} -> filter_date_from(q, d)
+      {:ok, d} -> filter_date_from(q, d, zone)
       _ -> q
     end
   end
 
-  defp filter_date_to(q, %Date{} = date) do
-    where(q, [o], o.inserted_at <= ^Delivest.LocalTime.end_of_day_utc(date))
+  defp filter_date_to(q, %Date{} = date, zone) do
+    where(q, [o], o.inserted_at <= ^Delivest.LocalTime.end_of_day_utc(date, zone))
   end
 
-  defp filter_date_to(q, str) when is_binary(str) do
+  defp filter_date_to(q, str, zone) when is_binary(str) do
     case Date.from_iso8601(str) do
-      {:ok, d} -> filter_date_to(q, d)
+      {:ok, d} -> filter_date_to(q, d, zone)
       _ -> q
     end
   end

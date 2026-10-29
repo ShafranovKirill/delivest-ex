@@ -58,7 +58,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       params: %{},
       timing: if(order.cook_by, do: "scheduled", else: "asap"),
       known_client: KnownClient.find(order.customer_phone),
-      form: to_form(Order.changeset(order, %{}))
+      form: to_form(Order.changeset(order, cook_by_input(order, branch_id)))
     )
   end
 
@@ -181,6 +181,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     |> clear_time()
     |> fill_name(known_client)
   end
+
+  defp cook_by_input(%Order{cook_by: nil}, _branch_id), do: %{}
+
+  defp cook_by_input(%Order{cook_by: cook_by}, branch_id),
+    do: %{"cook_by" => Delivest.LocalTime.input(cook_by, branch_id)}
 
   defp clear_time(%{"timing" => "asap"} = params), do: Map.put(params, "cook_by", "")
   defp clear_time(params), do: params

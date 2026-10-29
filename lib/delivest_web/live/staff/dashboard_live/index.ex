@@ -51,7 +51,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
   defp load(socket) do
     branch_id = socket.assigns.current_branch.id
-    today = LocalTime.today()
+    today = LocalTime.today(LocalTime.timezone(branch_id))
     today_period = {today, today}
     yesterday = Date.add(today, -1)
 

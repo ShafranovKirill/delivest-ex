@@ -37,18 +37,18 @@ defmodule Delivest.Integrations.Frontpad.Webhook do
       Journal.put_context(branch_id: order.branch_id, order_id: order.id)
       code = to_string(code)
       status = StatusCodes.status_for(info.crm.frontpad.statuses, code)
-      SyncState.remote_status(order, status, code, parse_datetime(datetime))
+      SyncState.remote_status(order, status, code, parse_datetime(datetime, order.branch_id))
     end
   end
 
-  defp parse_datetime(datetime) when is_binary(datetime) do
+  defp parse_datetime(datetime, branch_id) when is_binary(datetime) do
     with {:ok, naive} <- NaiveDateTime.from_iso8601(String.replace(datetime, " ", "T")),
-         {:ok, local} <- DateTime.from_naive(naive, Delivest.LocalTime.timezone()) do
+         {:ok, local} <- DateTime.from_naive(naive, Delivest.LocalTime.timezone(branch_id)) do
       local |> DateTime.shift_zone!("Etc/UTC") |> DateTime.truncate(:second)
     else
       _ -> DateTime.utc_now(:second)
     end
   end
 
-  defp parse_datetime(_datetime), do: DateTime.utc_now(:second)
+  defp parse_datetime(_datetime, _branch_id), do: DateTime.utc_now(:second)
 end

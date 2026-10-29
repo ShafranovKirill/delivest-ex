@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
-  alias Delivest.{Couriers, Identity}
+  alias Delivest.{Couriers, Identity, LocalTime}
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
@@ -371,7 +371,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </p>
       <p :if={@order.cook_by} class="flex gap-1.5 text-base-content/80">
         <.icon name="hero-clock" class="size-4 shrink-0 text-base-content/40" />
-        {gettext("Prepare by:")} {Calendar.strftime(@order.cook_by, "%d.%m %H:%M")}
+        {gettext("Prepare by:")} {@order.cook_by
+        |> LocalTime.local(@order.branch_id)
+        |> Calendar.strftime("%d.%m %H:%M")}
       </p>
       <p
         :if={@order.comment not in [nil, ""]}

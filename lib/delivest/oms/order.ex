@@ -62,7 +62,7 @@ defmodule Delivest.Oms.Order do
     field :discount_amount, :integer, default: 0
     field :delivery_amount, :integer, default: 0
     embeds_many :promotions, AppliedPromotion, on_replace: :delete
-    field :cook_by, :naive_datetime
+    field :cook_by, :utc_datetime
     field :comment, :string
     field :cancel_reason, Ecto.Enum, values: @cancel_reasons
     field :cancel_note, :string
@@ -225,10 +225,10 @@ defmodule Delivest.Oms.Order do
 
   defp validate_cook_by_range(changeset) do
     case get_field(changeset, :cook_by) do
-      %NaiveDateTime{} = cook_by ->
+      %DateTime{} = cook_by ->
         max_date = Date.add(Date.utc_today(), 30)
 
-        if Date.compare(NaiveDateTime.to_date(cook_by), max_date) == :gt do
+        if Date.compare(DateTime.to_date(cook_by), max_date) == :gt do
           add_error(changeset, :cook_by, "must be no more than 30 days from today")
         else
           changeset

@@ -63,8 +63,8 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
   end
 
   test "a late order turns red", %{conn: conn, branch: branch} do
-    past = NaiveDateTime.add(NaiveDateTime.local_now(), -3, :hour)
-    order = cooking(branch, cook_by: NaiveDateTime.truncate(past, :second))
+    past = DateTime.add(DateTime.utc_now(), -3, :hour)
+    order = cooking(branch, cook_by: DateTime.truncate(past, :second))
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/kitchen")
 

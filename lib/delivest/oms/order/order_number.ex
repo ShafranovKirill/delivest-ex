@@ -11,7 +11,7 @@ defmodule Delivest.Oms.Order.OrderNumber do
   """
 
   def next(repo, branch_id, now \\ DateTime.utc_now()) do
-    date = LocalTime.business_date(now)
+    date = LocalTime.business_date(now, LocalTime.timezone(branch_id))
 
     code =
       repo.one(from b in Branch, where: b.id == ^branch_id, select: b.code) || fallback(branch_id)

@@ -5,7 +5,8 @@ defmodule Delivest.Oms.SourceStats do
   alias Delivest.Oms.Order
 
   def today(branch_id) do
-    since = LocalTime.start_of_day_utc(LocalTime.today())
+    zone = LocalTime.timezone(branch_id)
+    since = LocalTime.start_of_day_utc(LocalTime.today(zone), zone)
 
     from(o in Order,
       where: o.branch_id == ^branch_id and o.inserted_at >= ^since and is_nil(o.deleted_at),

@@ -125,7 +125,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
           <span class="text-base-content/60">{@current_branch.name}</span>
         </div>
         <div class="flex items-center gap-3">
-          <span class="font-mono text-2xl font-bold">{clock(@now)}</span>
+          <span class="font-mono text-2xl font-bold">{clock(@now, @current_branch.id)}</span>
           <button
             id="kitchen-start"
             type="button"
@@ -178,7 +178,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
               class="flex items-baseline justify-between rounded-box bg-base-100 px-3 py-2"
             >
               <span class="font-bold">#{Order.short_number(order)}</span>
-              <span class="font-mono text-base-content/70">{clock(sends_at)}</span>
+              <span class="font-mono text-base-content/70">{clock(sends_at, @current_branch.id)}</span>
             </li>
           </ul>
         </aside>
@@ -221,7 +221,9 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
           </p>
         </div>
         <div class="text-right">
-          <p class="font-mono text-3xl font-black">{clock(@ticket.deadline)}</p>
+          <p class="font-mono text-3xl font-black">
+            {clock(@ticket.deadline, @ticket.order.branch_id)}
+          </p>
           <p class="text-lg">
             {gettext("cooking %{minutes} min", minutes: minutes_since(@ticket.started_at, @now))}
           </p>
@@ -275,7 +277,8 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
     """
   end
 
-  defp clock(%DateTime{} = at), do: at |> LocalTime.utc_to_naive() |> Calendar.strftime("%H:%M")
+  defp clock(%DateTime{} = at, branch_id),
+    do: at |> LocalTime.local(branch_id) |> Calendar.strftime("%H:%M")
 
   defp minutes_since(at, now), do: max(0, div(DateTime.diff(now, at), 60))
 end

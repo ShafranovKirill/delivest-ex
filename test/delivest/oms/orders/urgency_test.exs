@@ -31,7 +31,7 @@ defmodule Delivest.Oms.Orders.UrgencyTest do
 
   test "new orders lead, then the closest deadline, finished ones go last", ctx do
     in_two_hours =
-      DateTime.utc_now(:second) |> DateTime.add(2, :hour) |> Delivest.LocalTime.utc_to_naive()
+      DateTime.utc_now(:second) |> DateTime.add(2, :hour)
 
     finished = order(ctx, 50, status: :completed)
     pickup = order(ctx, 5, status: :preparing)

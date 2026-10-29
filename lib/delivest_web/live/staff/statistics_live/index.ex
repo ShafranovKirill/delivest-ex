@@ -22,7 +22,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     preset =
       if params["period"] in Analytics.presets(), do: params["period"], else: "week"
 
-    period = Analytics.resolve_period(preset, params["from"], params["to"])
+    period =
+      Analytics.resolve_period(
+        preset,
+        params["from"],
+        params["to"],
+        socket.assigns.current_branch.id
+      )
+
     sort = if params["sort"] == "quantity", do: :quantity, else: :revenue
 
     {:noreply,

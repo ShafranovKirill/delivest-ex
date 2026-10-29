@@ -1,12 +1,12 @@
 defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
-  use ExUnit.Case, async: true
+  use Delivest.DataCase, async: true
 
   alias Delivest.Integrations.Frontpad.{OrderPayload, Settings}
   alias Delivest.Oms.{Order, OrderItem}
 
   test "maps cook_by to Frontpad datetime using the required format" do
     order = %Order{
-      cook_by: ~N[2026-10-15 15:30:00],
+      cook_by: ~U[2026-10-15 12:30:00Z],
       items: [%OrderItem{product_id: "product-1", quantity: 2}]
     }
 

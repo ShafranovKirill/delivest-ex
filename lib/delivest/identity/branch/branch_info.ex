@@ -24,6 +24,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     field :whatsapp_url, :string
     field :instagram_url, :string
     field :board_token, :string
+    field :timezone, :string
     embeds_one :crm, BranchSettings, on_replace: :update
     embeds_one :channels, Delivest.Integrations.Channels.BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
@@ -46,19 +47,22 @@ defmodule Delivest.Identity.Branch.BranchInfo do
 
   def changeset(branch_info, attrs) do
     branch_info
-    |> cast(attrs, [
-      :address,
-      :city,
-      :latitude,
-      :longitude,
-      :phone_number,
-      :delivery_time,
-      :working_hours,
-      :vk_url,
-      :whatsapp_url,
-      :instagram_url,
-      :branch_id
-    ])
+    |> cast(
+      attrs,
+      [
+        :address,
+        :city,
+        :latitude,
+        :longitude,
+        :phone_number,
+        :delivery_time,
+        :working_hours,
+        :vk_url,
+        :whatsapp_url,
+        :instagram_url,
+        :timezone,
+        :branch_id
+      ], empty_values: [nil, ""])
     |> cast_embed(:crm, with: &BranchSettings.changeset/2)
     |> cast_embed(:channels, with: &Delivest.Integrations.Channels.BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
@@ -68,6 +72,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
       with: &Delivest.Integrations.YandexDelivery.Settings.changeset/2
     )
     |> validate_required([:branch_id])
+    |> Delivest.LocalTime.validate_timezone(:timezone)
     |> validate_length(:city, max: 100)
     |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)
     |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)

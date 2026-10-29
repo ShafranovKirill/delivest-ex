@@ -45,7 +45,12 @@ defmodule DelivestWeb.KitchenControl do
         <li :for={order <- @orders} id={"kitchen-late-#{order.id}"} class="flex justify-between">
           <span class="font-mono font-bold">#{Order.short_number(order)}</span>
           <span class="tabular-nums text-base-content/70">
-            {gettext("due %{time}", time: Calendar.strftime(order.cook_by, "%H:%M"))}
+            {gettext("due %{time}",
+              time:
+                order.cook_by
+                |> Delivest.LocalTime.local(order.branch_id)
+                |> Calendar.strftime("%H:%M")
+            )}
           </span>
         </li>
       </ul>

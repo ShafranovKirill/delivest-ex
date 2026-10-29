@@ -13,7 +13,7 @@ defmodule Delivest.Promo.Facts do
   defstruct [:subtotal, :quantity, :quantities, :fulfillment, :time, :weekday]
 
   def build(%Basket{} = basket, %Context{} = context) do
-    local = DateTime.shift_zone!(context.now, Delivest.LocalTime.timezone())
+    local = DateTime.shift_zone!(context.now, Delivest.LocalTime.timezone(context.branch_id))
 
     %__MODULE__{
       subtotal: Basket.subtotal(basket),

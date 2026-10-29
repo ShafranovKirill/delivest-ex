@@ -30,6 +30,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
     end
   end
 
+  defp with_customer(%Order{customer_phone: phone} = order) when is_binary(phone), do: order
+
   defp with_customer(%Order{client: %{phone: phone, name: name}} = order),
     do: %{order | customer_phone: phone, customer_name: name}
 

@@ -45,16 +45,17 @@ defmodule Delivest.Oms.Workers.StaleOrderWorker do
   end
 
   defp past_days_query(now) do
-    local_now = LocalTime.utc_to_naive(now)
-    day_start = local_now |> NaiveDateTime.to_date() |> LocalTime.start_of_day_utc()
-    local_day_start = LocalTime.utc_to_naive(day_start)
+    zone = LocalTime.timezone()
+
+    day_start =
+      now |> DateTime.shift_zone!(zone) |> DateTime.to_date() |> LocalTime.start_of_day_utc(zone)
+
     cutoff = DateTime.add(now, -@grace_hours, :hour)
-    local_cutoff = NaiveDateTime.add(local_now, -@grace_hours, :hour)
 
     from(o in Order,
       where: o.status in ^@open_statuses and is_nil(o.deleted_at) and is_nil(o.crm),
       where: o.inserted_at < ^day_start and o.inserted_at < ^cutoff,
-      where: is_nil(o.cook_by) or (o.cook_by < ^local_day_start and o.cook_by < ^local_cutoff)
+      where: is_nil(o.cook_by) or (o.cook_by < ^day_start and o.cook_by < ^cutoff)
     )
   end
 

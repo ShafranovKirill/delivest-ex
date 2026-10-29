@@ -77,7 +77,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
           descr: descr(order, settings),
           pay: PaymentCodes.code_for(settings.payments, order.payment_method),
           tags: TagCodes.codes(settings.tags, order),
-          datetime: format_cook_by(order.cook_by),
+          datetime: format_cook_by(order),
           sale_amount: sale_amount(order.items, settings),
           products: formatted_products ++ delivery_line(order, settings)
         }
@@ -224,8 +224,11 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     end
   end
 
-  defp format_cook_by(%NaiveDateTime{} = cook_by),
-    do: Calendar.strftime(cook_by, "%Y-%m-%d %H:%M:%S")
+  defp format_cook_by(%{cook_by: %DateTime{} = cook_by} = order),
+    do:
+      cook_by
+      |> Delivest.LocalTime.local(order.branch_id)
+      |> Calendar.strftime("%Y-%m-%d %H:%M:%S")
 
   defp format_cook_by(_), do: nil
 end

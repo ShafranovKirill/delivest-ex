@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
        push_available: YandexEda.push_available?(),
        can_reconcile: Identity.can?(staff, "orders.read"),
        can_pause: Identity.can?(staff, "stops.update"),
-       reconcile_date: LocalTime.today(),
+       reconcile_date: LocalTime.today(LocalTime.timezone(socket.assigns.current_branch.id)),
        reconciliation: nil
      )
      |> assign_shared(YandexEda.get_settings())
