@@ -55,8 +55,7 @@ defmodule Delivest.Identity.Branch do
   end
 
   def code_from(text) when is_binary(text) do
-    text
-    |> Delivest.Slug.slugify()
+    (Delivest.Slug.slugify(text) || "")
     |> String.replace("-", "")
     |> String.upcase()
     |> String.slice(0, 6)

@@ -49,7 +49,7 @@ defmodule Delivest.PushTest do
              PushClient.decrypt(client, body)
 
     assert url == "/" <> Repo.get!(Delivest.Identity.Branch, order.branch_id).slug
-    assert text == "Order #{order.number} is being prepared"
+    assert text == "Order #{order.daily_number} is being prepared"
     assert tag == "order-#{order.id}"
 
     assert :ok = perform_job(Worker, %{"order_id" => order.id})

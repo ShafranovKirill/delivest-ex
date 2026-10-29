@@ -18,4 +18,11 @@ defmodule Delivest.LocalTimeTest do
   test "defaults to the configured zone" do
     assert LocalTime.timezone() == "Europe/Moscow"
   end
+
+  test "the business day starts at five in the morning" do
+    assert LocalTime.business_date(~U[2026-10-19 23:59:00Z], @zone) == ~D[2026-10-19]
+    assert LocalTime.business_date(~U[2026-10-19 23:59:59Z], @zone) == ~D[2026-10-19]
+    assert LocalTime.business_date(~U[2026-10-20 00:00:00Z], @zone) == ~D[2026-10-20]
+    assert LocalTime.business_date(~U[2026-10-19 12:00:00Z], @zone) == ~D[2026-10-19]
+  end
 end

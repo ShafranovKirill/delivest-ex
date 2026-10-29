@@ -28,7 +28,12 @@ defmodule DelivestWeb.BoardLive.IndexTest do
 
     {:ok, lv, _html} = live(conn, ~p"/board/board-#{branch.id}")
 
-    assert has_element?(lv, "#board-preparing #board-order-#{order.id}", order.number)
+    assert has_element?(
+             lv,
+             "#board-preparing #board-order-#{order.id}",
+             to_string(order.daily_number)
+           )
+
     refute has_element?(lv, "#board-ready #board-order-#{order.id}")
 
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))

@@ -273,6 +273,45 @@ defmodule Delivest.Identity.BranchesTest do
       assert working_hours["tuesday"]["enabled"] == false
     end
 
+    test "generates a unique branch code from the slug", %{admin: admin} do
+      assert {:ok, first} = Branches.create_branch(admin, %{name: "Center", slug: "center"}, %{})
+
+      assert {:ok, second} =
+               Branches.create_branch(admin, %{name: "Centre", slug: "center-2"}, %{})
+
+      assert first.code == "CENTER"
+      assert second.code != first.code
+      assert second.code =~ ~r/^[A-Z0-9]{2,6}$/
+    end
+
+    test "keeps the given branch code in upper case", %{admin: admin} do
+      assert {:ok, branch} =
+               Branches.create_branch(admin, %{name: "Moscow", slug: "msk", code: "msk1"}, %{})
+
+      assert branch.code == "MSK1"
+    end
+
+    test "rejects a branch code that is not 2 to 6 letters or digits", %{admin: admin} do
+      changeset =
+        assert_changeset_error(
+          Branches.create_branch(admin, %{name: "Moscow", slug: "msk", code: "MSK-1"}, %{})
+        )
+
+      assert errors_on(changeset).code != []
+    end
+
+    test "rejects a branch code taken by another branch", %{admin: admin} do
+      assert {:ok, _} =
+               Branches.create_branch(admin, %{name: "Moscow", slug: "msk", code: "MSK"}, %{})
+
+      changeset =
+        assert_changeset_error(
+          Branches.create_branch(admin, %{name: "Moscow 2", slug: "msk-2", code: "MSK"}, %{})
+        )
+
+      assert "has already been taken" in errors_on(changeset).code
+    end
+
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
       attrs = %{name: ""}
 

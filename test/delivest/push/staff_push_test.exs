@@ -63,7 +63,7 @@ defmodule Delivest.Push.StaffPushTest do
     order = order_fixture(ctx.branch.id)
     run_jobs()
 
-    assert received(ctx.operator) == "New order ##{order.number}"
+    assert received(ctx.operator) == "New order ##{order.daily_number}"
     refute received(ctx.courier)
     refute received(ctx.other)
   end
@@ -82,13 +82,13 @@ defmodule Delivest.Push.StaffPushTest do
     {:ok, _delivery} = Couriers.find(ctx.operator.staff, order)
     run_jobs()
 
-    assert received(ctx.courier) == "New delivery request ##{order.number}"
+    assert received(ctx.courier) == "New delivery request ##{order.daily_number}"
     refute received(ctx.operator)
 
     {:ok, _delivery} = Couriers.assign(ctx.operator.staff, order, ctx.courier.staff.id)
     run_jobs()
 
-    assert received(ctx.courier) == "You were given order ##{order.number}"
+    assert received(ctx.courier) == "You were given order ##{order.daily_number}"
   end
 
   test "operators hear the kitchen finished an order", ctx do
@@ -103,7 +103,7 @@ defmodule Delivest.Push.StaffPushTest do
     {:ok, _order} = Kitchen.finish_ready(order.id, kitchen.id)
     run_jobs()
 
-    assert received(ctx.operator) == "Order ##{order.number} is ready"
+    assert received(ctx.operator) == "Order ##{order.daily_number} is ready"
   end
 
   test "operators hear the channel cancelled an order", ctx do
@@ -111,7 +111,7 @@ defmodule Delivest.Push.StaffPushTest do
     {:ok, _order} = Orders.cancel_order(order, :channel, %{"cancel_reason" => "other"})
     run_jobs()
 
-    assert received(ctx.operator) == "Order ##{order.number} was cancelled by the channel"
+    assert received(ctx.operator) == "Order ##{order.daily_number} was cancelled by the channel"
   end
 
   test "a gone device is dropped", ctx do

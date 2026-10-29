@@ -49,7 +49,7 @@ defmodule DelivestWeb.Staff.KitchenLive.OperatorTest do
     )
 
     assert_push_event(lv, "kitchen:ready", %{})
-    assert render(lv) =~ "Order ##{order.number} is ready"
+    assert render(lv) =~ "Order ##{order.daily_number} is ready"
   end
 
   test "an order past cook_by still cooking raises the alarm", %{conn: conn, branch: branch} do

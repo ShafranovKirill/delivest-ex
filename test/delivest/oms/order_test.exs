@@ -391,24 +391,27 @@ defmodule Delivest.Oms.OrderTest do
                })
     end
 
-    test "allows repeated order numbers once the number sequence wraps around" do
+    test "numbers orders of a branch day by day" do
       product = insert_branch_product(@branch_id, price: 100)
 
-      for session <- ["wrap-1", "wrap-2"] do
-        {:ok, cart} = Carts.create_cart(%{session_id: session, branch_id: @branch_id})
-        {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
+      numbers =
+        for session <- ["day-1", "day-2"] do
+          {:ok, cart} = Carts.create_cart(%{session_id: session, branch_id: @branch_id})
+          {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
 
-        {:ok, order} =
-          Orders.create_order(%{
-            "cart_id" => cart.id,
-            "fulfillment_type" => "pickup",
-            "payment_method" => "cash"
-          })
+          {:ok, order} =
+            Orders.create_order(%{
+              "cart_id" => cart.id,
+              "fulfillment_type" => "pickup",
+              "payment_method" => "cash"
+            })
 
-        order |> Ecto.Changeset.change(number: "A000") |> Repo.update!()
-      end
+          {order.daily_number, order.number, order.business_date}
+        end
 
-      assert Repo.aggregate(from(o in Order, where: o.number == "A000"), :count) == 2
+      assert [{1, first, date}, {2, second, date}] = numbers
+      assert first =~ ~r/^\d{6}-[A-Z0-9]+-001$/
+      assert second =~ ~r/^\d{6}-[A-Z0-9]+-002$/
     end
 
     test "update_payment_method changes only the payment without a cart" do

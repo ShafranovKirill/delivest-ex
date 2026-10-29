@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
 
     {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/kitchen")
 
-    assert html =~ "##{order.number}"
+    assert html =~ "##{order.daily_number}"
     assert html =~ hd(order.items).title
     assert html =~ "без лука"
     assert has_element?(lv, "#ready-#{order.id}")
