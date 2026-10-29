@@ -4,7 +4,7 @@ defmodule Delivest.Couriers do
   require Logger
 
   alias Delivest.{Audit, Identity, Repo}
-  alias Delivest.Couriers.{Contact, Delivery, Registry}
+  alias Delivest.Couriers.{Cash, Contact, Delivery, Registry}
   alias Delivest.Identity.{Branch, Staff, StaffBranch}
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
   alias Delivest.Integrations.Crm
@@ -17,6 +17,14 @@ defmodule Delivest.Couriers do
   @lost_limit 3
 
   def permission, do: @permission
+
+  defdelegate balance(branch_id, courier_id), to: Cash
+  defdelegate balances(branch_id, courier_ids), to: Cash
+
+  def settle(%Staff{} = staff, branch_id, courier_id) do
+    with {:ok, _settlement} = result <- Cash.settle(staff, branch_id, courier_id),
+         do: broadcast(result, branch_id)
+  end
 
   def subscribe(branch_id), do: Phoenix.PubSub.subscribe(Delivest.PubSub, topic(branch_id))
 

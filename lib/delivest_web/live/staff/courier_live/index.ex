@@ -57,7 +57,8 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
 
     assign(socket,
       mine: Couriers.list_mine(staff, branch.id),
-      open: Couriers.list_open(branch.id)
+      open: Couriers.list_open(branch.id),
+      balance: Couriers.balance(branch.id, staff.id)
     )
   end
 
@@ -66,6 +67,8 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     ~H"""
     <div id="courier-page" class="mx-auto max-w-2xl space-y-6 py-4 sm:p-6">
       <.page_header title={gettext("Deliveries")} subtitle={@current_branch.name} />
+
+      <.cash_summary balance={@balance} />
 
       <section id="courier-mine" class="space-y-3">
         <h2 class="text-sm font-bold uppercase text-base-content/60">{gettext("My orders")}</h2>
@@ -94,6 +97,38 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
         />
       </section>
     </div>
+    """
+  end
+
+  attr :balance, :map, required: true
+
+  defp cash_summary(assigns) do
+    ~H"""
+    <section
+      :if={@balance.orders > 0}
+      id="courier-cash"
+      class="grid grid-cols-2 gap-2 rounded-box border border-base-300 bg-base-100 p-4"
+    >
+      <div>
+        <p class="text-xs uppercase text-base-content/50">{gettext("Cash on hand")}</p>
+        <p id="courier-cash-amount" class="font-mono text-2xl font-black">
+          {OrderHelpers.money(@balance.cash)}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs uppercase text-base-content/50">{gettext("By terminal")}</p>
+        <p class="font-mono text-2xl font-bold text-base-content/70">
+          {OrderHelpers.money(@balance.card)}
+        </p>
+      </div>
+      <p class="col-span-2 text-sm text-base-content/60">
+        {ngettext(
+          "%{count} order since the last handover",
+          "%{count} orders since the last handover",
+          @balance.orders
+        )}
+      </p>
+    </section>
     """
   end
 

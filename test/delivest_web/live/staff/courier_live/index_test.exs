@@ -66,6 +66,7 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
     {:ok, lv, _html} = page(ctx.conn, ctx.branch)
     assert has_element?(lv, "#courier-open #delivery-#{ctx.delivery.id}")
     assert has_element?(lv, "#courier-mine-empty")
+    refute has_element?(lv, "#courier-cash")
     refute render(lv) =~ "tel:"
 
     lv |> element("#take-#{ctx.delivery.id}") |> render_click()
@@ -88,6 +89,7 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
     lv |> element("#hand-over-#{ctx.delivery.id}") |> render_click()
     assert Repo.reload!(ctx.order).status == :completed
     assert has_element?(lv, "#courier-mine-empty")
+    assert lv |> element("#courier-cash-amount") |> render() =~ "150"
   end
 
   test "a request taken by another courier disappears", ctx do
