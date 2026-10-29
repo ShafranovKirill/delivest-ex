@@ -108,13 +108,13 @@ msgstr ""
 msgid "must be equal to %{number}"
 msgstr ""
 
-#: lib/delivest/identity/staff.ex:60
+#: lib/delivest/identity/staff.ex:63
 #, elixir-autogen, elixir-format
 msgid "can only contain letters, numbers, dots, dashes, and underscores"
 msgstr ""
 
-#: lib/delivest/identity/staff.ex:76
-#: lib/delivest/identity/staff.ex:80
+#: lib/delivest/identity/staff.ex:79
+#: lib/delivest/identity/staff.ex:83
 #, elixir-autogen, elixir-format
 msgid "does not exist"
 msgstr ""
@@ -124,8 +124,8 @@ msgstr ""
 msgid "is required"
 msgstr ""
 
-#: lib/delivest/identity/staff.ex:68
-#: lib/delivest/identity/staff.ex:91
+#: lib/delivest/identity/staff.ex:71
+#: lib/delivest/identity/staff.ex:94
 #: lib/delivest_web/live/staff/auth_live/login.ex:27
 #, elixir-autogen, elixir-format
 msgid "must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"
@@ -168,7 +168,7 @@ msgstr ""
 msgid "can only contain lowercase letters, numbers, and hyphens"
 msgstr ""
 
-#: lib/delivest/identity/staff.ex:56
+#: lib/delivest/identity/staff.ex:58
 #, elixir-autogen, elixir-format
 msgid "does not match password"
 msgstr ""
