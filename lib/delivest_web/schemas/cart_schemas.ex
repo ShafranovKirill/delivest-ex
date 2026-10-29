@@ -55,7 +55,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
     OpenApiSpex.schema(%{
       title: "PromoReason",
       description:
-        "Почему акция пока не применилась. `subtotal`/`quantity` — сколько не хватает (`missing`), " <>
+        "Почему акция пока не применилась. `subtotal`/`quantity` — сколько не хватает (`missing`, для `subtotal` в копейках), " <>
           "`product` — какого товара не хватает, `fulfillment` — допустимые способы получения, " <>
           "`time`/`weekday` — когда действует, `requires_client` — нужна авторизация.",
       type: :object,
@@ -72,7 +72,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
             "requires_client"
           ]
         },
-        missing: %Schema{type: :integer, nullable: true, example: 300},
+        missing: %Schema{type: :integer, nullable: true, example: 30_000},
         product_id: %Schema{type: :string, format: :uuid, nullable: true},
         name: %Schema{type: :string, nullable: true, example: "Кола 0.5"},
         allowed: %Schema{
@@ -157,7 +157,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
         name: %Schema{type: :string, example: "Летняя скидка"},
         description: %Schema{type: :string, nullable: true},
         code: %Schema{type: :string, nullable: true, example: "SUMMER2025"},
-        discount: %Schema{type: :integer, example: 150, description: "Скидка в рублях"},
+        discount: %Schema{type: :integer, example: 15_000, description: "Скидка в копейках"},
         gifts: %Schema{type: :array, items: PromoGift}
       },
       required: [:promotion_id, :name, :discount, :gifts]
@@ -204,16 +204,16 @@ defmodule DelivestWeb.Schemas.CartSchemas do
           example: "https://example.com/images/pizza.jpg",
           nullable: true
         },
-        price: %Schema{type: :integer, example: 590, description: "Цена за единицу по меню"},
+        price: %Schema{type: :integer, example: 59_000, description: "Цена за единицу по меню"},
         quantity: %Schema{type: :integer, example: 2},
         total_price: %Schema{
           type: :integer,
-          example: 1062,
+          example: 106_200,
           description: "Итог по строке с учётом скидок"
         },
         base_total: %Schema{
           type: :integer,
-          example: 1180,
+          example: 118_000,
           description: "Итог по строке без скидок"
         },
         gift: %Schema{
@@ -280,11 +280,11 @@ defmodule DelivestWeb.Schemas.CartSchemas do
             total_quantity: %Schema{type: :integer, example: 3},
             subtotal_amount: %Schema{
               type: :integer,
-              example: 1700,
+              example: 170_000,
               description: "Сумма без скидок"
             },
-            discount_amount: %Schema{type: :integer, example: 200},
-            total_amount: %Schema{type: :integer, example: 1500, description: "К оплате"},
+            discount_amount: %Schema{type: :integer, example: 20_000},
+            total_amount: %Schema{type: :integer, example: 150_000, description: "К оплате"},
             promo_code: PromoCodeState,
             promotions: %Schema{type: :array, items: AppliedPromotion},
             hints: %Schema{type: :array, items: PromoHint}

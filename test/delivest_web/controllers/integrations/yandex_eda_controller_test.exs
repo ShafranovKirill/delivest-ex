@@ -13,7 +13,7 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
     settings = credentials()
     {:ok, token} = YandexEda.issue_token(settings.client_id, settings.client_secret)
     branch = yandex_branch()
-    product = menu_product(branch, menu_category(branch), name: "Борщ", price: 300)
+    product = menu_product(branch, menu_category(branch), name: "Борщ", price: 30_000)
 
     %{
       conn: put_req_header(conn, "authorization", "Bearer " <> token),

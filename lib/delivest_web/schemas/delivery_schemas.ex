@@ -12,9 +12,9 @@ defmodule DelivestWeb.Schemas.DeliverySchemas do
           type: :string,
           enum: ["ok", "below_minimum", "outside_zones", "no_coordinates"]
         },
-        price: %Schema{type: :integer, nullable: true, example: 150},
-        min_order: %Schema{type: :integer, nullable: true, example: 500},
-        free_from: %Schema{type: :integer, nullable: true, example: 1500},
+        price: %Schema{type: :integer, nullable: true, example: 15_000},
+        min_order: %Schema{type: :integer, nullable: true, example: 50_000},
+        free_from: %Schema{type: :integer, nullable: true, example: 150_000},
         minutes: %Schema{type: :integer, nullable: true, example: 45}
       },
       required: [:status, :price, :min_order, :free_from, :minutes]

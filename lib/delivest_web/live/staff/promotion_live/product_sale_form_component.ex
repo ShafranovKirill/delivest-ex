@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Net, Promo}
+  alias Delivest.{Money, Net, Promo}
   alias Delivest.Promo.Promotion
   alias DelivestWeb.Staff.PromotionLive.{ProductSale, PromotionHelpers}
 
@@ -181,7 +181,8 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
             </div>
             <label class="input w-full">
               <input
-                type="number"
+                type={if @sale.mode == "percent", do: "number", else: "text"}
+                inputmode={if @sale.mode == "percent", do: "numeric", else: "decimal"}
                 min="0"
                 name="sale[value]"
                 value={@sale.value}
@@ -199,8 +200,10 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
           >
             <p :for={slug <- @sale.products} :if={Map.has_key?(@new_prices, slug)} class="flex gap-2">
               <span class="flex-1 truncate">{Map.get(@names, slug, slug)}</span>
-              <span class="line-through text-base-content/50 tabular-nums">{@prices[slug]} ₽</span>
-              <span class="font-bold tabular-nums">{@new_prices[slug]} ₽</span>
+              <span class="line-through text-base-content/50 tabular-nums">{Money.format(
+                @prices[slug]
+              )}</span>
+              <span class="font-bold tabular-nums">{Money.format(@new_prices[slug])}</span>
             </p>
           </div>
 

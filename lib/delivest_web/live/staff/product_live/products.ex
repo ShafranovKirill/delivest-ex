@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.ProductLive.Products do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Identity, Repo, Net}
+  alias Delivest.{Identity, Money, Repo, Net}
   alias Delivest.Net.{Product, ProductCrmIds, Stops}
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.CopyComponent
@@ -518,7 +518,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Price")} sort="price">
-          <div class="font-mono">{prod.price}</div>
+          <div class="font-mono">{Money.format(prod.price)}</div>
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Quantity")} secondary>

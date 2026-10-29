@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Net, Media}
+  alias Delivest.{Media, Money, Net}
   alias Delivest.Integrations.Crm
   alias Delivest.Net.Product
 
@@ -286,7 +286,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <.input field={@form[:price]} type="number" label={gettext("Price")} required />
+            <.input
+              field={@form[:price]}
+              type="text"
+              inputmode="decimal"
+              value={Money.input(@form[:price].value)}
+              label={gettext("Price")}
+              required
+            />
 
             <p class="text-xs text-base-content/60 sm:self-end sm:pb-3">
               {gettext("Discounts are set in «Discounts & promo codes» by the product URL slug.")}

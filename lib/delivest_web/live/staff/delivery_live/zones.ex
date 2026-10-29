@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.DeliveryLive.Zones do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Delivery, Identity}
+  alias Delivest.{Delivery, Identity, Money}
   alias Delivest.Delivery.Conditions
   alias DelivestWeb.Staff.DeliveryLive.ZonePanel
 
@@ -353,24 +353,27 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
     <div class={["grid gap-3", not @stacked && "sm:grid-cols-3"]}>
       <.input
         field={@form[:min_order]}
-        type="number"
-        min="0"
+        type="text"
+        inputmode="decimal"
+        value={Money.input(@form[:min_order].value)}
         label={gettext("Minimum order, ₽")}
         placeholder="0"
         disabled={@disabled}
       />
       <.input
         field={@form[:price]}
-        type="number"
-        min="0"
+        type="text"
+        inputmode="decimal"
+        value={Money.input(@form[:price].value)}
         label={gettext("Delivery price, ₽")}
         placeholder="0"
         disabled={@disabled}
       />
       <.input
         field={@form[:free_from]}
-        type="number"
-        min="0"
+        type="text"
+        inputmode="decimal"
+        value={Money.input(@form[:free_from].value)}
         label={gettext("Free from, ₽")}
         disabled={@disabled}
       />

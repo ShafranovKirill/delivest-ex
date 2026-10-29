@@ -91,7 +91,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         expected_total: %Schema{
           type: :integer,
           nullable: true,
-          example: 1500,
+          example: 150_000,
           description:
             "Сумма, которую видел клиент. Если итог после пересчёта акций окажется больше — вернётся `price_changed`"
         }
@@ -115,10 +115,14 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         title: %Schema{type: :string, example: "Пицца Маргарита"},
         price: %Schema{
           type: :integer,
-          example: 531,
+          example: 53_100,
           description: "Цена за единицу с учётом скидок"
         },
-        base_price: %Schema{type: :integer, example: 590, description: "Цена за единицу по меню"},
+        base_price: %Schema{
+          type: :integer,
+          example: 59_000,
+          description: "Цена за единицу по меню"
+        },
         gift: %Schema{type: :boolean, example: false},
         quantity: %Schema{type: :integer, example: 2}
       },
@@ -135,7 +139,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       properties: %{
         name: %Schema{type: :string, example: "Летняя скидка"},
         code: %Schema{type: :string, nullable: true, example: "SUMMER2025"},
-        discount: %Schema{type: :integer, example: 150}
+        discount: %Schema{type: :integer, example: 15_000}
       },
       required: [:name, :discount]
     })
@@ -174,16 +178,16 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             },
             fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
             payment_method: %Schema{type: :string, enum: ["cash", "card_offline"]},
-            total_amount: %Schema{type: :integer, example: 1180},
+            total_amount: %Schema{type: :integer, example: 118_000},
             subtotal_amount: %Schema{
               type: :integer,
-              example: 1330,
+              example: 133_000,
               description: "Сумма без скидок"
             },
-            discount_amount: %Schema{type: :integer, example: 150},
+            discount_amount: %Schema{type: :integer, example: 15_000},
             delivery_amount: %Schema{
               type: :integer,
-              example: 200,
+              example: 20_000,
               description: "Стоимость доставки, входит в total_amount"
             },
             promotions: %Schema{
@@ -292,12 +296,16 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         },
         fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
         payment_method: %Schema{type: :string, enum: ["cash", "card_offline"]},
-        total_amount: %Schema{type: :integer, example: 1180},
-        subtotal_amount: %Schema{type: :integer, example: 1330, description: "Сумма без скидок"},
-        discount_amount: %Schema{type: :integer, example: 150},
+        total_amount: %Schema{type: :integer, example: 118_000},
+        subtotal_amount: %Schema{
+          type: :integer,
+          example: 133_000,
+          description: "Сумма без скидок"
+        },
+        discount_amount: %Schema{type: :integer, example: 15_000},
         delivery_amount: %Schema{
           type: :integer,
-          example: 200,
+          example: 20_000,
           description: "Стоимость доставки, входит в total_amount"
         },
         promotions: %Schema{type: :array, items: DelivestWeb.Schemas.OrderSchemas.OrderPromotion},

@@ -13,13 +13,13 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
         old_price: %Schema{
           type: :integer,
           nullable: true,
-          example: 690,
+          example: 69_000,
           description: "Цена без скидки, если на товар действует акция; `price` — цена со скидкой"
         },
         price: %Schema{
           type: :integer,
-          example: 590,
-          description: "Цена в копейках/минимальных единицах"
+          example: 59_000,
+          description: "Цена в копейках"
         },
         description: %Schema{type: :string, nullable: true, example: "Сочная пицца с колбасками"},
         quantity: %Schema{

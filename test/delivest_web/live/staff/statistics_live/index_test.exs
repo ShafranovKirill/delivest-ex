@@ -18,7 +18,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     category = insert(:category, name: "Горячее")
 
     product =
-      insert_branch_product(branch.id, name: "Хинкали", price: 300, category_id: category.id)
+      insert_branch_product(branch.id, name: "Хинкали", price: 30_000, category_id: category.id)
 
     order_fixture(branch.id, product: product, quantity: 2)
 

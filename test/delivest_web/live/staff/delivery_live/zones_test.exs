@@ -34,7 +34,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonesTest do
     |> render_submit()
 
     assert %{mode: :flat, thresholds: thresholds} = Delivery.get_settings(branch.id)
-    assert Enum.map(thresholds, &{&1.order_from, &1.price}) == [{0, 200}, {1500, 0}]
+    assert Enum.map(thresholds, &{&1.order_from, &1.price}) == [{0, 20_000}, {150_000, 0}]
   end
 
   test "zones are drawn, edited and deleted", %{conn: conn} do
@@ -69,7 +69,13 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonesTest do
     )
     |> render_submit()
 
-    assert [%{name: "Центр", delivery_minutes: 40, thresholds: [%{order_from: 500, price: 150}]}] =
+    assert [
+             %{
+               name: "Центр",
+               delivery_minutes: 40,
+               thresholds: [%{order_from: 50_000, price: 15_000}]
+             }
+           ] =
              Delivery.list_zones(branch.id)
 
     assert has_element?(lv, "#delivery-zone-#{zone.id}", "150 ₽")
@@ -108,7 +114,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonesTest do
     )
     |> render_submit()
 
-    assert %{mode: :zones, show_zones: true, outside_zones: true, thresholds: [%{price: 300}]} =
+    assert %{mode: :zones, show_zones: true, outside_zones: true, thresholds: [%{price: 30_000}]} =
              Delivery.get_settings(branch.id)
 
     lv |> form("#delivery-radius-zone", %{radius: "5"}) |> render_submit()

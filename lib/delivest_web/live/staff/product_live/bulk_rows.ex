@@ -84,14 +84,14 @@ defmodule DelivestWeb.Staff.ProductLive.BulkRows do
   defp parse("price", value) do
     case money(value) do
       nil -> {:error, gettext("Not a price")}
-      amount -> {:ok, amount}
+      amount -> {:ok, Delivest.Money.from_rubles(amount)}
     end
   end
 
   defp parse(column, value) when column in ~w(weight quantity) do
     case money(value) do
       nil -> {:error, gettext("Not a number")}
-      number -> {:ok, number}
+      number -> {:ok, round(number)}
     end
   end
 
@@ -105,7 +105,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkRows do
       |> String.replace(",", ".")
 
     case Float.parse(cleaned) do
-      {number, ""} when number >= 0 -> round(number)
+      {number, ""} when number >= 0 -> number
       _ -> nil
     end
   end

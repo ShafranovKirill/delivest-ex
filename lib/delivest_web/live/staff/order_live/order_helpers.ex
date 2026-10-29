@@ -64,23 +64,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
 
   def format_address(_address), do: "—"
 
-  def money(nil), do: "0 ₽"
-
-  def money(amount) when is_integer(amount) do
-    digits =
-      amount
-      |> abs()
-      |> Integer.to_string()
-      |> String.reverse()
-      |> String.graphemes()
-      |> Enum.chunk_every(3)
-      |> Enum.map_join(" ", &Enum.join/1)
-      |> String.reverse()
-
-    if amount < 0, do: "-#{digits} ₽", else: "#{digits} ₽"
-  end
-
-  def money(amount) when is_float(amount), do: money(round(amount))
+  defdelegate money(amount), to: Delivest.Money, as: :format
 
   def local_datetime(nil), do: "—"
 
