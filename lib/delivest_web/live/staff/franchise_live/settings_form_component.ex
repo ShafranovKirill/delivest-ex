@@ -83,6 +83,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         >
           <.input field={@form[:name]} type="text" label={gettext("Name")} maxlength="60" />
           <.input
+            field={@form[:timezone]}
+            type="select"
+            label={gettext("Time zone")}
+            options={DelivestWeb.Staff.TimezoneOptions.options()}
+          />
+          <.input
             field={@form[:description]}
             type="textarea"
             rows="2"

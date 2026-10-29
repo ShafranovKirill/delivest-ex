@@ -62,7 +62,9 @@ defmodule Delivest.Identity.Branch.BranchInfo do
         :instagram_url,
         :timezone,
         :branch_id
-      ], empty_values: [nil, ""])
+      ],
+      empty_values: [nil, ""]
+    )
     |> cast_embed(:crm, with: &BranchSettings.changeset/2)
     |> cast_embed(:channels, with: &Delivest.Integrations.Channels.BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)

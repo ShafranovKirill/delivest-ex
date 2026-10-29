@@ -154,6 +154,12 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                 type="number"
                 label={gettext("Delivery Time (minutes)")}
               />
+              <.input
+                field={@form[:timezone]}
+                type="select"
+                label={gettext("Time zone")}
+                options={DelivestWeb.Staff.TimezoneOptions.branch_options()}
+              />
             </div>
             <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
           </div>

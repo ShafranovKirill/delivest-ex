@@ -380,6 +380,21 @@ defmodule Delivest.Identity.BranchesTest do
       assert {:ok, nil} = Cachex.get(:branch_cache, branch.id)
     end
 
+    test "a branch zone overrides the franchise one", %{admin: admin} do
+      branch = insert(:branch)
+      assert Delivest.LocalTime.timezone(branch.id) == "Europe/Moscow"
+
+      assert {:ok, _branch} =
+               Branches.update_branch(admin, branch, %{}, %{"timezone" => "Asia/Omsk"})
+
+      assert Delivest.LocalTime.timezone(branch.id) == "Asia/Omsk"
+
+      assert {:error, :info, changeset} =
+               Branches.update_branch(admin, branch, %{}, %{"timezone" => "Mars/Base"})
+
+      assert "is not a known time zone" in errors_on(changeset).timezone
+    end
+
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
       branch = insert(:branch, name: "Valid Name")
       attrs = %{name: ""}

@@ -20,6 +20,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :longitude, :float
     field :phone_number, :string
     field :delivery_time, :integer
+    field :timezone, :string
     field :working_hours, :map, default: %{}
     field :vk_url, :string
     field :whatsapp_url, :string
@@ -41,6 +42,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :longitude,
       :phone_number,
       :delivery_time,
+      :timezone,
       :working_hours,
       :vk_url,
       :whatsapp_url,
@@ -75,6 +77,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       longitude: info && info.longitude,
       phone_number: info && info.phone_number,
       delivery_time: info && info.delivery_time,
+      timezone: info && info.timezone,
       working_hours: (info && info.working_hours) || %{},
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
@@ -198,6 +201,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :longitude,
         :phone_number,
         :delivery_time,
+        :timezone,
         :working_hours,
         :vk_url,
         :whatsapp_url,
