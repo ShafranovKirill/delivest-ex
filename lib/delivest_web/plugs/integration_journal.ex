@@ -23,6 +23,7 @@ defmodule DelivestWeb.Plugs.IntegrationJournal do
         response: conn.resp_body && IO.iodata_to_binary(conn.resp_body)
       })
 
+      Journal.reset_context()
       conn
     end)
   end

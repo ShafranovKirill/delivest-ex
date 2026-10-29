@@ -30,7 +30,7 @@ defmodule Delivest.Integrations.Journal do
     attrs = Map.merge(context(), Map.new(attrs))
 
     %Request{
-      provider: to_string(attrs.provider),
+      provider: attrs.provider |> to_string() |> String.slice(0, 64),
       branch_id: uuid(attrs[:branch_id]),
       order_id: uuid(attrs[:order_id]),
       direction: attrs.direction,
