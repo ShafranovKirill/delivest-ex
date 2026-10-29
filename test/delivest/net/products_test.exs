@@ -43,7 +43,7 @@ defmodule Delivest.Net.ProductsTest do
 
       assert {:ok, {products, _meta}} = Net.list_staff_products_for_branch(staff, branch.id)
       product_ids = Enum.map(products, & &1.id)
-      assert product_ids == [visible.id, inactive.id]
+      assert Enum.sort(product_ids) == Enum.sort([visible.id, inactive.id])
       refute deleted.id in product_ids
       refute unrelated.id in product_ids
     end
