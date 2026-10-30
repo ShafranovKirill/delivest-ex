@@ -6,6 +6,7 @@ defmodule Delivest.Integrations.Zvonok.Settings do
 
   @type t :: %__MODULE__{}
 
+  @modes [:inbound, :flash]
   @fields [:public_key, :campaign_id, :webhook_token]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -15,13 +16,14 @@ defmodule Delivest.Integrations.Zvonok.Settings do
     field :campaign_id, :string
     field :webhook_token, :string, redact: true
     field :enabled, :boolean, default: true
+    field :login_call_mode, Ecto.Enum, values: @modes, default: :inbound
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(settings, attrs) do
     settings
-    |> cast(attrs, [:enabled | @fields], empty_values: [nil, ""])
+    |> cast(attrs, [:enabled, :login_call_mode | @fields], empty_values: [nil, ""])
     |> update_change(:public_key, &String.trim/1)
     |> update_change(:campaign_id, &String.trim/1)
     |> update_change(:webhook_token, &String.trim/1)
@@ -31,6 +33,8 @@ defmodule Delivest.Integrations.Zvonok.Settings do
       message: gettext("At least 8 latin letters, digits, - or _")
     )
   end
+
+  def modes, do: @modes
 
   def complete?(%__MODULE__{} = settings),
     do: Enum.all?(@fields, &(Map.get(settings, &1) not in [nil, ""]))

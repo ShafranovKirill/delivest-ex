@@ -15,7 +15,8 @@ defmodule Delivest.Integrations.Poller do
     Delivest.Integrations.YandexEda.BusyPoller,
     Delivest.Integrations.AtolOnline.KktPoller,
     Delivest.Integrations.Dadata.Poller,
-    Delivest.Integrations.Yookassa.Reconciliation
+    Delivest.Integrations.Yookassa.Reconciliation,
+    Delivest.Integrations.YandexRating.Poller
   ]
 
   def modules, do: @modules

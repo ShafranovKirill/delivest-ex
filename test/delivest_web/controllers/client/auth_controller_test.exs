@@ -320,4 +320,71 @@ defmodule DelivestWeb.Client.AuthControllerTest do
 
     assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
   end
+
+  describe "flash call mode" do
+    setup do
+      Delivest.Repo.update_all(Delivest.Integrations.Zvonok.Settings,
+        set: [login_call_mode: :flash]
+      )
+
+      :ok
+    end
+
+    defp start_flash(conn) do
+      conn |> post(~p"/client/auth/call", %{phone: "8 (999) 123-45-67"}) |> json_response(200)
+    end
+
+    defp code_of(id), do: Delivest.Repo.get!(Delivest.Identity.PhoneConfirmation, id).code
+
+    test "starts without a number to call and signs in with the code", %{conn: conn} do
+      assert %{"data" => %{"mode" => "flash", "call_number" => nil, "confirmation_id" => id}} =
+               start_flash(conn)
+
+      assert conn |> post(~p"/client/auth/call/#{id}/complete") |> json_response(202)
+
+      assert %{"data" => %{"status" => "confirmed"}} =
+               conn
+               |> post(~p"/client/auth/call/#{id}/confirm", %{code: code_of(id)})
+               |> json_response(200)
+
+      assert %{"data" => %{"status" => "confirmed", "access_token" => _}} =
+               conn |> post(~p"/client/auth/call/#{id}/complete") |> json_response(200)
+    end
+
+    test "a wrong code costs an attempt and three of them lock the confirmation", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      wrong = if code_of(id) == "0000", do: "1111", else: "0000"
+
+      for left <- [2, 1, 0] do
+        assert %{"error" => "invalid_code", "details" => %{"attempts_left" => ^left}} =
+                 conn
+                 |> post(~p"/client/auth/call/#{id}/confirm", %{code: wrong})
+                 |> json_response(422)
+      end
+
+      assert conn
+             |> post(~p"/client/auth/call/#{id}/confirm", %{code: code_of(id)})
+             |> json_response(429)
+
+      assert conn |> post(~p"/client/auth/call/#{id}/complete") |> json_response(202)
+    end
+
+    test "another session cannot confirm", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+
+      other =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("x-forwarded-for", "auth-#{System.unique_integer([:positive])}")
+        |> with_session()
+
+      assert other
+             |> post(~p"/client/auth/call/#{id}/confirm", %{code: code_of(id)})
+             |> json_response(404)
+    end
+
+    test "a repeated start returns the same confirmation", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      assert %{"data" => %{"confirmation_id" => ^id}} = start_flash(conn)
+    end
+  end
 end

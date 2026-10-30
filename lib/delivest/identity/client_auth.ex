@@ -1,10 +1,11 @@
 defmodule Delivest.Identity.ClientAuth do
+  alias Delivest.Integrations.Zvonok
   alias Delivest.Identity.{Client, Clients, Phone, PhoneConfirmation, PhoneConfirmations}
 
   @auto_confirm Application.compile_env(:delivest, :auto_confirm_phone, false)
 
   @spec start(term(), String.t() | nil) ::
-          {:ok, PhoneConfirmation.t(), String.t()} | {:error, term()}
+          {:ok, PhoneConfirmation.t(), String.t() | nil} | {:error, term()}
   def start(phone, session_id) do
     with :ok <- ensure_enabled(),
          {:ok, phone} <- validate_phone(phone),
@@ -22,16 +23,21 @@ defmodule Delivest.Identity.ClientAuth do
 
   defp request_new(phone, session_id) do
     with :ok <- PhoneConfirmations.throttle(phone, session_id),
-         {:ok, %{call_id: call_id, call_number: call_number}} <- request_call(phone),
+         {:ok, call} <- request_call(phone, Zvonok.login_call_mode()),
          {:ok, confirmation} <-
-           PhoneConfirmations.create(%{
-             phone: phone,
-             session_id: session_id,
-             call_id: call_id,
-             call_number: call_number
-           }),
-         :ok <- auto_confirm(call_id, phone) do
+           PhoneConfirmations.create(Map.merge(call, %{phone: phone, session_id: session_id})),
+         :ok <- auto_confirm(confirmation) do
       {:ok, confirmation}
+    end
+  end
+
+  @spec confirm_code(String.t(), String.t() | nil, term()) ::
+          :ok | {:error, :not_found | :attempts_exhausted | {:invalid_code, non_neg_integer()}}
+  def confirm_code(confirmation_id, session_id, code) do
+    with :ok <- ensure_enabled(),
+         {:ok, id} <- PhoneConfirmations.verify_code(confirmation_id, session_id, code) do
+      notify_confirmed(id)
+      :ok
     end
   end
 
@@ -78,15 +84,29 @@ defmodule Delivest.Identity.ClientAuth do
   defp notify_confirmed(id),
     do: Phoenix.PubSub.broadcast(Delivest.PubSub, PhoneConfirmations.topic(id), :phone_confirmed)
 
+  defp request_call(phone, :flash) do
+    with {:ok, %{call_id: call_id, code: code}} <- Zvonok.request_flash(phone),
+         do: {:ok, %{mode: :flash, call_id: call_id, code: code}}
+  end
+
+  defp request_call(phone, _inbound) do
+    with {:ok, %{call_id: call_id, call_number: call_number}} <- inbound_call(phone),
+         do: {:ok, %{mode: :inbound, call_id: call_id, call_number: call_number}}
+  end
+
+  defp auto_confirm(%PhoneConfirmation{mode: :flash}), do: :ok
+  defp auto_confirm(%PhoneConfirmation{} = confirmation), do: auto_confirm_call(confirmation)
+
   if @auto_confirm do
-    defp request_call(_phone),
+    defp inbound_call(_phone),
       do: {:ok, %{call_id: Ecto.UUID.generate(), call_number: "70000000000"}}
 
-    defp auto_confirm(call_id, phone), do: confirm_call(call_id, phone)
+    defp auto_confirm_call(%PhoneConfirmation{call_id: call_id, phone: phone}),
+      do: confirm_call(call_id, phone)
   else
-    defp request_call(phone), do: Delivest.Integrations.Zvonok.request_call(phone)
+    defp inbound_call(phone), do: Zvonok.request_call(phone)
 
-    defp auto_confirm(_call_id, _phone), do: :ok
+    defp auto_confirm_call(_confirmation), do: :ok
   end
 
   defp validate_phone(phone) do

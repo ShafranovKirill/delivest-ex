@@ -5,6 +5,7 @@ defmodule Delivest.Identity.PhoneConfirmations do
   alias Delivest.Repo
 
   @ttl_minutes 10
+  @max_attempts 3
   @limits [{600, 3}, {86_400, 10}]
 
   @spec create(map()) :: {:ok, PhoneConfirmation.t()} | {:error, Ecto.Changeset.t()}
@@ -19,7 +20,8 @@ defmodule Delivest.Identity.PhoneConfirmations do
     PhoneConfirmation
     |> fresh()
     |> where([c], c.phone == ^phone and c.session_id == ^session_id)
-    |> where([c], is_nil(c.confirmed_at) and is_nil(c.consumed_at) and not is_nil(c.call_number))
+    |> where([c], is_nil(c.confirmed_at) and is_nil(c.consumed_at))
+    |> where([c], not is_nil(c.call_number) or not is_nil(c.code))
     |> order_by([c], desc: c.inserted_at)
     |> limit(1)
     |> Repo.one()
@@ -68,6 +70,42 @@ defmodule Delivest.Identity.PhoneConfirmations do
     |> case do
       {0, _} -> {:error, :not_found}
       {_count, ids} -> {:ok, ids}
+    end
+  end
+
+  @spec verify_code(String.t(), String.t() | nil, String.t()) ::
+          {:ok, String.t()}
+          | {:error, :not_found | :attempts_exhausted | {:invalid_code, non_neg_integer()}}
+  def verify_code(id, session_id, code) when is_binary(session_id) and is_binary(code) do
+    with {:ok, id} <- Ecto.UUID.cast(id),
+         %PhoneConfirmation{mode: :flash} = confirmation <-
+           id |> owned(session_id) |> where([c], is_nil(c.confirmed_at)) |> Repo.one() do
+      check_code(confirmation, String.trim(code))
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  def verify_code(_id, _session_id, _code), do: {:error, :not_found}
+
+  defp check_code(%PhoneConfirmation{attempts: attempts}, _code) when attempts >= @max_attempts,
+    do: {:error, :attempts_exhausted}
+
+  defp check_code(confirmation, code) do
+    if Plug.Crypto.secure_compare(confirmation.code, code) do
+      {_count, _} =
+        PhoneConfirmation
+        |> where([c], c.id == ^confirmation.id and is_nil(c.confirmed_at))
+        |> Repo.update_all(set: [confirmed_at: now()])
+
+      {:ok, confirmation.id}
+    else
+      {_count, _} =
+        PhoneConfirmation
+        |> where([c], c.id == ^confirmation.id)
+        |> Repo.update_all(inc: [attempts: 1])
+
+      {:error, {:invalid_code, @max_attempts - confirmation.attempts - 1}}
     end
   end
 

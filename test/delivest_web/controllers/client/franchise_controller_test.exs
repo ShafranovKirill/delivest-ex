@@ -18,6 +18,16 @@ defmodule DelivestWeb.Client.FranchiseControllerTest do
     :ok
   end
 
+  test "serves the login mode and the fresh Yandex rating", %{conn: conn} do
+    assert %{"login_call_mode" => "inbound", "rating" => nil} =
+             conn |> get(~p"/client/franchise") |> json_response(200) |> Map.fetch!("data")
+
+    {:ok, _} = Delivest.Franchise.Rating.store(:yandex, %{rating: 4.7, reviews_count: 30})
+
+    assert %{"rating" => %{"value" => 4.7, "count" => 30}} =
+             conn |> get(~p"/client/franchise") |> json_response(200) |> Map.fetch!("data")
+  end
+
   test "returns the franchise settings", %{conn: conn} do
     assert %{
              "name" => "Sushi Like",

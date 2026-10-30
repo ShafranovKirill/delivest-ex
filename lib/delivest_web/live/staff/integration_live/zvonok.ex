@@ -81,6 +81,23 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
           </p>
         </div>
 
+        <div class="space-y-1">
+          <.input
+            field={@form[:login_call_mode]}
+            type="select"
+            label={gettext("Sign-in call mode")}
+            options={[
+              {gettext("Customer calls us"), "inbound"},
+              {gettext("We flash-call the customer"), "flash"}
+            ]}
+          />
+          <p class="text-xs text-base-content/60">
+            {gettext(
+              "Flash call: the customer enters the last 4 digits of the incoming number. Turn it on only if flash calls are enabled in your Zvonok campaign."
+            )}
+          </p>
+        </div>
+
         <div class="grid gap-4 sm:grid-cols-2">
           <.input
             field={@form[:public_key]}

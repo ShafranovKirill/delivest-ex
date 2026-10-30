@@ -853,7 +853,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:303
 #: lib/delivest_web/live/staff/finance_live/payments.ex:122
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:238
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:252
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:271
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:489
@@ -863,7 +863,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:307
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:113
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:105
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:122
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:199
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:252
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:454
@@ -885,7 +885,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:302
 #: lib/delivest_web/live/staff/finance_live/payments.ex:121
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:237
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:251
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:86
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:269
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:488
@@ -895,7 +895,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:67
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:112
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:104
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:121
 #: lib/delivest_web/live/staff/pos_live/index.ex:403
 #: lib/delivest_web/live/staff/product_live/bulk.ex:374
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:452
@@ -1342,7 +1342,7 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_nav.ex:145
 #: lib/delivest_web/live/staff/delivery_live/index.ex:10
 #: lib/delivest_web/live/staff/delivery_live/index.ex:16
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:164
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:178
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:38
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:37
 #, elixir-autogen, elixir-format
@@ -3797,12 +3797,12 @@ msgstr ""
 msgid "Which products?"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:51
+#: lib/delivest/franchise/settings.ex:54
 #, elixir-autogen, elixir-format
 msgid "10 or 12 digits"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:52
+#: lib/delivest/franchise/settings.ex:55
 #, elixir-autogen, elixir-format
 msgid "13 or 15 digits"
 msgstr ""
@@ -3837,7 +3837,7 @@ msgstr ""
 msgid "Edited %{date}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:224
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:238
 #, elixir-autogen, elixir-format
 msgid "Email for requests"
 msgstr ""
@@ -3850,18 +3850,18 @@ msgstr ""
 msgid "Franchise settings"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:217
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:231
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:201
 #, elixir-autogen, elixir-format
 msgid "INN"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:206
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:220
 #, elixir-autogen, elixir-format
 msgid "LLC"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:231
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:245
 #, elixir-autogen, elixir-format
 msgid "Legal address"
 msgstr ""
@@ -3871,12 +3871,12 @@ msgstr ""
 msgid "Legal documents"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:205
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:219
 #, elixir-autogen, elixir-format
 msgid "Legal form"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:212
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:226
 #, elixir-autogen, elixir-format
 msgid "Legal name"
 msgstr ""
@@ -3891,12 +3891,12 @@ msgstr ""
 msgid "Name, brand color, seller details and legal documents for all branches."
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:53
+#: lib/delivest/franchise/settings.ex:56
 #, elixir-autogen, elixir-format
 msgid "Not an email"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:221
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:235
 #, elixir-autogen, elixir-format
 msgid "OGRN / OGRNIP"
 msgstr ""
@@ -3906,18 +3906,18 @@ msgstr ""
 msgid "Personal data policy"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:225
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:239
 #, elixir-autogen, elixir-format
 msgid "Phone for requests"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:115
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:170
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:129
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:184
 #, elixir-autogen, elixir-format
 msgid "Place order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:100
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:114
 #, elixir-autogen, elixir-format
 msgid "Primary color"
 msgstr ""
@@ -3965,7 +3965,7 @@ msgstr ""
 msgid "Shown in the site footer and inserted into the legal documents."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:95
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:109
 #, elixir-autogen, elixir-format
 msgid "Site description for search engines"
 msgstr ""
@@ -3975,13 +3975,13 @@ msgstr ""
 msgid "Terms of use"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:47
-#: lib/delivest/franchise/settings.ex:49
+#: lib/delivest/franchise/settings.ex:50
+#: lib/delivest/franchise/settings.ex:52
 #, elixir-autogen, elixir-format
 msgid "Use the #RRGGBB format"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:123
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:137
 #, elixir-autogen, elixir-format
 msgid "White text is hard to read on this color. Choose a darker one."
 msgstr ""
@@ -4156,22 +4156,22 @@ msgid "Who did what and when, application logs and errors."
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:78
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:89
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:106
 #, elixir-autogen, elixir-format
 msgid "API key"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:97
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:114
 #, elixir-autogen, elixir-format
 msgid "Any secret string, it becomes part of the webhook URL. A random one is suggested, you can keep it."
 msgstr ""
 
-#: lib/delivest/integrations/zvonok/settings.ex:31
+#: lib/delivest/integrations/zvonok/settings.ex:33
 #, elixir-autogen, elixir-format
 msgid "At least 8 latin letters, digits, - or _"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:91
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:108
 #, elixir-autogen, elixir-format
 msgid "Campaign ID"
 msgstr ""
@@ -4226,17 +4226,17 @@ msgstr ""
 msgid "These settings are shared by every branch."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:115
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:132
 #, elixir-autogen, elixir-format
 msgid "Webhook for zvonok.com"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:95
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:112
 #, elixir-autogen, elixir-format
 msgid "Webhook token"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:117
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:134
 #, elixir-autogen, elixir-format
 msgid "Paste this URL as a whole into the postback of the zvonok.com campaign. {ct_call_id} and {ct_phone} are Zvonok macros, it fills them in by itself."
 msgstr ""
@@ -5920,27 +5920,27 @@ msgstr ""
 msgid "When off, the site has no sign-in at all: everyone orders as a guest, signed in customers are signed out."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:147
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:161
 #, elixir-autogen, elixir-format
 msgid "Choose my own"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:134
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:148
 #, elixir-autogen, elixir-format
 msgid "Color in the dark theme"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:184
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:198
 #, elixir-autogen, elixir-format
 msgid "If the color is hard to read on a dark background, the site makes it lighter."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:180
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:194
 #, elixir-autogen, elixir-format
 msgid "Pick automatically"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:138
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:152
 #, elixir-autogen, elixir-format
 msgid "Picked automatically from the primary color so it reads well."
 msgstr ""
@@ -8402,4 +8402,34 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:83
 #, elixir-autogen, elixir-format
 msgid "Payments differ from YooKassa: %{count}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:90
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Customer calls us"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:95
+#, elixir-autogen, elixir-format
+msgid "Flash call: the customer enters the last 4 digits of the incoming number. Turn it on only if flash calls are enabled in your Zvonok campaign."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:88
+#, elixir-autogen, elixir-format
+msgid "Sign-in call mode"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:91
+#, elixir-autogen, elixir-format
+msgid "We flash-call the customer"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:102
+#, elixir-autogen, elixir-format
+msgid "Yandex Search API key"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:95
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Yandex organization ID"
 msgstr ""

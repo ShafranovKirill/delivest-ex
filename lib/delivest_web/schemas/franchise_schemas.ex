@@ -64,6 +64,22 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
               type: :boolean,
               description: "Клиенты могут войти по звонку; иначе все заказывают как гости"
             },
+            login_call_mode: %Schema{
+              type: :string,
+              enum: ["inbound", "flash"],
+              description: "inbound: клиент звонит сам; flash: клиенту звонят, он вводит 4 цифры"
+            },
+            rating: %Schema{
+              type: :object,
+              nullable: true,
+              description: "Оценка Яндекса; null, если не настроено или данные старше 7 дней",
+              properties: %{
+                value: %Schema{type: :number, example: 4.8},
+                count: %Schema{type: :integer, example: 120},
+                url: %Schema{type: :string, format: :uri, nullable: true}
+              },
+              required: [:value, :count, :url]
+            },
             documents: %Schema{type: :array, items: DocumentSummary}
           },
           required: [
@@ -75,6 +91,8 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             :logo_dark_url,
             :address_map,
             :client_auth,
+            :login_call_mode,
+            :rating,
             :legal,
             :documents
           ]

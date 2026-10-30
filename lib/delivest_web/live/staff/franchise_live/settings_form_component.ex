@@ -88,6 +88,20 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
             label={gettext("Time zone")}
             options={DelivestWeb.Staff.TimezoneOptions.options()}
           />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
+            <.input
+              field={@form[:yandex_org_id]}
+              type="text"
+              label={gettext("Yandex organization ID")}
+              inputmode="numeric"
+            />
+            <.input
+              field={@form[:yandex_api_key]}
+              type="password"
+              value={@form[:yandex_api_key].value}
+              label={gettext("Yandex Search API key")}
+            />
+          </div>
           <.input
             field={@form[:description]}
             type="textarea"

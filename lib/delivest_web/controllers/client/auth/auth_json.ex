@@ -5,11 +5,14 @@ defmodule DelivestWeb.Client.Auth.AuthJSON do
     %{
       data: %{
         confirmation_id: confirmation.id,
+        mode: confirmation.mode,
         call_number: call_number,
         expires_in: expires_in
       }
     }
   end
+
+  def confirmed(_assigns), do: %{data: %{status: "confirmed"}}
 
   def pending(_assigns), do: %{data: %{status: "pending"}}
 

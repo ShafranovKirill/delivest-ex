@@ -67,6 +67,7 @@ defmodule DelivestWeb.Router do
     pipe_through :client_api
 
     post "/call/:id/complete", AuthController, :complete
+    post "/call/:id/confirm", AuthController, :confirm_code
     post "/refresh", AuthController, :refresh
 
     scope "/" do

@@ -11,6 +11,16 @@ defmodule Delivest.Integrations.Zvonok do
     end
   end
 
+  @spec request_flash(String.t()) ::
+          {:ok, %{call_id: String.t(), code: String.t()}} | {:error, term()}
+  def request_flash(phone) do
+    with {:ok, settings} <- fetch_settings() do
+      settings |> Api.flash(phone) |> track()
+    end
+  end
+
+  def login_call_mode, do: get_settings().login_call_mode
+
   def health_check(settings),
     do: if(Settings.complete?(settings), do: :ok, else: {:error, :zvonok_not_configured})
 

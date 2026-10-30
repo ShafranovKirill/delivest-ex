@@ -17,6 +17,22 @@ defmodule Delivest.Integrations.Zvonok.Api do
     |> result()
   end
 
+  @spec flash(Settings.t(), String.t()) ::
+          {:ok, %{call_id: String.t(), code: String.t()}} | {:error, term()}
+  def flash(%Settings{}, _phone) do
+    if Application.get_env(:delivest, :zvonok_flash_stub, false),
+      do: {:ok, %{call_id: Ecto.UUID.generate(), code: random_code()}},
+      else: {:error, {:zvonok, :flash_not_supported}}
+  end
+
+  defp random_code,
+    do:
+      10_000
+      |> :rand.uniform()
+      |> Kernel.-(1)
+      |> Integer.to_string()
+      |> String.pad_leading(4, "0")
+
   defp result({:ok, %{"status" => "ok", "data" => %{"call_id" => call_id} = data} = body}) do
     case call_number(data["allowed_phones_for_call"] || body["allowed_phones_for_call"]) do
       nil -> {:error, {:zvonok, :no_call_number}}

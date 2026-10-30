@@ -65,7 +65,7 @@ config :delivest, :cookie_options,
 # Enable dev routes for dashboard and mailbox
 config :delivest, dev_routes: true
 
-config :delivest, auto_confirm_phone: true
+config :delivest, auto_confirm_phone: true, zvonok_flash_stub: true, yandex_rating_stub: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
