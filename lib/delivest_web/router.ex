@@ -102,6 +102,7 @@ defmodule DelivestWeb.Router do
     pipe_through [:client_api, :client_identity, :client_required]
 
     get "/me", Profile.ProfileController, :show
+    get "/loyalty", Loyalty.LoyaltyController, :show
     get "/orders", Order.OrderController, :index
 
     scope "/addresses", Address do

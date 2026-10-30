@@ -13,7 +13,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       name: branch.name,
       slug: branch.slug,
       is_active: branch.is_active,
-      branch_info: branch_info(branch.info)
+      branch_info: branch_info(branch.info, branch)
     }
   end
 
@@ -42,10 +42,24 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
 
   defp payment_methods(_info), do: [:cash, :card_offline]
 
-  defp branch_info(%Ecto.Association.NotLoaded{}), do: nil
-  defp branch_info(nil), do: nil
+  defp loyalty(%{loyalty: %Delivest.Identity.Branch.LoyaltySettings{} = loyalty}, branch) do
+    enabled = loyalty.enabled and Delivest.Gateway.own?(branch, :loyalty)
 
-  defp branch_info(info) do
+    %{
+      enabled: enabled,
+      per_rubles: loyalty.per_rubles,
+      stars: loyalty.stars,
+      expire_days: loyalty.expire_days
+    }
+  end
+
+  defp loyalty(_info, _branch),
+    do: %{enabled: false, per_rubles: nil, stars: nil, expire_days: nil}
+
+  defp branch_info(%Ecto.Association.NotLoaded{}, _branch), do: nil
+  defp branch_info(nil, _branch), do: nil
+
+  defp branch_info(info, branch) do
     %{
       id: info.id,
       address: info.address,
@@ -56,6 +70,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       delivery_time: effective_time(info),
       intake: intake(info),
       payment_methods: payment_methods(info),
+      loyalty: loyalty(info, branch),
       working_hours: info.working_hours || %{},
       special_hours: info.special_hours || %{},
       vk_url: info.vk_url,

@@ -36,6 +36,16 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
             reason: %Schema{type: :string, nullable: true}
           }
         },
+        loyalty: %Schema{
+          type: :object,
+          description: "Бонусная система филиала: за каждые per_rubles ₽ начисляется stars звёзд",
+          properties: %{
+            enabled: %Schema{type: :boolean},
+            per_rubles: %Schema{type: :integer, nullable: true},
+            stars: %Schema{type: :integer, nullable: true},
+            expire_days: %Schema{type: :integer, nullable: true}
+          }
+        },
         payment_methods: %Schema{
           type: :array,
           items: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
