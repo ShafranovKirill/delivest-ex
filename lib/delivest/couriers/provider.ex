@@ -9,5 +9,7 @@ defmodule Delivest.Couriers.Provider do
   @callback health_check(settings :: struct()) :: :ok | {:error, term()}
   @callback classify_error(reason :: term()) :: Delivest.Integrations.Error.kind()
 
-  @optional_callbacks health_check: 1, classify_error: 1
+  @callback order_ready(Delivery.t()) :: :ok | {:error, term()}
+
+  @optional_callbacks health_check: 1, classify_error: 1, order_ready: 1
 end

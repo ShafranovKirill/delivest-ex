@@ -48,6 +48,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
            point_id: @source,
            visit_order: 1,
            type: "source",
+           should_notify_on_order_readiness: true,
            contact: %{
              name: settings.contact_name || branch.name,
              phone: phone,

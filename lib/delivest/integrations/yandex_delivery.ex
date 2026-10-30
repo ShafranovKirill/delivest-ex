@@ -163,6 +163,20 @@ defmodule Delivest.Integrations.YandexDelivery do
     end
   end
 
+  @impl true
+  def order_ready(%Delivery{external_id: nil}), do: :ok
+  def order_ready(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
+
+  def order_ready(%Delivery{external_id: claim_id} = delivery) do
+    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+      case Api.set_point_ready(settings(delivery.branch_id).token, claim_id) do
+        {:ok, _response} -> :ok
+        {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
+        error -> error
+      end
+    end)
+  end
+
   def poll(branch_id) do
     settings = settings(branch_id)
 

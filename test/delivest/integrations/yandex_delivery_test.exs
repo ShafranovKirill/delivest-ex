@@ -66,6 +66,9 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     Req.Test.json(conn, %{"cursor" => "cursor-#{length(events)}", "events" => events})
   end
 
+  defp respond(conn, _yandex, "/claims/set-point-ready", _query, _body),
+    do: Req.Test.json(conn, %{"id" => "ok"})
+
   defp respond(conn, _yandex, "/claims/cancel-info", _query, _body),
     do: Req.Test.json(conn, %{"cancel_state" => "free"})
 
@@ -261,6 +264,40 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
         "number" => order.number,
         "started_at" => System.os_time(:second)
       }
+  end
+
+  describe "order readiness" do
+    test "the claim asks to be notified and gets the readiness when the kitchen is done" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch) |> cooking(staff)
+      delivery = Couriers.active(order.id)
+      assert_received {:yandex, "/claims/create", _query, body}
+      assert [%{"should_notify_on_order_readiness" => true}, _destination] = body["route_points"]
+      refute_received {:yandex, "/claims/set-point-ready", _query, _body}
+
+      {:ok, _order} = Orders.advance_order(order, :ready, {:staff, staff})
+      deliver_events()
+
+      claim_id = delivery.external_id
+      assert_received {:yandex, "/claims/set-point-ready", %{"claim_id" => ^claim_id}, body}
+      assert body == %{"visit_order" => 1}
+    end
+
+    test "nothing is called without an active claim" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch)
+      {:ok, order} = Orders.advance_order(order, :accepted, {:staff, staff})
+      {:ok, _order} = Orders.advance_order(order, :preparing, {:staff, staff})
+      deliver_events()
+      Couriers.active(order.id) |> then(&Couriers.give_up/1)
+
+      order = Repo.reload!(order)
+      {:ok, _order} = Orders.advance_order(order, :ready, {:staff, staff})
+      deliver_events()
+      refute_received {:yandex, "/claims/set-point-ready", _query, _body}
+    end
   end
 
   describe "calling a courier" do
