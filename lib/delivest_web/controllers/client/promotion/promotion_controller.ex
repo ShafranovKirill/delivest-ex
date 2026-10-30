@@ -8,7 +8,8 @@ defmodule DelivestWeb.Client.Promotion.PromotionController do
 
   operation(:index,
     summary: "Действующие акции филиала",
-    description: "Автоматические акции, которые сейчас применяются к корзине без промокода.",
+    description:
+      "Автоматические акции с описанием, которые сейчас применяются к корзине без промокода. Акции без описания в список не попадают.",
     tags: ["Promotions"],
     parameters: [
       branch_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true]
@@ -19,10 +20,13 @@ defmodule DelivestWeb.Client.Promotion.PromotionController do
   def index(conn, %{"branch_id" => branch_id}) do
     promotions =
       case Ecto.UUID.cast(branch_id) do
-        {:ok, uuid} -> Promo.list_running_promotions(uuid)
+        {:ok, uuid} -> uuid |> Promo.list_running_promotions() |> Enum.filter(&described?/1)
         :error -> []
       end
 
     render(conn, :index, promotions: promotions)
   end
+
+  defp described?(%{description: description}),
+    do: is_binary(description) and String.trim(description) != ""
 end

@@ -10,6 +10,7 @@ defmodule DelivestWeb.Client.PromotionControllerTest do
     future = DateTime.add(DateTime.utc_now(:second), 1, :day)
 
     insert_promotion(branch.id, name: "Running", description: "Every day", ends_at: future)
+    insert_promotion(branch.id, name: "Silent", description: "  ")
     insert_promotion(branch.id, name: "Disabled", enabled: false)
     insert_promotion(branch.id, name: "Finished", ends_at: past)
     insert_promotion(branch.id, name: "Upcoming", starts_at: future)
