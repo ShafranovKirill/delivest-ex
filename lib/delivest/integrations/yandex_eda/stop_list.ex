@@ -1,9 +1,12 @@
 defmodule Delivest.Integrations.YandexEda.StopList do
+  require Logger
+
   alias Delivest.Integrations.Crm.StopSync
   alias Delivest.Integrations.YandexEda.Menu
   alias Delivest.Net.Stops
 
-  @fresh_timeout 2_000
+  @min_timeout 2_000
+  @fresh_seconds 30
 
   def availability(branch, settings) do
     %{
@@ -21,13 +24,35 @@ defmodule Delivest.Integrations.YandexEda.StopList do
   end
 
   def refresh(branch_id) do
-    task = Task.async(fn -> StopSync.sync(branch_id) end)
+    if fresh?(branch_id), do: :ok, else: sync(branch_id)
+  end
 
-    case Task.yield(task, @fresh_timeout) || Task.shutdown(task) do
-      {:ok, result} -> result
-      _timeout -> {:error, :timeout}
+  defp fresh?(branch_id) do
+    case StopSync.last(branch_id) do
+      %{synced_at: synced_at} -> DateTime.diff(DateTime.utc_now(), synced_at) < @fresh_seconds
+      _none -> false
     end
   end
+
+  defp sync(branch_id) do
+    task =
+      Task.Supervisor.async_nolink(Delivest.TaskSupervisor, fn -> StopSync.sync(branch_id) end)
+
+    case Task.yield(task, timeout(branch_id)) || Task.shutdown(task) do
+      {:ok, result} ->
+        result
+
+      {:exit, reason} ->
+        Logger.error("yandex eda stop list refresh crashed: #{inspect(reason)}")
+        {:error, :crashed}
+
+      _timeout ->
+        Logger.warning("yandex eda stop list was not refreshed before the order")
+        {:error, :timeout}
+    end
+  end
+
+  defp timeout(branch_id), do: max(@min_timeout, StopSync.interval_ms(branch_id) + 1_000)
 
   def unavailable(branch_id, product_ids),
     do: unavailable_in(product_ids, Stops.stopped_ids(branch_id))
