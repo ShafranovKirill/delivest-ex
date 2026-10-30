@@ -4,7 +4,8 @@ defmodule Delivest.Events.Registry do
     Delivest.Oms.Kitchen.OrderSubscriber,
     Delivest.Push.OrderSubscriber,
     Delivest.Integrations.Crm.OrderSubscriber,
-    Delivest.Fiscal.OrderSubscriber
+    Delivest.Fiscal.OrderSubscriber,
+    Delivest.Payments.OrderSubscriber
   ]
 
   def modules, do: Application.get_env(:delivest, :event_subscribers, @modules)

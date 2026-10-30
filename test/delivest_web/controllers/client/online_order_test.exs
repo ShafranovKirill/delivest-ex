@@ -69,7 +69,12 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
   defp stub_yookassa(test_pid) do
     Req.Test.stub(Delivest.HTTP.Client, fn conn ->
       {:ok, body, conn} = Plug.Conn.read_body(conn)
-      send(test_pid, {:yookassa, conn.request_path, conn.req_headers, Jason.decode!(body)})
+
+      send(
+        test_pid,
+        {:yookassa, conn.request_path, conn.req_headers,
+         if(body == "", do: %{}, else: Jason.decode!(body))}
+      )
 
       Req.Test.json(conn, %{
         "id" => "2d9c4d8e-000f-5000-9000-1f9a3b7c1e11",
@@ -256,6 +261,124 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
 
       assert [{_id, {:ok, :authorized}}] = Delivest.Payments.Online.PollWorker.poll(later)
       refute Repo.get!(Order, ctx.order.id).awaiting_payment
+    end
+  end
+
+  describe "capture and release" do
+    setup %{conn: conn, branch: branch, cart_id: cart_id} do
+      stub_yookassa(self())
+      body = conn |> post(~p"/client/orders", params(branch, cart_id)) |> json_response(200)
+      order = Repo.get!(Order, body["data"]["id"])
+      [payment] = Payments.list(order.id)
+
+      %{conn: conn, order: order, payment: payment, id: payment.external_id}
+    end
+
+    defp drain do
+      Oban.drain_queue(queue: :default, with_safety: false)
+      Oban.drain_queue(queue: :events, with_safety: false)
+    end
+
+    defp remote_api(test_pid, id, status) do
+      Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+        send(test_pid, {:remote, conn.method, conn.request_path, conn.req_headers})
+
+        remote_status =
+          cond do
+            String.ends_with?(conn.request_path, "/capture") -> "succeeded"
+            String.ends_with?(conn.request_path, "/cancel") -> "canceled"
+            true -> status
+          end
+
+        Req.Test.json(conn, %{
+          "id" => id,
+          "status" => remote_status,
+          "amount" => %{"value" => "3.00", "currency" => "RUB"}
+        })
+      end)
+    end
+
+    defp hold(ctx) do
+      remote_api(self(), ctx.id, "waiting_for_capture")
+      {:ok, _} = Delivest.Payments.Online.sync(ctx.id)
+      Repo.get!(Order, ctx.order.id)
+    end
+
+    test "accepting the order captures the hold", ctx do
+      order = hold(ctx)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+      insert(:staff_branch,
+        staff: staff,
+        branch: Repo.get!(Delivest.Identity.Branch, order.branch_id)
+      )
+
+      assert {:ok, _} = Delivest.Oms.Orders.advance_order(order, :accepted, {:staff, staff})
+      drain()
+
+      assert_received {:remote, "POST", path, headers}
+      assert String.ends_with?(path, "/payments/#{ctx.id}/capture")
+      assert {"idempotence-key", ctx.payment.id <> ":capture"} in headers
+      assert [%{status: :paid, paid_at: %DateTime{}}] = Payments.list(order.id)
+    end
+
+    test "cancelling the order releases the hold", ctx do
+      order = hold(ctx)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+      insert(:staff_branch,
+        staff: staff,
+        branch: Repo.get!(Delivest.Identity.Branch, order.branch_id)
+      )
+
+      assert {:ok, _} =
+               Delivest.Oms.Orders.cancel_order(order, {:staff, staff}, %{
+                 "cancel_reason" => "other"
+               })
+
+      drain()
+
+      assert_received {:remote, "POST", path, _headers}
+      assert String.ends_with?(path, "/cancel")
+      assert [%{status: :cancelled, details: %{"released" => true}}] = Payments.list(order.id)
+    end
+
+    test "a hold that arrives after the customer cancelled is released", ctx do
+      {:ok, _} = Delivest.Oms.Orders.cancel_by_client(ctx.order.session_id, nil, ctx.order.id)
+      drain()
+      refute_received {:remote, _, _, _}
+
+      remote_api(self(), ctx.id, "waiting_for_capture")
+      assert {:ok, _} = Delivest.Payments.Online.sync(ctx.id)
+
+      assert_received {:remote, "POST", path, _headers}
+      assert String.ends_with?(path, "/cancel")
+    end
+
+    test "a hold that expires cancels the active order", ctx do
+      order = hold(ctx)
+      remote_api(self(), ctx.id, "canceled")
+      assert {:ok, :cancelled} = Delivest.Payments.Online.sync(ctx.id)
+
+      assert %{status: :cancelled, cancel_reason: :not_paid} = Repo.get!(Order, order.id)
+    end
+
+    test "the no-call option accepts a paid order and captures it", ctx do
+      staff = insert(:staff, role: insert(:role, permissions: ["finance.update"]))
+      branch = Repo.get!(Delivest.Identity.Branch, ctx.order.branch_id)
+      insert(:staff_branch, staff: staff, branch: branch)
+
+      {:ok, _} =
+        Delivest.Identity.update_payments(staff, branch, %{
+          "online" => "true",
+          "skip_confirmation_call" => "true"
+        })
+
+      hold(ctx)
+      drain()
+
+      assert %{status: :accepted} = Repo.get!(Order, ctx.order.id)
+      assert [%{status: :paid}] = Payments.list(ctx.order.id)
     end
   end
 end

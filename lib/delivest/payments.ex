@@ -168,7 +168,9 @@ defmodule Delivest.Payments do
     attrs = Map.put(collector(repo, order, by), :paid_at, DateTime.utc_now(:second))
     move_attrs = Map.take(attrs, [:paid_at, :collected_by_id])
 
-    with {:ok, _moved} <- each(open, &move(repo, order, &1, :paid, by, move_attrs)) do
+    offline = Enum.filter(open, &(&1.method in [:cash, :card]))
+
+    with {:ok, _moved} <- each(offline, &move(repo, order, &1, :paid, by, move_attrs)) do
       due =
         order.total_amount - paid(payments) - Enum.sum(Enum.map(open, & &1.amount)) +
           refunded(payments)
