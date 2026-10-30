@@ -24,7 +24,8 @@ config :delivest, Oban,
     {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_delivery"}},
     {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "rkeeper"}},
     {"*/5 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_eda_busy"}},
-    {"11 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "atol_kkt"}}
+    {"11 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "atol_kkt"}},
+    {"23 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "dadata"}}
   ],
   repo: Delivest.Repo
 

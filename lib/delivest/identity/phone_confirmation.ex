@@ -12,6 +12,7 @@ defmodule Delivest.Identity.PhoneConfirmation do
     field :phone, :string
     field :session_id, :string
     field :call_id, :string
+    field :call_number, :string
     field :confirmed_at, :utc_datetime
     field :consumed_at, :utc_datetime
 
@@ -20,7 +21,7 @@ defmodule Delivest.Identity.PhoneConfirmation do
 
   def changeset(confirmation, attrs) do
     confirmation
-    |> cast(attrs, [:phone, :session_id, :call_id])
+    |> cast(attrs, [:phone, :session_id, :call_id, :call_number])
     |> validate_required([:phone, :session_id, :call_id])
     |> validate_format(:phone, Identity.phone_regex())
   end

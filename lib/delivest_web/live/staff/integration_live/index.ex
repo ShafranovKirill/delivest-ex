@@ -69,6 +69,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Sign-in by phone number")}
             description={gettext("Customers confirm the phone number with a call via zvonok.com.")}
             status={if @zvonok_configured, do: :configured, else: :off}
+            health={@health["zvonok"]}
             path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/zvonok"}
           />
           <.integration_card
@@ -76,6 +77,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Delivery address on the map")}
             description={gettext("Address suggestions and the map via dadata.ru.")}
             status={if @dadata_active, do: :configured, else: :off}
+            health={@health["dadata"]}
             path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/dadata"}
           />
         </div>
