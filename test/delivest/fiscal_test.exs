@@ -341,4 +341,44 @@ defmodule Delivest.FiscalTest do
     lv |> element("#receipt-#{receipt.id} button[phx-click=retry_receipt]") |> render_click()
     assert [_failed, %Receipt{status: :pending}] = Fiscal.list(order.id)
   end
+
+  describe "correction" do
+    setup %{order: order, payments: payments} do
+      stub_atol(fn conn ->
+        conn
+        |> Plug.Conn.put_status(400)
+        |> Req.Test.json(%{"error" => %{"code" => 32, "text" => "bad"}, "status" => "fail"})
+      end)
+
+      {:ok, receipt} = Fiscal.issue(order, payments)
+      {:cancel, _reason} = register(receipt)
+      %{failed: Fiscal.get(receipt.id)}
+    end
+
+    test "an administrator issues a correction of the failed receipt", %{failed: failed} do
+      admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+      assert {:ok, %Receipt{kind: :sell_correction, status: :pending, request: request} = fix} =
+               Fiscal.correct(failed, admin)
+
+      assert %{"correction_info" => %{"type" => "self", "base_date" => date}} =
+               request["correction"]
+
+      assert date =~ ~r/^\d{2}\.\d{2}\.\d{4}$/
+      refute Map.has_key?(request, "receipt")
+      assert request["correction"]["total"] == failed.request["receipt"]["total"]
+      assert [] = Fiscal.pending_alerts(failed.branch_id) -- [failed]
+      assert_enqueued(worker: RegisterWorker, args: %{"receipt_id" => fix.id})
+    end
+
+    test "other staff cannot correct and a done receipt is not corrected", %{
+      failed: failed,
+      order: order
+    } do
+      staff = insert(:staff, role: insert(:role, permissions: ["orders.update"]))
+      assert {:error, :forbidden} = Fiscal.correct(failed, staff)
+      assert {:error, :not_failed} = Fiscal.correct(%{failed | status: :done}, staff)
+      assert [_failed] = Fiscal.list(order.id)
+    end
+  end
 end

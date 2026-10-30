@@ -25,6 +25,17 @@ defmodule Delivest.Integrations.AtolOnline do
   end
 
   @impl true
+  def correction_body(%{"receipt" => receipt, "timestamp" => timestamp} = request) do
+    correction =
+      Map.put(receipt, "correction_info", %{
+        "type" => "self",
+        "base_date" => String.slice(timestamp, 0, 10)
+      })
+
+    request |> Map.delete("receipt") |> Map.put("correction", correction)
+  end
+
+  @impl true
   def register(receipt, body, settings) do
     body = Map.put(body, "external_id", external_id(receipt))
 

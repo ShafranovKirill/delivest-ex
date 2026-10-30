@@ -142,6 +142,30 @@ defmodule Delivest.Fiscal do
 
   def retry(_receipt, _staff), do: {:error, :not_failed}
 
+  def correct(%Receipt{kind: :sell, status: :fail} = receipt, staff) do
+    with true <- Identity.admin_staff?(staff) || {:error, :forbidden},
+         {:ok, module} <- Registry.fetch(receipt.provider) do
+      order = Repo.get!(Order, receipt.order_id)
+
+      %Receipt{}
+      |> Receipt.changeset(%{
+        order_id: receipt.order_id,
+        branch_id: receipt.branch_id,
+        payment_ids: receipt.payment_ids,
+        issued_by_id: staff.id,
+        kind: :sell_correction,
+        stage: receipt.stage,
+        provider: receipt.provider,
+        amount: receipt.amount
+      })
+      |> Ecto.Changeset.put_change(:request, module.correction_body(receipt.request))
+      |> insert_and_enqueue()
+      |> tap(&audit(&1, staff, "fiscal.corrected", order))
+    end
+  end
+
+  def correct(_receipt, _staff), do: {:error, :not_failed}
+
   def refund(%Receipt{kind: :sell, status: :done} = receipt, staff) do
     order = Repo.get!(Order, receipt.order_id)
 
@@ -239,7 +263,9 @@ defmodule Delivest.Fiscal do
           not exists(
             from(n in Receipt,
               where:
-                n.order_id == parent_as(:receipt).order_id and n.kind == parent_as(:receipt).kind,
+                n.order_id == parent_as(:receipt).order_id and
+                  (n.kind == parent_as(:receipt).kind or
+                     (n.kind == :sell_correction and parent_as(:receipt).kind == :sell)),
               where:
                 n.status in [:pending, :wait, :done] and
                   n.inserted_at > parent_as(:receipt).inserted_at

@@ -271,7 +271,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </footer>
 
       <.payments order={@order} />
-      <.receipts order={@order} />
+      <.receipts order={@order} current_staff={@current_staff} />
 
       <ol
         :if={@history != []}
@@ -428,6 +428,19 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </button>
         <button
           :if={
+            receipt.kind == :sell and receipt.status == :fail and
+              not retried?(@order.receipts, receipt) and Identity.admin_staff?(@current_staff)
+          }
+          type="button"
+          phx-click="correct_receipt"
+          phx-value-id={receipt.id}
+          data-confirm={gettext("Issue a correction receipt? Make sure the original is not in ATOL.")}
+          class="btn btn-ghost btn-xs text-error"
+        >
+          {gettext("Correction")}
+        </button>
+        <button
+          :if={
             receipt.kind == :sell and receipt.status == :done and
               not refunded?(@order.receipts, receipt)
           }
@@ -463,9 +476,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     do:
       Enum.any?(
         receipts,
-        &(&1.id != receipt.id and &1.kind == receipt.kind and &1.stage == receipt.stage and
+        &(&1.id != receipt.id and same_chain?(&1, receipt) and &1.stage == receipt.stage and
             &1.status != :fail and DateTime.compare(&1.inserted_at, receipt.inserted_at) != :lt)
       )
+
+  defp same_chain?(other, receipt),
+    do: other.kind == receipt.kind or (receipt.kind == :sell and other.kind == :sell_correction)
 
   defp refunded?(receipts, receipt),
     do: Enum.any?(receipts, &(&1.refund_of_id == receipt.id and &1.status != :fail))

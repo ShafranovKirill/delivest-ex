@@ -15,6 +15,7 @@ defmodule Delivest.Fiscal.Provider do
   @callback body(Receipt.t(), receipt :: map(), settings :: struct()) :: map()
   @callback register(Receipt.t(), body :: map(), settings :: struct()) ::
               {:ok, result()} | {:error, term()}
+  @callback correction_body(request :: map()) :: map()
   @callback fetch(Receipt.t(), settings :: struct()) :: {:ok, result()} | {:error, term()}
   @callback classify_error(reason :: term()) :: Delivest.Integrations.Error.kind()
   @callback callback_token(settings :: struct()) :: String.t() | nil
