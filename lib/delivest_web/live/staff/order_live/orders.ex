@@ -74,6 +74,9 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
          socket
          |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
          |> assign(receipt_alerts: receipt_alerts(socket.assigns.current_branch.id))
+         |> assign(
+           busy_mode: Delivest.Integrations.YandexEda.busy_mode(socket.assigns.current_branch.id)
+         )
          |> stream(:orders, Enum.reject(orders, &(&1.id == socket.assigns.shown_id)), reset: true)
          |> assign_shown()}
 
@@ -357,6 +360,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           </.link>
         </:actions>
       </.page_header>
+
+      <DelivestWeb.Staff.IntegrationLive.YandexEdaBusy.plate
+        busy={@busy_mode}
+        branch_id={@current_branch.id}
+      />
 
       <div :if={@receipt_alerts > 0} id="receipt-alerts" role="alert" class="alert alert-error">
         <.icon name="hero-exclamation-triangle" class="size-5" />

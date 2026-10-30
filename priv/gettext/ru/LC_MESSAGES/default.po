@@ -421,7 +421,7 @@ msgstr "Дата создания"
 #: lib/delivest_web/live/staff/category_live/categories.ex:332
 #: lib/delivest_web/live/staff/client_live/clients.ex:381
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:134
-#: lib/delivest_web/live/staff/order_live/orders.ex:434
+#: lib/delivest_web/live/staff/order_live/orders.ex:442
 #: lib/delivest_web/live/staff/product_live/products.ex:636
 #: lib/delivest_web/live/staff/product_live/products.ex:691
 #: lib/delivest_web/live/staff/product_live/products.ex:706
@@ -689,13 +689,13 @@ msgstr "Страница %{current} из %{total}"
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:91
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:53
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:192
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:194
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:37
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:38
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:52
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:28
-#: lib/delivest_web/live/staff/order_live/orders.ex:261
-#: lib/delivest_web/live/staff/order_live/orders.ex:286
+#: lib/delivest_web/live/staff/order_live/orders.ex:264
+#: lib/delivest_web/live/staff/order_live/orders.ex:289
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:16
 #: lib/delivest_web/live/staff/product_live/bulk.ex:120
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:27
@@ -855,7 +855,7 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:250
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:197
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:198
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:305
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:307
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:105
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:199
@@ -884,7 +884,7 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:488
 #: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:77
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:197
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:304
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:306
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:67
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:104
@@ -1180,7 +1180,7 @@ msgstr "Квартира"
 msgid "Are you sure you want to delete this client? This action cannot be easily undone."
 msgstr "Вы уверены, что хотите удалить этого клиента? Это действие будет сложно отменить."
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:432
+#: lib/delivest_web/live/staff/order_live/orders.ex:440
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this order? This action cannot be undone."
 msgstr "Вы уверены, что хотите удалить этот заказ? Это действие нельзя будет отменить."
@@ -1320,7 +1320,7 @@ msgid "Delete Client"
 msgstr "Удалить клиента"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:266
-#: lib/delivest_web/live/staff/order_live/orders.ex:430
+#: lib/delivest_web/live/staff/order_live/orders.ex:438
 #, elixir-autogen, elixir-format
 msgid "Delete Order"
 msgstr "Удалить заказ"
@@ -1372,8 +1372,8 @@ msgstr "Не удалось добавить товар в корзину."
 msgid "Failed to delete client"
 msgstr "Не удалось удалить клиента"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:247
-#: lib/delivest_web/live/staff/order_live/orders.ex:264
+#: lib/delivest_web/live/staff/order_live/orders.ex:250
+#: lib/delivest_web/live/staff/order_live/orders.ex:267
 #, elixir-autogen, elixir-format
 msgid "Failed to delete order"
 msgstr "Не удалось удалить заказ"
@@ -1392,7 +1392,7 @@ msgstr "Не удалось обновить заказ"
 msgid "Guest"
 msgstr "Гость"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:351
+#: lib/delivest_web/live/staff/order_live/orders.ex:354
 #, elixir-autogen, elixir-format
 msgid "Manage customer orders, track statuses and process fulfillment."
 msgstr "Управляйте заказами клиентов, отслеживайте статусы и обрабатывайте выдачу."
@@ -1410,7 +1410,7 @@ msgstr "Месяц"
 #: lib/delivest_web/components/staff/app/staff_nav.ex:44
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:108
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:10
-#: lib/delivest_web/live/staff/order_live/orders.ex:356
+#: lib/delivest_web/live/staff/order_live/orders.ex:359
 #, elixir-autogen, elixir-format
 msgid "New Order"
 msgstr "Новый заказ"
@@ -1425,7 +1425,7 @@ msgstr "Товары не найдены"
 msgid "Order created successfully"
 msgstr "Заказ успешно создан"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:255
+#: lib/delivest_web/live/staff/order_live/orders.ex:258
 #, elixir-autogen, elixir-format
 msgid "Order deleted successfully"
 msgstr "Заказ успешно удален"
@@ -1442,7 +1442,7 @@ msgstr "Заказ успешно обновлен"
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:116
 #: lib/delivest_web/live/staff/log_live/event_text.ex:35
 #: lib/delivest_web/live/staff/order_live/orders.ex:75
-#: lib/delivest_web/live/staff/order_live/orders.ex:350
+#: lib/delivest_web/live/staff/order_live/orders.ex:353
 #: lib/delivest_web/live/staff/statistics_live/index.ex:196
 #: lib/delivest_web/live/staff/statistics_live/index.ex:298
 #: lib/delivest_web/live/staff/statistics_live/index.ex:331
@@ -1876,7 +1876,7 @@ msgid "Order history"
 msgstr "История заказов"
 
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:30
-#: lib/delivest_web/live/staff/order_live/orders.ex:96
+#: lib/delivest_web/live/staff/order_live/orders.ex:99
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:17
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:18
 #, elixir-autogen, elixir-format
@@ -2347,7 +2347,7 @@ msgid "All products of this branch"
 msgstr "Все товары этого филиала"
 
 #: lib/delivest_web/live/staff/integration_live/index.ex:86
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:248
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:250
 #: lib/delivest_web/live/staff/log_live/components/events_component.ex:38
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:61
 #, elixir-autogen, elixir-format
@@ -3939,8 +3939,8 @@ msgstr "Реквизиты продавца"
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:46
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:44
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:44
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:63
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:77
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:65
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:79
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:31
 #, elixir-autogen, elixir-format
 msgid "Settings saved"
@@ -4052,7 +4052,7 @@ msgstr "Получить товары"
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:79
 #: lib/delivest_web/live/staff/integration_live/routes.ex:71
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:78
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:213
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:215
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:56
 #, elixir-autogen, elixir-format
 msgid "Integrations"
@@ -4516,7 +4516,7 @@ msgstr "Выдан"
 msgid "Keep the order"
 msgstr "Не отменять"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:389
+#: lib/delivest_web/live/staff/order_live/orders.ex:397
 #, elixir-autogen, elixir-format
 msgid "No orders here yet"
 msgstr "Заказов пока нет"
@@ -5059,7 +5059,7 @@ msgstr "Подключите CRM в интеграциях"
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:36
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:206
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:193
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:195
 #: lib/delivest_web/live/staff/product_live/suggested.ex:43
 #, elixir-autogen, elixir-format
 msgid "Failed to save"
@@ -5118,7 +5118,7 @@ msgstr "ошибок: %{count}"
 msgid "Access for Yandex"
 msgstr "Доступ для Яндекса"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:196
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:198
 #, elixir-autogen, elixir-format
 msgid "Automatically"
 msgstr "Автоматически"
@@ -5158,7 +5158,7 @@ msgstr "Сгенерировать новый секрет"
 msgid "Generate access"
 msgstr "Сгенерировать доступ"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:196
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:198
 #, elixir-autogen, elixir-format
 msgid "Manually by staff"
 msgstr "Вручную сотрудником"
@@ -5168,22 +5168,22 @@ msgstr "Вручную сотрудником"
 msgid "Menu in Yandex Eda"
 msgstr "Меню в Яндекс Еде"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:275
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:277
 #, elixir-autogen, elixir-format
 msgid "Minutes to confirm"
 msgstr "Минут на подтверждение"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:93
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:95
 #, elixir-autogen, elixir-format
 msgid "New access for Yandex Eda is generated"
 msgstr "Новый доступ для Яндекс Еды сгенерирован"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:267
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:269
 #, elixir-autogen, elixir-format
 msgid "Order confirmation"
 msgstr "Подтверждение заказа"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:219
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:221
 #, elixir-autogen, elixir-format
 msgid "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
 msgstr "Заказы из Яндекс Еды и Delivery Club приходят в приложение. Яндекс сам забирает у нас меню, стоп-лист и статусы заказов."
@@ -5209,12 +5209,12 @@ msgstr "Оплачено онлайн"
 msgid "Price in Yandex Eda"
 msgstr "Цена в Яндекс Еде"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:284
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:286
 #, elixir-autogen, elixir-format
 msgid "Price markup, %"
 msgstr "Наценка, %"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:290
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:292
 #, elixir-autogen, elixir-format
 msgid "Round marked up prices up to"
 msgstr "Округлять цены с наценкой вверх до"
@@ -5224,7 +5224,7 @@ msgstr "Округлять цены с наценкой вверх до"
 msgid "Shared by every branch. Give the address, the client id and the secret to the Yandex Eda manager."
 msgstr "Общий для всех филиалов. Передайте адрес, client_id и секрет менеджеру Яндекс Еды."
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:259
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:261
 #, elixir-autogen, elixir-format
 msgid "Take orders from Yandex Eda"
 msgstr "Принимать заказы из Яндекс Еды"
@@ -5234,7 +5234,7 @@ msgstr "Принимать заказы из Яндекс Еды"
 msgid "Takes orders"
 msgstr "Принимает заказы"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:250
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:252
 #, elixir-autogen, elixir-format
 msgid "The branch is a separate restaurant in Yandex Eda, its id is %{id}."
 msgstr "Филиал — отдельный ресторан в Яндекс Еде, его id: %{id}."
@@ -5250,8 +5250,8 @@ msgid "Unit"
 msgstr "Единица"
 
 #: lib/delivest_web/live/staff/integration_live/index.ex:102
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:27
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:217
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:28
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:219
 #, elixir-autogen, elixir-format
 msgid "Yandex Eda"
 msgstr "Яндекс Еда"
@@ -5422,7 +5422,7 @@ msgid "Fats"
 msgstr "Жиры"
 
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:93
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:202
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:204
 #, elixir-autogen, elixir-format
 msgid "No VAT"
 msgstr "Без НДС"
@@ -5452,7 +5452,7 @@ msgstr "Белки"
 msgid "Sugary drink"
 msgstr "Сахаросодержащий напиток"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:297
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:299
 #, elixir-autogen, elixir-format
 msgid "VAT in the menu"
 msgstr "НДС в меню"
@@ -5523,12 +5523,12 @@ msgstr "С %{from}, до снятия"
 msgid "Technical problem"
 msgstr "Технические проблемы"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:103
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:105
 #, elixir-autogen, elixir-format
 msgid "The branch is paused in Yandex Eda"
 msgstr "Филиал поставлен на паузу в Яндекс Еде"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:109
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:111
 #, elixir-autogen, elixir-format
 msgid "The pause is lifted"
 msgstr "Пауза снята"
@@ -5538,8 +5538,8 @@ msgstr "Пауза снята"
 msgid "Too busy"
 msgstr "Высокая загрузка"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:183
-#: lib/delivest_web/live/staff/order_live/orders.ex:293
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:185
+#: lib/delivest_web/live/staff/order_live/orders.ex:296
 #, elixir-autogen, elixir-format
 msgid "Yandex Eda did not accept the request"
 msgstr "Яндекс Еда не приняла запрос"
@@ -5560,32 +5560,32 @@ msgstr "Яндекс перестаёт принимать заказы в фи�
 msgid "Courier code"
 msgstr "Код курьера"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:287
+#: lib/delivest_web/live/staff/order_live/orders.ex:290
 #, elixir-autogen, elixir-format
 msgid "Enter the courier code"
 msgstr "Введите код курьера"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:288
+#: lib/delivest_web/live/staff/order_live/orders.ex:291
 #, elixir-autogen, elixir-format
 msgid "No attempts left to check the courier code"
 msgstr "Попытки проверки кода курьера закончились"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:226
+#: lib/delivest_web/live/staff/order_live/orders.ex:229
 #, elixir-autogen, elixir-format
 msgid "The courier code is correct"
 msgstr "Код курьера верный"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:237
+#: lib/delivest_web/live/staff/order_live/orders.ex:240
 #, elixir-autogen, elixir-format
 msgid "Wrong courier code"
 msgstr "Неверный код курьера"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:233
+#: lib/delivest_web/live/staff/order_live/orders.ex:236
 #, elixir-autogen, elixir-format
 msgid "Wrong courier code, attempts left: %{count}"
 msgstr "Неверный код курьера, осталось попыток: %{count}"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:291
+#: lib/delivest_web/live/staff/order_live/orders.ex:294
 #, elixir-autogen, elixir-format
 msgid "Yandex Eda push access is not set up"
 msgstr "Не настроен доступ к push-API Яндекс Еды"
@@ -5655,7 +5655,7 @@ msgstr "Заказов в Яндексе: %{total}, расхождений: %{pr
 msgid "Orders reconciliation"
 msgstr "Сверка заказов с Яндексом"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:127
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:129
 #, elixir-autogen, elixir-format
 msgid "Pick a day"
 msgstr "Выберите день"
@@ -5957,7 +5957,7 @@ msgid "Open order"
 msgstr "Открыть заказ"
 
 #: lib/delivest_web/components/staff/app/command_search.ex:50
-#: lib/delivest_web/live/staff/order_live/orders.ex:408
+#: lib/delivest_web/live/staff/order_live/orders.ex:416
 #, elixir-autogen, elixir-format
 msgid "Order #%{number}"
 msgstr "Заказ №%{number}"
@@ -7326,7 +7326,7 @@ msgstr "НДС доставки"
 msgid "Failed"
 msgstr "Ошибка"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:305
+#: lib/delivest_web/live/staff/order_live/orders.ex:308
 #, elixir-autogen, elixir-format
 msgid "Failed to issue the receipt"
 msgstr "Не удалось пробить чек"
@@ -7554,7 +7554,7 @@ msgstr "сдача с %{amount}"
 msgid "refund %{amount}"
 msgstr "возврат %{amount}"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:364
+#: lib/delivest_web/live/staff/order_live/orders.ex:372
 #, elixir-autogen, elixir-format
 msgid "%{count} receipt is not issued"
 msgid_plural "%{count} receipts are not issued"
@@ -7587,7 +7587,7 @@ msgstr "Чеков нет"
 msgid "OFD"
 msgstr "ОФД"
 
-#: lib/delivest_web/live/staff/order_live/orders.ex:374
+#: lib/delivest_web/live/staff/order_live/orders.ex:382
 #, elixir-autogen, elixir-format
 msgid "Open receipts"
 msgstr "Открыть чеки"
@@ -7975,3 +7975,8 @@ msgstr "Меню расходится с CRM: %{count}"
 #, elixir-autogen, elixir-format
 msgid "Items cost differs by %{amount}"
 msgstr "Сумма позиций расходится на %{amount}"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_busy.ex:16
+#, elixir-autogen, elixir-format
+msgid "Yandex Eda high demand: +%{minutes} min until %{time}"
+msgstr "Яндекс Еда, высокий спрос: +%{minutes} мин до %{time}"

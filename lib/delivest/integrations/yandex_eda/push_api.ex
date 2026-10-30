@@ -51,6 +51,14 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     end
   end
 
+  def busy_places(%Settings{} = settings, filter) do
+    case call(settings, "/partner-integration/v1/place-info/v1/busy-mode-status", filter) do
+      {:ok, %{"busy_places" => _places} = body} -> {:ok, body}
+      {:ok, body} -> {:error, {:yandex_eda, body}}
+      error -> error
+    end
+  end
+
   defp call(settings, path, body) do
     TokenCache.run(token_key(settings), fn -> issue(settings) end, fn token ->
       Client.post(path, body,

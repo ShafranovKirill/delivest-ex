@@ -11,6 +11,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
     JournalComponent,
     YandexEdaAccess,
     YandexEdaMenu,
+    YandexEdaBusy,
     YandexEdaPause,
     YandexEdaReconciliation
   }
@@ -32,7 +33,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
        can_reconcile: Identity.can?(staff, "orders.read"),
        can_pause: Identity.can?(staff, "stops.update"),
        reconcile_date: LocalTime.today(LocalTime.timezone(socket.assigns.current_branch.id)),
-       reconciliation: nil
+       reconciliation: nil,
+       busy_mode: YandexEda.busy_mode(socket.assigns.current_branch.id)
      )
      |> assign_shared(YandexEda.get_settings())
      |> assign_branch(YandexEda.get_branch_settings(socket.assigns.current_branch.id))
@@ -306,6 +308,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
           </button>
         </div>
       </.form>
+
+      <YandexEdaBusy.plate
+        :if={@branch_settings.enabled}
+        busy={@busy_mode}
+        branch_id={@current_branch.id}
+      />
 
       <YandexEdaPause.pause
         :if={@push_available and @branch_settings.enabled}

@@ -7,6 +7,7 @@ defmodule Delivest.Integrations.YandexEda do
 
   alias Delivest.Integrations.YandexEda.{
     BranchSettings,
+    BusyMode,
     CourierCode,
     Menu,
     MenuReloadWorker,
@@ -97,6 +98,12 @@ defmodule Delivest.Integrations.YandexEda do
   def get_settings, do: Repo.one(Settings) || %Settings{}
 
   def push_available?, do: PushApi.configured?(get_settings())
+
+  def enabled_branch_ids do
+    for branch <- Places.list(), Places.settings(branch).enabled, do: branch.id
+  end
+
+  def busy_mode(branch_id), do: BusyMode.active(branch_id)
 
   def pauses(branch_id), do: with_push(branch_id, &Pause.list(&1, branch_id))
 
