@@ -56,8 +56,8 @@ defmodule Delivest.Fiscal do
          %{} <- Map.get(settings, module.key()) || {:error, :missing_settings},
          [_ | _] <- payments || {:error, :no_payments} do
       order = Repo.preload(order, [items: :modifiers], force: true)
-      payment_id = payment_id(payments, opts)
-      payments = Enum.map(payments, &Builder.payment/1)
+      payment_ids = Keyword.get_lazy(opts, :payment_ids, fn -> payment_ids(payments) end)
+      payments = Builder.payments(payments)
 
       built =
         Builder.build(order, settings,
@@ -71,7 +71,7 @@ defmodule Delivest.Fiscal do
       |> Receipt.changeset(%{
         order_id: order.id,
         branch_id: order.branch_id,
-        payment_id: payment_id,
+        payment_ids: payment_ids,
         refund_of_id: opts[:refund_of_id],
         issued_by_id: opts[:staff_id],
         kind: built.kind,
@@ -90,7 +90,7 @@ defmodule Delivest.Fiscal do
     |> Receipt.changeset(%{
       order_id: receipt.order_id,
       branch_id: receipt.branch_id,
-      payment_id: receipt.payment_id,
+      payment_ids: receipt.payment_ids,
       refund_of_id: receipt.refund_of_id,
       issued_by_id: staff.id,
       kind: receipt.kind,
@@ -120,7 +120,7 @@ defmodule Delivest.Fiscal do
         kind: :sell_refund,
         refund_of_id: receipt.id,
         staff_id: staff.id,
-        payment_id: receipt.payment_id
+        payment_ids: receipt.payment_ids
       )
       |> tap(&audit(&1, staff, "fiscal.refunded", order))
     end
@@ -215,9 +215,8 @@ defmodule Delivest.Fiscal do
     |> Oban.insert()
   end
 
-  defp after_result(%Receipt{status: :done, kind: :sell, payment_id: payment_id})
-       when is_binary(payment_id) do
-    Repo.update_all(from(p in Payment, where: p.id == ^payment_id), set: [fiscalized_by: :us])
+  defp after_result(%Receipt{status: :done, kind: :sell, payment_ids: [_ | _] = ids}) do
+    Repo.update_all(from(p in Payment, where: p.id in ^ids), set: [fiscalized_by: :us])
   end
 
   defp after_result(%Receipt{status: :fail} = receipt),
@@ -270,12 +269,8 @@ defmodule Delivest.Fiscal do
     |> Map.new()
   end
 
-  defp payment_id(payments, opts) do
-    case {opts[:payment_id], payments} do
-      {nil, [%{id: id}]} -> id
-      {id, _payments} -> id
-    end
-  end
+  defp payment_ids(payments),
+    do: payments |> Enum.map(&Map.get(&1, :id)) |> Enum.filter(&is_binary/1)
 
   defp receipt_payments(%Receipt{request: %{"receipt" => %{"payments" => payments}}}) do
     types = %{0 => :cash, 1 => :card, 2 => :certificate}

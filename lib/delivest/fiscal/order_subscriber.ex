@@ -22,16 +22,14 @@ defmodule Delivest.Fiscal.OrderSubscriber do
          %Order{deleted_at: nil, channel: nil, crm: nil} = order <-
            Repo.get(Order, event.aggregate_id),
          %BranchSettings{mode: :own} = settings <- Fiscal.settings(order.branch_id) do
-      cashier = cashier(event.actor)
+      case payments(order, settings) do
+        [] ->
+          :ok
 
-      order
-      |> payments(settings)
-      |> Enum.reduce_while(:ok, fn payment, :ok ->
-        case Fiscal.issue(order, [payment], cashier: cashier) do
-          {:ok, _receipt} -> {:cont, :ok}
-          error -> {:halt, error}
-        end
-      end)
+        payments ->
+          with {:ok, _receipt} <- Fiscal.issue(order, payments, cashier: cashier(event.actor)),
+               do: :ok
+      end
     else
       _skip -> :ok
     end
@@ -40,20 +38,25 @@ defmodule Delivest.Fiscal.OrderSubscriber do
   def handle(_event), do: :ok
 
   def payments(%Order{} = order, %BranchSettings{} = settings) do
-    issued =
-      from(r in Receipt,
-        where: r.status != :fail and r.kind == :sell and not is_nil(r.payment_id),
-        select: r.payment_id
+    if issued?(order) do
+      []
+    else
+      from(p in Payment,
+        where: p.order_id == ^order.id and p.status == :paid and p.method in [:cash, :card],
+        where: is_nil(p.fiscalized_by) and (is_nil(p.provider) or p.provider != "yandex_delivery")
       )
-
-    from(p in Payment,
-      where: p.order_id == ^order.id and p.status == :paid and p.method in [:cash, :card],
-      where: is_nil(p.fiscalized_by) and (is_nil(p.provider) or p.provider != "yandex_delivery"),
-      where: p.id not in subquery(issued)
-    )
-    |> Repo.all()
-    |> Enum.reject(&terminal?(&1, order, settings))
+      |> Repo.all()
+      |> Enum.reject(&terminal?(&1, order, settings))
+    end
   end
+
+  defp issued?(order),
+    do:
+      Repo.exists?(
+        from(r in Receipt,
+          where: r.order_id == ^order.id and r.kind == :sell and r.status != :fail
+        )
+      )
 
   defp terminal?(%Payment{method: :card}, %Order{fulfillment_type: :delivery}, %{
          courier_card: :terminal

@@ -4,7 +4,6 @@ defmodule Delivest.Fiscal.Receipt do
 
   alias Delivest.Identity.Staff
   alias Delivest.Oms.Order
-  alias Delivest.Payments.Payment
 
   @type t :: %__MODULE__{}
 
@@ -18,7 +17,7 @@ defmodule Delivest.Fiscal.Receipt do
   schema "fiscal_receipts" do
     belongs_to :order, Order
     field :branch_id, :binary_id
-    belongs_to :payment, Payment
+    field :payment_ids, {:array, :binary_id}, default: []
     belongs_to :refund_of, __MODULE__
     belongs_to :issued_by, Staff
     field :kind, Ecto.Enum, values: @kinds
@@ -43,7 +42,7 @@ defmodule Delivest.Fiscal.Receipt do
     |> cast(attrs, [
       :order_id,
       :branch_id,
-      :payment_id,
+      :payment_ids,
       :refund_of_id,
       :issued_by_id,
       :kind,
@@ -54,7 +53,7 @@ defmodule Delivest.Fiscal.Receipt do
     ])
     |> validate_required([:order_id, :branch_id, :kind, :stage, :provider, :amount])
     |> validate_number(:amount, greater_than: 0)
-    |> unique_constraint([:payment_id, :kind, :stage], name: :fiscal_receipts_one_per_payment)
+    |> unique_constraint([:order_id, :kind, :stage], name: :fiscal_receipts_one_per_order)
   end
 
   def result_changeset(receipt, attrs),

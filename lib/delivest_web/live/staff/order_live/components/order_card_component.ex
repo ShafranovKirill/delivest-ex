@@ -413,7 +413,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     do:
       Enum.any?(
         receipts,
-        &(&1.id != receipt.id and &1.kind == receipt.kind and &1.payment_id == receipt.payment_id and
+        &(&1.id != receipt.id and &1.kind == receipt.kind and &1.stage == receipt.stage and
             &1.status != :fail and DateTime.compare(&1.inserted_at, receipt.inserted_at) != :lt)
       )
 

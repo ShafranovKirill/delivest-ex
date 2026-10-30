@@ -98,6 +98,23 @@ defmodule Delivest.FiscalTest do
     assert [%{fiscalized_by: :us}] = Payments.list(order.id)
   end
 
+  test "one receipt per order carries every payment", %{order: order, payments: [payment]} do
+    stub_atol(&Req.Test.json(&1, %{"uuid" => "u-1", "status" => "wait"}))
+
+    split = [
+      %{payment | amount: 30_000},
+      %{id: Ecto.UUID.generate(), method: :card, amount: 29_000}
+    ]
+
+    {:ok, receipt} = Fiscal.issue(order, split)
+    assert length(receipt.payment_ids) == 2
+    :ok = register(receipt)
+
+    assert_received {:atol_body, %{"receipt" => body}}
+    assert body["payments"] == [%{"type" => 1, "sum" => 290}, %{"type" => 0, "sum" => 300}]
+    assert {:error, %Ecto.Changeset{}} = Fiscal.issue(order, split)
+  end
+
   test "the poll picks up the result", %{order: order, payments: payments} do
     stub_atol(&Req.Test.json(&1, %{"uuid" => "u-1", "status" => "wait"}))
     {:ok, receipt} = Fiscal.issue(order, payments)
@@ -148,7 +165,7 @@ defmodule Delivest.FiscalTest do
     assert {:error, :not_own} = Fiscal.issue(order, payments)
   end
 
-  test "completing the order issues a receipt per cash payment", %{order: order} do
+  test "completing the order issues one receipt", %{order: order} do
     staff = insert(:staff, name: "Мария", role: build(:role, permissions: ["admin"]))
 
     {:ok, order} =

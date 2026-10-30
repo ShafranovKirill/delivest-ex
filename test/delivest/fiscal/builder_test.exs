@@ -63,7 +63,7 @@ defmodule Delivest.Fiscal.BuilderTest do
 
     receipt =
       Builder.build(order, @settings,
-        payments: [Builder.payment(%{method: :card, amount: 10_000})],
+        payments: Builder.payments([%{method: :card, amount: 10_000}]),
         products: %{pid => %{excise: :sugary_drink}}
       )
 
