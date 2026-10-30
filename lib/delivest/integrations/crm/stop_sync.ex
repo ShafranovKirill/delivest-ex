@@ -18,6 +18,15 @@ defmodule Delivest.Integrations.Crm.StopSync do
     end
   end
 
+  def interval_ms(branch_id) do
+    with {:ok, _provider, module, settings} <- branch_id |> Crm.get_branch_settings() |> source(),
+         {_key, interval} <- module.rate_limit(settings) do
+      interval
+    else
+      _ -> 0
+    end
+  end
+
   def last(branch_id), do: Cachex.get!(@cache, {:stops, branch_id})
 
   defp source(crm) do

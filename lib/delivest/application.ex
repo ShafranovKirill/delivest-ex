@@ -15,6 +15,7 @@ defmodule Delivest.Application do
       log_buffer(),
       {DNSCluster, query: Application.get_env(:delivest, :dns_cluster_query) || :ignore},
       {Oban, Application.fetch_env!(:delivest, Oban)},
+      {Task.Supervisor, name: Delivest.TaskSupervisor},
       {Phoenix.PubSub, name: Delivest.PubSub},
       # Start a worker by calling: Delivest.Worker.start_link(arg)
       # {Delivest.Worker, arg},
