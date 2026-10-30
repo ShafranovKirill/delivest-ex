@@ -37,6 +37,7 @@ defmodule Delivest.Oms.Orders do
       {:ok,
        {Repo.preload(orders, [
           :client,
+          :receipts,
           items: :modifiers,
           transitions: [:staff],
           deliveries: [:courier]

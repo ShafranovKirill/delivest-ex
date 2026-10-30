@@ -7,6 +7,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
+  alias Delivest.Fiscal.Receipt
   alias Delivest.Oms.OrderFlow
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
   alias DelivestWeb.Staff.CourierLive.LocationComponents
@@ -218,6 +219,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </div>
       </footer>
 
+      <.receipts order={@order} />
+
       <ol
         :if={@history != []}
         id={"order-history-#{@order.id}"}
@@ -244,6 +247,88 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     </article>
     """
   end
+
+  defp receipts(%{order: %{receipts: [_ | _]}} = assigns) do
+    ~H"""
+    <ul
+      id={"order-receipts-#{@order.id}"}
+      class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
+    >
+      <li
+        :for={receipt <- @order.receipts}
+        id={"receipt-#{receipt.id}"}
+        class="flex items-center gap-2"
+      >
+        <.icon name="hero-receipt-percent" class="size-4 text-base-content/60" />
+        <span class="font-medium">{receipt_kind(receipt.kind)}</span>
+        <span class="tabular-nums">{Delivest.Money.format(receipt.amount)}</span>
+        <span class={["badge badge-xs", receipt_badge(receipt.status)]}>
+          {receipt_status(receipt.status)}
+        </span>
+        <span :if={receipt.status == :fail} class="text-error truncate" title={receipt.error}>
+          {receipt.error}
+        </span>
+        <a
+          :if={Receipt.ofd_url(receipt)}
+          href={Receipt.ofd_url(receipt)}
+          target="_blank"
+          rel="noopener"
+          class="link"
+        >
+          {gettext("Receipt")}
+        </a>
+        <button
+          :if={receipt.status == :fail and not retried?(@order.receipts, receipt)}
+          type="button"
+          phx-click="retry_receipt"
+          phx-value-id={receipt.id}
+          class="btn btn-ghost btn-xs"
+        >
+          {gettext("Retry")}
+        </button>
+        <button
+          :if={
+            receipt.kind == :sell and receipt.status == :done and
+              not refunded?(@order.receipts, receipt)
+          }
+          type="button"
+          phx-click="refund_receipt"
+          phx-value-id={receipt.id}
+          data-confirm={gettext("Issue a refund receipt?")}
+          class="btn btn-ghost btn-xs text-error"
+        >
+          {gettext("Issue a refund")}
+        </button>
+      </li>
+    </ul>
+    """
+  end
+
+  defp receipts(assigns), do: ~H""
+
+  defp receipt_kind(:sell), do: gettext("Sale receipt")
+  defp receipt_kind(:sell_refund), do: gettext("Refund receipt")
+  defp receipt_kind(_kind), do: gettext("Correction receipt")
+
+  defp receipt_status(:pending), do: gettext("Sending")
+  defp receipt_status(:wait), do: gettext("Processing")
+  defp receipt_status(:done), do: gettext("Issued")
+  defp receipt_status(:fail), do: gettext("Failed")
+
+  defp receipt_badge(:done), do: "badge-success"
+  defp receipt_badge(:fail), do: "badge-error"
+  defp receipt_badge(_status), do: "badge-warning"
+
+  defp retried?(receipts, receipt),
+    do:
+      Enum.any?(
+        receipts,
+        &(&1.id != receipt.id and &1.kind == receipt.kind and &1.payment_id == receipt.payment_id and
+            &1.status != :fail and DateTime.compare(&1.inserted_at, receipt.inserted_at) != :lt)
+      )
+
+  defp refunded?(receipts, receipt),
+    do: Enum.any?(receipts, &(&1.refund_of_id == receipt.id and &1.status != :fail))
 
   defp fulfillment_icon(:delivery), do: "hero-truck"
   defp fulfillment_icon(:pickup), do: "hero-shopping-bag"

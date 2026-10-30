@@ -164,4 +164,30 @@ defmodule Delivest.FiscalTest do
     assert_enqueued(worker: RegisterWorker)
     assert [] = Fiscal.OrderSubscriber.payments(order, Fiscal.settings(order.branch_id))
   end
+
+  test "the order card retries a failed receipt", %{conn: conn, order: order, payments: payments} do
+    import Phoenix.LiveViewTest
+
+    stub_atol(fn conn ->
+      conn
+      |> Plug.Conn.put_status(400)
+      |> Req.Test.json(%{"error" => %{"code" => 32, "text" => "bad"}, "status" => "fail"})
+    end)
+
+    {:ok, receipt} = Fiscal.issue(order, payments)
+    register(receipt)
+
+    staff = insert(:staff, role: insert(:role, permissions: ["orders.read", "orders.update"]))
+
+    branch = Repo.get!(Delivest.Identity.Branch, order.branch_id)
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
+    assert lv |> element("#receipt-#{receipt.id}") |> render() =~ "32: bad"
+
+    lv |> element("#receipt-#{receipt.id} button[phx-click=retry_receipt]") |> render_click()
+    assert [_failed, %Receipt{status: :pending}] = Fiscal.list(order.id)
+  end
 end

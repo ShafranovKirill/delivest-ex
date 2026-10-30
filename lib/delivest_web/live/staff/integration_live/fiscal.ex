@@ -81,7 +81,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
 
   defp sno_options,
     do: [
-      {gettext("General"), :osn},
+      {gettext("General tax system"), :osn},
       {gettext("Simplified, income"), :usn_income},
       {gettext("Simplified, income minus expenses"), :usn_income_outcome},
       {gettext("Unified agricultural"), :esn},

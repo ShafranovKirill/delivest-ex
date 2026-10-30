@@ -23,7 +23,7 @@ defmodule Delivest.Fiscal.RegisterWorker do
   defp handle({:ok, _receipt}, _receipt_before, _attempt, _max), do: :ok
 
   defp handle({:error, reason} = error, receipt, attempt, max) do
-    message = inspect(reason)
+    message = describe(reason)
     Logger.error("fiscal receipt #{receipt.id} attempt #{attempt}/#{max} failed: #{message}")
 
     case Fiscal.classify_error(receipt, reason) do
@@ -40,4 +40,7 @@ defmodule Delivest.Fiscal.RegisterWorker do
         {:cancel, reason}
     end
   end
+
+  defp describe({_provider, code, text}) when is_binary(text), do: "#{code}: #{text}"
+  defp describe(reason), do: inspect(reason)
 end

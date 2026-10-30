@@ -211,6 +211,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
+  def handle_event("retry_receipt", %{"id" => id}, socket),
+    do: receipt_action(socket, id, &Delivest.Fiscal.retry/2)
+
+  def handle_event("refund_receipt", %{"id" => id}, socket),
+    do: receipt_action(socket, id, &Delivest.Fiscal.refund/2)
+
   def handle_event("courier_code", %{"order-id" => id, "code" => code}, socket) do
     socket.assigns.current_staff
     |> YandexEda.validate_courier_code(socket.assigns.current_branch.id, id, code)
@@ -284,6 +290,20 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: gettext("Yandex Eda push access is not set up")
 
   defp courier_code_error(_reason), do: gettext("Yandex Eda did not accept the request")
+
+  defp receipt_action(socket, id, action) do
+    branch_id = socket.assigns.current_branch.id
+
+    with :ok <- authorize(socket, "orders.update"),
+         {:ok, uuid} <- Ecto.UUID.cast(id),
+         %{branch_id: ^branch_id} = receipt <- Delivest.Fiscal.get(uuid),
+         {:ok, _receipt} <- action.(receipt, socket.assigns.current_staff) do
+      load(socket)
+    else
+      {:error, :forbidden} = error -> failed(socket, error)
+      _error -> socket |> put_flash(:error, gettext("Failed to issue the receipt")) |> load()
+    end
+  end
 
   defp failed(socket, error),
     do: socket |> put_flash(:error, StatusErrors.message(error)) |> load()
