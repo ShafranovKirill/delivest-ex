@@ -1,7 +1,17 @@
 defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
   alias Delivest.LocalTime
 
-  @keys ["search", "period", "status", "sort", "date_from", "date_to", "page", "page_size"]
+  @keys [
+    "search",
+    "period",
+    "status",
+    "problem",
+    "sort",
+    "date_from",
+    "date_to",
+    "page",
+    "page_size"
+  ]
   @page_size 20
 
   def parse(params, branch_id) do
@@ -9,6 +19,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
       search: Map.get(params, "search", ""),
       period: Map.get(params, "period", "today"),
       status: Map.get(params, "status", ""),
+      problem: Map.get(params, "problem", "") == "true",
       sort: Map.get(params, "sort", "urgency"),
       date_from: Map.get(params, "date_from", ""),
       date_to: Map.get(params, "date_to", "")
@@ -25,6 +36,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
         branch_id: branch_id,
         search: selected.search,
         status: selected.status,
+        problem: selected.problem,
         sort: selected.sort,
         date_from: date_from,
         date_to: date_to
@@ -40,7 +52,9 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
   def clean(params) do
     params
     |> Map.take(@keys)
-    |> Map.reject(fn {_key, value} -> value in [nil, ""] end)
+    |> Map.reject(fn {key, value} ->
+      value in [nil, ""] or (key == "problem" and value == "false")
+    end)
   end
 
   defp date_range("today", _from, _to, today), do: {today, today}

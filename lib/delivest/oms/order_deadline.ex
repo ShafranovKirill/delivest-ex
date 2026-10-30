@@ -36,18 +36,7 @@ defmodule Delivest.Oms.OrderDeadline do
     finished = dynamic([o], o.status in [:completed, :cancelled])
     unconfirmed = dynamic([o], o.status == :created)
 
-    deadline =
-      dynamic(
-        [o],
-        fragment(
-          "coalesce(?, ? + make_interval(mins => CASE WHEN ? = 'delivery' THEN ?::integer ELSE ?::integer END))",
-          o.cook_by,
-          o.inserted_at,
-          o.fulfillment_type,
-          ^lead_minutes(:delivery, delivery_minutes),
-          ^lead_minutes(:pickup, delivery_minutes)
-        )
-      )
+    deadline = deadline_expr(delivery_minutes)
 
     rank =
       dynamic(
@@ -61,5 +50,27 @@ defmodule Delivest.Oms.OrderDeadline do
       )
 
     order_by(query, ^[asc: finished, desc: unconfirmed, asc: rank])
+  end
+
+  def overdue_expr(delivery_minutes, now \\ DateTime.utc_now()) do
+    dynamic(
+      [o],
+      o.status in [:created, :accepted, :preparing, :ready] and
+        ^deadline_expr(delivery_minutes) < ^now
+    )
+  end
+
+  defp deadline_expr(delivery_minutes) do
+    dynamic(
+      [o],
+      fragment(
+        "coalesce(?, ? + make_interval(mins => CASE WHEN ? = 'delivery' THEN ?::integer ELSE ?::integer END))",
+        o.cook_by,
+        o.inserted_at,
+        o.fulfillment_type,
+        ^lead_minutes(:delivery, delivery_minutes),
+        ^lead_minutes(:pickup, delivery_minutes)
+      )
+    )
   end
 end

@@ -77,4 +77,30 @@ defmodule Delivest.Oms.Orders.UrgencyTest do
     assert OrderDeadline.lead_minutes(:delivery, 40) == 40
     assert OrderDeadline.lead_minutes(:pickup, 90) == 45
   end
+
+  test "the problem filter keeps overdue orders and crm trouble", ctx do
+    on_time = order(ctx, 5, status: :preparing)
+    overdue = order(ctx, 100, status: :preparing)
+    finished_late = order(ctx, 100, status: :completed)
+
+    alerted =
+      order(ctx, 5,
+        status: :accepted,
+        crm: %Delivest.Oms.Order.CrmSync{provider: "frontpad", status: "sent", alert: "check"}
+      )
+
+    failed =
+      order(ctx, 5,
+        status: :accepted,
+        crm: %Delivest.Oms.Order.CrmSync{provider: "frontpad", status: "failed"}
+      )
+
+    {:ok, {orders, _meta}} =
+      Orders.paginate_orders(%{branch_id: ctx.branch.id, problem: true}, %{})
+
+    ids = Enum.map(orders, & &1.id)
+    assert Enum.sort(ids) == Enum.sort([overdue.id, alerted.id, failed.id])
+    refute on_time.id in ids
+    refute finished_late.id in ids
+  end
 end

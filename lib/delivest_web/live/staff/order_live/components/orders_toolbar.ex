@@ -34,6 +34,18 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             {label}
           </option>
         </select>
+        <label class="label cursor-pointer gap-2 py-0">
+          <input type="hidden" name="problem" value="false" />
+          <input
+            id="orders-problem"
+            type="checkbox"
+            name="problem"
+            value="true"
+            checked={@selected.problem}
+            class="checkbox checkbox-sm"
+          />
+          <span class="text-sm">{gettext("With a problem")}</span>
+        </label>
         <div :if={@selected.period == "custom"} class="flex items-center gap-1">
           <input
             type="date"

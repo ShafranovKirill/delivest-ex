@@ -21,9 +21,26 @@ defmodule Delivest.Oms.Orders.Filter do
       {"date_from", val}, q -> filter_date_from(q, val, zone(params))
       {"date_to", val}, q -> filter_date_to(q, val, zone(params))
       {"search", val}, q -> Search.apply(q, val)
+      {"problem", val}, q when val in [true, "true", "on"] -> problem(q, params["branch_id"])
       {"sort_by", val}, q -> apply_sort(q, val, params["sort_dir"])
       _, q -> q
     end)
+  end
+
+  defp problem(q, branch_id) do
+    delivery_minutes = Delivest.Oms.OrderDeadline.delivery_minutes(branch_id)
+
+    crm_problem =
+      dynamic(
+        [o],
+        fragment(
+          "coalesce(?->>'alert', '') <> '' OR ?->>'status' IN ('failed', 'unknown')",
+          o.crm,
+          o.crm
+        )
+      )
+
+    where(q, ^dynamic(^crm_problem or ^Delivest.Oms.OrderDeadline.overdue_expr(delivery_minutes)))
   end
 
   defp filter_status(q, status) when is_atom(status), do: filter_status(q, to_string(status))
