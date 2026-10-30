@@ -347,6 +347,7 @@ defmodule DelivestWeb.Router do
           live "/", Index, :index
           live "/frontpad", Frontpad, :index
           live "/iiko", Iiko, :index
+          live "/rkeeper", Rkeeper, :index
           live "/routes", Routes, :index
           live "/zvonok", Zvonok, :index
           live "/dadata", Dadata, :index

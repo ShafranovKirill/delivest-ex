@@ -20,7 +20,8 @@ config :delivest, Oban,
     {"30 4 * * *", Delivest.Media.Workers.ThumbnailBackfillWorker},
     {"*/10 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_stops"}},
     {"* * * * *", Delivest.Oms.Kitchen.DispatchWorker},
-    {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_delivery"}}
+    {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_delivery"}},
+    {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "rkeeper"}}
   ],
   repo: Delivest.Repo
 

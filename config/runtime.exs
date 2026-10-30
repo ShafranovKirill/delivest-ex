@@ -31,6 +31,8 @@ config :delivest, Delivest.Integrations.Iiko,
   app_id: System.get_env("IIKO_APP_ID"),
   client_secret: System.get_env("IIKO_CLIENT_SECRET")
 
+config :delivest, Delivest.Integrations.Rkeeper, token: System.get_env("RKEEPER_TOKEN")
+
 client_origin = System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"
 
 config :delivest, :client_origin, String.trim_trailing(client_origin, "/")
