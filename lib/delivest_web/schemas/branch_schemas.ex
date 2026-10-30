@@ -36,6 +36,12 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
             reason: %Schema{type: :string, nullable: true}
           }
         },
+        special_hours: %Schema{
+          type: :object,
+          additionalProperties: true,
+          description: "Исключения по датам (ISO-дата → enabled, open, close) поверх недели",
+          example: %{"2026-12-31" => %{enabled: true, open: "10:00", close: "18:00"}}
+        },
         working_hours: %Schema{
           type: :object,
           additionalProperties: true,

@@ -131,6 +131,59 @@ defmodule Delivest.Identity.Branches do
     end
   end
 
+  @time ~r/^([01]\d|2[0-3]):[0-5]\d$/
+
+  def set_special_day(staff, %Branch{} = branch, %Date{} = date, attrs) do
+    with {:ok, day} <- special_day(attrs) do
+      staff
+      |> update_special_hours(branch, fn hours -> Map.put(hours, Date.to_iso8601(date), day) end)
+      |> Audit.track(staff, "branch.updated")
+    end
+  end
+
+  def remove_special_day(staff, %Branch{} = branch, %Date{} = date) do
+    staff
+    |> update_special_hours(branch, &Map.delete(&1, Date.to_iso8601(date)))
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  defp special_day(%{"enabled" => false}),
+    do: {:ok, %{"enabled" => false, "open" => nil, "close" => nil}}
+
+  defp special_day(%{"enabled" => true, "open" => open, "close" => close})
+       when is_binary(open) and is_binary(close) do
+    if open =~ @time and close =~ @time,
+      do: {:ok, %{"enabled" => true, "open" => open, "close" => close}},
+      else: {:error, :invalid_time}
+  end
+
+  defp special_day(_attrs), do: {:error, :invalid_time}
+
+  defp update_special_hours(staff, branch, change) do
+    with :ok <- Identity.authorize(staff, "branches.update", branch.id) do
+      branch = Repo.preload(branch, :info, force: true)
+      info = branch.info || Ecto.build_assoc(branch, :info)
+      today = Delivest.LocalTime.today(Delivest.LocalTime.timezone(branch.id))
+
+      hours =
+        (info.special_hours || %{})
+        |> change.()
+        |> Map.filter(fn {date, _day} -> Date.compare(Date.from_iso8601!(date), today) != :lt end)
+
+      info
+      |> BranchInfo.special_hours_changeset(hours)
+      |> Repo.insert_or_update()
+      |> case do
+        {:ok, info} ->
+          Cachex.del(:branch_cache, branch.id)
+          {:ok, %{branch | info: info}}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    end
+  end
+
   defp new_board_token, do: 18 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
 
   def update_couriers(staff, %Branch{} = branch, attrs) do

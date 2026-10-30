@@ -20,6 +20,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     field :phone_number, :string
     field :delivery_time, :integer
     field :working_hours, :map, default: %{}
+    field :special_hours, :map, default: %{}
     field :vk_url, :string
     field :whatsapp_url, :string
     field :instagram_url, :string
@@ -39,6 +40,10 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     belongs_to :branch, Delivest.Identity.Branch
 
     timestamps()
+  end
+
+  def special_hours_changeset(branch_info, special_hours) do
+    change(branch_info, special_hours: special_hours)
   end
 
   def board_token_changeset(branch_info, token) do

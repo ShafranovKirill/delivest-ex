@@ -5,7 +5,13 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
 
   alias Delivest.Identity
   alias Delivest.Integrations.Dadata
-  alias DelivestWeb.Staff.BranchLive.{BranchForm, Location, WorkingHoursComponent}
+
+  alias DelivestWeb.Staff.BranchLive.{
+    BranchForm,
+    Location,
+    SpecialHoursComponent,
+    WorkingHoursComponent
+  }
 
   @impl true
   def update(assigns, socket) do
@@ -212,6 +218,14 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
           </button>
         </div>
       </.form>
+
+      <.live_component
+        :if={@section.id == :hours and @action != :new}
+        module={SpecialHoursComponent}
+        id="special-hours-editor"
+        branch={@branch}
+        staff={@current_staff}
+      />
     </div>
     """
   end
