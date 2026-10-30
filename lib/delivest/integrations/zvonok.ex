@@ -19,6 +19,10 @@ defmodule Delivest.Integrations.Zvonok do
     end
   end
 
+  @dev_tools Application.compile_env(:delivest, :auto_confirm_phone, false)
+
+  def dev_tools?, do: @dev_tools
+
   def login_call_mode, do: get_settings().login_call_mode
 
   def health_check(settings),

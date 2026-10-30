@@ -81,6 +81,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
           </p>
         </div>
 
+        <div :if={Zvonok.dev_tools?()} class="space-y-1">
+          <.input
+            field={@form[:dev_skip_calls]}
+            type="checkbox"
+            label={gettext("Dev: do not call, confirm sign-in instantly")}
+          />
+          <p class="text-xs text-base-content/60">
+            {gettext("Only in the dev build. Turn off to test a real call from Zvonok.")}
+          </p>
+        </div>
+
         <div class="space-y-1">
           <.input
             field={@form[:login_call_mode]}

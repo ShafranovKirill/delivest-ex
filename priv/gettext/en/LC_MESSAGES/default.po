@@ -863,7 +863,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:307
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:113
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:122
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:133
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:199
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:252
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:454
@@ -895,7 +895,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:67
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:112
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:121
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:132
 #: lib/delivest_web/live/staff/pos_live/index.ex:403
 #: lib/delivest_web/live/staff/product_live/bulk.ex:374
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:452
@@ -4156,22 +4156,22 @@ msgid "Who did what and when, application logs and errors."
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:78
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:106
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:117
 #, elixir-autogen, elixir-format
 msgid "API key"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:114
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:125
 #, elixir-autogen, elixir-format
 msgid "Any secret string, it becomes part of the webhook URL. A random one is suggested, you can keep it."
 msgstr ""
 
-#: lib/delivest/integrations/zvonok/settings.ex:33
+#: lib/delivest/integrations/zvonok/settings.ex:36
 #, elixir-autogen, elixir-format
 msgid "At least 8 latin letters, digits, - or _"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:108
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:119
 #, elixir-autogen, elixir-format
 msgid "Campaign ID"
 msgstr ""
@@ -4226,17 +4226,17 @@ msgstr ""
 msgid "These settings are shared by every branch."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:132
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:143
 #, elixir-autogen, elixir-format
 msgid "Webhook for zvonok.com"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:112
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:123
 #, elixir-autogen, elixir-format
 msgid "Webhook token"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:134
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:145
 #, elixir-autogen, elixir-format
 msgid "Paste this URL as a whole into the postback of the zvonok.com campaign. {ct_call_id} and {ct_phone} are Zvonok macros, it fills them in by itself."
 msgstr ""
@@ -8404,22 +8404,22 @@ msgstr ""
 msgid "Payments differ from YooKassa: %{count}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:90
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:101
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Customer calls us"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:95
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:106
 #, elixir-autogen, elixir-format
 msgid "Flash call: the customer enters the last 4 digits of the incoming number. Turn it on only if flash calls are enabled in your Zvonok campaign."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:88
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:99
 #, elixir-autogen, elixir-format
 msgid "Sign-in call mode"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/zvonok.ex:91
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:102
 #, elixir-autogen, elixir-format
 msgid "We flash-call the customer"
 msgstr ""
@@ -8432,4 +8432,14 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:95
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Yandex organization ID"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:88
+#, elixir-autogen, elixir-format
+msgid "Dev: do not call, confirm sign-in instantly"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/zvonok.ex:91
+#, elixir-autogen, elixir-format
+msgid "Only in the dev build. Turn off to test a real call from Zvonok."
 msgstr ""

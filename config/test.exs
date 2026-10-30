@@ -1,6 +1,6 @@
 import Config
 
-config :delivest, zvonok_flash_stub: true, yandex_rating_stub: true
+config :delivest, yandex_rating_stub: true
 config :delivest, Oban, testing: :manual
 config :delivest, Delivest.Logs, enabled: false
 

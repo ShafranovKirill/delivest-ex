@@ -327,7 +327,15 @@ defmodule DelivestWeb.Client.AuthControllerTest do
         set: [login_call_mode: :flash]
       )
 
+      stub_flash(%{"call_id" => 777, "flashcall_phone" => "+79990004821"})
       :ok
+    end
+
+    defp stub_flash(data) do
+      Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+        assert conn.request_path == "/manager/cabapi_external/api/v1/phones/flashcall/"
+        Req.Test.json(conn, %{"status" => "ok", "data" => data})
+      end)
     end
 
     defp start_flash(conn) do
@@ -349,6 +357,25 @@ defmodule DelivestWeb.Client.AuthControllerTest do
 
       assert %{"data" => %{"status" => "confirmed", "access_token" => _}} =
                conn |> post(~p"/client/auth/call/#{id}/complete") |> json_response(200)
+    end
+
+    test "the code is the last four digits of the calling number", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      assert code_of(id) == "4821"
+    end
+
+    test "a pincode in the answer is used as is", %{conn: conn} do
+      stub_flash(%{"call_id" => 778, "pincode" => "1357"})
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      assert code_of(id) == "1357"
+    end
+
+    test "an answer without a code fails the request", %{conn: conn} do
+      stub_flash(%{"call_id" => 779})
+
+      assert conn
+             |> post(~p"/client/auth/call", %{phone: "8 (999) 123-45-67"})
+             |> json_response(503)
     end
 
     test "a wrong code costs an attempt and three of them lock the confirmation", %{conn: conn} do

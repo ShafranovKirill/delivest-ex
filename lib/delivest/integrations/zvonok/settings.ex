@@ -16,6 +16,7 @@ defmodule Delivest.Integrations.Zvonok.Settings do
     field :campaign_id, :string
     field :webhook_token, :string, redact: true
     field :enabled, :boolean, default: true
+    field :dev_skip_calls, :boolean, default: true
     field :login_call_mode, Ecto.Enum, values: @modes, default: :inbound
 
     timestamps(type: :utc_datetime)
@@ -23,7 +24,9 @@ defmodule Delivest.Integrations.Zvonok.Settings do
 
   def changeset(settings, attrs) do
     settings
-    |> cast(attrs, [:enabled, :login_call_mode | @fields], empty_values: [nil, ""])
+    |> cast(attrs, [:enabled, :login_call_mode, :dev_skip_calls | @fields],
+      empty_values: [nil, ""]
+    )
     |> update_change(:public_key, &String.trim/1)
     |> update_change(:campaign_id, &String.trim/1)
     |> update_change(:webhook_token, &String.trim/1)

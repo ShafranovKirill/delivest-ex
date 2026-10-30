@@ -2,7 +2,7 @@ defmodule Delivest.Identity.ClientAuth do
   alias Delivest.Integrations.Zvonok
   alias Delivest.Identity.{Client, Clients, Phone, PhoneConfirmation, PhoneConfirmations}
 
-  @auto_confirm Application.compile_env(:delivest, :auto_confirm_phone, false)
+  @dev_tools Application.compile_env(:delivest, :auto_confirm_phone, false)
 
   @spec start(term(), String.t() | nil) ::
           {:ok, PhoneConfirmation.t(), String.t() | nil} | {:error, term()}
@@ -84,28 +84,33 @@ defmodule Delivest.Identity.ClientAuth do
   defp notify_confirmed(id),
     do: Phoenix.PubSub.broadcast(Delivest.PubSub, PhoneConfirmations.topic(id), :phone_confirmed)
 
-  defp request_call(phone, :flash) do
+  defp request_call(phone, mode) do
+    if skip_calls?(), do: fake_call(mode), else: real_call(phone, mode)
+  end
+
+  defp real_call(phone, :flash) do
     with {:ok, %{call_id: call_id, code: code}} <- Zvonok.request_flash(phone),
          do: {:ok, %{mode: :flash, call_id: call_id, code: code}}
   end
 
-  defp request_call(phone, _inbound) do
-    with {:ok, %{call_id: call_id, call_number: call_number}} <- inbound_call(phone),
+  defp real_call(phone, _inbound) do
+    with {:ok, %{call_id: call_id, call_number: call_number}} <- Zvonok.request_call(phone),
          do: {:ok, %{mode: :inbound, call_id: call_id, call_number: call_number}}
   end
 
-  defp auto_confirm(%PhoneConfirmation{} = confirmation), do: auto_confirm_call(confirmation)
+  defp fake_call(:flash),
+    do: {:ok, %{mode: :flash, call_id: Ecto.UUID.generate(), code: "0000"}}
 
-  if @auto_confirm do
-    defp inbound_call(_phone),
-      do: {:ok, %{call_id: Ecto.UUID.generate(), call_number: "70000000000"}}
+  defp fake_call(_inbound),
+    do: {:ok, %{mode: :inbound, call_id: Ecto.UUID.generate(), call_number: "70000000000"}}
 
-    defp auto_confirm_call(%PhoneConfirmation{call_id: call_id, phone: phone}),
-      do: confirm_call(call_id, phone)
+  defp auto_confirm(%PhoneConfirmation{call_id: call_id, phone: phone}),
+    do: if(skip_calls?(), do: confirm_call(call_id, phone), else: :ok)
+
+  if @dev_tools do
+    defp skip_calls?, do: Zvonok.get_settings().dev_skip_calls
   else
-    defp inbound_call(phone), do: Zvonok.request_call(phone)
-
-    defp auto_confirm_call(_confirmation), do: :ok
+    defp skip_calls?, do: false
   end
 
   defp validate_phone(phone) do

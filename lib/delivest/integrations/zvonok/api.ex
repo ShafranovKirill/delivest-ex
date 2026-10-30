@@ -17,21 +17,52 @@ defmodule Delivest.Integrations.Zvonok.Api do
     |> result()
   end
 
+  @flash_path "/manager/cabapi_external/api/v1/phones/flashcall/"
+
   @spec flash(Settings.t(), String.t()) ::
           {:ok, %{call_id: String.t(), code: String.t()}} | {:error, term()}
-  def flash(%Settings{}, _phone) do
-    if Application.get_env(:delivest, :zvonok_flash_stub, false),
-      do: {:ok, %{call_id: Ecto.UUID.generate(), code: random_code()}},
-      else: {:error, {:zvonok, :flash_not_supported}}
+  def flash(%Settings{} = config, phone) do
+    @flash_path
+    |> Client.post(
+      [public_key: config.public_key, campaign_id: config.campaign_id, phone: phone],
+      base_url: @base_url,
+      format: :form,
+      journal: :zvonok
+    )
+    |> flash_result()
   end
 
-  defp random_code,
-    do:
-      10_000
-      |> :rand.uniform()
-      |> Kernel.-(1)
-      |> Integer.to_string()
-      |> String.pad_leading(4, "0")
+  defp flash_result({:ok, body}) when is_binary(body) do
+    case Jason.decode(body) do
+      {:ok, decoded} -> flash_result({:ok, decoded})
+      {:error, _reason} -> {:error, {:zvonok, body}}
+    end
+  end
+
+  defp flash_result({:ok, %{"status" => "ok", "data" => %{"call_id" => call_id} = data} = body}) do
+    case flash_code(data) || flash_code(body) do
+      nil -> {:error, {:zvonok, :no_flash_code}}
+      code -> {:ok, %{call_id: to_string(call_id), code: code}}
+    end
+  end
+
+  defp flash_result({:ok, body}), do: {:error, {:zvonok, body}}
+  defp flash_result(error), do: error
+
+  defp flash_code(%{"pincode" => code}) when code not in [nil, ""], do: last_digits(code)
+  defp flash_code(%{"code" => code}) when code not in [nil, ""], do: last_digits(code)
+
+  defp flash_code(data) do
+    Enum.find_value(
+      ["flashcall_phone", "call_phone", "caller_id", "callerid", "phone_from", "from"],
+      fn key -> if data[key] not in [nil, ""], do: last_digits(data[key]) end
+    )
+  end
+
+  defp last_digits(value) do
+    digits = value |> to_string() |> String.replace(~r/\D/, "")
+    if String.length(digits) >= 4, do: String.slice(digits, -4, 4)
+  end
 
   defp result({:ok, %{"status" => "ok", "data" => %{"call_id" => call_id} = data} = body}) do
     case call_number(data["allowed_phones_for_call"] || body["allowed_phones_for_call"]) do
