@@ -678,7 +678,7 @@ msgstr ""
 
 #: lib/delivest_web/hooks/new_orders.ex:114
 #: lib/delivest_web/hooks/new_orders.ex:127
-#: lib/delivest_web/hooks/new_orders.ex:148
+#: lib/delivest_web/hooks/new_orders.ex:151
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
 #: lib/delivest_web/live/staff/branch_live/edit.ex:73
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
@@ -4009,8 +4009,8 @@ msgid "Check"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:57
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:69
-#: lib/delivest_web/live/staff/integration_live/index.ex:220
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:72
+#: lib/delivest_web/live/staff/integration_live/index.ex:227
 #, elixir-autogen, elixir-format
 msgid "Connected"
 msgstr ""
@@ -4069,7 +4069,7 @@ msgstr ""
 msgid "Loading..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:225
+#: lib/delivest_web/live/staff/integration_live/index.ex:232
 #, elixir-autogen, elixir-format
 msgid "Not connected"
 msgstr ""
@@ -4085,7 +4085,7 @@ msgstr ""
 msgid "Nothing found"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:205
+#: lib/delivest_web/live/staff/integration_live/index.ex:212
 #, elixir-autogen, elixir-format
 msgid "Orders go to CRM"
 msgstr ""
@@ -5227,7 +5227,7 @@ msgstr ""
 msgid "Take orders from Yandex Eda"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:210
+#: lib/delivest_web/live/staff/integration_live/index.ex:217
 #, elixir-autogen, elixir-format
 msgid "Takes orders"
 msgstr ""
@@ -5373,7 +5373,7 @@ msgstr ""
 
 #: lib/delivest_web/hooks/new_orders.ex:115
 #: lib/delivest_web/hooks/new_orders.ex:128
-#: lib/delivest_web/hooks/new_orders.ex:150
+#: lib/delivest_web/hooks/new_orders.ex:157
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:39
 #, elixir-autogen, elixir-format
 msgid "Failed to update the order"
@@ -6536,7 +6536,7 @@ msgstr ""
 msgid "Branch phone"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:215
+#: lib/delivest_web/live/staff/integration_live/index.ex:222
 #, elixir-autogen, elixir-format
 msgid "Calls couriers"
 msgstr ""
@@ -6885,7 +6885,7 @@ msgid "New link created"
 msgstr ""
 
 #: lib/delivest_web/live/board_live/index.ex:78
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:74
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:77
 #: lib/delivest_web/live/staff/integration_live/index.ex:195
 #, elixir-autogen, elixir-format
 msgid "No connection"
@@ -7009,7 +7009,7 @@ msgstr ""
 msgid "no response"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:72
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:75
 #, elixir-autogen, elixir-format
 msgid "Access denied, reconnect the integration"
 msgstr ""
@@ -7035,7 +7035,7 @@ msgstr ""
 msgid "Reconnect"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:68
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:71
 #, elixir-autogen, elixir-format
 msgid "The connection has not been checked"
 msgstr ""
@@ -7930,7 +7930,7 @@ msgstr ""
 msgid "The answer was lost. Check in the CRM whether order %{number} exists and confirm or resend it"
 msgstr ""
 
-#: lib/delivest_web/hooks/new_orders.ex:149
+#: lib/delivest_web/hooks/new_orders.ex:154
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Enter the order number in the CRM"
 msgstr ""
@@ -7948,4 +7948,19 @@ msgstr ""
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:183
 #, elixir-autogen, elixir-format, fuzzy
 msgid "The order is in the CRM"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:202
+#, elixir-autogen, elixir-format
+msgid "Menu differs"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:82
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Needs attention"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:80
+#, elixir-autogen, elixir-format
+msgid "The menu differs from the CRM: %{count}"
 msgstr ""

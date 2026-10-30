@@ -10,6 +10,7 @@ defmodule Delivest.Integrations.Poller do
   @modules [
     Delivest.Integrations.YandexDelivery.Poller,
     Delivest.Integrations.Crm.StopPoller,
+    Delivest.Integrations.Crm.CatalogPoller,
     Delivest.Integrations.Rkeeper.Poller
   ]
 

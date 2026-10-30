@@ -8,7 +8,7 @@ defmodule Delivest.Integrations.Health.Status do
   schema "integration_health" do
     field :provider, :string
     field :branch_id, Ecto.UUID
-    field :status, Ecto.Enum, values: [:ok, :failed, :auth]
+    field :status, Ecto.Enum, values: [:ok, :failed, :auth, :warning]
     field :message, :string
     field :checked_at, :utc_datetime_usec
   end
