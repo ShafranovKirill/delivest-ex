@@ -31,6 +31,23 @@ defmodule Delivest.Oms.CartTest do
   end
 
   describe "cart context" do
+    test "items keep the order they were added in when the quantity changes" do
+      first = insert_branch_product(@branch_id, price: 100)
+      second = insert_branch_product(@branch_id, price: 200)
+      third = insert_branch_product(@branch_id, price: 300)
+
+      {:ok, cart} = Carts.create_cart(%{session_id: "session-order", branch_id: @branch_id})
+      for product <- [first, second, third], do: {:ok, _, _} = Carts.add_item(cart.id, product.id)
+
+      for product <- [first, second, first, third, first] do
+        {:ok, _, view} = Carts.add_item(cart.id, product.id)
+        assert Enum.map(view.items, & &1.product_id) == [first.id, second.id, third.id]
+      end
+
+      {:ok, :updated, view} = Carts.remove_item(cart.id, second.id)
+      assert Enum.map(view.items, & &1.product_id) == [first.id, second.id, third.id]
+    end
+
     test "creates a cart and calculates totals" do
       product = insert_branch_product(@branch_id, price: 250)
 

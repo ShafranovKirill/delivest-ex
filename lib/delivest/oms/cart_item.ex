@@ -19,7 +19,7 @@ defmodule Delivest.Oms.CartItem do
 
     belongs_to :cart, Cart
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def max_quantity, do: @max_quantity
