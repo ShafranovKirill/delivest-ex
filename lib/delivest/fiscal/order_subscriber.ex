@@ -14,7 +14,7 @@ defmodule Delivest.Fiscal.OrderSubscriber do
   def key, do: :fiscal
 
   @impl true
-  def events, do: ["order.status_changed"]
+  def events, do: ["order.status_changed", "order.payment_changed"]
 
   @impl true
   def handle(%{payload: %{"to" => "completed"} = payload} = event) do
@@ -35,6 +35,18 @@ defmodule Delivest.Fiscal.OrderSubscriber do
     end
   end
 
+  def handle(%{payload: %{"change" => "paid", "method" => "online", "payment_id" => id}} = event) do
+    with %Order{deleted_at: nil, channel: nil, crm: nil} = order <-
+           Repo.get(Order, event.aggregate_id),
+         %BranchSettings{mode: :own} <- Fiscal.settings(order.branch_id),
+         %Payment{status: :paid} = payment <- Repo.get(Payment, id),
+         false <- prepaid?(order) do
+      with {:ok, _receipt} <- Fiscal.issue(order, [payment], stage: :full_prepayment), do: :ok
+    else
+      _skip -> :ok
+    end
+  end
+
   def handle(_event), do: :ok
 
   def payments(%Order{} = order, %BranchSettings{} = settings) do
@@ -42,19 +54,34 @@ defmodule Delivest.Fiscal.OrderSubscriber do
       []
     else
       from(p in Payment,
-        where: p.order_id == ^order.id and p.status == :paid and p.method in [:cash, :card],
-        where: is_nil(p.fiscalized_by) and (is_nil(p.provider) or p.provider != "yandex_delivery")
+        where: p.order_id == ^order.id and p.status == :paid,
+        where:
+          (p.method in [:cash, :card] and is_nil(p.fiscalized_by) and
+             (is_nil(p.provider) or p.provider != "yandex_delivery")) or
+            (p.method == :online and p.fiscalized_by == :us)
       )
       |> Repo.all()
       |> Enum.reject(&terminal?(&1, order, settings))
     end
   end
 
+  defp prepaid?(order),
+    do:
+      Repo.exists?(
+        from(r in Receipt,
+          where:
+            r.order_id == ^order.id and r.kind == :sell and r.stage == :full_prepayment and
+              r.status != :fail
+        )
+      )
+
   defp issued?(order),
     do:
       Repo.exists?(
         from(r in Receipt,
-          where: r.order_id == ^order.id and r.kind == :sell and r.status != :fail
+          where:
+            r.order_id == ^order.id and r.kind == :sell and r.stage == :full_payment and
+              r.status != :fail
         )
       )
 

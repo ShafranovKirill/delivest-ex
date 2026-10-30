@@ -5,6 +5,7 @@ defmodule Delivest.Payments.Online do
 
   alias Delivest.Integrations.Yookassa
   alias Delivest.Integrations.Yookassa.Api
+  alias Delivest.Fiscal
   alias Delivest.Identity.Branch
   alias Delivest.Oms.{Order, OrderEvents, OrderFlow, Orders}
   alias Delivest.Oms.Orders.Notifier
@@ -98,6 +99,7 @@ defmodule Delivest.Payments.Online do
           })
           |> Ecto.Changeset.put_change(:provider, "yookassa")
           |> Repo.update()
+          |> tap(&refund_receipt/1)
         end
 
       "canceled" ->
@@ -114,6 +116,24 @@ defmodule Delivest.Payments.Online do
   end
 
   defp apply_refund(%Refund{} = refund, _remote), do: {:ok, refund}
+
+  defp refund_receipt({:ok, %Refund{} = refund}) do
+    payment = Repo.get!(Payment, refund.payment_id)
+    order = Repo.get!(Order, refund.order_id)
+
+    case Fiscal.refund_online(order, payment, refund.amount) do
+      {:ok, _receipt} ->
+        :ok
+
+      {:error, :not_own} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("refund receipt of order #{order.number} failed: #{inspect(reason)}")
+    end
+  end
+
+  defp refund_receipt(_result), do: :ok
 
   defp check_refund_amount(refund, remote) do
     case Api.parse_amount(remote["amount"]) do
@@ -186,7 +206,8 @@ defmodule Delivest.Payments.Online do
        when status in [:pending, :authorized] do
     with {:ok, _payment} <-
            Payments.advance(Repo, order, payment, :paid, :system, %{
-             paid_at: DateTime.utc_now(:second)
+             paid_at: DateTime.utc_now(:second),
+             fiscalized_by: if(order.crm, do: :crm)
            }),
          {:ok, _order} <- open_to_work(order) do
       {:ok, :paid}

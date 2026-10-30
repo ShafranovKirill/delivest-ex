@@ -4,6 +4,7 @@ defmodule Delivest.Payments.OrderSubscriber do
   import Ecto.Query
 
   alias Delivest.Oms.Order
+  alias Delivest.Payments
   alias Delivest.Payments.{Online, Payment}
   alias Delivest.Repo
 
@@ -47,6 +48,13 @@ defmodule Delivest.Payments.OrderSubscriber do
 
   defp step(%Order{status: :cancelled}, %Payment{status: :cancelled} = payment),
     do: Online.release(payment)
+
+  defp step(%Order{status: :cancelled}, %Payment{status: :paid, method: :online} = payment) do
+    case Payments.refund_left(payment) do
+      left when left > 0 -> Payments.refund(payment, left, %{reason: "order cancelled"})
+      _none -> :ok
+    end
+  end
 
   defp step(_order, _payment), do: :ok
 end

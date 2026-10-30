@@ -84,7 +84,14 @@ defmodule Delivest.Payments.Payment do
 
   def move_changeset(%__MODULE__{status: from} = payment, to, attrs \\ %{}) do
     payment
-    |> cast(attrs, [:collected_by_id, :paid_at, :cash_given, :details, :external_id])
+    |> cast(attrs, [
+      :collected_by_id,
+      :paid_at,
+      :cash_given,
+      :details,
+      :external_id,
+      :fiscalized_by
+    ])
     |> put_change(:status, to)
     |> validate_change(:status, fn :status, to ->
       if to in Map.get(@moves, from, []), do: [], else: [status: "cannot move from #{from}"]

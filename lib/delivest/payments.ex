@@ -175,6 +175,8 @@ defmodule Delivest.Payments do
     |> each(&move(repo, order, &1, :pending, by, %{paid_at: nil, collected_by_id: nil}))
   end
 
+  def refund_left(%Payment{} = payment), do: payment.amount - taken(payment.id)
+
   def refund(payment, amount, attrs \\ %{}, by \\ :system)
 
   def refund(%Payment{status: :paid} = payment, amount, attrs, by) do

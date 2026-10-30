@@ -94,12 +94,15 @@ defmodule Delivest.Fiscal do
          [_ | _] <- payments || {:error, :no_payments} do
       order = Repo.preload(order, [items: :modifiers], force: true)
       payment_ids = Keyword.get_lazy(opts, :payment_ids, fn -> payment_ids(payments) end)
-      payments = Builder.payments(payments)
+      stage = Keyword.get(opts, :stage, :full_payment)
+      kind = Keyword.get(opts, :kind, :sell)
+      payments = Builder.payments(payments, stage, kind)
 
       built =
         Builder.build(order, settings,
           payments: payments,
-          kind: Keyword.get(opts, :kind, :sell),
+          kind: kind,
+          stage: stage,
           products: products(order),
           cashier: opts[:cashier]
         )
@@ -117,6 +120,30 @@ defmodule Delivest.Fiscal do
         amount: built.total
       })
       |> insert_with_body(module, built, Map.get(settings, module.key()))
+    end
+  end
+
+  def refund_online(%Order{} = order, %Payment{} = payment, amount) do
+    sale =
+      Repo.one(
+        from(r in Receipt,
+          where: r.order_id == ^order.id and r.kind == :sell and r.status == :done,
+          order_by: [desc: r.stage],
+          limit: 1
+        )
+      )
+
+    case sale do
+      nil ->
+        {:ok, nil}
+
+      %Receipt{} = sale ->
+        issue(order, [%{payment | amount: amount}],
+          kind: :sell_refund,
+          stage: sale.stage,
+          refund_of_id: sale.id,
+          payment_ids: [payment.id]
+        )
     end
   end
 

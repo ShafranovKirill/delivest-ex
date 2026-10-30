@@ -36,12 +36,15 @@ defmodule Delivest.Fiscal.Builder do
     }
   end
 
-  def payments(payments) do
+  def payments(payments, stage \\ :full_payment, kind \\ :sell) do
     payments
-    |> Enum.group_by(&Map.get(@payment_types, &1.method, :card), & &1.amount)
+    |> Enum.group_by(&payment_type(&1.method, stage, kind), & &1.amount)
     |> Enum.map(fn {type, sums} -> %{type: type, sum: Enum.sum(sums)} end)
     |> Enum.sort_by(& &1.type)
   end
+
+  defp payment_type(:online, :full_payment, :sell), do: :prepayment
+  defp payment_type(method, _stage, _kind), do: Map.get(@payment_types, method, :card)
 
   defp item(%OrderItem{} = item, settings, opts) do
     product = Map.get(Keyword.get(opts, :products, %{}), item.product_id, %{})
