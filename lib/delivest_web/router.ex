@@ -330,6 +330,7 @@ defmodule DelivestWeb.Router do
         live "/delivery/couriers", DeliveryLive.Couriers, :index
         live "/deliveries", CourierLive.Index, :index
         live "/couriers", CourierLive.Board, :index
+        live "/receipts", ReceiptLive.Index, :index
 
         scope "/integrations", IntegrationLive do
           live "/", Index, :index

@@ -71,6 +71,13 @@ defmodule DelivestWeb.StaffNav do
           "hero-user-circle",
           gettext("Couriers")
         )
+        |> allowed(staff, "orders.update"),
+        item(
+          :receipts,
+          branch && ~p"/staff/b/#{branch}/receipts",
+          "hero-document-text",
+          gettext("Receipts")
+        )
         |> allowed(staff, "orders.update")
       ]),
       group(:menu, "hero-book-open", gettext("Menu"), [

@@ -48,6 +48,29 @@ defmodule Delivest.Fiscal do
 
   def get(id), do: Repo.get(Receipt, id)
 
+  def list_branch(branch_id, status \\ nil, limit \\ 200) do
+    from(r in Receipt,
+      join: o in Order,
+      on: o.id == r.order_id,
+      where: r.branch_id == ^branch_id,
+      order_by: [desc: r.inserted_at],
+      limit: ^limit,
+      select: {r, o.number}
+    )
+    |> by_status(status, branch_id)
+    |> Repo.all()
+  end
+
+  defp by_status(query, :problem, branch_id) do
+    ids = branch_id |> pending_alerts() |> Enum.map(& &1.id)
+    where(query, [r], r.id in ^ids)
+  end
+
+  defp by_status(query, status, _branch_id) when is_atom(status) and not is_nil(status),
+    do: where(query, [r], r.status == ^status)
+
+  defp by_status(query, _status, _branch_id), do: query
+
   def issue(%Order{} = order, payments, opts \\ []) do
     settings = settings(order.branch_id)
 

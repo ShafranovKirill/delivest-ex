@@ -73,6 +73,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         {:noreply,
          socket
          |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
+         |> assign(receipt_alerts: receipt_alerts(socket.assigns.current_branch.id))
          |> stream(:orders, Enum.reject(orders, &(&1.id == socket.assigns.shown_id)), reset: true)
          |> assign_shown()}
 
@@ -339,6 +340,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     |> then(&orders_path(branch, &1))
   end
 
+  defp receipt_alerts(branch_id), do: length(Delivest.Fiscal.pending_alerts(branch_id))
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -354,6 +357,23 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           </.link>
         </:actions>
       </.page_header>
+
+      <div :if={@receipt_alerts > 0} id="receipt-alerts" role="alert" class="alert alert-error">
+        <.icon name="hero-exclamation-triangle" class="size-5" />
+        <span>
+          {ngettext(
+            "%{count} receipt is not issued",
+            "%{count} receipts are not issued",
+            @receipt_alerts
+          )}
+        </span>
+        <.link
+          navigate={~p"/staff/b/#{@current_branch}/receipts?status=problem"}
+          class="btn btn-sm"
+        >
+          {gettext("Open receipts")}
+        </.link>
+      </div>
 
       <.card class="flex flex-col gap-4 p-3 sm:p-4">
         <StatusTabs.status_tabs
