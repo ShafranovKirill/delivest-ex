@@ -3,7 +3,7 @@ defmodule Delivest.Integrations.Health do
 
   require Logger
 
-  alias Delivest.Integrations.{Crm, Error, Journal, YandexDelivery, YandexEda}
+  alias Delivest.Integrations.{Crm, Dadata, Error, Journal, YandexDelivery, YandexEda, Zvonok}
   alias Delivest.Integrations.Health.Status
   alias Delivest.Repo
 
@@ -86,6 +86,8 @@ defmodule Delivest.Integrations.Health do
       else: Error.classify(reason)
   end
 
+  defp source("zvonok", _branch_id), do: {:ok, Zvonok, Zvonok.get_settings(), nil}
+  defp source("dadata", _branch_id), do: {:ok, Dadata, Dadata.get_settings(), nil}
   defp source("yandex_eda", _branch_id), do: {:ok, YandexEda, YandexEda.get_settings(), nil}
 
   defp source("yandex_delivery", branch_id),

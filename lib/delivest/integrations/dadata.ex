@@ -19,6 +19,10 @@ defmodule Delivest.Integrations.Dadata do
     cached({:geolocate, latitude, longitude}, &Api.geolocate(&1, latitude, longitude))
   end
 
+  def health_check(%Settings{} = settings) do
+    with {:ok, _addresses} <- Api.suggest(settings, "москва", nil), do: :ok
+  end
+
   def get_settings, do: Repo.one(Settings) || %Settings{}
 
   def change_settings(%Settings{} = settings, attrs \\ %{}),
