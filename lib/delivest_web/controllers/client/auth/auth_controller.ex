@@ -94,6 +94,14 @@ defmodule DelivestWeb.Client.Auth.AuthController do
   defp render_error(conn, :invalid_phone),
     do: ApiError.send_error(conn, :unprocessable_entity, :invalid_phone, "Invalid phone")
 
+  defp render_error(conn, {:rate_limited, seconds}) do
+    conn
+    |> put_resp_header("retry-after", Integer.to_string(seconds))
+    |> ApiError.send_error(:too_many_requests, :too_many_requests, "Too many requests", %{
+      retry_after: seconds
+    })
+  end
+
   defp render_error(conn, :not_found),
     do: ApiError.send_error(conn, :not_found, :confirmation_not_found, "Confirmation not found")
 

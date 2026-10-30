@@ -267,6 +267,51 @@ defmodule DelivestWeb.Client.AuthControllerTest do
     assert %{"error" => "unauthorized"} = conn |> get(~p"/client/me") |> json_response(401)
   end
 
+  test "an active unconfirmed call is reused without a new Zvonok request", %{conn: conn} do
+    first = start_call(conn)
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("Zvonok must not be called again") end)
+
+    second =
+      conn |> post(~p"/client/auth/call", %{phone: "8 (999) 123-45-67"}) |> json_response(200)
+
+    assert second["data"]["confirmation_id"] == first["confirmation_id"]
+    assert second["data"]["call_number"] == first["call_number"]
+  end
+
+  test "the fourth call request for a phone in ten minutes gets 429", %{conn: conn} do
+    for n <- 1..3 do
+      {:ok, _} =
+        Delivest.Identity.PhoneConfirmations.create(%{
+          phone: @phone,
+          session_id: "other-#{n}",
+          call_id: "c-#{n}",
+          call_number: "7800"
+        })
+    end
+
+    stub_zvonok(1)
+
+    conn = post(conn, ~p"/client/auth/call", %{phone: "8 (999) 123-45-67"})
+
+    assert %{"error" => "too_many_requests", "details" => %{"retry_after" => wait}} =
+             json_response(conn, 429)
+
+    assert wait in 1..600
+    assert [_] = get_resp_header(conn, "retry-after")
+
+    stub_zvonok(2)
+
+    assert %{"data" => %{"confirmation_id" => _}} =
+             build_conn()
+             |> put_req_header(
+               "x-forwarded-for",
+               "auth-other-#{System.unique_integer([:positive])}"
+             )
+             |> with_session()
+             |> post(~p"/client/auth/call", %{phone: "+79990000001"})
+             |> json_response(200)
+  end
+
   test "integration webhooks allow any origin" do
     conn =
       build_conn()

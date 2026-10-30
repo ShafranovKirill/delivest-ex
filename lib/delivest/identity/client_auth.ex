@@ -8,11 +8,30 @@ defmodule Delivest.Identity.ClientAuth do
   def start(phone, session_id) do
     with :ok <- ensure_enabled(),
          {:ok, phone} <- validate_phone(phone),
+         {:ok, confirmation} <- confirmation(phone, session_id) do
+      {:ok, confirmation, confirmation.call_number}
+    end
+  end
+
+  defp confirmation(phone, session_id) do
+    case PhoneConfirmations.reusable(phone, session_id) do
+      %PhoneConfirmation{} = confirmation -> {:ok, confirmation}
+      nil -> request_new(phone, session_id)
+    end
+  end
+
+  defp request_new(phone, session_id) do
+    with :ok <- PhoneConfirmations.throttle(phone, session_id),
          {:ok, %{call_id: call_id, call_number: call_number}} <- request_call(phone),
          {:ok, confirmation} <-
-           PhoneConfirmations.create(%{phone: phone, session_id: session_id, call_id: call_id}),
+           PhoneConfirmations.create(%{
+             phone: phone,
+             session_id: session_id,
+             call_id: call_id,
+             call_number: call_number
+           }),
          :ok <- auto_confirm(call_id, phone) do
-      {:ok, confirmation, call_number}
+      {:ok, confirmation}
     end
   end
 

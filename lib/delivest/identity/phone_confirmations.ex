@@ -5,12 +5,57 @@ defmodule Delivest.Identity.PhoneConfirmations do
   alias Delivest.Repo
 
   @ttl_minutes 10
+  @limits [{600, 3}, {86_400, 10}]
 
   @spec create(map()) :: {:ok, PhoneConfirmation.t()} | {:error, Ecto.Changeset.t()}
   def create(attrs) do
     %PhoneConfirmation{}
     |> PhoneConfirmation.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @spec reusable(String.t(), String.t() | nil) :: PhoneConfirmation.t() | nil
+  def reusable(phone, session_id) when is_binary(session_id) do
+    PhoneConfirmation
+    |> fresh()
+    |> where([c], c.phone == ^phone and c.session_id == ^session_id)
+    |> where([c], is_nil(c.confirmed_at) and is_nil(c.consumed_at) and not is_nil(c.call_number))
+    |> order_by([c], desc: c.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  def reusable(_phone, _session_id), do: nil
+
+  @spec throttle(String.t(), String.t() | nil) :: :ok | {:error, {:rate_limited, pos_integer()}}
+  def throttle(phone, session_id) do
+    keys =
+      if is_binary(session_id), do: [phone: phone, session_id: session_id], else: [phone: phone]
+
+    waits =
+      for {field, value} <- keys,
+          {seconds, max} <- @limits,
+          wait = wait(field, value, seconds, max),
+          do: wait
+
+    if waits == [], do: :ok, else: {:error, {:rate_limited, Enum.max(waits)}}
+  end
+
+  defp wait(field, value, seconds, max) do
+    since = DateTime.add(now(), -seconds, :second)
+
+    times =
+      PhoneConfirmation
+      |> where([c], field(c, ^field) == ^value and c.inserted_at > ^since)
+      |> order_by([c], desc: c.inserted_at)
+      |> limit(^max)
+      |> select([c], c.inserted_at)
+      |> Repo.all()
+
+    if length(times) >= max do
+      oldest = List.last(times)
+      max(DateTime.diff(DateTime.add(oldest, seconds, :second), now()), 1)
+    end
   end
 
   @spec confirm(String.t(), String.t()) :: {:ok, [String.t()]} | {:error, :not_found}
