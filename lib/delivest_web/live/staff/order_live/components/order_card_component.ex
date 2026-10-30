@@ -723,7 +723,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     assigns =
       assign(assigns,
         assignable: assigns.can_manage and Couriers.assignable?(assigns.order),
-        courier_id: assigns.delivery && assigns.delivery.courier_id
+        courier_id: assigns.delivery && assigns.delivery.courier_id,
+        cancel_price: Couriers.cancel_pending(assigns.order)
       )
 
     ~H"""
@@ -749,6 +750,27 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       >
         {gettext("Yandex Delivery did not take the last request")}
       </span>
+      <div
+        :if={@cancel_price}
+        id={"order-paid-cancel-#{@order.id}"}
+        class="basis-full flex flex-wrap items-center gap-2 text-error"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-4" />
+        {gettext("Cancelling the Yandex courier is paid: %{price}",
+          price: Delivest.Money.format(@cancel_price)
+        )}
+        <button
+          :if={@can_manage}
+          type="button"
+          id={"order-confirm-paid-cancel-#{@order.id}"}
+          class="btn btn-xs btn-error"
+          phx-click="confirm_paid_cancel"
+          phx-value-order-id={@order.id}
+          data-confirm={gettext("Cancel the courier and pay for it?")}
+        >
+          {gettext("Confirm the paid cancel")}
+        </button>
+      </div>
       <div :if={@assignable} class="ml-auto flex flex-wrap items-center gap-2">
         <button
           :if={is_nil(@delivery)}

@@ -88,8 +88,12 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   defp respond(conn, _yandex, "/claims/set-point-ready", _query, _body),
     do: Req.Test.json(conn, %{"id" => "ok"})
 
-  defp respond(conn, _yandex, "/claims/cancel-info", _query, _body),
-    do: Req.Test.json(conn, %{"cancel_state" => "free"})
+  defp respond(conn, yandex, "/claims/cancel-info", _query, _body) do
+    case Agent.get(yandex, & &1[:cancel_state]) do
+      "paid" -> Req.Test.json(conn, %{"cancel_state" => "paid", "price" => "150.00"})
+      _free -> Req.Test.json(conn, %{"cancel_state" => "free"})
+    end
+  end
 
   defp respond(conn, yandex, "/claims/cancel", %{"claim_id" => claim_id}, _body) do
     set_status(yandex, claim_id, "cancelled")
@@ -595,6 +599,27 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
       assert_received {:yandex, "/claims/cancel", _query,
                        %{"cancel_state" => "free", "version" => 3}}
+
+      assert %Delivery{status: :cancelled, close_reason: :order_cancelled} =
+               Repo.reload!(ctx.delivery)
+    end
+
+    test "a paid cancel waits for the operator", ctx do
+      Agent.update(ctx.yandex, &Map.put(&1, :cancel_state, "paid"))
+
+      {:ok, order} =
+        Orders.cancel_order(Repo.reload!(ctx.order), {:staff, ctx.operator}, %{
+          "cancel_reason" => "other"
+        })
+
+      deliver_events()
+      refute_received {:yandex, "/claims/cancel", _query, _body}
+      assert %Delivery{status: :searching} = delivery = Repo.reload!(ctx.delivery)
+      assert delivery.details["cancel_price"] == 15_000
+      assert Couriers.cancel_pending(Repo.preload(order, :deliveries, force: true)) == 15_000
+
+      assert {:ok, _delivery} = Couriers.confirm_cancel(ctx.operator, order)
+      assert_received {:yandex, "/claims/cancel", _query, %{"cancel_state" => "paid"}}
 
       assert %Delivery{status: :cancelled, close_reason: :order_cancelled} =
                Repo.reload!(ctx.delivery)

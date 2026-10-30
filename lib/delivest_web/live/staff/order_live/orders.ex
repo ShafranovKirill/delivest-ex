@@ -156,6 +156,15 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
+  def handle_event("confirm_paid_cancel", %{"order-id" => id}, socket) do
+    with {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, _delivery} <- Couriers.confirm_cancel(socket.assigns.current_staff, order) do
+      load(socket)
+    else
+      error -> failed(socket, error)
+    end
+  end
+
   def handle_event("assign_courier", %{"order-id" => id, "courier_id" => courier_id}, socket) do
     with {:ok, order} <- fetch_branch_order(socket, id),
          {:ok, _delivery} <- Couriers.assign(socket.assigns.current_staff, order, courier_id) do

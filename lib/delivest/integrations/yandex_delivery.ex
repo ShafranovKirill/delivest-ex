@@ -189,7 +189,8 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp cancel_claim(%Delivery{external_id: claim_id} = delivery) do
     token = settings(delivery.branch_id).token
 
-    with {:ok, %{"cancel_state" => cancel_state}} <- Api.cancel_info(token, claim_id),
+    with {:ok, %{"cancel_state" => cancel_state} = info} <- Api.cancel_info(token, claim_id),
+         :ok <- confirmed(delivery, cancel_state, info),
          {:ok, %{"version" => version}} <- Api.info(token, claim_id),
          {:ok, _response} <- Api.cancel(token, claim_id, version, cancel_state) do
       :ok
@@ -198,6 +199,12 @@ defmodule Delivest.Integrations.YandexDelivery do
       error -> error
     end
   end
+
+  defp confirmed(%Delivery{details: details}, "paid", info) do
+    if details["cancel_price"], do: :ok, else: {:error, {:paid_cancel, cents(info["price"])}}
+  end
+
+  defp confirmed(_delivery, _state, _info), do: :ok
 
   @impl true
   def order_ready(%Delivery{external_id: nil}), do: :ok
