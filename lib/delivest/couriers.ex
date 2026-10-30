@@ -120,6 +120,7 @@ defmodule Delivest.Couriers do
       :cancelled -> close_active(order.id, :cancelled, :order_cancelled)
       :completed -> complete_active(order.id)
       :delivering -> pick_up_active(order.id)
+      :ready -> [auto_start(order), notify_ready(order.id)]
       status when is_map_key(@rank, status) -> auto_start(order)
       _status -> :ok
     end
@@ -361,6 +362,24 @@ defmodule Delivest.Couriers do
       {:error, %Ecto.Changeset{}} -> {:error, :already_searching}
       error -> error
     end
+  end
+
+  def give_up(%Delivery{} = delivery) do
+    if Delivery.active?(delivery),
+      do: close(delivery, :failed, :provider_error),
+      else: {:ok, delivery}
+  end
+
+  defp notify_ready(order_id) do
+    with %Delivery{provider: key, external_id: external_id} = delivery
+         when not is_nil(external_id) <- active(order_id),
+         {:ok, provider} <- Registry.fetch(key),
+         true <- function_exported?(provider, :order_ready, 1),
+         {:error, reason} <- provider.order_ready(delivery) do
+      Logger.warning("delivery #{delivery.id}: #{key} order ready failed (#{inspect(reason)})")
+    end
+
+    :ok
   end
 
   defp close_active(order_id, status, reason) do

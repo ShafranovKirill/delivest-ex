@@ -10,7 +10,7 @@ defmodule Delivest.Integrations.YandexDelivery do
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Journal, as: RequestJournal
   alias Delivest.Integrations.{Error, Poller}
-  alias Delivest.Integrations.YandexDelivery.{Api, Claim, Journal, Settings}
+  alias Delivest.Integrations.YandexDelivery.{Api, Claim, ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders}
 
   @searching ~w(new estimating ready_for_approval accepted performer_lookup performer_draft)
@@ -22,6 +22,8 @@ defmodule Delivest.Integrations.YandexDelivery do
   @returning ~w(returning return_arrived ready_for_return_confirmation returned returned_finish)
   @final ["delivered_finish", "returned_finish" | @lost ++ @failed ++ @cancelled]
   @stale_seconds 60
+  @create_retries 2
+  @retry_pause 2_000
 
   @impl true
   def key, do: :yandex
@@ -95,12 +97,48 @@ defmodule Delivest.Integrations.YandexDelivery do
     with {:ok, branch} <- Identity.get_branch(order.branch_id, preload: :info),
          %Settings{} = settings <- configured(branch),
          {:ok, body} <- Claim.build(order, branch, settings),
-         {:ok, %{"id" => claim_id} = claim} <- Api.create(settings.token, delivery.id, body) do
+         {:ok, claim} <- create_with_retry(settings.token, delivery.id, body, @create_retries) do
       switch_to_card(order)
       Poller.enqueue(__MODULE__.Poller, order.branch_id)
-      {:ok, %{external_id: claim_id, details: details(claim)}}
+      {:ok, %{external_id: claim["id"], details: details(claim)}}
+    else
+      {:error, reason} = error ->
+        if ambiguous?(reason) do
+          ClaimLookupWorker.enqueue(delivery, order)
+          {:ok, %{details: %{"lookup" => true}}}
+        else
+          error
+        end
+
+      other ->
+        other
     end
   end
+
+  defp create_with_retry(token, request_id, body, retries) do
+    case Api.create(token, request_id, body) do
+      {:ok, %{"id" => _id}} = ok ->
+        ok
+
+      {:error, reason} = error ->
+        if retries > 0 and ambiguous?(reason) do
+          Process.sleep(retry_pause())
+          create_with_retry(token, request_id, body, retries - 1)
+        else
+          error
+        end
+
+      {:ok, body} ->
+        {:error, {:yandex_delivery, :unexpected, body}}
+    end
+  end
+
+  def ambiguous?({:connection_error, _message, _reason}), do: true
+  def ambiguous?({:yandex_delivery, status, _code}) when is_integer(status), do: status >= 500
+  def ambiguous?(_reason), do: false
+
+  defp retry_pause,
+    do: Application.get_env(:delivest, :yandex_delivery_retry_pause, @retry_pause)
 
   @impl true
   def cancel(%Delivery{external_id: nil}), do: :ok
@@ -123,6 +161,20 @@ defmodule Delivest.Integrations.YandexDelivery do
       {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
       error -> error
     end
+  end
+
+  @impl true
+  def order_ready(%Delivery{external_id: nil}), do: :ok
+  def order_ready(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
+
+  def order_ready(%Delivery{external_id: claim_id} = delivery) do
+    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+      case Api.set_point_ready(settings(delivery.branch_id).token, claim_id) do
+        {:ok, _response} -> :ok
+        {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
+        error -> error
+      end
+    end)
   end
 
   def poll(branch_id) do

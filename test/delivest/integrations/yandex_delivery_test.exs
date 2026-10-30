@@ -10,7 +10,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.Poller.Worker, as: PollWorker
-  alias Delivest.Integrations.YandexDelivery.{Journal, Settings}
+  alias Delivest.Integrations.YandexDelivery.{ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders, OrderTransition}
 
   @settings %Settings{token: "y-token", contact_email: "kitchen@example.com"}
@@ -34,13 +34,24 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   defp respond(conn, yandex, "/claims/create", %{"request_id" => request_id}, _body) do
     claim_id = "claim-" <> request_id
 
-    Agent.update(yandex, fn state ->
-      state
-      |> put_in([:claims, claim_id], claim(claim_id, "new"))
-      |> Map.update!(:created, &(&1 + 1))
-    end)
+    case Agent.get_and_update(yandex, fn state ->
+           {state[:failures], Map.put(state, :failures, tl_or_empty(state[:failures]))}
+         end) do
+      [:timeout | _] -> Req.Test.transport_error(conn, :timeout)
+      [:lost | _] -> create_claim(yandex, claim_id, :lost, conn)
+      [:error | _] -> Plug.Conn.send_resp(conn, 500, "")
+      _none -> create_claim(yandex, claim_id, :ok, conn)
+    end
+  end
 
-    Req.Test.json(conn, %{"id" => claim_id, "status" => "new", "version" => 1})
+  defp respond(conn, yandex, "/claims/search", _query, %{"external_order_id" => number}) do
+    claims =
+      yandex
+      |> Agent.get(& &1.claims)
+      |> Map.values()
+      |> Enum.filter(&Map.has_key?(&1, "id"))
+
+    Req.Test.json(conn, %{"claims" => if(number, do: claims, else: [])})
   end
 
   defp respond(conn, yandex, "/claims/info", %{"claim_id" => claim_id}, _body),
@@ -54,6 +65,9 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
     Req.Test.json(conn, %{"cursor" => "cursor-#{length(events)}", "events" => events})
   end
+
+  defp respond(conn, _yandex, "/claims/set-point-ready", _query, _body),
+    do: Req.Test.json(conn, %{"id" => "ok"})
 
   defp respond(conn, _yandex, "/claims/cancel-info", _query, _body),
     do: Req.Test.json(conn, %{"cancel_state" => "free"})
@@ -79,6 +93,21 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
   defp respond(conn, _yandex, "/driver-voiceforwarding", _query, _body),
     do: Req.Test.json(conn, %{"phone" => "+79000000001", "ext" => "0163"})
+
+  defp tl_or_empty([_ | rest]), do: rest
+  defp tl_or_empty(_none), do: []
+
+  defp create_claim(yandex, claim_id, mode, conn) do
+    Agent.update(yandex, fn state ->
+      state
+      |> put_in([:claims, claim_id], claim(claim_id, "new"))
+      |> Map.update!(:created, &(&1 + 1))
+    end)
+
+    if mode == :lost,
+      do: Req.Test.transport_error(conn, :timeout),
+      else: Req.Test.json(conn, %{"id" => claim_id, "status" => "new", "version" => 1})
+  end
 
   defp claim(claim_id, status) do
     %{
@@ -168,6 +197,127 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     result = perform_job(PollWorker, %{poller: "yandex_delivery", target: branch.id})
     deliver_events()
     result
+  end
+
+  describe "a lost answer to claim creation" do
+    setup do
+      Application.put_env(:delivest, :yandex_delivery_retry_pause, 0)
+      on_exit(fn -> Application.delete_env(:delivest, :yandex_delivery_retry_pause) end)
+    end
+
+    defp fail_creation(yandex, failures),
+      do: Agent.update(yandex, &Map.put(&1, :failures, failures))
+
+    test "a timeout is retried with the same request id", %{yandex: yandex} do
+      fail_creation(yandex, [:timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+
+      delivery = Couriers.active(order.id)
+      assert delivery.external_id == "claim-" <> delivery.id
+      assert Agent.get(yandex, & &1.created) == 1
+      assert_received {:yandex, "/claims/create", %{"request_id" => id}, _body}
+      assert_received {:yandex, "/claims/create", %{"request_id" => ^id}, _body}
+    end
+
+    test "when retries get no answer the claim is looked up by the order number", %{
+      yandex: yandex
+    } do
+      fail_creation(yandex, [:lost, :timeout, :timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+
+      delivery = Couriers.active(order.id)
+      assert delivery.status == :searching
+      assert delivery.external_id == nil
+
+      assert :ok = perform_job(ClaimLookupWorker, lookup_args(delivery, order))
+      assert Repo.reload!(delivery).external_id == "claim-" <> delivery.id
+      assert Agent.get(yandex, & &1.created) == 1
+    end
+
+    test "no claim within the window closes the attempt", %{yandex: yandex} do
+      fail_creation(yandex, [:timeout, :timeout, :timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+      delivery = Couriers.active(order.id)
+
+      args = %{lookup_args(delivery, order) | "started_at" => System.os_time(:second) - 301}
+      assert :ok = perform_job(ClaimLookupWorker, args)
+      assert %Delivery{status: :failed, close_reason: :provider_error} = Repo.reload!(delivery)
+    end
+
+    test "no claim yet schedules another lookup", %{yandex: yandex} do
+      fail_creation(yandex, [:timeout, :timeout, :timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+      delivery = Couriers.active(order.id)
+
+      assert :ok = perform_job(ClaimLookupWorker, lookup_args(delivery, order))
+      assert Repo.reload!(delivery).status == :searching
+      assert_enqueued(worker: ClaimLookupWorker, args: %{delivery_id: delivery.id})
+    end
+
+    defp lookup_args(delivery, order),
+      do: %{
+        "delivery_id" => delivery.id,
+        "number" => order.number,
+        "started_at" => System.os_time(:second)
+      }
+  end
+
+  describe "preorders" do
+    test "a cook time inside the window becomes the due time" do
+      branch = branch()
+      soon = DateTime.utc_now() |> DateTime.add(90, :minute) |> DateTime.truncate(:second)
+
+      order(branch, cook_by: soon) |> cooking(operator(branch))
+      assert_received {:yandex, "/claims/create", _query, %{"due" => due}}
+      assert {:ok, ^soon, _} = DateTime.from_iso8601(due)
+    end
+
+    test "a cook time outside the window is not sent" do
+      branch = branch()
+      far = DateTime.utc_now() |> DateTime.add(600, :minute) |> DateTime.truncate(:second)
+
+      order(branch, cook_by: far) |> cooking(operator(branch))
+      assert_received {:yandex, "/claims/create", _query, body}
+      refute Map.has_key?(body, "due")
+    end
+  end
+
+  describe "order readiness" do
+    test "the claim asks to be notified and gets the readiness when the kitchen is done" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch) |> cooking(staff)
+      delivery = Couriers.active(order.id)
+      assert_received {:yandex, "/claims/create", _query, body}
+      assert [%{"should_notify_on_order_readiness" => true}, _destination] = body["route_points"]
+      refute_received {:yandex, "/claims/set-point-ready", _query, _body}
+
+      {:ok, _order} = Orders.advance_order(order, :ready, {:staff, staff})
+      deliver_events()
+
+      claim_id = delivery.external_id
+      assert_received {:yandex, "/claims/set-point-ready", %{"claim_id" => ^claim_id}, body}
+      assert body == %{"visit_order" => 1}
+    end
+
+    test "nothing is called without an active claim" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch)
+      {:ok, order} = Orders.advance_order(order, :accepted, {:staff, staff})
+      {:ok, _order} = Orders.advance_order(order, :preparing, {:staff, staff})
+      deliver_events()
+      Couriers.active(order.id) |> then(&Couriers.give_up/1)
+
+      order = Repo.reload!(order)
+      {:ok, _order} = Orders.advance_order(order, :ready, {:staff, staff})
+      deliver_events()
+      refute_received {:yandex, "/claims/set-point-ready", _query, _body}
+    end
   end
 
   describe "calling a courier" do
