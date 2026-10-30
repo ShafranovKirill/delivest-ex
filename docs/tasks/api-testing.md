@@ -2,7 +2,7 @@
 
 Список того, что нельзя узнать из документации и заглушек и нужно проверить руками на тестовых средах. Результаты закрепляются в контрактных тестах и в README интеграций, после чего пункты соответствующих задач можно закрывать.
 
-Задачи, к которым относятся проверки: [frontpad.md](frontpad.md), [iiko-api.md](iiko-api.md), [rkeeper-api.md](rkeeper-api.md), [yandex-eda-api.md](yandex-eda-api.md), [yandex-delivery-api.md](yandex-delivery-api.md), [atol-api.md](atol-api.md), [yookassa.md](yookassa.md), [small-integrations.md](small-integrations.md), [otp-usage.md](otp-usage.md).
+Задачи, к которым относятся проверки: [frontpad.md](frontpad.md), [iiko-api.md](iiko-api.md), [rkeeper-api.md](rkeeper-api.md), [yandex-eda-api.md](yandex-eda-api.md), [atol-api.md](atol-api.md), [yookassa.md](yookassa.md), [small-integrations.md](small-integrations.md), [otp-usage.md](otp-usage.md).
 
 ## Как проверять
 
@@ -99,7 +99,7 @@
 
 ## Яндекс Доставка
 
-Задача: [yandex-delivery-api.md](yandex-delivery-api.md). Тестовая среда не создаёт заявки (`403 no_permissions`), поэтому пункты с заявками делаются на боевом аккаунте с отменой до назначения курьера.
+Задача выполнена. Тестовая среда не создаёт заявки (`403 no_permissions`), поэтому пункты с заявками делаются на боевом аккаунте с отменой до назначения курьера.
 
 - [ ] **YD1. Идемпотентность `request_id`.** Два вызова `claims/create` с одним `request_id` подряд: тот же `claim_id` или ошибка. Записать форму.
 - [ ] **YD2. Поиск по заказу.** `claims/search` по `external_order_id` сразу после создания и после нескольких секунд: находит ли и как быстро. Нужен для восстановления после таймаута.
@@ -161,7 +161,7 @@
 - [ ] **P2. Throttle.** Два заказа Frontpad подряд на один ключ при очереди `:crm` из двух слотов: заказ другого филиала не ждёт ([otp-usage.md](otp-usage.md) п.4).
 - [ ] **P3. Повтор Req.** GET Zvonok при 502 уходит один раз ([otp-usage.md](otp-usage.md) п.5).
 - [ ] **P4. Таймер кухни.** Заказ с `cook_by` через 30 минут уходит на кухню в расчётную секунду, перенос времени сдвигает ([otp-usage.md](otp-usage.md) п.7).
-- [ ] **P5. Дубли.** Таймаут отправки Frontpad, r_keeper и Яндекс Доставки не создаёт второй заказ, заявку или чек ([frontpad.md](frontpad.md) п.2, [rkeeper-api.md](rkeeper-api.md) п.6, [yandex-delivery-api.md](yandex-delivery-api.md) п.1, [atol-api.md](atol-api.md) п.1).
+- [ ] **P5. Дубли.** Таймаут отправки Frontpad, r_keeper и Яндекс Доставки не создаёт второй заказ, заявку или чек ([frontpad.md](frontpad.md) п.2, [rkeeper-api.md](rkeeper-api.md) п.6, [atol-api.md](atol-api.md) п.1).
 - [ ] **P6. Падение синхронизации стопов.** Исключение в `StopSync` не роняет `POST /order` Яндекса ([yandex-eda-api.md](yandex-eda-api.md) п.1).
 - [ ] **P7. Копейки.** Заказ Яндекса 3 × 333,33 ₽ доходит до всех CRM с суммой, равной `itemsCost` ([yandex-eda-api.md](yandex-eda-api.md) п.2).
 
