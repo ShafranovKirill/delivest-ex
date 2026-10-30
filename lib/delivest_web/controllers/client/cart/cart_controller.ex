@@ -261,6 +261,74 @@ defmodule DelivestWeb.Client.Cart.CartController do
     end
   end
 
+  operation(:replace_item,
+    summary: "Заменить модификаторы одной единицы позиции",
+    description:
+      "Одна единица позиции с ключом `key` получает новый набор модификаторов. Если в позиции одна штука, она остаётся на месте в списке.",
+    tags: ["Cart"],
+    parameters: [
+      cart_id: [
+        in: :path,
+        schema: %Schema{type: :string, format: :uuid},
+        required: true,
+        description: "UUID корзины"
+      ],
+      product_id: [
+        in: :path,
+        schema: %Schema{type: :string},
+        required: true,
+        description: "`key` строки корзины"
+      ]
+    ],
+    request_body: {"Новые модификаторы", "application/json", AddItemRequest},
+    responses: [
+      ok: {"Обновленная корзина", "application/json", CartResponse},
+      unprocessable_entity: {"Ошибка замены", "application/json", ErrorResponse},
+      not_found: {"Корзина или позиция не найдены", "application/json", ErrorResponse}
+    ]
+  )
+
+  def replace_item(conn, %{"cart_id" => cart_id, "product_id" => key} = params) do
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, cart_view} <- Carts.replace_item(cart_id, key, params["modifiers"]) do
+      render(conn, :show, cart: cart_view)
+    else
+      {:error, :cart_not_found} ->
+        cart_not_found(conn)
+
+      {:error, :item_not_found} ->
+        ApiError.send_error(conn, :not_found, :item_not_found, "Item not found in cart")
+
+      {:error, :product_unavailable} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :product_unavailable,
+          "Product is unavailable"
+        )
+
+      {:error, reason}
+      when reason in [
+             :modifier_unavailable,
+             :modifiers_required,
+             :modifiers_limit,
+             :modifier_quantity
+           ] ->
+        ApiError.send_error(conn, :unprocessable_entity, reason, "Invalid modifiers")
+
+      {:error, :quantity_limit_exceeded} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :quantity_limit_exceeded,
+          "Quantity limit exceeded"
+        )
+
+      _ ->
+        ApiError.send_error(conn, :unprocessable_entity, :bad_request, "Failed to replace item")
+    end
+  end
+
   operation(:remove_item,
     summary: "Удалить товар из корзины",
     description: "Уменьшает количество товара на 1 или удаляет его полностью из корзины.",

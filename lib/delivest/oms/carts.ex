@@ -76,6 +76,76 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
+  def replace_item(cart_id, key, modifiers) do
+    {product_part, modifier_key} = parse_item_key(key)
+
+    with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found},
+         {:ok, product_uuid} <- available_product(product_part, cart.branch_id),
+         {:ok, choices} <- choose(product_uuid, cart.branch_id, modifiers),
+         %CartItem{} = old <-
+           Repo.get_by(CartItem,
+             cart_id: cart.id,
+             product_id: product_uuid,
+             modifier_key: modifier_key
+           ) || {:error, :item_not_found},
+         {:ok, _item} <- swap_choices(old, choices) do
+      {:ok, recalculate_and_cache(cart)}
+    end
+  end
+
+  defp swap_choices(%CartItem{} = old, choices) do
+    new_key = Modifiers.key(choices)
+
+    cond do
+      new_key == old.modifier_key ->
+        {:ok, old}
+
+      old.quantity > 1 ->
+        in_transaction(fn ->
+          old |> Ecto.Changeset.change(quantity: old.quantity - 1) |> Repo.update!()
+          upsert_item!(old.cart_id, old.product_id, 1, choices)
+        end)
+
+      existing_item?(old, new_key) ->
+        in_transaction(fn ->
+          Repo.delete!(old)
+          upsert_item!(old.cart_id, old.product_id, old.quantity, choices)
+        end)
+
+      true ->
+        old
+        |> Ecto.Changeset.change(
+          modifiers: Enum.map(choices, &%{"id" => &1.id, "quantity" => &1.quantity}),
+          modifier_key: new_key
+        )
+        |> Repo.update()
+    end
+  end
+
+  defp existing_item?(old, modifier_key) do
+    Repo.exists?(
+      from(ci in CartItem,
+        where:
+          ci.cart_id == ^old.cart_id and ci.product_id == ^old.product_id and
+            ci.modifier_key == ^modifier_key
+      )
+    )
+  end
+
+  defp upsert_item!(cart_id, product_id, quantity, choices) do
+    case upsert_item(cart_id, product_id, quantity, choices) do
+      {:ok, item} -> item
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp in_transaction(fun) do
+    case Repo.transaction(fun) do
+      {:ok, item} -> {:ok, item}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   def add_items(cart_id, lines) do
     with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found} do
       Enum.each(lines, fn line ->

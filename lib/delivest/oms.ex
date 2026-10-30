@@ -22,6 +22,7 @@ defmodule Delivest.Oms do
   defdelegate add_item(cart_id, product_id, quantity \\ 1), to: Carts
   defdelegate repeat_order(cart_id, client_id, order_id), to: OrderRepeat, as: :run
   defdelegate remove_item(cart_id, product_id, opts \\ []), to: Carts
+  defdelegate replace_item(cart_id, key, modifiers), to: Carts
   defdelegate delete_cart(cart_or_id), to: Carts
   defdelegate detach_cart(cart_or_id), to: Carts
   defdelegate update_cart_context(cart_id, attrs), to: Carts, as: :update_context

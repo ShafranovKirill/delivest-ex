@@ -45,6 +45,45 @@ defmodule Delivest.Oms.ModifierOrderTest do
     assert [%{price: 50_000}] = view.items
   end
 
+  describe "replace_item" do
+    test "a single unit changes its modifiers in place", ctx do
+      {:ok, _, _} = Carts.add_item(ctx.cart.id, ctx.pizza.id, 1, [ctx.small.id])
+      other = insert_branch_product(ctx.branch.id, price: 10_000)
+      {:ok, _, view} = Carts.add_item(ctx.cart.id, other.id)
+      [pizza_line, _] = view.items
+
+      {:ok, view} = Carts.replace_item(ctx.cart.id, pizza_line.key, [ctx.large.id])
+
+      assert [%{product_id: pizza_id, price: 70_000}, %{product_id: other_id}] = view.items
+      assert pizza_id == ctx.pizza.id
+      assert other_id == other.id
+    end
+
+    test "one unit splits off a line of several", ctx do
+      {:ok, _, view} = Carts.add_item(ctx.cart.id, ctx.pizza.id, 3, [ctx.small.id])
+      [line] = view.items
+
+      {:ok, view} = Carts.replace_item(ctx.cart.id, line.key, [ctx.large.id])
+
+      assert [%{quantity: 2, price: 50_000}, %{quantity: 1, price: 70_000}] = view.items
+    end
+
+    test "it merges into a line that already has the same modifiers", ctx do
+      {:ok, _, _} = Carts.add_item(ctx.cart.id, ctx.pizza.id, 1, [ctx.small.id])
+      {:ok, _, view} = Carts.add_item(ctx.cart.id, ctx.pizza.id, 1, [ctx.large.id])
+      [small_line, _] = view.items
+
+      {:ok, view} = Carts.replace_item(ctx.cart.id, small_line.key, [ctx.large.id])
+
+      assert [%{quantity: 2, price: 70_000}] = view.items
+    end
+
+    test "an unknown line is refused", ctx do
+      assert {:error, :item_not_found} =
+               Carts.replace_item(ctx.cart.id, ctx.pizza.id, [ctx.large.id])
+    end
+  end
+
   test "a wrong choice is refused", ctx do
     assert {:error, :modifiers_limit} =
              Carts.add_item(ctx.cart.id, ctx.pizza.id, 1, [ctx.small.id, ctx.large.id])

@@ -127,6 +127,7 @@ defmodule DelivestWeb.Router do
 
       get "/", CartController, :show
       post "/:cart_id/items/:product_id", CartController, :add_item
+      put "/:cart_id/items/:product_id", CartController, :replace_item
       delete "/:cart_id/items/:product_id", CartController, :remove_item
       delete "/:cart_id/clear", CartController, :clear
       post "/:cart_id/repeat/:order_id", CartController, :repeat
