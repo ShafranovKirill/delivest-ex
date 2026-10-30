@@ -114,6 +114,23 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     })
   end
 
+  defp respond(conn, _yandex, "/claims/points-eta", _query, _body) do
+    Req.Test.json(conn, %{
+      "route_points" => [
+        %{
+          "visit_order" => 1,
+          "visit_status" => "visited",
+          "visited_at" => %{"expected" => "2026-07-17T08:00:00Z"}
+        },
+        %{
+          "visit_order" => 2,
+          "visit_status" => "pending",
+          "visited_at" => %{"expected" => "2026-07-17T08:40:00Z"}
+        }
+      ]
+    })
+  end
+
   defp respond(conn, _yandex, "/driver-voiceforwarding", _query, _body),
     do: Req.Test.json(conn, %{"phone" => "+79000000001", "ext" => "0163"})
 
@@ -487,6 +504,22 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
       assert :ok = poll(ctx.branch)
       assert_received {:yandex, "/claims/journal", _query, %{"cursor" => "cursor-1"}}
+    end
+
+    test "an assigned claim gets the arrival time of the next point", ctx do
+      set_status(ctx.yandex, ctx.delivery.external_id, "performer_found")
+
+      assert :ok = poll(ctx.branch)
+
+      assert_received {:yandex, "/claims/points-eta", _query, _body}
+
+      assert %Delivery{details: %{"point_eta" => "2026-07-17T08:40:00Z"}} =
+               Couriers.active(ctx.order.id)
+    end
+
+    test "a claim still being searched is not asked for the arrival time", ctx do
+      assert :ok = poll(ctx.branch)
+      refute_received {:yandex, "/claims/points-eta", _query, _body}
     end
 
     test "the poller keeps polling while claims are active and is started by cron", ctx do

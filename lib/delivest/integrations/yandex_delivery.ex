@@ -266,6 +266,7 @@ defmodule Delivest.Integrations.YandexDelivery do
         claim
         |> details()
         |> Map.merge(courier_details(token, claim, delivery.details))
+        |> Map.merge(point_eta(token, claim))
 
       Couriers.report(delivery, state(status), details)
     else
@@ -302,6 +303,21 @@ defmodule Delivest.Integrations.YandexDelivery do
   end
 
   defp courier_details(_token, _claim, known), do: Map.take(known, ["phone", "tracking_url"])
+
+  defp point_eta(token, %{"id" => claim_id, "status" => status})
+       when status in @assigned or status in @picked_up do
+    with {:ok, %{"route_points" => points}} <- Api.points_eta(token, claim_id),
+         %{"visited_at" => %{"expected" => expected}} when is_binary(expected) <-
+           points
+           |> Enum.filter(&(&1["visit_status"] == "pending"))
+           |> Enum.min_by(& &1["visit_order"], fn -> nil end) do
+      %{"point_eta" => expected}
+    else
+      _other -> %{}
+    end
+  end
+
+  defp point_eta(_token, _claim), do: %{}
 
   defp phone(token, %{"id" => claim_id} = claim) do
     with %{"id" => point_id} <- point(claim, "source"),

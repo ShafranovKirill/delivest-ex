@@ -16,6 +16,9 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
 
   def info(token, claim_id), do: call(token, "/claims/info", [claim_id: claim_id], %{})
 
+  def points_eta(token, claim_id),
+    do: call(token, "/claims/points-eta", [claim_id: claim_id], %{})
+
   def accept(token, claim_id, version),
     do: call(token, "/claims/accept", [claim_id: claim_id], %{version: version})
 

@@ -894,6 +894,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     >
       <.icon name="hero-phone" class="size-3.5" /> {courier_phone(@details["phone"])}
     </a>
+    <span :if={eta = point_eta(@details)} id={"order-yandex-eta-#{@delivery.order_id}"}>
+      {gettext("arrives by %{time}", time: OrderHelpers.local_time(eta))}
+    </span>
     <span :if={@details["price"]} class="text-base-content/60">
       {@details["price"]} ₽
     </span>
@@ -1033,6 +1036,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   end
 
   defp courier_eta(_courier), do: nil
+
+  defp point_eta(%{"point_eta" => value}) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} -> datetime
+      _error -> nil
+    end
+  end
+
+  defp point_eta(_details), do: nil
 
   defp overdue?(datetime), do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
 
