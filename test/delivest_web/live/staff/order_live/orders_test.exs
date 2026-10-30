@@ -208,6 +208,18 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
       assert has_element?(lv, "#order-unmapped-#{order.id}", "4")
+      assert has_element?(lv, "#order-gateway-#{order.id}", "Frontpad")
+      refute has_element?(lv, "#order-payment-#{order.id}")
+    end
+
+    test "an order of our own carries no gateway note", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
+
+      refute has_element?(lv, "#order-gateway-#{order.id}")
     end
 
     test "read-only staff cannot change orders", %{conn: conn, branch: branch, order: order} do

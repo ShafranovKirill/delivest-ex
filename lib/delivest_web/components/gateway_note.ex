@@ -28,6 +28,24 @@ defmodule DelivestWeb.GatewayNote do
 
   defp badge_text(%{name: name}), do: gettext("Gateway: %{crm}", crm: name)
 
+  attr :order, :map, required: true
+  attr :name, :string, required: true
+
+  def order_gateway_note(%{order: %{crm: nil}} = assigns), do: ~H""
+
+  def order_gateway_note(assigns) do
+    ~H"""
+    <span
+      id={"order-gateway-#{@order.id}"}
+      class="text-xs text-base-content/60"
+      title={gettext("Statuses and changes of this order come from %{crm}", crm: @name)}
+    >
+      <.icon name="hero-arrows-right-left" class="size-3.5" />
+      {gettext("Run by %{crm}", crm: @name)}
+    </span>
+    """
+  end
+
   attr :branch, :map, required: true
 
   def gateway_summary(assigns) do
