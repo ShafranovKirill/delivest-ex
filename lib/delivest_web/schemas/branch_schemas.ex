@@ -19,7 +19,23 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         latitude: %Schema{type: :number, format: :float, example: 55.7558, nullable: true},
         longitude: %Schema{type: :number, format: :float, example: 37.6173, nullable: true},
         phone_number: %Schema{type: :string, example: "+79990000000", nullable: true},
-        delivery_time: %Schema{type: :integer, example: "30", nullable: true},
+        delivery_time: %Schema{
+          type: :integer,
+          example: "30",
+          nullable: true,
+          description: "Минуты до готовности вместе с добавкой на загрузку"
+        },
+        intake: %Schema{
+          type: :object,
+          description:
+            "Режим приёма: normal, load (добавка к времени) или paused (заказы закрыты)",
+          properties: %{
+            mode: %Schema{type: :string, enum: ["normal", "load", "paused"]},
+            extra_minutes: %Schema{type: :integer},
+            until: %Schema{type: :string, format: :"date-time", nullable: true},
+            reason: %Schema{type: :string, nullable: true}
+          }
+        },
         working_hours: %Schema{
           type: :object,
           additionalProperties: true,

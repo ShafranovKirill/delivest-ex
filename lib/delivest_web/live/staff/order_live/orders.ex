@@ -9,6 +9,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   alias DelivestWeb.Staff.OrderLive.Components.{
     CancelOrderModal,
+    IntakeControls,
     OrderCardComponent,
     RevertStatusModal,
     OrdersToolbar,
@@ -74,6 +75,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
          socket
          |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
          |> assign(receipt_alerts: receipt_alerts(socket.assigns.current_branch.id))
+         |> assign(
+           intake: Delivest.Intake.status(socket.assigns.current_branch.id),
+           delivery_minutes: OrderDeadline.delivery_minutes(socket.assigns.current_branch.id)
+         )
          |> assign(
            busy_mode: Delivest.Integrations.YandexEda.busy_mode(socket.assigns.current_branch.id)
          )
@@ -215,6 +220,26 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
+  def handle_event("intake_pause", %{"duration" => duration} = params, socket) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+    result = Delivest.Intake.pause(staff, branch, duration(duration), params["reason"])
+    intake_result(socket, result)
+  end
+
+  def handle_event("intake_load", %{"minutes" => minutes, "duration" => duration}, socket) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+
+    result =
+      Delivest.Intake.start_load(staff, branch, String.to_integer(minutes), duration(duration))
+
+    intake_result(socket, result)
+  end
+
+  def handle_event("intake_resume", _params, socket) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+    intake_result(socket, Delivest.Intake.resume(staff, branch))
+  end
+
   def handle_event("retry_receipt", %{"id" => id}, socket),
     do: receipt_action(socket, id, &Delivest.Fiscal.retry/2)
 
@@ -298,6 +323,15 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   defp courier_code_error(_reason), do: gettext("Yandex Eda did not accept the request")
 
+  defp duration("end_of_day"), do: :end_of_day
+  defp duration(minutes), do: String.to_integer(minutes)
+
+  defp intake_result(socket, {:ok, _status}), do: load(socket)
+  defp intake_result(socket, {:error, :forbidden}), do: failed(socket, {:error, :forbidden})
+
+  defp intake_result(socket, _error),
+    do: {:noreply, put_flash(socket, :error, gettext("Failed to update the order"))}
+
   defp receipt_action(socket, id, action) do
     branch_id = socket.assigns.current_branch.id
 
@@ -357,12 +391,19 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
       >
         <:actions>
+          <IntakeControls.menu can_manage={Identity.can?(@current_staff, "orders.update")} />
           <.link navigate={~p"/staff/b/#{@current_branch}/orders/new"} class="btn btn-primary">
             <.icon name="hero-plus" class="size-5" />
             {gettext("New Order")}
           </.link>
         </:actions>
       </.page_header>
+
+      <IntakeControls.plate
+        intake={@intake}
+        branch_id={@current_branch.id}
+        can_manage={Identity.can?(@current_staff, "orders.update")}
+      />
 
       <DelivestWeb.Staff.IntegrationLive.YandexEdaBusy.plate
         busy={@busy_mode}
