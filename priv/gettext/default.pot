@@ -869,7 +869,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:113
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:133
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:134
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:149
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:475
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:523
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:454
@@ -902,7 +902,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:112
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:132
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:133
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:148
 #: lib/delivest_web/live/staff/pos_live/index.ex:403
 #: lib/delivest_web/live/staff/product_live/bulk.ex:382
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:452
@@ -2067,7 +2067,7 @@ msgstr ""
 msgid "CRM orders cannot be edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:21
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:25
 #, elixir-autogen, elixir-format
 msgid "Failed to save order"
 msgstr ""
@@ -2906,7 +2906,7 @@ msgstr ""
 msgid "Phone must be +7XXXXXXXXXX"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:16
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:20
 #, elixir-autogen, elixir-format
 msgid "Prices have changed, check the cart"
 msgstr ""
@@ -3046,7 +3046,7 @@ msgstr ""
 msgid "The client has already used this promotion"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:19
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:23
 #, elixir-autogen, elixir-format
 msgid "The promotion has just run out, the cart was recalculated"
 msgstr ""
@@ -7272,7 +7272,7 @@ msgstr ""
 msgid "The order came from a sales channel"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:15
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:19
 #, elixir-autogen, elixir-format
 msgid "The order has a refund"
 msgstr ""
@@ -7287,7 +7287,7 @@ msgstr ""
 msgid "The order is finished"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:14
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:18
 #, elixir-autogen, elixir-format
 msgid "The order is paid"
 msgstr ""
@@ -8633,7 +8633,7 @@ msgstr ""
 msgid "Stars"
 msgstr ""
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:128
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:143
 #, elixir-autogen, elixir-format
 msgid "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
 msgstr ""
@@ -8659,3 +8659,18 @@ msgid "%{count} order needs attention"
 msgid_plural "%{count} orders need attention"
 msgstr[0] ""
 msgstr[1] ""
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:139
+#, elixir-autogen, elixir-format
+msgid "At most, % of the order total"
+msgstr ""
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:130
+#, elixir-autogen, elixir-format
+msgid "Customers can pay part of an order with stars"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:16
+#, elixir-autogen, elixir-format
+msgid "The order is paid with stars, the items cannot be changed"
+msgstr ""

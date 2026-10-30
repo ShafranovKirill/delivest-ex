@@ -20,8 +20,12 @@ defmodule Delivest.Loyalty.OrderSubscriber do
   end
 
   defp run(%{"to" => "completed"}, order), do: wrap(Loyalty.accrue(order))
+
+  defp run(%{"to" => "cancelled"}, order) do
+    with :ok <- wrap(Loyalty.reverse(order)), do: wrap(Loyalty.refund(order))
+  end
+
   defp run(%{"from" => "completed"}, order), do: wrap(Loyalty.reverse(order))
-  defp run(%{"to" => "cancelled"}, order), do: wrap(Loyalty.reverse(order))
   defp run(_payload, _order), do: :ok
 
   defp wrap({:ok, _entry}), do: :ok

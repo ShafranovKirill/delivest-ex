@@ -49,12 +49,21 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       enabled: enabled,
       per_rubles: loyalty.per_rubles,
       stars: loyalty.stars,
-      expire_days: loyalty.expire_days
+      expire_days: loyalty.expire_days,
+      spend_enabled: enabled and loyalty.spend_enabled == true,
+      max_percent: loyalty.max_percent || 50
     }
   end
 
   defp loyalty(_info, _branch),
-    do: %{enabled: false, per_rubles: nil, stars: nil, expire_days: nil}
+    do: %{
+      enabled: false,
+      per_rubles: nil,
+      stars: nil,
+      expire_days: nil,
+      spend_enabled: false,
+      max_percent: nil
+    }
 
   defp branch_info(%Ecto.Association.NotLoaded{}, _branch), do: nil
   defp branch_info(nil, _branch), do: nil

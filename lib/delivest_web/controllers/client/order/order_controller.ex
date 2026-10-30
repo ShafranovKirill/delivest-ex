@@ -30,7 +30,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
   )
 
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
-                    payment_method cook_by comment persons cash_given address expected_total)
+                    payment_method cook_by comment persons cash_given address expected_total spend_points)
 
   def create(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
@@ -301,7 +301,10 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :product_unavailable,
               :client_blocked,
               :price_changed,
-              :promo_unavailable
+              :promo_unavailable,
+              :points_unavailable,
+              :insufficient_points,
+              :points_over_limit
             ] do
     ApiError.send_error(conn, :unprocessable_entity, reason, Phoenix.Naming.humanize(reason))
   end

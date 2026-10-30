@@ -11,6 +11,10 @@ defmodule DelivestWeb.Staff.OrderLive.SaveErrors do
   def message(:crm_order), do: gettext("The CRM does not accept this change")
   def message(:with_courier), do: gettext("The order is with the courier")
   def message(:order_ready), do: gettext("The order is ready, the time cannot be changed")
+
+  def message(:with_points),
+    do: gettext("The order is paid with stars, the items cannot be changed")
+
   def message(:paid), do: gettext("The order is paid")
   def message(:refunded), do: gettext("The order has a refund")
   def message(:price_changed), do: gettext("Prices have changed, check the cart")

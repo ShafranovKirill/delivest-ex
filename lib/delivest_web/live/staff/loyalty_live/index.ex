@@ -124,6 +124,21 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
           label={gettext("Stars expire after, days")}
           disabled={not @can_edit}
         />
+        <.input
+          field={@form[:spend_enabled]}
+          type="checkbox"
+          label={gettext("Customers can pay part of an order with stars")}
+          disabled={not @can_edit}
+        />
+        <.input
+          :if={@form[:spend_enabled].value in [true, "true"]}
+          field={@form[:max_percent]}
+          type="number"
+          min="1"
+          max="100"
+          label={gettext("At most, % of the order total")}
+          disabled={not @can_edit}
+        />
         <p class="text-sm text-base-content/60">
           {gettext(
             "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."

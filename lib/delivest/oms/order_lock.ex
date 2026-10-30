@@ -79,6 +79,9 @@ defmodule Delivest.Oms.OrderLock do
   defp check(%Order{awaiting_payment: true}, change, _payments) when change != :comment,
     do: {:error, :awaiting_payment}
 
+  defp check(%Order{points_spent: points}, :items, _payments) when points > 0,
+    do: {:error, :with_points}
+
   defp check(%Order{channel: %{}}, change, _payments) when change != :comment,
     do: {:error, :channel_order}
 

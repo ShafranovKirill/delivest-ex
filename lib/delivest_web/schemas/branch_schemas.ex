@@ -43,7 +43,16 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
             enabled: %Schema{type: :boolean},
             per_rubles: %Schema{type: :integer, nullable: true},
             stars: %Schema{type: :integer, nullable: true},
-            expire_days: %Schema{type: :integer, nullable: true}
+            expire_days: %Schema{type: :integer, nullable: true},
+            spend_enabled: %Schema{
+              type: :boolean,
+              description: "Можно списывать звёзды с суммы заказа"
+            },
+            max_percent: %Schema{
+              type: :integer,
+              nullable: true,
+              description: "Максимальная доля заказа в процентах, которую можно оплатить звёздами"
+            }
           }
         },
         payment_methods: %Schema{

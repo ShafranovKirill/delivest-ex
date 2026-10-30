@@ -1,7 +1,7 @@
 defmodule Delivest.Loyalty.Entry do
   use Ecto.Schema
 
-  @kinds [:accrual, :accrual_reversal, :expire, :adjust]
+  @kinds [:accrual, :accrual_reversal, :expire, :adjust, :redeem, :refund]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id

@@ -102,6 +102,13 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "Без лука",
           nullable: true
         },
+        spend_points: %Schema{
+          type: :integer,
+          nullable: true,
+          example: 100,
+          description:
+            "Сколько звёзд списать с суммы заказа (1 звезда = 1 ₽). Только для вошедшего клиента в филиале с включённым списанием"
+        },
         address: AddressRequest,
         expected_total: %Schema{
           type: :integer,

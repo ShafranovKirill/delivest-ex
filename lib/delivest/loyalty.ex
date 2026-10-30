@@ -75,6 +75,51 @@ defmodule Delivest.Loyalty do
     end
   end
 
+  def spend(%Order{points_spent: stars}) when not is_integer(stars) or stars <= 0, do: {:ok, nil}
+  def spend(%Order{client_id: nil}), do: {:error, :points_unavailable}
+
+  def spend(%Order{} = order) do
+    Repo.transaction(fn ->
+      lock_account(order.client_id)
+
+      if balance(order.client_id) < order.points_spent, do: Repo.rollback(:insufficient_points)
+
+      consume(order.client_id, order.points_spent)
+
+      case insert_entry(%{
+             client_id: order.client_id,
+             branch_id: order.branch_id,
+             order_id: order.id,
+             kind: :redeem,
+             amount: -order.points_spent
+           }) do
+        {:ok, entry} -> entry
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def refund(%Order{points_spent: stars}) when not is_integer(stars) or stars <= 0,
+    do: {:ok, nil}
+
+  def refund(%Order{} = order) do
+    with %Entry{} <- find_entry(order.id, :redeem),
+         false <- entry_exists?(order.id, :refund) do
+      insert_entry(%{
+        client_id: order.client_id,
+        branch_id: order.branch_id,
+        order_id: order.id,
+        kind: :refund,
+        amount: order.points_spent,
+        remaining: order.points_spent,
+        expires_at:
+          DateTime.add(DateTime.utc_now(:second), settings(order.branch_id).expire_days, :day)
+      })
+    else
+      _ -> {:ok, nil}
+    end
+  end
+
   def reverse(%Order{client_id: nil}), do: {:ok, nil}
 
   def reverse(%Order{} = order) do
@@ -171,6 +216,26 @@ defmodule Delivest.Loyalty do
   end
 
   defp positive(value), do: max(value, 0)
+
+  defp consume(client_id, stars) do
+    entries =
+      Repo.all(
+        from(e in Entry,
+          where: e.client_id == ^client_id and e.remaining > 0,
+          order_by: [asc_nulls_last: e.expires_at, asc: e.inserted_at]
+        )
+      )
+
+    Enum.reduce_while(entries, stars, fn
+      _entry, 0 ->
+        {:halt, 0}
+
+      entry, left ->
+        taken = min(entry.remaining, left)
+        Repo.update_all(from(e in Entry, where: e.id == ^entry.id), inc: [remaining: -taken])
+        {:cont, left - taken}
+    end)
+  end
 
   defp expire(entry) do
     Repo.transaction(fn ->

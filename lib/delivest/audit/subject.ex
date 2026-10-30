@@ -16,6 +16,12 @@ defmodule Delivest.Audit.Subject do
   def describe(%Branch{} = branch), do: build("branch", branch.id, branch.name, branch.id)
   def describe(%Staff{} = staff), do: build("staff", staff.id, staff.name || staff.login)
   def describe(%Role{} = role), do: build("role", role.id, role.name)
+
+  def describe(%Delivest.Loyalty.Entry{} = entry) do
+    sign = if entry.amount > 0, do: "+", else: ""
+    build("client", entry.client_id, "#{sign}#{entry.amount} ★", entry.branch_id)
+  end
+
   def describe(%Client{} = client), do: build("client", client.id, client.name || client.phone)
 
   def describe(%Promotion{} = promotion),
