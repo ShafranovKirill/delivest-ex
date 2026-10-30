@@ -5506,6 +5506,7 @@ msgid "Pause in Yandex Eda"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:75
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:64
 #, elixir-autogen, elixir-format
 msgid "Reason"
 msgstr ""
@@ -5597,12 +5598,12 @@ msgstr ""
 msgid "Review"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:80
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:86
 #, elixir-autogen, elixir-format
 msgid "Cancelled in Yandex"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:75
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:81
 #, elixir-autogen, elixir-format
 msgid "Cancelled in Yandex, not here"
 msgstr ""
@@ -5617,27 +5618,27 @@ msgstr ""
 msgid "Day"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:79
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:85
 #, elixir-autogen, elixir-format
 msgid "Delivered in Yandex"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:76
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:82
 #, elixir-autogen, elixir-format
 msgid "Delivered in Yandex, cancelled here"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:78
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:84
 #, elixir-autogen, elixir-format
 msgid "In progress in Yandex"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:73
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:79
 #, elixir-autogen, elixir-format
 msgid "No such order here"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:74
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:80
 #, elixir-autogen, elixir-format
 msgid "Not in Yandex history"
 msgstr ""
@@ -5662,7 +5663,7 @@ msgstr ""
 msgid "Reconcile"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:81
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:87
 #, elixir-autogen, elixir-format
 msgid "Status unknown"
 msgstr ""
@@ -7963,4 +7964,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:80
 #, elixir-autogen, elixir-format
 msgid "The menu differs from the CRM: %{count}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:67
+#, elixir-autogen, elixir-format
+msgid "Items cost differs by %{amount}"
 msgstr ""

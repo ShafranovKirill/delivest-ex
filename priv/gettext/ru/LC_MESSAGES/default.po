@@ -5508,6 +5508,7 @@ msgid "Pause in Yandex Eda"
 msgstr "Пауза в Яндекс Еде"
 
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:75
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:64
 #, elixir-autogen, elixir-format
 msgid "Reason"
 msgstr "Причина"
@@ -5599,12 +5600,12 @@ msgstr "Проверить"
 msgid "Review"
 msgstr "Отзыв"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:80
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:86
 #, elixir-autogen, elixir-format
 msgid "Cancelled in Yandex"
 msgstr "Отменён в Яндексе"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:75
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:81
 #, elixir-autogen, elixir-format
 msgid "Cancelled in Yandex, not here"
 msgstr "Отменён в Яндексе, у нас нет"
@@ -5619,27 +5620,27 @@ msgstr "Сравнивает историю заказов Яндекс Еды �
 msgid "Day"
 msgstr "День"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:79
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:85
 #, elixir-autogen, elixir-format
 msgid "Delivered in Yandex"
 msgstr "Доставлен в Яндексе"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:76
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:82
 #, elixir-autogen, elixir-format
 msgid "Delivered in Yandex, cancelled here"
 msgstr "Доставлен в Яндексе, у нас отменён"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:78
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:84
 #, elixir-autogen, elixir-format
 msgid "In progress in Yandex"
 msgstr "В работе в Яндексе"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:73
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:79
 #, elixir-autogen, elixir-format
 msgid "No such order here"
 msgstr "Нет у нас"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:74
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:80
 #, elixir-autogen, elixir-format
 msgid "Not in Yandex history"
 msgstr "Нет в истории Яндекса"
@@ -5664,7 +5665,7 @@ msgstr "Выберите день"
 msgid "Reconcile"
 msgstr "Сверить"
 
-#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:81
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:87
 #, elixir-autogen, elixir-format
 msgid "Status unknown"
 msgstr "Статус неизвестен"
@@ -7969,3 +7970,8 @@ msgstr "Требует внимания"
 #, elixir-autogen, elixir-format
 msgid "The menu differs from the CRM: %{count}"
 msgstr "Меню расходится с CRM: %{count}"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:67
+#, elixir-autogen, elixir-format
+msgid "Items cost differs by %{amount}"
+msgstr "Сумма позиций расходится на %{amount}"

@@ -60,6 +60,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaReconciliation do
             <span :if={row.order} class="text-base-content/60">
               {gettext("ours")}: {OrderHelpers.status_label(row.order.status)}
             </span>
+            <span :if={row.cancel_reason} class="text-base-content/60">
+              {gettext("Reason")}: {row.cancel_reason}
+            </span>
+            <span :if={row.cost_diff} class="text-error">
+              {gettext("Items cost differs by %{amount}", amount: OrderHelpers.money(row.cost_diff))}
+            </span>
           </li>
         </ul>
       </.async_result>

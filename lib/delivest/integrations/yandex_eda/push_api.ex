@@ -41,6 +41,16 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     end
   end
 
+  def orders_details(%Settings{} = settings, eats_ids) do
+    with {:ok, %{"orders" => orders}} <-
+           call(settings, "/v1/get-orders-details", %{eats_ids: eats_ids}) do
+      {:ok, orders}
+    else
+      {:ok, body} -> {:error, {:yandex_eda, body}}
+      error -> error
+    end
+  end
+
   defp call(settings, path, body) do
     TokenCache.run(token_key(settings), fn -> issue(settings) end, fn token ->
       Client.post(path, body,

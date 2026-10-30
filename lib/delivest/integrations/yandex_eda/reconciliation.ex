@@ -1,12 +1,14 @@
 defmodule Delivest.Integrations.YandexEda.Reconciliation do
   import Ecto.Query
 
-  alias Delivest.{LocalTime, Repo}
+  alias Delivest.{LocalTime, Money, Repo}
   alias Delivest.Integrations.YandexEda.{Clock, PushApi}
   alias Delivest.Oms.Order
 
   @provider "yandex_eda"
+  @detailed [:cancelled_in_yandex, :cancelled_here]
   @page 1000
+  @details_page 100
 
   def run(settings, branch_id, %Date{} = date) do
     zone = LocalTime.timezone(branch_id)
@@ -21,11 +23,58 @@ defmodule Delivest.Integrations.YandexEda.Reconciliation do
       extra =
         for {eats_id, order} <- ours,
             not MapSet.member?(known, eats_id),
-            do: %{eats_id: eats_id, order: order, remote: nil, problem: :not_in_yandex}
+            do: %{
+              eats_id: eats_id,
+              order: order,
+              remote: nil,
+              problem: :not_in_yandex,
+              cancel_reason: nil,
+              cost_diff: nil
+            }
 
-      {:ok, %{total: length(remote), problems: Enum.reject(rows ++ extra, &is_nil(&1.problem))}}
+      problems = Enum.reject(rows ++ extra, &is_nil(&1.problem))
+      {:ok, %{total: length(remote), problems: with_details(settings, problems)}}
     end
   end
+
+  defp with_details(settings, problems) do
+    ids = for %{problem: p, eats_id: id} <- problems, p in @detailed, do: id
+    details = details(settings, ids)
+
+    Enum.map(problems, fn row ->
+      case Map.get(details, row.eats_id) do
+        nil ->
+          row
+
+        detail ->
+          Map.merge(row, %{
+            cancel_reason: detail["cancel_reason"],
+            cost_diff: cost_diff(row, detail)
+          })
+      end
+    end)
+  end
+
+  defp details(_settings, []), do: %{}
+
+  defp details(settings, ids) do
+    ids
+    |> Enum.chunk_every(@details_page)
+    |> Enum.flat_map(fn chunk ->
+      case PushApi.orders_details(settings, chunk) do
+        {:ok, orders} -> orders
+        {:error, _reason} -> []
+      end
+    end)
+    |> Map.new(&{&1["eats_id"], &1})
+  end
+
+  defp cost_diff(%{order: %Order{} = order}, %{"items_cost" => cost}) when is_number(cost) do
+    diff = Money.from_rubles(cost) - (order.total_amount - order.delivery_amount)
+    if diff == 0, do: nil, else: diff
+  end
+
+  defp cost_diff(_row, _detail), do: nil
 
   defp history(settings, branch_id, from, to, offset, acc) do
     filter = %{
@@ -58,7 +107,9 @@ defmodule Delivest.Integrations.YandexEda.Reconciliation do
       eats_id: remote["eats_id"],
       order: order,
       remote: remote,
-      problem: problem(remote["status"], order)
+      problem: problem(remote["status"], order),
+      cancel_reason: nil,
+      cost_diff: nil
     }
   end
 
