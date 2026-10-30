@@ -145,13 +145,6 @@ defmodule Delivest.Integrations.Crm do
     end
   end
 
-  def own_pos?(%Branch{} = branch) do
-    case active_provider(branch) do
-      nil -> false
-      provider -> :own_pos in capabilities(provider)
-    end
-  end
-
   def can?(%Order{crm: %{provider: provider}}, capability),
     do: capability in capabilities(provider)
 
@@ -206,6 +199,13 @@ defmodule Delivest.Integrations.Crm do
   end
 
   def menu_owner(_branch_id, _product_id), do: nil
+
+  def stops_source?(provider) do
+    case Registry.fetch(provider) do
+      {:ok, module} -> exported?(module, :fetch_stops, 1)
+      _ -> false
+    end
+  end
 
   def fetch_menu(branch_id) do
     with {:ok, name, module} <- branch_provider(branch_id),

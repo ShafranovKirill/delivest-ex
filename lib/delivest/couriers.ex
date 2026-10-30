@@ -7,7 +7,7 @@ defmodule Delivest.Couriers do
   alias Delivest.Couriers.{Cash, Contact, Delivery, Registry}
   alias Delivest.Identity.{Branch, Staff, StaffBranch}
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
-  alias Delivest.Integrations.Crm
+  alias Delivest.Gateway
   alias Delivest.Oms.{Order, OrderFlow, Orders}
 
   @permission "orders.deliver"
@@ -45,7 +45,7 @@ defmodule Delivest.Couriers do
 
   def automatic?(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
-      {:ok, branch} -> is_nil(Crm.active_provider(branch))
+      {:ok, branch} -> not Gateway.active?(branch)
       _error -> false
     end
   end
