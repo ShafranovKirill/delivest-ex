@@ -3,7 +3,6 @@ defmodule Delivest.Integrations.YandexDelivery.Settings do
   import Ecto.Changeset
 
   @taxi_classes [:courier, :express]
-  @vat_codes [:vat_none, :vat0, :vat10, :vat20]
 
   @type t :: %__MODULE__{}
 
@@ -16,11 +15,9 @@ defmodule Delivest.Integrations.YandexDelivery.Settings do
     field :contact_email, :string
     field :confirm_codes, :boolean, default: false
     field :auto_accept, :boolean, default: false
-    field :vat, Ecto.Enum, values: @vat_codes, default: :vat_none
   end
 
   def taxi_classes, do: @taxi_classes
-  def vat_codes, do: @vat_codes
 
   def changeset(settings, attrs) do
     settings
@@ -31,11 +28,10 @@ defmodule Delivest.Integrations.YandexDelivery.Settings do
       :contact_phone,
       :contact_email,
       :confirm_codes,
-      :auto_accept,
-      :vat
+      :auto_accept
     ])
     |> update_change(:token, &String.trim/1)
-    |> validate_required([:taxi_class, :vat])
+    |> validate_required([:taxi_class])
     |> validate_format(:contact_email, ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
     |> validate_format(:contact_phone, ~r/^\+7\d{10}$/)
     |> validate_length(:contact_name, max: 100)

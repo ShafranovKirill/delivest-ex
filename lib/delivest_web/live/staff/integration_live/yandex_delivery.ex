@@ -67,14 +67,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
   defp taxi_class_options,
     do: [{gettext("Courier, up to 10 kg"), :courier}, {gettext("Express, up to 20 kg"), :express}]
 
-  defp vat_options,
-    do: [
-      {gettext("No VAT"), :vat_none},
-      {"0%", :vat0},
-      {"10%", :vat10},
-      {"20%", :vat20}
-    ]
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -172,13 +164,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
             type="select"
             label={gettext("Tariff")}
             options={taxi_class_options()}
-            disabled={not @can_edit}
-          />
-          <.input
-            field={@form[:vat]}
-            type="select"
-            label={gettext("VAT for the payment to the courier")}
-            options={vat_options()}
             disabled={not @can_edit}
           />
         </div>

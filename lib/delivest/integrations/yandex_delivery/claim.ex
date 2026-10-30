@@ -17,7 +17,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
          {:ok, destination} <- destination_point(order, settings) do
       {:ok,
        %{
-         items: items(order, settings),
+         items: items(order),
          route_points: [source, destination],
          emergency_contact: source.contact |> Map.delete(:email),
          client_requirements: %{taxi_class: to_string(settings.taxi_class)},
@@ -114,7 +114,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
       else: point
   end
 
-  defp items(order, settings) do
+  defp items(order) do
     goods =
       Enum.map(
         order.items,
@@ -130,7 +130,8 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
         do: fit(goods, order.total_amount - (order.delivery_amount || 0)) ++ delivery(order),
         else: goods
 
-    Enum.map(lines, &item(&1, order, settings))
+    fiscal = Delivest.Fiscal.settings(order.branch_id)
+    Enum.map(lines, &item(&1, order, fiscal))
   end
 
   defp delivery(%Order{delivery_amount: amount}) when is_integer(amount) and amount > 0,
@@ -176,13 +177,16 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
   defp put_fiscalization(item, line, order, settings) do
     if collects_payment?(order) do
       Map.put(item, :fiscalization, %{
-        vat_code_str: to_string(settings.vat),
+        vat_code_str: vat_code(if(line[:service], do: settings.delivery_vat, else: settings.vat)),
         item_type: if(line[:service], do: "service", else: "product")
       })
     else
       item
     end
   end
+
+  defp vat_code(:none), do: "vat_none"
+  defp vat_code(rate), do: to_string(rate)
 
   defp comment(%Order{comment: comment} = order) do
     Enum.join(Enum.reject([label(order), comment], &blank?/1), ". ")
