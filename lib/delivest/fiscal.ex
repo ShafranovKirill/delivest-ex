@@ -48,6 +48,19 @@ defmodule Delivest.Fiscal do
 
   def get(id), do: Repo.get(Receipt, id)
 
+  def sale_receipt(order_id),
+    do:
+      Repo.one(
+        from(r in Receipt,
+          where: r.order_id == ^order_id and r.kind == :sell and r.status != :fail,
+          order_by: [desc: r.inserted_at],
+          limit: 1
+        )
+      )
+
+  def qr_svg(url) when is_binary(url),
+    do: url |> EQRCode.encode() |> EQRCode.svg(width: 220, viewbox: true)
+
   def list_branch(branch_id, status \\ nil, limit \\ 200) do
     from(r in Receipt,
       join: o in Order,

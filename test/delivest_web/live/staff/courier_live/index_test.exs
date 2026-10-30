@@ -92,6 +92,37 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
     assert lv |> element("#courier-cash-amount") |> render() =~ "150"
   end
 
+  test "after the handover the courier shows the receipt QR", ctx do
+    info = Repo.get_by!(BranchInfo, branch_id: ctx.branch.id)
+
+    info
+    |> Ecto.Changeset.change(fiscal: %Delivest.Fiscal.BranchSettings{mode: :own})
+    |> Repo.update!()
+
+    ctx.order |> Ecto.Changeset.change(status: :delivering) |> Repo.update!()
+
+    ctx.delivery
+    |> Ecto.Changeset.change(courier_id: ctx.courier.id, status: :picked_up)
+    |> Repo.update!()
+
+    {:ok, lv, _html} = page(ctx.conn, ctx.branch)
+    lv |> element("#hand-over-#{ctx.delivery.id}") |> render_click()
+    assert has_element?(lv, "#courier-receipt-wait")
+
+    Repo.insert!(%Delivest.Fiscal.Receipt{
+      order_id: ctx.order.id,
+      branch_id: ctx.branch.id,
+      kind: :sell,
+      provider: "atol",
+      amount: 15_000,
+      status: :done,
+      payload: %{"ofd_receipt_url" => "https://ofd.example/r/1"}
+    })
+
+    send(lv.pid, :refresh_receipt)
+    assert lv |> element("#courier-receipt-qr") |> render() =~ "<svg"
+  end
+
   test "a request taken by another courier disappears", ctx do
     {:ok, lv, _html} = page(ctx.conn, ctx.branch)
     other = staff(["orders.deliver"], ctx.branch) |> Repo.preload([:role, :branches])

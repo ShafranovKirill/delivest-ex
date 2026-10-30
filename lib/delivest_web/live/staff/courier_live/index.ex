@@ -3,7 +3,8 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
 
   alias Delivest.Oms.Order
 
-  alias Delivest.{Couriers, Identity}
+  alias Delivest.{Couriers, Fiscal, Identity}
+  alias Delivest.Fiscal.{BranchSettings, Receipt}
   alias Delivest.Oms.{OrderDeadline, Orders}
   alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.OrderLive.{OrderHelpers, StatusErrors}
@@ -27,6 +28,9 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
      |> assign(
        page_title: gettext("Deliveries"),
        pickup: branch.info,
+       fiscal: BranchSettings.own?(Fiscal.settings(branch_id)),
+       handed: nil,
+       receipt: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id)
      )
      |> load()}
@@ -48,14 +52,18 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
 
     socket =
       case run(action, staff, branch.id, id) do
-        {:ok, _result} -> socket
+        {:ok, _result} -> handed(socket, action, id)
         error -> put_flash(socket, :error, StatusErrors.message(error))
       end
 
     {:noreply, load(socket)}
   end
 
+  def handle_event("close_receipt", _params, socket),
+    do: {:noreply, assign(socket, handed: nil, receipt: nil)}
+
   @impl true
+  def handle_info(:refresh_receipt, socket), do: {:noreply, refresh_receipt(socket)}
   def handle_info({:deliveries_changed, _branch_id}, socket), do: {:noreply, load(socket)}
   def handle_info({Orders, _event, _order}, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
@@ -64,6 +72,26 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
   defp run("refuse", staff, branch_id, id), do: Couriers.refuse(staff, branch_id, id)
   defp run("pick_up", staff, branch_id, id), do: Couriers.pick_up(staff, branch_id, id)
   defp run("hand_over", staff, branch_id, id), do: Couriers.hand_over(staff, branch_id, id)
+
+  defp handed(%{assigns: %{fiscal: true}} = socket, "hand_over", id) do
+    case Enum.find(socket.assigns.mine, &(&1.id == id)) do
+      nil -> socket
+      delivery -> socket |> assign(handed: delivery.order) |> refresh_receipt()
+    end
+  end
+
+  defp handed(socket, _action, _id), do: socket
+
+  defp refresh_receipt(%{assigns: %{handed: nil}} = socket), do: socket
+
+  defp refresh_receipt(socket) do
+    receipt = Fiscal.sale_receipt(socket.assigns.handed.id)
+
+    if !(receipt && receipt.status == :done) and connected?(socket),
+      do: Process.send_after(self(), :refresh_receipt, 3_000)
+
+    assign(socket, receipt: receipt)
+  end
 
   defp load(socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
@@ -105,6 +133,8 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
         class="btn btn-outline btn-block justify-center data-[state=on]:btn-ghost data-[state=on]:btn-sm data-[state=on]:text-success"
       />
 
+      <.receipt_panel :if={@handed} order={@handed} receipt={@receipt} />
+
       <.cash_summary balance={@balance} />
 
       <section id="courier-mine" class="space-y-3">
@@ -134,6 +164,47 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
         />
       </section>
     </div>
+    """
+  end
+
+  attr :order, :map, required: true
+  attr :receipt, :map, default: nil
+
+  defp receipt_panel(assigns) do
+    assigns = assign(assigns, url: assigns.receipt && Receipt.ofd_url(assigns.receipt))
+
+    ~H"""
+    <section
+      id="courier-receipt"
+      class="space-y-3 rounded-box border border-base-300 bg-base-100 p-4 text-center"
+    >
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold">
+          {gettext("Receipt for order #%{number}", number: Order.short_number(@order))}
+        </h2>
+        <button type="button" phx-click="close_receipt" class="btn btn-ghost btn-sm btn-square">
+          <.icon name="hero-x-mark" class="size-5" />
+        </button>
+      </div>
+      <div :if={@url} id="courier-receipt-qr" class="space-y-2">
+        <div class="mx-auto w-56 bg-white p-2">{Phoenix.HTML.raw(Fiscal.qr_svg(@url))}</div>
+        <a href={@url} target="_blank" rel="noopener" class="link link-primary break-all text-sm">
+          {gettext("Open the receipt")}
+        </a>
+      </div>
+      <p :if={!@url && @receipt && @receipt.status == :done} class="text-success">
+        {gettext("The receipt is issued")}
+      </p>
+      <p
+        :if={!@url && !(@receipt && @receipt.status == :done)}
+        id="courier-receipt-wait"
+        class="text-base-content/70"
+      >
+        <span class="loading loading-spinner loading-sm"></span> {gettext(
+          "The receipt is being issued"
+        )}
+      </p>
+    </section>
     """
   end
 

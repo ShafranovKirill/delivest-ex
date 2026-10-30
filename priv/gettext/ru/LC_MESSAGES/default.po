@@ -966,7 +966,7 @@ msgstr "Сотрудник успешно обновлен"
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:130
 #: lib/delivest_web/live/staff/client_live/clients.ex:304
 #: lib/delivest_web/live/staff/product_live/products.ex:544
-#: lib/delivest_web/live/staff/receipt_live/index.ex:55
+#: lib/delivest_web/live/staff/receipt_live/index.ex:57
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr "Статус"
@@ -1153,7 +1153,7 @@ msgstr "2. Оформление"
 
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:81
 #: lib/delivest_web/live/staff/order_live/components/status_tabs.ex:19
-#: lib/delivest_web/live/staff/receipt_live/index.ex:99
+#: lib/delivest_web/live/staff/receipt_live/index.ex:101
 #, elixir-autogen, elixir-format
 msgid "All"
 msgstr "Все"
@@ -1293,7 +1293,7 @@ msgstr "Создать клиента"
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:65
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:25
-#: lib/delivest_web/live/staff/receipt_live/index.ex:56
+#: lib/delivest_web/live/staff/receipt_live/index.ex:58
 #, elixir-autogen, elixir-format
 msgid "Created"
 msgstr "Новый"
@@ -6362,116 +6362,116 @@ msgstr "Этот заказ не возят наши курьеры"
 msgid "This order is not yours"
 msgstr "Это не ваш заказ"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:218
+#: lib/delivest_web/live/staff/courier_live/index.ex:283
 #, elixir-autogen, elixir-format
 msgid "Deliver to"
 msgstr "Куда везти"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:335
+#: lib/delivest_web/live/staff/courier_live/index.ex:400
 #, elixir-autogen, elixir-format
 msgid "Delivered, payment received"
 msgstr "Вручил, оплату получил"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:65
-#: lib/delivest_web/live/staff/courier_live/index.ex:28
-#: lib/delivest_web/live/staff/courier_live/index.ex:82
+#: lib/delivest_web/live/staff/courier_live/index.ex:29
+#: lib/delivest_web/live/staff/courier_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Deliveries"
 msgstr "Доставки"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:111
+#: lib/delivest_web/live/staff/courier_live/index.ex:141
 #, elixir-autogen, elixir-format
 msgid "My orders"
 msgstr "Мои заказы"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:282
+#: lib/delivest_web/live/staff/courier_live/index.ex:347
 #, elixir-autogen, elixir-format
 msgid "Navigator"
 msgstr "Навигатор"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:125
+#: lib/delivest_web/live/staff/courier_live/index.ex:155
 #, elixir-autogen, elixir-format
 msgid "New requests"
 msgstr "Новые заявки"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:127
+#: lib/delivest_web/live/staff/courier_live/index.ex:157
 #, elixir-autogen, elixir-format
 msgid "No new requests"
 msgstr "Новых заявок нет"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:264
+#: lib/delivest_web/live/staff/courier_live/index.ex:329
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:312
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:332
 #, elixir-autogen, elixir-format
 msgid "Paid"
 msgstr "Оплачен"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:331
+#: lib/delivest_web/live/staff/courier_live/index.ex:396
 #, elixir-autogen, elixir-format
 msgid "Payment received from the customer?"
 msgstr "Оплата от клиента получена?"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:210
+#: lib/delivest_web/live/staff/courier_live/index.ex:275
 #, elixir-autogen, elixir-format
 msgid "Pick up"
 msgstr "Откуда забрать"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:321
+#: lib/delivest_web/live/staff/courier_live/index.ex:386
 #, elixir-autogen, elixir-format
 msgid "Picked up"
 msgstr "Забрал"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:311
+#: lib/delivest_web/live/staff/courier_live/index.ex:376
 #, elixir-autogen, elixir-format
 msgid "Refuse"
 msgstr "Отказаться"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:308
+#: lib/delivest_web/live/staff/courier_live/index.ex:373
 #, elixir-autogen, elixir-format
 msgid "Refuse this order?"
 msgstr "Отказаться от заказа?"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:321
+#: lib/delivest_web/live/staff/courier_live/index.ex:386
 #, elixir-autogen, elixir-format
 msgid "Still cooking"
 msgstr "Ещё готовится"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:299
+#: lib/delivest_web/live/staff/courier_live/index.ex:364
 #, elixir-autogen, elixir-format
 msgid "Take"
 msgstr "Взять"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:285
+#: lib/delivest_web/live/staff/courier_live/index.ex:350
 #, elixir-autogen, elixir-format
 msgid "Yandex Maps"
 msgstr "Яндекс Карты"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:113
+#: lib/delivest_web/live/staff/courier_live/index.ex:143
 #, elixir-autogen, elixir-format
 msgid "You have no orders"
 msgstr "У вас нет заказов"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:230
+#: lib/delivest_web/live/staff/courier_live/index.ex:295
 #, elixir-autogen, elixir-format
 msgid "apartment"
 msgstr "кв."
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:224
+#: lib/delivest_web/live/staff/courier_live/index.ex:289
 #, elixir-autogen, elixir-format
 msgid "entrance"
 msgstr "подъезд"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:227
+#: lib/delivest_web/live/staff/courier_live/index.ex:292
 #, elixir-autogen, elixir-format
 msgid "floor"
 msgstr "этаж"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:233
+#: lib/delivest_web/live/staff/courier_live/index.ex:298
 #, elixir-autogen, elixir-format
 msgid "intercom"
 msgstr "домофон"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:336
+#: lib/delivest_web/live/staff/courier_live/index.ex:401
 #, elixir-autogen, elixir-format
 msgid "Handed to the customer"
 msgstr "Вручил"
@@ -6641,7 +6641,7 @@ msgstr "Яндекс Доставка отказала: %{code}"
 msgid "The branch works through a CRM, the courier is not searched automatically. For orders that did not go to the CRM the operator calls a courier with the Find a courier button."
 msgstr "Филиал работает через CRM, курьер автоматически не ищется. Для заказов, которые не ушли в CRM, оператор вызывает курьера кнопкой «Найти курьера»."
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:162
+#: lib/delivest_web/live/staff/courier_live/index.ex:227
 #, elixir-autogen, elixir-format
 msgid "%{count} order since the last handover"
 msgid_plural "%{count} orders since the last handover"
@@ -6674,17 +6674,17 @@ msgstr "Принято %{amount}"
 msgid "Add the app to the home screen to get notifications"
 msgstr "Добавьте приложение на экран «Домой», чтобы получать уведомления"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:95
+#: lib/delivest_web/live/staff/courier_live/index.ex:123
 #, elixir-autogen, elixir-format
 msgid "Allow access to the location so the operator sees you on the map"
 msgstr "Разрешите доступ к геопозиции, чтобы оператор видел вас на карте"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:156
+#: lib/delivest_web/live/staff/courier_live/index.ex:221
 #, elixir-autogen, elixir-format
 msgid "By terminal"
 msgstr "Терминалом"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:150
+#: lib/delivest_web/live/staff/courier_live/index.ex:215
 #, elixir-autogen, elixir-format
 msgid "Cash on hand"
 msgstr "Наличные на руках"
@@ -6754,12 +6754,12 @@ msgstr "У филиала нет курьеров. Выдайте сотрудн
 msgid "The courier location is not known: the courier page is closed or the location is off"
 msgstr "Где курьер, неизвестно: страница доставки закрыта или геопозиция выключена"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:99
+#: lib/delivest_web/live/staff/courier_live/index.ex:127
 #, elixir-autogen, elixir-format
 msgid "The location is not available on this device"
 msgstr "Геопозиция недоступна на этом устройстве"
 
-#: lib/delivest_web/live/staff/courier_live/index.ex:91
+#: lib/delivest_web/live/staff/courier_live/index.ex:119
 #, elixir-autogen, elixir-format
 msgid "The operator sees you on the map"
 msgstr "Оператор видит вас на карте"
@@ -7278,7 +7278,7 @@ msgid "Connection failed: %{reason}"
 msgstr "Не удалось подключиться: %{reason}"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:401
-#: lib/delivest_web/live/staff/receipt_live/index.ex:109
+#: lib/delivest_web/live/staff/receipt_live/index.ex:111
 #, elixir-autogen, elixir-format
 msgid "Correction receipt"
 msgstr "Чек коррекции"
@@ -7290,8 +7290,8 @@ msgstr "НДС доставки"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:333
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:406
-#: lib/delivest_web/live/staff/receipt_live/index.ex:104
-#: lib/delivest_web/live/staff/receipt_live/index.ex:114
+#: lib/delivest_web/live/staff/receipt_live/index.ex:106
+#: lib/delivest_web/live/staff/receipt_live/index.ex:116
 #, elixir-autogen, elixir-format
 msgid "Failed"
 msgstr "Ошибка"
@@ -7322,8 +7322,8 @@ msgid "Issue a refund receipt?"
 msgstr "Пробить чек возврата?"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:405
-#: lib/delivest_web/live/staff/receipt_live/index.ex:103
-#: lib/delivest_web/live/staff/receipt_live/index.ex:113
+#: lib/delivest_web/live/staff/receipt_live/index.ex:105
+#: lib/delivest_web/live/staff/receipt_live/index.ex:115
 #, elixir-autogen, elixir-format
 msgid "Issued"
 msgstr "Пробит"
@@ -7349,14 +7349,14 @@ msgid "Place of settlement"
 msgstr "Место расчётов"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:404
-#: lib/delivest_web/live/staff/receipt_live/index.ex:102
-#: lib/delivest_web/live/staff/receipt_live/index.ex:112
+#: lib/delivest_web/live/staff/receipt_live/index.ex:104
+#: lib/delivest_web/live/staff/receipt_live/index.ex:114
 #, elixir-autogen, elixir-format
 msgid "Processing"
 msgstr "Обрабатывается"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:368
-#: lib/delivest_web/live/staff/receipt_live/index.ex:53
+#: lib/delivest_web/live/staff/receipt_live/index.ex:55
 #, elixir-autogen, elixir-format
 msgid "Receipt"
 msgstr "Чек"
@@ -7383,7 +7383,7 @@ msgid "Receipts are issued when the order is handed over: for cash and card paym
 msgstr "Чек пробивается при выдаче заказа: за наличные и карту оператору или нашему курьеру. Заказы Яндекс Еды, Яндекс Доставки и CRM пробиваются на их стороне."
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:400
-#: lib/delivest_web/live/staff/receipt_live/index.ex:108
+#: lib/delivest_web/live/staff/receipt_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Refund receipt"
 msgstr "Чек возврата"
@@ -7394,7 +7394,7 @@ msgid "Retry"
 msgstr "Повторить"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:399
-#: lib/delivest_web/live/staff/receipt_live/index.ex:107
+#: lib/delivest_web/live/staff/receipt_live/index.ex:109
 #, elixir-autogen, elixir-format
 msgid "Sale receipt"
 msgstr "Чек прихода"
@@ -7405,8 +7405,8 @@ msgid "Sender email"
 msgstr "Email отправителя"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:403
-#: lib/delivest_web/live/staff/receipt_live/index.ex:101
-#: lib/delivest_web/live/staff/receipt_live/index.ex:111
+#: lib/delivest_web/live/staff/receipt_live/index.ex:103
+#: lib/delivest_web/live/staff/receipt_live/index.ex:113
 #, elixir-autogen, elixir-format
 msgid "Sending"
 msgstr "Отправляется"
@@ -7529,27 +7529,27 @@ msgstr[0] "%{count} чек не пробит"
 msgstr[1] "%{count} чека не пробиты"
 msgstr[2] "%{count} чеков не пробиты"
 
-#: lib/delivest_web/live/staff/receipt_live/index.ex:54
+#: lib/delivest_web/live/staff/receipt_live/index.ex:56
 #, elixir-autogen, elixir-format
 msgid "Amount"
 msgstr "Сумма"
 
-#: lib/delivest_web/live/staff/receipt_live/index.ex:34
+#: lib/delivest_web/live/staff/receipt_live/index.ex:35
 #, elixir-autogen, elixir-format
 msgid "Fiscal receipts of the branch. Find the ones not issued during the shift."
 msgstr "Фискальные чеки филиала. Найдите непробитые за смену."
 
-#: lib/delivest_web/live/staff/receipt_live/index.ex:100
+#: lib/delivest_web/live/staff/receipt_live/index.ex:102
 #, elixir-autogen, elixir-format
 msgid "Need attention"
 msgstr "Требуют внимания"
 
-#: lib/delivest_web/live/staff/receipt_live/index.ex:91
+#: lib/delivest_web/live/staff/receipt_live/index.ex:93
 #, elixir-autogen, elixir-format
 msgid "No receipts"
 msgstr "Чеков нет"
 
-#: lib/delivest_web/live/staff/receipt_live/index.ex:79
+#: lib/delivest_web/live/staff/receipt_live/index.ex:81
 #, elixir-autogen, elixir-format
 msgid "OFD"
 msgstr "ОФД"
@@ -7559,7 +7559,27 @@ msgstr "ОФД"
 msgid "Open receipts"
 msgstr "Открыть чеки"
 
-#: lib/delivest_web/live/staff/receipt_live/index.ex:52
+#: lib/delivest_web/live/staff/receipt_live/index.ex:54
 #, elixir-autogen, elixir-format
 msgid "Order"
 msgstr "Заказ"
+
+#: lib/delivest_web/live/staff/courier_live/index.ex:192
+#, elixir-autogen, elixir-format
+msgid "Open the receipt"
+msgstr "Открыть чек"
+
+#: lib/delivest_web/live/staff/courier_live/index.ex:183
+#, elixir-autogen, elixir-format
+msgid "Receipt for order #%{number}"
+msgstr "Чек заказа #%{number}"
+
+#: lib/delivest_web/live/staff/courier_live/index.ex:199
+#, elixir-autogen, elixir-format
+msgid "The receipt is being issued"
+msgstr "Чек формируется"
+
+#: lib/delivest_web/live/staff/courier_live/index.ex:196
+#, elixir-autogen, elixir-format
+msgid "The receipt is issued"
+msgstr "Чек пробит"
