@@ -29,7 +29,13 @@
     <main class="flex-1 px-2 sm:px-6 min-w-0">
       <div class="max-w-7xl mx-auto">
         <.flash_group flash={@flash} />
-        {@inner_content}
+        <DelivestWeb.GatewayNote.gateway_note
+          :if={assigns[:gateway_block]}
+          name={@gateway_block.name}
+          area={@gateway_block.area}
+          branch={assigns[:current_branch]}
+        />
+        <div :if={!assigns[:gateway_block]}>{@inner_content}</div>
       </div>
     </main>
   </div>

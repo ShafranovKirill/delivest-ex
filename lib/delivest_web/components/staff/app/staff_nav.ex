@@ -3,6 +3,8 @@ defmodule DelivestWeb.StaffNav do
 
   import Delivest.Identity.Acl
 
+  alias Delivest.Gateway
+
   def pages(staff, branch) do
     staff
     |> entries(branch)
@@ -57,28 +59,32 @@ defmodule DelivestWeb.StaffNav do
           "hero-calculator",
           gettext("POS")
         )
-        |> allowed(staff, "pos.use"),
+        |> allowed(staff, "pos.use")
+        |> owned(branch, :pos),
         item(
           :kitchen,
           branch && ~p"/staff/b/#{branch}/kitchen",
           "hero-fire",
           gettext("Kitchen")
         )
-        |> allowed(staff, "orders.cook"),
+        |> allowed(staff, "orders.cook")
+        |> owned(branch, :kitchen),
         item(
           :deliveries,
           branch && ~p"/staff/b/#{branch}/deliveries",
           "hero-map",
           gettext("Deliveries")
         )
-        |> allowed(staff, "orders.deliver"),
+        |> allowed(staff, "orders.deliver")
+        |> owned(branch, :couriers),
         item(
           :couriers,
           branch && ~p"/staff/b/#{branch}/couriers",
           "hero-user-circle",
           gettext("Couriers")
         )
-        |> allowed(staff, "orders.update"),
+        |> allowed(staff, "orders.update")
+        |> owned(branch, :couriers),
         item(
           :receipts,
           branch && ~p"/staff/b/#{branch}/receipts",
@@ -86,6 +92,7 @@ defmodule DelivestWeb.StaffNav do
           gettext("Receipts")
         )
         |> allowed(staff, "orders.update")
+        |> owned(branch, :receipts)
       ]),
       group(:menu, "hero-book-open", gettext("Menu"), [
         item(
@@ -189,6 +196,10 @@ defmodule DelivestWeb.StaffNav do
 
   defp group(id, icon, label, items),
     do: %{kind: :group, id: id, icon: icon, label: label, items: items}
+
+  defp owned(nil, _branch, _area), do: nil
+  defp owned(item, nil, _area), do: item
+  defp owned(item, branch, area), do: if(Gateway.own?(branch, area), do: item)
 
   defp allowed(item, staff, permission), do: if(can?(staff, permission), do: item)
 end

@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.ReceiptLive.Index do
   use DelivestWeb, :live_view
 
+  on_mount {DelivestWeb.Hooks.GatewayArea, :receipts}
+
   alias Delivest.Fiscal
   alias Delivest.Fiscal.Receipt
 

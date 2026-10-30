@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.CourierLive.Board do
   use DelivestWeb, :live_view
 
+  on_mount {DelivestWeb.Hooks.GatewayArea, :couriers}
+
   alias Delivest.Oms.Order
 
   alias Delivest.{Couriers, Identity}
