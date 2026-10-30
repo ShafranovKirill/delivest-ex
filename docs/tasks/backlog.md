@@ -4,19 +4,15 @@
 
 ## 1. CI на сервере
 
-`mix format --check-formatted` падает: локально Elixir 1.17, в CI 1.19.5-otp-28, новый форматтер требует скобки в `lib/delivest_web/components/staff/app/command_search.ex:35` и `:79`.
-
-- Поставить скобки: `(searchable?(query) and branch) && can?(...)`.
-- Закрепить локальную версию под CI (`.tool-versions`: elixir 1.19.5-otp-28, erlang 28.3.1).
-- Прогнать тесты, credo и dialyzer — в CI они не запускались с 27.10, после format может вылезти ещё.
+Закрыто: `mix format --check-formatted` проходит, версии закреплены в `.tool-versions` (elixir 1.19.5-otp-28, erlang 28.4.2), 983 теста зелёные. Credo в проекте не подключён, credo и dialyzer — в [otp-usage.md](otp-usage.md).
 
 ## 2. Смена статуса в событиях
 
-Вместо «Order status changed» — «Статус: Принят → Готовится». `from` и `to` уже лежат в metadata события `order.status_changed`, меняется только текст в `log_live/event_text.ex`.
+Закрыто: «Заказ A-042: Принят → Готовится» (`log_live/event_text.ex`).
 
 ## 3. Строка «Доставка от…»
 
-Только в корзине и в форме оформления заказа. С главной, карты и остальных экранов убрать.
+Закрыто: цена доставки только в корзине и в оформлении (`FulfillmentSummary with-quote`), на карте остаётся только отказ «сюда не доставляем».
 
 ## 4. Настройки в админке
 
