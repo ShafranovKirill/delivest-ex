@@ -22,24 +22,23 @@ defmodule DelivestWeb.Staff.ProductLive.ModifiersTest do
         ~p"/staff/b/#{branch}/products/modifiers"
       )
 
+    lv |> element("button[phx-click=new_group]") |> render_click()
+
     lv
-    |> form("#new-group", group: %{name: "Добавки", min: "0", max: "3"})
+    |> form("#group-form", group: %{name: "Добавки", required: "true", max: "3"})
     |> render_submit()
 
     group = Repo.get_by!(ModifierGroup, name: "Добавки")
-    assert group.max == 3
+    assert {group.min, group.max} == {1, 3}
+
+    lv |> element("#group-#{group.id} button[phx-click=new_modifier]") |> render_click()
 
     lv
-    |> form("#new-modifier-#{group.id}", modifier: %{name: "Сыр", price: "50", max_quantity: "2"})
+    |> form("#modifier-form", modifier: %{name: "Сыр", price: "50", article: "77"})
     |> render_submit()
 
     cheese = Repo.get_by!(Modifier, name: "Сыр")
-    assert cheese.price == 5_000
-
-    lv
-    |> form("#modifier-#{cheese.id}", modifier: %{article: "77"})
-    |> render_submit()
-
+    assert {cheese.price, cheese.max_quantity} == {5_000, 1}
     assert Modifiers.crm_ids([cheese.id], "frontpad") == %{cheese.id => "77"}
 
     lv |> element("#modifier-#{cheese.id} button[phx-click=stop]") |> render_click()

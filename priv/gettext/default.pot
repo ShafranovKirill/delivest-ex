@@ -140,8 +140,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/client_live/clients.ex:277
 #: lib/delivest_web/live/staff/client_live/clients.ex:307
 #: lib/delivest_web/live/staff/client_live/show.ex:106
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:223
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:289
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:468
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:444
 #: lib/delivest_web/live/staff/product_live/products.ex:487
 #: lib/delivest_web/live/staff/product_live/products.ex:546
@@ -264,6 +263,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/order_live/order_form.ex:359
 #: lib/delivest_web/live/staff/pos_live/index.ex:327
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:91
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:473
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:521
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:448
 #: lib/delivest_web/live/staff/product_live/tags.ex:258
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:247
@@ -486,6 +487,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/client_live/show.ex:118
 #: lib/delivest_web/live/staff/franchise_live/index.ex:167
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:181
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:411
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:293
 #: lib/delivest_web/live/staff/role_live/roles.ex:160
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:272
@@ -588,6 +590,7 @@ msgid "Images: JPG, PNG, WEBP (Max 10MB)"
 msgstr ""
 
 #: lib/delivest_web/live/staff/category_live/categories.ex:321
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:286
 #: lib/delivest_web/live/staff/product_live/products.ex:488
 #: lib/delivest_web/live/staff/product_live/products.ex:548
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:253
@@ -638,7 +641,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:84
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:729
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:22
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:318
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:496
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:304
 #: lib/delivest_web/live/staff/product_live/products.ex:512
 #: lib/delivest_web/live/staff/product_live/tags.ex:197
@@ -704,8 +707,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:16
 #: lib/delivest_web/live/staff/product_live/bulk.ex:120
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:27
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:45
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:78
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:67
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:97
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:109
 #: lib/delivest_web/live/staff/product_live/products.ex:361
 #: lib/delivest_web/live/staff/product_live/stop_list.ex:64
 #: lib/delivest_web/live/staff/product_live/suggested.ex:42
@@ -732,8 +736,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:730
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:23
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:324
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:377
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:500
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:329
 #: lib/delivest_web/live/staff/product_live/products.ex:520
 #, elixir-autogen, elixir-format
@@ -865,8 +868,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:113
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:133
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:292
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:347
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:475
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:523
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:454
 #: lib/delivest_web/live/staff/product_live/tags.ex:261
 #: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:249
@@ -3669,6 +3672,7 @@ msgid "Paste a table from Excel or Google Sheets into any cell (Ctrl+V) or fill 
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/bulk.ex:302
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:348
 #, elixir-autogen, elixir-format
 msgid "Photo"
 msgstr ""
@@ -3689,6 +3693,7 @@ msgid "Products to add: %{count}"
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/bulk.ex:406
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:370
 #, elixir-autogen, elixir-format
 msgid "Remove photo"
 msgstr ""
@@ -4320,12 +4325,14 @@ msgstr ""
 
 #: lib/delivest/net/product_tags.ex:113
 #: lib/delivest_web/live/staff/franchise_live/image_uploads.ex:42
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:163
 #, elixir-autogen, elixir-format
 msgid "Could not read the image"
 msgstr ""
 
 #: lib/delivest/net/product_tags.ex:117
 #: lib/delivest_web/live/staff/franchise_live/image_uploads.ex:44
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:166
 #, elixir-autogen, elixir-format
 msgid "Could not save the image, try again"
 msgstr ""
@@ -4958,8 +4965,8 @@ msgstr ""
 msgid "Not received yet"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:211
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:355
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:260
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:403
 #: lib/delivest_web/live/staff/product_live/stop_control.ex:45
 #, elixir-autogen, elixir-format
 msgid "Stop"
@@ -5803,8 +5810,6 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:53
 #: lib/delivest_web/live/staff/order_live/order_form.ex:361
 #: lib/delivest_web/live/staff/pos_live/index.ex:329
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:242
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:379
 #, elixir-autogen, elixir-format
 msgid "Add"
 msgstr ""
@@ -7151,98 +7156,77 @@ msgstr ""
 msgid "Yekaterinburg"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:205
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:344
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:382
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:511
 #, elixir-autogen, elixir-format
 msgid "By default"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:298
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:327
 #, elixir-autogen, elixir-format
 msgid "Delete the group with its modifiers?"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:362
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:420
 #, elixir-autogen, elixir-format
 msgid "Delete the modifier?"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:217
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:337
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:266
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:505
 #, elixir-autogen, elixir-format
 msgid "Frontpad article"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:170
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:261
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:242
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:442
 #, elixir-autogen, elixir-format
 msgid "Group"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:240
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:275
-#, elixir-autogen, elixir-format
-msgid "Max"
-msgstr ""
-
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:239
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:268
-#, elixir-autogen, elixir-format
-msgid "Min"
-msgstr ""
-
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:20
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:145
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:207
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:414
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:22
 #, elixir-autogen, elixir-format
 msgid "Modifiers"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:238
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:434
 #, elixir-autogen, elixir-format
 msgid "New group"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:376
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:486
 #, elixir-autogen, elixir-format
 msgid "New modifier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:245
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:274
 #, elixir-autogen, elixir-format
 msgid "No modifier groups yet"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:355
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:402
 #, elixir-autogen, elixir-format
 msgid "Resume"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:38
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:72
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:61
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:91
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:160
 #, elixir-autogen, elixir-format
 msgid "Saved"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:195
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:238
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:241
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:282
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:443
 #, elixir-autogen, elixir-format
 msgid "Size"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:147
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:209
 #, elixir-autogen, elixir-format
 msgid "Size, dough and extras. A group is made once and attached to many products."
-msgstr ""
-
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:201
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:331
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:378
-#, elixir-autogen, elixir-format
-msgid "Up to"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/order_form.ex:339
@@ -8451,102 +8435,120 @@ msgstr ""
 msgid "Only in the dev build. Turn off to test a real call from Zvonok."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:163
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:236
 #, elixir-autogen, elixir-format
 msgid "A modifier is a choice the customer makes on a product: size, dough, sauce, extra cheese. The choice changes the price and goes to the kitchen, the receipt and the cash register together with the dish."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:225
-#, elixir-autogen, elixir-format
-msgid "A switched off group disappears from all products without being deleted."
-msgstr ""
-
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:191
-#, elixir-autogen, elixir-format
-msgid "How many modifiers of the group the customer must and may take. 1 and 1 — pick exactly one (size). 0 and 3 — can skip, up to three (extras). 0 and 1 — one optional (sauce)."
-msgstr ""
-
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:203
-#, elixir-autogen, elixir-format
-msgid "How many times one modifier can be taken. 2 makes «Double cheese» possible."
-msgstr ""
-
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:158
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:231
 #, elixir-autogen, elixir-format
 msgid "How modifiers work"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:197
-#, elixir-autogen, elixir-format
-msgid "Mark the group as size: the customer sees a switch instead of a list, and CRMs with a size scale (iiko) get it as the product size."
-msgstr ""
-
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:189
-#, elixir-autogen, elixir-format
-msgid "Min / Max"
-msgstr ""
-
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:176
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:248
 #, elixir-autogen, elixir-format
 msgid "Modifier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:182
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:254
 #, elixir-autogen, elixir-format
 msgid "Open a product in the catalog and tick the groups it has. The customer sees them in the product card before adding it to the cart."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:120
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:199
 #, elixir-autogen, elixir-format
 msgid "Shown as a size switch."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:213
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:290
 #, elixir-autogen, elixir-format
-msgid "Temporarily hides the modifier from customers and aggregators, for example when an ingredient ran out. The product itself stays on sale."
+msgid "%{count} modifier"
+msgid_plural "%{count} modifiers"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:215
+#, elixir-autogen, elixir-format
+msgid "Add group"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:219
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:312
 #, elixir-autogen, elixir-format
-msgid "The code of the modifier in the cash register. Without it the order reaches Frontpad without this modifier."
+msgid "Add modifier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:125
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:321
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:434
 #, elixir-autogen, elixir-format
-msgid "The customer may pick one or skip."
+msgid "Edit group"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:127
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:485
 #, elixir-autogen, elixir-format
-msgid "The customer may skip or pick up to %{count}."
+msgid "Edit modifier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:126
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:461
 #, elixir-autogen, elixir-format
-msgid "The customer must pick %{count}."
+msgid "Maximum choices (ignored for a size)"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:124
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:335
 #, elixir-autogen, elixir-format
-msgid "The customer must pick exactly one."
+msgid "No modifiers in this group yet"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:128
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:195
 #, elixir-autogen, elixir-format
-msgid "The customer picks from %{min} to %{max}."
+msgid "Optional: the customer may pick one."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:207
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:196
 #, elixir-autogen, elixir-format
-msgid "The modifier is already chosen when the card opens, for example the usual size."
+msgid "Optional: the customer may pick up to %{count}."
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:171
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:449
 #, elixir-autogen, elixir-format
-msgid "a question to the customer: «Size», «Dough», «Extras». A group is made once and attached to any number of products."
+msgid "Required: the customer must pick something"
 msgstr ""
 
-#: lib/delivest_web/live/staff/product_live/modifiers.ex:177
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:194
 #, elixir-autogen, elixir-format
-msgid "one answer in the group with its own price: «30 cm» +0, «35 cm» +150, «Double cheese» +80. The price of the line is the product plus the chosen modifiers."
+msgid "Required: the customer picks from 1 to %{count}."
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:193
+#, elixir-autogen, elixir-format
+msgid "Required: the customer picks one."
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:455
+#, elixir-autogen, elixir-format
+msgid "Size (shown as a switch, one choice)"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:388
+#, elixir-autogen, elixir-format
+msgid "Stopped"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:243
+#, elixir-autogen, elixir-format
+msgid "a question to the customer: «Size», «Dough», «Extras». Tick «Required» if something must be chosen and set the maximum for extras. A group is made once and attached to any number of products."
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:249
+#, elixir-autogen, elixir-format
+msgid "one answer in the group with its own price and photo: «30 cm» +0, «Jam» +80. It can be taken once per product. Sizes are shown without a price, extras with «+price»."
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:261
+#, elixir-autogen, elixir-format
+msgid "temporarily hides the modifier from customers and aggregators, for example when an ingredient ran out. The product itself stays on sale."
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/modifiers.ex:267
+#, elixir-autogen, elixir-format
+msgid "the code of the modifier in the cash register. Without it the order reaches Frontpad without this modifier."
 msgstr ""

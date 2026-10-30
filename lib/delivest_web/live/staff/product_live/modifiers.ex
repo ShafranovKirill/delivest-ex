@@ -22,7 +22,9 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
        can_edit: Identity.can?(staff, "products.update"),
        can_stop: Identity.can?(staff, "stops.update"),
        new_group: to_form(Modifiers.change_group(%ModifierGroup{}), as: :group),
-       photo_for: nil
+       photo_for: nil,
+       group_form: nil,
+       modifier_form: nil
      )
      |> allow_upload(:photo,
        accept: ~w(.png .webp .jpg .jpeg),
@@ -35,16 +37,28 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   end
 
   @impl true
-  def handle_event("save_group", %{"group" => params} = event, socket) do
-    group = if id = event["id"], do: Modifiers.get_group(id), else: %ModifierGroup{}
+  def handle_event("new_group", _params, socket),
+    do: {:noreply, assign(socket, group_form: %ModifierGroup{min: 0, max: 1})}
 
-    case Modifiers.save_group(socket.assigns.current_staff, group, params) do
+  def handle_event("edit_group", %{"id" => id}, socket),
+    do: {:noreply, assign(socket, group_form: Modifiers.get_group(id))}
+
+  def handle_event("new_modifier", %{"group_id" => group_id}, socket),
+    do: {:noreply, assign(socket, modifier_form: %Modifier{group_id: group_id})}
+
+  def handle_event("edit_modifier", %{"id" => id}, socket),
+    do: {:noreply, assign(socket, modifier_form: Modifiers.get_modifier(id))}
+
+  def handle_event("close_form", _params, socket),
+    do: {:noreply, assign(socket, group_form: nil, modifier_form: nil)}
+
+  def handle_event("save_group", %{"group" => params}, socket) do
+    group = socket.assigns.group_form
+
+    case Modifiers.save_group(socket.assigns.current_staff, group, group_attrs(params)) do
       {:ok, _group} ->
         {:noreply,
-         socket
-         |> assign(new_group: to_form(Modifiers.change_group(%ModifierGroup{}), as: :group))
-         |> put_flash(:info, gettext("Saved"))
-         |> load()}
+         socket |> assign(group_form: nil) |> put_flash(:info, gettext("Saved")) |> load()}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, put_flash(socket, :error, errors(changeset))}
@@ -59,16 +73,12 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     {:noreply, load(socket)}
   end
 
-  def handle_event("save_modifier", %{"modifier" => params} = event, socket) do
-    modifier =
-      if id = event["id"],
-        do: Modifiers.get_modifier(id),
-        else: %Modifier{group_id: event["group_id"]}
-
+  def handle_event("save_modifier", %{"modifier" => params}, socket) do
+    modifier = socket.assigns.modifier_form
     staff = socket.assigns.current_staff
+    attrs = params |> Map.delete("article") |> Map.put("max_quantity", "1")
 
-    with {:ok, modifier} <-
-           Modifiers.save_modifier(staff, modifier, Map.delete(params, "article")),
+    with {:ok, modifier} <- Modifiers.save_modifier(staff, modifier, attrs),
          {:ok, _id} <-
            Modifiers.put_crm_id(
              staff,
@@ -77,7 +87,8 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
              @provider,
              params["article"]
            ) do
-      {:noreply, socket |> put_flash(:info, gettext("Saved")) |> load()}
+      {:noreply,
+       socket |> assign(modifier_form: nil) |> put_flash(:info, gettext("Saved")) |> load()}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, put_flash(socket, :error, errors(changeset))}
@@ -125,6 +136,18 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     {:noreply, load(socket)}
   end
 
+  defp group_attrs(params) do
+    size? = params["is_size"] == "true"
+
+    %{
+      "name" => params["name"],
+      "is_size" => params["is_size"] || "false",
+      "is_active" => params["is_active"] || "false",
+      "min" => if(params["required"] == "true", do: "1", else: "0"),
+      "max" => if(size?, do: "1", else: params["max"] || "1")
+    }
+  end
+
   defp handle_progress(:photo, entry, socket) do
     if entry.done? do
       binary =
@@ -158,25 +181,22 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     )
   end
 
-  defp rule_text(%{min: min, max: max} = group) do
-    kind = if group.is_size, do: gettext("Shown as a size switch."), else: ""
-
-    rule =
-      cond do
-        min == 1 and max == 1 -> gettext("The customer must pick exactly one.")
-        min == 0 and max == 1 -> gettext("The customer may pick one or skip.")
-        min == max -> gettext("The customer must pick %{count}.", count: min)
-        min == 0 -> gettext("The customer may skip or pick up to %{count}.", count: max)
-        true -> gettext("The customer picks from %{min} to %{max}.", min: min, max: max)
-      end
-
-    String.trim("#{rule} #{kind}")
-  end
-
   defp errors(changeset) do
     changeset.errors
     |> Enum.map(fn {field, {message, _opts}} -> "#{field}: #{message}" end)
     |> Enum.join(", ")
+  end
+
+  defp rule_text(%{min: min, max: max} = group) do
+    rule =
+      cond do
+        min >= 1 and max == 1 -> gettext("Required: the customer picks one.")
+        min >= 1 -> gettext("Required: the customer picks from 1 to %{count}.", count: max)
+        max == 1 -> gettext("Optional: the customer may pick one.")
+        true -> gettext("Optional: the customer may pick up to %{count}.", count: max)
+      end
+
+    if group.is_size, do: "#{rule} #{gettext("Shown as a size switch.")}", else: rule
   end
 
   @impl true
@@ -188,9 +208,20 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
         subtitle={
           gettext("Size, dough and extras. A group is made once and attached to many products.")
         }
-      />
+      >
+        <:actions>
+          <button :if={@can_edit} type="button" phx-click="new_group" class="btn btn-primary btn-sm">
+            <.icon name="hero-plus" class="size-4" />
+            {gettext("Add group")}
+          </button>
+        </:actions>
+      </.page_header>
 
       <.tabs current={:modifiers} branch={@current_branch} />
+
+      <form :if={@can_edit} id="photo-upload" phx-change="validate_photo" class="hidden">
+        <.live_file_input upload={@uploads.photo} />
+      </form>
 
       <details
         class="rounded-box border border-base-300 bg-base-100 group"
@@ -200,24 +231,23 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
           {gettext("How modifiers work")}
           <.icon name="hero-chevron-down" class="size-4 transition-transform group-open:rotate-180" />
         </summary>
-        <div class="space-y-4 border-t border-base-200 p-4 text-sm text-base-content/80">
+        <div class="space-y-3 border-t border-base-200 p-4 text-sm text-base-content/80">
           <p>
             {gettext(
               "A modifier is a choice the customer makes on a product: size, dough, sauce, extra cheese. The choice changes the price and goes to the kitchen, the receipt and the cash register together with the dish."
             )}
           </p>
-
           <ol class="list-decimal space-y-2 pl-5">
             <li>
               <b>{gettext("Group")}</b>
               — {gettext(
-                "a question to the customer: «Size», «Dough», «Extras». A group is made once and attached to any number of products."
+                "a question to the customer: «Size», «Dough», «Extras». Tick «Required» if something must be chosen and set the maximum for extras. A group is made once and attached to any number of products."
               )}
             </li>
             <li>
               <b>{gettext("Modifier")}</b>
               — {gettext(
-                "one answer in the group with its own price: «30 cm» +0, «35 cm» +150, «Double cheese» +80. The price of the line is the product plus the chosen modifiers."
+                "one answer in the group with its own price and photo: «30 cm» +0, «Jam» +80. It can be taken once per product. Sizes are shown without a price, extras with «+price»."
               )}
             </li>
             <li>
@@ -226,139 +256,91 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
               )}
             </li>
           </ol>
-
-          <dl class="grid gap-x-6 gap-y-2 sm:grid-cols-[10rem_1fr]">
-            <dt class="font-semibold">{gettext("Min / Max")}</dt>
-            <dd>
-              {gettext(
-                "How many modifiers of the group the customer must and may take. 1 and 1 — pick exactly one (size). 0 and 3 — can skip, up to three (extras). 0 and 1 — one optional (sauce)."
-              )}
-            </dd>
-            <dt class="font-semibold">{gettext("Size")}</dt>
-            <dd>
-              {gettext(
-                "Mark the group as size: the customer sees a switch instead of a list, and CRMs with a size scale (iiko) get it as the product size."
-              )}
-            </dd>
-            <dt class="font-semibold">{gettext("Up to")}</dt>
-            <dd>
-              {gettext("How many times one modifier can be taken. 2 makes «Double cheese» possible.")}
-            </dd>
-            <dt class="font-semibold">{gettext("By default")}</dt>
-            <dd>
-              {gettext(
-                "The modifier is already chosen when the card opens, for example the usual size."
-              )}
-            </dd>
-            <dt class="font-semibold">{gettext("Stop")}</dt>
-            <dd>
-              {gettext(
-                "Temporarily hides the modifier from customers and aggregators, for example when an ingredient ran out. The product itself stays on sale."
-              )}
-            </dd>
-            <dt class="font-semibold">{gettext("Frontpad article")}</dt>
-            <dd>
-              {gettext(
-                "The code of the modifier in the cash register. Without it the order reaches Frontpad without this modifier."
-              )}
-            </dd>
-            <dt class="font-semibold">{gettext("Active")}</dt>
-            <dd>
-              {gettext("A switched off group disappears from all products without being deleted.")}
-            </dd>
-          </dl>
+          <p>
+            <b>{gettext("Stop")}</b>
+            — {gettext(
+              "temporarily hides the modifier from customers and aggregators, for example when an ingredient ran out. The product itself stays on sale."
+            )}
+          </p>
+          <p>
+            <b>{gettext("Frontpad article")}</b>
+            — {gettext(
+              "the code of the modifier in the cash register. Without it the order reaches Frontpad without this modifier."
+            )}
+          </p>
         </div>
       </details>
 
-      <.form
-        :if={@can_edit}
-        for={@new_group}
-        id="new-group"
-        phx-submit="save_group"
-        class="p-4 bg-base-100 rounded-box border border-base-300 grid gap-3 sm:grid-cols-[1fr_6rem_6rem_auto_auto] sm:items-end"
-      >
-        <.input field={@new_group[:name]} label={gettext("New group")} placeholder={gettext("Size")} />
-        <.input field={@new_group[:min]} type="number" label={gettext("Min")} />
-        <.input field={@new_group[:max]} type="number" label={gettext("Max")} />
-        <.input field={@new_group[:is_size]} type="checkbox" label={gettext("Size")} />
-        <.button>{gettext("Add")}</.button>
-      </.form>
-
-      <form id="photo-upload" phx-change="validate_photo" class="hidden">
-        <.live_file_input upload={@uploads.photo} />
-      </form>
-
       <p :if={@groups == []} class="text-base-content/60">{gettext("No modifier groups yet")}</p>
 
-      <section
+      <details
         :for={group <- @groups}
         id={"group-#{group.id}"}
-        class="p-4 bg-base-100 rounded-box border border-base-300 space-y-3"
+        class="group bg-base-100 rounded-box border border-base-300"
       >
-        <form
-          phx-submit="save_group"
-          phx-value-id={group.id}
-          id={"group-form-#{group.id}"}
-          class="grid gap-3 sm:grid-cols-[1fr_6rem_6rem_auto_auto_auto_auto] sm:items-end"
-        >
-          <.input
-            name="group[name]"
-            value={group.name}
-            label={gettext("Group")}
-            disabled={!@can_edit}
+        <summary class="flex cursor-pointer items-center justify-between gap-3 p-4">
+          <span class="min-w-0">
+            <span class="block font-semibold">
+              {group.name}
+              <span :if={!group.is_active} class="badge badge-ghost badge-sm ml-1">
+                {gettext("Inactive")}
+              </span>
+            </span>
+            <span class="block text-sm text-base-content/60">
+              {rule_text(group)} · {ngettext(
+                "%{count} modifier",
+                "%{count} modifiers",
+                length(group.modifiers)
+              )}
+            </span>
+          </span>
+          <.icon
+            name="hero-chevron-down"
+            class="size-4 shrink-0 transition-transform group-open:rotate-180"
           />
-          <.input
-            name="group[min]"
-            type="number"
-            value={group.min}
-            label={gettext("Min")}
-            disabled={!@can_edit}
-          />
-          <.input
-            name="group[max]"
-            type="number"
-            value={group.max}
-            label={gettext("Max")}
-            disabled={!@can_edit}
-          />
-          <.input
-            name="group[is_size]"
-            type="checkbox"
-            checked={group.is_size}
-            label={gettext("Size")}
-            disabled={!@can_edit}
-          />
-          <.input
-            name="group[is_active]"
-            type="checkbox"
-            checked={group.is_active}
-            label={gettext("Active")}
-            disabled={!@can_edit}
-          />
-          <.button :if={@can_edit}>{gettext("Save")}</.button>
-          <button
-            :if={@can_edit}
-            type="button"
-            phx-click="delete_group"
-            phx-value-id={group.id}
-            data-confirm={gettext("Delete the group with its modifiers?")}
-            class="btn btn-ghost btn-sm text-error"
-          >
-            <.icon name="hero-trash" class="size-4" />
-          </button>
-        </form>
+        </summary>
 
-        <p class="text-xs text-base-content/60">{rule_text(group)}</p>
+        <div class="space-y-3 border-t border-base-200 p-4">
+          <div :if={@can_edit} class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              phx-click="new_modifier"
+              phx-value-group_id={group.id}
+              class="btn btn-sm btn-outline"
+            >
+              <.icon name="hero-plus" class="size-4" />
+              {gettext("Add modifier")}
+            </button>
+            <button
+              type="button"
+              phx-click="edit_group"
+              phx-value-id={group.id}
+              class="btn btn-sm btn-ghost"
+            >
+              <.icon name="hero-pencil-square" class="size-4" />
+              {gettext("Edit group")}
+            </button>
+            <button
+              type="button"
+              phx-click="delete_group"
+              phx-value-id={group.id}
+              data-confirm={gettext("Delete the group with its modifiers?")}
+              class="btn btn-sm btn-ghost text-error"
+            >
+              <.icon name="hero-trash" class="size-4" />
+            </button>
+          </div>
 
-        <div class="space-y-2">
-          <form
-            :for={modifier <- group.modifiers}
-            id={"modifier-#{modifier.id}"}
-            phx-submit="save_modifier"
-            phx-value-id={modifier.id}
-            class="grid gap-2 sm:grid-cols-[1fr_7rem_5rem_7rem_auto_auto_auto_auto] sm:items-end border-t border-base-200 pt-2"
-          >
-            <div class="flex items-end gap-2">
+          <p :if={group.modifiers == []} class="text-sm text-base-content/50">
+            {gettext("No modifiers in this group yet")}
+          </p>
+
+          <ul class="divide-y divide-base-200">
+            <li
+              :for={modifier <- group.modifiers}
+              id={"modifier-#{modifier.id}"}
+              class="flex flex-wrap items-center gap-3 py-2"
+            >
               <label
                 for={@can_edit && @uploads.photo.ref}
                 phx-click={@can_edit && "pick_photo"}
@@ -390,76 +372,158 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
               >
                 <.icon name="hero-x-mark" class="size-4" />
               </button>
-              <.input
-                name="modifier[name]"
-                value={modifier.name}
-                label={gettext("Name")}
-                disabled={!@can_edit}
-                class="w-full input"
-              />
-            </div>
-            <.input
-              name="modifier[price]"
-              value={Delivest.Money.input(modifier.price)}
-              label={gettext("Price")}
-              disabled={!@can_edit}
-            />
-            <.input
-              name="modifier[max_quantity]"
-              type="number"
-              value={modifier.max_quantity}
-              label={gettext("Up to")}
-              disabled={!@can_edit}
-            />
-            <.input
-              name="modifier[article]"
-              value={@articles[modifier.id]}
-              label={gettext("Frontpad article")}
-              disabled={!@can_edit}
-            />
-            <.input
-              name="modifier[is_default]"
-              type="checkbox"
-              checked={modifier.is_default}
-              label={gettext("By default")}
-              disabled={!@can_edit}
-            />
-            <.button :if={@can_edit} class="btn-sm">{gettext("Save")}</.button>
-            <button
-              :if={@can_stop}
-              type="button"
-              phx-click={if MapSet.member?(@stopped, modifier.id), do: "resume", else: "stop"}
-              phx-value-id={modifier.id}
-              class={["btn btn-sm", MapSet.member?(@stopped, modifier.id) && "btn-error"]}
-            >
-              {if MapSet.member?(@stopped, modifier.id), do: gettext("Resume"), else: gettext("Stop")}
-            </button>
-            <button
-              :if={@can_edit}
-              type="button"
-              phx-click="delete_modifier"
-              phx-value-id={modifier.id}
-              data-confirm={gettext("Delete the modifier?")}
-              class="btn btn-ghost btn-sm text-error"
-            >
-              <.icon name="hero-trash" class="size-4" />
-            </button>
-          </form>
 
-          <form
-            :if={@can_edit}
-            id={"new-modifier-#{group.id}"}
-            phx-submit="save_modifier"
-            phx-value-group_id={group.id}
-            class="grid gap-2 sm:grid-cols-[1fr_7rem_5rem_auto] sm:items-end border-t border-base-200 pt-2"
-          >
-            <.input name="modifier[name]" value="" label={gettext("New modifier")} />
-            <.input name="modifier[price]" value="0" label={gettext("Price")} />
-            <.input name="modifier[max_quantity]" type="number" value="1" label={gettext("Up to")} />
-            <.button class="btn-sm">{gettext("Add")}</.button>
-          </form>
+              <div class="min-w-0 flex-1">
+                <span class="font-medium">{modifier.name}</span>
+                <span
+                  :if={modifier.is_default}
+                  class="badge badge-sm badge-primary badge-outline ml-1"
+                >
+                  {gettext("By default")}
+                </span>
+                <span
+                  :if={MapSet.member?(@stopped, modifier.id)}
+                  class="badge badge-sm badge-error ml-1"
+                >
+                  {gettext("Stopped")}
+                </span>
+              </div>
+
+              <span class="text-sm tabular-nums">{Delivest.Money.input(modifier.price)}</span>
+
+              <button
+                :if={@can_stop}
+                type="button"
+                phx-click={if MapSet.member?(@stopped, modifier.id), do: "resume", else: "stop"}
+                phx-value-id={modifier.id}
+                class={["btn btn-sm", MapSet.member?(@stopped, modifier.id) && "btn-error"]}
+              >
+                {if MapSet.member?(@stopped, modifier.id),
+                  do: gettext("Resume"),
+                  else: gettext("Stop")}
+              </button>
+              <button
+                :if={@can_edit}
+                type="button"
+                phx-click="edit_modifier"
+                phx-value-id={modifier.id}
+                class="btn btn-ghost btn-sm btn-square"
+                title={gettext("Edit")}
+              >
+                <.icon name="hero-pencil-square" class="size-4" />
+              </button>
+              <button
+                :if={@can_edit}
+                type="button"
+                phx-click="delete_modifier"
+                phx-value-id={modifier.id}
+                data-confirm={gettext("Delete the modifier?")}
+                class="btn btn-ghost btn-sm btn-square text-error"
+              >
+                <.icon name="hero-trash" class="size-4" />
+              </button>
+            </li>
+          </ul>
         </div>
-      </section>
+      </details>
+
+      <.modal
+        id="group-modal"
+        show={@group_form != nil}
+        title={
+          if @group_form && @group_form.id, do: gettext("Edit group"), else: gettext("New group")
+        }
+        on_cancel={JS.push("close_form")}
+      >
+        <form :if={@group_form} id="group-form" phx-submit="save_group" class="mt-4 space-y-4">
+          <.input
+            name="group[name]"
+            value={@group_form.name}
+            label={gettext("Group")}
+            placeholder={gettext("Size")}
+          />
+          <.input
+            name="group[required]"
+            type="checkbox"
+            checked={@group_form.min >= 1}
+            label={gettext("Required: the customer must pick something")}
+          />
+          <.input
+            name="group[is_size]"
+            type="checkbox"
+            checked={@group_form.is_size}
+            label={gettext("Size (shown as a switch, one choice)")}
+          />
+          <.input
+            name="group[max]"
+            type="number"
+            value={@group_form.max}
+            label={gettext("Maximum choices (ignored for a size)")}
+          />
+          <.input
+            :if={@group_form.id}
+            name="group[is_active]"
+            type="checkbox"
+            checked={@group_form.is_active}
+            label={gettext("Active")}
+          />
+          <input :if={!@group_form.id} type="hidden" name="group[is_active]" value="true" />
+          <div class="modal-action">
+            <button type="button" class="btn btn-outline btn-sm" phx-click="close_form">
+              {gettext("Cancel")}
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm">{gettext("Save")}</button>
+          </div>
+        </form>
+      </.modal>
+
+      <.modal
+        id="modifier-modal"
+        show={@modifier_form != nil}
+        title={
+          if @modifier_form && @modifier_form.id,
+            do: gettext("Edit modifier"),
+            else: gettext("New modifier")
+        }
+        on_cancel={JS.push("close_form")}
+      >
+        <form
+          :if={@modifier_form}
+          id="modifier-form"
+          phx-submit="save_modifier"
+          class="mt-4 space-y-4"
+        >
+          <.input name="modifier[name]" value={@modifier_form.name} label={gettext("Name")} />
+          <.input
+            name="modifier[price]"
+            value={Delivest.Money.input(@modifier_form.price)}
+            label={gettext("Price")}
+          />
+          <.input
+            name="modifier[article]"
+            value={@modifier_form.id && @articles[@modifier_form.id]}
+            label={gettext("Frontpad article")}
+          />
+          <.input
+            name="modifier[is_default]"
+            type="checkbox"
+            checked={@modifier_form.is_default}
+            label={gettext("By default")}
+          />
+          <input
+            :if={!@modifier_form.id}
+            type="hidden"
+            name="modifier[group_id]"
+            value={@modifier_form.group_id}
+          />
+          <div class="modal-action">
+            <button type="button" class="btn btn-outline btn-sm" phx-click="close_form">
+              {gettext("Cancel")}
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm">{gettext("Save")}</button>
+          </div>
+        </form>
+      </.modal>
     </div>
     """
   end
