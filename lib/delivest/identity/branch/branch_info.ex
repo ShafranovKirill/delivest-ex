@@ -26,6 +26,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     field :board_token, :string
     field :timezone, :string
     embeds_one :crm, BranchSettings, on_replace: :update
+    embeds_one :fiscal, Delivest.Fiscal.BranchSettings, on_replace: :update
     embeds_one :channels, Delivest.Integrations.Channels.BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update, defaults_to_struct: true
@@ -66,6 +67,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
       empty_values: [nil, ""]
     )
     |> cast_embed(:crm, with: &BranchSettings.changeset/2)
+    |> cast_embed(:fiscal, with: &Delivest.Fiscal.BranchSettings.changeset/2)
     |> cast_embed(:channels, with: &Delivest.Integrations.Channels.BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)

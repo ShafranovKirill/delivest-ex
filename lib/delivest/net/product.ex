@@ -34,6 +34,7 @@ defmodule Delivest.Net.Product do
     field :fats, :float
     field :carbohydrates, :float
     field :excise, Ecto.Enum, values: @excises
+    field :vat, Ecto.Enum, values: Delivest.Fiscal.Vat.rates()
     field :is_active, :boolean, default: true
     field :tags, {:array, :string}, default: []
     field :suggested, :boolean, default: false
@@ -74,7 +75,8 @@ defmodule Delivest.Net.Product do
       :slug,
       :tags,
       :suggested,
-      :excise
+      :excise,
+      :vat
       | @nutrients
     ])
     |> validate_required([:name, :price])
