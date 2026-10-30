@@ -2,6 +2,10 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
   alias Delivest.Couriers
   alias Delivest.Oms.Order
 
+  def create(%{order: order, confirmation_url: url}) do
+    %{data: order |> order_data() |> Map.put(:payment, payment_data(order, url))}
+  end
+
   def create(%{order: order}) do
     %{data: order_data(order)}
   end
@@ -22,6 +26,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       status: order.status,
       fulfillment_type: order.fulfillment_type,
       payment_method: order.payment_method,
+      awaiting_payment: order.awaiting_payment,
       total_amount: order.total_amount,
       subtotal_amount: order.subtotal_amount || order.total_amount,
       discount_amount: order.discount_amount || 0,
@@ -38,6 +43,11 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
     }
   end
 
+  defp payment_data(%{awaiting_payment: true}, url) when is_binary(url),
+    do: %{confirmation_url: url}
+
+  defp payment_data(_order, _url), do: nil
+
   defp order_data(order) do
     %{
       id: order.id,
@@ -46,6 +56,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       status: order.status,
       fulfillment_type: order.fulfillment_type,
       payment_method: order.payment_method,
+      awaiting_payment: order.awaiting_payment,
       total_amount: order.total_amount,
       subtotal_amount: order.subtotal_amount || order.total_amount,
       discount_amount: order.discount_amount || 0,

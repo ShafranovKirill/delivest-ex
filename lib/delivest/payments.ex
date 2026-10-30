@@ -62,6 +62,14 @@ defmodule Delivest.Payments do
 
   def open(repo, %Order{} = order, opts \\ []) do
     cond do
+      order.awaiting_payment ->
+        insert(repo, order, :system, %{
+          method: :online,
+          amount: order.total_amount,
+          status: :pending,
+          provider: "yookassa"
+        })
+
       opts[:paid_online] && order.channel ->
         insert(repo, order, :channel, %{
           method: :aggregator,

@@ -21,6 +21,7 @@ defmodule Delivest.Oms.Order do
     :unreachable,
     :other,
     :not_confirmed,
+    :not_paid,
     :client
   ]
 
@@ -75,6 +76,7 @@ defmodule Delivest.Oms.Order do
     field :cancel_note, :string
     field :cancel_acknowledged_at, :utc_datetime
     field :deleted_at, :utc_datetime
+    field :awaiting_payment, :boolean, default: false
 
     embeds_one :address, Address, on_replace: :update
     has_many :items, OrderItem, on_delete: :delete_all, on_replace: :delete
@@ -167,6 +169,11 @@ defmodule Delivest.Oms.Order do
   end
 
   def paid_online_changeset(changeset), do: put_change(changeset, :payment_method, :online)
+
+  def awaiting_payment_changeset(changeset),
+    do: change(changeset, payment_method: :online, awaiting_payment: true)
+
+  def awaiting_payment?(%__MODULE__{awaiting_payment: awaiting}), do: awaiting == true
 
   def crm_changeset(order, attrs) do
     order

@@ -17,6 +17,7 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
   def message(:not_found), do: gettext("Order not found")
   def message(:order_not_found), do: gettext("Order not found")
   def message(:order_locked), do: gettext("The order is managed by the CRM")
+  def message(:awaiting_payment), do: gettext("The order is waiting for the online payment")
 
   def message(:paid),
     do: gettext("The payment is already handed over or receipted, refund it before reverting")

@@ -675,7 +675,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       id={"order-status-#{@order.id}"}
       class={["badge badge-sm border font-medium", OrderHelpers.status_color(@order.status)]}
     >
-      {OrderHelpers.status_label(@order.status)}
+      {if @order.awaiting_payment,
+        do: gettext("Awaiting payment"),
+        else: OrderHelpers.status_label(@order.status)}
     </span>
     <.crm_state :if={@order.crm} order={@order} />
     <DelivestWeb.GatewayNote.order_gateway_note order={@order} name={crm_name(@order)} />

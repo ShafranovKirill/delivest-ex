@@ -54,6 +54,7 @@ defmodule Delivest.Oms.OrderFlow do
     cond do
       to == order.status -> {:ok, []}
       order.status in @final -> refuse(by, :finished)
+      order.awaiting_payment and to != :cancelled -> refuse(by, :awaiting_payment)
       to == :cancelled -> permit(order, [{order.status, :cancelled}], by)
       true -> forward(order, to, by)
     end

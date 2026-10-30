@@ -63,6 +63,12 @@ defmodule Delivest.Payments.Payment do
     |> unique_constraint([:provider, :external_id])
   end
 
+  def link_changeset(%__MODULE__{} = payment, external_id, details) do
+    payment
+    |> change(external_id: external_id, details: Map.merge(payment.details || %{}, details))
+    |> unique_constraint([:provider, :external_id])
+  end
+
   def amount_changeset(%__MODULE__{status: :pending} = payment, attrs) do
     payment
     |> cast(attrs, [:amount, :method, :cash_given])

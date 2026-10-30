@@ -5,7 +5,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
   require Logger
 
   alias Delivest.{Identity, Oms}
-  alias Delivest.Oms.Carts
+  alias Delivest.Oms.{Carts, Order}
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
 
@@ -46,9 +46,14 @@ defmodule DelivestWeb.Client.Order.OrderController do
          :ok <- ensure_payment_method(branch, attrs["payment_method"]),
          true <-
            Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
-         {:ok, order} <- Oms.create_order(attrs, update_client: false) do
+         {:ok, order} <-
+           Oms.create_order(attrs,
+             update_client: false,
+             online: attrs["payment_method"] == "online"
+           ),
+         {:ok, confirmation_url} <- begin_payment(order) do
       remember_address(client, order)
-      render(conn, :create, order: order)
+      render(conn, :create, order: order, confirmation_url: confirmation_url)
     else
       {:error, reason} -> render_error(conn, reason)
       {:error, _step, reason} -> render_error(conn, reason)
@@ -147,6 +152,23 @@ defmodule DelivestWeb.Client.Order.OrderController do
     end
   end
 
+  defp begin_payment(%Order{awaiting_payment: true} = order) do
+    case Delivest.Payments.Online.start(order) do
+      {:ok, url} ->
+        {:ok, url}
+
+      {:error, reason} ->
+        Logger.error(
+          "online payment of order #{order.number} was not started: #{inspect(reason)}"
+        )
+
+        Delivest.Payments.Online.abandon(order)
+        {:error, :payment_unavailable}
+    end
+  end
+
+  defp begin_payment(_order), do: {:ok, nil}
+
   defp ensure_payment_method(_branch, nil), do: :ok
 
   defp ensure_payment_method(branch, method) do
@@ -193,6 +215,15 @@ defmodule DelivestWeb.Client.Order.OrderController do
       %{until: status.until, reason: status.reason}
     )
   end
+
+  defp render_error(conn, :payment_unavailable),
+    do:
+      ApiError.send_error(
+        conn,
+        :bad_gateway,
+        :payment_unavailable,
+        "The online payment is not available now, choose another way to pay"
+      )
 
   defp render_error(conn, :payment_method_disabled),
     do:

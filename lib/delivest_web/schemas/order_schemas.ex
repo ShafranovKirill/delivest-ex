@@ -85,7 +85,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         },
         payment_method: %Schema{
           type: :string,
-          enum: ["cash", "card_offline"],
+          enum: ["cash", "card_offline", "online"],
           example: "cash",
           nullable: true
         },
@@ -193,7 +193,17 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               example: "created"
             },
             fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
-            payment_method: %Schema{type: :string, enum: ["cash", "card_offline"]},
+            payment_method: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
+            awaiting_payment: %Schema{
+              type: :boolean,
+              description: "Заказ ждёт онлайн-оплаты и ещё не принят в работу"
+            },
+            payment: %Schema{
+              type: :object,
+              nullable: true,
+              description: "Только в ответе на создание онлайн-заказа",
+              properties: %{confirmation_url: %Schema{type: :string, format: :uri}}
+            },
             total_amount: %Schema{type: :integer, example: 118_000},
             subtotal_amount: %Schema{
               type: :integer,
@@ -313,7 +323,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "preparing"
         },
         fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
-        payment_method: %Schema{type: :string, enum: ["cash", "card_offline"]},
+        payment_method: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
         total_amount: %Schema{type: :integer, example: 118_000},
         subtotal_amount: %Schema{
           type: :integer,

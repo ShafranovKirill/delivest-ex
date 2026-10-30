@@ -20,7 +20,8 @@ defmodule Delivest.Oms.Orders.Create do
   alias Ecto.Multi
 
   def run(attrs, opts \\ []) do
-    attrs = Attrs.normalize(attrs)
+    online? = Keyword.get(opts, :online, false)
+    attrs = attrs |> Attrs.normalize() |> online_attrs(online?)
     client_opts = [update_existing: Keyword.get(opts, :update_client, true)]
     pricing = Keyword.get(opts, :pricing, &Pricing.run/3)
 
@@ -42,7 +43,7 @@ defmodule Delivest.Oms.Orders.Create do
     end)
     |> Multi.run(:collected, fn repo, %{order: order} -> collect(repo, order, opts[:collect]) end)
     |> Multi.run(:created, fn repo, %{order: order} ->
-      OrderEvents.created(repo, order, opts[:actor] || if(opts[:channel], do: :channel))
+      created(repo, order, opts[:actor] || if(opts[:channel], do: :channel))
     end)
     |> Multi.run(:advanced, fn repo, %{order: order} -> advance(repo, order, opts[:advance]) end)
     |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
@@ -52,13 +53,22 @@ defmodule Delivest.Oms.Orders.Create do
     |> Repo.transaction()
     |> case do
       {:ok, %{advanced: order}} ->
-        Notifier.publish({:ok, order}, [:order, :created])
+        Notifier.publish({:ok, order}, [
+          :order,
+          if(order.awaiting_payment, do: :updated, else: :created)
+        ])
 
       {:error, step, reason, _} ->
         {:error, step, reason}
     end
     |> track(opts)
   end
+
+  defp online_attrs(attrs, true), do: Map.delete(attrs, "payment_method")
+  defp online_attrs(attrs, _online), do: attrs
+
+  defp created(_repo, %Order{awaiting_payment: true}, _actor), do: {:ok, nil}
+  defp created(repo, order, actor), do: OrderEvents.created(repo, order, actor)
 
   defp collect(_repo, _order, nil), do: {:ok, nil}
   defp collect(repo, order, by), do: Payments.collect(repo, order, by)
@@ -85,6 +95,7 @@ defmodule Delivest.Oms.Orders.Create do
     |> then(&if(opts[:channel], do: Order.channel_changeset(&1, opts[:channel]), else: &1))
     |> then(&if(opts[:crm], do: Order.crm_changeset(&1, opts[:crm]), else: &1))
     |> then(&if(opts[:paid_online], do: Order.paid_online_changeset(&1), else: &1))
+    |> then(&if(opts[:online], do: Order.awaiting_payment_changeset(&1), else: &1))
   end
 
   defp cash_given(%{"cash_given" => value}) when is_integer(value) and value > 0, do: value
