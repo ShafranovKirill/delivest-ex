@@ -28,6 +28,8 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "item_not_found",
             "validation_failed",
             "order_failed",
+            "order_not_found",
+            "order_not_cancellable",
             "too_many_requests",
             "unauthorized",
             "invalid_phone",

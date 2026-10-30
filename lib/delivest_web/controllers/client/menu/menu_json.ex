@@ -34,6 +34,7 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
       quantity: Map.get(product, :quantity),
       weight: Map.get(product, :weight),
       measure_unit: Map.get(product, :measure_unit, "g"),
+      nutrition: Map.get(product, :nutrition),
       is_active: Map.get(product, :is_active),
       tags: Map.get(product, :tags, []),
       suggested: Map.get(product, :suggested, false),

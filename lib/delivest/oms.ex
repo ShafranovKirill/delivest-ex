@@ -6,6 +6,7 @@ defmodule Delivest.Oms do
   defdelegate update_payment_method(order, attrs, actor \\ :system), to: Orders
   defdelegate advance_order(order, to, by, opts \\ []), to: Orders
   defdelegate cancel_order(order, by, attrs), to: Orders
+  defdelegate cancel_by_client(session_id, client_id, order_id), to: Orders
   defdelegate soft_delete_order(order, actor \\ :system), to: Orders
   defdelegate create_draft_cart(order), to: Orders
   defdelegate list_active_orders(session_id, client_id \\ nil), to: Orders

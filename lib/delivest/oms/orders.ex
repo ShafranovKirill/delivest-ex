@@ -148,6 +148,29 @@ defmodule Delivest.Oms.Orders do
     ])
   end
 
+  def client_cancellable?(%Order{} = order) do
+    order.status == :created and is_nil(order.crm) and is_nil(order.channel) and
+      order.payment_method in [:cash, :card_offline] and is_nil(order.deleted_at)
+  end
+
+  def cancel_by_client(session_id, client_id, order_id) do
+    with {:ok, id} <- Ecto.UUID.cast(order_id),
+         %Order{} = order <-
+           Order
+           |> where([o], o.id == ^id and is_nil(o.deleted_at))
+           |> where(^owned_by(session_id, client_id))
+           |> Repo.one() || {:error, :not_found},
+         true <- client_cancellable?(order) || {:error, :not_cancellable} do
+      advance_order(order, :cancelled, :client,
+        attrs: %{"cancel_reason" => "client"},
+        reason: nil
+      )
+    else
+      :error -> {:error, :not_found}
+      error -> error
+    end
+  end
+
   def cancel_order(%Order{} = order, by, attrs) do
     attrs = Filter.normalize_params(attrs)
 
