@@ -108,6 +108,13 @@ defmodule Delivest.Identity.PhoneConfirmations do
 
   def consume(_id, _session_id), do: {:error, :not_found}
 
+  @spec prune(pos_integer()) :: non_neg_integer()
+  def prune(days) do
+    before = DateTime.add(now(), -days, :day)
+    {count, _} = Repo.delete_all(from(c in PhoneConfirmation, where: c.inserted_at < ^before))
+    count
+  end
+
   def ttl_minutes, do: @ttl_minutes
 
   defp take_confirmed(query) do
