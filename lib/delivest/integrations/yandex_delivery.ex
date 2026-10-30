@@ -140,6 +140,42 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp retry_pause,
     do: Application.get_env(:delivest, :yandex_delivery_retry_pause, @retry_pause)
 
+  def estimate(%Order{} = order) do
+    RequestJournal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+      with {:ok, branch} <- Identity.get_branch(order.branch_id, preload: :info),
+           %Settings{} = settings <- configured(branch),
+           {:ok, body} <- Claim.estimate(order, branch, settings),
+           {:ok, response} <- Api.calculate(settings.token, body) do
+        offer(response, order)
+      else
+        {:error, _reason} = error -> error
+        other -> other
+      end
+    end)
+  end
+
+  defp offer(%{"offers" => [_ | _] = offers}, order) do
+    offer = Enum.min_by(offers, &cents(&1["price"]["total_price"]))
+    price = cents(offer["price"]["total_price"])
+
+    {:ok,
+     %{
+       price: price,
+       pickup_interval: offer["pickup_interval"],
+       delivery_interval: offer["delivery_interval"],
+       loss: max(price - (order.delivery_amount || 0), 0)
+     }}
+  end
+
+  defp offer(_response, _order), do: {:error, :no_offers}
+
+  defp cents(price) when is_binary(price) do
+    {value, _rest} = Float.parse(price)
+    round(value * 100)
+  end
+
+  defp cents(_price), do: 0
+
   @impl true
   def cancel(%Delivery{external_id: nil}), do: :ok
   def cancel(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok

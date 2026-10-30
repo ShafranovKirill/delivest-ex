@@ -33,6 +33,25 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
 
   def build(_order, _branch, _settings), do: {:error, :branch_address_missing}
 
+  def estimate(
+        %Order{} = order,
+        %Branch{info: %BranchInfo{} = info} = branch,
+        %Settings{} = settings
+      ) do
+    with {:ok, source} <- source_point(branch, info, settings, order),
+         {:ok, destination} <- destination_point(order, settings) do
+      {:ok,
+       %{
+         items: [%{quantity: 1, pickup_point: @source, dropoff_point: @destination}],
+         route_points: Enum.map([source, destination], &estimate_point/1),
+         referral_source: "delivest",
+         requirements: compact(%{taxi_classes: [to_string(settings.taxi_class)], due: due(order)})
+       }}
+    end
+  end
+
+  def estimate(_order, _branch, _settings), do: {:error, :branch_address_missing}
+
   def collects_payment?(%Order{payment_method: method}), do: method in [:cash, :card_offline]
 
   defp source_point(branch, info, settings, order) do
@@ -109,15 +128,27 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
     |> put_payment(order)
   end
 
-  defp put_due(body, %Order{cook_by: %DateTime{} = cook_by}) do
-    minutes = DateTime.diff(cook_by, DateTime.utc_now(), :minute)
-
-    if minutes >= @due_min and minutes <= @due_max,
-      do: Map.put(body, :due, DateTime.to_iso8601(cook_by)),
-      else: body
+  defp put_due(body, order) do
+    case due(order) do
+      nil -> body
+      due -> Map.put(body, :due, due)
+    end
   end
 
-  defp put_due(body, _order), do: body
+  defp due(%Order{cook_by: %DateTime{} = cook_by}) do
+    minutes = DateTime.diff(cook_by, DateTime.utc_now(), :minute)
+    if minutes >= @due_min and minutes <= @due_max, do: DateTime.to_iso8601(cook_by)
+  end
+
+  defp due(_order), do: nil
+
+  defp estimate_point(point) do
+    compact(%{
+      id: point.point_id,
+      coordinates: point.address[:coordinates],
+      fullname: point.address.fullname
+    })
+  end
 
   defp put_auto_accept(body, %Settings{auto_accept: true}), do: Map.put(body, :auto_accept, true)
   defp put_auto_accept(body, _settings), do: body

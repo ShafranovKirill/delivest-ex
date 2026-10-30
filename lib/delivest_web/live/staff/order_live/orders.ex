@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Couriers, Identity}
+  alias Delivest.{Couriers, Identity, LocalTime, Money}
   alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias DelivestWeb.CourierPresence
@@ -43,6 +43,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        shown_order: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id),
        couriers: couriers,
+       estimable: Couriers.settings(branch_id).source == :yandex,
        pickup: branch.info,
        positions: CourierPresence.positions(branch_id, couriers)
      )
@@ -141,6 +142,15 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     with {:ok, order} <- fetch_branch_order(socket, id),
          {:ok, _delivery} <- Couriers.find(socket.assigns.current_staff, order) do
       load(socket)
+    else
+      error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("estimate_delivery", %{"order-id" => id}, socket) do
+    with {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, estimate} <- Couriers.estimate(socket.assigns.current_staff, order) do
+      {:noreply, put_flash(socket, estimate_kind(estimate), estimate_message(estimate, socket))}
     else
       error -> failed(socket, error)
     end
@@ -346,6 +356,33 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
+  defp estimate_kind(%{loss: 0}), do: :info
+  defp estimate_kind(_estimate), do: :error
+
+  defp estimate_message(%{price: price, loss: loss} = estimate, socket) do
+    text =
+      gettext("Yandex Delivery: %{price}, pickup %{pickup}",
+        price: Money.format(price),
+        pickup: interval(estimate.pickup_interval, socket.assigns.current_branch)
+      )
+
+    if loss > 0,
+      do: text <> " " <> gettext("Loss: %{loss}", loss: Money.format(loss)),
+      else: text
+  end
+
+  defp interval(%{"from" => from, "to" => to}, branch),
+    do: "#{clock(from, branch)}–#{clock(to, branch)}"
+
+  defp interval(_interval, _branch), do: "—"
+
+  defp clock(iso, branch) do
+    case DateTime.from_iso8601(iso) do
+      {:ok, at, _offset} -> at |> LocalTime.local(branch) |> Calendar.strftime("%H:%M")
+      _error -> iso
+    end
+  end
+
   defp failed(socket, error),
     do: socket |> put_flash(:error, StatusErrors.message(error)) |> load()
 
@@ -448,6 +485,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
+          estimable={@estimable}
         />
       </div>
 
@@ -468,6 +506,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
+          estimable={@estimable}
           positions={@positions}
           pickup={@pickup}
         />

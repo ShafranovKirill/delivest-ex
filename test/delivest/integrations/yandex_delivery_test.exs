@@ -66,6 +66,25 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     Req.Test.json(conn, %{"cursor" => "cursor-#{length(events)}", "events" => events})
   end
 
+  defp respond(conn, _yandex, "/offers/calculate", _query, _body) do
+    Req.Test.json(conn, %{
+      "offers" => [
+        %{
+          "price" => %{"total_price" => "673.0"},
+          "pickup_interval" => %{
+            "from" => "2026-07-17T08:02:26+00:00",
+            "to" => "2026-07-17T08:42:26+00:00"
+          },
+          "delivery_interval" => %{
+            "from" => "2026-07-17T08:02:26+00:00",
+            "to" => "2026-07-17T09:15:43+00:00"
+          }
+        },
+        %{"price" => %{"total_price" => "810.5"}}
+      ]
+    })
+  end
+
   defp respond(conn, _yandex, "/claims/set-point-ready", _query, _body),
     do: Req.Test.json(conn, %{"id" => "ok"})
 
@@ -132,7 +151,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     end)
   end
 
-  defp branch(settings \\ @settings) do
+  defp branch(settings \\ @settings, couriers \\ %{source: :yandex, search: :preparing}) do
     branch = insert(:branch, name: "Центральный")
 
     Repo.insert!(%BranchInfo{
@@ -142,7 +161,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       latitude: 57.15,
       longitude: 65.53,
       phone_number: "+73452000000",
-      couriers: %{source: :yandex, search: :preparing},
+      couriers: couriers,
       yandex_delivery: settings
     })
 
@@ -283,6 +302,49 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       order(branch, cook_by: far) |> cooking(operator(branch))
       assert_received {:yandex, "/claims/create", _query, body}
       refute Map.has_key?(body, "due")
+    end
+  end
+
+  describe "delivery estimate" do
+    test "shows the cheapest offer and the loss against the delivery paid by the customer" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch, status: :accepted, delivery_amount: 40_000)
+
+      assert {:ok, estimate} = Couriers.estimate(staff, order)
+      assert estimate.price == 67_300
+      assert estimate.loss == 27_300
+      assert_received {:yandex, "/offers/calculate", _query, body}
+      assert [%{"id" => 1}, %{"id" => 2}] = body["route_points"]
+      assert body["requirements"]["taxi_classes"] == ["courier"]
+      refute Map.has_key?(body["requirements"], "due")
+      refute_received {:yandex, "/claims/create", _query, _body}
+    end
+
+    test "there is no loss when the customer pays enough" do
+      branch = branch()
+      order = order(branch, status: :accepted, delivery_amount: 80_000)
+
+      assert {:ok, %{loss: 0}} = Couriers.estimate(operator(branch), order)
+    end
+
+    test "a preorder inside the window sends the due time" do
+      branch = branch()
+      soon = DateTime.utc_now() |> DateTime.add(90, :minute) |> DateTime.truncate(:second)
+      order = order(branch, status: :accepted, cook_by: soon)
+
+      assert {:ok, _estimate} = Couriers.estimate(operator(branch), order)
+      assert_received {:yandex, "/offers/calculate", _query, %{"requirements" => %{"due" => due}}}
+      assert {:ok, ^soon, _} = DateTime.from_iso8601(due)
+    end
+
+    test "is not available for our own couriers" do
+      branch = branch(@settings, %{source: :staff, search: :preparing})
+
+      assert {:error, :not_available} =
+               Couriers.estimate(operator(branch), order(branch, status: :accepted))
+
+      refute_received {:yandex, "/offers/calculate", _query, _body}
     end
   end
 

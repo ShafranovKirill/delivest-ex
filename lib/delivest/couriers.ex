@@ -141,6 +141,18 @@ defmodule Delivest.Couriers do
     end
   end
 
+  def estimate(%Staff{} = staff, %Order{} = order) do
+    with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
+         true <- assignable?(order) || {:error, :not_available},
+         %CourierSettings{source: :yandex} <-
+           settings(order.branch_id) || {:error, :not_available} do
+      order |> Repo.preload([:items]) |> Delivest.Integrations.YandexDelivery.estimate()
+    else
+      %CourierSettings{} -> {:error, :not_available}
+      error -> error
+    end
+  end
+
   def assign(%Staff{} = staff, %Order{} = order, courier_id) do
     with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
          true <- assignable?(order) || {:error, :not_available},

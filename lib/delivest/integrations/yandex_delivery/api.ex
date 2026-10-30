@@ -6,6 +6,8 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
   def create(token, request_id, body),
     do: call(token, "/claims/create", [request_id: request_id], body)
 
+  def calculate(token, body), do: call(token, "/offers/calculate", [], body)
+
   def search(token, external_order_id),
     do: call(token, "/claims/search", [], %{external_order_id: external_order_id, limit: 10})
 

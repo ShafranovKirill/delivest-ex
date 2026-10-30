@@ -19,6 +19,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :current_branch, :map, required: true
   attr :delivery_minutes, :integer, required: true
   attr :couriers, :list, default: []
+  attr :estimable, :boolean, default: false
   attr :positions, :list, default: nil
   attr :pickup, :map, default: nil
 
@@ -103,6 +104,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         order={@order}
         delivery={@delivery}
         couriers={@couriers}
+        estimable={@estimable}
         can_manage={Identity.can?(@current_staff, "orders.update")}
       />
 
@@ -714,6 +716,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :order, :map, required: true
   attr :delivery, :map, default: nil
   attr :couriers, :list, default: []
+  attr :estimable, :boolean, default: false
   attr :can_manage, :boolean, default: false
 
   defp courier_panel(assigns) do
@@ -756,6 +759,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           phx-value-order-id={@order.id}
         >
           <.icon name="hero-magnifying-glass" class="size-3.5" /> {gettext("Find a courier")}
+        </button>
+        <button
+          :if={@estimable and is_nil(@delivery)}
+          type="button"
+          id={"order-estimate-delivery-#{@order.id}"}
+          class="btn btn-xs btn-ghost"
+          phx-click="estimate_delivery"
+          phx-value-order-id={@order.id}
+        >
+          <.icon name="hero-calculator" class="size-3.5" /> {gettext("Estimate delivery")}
         </button>
         <form
           :if={@couriers != [] and (is_nil(@delivery) or @delivery.status != :picked_up)}
