@@ -94,6 +94,51 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(422)
   end
 
+  test "the customer cancels an unaccepted order once", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    data = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+    id = data["data"]["id"]
+    conn = recycle_with_headers(conn)
+
+    assert [%{"can_cancel" => true}] =
+             conn |> get(~p"/client/orders/active") |> json_response(200) |> Map.fetch!("data")
+
+    assert %{"data" => %{"status" => "cancelled"}} =
+             conn |> post(~p"/client/orders/#{id}/cancel") |> json_response(200)
+
+    order = Repo.get!(Order, id)
+    assert order.cancel_reason == :client
+
+    assert %{"error" => "order_not_cancellable"} =
+             conn |> post(~p"/client/orders/#{id}/cancel") |> json_response(422)
+  end
+
+  test "someone else's order is not found when cancelled", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    data = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+
+    stranger =
+      build_conn()
+      |> put_req_header("x-forwarded-for", "stranger-#{System.unique_integer([:positive])}")
+
+    stranger = start_session(stranger, branch)
+
+    assert %{"error" => "order_not_found"} =
+             stranger
+             |> post(~p"/client/orders/#{data["data"]["id"]}/cancel")
+             |> json_response(404)
+  end
+
   test "creates an order and ignores server-controlled fields", %{
     conn: conn,
     branch: branch,

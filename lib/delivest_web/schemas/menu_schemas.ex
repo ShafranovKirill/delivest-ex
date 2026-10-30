@@ -40,6 +40,17 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           example: "g",
           description: "Единица измерения веса: граммы или миллилитры"
         },
+        nutrition: %Schema{
+          type: :object,
+          nullable: true,
+          description: "КБЖУ на 100 г; пустые поля — null",
+          properties: %{
+            calories: %Schema{type: :number, nullable: true, example: 250.0},
+            proteins: %Schema{type: :number, nullable: true, example: 12.5},
+            fats: %Schema{type: :number, nullable: true, example: 9.0},
+            carbohydrates: %Schema{type: :number, nullable: true, example: 30.0}
+          }
+        },
         is_active: %Schema{type: :boolean, example: true},
         tags: %Schema{
           type: :array,

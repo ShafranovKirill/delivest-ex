@@ -8,7 +8,7 @@ defmodule Delivest.Oms.OrderTransition do
   @type t :: %__MODULE__{}
 
   @statuses Order.statuses()
-  @sources [:staff, :crm, :channel, :courier, :delivery, :system]
+  @sources [:staff, :crm, :channel, :courier, :delivery, :system, :client]
 
   @foreign_key_type :binary_id
 

@@ -145,6 +145,7 @@ defmodule DelivestWeb.Router do
 
     scope "/orders", Order do
       get "/active", OrderController, :active
+      post "/:id/cancel", OrderController, :cancel
 
       scope "/" do
         pipe_through :order_rate_limit

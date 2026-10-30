@@ -15,7 +15,14 @@ defmodule Delivest.Oms.Order do
   @statuses [:created, :accepted, :preparing, :ready, :delivering, :completed, :cancelled]
   @payment_methods [:cash, :card_offline]
   @channel_payment_methods [:online]
-  @cancel_reasons [:customer_refused, :out_of_stock, :unreachable, :other, :not_confirmed]
+  @cancel_reasons [
+    :customer_refused,
+    :out_of_stock,
+    :unreachable,
+    :other,
+    :not_confirmed,
+    :client
+  ]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id

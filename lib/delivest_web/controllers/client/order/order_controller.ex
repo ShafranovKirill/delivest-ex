@@ -69,6 +69,40 @@ defmodule DelivestWeb.Client.Order.OrderController do
     render(conn, :active, orders: orders)
   end
 
+  operation(:cancel,
+    summary: "Отменить заказ",
+    description:
+      "Только пока заказ в статусе created, без CRM и канала, оплата не онлайн. " <>
+        "Дальше отмена — звонком в филиал.",
+    tags: ["Orders"],
+    parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
+    responses: [
+      ok: {"Отменённый заказ", "application/json", OrderResponse},
+      not_found: {"Заказ не найден", "application/json", ErrorResponse},
+      unprocessable_entity: {"Заказ уже нельзя отменить", "application/json", ErrorResponse}
+    ]
+  )
+
+  def cancel(conn, %{"id" => id}) do
+    session_id = CookieHelper.get_cookie(conn, "session_id")
+
+    case Oms.cancel_by_client(session_id, client_id(conn.assigns.current_client), id) do
+      {:ok, order} ->
+        render(conn, :create, order: order)
+
+      {:error, :not_found} ->
+        ApiError.send_error(conn, :not_found, :order_not_found, "Order not found")
+
+      {:error, _reason} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :order_not_cancellable,
+          "The order can no longer be cancelled"
+        )
+    end
+  end
+
   operation(:index,
     summary: "Мои заказы",
     description: "Все заказы авторизованного клиента, новые сначала.",

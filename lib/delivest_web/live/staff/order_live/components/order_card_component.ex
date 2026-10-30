@@ -965,6 +965,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp actor_label(_order, %{source: :courier}), do: gettext("Courier")
   defp actor_label(_order, %{source: :delivery}), do: gettext("Yandex Delivery")
   defp actor_label(_order, %{source: :system}), do: gettext("System")
+  defp actor_label(_order, %{source: :client}), do: gettext("Customer")
   defp actor_label(_order, _transition), do: "—"
 
   defp unmapped_crm_code(%{crm: %{remote_status: nil, remote_status_code: code}})

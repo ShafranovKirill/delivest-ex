@@ -333,6 +333,10 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         address: %Schema{type: :object, nullable: true, additionalProperties: true},
         inserted_at: %Schema{type: :string, format: :date_time},
         courier: DelivestWeb.Schemas.OrderSchemas.OrderCourier,
+        can_cancel: %Schema{
+          type: :boolean,
+          description: "Клиент ещё может отменить заказ сам"
+        },
         items: %Schema{type: :array, items: OrderItemResponse}
       },
       required: [

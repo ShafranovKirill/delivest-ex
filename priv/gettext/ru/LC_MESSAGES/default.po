@@ -4524,12 +4524,12 @@ msgstr "Не отменять"
 msgid "No orders here yet"
 msgstr "Заказов пока нет"
 
-#: lib/delivest_web/live/staff/order_live/cancel_reasons.ex:9
+#: lib/delivest_web/live/staff/order_live/cancel_reasons.ex:10
 #, elixir-autogen, elixir-format
 msgid "Not confirmed in time"
 msgstr "Не подтверждён вовремя"
 
-#: lib/delivest_web/live/staff/order_live/cancel_reasons.ex:10
+#: lib/delivest_web/live/staff/order_live/cancel_reasons.ex:11
 #, elixir-autogen, elixir-format
 msgid "Other"
 msgstr "Другое"
@@ -5038,7 +5038,7 @@ msgstr "Готовить"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:160
 #: lib/delivest_web/live/staff/integration_live/routes.ex:55
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1003
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1004
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr "Админка"
@@ -6519,7 +6519,7 @@ msgid "The courier has picked up the order, its status cannot be reverted"
 msgstr "Курьер уже забрал заказ, статус откатить нельзя"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:886
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:978
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:979
 #, elixir-autogen, elixir-format
 msgid "%{number} ext. %{ext}"
 msgstr "%{number} доб. %{ext}"
@@ -7666,7 +7666,7 @@ msgstr "Номер заказа"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:58
 #: lib/delivest_web/live/staff/integration_live/routes.ex:56
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1004
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1005
 #: lib/delivest_web/live/staff/pos_live/index.ex:22
 #: lib/delivest_web/live/staff/pos_live/index.ex:218
 #, elixir-autogen, elixir-format
@@ -8100,3 +8100,13 @@ msgstr "Закрыть"
 #, elixir-autogen, elixir-format
 msgid "Special days"
 msgstr "Особые дни"
+
+#: lib/delivest_web/live/staff/order_live/cancel_reasons.ex:9
+#, elixir-autogen, elixir-format
+msgid "Cancelled by the customer"
+msgstr "Отменил клиент"
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:968
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Customer"
+msgstr "Произвольный период"

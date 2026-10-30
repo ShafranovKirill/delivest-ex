@@ -33,6 +33,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       address: serialize_address(order.address),
       inserted_at: order.inserted_at,
       courier: Couriers.contact(order),
+      can_cancel: Delivest.Oms.Orders.client_cancellable?(order),
       items: Enum.map(order.items, &item_data/1)
     }
   end
