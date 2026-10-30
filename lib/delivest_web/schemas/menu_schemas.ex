@@ -114,6 +114,7 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
                     max_quantity: %Schema{type: :integer, example: 1},
                     is_default: %Schema{type: :boolean},
                     weight: %Schema{type: :integer, nullable: true},
+                    photo_url: %Schema{type: :string, nullable: true},
                     stopped: %Schema{type: :boolean}
                   },
                   required: [:id, :name, :price, :max_quantity, :is_default, :stopped]

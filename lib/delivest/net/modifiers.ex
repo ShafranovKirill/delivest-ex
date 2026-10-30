@@ -1,7 +1,8 @@
 defmodule Delivest.Net.Modifiers do
   import Ecto.Query
 
-  alias Delivest.{Audit, Identity, Repo}
+  alias Delivest.{Audit, Identity, Media, Repo}
+  alias Vix.Vips.{Image, Operation}
 
   alias Delivest.Net.{
     Modifier,
@@ -56,7 +57,79 @@ defmodule Delivest.Net.Modifiers do
   end
 
   def delete_modifier(staff, %Modifier{} = modifier) do
-    with :ok <- authorize(staff), do: Repo.delete(modifier)
+    with :ok <- authorize(staff) do
+      with {:ok, deleted} <- Repo.delete(modifier) do
+        delete_photo(modifier.photo_key)
+        clear_caches()
+        {:ok, deleted}
+      end
+    end
+  end
+
+  def photo_url(%Modifier{photo_key: key}) when is_binary(key) do
+    {:ok, url} = Media.generate_public_url(Media.public_bucket(), key)
+    url
+  end
+
+  def photo_url(_modifier), do: nil
+
+  def put_photo(staff, %Modifier{} = modifier, binary) when is_binary(binary) do
+    with :ok <- authorize(staff),
+         {:ok, webp} <- shrink(binary),
+         key = "modifiers/#{Ecto.UUID.generate()}.webp",
+         :ok <- put(key, webp) do
+      case modifier |> Ecto.Changeset.change(photo_key: key) |> Repo.update() do
+        {:ok, updated} ->
+          delete_photo(modifier.photo_key)
+          clear_caches()
+          {:ok, updated}
+
+        error ->
+          delete_photo(key)
+          error
+      end
+    end
+  end
+
+  def remove_photo(staff, %Modifier{} = modifier) do
+    with :ok <- authorize(staff),
+         {:ok, updated} <- modifier |> Ecto.Changeset.change(photo_key: nil) |> Repo.update() do
+      delete_photo(modifier.photo_key)
+      clear_caches()
+      {:ok, updated}
+    end
+  end
+
+  defp shrink(binary) do
+    with {:ok, thumb} <-
+           Operation.thumbnail_buffer(binary, 400, height: 400, size: :VIPS_SIZE_DOWN),
+         {:ok, webp} <- Image.write_to_buffer(thumb, ".webp[strip,Q=82]") do
+      {:ok, webp}
+    else
+      {:error, _reason} -> {:error, :invalid_image}
+    end
+  end
+
+  defp put(key, body) do
+    Media.public_bucket()
+    |> ExAws.S3.put_object(key, body, content_type: "image/webp")
+    |> ExAws.request()
+    |> case do
+      {:ok, _response} -> :ok
+      {:error, _reason} -> {:error, :upload_failed}
+    end
+  end
+
+  defp delete_photo(nil), do: :ok
+
+  defp delete_photo(key) do
+    Media.public_bucket() |> ExAws.S3.delete_object(key) |> ExAws.request()
+    :ok
+  end
+
+  defp clear_caches do
+    Cachex.clear(:menu_cache)
+    Cachex.clear(:cart_cache)
   end
 
   def get_modifier(id), do: Repo.get(Modifier, id)

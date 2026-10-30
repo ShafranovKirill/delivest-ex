@@ -61,6 +61,7 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
             max_quantity: m.max_quantity,
             is_default: m.is_default,
             weight: m.weight,
+            photo_url: Delivest.Net.Modifiers.photo_url(m),
             stopped: MapSet.member?(stopped.modifiers, m.id)
           }
         end

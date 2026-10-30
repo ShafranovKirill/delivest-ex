@@ -21,7 +21,15 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
        branch_id: socket.assigns.current_branch.id,
        can_edit: Identity.can?(staff, "products.update"),
        can_stop: Identity.can?(staff, "stops.update"),
-       new_group: to_form(Modifiers.change_group(%ModifierGroup{}), as: :group)
+       new_group: to_form(Modifiers.change_group(%ModifierGroup{}), as: :group),
+       photo_for: nil
+     )
+     |> allow_upload(:photo,
+       accept: ~w(.png .webp .jpg .jpeg),
+       max_entries: 1,
+       max_file_size: 5_000_000,
+       auto_upload: true,
+       progress: &handle_progress/3
      )
      |> load()}
   end
@@ -79,6 +87,18 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     end
   end
 
+  def handle_event("pick_photo", %{"id" => id}, socket),
+    do: {:noreply, assign(socket, photo_for: id)}
+
+  def handle_event("validate_photo", _params, socket), do: {:noreply, socket}
+
+  def handle_event("remove_photo", %{"id" => id}, socket) do
+    case Modifiers.remove_photo(socket.assigns.current_staff, Modifiers.get_modifier(id)) do
+      {:ok, _modifier} -> {:noreply, load(socket)}
+      {:error, _reason} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
   def handle_event("delete_modifier", %{"id" => id}, socket) do
     Modifiers.delete_modifier(socket.assigns.current_staff, Modifiers.get_modifier(id))
     {:noreply, load(socket)}
@@ -103,6 +123,28 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     )
 
     {:noreply, load(socket)}
+  end
+
+  defp handle_progress(:photo, entry, socket) do
+    if entry.done? do
+      binary =
+        consume_uploaded_entry(socket, entry, fn %{path: path} -> {:ok, File.read!(path)} end)
+
+      modifier = Modifiers.get_modifier(socket.assigns.photo_for)
+
+      case modifier && Modifiers.put_photo(socket.assigns.current_staff, modifier, binary) do
+        {:ok, _modifier} ->
+          {:noreply, socket |> put_flash(:info, gettext("Saved")) |> load()}
+
+        {:error, :invalid_image} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not read the image"))}
+
+        _ ->
+          {:noreply, put_flash(socket, :error, gettext("Could not save the image, try again"))}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   defp load(socket) do
@@ -242,6 +284,10 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
         <.button>{gettext("Add")}</.button>
       </.form>
 
+      <form id="photo-upload" phx-change="validate_photo" class="hidden">
+        <.live_file_input upload={@uploads.photo} />
+      </form>
+
       <p :if={@groups == []} class="text-base-content/60">{gettext("No modifier groups yet")}</p>
 
       <section
@@ -312,12 +358,46 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
             phx-value-id={modifier.id}
             class="grid gap-2 sm:grid-cols-[1fr_7rem_5rem_7rem_auto_auto_auto_auto] sm:items-end border-t border-base-200 pt-2"
           >
-            <.input
-              name="modifier[name]"
-              value={modifier.name}
-              label={gettext("Name")}
-              disabled={!@can_edit}
-            />
+            <div class="flex items-end gap-2">
+              <label
+                for={@can_edit && @uploads.photo.ref}
+                phx-click={@can_edit && "pick_photo"}
+                phx-value-id={modifier.id}
+                title={gettext("Photo")}
+                class={[
+                  "size-10 shrink-0 rounded-box border border-base-300 bg-base-200 grid place-items-center overflow-hidden",
+                  @can_edit && "cursor-pointer"
+                ]}
+              >
+                <img
+                  :if={modifier.photo_key}
+                  src={Modifiers.photo_url(modifier)}
+                  class="size-full object-cover"
+                />
+                <.icon
+                  :if={!modifier.photo_key}
+                  name="hero-photo"
+                  class="size-5 text-base-content/30"
+                />
+              </label>
+              <button
+                :if={@can_edit && modifier.photo_key}
+                type="button"
+                phx-click="remove_photo"
+                phx-value-id={modifier.id}
+                title={gettext("Remove photo")}
+                class="btn btn-ghost btn-xs"
+              >
+                <.icon name="hero-x-mark" class="size-4" />
+              </button>
+              <.input
+                name="modifier[name]"
+                value={modifier.name}
+                label={gettext("Name")}
+                disabled={!@can_edit}
+                class="w-full input"
+              />
+            </div>
             <.input
               name="modifier[price]"
               value={Delivest.Money.input(modifier.price)}

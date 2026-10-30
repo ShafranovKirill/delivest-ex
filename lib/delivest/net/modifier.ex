@@ -16,6 +16,7 @@ defmodule Delivest.Net.Modifier do
     field :weight, :integer
     field :position, :integer, default: 0
     field :is_active, :boolean, default: true
+    field :photo_key, :string
 
     timestamps(type: :utc_datetime)
   end
