@@ -53,16 +53,20 @@ defmodule Delivest.Integrations.AtolOnline.Api do
     end
   end
 
-  defp handle({:ok, %{"error" => %{} = error}}),
-    do: {:error, {:atol, error["code"], error["text"]}}
+  defp handle({:ok, %{"error" => %{} = error} = body}), do: failure(body, error)
 
   defp handle({:ok, %{} = body}), do: {:ok, body}
   defp handle({:ok, body}), do: {:error, {:atol, nil, inspect(body)}}
 
-  defp handle({:error, {:http_error, _status, %{"error" => %{} = error}}}),
-    do: {:error, {:atol, error["code"], error["text"]}}
+  defp handle({:error, {:http_error, _status, %{"error" => %{} = error} = body}}),
+    do: failure(body, error)
 
   defp handle(error), do: error
+
+  defp failure(%{"uuid" => uuid}, %{"code" => 33}) when is_binary(uuid),
+    do: {:ok, %{"uuid" => uuid, "status" => "wait"}}
+
+  defp failure(_body, error), do: {:error, {:atol, error["code"], error["text"]}}
 
   defp error_code(%{"error" => %{"code" => code}}), do: code
   defp error_code(_body), do: nil

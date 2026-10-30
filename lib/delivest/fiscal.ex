@@ -11,6 +11,7 @@ defmodule Delivest.Fiscal do
   alias Delivest.Payments.Payment
 
   @poll_seconds 300
+  @max_retries 3
 
   def settings(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
@@ -183,7 +184,7 @@ defmodule Delivest.Fiscal do
   def handle_callback(provider, token, params) do
     with {:ok, module} <- Registry.fetch(provider),
          {:ok, uuid, result} <- module.parse_callback(params),
-         %Receipt{} = receipt <- Repo.get_by(Receipt, uuid: uuid) || {:error, :not_found},
+         %Receipt{} = receipt <- find_receipt(module, uuid, result) || {:error, :not_found},
          {:ok, _module, settings} <- provider(receipt),
          true <- valid_token?(module.callback_token(settings), token) || {:error, :not_found} do
       apply_result(receipt, result)
@@ -215,6 +216,10 @@ defmodule Delivest.Fiscal do
       when status in [:done, :fail],
       do: {:ok, receipt}
 
+  def apply_result(%Receipt{retries: retries} = receipt, %{status: :fail, retriable: true}, _opts)
+      when retries < @max_retries,
+      do: reregister(receipt)
+
   def apply_result(%Receipt{} = receipt, result, opts) do
     with {:ok, updated} <- receipt |> Receipt.result_changeset(result) |> Repo.update() do
       if updated.status != :wait or Keyword.get(opts, :poll, true), do: after_result(updated)
@@ -244,6 +249,53 @@ defmodule Delivest.Fiscal do
       )
     )
   end
+
+  defp reregister(%Receipt{} = receipt) do
+    retries = receipt.retries + 1
+
+    Repo.transaction(fn ->
+      with {:ok, updated} <-
+             receipt
+             |> Receipt.result_changeset(%{
+               status: :pending,
+               uuid: nil,
+               error: nil,
+               retries: retries,
+               external_id: "#{receipt.id}-#{retries + 1}"
+             })
+             |> Repo.update(),
+           {:ok, _job} <-
+             %{"receipt_id" => receipt.id, "retry" => retries}
+             |> RegisterWorker.new()
+             |> Oban.insert() do
+        updated
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp find_receipt(module, uuid, result) do
+    Repo.get_by(Receipt, uuid: uuid) || find_by_external_id(module, result[:external_id])
+  end
+
+  defp find_by_external_id(module, external_id) when is_binary(external_id) do
+    matches =
+      case Ecto.UUID.cast(external_id) do
+        {:ok, id} -> dynamic([r], r.external_id == ^external_id or r.id == ^id)
+        :error -> dynamic([r], r.external_id == ^external_id)
+      end
+
+    Repo.one(
+      from(r in Receipt,
+        where: r.provider == ^to_string(module.key()) and is_nil(r.uuid),
+        where: ^matches,
+        limit: 1
+      )
+    )
+  end
+
+  defp find_by_external_id(_module, _external_id), do: nil
 
   defp after_result(%Receipt{status: :wait} = receipt) do
     %{"receipt_id" => receipt.id}

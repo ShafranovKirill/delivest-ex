@@ -30,6 +30,8 @@ defmodule Delivest.Fiscal.Receipt do
     field :payload, :map
     field :error, :string
     field :attempts, :integer, default: 0
+    field :external_id, :string
+    field :retries, :integer, default: 0
 
     timestamps(type: :utc_datetime)
   end
@@ -57,7 +59,8 @@ defmodule Delivest.Fiscal.Receipt do
   end
 
   def result_changeset(receipt, attrs),
-    do: cast(receipt, attrs, [:uuid, :status, :payload, :error, :attempts])
+    do:
+      cast(receipt, attrs, [:uuid, :status, :payload, :error, :attempts, :external_id, :retries])
 
   def ofd_url(%__MODULE__{payload: %{"ofd_receipt_url" => url}}) when is_binary(url), do: url
   def ofd_url(_receipt), do: nil

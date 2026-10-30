@@ -4,6 +4,8 @@ defmodule Delivest.Fiscal.Provider do
   @type result :: %{
           required(:status) => :wait | :done | :fail,
           optional(:uuid) => String.t(),
+          optional(:external_id) => String.t(),
+          optional(:retriable) => boolean(),
           optional(:payload) => map(),
           optional(:error) => String.t()
         }
