@@ -444,5 +444,13 @@ defmodule DelivestWeb.Router do
       live_dashboard "/dashboard", metrics: DelivestWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+
+    scope "/dev/atol/possystem/v5", DelivestWeb.Dev do
+      pipe_through :api
+
+      post "/getToken", AtolStubController, :token
+      get "/:group/report/:uuid", AtolStubController, :report
+      post "/:group/:operation", AtolStubController, :register
+    end
   end
 end

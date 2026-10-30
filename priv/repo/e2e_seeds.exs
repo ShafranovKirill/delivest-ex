@@ -22,7 +22,21 @@ branch =
     |> Repo.insert!()
 
 Repo.get_by(BranchInfo, branch_id: branch.id) ||
-  %BranchInfo{board_token: "e2e-board"}
+  %BranchInfo{
+    board_token: "e2e-board",
+    fiscal: %Delivest.Fiscal.BranchSettings{
+      mode: :own,
+      inn: "5544332219",
+      payment_address: "https://v5.online.atol.ru",
+      email: "e2e@example.com",
+      atol: %Delivest.Integrations.AtolOnline.Settings{
+        login: "e2e",
+        password: "e2e",
+        group_code: "e2e-group",
+        callback_token: "e2e"
+      }
+    }
+  }
   |> BranchInfo.changeset(%{
     branch_id: branch.id,
     address: "Москва, Тверская улица, 7",

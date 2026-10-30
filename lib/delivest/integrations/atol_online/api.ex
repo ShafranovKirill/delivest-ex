@@ -40,10 +40,17 @@ defmodule Delivest.Integrations.AtolOnline.Api do
     headers = if token, do: [{"token", token}], else: []
 
     [
-      base_url: if(settings.sandbox, do: @sandbox, else: @host),
+      base_url: host(settings),
       journal: :atol,
       headers: [{"content-type", "application/json; charset=utf-8"} | headers]
     ]
+  end
+
+  defp host(settings) do
+    case Application.get_env(:delivest, Delivest.Integrations.AtolOnline, [])[:host] do
+      host when is_binary(host) and host != "" -> host
+      _default -> if settings.sandbox, do: @sandbox, else: @host
+    end
   end
 
   defp handle({:ok, %{"error" => %{} = error}}),

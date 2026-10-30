@@ -33,6 +33,8 @@ config :delivest, Delivest.Integrations.Iiko,
 
 config :delivest, Delivest.Integrations.Rkeeper, token: System.get_env("RKEEPER_TOKEN")
 
+config :delivest, Delivest.Integrations.AtolOnline, host: System.get_env("ATOL_HOST")
+
 client_origin = System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"
 
 config :delivest, :client_origin, String.trim_trailing(client_origin, "/")
