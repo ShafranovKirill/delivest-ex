@@ -42,6 +42,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   end
 
   defp provider_path(branch, :frontpad), do: ~p"/staff/b/#{branch}/integrations/frontpad"
+  defp provider_path(branch, :iiko), do: ~p"/staff/b/#{branch}/integrations/iiko"
   defp provider_path(branch, _provider), do: ~p"/staff/b/#{branch}/integrations"
 
   @impl true

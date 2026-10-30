@@ -87,8 +87,8 @@ defmodule Delivest.Integrations.Iiko do
   defp apply_change(_order, _change, _settings), do: :skip
 
   @impl true
-  def dictionaries(settings) do
-    with {:ok, %{"paymentTypes" => types}} <- Api.payment_types(settings) do
+  def dictionaries(settings, organization_ids \\ nil) do
+    with {:ok, %{"paymentTypes" => types}} <- Api.payment_types(settings, organization_ids) do
       {:ok,
        %{
          payment_types:
@@ -104,8 +104,8 @@ defmodule Delivest.Integrations.Iiko do
          do: {:ok, Enum.map(list, &%{id: &1["id"], name: &1["name"]})}
   end
 
-  def terminal_groups(settings) do
-    with {:ok, %{"terminalGroups" => groups}} <- Api.terminal_groups(settings) do
+  def terminal_groups(settings, organization_ids \\ nil) do
+    with {:ok, %{"terminalGroups" => groups}} <- Api.terminal_groups(settings, organization_ids) do
       {:ok,
        groups
        |> Enum.flat_map(&Map.get(&1, "items", []))

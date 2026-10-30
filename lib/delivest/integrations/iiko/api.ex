@@ -26,8 +26,11 @@ defmodule Delivest.Integrations.Iiko.Api do
   def organizations(settings),
     do: call(settings, "/api/1/organizations", %{returnAdditionalInfo: false})
 
-  def terminal_groups(settings),
-    do: call(settings, "/api/1/terminal_groups", %{organizationIds: [settings.organization_id]})
+  def terminal_groups(settings, ids \\ nil),
+    do:
+      call(settings, "/api/1/terminal_groups", %{
+        organizationIds: ids || [settings.organization_id]
+      })
 
   def alive(settings) do
     call(settings, "/api/1/terminal_groups/is_alive", %{
@@ -36,8 +39,9 @@ defmodule Delivest.Integrations.Iiko.Api do
     })
   end
 
-  def payment_types(settings),
-    do: call(settings, "/api/1/payment_types", %{organizationIds: [settings.organization_id]})
+  def payment_types(settings, ids \\ nil),
+    do:
+      call(settings, "/api/1/payment_types", %{organizationIds: ids || [settings.organization_id]})
 
   def create_delivery(settings, order) do
     call(settings, "/api/1/deliveries/create", %{

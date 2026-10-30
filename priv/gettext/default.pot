@@ -851,6 +851,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:245
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:489
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:235
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:198
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:305
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
@@ -1222,6 +1223,7 @@ msgid "Cart is empty"
 msgstr ""
 
 #: lib/delivest_web/live/staff/courier_live/board.ex:158
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:208
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:153
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:186
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:323
@@ -2329,6 +2331,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:95
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:49
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:94
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:52
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:56
 #, elixir-autogen, elixir-format
 msgid "Please check the highlighted fields"
@@ -2339,7 +2342,7 @@ msgstr ""
 msgid "All products of this branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:84
+#: lib/delivest_web/live/staff/integration_live/index.ex:85
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:248
 #: lib/delivest_web/live/staff/log_live/components/events_component.ex:38
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:61
@@ -3490,7 +3493,7 @@ msgstr ""
 msgid "to"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:58
+#: lib/delivest_web/live/staff/integration_live/index.ex:59
 #: lib/delivest_web/live/staff/log_live/index.ex:161
 #, elixir-autogen, elixir-format
 msgid "All branches"
@@ -3928,6 +3931,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:39
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:85
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:46
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:44
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:63
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:77
@@ -4000,7 +4004,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:57
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:69
-#: lib/delivest_web/live/staff/integration_live/index.ex:218
+#: lib/delivest_web/live/staff/integration_live/index.ex:219
 #, elixir-autogen, elixir-format
 msgid "Connected"
 msgstr ""
@@ -4036,8 +4040,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:55
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:110
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:192
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:116
 #: lib/delivest_web/live/staff/integration_live/index.ex:14
-#: lib/delivest_web/live/staff/integration_live/index.ex:52
+#: lib/delivest_web/live/staff/integration_live/index.ex:53
 #: lib/delivest_web/live/staff/integration_live/routes.ex:71
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:78
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:213
@@ -4048,6 +4053,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:206
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:603
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:179
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:22
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:27
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:35
@@ -4055,7 +4061,7 @@ msgstr ""
 msgid "Loading..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:223
+#: lib/delivest_web/live/staff/integration_live/index.ex:224
 #, elixir-autogen, elixir-format
 msgid "Not connected"
 msgstr ""
@@ -4071,7 +4077,7 @@ msgstr ""
 msgid "Nothing found"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:203
+#: lib/delivest_web/live/staff/integration_live/index.ex:204
 #, elixir-autogen, elixir-format
 msgid "Orders go to CRM"
 msgstr ""
@@ -4147,7 +4153,7 @@ msgstr ""
 msgid "Campaign ID"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:68
+#: lib/delivest_web/live/staff/integration_live/index.ex:69
 #, elixir-autogen, elixir-format
 msgid "Customers confirm the phone number with a call via zvonok.com."
 msgstr ""
@@ -4157,17 +4163,17 @@ msgstr ""
 msgid "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:86
+#: lib/delivest_web/live/staff/integration_live/index.ex:87
 #, elixir-autogen, elixir-format
 msgid "Each branch has its own settings. Switch the branch to set up another one."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:53
+#: lib/delivest_web/live/staff/integration_live/index.ex:54
 #, elixir-autogen, elixir-format
 msgid "External services connected to the app."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:125
+#: lib/delivest_web/live/staff/integration_live/index.ex:126
 #, elixir-autogen, elixir-format
 msgid "Orders to the CRM and products matching with the app menu."
 msgstr ""
@@ -4179,18 +4185,19 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:246
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:292
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:131
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:67
+#: lib/delivest_web/live/staff/integration_live/index.ex:68
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:13
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:60
 #, elixir-autogen, elixir-format
 msgid "Sign-in by phone number"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:60
+#: lib/delivest_web/live/staff/integration_live/index.ex:61
 #, elixir-autogen, elixir-format
 msgid "These settings are shared by every branch."
 msgstr ""
@@ -4806,7 +4813,7 @@ msgstr ""
 msgid "You don't have permission to edit banners."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:75
+#: lib/delivest_web/live/staff/integration_live/index.ex:76
 #, elixir-autogen, elixir-format
 msgid "Address suggestions and the map via dadata.ru."
 msgstr ""
@@ -4818,7 +4825,7 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:12
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:59
-#: lib/delivest_web/live/staff/integration_live/index.ex:74
+#: lib/delivest_web/live/staff/integration_live/index.ex:75
 #, elixir-autogen, elixir-format
 msgid "Delivery address on the map"
 msgstr ""
@@ -4957,6 +4964,7 @@ msgid "Stop list sync is off"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:52
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:79
 #, elixir-autogen, elixir-format
 msgid "Stop list updated"
 msgstr ""
@@ -5056,7 +5064,7 @@ msgid "No CRM is connected to this branch. All orders stay in the app."
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:559
-#: lib/delivest_web/live/staff/integration_live/index.ex:93
+#: lib/delivest_web/live/staff/integration_live/index.ex:94
 #: lib/delivest_web/live/staff/integration_live/routes.ex:18
 #: lib/delivest_web/live/staff/integration_live/routes.ex:75
 #, elixir-autogen, elixir-format
@@ -5083,7 +5091,7 @@ msgstr ""
 msgid "Where orders come from and which of them go further to the CRM."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:94
+#: lib/delivest_web/live/staff/integration_live/index.ex:95
 #, elixir-autogen, elixir-format
 msgid "Which orders go further to the CRM."
 msgstr ""
@@ -5168,7 +5176,7 @@ msgstr ""
 msgid "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:101
+#: lib/delivest_web/live/staff/integration_live/index.ex:102
 #, elixir-autogen, elixir-format
 msgid "Orders from Yandex Eda and Delivery Club."
 msgstr ""
@@ -5209,7 +5217,7 @@ msgstr ""
 msgid "Take orders from Yandex Eda"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:208
+#: lib/delivest_web/live/staff/integration_live/index.ex:209
 #, elixir-autogen, elixir-format
 msgid "Takes orders"
 msgstr ""
@@ -5229,7 +5237,7 @@ msgstr ""
 msgid "Unit"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:100
+#: lib/delivest_web/live/staff/integration_live/index.ex:101
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:27
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:217
 #, elixir-autogen, elixir-format
@@ -6494,7 +6502,7 @@ msgstr ""
 msgid "%{number} ext. %{ext}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:116
+#: lib/delivest_web/live/staff/integration_live/index.ex:117
 #, elixir-autogen, elixir-format
 msgid "A Yandex courier for the delivery orders."
 msgstr ""
@@ -6514,7 +6522,7 @@ msgstr ""
 msgid "Branch phone"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:213
+#: lib/delivest_web/live/staff/integration_live/index.ex:214
 #, elixir-autogen, elixir-format
 msgid "Calls couriers"
 msgstr ""
@@ -6610,7 +6618,7 @@ msgstr ""
 msgid "Yandex"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:115
+#: lib/delivest_web/live/staff/integration_live/index.ex:116
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:18
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:82
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:900
@@ -6864,7 +6872,7 @@ msgstr ""
 
 #: lib/delivest_web/live/board_live/index.ex:78
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:74
-#: lib/delivest_web/live/staff/integration_live/index.ex:193
+#: lib/delivest_web/live/staff/integration_live/index.ex:194
 #, elixir-autogen, elixir-format
 msgid "No connection"
 msgstr ""
@@ -6960,6 +6968,7 @@ msgid "Request"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:256
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:139
 #: lib/delivest_web/live/staff/integration_live/journal_component.ex:34
 #, elixir-autogen, elixir-format
 msgid "Request journal"
@@ -7006,7 +7015,7 @@ msgstr ""
 msgid "Checking..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:186
+#: lib/delivest_web/live/staff/integration_live/index.ex:187
 #, elixir-autogen, elixir-format
 msgid "Reconnect"
 msgstr ""
@@ -7302,7 +7311,7 @@ msgstr ""
 msgid "Failed to issue the receipt"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:109
+#: lib/delivest_web/live/staff/integration_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Fiscal receipts through ATOL Online."
 msgstr ""
@@ -7366,7 +7375,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:14
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:114
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:132
-#: lib/delivest_web/live/staff/integration_live/index.ex:108
+#: lib/delivest_web/live/staff/integration_live/index.ex:109
 #: lib/delivest_web/live/staff/receipt_live/index.ex:13
 #: lib/delivest_web/live/staff/receipt_live/index.ex:33
 #, elixir-autogen, elixir-format
@@ -7472,6 +7481,7 @@ msgstr ""
 msgid "Awaiting payment"
 msgstr ""
 
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:215
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:324
 #: lib/delivest_web/live/staff/pos_live/index.ex:361
 #, elixir-autogen, elixir-format
@@ -7488,6 +7498,7 @@ msgstr ""
 msgid "Not paid"
 msgstr ""
 
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:222
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:325
 #, elixir-autogen, elixir-format
 msgid "Online"
@@ -7679,4 +7690,84 @@ msgstr ""
 #: lib/delivest_web/live/staff/pos_live/index.ex:522
 #, elixir-autogen, elixir-format
 msgid "Total"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:189
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:196
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:207
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:214
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:221
+#, elixir-autogen, elixir-format
+msgid "Choose"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:243
+#, elixir-autogen, elixir-format
+msgid "Connect iiko updates"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:182
+#, elixir-autogen, elixir-format
+msgid "Load from iiko"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:121
+#, elixir-autogen, elixir-format
+msgid "Orders go to the restaurant POS, statuses and the stop list come back."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:190
+#, elixir-autogen, elixir-format
+msgid "Organization"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:202
+#, elixir-autogen, elixir-format
+msgid "Payment types in iiko"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:161
+#, elixir-autogen, elixir-format
+msgid "Send orders to iiko"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:230
+#, elixir-autogen, elixir-format
+msgid "Take the stop list from iiko"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:197
+#, elixir-autogen, elixir-format
+msgid "Terminal group"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:251
+#, elixir-autogen, elixir-format
+msgid "Update the stop list"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:168
+#, elixir-autogen, elixir-format
+msgid "iiko API key"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:106
+#, elixir-autogen, elixir-format
+msgid "iiko did not respond, try again later"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:104
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:105
+#, elixir-autogen, elixir-format
+msgid "iiko error: %{error}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:72
+#, elixir-autogen, elixir-format
+msgid "iiko will send updates"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:171
+#, elixir-autogen, elixir-format
+msgid "iikoWeb → Integrations → API keys. Save the key, then load the lists."
 msgstr ""
