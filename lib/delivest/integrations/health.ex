@@ -14,7 +14,12 @@ defmodule Delivest.Integrations.Health do
     end
   end
 
-  def report(provider, branch_id, _module, :ok), do: save(provider, branch_id, :ok, nil)
+  def report(provider, branch_id, _module, :ok) do
+    case get(provider, branch_id) do
+      %Status{status: :warning} = status -> {:ok, status}
+      _status -> save(provider, branch_id, :ok, nil)
+    end
+  end
 
   def report(provider, branch_id, module, {:error, reason}) do
     status = if kind(module, reason) == :auth, do: :auth, else: :failed
@@ -26,9 +31,20 @@ defmodule Delivest.Integrations.Health do
     save(provider, branch_id, :auth, inspect(reason))
   end
 
+  def warn(provider, branch_id, message), do: save(provider, branch_id, :warning, message)
+
+  def clear_warning(provider, branch_id) do
+    Status
+    |> where([s], s.provider == ^to_string(provider) and s.status == :warning)
+    |> by_branch(branch_id)
+    |> Repo.update_all(set: [status: :ok, message: nil, checked_at: DateTime.utc_now()])
+
+    :ok
+  end
+
   def recovered(provider, branch_id) do
     Status
-    |> where([s], s.provider == ^to_string(provider) and s.status != :ok)
+    |> where([s], s.provider == ^to_string(provider) and s.status in [:failed, :auth])
     |> by_branch(branch_id)
     |> Repo.update_all(set: [status: :ok, message: nil, checked_at: DateTime.utc_now()])
 

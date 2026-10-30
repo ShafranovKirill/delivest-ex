@@ -61,6 +61,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.HealthComponent do
   defp status_icon(%{status: :failed} = assigns),
     do: ~H|<.icon name="hero-exclamation-triangle" class="size-6 shrink-0 text-warning" />|
 
+  defp status_icon(%{status: :warning} = assigns),
+    do: ~H|<.icon name="hero-exclamation-triangle" class="size-6 shrink-0 text-warning" />|
+
   defp status_icon(assigns),
     do:
       ~H|<.icon name="hero-question-mark-circle" class="size-6 shrink-0 text-base-content/40" />|
@@ -72,4 +75,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.HealthComponent do
     do: gettext("Access denied, reconnect the integration")
 
   defp status_text(%Status{status: :failed}), do: gettext("No connection")
+
+  defp status_text(%Status{status: :warning, message: "catalog_issues:" <> count}),
+    do: gettext("The menu differs from the CRM: %{count}", count: count)
+
+  defp status_text(%Status{status: :warning}), do: gettext("Needs attention")
 end

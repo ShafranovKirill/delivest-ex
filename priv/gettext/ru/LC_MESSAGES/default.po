@@ -678,7 +678,7 @@ msgstr "Страница %{current} из %{total}"
 
 #: lib/delivest_web/hooks/new_orders.ex:114
 #: lib/delivest_web/hooks/new_orders.ex:127
-#: lib/delivest_web/hooks/new_orders.ex:148
+#: lib/delivest_web/hooks/new_orders.ex:151
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:99
 #: lib/delivest_web/live/staff/branch_live/edit.ex:73
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
@@ -4009,8 +4009,8 @@ msgid "Check"
 msgstr "Сверка"
 
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:57
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:69
-#: lib/delivest_web/live/staff/integration_live/index.ex:220
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:72
+#: lib/delivest_web/live/staff/integration_live/index.ex:227
 #, elixir-autogen, elixir-format
 msgid "Connected"
 msgstr "Подключено"
@@ -4069,7 +4069,7 @@ msgstr "Интеграции"
 msgid "Loading..."
 msgstr "Загрузка..."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:225
+#: lib/delivest_web/live/staff/integration_live/index.ex:232
 #, elixir-autogen, elixir-format
 msgid "Not connected"
 msgstr "Не подключено"
@@ -4085,7 +4085,7 @@ msgstr "Нет во Frontpad"
 msgid "Nothing found"
 msgstr "Ничего не найдено"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:205
+#: lib/delivest_web/live/staff/integration_live/index.ex:212
 #, elixir-autogen, elixir-format
 msgid "Orders go to CRM"
 msgstr "Заказы уходят в CRM"
@@ -5229,7 +5229,7 @@ msgstr "Общий для всех филиалов. Передайте адре
 msgid "Take orders from Yandex Eda"
 msgstr "Принимать заказы из Яндекс Еды"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:210
+#: lib/delivest_web/live/staff/integration_live/index.ex:217
 #, elixir-autogen, elixir-format
 msgid "Takes orders"
 msgstr "Принимает заказы"
@@ -5375,7 +5375,7 @@ msgstr "Отменить заказ? Агрегатор увидит его от
 
 #: lib/delivest_web/hooks/new_orders.ex:115
 #: lib/delivest_web/hooks/new_orders.ex:128
-#: lib/delivest_web/hooks/new_orders.ex:150
+#: lib/delivest_web/hooks/new_orders.ex:157
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:39
 #, elixir-autogen, elixir-format
 msgid "Failed to update the order"
@@ -6538,7 +6538,7 @@ msgstr "Курьер Яндекса принимает оплату только
 msgid "Branch phone"
 msgstr "Телефон филиала"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:215
+#: lib/delivest_web/live/staff/integration_live/index.ex:222
 #, elixir-autogen, elixir-format
 msgid "Calls couriers"
 msgstr "Вызывает курьеров"
@@ -6889,7 +6889,7 @@ msgid "New link created"
 msgstr "Новая ссылка создана"
 
 #: lib/delivest_web/live/board_live/index.ex:78
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:74
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:77
 #: lib/delivest_web/live/staff/integration_live/index.ex:195
 #, elixir-autogen, elixir-format
 msgid "No connection"
@@ -7013,7 +7013,7 @@ msgstr "мс"
 msgid "no response"
 msgstr "нет ответа"
 
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:72
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:75
 #, elixir-autogen, elixir-format
 msgid "Access denied, reconnect the integration"
 msgstr "Доступ отклонён, переподключите интеграцию"
@@ -7039,7 +7039,7 @@ msgstr "Проверяем..."
 msgid "Reconnect"
 msgstr "Переподключите"
 
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:68
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:71
 #, elixir-autogen, elixir-format
 msgid "The connection has not been checked"
 msgstr "Подключение ещё не проверялось"
@@ -7935,7 +7935,7 @@ msgstr "Frontpad не принял статусы вебхука, статусы
 msgid "The answer was lost. Check in the CRM whether order %{number} exists and confirm or resend it"
 msgstr "Ответ потерян. Проверьте в CRM, есть ли заказ %{number}, и подтвердите или отправьте заново"
 
-#: lib/delivest_web/hooks/new_orders.ex:149
+#: lib/delivest_web/hooks/new_orders.ex:154
 #, elixir-autogen, elixir-format
 msgid "Enter the order number in the CRM"
 msgstr "Введите номер заказа в CRM"
@@ -7954,3 +7954,18 @@ msgstr "Отправить заново"
 #, elixir-autogen, elixir-format
 msgid "The order is in the CRM"
 msgstr "Заказ есть в CRM"
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:202
+#, elixir-autogen, elixir-format
+msgid "Menu differs"
+msgstr "Меню расходится"
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:82
+#, elixir-autogen, elixir-format
+msgid "Needs attention"
+msgstr "Требует внимания"
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:80
+#, elixir-autogen, elixir-format
+msgid "The menu differs from the CRM: %{count}"
+msgstr "Меню расходится с CRM: %{count}"

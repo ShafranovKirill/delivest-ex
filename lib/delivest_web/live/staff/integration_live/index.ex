@@ -196,6 +196,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     </span>
     """
 
+  defp health_badge(%{health: %{status: :warning}} = assigns),
+    do: ~H"""
+    <span class="badge badge-warning gap-1">
+      <.icon name="hero-exclamation-triangle" class="size-3" /> {gettext("Menu differs")}
+    </span>
+    """
+
   defp health_badge(assigns), do: ~H""
 
   attr :status, :atom, required: true
