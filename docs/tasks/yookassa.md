@@ -4,6 +4,8 @@
 
 Основа: [payments.md](payments.md) (модель `order_payments`, статусы `pending → authorized → paid`), [fiscal-receipts.md](fiscal-receipts.md) (два чека АТОЛ), `integrations/yookassa/README.md`.
 
+Сделано: п. 1 (настройки магазина `yookassa_settings` на всю сеть, `Yookassa.Api`, `GET /me` в `health_check` и проверка конфликта чеков, страница `/staff/b/:slug/integrations/yookassa` с адресом вебхука и журналом). Дальше п. 0 (раздел «Финансы» и способы оплаты по филиалам) и п. 2–7. Ветка `feature/yookassa`.
+
 ## Решения
 
 | Вопрос | Решение |
