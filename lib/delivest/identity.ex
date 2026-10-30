@@ -33,6 +33,8 @@ defmodule Delivest.Identity do
   defdelegate update_couriers(staff, branch, attrs), to: Branches
   defdelegate get_branch_by_board_token(token), to: Branches
   defdelegate reset_board_token(staff, branch), to: Branches
+  defdelegate set_special_day(staff, branch, date, attrs), to: Branches
+  defdelegate remove_special_day(staff, branch, date), to: Branches
   defdelegate create_branch(staff, branch_attrs, info_attrs), to: Branches
   defdelegate soft_delete_branch(staff, branch), to: Branches
 

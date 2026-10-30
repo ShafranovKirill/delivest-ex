@@ -47,6 +47,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       delivery_time: effective_time(info),
       intake: intake(info),
       working_hours: info.working_hours || %{},
+      special_hours: info.special_hours || %{},
       vk_url: info.vk_url,
       whatsapp_url: info.whatsapp_url,
       instagram_url: info.instagram_url,

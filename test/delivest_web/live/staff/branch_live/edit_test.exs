@@ -138,4 +138,20 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
              live(conn, ~p"/staff/branches/missing/edit")
   end
+
+  test "a special day is added, listed and removed", %{conn: conn} do
+    insert(:branch, slug: "holidays")
+    date = Date.to_iso8601(Date.add(Date.utc_today(), 10))
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/branches/holidays/edit/hours")
+
+    lv
+    |> form("#special-hours-form", %{"date" => date, "open" => "10:00", "close" => "18:00"})
+    |> render_submit()
+
+    assert has_element?(lv, "#special-day-#{date}", "10:00")
+
+    lv |> element("#special-day-#{date} button") |> render_click()
+    refute has_element?(lv, "#special-day-#{date}")
+  end
 end
