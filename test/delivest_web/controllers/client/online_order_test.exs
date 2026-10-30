@@ -19,7 +19,11 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
       payments: %PaymentSettings{online: true}
     })
 
-    Repo.insert!(%Yookassa.Settings{shop_id: "506751", secret_key: "k"})
+    Repo.insert!(%Yookassa.Settings{
+      shop_id: "506751",
+      secret_key: "k",
+      webhook_token: "hook-token"
+    })
 
     Repo.insert!(%Health.Status{
       provider: "yookassa",
@@ -159,5 +163,99 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
              conn |> post(~p"/client/orders", params(branch, cart_id)) |> json_response(502)
 
     assert [%Order{status: :cancelled, cancel_reason: :not_paid}] = Repo.all(Order)
+  end
+
+  describe "yookassa webhook" do
+    setup %{conn: conn, branch: branch, cart_id: cart_id} do
+      stub_yookassa(self())
+      body = conn |> post(~p"/client/orders", params(branch, cart_id)) |> json_response(200)
+      order = Repo.get!(Order, body["data"]["id"])
+      [payment] = Payments.list(order.id)
+      token = Yookassa.get_settings().webhook_token
+
+      %{order: order, payment: payment, token: token, external_id: payment.external_id}
+    end
+
+    defp remote(external_id, status, value \\ "3.00") do
+      Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+        Req.Test.json(conn, %{
+          "id" => external_id,
+          "status" => status,
+          "amount" => %{"value" => value, "currency" => "RUB"}
+        })
+      end)
+    end
+
+    defp notify(conn, token, event, external_id) do
+      conn =
+        post(conn, "/integrations/yookassa/#{token}", %{
+          "event" => event,
+          "object" => %{"id" => external_id}
+        })
+
+      assert json_response(conn, 200)
+      Oban.drain_queue(queue: :default, with_safety: false)
+    end
+
+    test "the hold releases the order to the kitchen and the crm", ctx do
+      remote(ctx.external_id, "waiting_for_capture")
+      notify(ctx.conn, ctx.token, "payment.waiting_for_capture", ctx.external_id)
+
+      order = Repo.get!(Order, ctx.order.id)
+      refute order.awaiting_payment
+      assert [%{status: :authorized}] = Payments.list(order.id)
+
+      assert Repo.exists?(
+               from(e in Event, where: e.type == "order.created" and e.aggregate_id == ^order.id)
+             )
+    end
+
+    test "a repeated notification changes nothing", ctx do
+      remote(ctx.external_id, "waiting_for_capture")
+      notify(ctx.conn, ctx.token, "payment.waiting_for_capture", ctx.external_id)
+      notify(ctx.conn, ctx.token, "payment.waiting_for_capture", ctx.external_id)
+
+      count =
+        Repo.aggregate(
+          from(e in Event, where: e.type == "order.created" and e.aggregate_id == ^ctx.order.id),
+          :count
+        )
+
+      assert count == 1
+    end
+
+    test "an amount that differs from the hold is not accepted", ctx do
+      remote(ctx.external_id, "waiting_for_capture", "1.00")
+      notify(ctx.conn, ctx.token, "payment.waiting_for_capture", ctx.external_id)
+
+      assert Repo.get!(Order, ctx.order.id).awaiting_payment
+      assert [%{status: :pending}] = Payments.list(ctx.order.id)
+    end
+
+    test "a canceled payment of an unpaid order cancels the order", ctx do
+      remote(ctx.external_id, "canceled")
+      notify(ctx.conn, ctx.token, "payment.canceled", ctx.external_id)
+
+      assert %{status: :cancelled, cancel_reason: :not_paid} = Repo.get!(Order, ctx.order.id)
+      assert [%{status: :cancelled}] = Payments.list(ctx.order.id)
+    end
+
+    test "a wrong token is turned away", ctx do
+      conn =
+        post(ctx.conn, "/integrations/yookassa/wrong", %{
+          "event" => "payment.succeeded",
+          "object" => %{"id" => "x"}
+        })
+
+      assert json_response(conn, 404)
+    end
+
+    test "the poller picks up a payment the webhook missed", ctx do
+      remote(ctx.external_id, "waiting_for_capture")
+      later = DateTime.add(DateTime.utc_now(), 300, :second)
+
+      assert [{_id, {:ok, :authorized}}] = Delivest.Payments.Online.PollWorker.poll(later)
+      refute Repo.get!(Order, ctx.order.id).awaiting_payment
+    end
   end
 end

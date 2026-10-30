@@ -116,6 +116,9 @@ defmodule Delivest.Payments do
 
   def collect(repo, %Order{} = order, by), do: settle(repo, order, by)
 
+  def advance(repo, %Order{} = order, %Payment{} = payment, to, by, attrs \\ %{}),
+    do: move(repo, order, payment, to, by, attrs)
+
   def on_status(_repo, _order, [], _by), do: {:ok, nil}
 
   def on_status(repo, %Order{} = order, steps, by) do

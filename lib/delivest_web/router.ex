@@ -174,6 +174,16 @@ defmodule DelivestWeb.Router do
     post "/fiscal/:provider/:token", FiscalCallbackController, :create
   end
 
+  pipeline :yookassa_journal do
+    plug DelivestWeb.Plugs.IntegrationJournal, provider: :yookassa
+  end
+
+  scope "/integrations", DelivestWeb.Integrations do
+    pipe_through [:api, :yookassa_journal]
+
+    post "/yookassa/:token", YookassaWebhookController, :create
+  end
+
   scope "/integrations", DelivestWeb.Integrations do
     pipe_through :zvonok_journal
 

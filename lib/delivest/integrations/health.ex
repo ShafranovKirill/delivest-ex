@@ -13,6 +13,7 @@ defmodule Delivest.Integrations.Health do
     Yookassa,
     Zvonok
   }
+
   alias Delivest.Integrations.Health.Status
   alias Delivest.Repo
 

@@ -6,7 +6,8 @@ defmodule Delivest.Integrations.Inbox do
 
   @handlers %{
     "frontpad" => Delivest.Integrations.Frontpad.Webhook,
-    "iiko" => Delivest.Integrations.Iiko.Webhook
+    "iiko" => Delivest.Integrations.Iiko.Webhook,
+    "yookassa" => Delivest.Integrations.Yookassa.Webhook
   }
 
   def handler(provider) do
