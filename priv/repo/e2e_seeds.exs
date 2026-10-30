@@ -43,7 +43,8 @@ for {login, name, role_name} <- [
       {"e2e_admin", "Админ", "Администратор"},
       {"e2e_operator", "Оператор", "Оператор"},
       {"e2e_kitchen", "Кухня", "Кухня"},
-      {"e2e_courier", "Курьер", "Курьер"}
+      {"e2e_courier", "Курьер", "Курьер"},
+      {"e2e_cashier", "Кассир", "Кассир"}
     ],
     is_nil(Repo.get_by(Staff, login: login)) do
   {:ok, _staff} =

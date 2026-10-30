@@ -49,7 +49,7 @@ defmodule Delivest.Repo.Migrations.OrderNumbers do
 
     flush()
 
-    zone = Delivest.LocalTime.timezone()
+    zone = "Europe/Moscow"
 
     execute("""
     UPDATE orders SET business_date =
