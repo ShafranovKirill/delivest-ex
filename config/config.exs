@@ -23,7 +23,8 @@ config :delivest, Oban,
     {"17 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_catalog"}},
     {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_delivery"}},
     {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "rkeeper"}},
-    {"*/5 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_eda_busy"}}
+    {"*/5 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_eda_busy"}},
+    {"11 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "atol_kkt"}}
   ],
   repo: Delivest.Repo
 

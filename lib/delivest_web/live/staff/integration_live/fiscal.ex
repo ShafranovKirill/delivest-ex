@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
 
   alias Delivest.{Fiscal, Identity}
   alias Delivest.Fiscal.{BranchSettings, Vat}
+  alias Delivest.Integrations.Health
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -13,7 +14,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
      |> assign(
        page_title: gettext("Receipts"),
        can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update"),
-       check: nil
+       check: nil,
+       kkt_issues: kkt_issues(socket.assigns.current_branch.id)
      )
      |> assign_settings(Fiscal.settings(socket.assigns.current_branch.id))}
   end
@@ -62,6 +64,23 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
 
     {:noreply, assign(socket, check: check)}
   end
+
+  defp kkt_issues(branch_id) do
+    case Health.get(:atol, branch_id) do
+      %{status: :warning, message: "kkt_issues:" <> codes} -> String.split(codes, ",")
+      _status -> []
+    end
+  end
+
+  defp kkt_issue_text("offline"),
+    do: gettext("The cash register is not sending documents to the OFD")
+
+  defp kkt_issue_text("fn_full"), do: gettext("The fiscal storage is more than 90% full")
+
+  defp kkt_issue_text("fn_expiring"),
+    do: gettext("The fiscal storage expires in less than 30 days")
+
+  defp kkt_issue_text(_code), do: gettext("Needs attention")
 
   defp assign_settings(socket, settings) do
     settings = %{settings | atol: settings.atol || %Delivest.Integrations.AtolOnline.Settings{}}
@@ -118,6 +137,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
           )
         }
       />
+
+      <div :if={@kkt_issues != []} id="fiscal-kkt-issues" role="alert" class="alert alert-warning">
+        <.icon name="hero-exclamation-triangle" class="size-5" />
+        <ul>
+          <li :for={code <- @kkt_issues}>{kkt_issue_text(code)}</li>
+        </ul>
+      </div>
 
       <.form
         for={@form}

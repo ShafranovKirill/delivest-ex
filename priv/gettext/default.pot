@@ -48,7 +48,7 @@ msgid "Logged out successfully."
 msgstr ""
 
 #: lib/delivest_web/live/staff/auth_live/login.ex:156
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:150
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:176
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:154
 #, elixir-autogen, elixir-format
 msgid "Password"
@@ -609,7 +609,7 @@ msgstr ""
 msgid "List of available company roles"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:143
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:169
 #: lib/delivest_web/live/staff/staff_live/staff_form_component.ex:148
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:218
 #, elixir-autogen, elixir-format
@@ -685,7 +685,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:39
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:200
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:46
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:48
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:91
 #: lib/delivest_web/live/staff/integration_live/routes.ex:35
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:53
@@ -850,7 +850,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:238
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:245
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:271
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:489
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:250
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:197
@@ -880,7 +880,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:237
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:86
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:243
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:269
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:488
 #: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:77
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:197
@@ -2332,7 +2332,7 @@ msgid "General"
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:95
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:49
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:51
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:94
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:52
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:50
@@ -3839,7 +3839,7 @@ msgid "Franchise settings"
 msgstr ""
 
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:217
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:175
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:201
 #, elixir-autogen, elixir-format
 msgid "INN"
 msgstr ""
@@ -3934,7 +3934,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:45
 #: lib/delivest_web/live/staff/franchise_live/index.ex:63
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:39
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:41
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:85
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:46
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:44
@@ -4008,9 +4008,9 @@ msgstr ""
 msgid "Check"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:57
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:59
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:72
-#: lib/delivest_web/live/staff/integration_live/index.ex:227
+#: lib/delivest_web/live/staff/integration_live/index.ex:231
 #, elixir-autogen, elixir-format
 msgid "Connected"
 msgstr ""
@@ -4044,7 +4044,7 @@ msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:136
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:55
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:110
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:129
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:192
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:116
 #: lib/delivest_web/live/staff/integration_live/index.ex:14
@@ -4069,7 +4069,7 @@ msgstr ""
 msgid "Loading..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:232
+#: lib/delivest_web/live/staff/integration_live/index.ex:236
 #, elixir-autogen, elixir-format
 msgid "Not connected"
 msgstr ""
@@ -4085,7 +4085,7 @@ msgstr ""
 msgid "Nothing found"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:212
+#: lib/delivest_web/live/staff/integration_live/index.ex:216
 #, elixir-autogen, elixir-format
 msgid "Orders go to CRM"
 msgstr ""
@@ -4181,7 +4181,7 @@ msgstr ""
 msgid "External services connected to the app."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:127
+#: lib/delivest_web/live/staff/integration_live/index.ex:128
 #, elixir-autogen, elixir-format
 msgid "Orders to the CRM and products matching with the app menu."
 msgstr ""
@@ -5227,7 +5227,7 @@ msgstr ""
 msgid "Take orders from Yandex Eda"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:217
+#: lib/delivest_web/live/staff/integration_live/index.ex:221
 #, elixir-autogen, elixir-format
 msgid "Takes orders"
 msgstr ""
@@ -5419,7 +5419,7 @@ msgstr ""
 msgid "Fats"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:93
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:112
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:204
 #, elixir-autogen, elixir-format
 msgid "No VAT"
@@ -6517,7 +6517,7 @@ msgstr ""
 msgid "%{number} ext. %{ext}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:118
+#: lib/delivest_web/live/staff/integration_live/index.ex:119
 #, elixir-autogen, elixir-format
 msgid "A Yandex courier for the delivery orders."
 msgstr ""
@@ -6537,7 +6537,7 @@ msgstr ""
 msgid "Branch phone"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:222
+#: lib/delivest_web/live/staff/integration_live/index.ex:226
 #, elixir-autogen, elixir-format
 msgid "Calls couriers"
 msgstr ""
@@ -6582,7 +6582,7 @@ msgstr ""
 msgid "Personal account dostavka.yandex.ru, the Integrations tab."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:152
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:178
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:134
 #, elixir-autogen, elixir-format
 msgid "Saved, enter a new one to replace it"
@@ -6633,7 +6633,7 @@ msgstr ""
 msgid "Yandex"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:117
+#: lib/delivest_web/live/staff/integration_live/index.ex:118
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:18
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:82
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:950
@@ -6887,7 +6887,7 @@ msgstr ""
 
 #: lib/delivest_web/live/board_live/index.ex:78
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:77
-#: lib/delivest_web/live/staff/integration_live/index.ex:195
+#: lib/delivest_web/live/staff/integration_live/index.ex:196
 #, elixir-autogen, elixir-format
 msgid "No connection"
 msgstr ""
@@ -7015,7 +7015,7 @@ msgstr ""
 msgid "Access denied, reconnect the integration"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:237
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:263
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:47
 #, elixir-autogen, elixir-format
 msgid "Check the connection"
@@ -7031,7 +7031,7 @@ msgstr ""
 msgid "Checking..."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:188
+#: lib/delivest_web/live/staff/integration_live/index.ex:189
 #, elixir-autogen, elixir-format
 msgid "Reconnect"
 msgstr ""
@@ -7288,17 +7288,17 @@ msgstr ""
 msgid "The payment is already handed over or receipted, refund it before reverting"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:171
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:197
 #, elixir-autogen, elixir-format
 msgid "ATOL Online account, the integrator settings."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:212
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:238
 #, elixir-autogen, elixir-format
 msgid "Card payment to our courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:60
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:62
 #, elixir-autogen, elixir-format
 msgid "Connection failed: %{reason}"
 msgstr ""
@@ -7309,7 +7309,7 @@ msgstr ""
 msgid "Correction receipt"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:205
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:231
 #, elixir-autogen, elixir-format
 msgid "Delivery VAT"
 msgstr ""
@@ -7332,7 +7332,7 @@ msgstr ""
 msgid "Fiscal receipts through ATOL Online."
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:159
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:185
 #, elixir-autogen, elixir-format
 msgid "Group code"
 msgstr ""
@@ -7354,22 +7354,22 @@ msgstr ""
 msgid "Issued"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:77
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:96
 #, elixir-autogen, elixir-format
 msgid "Off"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:78
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:97
 #, elixir-autogen, elixir-format
 msgid "Our receipts through ATOL Online"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:88
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:107
 #, elixir-autogen, elixir-format
 msgid "Patent"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:186
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:212
 #, elixir-autogen, elixir-format
 msgid "Place of settlement"
 msgstr ""
@@ -7388,9 +7388,9 @@ msgid "Receipt"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:86
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:14
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:114
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:132
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:15
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:133
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:158
 #: lib/delivest_web/live/staff/integration_live/index.ex:110
 #: lib/delivest_web/live/staff/receipt_live/index.ex:13
 #: lib/delivest_web/live/staff/receipt_live/index.ex:33
@@ -7398,12 +7398,12 @@ msgstr ""
 msgid "Receipts"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:79
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:98
 #, elixir-autogen, elixir-format
 msgid "Receipts are issued by the CRM or POS"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:116
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:135
 #, elixir-autogen, elixir-format
 msgid "Receipts are issued when the order is handed over: for cash and card payments to the operator or our courier. Yandex Eda, Yandex Delivery and CRM orders are receipted on their side."
 msgstr ""
@@ -7425,7 +7425,7 @@ msgstr ""
 msgid "Sale receipt"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:192
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:218
 #, elixir-autogen, elixir-format
 msgid "Sender email"
 msgstr ""
@@ -7437,47 +7437,47 @@ msgstr ""
 msgid "Sending"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:85
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:104
 #, elixir-autogen, elixir-format
 msgid "Simplified, income"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:86
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:105
 #, elixir-autogen, elixir-format
 msgid "Simplified, income minus expenses"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:179
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:205
 #, elixir-autogen, elixir-format
 msgid "Tax system"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:165
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:191
 #, elixir-autogen, elixir-format
 msgid "Test environment"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:99
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:118
 #, elixir-autogen, elixir-format
 msgid "The courier terminal issues it"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:87
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:106
 #, elixir-autogen, elixir-format
 msgid "Unified agricultural"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:198
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:224
 #, elixir-autogen, elixir-format
 msgid "VAT"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:98
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:117
 #, elixir-autogen, elixir-format
 msgid "We issue the receipt"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/fiscal.ex:84
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:103
 #, elixir-autogen, elixir-format
 msgid "General tax system"
 msgstr ""
@@ -7951,12 +7951,14 @@ msgstr ""
 msgid "The order is in the CRM"
 msgstr ""
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:202
+#: lib/delivest_web/live/staff/integration_live/index.ex:209
 #, elixir-autogen, elixir-format
 msgid "Menu differs"
 msgstr ""
 
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:83
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:82
+#: lib/delivest_web/live/staff/integration_live/index.ex:210
 #, elixir-autogen, elixir-format
 msgid "Needs attention"
 msgstr ""
@@ -7974,4 +7976,19 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_busy.ex:16
 #, elixir-autogen, elixir-format
 msgid "Yandex Eda high demand: +%{minutes} min until %{time}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:76
+#, elixir-autogen, elixir-format
+msgid "The cash register is not sending documents to the OFD"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:81
+#, elixir-autogen, elixir-format
+msgid "The fiscal storage expires in less than 30 days"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/fiscal.ex:78
+#, elixir-autogen, elixir-format
+msgid "The fiscal storage is more than 90% full"
 msgstr ""
