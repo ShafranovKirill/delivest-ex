@@ -94,7 +94,6 @@ defmodule Delivest.Identity.ClientAuth do
          do: {:ok, %{mode: :inbound, call_id: call_id, call_number: call_number}}
   end
 
-  defp auto_confirm(%PhoneConfirmation{mode: :flash}), do: :ok
   defp auto_confirm(%PhoneConfirmation{} = confirmation), do: auto_confirm_call(confirmation)
 
   if @auto_confirm do
