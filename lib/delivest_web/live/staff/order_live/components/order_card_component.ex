@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
-  alias Delivest.{Couriers, Identity, LocalTime}
+  alias Delivest.{Couriers, Identity, LocalTime, Payments}
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
@@ -189,6 +189,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
             </option>
           </select>
         </form>
+        <.payment_badge order={@order} />
         <span
           :for={promotion <- @order.promotions}
           class="badge badge-success badge-sm whitespace-nowrap"
@@ -219,6 +220,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </div>
       </footer>
 
+      <.payments order={@order} />
       <.receipts order={@order} />
 
       <ol
@@ -247,6 +249,94 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     </article>
     """
   end
+
+  defp payment_badge(%{order: %{payments: [_ | _] = payments}} = assigns) do
+    assigns = assign(assigns, balance: Payments.balance(assigns.order.total_amount, payments))
+
+    ~H"""
+    <span id={"order-balance-#{@order.id}"} class={["badge badge-sm", balance_badge(@balance)]}>
+      <.icon :if={@balance == :paid} name="hero-check-circle" class="size-3.5" />
+      {balance_label(@balance)}
+    </span>
+    """
+  end
+
+  defp payment_badge(assigns), do: ~H""
+
+  defp payments(%{order: %{payments: [_ | _]}} = assigns) do
+    ~H"""
+    <ul
+      id={"order-payments-#{@order.id}"}
+      class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
+    >
+      <li
+        :for={payment <- @order.payments}
+        id={"payment-#{payment.id}"}
+        class={[
+          "flex flex-wrap items-center gap-2",
+          payment.status in [:cancelled, :failed] && "opacity-50"
+        ]}
+      >
+        <.icon name="hero-banknotes" class="size-4 text-base-content/60" />
+        <span class="font-medium">{method_label(payment.method)}</span>
+        <span class="tabular-nums">{Delivest.Money.format(payment.amount)}</span>
+        <span class={["badge badge-xs", payment_status_badge(payment.status)]}>
+          {payment_status_label(payment.status)}
+        </span>
+        <span
+          :if={payment.cash_given && payment.cash_given > payment.amount}
+          class="text-base-content/60"
+        >
+          {gettext("change from %{amount}", amount: Delivest.Money.format(payment.cash_given))}
+        </span>
+        <span :if={payment.paid_at} class="tabular-nums text-base-content/60">
+          {OrderHelpers.local_time(payment.paid_at)}
+        </span>
+        <span
+          :for={refund <- payment.refunds}
+          class={[
+            "badge badge-xs",
+            refund.status == :failed && "badge-ghost",
+            refund.status != :failed && "badge-error"
+          ]}
+        >
+          {gettext("refund %{amount}", amount: Delivest.Money.format(refund.amount))}
+        </span>
+      </li>
+    </ul>
+    """
+  end
+
+  defp payments(assigns), do: ~H""
+
+  defp balance_label(:paid), do: gettext("Paid")
+  defp balance_label(:partially_paid), do: gettext("Partially paid")
+  defp balance_label(:unpaid), do: gettext("Not paid")
+  defp balance_label(:refunded), do: gettext("Refunded")
+  defp balance_label(:overpaid), do: gettext("Overpaid")
+
+  defp balance_badge(:paid), do: "badge-success"
+  defp balance_badge(:partially_paid), do: "badge-warning"
+  defp balance_badge(:unpaid), do: "badge-ghost"
+  defp balance_badge(_balance), do: "badge-error"
+
+  defp method_label(:cash), do: gettext("Cash")
+  defp method_label(:card), do: gettext("Card")
+  defp method_label(:online), do: gettext("Online")
+  defp method_label(:sbp), do: gettext("SBP")
+  defp method_label(:certificate), do: gettext("Certificate")
+  defp method_label(:aggregator), do: gettext("Aggregator")
+
+  defp payment_status_label(:pending), do: gettext("Awaiting payment")
+  defp payment_status_label(:authorized), do: gettext("Authorized")
+  defp payment_status_label(:paid), do: gettext("Paid")
+  defp payment_status_label(:failed), do: gettext("Failed")
+  defp payment_status_label(:cancelled), do: gettext("Cancelled")
+
+  defp payment_status_badge(:paid), do: "badge-success"
+  defp payment_status_badge(:pending), do: "badge-ghost"
+  defp payment_status_badge(:authorized), do: "badge-info"
+  defp payment_status_badge(_status), do: "badge-error"
 
   defp receipts(%{order: %{receipts: [_ | _]}} = assigns) do
     ~H"""

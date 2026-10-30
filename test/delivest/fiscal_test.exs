@@ -186,6 +186,8 @@ defmodule Delivest.FiscalTest do
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
     assert lv |> element("#receipt-#{receipt.id}") |> render() =~ "32: bad"
+    assert has_element?(lv, "#order-balance-#{order.id}.badge-ghost")
+    assert has_element?(lv, "#order-payments-#{order.id}")
 
     lv |> element("#receipt-#{receipt.id} button[phx-click=retry_receipt]") |> render_click()
     assert [_failed, %Receipt{status: :pending}] = Fiscal.list(order.id)

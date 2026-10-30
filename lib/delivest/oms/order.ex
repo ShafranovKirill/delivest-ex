@@ -74,6 +74,7 @@ defmodule Delivest.Oms.Order do
     has_many :transitions, OrderTransition, preload_order: [asc: :id]
     has_many :deliveries, Delivest.Couriers.Delivery, preload_order: [asc: :inserted_at]
     has_many :receipts, Delivest.Fiscal.Receipt, preload_order: [asc: :inserted_at]
+    has_many :payments, Delivest.Payments.Payment, preload_order: [asc: :inserted_at]
 
     timestamps(type: :utc_datetime)
   end

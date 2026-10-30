@@ -38,6 +38,7 @@ defmodule Delivest.Oms.Orders do
        {Repo.preload(orders, [
           :client,
           :receipts,
+          payments: :refunds,
           items: :modifiers,
           transitions: [:staff],
           deliveries: [:courier]
@@ -137,7 +138,14 @@ defmodule Delivest.Oms.Orders do
   def get_order(id) do
     Order
     |> Repo.get(id)
-    |> Repo.preload([:client, items: :modifiers, transitions: [:staff], deliveries: [:courier]])
+    |> Repo.preload([
+      :client,
+      :receipts,
+      payments: :refunds,
+      items: :modifiers,
+      transitions: [:staff],
+      deliveries: [:courier]
+    ])
   end
 
   def cancel_order(%Order{} = order, by, attrs) do
