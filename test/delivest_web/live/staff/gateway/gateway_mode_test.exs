@@ -76,6 +76,36 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
     end
   end
 
+  describe "a branch whose menu comes from the crm" do
+    setup %{conn: conn} do
+      branch = insert(:branch)
+
+      Repo.insert!(%BranchInfo{
+        branch_id: branch.id,
+        crm: %{enabled: true, provider: :iiko, menu_source: :crm}
+      })
+
+      role = insert(:role, permissions: ~w(products.read products.create products.delete))
+      staff = insert(:staff, role: role)
+      insert(:staff_branch, staff: staff, branch: branch)
+      %{conn: init_test_session(conn, %{"staff_id" => staff.id}), branch: branch}
+    end
+
+    test "hides creating and bulk adding products", %{conn: conn, branch: branch} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products")
+
+      refute has_element?(lv, ~s(a[href$="/products/bulk"]))
+      refute has_element?(lv, ~s(a[href*="/products/new"]))
+    end
+
+    test "bulk add redirects back to the list", %{conn: conn, branch: branch} do
+      assert {:error, {:live_redirect, %{to: to}}} =
+               live(conn, ~p"/staff/b/#{branch}/products/bulk")
+
+      assert to == "/staff/b/#{branch.slug}/products"
+    end
+  end
+
   test "a branch without crm has no badge", %{conn: conn} do
     %{conn: conn, branch: branch} = setup_branch(conn, nil)
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")

@@ -11,6 +11,14 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
 
   @impl true
   def mount(_params, _session, socket) do
+    if Delivest.Gateway.crm?(socket.assigns.current_branch, :menu) do
+      {:ok, push_navigate(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/products")}
+    else
+      {:ok, init(socket)}
+    end
+  end
+
+  defp init(socket) do
     socket =
       socket
       |> assign(
@@ -22,7 +30,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
       )
       |> add_rows(@initial_rows)
 
-    {:ok, socket}
+    socket
   end
 
   @impl true
