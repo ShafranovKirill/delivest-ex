@@ -138,6 +138,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
         <fieldset disabled={!@can_edit} class="space-y-4">
           <.input field={@form[:enabled]} type="checkbox" label={gettext("Send orders to r_keeper")} />
 
+          <.input
+            field={@form[:menu_source]}
+            type="select"
+            label={gettext("Menu source")}
+            options={[{gettext("Ours, the CRM is only checked"), "own"}, {"r_keeper", "crm"}]}
+          />
+
           <.inputs_for :let={rk} field={@form[:rkeeper]}>
             <div class="grid gap-4 sm:grid-cols-2">
               <.input

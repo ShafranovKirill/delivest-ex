@@ -168,6 +168,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Iiko do
         <fieldset disabled={!@can_edit} class="space-y-4">
           <.input field={@form[:enabled]} type="checkbox" label={gettext("Send orders to iiko")} />
 
+          <.input
+            field={@form[:menu_source]}
+            type="select"
+            label={gettext("Menu source")}
+            options={[{gettext("Ours, the CRM is only checked"), "own"}, {"iiko", "crm"}]}
+          />
+
           <.inputs_for :let={iiko} field={@form[:iiko]}>
             <.input
               field={iiko[:api_key]}

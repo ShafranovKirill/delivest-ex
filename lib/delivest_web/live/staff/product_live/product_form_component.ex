@@ -54,6 +54,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           socket
           |> assign(:form, to_form(changeset))
           |> assign(:category_options, category_options)
+          |> assign(:crm_owner, Crm.menu_owner(branch_id, product && product.id))
           |> assign(:product_tags, Net.list_product_tags())
           |> assign(:modifier_groups, Delivest.Net.Modifiers.list_groups())
           |> assign(
@@ -293,7 +294,17 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             </div>
           </div>
 
-          <.input field={@form[:name]} type="text" label={gettext("Name")} required />
+          <p :if={@crm_owner} id="product-crm-owner" class="text-sm text-base-content/60">
+            {gettext("Name, price and weight come from %{crm}", crm: @crm_owner)}
+          </p>
+
+          <.input
+            field={@form[:name]}
+            type="text"
+            label={gettext("Name")}
+            required
+            disabled={@crm_owner != nil}
+          />
 
           <div>
             <.input
@@ -317,6 +328,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
               value={Money.input(@form[:price].value)}
               label={gettext("Price")}
               required
+              disabled={@crm_owner != nil}
             />
 
             <p class="text-xs text-base-content/60 sm:self-end sm:pb-3">
@@ -328,7 +340,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             <.input field={@form[:quantity]} type="number" label={gettext("Quantity")} />
 
             <div class="grid grid-cols-[1fr_6rem] gap-2">
-              <.input field={@form[:weight]} type="number" label={gettext("Weight")} />
+              <.input
+                field={@form[:weight]}
+                type="number"
+                label={gettext("Weight")}
+                disabled={@crm_owner != nil}
+              />
               <.input
                 field={@form[:measure_unit]}
                 type="select"

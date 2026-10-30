@@ -11,6 +11,7 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
     field :enabled, :boolean, default: false
     field :provider, Ecto.Enum, values: @providers
     field :sources, {:array, :string}, default: ~w(app staff)
+    field :menu_source, Ecto.Enum, values: [:own, :crm], default: :own
 
     for module <- Registry.modules() do
       embeds_one module.key(), module.settings_schema(), on_replace: :update
@@ -22,7 +23,7 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
   def changeset(settings, attrs) do
     changeset =
       settings
-      |> cast(attrs, [:enabled, :provider, :sources])
+      |> cast(attrs, [:enabled, :provider, :sources, :menu_source])
       |> validate_subset(:sources, Delivest.Oms.OrderSource.all())
 
     Registry.modules()

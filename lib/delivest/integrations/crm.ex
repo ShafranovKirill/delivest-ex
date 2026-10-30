@@ -1,5 +1,7 @@
 defmodule Delivest.Integrations.Crm do
-  alias Delivest.Identity
+  import Ecto.Query, only: [from: 2]
+
+  alias Delivest.{Identity, Repo}
   alias Delivest.Identity.Branch
 
   alias Delivest.Integrations.Crm.{
@@ -148,6 +150,25 @@ defmodule Delivest.Integrations.Crm do
       _ -> false
     end
   end
+
+  def menu_owner(branch_id, product_id) when is_binary(product_id) do
+    with %BranchSettings{menu_source: :crm} = crm <- get_branch_settings(branch_id),
+         provider when not is_nil(provider) <- BranchSettings.active_provider(crm),
+         true <- menu_source?(provider),
+         true <-
+           Repo.exists?(
+             from(e in Delivest.Net.ProductExternalId,
+               where: e.entity_type == "product" and e.entity_id == ^product_id,
+               where: e.branch_id == ^branch_id and e.provider == ^to_string(provider)
+             )
+           ) do
+      provider_name(provider)
+    else
+      _ -> nil
+    end
+  end
+
+  def menu_owner(_branch_id, _product_id), do: nil
 
   def fetch_menu(branch_id) do
     with {:ok, name, module} <- branch_provider(branch_id),

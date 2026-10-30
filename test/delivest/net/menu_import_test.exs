@@ -82,4 +82,29 @@ defmodule Delivest.Net.MenuImportTest do
     assert %Product{is_active: false} = Repo.get_by!(Product, name: "Чай")
     assert Repo.reload!(pizza).price == 55_000
   end
+
+  test "products from a crm menu are owned by the crm" do
+    alias Delivest.Identity.Branch.BranchInfo
+    alias Delivest.Integrations.{Crm, Iiko}
+    alias Delivest.Integrations.Crm.BranchSettings
+
+    branch = insert(:branch)
+    staff = insert(:staff, role: build(:role, permissions: ["admin"]))
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :iiko,
+        menu_source: :crm,
+        iiko: %Iiko.Settings{api_key: "k"}
+      }
+    })
+
+    {:ok, _summary} = MenuImport.apply(staff, branch.id, :iiko, Menu.parse(nomenclature(500)))
+    pizza = Repo.get_by!(Product, name: "Маргарита")
+
+    assert Crm.menu_owner(branch.id, pizza.id) == "iiko"
+    assert Crm.menu_owner(branch.id, insert(:product).id) == nil
+  end
 end
