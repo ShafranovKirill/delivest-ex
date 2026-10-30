@@ -156,6 +156,56 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         )}
       </p>
 
+      <div
+        :if={Crm.alert?(@order)}
+        id={"order-crm-alert-#{@order.id}"}
+        class="mx-3 sm:mx-4 mb-3 space-y-2 rounded-box bg-error/10 px-3 py-2 text-sm text-error"
+      >
+        <p class="font-semibold">
+          <.icon name="hero-exclamation-triangle" class="size-4" />
+          {@order.crm.alert}
+        </p>
+        <form
+          :if={@order.crm.status == "unknown"}
+          id={"order-crm-exists-#{@order.id}"}
+          phx-submit="crm_alert"
+          class="flex flex-wrap items-center gap-2"
+        >
+          <input type="hidden" name="order_id" value={@order.id} />
+          <input type="hidden" name="action" value="exists" />
+          <input
+            type="text"
+            name="number"
+            class="input input-xs input-bordered w-32 text-base-content"
+            placeholder={gettext("Order number in the CRM")}
+          />
+          <button type="submit" class="btn btn-error btn-xs btn-outline">
+            {gettext("The order is in the CRM")}
+          </button>
+          <button
+            id={"order-crm-resend-#{@order.id}"}
+            type="button"
+            class="btn btn-error btn-xs"
+            phx-click="crm_alert"
+            phx-value-id={@order.id}
+            phx-value-action="resend"
+          >
+            {gettext("Send again")}
+          </button>
+        </form>
+        <button
+          :if={@order.crm.status != "unknown"}
+          id={"order-crm-acknowledge-#{@order.id}"}
+          type="button"
+          class="btn btn-error btn-xs"
+          phx-click="crm_alert"
+          phx-value-id={@order.id}
+          phx-value-action="acknowledge"
+        >
+          {gettext("Got it")}
+        </button>
+      </div>
+
       <footer class="px-3 sm:px-4 py-2.5 border-t border-base-200 flex flex-wrap items-center gap-2">
         <span
           :if={@order.source != "app"}

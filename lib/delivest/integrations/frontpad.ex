@@ -2,9 +2,10 @@ defmodule Delivest.Integrations.Frontpad do
   @behaviour Delivest.Integrations.Crm.Provider
 
   alias Delivest.Integrations.Crm
-  alias Delivest.Integrations.Frontpad.{Api, OrderPayload, Webhook}
+  alias Delivest.Integrations.Frontpad.{Api, OrderPayload, Warnings, Webhook}
   alias Delivest.Net.ProductCrmIds
 
+  @not_sent [:econnrefused, :nxdomain, :ehostunreach, :enetunreach]
   @auth_errors ~w(invalid_secret api_off)
   @permanent_errors ~w(invalid_plant invalid_product_keys invalid_certificate)
   @snooze %{"requests_limit" => 60, "cash_close" => 600}
@@ -58,8 +59,9 @@ defmodule Delivest.Integrations.Frontpad do
       |> Map.new(fn {product_id, external_id} -> {product_id, %{external_id: external_id}} end)
       |> Map.merge(modifier_articles(order))
 
-    with {:ok, payload} <- OrderPayload.build(order, settings, products) do
-      payload |> OrderPayload.to_form_params() |> Api.new_order()
+    with {:ok, payload} <- OrderPayload.build(order, settings, products),
+         {:ok, delivery} <- payload |> OrderPayload.to_form_params() |> Api.new_order() do
+      {:ok, Warnings.apply(delivery, payload, order)}
     end
   end
 
@@ -96,6 +98,13 @@ defmodule Delivest.Integrations.Frontpad do
   def classify_error({:frontpad, error}) when is_map_key(@snooze, error),
     do: {:snooze, @snooze[error]}
 
+  def classify_error({:connection_error, _message, reason}) when reason in @not_sent,
+    do: :retry
+
+  def classify_error({:connection_error, _message, _reason}), do: :unknown_outcome
+  def classify_error({:http_error, status, _body}) when status >= 500, do: :unknown_outcome
+  def classify_error({:invalid_json, _body, _reason}), do: :unknown_outcome
+  def classify_error({:unexpected_response, _body}), do: :unknown_outcome
   def classify_error(reason), do: Delivest.Integrations.Error.classify(reason)
 
   @impl true

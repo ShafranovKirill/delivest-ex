@@ -37,7 +37,7 @@ defmodule Delivest.Integrations.JournalTest do
   test "get params go to the url and connection errors are kept" do
     Req.Test.stub(Client, &Req.Test.transport_error(&1, :econnrefused))
 
-    assert {:error, {:connection_error, _message}} =
+    assert {:error, {:connection_error, _message, _reason}} =
              Client.get("/confirm", [public_key: "k", phone: "7999"],
                base_url: "https://zvonok.test",
                journal: :zvonok

@@ -7,6 +7,7 @@ defmodule Delivest.Integrations.CrmTest do
   alias Delivest.Audit.Event
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker}
+  alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Frontpad
   alias Delivest.Oms
   alias Delivest.Oms.{Carts, Order}
@@ -90,6 +91,70 @@ defmodule Delivest.Integrations.CrmTest do
 
     assert [%Event{action: "order.sent_to_crm"}] =
              Repo.all(from(e in Event, where: e.action == "order.sent_to_crm"))
+  end
+
+  test "dropped items raise an alert, tags only stay in the warnings" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+
+    stub_frontpad(%{
+      "result" => "success",
+      "order_id" => "556",
+      "warnings" => %{"invalid_product_keys" => [0]}
+    })
+
+    assert :ok = sync(order)
+    assert %{status: "sent", alert: alert} = Repo.reload!(order).crm
+    assert alert =~ "fp-1"
+
+    {:ok, other} = place_order(branch(frontpad(true)))
+
+    stub_frontpad(%{
+      "result" => "success",
+      "order_id" => "557",
+      "warnings" => %{"invalid_tags" => [0]}
+    })
+
+    assert :ok = sync(other)
+    assert %{status: "sent", alert: nil} = Repo.reload!(other).crm
+  end
+
+  test "a lost answer is not retried and asks the operator" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :timeout))
+
+    assert {:cancel, _reason} = sync(order)
+    assert %{status: "unknown", alert: alert} = Repo.reload!(order).crm
+    assert alert =~ order.number
+  end
+
+  test "a refused connection is retried" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :econnrefused))
+
+    assert {:error, _reason} = sync(order)
+    assert %{status: "pending"} = Repo.reload!(order).crm
+  end
+
+  test "a server error is not retried" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    Req.Test.stub(Delivest.HTTP.Client, &Plug.Conn.send_resp(&1, 502, "bad gateway"))
+
+    assert {:cancel, _reason} = sync(order)
+    assert %{status: "unknown"} = Repo.reload!(order).crm
+  end
+
+  test "the operator confirms that the order exists after a lost answer" do
+    branch = branch(frontpad(true))
+    {:ok, order} = place_order(branch)
+    Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :timeout))
+    sync(order)
+
+    staff = insert(:staff, role: build(:role, permissions: ["orders.update"]), branches: [branch])
+
+    assert {:ok, _order} =
+             Crm.resolve_alert(staff, branch.id, order.id, "exists", "321")
+
+    assert %{status: "sent", external_id: "321", alert: nil} = Repo.reload!(order).crm
   end
 
   test "temporary crm errors are retried" do

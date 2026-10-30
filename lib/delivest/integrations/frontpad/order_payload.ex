@@ -248,14 +248,21 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
       {%{delivery_amount: amount}, []} when is_integer(amount) and amount > 0 ->
         note = gettext("Delivery %{amount}", amount: Money.format(amount))
 
-        [note | OrderNotes.lines(order)]
+        [number_note(order), note | OrderNotes.lines(order)]
+        |> Enum.reject(&is_nil/1)
         |> Enum.join(". ")
         |> String.slice(0, 100)
 
       _sent_as_product ->
-        OrderNotes.text(order, 100)
+        [number_note(order) | OrderNotes.lines(order)]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(". ")
+        |> String.slice(0, 100)
     end
   end
+
+  defp number_note(%{number: number}) when is_binary(number), do: "№#{number}"
+  defp number_note(_order), do: nil
 
   defp format_cook_by(%{cook_by: %DateTime{} = cook_by} = order),
     do:

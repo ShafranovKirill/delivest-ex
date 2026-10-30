@@ -21,6 +21,7 @@ defmodule Delivest.Integrations.Crm.SyncState do
       external_id: delivery.external_id,
       external_number: Map.get(delivery, :external_number),
       warnings: warnings,
+      alert: Map.get(delivery, :alert),
       attempts: attempt,
       last_error: nil,
       sent_at: DateTime.utc_now(:second)
@@ -55,6 +56,23 @@ defmodule Delivest.Integrations.Crm.SyncState do
 
   def retrying(order, error, attempt),
     do: Orders.update_order_crm(order, %{status: "pending", attempts: attempt, last_error: error})
+
+  def unknown(order, error, attempt) do
+    Audit.record(:system, "order.crm_unknown", order, metadata: %{error: error})
+
+    Orders.update_order_crm(order, %{
+      status: "unknown",
+      attempts: attempt,
+      last_error: error,
+      alert:
+        gettext(
+          "The answer was lost. Check in the CRM whether order %{number} exists and confirm or resend it",
+          number: order.number
+        )
+    })
+  end
+
+  def acknowledge_alert(order), do: Orders.update_order_crm(order, %{alert: nil})
 
   def failed(order, error, attempt) do
     Audit.record(:system, "order.crm_failed", order, metadata: %{error: error})

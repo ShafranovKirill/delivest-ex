@@ -50,6 +50,10 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
         SyncState.failed(order, message, attempt)
         {:cancel, reason}
 
+      :unknown_outcome ->
+        SyncState.unknown(order, message, attempt)
+        {:cancel, reason}
+
       :auth ->
         SyncState.failed(order, message, attempt)
         Health.auth_failed(order.crm.provider, order.branch_id, reason)
