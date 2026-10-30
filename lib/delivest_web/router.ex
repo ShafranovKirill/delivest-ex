@@ -352,6 +352,7 @@ defmodule DelivestWeb.Router do
           live "/routes", Routes, :index
           live "/zvonok", Zvonok, :index
           live "/dadata", Dadata, :index
+          live "/yookassa", Yookassa, :index
           live "/yandex-eda", YandexEda, :index
           live "/yandex-delivery", YandexDelivery, :index
           live "/fiscal", Fiscal, :index

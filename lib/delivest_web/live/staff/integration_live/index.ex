@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.{Couriers, Identity}
-  alias Delivest.Integrations.{Crm, Dadata, Health, YandexDelivery, YandexEda, Zvonok}
+  alias Delivest.Integrations.{Crm, Dadata, Health, YandexDelivery, YandexEda, Yookassa, Zvonok}
   alias Delivest.Integrations.Crm.BranchSettings
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
@@ -18,6 +18,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
        fiscal: Delivest.Fiscal.settings(socket.assigns.current_branch.id),
        zvonok_configured: Zvonok.configured?(),
        dadata_active: Dadata.active?(),
+       yookassa_configured: Yookassa.configured?(),
        health: Health.for_branch(socket.assigns.current_branch.id),
        can_edit_shared: Identity.can?(socket.assigns.current_staff, "admin")
      )}
@@ -79,6 +80,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             status={if @dadata_active, do: :configured, else: :off}
             health={@health["dadata"]}
             path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/dadata"}
+          />
+          <.integration_card
+            id="integration-yookassa"
+            title={gettext("Online payment")}
+            description={gettext("Card and SBP payments through YooKassa.")}
+            status={if @yookassa_configured, do: :configured, else: :off}
+            health={@health["yookassa"]}
+            path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/yookassa"}
           />
         </div>
       </section>
