@@ -12,7 +12,8 @@ defmodule Delivest.Integrations.Poller do
     Delivest.Integrations.Crm.StopPoller,
     Delivest.Integrations.Crm.CatalogPoller,
     Delivest.Integrations.Rkeeper.Poller,
-    Delivest.Integrations.YandexEda.BusyPoller
+    Delivest.Integrations.YandexEda.BusyPoller,
+    Delivest.Integrations.AtolOnline.KktPoller
   ]
 
   def modules, do: @modules

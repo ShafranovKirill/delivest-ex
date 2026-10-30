@@ -218,6 +218,9 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("retry_receipt", %{"id" => id}, socket),
     do: receipt_action(socket, id, &Delivest.Fiscal.retry/2)
 
+  def handle_event("correct_receipt", %{"id" => id}, socket),
+    do: receipt_action(socket, id, &Delivest.Fiscal.correct/2)
+
   def handle_event("refund_receipt", %{"id" => id}, socket),
     do: receipt_action(socket, id, &Delivest.Fiscal.refund/2)
 

@@ -110,6 +110,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Receipts")}
             description={gettext("Fiscal receipts through ATOL Online.")}
             status={if @fiscal.mode == :own, do: :configured, else: :off}
+            health={@health["atol"]}
             path={~p"/staff/b/#{@current_branch}/integrations/fiscal"}
           />
           <.integration_card
@@ -199,11 +200,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   defp health_badge(%{health: %{status: :warning}} = assigns),
     do: ~H"""
     <span class="badge badge-warning gap-1">
-      <.icon name="hero-exclamation-triangle" class="size-3" /> {gettext("Menu differs")}
+      <.icon name="hero-exclamation-triangle" class="size-3" /> {warning_text(@health)}
     </span>
     """
 
   defp health_badge(assigns), do: ~H""
+
+  defp warning_text(%{message: "catalog_issues:" <> _count}), do: gettext("Menu differs")
+  defp warning_text(_health), do: gettext("Needs attention")
 
   attr :status, :atom, required: true
 

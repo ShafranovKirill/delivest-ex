@@ -17,6 +17,7 @@ defmodule Delivest.Fiscal.PollWorker do
 
   defp poll(receipt) do
     case Fiscal.poll(receipt) do
+      {:ok, %Receipt{status: :wait, uuid: nil}} -> :ok
       {:ok, %Receipt{status: :wait}} -> {:error, :still_waiting}
       {:ok, _receipt} -> :ok
       error -> error
