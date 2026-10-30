@@ -147,4 +147,21 @@ defmodule Delivest.FiscalTest do
     order = order_fixture(other.id)
     assert {:error, :not_own} = Fiscal.issue(order, payments)
   end
+
+  test "completing the order issues a receipt per cash payment", %{order: order} do
+    staff = insert(:staff, name: "Мария", role: build(:role, permissions: ["admin"]))
+
+    {:ok, order} =
+      Enum.reduce([:accepted, :preparing, :ready, :completed], {:ok, order}, fn status,
+                                                                                {:ok, o} ->
+        Delivest.Oms.Orders.advance_order(o, status, {:staff, staff})
+      end)
+
+    deliver_events()
+    assert [%Receipt{kind: :sell, status: :pending, request: request}] = Fiscal.list(order.id)
+    assert request["receipt"]["cashier"] == "Мария"
+
+    assert_enqueued(worker: RegisterWorker)
+    assert [] = Fiscal.OrderSubscriber.payments(order, Fiscal.settings(order.branch_id))
+  end
 end
