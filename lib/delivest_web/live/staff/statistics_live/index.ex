@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.StatisticsLive.Index do
   use DelivestWeb, :live_view
 
-  alias Delivest.Analytics
+  alias Delivest.{Analytics, Gateway}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   import DelivestWeb.Staff.StatsComponents
@@ -71,6 +71,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     assign(socket,
       summary: summary,
       previous: previous,
+      crm_split: Gateway.active?(branch) && Analytics.crm_split(branch.id, period),
       daily: Analytics.daily(branch.id, period),
       hourly: Analytics.hourly(branch.id, period),
       by_fulfillment: Analytics.breakdown(branch.id, period, :fulfillment_type),
@@ -114,6 +115,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   defp format_period({from, to}),
     do: "#{Calendar.strftime(from, "%d.%m.%Y")} — #{Calendar.strftime(to, "%d.%m.%Y")}"
+
+  defp confirm_time(nil), do: "—"
+  defp confirm_time(seconds) when seconds < 60, do: gettext("%{n} s", n: seconds)
+  defp confirm_time(seconds), do: gettext("%{n} min", n: Float.round(seconds / 60, 1))
 
   defp short_date(date), do: Calendar.strftime(date, "%d.%m")
 
@@ -212,6 +217,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             delta={delta(@summary.items_sold, @previous.items_sold)}
           >
             {@summary.items_sold}
+          </.stat_card>
+        </div>
+
+        <div :if={@crm_split} id="crm-split" class="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <.stat_card icon="hero-arrows-right-left" label={gettext("Orders via the CRM")}>
+            {@crm_split.crm_orders}
+          </.stat_card>
+          <.stat_card icon="hero-banknotes" label={gettext("Revenue via the CRM")}>
+            {OrderHelpers.money(@crm_split.crm_revenue)}
+          </.stat_card>
+          <.stat_card icon="hero-clock" label={gettext("Time until the CRM took the order")}>
+            {confirm_time(@crm_split.avg_confirm_seconds)}
           </.stat_card>
         </div>
 

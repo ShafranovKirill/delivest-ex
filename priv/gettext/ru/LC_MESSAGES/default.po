@@ -282,7 +282,7 @@ msgstr "Невозможно удалить роль, так как она на�
 #: lib/delivest_web/components/staff/app/staff_nav.ex:102
 #: lib/delivest_web/live/staff/category_live/categories.ex:90
 #: lib/delivest_web/live/staff/log_live/event_text.ex:37
-#: lib/delivest_web/live/staff/statistics_live/index.ex:173
+#: lib/delivest_web/live/staff/statistics_live/index.ex:178
 #, elixir-autogen, elixir-format
 msgid "Categories"
 msgstr "Категории"
@@ -295,8 +295,8 @@ msgstr "Управление категориями"
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:26
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:388
 #: lib/delivest_web/live/staff/product_live/products.ex:516
-#: lib/delivest_web/live/staff/statistics_live/index.ex:296
-#: lib/delivest_web/live/staff/statistics_live/index.ex:328
+#: lib/delivest_web/live/staff/statistics_live/index.ex:313
+#: lib/delivest_web/live/staff/statistics_live/index.ex:345
 #, elixir-autogen, elixir-format
 msgid "Category"
 msgstr "Категория"
@@ -773,8 +773,8 @@ msgstr "Товар успешно обновлен"
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:18
 #: lib/delivest_web/live/staff/product_live/products.ex:421
 #: lib/delivest_web/live/staff/product_live/tags.ex:131
-#: lib/delivest_web/live/staff/statistics_live/index.ex:172
-#: lib/delivest_web/live/staff/statistics_live/index.ex:329
+#: lib/delivest_web/live/staff/statistics_live/index.ex:177
+#: lib/delivest_web/live/staff/statistics_live/index.ex:346
 #, elixir-autogen, elixir-format
 msgid "Products"
 msgstr "Товары"
@@ -1034,7 +1034,7 @@ msgstr "Ссылка на WhatsApp"
 #: lib/delivest_web/live/staff/product_live/branch_products.ex:82
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:43
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:48
-#: lib/delivest_web/live/staff/statistics_live/index.ex:338
+#: lib/delivest_web/live/staff/statistics_live/index.ex:355
 #, elixir-autogen, elixir-format
 msgid "Without category"
 msgstr "Без категории"
@@ -1311,7 +1311,7 @@ msgid "Created"
 msgstr "Новый"
 
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:82
-#: lib/delivest_web/live/staff/statistics_live/index.ex:111
+#: lib/delivest_web/live/staff/statistics_live/index.ex:112
 #, elixir-autogen, elixir-format
 msgid "Custom"
 msgstr "Произвольный период"
@@ -1445,9 +1445,9 @@ msgstr "Заказ успешно обновлен"
 #: lib/delivest_web/live/staff/log_live/event_text.ex:35
 #: lib/delivest_web/live/staff/order_live/orders.ex:77
 #: lib/delivest_web/live/staff/order_live/orders.ex:436
-#: lib/delivest_web/live/staff/statistics_live/index.ex:196
-#: lib/delivest_web/live/staff/statistics_live/index.ex:298
-#: lib/delivest_web/live/staff/statistics_live/index.ex:331
+#: lib/delivest_web/live/staff/statistics_live/index.ex:201
+#: lib/delivest_web/live/staff/statistics_live/index.ex:315
+#: lib/delivest_web/live/staff/statistics_live/index.ex:348
 #, elixir-autogen, elixir-format
 msgid "Orders"
 msgstr "Заказы"
@@ -1517,7 +1517,7 @@ msgstr "Оформить заказ"
 
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:98
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:76
-#: lib/delivest_web/live/staff/statistics_live/index.ex:106
+#: lib/delivest_web/live/staff/statistics_live/index.ex:107
 #, elixir-autogen, elixir-format
 msgid "Today"
 msgstr "Сегодня"
@@ -1533,7 +1533,7 @@ msgid "Week"
 msgstr "Неделя"
 
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:78
-#: lib/delivest_web/live/staff/statistics_live/index.ex:107
+#: lib/delivest_web/live/staff/statistics_live/index.ex:108
 #, elixir-autogen, elixir-format
 msgid "Yesterday"
 msgstr "Вчера"
@@ -1697,7 +1697,7 @@ msgstr "ошибка"
 msgid "sending"
 msgstr "отправка"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:360
+#: lib/delivest_web/live/staff/statistics_live/index.ex:377
 #, elixir-autogen, elixir-format
 msgid "%{count} cancelled"
 msgstr "отменено: %{count}"
@@ -1709,7 +1709,7 @@ msgstr "отменено сегодня: %{count}"
 
 #: lib/delivest_web/live/staff/client_live/show.ex:129
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:149
-#: lib/delivest_web/live/staff/statistics_live/index.ex:204
+#: lib/delivest_web/live/staff/statistics_live/index.ex:209
 #, elixir-autogen, elixir-format
 msgid "Average check"
 msgstr "Средний чек"
@@ -1719,22 +1719,22 @@ msgstr "Средний чек"
 msgid "Best sellers today"
 msgstr "Хиты продаж сегодня"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:250
+#: lib/delivest_web/live/staff/statistics_live/index.ex:267
 #, elixir-autogen, elixir-format
 msgid "By fulfillment type"
 msgstr "По способу получения"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:251
+#: lib/delivest_web/live/staff/statistics_live/index.ex:268
 #, elixir-autogen, elixir-format
 msgid "By payment method"
 msgstr "По способу оплаты"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:286
+#: lib/delivest_web/live/staff/statistics_live/index.ex:303
 #, elixir-autogen, elixir-format
 msgid "By quantity"
 msgstr "По количеству"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:280
+#: lib/delivest_web/live/staff/statistics_live/index.ex:297
 #, elixir-autogen, elixir-format
 msgid "By revenue"
 msgstr "По выручке"
@@ -1780,12 +1780,12 @@ msgstr "Пт"
 msgid "In work now"
 msgstr "Сейчас в работе"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:211
+#: lib/delivest_web/live/staff/statistics_live/index.ex:216
 #, elixir-autogen, elixir-format
 msgid "Items sold"
 msgstr "Продано позиций"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:109
+#: lib/delivest_web/live/staff/statistics_live/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Last 30 days"
 msgstr "Последние 30 дней"
@@ -1795,7 +1795,7 @@ msgstr "Последние 30 дней"
 msgid "Last 50 orders"
 msgstr "Последние 50 заказов"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:108
+#: lib/delivest_web/live/staff/statistics_live/index.ex:109
 #, elixir-autogen, elixir-format
 msgid "Last 7 days"
 msgstr "Последние 7 дней"
@@ -1841,13 +1841,13 @@ msgstr "Сегодня заказов пока нет"
 msgid "No product"
 msgstr "Без товара"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:257
+#: lib/delivest_web/live/staff/statistics_live/index.ex:274
 #, elixir-autogen, elixir-format
 msgid "No sales"
 msgstr "Продаж нет"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:315
-#: lib/delivest_web/live/staff/statistics_live/index.ex:347
+#: lib/delivest_web/live/staff/statistics_live/index.ex:332
+#: lib/delivest_web/live/staff/statistics_live/index.ex:364
 #, elixir-autogen, elixir-format
 msgid "No sales in this period"
 msgstr "За этот период продаж нет"
@@ -1886,7 +1886,7 @@ msgid "Order not found"
 msgstr "Заказ не найден"
 
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:252
-#: lib/delivest_web/live/staff/statistics_live/index.ex:233
+#: lib/delivest_web/live/staff/statistics_live/index.ex:250
 #, elixir-autogen, elixir-format
 msgid "Orders by hour"
 msgstr "Заказы по часам"
@@ -1902,30 +1902,30 @@ msgstr "Заказов сегодня"
 msgid "Payment"
 msgstr "Оплата"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:295
+#: lib/delivest_web/live/staff/statistics_live/index.ex:312
 #, elixir-autogen, elixir-format
 msgid "Product"
 msgstr "Товар"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:274
+#: lib/delivest_web/live/staff/statistics_live/index.ex:291
 #, elixir-autogen, elixir-format
 msgid "Products sold"
 msgstr "Проданные товары"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:297
-#: lib/delivest_web/live/staff/statistics_live/index.ex:330
+#: lib/delivest_web/live/staff/statistics_live/index.ex:314
+#: lib/delivest_web/live/staff/statistics_live/index.ex:347
 #, elixir-autogen, elixir-format
 msgid "Qty"
 msgstr "Кол-во"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:188
-#: lib/delivest_web/live/staff/statistics_live/index.ex:299
-#: lib/delivest_web/live/staff/statistics_live/index.ex:332
+#: lib/delivest_web/live/staff/statistics_live/index.ex:193
+#: lib/delivest_web/live/staff/statistics_live/index.ex:316
+#: lib/delivest_web/live/staff/statistics_live/index.ex:349
 #, elixir-autogen, elixir-format
 msgid "Revenue"
 msgstr "Выручка"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:220
+#: lib/delivest_web/live/staff/statistics_live/index.ex:237
 #, elixir-autogen, elixir-format
 msgid "Revenue by day"
 msgstr "Выручка по дням"
@@ -1935,7 +1935,7 @@ msgstr "Выручка по дням"
 msgid "Revenue today"
 msgstr "Выручка сегодня"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:171
+#: lib/delivest_web/live/staff/statistics_live/index.ex:176
 #, elixir-autogen, elixir-format
 msgid "Sales"
 msgstr "Продажи"
@@ -1946,8 +1946,8 @@ msgstr "Продажи"
 msgid "Sat"
 msgstr "Сб"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:300
-#: lib/delivest_web/live/staff/statistics_live/index.ex:333
+#: lib/delivest_web/live/staff/statistics_live/index.ex:317
+#: lib/delivest_web/live/staff/statistics_live/index.ex:350
 #, elixir-autogen, elixir-format
 msgid "Share of revenue"
 msgstr "Доля выручки"
@@ -1956,7 +1956,7 @@ msgstr "Доля выручки"
 #: lib/delivest_web/controllers/page_html/home.html.heex:173
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:124
 #: lib/delivest_web/live/staff/statistics_live/index.ex:15
-#: lib/delivest_web/live/staff/statistics_live/index.ex:132
+#: lib/delivest_web/live/staff/statistics_live/index.ex:137
 #, elixir-autogen, elixir-format
 msgid "Statistics"
 msgstr "Статистика"
@@ -1972,7 +1972,7 @@ msgstr "Вс"
 msgid "The client has no orders yet."
 msgstr "У клиента пока нет заказов."
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:110
+#: lib/delivest_web/live/staff/statistics_live/index.ex:111
 #, elixir-autogen, elixir-format
 msgid "This month"
 msgstr "Этот месяц"
@@ -2025,13 +2025,13 @@ msgstr "Режим работы"
 msgid "You don't have permission to view orders."
 msgstr "У вас нет прав на просмотр заказов."
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:226
-#: lib/delivest_web/live/staff/statistics_live/index.ex:239
+#: lib/delivest_web/live/staff/statistics_live/index.ex:243
+#: lib/delivest_web/live/staff/statistics_live/index.ex:256
 #, elixir-autogen, elixir-format
 msgid "orders"
 msgstr "заказов"
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:190
+#: lib/delivest_web/live/staff/statistics_live/index.ex:195
 #, elixir-autogen, elixir-format
 msgid "vs previous period"
 msgstr "к прошлому периоду"
@@ -3253,7 +3253,7 @@ msgstr "«max» работает только для скидки на корз�
 msgid "«subtotal» is the cart total at menu prices. Unconditional automatic sales are shown in the menu as crossed-out prices."
 msgstr "«subtotal» — сумма корзины по ценам меню. Безусловные автоматические скидки на товары показываются в меню зачёркнутой ценой."
 
-#: lib/delivest_web/live/staff/statistics_live/index.ex:361
+#: lib/delivest_web/live/staff/statistics_live/index.ex:378
 #, elixir-autogen, elixir-format
 msgid "%{count} not delivered to CRM"
 msgstr "%{count} не доставлено в CRM"
@@ -8231,3 +8231,28 @@ msgstr "Ведёт %{crm}"
 #, elixir-autogen, elixir-format
 msgid "Statuses and changes of this order come from %{crm}"
 msgstr "Статусы и правки этого заказа приходят из %{crm}"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:121
+#, elixir-autogen, elixir-format
+msgid "%{n} min"
+msgstr "%{n} мин"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:120
+#, elixir-autogen, elixir-format
+msgid "%{n} s"
+msgstr "%{n} с"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:224
+#, elixir-autogen, elixir-format
+msgid "Orders via the CRM"
+msgstr "Заказов через CRM"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:227
+#, elixir-autogen, elixir-format
+msgid "Revenue via the CRM"
+msgstr "Выручка через CRM"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:230
+#, elixir-autogen, elixir-format
+msgid "Time until the CRM took the order"
+msgstr "Время до принятия заказа CRM"

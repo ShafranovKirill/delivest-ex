@@ -70,6 +70,17 @@ defmodule Delivest.Analytics do
     }
   end
 
+  @spec crm_split(binary(), period()) :: map()
+  def crm_split(branch_id, period) do
+    result = branch_id |> sales_orders(period) |> select(^crm_totals()) |> Repo.one()
+
+    %{
+      crm_orders: result.crm_orders,
+      crm_revenue: to_int(result.crm_revenue),
+      avg_confirm_seconds: result.avg_confirm_seconds && to_int(result.avg_confirm_seconds)
+    }
+  end
+
   @spec daily(binary(), period()) :: [%{date: Date.t(), revenue: integer(), orders: integer()}]
   def daily(branch_id, {from, to} = period) do
     tz = LocalTime.timezone(branch_id)
@@ -244,6 +255,35 @@ defmodule Delivest.Analytics do
     branch_id
     |> period_orders(period)
     |> OrderScopes.sold()
+  end
+
+  defp crm_totals do
+    crm = dynamic([o], not is_nil(o.crm))
+
+    confirmed =
+      dynamic(
+        [o],
+        fragment("?->>'status'", o.crm) == "sent" and not is_nil(fragment("?->>'sent_at'", o.crm))
+      )
+
+    %{
+      crm_orders: dynamic([o], filter(count(o.id), ^crm)),
+      crm_revenue: dynamic([o], coalesce(filter(sum(o.total_amount), ^crm), 0)),
+      avg_confirm_seconds:
+        dynamic(
+          [o],
+          filter(
+            avg(
+              fragment(
+                "extract(epoch from ((?->>'sent_at')::timestamptz - ?))",
+                o.crm,
+                o.inserted_at
+              )
+            ),
+            ^confirmed
+          )
+        )
+    }
   end
 
   defp period_totals do

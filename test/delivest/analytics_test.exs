@@ -197,4 +197,29 @@ defmodule Delivest.AnalyticsTest do
     assert %{completed: 1, cancelled: 1, created: 1, accepted: 1} =
              Analytics.status_counts(@branch_id, period)
   end
+
+  test "crm split counts crm sales and the time until the crm took the order", ctx do
+    period = {~D[2026-10-19], ~D[2026-10-19]}
+
+    order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 10:00:00Z])
+    |> crm!(%{status: "sent", sent_at: ~U[2026-10-19 10:00:20Z]})
+
+    order!(@branch_id, [{ctx.tea, 2}], ~U[2026-10-19 11:00:00Z])
+    |> crm!(%{status: "sent", sent_at: ~U[2026-10-19 11:01:00Z]})
+
+    order!(@branch_id, [{ctx.tea, 3}], ~U[2026-10-19 12:00:00Z])
+    |> crm!(%{status: "pending"})
+
+    order!(@branch_id, [{ctx.tea, 4}], ~U[2026-10-19 13:00:00Z])
+
+    assert %{crm_orders: 3, crm_revenue: 600, avg_confirm_seconds: 40} =
+             Analytics.crm_split(@branch_id, period)
+  end
+
+  test "crm split without crm orders has no confirmation time", ctx do
+    order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 10:00:00Z])
+
+    assert %{crm_orders: 0, crm_revenue: 0, avg_confirm_seconds: nil} =
+             Analytics.crm_split(@branch_id, {~D[2026-10-19], ~D[2026-10-19]})
+  end
 end

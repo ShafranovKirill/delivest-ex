@@ -33,6 +33,23 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert html =~ "Горячее"
   end
 
+  test "the crm split shows only for a branch on a crm", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    refute has_element?(lv, "#crm-split")
+
+    Delivest.Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+      branch_id: branch.id,
+      crm: %{enabled: true, provider: :iiko}
+    })
+
+    Cachex.del(:branch_cache, branch.id)
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    assert has_element?(lv, "#crm-split", "CRM")
+  end
+
   test "custom period comes from the filter form", %{conn: conn} do
     {conn, branch} = login(conn, ["statistics.read"])
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics")
