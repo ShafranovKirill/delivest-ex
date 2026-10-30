@@ -4,7 +4,10 @@ defmodule Delivest.Integrations.Inbox do
   alias Delivest.Integrations.Inbox.{Message, Worker}
   alias Delivest.Repo
 
-  @handlers %{"frontpad" => Delivest.Integrations.Frontpad.Webhook}
+  @handlers %{
+    "frontpad" => Delivest.Integrations.Frontpad.Webhook,
+    "iiko" => Delivest.Integrations.Iiko.Webhook
+  }
 
   def handler(provider) do
     case Map.fetch(@handlers, to_string(provider)) do
