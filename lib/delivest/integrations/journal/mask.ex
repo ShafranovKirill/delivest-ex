@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.Journal.Mask do
-  @secrets ~w(secret password token authorization api_key apikey public_key private_key apilogin)
+  @secrets ~w(secret password pass token authorization api_key apikey public_key private_key apilogin)
   @mask "***"
   @max_length 16_000
 

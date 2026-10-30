@@ -170,6 +170,7 @@ defmodule DelivestWeb.Router do
     pipe_through [:api, :integration_journal]
 
     post "/crm/:provider/:token", CrmWebhookController, :create
+    post "/fiscal/:provider/:token", FiscalCallbackController, :create
   end
 
   scope "/integrations", DelivestWeb.Integrations do
