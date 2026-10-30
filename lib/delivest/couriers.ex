@@ -363,6 +363,12 @@ defmodule Delivest.Couriers do
     end
   end
 
+  def give_up(%Delivery{} = delivery) do
+    if Delivery.active?(delivery),
+      do: close(delivery, :failed, :provider_error),
+      else: {:ok, delivery}
+  end
+
   defp close_active(order_id, status, reason) do
     case active(order_id) do
       nil -> :ok
