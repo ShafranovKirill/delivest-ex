@@ -19,6 +19,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :current_branch, :map, required: true
   attr :delivery_minutes, :integer, required: true
   attr :couriers, :list, default: []
+  attr :estimable, :boolean, default: false
   attr :positions, :list, default: nil
   attr :pickup, :map, default: nil
 
@@ -103,6 +104,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         order={@order}
         delivery={@delivery}
         couriers={@couriers}
+        estimable={@estimable}
         can_manage={Identity.can?(@current_staff, "orders.update")}
       />
 
@@ -714,13 +716,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :order, :map, required: true
   attr :delivery, :map, default: nil
   attr :couriers, :list, default: []
+  attr :estimable, :boolean, default: false
   attr :can_manage, :boolean, default: false
 
   defp courier_panel(assigns) do
     assigns =
       assign(assigns,
         assignable: assigns.can_manage and Couriers.assignable?(assigns.order),
-        courier_id: assigns.delivery && assigns.delivery.courier_id
+        courier_id: assigns.delivery && assigns.delivery.courier_id,
+        cancel_price: Couriers.cancel_pending(assigns.order)
       )
 
     ~H"""
@@ -746,6 +750,27 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       >
         {gettext("Yandex Delivery did not take the last request")}
       </span>
+      <div
+        :if={@cancel_price}
+        id={"order-paid-cancel-#{@order.id}"}
+        class="basis-full flex flex-wrap items-center gap-2 text-error"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-4" />
+        {gettext("Cancelling the Yandex courier is paid: %{price}",
+          price: Delivest.Money.format(@cancel_price)
+        )}
+        <button
+          :if={@can_manage}
+          type="button"
+          id={"order-confirm-paid-cancel-#{@order.id}"}
+          class="btn btn-xs btn-error"
+          phx-click="confirm_paid_cancel"
+          phx-value-order-id={@order.id}
+          data-confirm={gettext("Cancel the courier and pay for it?")}
+        >
+          {gettext("Confirm the paid cancel")}
+        </button>
+      </div>
       <div :if={@assignable} class="ml-auto flex flex-wrap items-center gap-2">
         <button
           :if={is_nil(@delivery)}
@@ -756,6 +781,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           phx-value-order-id={@order.id}
         >
           <.icon name="hero-magnifying-glass" class="size-3.5" /> {gettext("Find a courier")}
+        </button>
+        <button
+          :if={@estimable and is_nil(@delivery)}
+          type="button"
+          id={"order-estimate-delivery-#{@order.id}"}
+          class="btn btn-xs btn-ghost"
+          phx-click="estimate_delivery"
+          phx-value-order-id={@order.id}
+        >
+          <.icon name="hero-calculator" class="size-3.5" /> {gettext("Estimate delivery")}
         </button>
         <form
           :if={@couriers != [] and (is_nil(@delivery) or @delivery.status != :picked_up)}
@@ -859,6 +894,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     >
       <.icon name="hero-phone" class="size-3.5" /> {courier_phone(@details["phone"])}
     </a>
+    <span :if={eta = point_eta(@details)} id={"order-yandex-eta-#{@delivery.order_id}"}>
+      {gettext("arrives by %{time}", time: OrderHelpers.local_time(eta))}
+    </span>
     <span :if={@details["price"]} class="text-base-content/60">
       {@details["price"]} ₽
     </span>
@@ -998,6 +1036,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   end
 
   defp courier_eta(_courier), do: nil
+
+  defp point_eta(%{"point_eta" => value}) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} -> datetime
+      _error -> nil
+    end
+  end
+
+  defp point_eta(_details), do: nil
 
   defp overdue?(datetime), do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
 

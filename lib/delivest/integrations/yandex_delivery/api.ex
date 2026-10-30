@@ -6,6 +6,8 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
   def create(token, request_id, body),
     do: call(token, "/claims/create", [request_id: request_id], body)
 
+  def calculate(token, body), do: call(token, "/offers/calculate", [], body)
+
   def search(token, external_order_id),
     do: call(token, "/claims/search", [], %{external_order_id: external_order_id, limit: 10})
 
@@ -13,6 +15,9 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
     do: call(token, "/claims/set-point-ready", [claim_id: claim_id], %{visit_order: 1})
 
   def info(token, claim_id), do: call(token, "/claims/info", [claim_id: claim_id], %{})
+
+  def points_eta(token, claim_id),
+    do: call(token, "/claims/points-eta", [claim_id: claim_id], %{})
 
   def accept(token, claim_id, version),
     do: call(token, "/claims/accept", [claim_id: claim_id], %{version: version})

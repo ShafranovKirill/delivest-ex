@@ -5,7 +5,7 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   require Logger
 
-  alias Delivest.{Couriers, Identity, Repo}
+  alias Delivest.{Couriers, Identity, Push, Repo}
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Journal, as: RequestJournal
@@ -140,6 +140,42 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp retry_pause,
     do: Application.get_env(:delivest, :yandex_delivery_retry_pause, @retry_pause)
 
+  def estimate(%Order{} = order) do
+    RequestJournal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+      with {:ok, branch} <- Identity.get_branch(order.branch_id, preload: :info),
+           %Settings{} = settings <- configured(branch),
+           {:ok, body} <- Claim.estimate(order, branch, settings),
+           {:ok, response} <- Api.calculate(settings.token, body) do
+        offer(response, order)
+      else
+        {:error, _reason} = error -> error
+        other -> other
+      end
+    end)
+  end
+
+  defp offer(%{"offers" => [_ | _] = offers}, order) do
+    offer = Enum.min_by(offers, &cents(&1["price"]["total_price"]))
+    price = cents(offer["price"]["total_price"])
+
+    {:ok,
+     %{
+       price: price,
+       pickup_interval: offer["pickup_interval"],
+       delivery_interval: offer["delivery_interval"],
+       loss: max(price - (order.delivery_amount || 0), 0)
+     }}
+  end
+
+  defp offer(_response, _order), do: {:error, :no_offers}
+
+  defp cents(price) when is_binary(price) do
+    {value, _rest} = Float.parse(price)
+    round(value * 100)
+  end
+
+  defp cents(_price), do: 0
+
   @impl true
   def cancel(%Delivery{external_id: nil}), do: :ok
   def cancel(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
@@ -153,7 +189,8 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp cancel_claim(%Delivery{external_id: claim_id} = delivery) do
     token = settings(delivery.branch_id).token
 
-    with {:ok, %{"cancel_state" => cancel_state}} <- Api.cancel_info(token, claim_id),
+    with {:ok, %{"cancel_state" => cancel_state} = info} <- Api.cancel_info(token, claim_id),
+         :ok <- confirmed(delivery, cancel_state, info),
          {:ok, %{"version" => version}} <- Api.info(token, claim_id),
          {:ok, _response} <- Api.cancel(token, claim_id, version, cancel_state) do
       :ok
@@ -162,6 +199,12 @@ defmodule Delivest.Integrations.YandexDelivery do
       error -> error
     end
   end
+
+  defp confirmed(%Delivery{details: details}, "paid", info) do
+    if details["cancel_price"], do: :ok, else: {:error, {:paid_cancel, cents(info["price"])}}
+  end
+
+  defp confirmed(_delivery, _state, _info), do: :ok
 
   @impl true
   def order_ready(%Delivery{external_id: nil}), do: :ok
@@ -223,6 +266,7 @@ defmodule Delivest.Integrations.YandexDelivery do
         claim
         |> details()
         |> Map.merge(courier_details(token, claim, delivery.details))
+        |> Map.merge(point_eta(token, claim))
 
       Couriers.report(delivery, state(status), details)
     else
@@ -259,6 +303,21 @@ defmodule Delivest.Integrations.YandexDelivery do
   end
 
   defp courier_details(_token, _claim, known), do: Map.take(known, ["phone", "tracking_url"])
+
+  defp point_eta(token, %{"id" => claim_id, "status" => status})
+       when status in @assigned or status in @picked_up do
+    with {:ok, %{"route_points" => points}} <- Api.points_eta(token, claim_id),
+         %{"visited_at" => %{"expected" => expected}} when is_binary(expected) <-
+           points
+           |> Enum.filter(&(&1["visit_status"] == "pending"))
+           |> Enum.min_by(& &1["visit_order"], fn -> nil end) do
+      %{"point_eta" => expected}
+    else
+      _other -> %{}
+    end
+  end
+
+  defp point_eta(_token, _claim), do: %{}
 
   defp phone(token, %{"id" => claim_id} = claim) do
     with %{"id" => point_id} <- point(claim, "source"),
@@ -303,9 +362,12 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp configured(_branch), do: {:error, :not_configured}
 
   defp switch_to_card(%Order{payment_method: :cash} = order) do
-    with {:error, reason} <-
-           Orders.update_payment_method(order, %{"payment_method" => "card_offline"}) do
-      Logger.warning("order #{order.number}: cash to card switch failed (#{inspect(reason)})")
+    case Orders.update_payment_method(order, %{"payment_method" => "card_offline"}) do
+      {:ok, _order} ->
+        Push.notify_note(order, :card_only)
+
+      {:error, reason} ->
+        Logger.warning("order #{order.number}: cash to card switch failed (#{inspect(reason)})")
     end
   end
 

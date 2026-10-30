@@ -36,6 +36,7 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
     do: gettext("The courier has picked up the order, its status cannot be reverted")
 
   def message(:not_ready), do: gettext("The order is not ready yet")
+  def message(:no_offers), do: gettext("Yandex Delivery has no offers for this address")
   def message(:not_configured), do: gettext("Yandex Delivery is not set up for this branch")
 
   def message(:branch_address_missing),

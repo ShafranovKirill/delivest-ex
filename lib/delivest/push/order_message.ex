@@ -27,6 +27,17 @@ defmodule Delivest.Push.OrderMessage do
     end)
   end
 
+  def note(order, :card_only, locale) do
+    localized(locale, fn ->
+      body =
+        gettext("The Yandex courier accepts only a card, pay for order %{number} by card",
+          number: Order.short_number(order)
+        )
+
+      message(order, body, url(order))
+    end)
+  end
+
   defp localized(nil, fun), do: fun.()
   defp localized(locale, fun), do: Gettext.with_locale(DelivestWeb.Gettext, locale, fun)
 

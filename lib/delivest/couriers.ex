@@ -141,6 +141,18 @@ defmodule Delivest.Couriers do
     end
   end
 
+  def estimate(%Staff{} = staff, %Order{} = order) do
+    with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
+         true <- assignable?(order) || {:error, :not_available},
+         %CourierSettings{source: :yandex} <-
+           settings(order.branch_id) || {:error, :not_available} do
+      order |> Repo.preload([:items]) |> Delivest.Integrations.YandexDelivery.estimate()
+    else
+      %CourierSettings{} -> {:error, :not_available}
+      error -> error
+    end
+  end
+
   def assign(%Staff{} = staff, %Order{} = order, courier_id) do
     with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
          true <- assignable?(order) || {:error, :not_available},
@@ -411,10 +423,22 @@ defmodule Delivest.Couriers do
   end
 
   defp close(%Delivery{} = delivery, status, reason) do
-    if status != :delivered, do: cancel_at_provider(delivery)
+    case if(status != :delivered, do: cancel_at_provider(delivery), else: :ok) do
+      {:paid, price} when reason == :order_cancelled -> hold_cancel(delivery, price)
+      _result -> finish(delivery, status, reason)
+    end
+  end
 
+  defp finish(delivery, status, reason) do
     delivery
     |> Delivery.close_changeset(status, reason)
+    |> Repo.update()
+    |> changed()
+  end
+
+  defp hold_cancel(%Delivery{details: details} = delivery, price) do
+    delivery
+    |> Ecto.Changeset.change(details: Map.put(details || %{}, "cancel_price", price))
     |> Repo.update()
     |> changed()
   end
@@ -422,7 +446,37 @@ defmodule Delivest.Couriers do
   defp cancel_at_provider(%Delivery{provider: key} = delivery) do
     with {:ok, provider} <- Registry.fetch(key),
          {:error, reason} <- provider.cancel(delivery) do
-      Logger.warning("delivery #{delivery.id}: #{key} cancel failed (#{inspect(reason)})")
+      case reason do
+        {:paid_cancel, price} ->
+          {:paid, price}
+
+        _other ->
+          Logger.warning("delivery #{delivery.id}: #{key} cancel failed (#{inspect(reason)})")
+      end
+    end
+  end
+
+  def cancel_pending(%Order{deliveries: deliveries}) when is_list(deliveries) do
+    case Enum.find(deliveries, &(Delivery.active?(&1) and &1.details["cancel_price"])) do
+      %Delivery{details: %{"cancel_price" => price}} -> price
+      nil -> nil
+    end
+  end
+
+  def cancel_pending(_order), do: nil
+
+  def confirm_cancel(%Staff{} = staff, %Order{} = order) do
+    with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
+         %Delivery{details: %{"cancel_price" => _}, provider: key} = delivery <-
+           active(order.id) || {:error, :not_available},
+         {:ok, provider} <- Registry.fetch(key),
+         :ok <- provider.cancel(delivery) do
+      delivery
+      |> finish(:cancelled, :order_cancelled)
+      |> audited(staff, "order.courier_paid_cancel_confirmed", order)
+    else
+      %Delivery{} -> {:error, :not_available}
+      error -> error
     end
   end
 
