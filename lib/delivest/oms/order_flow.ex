@@ -13,11 +13,11 @@ defmodule Delivest.Oms.OrderFlow do
   @rank @path |> Enum.with_index() |> Map.new() |> Map.put(:cancelled, length(@path))
 
   @staff_permissions %{
-    accepted: ["orders.update"],
+    accepted: ["orders.update", "pos.use"],
     preparing: ["orders.cook", "orders.update"],
     ready: ["orders.cook", "orders.update"],
     delivering: ["orders.update"],
-    completed: ["orders.update"],
+    completed: ["orders.update", "pos.use"],
     cancelled: ["orders.update"]
   }
   @courier_steps [:delivering, :completed]

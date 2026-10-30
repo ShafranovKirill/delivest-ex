@@ -53,6 +53,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
 
   defp source_label("app"), do: gettext("App")
   defp source_label("staff"), do: gettext("Admin")
+  defp source_label("pos"), do: gettext("POS")
   defp source_label(source), do: Channels.name(source)
 
   defp source_icon("app"), do: "hero-device-phone-mobile"

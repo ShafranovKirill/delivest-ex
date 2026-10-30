@@ -312,6 +312,17 @@ defmodule DelivestWeb.Router do
         live "/kitchen", KitchenLive.Index, :index
       end
 
+      live_session :pos,
+        layout: {DelivestWeb.Layouts, :kitchen},
+        on_mount: [
+          {DelivestWeb.Hooks.StaffAuth, :default},
+          {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+          {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.Permission, "pos.use"}
+        ] do
+        live "/pos", PosLive.Index, :index
+      end
+
       live_session :staff_need_branch,
         layout: {DelivestWeb.Layouts, :staff_app},
         on_mount: [

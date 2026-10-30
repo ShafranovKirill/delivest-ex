@@ -72,3 +72,9 @@ msgstr ""
 
 msgid "franchise"
 msgstr ""
+
+msgid "pos"
+msgstr ""
+
+msgid "use"
+msgstr ""

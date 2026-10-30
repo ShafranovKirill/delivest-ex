@@ -90,6 +90,8 @@ defmodule Delivest.Payments do
     end
   end
 
+  def collect(repo, %Order{} = order, by), do: settle(repo, order, by)
+
   def on_status(_repo, _order, [], _by), do: {:ok, nil}
 
   def on_status(repo, %Order{} = order, steps, by) do

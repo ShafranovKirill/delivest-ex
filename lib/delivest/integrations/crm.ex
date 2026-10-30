@@ -106,6 +106,13 @@ defmodule Delivest.Integrations.Crm do
     end
   end
 
+  def own_pos?(%Branch{} = branch) do
+    case active_provider(branch) do
+      nil -> false
+      provider -> :own_pos in capabilities(provider)
+    end
+  end
+
   def can?(%Order{crm: %{provider: provider}}, capability),
     do: capability in capabilities(provider)
 

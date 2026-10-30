@@ -1,7 +1,7 @@
 defmodule Delivest.Oms.OrderSource do
   alias Delivest.Integrations.Channels.Registry
 
-  @own ~w(app staff)
+  @own ~w(app staff pos)
 
   def own, do: @own
 

@@ -18,6 +18,7 @@ defmodule Delivest.Integrations.Crm.Provider do
           | :update_address
           | :update_time
           | :update_payments
+          | :own_pos
 
   @type dictionary :: %{optional(atom()) => [%{id: String.t(), name: String.t()}]}
 

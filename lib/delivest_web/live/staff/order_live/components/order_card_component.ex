@@ -935,6 +935,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp overdue?(datetime), do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
 
   defp source_label("staff"), do: gettext("Admin")
+  defp source_label("pos"), do: gettext("POS")
   defp source_label(source), do: Channels.name(source)
 
   defp crm_name(%{crm: %{provider: provider}}) do

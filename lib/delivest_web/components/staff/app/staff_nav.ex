@@ -52,6 +52,13 @@ defmodule DelivestWeb.StaffNav do
         )
         |> allowed(staff, "orders.read"),
         item(
+          :pos,
+          branch && ~p"/staff/b/#{branch}/pos",
+          "hero-calculator",
+          gettext("POS")
+        )
+        |> allowed(staff, "pos.use"),
+        item(
           :kitchen,
           branch && ~p"/staff/b/#{branch}/kitchen",
           "hero-fire",

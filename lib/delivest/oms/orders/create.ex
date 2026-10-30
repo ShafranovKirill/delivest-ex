@@ -40,6 +40,7 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:payments, fn repo, %{order: order} ->
       Payments.open(repo, order, paid_online: opts[:paid_online], cash_given: cash_given(attrs))
     end)
+    |> Multi.run(:collected, fn repo, %{order: order} -> collect(repo, order, opts[:collect]) end)
     |> Multi.run(:created, fn repo, %{order: order} ->
       OrderEvents.created(repo, order, opts[:actor] || if(opts[:channel], do: :channel))
     end)
@@ -58,6 +59,9 @@ defmodule Delivest.Oms.Orders.Create do
     end
     |> track(opts)
   end
+
+  defp collect(_repo, _order, nil), do: {:ok, nil}
+  defp collect(repo, order, by), do: Payments.collect(repo, order, by)
 
   defp advance(_repo, order, nil), do: {:ok, order}
 
