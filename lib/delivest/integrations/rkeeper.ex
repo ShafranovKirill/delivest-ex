@@ -128,6 +128,55 @@ defmodule Delivest.Integrations.Rkeeper do
   end
 
   @impl true
+  def fetch_menu(settings) do
+    with {:ok, response} <- Api.task(settings, "GetMenu") do
+      {:ok,
+       %{
+         categories:
+           response
+           |> list(["categories", "dishCategories"])
+           |> Enum.map(&%{external_id: to_string(&1["id"] || &1["code"]), name: &1["name"]}),
+         products:
+           response
+           |> list(["dishes", "products", "items"])
+           |> Enum.map(&menu_dish/1)
+       }}
+    end
+  end
+
+  defp menu_dish(dish) do
+    %{
+      external_id: to_string(dish["id"] || dish["code"]),
+      name: dish["name"],
+      category:
+        (dish["categoryId"] || dish["category"]) &&
+          to_string(dish["categoryId"] || dish["category"]),
+      price: round((dish["price"] || 0) * 100),
+      groups:
+        dish
+        |> Map.get("modifierGroups", [])
+        |> Enum.map(fn group ->
+          %{
+            external_id: to_string(group["id"] || group["code"]),
+            name: group["name"] || "Модификаторы",
+            min: group["minAmount"] || group["min"] || 0,
+            max: group["maxAmount"] || group["max"] || 1,
+            modifiers:
+              group
+              |> Map.get("modifiers", [])
+              |> Enum.map(
+                &%{
+                  external_id: to_string(&1["id"] || &1["code"]),
+                  name: &1["name"],
+                  price: round((&1["price"] || 0) * 100)
+                }
+              )
+          }
+        end)
+    }
+  end
+
+  @impl true
   def stops_enabled?(%{sync_stops: true} = settings), do: configured?(settings)
   def stops_enabled?(_settings), do: false
 

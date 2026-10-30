@@ -131,6 +131,12 @@ defmodule Delivest.Integrations.Iiko do
     end
   end
 
+  @impl true
+  def fetch_menu(settings) do
+    with {:ok, body} <- Api.nomenclature(settings),
+         do: {:ok, Delivest.Integrations.Iiko.Menu.parse(body)}
+  end
+
   defp price(%{"sizePrices" => [%{"price" => %{"currentPrice" => price}} | _]})
        when is_number(price),
        do: round(price * 100)

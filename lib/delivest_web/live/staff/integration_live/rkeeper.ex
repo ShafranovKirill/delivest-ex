@@ -22,7 +22,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
   end
 
   @impl true
-  def handle_event("tab", %{"tab" => tab}, socket) when tab in ~w(settings journal),
+  def handle_event("tab", %{"tab" => tab}, socket) when tab in ~w(settings menu journal),
     do: {:noreply, assign(socket, tab: String.to_existing_atom(tab))}
 
   def handle_event("validate", %{"crm" => params}, socket) do
@@ -99,6 +99,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
           class={["tab", @tab == :settings && "tab-active font-bold"]}
         >
           {gettext("Settings")}
+        </button>
+        <button
+          type="button"
+          phx-click="tab"
+          phx-value-tab="menu"
+          class={["tab", @tab == :menu && "tab-active font-bold"]}
+        >
+          {gettext("Menu")}
         </button>
         <button
           type="button"
@@ -191,6 +199,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
           </div>
         </fieldset>
       </.form>
+
+      <.live_component
+        :if={@tab == :menu}
+        module={DelivestWeb.Staff.IntegrationLive.MenuImportComponent}
+        id="rkeeper-menu"
+        branch_id={@current_branch.id}
+        staff={@current_staff}
+        can_edit={@can_edit}
+      />
 
       <.live_component
         :if={@tab == :journal}

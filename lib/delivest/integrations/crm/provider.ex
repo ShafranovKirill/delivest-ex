@@ -49,6 +49,9 @@ defmodule Delivest.Integrations.Crm.Provider do
 
   @callback handle_webhook(token :: String.t(), params :: map()) :: webhook_reply()
 
+  @callback fetch_menu(settings :: struct()) ::
+              {:ok, Delivest.Net.MenuImport.menu()} | {:error, term()}
+
   @callback stops_enabled?(settings :: struct()) :: boolean()
   @callback fetch_stops(settings :: struct()) :: {:ok, [String.t()]} | {:error, term()}
 
@@ -60,6 +63,7 @@ defmodule Delivest.Integrations.Crm.Provider do
                       dictionaries: 1,
                       catalog_source: 1,
                       fetch_catalog: 1,
+                      fetch_menu: 1,
                       handle_webhook: 2,
                       stops_enabled?: 1,
                       fetch_stops: 1

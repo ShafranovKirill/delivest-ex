@@ -142,6 +142,22 @@ defmodule Delivest.Integrations.Crm do
     end
   end
 
+  def menu_source?(provider) do
+    case Registry.fetch(provider) do
+      {:ok, module} -> exported?(module, :fetch_menu, 1)
+      _ -> false
+    end
+  end
+
+  def fetch_menu(branch_id) do
+    with {:ok, name, module} <- branch_provider(branch_id),
+         true <- exported?(module, :fetch_menu, 1) || {:error, :no_menu_source},
+         {:ok, settings} <- branch_settings(branch_id, name),
+         {:ok, menu} <- module.fetch_menu(settings) do
+      {:ok, name, menu}
+    end
+  end
+
   def deliver(%Order{} = order), do: call(order, & &1.deliver_order(order, &2))
 
   def cancel(%Order{} = order, reason),

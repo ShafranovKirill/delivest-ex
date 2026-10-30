@@ -78,7 +78,7 @@ defmodule Delivest.Integrations.Iiko.OrderPayload do
         {:ok, nil, rest}
 
       {[size | _], rest} ->
-        {:ok, articles[size.modifier_id].external_id, rest}
+        {:ok, articles[size.modifier_id].external_id |> String.split(":") |> List.last(), rest}
     end
   end
 

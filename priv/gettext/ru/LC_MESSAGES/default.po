@@ -851,8 +851,8 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:245
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:489
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:235
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:182
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:243
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:190
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:198
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:305
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
@@ -881,6 +881,7 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:86
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:243
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:488
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:77
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:197
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:304
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:67
@@ -1224,7 +1225,7 @@ msgid "Cart is empty"
 msgstr "Корзина пуста"
 
 #: lib/delivest_web/live/staff/courier_live/board.ex:158
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:208
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:216
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:153
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:186
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:323
@@ -2661,6 +2662,7 @@ msgstr "Всегда"
 msgid "An entered promo code always goes first. Automatic promotions follow by priority; a non-combinable one blocks the rest."
 msgstr "Введённый промокод всегда применяется первым. Затем автоматические акции по приоритету; несовместимая акция блокирует остальные."
 
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:81
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:121
 #, elixir-autogen, elixir-format
 msgid "Apply"
@@ -4057,7 +4059,8 @@ msgstr "Интеграции"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:206
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:603
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:179
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:187
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:66
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:22
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:27
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:35
@@ -5841,6 +5844,8 @@ msgid "Marketing"
 msgstr "Маркетинг"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:90
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:139
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:109
 #, elixir-autogen, elixir-format
 msgid "Menu"
 msgstr "Меню"
@@ -6978,9 +6983,9 @@ msgid "Request"
 msgstr "Запрос"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:256
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:139
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:147
 #: lib/delivest_web/live/staff/integration_live/journal_component.ex:34
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:109
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:117
 #, elixir-autogen, elixir-format
 msgid "Request journal"
 msgstr "Журнал запросов"
@@ -7492,7 +7497,7 @@ msgstr "Заблокировано"
 msgid "Awaiting payment"
 msgstr "Ждёт оплаты"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:215
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:223
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:324
 #: lib/delivest_web/live/staff/pos_live/index.ex:361
 #, elixir-autogen, elixir-format
@@ -7509,7 +7514,7 @@ msgstr "Сертификат"
 msgid "Not paid"
 msgstr "Не оплачен"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:222
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:230
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:325
 #, elixir-autogen, elixir-format
 msgid "Online"
@@ -7704,21 +7709,21 @@ msgstr "К оплате"
 msgid "Total"
 msgstr "Итого"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:189
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:196
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:207
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:214
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:221
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:197
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:204
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:215
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:222
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:229
 #, elixir-autogen, elixir-format
 msgid "Choose"
 msgstr "Выберите"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:243
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:251
 #, elixir-autogen, elixir-format
 msgid "Connect iiko updates"
 msgstr "Подключить обновления от iiko"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:182
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:190
 #, elixir-autogen, elixir-format
 msgid "Load from iiko"
 msgstr "Загрузить из iiko"
@@ -7728,38 +7733,38 @@ msgstr "Загрузить из iiko"
 msgid "Orders go to the restaurant POS, statuses and the stop list come back."
 msgstr "Заказы уходят на кассу ресторана, статусы и стоп-лист приходят обратно."
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:190
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:198
 #, elixir-autogen, elixir-format
 msgid "Organization"
 msgstr "Организация"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:202
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:210
 #, elixir-autogen, elixir-format
 msgid "Payment types in iiko"
 msgstr "Типы оплат в iiko"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:161
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:169
 #, elixir-autogen, elixir-format
 msgid "Send orders to iiko"
 msgstr "Передавать заказы в iiko"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:230
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:238
 #, elixir-autogen, elixir-format
 msgid "Take the stop list from iiko"
 msgstr "Получать стоп-лист из iiko"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:197
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:205
 #, elixir-autogen, elixir-format
 msgid "Terminal group"
 msgstr "Группа терминалов"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:251
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:189
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:259
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:197
 #, elixir-autogen, elixir-format
 msgid "Update the stop list"
 msgstr "Обновить стоп-лист"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:168
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:176
 #, elixir-autogen, elixir-format
 msgid "iiko API key"
 msgstr "API-ключ iiko"
@@ -7780,22 +7785,22 @@ msgstr "Ошибка iiko: %{error}"
 msgid "iiko will send updates"
 msgstr "iiko будет присылать обновления"
 
-#: lib/delivest_web/live/staff/integration_live/iiko.ex:171
+#: lib/delivest_web/live/staff/integration_live/iiko.ex:179
 #, elixir-autogen, elixir-format
 msgid "iikoWeb → Integrations → API keys. Save the key, then load the lists."
 msgstr "iikoWeb → Интеграции → API-ключи. Сохраните ключ, затем загрузите списки."
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:171
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:179
 #, elixir-autogen, elixir-format
 msgid "Cancel reason code"
 msgstr "Код причины отмены"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:153
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:161
 #, elixir-autogen, elixir-format
 msgid "Delivery order category"
 msgstr "Категория заказа доставки"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:158
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:166
 #, elixir-autogen, elixir-format
 msgid "Delivery order type"
 msgstr "Тип заказа доставки"
@@ -7805,37 +7810,37 @@ msgstr "Тип заказа доставки"
 msgid "Orders go to the restaurant r_keeper POS through the White Server gateway."
 msgstr "Заказы уходят на кассу r_keeper ресторана через шлюз White Server."
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:163
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:171
 #, elixir-autogen, elixir-format
 msgid "Pickup order category"
 msgstr "Категория заказа самовывоза"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:165
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:173
 #, elixir-autogen, elixir-format
 msgid "Pickup order type"
 msgstr "Тип заказа самовывоза"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:169
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:177
 #, elixir-autogen, elixir-format
 msgid "Prepayment currency GUID"
 msgstr "GUID валюты предоплаты"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:139
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:147
 #, elixir-autogen, elixir-format
 msgid "Restaurant objectId"
 msgstr "objectId ресторана"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:131
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:139
 #, elixir-autogen, elixir-format
 msgid "Send orders to r_keeper"
 msgstr "Передавать заказы в r_keeper"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:177
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:185
 #, elixir-autogen, elixir-format
 msgid "Take the stop list from r_keeper"
 msgstr "Получать стоп-лист из r_keeper"
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:141
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:149
 #, elixir-autogen, elixir-format
 msgid "Test gateway"
 msgstr "Тестовый шлюз"
@@ -7845,7 +7850,7 @@ msgstr "Тестовый шлюз"
 msgid "The aggregator token RKEEPER_TOKEN is not set on the server."
 msgstr "На сервере не задан токен агрегатора RKEEPER_TOKEN."
 
-#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:144
+#: lib/delivest_web/live/staff/integration_live/rkeeper.ex:152
 #, elixir-autogen, elixir-format
 msgid "The restaurant connects us as an aggregator in its WS r_keeper and tells the objectId."
 msgstr "Ресторан подключает нас как агрегатора в своём WS r_keeper и сообщает objectId."
@@ -7854,3 +7859,38 @@ msgstr "Ресторан подключает нас как агрегатора
 #, elixir-autogen, elixir-format
 msgid "r_keeper did not respond"
 msgstr "r_keeper не ответил"
+
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:78
+#, elixir-autogen, elixir-format
+msgid "Apply the menu from the CRM?"
+msgstr "Применить меню из CRM?"
+
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:69
+#, elixir-autogen, elixir-format
+msgid "Check the menu"
+msgstr "Проверить меню"
+
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:37
+#, elixir-autogen, elixir-format
+msgid "Menu updated: %{added} added, %{changed} changed, %{hidden} hidden"
+msgstr "Меню обновлено: добавлено %{added}, изменено %{changed}, скрыто %{hidden}"
+
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:56
+#, elixir-autogen, elixir-format
+msgid "Products, prices, sizes and modifiers come from the CRM. Photos, descriptions and tags stay ours. Products removed in the CRM are hidden."
+msgstr "Товары, цены, размеры и модификаторы приходят из CRM. Фото, описания и теги остаются нашими. Удалённые в CRM товары скрываются."
+
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:87
+#, elixir-autogen, elixir-format
+msgid "Will be added"
+msgstr "Будут добавлены"
+
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:89
+#, elixir-autogen, elixir-format
+msgid "Will be changed"
+msgstr "Будут изменены"
+
+#: lib/delivest_web/live/staff/integration_live/menu_import_component.ex:92
+#, elixir-autogen, elixir-format
+msgid "Will be hidden"
+msgstr "Будут скрыты"

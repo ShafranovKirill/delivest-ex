@@ -56,4 +56,46 @@ defmodule DelivestWeb.Staff.IntegrationLive.IikoTest do
     assert settings.terminal_group_id == "tg-1"
     assert Iiko.configured?(settings)
   end
+
+  test "the menu is checked and applied from iiko", ctx do
+    alias Delivest.Identity.Branch.BranchInfo
+    alias Delivest.Integrations.Crm.BranchSettings
+
+    Delivest.Repo.insert!(%BranchInfo{
+      branch_id: ctx.branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :iiko,
+        iiko: %Iiko.Settings{api_key: "k", organization_id: "o", terminal_group_id: "t"}
+      }
+    })
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      case conn.request_path do
+        "/api/1/access_token" ->
+          Req.Test.json(conn, %{"token" => "jwt"})
+
+        "/api/1/nomenclature" ->
+          Req.Test.json(conn, %{
+            "groups" => [],
+            "products" => [
+              %{
+                "id" => "p-1",
+                "name" => "Лимонад",
+                "type" => "Good",
+                "sizePrices" => [%{"price" => %{"currentPrice" => 150}}]
+              }
+            ]
+          })
+      end
+    end)
+
+    {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/integrations/iiko")
+    lv |> element("button[phx-value-tab=menu]") |> render_click()
+    lv |> element("#iiko-menu-check") |> render_click()
+    assert lv |> element("#iiko-menu-plan") |> render() =~ "Лимонад"
+
+    lv |> element("#iiko-menu-apply") |> render_click()
+    assert %{price: 15_000} = Delivest.Repo.get_by!(Delivest.Net.Product, name: "Лимонад")
+  end
 end
