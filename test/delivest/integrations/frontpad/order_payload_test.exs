@@ -47,6 +47,13 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     assert {"descr", "Phone extension 123"} in params
   end
 
+  test "the order number goes first in the description" do
+    order = %Order{items: [], number: "A123", comment: "Без лука"}
+
+    assert {:ok, view} = OrderPayload.build(order, %Settings{api_key: "secret"}, %{})
+    assert {"descr", "№A123. Без лука"} in OrderPayload.to_form_params(view)
+  end
+
   test "delivery goes as the delivery product line or into the description" do
     order = %Order{items: [], delivery_amount: 15_000, comment: "Без лука"}
 

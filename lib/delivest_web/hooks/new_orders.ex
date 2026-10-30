@@ -7,7 +7,7 @@ defmodule DelivestWeb.Hooks.NewOrders do
   import Phoenix.LiveView
 
   alias Delivest.Identity
-  alias Delivest.Integrations.YandexEda
+  alias Delivest.Integrations.{Crm, YandexEda}
   alias Delivest.Oms.{Kitchen, Orders}
   alias DelivestWeb.KitchenPresence
 
@@ -129,6 +129,35 @@ defmodule DelivestWeb.Hooks.NewOrders do
       end
 
     {:halt, assign_counts(socket, branch.id)}
+  end
+
+  defp handle_event("crm_alert", %{"order_id" => order_id} = params, socket),
+    do:
+      handle_event(
+        "crm_alert",
+        params |> Map.delete("order_id") |> Map.put("id", order_id),
+        socket
+      )
+
+  defp handle_event("crm_alert", %{"id" => order_id, "action" => action} = params, socket) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+
+    socket =
+      case Crm.resolve_alert(staff, branch.id, order_id, action, params["number"]) do
+        {:ok, _order} ->
+          socket
+
+        {:error, :forbidden} ->
+          put_flash(socket, :error, gettext("Permission denied"))
+
+        {:error, :number_required} ->
+          put_flash(socket, :error, gettext("Enter the order number in the CRM"))
+
+        {:error, _reason} ->
+          put_flash(socket, :error, gettext("Failed to update the order"))
+      end
+
+    {:halt, socket}
   end
 
   defp handle_event(_event, _params, socket), do: {:cont, socket}

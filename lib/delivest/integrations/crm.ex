@@ -71,6 +71,43 @@ defmodule Delivest.Integrations.Crm do
 
   def manual_cancel_required?(_order), do: false
 
+  def alert?(%Order{crm: %{alert: alert}}), do: is_binary(alert) and alert != ""
+  def alert?(_order), do: false
+
+  def resolve_alert(staff, branch_id, order_id, action, number \\ nil) do
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id),
+         {:ok, uuid} <- Ecto.UUID.cast(order_id),
+         %Order{crm: %{}} = order <- Repo.get_by(Order, id: uuid, branch_id: branch_id) do
+      resolve(order, action, number)
+    else
+      {:error, :forbidden} -> {:error, :forbidden}
+      _ -> {:error, :order_not_found}
+    end
+  end
+
+  defp resolve(order, "acknowledge", _number), do: SyncState.acknowledge_alert(order)
+
+  defp resolve(order, "exists", number) when is_binary(number) and number != "" do
+    number = String.trim(number)
+
+    SyncState.sent(
+      order,
+      %{external_id: number, external_number: number},
+      order.crm.attempts
+    )
+  end
+
+  defp resolve(_order, "exists", _number), do: {:error, :number_required}
+
+  defp resolve(order, "resend", _number) do
+    with {:ok, order} <-
+           Orders.update_order_crm(order, %{status: "pending", alert: nil, last_error: nil}),
+         {:ok, _job} <- enqueue_sync(order),
+         do: {:ok, order}
+  end
+
+  defp resolve(_order, _action, _number), do: {:error, :unknown_action}
+
   def get_branch_settings(branch_id) do
     case Identity.get_branch(branch_id, preload: [:info]) do
       {:ok, %Branch{info: %{crm: %BranchSettings{} = settings}}} -> settings

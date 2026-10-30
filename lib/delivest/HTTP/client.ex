@@ -84,9 +84,12 @@ defmodule Delivest.HTTP.Client do
           "HTTP <<< Connection Exception on #{full_url}\nReason: #{inspect(exception)}"
         )
 
-        {:error, {:connection_error, Exception.message(exception)}}
+        {:error, {:connection_error, Exception.message(exception), transport_reason(exception)}}
     end
   end
+
+  defp transport_reason(%{reason: reason}) when is_atom(reason), do: reason
+  defp transport_reason(_exception), do: :unknown
 
   def get(url, params \\ [], opts \\ []), do: request(:get, url, params, opts)
   def post(url, body \\ [], opts \\ []), do: request(:post, url, body, opts)

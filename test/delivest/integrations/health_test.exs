@@ -81,7 +81,7 @@ defmodule Delivest.Integrations.HealthTest do
     assert Error.classify({:http_error, 429, %{}}) == {:snooze, 60}
     assert Error.classify({:http_error, 502, %{}}) == :retry
     assert Error.classify({:http_error, 422, %{}}) == :permanent
-    assert Error.classify({:connection_error, "timeout"}) == :retry
+    assert Error.classify({:connection_error, "timeout", :timeout}) == :retry
     assert Frontpad.classify_error({:frontpad, "invalid_secret"}) == :auth
     assert Frontpad.classify_error({:frontpad, "requests_limit"}) == {:snooze, 60}
   end
