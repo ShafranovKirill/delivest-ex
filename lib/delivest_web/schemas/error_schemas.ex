@@ -39,6 +39,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "price_changed",
             "delivery_below_minimum",
             "delivery_outside_zones",
+            "branch_paused",
             "delivery_no_coordinates",
             "promo_unavailable",
             "promo_not_found",

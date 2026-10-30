@@ -41,7 +41,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
       |> Map.put("session_id", session_id)
       |> put_client(client)
 
-    with {:ok, _branch} <- fetch_public_branch(attrs["branch_id"]),
+    with {:ok, branch} <- fetch_public_branch(attrs["branch_id"]),
+         :ok <- ensure_accepting(branch),
          true <-
            Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
          {:ok, order} <- Oms.create_order(attrs, update_client: false) do
@@ -104,6 +105,13 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
   defp remember_address(_client, _order), do: :ok
 
+  defp ensure_accepting(branch) do
+    case Delivest.Intake.status(branch.id) do
+      %{mode: :paused} = status -> {:error, {:branch_paused, status}}
+      _status -> :ok
+    end
+  end
+
   defp fetch_public_branch(nil), do: {:error, :branch_id_required}
 
   defp fetch_public_branch(branch_id) do
@@ -130,6 +138,16 @@ defmodule DelivestWeb.Client.Order.OrderController do
       :delivery_below_minimum,
       "Delivery needs an order from #{min_order}",
       %{min_order: min_order}
+    )
+  end
+
+  defp render_error(conn, {:branch_paused, status}) do
+    ApiError.send_error(
+      conn,
+      :unprocessable_entity,
+      :branch_paused,
+      "The branch is not taking orders now",
+      %{until: status.until, reason: status.reason}
     )
   end
 

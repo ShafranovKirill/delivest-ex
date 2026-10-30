@@ -78,6 +78,22 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              conn |> post(~p"/client/branches/#{inactive.id}/select") |> json_response(404)
   end
 
+  test "a paused branch does not take client orders", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    staff = insert(:staff, role: insert(:role, permissions: ["orders.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    {:ok, _status} = Delivest.Intake.pause(staff, branch, 10, "нет курьеров")
+
+    assert %{"error" => "branch_paused", "details" => %{"reason" => "нет курьеров"}} =
+             conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(422)
+  end
+
   test "creates an order and ignores server-controlled fields", %{
     conn: conn,
     branch: branch,

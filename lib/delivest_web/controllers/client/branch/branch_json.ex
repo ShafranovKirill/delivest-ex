@@ -17,6 +17,22 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     }
   end
 
+  defp effective_time(%{delivery_time: nil}), do: nil
+  defp effective_time(%{delivery_time: time} = info), do: time + intake(info).extra_minutes
+
+  defp intake(%{intake: %Delivest.Identity.Branch.IntakeSettings{} = intake}) do
+    status = Delivest.Intake.status_of(intake, DateTime.utc_now())
+
+    %{
+      mode: status.mode,
+      extra_minutes: status.extra_minutes,
+      until: status.until,
+      reason: status.reason
+    }
+  end
+
+  defp intake(_info), do: %{mode: :normal, extra_minutes: 0, until: nil, reason: nil}
+
   defp branch_info(%Ecto.Association.NotLoaded{}), do: nil
   defp branch_info(nil), do: nil
 
@@ -28,7 +44,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       latitude: info.latitude,
       longitude: info.longitude,
       phone_number: info.phone_number,
-      delivery_time: info.delivery_time,
+      delivery_time: effective_time(info),
+      intake: intake(info),
       working_hours: info.working_hours || %{},
       vk_url: info.vk_url,
       whatsapp_url: info.whatsapp_url,

@@ -10,10 +10,10 @@ defmodule Delivest.Oms.OrderDeadline do
   def delivery_minutes(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
       {:ok, %{info: %{delivery_time: minutes}}} when is_integer(minutes) and minutes > 0 ->
-        minutes
+        minutes + Delivest.Intake.extra_minutes(branch_id)
 
       _ ->
-        @default_delivery_minutes
+        @default_delivery_minutes + Delivest.Intake.extra_minutes(branch_id)
     end
   end
 
