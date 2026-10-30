@@ -43,6 +43,12 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/orders"]))
     end
 
+    test "the header names the gateway", %{conn: conn, branch: branch} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
+
+      assert has_element?(lv, "#gateway-badge", "iiko")
+    end
+
     test "a direct visit shows the note instead of the page", %{conn: conn, branch: branch} do
       for page <- ~w(receipts couriers deliveries) do
         {:ok, lv, _html} = live(conn, "/staff/b/#{branch.slug}/#{page}")
@@ -61,5 +67,12 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
 
       refute has_element?(lv, "#gateway-note")
     end
+  end
+
+  test "a branch without crm has no badge", %{conn: conn} do
+    %{conn: conn, branch: branch} = setup_branch(conn, nil)
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
+
+    refute has_element?(lv, "#gateway-badge")
   end
 end

@@ -1,6 +1,33 @@
 defmodule DelivestWeb.GatewayNote do
   use DelivestWeb, :html
 
+  alias Delivest.Gateway
+
+  attr :branch, :map, default: nil
+
+  def gateway_badge(%{branch: nil} = assigns), do: ~H""
+
+  def gateway_badge(assigns) do
+    assigns = assign(assigns, :mode, Gateway.mode(assigns.branch))
+
+    ~H"""
+    <.link
+      :if={@mode.provider}
+      id="gateway-badge"
+      navigate={~p"/staff/b/#{@branch}/integrations"}
+      class="hidden items-center gap-1.5 rounded-field bg-info/15 px-2 py-1 text-xs font-semibold text-info md:flex"
+    >
+      <.icon name="hero-arrows-right-left" class="size-4" />
+      {badge_text(@mode)}
+    </.link>
+    """
+  end
+
+  defp badge_text(%{name: name, areas: %{menu: :crm}}),
+    do: gettext("Gateway: %{crm}, menu from CRM", crm: name)
+
+  defp badge_text(%{name: name}), do: gettext("Gateway: %{crm}", crm: name)
+
   attr :name, :string, required: true
   attr :area, :atom, required: true
   attr :branch, :map, default: nil

@@ -95,7 +95,7 @@ msgstr "логин"
 msgid "All rights reserved."
 msgstr "Все права защищены."
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:130
+#: lib/delivest_web/components/staff/app/staff_header.ex:132
 #, elixir-autogen, elixir-format
 msgid "Dark Mode"
 msgstr "Темная тема"
@@ -106,12 +106,12 @@ msgstr "Темная тема"
 msgid "Dashboard"
 msgstr "Дашборд"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:87
+#: lib/delivest_web/components/staff/app/staff_header.ex:89
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr "Язык"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:152
+#: lib/delivest_web/components/staff/app/staff_header.ex:154
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Выйти"
@@ -126,7 +126,7 @@ msgstr "Открыть меню"
 msgid "Sign In"
 msgstr "Войти"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:62
+#: lib/delivest_web/components/staff/app/staff_header.ex:64
 #: lib/delivest_web/components/staff/app/staff_nav.ex:157
 #: lib/delivest_web/live/staff/log_live/event_text.ex:42
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:178
@@ -3981,7 +3981,7 @@ msgstr "Белый текст плохо читается на этом цвет
 msgid "Collapse menu"
 msgstr "Свернуть меню"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:140
+#: lib/delivest_web/components/staff/app/staff_header.ex:142
 #, elixir-autogen, elixir-format
 msgid "Light Mode"
 msgstr "Светлая тема"
@@ -3991,7 +3991,7 @@ msgstr "Светлая тема"
 msgid "Orders awaiting confirmation"
 msgstr "Заказы ждут подтверждения"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:121
+#: lib/delivest_web/components/staff/app/staff_header.ex:123
 #, elixir-autogen, elixir-format
 msgid "Theme"
 msgstr "Тема"
@@ -5942,7 +5942,7 @@ msgstr "Номер, телефон, имя или адрес"
 msgid "New order"
 msgstr "Новый заказ"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:103
+#: lib/delivest_web/components/staff/app/staff_header.ex:105
 #, elixir-autogen, elixir-format
 msgid "New orders"
 msgstr "Новые заказы"
@@ -6802,7 +6802,7 @@ msgstr "Оператор видит вас на карте"
 msgid "This browser does not support notifications"
 msgstr "Этот браузер не поддерживает уведомления"
 
-#: lib/delivest_web/components/staff/app/staff_header.ex:112
+#: lib/delivest_web/components/staff/app/staff_header.ex:114
 #, elixir-autogen, elixir-format
 msgid "This device"
 msgstr "Это устройство"
@@ -8152,37 +8152,47 @@ msgstr "Подтвердить платную отмену"
 msgid "The Yandex courier accepts only a card, pay for order %{number} by card"
 msgstr "Курьер Яндекса принимает только карту, оплатите заказ %{number} картой"
 
-#: lib/delivest_web/components/gateway_note.ex:32
+#: lib/delivest_web/components/gateway_note.ex:59
 #, elixir-autogen, elixir-format
 msgid "Delivery of orders is handled by %{crm}, couriers are not assigned here."
 msgstr "Доставку заказов ведёт %{crm}, курьеры здесь не назначаются."
 
-#: lib/delivest_web/components/gateway_note.ex:24
+#: lib/delivest_web/components/gateway_note.ex:51
 #, elixir-autogen, elixir-format
 msgid "Integration settings"
 msgstr "Настройки интеграции"
 
-#: lib/delivest_web/components/gateway_note.ex:16
+#: lib/delivest_web/components/gateway_note.ex:43
 #, elixir-autogen, elixir-format
 msgid "Managed in %{crm}"
 msgstr "Ведётся в %{crm}"
 
-#: lib/delivest_web/components/gateway_note.ex:37
+#: lib/delivest_web/components/gateway_note.ex:64
 #, elixir-autogen, elixir-format
 msgid "Receipts are printed on the cash desk of %{crm}."
 msgstr "Чеки пробивает касса %{crm}."
 
-#: lib/delivest_web/components/gateway_note.ex:39
+#: lib/delivest_web/components/gateway_note.ex:66
 #, elixir-autogen, elixir-format
 msgid "Sales go through the POS of %{crm}."
 msgstr "Продажи идут через кассу %{crm}."
 
-#: lib/delivest_web/components/gateway_note.ex:40
+#: lib/delivest_web/components/gateway_note.ex:67
 #, elixir-autogen, elixir-format
 msgid "The kitchen works in %{crm}."
 msgstr "Кухня ведётся в %{crm}."
 
-#: lib/delivest_web/components/gateway_note.ex:41
+#: lib/delivest_web/components/gateway_note.ex:68
 #, elixir-autogen, elixir-format
 msgid "This section is managed in %{crm}."
 msgstr "Этот раздел ведётся в %{crm}."
+
+#: lib/delivest_web/components/gateway_note.ex:29
+#, elixir-autogen, elixir-format
+msgid "Gateway: %{crm}"
+msgstr "Шлюз: %{crm}"
+
+#: lib/delivest_web/components/gateway_note.ex:27
+#, elixir-autogen, elixir-format
+msgid "Gateway: %{crm}, menu from CRM"
+msgstr "Шлюз: %{crm}, меню из CRM"
