@@ -121,6 +121,35 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
            )
   end
 
+  test "the customer gets the payment page again for an unpaid order", %{
+    conn: conn,
+    branch: branch,
+    cart_id: cart_id
+  } do
+    stub_yookassa(self())
+    body = conn |> post(~p"/client/orders", params(branch, cart_id)) |> json_response(200)
+    id = body["data"]["id"]
+
+    assert %{"data" => %{"confirmation_url" => "https://yoomoney.ru/checkout" <> _}} =
+             conn
+             |> recycle_with_headers()
+             |> post(~p"/client/orders/#{id}/pay")
+             |> json_response(200)
+
+    order = Repo.get!(Order, id)
+
+    {:ok, _} =
+      Delivest.Oms.Orders.advance_order(order, :cancelled, :client,
+        attrs: %{cancel_reason: :client}
+      )
+
+    assert %{"error" => "order_not_awaiting_payment"} =
+             conn
+             |> recycle_with_headers()
+             |> post(~p"/client/orders/#{id}/pay")
+             |> json_response(422)
+  end
+
   test "the operator cannot take an unpaid order into work", %{
     conn: conn,
     branch: branch,

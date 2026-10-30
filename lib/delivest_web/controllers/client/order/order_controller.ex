@@ -13,7 +13,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
     ActiveOrdersResponse,
     ClientOrdersResponse,
     CreateOrderRequest,
-    OrderResponse
+    OrderResponse,
+    PaymentLinkResponse
   }
 
   operation(:create,
@@ -106,6 +107,43 @@ defmodule DelivestWeb.Client.Order.OrderController do
           :order_not_cancellable,
           "The order can no longer be cancelled"
         )
+    end
+  end
+
+  operation(:pay,
+    summary: "Ссылка на оплату",
+    description:
+      "Для заказа, который ждёт онлайн-оплаты: возвращает страницу оплаты ЮKassa, " <>
+        "чтобы клиент мог вернуться и оплатить.",
+    tags: ["Orders"],
+    parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
+    responses: [
+      ok: {"Страница оплаты", "application/json", PaymentLinkResponse},
+      not_found: {"Заказ не найден", "application/json", ErrorResponse},
+      unprocessable_entity: {"Заказ не ждёт оплаты", "application/json", ErrorResponse}
+    ]
+  )
+
+  def pay(conn, %{"id" => id}) do
+    session_id = CookieHelper.get_cookie(conn, "session_id")
+
+    case Oms.payment_link(session_id, client_id(conn.assigns.current_client), id) do
+      {:ok, url} ->
+        json(conn, %{data: %{confirmation_url: url}})
+
+      {:error, :not_found} ->
+        ApiError.send_error(conn, :not_found, :order_not_found, "Order not found")
+
+      {:error, :not_awaiting} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :order_not_awaiting_payment,
+          "The order is not waiting for the payment"
+        )
+
+      {:error, _reason} ->
+        render_error(conn, :payment_unavailable)
     end
   end
 

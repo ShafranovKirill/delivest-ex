@@ -154,6 +154,21 @@ defmodule Delivest.Oms.Orders do
       is_nil(order.deleted_at)
   end
 
+  def payment_link(session_id, client_id, order_id) do
+    with {:ok, id} <- Ecto.UUID.cast(order_id),
+         %Order{awaiting_payment: true, status: :created} = order <-
+           Order
+           |> where([o], o.id == ^id and is_nil(o.deleted_at))
+           |> where(^owned_by(session_id, client_id))
+           |> Repo.one() || {:error, :not_found} do
+      Delivest.Payments.Online.start(order)
+    else
+      %Order{} -> {:error, :not_awaiting}
+      :error -> {:error, :not_found}
+      error -> error
+    end
+  end
+
   def cancel_by_client(session_id, client_id, order_id) do
     with {:ok, id} <- Ecto.UUID.cast(order_id),
          %Order{} = order <-

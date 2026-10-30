@@ -381,6 +381,23 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
     })
   end
 
+  defmodule PaymentLinkResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "PaymentLinkResponse",
+      type: :object,
+      properties: %{
+        data: %Schema{
+          type: :object,
+          properties: %{confirmation_url: %Schema{type: :string, format: :uri}},
+          required: [:confirmation_url]
+        }
+      },
+      required: [:data]
+    })
+  end
+
   defmodule ClientOrdersResponse do
     require OpenApiSpex
     alias DelivestWeb.Schemas.OrderSchemas.ActiveOrder
