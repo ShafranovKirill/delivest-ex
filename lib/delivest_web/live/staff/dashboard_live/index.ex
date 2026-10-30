@@ -76,7 +76,15 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         latest =
           Orders.list_latest_orders(%{branch_id: branch_id, date_from: today, date_to: today}, 8)
 
+        problem_count =
+          %{branch_id: branch_id, problem: true, date_from: today, date_to: today}
+          |> Orders.count_by_status()
+          |> Map.drop([:completed, :cancelled])
+          |> Map.values()
+          |> Enum.sum()
+
         assign(socket,
+          problem_count: problem_count,
           status_counts: counts,
           in_work: counts |> Map.take(@active_statuses) |> Map.values() |> Enum.sum(),
           latest_orders: latest
@@ -125,6 +133,23 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
           </.link>
         </div>
       </div>
+
+      <.link
+        :if={@can_orders and @problem_count > 0}
+        id="dashboard-problem-orders"
+        navigate={~p"/staff/b/#{@current_branch}/orders?problem=true"}
+        class="flex items-center gap-3 rounded-box border border-warning/40 bg-warning/10 p-4 hover:bg-warning/15 transition-colors"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-6 text-warning" />
+        <span class="font-medium">
+          {ngettext(
+            "%{count} order needs attention",
+            "%{count} orders need attention",
+            @problem_count
+          )}
+        </span>
+        <.icon name="hero-chevron-right" class="size-4 ml-auto text-base-content/40" />
+      </.link>
 
       <div :if={@can_stats or @can_orders} class="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <%= if @can_stats do %>

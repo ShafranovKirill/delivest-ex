@@ -77,6 +77,22 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       assert has_element?(lv, "#header-new-orders-count", "2")
     end
 
+    test "links to the problem orders only when there are some", %{conn: conn, branch: branch} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+      refute has_element?(lv, "#dashboard-problem-orders")
+
+      order = Delivest.OrderFixtures.order_fixture(branch.id, price: 10_000)
+
+      order
+      |> Ecto.Changeset.change(
+        crm: %Delivest.Oms.Order.CrmSync{provider: "frontpad", status: "failed"}
+      )
+      |> Delivest.Repo.update!()
+
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+      assert has_element?(lv, "#dashboard-problem-orders", "1")
+    end
+
     test "log out lives in the header, not the sidebar", %{conn: conn, branch: branch} do
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
