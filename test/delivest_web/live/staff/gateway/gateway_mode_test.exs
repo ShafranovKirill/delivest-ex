@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Repo
 
-  @permissions ~w(orders.read orders.update orders.deliver orders.cook pos.use)
+  @permissions ~w(orders.read orders.update orders.deliver orders.cook pos.use integrations.read)
 
   defp setup_branch(conn, crm) do
     branch = insert(:branch)
@@ -47,6 +47,13 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
 
       assert has_element?(lv, "#gateway-badge", "iiko")
+    end
+
+    test "the integrations page lists who runs what", %{conn: conn, branch: branch} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
+
+      assert has_element?(lv, "#gateway-area-kitchen", "iiko")
+      assert has_element?(lv, "#gateway-area-menu", "Delivest")
     end
 
     test "a direct visit shows the note instead of the page", %{conn: conn, branch: branch} do

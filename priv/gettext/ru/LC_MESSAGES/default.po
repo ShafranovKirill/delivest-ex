@@ -2348,7 +2348,7 @@ msgstr "Проверьте отмеченные поля"
 msgid "All products of this branch"
 msgstr "Все товары этого филиала"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:88
+#: lib/delivest_web/live/staff/integration_live/index.ex:90
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:250
 #: lib/delivest_web/live/staff/log_live/components/events_component.ex:38
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:61
@@ -4013,7 +4013,7 @@ msgstr "Сверка"
 
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:59
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:72
-#: lib/delivest_web/live/staff/integration_live/index.ex:233
+#: lib/delivest_web/live/staff/integration_live/index.ex:235
 #, elixir-autogen, elixir-format
 msgid "Connected"
 msgstr "Подключено"
@@ -4072,7 +4072,7 @@ msgstr "Интеграции"
 msgid "Loading..."
 msgstr "Загрузка..."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:238
+#: lib/delivest_web/live/staff/integration_live/index.ex:240
 #, elixir-autogen, elixir-format
 msgid "Not connected"
 msgstr "Не подключено"
@@ -4088,7 +4088,7 @@ msgstr "Нет во Frontpad"
 msgid "Nothing found"
 msgstr "Ничего не найдено"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:218
+#: lib/delivest_web/live/staff/integration_live/index.ex:220
 #, elixir-autogen, elixir-format
 msgid "Orders go to CRM"
 msgstr "Заказы уходят в CRM"
@@ -4174,7 +4174,7 @@ msgstr "Клиенты подтверждают номер звонком чер
 msgid "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
 msgstr "Клиенты входят по звонку через zvonok.com. Настройки общие для всех филиалов."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:90
+#: lib/delivest_web/live/staff/integration_live/index.ex:92
 #, elixir-autogen, elixir-format
 msgid "Each branch has its own settings. Switch the branch to set up another one."
 msgstr "У каждого филиала свои настройки. Чтобы настроить другой, переключите филиал."
@@ -4184,7 +4184,7 @@ msgstr "У каждого филиала свои настройки. Чтобы
 msgid "External services connected to the app."
 msgstr "Внешние сервисы, подключённые к приложению."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:130
+#: lib/delivest_web/live/staff/integration_live/index.ex:132
 #, elixir-autogen, elixir-format
 msgid "Orders to the CRM and products matching with the app menu."
 msgstr "Передача заказов в CRM и сверка товаров с меню приложения."
@@ -4958,6 +4958,7 @@ msgstr "В стоп"
 msgid "Stop in %{crm}"
 msgstr "Стоп в %{crm}"
 
+#: lib/delivest_web/components/gateway_note.ex:70
 #: lib/delivest_web/components/staff/app/staff_nav.ex:117
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:20
 #: lib/delivest_web/live/staff/product_live/products.ex:554
@@ -5079,7 +5080,7 @@ msgid "No CRM is connected to this branch. All orders stay in the app."
 msgstr "К филиалу не подключена CRM. Все заказы остаются в приложении."
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:559
-#: lib/delivest_web/live/staff/integration_live/index.ex:97
+#: lib/delivest_web/live/staff/integration_live/index.ex:99
 #: lib/delivest_web/live/staff/integration_live/routes.ex:18
 #: lib/delivest_web/live/staff/integration_live/routes.ex:75
 #, elixir-autogen, elixir-format
@@ -5106,7 +5107,7 @@ msgstr "Сегодня: %{count}"
 msgid "Where orders come from and which of them go further to the CRM."
 msgstr "Откуда приходят заказы и какие из них передаются дальше в CRM."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:98
+#: lib/delivest_web/live/staff/integration_live/index.ex:100
 #, elixir-autogen, elixir-format
 msgid "Which orders go further to the CRM."
 msgstr "Какие заказы передаются дальше в CRM."
@@ -5191,7 +5192,7 @@ msgstr "Подтверждение заказа"
 msgid "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
 msgstr "Заказы из Яндекс Еды и Delivery Club приходят в приложение. Яндекс сам забирает у нас меню, стоп-лист и статусы заказов."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:105
+#: lib/delivest_web/live/staff/integration_live/index.ex:107
 #, elixir-autogen, elixir-format
 msgid "Orders from Yandex Eda and Delivery Club."
 msgstr "Заказы из Яндекс Еды и Delivery Club."
@@ -5232,7 +5233,7 @@ msgstr "Общий для всех филиалов. Передайте адре
 msgid "Take orders from Yandex Eda"
 msgstr "Принимать заказы из Яндекс Еды"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:223
+#: lib/delivest_web/live/staff/integration_live/index.ex:225
 #, elixir-autogen, elixir-format
 msgid "Takes orders"
 msgstr "Принимает заказы"
@@ -5252,7 +5253,7 @@ msgstr "Меню филиала пусто"
 msgid "Unit"
 msgstr "Единица"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:104
+#: lib/delivest_web/live/staff/integration_live/index.ex:106
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:28
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:219
 #, elixir-autogen, elixir-format
@@ -5852,6 +5853,7 @@ msgstr "Вход клиентов"
 msgid "Marketing"
 msgstr "Маркетинг"
 
+#: lib/delivest_web/components/gateway_note.ex:69
 #: lib/delivest_web/components/staff/app/staff_nav.ex:97
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:139
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:109
@@ -6114,6 +6116,7 @@ msgstr "Ознакомлен"
 msgid "Keep the status"
 msgstr "Оставить статус"
 
+#: lib/delivest_web/components/gateway_note.ex:64
 #: lib/delivest_web/components/staff/app/staff_nav.ex:68
 #: lib/delivest_web/live/staff/branch_live/sections.ex:34
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:27
@@ -6525,7 +6528,7 @@ msgstr "Курьер уже забрал заказ, статус откатит
 msgid "%{number} ext. %{ext}"
 msgstr "%{number} доб. %{ext}"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:121
+#: lib/delivest_web/live/staff/integration_live/index.ex:123
 #, elixir-autogen, elixir-format
 msgid "A Yandex courier for the delivery orders."
 msgstr "Курьер Яндекса на заказы с доставкой."
@@ -6545,7 +6548,7 @@ msgstr "Курьер Яндекса принимает оплату только
 msgid "Branch phone"
 msgstr "Телефон филиала"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:228
+#: lib/delivest_web/live/staff/integration_live/index.ex:230
 #, elixir-autogen, elixir-format
 msgid "Calls couriers"
 msgstr "Вызывает курьеров"
@@ -6641,7 +6644,7 @@ msgstr "Отслеживание"
 msgid "Yandex"
 msgstr "Яндекс"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:120
+#: lib/delivest_web/live/staff/integration_live/index.ex:122
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:18
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:82
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1004
@@ -6897,7 +6900,7 @@ msgstr "Новая ссылка создана"
 
 #: lib/delivest_web/live/board_live/index.ex:78
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:77
-#: lib/delivest_web/live/staff/integration_live/index.ex:198
+#: lib/delivest_web/live/staff/integration_live/index.ex:200
 #, elixir-autogen, elixir-format
 msgid "No connection"
 msgstr "Нет связи"
@@ -7041,7 +7044,7 @@ msgstr "Проверено"
 msgid "Checking..."
 msgstr "Проверяем..."
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:191
+#: lib/delivest_web/live/staff/integration_live/index.ex:193
 #, elixir-autogen, elixir-format
 msgid "Reconnect"
 msgstr "Переподключите"
@@ -7337,7 +7340,7 @@ msgstr "Ошибка"
 msgid "Failed to issue the receipt"
 msgstr "Не удалось пробить чек"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:113
+#: lib/delivest_web/live/staff/integration_live/index.ex:115
 #, elixir-autogen, elixir-format
 msgid "Fiscal receipts through ATOL Online."
 msgstr "Фискальные чеки через АТОЛ Онлайн."
@@ -7397,11 +7400,12 @@ msgstr "Обрабатывается"
 msgid "Receipt"
 msgstr "Чек"
 
+#: lib/delivest_web/components/gateway_note.ex:68
 #: lib/delivest_web/components/staff/app/staff_nav.ex:92
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:15
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:133
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:158
-#: lib/delivest_web/live/staff/integration_live/index.ex:112
+#: lib/delivest_web/live/staff/integration_live/index.ex:114
 #: lib/delivest_web/live/staff/receipt_live/index.ex:15
 #: lib/delivest_web/live/staff/receipt_live/index.ex:35
 #, elixir-autogen, elixir-format
@@ -7665,6 +7669,7 @@ msgstr "Недостаточно"
 msgid "Order number"
 msgstr "Номер заказа"
 
+#: lib/delivest_web/components/gateway_note.ex:66
 #: lib/delivest_web/components/staff/app/staff_nav.ex:60
 #: lib/delivest_web/live/staff/integration_live/routes.ex:56
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1052
@@ -7962,14 +7967,14 @@ msgstr "Отправить заново"
 msgid "The order is in the CRM"
 msgstr "Заказ есть в CRM"
 
-#: lib/delivest_web/live/staff/integration_live/index.ex:211
+#: lib/delivest_web/live/staff/integration_live/index.ex:213
 #, elixir-autogen, elixir-format
 msgid "Menu differs"
 msgstr "Меню расходится"
 
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:83
 #: lib/delivest_web/live/staff/integration_live/health_component.ex:82
-#: lib/delivest_web/live/staff/integration_live/index.ex:212
+#: lib/delivest_web/live/staff/integration_live/index.ex:214
 #, elixir-autogen, elixir-format
 msgid "Needs attention"
 msgstr "Требует внимания"
@@ -8152,37 +8157,37 @@ msgstr "Подтвердить платную отмену"
 msgid "The Yandex courier accepts only a card, pay for order %{number} by card"
 msgstr "Курьер Яндекса принимает только карту, оплатите заказ %{number} картой"
 
-#: lib/delivest_web/components/gateway_note.ex:59
+#: lib/delivest_web/components/gateway_note.ex:100
 #, elixir-autogen, elixir-format
 msgid "Delivery of orders is handled by %{crm}, couriers are not assigned here."
 msgstr "Доставку заказов ведёт %{crm}, курьеры здесь не назначаются."
 
-#: lib/delivest_web/components/gateway_note.ex:51
+#: lib/delivest_web/components/gateway_note.ex:92
 #, elixir-autogen, elixir-format
 msgid "Integration settings"
 msgstr "Настройки интеграции"
 
-#: lib/delivest_web/components/gateway_note.ex:43
+#: lib/delivest_web/components/gateway_note.ex:84
 #, elixir-autogen, elixir-format
 msgid "Managed in %{crm}"
 msgstr "Ведётся в %{crm}"
 
-#: lib/delivest_web/components/gateway_note.ex:64
+#: lib/delivest_web/components/gateway_note.ex:105
 #, elixir-autogen, elixir-format
 msgid "Receipts are printed on the cash desk of %{crm}."
 msgstr "Чеки пробивает касса %{crm}."
 
-#: lib/delivest_web/components/gateway_note.ex:66
+#: lib/delivest_web/components/gateway_note.ex:107
 #, elixir-autogen, elixir-format
 msgid "Sales go through the POS of %{crm}."
 msgstr "Продажи идут через кассу %{crm}."
 
-#: lib/delivest_web/components/gateway_note.ex:67
+#: lib/delivest_web/components/gateway_note.ex:108
 #, elixir-autogen, elixir-format
 msgid "The kitchen works in %{crm}."
 msgstr "Кухня ведётся в %{crm}."
 
-#: lib/delivest_web/components/gateway_note.ex:68
+#: lib/delivest_web/components/gateway_note.ex:109
 #, elixir-autogen, elixir-format
 msgid "This section is managed in %{crm}."
 msgstr "Этот раздел ведётся в %{crm}."
@@ -8196,3 +8201,23 @@ msgstr "Шлюз: %{crm}"
 #, elixir-autogen, elixir-format
 msgid "Gateway: %{crm}, menu from CRM"
 msgstr "Шлюз: %{crm}, меню из CRM"
+
+#: lib/delivest_web/components/gateway_note.ex:67
+#, elixir-autogen, elixir-format
+msgid "Couriers and deliveries"
+msgstr "Курьеры и доставки"
+
+#: lib/delivest_web/components/gateway_note.ex:39
+#, elixir-autogen, elixir-format
+msgid "Gateway mode: %{crm}"
+msgstr "Режим шлюза: %{crm}"
+
+#: lib/delivest_web/components/gateway_note.ex:65
+#, elixir-autogen, elixir-format
+msgid "Order statuses"
+msgstr "Статусы заказа"
+
+#: lib/delivest_web/components/gateway_note.ex:41
+#, elixir-autogen, elixir-format
+msgid "The branch hands orders to the CRM. Who runs what:"
+msgstr "Филиал отдаёт заказы в CRM. Кто чем ведает:"

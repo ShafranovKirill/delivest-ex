@@ -28,6 +28,47 @@ defmodule DelivestWeb.GatewayNote do
 
   defp badge_text(%{name: name}), do: gettext("Gateway: %{crm}", crm: name)
 
+  attr :branch, :map, required: true
+
+  def gateway_summary(assigns) do
+    assigns = assign(assigns, :mode, Gateway.mode(assigns.branch))
+
+    ~H"""
+    <section :if={@mode.provider} id="gateway-summary" class="space-y-3">
+      <div>
+        <h2 class="font-bold">{gettext("Gateway mode: %{crm}", crm: @mode.name)}</h2>
+        <p class="text-sm text-base-content/60">
+          {gettext("The branch hands orders to the CRM. Who runs what:")}
+        </p>
+      </div>
+      <ul class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <li
+          :for={area <- Gateway.areas()}
+          id={"gateway-area-#{area}"}
+          class="flex items-center justify-between rounded-box border border-base-300 bg-base-100 px-4 py-2 text-sm"
+        >
+          <span>{area_label(area)}</span>
+          <span class={[
+            "badge badge-sm",
+            @mode.areas[area] == :crm && "badge-info",
+            @mode.areas[area] == :own && "badge-ghost"
+          ]}>
+            {if @mode.areas[area] == :crm, do: @mode.name, else: "Delivest"}
+          </span>
+        </li>
+      </ul>
+    </section>
+    """
+  end
+
+  defp area_label(:kitchen), do: gettext("Kitchen")
+  defp area_label(:statuses), do: gettext("Order statuses")
+  defp area_label(:pos), do: gettext("POS")
+  defp area_label(:couriers), do: gettext("Couriers and deliveries")
+  defp area_label(:receipts), do: gettext("Receipts")
+  defp area_label(:menu), do: gettext("Menu")
+  defp area_label(:stops), do: gettext("Stop list")
+
   attr :name, :string, required: true
   attr :area, :atom, required: true
   attr :branch, :map, default: nil
