@@ -253,6 +253,7 @@ defmodule DelivestWeb.Router do
     delete "/auth/log_out", StaffSessionController, :delete
     get "/", StaffHomeController, :show
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
+    get "/b/:branch_slug/products/export", StaffMenuExportController, :show
 
     live_session :staff_public,
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do

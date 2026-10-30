@@ -446,6 +446,15 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </.button>
 
           <.link
+            id="export-products"
+            href={~p"/staff/b/#{@current_branch}/products/export"}
+            class="btn btn-outline"
+          >
+            <.icon name="hero-arrow-down-tray" class="size-5 mr-1" />
+            {gettext("Export")}
+          </.link>
+
+          <.link
             :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
             navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
             class="btn btn-outline"
