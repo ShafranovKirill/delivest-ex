@@ -116,6 +116,21 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     )
   end
 
+  defp rule_text(%{min: min, max: max} = group) do
+    kind = if group.is_size, do: gettext("Shown as a size switch."), else: ""
+
+    rule =
+      cond do
+        min == 1 and max == 1 -> gettext("The customer must pick exactly one.")
+        min == 0 and max == 1 -> gettext("The customer may pick one or skip.")
+        min == max -> gettext("The customer must pick %{count}.", count: min)
+        min == 0 -> gettext("The customer may skip or pick up to %{count}.", count: max)
+        true -> gettext("The customer picks from %{min} to %{max}.", min: min, max: max)
+      end
+
+    String.trim("#{rule} #{kind}")
+  end
+
   defp errors(changeset) do
     changeset.errors
     |> Enum.map(fn {field, {message, _opts}} -> "#{field}: #{message}" end)
@@ -134,6 +149,84 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
       />
 
       <.tabs current={:modifiers} branch={@current_branch} />
+
+      <details
+        class="rounded-box border border-base-300 bg-base-100 group"
+        open={@groups == []}
+      >
+        <summary class="flex cursor-pointer items-center justify-between gap-3 p-4 font-semibold">
+          {gettext("How modifiers work")}
+          <.icon name="hero-chevron-down" class="size-4 transition-transform group-open:rotate-180" />
+        </summary>
+        <div class="space-y-4 border-t border-base-200 p-4 text-sm text-base-content/80">
+          <p>
+            {gettext(
+              "A modifier is a choice the customer makes on a product: size, dough, sauce, extra cheese. The choice changes the price and goes to the kitchen, the receipt and the cash register together with the dish."
+            )}
+          </p>
+
+          <ol class="list-decimal space-y-2 pl-5">
+            <li>
+              <b>{gettext("Group")}</b>
+              — {gettext(
+                "a question to the customer: «Size», «Dough», «Extras». A group is made once and attached to any number of products."
+              )}
+            </li>
+            <li>
+              <b>{gettext("Modifier")}</b>
+              — {gettext(
+                "one answer in the group with its own price: «30 cm» +0, «35 cm» +150, «Double cheese» +80. The price of the line is the product plus the chosen modifiers."
+              )}
+            </li>
+            <li>
+              {gettext(
+                "Open a product in the catalog and tick the groups it has. The customer sees them in the product card before adding it to the cart."
+              )}
+            </li>
+          </ol>
+
+          <dl class="grid gap-x-6 gap-y-2 sm:grid-cols-[10rem_1fr]">
+            <dt class="font-semibold">{gettext("Min / Max")}</dt>
+            <dd>
+              {gettext(
+                "How many modifiers of the group the customer must and may take. 1 and 1 — pick exactly one (size). 0 and 3 — can skip, up to three (extras). 0 and 1 — one optional (sauce)."
+              )}
+            </dd>
+            <dt class="font-semibold">{gettext("Size")}</dt>
+            <dd>
+              {gettext(
+                "Mark the group as size: the customer sees a switch instead of a list, and CRMs with a size scale (iiko) get it as the product size."
+              )}
+            </dd>
+            <dt class="font-semibold">{gettext("Up to")}</dt>
+            <dd>
+              {gettext("How many times one modifier can be taken. 2 makes «Double cheese» possible.")}
+            </dd>
+            <dt class="font-semibold">{gettext("By default")}</dt>
+            <dd>
+              {gettext(
+                "The modifier is already chosen when the card opens, for example the usual size."
+              )}
+            </dd>
+            <dt class="font-semibold">{gettext("Stop")}</dt>
+            <dd>
+              {gettext(
+                "Temporarily hides the modifier from customers and aggregators, for example when an ingredient ran out. The product itself stays on sale."
+              )}
+            </dd>
+            <dt class="font-semibold">{gettext("Frontpad article")}</dt>
+            <dd>
+              {gettext(
+                "The code of the modifier in the cash register. Without it the order reaches Frontpad without this modifier."
+              )}
+            </dd>
+            <dt class="font-semibold">{gettext("Active")}</dt>
+            <dd>
+              {gettext("A switched off group disappears from all products without being deleted.")}
+            </dd>
+          </dl>
+        </div>
+      </details>
 
       <.form
         :if={@can_edit}
@@ -208,6 +301,8 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
             <.icon name="hero-trash" class="size-4" />
           </button>
         </form>
+
+        <p class="text-xs text-base-content/60">{rule_text(group)}</p>
 
         <div class="space-y-2">
           <form
