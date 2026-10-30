@@ -3,9 +3,9 @@ defmodule Delivest.Oms.Orders.StatusChange do
 
   require Logger
 
-  alias Delivest.{Audit, Couriers, Repo}
+  alias Delivest.{Audit, Payments, Repo}
   alias Delivest.Identity.Staff
-  alias Delivest.Oms.{Order, OrderEvents, OrderFlow, OrderTransition}
+  alias Delivest.Oms.{Order, OrderEvents, OrderFlow, OrderLock, OrderTransition}
   alias Delivest.Oms.Orders.Notifier
   alias Ecto.Multi
 
@@ -37,7 +37,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
   def revert(%Order{} = order, %Staff{} = staff, reason) do
     cond do
       not OrderFlow.can_revert?(staff, order) -> {:error, :forbidden}
-      Couriers.handed_over?(order) -> {:error, :handed_to_courier}
+      (locked = OrderLock.revert(order)) != :ok -> locked
       true -> do_revert(order, staff, reason)
     end
   end
@@ -51,6 +51,11 @@ defmodule Delivest.Oms.Orders.StatusChange do
     end)
     |> Multi.update(:order, fn %{locked: locked, transition: transition} ->
       Order.status_changeset(locked, transition.from)
+    end)
+    |> Multi.run(:payments, fn repo, %{order: order, reverted: transition} ->
+      if transition.to == :completed,
+        do: Payments.reopen(repo, order, {:staff, staff}),
+        else: {:ok, []}
     end)
     |> Multi.run(:event, fn repo, %{order: order, reverted: transition} ->
       OrderEvents.reverted(repo, order, transition.to, transition.from, staff, reason)

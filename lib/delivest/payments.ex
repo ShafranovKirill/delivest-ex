@@ -100,6 +100,18 @@ defmodule Delivest.Payments do
     end
   end
 
+  def reopenable?(%Payment{} = payment) do
+    payment.status == :paid and payment.method in [:cash, :card] and is_nil(payment.settlement_id) and
+      payment.fiscalized_by in [nil, :none] and
+      Enum.all?(payment.refunds, &(&1.status == :failed))
+  end
+
+  def reopen(repo, %Order{} = order, by) do
+    repo.all(from(p in Payment, where: p.order_id == ^order.id, preload: :refunds))
+    |> Enum.filter(&reopenable?/1)
+    |> each(&move(repo, order, &1, :pending, by, %{paid_at: nil, collected_by_id: nil}))
+  end
+
   def refund(payment, amount, attrs \\ %{}, by \\ :system)
 
   def refund(%Payment{status: :paid} = payment, amount, attrs, by) do

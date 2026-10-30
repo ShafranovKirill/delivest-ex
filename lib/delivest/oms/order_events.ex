@@ -87,7 +87,7 @@ defmodule Delivest.Oms.OrderEvents do
   def actor(kind, _order) when kind in [:crm, :channel, :delivery], do: %{kind: kind}
   def actor(_actor, _order), do: %{kind: :system}
 
-  defp changes(old, new) do
+  def changes(old, new) do
     @tracked
     |> Enum.map(&{&1, dump(Map.get(old, &1)), dump(Map.get(new, &1))})
     |> then(&[{:items, items(old), items(new)} | &1])

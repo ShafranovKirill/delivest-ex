@@ -344,12 +344,12 @@ defmodule Delivest.Oms.OrderTest do
 
       admin = insert(:staff, role: build(:role, permissions: ["admin"]))
 
-      assert {:error, :lock, :order_locked} =
+      assert {:error, :editable, :crm_order} =
                Orders.update_order(order, %{"cart_id" => order.cart_id})
 
       assert {:error, :order_locked} = Orders.advance_order(order, :accepted, {:staff, admin})
 
-      assert {:error, :order_locked} =
+      assert {:error, :crm_order} =
                Orders.update_payment_method(order, %{"payment_method" => "card_offline"})
     end
 
@@ -505,7 +505,7 @@ defmodule Delivest.Oms.OrderTest do
                  "cancel_note" => "Нет сыра"
                })
 
-      assert {:ok, %{payment_method: :card_offline, cancel_reason: :out_of_stock}} =
+      assert {:error, :order_finished} =
                Orders.update_payment_method(cancelled, %{"payment_method" => "card_offline"})
 
       assert {:ok, %{status: :accepted, cancel_reason: nil, cancel_note: nil}} =

@@ -17,6 +17,12 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
   def message(:not_found), do: gettext("Order not found")
   def message(:order_not_found), do: gettext("Order not found")
   def message(:order_locked), do: gettext("The order is managed by the CRM")
+
+  def message(:paid),
+    do: gettext("The payment is already handed over or receipted, refund it before reverting")
+
+  def message(:refunded), do: gettext("The order has a refund, it cannot be restored")
+  def message(:with_courier), do: gettext("The order is with the courier")
   def message(:nothing_to_revert), do: gettext("There is no step to revert")
   def message(:not_available), do: gettext("This order is not delivered by our couriers")
   def message(:already_searching), do: gettext("A courier is already being searched for")

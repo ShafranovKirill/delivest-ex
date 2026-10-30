@@ -2,7 +2,17 @@ defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
 
   alias Delivest.Audit
-  alias Delivest.Oms.{Order, OrderDeadline, OrderEvents, OrderFlow, OrderScopes, OrderTransition}
+
+  alias Delivest.Oms.{
+    Order,
+    OrderDeadline,
+    OrderEvents,
+    OrderFlow,
+    OrderLock,
+    OrderScopes,
+    OrderTransition
+  }
+
   alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, StatusChange, Update}
   alias Delivest.Repo
 
@@ -140,12 +150,19 @@ defmodule Delivest.Oms.Orders do
 
   def update_payment_method(order, attrs, actor \\ :system)
 
-  def update_payment_method(%Order{crm: %{}}, _attrs, actor),
-    do: Audit.track({:error, :order_locked}, actor, "order.details_changed")
-
   def update_payment_method(%Order{} = order, attrs, actor) do
     changeset = Order.payment_changeset(order, Filter.normalize_params(attrs))
 
+    case OrderLock.check(
+           order,
+           {:payment_method, Ecto.Changeset.get_field(changeset, :payment_method)}
+         ) do
+      :ok -> change_payment_method(order, changeset, actor)
+      error -> Audit.track(error, actor, "order.details_changed")
+    end
+  end
+
+  defp change_payment_method(order, changeset, actor) do
     changeset
     |> persist([:order, :updated], fn repo, updated ->
       with {:ok, _payments} <- Delivest.Payments.sync(repo, updated),

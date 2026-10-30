@@ -12,7 +12,8 @@ defmodule Delivest.Payments.Payment do
   @fiscalizers [:us, :yookassa, :crm, :aggregator, :yandex_delivery, :none]
   @moves %{
     pending: [:authorized, :paid, :failed, :cancelled],
-    authorized: [:paid, :cancelled, :failed]
+    authorized: [:paid, :cancelled, :failed],
+    paid: [:pending]
   }
 
   @primary_key {:id, :binary_id, autogenerate: true}

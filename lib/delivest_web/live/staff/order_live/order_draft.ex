@@ -2,7 +2,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
   use Gettext, backend: DelivestWeb.Gettext
 
   alias Delivest.{Identity, Oms}
-  alias Delivest.Oms.{CartView, Order, Orders}
+  alias Delivest.Oms.{CartView, Order, OrderLock, Orders}
+  alias DelivestWeb.Staff.OrderLive.SaveErrors
 
   def new(staff, branch_id) do
     {:ok, cart} = Oms.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
@@ -21,11 +22,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
     with true <- Identity.can?(staff, "orders.update"),
          {:ok, uuid} <- Ecto.UUID.cast(id),
          %Order{branch_id: ^branch_id} = order <- Orders.get_order(uuid),
-         false <- Order.crm_managed?(order) do
+         :ok <- OrderLock.editable(order) do
       {:ok, order}
     else
       false -> {:error, gettext("Permission denied")}
-      true -> {:error, gettext("CRM orders cannot be edited")}
+      {:error, reason} when is_atom(reason) -> {:error, SaveErrors.message(reason)}
       _ -> {:error, gettext("Order not found")}
     end
   end

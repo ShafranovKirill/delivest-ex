@@ -688,7 +688,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:37
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:38
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:52
-#: lib/delivest_web/live/staff/order_live/order_draft.ex:27
+#: lib/delivest_web/live/staff/order_live/order_draft.ex:28
 #: lib/delivest_web/live/staff/order_live/orders.ex:254
 #: lib/delivest_web/live/staff/order_live/orders.ex:279
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:16
@@ -1337,7 +1337,7 @@ msgstr ""
 msgid "Edit Order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/order_draft.ex:16
+#: lib/delivest_web/live/staff/order_live/order_draft.ex:17
 #, elixir-autogen, elixir-format
 msgid "Edit Order #%{number}"
 msgstr ""
@@ -1358,8 +1358,8 @@ msgstr ""
 msgid "Failed to delete order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:56
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:59
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:61
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:64
 #, elixir-autogen, elixir-format
 msgid "Failed to update order"
 msgstr ""
@@ -1389,7 +1389,7 @@ msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:44
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:108
-#: lib/delivest_web/live/staff/order_live/order_draft.ex:9
+#: lib/delivest_web/live/staff/order_live/order_draft.ex:10
 #: lib/delivest_web/live/staff/order_live/orders.ex:333
 #, elixir-autogen, elixir-format
 msgid "New Order"
@@ -1852,7 +1852,7 @@ msgstr ""
 msgid "Order history"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/order_draft.ex:29
+#: lib/delivest_web/live/staff/order_live/order_draft.ex:30
 #: lib/delivest_web/live/staff/order_live/orders.ex:95
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:17
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:18
@@ -2021,13 +2021,12 @@ msgstr ""
 msgid "yesterday %{count}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/order_draft.ex:28
 #: lib/delivest_web/live/staff/order_live/save_errors.ex:7
 #, elixir-autogen, elixir-format
 msgid "CRM orders cannot be edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:13
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:20
 #, elixir-autogen, elixir-format
 msgid "Failed to save order"
 msgstr ""
@@ -2861,7 +2860,7 @@ msgstr ""
 msgid "Phone must be +7XXXXXXXXXX"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:8
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:15
 #, elixir-autogen, elixir-format
 msgid "Prices have changed, check the cart"
 msgstr ""
@@ -3001,7 +3000,7 @@ msgstr ""
 msgid "The client has already used this promotion"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:11
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:18
 #, elixir-autogen, elixir-format
 msgid "The promotion has just run out, the cart was recalculated"
 msgstr ""
@@ -6044,7 +6043,7 @@ msgstr ""
 msgid "Cancelled in CRM"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:55
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:60
 #, elixir-autogen, elixir-format
 msgid "Enter the reason for reverting"
 msgstr ""
@@ -6123,12 +6122,12 @@ msgstr ""
 msgid "The order is managed by the CRM"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:51
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:56
 #, elixir-autogen, elixir-format
 msgid "The order status has already changed, refresh the page"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:20
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:25
 #, elixir-autogen, elixir-format
 msgid "There is no step to revert"
 msgstr ""
@@ -6274,12 +6273,12 @@ msgstr ""
 msgid "Who delivers the orders and when the courier search starts. With Frontpad the delivery stays in Frontpad."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:22
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:27
 #, elixir-autogen, elixir-format
 msgid "A courier is already being searched for"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:26
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:31
 #, elixir-autogen, elixir-format
 msgid "Another courier has already taken this order"
 msgstr ""
@@ -6305,7 +6304,7 @@ msgstr ""
 msgid "Looking for a courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:24
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:29
 #, elixir-autogen, elixir-format
 msgid "No courier is assigned"
 msgstr ""
@@ -6320,27 +6319,27 @@ msgstr ""
 msgid "Remove the courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:25
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:30
 #, elixir-autogen, elixir-format
 msgid "The courier has already picked up the order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:32
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:37
 #, elixir-autogen, elixir-format
 msgid "The order is not ready yet"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:23
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:28
 #, elixir-autogen, elixir-format
 msgid "This employee is not a courier of the branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:21
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:26
 #, elixir-autogen, elixir-format
 msgid "This order is not delivered by our couriers"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:27
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:32
 #, elixir-autogen, elixir-format
 msgid "This order is not yours"
 msgstr ""
@@ -6457,7 +6456,7 @@ msgstr ""
 msgid "Handed to the customer"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:30
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:35
 #, elixir-autogen, elixir-format
 msgid "The courier has picked up the order, its status cannot be reverted"
 msgstr ""
@@ -6538,12 +6537,12 @@ msgstr ""
 msgid "Saved, enter a new one to replace it"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:36
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:41
 #, elixir-autogen, elixir-format
 msgid "Set the branch address and coordinates to call a Yandex courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:39
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:44
 #, elixir-autogen, elixir-format
 msgid "Set the branch phone to call a Yandex courier"
 msgstr ""
@@ -6563,12 +6562,12 @@ msgstr ""
 msgid "The courier is bringing the order back"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:42
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:47
 #, elixir-autogen, elixir-format
 msgid "The order has no customer phone"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:41
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:46
 #, elixir-autogen, elixir-format
 msgid "The order has no delivery address"
 msgstr ""
@@ -6601,17 +6600,17 @@ msgstr ""
 msgid "Yandex Delivery did not take the last request"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:48
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:53
 #, elixir-autogen, elixir-format
 msgid "Yandex Delivery is not responding, try again later"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:33
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:38
 #, elixir-autogen, elixir-format
 msgid "Yandex Delivery is not set up for this branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/status_errors.ex:45
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:50
 #, elixir-autogen, elixir-format
 msgid "Yandex Delivery refused: %{code}"
 msgstr ""
@@ -7191,4 +7190,50 @@ msgstr ""
 #: lib/delivest_web/live/staff/log_live/event_text.ex:93
 #, elixir-autogen, elixir-format
 msgid "Order %{subject} updated in CRM"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:10
+#, elixir-autogen, elixir-format
+msgid "The CRM does not accept this change"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:9
+#, elixir-autogen, elixir-format
+msgid "The order came from a sales channel"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:14
+#, elixir-autogen, elixir-format
+msgid "The order has a refund"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:23
+#, elixir-autogen, elixir-format
+msgid "The order has a refund, it cannot be restored"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:8
+#, elixir-autogen, elixir-format
+msgid "The order is finished"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:13
+#, elixir-autogen, elixir-format
+msgid "The order is paid"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:12
+#, elixir-autogen, elixir-format
+msgid "The order is ready, the time cannot be changed"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:11
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:24
+#, elixir-autogen, elixir-format
+msgid "The order is with the courier"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/status_errors.ex:21
+#, elixir-autogen, elixir-format
+msgid "The payment is already handed over or receipted, refund it before reverting"
 msgstr ""
