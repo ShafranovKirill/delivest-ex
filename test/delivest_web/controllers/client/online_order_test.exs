@@ -511,4 +511,67 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
       assert [%{amount: 300}] = Payments.list(order.id)
     end
   end
+
+  describe "abandoned payments and reconciliation" do
+    alias Delivest.Integrations.Yookassa.Reconciliation
+    alias Delivest.Payments.Online.PollWorker
+
+    setup %{conn: conn, branch: branch, cart_id: cart_id} do
+      stub_yookassa(self())
+      body = conn |> post(~p"/client/orders", params(branch, cart_id)) |> json_response(200)
+      order = Repo.get!(Order, body["data"]["id"])
+      [payment] = Payments.list(order.id)
+      %{order: order, payment: payment, id: payment.external_id}
+    end
+
+    defp remote_body(ctx, status, value \\ "3.00") do
+      %{
+        "id" => ctx.id,
+        "status" => status,
+        "amount" => %{"value" => value, "currency" => "RUB"},
+        "metadata" => %{"payment_id" => ctx.payment.id}
+      }
+    end
+
+    test "an unpaid order is cancelled after fifteen minutes", ctx do
+      remote_api(self(), ctx.id, "pending")
+
+      assert [] = PollWorker.abandon(DateTime.add(DateTime.utc_now(), 5, :minute))
+      refute Repo.get!(Order, ctx.order.id).status == :cancelled
+
+      assert [{_id, {:ok, _}}] = PollWorker.abandon(DateTime.add(DateTime.utc_now(), 16, :minute))
+      assert %{status: :cancelled, cancel_reason: :not_paid} = Repo.get!(Order, ctx.order.id)
+      assert [%{status: :cancelled}] = Payments.list(ctx.order.id)
+    end
+
+    test "the reconciliation finds nothing when both sides agree", ctx do
+      assert [] = Reconciliation.run([remote_body(ctx, "pending")])
+    end
+
+    test "the reconciliation heals a status the webhook missed", ctx do
+      later = DateTime.add(DateTime.utc_now(), 1, :hour)
+      assert [] = Reconciliation.run([remote_body(ctx, "waiting_for_capture")], later)
+      assert [%{status: :authorized}] = Payments.list(ctx.order.id)
+    end
+
+    test "the reconciliation reports a different amount, a missing and an unknown payment", ctx do
+      assert [{:amount, id}] = Reconciliation.run([remote_body(ctx, "pending", "9.00")])
+      assert id == ctx.id
+
+      assert [{:missing, id}] = Reconciliation.run([])
+      assert id == ctx.id
+
+      stranger = %{remote_body(ctx, "pending") | "id" => "other"}
+      assert [{:unknown, "other"}] = Reconciliation.run([remote_body(ctx, "pending"), stranger])
+    end
+
+    test "the reconciliation warns on the integration health", ctx do
+      Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+        Req.Test.json(conn, %{"type" => "list", "items" => [remote_body(ctx, "pending", "9.00")]})
+      end)
+
+      assert :done = Reconciliation.poll("all")
+      assert %{status: :warning, message: "reconcile_issues:1"} = Health.get(:yookassa, nil)
+    end
+  end
 end

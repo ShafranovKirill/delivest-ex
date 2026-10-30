@@ -26,7 +26,8 @@ config :delivest, Oban,
     {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "rkeeper"}},
     {"*/5 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_eda_busy"}},
     {"11 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "atol_kkt"}},
-    {"23 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "dadata"}}
+    {"23 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "dadata"}},
+    {"41 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yookassa_reconcile"}}
   ],
   repo: Delivest.Repo
 

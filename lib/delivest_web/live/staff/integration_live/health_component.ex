@@ -79,5 +79,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.HealthComponent do
   defp status_text(%Status{status: :warning, message: "catalog_issues:" <> count}),
     do: gettext("The menu differs from the CRM: %{count}", count: count)
 
+  defp status_text(%Status{status: :warning, message: "reconcile_issues:" <> count}),
+    do: gettext("Payments differ from YooKassa: %{count}", count: count)
+
   defp status_text(%Status{status: :warning}), do: gettext("Needs attention")
 end

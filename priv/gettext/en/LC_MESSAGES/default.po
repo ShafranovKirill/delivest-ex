@@ -7982,7 +7982,7 @@ msgid "Menu differs"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:83
-#: lib/delivest_web/live/staff/integration_live/health_component.ex:82
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:85
 #: lib/delivest_web/live/staff/integration_live/index.ex:223
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Needs attention"
@@ -8397,4 +8397,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:20
 #, elixir-autogen, elixir-format
 msgid "The order is waiting for the online payment"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/health_component.ex:83
+#, elixir-autogen, elixir-format
+msgid "Payments differ from YooKassa: %{count}"
 msgstr ""
