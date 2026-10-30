@@ -466,7 +466,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           )}
         </span>
         <.link
-          navigate={~p"/staff/b/#{@current_branch}/receipts?status=problem"}
+          navigate={~p"/staff/b/#{@current_branch}/finance/receipts?status=problem"}
           class="btn btn-sm"
         >
           {gettext("Open receipts")}

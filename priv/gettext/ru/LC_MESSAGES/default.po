@@ -127,7 +127,7 @@ msgid "Sign In"
 msgstr "Войти"
 
 #: lib/delivest_web/components/staff/app/staff_header.ex:64
-#: lib/delivest_web/components/staff/app/staff_nav.ex:157
+#: lib/delivest_web/components/staff/app/staff_nav.ex:166
 #: lib/delivest_web/live/staff/log_live/event_text.ex:42
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:178
 #, elixir-autogen, elixir-format
@@ -231,7 +231,7 @@ msgstr "Филиал не найден."
 msgid "Branch saved successfully"
 msgstr "Филиал успешно сохранен"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:152
+#: lib/delivest_web/components/staff/app/staff_nav.ex:161
 #: lib/delivest_web/live/staff/branch_live/branches.ex:15
 #: lib/delivest_web/live/staff/branch_live/edit.ex:62
 #: lib/delivest_web/live/staff/branch_live/edit.ex:86
@@ -279,7 +279,7 @@ msgstr "Отмена"
 msgid "Cannot delete role because it is assigned to staff members."
 msgstr "Невозможно удалить роль, так как она назначена сотрудникам."
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:102
+#: lib/delivest_web/components/staff/app/staff_nav.ex:111
 #: lib/delivest_web/live/staff/category_live/categories.ex:90
 #: lib/delivest_web/live/staff/log_live/event_text.ex:37
 #: lib/delivest_web/live/staff/statistics_live/index.ex:178
@@ -686,6 +686,7 @@ msgstr "Страница %{current} из %{total}"
 #: lib/delivest_web/live/staff/category_live/categories.ex:143
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:39
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:200
+#: lib/delivest_web/live/staff/finance_live/payments.ex:52
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:36
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:48
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:91
@@ -769,7 +770,7 @@ msgid "Product updated successfully"
 msgstr "Товар успешно обновлен"
 
 #: lib/delivest_web/components/staff/app/command_search.ex:22
-#: lib/delivest_web/components/staff/app/staff_nav.ex:109
+#: lib/delivest_web/components/staff/app/staff_nav.ex:118
 #: lib/delivest_web/live/staff/log_live/event_text.ex:36
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:18
 #: lib/delivest_web/live/staff/product_live/products.ex:421
@@ -832,7 +833,7 @@ msgstr "Роль успешно сохранена"
 msgid "Role updated successfully"
 msgstr "Роль успешно обновлена"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:159
+#: lib/delivest_web/components/staff/app/staff_nav.ex:168
 #: lib/delivest_web/live/staff/log_live/event_text.ex:43
 #: lib/delivest_web/live/staff/role_live/roles.ex:54
 #, elixir-autogen, elixir-format
@@ -850,6 +851,7 @@ msgstr "Управление ролями"
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:95
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:137
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:303
+#: lib/delivest_web/live/staff/finance_live/payments.ex:122
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:238
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:87
@@ -881,6 +883,7 @@ msgstr "Сохранить"
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:94
 #: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:136
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:302
+#: lib/delivest_web/live/staff/finance_live/payments.ex:121
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:237
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:86
@@ -1278,7 +1281,7 @@ msgid "Client updated successfully"
 msgstr "Клиент успешно обновлен"
 
 #: lib/delivest_web/components/staff/app/command_search.ex:21
-#: lib/delivest_web/components/staff/app/staff_nav.ex:154
+#: lib/delivest_web/components/staff/app/staff_nav.ex:163
 #: lib/delivest_web/live/staff/client_live/clients.ex:235
 #: lib/delivest_web/live/staff/log_live/event_text.ex:41
 #, elixir-autogen, elixir-format
@@ -1336,7 +1339,7 @@ msgstr "Удалить заказ"
 msgid "Delivering"
 msgstr "Доставляется"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:136
+#: lib/delivest_web/components/staff/app/staff_nav.ex:145
 #: lib/delivest_web/live/staff/delivery_live/index.ex:10
 #: lib/delivest_web/live/staff/delivery_live/index.ex:16
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:164
@@ -1899,7 +1902,10 @@ msgstr "Заказы по часам"
 msgid "Orders today"
 msgstr "Заказов сегодня"
 
+#: lib/delivest_web/components/staff/app/staff_nav.ex:94
 #: lib/delivest_web/live/staff/client_live/show.ex:244
+#: lib/delivest_web/live/staff/finance_live/payments.ex:17
+#: lib/delivest_web/live/staff/finance_live/payments.ex:64
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:147
 #, elixir-autogen, elixir-format
 msgid "Payment"
@@ -2159,7 +2165,7 @@ msgstr "События"
 msgid "Level"
 msgstr "Уровень"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:169
+#: lib/delivest_web/components/staff/app/staff_nav.ex:178
 #: lib/delivest_web/live/staff/log_live/index.ex:23
 #: lib/delivest_web/live/staff/log_live/index.ex:117
 #, elixir-autogen, elixir-format
@@ -2739,7 +2745,7 @@ msgstr "Выключена"
 msgid "Discount"
 msgstr "Скидка"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:128
+#: lib/delivest_web/components/staff/app/staff_nav.ex:137
 #: lib/delivest_web/live/staff/log_live/event_text.ex:40
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:32
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:167
@@ -3836,7 +3842,7 @@ msgstr "Изменён %{date}"
 msgid "Email for requests"
 msgstr "Email для обращений"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:166
+#: lib/delivest_web/components/staff/app/staff_nav.ex:175
 #: lib/delivest_web/live/staff/franchise_live/index.ex:24
 #: lib/delivest_web/live/staff/franchise_live/index.ex:48
 #: lib/delivest_web/live/staff/franchise_live/index.ex:90
@@ -3938,6 +3944,7 @@ msgstr "Реквизиты продавца"
 
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:32
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:45
+#: lib/delivest_web/live/staff/finance_live/payments.ex:46
 #: lib/delivest_web/live/staff/franchise_live/index.ex:63
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:30
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:41
@@ -4049,7 +4056,7 @@ msgstr "Товары Frontpad"
 msgid "Get products"
 msgstr "Получить товары"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:143
+#: lib/delivest_web/components/staff/app/staff_nav.ex:152
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:55
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:129
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:192
@@ -4759,7 +4766,7 @@ msgstr "Удалён баннер «%{subject}»"
 msgid "Banner «%{subject}» edited"
 msgstr "Изменён баннер «%{subject}»"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:122
+#: lib/delivest_web/components/staff/app/staff_nav.ex:131
 #: lib/delivest_web/live/staff/log_live/event_text.ex:39
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:42
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:201
@@ -4964,7 +4971,7 @@ msgid "Stop in %{crm}"
 msgstr "Стоп в %{crm}"
 
 #: lib/delivest_web/components/gateway_note.ex:88
-#: lib/delivest_web/components/staff/app/staff_nav.ex:117
+#: lib/delivest_web/components/staff/app/staff_nav.ex:126
 #: lib/delivest_web/live/staff/product_live/product_tags.ex:20
 #: lib/delivest_web/live/staff/product_live/products.ex:554
 #: lib/delivest_web/live/staff/product_live/stop_list.ex:21
@@ -5067,6 +5074,7 @@ msgstr "Подключите CRM в интеграциях"
 
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:36
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:206
+#: lib/delivest_web/live/staff/finance_live/payments.ex:49
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:195
 #: lib/delivest_web/live/staff/product_live/suggested.ex:43
@@ -5853,13 +5861,13 @@ msgstr "Все заказы"
 msgid "Customer sign-in"
 msgstr "Вход клиентов"
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:121
+#: lib/delivest_web/components/staff/app/staff_nav.ex:130
 #, elixir-autogen, elixir-format
 msgid "Marketing"
 msgstr "Маркетинг"
 
 #: lib/delivest_web/components/gateway_note.ex:87
-#: lib/delivest_web/components/staff/app/staff_nav.ex:97
+#: lib/delivest_web/components/staff/app/staff_nav.ex:106
 #: lib/delivest_web/live/staff/integration_live/iiko.ex:139
 #: lib/delivest_web/live/staff/integration_live/rkeeper.ex:109
 #, elixir-autogen, elixir-format
@@ -5904,7 +5912,7 @@ msgstr "Рекомендуемые"
 msgid "Recommended products are offered in the cart on the site."
 msgstr "Рекомендуемые товары предлагаются в корзине на сайте."
 
-#: lib/delivest_web/components/staff/app/staff_nav.ex:156
+#: lib/delivest_web/components/staff/app/staff_nav.ex:165
 #, elixir-autogen, elixir-format
 msgid "Team"
 msgstr "Команда"
@@ -7406,7 +7414,7 @@ msgid "Receipt"
 msgstr "Чек"
 
 #: lib/delivest_web/components/gateway_note.ex:86
-#: lib/delivest_web/components/staff/app/staff_nav.ex:92
+#: lib/delivest_web/components/staff/app/staff_nav.ex:101
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:15
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:133
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:158
@@ -8333,3 +8341,53 @@ msgstr "не подключён"
 #, elixir-autogen, elixir-format
 msgid "test"
 msgstr "тестовый"
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:111
+#, elixir-autogen, elixir-format
+msgid "A paid order is accepted automatically and the customer sees \"Order accepted, we started cooking\". If the operator changes the order, they call the customer."
+msgstr "Оплаченный заказ принимается сам, клиент видит «Заказ принят, начали готовить». Если оператор меняет заказ, он звонит клиенту."
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:84
+#, elixir-autogen, elixir-format
+msgid "Card to the courier"
+msgstr "Картой курьеру"
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:78
+#, elixir-autogen, elixir-format
+msgid "Cash to the courier"
+msgstr "Наличными курьеру"
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:94
+#, elixir-autogen, elixir-format
+msgid "Connect YooKassa and pass the connection check in the integrations first."
+msgstr "Сначала подключите ЮKassa в интеграциях и пройдите проверку связи."
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:107
+#, elixir-autogen, elixir-format
+msgid "Do not call the customer to confirm paid orders"
+msgstr "Не звонить клиенту для подтверждения оплаченных заказов"
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:117
+#, elixir-autogen, elixir-format
+msgid "Enable at least one payment method"
+msgstr "Включите хотя бы один способ оплаты"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex:89
+#, elixir-autogen, elixir-format
+msgid "Finance"
+msgstr "Финансы"
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:65
+#, elixir-autogen, elixir-format
+msgid "How customers of this branch can pay for an order."
+msgstr "Как клиенты этого филиала могут оплатить заказ."
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:90
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Online payment (YooKassa)"
+msgstr "Онлайн-оплата (ЮKassa)"
+
+#: lib/delivest_web/live/staff/finance_live/payments.ex:100
+#, elixir-autogen, elixir-format
+msgid "Open YooKassa settings"
+msgstr "Настройки ЮKassa"

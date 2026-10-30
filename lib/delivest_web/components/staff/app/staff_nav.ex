@@ -84,10 +84,19 @@ defmodule DelivestWeb.StaffNav do
           gettext("Couriers")
         )
         |> allowed(staff, "orders.update")
-        |> owned(branch, :couriers),
+        |> owned(branch, :couriers)
+      ]),
+      group(:finance, "hero-banknotes", gettext("Finance"), [
+        item(
+          :payments,
+          branch && ~p"/staff/b/#{branch}/finance/payments",
+          "hero-credit-card",
+          gettext("Payment")
+        )
+        |> allowed(staff, "finance.read"),
         item(
           :receipts,
-          branch && ~p"/staff/b/#{branch}/receipts",
+          branch && ~p"/staff/b/#{branch}/finance/receipts",
           "hero-document-text",
           gettext("Receipts")
         )

@@ -43,6 +43,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
     with {:ok, branch} <- fetch_public_branch(attrs["branch_id"]),
          :ok <- ensure_accepting(branch),
+         :ok <- ensure_payment_method(branch, attrs["payment_method"]),
          true <-
            Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
          {:ok, order} <- Oms.create_order(attrs, update_client: false) do
@@ -146,6 +147,14 @@ defmodule DelivestWeb.Client.Order.OrderController do
     end
   end
 
+  defp ensure_payment_method(_branch, nil), do: :ok
+
+  defp ensure_payment_method(branch, method) do
+    if method in Enum.map(Delivest.Payments.enabled_methods(branch), &to_string/1),
+      do: :ok,
+      else: {:error, :payment_method_disabled}
+  end
+
   defp fetch_public_branch(nil), do: {:error, :branch_id_required}
 
   defp fetch_public_branch(branch_id) do
@@ -184,6 +193,15 @@ defmodule DelivestWeb.Client.Order.OrderController do
       %{until: status.until, reason: status.reason}
     )
   end
+
+  defp render_error(conn, :payment_method_disabled),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :payment_method_disabled,
+        "This payment method is not available at the branch"
+      )
 
   defp render_error(conn, :outside_zones),
     do:

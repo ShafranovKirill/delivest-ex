@@ -13,6 +13,7 @@ defmodule Delivest.Identity.Definitions do
   pos.use
   delivery.read delivery.update
   integrations.read integrations.update
+  finance.read finance.update
   franchise.update
   statistics.read
   logs.read

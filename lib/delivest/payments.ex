@@ -2,7 +2,11 @@ defmodule Delivest.Payments do
   import Ecto.Query
 
   alias Delivest.Couriers.Delivery
+  alias Delivest.Identity
+  alias Delivest.Identity.Branch
+  alias Delivest.Identity.Branch.{BranchInfo, PaymentSettings}
   alias Delivest.Identity.Staff
+  alias Delivest.Integrations.Yookassa
   alias Delivest.Oms.{Order, OrderEvents, OrderFlow}
   alias Delivest.Payments.{Payment, Refund}
   alias Delivest.Repo
@@ -11,6 +15,18 @@ defmodule Delivest.Payments do
   @open [:pending, :authorized]
 
   @type balance :: :unpaid | :partially_paid | :paid | :overpaid | :refunded
+
+  def settings(%Branch{info: %BranchInfo{payments: %PaymentSettings{} = payments}}), do: payments
+
+  def settings(%Branch{id: id}) do
+    case Identity.get_branch(id, preload: :info) do
+      {:ok, %Branch{info: %BranchInfo{payments: %PaymentSettings{} = payments}}} -> payments
+      _ -> %PaymentSettings{}
+    end
+  end
+
+  def enabled_methods(%Branch{} = branch),
+    do: branch |> settings() |> PaymentSettings.enabled(Yookassa.ready?())
 
   def list(order_id) do
     Repo.all(

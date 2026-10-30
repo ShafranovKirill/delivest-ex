@@ -42,7 +42,7 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
         <.link
           :for={{value, label} <- @filters}
           id={"receipts-filter-#{value || "all"}"}
-          patch={~p"/staff/b/#{@current_branch}/receipts?#{(value && [status: value]) || []}"}
+          patch={~p"/staff/b/#{@current_branch}/finance/receipts?#{(value && [status: value]) || []}"}
           class={["tab", @status == value && "tab-active"]}
         >
           {label}

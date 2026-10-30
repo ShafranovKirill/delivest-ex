@@ -21,11 +21,11 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
     setup %{conn: conn}, do: setup_branch(conn, nil)
 
     test "shows every section", %{conn: conn, branch: branch} do
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/receipts")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/receipts")
 
       refute has_element?(lv, "#gateway-note")
       assert has_element?(lv, ~s(#main-sidebar a[href="/staff/b/#{branch.slug}/couriers"]))
-      assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/receipts"]))
+      assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/receipts"]))
     end
   end
 
@@ -57,7 +57,7 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
     end
 
     test "a direct visit shows the note instead of the page", %{conn: conn, branch: branch} do
-      for page <- ~w(receipts couriers deliveries) do
+      for page <- ~w(finance/receipts couriers deliveries) do
         {:ok, lv, _html} = live(conn, "/staff/b/#{branch.slug}/#{page}")
 
         assert has_element?(lv, "#gateway-note", "iiko")
@@ -70,7 +70,7 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       do: setup_branch(conn, %{enabled: true, provider: :frontpad, frontpad: %{api_key: "key"}})
 
     test "keeps receipts and couriers", %{conn: conn, branch: branch} do
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/receipts")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/receipts")
 
       refute has_element?(lv, "#gateway-note")
     end

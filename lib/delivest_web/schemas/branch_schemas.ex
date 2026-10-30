@@ -36,6 +36,11 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
             reason: %Schema{type: :string, nullable: true}
           }
         },
+        payment_methods: %Schema{
+          type: :array,
+          items: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
+          description: "Способы оплаты, включённые на филиале"
+        },
         special_hours: %Schema{
           type: :object,
           additionalProperties: true,

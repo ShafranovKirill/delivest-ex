@@ -35,10 +35,10 @@ defmodule DelivestWeb.Staff.ReceiptLive.IndexTest do
   } do
     failed = receipt(order, :fail)
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/receipts?status=problem")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/receipts?status=problem")
     assert lv |> element("#receipt-row-#{failed.id}") |> render() =~ "32: bad"
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/receipts?status=done")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/receipts?status=done")
     refute has_element?(lv, "#receipt-row-#{failed.id}")
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")

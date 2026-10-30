@@ -4,7 +4,7 @@
 
 Основа: [payments.md](payments.md) (модель `order_payments`, статусы `pending → authorized → paid`), [fiscal-receipts.md](fiscal-receipts.md) (два чека АТОЛ), `integrations/yookassa/README.md`.
 
-Сделано: п. 1 (настройки магазина `yookassa_settings` на всю сеть, `Yookassa.Api`, `GET /me` в `health_check` и проверка конфликта чеков, страница `/staff/b/:slug/integrations/yookassa` с адресом вебхука и журналом). Дальше п. 0 (раздел «Финансы» и способы оплаты по филиалам) и п. 2–7. Ветка `feature/yookassa`.
+Сделано: п. 1 (настройки магазина `yookassa_settings` на всю сеть, `Yookassa.Api`, `GET /me` в `health_check` и проверка конфликта чеков, страница `/staff/b/:slug/integrations/yookassa` с адресом вебхука и журналом). П. 0 (раздел «Финансы»: страница «Оплата» с способами по филиалам и галочкой «Не звонить клиенту», «Чеки» переехали в `/finance/receipts`, права `finance.read/update`, `payment_methods` в ответе филиала, отказ по отключённому способу). Дальше п. 2–7; клиент ещё не прячет отключённые способы, это делается вместе с редиректом в п. 2. Ветка `feature/yookassa`.
 
 ## Решения
 

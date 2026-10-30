@@ -1,7 +1,15 @@
 defmodule Delivest.Identity.Branch.BranchInfo do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.{CourierSettings, IntakeSettings, KitchenSettings, YcartSettings}
+
+  alias Delivest.Identity.Branch.{
+    CourierSettings,
+    IntakeSettings,
+    KitchenSettings,
+    PaymentSettings,
+    YcartSettings
+  }
+
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Identity
 
@@ -33,6 +41,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     embeds_one :kitchen, KitchenSettings, on_replace: :update, defaults_to_struct: true
     embeds_one :intake, IntakeSettings, on_replace: :update, defaults_to_struct: true
     embeds_one :couriers, CourierSettings, on_replace: :update, defaults_to_struct: true
+    embeds_one :payments, PaymentSettings, on_replace: :update, defaults_to_struct: true
 
     embeds_one :yandex_delivery, Delivest.Integrations.YandexDelivery.Settings,
       on_replace: :update
@@ -79,6 +88,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
     |> cast_embed(:intake, with: &IntakeSettings.changeset/2)
     |> cast_embed(:couriers, with: &CourierSettings.changeset/2)
+    |> cast_embed(:payments, with: &PaymentSettings.changeset/2)
     |> cast_embed(:yandex_delivery,
       with: &Delivest.Integrations.YandexDelivery.Settings.changeset/2
     )

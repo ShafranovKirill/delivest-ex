@@ -69,6 +69,9 @@ msgstr "Stop list"
 msgid "delivery"
 msgstr "Delivery"
 
+msgid "finance"
+msgstr "Finance"
+
 msgid "integrations"
 msgstr "Integrations"
 

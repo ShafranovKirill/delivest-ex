@@ -33,6 +33,7 @@ defmodule Delivest.Identity.RolePresets do
                       stocks.read promotions.read
                       delivery.read delivery.update
                       integrations.read
+                      finance.read finance.update
                       statistics.read staff.read
                     )
 

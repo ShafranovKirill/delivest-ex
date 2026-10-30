@@ -94,6 +94,24 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(422)
   end
 
+  test "a payment method turned off at the branch is refused", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    staff = insert(:staff, role: insert(:role, permissions: ["finance.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    {:ok, _branch} = Delivest.Identity.update_payments(staff, branch, %{"cash" => "false"})
+
+    params = Map.put(order_params(branch, cart_id), "payment_method", "cash")
+
+    assert %{"error" => "payment_method_disabled"} =
+             conn |> post(~p"/client/orders", params) |> json_response(422)
+  end
+
   test "the customer cancels an unaccepted order once", %{
     conn: conn,
     branch: branch,

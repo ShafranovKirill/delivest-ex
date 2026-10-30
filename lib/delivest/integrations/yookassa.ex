@@ -1,5 +1,6 @@
 defmodule Delivest.Integrations.Yookassa do
   alias Delivest.{Identity, Repo}
+  alias Delivest.Integrations.Health
   alias Delivest.Integrations.Yookassa.{Api, Settings}
 
   def get_settings, do: Repo.one(Settings) || %Settings{}
@@ -14,6 +15,10 @@ defmodule Delivest.Integrations.Yookassa do
   end
 
   def configured?, do: Settings.complete?(get_settings())
+
+  def ready? do
+    configured?() and match?(%{status: :ok}, Health.get(:yookassa, nil))
+  end
 
   def webhook_url(token),
     do: DelivestWeb.Endpoint.url() <> "/integrations/yookassa/" <> token

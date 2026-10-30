@@ -192,6 +192,12 @@ defmodule Delivest.Identity.Branches do
     |> Audit.track(staff, "branch.updated")
   end
 
+  def update_payments(staff, %Branch{} = branch, attrs) do
+    staff
+    |> do_update_branch("finance.update", branch, %{}, %{"payments" => attrs})
+    |> Audit.track(staff, "branch.updated")
+  end
+
   defp do_update_branch(staff, permission, %Branch{} = branch, branch_attrs, info_attrs) do
     with :ok <- Identity.authorize(staff, permission, branch.id) do
       branch = Repo.preload(branch, :info)
