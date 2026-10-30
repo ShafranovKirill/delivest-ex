@@ -12,6 +12,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   alias Delivest.Integrations.Poller.Worker, as: PollWorker
   alias Delivest.Integrations.YandexDelivery.{ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders, OrderTransition}
+  alias Delivest.Push.NoteWorker
 
   @settings %Settings{token: "y-token", contact_email: "kitchen@example.com"}
 
@@ -440,6 +441,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert fiscal == %{"vat_code_str" => "vat_none", "item_type" => "product"}
 
       assert Repo.reload!(order).payment_method == :card_offline
+      assert_enqueued(worker: NoteWorker, args: %{order_id: order.id, note: "card_only"})
       assert_enqueued(worker: PollWorker, args: %{poller: "yandex_delivery", target: branch.id})
     end
 
@@ -457,6 +459,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert_received {:yandex, "/claims/create", _query, body}
       refute Map.has_key?(Enum.at(body["route_points"], 1), "payment_on_delivery")
       refute Map.has_key?(hd(body["items"]), "fiscalization")
+      refute_enqueued(worker: NoteWorker)
     end
 
     test "fits the item prices to the total after a discount" do

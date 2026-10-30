@@ -3,7 +3,7 @@ defmodule Delivest.Push do
 
   alias Delivest.Identity.Staff
   alias Delivest.Oms.Order
-  alias Delivest.Push.{StaffSubscription, StaffWorker, Subscription, Vapid, Worker}
+  alias Delivest.Push.{NoteWorker, StaffSubscription, StaffWorker, Subscription, Vapid, Worker}
   alias Delivest.Repo
 
   defdelegate public_key, to: Vapid
@@ -21,6 +21,11 @@ defmodule Delivest.Push do
     if Repo.exists?(from(s in Subscription, where: s.order_id == ^order_id)),
       do: %{order_id: order_id} |> Worker.new() |> Oban.insert()
 
+    :ok
+  end
+
+  def notify_note(%Order{id: order_id}, note) when is_atom(note) do
+    %{order_id: order_id, note: note} |> NoteWorker.new() |> Oban.insert()
     :ok
   end
 

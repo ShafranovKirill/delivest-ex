@@ -4417,37 +4417,37 @@ msgstr "Показывается в блоке «Добавить к заказ�
 msgid "Suggest in the cart"
 msgstr "Предлагать в корзине"
 
-#: lib/delivest/push/order_message.ex:68
+#: lib/delivest/push/order_message.ex:79
 #, elixir-autogen, elixir-format
 msgid "Order %{number} is being prepared"
 msgstr "Заказ %{number} готовится"
 
-#: lib/delivest/push/order_message.ex:88
+#: lib/delivest/push/order_message.ex:99
 #, elixir-autogen, elixir-format
 msgid "Order %{number} is completed. Enjoy your meal!"
 msgstr "Заказ %{number} выполнен. Приятного аппетита!"
 
-#: lib/delivest/push/order_message.ex:80
+#: lib/delivest/push/order_message.ex:91
 #, elixir-autogen, elixir-format
 msgid "Order %{number} is ready"
 msgstr "Заказ %{number} готов"
 
-#: lib/delivest/push/order_message.ex:72
+#: lib/delivest/push/order_message.ex:83
 #, elixir-autogen, elixir-format
 msgid "Order %{number} is ready and will be on its way soon"
 msgstr "Заказ %{number} собран и скоро поедет к вам"
 
-#: lib/delivest/push/order_message.ex:77
+#: lib/delivest/push/order_message.ex:88
 #, elixir-autogen, elixir-format
 msgid "Order %{number} is ready, you can pick it up"
 msgstr "Заказ %{number} готов, можно забирать"
 
-#: lib/delivest/push/order_message.ex:91
+#: lib/delivest/push/order_message.ex:102
 #, elixir-autogen, elixir-format
 msgid "Order %{number} was cancelled"
 msgstr "Заказ %{number} отменён"
 
-#: lib/delivest/push/order_message.ex:84
+#: lib/delivest/push/order_message.ex:95
 #, elixir-autogen, elixir-format
 msgid "The courier is on the way with order %{number}"
 msgstr "Курьер уже везёт заказ %{number}"
@@ -5026,7 +5026,7 @@ msgstr "Подтвердить"
 msgid "Confirmed"
 msgstr "Подтверждён"
 
-#: lib/delivest/push/order_message.ex:65
+#: lib/delivest/push/order_message.ex:76
 #, elixir-autogen, elixir-format
 msgid "Order %{number} is confirmed"
 msgstr "Заказ %{number} подтверждён"
@@ -6732,7 +6732,7 @@ msgstr "Подтверждать заявку автоматически"
 msgid "Courier %{name} is heading to pick up order %{number}"
 msgstr "Курьер %{name} едет за заказом %{number}"
 
-#: lib/delivest/push/order_message.ex:57
+#: lib/delivest/push/order_message.ex:68
 #, elixir-autogen, elixir-format
 msgid "Courier %{name} is on the way with order %{number}"
 msgstr "Курьер %{name} везёт заказ %{number}"
@@ -8146,3 +8146,8 @@ msgstr "Отмена курьера Яндекса платная: %{price}"
 #, elixir-autogen, elixir-format
 msgid "Confirm the paid cancel"
 msgstr "Подтвердить платную отмену"
+
+#: lib/delivest/push/order_message.ex:33
+#, elixir-autogen, elixir-format
+msgid "The Yandex courier accepts only a card, pay for order %{number} by card"
+msgstr "Курьер Яндекса принимает только карту, оплатите заказ %{number} картой"

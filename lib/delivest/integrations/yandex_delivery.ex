@@ -5,7 +5,7 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   require Logger
 
-  alias Delivest.{Couriers, Identity, Repo}
+  alias Delivest.{Couriers, Identity, Push, Repo}
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Journal, as: RequestJournal
@@ -362,9 +362,12 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp configured(_branch), do: {:error, :not_configured}
 
   defp switch_to_card(%Order{payment_method: :cash} = order) do
-    with {:error, reason} <-
-           Orders.update_payment_method(order, %{"payment_method" => "card_offline"}) do
-      Logger.warning("order #{order.number}: cash to card switch failed (#{inspect(reason)})")
+    case Orders.update_payment_method(order, %{"payment_method" => "card_offline"}) do
+      {:ok, _order} ->
+        Push.notify_note(order, :card_only)
+
+      {:error, reason} ->
+        Logger.warning("order #{order.number}: cash to card switch failed (#{inspect(reason)})")
     end
   end
 

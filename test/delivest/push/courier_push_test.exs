@@ -100,4 +100,12 @@ defmodule Delivest.Push.CourierPushTest do
     assert %{courier: nil} = OrderJSON.active_order_data(order)
     assert pushed(ctx) == ["Order #{order.daily_number} is being prepared"]
   end
+
+  test "the client is told the Yandex courier takes only a card", ctx do
+    assert :ok = Push.notify_note(ctx.order, :card_only)
+    assert %{success: 1} = Oban.drain_queue(queue: :default)
+
+    assert_receive {:push, body}
+    assert PushClient.decrypt(ctx.client, body)["body"] =~ "only a card"
+  end
 end
