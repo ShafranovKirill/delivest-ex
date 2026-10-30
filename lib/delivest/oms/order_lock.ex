@@ -76,6 +76,9 @@ defmodule Delivest.Oms.OrderLock do
   defp check(%Order{status: status}, _change, _payments) when status in [:completed, :cancelled],
     do: {:error, :order_finished}
 
+  defp check(%Order{awaiting_payment: true}, change, _payments) when change != :comment,
+    do: {:error, :awaiting_payment}
+
   defp check(%Order{channel: %{}}, change, _payments) when change != :comment,
     do: {:error, :channel_order}
 

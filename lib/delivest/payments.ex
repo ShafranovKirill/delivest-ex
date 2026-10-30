@@ -90,6 +90,40 @@ defmodule Delivest.Payments do
 
   def sync(repo, %Order{} = order) do
     payments = repo.all(from(p in Payment, where: p.order_id == ^order.id, preload: :refunds))
+
+    with {:ok, _adjusted} <- adjust_online(repo, order, payments) do
+      sync_offline(repo, order, payments)
+    end
+  end
+
+  defp adjust_online(repo, order, payments) do
+    payments
+    |> Enum.filter(&(&1.method == :online and &1.provider == "yookassa"))
+    |> each(&adjust_online_payment(repo, order, &1))
+  end
+
+  defp adjust_online_payment(repo, order, %Payment{status: :authorized} = payment) do
+    target = min(order.total_amount, get_in(payment.details, ["hold_amount"]) || payment.amount)
+
+    if target > 0 and target != payment.amount,
+      do: payment |> Payment.resize_changeset(target) |> repo.update(),
+      else: {:ok, payment}
+  end
+
+  defp adjust_online_payment(_repo, order, %Payment{status: :paid} = payment) do
+    excess = payment.amount - taken(payment.id) - order.total_amount
+
+    if excess > 0 and not order.awaiting_payment do
+      with {:ok, _refund} <- refund(payment, excess, %{reason: "order changed"}),
+           do: {:ok, payment}
+    else
+      {:ok, payment}
+    end
+  end
+
+  defp adjust_online_payment(_repo, _order, payment), do: {:ok, payment}
+
+  defp sync_offline(repo, order, payments) do
     pending = Enum.find(payments, &(&1.status == :pending and &1.method in [:cash, :card]))
     due = order.total_amount - paid(payments) + refunded(payments)
     method = @offline[order.payment_method]
@@ -151,6 +185,7 @@ defmodule Delivest.Payments do
 
       with :ok <- check_amount(amount, left),
            {:ok, refund} <- insert_refund(payment, amount, attrs, by, instant?),
+           :ok <- enqueue_remote(payment, refund),
            order = Repo.get!(Order, payment.order_id),
            {:ok, _event} <- event(Repo, order, payment, "refund", by) do
         refund
@@ -254,6 +289,17 @@ defmodule Delivest.Payments do
     )
     |> Repo.insert()
   end
+
+  defp enqueue_remote(%Payment{method: :online, provider: "yookassa"}, %Refund{} = refund) do
+    case %{refund_id: refund.id}
+         |> Delivest.Payments.Online.RefundWorker.new()
+         |> Oban.insert() do
+      {:ok, _job} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp enqueue_remote(_payment, _refund), do: :ok
 
   defp check_amount(amount, left) when is_integer(amount) and amount > 0 and amount <= left,
     do: :ok

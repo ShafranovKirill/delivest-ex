@@ -34,5 +34,13 @@ defmodule Delivest.Integrations.Yookassa.Webhook do
     end
   end
 
+  def handle_inbox(%{payload: %{"event" => "refund.succeeded", "object" => %{"id" => id}}}) do
+    case Online.sync_refund(id) do
+      {:ok, _refund} -> :ok
+      {:error, :refund_not_found} -> {:cancel, :refund_not_found}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   def handle_inbox(_message), do: :ok
 end

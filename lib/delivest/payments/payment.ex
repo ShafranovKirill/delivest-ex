@@ -69,6 +69,12 @@ defmodule Delivest.Payments.Payment do
     |> unique_constraint([:provider, :external_id])
   end
 
+  def resize_changeset(%__MODULE__{status: :authorized} = payment, amount) do
+    payment
+    |> change(amount: amount)
+    |> validate_number(:amount, greater_than: 0)
+  end
+
   def amount_changeset(%__MODULE__{status: :pending} = payment, attrs) do
     payment
     |> cast(attrs, [:amount, :method, :cash_given])

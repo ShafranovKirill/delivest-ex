@@ -2060,7 +2060,7 @@ msgstr ""
 msgid "CRM orders cannot be edited"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:20
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:21
 #, elixir-autogen, elixir-format
 msgid "Failed to save order"
 msgstr ""
@@ -2898,7 +2898,7 @@ msgstr ""
 msgid "Phone must be +7XXXXXXXXXX"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:15
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:16
 #, elixir-autogen, elixir-format
 msgid "Prices have changed, check the cart"
 msgstr ""
@@ -3038,7 +3038,7 @@ msgstr ""
 msgid "The client has already used this promotion"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:18
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:19
 #, elixir-autogen, elixir-format
 msgid "The promotion has just run out, the cart was recalculated"
 msgstr ""
@@ -7264,17 +7264,17 @@ msgstr ""
 msgid "Order %{subject} updated in CRM"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:10
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:11
 #, elixir-autogen, elixir-format
 msgid "The CRM does not accept this change"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:9
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:10
 #, elixir-autogen, elixir-format
 msgid "The order came from a sales channel"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:14
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:15
 #, elixir-autogen, elixir-format
 msgid "The order has a refund"
 msgstr ""
@@ -7284,22 +7284,22 @@ msgstr ""
 msgid "The order has a refund, it cannot be restored"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:8
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:9
 #, elixir-autogen, elixir-format
 msgid "The order is finished"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:13
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:14
 #, elixir-autogen, elixir-format
 msgid "The order is paid"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:12
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:13
 #, elixir-autogen, elixir-format
 msgid "The order is ready, the time cannot be changed"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/save_errors.ex:11
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:12
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:26
 #, elixir-autogen, elixir-format
 msgid "The order is with the courier"
@@ -8393,6 +8393,7 @@ msgstr ""
 msgid "Not paid in time"
 msgstr ""
 
+#: lib/delivest_web/live/staff/order_live/save_errors.ex:8
 #: lib/delivest_web/live/staff/order_live/status_errors.ex:20
 #, elixir-autogen, elixir-format
 msgid "The order is waiting for the online payment"

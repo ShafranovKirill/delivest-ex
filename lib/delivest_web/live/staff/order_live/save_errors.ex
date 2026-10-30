@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.OrderLive.SaveErrors do
   def message(:product_unavailable), do: gettext("Some products are no longer available")
   def message(:client_blocked), do: gettext("This client is blocked")
   def message(:order_locked), do: gettext("CRM orders cannot be edited")
+  def message(:awaiting_payment), do: gettext("The order is waiting for the online payment")
   def message(:order_finished), do: gettext("The order is finished")
   def message(:channel_order), do: gettext("The order came from a sales channel")
   def message(:crm_order), do: gettext("The CRM does not accept this change")

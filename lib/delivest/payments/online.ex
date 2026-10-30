@@ -9,7 +9,7 @@ defmodule Delivest.Payments.Online do
   alias Delivest.Oms.{Order, OrderEvents, OrderFlow, Orders}
   alias Delivest.Oms.Orders.Notifier
   alias Delivest.Payments
-  alias Delivest.Payments.Payment
+  alias Delivest.Payments.{Payment, Refund}
   alias Delivest.Repo
 
   def start(%Order{awaiting_payment: true} = order) do
@@ -58,6 +58,69 @@ defmodule Delivest.Payments.Online do
   end
 
   def apply_remote(_remote), do: {:error, :bad_response}
+
+  def send_refund(%Refund{payment: %Payment{external_id: payment_id}} = refund)
+      when is_binary(payment_id) do
+    body = %{
+      payment_id: payment_id,
+      amount: Api.amount(refund.amount),
+      description: refund.reason
+    }
+
+    with {:ok, remote} <- Api.create_refund(Yookassa.get_settings(), refund.id, body),
+         {:ok, _refund} <- apply_refund(refund, remote) do
+      :ok
+    end
+  end
+
+  def send_refund(_refund), do: {:cancel, :no_payment}
+
+  def sync_refund(external_id) when is_binary(external_id) do
+    with {:ok, remote} <- Api.get_refund(Yookassa.get_settings(), external_id) do
+      case Repo.get_by(Refund, provider: "yookassa", external_id: external_id) do
+        %Refund{} = refund -> apply_refund(refund, remote)
+        nil -> {:error, :refund_not_found}
+      end
+    end
+  end
+
+  defp apply_refund(
+         %Refund{status: :pending} = refund,
+         %{"id" => id, "status" => status} = remote
+       ) do
+    case status do
+      "succeeded" ->
+        with :ok <- check_refund_amount(refund, remote) do
+          refund
+          |> Refund.move_changeset(:succeeded, %{
+            external_id: id,
+            refunded_at: DateTime.utc_now(:second)
+          })
+          |> Ecto.Changeset.put_change(:provider, "yookassa")
+          |> Repo.update()
+        end
+
+      "canceled" ->
+        refund
+        |> Refund.move_changeset(:failed, %{external_id: id})
+        |> Ecto.Changeset.put_change(:provider, "yookassa")
+        |> Repo.update()
+
+      _pending ->
+        refund
+        |> Ecto.Changeset.change(external_id: id, provider: "yookassa")
+        |> Repo.update()
+    end
+  end
+
+  defp apply_refund(%Refund{} = refund, _remote), do: {:ok, refund}
+
+  defp check_refund_amount(refund, remote) do
+    case Api.parse_amount(remote["amount"]) do
+      {:ok, amount} when amount == refund.amount -> :ok
+      _other -> {:error, :amount_mismatch}
+    end
+  end
 
   def capture(%Order{} = order, %Payment{status: :authorized, external_id: id} = payment)
       when is_binary(id) do

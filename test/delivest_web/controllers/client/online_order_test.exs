@@ -279,22 +279,40 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
       Oban.drain_queue(queue: :events, with_safety: false)
     end
 
-    defp remote_api(test_pid, id, status) do
+    defp remote_api(test_pid, id, status, refund_amount \\ "3.00") do
       Req.Test.stub(Delivest.HTTP.Client, fn conn ->
-        send(test_pid, {:remote, conn.method, conn.request_path, conn.req_headers})
+        {:ok, raw, conn} = Plug.Conn.read_body(conn)
+        send(test_pid, {:remote, conn.method, conn.request_path, conn.req_headers, raw})
 
-        remote_status =
-          cond do
-            String.ends_with?(conn.request_path, "/capture") -> "succeeded"
-            String.ends_with?(conn.request_path, "/cancel") -> "canceled"
-            true -> status
-          end
+        cond do
+          String.ends_with?(conn.request_path, "/refunds") ->
+            Req.Test.json(conn, %{
+              "id" => "refund-1",
+              "status" => "pending",
+              "amount" => %{"value" => refund_amount, "currency" => "RUB"}
+            })
 
-        Req.Test.json(conn, %{
-          "id" => id,
-          "status" => remote_status,
-          "amount" => %{"value" => "3.00", "currency" => "RUB"}
-        })
+          String.contains?(conn.request_path, "/refunds/") ->
+            Req.Test.json(conn, %{
+              "id" => "refund-1",
+              "status" => "succeeded",
+              "amount" => %{"value" => refund_amount, "currency" => "RUB"}
+            })
+
+          true ->
+            remote_status =
+              cond do
+                String.ends_with?(conn.request_path, "/capture") -> "succeeded"
+                String.ends_with?(conn.request_path, "/cancel") -> "canceled"
+                true -> status
+              end
+
+            Req.Test.json(conn, %{
+              "id" => id,
+              "status" => remote_status,
+              "amount" => %{"value" => "3.00", "currency" => "RUB"}
+            })
+        end
       end)
     end
 
@@ -316,7 +334,7 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
       assert {:ok, _} = Delivest.Oms.Orders.advance_order(order, :accepted, {:staff, staff})
       drain()
 
-      assert_received {:remote, "POST", path, headers}
+      assert_received {:remote, "POST", path, headers, _raw}
       assert String.ends_with?(path, "/payments/#{ctx.id}/capture")
       assert {"idempotence-key", ctx.payment.id <> ":capture"} in headers
       assert [%{status: :paid, paid_at: %DateTime{}}] = Payments.list(order.id)
@@ -338,7 +356,7 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
 
       drain()
 
-      assert_received {:remote, "POST", path, _headers}
+      assert_received {:remote, "POST", path, _headers, _raw}
       assert String.ends_with?(path, "/cancel")
       assert [%{status: :cancelled, details: %{"released" => true}}] = Payments.list(order.id)
     end
@@ -346,12 +364,12 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
     test "a hold that arrives after the customer cancelled is released", ctx do
       {:ok, _} = Delivest.Oms.Orders.cancel_by_client(ctx.order.session_id, nil, ctx.order.id)
       drain()
-      refute_received {:remote, _, _, _}
+      refute_received {:remote, _, _, _, _}
 
       remote_api(self(), ctx.id, "waiting_for_capture")
       assert {:ok, _} = Delivest.Payments.Online.sync(ctx.id)
 
-      assert_received {:remote, "POST", path, _headers}
+      assert_received {:remote, "POST", path, _headers, _raw}
       assert String.ends_with?(path, "/cancel")
     end
 
@@ -379,6 +397,118 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
 
       assert %{status: :accepted} = Repo.get!(Order, ctx.order.id)
       assert [%{status: :paid}] = Payments.list(ctx.order.id)
+    end
+  end
+
+  describe "refunds" do
+    setup %{conn: conn, branch: branch, cart_id: cart_id} do
+      stub_yookassa(self())
+      body = conn |> post(~p"/client/orders", params(branch, cart_id)) |> json_response(200)
+      order = Repo.get!(Order, body["data"]["id"])
+      [payment] = Payments.list(order.id)
+      id = payment.external_id
+
+      remote_api(self(), id, "waiting_for_capture")
+      {:ok, _} = Delivest.Payments.Online.sync(id)
+
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+      insert(:staff_branch,
+        staff: staff,
+        branch: Repo.get!(Delivest.Identity.Branch, order.branch_id)
+      )
+
+      {:ok, _} =
+        Delivest.Oms.Orders.advance_order(Repo.get!(Order, order.id), :accepted, {:staff, staff})
+
+      drain()
+      assert [%{status: :paid}] = Payments.list(order.id)
+      flush_remote()
+
+      %{order: Repo.get!(Order, order.id), payment: hd(Payments.list(order.id)), id: id}
+    end
+
+    defp flush_remote do
+      receive do
+        {:remote, _, _, _, _} -> flush_remote()
+      after
+        0 -> :ok
+      end
+    end
+
+    test "a refund is sent once with the refund id as the key and closed by the webhook", ctx do
+      assert {:ok, refund} = Payments.refund(ctx.payment, 300, %{reason: "order changed"})
+      remote_api(self(), ctx.id, "succeeded")
+      drain()
+
+      assert_received {:remote, "POST", path, headers, raw}
+      assert String.ends_with?(path, "/refunds")
+      assert {"idempotence-key", refund.id} in headers
+      assert %{"payment_id" => id, "amount" => %{"value" => "3.00"}} = Jason.decode!(raw)
+      assert id == ctx.id
+
+      assert [%{refunds: [%{status: :pending, external_id: "refund-1"}]}] =
+               Payments.list(ctx.order.id)
+
+      assert {:ok, _} = Delivest.Payments.Online.sync_refund("refund-1")
+      assert {:ok, _} = Delivest.Payments.Online.sync_refund("refund-1")
+      assert [%{refunds: [%{status: :succeeded}]}] = Payments.list(ctx.order.id)
+      assert Payments.balance(ctx.order) == :refunded
+    end
+
+    test "a refund cannot exceed what is left of the payment", ctx do
+      assert {:ok, _} = Payments.refund(ctx.payment, 200)
+      assert {:error, :refund_too_large} = Payments.refund(ctx.payment, 200)
+      assert {:ok, _} = Payments.refund(ctx.payment, 100)
+    end
+
+    test "lowering the total of a paid order refunds the difference", ctx do
+      remote_api(self(), ctx.id, "succeeded", "2.00")
+      lowered = %{ctx.order | total_amount: 100}
+
+      assert {:ok, _} = Payments.sync(Repo, lowered)
+      drain()
+
+      assert [%{refunds: [%{amount: 200}]}] = Payments.list(ctx.order.id)
+      assert_received {:remote, "POST", path, _headers, raw}
+      assert String.ends_with?(path, "/refunds")
+      assert %{"amount" => %{"value" => "2.00"}} = Jason.decode!(raw)
+    end
+
+    test "a fully refunded payment takes no more refunds", ctx do
+      [payment] = Payments.list(ctx.order.id)
+      {:ok, _} = Payments.refund(payment, 300)
+      drain()
+      assert {:error, :refund_too_large} = Payments.refund(payment, 1)
+    end
+  end
+
+  describe "resizing a hold" do
+    test "lowering the total of an unpaid hold lowers the sum that is captured", %{
+      conn: conn,
+      branch: branch,
+      cart_id: cart_id
+    } do
+      stub_yookassa(self())
+      body = conn |> post(~p"/client/orders", params(branch, cart_id)) |> json_response(200)
+      order = Repo.get!(Order, body["data"]["id"])
+      [payment] = Payments.list(order.id)
+      id = payment.external_id
+
+      Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+        Req.Test.json(conn, %{
+          "id" => id,
+          "status" => "waiting_for_capture",
+          "amount" => %{"value" => "3.00", "currency" => "RUB"}
+        })
+      end)
+
+      {:ok, _} = Delivest.Payments.Online.sync(id)
+      assert {:ok, _} = Payments.sync(Repo, %{Repo.get!(Order, order.id) | total_amount: 200})
+      assert [%{amount: 200, status: :authorized}] = Payments.list(order.id)
+
+      assert {:ok, _} = Payments.sync(Repo, %{Repo.get!(Order, order.id) | total_amount: 900})
+      assert [%{amount: 300}] = Payments.list(order.id)
     end
   end
 end
