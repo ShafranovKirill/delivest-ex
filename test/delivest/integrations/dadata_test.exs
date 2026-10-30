@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.DadataTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   alias Delivest.Integrations.Dadata
   alias Delivest.Integrations.Dadata.Settings
@@ -70,5 +70,48 @@ defmodule Delivest.Integrations.DadataTest do
     configure(%{enabled: false})
     refute Dadata.active?()
     assert {:error, :dadata_not_configured} = Dadata.geolocate(57.1, 65.5)
+  end
+
+  test "parallel identical requests make one API call" do
+    configure()
+    query = "ленина #{System.unique_integer([:positive])}"
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      send(test_pid, :called)
+      Process.sleep(100)
+      Req.Test.json(conn, %{"suggestions" => [suggestion("ул Ленина", "1")]})
+    end)
+
+    results =
+      1..5
+      |> Enum.map(fn _ -> Task.async(fn -> Dadata.suggest(query, nil) end) end)
+      |> Task.await_many()
+
+    assert Enum.all?(results, &match?({:ok, [_]}, &1))
+    assert_received :called
+    refute_received :called
+  end
+
+  test "a quota error returns no suggestions and pauses the API for a while" do
+    configure()
+    on_exit(fn -> Cachex.del(:geo_cache, :unavailable) end)
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      send(test_pid, :called)
+      conn |> Plug.Conn.put_status(429) |> Req.Test.json(%{"message" => "limit"})
+    end)
+
+    first = "квота #{System.unique_integer([:positive])}"
+    assert {:ok, []} = Dadata.suggest(first, nil)
+    assert_received :called
+
+    assert {:ok, []} = Dadata.suggest("другая #{System.unique_integer([:positive])}", nil)
+    refute_received :called
+
+    Cachex.del(:geo_cache, :unavailable)
+    assert {:ok, []} = Dadata.suggest(first, nil)
+    assert_received :called
   end
 end
