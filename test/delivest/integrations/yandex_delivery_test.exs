@@ -266,6 +266,26 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       }
   end
 
+  describe "preorders" do
+    test "a cook time inside the window becomes the due time" do
+      branch = branch()
+      soon = DateTime.utc_now() |> DateTime.add(90, :minute) |> DateTime.truncate(:second)
+
+      order(branch, cook_by: soon) |> cooking(operator(branch))
+      assert_received {:yandex, "/claims/create", _query, %{"due" => due}}
+      assert {:ok, ^soon, _} = DateTime.from_iso8601(due)
+    end
+
+    test "a cook time outside the window is not sent" do
+      branch = branch()
+      far = DateTime.utc_now() |> DateTime.add(600, :minute) |> DateTime.truncate(:second)
+
+      order(branch, cook_by: far) |> cooking(operator(branch))
+      assert_received {:yandex, "/claims/create", _query, body}
+      refute Map.has_key?(body, "due")
+    end
+  end
+
   describe "order readiness" do
     test "the claim asks to be notified and gets the readiness when the kitchen is done" do
       branch = branch()

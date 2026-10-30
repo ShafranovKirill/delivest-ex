@@ -7,6 +7,8 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
 
   @source 1
   @destination 2
+  @due_min 30
+  @due_max 240
 
   def build(
         %Order{} = order,
@@ -24,7 +26,8 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
          comment: comment(order),
          referral_source: "delivest"
        }
-       |> put_auto_accept(settings)}
+       |> put_auto_accept(settings)
+       |> put_due(order)}
     end
   end
 
@@ -105,6 +108,16 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
     }
     |> put_payment(order)
   end
+
+  defp put_due(body, %Order{cook_by: %DateTime{} = cook_by}) do
+    minutes = DateTime.diff(cook_by, DateTime.utc_now(), :minute)
+
+    if minutes >= @due_min and minutes <= @due_max,
+      do: Map.put(body, :due, DateTime.to_iso8601(cook_by)),
+      else: body
+  end
+
+  defp put_due(body, _order), do: body
 
   defp put_auto_accept(body, %Settings{auto_accept: true}), do: Map.put(body, :auto_accept, true)
   defp put_auto_accept(body, _settings), do: body
