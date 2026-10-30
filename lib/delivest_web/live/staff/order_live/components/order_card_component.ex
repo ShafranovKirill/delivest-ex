@@ -8,7 +8,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
   alias Delivest.Fiscal.Receipt
-  alias Delivest.Oms.OrderFlow
+  alias Delivest.Oms.{Order, OrderFlow}
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
   alias DelivestWeb.Staff.CourierLive.LocationComponents
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
@@ -229,7 +229,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </span>
         <.status_control order={@order} current_staff={@current_staff} last={@last} />
         <form
-          :if={is_nil(@order.crm) and @order.payment_method != :online}
+          :if={not Order.crm_managed?(@order) and @order.payment_method != :online}
           id={"order-payment-#{@order.id}"}
           phx-change="update_payment"
           phx-value-order-id={@order.id}
@@ -253,7 +253,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </span>
         <div class="ml-auto flex items-center gap-1">
           <.link
-            :if={is_nil(@order.crm)}
+            :if={not Order.crm_managed?(@order)}
             navigate={~p"/staff/b/#{@current_branch}/orders/#{@order.id}/edit"}
             class="btn btn-ghost btn-sm btn-square"
             title={gettext("Edit Order")}
@@ -678,6 +678,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       {OrderHelpers.status_label(@order.status)}
     </span>
     <.crm_state :if={@order.crm} order={@order} />
+    <DelivestWeb.GatewayNote.order_gateway_note order={@order} name={crm_name(@order)} />
     <button
       :if={@next}
       type="button"

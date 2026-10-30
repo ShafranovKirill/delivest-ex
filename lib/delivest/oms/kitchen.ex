@@ -6,7 +6,7 @@ defmodule Delivest.Oms.Kitchen do
   alias Delivest.{Identity, Push, Repo}
   alias Delivest.Identity.{Branch, Staff}
   alias Delivest.Identity.Branch.{BranchInfo, KitchenSettings}
-  alias Delivest.Integrations.Crm
+  alias Delivest.Gateway
   alias Delivest.Oms.{Order, OrderDeadline, OrderFlow, Orders, OrderTransition}
   alias Delivest.Oms.Kitchen.ReadyWorker
 
@@ -27,7 +27,7 @@ defmodule Delivest.Oms.Kitchen do
     with {:ok,
           %Branch{info: %BranchInfo{kitchen: %KitchenSettings{enabled: true} = kitchen}} = branch} <-
            Identity.get_branch(branch_id, preload: :info),
-         nil <- Crm.active_provider(branch) do
+         true <- Gateway.own?(branch, :kitchen) do
       kitchen
     else
       _ -> nil

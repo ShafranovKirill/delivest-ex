@@ -47,7 +47,7 @@ defmodule Delivest.Integrations.Rkeeper do
   def idempotent?, do: false
 
   @impl true
-  def capabilities, do: [:cancel, :update_comment, :own_pos]
+  def capabilities, do: [:cancel, :update_comment, :own_pos, :delivery]
 
   @impl true
   def status_map(_settings), do: @statuses

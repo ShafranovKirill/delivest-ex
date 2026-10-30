@@ -40,7 +40,7 @@ defmodule Delivest.Integrations.Iiko do
   def idempotent?, do: true
 
   @impl true
-  def capabilities, do: [:cancel, :update_comment, :update_time, :own_pos]
+  def capabilities, do: [:cancel, :update_comment, :update_time, :own_pos, :delivery]
 
   @impl true
   def status_map(_settings), do: @statuses

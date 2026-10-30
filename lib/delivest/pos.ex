@@ -3,13 +3,13 @@ defmodule Delivest.Pos do
 
   alias Delivest.{Oms, Repo}
   alias Delivest.Identity.{Branch, Staff}
-  alias Delivest.Integrations.Crm
+  alias Delivest.Gateway
   alias Delivest.Oms.{Order, Orders}
 
   @types ~w(dine_in pickup)
   @methods %{"cash" => "cash", "card" => "card_offline"}
 
-  def available?(%Branch{} = branch), do: not Crm.own_pos?(branch)
+  def available?(%Branch{} = branch), do: Gateway.own?(branch, :pos)
 
   def cart(%Staff{id: staff_id}, branch_id),
     do: Oms.get_or_create_cart(session_id: "pos:#{staff_id}", branch_id: branch_id)

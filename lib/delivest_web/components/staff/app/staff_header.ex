@@ -35,6 +35,8 @@ defmodule DelivestWeb.StaffHeader do
         <DelivestWeb.CommandPalette.command_palette_trigger />
       </div>
 
+      <DelivestWeb.GatewayNote.gateway_badge branch={@current_branch} />
+
       <DelivestWeb.KitchenControl.kitchen_indicator status={@kitchen_status} />
 
       <DelivestWeb.NewOrdersBell.new_orders_bell

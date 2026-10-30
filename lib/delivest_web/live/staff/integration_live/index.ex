@@ -83,6 +83,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
         </div>
       </section>
 
+      <DelivestWeb.GatewayNote.gateway_summary branch={@current_branch} />
+
       <section class="space-y-3">
         <div>
           <h2 class="font-bold">{gettext("Branch")} «{@current_branch.name}»</h2>
