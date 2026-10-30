@@ -19,6 +19,29 @@ defmodule Delivest.Fiscal do
     end
   end
 
+  def change_settings(%BranchSettings{} = settings, attrs \\ %{}),
+    do: BranchSettings.changeset(settings, attrs)
+
+  def update_settings(staff, branch_id, attrs) do
+    with {:ok, branch} <- Identity.get_branch(branch_id, preload: :info),
+         {:ok, branch} <- Identity.update_integrations(staff, branch, %{"fiscal" => attrs}) do
+      {:ok, branch.info.fiscal}
+    else
+      {:error, :info, changeset} -> {:error, Ecto.Changeset.get_change(changeset, :fiscal)}
+      {:error, _step, changeset} -> {:error, changeset}
+      error -> error
+    end
+  end
+
+  def health_check(branch_id) do
+    settings = settings(branch_id)
+
+    with {:ok, module} <- Registry.fetch(settings.provider),
+         %{} = provider_settings <- Map.get(settings, module.key()) || {:error, :missing_settings} do
+      module.health_check(provider_settings)
+    end
+  end
+
   def list(order_id),
     do:
       Repo.all(from(r in Receipt, where: r.order_id == ^order_id, order_by: [asc: r.inserted_at]))

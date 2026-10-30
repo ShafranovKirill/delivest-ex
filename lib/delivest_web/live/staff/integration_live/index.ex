@@ -15,6 +15,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
        crm: Crm.get_branch_settings(socket.assigns.current_branch.id),
        yandex_eda: YandexEda.get_branch_settings(socket.assigns.current_branch.id),
        yandex_delivery: yandex_delivery_status(socket.assigns.current_branch.id),
+       fiscal: Delivest.Fiscal.settings(socket.assigns.current_branch.id),
        zvonok_configured: Zvonok.configured?(),
        dadata_active: Dadata.active?(),
        health: Health.for_branch(socket.assigns.current_branch.id),
@@ -101,6 +102,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             status={if @yandex_eda.enabled, do: :receiving, else: :off}
             health={@health["yandex_eda"]}
             path={~p"/staff/b/#{@current_branch}/integrations/yandex-eda"}
+          />
+          <.integration_card
+            id="integration-fiscal"
+            title={gettext("Receipts")}
+            description={gettext("Fiscal receipts through ATOL Online.")}
+            status={if @fiscal.mode == :own, do: :configured, else: :off}
+            path={~p"/staff/b/#{@current_branch}/integrations/fiscal"}
           />
           <.integration_card
             id="integration-yandex-delivery"

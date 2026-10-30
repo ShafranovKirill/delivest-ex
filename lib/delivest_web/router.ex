@@ -339,6 +339,7 @@ defmodule DelivestWeb.Router do
           live "/dadata", Dadata, :index
           live "/yandex-eda", YandexEda, :index
           live "/yandex-delivery", YandexDelivery, :index
+          live "/fiscal", Fiscal, :index
         end
 
         scope "/categories", CategoryLive do
