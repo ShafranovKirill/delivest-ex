@@ -322,8 +322,10 @@ defmodule Delivest.Payments.Online do
 
   defp confirmation(_body), do: :error
 
-  defp return_url(order),
-    do: Application.fetch_env!(:delivest, :client_origin) <> "/orders?order=" <> order.id
+  defp return_url(order) do
+    slug = Repo.one(from(b in Branch, where: b.id == ^order.branch_id, select: b.slug))
+    Application.fetch_env!(:delivest, :client_origin) <> "/#{slug}?order=" <> order.id
+  end
 
   defp pending(order_id) do
     Repo.one(
