@@ -22,7 +22,8 @@ config :delivest, Oban,
     {"* * * * *", Delivest.Oms.Kitchen.DispatchWorker},
     {"17 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_catalog"}},
     {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_delivery"}},
-    {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "rkeeper"}}
+    {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "rkeeper"}},
+    {"*/5 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_eda_busy"}}
   ],
   repo: Delivest.Repo
 

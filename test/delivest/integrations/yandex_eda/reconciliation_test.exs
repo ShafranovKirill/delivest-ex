@@ -63,6 +63,29 @@ defmodule Delivest.Integrations.YandexEda.ReconciliationTest do
     assert filter["pagination"] == %{"limit" => 1000, "offset" => 0}
   end
 
+  test "cancel reason and items cost difference come from the order details", %{
+    branch: branch,
+    product: product,
+    staff: staff
+  } do
+    {cancelled, order} = order(branch, product)
+    cost = div(order.total_amount - order.delivery_amount, 100) + 5
+
+    stub_push(%{
+      "/v1/orders-history" => %{"orders" => [remote(cancelled, "CANCELLED")]},
+      "/v1/get-orders-details" => %{
+        "orders" => [
+          %{"eats_id" => cancelled, "cancel_reason" => "client_refused", "items_cost" => cost}
+        ]
+      }
+    })
+
+    assert {:ok, %{problems: [row]}} = YandexEda.reconcile(staff, branch.id, LocalTime.today())
+    assert row.cancel_reason == "client_refused"
+    assert row.cost_diff == 500
+    assert_received {:push, "/v1/get-orders-details", %{"eats_ids" => [^cancelled]}}
+  end
+
   test "reconciliation needs the orders right", %{branch: branch} do
     assert {:error, :forbidden} =
              YandexEda.reconcile(insert(:staff), branch.id, LocalTime.today())
