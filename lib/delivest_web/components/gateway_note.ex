@@ -86,6 +86,7 @@ defmodule DelivestWeb.GatewayNote do
   defp area_label(:receipts), do: gettext("Receipts")
   defp area_label(:menu), do: gettext("Menu")
   defp area_label(:stops), do: gettext("Stop list")
+  defp area_label(:loyalty), do: gettext("Loyalty program")
 
   attr :name, :string, required: true
   attr :area, :atom, required: true

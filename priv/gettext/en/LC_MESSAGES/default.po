@@ -8157,37 +8157,37 @@ msgstr "Confirm the paid cancel"
 msgid "The Yandex courier accepts only a card, pay for order %{number} by card"
 msgstr "The Yandex courier accepts only a card, pay for order %{number} by card"
 
-#: lib/delivest_web/components/gateway_note.ex:118
+#: lib/delivest_web/components/gateway_note.ex:119
 #, elixir-autogen, elixir-format
 msgid "Delivery of orders is handled by %{crm}, couriers are not assigned here."
 msgstr ""
 
-#: lib/delivest_web/components/gateway_note.ex:110
+#: lib/delivest_web/components/gateway_note.ex:111
 #, elixir-autogen, elixir-format
 msgid "Integration settings"
 msgstr ""
 
-#: lib/delivest_web/components/gateway_note.ex:102
+#: lib/delivest_web/components/gateway_note.ex:103
 #, elixir-autogen, elixir-format
 msgid "Managed in %{crm}"
 msgstr ""
 
-#: lib/delivest_web/components/gateway_note.ex:123
+#: lib/delivest_web/components/gateway_note.ex:124
 #, elixir-autogen, elixir-format
 msgid "Receipts are printed on the cash desk of %{crm}."
 msgstr ""
 
-#: lib/delivest_web/components/gateway_note.ex:125
+#: lib/delivest_web/components/gateway_note.ex:126
 #, elixir-autogen, elixir-format
 msgid "Sales go through the POS of %{crm}."
 msgstr ""
 
-#: lib/delivest_web/components/gateway_note.ex:126
+#: lib/delivest_web/components/gateway_note.ex:127
 #, elixir-autogen, elixir-format
 msgid "The kitchen works in %{crm}."
 msgstr ""
 
-#: lib/delivest_web/components/gateway_note.ex:127
+#: lib/delivest_web/components/gateway_note.ex:128
 #, elixir-autogen, elixir-format
 msgid "This section is managed in %{crm}."
 msgstr ""
@@ -8567,3 +8567,8 @@ msgstr "Export"
 #, elixir-autogen, elixir-format
 msgid "With a problem"
 msgstr "With a problem"
+
+#: lib/delivest_web/components/gateway_note.ex:89
+#, elixir-autogen, elixir-format
+msgid "Loyalty program"
+msgstr "Loyalty program"

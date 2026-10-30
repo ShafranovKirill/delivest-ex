@@ -16,6 +16,7 @@ config :delivest, Oban,
   crontab: [
     {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker},
     {"5 * * * *", Delivest.Oms.Workers.StaleOrderWorker},
+    {"20 3 * * *", Delivest.Loyalty.ExpireWorker},
     {"0 4 * * *", Delivest.Logs.PruneWorker},
     {"30 4 * * *", Delivest.Media.Workers.ThumbnailBackfillWorker},
     {"*/10 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_stops"}},

@@ -3,7 +3,7 @@ defmodule Delivest.Gateway do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.BranchSettings
 
-  @areas [:kitchen, :pos, :couriers, :receipts, :statuses, :menu, :stops]
+  @areas [:kitchen, :pos, :couriers, :receipts, :statuses, :menu, :stops, :loyalty]
 
   def areas, do: @areas
 
@@ -39,7 +39,8 @@ defmodule Delivest.Gateway do
         couriers: owner_if(:delivery in capabilities),
         receipts: owner_if(:own_pos in capabilities),
         menu: owner_if(settings.menu_source == :crm and Crm.menu_source?(provider)),
-        stops: owner_if(Crm.stops_source?(provider))
+        stops: owner_if(Crm.stops_source?(provider)),
+        loyalty: :crm
       }
     }
   end

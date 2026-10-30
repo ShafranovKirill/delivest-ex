@@ -6,6 +6,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     CourierSettings,
     IntakeSettings,
     KitchenSettings,
+    LoyaltySettings,
     PaymentSettings,
     YcartSettings
   }
@@ -42,6 +43,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     embeds_one :intake, IntakeSettings, on_replace: :update, defaults_to_struct: true
     embeds_one :couriers, CourierSettings, on_replace: :update, defaults_to_struct: true
     embeds_one :payments, PaymentSettings, on_replace: :update, defaults_to_struct: true
+    embeds_one :loyalty, LoyaltySettings, on_replace: :update, defaults_to_struct: true
 
     embeds_one :yandex_delivery, Delivest.Integrations.YandexDelivery.Settings,
       on_replace: :update
@@ -87,6 +89,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
     |> cast_embed(:intake, with: &IntakeSettings.changeset/2)
+    |> cast_embed(:loyalty, with: &LoyaltySettings.changeset/2)
     |> cast_embed(:couriers, with: &CourierSettings.changeset/2)
     |> cast_embed(:payments, with: &PaymentSettings.changeset/2)
     |> cast_embed(:yandex_delivery,
