@@ -136,7 +136,15 @@ defmodule DelivestWeb.StaffNav do
           "hero-receipt-percent",
           gettext("Discounts & promo codes")
         )
+        |> allowed(staff, "promotions.read"),
+        item(
+          :loyalty,
+          branch && ~p"/staff/b/#{branch}/loyalty",
+          "hero-star",
+          gettext("Loyalty")
+        )
         |> allowed(staff, "promotions.read")
+        |> owned(branch, :loyalty)
       ]),
       item(
         :delivery,

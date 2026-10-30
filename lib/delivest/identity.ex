@@ -32,6 +32,7 @@ defmodule Delivest.Identity do
   defdelegate update_integrations(staff, branch, info_attrs), to: Branches
   defdelegate update_couriers(staff, branch, attrs), to: Branches
   defdelegate update_payments(staff, branch, attrs), to: Branches
+  defdelegate update_loyalty(staff, branch, attrs), to: Branches
   defdelegate get_branch_by_board_token(token), to: Branches
   defdelegate reset_board_token(staff, branch), to: Branches
   defdelegate set_special_day(staff, branch, date, attrs), to: Branches

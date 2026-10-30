@@ -399,6 +399,8 @@ defmodule DelivestWeb.Router do
           live "/new", Stocks, :new
         end
 
+        live "/loyalty", LoyaltyLive.Index, :index
+
         scope "/promotions", PromotionLive do
           live "/", Promotions, :index
           live "/new", Promotions, :new
