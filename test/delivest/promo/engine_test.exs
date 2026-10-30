@@ -108,6 +108,17 @@ defmodule Delivest.Promo.EngineTest do
     assert [%{discount: 20_000}] = result.applied
   end
 
+  test "a fixed price leaves the modifiers on top", %{branch: branch, pizza: pizza} do
+    insert_promotion(branch.id, rules: ~s(then price "pizza" 300))
+
+    line =
+      pizza
+      |> item(2)
+      |> Map.merge(%{price: 50_000 + 15_000, modifiers: [%{price: 7500, quantity: 2}]})
+
+    assert %{total: 90_000, discount: 40_000} = price(branch, [line])
+  end
+
   test "does not combine non-combinable promotions", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, priority: 10, rules: "then discount 10%")
     insert_promotion(branch.id, priority: 1, combinable: true, rules: "then discount 50 rub")

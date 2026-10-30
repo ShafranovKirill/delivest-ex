@@ -52,6 +52,19 @@ defmodule Delivest.Promo.Line do
     }
   end
 
+  def extra(%__MODULE__{modifiers: modifiers}) when is_list(modifiers),
+    do: modifiers |> Enum.map(&(price(&1) * quantity(&1))) |> Enum.sum()
+
+  def extra(_line), do: 0
+
+  defp price(%{price: price}) when is_integer(price), do: price
+  defp price(%{"price" => price}) when is_integer(price), do: price
+  defp price(_modifier), do: 0
+
+  defp quantity(%{quantity: quantity}) when is_integer(quantity), do: quantity
+  defp quantity(%{"quantity" => quantity}) when is_integer(quantity), do: quantity
+  defp quantity(_modifier), do: 1
+
   def base_total(%__MODULE__{base_price: price, quantity: quantity}), do: price * quantity
 
   def discount(%__MODULE__{} = line), do: base_total(line) - line.total

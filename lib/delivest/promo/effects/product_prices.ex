@@ -24,12 +24,14 @@ defmodule Delivest.Promo.Effects.ProductPrices do
   defp price_line(%Line{gift: true} = line, credits, _offers), do: {line, credits}
 
   defp price_line(%Line{} = line, credits, offers) do
-    case best(Map.get(offers, line.product_id, []), line.base_price) do
+    extra = Line.extra(line)
+
+    case best(Map.get(offers, line.product_id, []), line.base_price - extra) do
       nil ->
         {line, credits}
 
       {unit, promotion_id} ->
-        amount = (line.base_price - unit) * line.quantity
+        amount = (line.base_price - extra - unit) * line.quantity
         {Line.reduce(line, amount, promotion_id), [{promotion_id, amount} | credits]}
     end
   end
