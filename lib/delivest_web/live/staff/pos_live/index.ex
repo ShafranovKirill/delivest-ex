@@ -88,6 +88,20 @@ defmodule DelivestWeb.Staff.PosLive.Index do
     end
   end
 
+  def handle_event("promo", %{"code" => code}, socket) do
+    case Oms.apply_promo_code(socket.assigns.cart.id, code) do
+      {:ok, cart} -> {:noreply, assign_cart(socket, cart)}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    end
+  end
+
+  def handle_event("remove_promo", _params, socket) do
+    case Oms.remove_promo_code(socket.assigns.cart.id) do
+      {:ok, cart} -> {:noreply, assign_cart(socket, cart)}
+      _ -> {:noreply, socket}
+    end
+  end
+
   def handle_event("pay", _params, %{assigns: %{cart: %{items: [_ | _]}}} = socket),
     do: {:noreply, assign(socket, screen: :payment, method: "cash", cash_given: nil)}
 
@@ -331,7 +345,24 @@ defmodule DelivestWeb.Staff.PosLive.Index do
           </form>
         </section>
 
-        <.check cart={@cart} />
+        <div class="flex flex-col">
+          <form id="pos-promo" phx-submit="promo" class="flex gap-2 p-3">
+            <input
+              name="code"
+              value={@cart.promo_code}
+              placeholder={gettext("Promo code")}
+              class="input min-w-0 flex-1"
+            />
+            <button class="btn">{gettext("Apply")}</button>
+            <button
+              :if={@cart.promo_code}
+              type="button"
+              phx-click="remove_promo"
+              class="btn btn-ghost"
+            >{gettext("Remove")}</button>
+          </form>
+          <.check cart={@cart} />
+        </div>
       </div>
 
       <div

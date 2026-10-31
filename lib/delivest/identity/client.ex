@@ -26,6 +26,7 @@ defmodule Delivest.Identity.Client do
   schema "clients" do
     field :phone, :string
     field :name, :string
+    field :operator_note, :string
     field :status, Ecto.Enum, values: @statuses, default: :active
     field :deleted_at, :utc_datetime
 
@@ -36,7 +37,8 @@ defmodule Delivest.Identity.Client do
 
   def changeset(client, attrs) do
     client
-    |> cast(attrs, [:phone, :name, :status, :deleted_at])
+    |> cast(attrs, [:phone, :name, :status, :deleted_at, :operator_note])
+    |> validate_length(:operator_note, max: 4000)
     |> validate_required([:phone, :status])
     |> validate_format(:phone, Identity.phone_regex(),
       message:

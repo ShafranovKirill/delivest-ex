@@ -235,6 +235,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :media_id,
       :slug,
       :tags,
+      :stars_price,
+      :stars_reward,
       :suggested
     ])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
@@ -431,6 +433,18 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           </fieldset>
 
           <div>
+            <.input
+              field={@form[:stars_price]}
+              type="number"
+              min="1"
+              label={gettext("Price in stars")}
+            />
+            <.input
+              field={@form[:stars_reward]}
+              type="number"
+              min="0"
+              label={gettext("Stars per product")}
+            />
             <.input
               field={@form[:suggested]}
               type="checkbox"

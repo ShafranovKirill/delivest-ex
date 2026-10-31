@@ -217,6 +217,17 @@ defmodule DelivestWeb.Client.Cart.CartController do
     end
   end
 
+  defp add_cart_item(conn, cart_id, product_id, quantity, %{"stars" => true}) do
+    if conn.assigns.current_client do
+      Carts.add_star_item(cart_id, product_id, quantity)
+    else
+      {:error, :product_unavailable}
+    end
+  end
+
+  defp add_cart_item(_conn, cart_id, product_id, quantity, params),
+    do: Carts.add_item(cart_id, product_id, quantity, params["modifiers"])
+
   def add_item(conn, %{"cart_id" => cart_id, "product_id" => product_id} = params) do
     quantity =
       if is_integer(params["quantity"]) and params["quantity"] > 0,
@@ -225,7 +236,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
 
     with :ok <- authorize_cart(conn, cart_id),
          {:ok, _item, cart_view} <-
-           Carts.add_item(cart_id, product_id, quantity, params["modifiers"]) do
+           add_cart_item(conn, cart_id, product_id, quantity, params) do
       render(conn, :show, cart: cart_view)
     else
       {:error, :cart_not_found} ->

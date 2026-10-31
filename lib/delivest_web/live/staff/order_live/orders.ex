@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
+  alias Delivest.Repo
+
   alias Delivest.{Couriers, Identity, LocalTime, Money}
   alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
@@ -241,15 +243,32 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("intake_pause", %{"duration" => duration} = params, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
-    result = Delivest.Intake.pause(staff, branch, duration(duration), params["reason"])
+
+    result =
+      intake_many(
+        staff,
+        branch,
+        params,
+        &Delivest.Intake.pause(staff, &1, duration(duration), params["reason"])
+      )
+
     intake_result(socket, result)
   end
 
-  def handle_event("intake_load", %{"minutes" => minutes, "duration" => duration}, socket) do
+  def handle_event(
+        "intake_load",
+        %{"minutes" => minutes, "duration" => duration} = params,
+        socket
+      ) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
     result =
-      Delivest.Intake.start_load(staff, branch, String.to_integer(minutes), duration(duration))
+      intake_many(
+        staff,
+        branch,
+        params,
+        &Delivest.Intake.start_load(staff, &1, String.to_integer(minutes), duration(duration))
+      )
 
     intake_result(socket, result)
   end
@@ -345,6 +364,24 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   defp duration("end_of_day"), do: :end_of_day
   defp duration(minutes), do: String.to_integer(minutes)
 
+  defp intake_many(staff, branch, params, action) do
+    ids = params["branches"] || []
+
+    targets = [
+      branch
+      | Enum.filter(Identity.list_branch_for_staff(staff), &(&1.id in ids and &1.id != branch.id))
+    ]
+
+    Repo.transaction(fn ->
+      Enum.each(targets, fn target ->
+        case action.(target) do
+          {:ok, _} -> :ok
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+    end)
+  end
+
   defp intake_result(socket, {:ok, _status}), do: load(socket)
   defp intake_result(socket, {:error, :forbidden}), do: failed(socket, {:error, :forbidden})
 
@@ -437,7 +474,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
       >
         <:actions>
-          <IntakeControls.menu can_manage={Identity.can?(@current_staff, "orders.update")} />
+          <IntakeControls.menu
+            can_manage={Identity.can?(@current_staff, "orders.update")}
+            branches={Identity.list_branch_for_staff(@current_staff)}
+          />
           <.link navigate={~p"/staff/b/#{@current_branch}/orders/new"} class="btn btn-primary">
             <.icon name="hero-plus" class="size-5" />
             {gettext("New Order")}

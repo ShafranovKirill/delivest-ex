@@ -20,6 +20,7 @@ defmodule Delivest.Oms.Orders.Lines do
         price: price,
         base_price: line.base_price,
         gift: line.gift,
+        stars_spent: line.stars,
         quantity: quantity,
         category_id: product.category_id,
         category_name: category_name(product),

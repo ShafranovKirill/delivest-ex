@@ -30,6 +30,29 @@ defmodule Delivest.Loyalty do
     end
   end
 
+  def shop_enabled?(branch_id),
+    do: enabled?(branch_id) and settings(branch_id).shop_enabled == true
+
+  def rewards(branch_id) do
+    if shop_enabled?(branch_id) do
+      Delivest.Net.list_branch_products(branch_id)
+      |> Enum.filter(&(is_integer(&1.stars_price) and &1.stars_price > 0))
+    else
+      []
+    end
+  end
+
+  def set_product(staff, branch_id, product_id, attrs) do
+    with :ok <- Identity.authorize(staff, "promotions.update", branch_id),
+         true <- enabled?(branch_id) || {:error, :points_unavailable},
+         {:ok, product} <- Delivest.Net.get_branch_product(branch_id, product_id) do
+      product
+      |> Delivest.Net.Product.changeset(Map.take(attrs, ["stars_price", "stars_reward"]))
+      |> Repo.update()
+      |> Audit.track(staff, "product.updated")
+    end
+  end
+
   def balance(client_id) do
     Repo.one(from(a in Account, where: a.client_id == ^client_id, select: a.balance)) || 0
   end
@@ -49,6 +72,28 @@ defmodule Delivest.Loyalty do
     div(base, settings.per_rubles * 100) * settings.stars
   end
 
+  defp order_stars(order, settings) do
+    order = Repo.preload(order, :items)
+    products = Delivest.Net.list_products_by_ids(Enum.map(order.items, & &1.product_id))
+
+    {base, special} =
+      Enum.reduce(order.items, {0, 0}, fn item, {base, special} ->
+        reward =
+          case products[item.product_id] do
+            %{stars_reward: reward} -> reward
+            _ -> nil
+          end
+
+        cond do
+          item.stars_spent > 0 or item.gift -> {base, special}
+          is_integer(reward) -> {base, special + reward * item.quantity}
+          true -> {base + item.price * item.quantity, special}
+        end
+      end)
+
+    div(base, settings.per_rubles * 100) * settings.stars + special
+  end
+
   def accrue(%Order{client_id: nil}), do: {:ok, nil}
   def accrue(%Order{channel: %{}}), do: {:ok, nil}
   def accrue(%Order{crm: %{}}), do: {:ok, nil}
@@ -57,7 +102,7 @@ defmodule Delivest.Loyalty do
     settings = settings(order.branch_id)
 
     with true <- enabled?(order.branch_id),
-         stars when stars > 0 <- stars_for(order, settings),
+         stars when stars > 0 <- order_stars(order, settings),
          false <- entry_exists?(order.id, :accrual) do
       now = DateTime.utc_now(:second)
 
@@ -181,7 +226,8 @@ defmodule Delivest.Loyalty do
     due =
       Repo.all(
         from(e in Entry,
-          where: e.kind in [:accrual, :adjust] and e.remaining > 0 and e.expires_at <= ^now,
+          where:
+            e.kind in [:accrual, :adjust, :refund] and e.remaining > 0 and e.expires_at <= ^now,
           order_by: [asc: e.expires_at]
         )
       )
@@ -240,6 +286,7 @@ defmodule Delivest.Loyalty do
   defp expire(entry) do
     Repo.transaction(fn ->
       lock_account(entry.client_id)
+      entry = Repo.get!(Entry, entry.id)
       taken = min(entry.remaining, balance(entry.client_id))
 
       Repo.update_all(from(e in Entry, where: e.id == ^entry.id), set: [remaining: 0])

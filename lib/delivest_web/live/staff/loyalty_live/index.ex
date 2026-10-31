@@ -18,6 +18,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
        can_edit: Identity.can?(socket.assigns.current_staff, "promotions.update"),
        summary: Loyalty.summary(branch.id)
      )
+     |> stream(:products, Delivest.Net.list_branch_products(branch.id))
      |> assign_form(LoyaltySettings.changeset(Loyalty.settings(branch), %{}))}
   end
 
@@ -30,6 +31,18 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
+  end
+
+  def handle_event("product", %{"product_id" => id} = params, socket) do
+    case Loyalty.set_product(
+           socket.assigns.current_staff,
+           socket.assigns.current_branch.id,
+           id,
+           params
+         ) do
+      {:ok, product} -> {:noreply, stream_insert(socket, :products, product)}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    end
   end
 
   def handle_event("save", %{"loyalty" => params}, socket) do
@@ -125,6 +138,12 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
           disabled={not @can_edit}
         />
         <.input
+          field={@form[:shop_enabled]}
+          type="checkbox"
+          label={gettext("Products for stars")}
+          disabled={not @can_edit}
+        />
+        <.input
           field={@form[:spend_enabled]}
           type="checkbox"
           label={gettext("Customers can pay part of an order with stars")}
@@ -150,6 +169,37 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
           </button>
         </div>
       </.form>
+      <section class="space-y-3">
+        <h2 class="font-bold text-lg">{gettext("Products for stars")}</h2>
+        <div id="loyalty-products" phx-update="stream" class="space-y-3">
+          <form
+            :for={{dom_id, product} <- @streams.products}
+            id={dom_id}
+            phx-submit="product"
+            class="grid gap-3 rounded-box border border-base-300 p-4 sm:grid-cols-3"
+          >
+            <strong class="sm:col-span-3">{product.name}</strong>
+            <input type="hidden" name="product_id" value={product.id} />
+            <.input
+              type="number"
+              name="stars_price"
+              value={product.stars_price}
+              min="1"
+              label={gettext("Price in stars")}
+              disabled={not @can_edit}
+            />
+            <.input
+              type="number"
+              name="stars_reward"
+              value={product.stars_reward}
+              min="0"
+              label={gettext("Stars per product")}
+              disabled={not @can_edit}
+            />
+            <button :if={@can_edit} class="btn btn-primary self-end">{gettext("Save")}</button>
+          </form>
+        </div>
+      </section>
     </div>
     """
   end

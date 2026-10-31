@@ -168,6 +168,10 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
         </.stat_card>
       </div>
 
+      <.card :if={@client.operator_note not in [nil, ""]} class="p-4">
+        <h2 class="font-bold">{gettext("Operator note")}</h2>
+        <p class="whitespace-pre-wrap">{@client.operator_note}</p>
+      </.card>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div class="space-y-6">
           <.live_component

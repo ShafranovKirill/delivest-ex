@@ -38,6 +38,8 @@ defmodule Delivest.Net.Product do
     field :is_active, :boolean, default: true
     field :tags, {:array, :string}, default: []
     field :suggested, :boolean, default: false
+    field :stars_price, :integer
+    field :stars_reward, :integer
     field :order, :float
     belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
     field :crm_ids, :map, virtual: true, default: %{}
@@ -74,11 +76,15 @@ defmodule Delivest.Net.Product do
       :deleted_at,
       :slug,
       :tags,
+      :stars_price,
+      :stars_reward,
       :suggested,
       :excise,
       :vat
       | @nutrients
     ])
+    |> validate_number(:stars_price, greater_than: 0)
+    |> validate_number(:stars_reward, greater_than_or_equal_to: 0)
     |> validate_required([:name, :price])
     |> validate_number(:price, greater_than_or_equal_to: 0, less_than: 100_000_000)
     |> validate_number(:old_price, greater_than: 0, less_than: 100_000_000)

@@ -416,4 +416,22 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     assert Enum.take(statuses, 10) |> Enum.all?(&(&1 == 422))
     assert List.last(statuses) == 429
   end
+
+  test "a phone number alone cannot spend a client's stars", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    Repo.get_by!(BranchInfo, branch_id: branch.id)
+    |> BranchInfo.changeset(%{"loyalty" => %{"enabled" => true, "shop_enabled" => true}})
+    |> Repo.update!()
+
+    Cachex.clear(:branch_cache)
+    product |> Ecto.Changeset.change(stars_price: 1) |> Repo.update!()
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    {:ok, _, _} = Delivest.Oms.Carts.add_star_item(cart_id, product.id)
+    conn = post(conn, ~p"/client/orders", order_params(branch, cart_id))
+    assert json_response(conn, 422)["error"] == "points_unavailable"
+  end
 end

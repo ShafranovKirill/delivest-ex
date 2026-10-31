@@ -18,7 +18,7 @@ defmodule Delivest.Oms.Orders.Update do
   alias Delivest.{Payments, Promo, Repo}
   alias Ecto.Multi
 
-  @protected ["number", "staff_id", "branch_id"]
+  @protected ["number", "staff_id", "branch_id", "spend_points"]
 
   def run(order, attrs, opts \\ [])
 

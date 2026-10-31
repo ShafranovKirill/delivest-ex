@@ -24,6 +24,7 @@ defmodule DelivestWeb.Client.Loyalty.LoyaltyController do
     enabled = enabled?(params["branch_id"])
 
     render(conn, :show,
+      products: if(enabled, do: Loyalty.rewards(params["branch_id"]), else: []),
       enabled: enabled,
       balance: Loyalty.balance(client.id),
       history: if(enabled, do: Loyalty.history(client.id, 30), else: [])

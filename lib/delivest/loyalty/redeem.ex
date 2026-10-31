@@ -23,7 +23,7 @@ defmodule Delivest.Loyalty.Redeem do
     settings = Loyalty.settings(branch_id)
 
     cond do
-      is_nil(client_id) or not Loyalty.enabled?(branch_id) or not settings.spend_enabled ->
+      is_nil(client_id) or not Loyalty.enabled?(branch_id) or settings.spend_enabled != true ->
         {:error, :points_unavailable}
 
       stars > Loyalty.balance(client_id) ->

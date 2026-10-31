@@ -36,6 +36,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.IntakeControls do
 
   attr :can_manage, :boolean, default: false
 
+  attr :branches, :list, default: []
+
   def menu(%{can_manage: false} = assigns), do: ~H""
 
   def menu(assigns) do
@@ -49,6 +51,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.IntakeControls do
         class="dropdown-content z-10 mt-2 w-80 space-y-4 rounded-box border border-base-300 bg-base-100 p-4 shadow"
       >
         <form id="intake-pause-form" phx-submit="intake_pause" class="space-y-2">
+          <label class="text-sm block">
+            {gettext("Also apply to branches")}
+            <select name="branches[]" multiple class="select select-sm w-full">
+              <option :for={branch <- @branches} value={branch.id}>{branch.name}</option>
+            </select>
+          </label>
           <div class="font-semibold">{gettext("Pause")}</div>
           <select name="duration" class="select select-sm w-full">
             <option :for={minutes <- Intake.pause_minutes()} value={minutes}>
@@ -68,6 +76,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.IntakeControls do
           </button>
         </form>
         <form id="intake-load-form" phx-submit="intake_load" class="space-y-2">
+          <label class="text-sm block">
+            {gettext("Also apply to branches")}
+            <select name="branches[]" multiple class="select select-sm w-full">
+              <option :for={branch <- @branches} value={branch.id}>{branch.name}</option>
+            </select>
+          </label>
           <div class="font-semibold">{gettext("High load")}</div>
           <select name="minutes" class="select select-sm w-full">
             <option :for={minutes <- Intake.load_minutes()} value={minutes}>

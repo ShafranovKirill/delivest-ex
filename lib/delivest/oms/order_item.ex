@@ -20,6 +20,7 @@ defmodule Delivest.Oms.OrderItem do
     field :quantity, :integer, default: 1
     field :category_id, :binary_id
     field :category_name, :string
+    field :stars_spent, :integer, default: 0
 
     belongs_to :order, Order
 
@@ -65,7 +66,8 @@ defmodule Delivest.Oms.OrderItem do
       :gift,
       :quantity,
       :category_id,
-      :category_name
+      :category_name,
+      :stars_spent
     ])
     |> cast_assoc(:modifiers)
     |> validate_required([:product_id, :title, :price, :quantity])

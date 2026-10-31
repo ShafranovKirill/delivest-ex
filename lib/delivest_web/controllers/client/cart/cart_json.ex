@@ -44,6 +44,8 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       total_price: item.total_price,
       base_total: Map.get(item, :base_total, item.total_price),
       gift: Map.get(item, :gift, false),
+      stars: Map.get(item, :stars, false),
+      stars_price: Map.get(item, :stars_price),
       promotion_ids: Map.get(item, :promotion_ids, []),
       stopped: MapSet.member?(stopped, item.product_id),
       modifiers: Enum.map(Map.get(item, :modifiers, []), &modifier/1)

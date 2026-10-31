@@ -5,7 +5,11 @@ defmodule DelivestWeb.Staff.BranchLive.SpecialHoursComponent do
 
   @impl true
   def update(assigns, socket) do
-    {:ok, socket |> assign(assigns) |> assign(:error, nil)}
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:error, nil)
+     |> assign(:targets, Identity.list_branch_for_staff(assigns.staff))}
   end
 
   @impl true
@@ -16,9 +20,33 @@ defmodule DelivestWeb.Staff.BranchLive.SpecialHoursComponent do
       "close" => params["close"]
     }
 
-    with {:ok, date} <- Date.from_iso8601(date),
-         {:ok, branch} <-
-           Identity.set_special_day(socket.assigns.staff, socket.assigns.branch, date, attrs) do
+    selected = params["branches"] || []
+
+    targets =
+      Enum.filter(
+        socket.assigns.targets,
+        &(&1.id in selected and &1.id != socket.assigns.branch.id)
+      )
+
+    result =
+      Delivest.Repo.transaction(fn ->
+        with {:ok, date} <- Date.from_iso8601(date),
+             {:ok, branch} <-
+               Identity.set_special_day(socket.assigns.staff, socket.assigns.branch, date, attrs) do
+          Enum.each(targets, fn target ->
+            case Identity.set_special_day(socket.assigns.staff, target, date, attrs) do
+              {:ok, _} -> :ok
+              {:error, reason} -> Delivest.Repo.rollback(reason)
+            end
+          end)
+
+          branch
+        else
+          error -> Delivest.Repo.rollback(error)
+        end
+      end)
+
+    with {:ok, branch} <- result do
       {:noreply, socket |> assign(branch: branch, error: nil)}
     else
       {:error, :forbidden} -> {:noreply, assign(socket, error: gettext("Permission denied"))}
@@ -86,6 +114,17 @@ defmodule DelivestWeb.Staff.BranchLive.SpecialHoursComponent do
           <input type="checkbox" name="closed" value="true" class="checkbox checkbox-sm" />
           {gettext("Closed")}
         </label>
+        <fieldset class="col-span-2 sm:col-span-5 flex flex-wrap gap-3">
+          <legend class="text-sm font-medium">{gettext("Also apply to branches")}</legend>
+          <label
+            :for={target <- @targets}
+            :if={target.id != @branch.id}
+            class="flex gap-2 items-center text-sm"
+          >
+            <input type="checkbox" name="branches[]" value={target.id} class="checkbox checkbox-sm" />
+            {target.name}
+          </label>
+        </fieldset>
         <button type="submit" class="btn btn-sm btn-primary col-span-2 sm:col-span-5">
           {gettext("Add the day")}
         </button>

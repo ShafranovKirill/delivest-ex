@@ -7,6 +7,7 @@ defmodule Delivest.Oms.Carts do
 
   @cache_store :cart_cache
   @cache_ttl :timer.hours(2)
+  @star_key "star:"
 
   def get_or_create_cart(opts) when is_list(opts) do
     case get_cart(opts) do
@@ -73,6 +74,28 @@ defmodule Delivest.Oms.Carts do
          {:ok, choices} <- choose(product_uuid, cart.branch_id, modifiers),
          {:ok, item} <- upsert_item(cart.id, product_uuid, quantity, choices) do
       {:ok, item, recalculate_and_cache(cart)}
+    end
+  end
+
+  def add_star_item(cart_id, product_id, quantity \\ 1)
+      when is_integer(quantity) and quantity > 0 do
+    with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found},
+         {:ok, product_uuid} <- available_product(product_id, cart.branch_id),
+         :ok <- star_product(product_uuid, cart.branch_id),
+         {:ok, item} <- upsert_item(cart.id, product_uuid, quantity, [], @star_key) do
+      {:ok, item, recalculate_and_cache(cart)}
+    end
+  end
+
+  def star_key, do: @star_key
+
+  defp star_product(product_id, branch_id) do
+    with true <- Delivest.Loyalty.shop_enabled?(branch_id),
+         %{stars_price: price} when is_integer(price) and price > 0 <-
+           Repo.get(Delivest.Net.Product, product_id) do
+      :ok
+    else
+      _ -> {:error, :stars_unavailable}
     end
   end
 
@@ -199,7 +222,7 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
-  defp upsert_item(cart_id, product_id, quantity, choices) do
+  defp upsert_item(cart_id, product_id, quantity, choices, key \\ nil) do
     now = DateTime.utc_now(:second)
 
     increment =
@@ -214,7 +237,7 @@ defmodule Delivest.Oms.Carts do
       product_id: product_id,
       quantity: quantity,
       modifiers: Enum.map(choices, &%{"id" => &1.id, "quantity" => &1.quantity}),
-      modifier_key: Modifiers.key(choices)
+      modifier_key: key || Modifiers.key(choices)
     })
     |> Repo.insert(
       on_conflict: increment,
@@ -318,25 +341,48 @@ defmodule Delivest.Oms.Carts do
           product ->
             choices = current_choices(item, Map.get(groups, item.product_id, []))
 
-            if product.is_active && is_nil(product.deleted_at) && choices != :gone do
-              price = product.price + Modifiers.price(choices)
-              item_total = price * item.quantity
+            if item.modifier_key == @star_key do
+              if product.is_active && is_nil(product.deleted_at) &&
+                   is_integer(product.stars_price) do
+                view_item = %{
+                  key: item_key(item.product_id, item.modifier_key),
+                  product_id: item.product_id,
+                  name: product.name,
+                  image_url: Delivest.Media.thumb_url_from_file(product.media),
+                  price: product.price,
+                  quantity: item.quantity,
+                  total_price: 0,
+                  base_total: product.price * item.quantity,
+                  stars: true,
+                  stars_price: product.stars_price,
+                  modifiers: []
+                }
 
-              view_item = %{
-                key: item_key(item.product_id, item.modifier_key),
-                product_id: item.product_id,
-                name: product.name,
-                image_url: Delivest.Media.thumb_url_from_file(product.media),
-                price: price,
-                quantity: item.quantity,
-                total_price: item_total,
-                modifiers: choices
-              }
-
-              {[view_item | acc_items], acc_qty + item.quantity, acc_amt + item_total,
-               inactive_acc}
+                {[view_item | acc_items], acc_qty + item.quantity, acc_amt, inactive_acc}
+              else
+                {acc_items, acc_qty, acc_amt, [item.id | inactive_acc]}
+              end
             else
-              {acc_items, acc_qty, acc_amt, [item.id | inactive_acc]}
+              if product.is_active && is_nil(product.deleted_at) && choices != :gone do
+                price = product.price + Modifiers.price(choices)
+                item_total = price * item.quantity
+
+                view_item = %{
+                  key: item_key(item.product_id, item.modifier_key),
+                  product_id: item.product_id,
+                  name: product.name,
+                  image_url: Delivest.Media.thumb_url_from_file(product.media),
+                  price: price,
+                  quantity: item.quantity,
+                  total_price: item_total,
+                  modifiers: choices
+                }
+
+                {[view_item | acc_items], acc_qty + item.quantity, acc_amt + item_total,
+                 inactive_acc}
+              else
+                {acc_items, acc_qty, acc_amt, [item.id | inactive_acc]}
+              end
             end
         end
       end)

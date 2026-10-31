@@ -7,6 +7,7 @@ defmodule Delivest.Promo.Line do
           base_price: non_neg_integer(),
           quantity: pos_integer(),
           total: non_neg_integer(),
+          stars: non_neg_integer(),
           gift: boolean(),
           promotion_ids: [binary()],
           modifiers: [map()]
@@ -20,6 +21,7 @@ defmodule Delivest.Promo.Line do
     base_price: 0,
     quantity: 1,
     total: 0,
+    stars: 0,
     gift: false,
     promotion_ids: [],
     modifiers: []

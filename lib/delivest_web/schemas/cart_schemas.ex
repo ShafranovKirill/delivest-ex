@@ -22,6 +22,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
       title: "AddItemRequest",
       type: :object,
       properties: %{
+        stars: %Schema{type: :boolean, description: "Купить за звёзды"},
         quantity: %Schema{type: :integer, minimum: 1, default: 1},
         modifiers: %Schema{
           type: :array,
@@ -222,6 +223,8 @@ defmodule DelivestWeb.Schemas.CartSchemas do
       title: "CartItemResponse",
       type: :object,
       properties: %{
+        stars: %Schema{type: :boolean},
+        stars_price: %Schema{type: :integer, nullable: true},
         key: %Schema{
           type: :string,
           description:

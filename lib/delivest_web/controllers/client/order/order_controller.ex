@@ -47,6 +47,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
          :ok <- ensure_payment_method(branch, attrs["payment_method"]),
          true <-
            Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
+         :ok <- authorize_rewards(client, attrs["cart_id"]),
          {:ok, order} <-
            Oms.create_order(attrs,
              update_client: false,
@@ -163,7 +164,21 @@ defmodule DelivestWeb.Client.Order.OrderController do
     render(conn, :index, orders: orders)
   end
 
-  defp put_client(attrs, nil), do: attrs
+  defp authorize_rewards(nil, cart_id) do
+    case Carts.get_cart_by_id(cart_id) do
+      %Delivest.Oms.CartView{} = cart ->
+        if Delivest.Oms.CartView.star_items(cart) == [],
+          do: :ok,
+          else: {:error, :points_unavailable}
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp authorize_rewards(_client, _cart_id), do: :ok
+
+  defp put_client(attrs, nil), do: Map.delete(attrs, "spend_points")
 
   defp put_client(attrs, client),
     do: Map.merge(attrs, %{"client_id" => client.id, "customer_phone" => client.phone})

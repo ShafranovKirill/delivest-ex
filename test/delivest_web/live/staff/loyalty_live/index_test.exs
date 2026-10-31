@@ -68,4 +68,25 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     assert Loyalty.balance(client.id) == 40
     assert has_element?(lv, "#client-loyalty-balance", "40")
   end
+
+  test "bonus settings control reward products without catalog permissions", %{
+    conn: conn,
+    branch: branch
+  } do
+    product = insert_branch_product(branch.id)
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/loyalty")
+
+    lv
+    |> form("#loyalty-form", loyalty: %{enabled: "true", shop_enabled: "true"})
+    |> render_submit()
+
+    lv
+    |> form("#products-#{product.id}", %{stars_price: "25", stars_reward: "3"})
+    |> render_submit()
+
+    saved = Repo.reload!(product)
+    assert saved.stars_price == 25
+    assert saved.stars_reward == 3
+    assert Loyalty.shop_enabled?(branch.id)
+  end
 end

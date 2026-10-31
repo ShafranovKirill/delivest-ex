@@ -9,7 +9,10 @@ defmodule DelivestWeb.Schemas.LoyaltySchemas do
       type: :object,
       properties: %{
         id: %Schema{type: :string, format: :uuid},
-        kind: %Schema{type: :string, enum: ["accrual", "accrual_reversal", "expire", "adjust"]},
+        kind: %Schema{
+          type: :string,
+          enum: ["accrual", "accrual_reversal", "expire", "adjust", "redeem", "refund"]
+        },
         amount: %Schema{type: :integer, description: "Звёзды со знаком"},
         order_id: %Schema{type: :string, format: :uuid, nullable: true},
         expires_at: %Schema{type: :string, format: :"date-time", nullable: true},
@@ -29,6 +32,17 @@ defmodule DelivestWeb.Schemas.LoyaltySchemas do
         data: %Schema{
           type: :object,
           properties: %{
+            products: %Schema{
+              type: :array,
+              items: %Schema{
+                type: :object,
+                properties: %{
+                  id: %Schema{type: :string, format: :uuid},
+                  name: %Schema{type: :string},
+                  stars_price: %Schema{type: :integer}
+                }
+              }
+            },
             enabled: %Schema{type: :boolean},
             balance: %Schema{type: :integer},
             history: %Schema{type: :array, items: LoyaltyEntry}

@@ -11,6 +11,7 @@ defmodule Delivest.Oms.CartView do
           optional(:key) => String.t(),
           optional(:base_total) => integer(),
           optional(:gift) => boolean(),
+          optional(:stars) => boolean(),
           optional(:promotion_ids) => [binary()]
         }
 
@@ -50,12 +51,15 @@ defmodule Delivest.Oms.CartView do
     hints: []
   ]
 
-  def base_items(%__MODULE__{items: items}), do: Enum.reject(items, &Map.get(&1, :gift, false))
+  def base_items(%__MODULE__{items: items}),
+    do: Enum.reject(items, &(Map.get(&1, :gift, false) or Map.get(&1, :stars, false)))
+
+  def star_items(%__MODULE__{items: items}), do: Enum.filter(items, &Map.get(&1, :stars, false))
 
   def with_pricing(%__MODULE__{} = view, %Result{} = result) do
     %{
       view
-      | items: Enum.map(result.lines, &item/1),
+      | items: Enum.map(result.lines, &item/1) ++ star_items(view),
         subtotal_amount: result.subtotal,
         discount_amount: result.discount,
         total_amount: result.total,

@@ -12,7 +12,11 @@ defmodule Delivest.Oms.Orders.DraftCart do
 
     order.items
     |> Enum.reject(& &1.gift)
-    |> Enum.each(&Carts.add_item(cart_id, &1.product_id, &1.quantity, OrderItem.selection(&1)))
+    |> Enum.each(fn item ->
+      if item.stars_spent > 0,
+        do: Carts.add_star_item(cart_id, item.product_id, item.quantity),
+        else: Carts.add_item(cart_id, item.product_id, item.quantity, OrderItem.selection(item))
+    end)
 
     {:ok, cart} = Carts.update_context(cart_id, context(order))
     cart
