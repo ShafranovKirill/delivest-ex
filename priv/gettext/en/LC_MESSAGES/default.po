@@ -701,7 +701,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:37
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:38
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:52
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:68
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:105
 #: lib/delivest_web/live/staff/order_live/order_draft.ex:28
 #: lib/delivest_web/live/staff/order_live/orders.ex:330
 #: lib/delivest_web/live/staff/order_live/orders.ex:355
@@ -869,8 +869,9 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:68
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:113
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:133
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:168
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:199
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:208
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:266
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:321
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:475
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:523
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:468
@@ -903,7 +904,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_pause.ex:82
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:112
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:132
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:167
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:207
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:320
 #: lib/delivest_web/live/staff/pos_live/index.ex:434
 #: lib/delivest_web/live/staff/product_live/bulk.ex:382
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:466
@@ -1431,6 +1433,7 @@ msgstr ""
 msgid "New Order"
 msgstr ""
 
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:272
 #: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:106
 #, elixir-autogen, elixir-format
 msgid "No products found"
@@ -1508,6 +1511,8 @@ msgstr ""
 msgid "Search by name or phone..."
 msgstr ""
 
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:238
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:240
 #: lib/delivest_web/live/staff/order_live/components/catalog_component.ex:27
 #: lib/delivest_web/live/staff/pos_live/index.ex:287
 #, elixir-autogen, elixir-format
@@ -1919,6 +1924,7 @@ msgstr ""
 msgid "Payment"
 msgstr ""
 
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:263
 #: lib/delivest_web/live/staff/statistics_live/index.ex:312
 #, elixir-autogen, elixir-format
 msgid "Product"
@@ -3970,7 +3976,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:79
 #: lib/delivest_web/live/staff/integration_live/yookassa.ex:34
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:31
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:59
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:78
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:96
 #, elixir-autogen, elixir-format
 msgid "Settings saved"
 msgstr ""
@@ -5093,8 +5100,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/finance_live/payments.ex:49
 #: lib/delivest_web/live/staff/integration_live/routes.ex:36
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:195
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:44
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:65
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:81
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:102
 #: lib/delivest_web/live/staff/pos_live/index.ex:94
 #: lib/delivest_web/live/staff/product_live/suggested.ex:43
 #, elixir-autogen, elixir-format
@@ -8586,7 +8593,7 @@ msgstr "With a problem"
 msgid "Loyalty program"
 msgstr "Loyalty program"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:90
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:130
 #, elixir-autogen, elixir-format
 msgid "Balance owed"
 msgstr "Balance owed"
@@ -8596,7 +8603,7 @@ msgstr "Balance owed"
 msgid "Balance updated"
 msgstr "Balance updated"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:80
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:120
 #, elixir-autogen, elixir-format
 msgid "Customers earn stars for completed orders."
 msgstr "Customers earn stars for completed orders."
@@ -8606,7 +8613,7 @@ msgstr "Customers earn stars for completed orders."
 msgid "Enter the reason for the correction"
 msgstr "Enter the reason for the correction"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:89
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:129
 #, elixir-autogen, elixir-format
 msgid "Expired"
 msgstr "Expired"
@@ -8616,7 +8623,7 @@ msgstr "Expired"
 msgid "Failed to update the balance"
 msgstr "Failed to update the balance"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:122
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:162
 #, elixir-autogen, elixir-format
 msgid "For every, ₽"
 msgstr "For every, ₽"
@@ -8624,37 +8631,37 @@ msgstr "For every, ₽"
 #: lib/delivest_web/components/staff/app/staff_nav.ex:144
 #: lib/delivest_web/live/staff/client_live/show.ex:186
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:17
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:79
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:119
 #, elixir-autogen, elixir-format
 msgid "Loyalty"
 msgstr "Loyalty"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:114
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:154
 #, elixir-autogen, elixir-format
 msgid "Loyalty program in this branch"
 msgstr "Loyalty program in this branch"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:129
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:169
 #, elixir-autogen, elixir-format
 msgid "Stars"
 msgstr "Stars"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:162
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:202
 #, elixir-autogen, elixir-format
 msgid "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
 msgstr "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:137
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:177
 #, elixir-autogen, elixir-format
 msgid "Stars expire after, days"
 msgstr "Stars expire after, days"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:87
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:127
 #, elixir-autogen, elixir-format
 msgid "Stars issued"
 msgstr "Stars issued"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:88
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:128
 #, elixir-autogen, elixir-format
 msgid "Stars returned"
 msgstr "Stars returned"
@@ -8666,12 +8673,12 @@ msgid_plural "%{count} orders need attention"
 msgstr[0] "%{count} order needs attention"
 msgstr[1] "%{count} orders need attention"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:158
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:198
 #, elixir-autogen, elixir-format
 msgid "At most, % of the order total"
 msgstr "At most, % of the order total"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:149
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:189
 #, elixir-autogen, elixir-format
 msgid "Customers can pay part of an order with stars"
 msgstr "Customers can pay part of an order with stars"
@@ -8694,20 +8701,46 @@ msgstr "Also apply to branches"
 msgid "Operator note"
 msgstr "Operator note"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:188
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:264
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:296
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:440
 #, elixir-autogen, elixir-format
 msgid "Price in stars"
 msgstr "Price in stars"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:143
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:173
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:183
 #, elixir-autogen, elixir-format
 msgid "Products for stars"
 msgstr "Products for stars"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:196
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:265
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:309
 #: lib/delivest_web/live/staff/product_live/product_form_component.ex:446
 #, elixir-autogen, elixir-format
 msgid "Stars per product"
 msgstr "Stars per product"
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:285
+#, elixir-autogen, elixir-format
+msgid "Configured"
+msgstr "Configured"
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:251
+#, elixir-autogen, elixir-format
+msgid "Configured only"
+msgstr "Configured only"
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:220
+#, elixir-autogen, elixir-format
+msgid "Configured: %{count}"
+msgstr "Configured: %{count}"
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:255
+#, elixir-autogen, elixir-format
+msgid "Empty price: not sold for stars. Empty reward: general rate. Zero reward: no stars earned."
+msgstr "Empty price: not sold for stars. Empty reward: general rate. Zero reward: no stars earned."
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:218
+#, elixir-autogen, elixir-format
+msgid "Product bonus settings"
+msgstr "Product bonus settings"

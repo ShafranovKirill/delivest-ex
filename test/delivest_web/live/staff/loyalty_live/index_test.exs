@@ -80,13 +80,27 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     |> form("#loyalty-form", loyalty: %{enabled: "true", shop_enabled: "true"})
     |> render_submit()
 
-    lv
-    |> form("#products-#{product.id}", %{stars_price: "25", stars_reward: "3"})
-    |> render_submit()
+    assert has_element?(lv, "#products-#{product.id} input[name=stars_price]")
+    render_submit(lv, "product", %{product_id: product.id, stars_price: "25", stars_reward: "3"})
 
     saved = Repo.reload!(product)
     assert saved.stars_price == 25
     assert saved.stars_reward == 3
     assert Loyalty.shop_enabled?(branch.id)
+  end
+
+  test "the table filters configured products including zero rewards", %{
+    conn: conn,
+    branch: branch
+  } do
+    configured = insert_branch_product(branch.id, name: "Soup", stars_reward: 0)
+    unconfigured = insert_branch_product(branch.id, name: "Tea")
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/loyalty")
+    assert has_element?(lv, "#loyalty-configured-count", "1")
+    lv |> form("#loyalty-product-filter", configured: "true", search: "") |> render_change()
+    assert has_element?(lv, "#products-#{configured.id}")
+    refute has_element?(lv, "#products-#{unconfigured.id}")
+    lv |> form("#loyalty-product-filter", configured: "true", search: "Tea") |> render_change()
+    refute has_element?(lv, "#products-#{configured.id}")
   end
 end
