@@ -8713,13 +8713,6 @@ msgstr ""
 msgid "Products for stars"
 msgstr ""
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:265
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:309
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:446
-#, elixir-autogen, elixir-format
-msgid "Stars per product"
-msgstr ""
-
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:285
 #, elixir-autogen, elixir-format
 msgid "Configured"
@@ -8735,12 +8728,19 @@ msgstr ""
 msgid "Configured: %{count}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:255
-#, elixir-autogen, elixir-format
-msgid "Empty price: not sold for stars. Empty reward: general rate. Zero reward: no stars earned."
-msgstr ""
-
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:218
 #, elixir-autogen, elixir-format
 msgid "Product bonus settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:255
+#, elixir-autogen, elixir-format
+msgid "Empty price: not sold for stars. Product rewards are added to the general rate. Empty or zero reward: no extra stars."
+msgstr ""
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:265
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:309
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:446
+#, elixir-autogen, elixir-format
+msgid "Extra stars per product"
 msgstr ""

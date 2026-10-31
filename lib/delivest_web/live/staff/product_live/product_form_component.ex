@@ -443,7 +443,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
               field={@form[:stars_reward]}
               type="number"
               min="0"
-              label={gettext("Stars per product")}
+              label={gettext("Extra stars per product")}
             />
             <.input
               field={@form[:suggested]}

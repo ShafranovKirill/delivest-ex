@@ -253,7 +253,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
           </form>
           <p class="px-4 pb-4 text-sm text-base-content/60">
             {gettext(
-              "Empty price: not sold for stars. Empty reward: general rate. Zero reward: no stars earned."
+              "Empty price: not sold for stars. Product rewards are added to the general rate. Empty or zero reward: no extra stars."
             )}
           </p>
           <div class="overflow-x-auto">
@@ -262,7 +262,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
                 <tr>
                   <th>{gettext("Product")}</th>
                   <th class="w-36">{gettext("Price in stars")}</th>
-                  <th class="w-36">{gettext("Stars per product")}</th>
+                  <th class="w-36">{gettext("Extra stars per product")}</th>
                   <th class="w-28"><span class="sr-only">{gettext("Save")}</span></th>
                 </tr>
               </thead>
@@ -306,7 +306,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
                       value={product.stars_reward}
                       min="0"
                       placeholder="—"
-                      aria-label={gettext("Stars per product")}
+                      aria-label={gettext("Extra stars per product")}
                       class="input input-sm w-28 font-mono"
                       disabled={not @can_edit}
                     />

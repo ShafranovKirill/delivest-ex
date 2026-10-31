@@ -9,7 +9,8 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
     %{
       products: Map.get(assigns, :stopped, MapSet.new()),
       modifiers: Map.get(assigns, :stopped_modifiers, MapSet.new()),
-      groups: Map.get(assigns, :modifiers, %{})
+      groups: Map.get(assigns, :modifiers, %{}),
+      rewards: Map.get(assigns, :rewards, %{})
     }
   end
 
@@ -30,6 +31,7 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
       slug: Map.get(product, :slug),
       old_price: Map.get(product, :old_price),
       price: product.price,
+      stars_reward: Map.get(stopped.rewards, product.id, Map.get(product, :stars_reward)),
       description: Map.get(product, :description),
       quantity: Map.get(product, :quantity),
       weight: Map.get(product, :weight),

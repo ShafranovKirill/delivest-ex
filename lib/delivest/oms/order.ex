@@ -69,6 +69,7 @@ defmodule Delivest.Oms.Order do
     field :subtotal_amount, :integer
     field :discount_amount, :integer, default: 0
     field :points_spent, :integer, default: 0
+    field :points_earned, :integer
     field :delivery_amount, :integer, default: 0
     embeds_many :promotions, AppliedPromotion, on_replace: :delete
     field :cook_by, :utc_datetime
@@ -111,6 +112,7 @@ defmodule Delivest.Oms.Order do
       :subtotal_amount,
       :discount_amount,
       :points_spent,
+      :points_earned,
       :delivery_amount,
       :cook_by,
       :comment,

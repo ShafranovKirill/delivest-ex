@@ -43,6 +43,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
       {:ok, menu} ->
         render(conn, :index,
           menu: Promo.overlay_menu(menu, branch_id),
+          rewards: Map.new(Net.list_branch_products(branch_id), &{&1.id, &1.stars_reward}),
           stopped: Net.Stops.stopped_ids(branch_id),
           modifiers: menu_modifiers(menu),
           stopped_modifiers: Net.Modifiers.stopped_ids(branch_id)

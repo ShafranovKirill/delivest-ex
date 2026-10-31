@@ -40,6 +40,11 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           example: "g",
           description: "Единица измерения веса: граммы или миллилитры"
         },
+        stars_reward: %Schema{
+          type: :integer,
+          nullable: true,
+          description: "Дополнительные звёзды за товар сверх общей ставки"
+        },
         nutrition: %Schema{
           type: :object,
           nullable: true,

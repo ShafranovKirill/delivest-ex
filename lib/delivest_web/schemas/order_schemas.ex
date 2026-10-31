@@ -145,6 +145,10 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: 59_000,
           description: "Цена за единицу по меню"
         },
+        stars_reward: %Schema{
+          type: :integer,
+          description: "Дополнительные звёзды за единицу товара"
+        },
         gift: %Schema{type: :boolean, example: false},
         quantity: %Schema{type: :integer, example: 2},
         modifiers: %Schema{type: :array, items: DelivestWeb.Schemas.CartSchemas.ItemModifier}
@@ -210,6 +214,10 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               nullable: true,
               description: "Только в ответе на создание онлайн-заказа",
               properties: %{confirmation_url: %Schema{type: :string, format: :uri}}
+            },
+            points_earned: %Schema{
+              type: :integer,
+              description: "Звёзды после выполнения заказа, включая бонусы за товары"
             },
             total_amount: %Schema{type: :integer, example: 118_000},
             subtotal_amount: %Schema{
@@ -331,6 +339,10 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         },
         fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
         payment_method: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
+        points_earned: %Schema{
+          type: :integer,
+          description: "Звёзды после выполнения заказа, включая бонусы за товары"
+        },
         total_amount: %Schema{type: :integer, example: 118_000},
         subtotal_amount: %Schema{
           type: :integer,

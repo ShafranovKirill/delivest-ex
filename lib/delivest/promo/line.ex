@@ -22,6 +22,7 @@ defmodule Delivest.Promo.Line do
     quantity: 1,
     total: 0,
     stars: 0,
+    stars_reward: 0,
     gift: false,
     promotion_ids: [],
     modifiers: []

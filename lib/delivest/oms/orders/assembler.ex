@@ -23,6 +23,7 @@ defmodule Delivest.Oms.Orders.Assembler do
         "subtotal_amount" => pricing.subtotal,
         "discount_amount" => pricing.discount,
         "points_spent" => pricing.points,
+        "points_earned" => if(client_id, do: pricing.points_earned, else: 0),
         "delivery_amount" => delivery
       })
 

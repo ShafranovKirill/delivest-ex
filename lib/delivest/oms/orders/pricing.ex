@@ -25,6 +25,7 @@ defmodule Delivest.Oms.Orders.Pricing do
              client_id,
              if(order, do: order.points_spent, else: 0)
            ) do
+      result = Delivest.Loyalty.Earnings.price(result, cart.branch_id)
       ensure_expected(result, attrs["expected_total"])
     end
   end

@@ -47,6 +47,9 @@ defmodule Delivest.Oms.CartView do
     subtotal_amount: 0,
     discount_amount: 0,
     total_amount: 0,
+    points_earned: 0,
+    base_stars: 0,
+    product_stars: 0,
     promotions: [],
     hints: []
   ]
@@ -63,6 +66,9 @@ defmodule Delivest.Oms.CartView do
         subtotal_amount: result.subtotal,
         discount_amount: result.discount,
         total_amount: result.total,
+        points_earned: result.points_earned,
+        base_stars: result.base_stars,
+        product_stars: result.product_stars,
         promotions: result.applied,
         hints: result.hints,
         code: result.code
@@ -80,6 +86,7 @@ defmodule Delivest.Oms.CartView do
       total_price: line.total,
       base_total: Line.base_total(line),
       gift: line.gift,
+      stars_reward: line.stars_reward,
       promotion_ids: line.promotion_ids,
       modifiers: line.modifiers
     }

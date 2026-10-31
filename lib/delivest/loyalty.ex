@@ -50,6 +50,10 @@ defmodule Delivest.Loyalty do
       |> Delivest.Net.Product.changeset(Map.take(attrs, ["stars_price", "stars_reward"]))
       |> Repo.update()
       |> Audit.track(staff, "product.updated")
+      |> tap(fn
+        {:ok, _} -> Delivest.Net.Catalogs.clear_menu_cache(branch_id)
+        _ -> :ok
+      end)
     end
   end
 
@@ -72,26 +76,19 @@ defmodule Delivest.Loyalty do
     div(base, settings.per_rubles * 100) * settings.stars
   end
 
+  defp order_stars(%Order{points_earned: points}, _settings) when is_integer(points), do: points
+
   defp order_stars(order, settings) do
     order = Repo.preload(order, :items)
-    products = Delivest.Net.list_products_by_ids(Enum.map(order.items, & &1.product_id))
 
-    {base, special} =
-      Enum.reduce(order.items, {0, 0}, fn item, {base, special} ->
-        reward =
-          case products[item.product_id] do
-            %{stars_reward: reward} -> reward
-            _ -> nil
-          end
-
-        cond do
-          item.stars_spent > 0 or item.gift -> {base, special}
-          is_integer(reward) -> {base, special + reward * item.quantity}
-          true -> {base + item.price * item.quantity, special}
-        end
+    extra =
+      Enum.reduce(order.items, 0, fn item, total ->
+        if item.gift or item.stars_spent > 0,
+          do: total,
+          else: total + item.stars_reward * item.quantity
       end)
 
-    div(base, settings.per_rubles * 100) * settings.stars + special
+    stars_for(order, settings) + extra
   end
 
   def accrue(%Order{client_id: nil}), do: {:ok, nil}

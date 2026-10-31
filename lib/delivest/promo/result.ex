@@ -42,6 +42,9 @@ defmodule Delivest.Promo.Result do
             discount: 0,
             total: 0,
             points: 0,
+            points_earned: 0,
+            base_stars: 0,
+            product_stars: 0,
             applied: [],
             hints: [],
             code: nil

@@ -8720,13 +8720,6 @@ msgstr "Цена в звёздах"
 msgid "Products for stars"
 msgstr "Товары за звёзды"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:265
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:309
-#: lib/delivest_web/live/staff/product_live/product_form_component.ex:446
-#, elixir-autogen, elixir-format
-msgid "Stars per product"
-msgstr "Звёзд за товар"
-
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:285
 #, elixir-autogen, elixir-format
 msgid "Configured"
@@ -8742,12 +8735,19 @@ msgstr "Только настроенные"
 msgid "Configured: %{count}"
 msgstr "Настроено товаров: %{count}"
 
-#: lib/delivest_web/live/staff/loyalty_live/index.ex:255
-#, elixir-autogen, elixir-format
-msgid "Empty price: not sold for stars. Empty reward: general rate. Zero reward: no stars earned."
-msgstr "Цена не указана — товар нельзя купить за звёзды. Начисление не указано — действует общая ставка. 0 — звёзды не начисляются."
-
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:218
 #, elixir-autogen, elixir-format
 msgid "Product bonus settings"
 msgstr "Настройки товаров"
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:255
+#, elixir-autogen, elixir-format
+msgid "Empty price: not sold for stars. Product rewards are added to the general rate. Empty or zero reward: no extra stars."
+msgstr "Цена не указана — товар нельзя купить за звёзды. Звёзды за товар прибавляются к общей ставке. Пусто или 0 — дополнительных звёзд нет."
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:265
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:309
+#: lib/delivest_web/live/staff/product_live/product_form_component.ex:446
+#, elixir-autogen, elixir-format
+msgid "Extra stars per product"
+msgstr "Дополнительно звёзд за товар"

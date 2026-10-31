@@ -28,6 +28,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       payment_method: order.payment_method,
       awaiting_payment: order.awaiting_payment,
       total_amount: order.total_amount,
+      points_earned: order.points_earned || 0,
       subtotal_amount: order.subtotal_amount || order.total_amount,
       discount_amount: order.discount_amount || 0,
       delivery_amount: order.delivery_amount || 0,
@@ -58,6 +59,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       payment_method: order.payment_method,
       awaiting_payment: order.awaiting_payment,
       total_amount: order.total_amount,
+      points_earned: order.points_earned || 0,
       subtotal_amount: order.subtotal_amount || order.total_amount,
       discount_amount: order.discount_amount || 0,
       delivery_amount: order.delivery_amount || 0,
@@ -83,6 +85,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       price: item.price,
       base_price: item.base_price || item.price,
       gift: item.gift || false,
+      stars_reward: item.stars_reward,
       quantity: item.quantity,
       modifiers: modifiers(item)
     }

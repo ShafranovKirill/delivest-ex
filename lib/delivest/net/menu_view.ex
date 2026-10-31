@@ -54,6 +54,7 @@ defmodule Delivest.Net.MenuView do
       slug: Map.get(product, :slug),
       old_price: Map.get(product, :old_price),
       price: product.price,
+      stars_reward: Map.get(product, :stars_reward),
       description: Map.get(product, :description),
       quantity: Map.get(product, :quantity),
       weight: Map.get(product, :weight),

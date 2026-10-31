@@ -253,6 +253,10 @@ defmodule DelivestWeb.Schemas.CartSchemas do
           example: 118_000,
           description: "Итог по строке без скидок"
         },
+        stars_reward: %Schema{
+          type: :integer,
+          description: "Дополнительные звёзды за единицу товара"
+        },
         gift: %Schema{
           type: :boolean,
           example: false,
@@ -322,6 +326,9 @@ defmodule DelivestWeb.Schemas.CartSchemas do
               description: "Сумма без скидок"
             },
             discount_amount: %Schema{type: :integer, example: 20_000},
+            points_earned: %Schema{type: :integer},
+            base_stars: %Schema{type: :integer},
+            product_stars: %Schema{type: :integer},
             total_amount: %Schema{type: :integer, example: 150_000, description: "К оплате"},
             promo_code: PromoCodeState,
             promotions: %Schema{type: :array, items: AppliedPromotion},

@@ -4,6 +4,7 @@ defmodule Delivest.Oms.CartPricing do
 
   def apply(%CartView{} = view, overrides \\ []) do
     result = Promo.price(CartView.base_items(view), context(view, overrides))
+    result = Delivest.Loyalty.Earnings.price(result, view.branch_id)
     CartView.with_pricing(view, result)
   end
 

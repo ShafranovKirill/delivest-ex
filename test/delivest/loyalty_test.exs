@@ -27,7 +27,7 @@ defmodule Delivest.LoyaltyTest do
 
   defp order(%{branch: branch, client: client}, price \\ 25_000) do
     branch.id
-    |> order_fixture(price: price)
+    |> order_fixture(price: price, attrs: %{"customer_phone" => client.phone})
     |> Ecto.Changeset.change(client_id: client.id, fulfillment_type: :pickup)
     |> Repo.update!()
   end
@@ -134,6 +134,37 @@ defmodule Delivest.LoyaltyTest do
     {:ok, _} = Loyalty.adjust(ctx.manager, ctx.branch, ctx.client.id, 5, "gift")
 
     assert %{issued: 15, liability: 15, expired: 0, reversed: 0} = Loyalty.summary(ctx.branch.id)
+  end
+
+  test "product bonus adds to the rate and the promise is fixed at checkout", ctx do
+    product = insert_branch_product(ctx.branch.id, price: 25_000, stars_reward: 200)
+
+    {:ok, cart} =
+      Delivest.Oms.Carts.create_cart(%{
+        session_id: Ecto.UUID.generate(),
+        branch_id: ctx.branch.id
+      })
+
+    {:ok, _, view} = Delivest.Oms.Carts.add_item(cart.id, product.id, 2)
+    assert view.base_stars == 25
+    assert view.product_stars == 400
+    assert view.points_earned == 425
+    assert [%{stars_reward: 200}] = view.items
+
+    {:ok, order} =
+      Orders.create_order(%{
+        "cart_id" => cart.id,
+        "branch_id" => ctx.branch.id,
+        "customer_phone" => ctx.client.phone,
+        "fulfillment_type" => "pickup",
+        "payment_method" => "cash"
+      })
+
+    assert order.points_earned == 425
+    product |> Ecto.Changeset.change(stars_reward: 1) |> Repo.update!()
+    update_info(ctx.branch, %{"loyalty" => %{"stars" => 1}})
+    order |> finish(ctx.manager, :completed)
+    assert Loyalty.balance(ctx.client.id) == 425
   end
 
   describe "paying with stars" do

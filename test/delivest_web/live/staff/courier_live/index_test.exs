@@ -99,6 +99,8 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
     |> Ecto.Changeset.change(fiscal: %Delivest.Fiscal.BranchSettings{mode: :own})
     |> Repo.update!()
 
+    Cachex.del(:branch_cache, ctx.branch.id)
+
     ctx.order |> Ecto.Changeset.change(status: :delivering) |> Repo.update!()
 
     ctx.delivery
