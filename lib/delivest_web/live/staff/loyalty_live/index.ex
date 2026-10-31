@@ -18,6 +18,8 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
        can_edit: Identity.can?(socket.assigns.current_staff, "promotions.update"),
        summary: Loyalty.summary(branch.id),
        product_search: "",
+       product_settings_open: false,
+       pending_products: %{},
        configured_only: false,
        configured_count: Enum.count(Delivest.Net.list_branch_products(branch.id), &configured?/1)
      )
@@ -55,31 +57,68 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
     {:noreply, stream(socket, :products, products, reset: true)}
   end
 
-  def handle_event("product", %{"product_id" => id} = params, socket) do
-    case Loyalty.set_product(
-           socket.assigns.current_staff,
-           socket.assigns.current_branch.id,
-           id,
-           params
-         ) do
-      {:ok, product} ->
-        count =
-          socket.assigns.current_branch.id
-          |> Delivest.Net.list_branch_products()
-          |> Enum.count(&configured?/1)
+  def handle_event("toggle_products", %{"open" => open}, socket) do
+    {:noreply, assign(socket, product_settings_open: open)}
+  end
 
-        socket = assign(socket, configured_count: count)
+  def handle_event("product", %{"product_id" => id} = params, socket) do
+    pending =
+      Map.put(
+        socket.assigns.pending_products,
+        id,
+        Map.take(params, ["stars_price", "stars_reward"])
+      )
+
+    {:noreply, assign(socket, pending_products: pending)}
+  end
+
+  def handle_event("save_products", _params, socket) do
+    result =
+      Delivest.Repo.transaction(fn ->
+        Enum.each(socket.assigns.pending_products, fn {id, params} ->
+          case Loyalty.set_product(
+                 socket.assigns.current_staff,
+                 socket.assigns.current_branch.id,
+                 id,
+                 params
+               ) do
+            {:ok, _product} -> :ok
+            {:error, reason} -> Delivest.Repo.rollback(reason)
+          end
+        end)
+      end)
+
+    case result do
+      {:ok, _} ->
+        products = Delivest.Net.list_branch_products(socket.assigns.current_branch.id)
 
         socket =
-          if socket.assigns.configured_only and not configured?(product),
-            do: stream_delete(socket, :products, product),
-            else: stream_insert(socket, :products, product)
+          assign(socket,
+            pending_products: %{},
+            configured_count: Enum.count(products, &configured?/1)
+          )
 
-        {:noreply, socket |> put_flash(:info, gettext("Settings saved"))}
+        {:noreply,
+         socket
+         |> stream(:products, filtered_products(products, socket), reset: true)
+         |> put_flash(:info, gettext("Settings saved"))}
 
-      _ ->
+      {:error, _} ->
         {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
     end
+  end
+
+  defp filtered_products(products, socket) do
+    query = String.downcase(String.trim(socket.assigns.product_search))
+
+    Enum.filter(products, fn product ->
+      (not socket.assigns.configured_only or configured?(product)) and
+        String.contains?(String.downcase(product.name), query)
+    end)
+  end
+
+  defp product_value(pending, product, field) do
+    Map.get(Map.get(pending, product.id, %{}), Atom.to_string(field), Map.get(product, field))
   end
 
   def handle_event("save", %{"loyalty" => params}, socket) do
@@ -211,6 +250,8 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
       </.form>
       <details
         id="loyalty-product-settings"
+        open={@product_settings_open}
+        phx-hook=".ProductSettings"
         class="group rounded-box border border-base-300 bg-base-100"
       >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
@@ -290,7 +331,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
                       type="number"
                       form={"bonus-form-#{product.id}"}
                       name="stars_price"
-                      value={product.stars_price}
+                      value={product_value(@pending_products, product, :stars_price)}
                       min="1"
                       placeholder="—"
                       aria-label={gettext("Price in stars")}
@@ -303,7 +344,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
                       type="number"
                       form={"bonus-form-#{product.id}"}
                       name="stars_reward"
-                      value={product.stars_reward}
+                      value={product_value(@pending_products, product, :stars_reward)}
                       min="0"
                       placeholder="—"
                       aria-label={gettext("Extra stars per product")}
@@ -312,13 +353,12 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
                     />
                   </td>
                   <td>
-                    <form id={"bonus-form-#{product.id}"} phx-submit="product">
+                    <form
+                      id={"bonus-form-#{product.id}"}
+                      phx-change="product"
+                      phx-submit="save_products"
+                    >
                       <input type="hidden" name="product_id" value={product.id} />
-                      <button
-                        :if={@can_edit}
-                        class="btn btn-sm btn-ghost"
-                        phx-disable-with={gettext("Saving...")}
-                      >{gettext("Save")}</button>
                     </form>
                   </td>
                 </tr>
@@ -326,7 +366,39 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
             </table>
           </div>
         </div>
+        <div
+          :if={@can_edit}
+          class="sticky bottom-0 flex justify-end border-t border-base-300 bg-base-100 p-4"
+        >
+          <button
+            id="save-product-bonuses"
+            type="button"
+            phx-click="save_products"
+            disabled={map_size(@pending_products) == 0}
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </div>
       </details>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".ProductSettings">
+        export default {
+          mounted() {
+            this.el.addEventListener("toggle", () => this.pushEvent("toggle_products", {open: this.el.open}))
+            this.warn = (event) => {
+              if (document.querySelector("#save-product-bonuses:not(:disabled)")) {
+                event.preventDefault()
+                event.returnValue = ""
+              }
+            }
+            window.addEventListener("beforeunload", this.warn)
+          },
+          beforeUpdate() { this.open = this.el.open },
+          updated() { this.el.open = this.open },
+          destroyed() { window.removeEventListener("beforeunload", this.warn) }
+        }
+      </script>
     </div>
     """
   end
