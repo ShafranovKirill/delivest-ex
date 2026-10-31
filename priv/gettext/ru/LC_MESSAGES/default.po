@@ -8755,3 +8755,7 @@ msgstr "Дополнительно звёзд за товар"
 #, elixir-autogen, elixir-format
 msgid "Kitchen · %{minutes} min"
 msgstr "Кухня · %{minutes} мин"
+
+#, elixir-autogen, elixir-format
+msgid "Leave without saving bonus changes?"
+msgstr "Уйти без сохранения изменений бонусов?"

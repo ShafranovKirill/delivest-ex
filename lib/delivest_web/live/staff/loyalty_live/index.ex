@@ -252,6 +252,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         id="loyalty-product-settings"
         open={@product_settings_open}
         phx-hook=".ProductSettings"
+        data-discard-message={gettext("Leave without saving bonus changes?")}
         class="group rounded-box border border-base-300 bg-base-100"
       >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
@@ -392,11 +393,25 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
                 event.returnValue = ""
               }
             }
+            this.navigate = (event) => {
+              const link = event.target.closest("a[href]")
+              if (!link || !document.querySelector("#save-product-bonuses:not(:disabled)")) return
+              const url = new URL(link.href, location.href)
+              if (url.pathname === location.pathname && url.search === location.search) return
+              if (!window.confirm(this.el.dataset.discardMessage)) {
+                event.preventDefault()
+                event.stopImmediatePropagation()
+              }
+            }
+            document.addEventListener("click", this.navigate, true)
             window.addEventListener("beforeunload", this.warn)
           },
           beforeUpdate() { this.open = this.el.open },
           updated() { this.el.open = this.open },
-          destroyed() { window.removeEventListener("beforeunload", this.warn) }
+          destroyed() {
+            window.removeEventListener("beforeunload", this.warn)
+            document.removeEventListener("click", this.navigate, true)
+          }
         }
       </script>
     </div>
