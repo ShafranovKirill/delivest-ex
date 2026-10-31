@@ -58,7 +58,7 @@ defmodule DelivestWeb.Hooks.NewOrders do
     socket
     |> assign(
       new_orders_count: Orders.count_unconfirmed(branch_id),
-      overdue_orders: YandexEda.overdue_orders(branch_id),
+      overdue_orders: Enum.filter(YandexEda.overdue_orders(branch_id), &today?/1),
       channel_cancelled_orders: channel_cancelled(staff, branch_id)
     )
     |> assign_kitchen(branch_id)
@@ -69,9 +69,16 @@ defmodule DelivestWeb.Hooks.NewOrders do
       do:
         assign(socket,
           kitchen_status: KitchenPresence.status(branch_id),
-          kitchen_late_orders: Kitchen.list_late(branch_id)
+          kitchen_late_orders: Enum.filter(Kitchen.list_late(branch_id), &today?/1)
         ),
       else: assign(socket, kitchen_status: nil, kitchen_late_orders: [])
+  end
+
+  defp today?(order) do
+    zone = Delivest.LocalTime.timezone(order.branch_id)
+
+    order.inserted_at |> DateTime.shift_zone!(zone) |> DateTime.to_date() ==
+      Delivest.LocalTime.today(zone)
   end
 
   defp operator?(staff, branch_id),

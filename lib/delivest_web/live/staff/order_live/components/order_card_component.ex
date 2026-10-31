@@ -59,7 +59,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           {OrderHelpers.fulfillment_label(@order.fulfillment_type)}
         </span>
         <span class="text-xs text-base-content/50 tabular-nums">
-          {OrderHelpers.local_time(@order.inserted_at)}
+          {OrderHelpers.order_time(@order.inserted_at, @order.branch_id)}
         </span>
         <OrderClock.order_clock order={@order} status={@status} delivery_minutes={@delivery_minutes} />
         <OrderClock.kitchen_clock

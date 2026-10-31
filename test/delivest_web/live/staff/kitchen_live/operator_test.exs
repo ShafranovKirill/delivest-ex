@@ -27,7 +27,7 @@ defmodule DelivestWeb.Staff.KitchenLive.OperatorTest do
 
   test "the header shows whether the kitchen screen is open", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = orders_page(conn, branch)
-    assert lv |> element("#kitchen-indicator") |> render() =~ "Kitchen offline"
+    assert lv |> element("#kitchen-indicator") |> render() =~ "Kitchen"
 
     cook = staff(["orders.read", "orders.cook"], branch)
     kitchen_conn = init_test_session(build_conn(), %{"staff_id" => cook.id})

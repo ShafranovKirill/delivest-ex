@@ -8744,3 +8744,7 @@ msgstr "Empty price: not sold for stars. Product rewards are added to the genera
 #, elixir-autogen, elixir-format
 msgid "Extra stars per product"
 msgstr "Extra stars per product"
+
+#, elixir-autogen, elixir-format
+msgid "Kitchen · %{minutes} min"
+msgstr "Kitchen · %{minutes} min"
