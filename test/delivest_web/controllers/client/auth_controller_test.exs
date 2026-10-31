@@ -118,10 +118,12 @@ defmodule DelivestWeb.Client.AuthControllerTest do
 
     assert refreshed["data"]["client"]["id"] == session["client"]["id"]
 
-    assert %{"error" => "confirmation_not_found"} =
-             conn
-             |> post(~p"/client/auth/call/#{data["confirmation_id"]}/complete")
-             |> json_response(404)
+    retry =
+      conn
+      |> post(~p"/client/auth/call/#{data["confirmation_id"]}/complete")
+      |> json_response(200)
+
+    assert retry["data"]["client"]["id"] == session["client"]["id"]
   end
 
   test "confirmation cannot be completed from another session", %{conn: conn} do

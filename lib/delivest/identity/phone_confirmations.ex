@@ -165,7 +165,23 @@ defmodule Delivest.Identity.PhoneConfirmations do
   defp result({1, [phone]}, _id, _session_id), do: {:ok, phone}
 
   defp result(_taken, id, session_id) do
-    if Repo.exists?(owned(id, session_id)), do: {:error, :pending}, else: {:error, :not_found}
+    # A second tab or a resumed mobile page may finish the same login concurrently.
+    # Only the owning session may retry, within a short fixed window.
+    retry_since = DateTime.add(now(), -30, :second)
+
+    retry =
+      PhoneConfirmation
+      |> fresh()
+      |> where([c], c.id == ^id and c.session_id == ^session_id)
+      |> where([c], not is_nil(c.confirmed_at) and c.consumed_at >= ^retry_since)
+      |> select([c], c.phone)
+      |> Repo.one()
+
+    cond do
+      retry -> {:ok, retry}
+      Repo.exists?(owned(id, session_id)) -> {:error, :pending}
+      true -> {:error, :not_found}
+    end
   end
 
   defp owned(id, session_id) do

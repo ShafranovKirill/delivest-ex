@@ -18,6 +18,20 @@ defmodule Delivest.Identity.PhoneConfirmationsTest do
     confirmation |> Ecto.Changeset.change(inserted_at: at) |> Repo.update!()
   end
 
+  test "completion retries are bounded and restricted to the owning session" do
+    confirmation = confirmation(0)
+    assert {:ok, [_]} = PhoneConfirmations.confirm(confirmation.call_id, confirmation.phone)
+    assert {:ok, phone} = PhoneConfirmations.consume(confirmation.id, "s")
+    assert {:ok, ^phone} = PhoneConfirmations.consume(confirmation.id, "s")
+    assert {:error, :not_found} = PhoneConfirmations.consume(confirmation.id, "other")
+
+    Repo.get!(PhoneConfirmation, confirmation.id)
+    |> Ecto.Changeset.change(consumed_at: DateTime.add(DateTime.utc_now(:second), -31, :second))
+    |> Repo.update!()
+
+    assert {:error, :not_found} = PhoneConfirmations.consume(confirmation.id, "s")
+  end
+
   test "the daily prune removes old confirmations and keeps fresh ones" do
     old = confirmation(8)
     fresh = confirmation(1)
