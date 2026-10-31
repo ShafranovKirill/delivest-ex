@@ -1,23 +1,43 @@
 defmodule Delivest.Integrations.YandexEda.MenuItem do
-  alias Delivest.Media
+  alias Delivest.{Media, Money}
   alias Delivest.Net.Product
 
-  def build({category, product, index, price}, settings) do
+  def build({category, product, index, price}, settings, groups \\ %{}) do
     %{
       id: product.id,
       categoryId: category.id,
       name: product.name,
-      price: price,
+      price: Money.to_rubles(price),
       measure: product.weight || 0,
       measureUnit: measure_unit(product.measure_unit),
       sortOrder: index,
-      modifierGroups: []
+      modifierGroups: groups |> Map.get(product.id, []) |> Enum.with_index() |> Enum.map(&group/1)
     }
     |> put_optional(:description, product.description)
     |> put_optional(:images, images(product.media))
     |> put_optional(:nutrients, nutrients(product))
     |> put_optional(:excise, product.excise && to_string(product.excise))
     |> put_optional(:vat, settings.vat > 0 && settings.vat)
+  end
+
+  defp group({group, index}) do
+    %{
+      id: group.id,
+      name: group.name,
+      minSelectedModifiers: group.min,
+      maxSelectedModifiers: group.max,
+      sortOrder: index,
+      modifiers:
+        Enum.map(group.modifiers, fn modifier ->
+          %{
+            id: modifier.id,
+            name: modifier.name,
+            price: Money.to_rubles(modifier.price),
+            minAmount: 0,
+            maxAmount: modifier.max_quantity
+          }
+        end)
+    }
   end
 
   defp measure_unit(:ml), do: "мл"

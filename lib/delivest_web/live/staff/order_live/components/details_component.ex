@@ -79,6 +79,22 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
                   maxlength="20"
                 />
               </div>
+              <div class="col-span-1">
+                <.input
+                  field={address_form[:block]}
+                  type="text"
+                  label={gettext("Block")}
+                  maxlength="10"
+                />
+              </div>
+              <div class="col-span-1">
+                <.input
+                  field={address_form[:building]}
+                  type="text"
+                  label={gettext("Building")}
+                  maxlength="10"
+                />
+              </div>
               <div class="col-span-2">
                 <.input
                   field={address_form[:entrance]}

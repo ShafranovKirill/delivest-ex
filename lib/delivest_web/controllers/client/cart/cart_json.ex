@@ -24,6 +24,9 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       subtotal_amount: cart.subtotal_amount,
       discount_amount: cart.discount_amount,
       total_amount: cart.total_amount,
+      points_earned: cart.points_earned,
+      base_stars: cart.base_stars,
+      product_stars: cart.product_stars,
       promo_code: PromoJSON.code(cart.code),
       promotions: Enum.map(cart.promotions, &PromoJSON.applied/1),
       hints: Enum.map(cart.hints, &PromoJSON.hint/1)
@@ -44,8 +47,22 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       total_price: item.total_price,
       base_total: Map.get(item, :base_total, item.total_price),
       gift: Map.get(item, :gift, false),
+      stars_reward: Map.get(item, :stars_reward, 0),
+      stars: Map.get(item, :stars, false),
+      stars_price: Map.get(item, :stars_price),
       promotion_ids: Map.get(item, :promotion_ids, []),
-      stopped: MapSet.member?(stopped, item.product_id)
+      stopped: MapSet.member?(stopped, item.product_id),
+      modifiers: Enum.map(Map.get(item, :modifiers, []), &modifier/1)
+    }
+  end
+
+  def modifier(choice) do
+    %{
+      id: Map.get(choice, :id, Map.get(choice, :modifier_id)),
+      group_name: choice.group_name,
+      name: choice.name,
+      price: choice.price,
+      quantity: choice.quantity
     }
   end
 end

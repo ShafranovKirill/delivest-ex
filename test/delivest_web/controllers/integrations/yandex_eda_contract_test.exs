@@ -5,7 +5,8 @@ defmodule DelivestWeb.Integrations.YandexEdaContractTest do
 
   alias Delivest.YandexEdaContract.{Collection, Newman}
 
-  @moduletag :yandex_contract
+  @moduletag :contract
+  @moduletag :yandex_eda_contract
   @moduletag :tmp_dir
   @moduletag timeout: :timer.minutes(3)
 

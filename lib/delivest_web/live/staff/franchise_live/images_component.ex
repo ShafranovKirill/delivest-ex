@@ -76,13 +76,6 @@ defmodule DelivestWeb.Staff.FranchiseLive.ImagesComponent do
   def render(assigns) do
     ~H"""
     <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-5">
-      <div>
-        <h2 class="font-bold text-lg">{gettext("Icon and link preview")}</h2>
-        <p class="text-sm text-base-content/60">
-          {gettext("Shown in the browser tab, on the phone home screen and when the link is shared.")}
-        </p>
-      </div>
-
       <form
         id="franchise-images-form"
         phx-target={@myself}

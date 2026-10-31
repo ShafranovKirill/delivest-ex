@@ -9,8 +9,10 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.YandexDelivery
-  alias Delivest.Integrations.YandexDelivery.{Journal, JournalWorker, Settings}
+  alias Delivest.Integrations.Poller.Worker, as: PollWorker
+  alias Delivest.Integrations.YandexDelivery.{ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders, OrderTransition}
+  alias Delivest.Push.NoteWorker
 
   @settings %Settings{token: "y-token", contact_email: "kitchen@example.com"}
 
@@ -33,13 +35,24 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   defp respond(conn, yandex, "/claims/create", %{"request_id" => request_id}, _body) do
     claim_id = "claim-" <> request_id
 
-    Agent.update(yandex, fn state ->
-      state
-      |> put_in([:claims, claim_id], claim(claim_id, "new"))
-      |> Map.update!(:created, &(&1 + 1))
-    end)
+    case Agent.get_and_update(yandex, fn state ->
+           {state[:failures], Map.put(state, :failures, tl_or_empty(state[:failures]))}
+         end) do
+      [:timeout | _] -> Req.Test.transport_error(conn, :timeout)
+      [:lost | _] -> create_claim(yandex, claim_id, :lost, conn)
+      [:error | _] -> Plug.Conn.send_resp(conn, 500, "")
+      _none -> create_claim(yandex, claim_id, :ok, conn)
+    end
+  end
 
-    Req.Test.json(conn, %{"id" => claim_id, "status" => "new", "version" => 1})
+  defp respond(conn, yandex, "/claims/search", _query, %{"external_order_id" => number}) do
+    claims =
+      yandex
+      |> Agent.get(& &1.claims)
+      |> Map.values()
+      |> Enum.filter(&Map.has_key?(&1, "id"))
+
+    Req.Test.json(conn, %{"claims" => if(number, do: claims, else: [])})
   end
 
   defp respond(conn, yandex, "/claims/info", %{"claim_id" => claim_id}, _body),
@@ -54,8 +67,34 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     Req.Test.json(conn, %{"cursor" => "cursor-#{length(events)}", "events" => events})
   end
 
-  defp respond(conn, _yandex, "/claims/cancel-info", _query, _body),
-    do: Req.Test.json(conn, %{"cancel_state" => "free"})
+  defp respond(conn, _yandex, "/offers/calculate", _query, _body) do
+    Req.Test.json(conn, %{
+      "offers" => [
+        %{
+          "price" => %{"total_price" => "673.0"},
+          "pickup_interval" => %{
+            "from" => "2026-07-17T08:02:26+00:00",
+            "to" => "2026-07-17T08:42:26+00:00"
+          },
+          "delivery_interval" => %{
+            "from" => "2026-07-17T08:02:26+00:00",
+            "to" => "2026-07-17T09:15:43+00:00"
+          }
+        },
+        %{"price" => %{"total_price" => "810.5"}}
+      ]
+    })
+  end
+
+  defp respond(conn, _yandex, "/claims/set-point-ready", _query, _body),
+    do: Req.Test.json(conn, %{"id" => "ok"})
+
+  defp respond(conn, yandex, "/claims/cancel-info", _query, _body) do
+    case Agent.get(yandex, & &1[:cancel_state]) do
+      "paid" -> Req.Test.json(conn, %{"cancel_state" => "paid", "price" => "150.00"})
+      _free -> Req.Test.json(conn, %{"cancel_state" => "free"})
+    end
+  end
 
   defp respond(conn, yandex, "/claims/cancel", %{"claim_id" => claim_id}, _body) do
     set_status(yandex, claim_id, "cancelled")
@@ -67,7 +106,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     Req.Test.json(conn, %{"id" => claim_id, "status" => "accepted"})
   end
 
-  defp respond(conn, _yandex, "/claims/tracking-links", _query, _body) do
+  defp respond(%{method: "GET"} = conn, _yandex, "/claims/tracking-links", _query, _body) do
     Req.Test.json(conn, %{
       "route_points" => [
         %{"id" => 11, "type" => "source", "visit_order" => 1, "sharing_link" => "https://a"},
@@ -76,8 +115,40 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     })
   end
 
+  defp respond(conn, _yandex, "/claims/points-eta", _query, _body) do
+    Req.Test.json(conn, %{
+      "route_points" => [
+        %{
+          "visit_order" => 1,
+          "visit_status" => "visited",
+          "visited_at" => %{"expected" => "2026-07-17T08:00:00Z"}
+        },
+        %{
+          "visit_order" => 2,
+          "visit_status" => "pending",
+          "visited_at" => %{"expected" => "2026-07-17T08:40:00Z"}
+        }
+      ]
+    })
+  end
+
   defp respond(conn, _yandex, "/driver-voiceforwarding", _query, _body),
     do: Req.Test.json(conn, %{"phone" => "+79000000001", "ext" => "0163"})
+
+  defp tl_or_empty([_ | rest]), do: rest
+  defp tl_or_empty(_none), do: []
+
+  defp create_claim(yandex, claim_id, mode, conn) do
+    Agent.update(yandex, fn state ->
+      state
+      |> put_in([:claims, claim_id], claim(claim_id, "new"))
+      |> Map.update!(:created, &(&1 + 1))
+    end)
+
+    if mode == :lost,
+      do: Req.Test.transport_error(conn, :timeout),
+      else: Req.Test.json(conn, %{"id" => claim_id, "status" => "new", "version" => 1})
+  end
 
   defp claim(claim_id, status) do
     %{
@@ -102,7 +173,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     end)
   end
 
-  defp branch(settings \\ @settings) do
+  defp branch(settings \\ @settings, couriers \\ %{source: :yandex, search: :preparing}) do
     branch = insert(:branch, name: "Центральный")
 
     Repo.insert!(%BranchInfo{
@@ -112,7 +183,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       latitude: 57.15,
       longitude: 65.53,
       phone_number: "+73452000000",
-      couriers: %{source: :yandex, search: :preparing},
+      couriers: couriers,
       yandex_delivery: settings
     })
 
@@ -128,13 +199,15 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
     client = insert(:client, phone: "+79001112233", name: "Анна")
 
     branch.id
-    |> order_fixture(price: 300, quantity: 2)
+    |> order_fixture(price: 30_000, quantity: 2)
     |> Ecto.Changeset.change(
       Keyword.merge(
         [
           fulfillment_type: :delivery,
           client_id: client.id,
-          total_amount: 600,
+          customer_phone: client.phone,
+          customer_name: client.name,
+          total_amount: 60_000,
           address: %Order.Address{
             city: "Тюмень",
             street: "ул Республики",
@@ -156,11 +229,180 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   defp cooking(order, operator) do
     Enum.reduce([:accepted, :preparing], order, fn to, order ->
       {:ok, order} = Orders.advance_order(order, to, {:staff, operator})
+      deliver_events()
       order
     end)
   end
 
-  defp poll(branch), do: perform_job(JournalWorker, %{branch_id: branch.id})
+  defp poll(branch) do
+    result = perform_job(PollWorker, %{poller: "yandex_delivery", target: branch.id})
+    deliver_events()
+    result
+  end
+
+  describe "a lost answer to claim creation" do
+    setup do
+      Application.put_env(:delivest, :yandex_delivery_retry_pause, 0)
+      on_exit(fn -> Application.delete_env(:delivest, :yandex_delivery_retry_pause) end)
+    end
+
+    defp fail_creation(yandex, failures),
+      do: Agent.update(yandex, &Map.put(&1, :failures, failures))
+
+    test "a timeout is retried with the same request id", %{yandex: yandex} do
+      fail_creation(yandex, [:timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+
+      delivery = Couriers.active(order.id)
+      assert delivery.external_id == "claim-" <> delivery.id
+      assert Agent.get(yandex, & &1.created) == 1
+      assert_received {:yandex, "/claims/create", %{"request_id" => id}, _body}
+      assert_received {:yandex, "/claims/create", %{"request_id" => ^id}, _body}
+    end
+
+    test "when retries get no answer the claim is looked up by the order number", %{
+      yandex: yandex
+    } do
+      fail_creation(yandex, [:lost, :timeout, :timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+
+      delivery = Couriers.active(order.id)
+      assert delivery.status == :searching
+      assert delivery.external_id == nil
+
+      assert :ok = perform_job(ClaimLookupWorker, lookup_args(delivery, order))
+      assert Repo.reload!(delivery).external_id == "claim-" <> delivery.id
+      assert Agent.get(yandex, & &1.created) == 1
+    end
+
+    test "no claim within the window closes the attempt", %{yandex: yandex} do
+      fail_creation(yandex, [:timeout, :timeout, :timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+      delivery = Couriers.active(order.id)
+
+      args = %{lookup_args(delivery, order) | "started_at" => System.os_time(:second) - 301}
+      assert :ok = perform_job(ClaimLookupWorker, args)
+      assert %Delivery{status: :failed, close_reason: :provider_error} = Repo.reload!(delivery)
+    end
+
+    test "no claim yet schedules another lookup", %{yandex: yandex} do
+      fail_creation(yandex, [:timeout, :timeout, :timeout])
+      branch = branch()
+      order = order(branch) |> cooking(operator(branch))
+      delivery = Couriers.active(order.id)
+
+      assert :ok = perform_job(ClaimLookupWorker, lookup_args(delivery, order))
+      assert Repo.reload!(delivery).status == :searching
+      assert_enqueued(worker: ClaimLookupWorker, args: %{delivery_id: delivery.id})
+    end
+
+    defp lookup_args(delivery, order),
+      do: %{
+        "delivery_id" => delivery.id,
+        "number" => order.number,
+        "started_at" => System.os_time(:second)
+      }
+  end
+
+  describe "preorders" do
+    test "a cook time inside the window becomes the due time" do
+      branch = branch()
+      soon = DateTime.utc_now() |> DateTime.add(90, :minute) |> DateTime.truncate(:second)
+
+      order(branch, cook_by: soon) |> cooking(operator(branch))
+      assert_received {:yandex, "/claims/create", _query, %{"due" => due}}
+      assert {:ok, ^soon, _} = DateTime.from_iso8601(due)
+    end
+
+    test "a cook time outside the window is not sent" do
+      branch = branch()
+      far = DateTime.utc_now() |> DateTime.add(600, :minute) |> DateTime.truncate(:second)
+
+      order(branch, cook_by: far) |> cooking(operator(branch))
+      assert_received {:yandex, "/claims/create", _query, body}
+      refute Map.has_key?(body, "due")
+    end
+  end
+
+  describe "delivery estimate" do
+    test "shows the cheapest offer and the loss against the delivery paid by the customer" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch, status: :accepted, delivery_amount: 40_000)
+
+      assert {:ok, estimate} = Couriers.estimate(staff, order)
+      assert estimate.price == 67_300
+      assert estimate.loss == 27_300
+      assert_received {:yandex, "/offers/calculate", _query, body}
+      assert [%{"id" => 1}, %{"id" => 2}] = body["route_points"]
+      assert body["requirements"]["taxi_classes"] == ["courier"]
+      refute Map.has_key?(body["requirements"], "due")
+      refute_received {:yandex, "/claims/create", _query, _body}
+    end
+
+    test "there is no loss when the customer pays enough" do
+      branch = branch()
+      order = order(branch, status: :accepted, delivery_amount: 80_000)
+
+      assert {:ok, %{loss: 0}} = Couriers.estimate(operator(branch), order)
+    end
+
+    test "a preorder inside the window sends the due time" do
+      branch = branch()
+      soon = DateTime.utc_now() |> DateTime.add(90, :minute) |> DateTime.truncate(:second)
+      order = order(branch, status: :accepted, cook_by: soon)
+
+      assert {:ok, _estimate} = Couriers.estimate(operator(branch), order)
+      assert_received {:yandex, "/offers/calculate", _query, %{"requirements" => %{"due" => due}}}
+      assert {:ok, ^soon, _} = DateTime.from_iso8601(due)
+    end
+
+    test "is not available for our own couriers" do
+      branch = branch(@settings, %{source: :staff, search: :preparing})
+
+      assert {:error, :not_available} =
+               Couriers.estimate(operator(branch), order(branch, status: :accepted))
+
+      refute_received {:yandex, "/offers/calculate", _query, _body}
+    end
+  end
+
+  describe "order readiness" do
+    test "the claim asks to be notified and gets the readiness when the kitchen is done" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch) |> cooking(staff)
+      delivery = Couriers.active(order.id)
+      assert_received {:yandex, "/claims/create", _query, body}
+      assert [%{"should_notify_on_order_readiness" => true}, _destination] = body["route_points"]
+      refute_received {:yandex, "/claims/set-point-ready", _query, _body}
+
+      {:ok, _order} = Orders.advance_order(order, :ready, {:staff, staff})
+      deliver_events()
+
+      claim_id = delivery.external_id
+      assert_received {:yandex, "/claims/set-point-ready", %{"claim_id" => ^claim_id}, body}
+      assert body == %{"visit_order" => 1}
+    end
+
+    test "nothing is called without an active claim" do
+      branch = branch()
+      staff = operator(branch)
+      order = order(branch)
+      {:ok, order} = Orders.advance_order(order, :accepted, {:staff, staff})
+      {:ok, _order} = Orders.advance_order(order, :preparing, {:staff, staff})
+      deliver_events()
+      Couriers.active(order.id) |> then(&Couriers.give_up/1)
+
+      order = Repo.reload!(order)
+      {:ok, _order} = Orders.advance_order(order, :ready, {:staff, staff})
+      deliver_events()
+      refute_received {:yandex, "/claims/set-point-ready", _query, _body}
+    end
+  end
 
   describe "calling a courier" do
     test "creates a claim when cooking begins and switches cash to card" do
@@ -191,6 +433,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert destination["external_order_id"] == order.number
       assert destination["payment_on_delivery"] == %{"payment_method" => "card"}
       assert body["client_requirements"] == %{"taxi_class" => "courier"}
+      refute Map.has_key?(body, "auto_accept")
 
       assert [%{"cost_value" => "300.00", "quantity" => 2, "fiscalization" => fiscal}] =
                body["items"]
@@ -198,7 +441,15 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert fiscal == %{"vat_code_str" => "vat_none", "item_type" => "product"}
 
       assert Repo.reload!(order).payment_method == :card_offline
-      assert_enqueued(worker: JournalWorker, args: %{branch_id: branch.id})
+      assert_enqueued(worker: NoteWorker, args: %{order_id: order.id, note: "card_only"})
+      assert_enqueued(worker: PollWorker, args: %{poller: "yandex_delivery", target: branch.id})
+    end
+
+    test "auto accept goes into the claim when it is enabled" do
+      branch = branch(%{@settings | auto_accept: true})
+      order(branch) |> cooking(operator(branch))
+
+      assert_received {:yandex, "/claims/create", _query, %{"auto_accept" => true}}
     end
 
     test "online orders are not paid to the courier" do
@@ -208,16 +459,17 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
       assert_received {:yandex, "/claims/create", _query, body}
       refute Map.has_key?(Enum.at(body["route_points"], 1), "payment_on_delivery")
       refute Map.has_key?(hd(body["items"]), "fiscalization")
+      refute_enqueued(worker: NoteWorker)
     end
 
     test "fits the item prices to the total after a discount" do
       branch = branch()
-      order(branch, total_amount: 500, delivery_amount: 100) |> cooking(operator(branch))
+      order(branch, total_amount: 50_050, delivery_amount: 10_000) |> cooking(operator(branch))
 
       assert_received {:yandex, "/claims/create", _query, body}
 
       assert [goods, delivery] = body["items"]
-      assert goods["cost_value"] == "400.00" and goods["quantity"] == 1
+      assert goods["cost_value"] == "400.50" and goods["quantity"] == 1
       assert delivery["cost_value"] == "100.00"
       assert delivery["fiscalization"]["item_type"] == "service"
     end
@@ -255,6 +507,49 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
       assert :ok = poll(ctx.branch)
       assert_received {:yandex, "/claims/journal", _query, %{"cursor" => "cursor-1"}}
+    end
+
+    test "an assigned claim gets the arrival time of the next point", ctx do
+      set_status(ctx.yandex, ctx.delivery.external_id, "performer_found")
+
+      assert :ok = poll(ctx.branch)
+
+      assert_received {:yandex, "/claims/points-eta", _query, _body}
+
+      assert %Delivery{details: %{"point_eta" => "2026-07-17T08:40:00Z"}} =
+               Couriers.active(ctx.order.id)
+    end
+
+    test "a claim still being searched is not asked for the arrival time", ctx do
+      assert :ok = poll(ctx.branch)
+      refute_received {:yandex, "/claims/points-eta", _query, _body}
+    end
+
+    test "the poller keeps polling while claims are active and is started by cron", ctx do
+      assert :ok = poll(ctx.branch)
+
+      assert_enqueued(
+        worker: PollWorker,
+        args: %{poller: "yandex_delivery", target: ctx.branch.id}
+      )
+
+      Repo.delete_all(Oban.Job)
+      assert :ok = perform_job(PollWorker, %{poller: "yandex_delivery"})
+
+      assert_enqueued(
+        worker: PollWorker,
+        args: %{poller: "yandex_delivery", target: ctx.branch.id}
+      )
+
+      assert {:error, :unknown_poller} = perform_job(PollWorker, %{poller: "nope", target: "x"})
+    end
+
+    test "claim requests go to the journal with the branch and the order", ctx do
+      poll(ctx.branch)
+
+      requests = Delivest.Integrations.Journal.list(:yandex_delivery, ctx.branch.id)
+      assert Enum.any?(requests, &(&1.url =~ "/claims/create" and &1.order_id == ctx.order.id))
+      assert Enum.any?(requests, &(&1.url =~ "/claims/journal" and &1.status == 200))
     end
 
     test "shows the courier, then moves the order on pickup and handover", ctx do
@@ -336,8 +631,31 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
           "cancel_reason" => "other"
         })
 
+      deliver_events()
+
       assert_received {:yandex, "/claims/cancel", _query,
                        %{"cancel_state" => "free", "version" => 3}}
+
+      assert %Delivery{status: :cancelled, close_reason: :order_cancelled} =
+               Repo.reload!(ctx.delivery)
+    end
+
+    test "a paid cancel waits for the operator", ctx do
+      Agent.update(ctx.yandex, &Map.put(&1, :cancel_state, "paid"))
+
+      {:ok, order} =
+        Orders.cancel_order(Repo.reload!(ctx.order), {:staff, ctx.operator}, %{
+          "cancel_reason" => "other"
+        })
+
+      deliver_events()
+      refute_received {:yandex, "/claims/cancel", _query, _body}
+      assert %Delivery{status: :searching} = delivery = Repo.reload!(ctx.delivery)
+      assert delivery.details["cancel_price"] == 15_000
+      assert Couriers.cancel_pending(Repo.preload(order, :deliveries, force: true)) == 15_000
+
+      assert {:ok, _delivery} = Couriers.confirm_cancel(ctx.operator, order)
+      assert_received {:yandex, "/claims/cancel", _query, %{"cancel_state" => "paid"}}
 
       assert %Delivery{status: :cancelled, close_reason: :order_cancelled} =
                Repo.reload!(ctx.delivery)

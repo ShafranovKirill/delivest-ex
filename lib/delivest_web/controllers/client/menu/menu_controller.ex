@@ -28,12 +28,25 @@ defmodule DelivestWeb.Client.Menu.MenuController do
     ]
   )
 
+  defp menu_modifiers(menu) do
+    categories =
+      if is_map(menu) and Map.has_key?(menu, :categories), do: menu.categories, else: menu
+
+    categories
+    |> Enum.flat_map(&(&1.products || []))
+    |> Enum.map(& &1.id)
+    |> Net.Modifiers.for_products()
+  end
+
   def index(conn, %{"branch_id" => branch_id}) do
     case Net.get_menu_for_branch(branch_id) do
       {:ok, menu} ->
         render(conn, :index,
           menu: Promo.overlay_menu(menu, branch_id),
-          stopped: Net.Stops.stopped_ids(branch_id)
+          rewards: Map.new(Net.list_branch_products(branch_id), &{&1.id, &1.stars_reward}),
+          stopped: Net.Stops.stopped_ids(branch_id),
+          modifiers: menu_modifiers(menu),
+          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id)
         )
 
       {:error, _reason} ->

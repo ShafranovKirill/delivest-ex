@@ -23,8 +23,8 @@ defmodule Delivest.Net.Product do
   schema "products" do
     field :name, :string
     field :slug, :string
-    field :old_price, :string
-    field :price, :integer
+    field :old_price, Delivest.Money.Type
+    field :price, Delivest.Money.Type
     field :description, :string
     field :quantity, :integer
     field :weight, :integer
@@ -34,13 +34,20 @@ defmodule Delivest.Net.Product do
     field :fats, :float
     field :carbohydrates, :float
     field :excise, Ecto.Enum, values: @excises
+    field :vat, Ecto.Enum, values: Delivest.Fiscal.Vat.rates()
     field :is_active, :boolean, default: true
     field :tags, {:array, :string}, default: []
     field :suggested, :boolean, default: false
+    field :stars_price, :integer
+    field :stars_reward, :integer
     field :order, :float
     belongs_to :media, Delivest.Media.File, foreign_key: :media_id, type: :binary_id
     field :crm_ids, :map, virtual: true, default: %{}
-    has_many :external_ids, Delivest.Net.ProductExternalId, on_replace: :delete
+
+    has_many :external_ids, Delivest.Net.ProductExternalId,
+      foreign_key: :entity_id,
+      where: [entity_type: "product"],
+      on_replace: :delete
 
     belongs_to :category, Category, type: :binary_id
 
@@ -69,12 +76,18 @@ defmodule Delivest.Net.Product do
       :deleted_at,
       :slug,
       :tags,
+      :stars_price,
+      :stars_reward,
       :suggested,
-      :excise
+      :excise,
+      :vat
       | @nutrients
     ])
+    |> validate_number(:stars_price, greater_than: 0)
+    |> validate_number(:stars_reward, greater_than_or_equal_to: 0)
     |> validate_required([:name, :price])
-    |> validate_number(:price, greater_than_or_equal_to: 0)
+    |> validate_number(:price, greater_than_or_equal_to: 0, less_than: 100_000_000)
+    |> validate_number(:old_price, greater_than: 0, less_than: 100_000_000)
     |> validate_nutrients()
     |> update_change(:slug, &Delivest.Slug.slugify/1)
     |> validate_length(:slug, max: 80)

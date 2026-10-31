@@ -38,6 +38,19 @@ defmodule DelivestWeb.Schemas.AuthSchemas do
     })
   end
 
+  defmodule ConfirmCodeRequest do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ConfirmCodeRequest",
+      type: :object,
+      properties: %{
+        code: %Schema{type: :string, example: "1234", description: "Последние 4 цифры номера"}
+      },
+      required: [:code]
+    })
+  end
+
   defmodule StartCallResponse do
     require OpenApiSpex
 
@@ -49,14 +62,17 @@ defmodule DelivestWeb.Schemas.AuthSchemas do
           type: :object,
           properties: %{
             confirmation_id: %Schema{type: :string, format: :uuid},
+            mode: %Schema{type: :string, enum: ["inbound", "flash"]},
             call_number: %Schema{
               type: :string,
+              nullable: true,
               example: "+78000000000",
-              description: "Номер, на который нужно позвонить для подтверждения"
+              description:
+                "Режим inbound: номер, на который нужно позвонить. Режим flash: null, клиенту позвонят сами"
             },
             expires_in: %Schema{type: :integer, example: 600, description: "Секунды"}
           },
-          required: [:confirmation_id, :call_number, :expires_in]
+          required: [:confirmation_id, :mode, :call_number, :expires_in]
         }
       },
       required: [:data]

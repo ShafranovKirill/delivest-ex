@@ -1,6 +1,7 @@
 defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaReconciliation do
   use DelivestWeb, :html
 
+  alias Delivest.Money
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   attr :date, Date, required: true
@@ -54,10 +55,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaReconciliation do
             <span :if={row.order} class="font-mono text-primary">#{row.order.number}</span>
             <span class="badge badge-sm badge-warning">{problem_label(row.problem)}</span>
             <span :if={row.remote} class="text-base-content/60">
-              {remote_status(row.remote["status"])} · {OrderHelpers.money(row.remote["items_cost"])}
+              {remote_status(row.remote["status"])} · {OrderHelpers.money(items_cost(row.remote))}
             </span>
             <span :if={row.order} class="text-base-content/60">
               {gettext("ours")}: {OrderHelpers.status_label(row.order.status)}
+            </span>
+            <span :if={row.cancel_reason} class="text-base-content/60">
+              {gettext("Reason")}: {row.cancel_reason}
+            </span>
+            <span :if={row.cost_diff} class="text-error">
+              {gettext("Items cost differs by %{amount}", amount: OrderHelpers.money(row.cost_diff))}
             </span>
           </li>
         </ul>
@@ -65,6 +72,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaReconciliation do
     </section>
     """
   end
+
+  defp items_cost(%{"items_cost" => cost}) when is_number(cost), do: Money.from_rubles(cost)
+  defp items_cost(_remote), do: nil
 
   defp problem_label(:missing), do: gettext("No such order here")
   defp problem_label(:not_in_yandex), do: gettext("Not in Yandex history")

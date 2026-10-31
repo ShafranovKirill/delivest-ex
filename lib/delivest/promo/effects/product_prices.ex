@@ -1,4 +1,5 @@
 defmodule Delivest.Promo.Effects.ProductPrices do
+  alias Delivest.Money
   alias Delivest.Promo.{Basket, Compiled, Line}
 
   def apply(%Basket{} = basket, selected) do
@@ -23,12 +24,14 @@ defmodule Delivest.Promo.Effects.ProductPrices do
   defp price_line(%Line{gift: true} = line, credits, _offers), do: {line, credits}
 
   defp price_line(%Line{} = line, credits, offers) do
-    case best(Map.get(offers, line.product_id, []), line.base_price) do
+    extra = Line.extra(line)
+
+    case best(Map.get(offers, line.product_id, []), line.base_price - extra) do
       nil ->
         {line, credits}
 
       {unit, promotion_id} ->
-        amount = (line.base_price - unit) * line.quantity
+        amount = (line.base_price - extra - unit) * line.quantity
         {Line.reduce(line, amount, promotion_id), [{promotion_id, amount} | credits]}
     end
   end
@@ -39,7 +42,10 @@ defmodule Delivest.Promo.Effects.ProductPrices do
   def slugs(_effect), do: []
 
   def unit_price({:price, _slug, price}, _base), do: price
-  def unit_price({:percent, percent, _target, _cap}, base), do: base - div(base * percent, 100)
+
+  def unit_price({:percent, percent, _target, _cap}, base),
+    do: base - Money.percent(base, percent)
+
   def unit_price({:amount, amount, _target}, base), do: max(base - amount, 0)
 
   defp offers(%Compiled{strategy: strategy} = compiled),

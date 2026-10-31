@@ -170,7 +170,16 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
               placeholder={gettext("Repeat password")}
             />
           </div>
-          <.input field={@form[:name]} type="text" label={gettext("Name")} required />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <.input field={@form[:name]} type="text" label={gettext("Name")} required />
+            <.input
+              field={@form[:phone]}
+              type="tel"
+              label={gettext("Phone")}
+              placeholder="+79991112233"
+              maxlength="12"
+            />
+          </div>
 
           <div :if={!@admin_target} class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <.input

@@ -1,4 +1,6 @@
 import Config
+
+config :delivest, yandex_rating_stub: true
 config :delivest, Oban, testing: :manual
 config :delivest, Delivest.Logs, enabled: false
 
@@ -62,3 +64,5 @@ config :delivest, Delivest.Media,
   public_bucket: "delivest",
   private_bucket: "delivest-private",
   public_host: "s3.test"
+
+config :delivest, :extra_crm_providers, [Delivest.Integrations.TestCrm]

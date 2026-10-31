@@ -9,6 +9,7 @@ defmodule Delivest.Net.MenuView do
           quantity: integer() | nil,
           weight: integer() | nil,
           measure_unit: String.t(),
+          nutrition: map() | nil,
           is_active: boolean() | nil,
           tags: [%{id: binary(), name: String.t(), icon_url: String.t() | nil}],
           suggested: boolean(),
@@ -39,6 +40,13 @@ defmodule Delivest.Net.MenuView do
     }
   end
 
+  @nutrients [:calories, :proteins, :fats, :carbohydrates]
+
+  defp nutrition(product) do
+    values = Map.new(@nutrients, &{&1, Map.get(product, &1)})
+    if Enum.all?(values, fn {_key, value} -> is_nil(value) end), do: nil, else: values
+  end
+
   defp build_product(product, tags) do
     %{
       id: product.id,
@@ -46,10 +54,12 @@ defmodule Delivest.Net.MenuView do
       slug: Map.get(product, :slug),
       old_price: Map.get(product, :old_price),
       price: product.price,
+      stars_reward: Map.get(product, :stars_reward),
       description: Map.get(product, :description),
       quantity: Map.get(product, :quantity),
       weight: Map.get(product, :weight),
       measure_unit: to_string(Map.get(product, :measure_unit) || :g),
+      nutrition: nutrition(product),
       is_active: Map.get(product, :is_active),
       tags: product |> Map.get(:tags, []) |> Enum.flat_map(&List.wrap(tags[&1])),
       suggested: Map.get(product, :suggested, false),

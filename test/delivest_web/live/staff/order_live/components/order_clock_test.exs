@@ -1,5 +1,5 @@
 defmodule DelivestWeb.Staff.OrderLive.Components.OrderClockTest do
-  use ExUnit.Case, async: true
+  use Delivest.DataCase, async: true
 
   import ExUnit.CaptureLog
   import Phoenix.LiveViewTest

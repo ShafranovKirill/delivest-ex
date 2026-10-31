@@ -1,0 +1,358 @@
+defmodule Delivest.Net.Modifiers do
+  import Ecto.Query
+
+  alias Delivest.{Audit, Identity, Media, Repo}
+  alias Vix.Vips.{Image, Operation}
+
+  alias Delivest.Net.{
+    Modifier,
+    ModifierGroup,
+    ModifierStop,
+    ProductExternalId,
+    ProductModifierGroup
+  }
+
+  @type choice :: %{
+          id: binary(),
+          group_name: String.t(),
+          name: String.t(),
+          price: non_neg_integer(),
+          quantity: pos_integer()
+        }
+
+  def list_groups do
+    ModifierGroup
+    |> order_by([g], asc: g.position, asc: g.name)
+    |> preload(:modifiers)
+    |> Repo.all()
+  end
+
+  def get_group(id), do: ModifierGroup |> Repo.get(id) |> Repo.preload(:modifiers)
+
+  def change_group(%ModifierGroup{} = group, attrs \\ %{}),
+    do: ModifierGroup.changeset(group, attrs)
+
+  def save_group(staff, %ModifierGroup{} = group, attrs) do
+    with :ok <- authorize(staff) do
+      group
+      |> ModifierGroup.changeset(attrs)
+      |> Repo.insert_or_update()
+      |> Audit.track(staff, "modifier_group.saved")
+    end
+  end
+
+  def delete_group(staff, %ModifierGroup{} = group) do
+    with :ok <- authorize(staff) do
+      group |> Repo.delete() |> Audit.track(staff, "modifier_group.deleted")
+    end
+  end
+
+  def change_modifier(%Modifier{} = modifier, attrs \\ %{}),
+    do: Modifier.changeset(modifier, attrs)
+
+  def save_modifier(staff, %Modifier{} = modifier, attrs) do
+    with :ok <- authorize(staff) do
+      modifier |> Modifier.changeset(attrs) |> Repo.insert_or_update()
+    end
+  end
+
+  def delete_modifier(staff, %Modifier{} = modifier) do
+    with :ok <- authorize(staff) do
+      with {:ok, deleted} <- Repo.delete(modifier) do
+        delete_photo(modifier.photo_key)
+        clear_caches()
+        {:ok, deleted}
+      end
+    end
+  end
+
+  def photo_url(%Modifier{photo_key: key}) when is_binary(key) do
+    {:ok, url} = Media.generate_public_url(Media.public_bucket(), key)
+    url
+  end
+
+  def photo_url(_modifier), do: nil
+
+  def put_photo(staff, %Modifier{} = modifier, binary) when is_binary(binary) do
+    with :ok <- authorize(staff),
+         {:ok, webp} <- shrink(binary),
+         key = "modifiers/#{Ecto.UUID.generate()}.webp",
+         :ok <- put(key, webp) do
+      case modifier |> Ecto.Changeset.change(photo_key: key) |> Repo.update() do
+        {:ok, updated} ->
+          delete_photo(modifier.photo_key)
+          clear_caches()
+          {:ok, updated}
+
+        error ->
+          delete_photo(key)
+          error
+      end
+    end
+  end
+
+  def remove_photo(staff, %Modifier{} = modifier) do
+    with :ok <- authorize(staff),
+         {:ok, updated} <- modifier |> Ecto.Changeset.change(photo_key: nil) |> Repo.update() do
+      delete_photo(modifier.photo_key)
+      clear_caches()
+      {:ok, updated}
+    end
+  end
+
+  defp shrink(binary) do
+    with {:ok, thumb} <-
+           Operation.thumbnail_buffer(binary, 400, height: 400, size: :VIPS_SIZE_DOWN),
+         {:ok, webp} <- Image.write_to_buffer(thumb, ".webp[strip,Q=82]") do
+      {:ok, webp}
+    else
+      {:error, _reason} -> {:error, :invalid_image}
+    end
+  end
+
+  defp put(key, body) do
+    Media.public_bucket()
+    |> ExAws.S3.put_object(key, body, content_type: "image/webp")
+    |> ExAws.request()
+    |> case do
+      {:ok, _response} -> :ok
+      {:error, _reason} -> {:error, :upload_failed}
+    end
+  end
+
+  defp delete_photo(nil), do: :ok
+
+  defp delete_photo(key) do
+    Media.public_bucket() |> ExAws.S3.delete_object(key) |> ExAws.request()
+    :ok
+  end
+
+  defp clear_caches do
+    Cachex.clear(:menu_cache)
+    Cachex.clear(:cart_cache)
+  end
+
+  def get_modifier(id), do: Repo.get(Modifier, id)
+
+  def crm_ids(modifier_ids, provider) do
+    Repo.all(
+      from(e in ProductExternalId,
+        where:
+          e.entity_type == "modifier" and e.entity_id in ^modifier_ids and
+            e.provider == ^to_string(provider),
+        select: {e.entity_id, e.external_id}
+      )
+    )
+    |> Map.new()
+  end
+
+  def put_crm_id(staff, %Modifier{} = modifier, branch_id, provider, value) do
+    with :ok <- authorize(staff) do
+      Repo.delete_all(
+        from(e in ProductExternalId,
+          where:
+            e.entity_type == "modifier" and e.entity_id == ^modifier.id and
+              e.provider == ^to_string(provider)
+        )
+      )
+
+      case value && String.trim(value) do
+        blank when blank in [nil, ""] ->
+          {:ok, nil}
+
+        external_id ->
+          %ProductExternalId{entity_type: "modifier", entity_id: modifier.id}
+          |> ProductExternalId.changeset(%{
+            branch_id: branch_id,
+            provider: to_string(provider),
+            external_id: external_id
+          })
+          |> Repo.insert()
+      end
+    end
+  end
+
+  def group_ids(product_id) do
+    Repo.all(
+      from(l in ProductModifierGroup,
+        where: l.product_id == ^product_id,
+        order_by: [asc: l.position],
+        select: l.group_id
+      )
+    )
+  end
+
+  def attach(staff, product_id, group_ids) do
+    with :ok <- authorize(staff) do
+      rows =
+        group_ids
+        |> Enum.uniq()
+        |> Enum.with_index()
+        |> Enum.map(fn {group_id, index} ->
+          %{product_id: product_id, group_id: group_id, position: index}
+        end)
+
+      Repo.transaction(fn ->
+        Repo.delete_all(from(l in ProductModifierGroup, where: l.product_id == ^product_id))
+        Repo.insert_all(ProductModifierGroup, rows)
+        rows
+      end)
+    end
+  end
+
+  def for_products(product_ids) do
+    links =
+      Repo.all(
+        from(l in ProductModifierGroup,
+          join: g in assoc(l, :group),
+          where: l.product_id in ^product_ids and g.is_active,
+          order_by: [asc: l.position],
+          preload: [group: {g, modifiers: ^from(m in Modifier, where: m.is_active)}]
+        )
+      )
+
+    links
+    |> Enum.group_by(& &1.product_id, & &1.group)
+    |> Map.new(fn {product_id, groups} ->
+      {product_id, Enum.reject(groups, &(&1.modifiers == []))}
+    end)
+  end
+
+  def stopped_ids(branch_id, now \\ DateTime.utc_now()) do
+    Repo.all(
+      from(s in ModifierStop,
+        where: s.branch_id == ^branch_id and (is_nil(s.until) or s.until > ^now),
+        select: s.modifier_id
+      )
+    )
+    |> MapSet.new()
+  end
+
+  def stop(staff, branch_id, %Modifier{} = modifier, period) do
+    with :ok <- Identity.authorize(staff, "stops.update", branch_id) do
+      %ModifierStop{
+        modifier_id: modifier.id,
+        branch_id: branch_id,
+        until: Delivest.Net.StopPeriod.until(period, DateTime.utc_now(), branch_id),
+        staff_id: staff.id
+      }
+      |> Repo.insert(
+        on_conflict: {:replace, [:until, :staff_id, :updated_at]},
+        conflict_target: [:modifier_id, :branch_id]
+      )
+    end
+  end
+
+  def resume(staff, branch_id, %Modifier{} = modifier) do
+    with :ok <- Identity.authorize(staff, "stops.update", branch_id) do
+      Repo.delete_all(
+        from(s in ModifierStop,
+          where: s.branch_id == ^branch_id and s.modifier_id == ^modifier.id
+        )
+      )
+
+      :ok
+    end
+  end
+
+  @spec resolve([ModifierGroup.t()], term(), MapSet.t()) ::
+          {:ok, [choice()]} | {:error, atom()}
+  def resolve(groups, selection, stopped \\ MapSet.new()) do
+    picked = normalize(selection)
+    known = for g <- groups, m <- g.modifiers, into: %{}, do: {m.id, {g, m}}
+
+    cond do
+      Enum.any?(picked, fn {id, _q} -> not Map.has_key?(known, id) end) ->
+        {:error, :modifier_unavailable}
+
+      Enum.any?(picked, fn {id, _q} -> MapSet.member?(stopped, id) end) ->
+        {:error, :modifier_unavailable}
+
+      true ->
+        groups
+        |> Enum.map(&pick(&1, picked, stopped))
+        |> collect()
+    end
+  end
+
+  def key(choices) do
+    choices
+    |> Enum.map(&"#{&1.id}*#{&1.quantity}")
+    |> Enum.sort()
+    |> Enum.join(",")
+  end
+
+  def price(choices), do: choices |> Enum.map(&(&1.price * &1.quantity)) |> Enum.sum()
+
+  defp pick(group, picked, stopped) do
+    chosen =
+      for m <- group.modifiers, quantity = Map.get(picked, m.id), quantity > 0, do: {m, quantity}
+
+    chosen =
+      if chosen == [] and (picked == %{} or group.min > 0),
+        do:
+          for(m <- group.modifiers, m.is_default, not MapSet.member?(stopped, m.id), do: {m, 1}),
+        else: chosen
+
+    count = chosen |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+
+    cond do
+      Enum.any?(chosen, fn {m, quantity} -> quantity > m.max_quantity end) ->
+        {:error, :modifier_quantity}
+
+      count < group.min ->
+        {:error, :modifiers_required}
+
+      count > group.max ->
+        {:error, :modifiers_limit}
+
+      true ->
+        {:ok, Enum.map(chosen, fn {m, quantity} -> choice(group, m, quantity) end)}
+    end
+  end
+
+  defp choice(group, modifier, quantity) do
+    %{
+      id: modifier.id,
+      group_name: group.name,
+      name: modifier.name,
+      price: modifier.price,
+      quantity: quantity
+    }
+  end
+
+  defp collect(results) do
+    Enum.reduce_while(results, {:ok, []}, fn
+      {:ok, choices}, {:ok, acc} -> {:cont, {:ok, acc ++ choices}}
+      error, _acc -> {:halt, error}
+    end)
+  end
+
+  defp normalize(nil), do: %{}
+
+  defp normalize(selection) when is_list(selection) do
+    Enum.reduce(selection, %{}, fn
+      %{"id" => id} = item, acc ->
+        Map.update(acc, id, quantity(item["quantity"]), &(&1 + quantity(item["quantity"])))
+
+      %{id: id} = item, acc ->
+        Map.update(acc, id, quantity(item[:quantity]), &(&1 + quantity(item[:quantity])))
+
+      id, acc when is_binary(id) ->
+        Map.update(acc, id, 1, &(&1 + 1))
+
+      _other, acc ->
+        acc
+    end)
+  end
+
+  defp normalize(_selection), do: %{}
+
+  defp quantity(value) when is_integer(value) and value > 0, do: value
+  defp quantity(nil), do: 1
+  defp quantity(_value), do: 0
+
+  defp authorize(staff) do
+    if Identity.can?(staff, "products.update"), do: :ok, else: {:error, :forbidden}
+  end
+end

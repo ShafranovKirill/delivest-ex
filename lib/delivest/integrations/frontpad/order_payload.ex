@@ -4,6 +4,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
   import Delivest.Integrations.Frontpad.Fields
 
   alias Delivest.Integrations.Crm.OrderNotes
+  alias Delivest.Money
 
   alias Delivest.Integrations.Frontpad.{
     AddressFields,
@@ -25,6 +26,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
           affiliate: String.t() | nil,
           phone: String.t() | nil,
           name: String.t() | nil,
+          person: String.t() | nil,
           street: String.t() | nil,
           home: String.t() | nil,
           pod: String.t() | nil,
@@ -45,6 +47,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     :affiliate,
     :phone,
     :name,
+    :person,
     :street,
     :home,
     :pod,
@@ -68,12 +71,13 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
         %__MODULE__{
           secret: secret,
           affiliate: text(settings.affiliate, 50),
-          phone: text(customer_phone(order), 50),
-          name: text(customer_name(order), 50),
+          phone: text(order.customer_phone, 50),
+          name: text(order.customer_name, 50),
+          person: person(order.persons),
           descr: descr(order, settings),
           pay: PaymentCodes.code_for(settings.payments, order.payment_method),
           tags: TagCodes.codes(settings.tags, order),
-          datetime: format_cook_by(order.cook_by),
+          datetime: format_cook_by(order),
           sale_amount: sale_amount(order.items, settings),
           products: formatted_products ++ delivery_line(order, settings)
         }
@@ -92,6 +96,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
         {"affiliate", view.affiliate},
         {"phone", view.phone},
         {"name", view.name},
+        {"person", view.person},
         {"street", view.street},
         {"home", view.home},
         {"pod", view.pod},
@@ -141,15 +146,8 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     end
   end
 
-  defp customer_phone(%{customer_phone: phone}) when is_binary(phone) and phone != "", do: phone
-  defp customer_phone(%{client: %{phone: phone}}), do: phone
-  defp customer_phone(%{channel: %{details: %{"phone" => phone}}}), do: phone
-  defp customer_phone(_), do: nil
-
-  defp customer_name(%{customer_name: name}) when is_binary(name) and name != "", do: name
-  defp customer_name(%{client: %{name: name}}), do: name
-  defp customer_name(%{channel: %{details: %{"client_name" => name}}}), do: name
-  defp customer_name(_), do: nil
+  defp person(count) when is_integer(count) and count > 0, do: Integer.to_string(count)
+  defp person(_count), do: nil
 
   defp extract_secret(%Settings{api_key: secret}) when is_binary(secret) and secret != "",
     do: {:ok, secret}
@@ -161,15 +159,20 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
   defp sale_amount(items, _settings) do
     case items |> Enum.map(&(discount_per_unit(&1) * &1.quantity)) |> Enum.sum() do
       0 -> nil
-      amount -> to_string(amount)
+      amount -> rubles(amount)
     end
   end
 
   defp forced_price(item, %Settings{price_override: true}) do
-    if discount_per_unit(item) > 0, do: to_string(item.price)
+    if discount_per_unit(item) > 0, do: rubles(item.price - modifiers_unit(item))
   end
 
   defp forced_price(_item, _settings), do: nil
+
+  defp modifiers_unit(%{modifiers: modifiers}) when is_list(modifiers),
+    do: modifiers |> Enum.map(&(&1.price * &1.quantity)) |> Enum.sum()
+
+  defp modifiers_unit(_item), do: 0
 
   defp discount_per_unit(%{base_price: base, price: price})
        when is_integer(base) and is_integer(price),
@@ -191,7 +194,10 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
               price: forced_price(item, settings)
             }
 
-            {:cont, [line | acc]}
+            case modifier_lines(item, length(acc), products_map) do
+              {:ok, extra} -> {:cont, Enum.reverse(extra) ++ [line | acc]}
+              error -> {:halt, error}
+            end
 
           _ ->
             {:halt, {:error, {:missing_external_id, item.product_id}}}
@@ -204,28 +210,65 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     end
   end
 
+  defp modifier_lines(%{modifiers: modifiers} = item, parent, products_map)
+       when is_list(modifiers) do
+    Enum.reduce_while(modifiers, {:ok, []}, fn modifier, {:ok, acc} ->
+      case products_map[modifier.modifier_id] do
+        %{external_id: ext_id} ->
+          line = %{
+            external_id: ext_id,
+            quantity: item.quantity * modifier.quantity,
+            mod: Integer.to_string(parent),
+            price: nil
+          }
+
+          {:cont, {:ok, acc ++ [line]}}
+
+        _missing when modifier.price == 0 ->
+          {:cont, {:ok, acc}}
+
+        _missing ->
+          {:halt, {:error, {:missing_external_id, modifier.modifier_id || modifier.name}}}
+      end
+    end)
+  end
+
+  defp modifier_lines(_item, _parent, _products_map), do: {:ok, []}
+
   defp delivery_line(%{delivery_amount: amount}, %Settings{delivery_article: article})
        when is_integer(amount) and amount > 0 and article not in [nil, ""],
-       do: [%{external_id: article, quantity: 1, mod: nil, price: to_string(amount)}]
+       do: [%{external_id: article, quantity: 1, mod: nil, price: rubles(amount)}]
 
   defp delivery_line(_order, _settings), do: []
+
+  defp rubles(amount), do: amount |> Money.to_rubles() |> to_string()
 
   defp descr(order, settings) do
     case {order, delivery_line(order, settings)} do
       {%{delivery_amount: amount}, []} when is_integer(amount) and amount > 0 ->
-        note = gettext("Delivery %{amount} ₽", amount: amount)
+        note = gettext("Delivery %{amount}", amount: Money.format(amount))
 
-        [note | OrderNotes.lines(order)]
+        [number_note(order), note | OrderNotes.lines(order)]
+        |> Enum.reject(&is_nil/1)
         |> Enum.join(". ")
         |> String.slice(0, 100)
 
       _sent_as_product ->
-        OrderNotes.text(order, 100)
+        [number_note(order) | OrderNotes.lines(order)]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(". ")
+        |> String.slice(0, 100)
     end
   end
 
-  defp format_cook_by(%NaiveDateTime{} = cook_by),
-    do: Calendar.strftime(cook_by, "%Y-%m-%d %H:%M:%S")
+  defp number_note(%{number: number}) when is_binary(number), do: "№#{number}"
+  defp number_note(_order), do: nil
+
+  defp format_cook_by(%{cook_by: %DateTime{} = cook_by} = order),
+    do:
+      cook_by
+      |> Delivest.LocalTime.local(order.branch_id)
+      |> Calendar.strftime("%Y-%m-%d %H:%M:%S")
 
   defp format_cook_by(_), do: nil
 end

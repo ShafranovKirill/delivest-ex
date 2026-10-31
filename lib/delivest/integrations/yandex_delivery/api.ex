@@ -6,7 +6,18 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
   def create(token, request_id, body),
     do: call(token, "/claims/create", [request_id: request_id], body)
 
+  def calculate(token, body), do: call(token, "/offers/calculate", [], body)
+
+  def search(token, external_order_id),
+    do: call(token, "/claims/search", [], %{external_order_id: external_order_id, limit: 10})
+
+  def set_point_ready(token, claim_id),
+    do: call(token, "/claims/set-point-ready", [claim_id: claim_id], %{visit_order: 1})
+
   def info(token, claim_id), do: call(token, "/claims/info", [claim_id: claim_id], %{})
+
+  def points_eta(token, claim_id),
+    do: call(token, "/claims/points-eta", [claim_id: claim_id], %{})
 
   def accept(token, claim_id, version),
     do: call(token, "/claims/accept", [claim_id: claim_id], %{version: version})
@@ -22,7 +33,7 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
     do: call(token, "/claims/journal", [], if(cursor, do: %{cursor: cursor}, else: %{}))
 
   def tracking_links(token, claim_id),
-    do: call(token, "/claims/tracking-links", [claim_id: claim_id], %{})
+    do: fetch(token, "/claims/tracking-links", claim_id: claim_id)
 
   def courier_phone(token, claim_id, point_id),
     do: call(token, "/driver-voiceforwarding", [], %{claim_id: claim_id, point_id: point_id})
@@ -30,11 +41,26 @@ defmodule Delivest.Integrations.YandexDelivery.Api do
   defp call(token, path, query, body) do
     path
     |> with_query(query)
-    |> Client.post(body,
+    |> Client.post(body, options(token))
+    |> handle()
+  end
+
+  defp fetch(token, path, query) do
+    path
+    |> Client.get(query, options(token))
+    |> handle()
+  end
+
+  defp options(token) do
+    [
       base_url: base_url(),
+      journal: :yandex_delivery,
       headers: [{"authorization", "Bearer " <> token}, {"accept-language", "ru"}]
-    )
-    |> case do
+    ]
+  end
+
+  defp handle(result) do
+    case result do
       {:ok, %{} = response} ->
         {:ok, response}
 

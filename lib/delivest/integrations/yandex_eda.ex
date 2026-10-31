@@ -3,9 +3,11 @@ defmodule Delivest.Integrations.YandexEda do
 
   alias Delivest.{Identity, Repo}
   alias Delivest.Integrations.Channels.Products
+  alias Delivest.Integrations.Journal
 
   alias Delivest.Integrations.YandexEda.{
     BranchSettings,
+    BusyMode,
     CourierCode,
     Menu,
     MenuReloadWorker,
@@ -46,6 +48,11 @@ defmodule Delivest.Integrations.YandexEda do
 
   @impl true
   def menu_changed(branch_id), do: reload_menu(branch_id, "menu", schedule_in: @menu_delay)
+
+  @impl true
+  def health_check(%Settings{} = settings) do
+    if PushApi.configured?(settings), do: PushApi.check(settings), else: {:error, :not_configured}
+  end
 
   def get_branch_settings(branch_id) do
     case Identity.get_branch(branch_id, preload: [:info]) do
@@ -92,32 +99,41 @@ defmodule Delivest.Integrations.YandexEda do
 
   def push_available?, do: PushApi.configured?(get_settings())
 
-  def pauses(branch_id), do: with_push(&Pause.list(&1, branch_id))
+  def enabled_branch_ids do
+    for branch <- Places.list(), Places.settings(branch).enabled, do: branch.id
+  end
+
+  def busy_mode(branch_id), do: BusyMode.active(branch_id)
+
+  def pauses(branch_id), do: with_push(branch_id, &Pause.list(&1, branch_id))
 
   def pause(staff, branch_id, minutes, tag) do
     if Identity.authorize(staff, "stops.update", branch_id) == :ok,
-      do: with_push(&Pause.start(&1, branch_id, minutes, tag)),
+      do: with_push(branch_id, &Pause.start(&1, branch_id, minutes, tag)),
       else: {:error, :forbidden}
   end
 
   def resume(staff, branch_id, block_ids) do
     if Identity.authorize(staff, "stops.update", branch_id) == :ok,
-      do: with_push(&Pause.stop(&1, branch_id, block_ids)),
+      do: with_push(branch_id, &Pause.stop(&1, branch_id, block_ids)),
       else: {:error, :forbidden}
   end
 
   def reconcile(staff, branch_id, date) do
     if Identity.authorize(staff, "orders.read", branch_id) == :ok,
-      do: with_push(&Reconciliation.run(&1, branch_id, date)),
+      do: with_push(branch_id, &Reconciliation.run(&1, branch_id, date)),
       else: {:error, :forbidden}
   end
 
   def validate_courier_code(staff, branch_id, order_id, code),
-    do: with_push(&CourierCode.validate(&1, staff, branch_id, order_id, code))
+    do: with_push(branch_id, &CourierCode.validate(&1, staff, branch_id, order_id, code))
 
-  defp with_push(fun) do
+  defp with_push(branch_id, fun) do
     settings = get_settings()
-    if PushApi.configured?(settings), do: fun.(settings), else: {:error, :push_not_configured}
+
+    if PushApi.configured?(settings),
+      do: Journal.scope([branch_id: branch_id], fn -> fun.(settings) end),
+      else: {:error, :push_not_configured}
   end
 
   def change_settings(%Settings{} = settings, attrs \\ %{}),

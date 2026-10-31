@@ -1,9 +1,9 @@
 defmodule Delivest.Push.Sender do
-  alias Delivest.Push.{Encryption, Subscription, Vapid}
+  alias Delivest.Push.{Encryption, Vapid}
 
   @ttl_seconds 3600
 
-  def deliver(%Subscription{} = subscription, payload) do
+  def deliver(%{endpoint: _, p256dh: _, auth: _} = subscription, payload) do
     body =
       payload |> Jason.encode!() |> Encryption.encrypt(subscription.p256dh, subscription.auth)
 

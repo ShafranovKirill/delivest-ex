@@ -137,7 +137,7 @@ defmodule Mix.Tasks.Delivest.CreateMenu do
         product_params = %{
           name: name,
           description: description,
-          price: price,
+          price: Delivest.Money.from_rubles(price),
           category_id: category_id,
           is_active: true,
           quantity: 10,
@@ -152,7 +152,10 @@ defmodule Mix.Tasks.Delivest.CreateMenu do
         |> Repo.transaction()
         |> case do
           {:ok, %{product: product}} ->
-            Mix.shell().info("    Created product: #{product.name} (#{product.price} ₽)")
+            Mix.shell().info(
+              "    Created product: #{product.name} (#{Delivest.Money.format(product.price)})"
+            )
+
             product
 
           {:error, _failed_op, error, _changes} ->

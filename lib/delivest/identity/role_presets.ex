@@ -10,11 +10,16 @@ defmodule Delivest.Identity.RolePresets do
     orders.create orders.read orders.update
     clients.create clients.read clients.update
     categories.read products.read stops.update
+    pos.use
   )
 
   @kitchen ~w(orders.read orders.cook)
 
+  @cashier ~w(orders.read pos.use)
+
   @courier ~w(orders.deliver)
+
+  @analyst ~w(orders.read clients.read statistics.read finance.read branches.read)
 
   @catalog ~w(
     categories.create categories.read categories.update categories.delete
@@ -30,6 +35,7 @@ defmodule Delivest.Identity.RolePresets do
                       stocks.read promotions.read
                       delivery.read delivery.update
                       integrations.read
+                      finance.read finance.update
                       statistics.read staff.read
                     )
 
@@ -39,8 +45,10 @@ defmodule Delivest.Identity.RolePresets do
       %{name: "Управляющий", permissions: Definitions.grantable()},
       %{name: "Менеджер филиала", permissions: @branch_manager},
       %{name: "Оператор", permissions: @operator},
+      %{name: "Кассир", permissions: @cashier},
       %{name: "Кухня", permissions: @kitchen},
       %{name: "Курьер", permissions: @courier},
+      %{name: "Аналитик", permissions: @analyst},
       %{name: "Контент-менеджер", permissions: @catalog}
     ]
   end

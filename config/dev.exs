@@ -7,7 +7,7 @@ config :delivest, Delivest.Repo,
   username: "postgres",
   password: "postgres",
   hostname: external_host,
-  database: "delivest",
+  database: System.get_env("DEV_DATABASE", "delivest"),
   port: 5432,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
@@ -65,7 +65,7 @@ config :delivest, :cookie_options,
 # Enable dev routes for dashboard and mailbox
 config :delivest, dev_routes: true
 
-config :delivest, auto_confirm_phone: true
+config :delivest, auto_confirm_phone: true, yandex_rating_stub: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

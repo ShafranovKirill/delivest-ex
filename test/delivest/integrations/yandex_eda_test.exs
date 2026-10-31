@@ -72,7 +72,7 @@ defmodule Delivest.Integrations.YandexEdaTest do
       soup =
         menu_product(branch, category,
           name: "Борщ",
-          price: 300,
+          price: 30_000,
           weight: 350,
           calories: 52.5,
           proteins: 3.1,
@@ -83,13 +83,13 @@ defmodule Delivest.Integrations.YandexEdaTest do
       tea =
         menu_product(branch, category,
           name: "Морс",
-          price: 100,
+          price: 10_000,
           measure_unit: :ml,
           calories: 40.0,
           excise: :sugary_drink
         )
 
-      hidden = menu_product(branch, category, price: 100)
+      hidden = menu_product(branch, category, price: 10_000)
       staff = insert(:staff, role: build(:role, permissions: ["products.update"]))
 
       {:ok, _} = YandexEda.update_product(staff, tea.id, %{"price" => "150"})

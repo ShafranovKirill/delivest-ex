@@ -7,9 +7,20 @@ defmodule Delivest.Integrations.Crm.Provider do
           optional(:warnings) => map()
         }
 
-  @type error_kind :: :permanent | :retry | {:snooze, pos_integer()}
+  @type error_kind :: Delivest.Integrations.Error.kind()
 
   @type catalog_item :: %{external_id: String.t(), name: String.t(), price: integer()}
+
+  @type capability ::
+          :cancel
+          | :update_items
+          | :update_comment
+          | :update_address
+          | :update_time
+          | :update_payments
+          | :own_pos
+
+  @type dictionary :: %{optional(atom()) => [%{id: String.t(), name: String.t()}]}
 
   @type webhook_reply :: {:ok, map()} | {:error, :not_found | term()}
 
@@ -18,8 +29,18 @@ defmodule Delivest.Integrations.Crm.Provider do
   @callback settings_schema() :: module()
   @callback configured?(settings :: struct() | nil) :: boolean()
 
-  @callback deliver_order(Order.t(), settings :: struct()) :: {:ok, delivery()} | {:error, term()}
+  @callback deliver_order(Order.t(), settings :: struct()) ::
+              {:ok, delivery()} | {:pending, ref :: String.t()} | {:error, term()}
+  @callback idempotent?() :: boolean()
+  @callback capabilities() :: [capability()]
+  @callback cancel_order(Order.t(), reason :: atom() | nil, settings :: struct()) ::
+              :ok | {:error, term()}
+  @callback update_order(Order.t(), changes :: map(), settings :: struct()) ::
+              :ok | {:pending, ref :: String.t()} | {:error, term()}
+  @callback status_map(settings :: struct()) :: %{String.t() => atom()}
+  @callback dictionaries(settings :: struct()) :: {:ok, dictionary()} | {:error, term()}
   @callback classify_error(reason :: term()) :: error_kind()
+  @callback health_check(settings :: struct() | nil) :: :ok | {:error, term()}
   @callback rate_limit(settings :: struct()) ::
               {key :: term(), interval_ms :: pos_integer()} | nil
 
@@ -28,11 +49,21 @@ defmodule Delivest.Integrations.Crm.Provider do
 
   @callback handle_webhook(token :: String.t(), params :: map()) :: webhook_reply()
 
+  @callback fetch_menu(settings :: struct()) ::
+              {:ok, Delivest.Net.MenuImport.menu()} | {:error, term()}
+
   @callback stops_enabled?(settings :: struct()) :: boolean()
   @callback fetch_stops(settings :: struct()) :: {:ok, [String.t()]} | {:error, term()}
 
-  @optional_callbacks catalog_source: 1,
+  @optional_callbacks idempotent?: 0,
+                      capabilities: 0,
+                      cancel_order: 3,
+                      update_order: 3,
+                      status_map: 1,
+                      dictionaries: 1,
+                      catalog_source: 1,
                       fetch_catalog: 1,
+                      fetch_menu: 1,
                       handle_webhook: 2,
                       stops_enabled?: 1,
                       fetch_stops: 1

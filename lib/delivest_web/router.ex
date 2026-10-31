@@ -67,6 +67,7 @@ defmodule DelivestWeb.Router do
     pipe_through :client_api
 
     post "/call/:id/complete", AuthController, :complete
+    post "/call/:id/confirm", AuthController, :confirm_code
     post "/refresh", AuthController, :refresh
 
     scope "/" do
@@ -101,6 +102,7 @@ defmodule DelivestWeb.Router do
     pipe_through [:client_api, :client_identity, :client_required]
 
     get "/me", Profile.ProfileController, :show
+    get "/loyalty", Loyalty.LoyaltyController, :show
     get "/orders", Order.OrderController, :index
 
     scope "/addresses", Address do
@@ -126,6 +128,7 @@ defmodule DelivestWeb.Router do
 
       get "/", CartController, :show
       post "/:cart_id/items/:product_id", CartController, :add_item
+      put "/:cart_id/items/:product_id", CartController, :replace_item
       delete "/:cart_id/items/:product_id", CartController, :remove_item
       delete "/:cart_id/clear", CartController, :clear
       post "/:cart_id/repeat/:order_id", CartController, :repeat
@@ -145,6 +148,8 @@ defmodule DelivestWeb.Router do
 
     scope "/orders", Order do
       get "/active", OrderController, :active
+      post "/:id/cancel", OrderController, :cancel
+      post "/:id/pay", OrderController, :pay
 
       scope "/" do
         pipe_through :order_rate_limit
@@ -158,19 +163,44 @@ defmodule DelivestWeb.Router do
     get "/branches/:branch_id/menu", Menu.MenuController, :index
   end
 
-  scope "/integrations", DelivestWeb.Integrations do
-    pipe_through :api
+  pipeline :integration_journal do
+    plug DelivestWeb.Plugs.IntegrationJournal
+  end
 
-    post "/crm/:provider/:token", CrmWebhookController, :create
+  pipeline :zvonok_journal do
+    plug DelivestWeb.Plugs.IntegrationJournal, provider: :zvonok
   end
 
   scope "/integrations", DelivestWeb.Integrations do
+    pipe_through [:api, :integration_journal]
+
+    post "/crm/:provider/:token", CrmWebhookController, :create
+    post "/fiscal/:provider/:token", FiscalCallbackController, :create
+  end
+
+  pipeline :yookassa_journal do
+    plug DelivestWeb.Plugs.IntegrationJournal, provider: :yookassa
+  end
+
+  scope "/integrations", DelivestWeb.Integrations do
+    pipe_through [:api, :yookassa_journal]
+
+    post "/yookassa/:token", YookassaWebhookController, :create
+  end
+
+  scope "/integrations", DelivestWeb.Integrations do
+    pipe_through :zvonok_journal
+
     get "/zvonok/:token", ZvonokWebhookController, :create
   end
 
   pipeline :yandex_eda do
     plug DelivestWeb.Plugs.RateLimit, bucket: :yandex_eda, limit: 600, period: :timer.minutes(1)
-    plug DelivestWeb.Plugs.YandexEdaJournal
+
+    plug DelivestWeb.Plugs.IntegrationJournal,
+      provider: :yandex_eda,
+      branch_param: "restaurant_id"
+
     plug DelivestWeb.Plugs.YandexEdaContentType
   end
 
@@ -206,7 +236,15 @@ defmodule DelivestWeb.Router do
   end
 
   scope "/staff", DelivestWeb.Staff do
+    get "/manifest.webmanifest", StaffPwaController, :manifest
+    get "/sw.js", StaffPwaController, :worker
+  end
+
+  scope "/staff", DelivestWeb.Staff do
     pipe_through :staff_browser
+
+    post "/push/subscriptions", StaffPushController, :subscribe
+    delete "/push/subscriptions", StaffPushController, :unsubscribe
 
     scope "/" do
       pipe_through :login_rate_limit
@@ -216,6 +254,7 @@ defmodule DelivestWeb.Router do
     delete "/auth/log_out", StaffSessionController, :delete
     get "/", StaffHomeController, :show
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
+    get "/b/:branch_slug/products/export", StaffMenuExportController, :show
 
     live_session :staff_public,
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
@@ -242,6 +281,7 @@ defmodule DelivestWeb.Router do
         live "/", Branches, :index
         live "/new", Edit, :new
         live "/:slug/edit", Edit, :edit
+        live "/:slug/edit/:section", Edit, :section
       end
 
       scope "/employee", StaffLive do
@@ -253,6 +293,7 @@ defmodule DelivestWeb.Router do
       scope "/franchise", FranchiseLive do
         live "/", Index, :index
         live "/documents/:kind", Index, :document
+        live "/:section", Index, :section
       end
 
       scope "/roles", RoleLive do
@@ -287,6 +328,17 @@ defmodule DelivestWeb.Router do
         live "/kitchen", KitchenLive.Index, :index
       end
 
+      live_session :pos,
+        layout: {DelivestWeb.Layouts, :kitchen},
+        on_mount: [
+          {DelivestWeb.Hooks.StaffAuth, :default},
+          {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+          {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.Permission, "pos.use"}
+        ] do
+        live "/pos", PosLive.Index, :index
+      end
+
       live_session :staff_need_branch,
         layout: {DelivestWeb.Layouts, :staff_app},
         on_mount: [
@@ -301,16 +353,25 @@ defmodule DelivestWeb.Router do
         live "/dashboard", DashboardLive.Index, :index
         live "/statistics", StatisticsLive.Index, :index
         live "/delivery", DeliveryLive.Index, :index
+        live "/delivery/zones", DeliveryLive.Zones, :index
+        live "/delivery/couriers", DeliveryLive.Couriers, :index
         live "/deliveries", CourierLive.Index, :index
+        live "/couriers", CourierLive.Board, :index
+        live "/finance/payments", FinanceLive.Payments, :index
+        live "/finance/receipts", ReceiptLive.Index, :index
 
         scope "/integrations", IntegrationLive do
           live "/", Index, :index
           live "/frontpad", Frontpad, :index
+          live "/iiko", Iiko, :index
+          live "/rkeeper", Rkeeper, :index
           live "/routes", Routes, :index
           live "/zvonok", Zvonok, :index
           live "/dadata", Dadata, :index
+          live "/yookassa", Yookassa, :index
           live "/yandex-eda", YandexEda, :index
           live "/yandex-delivery", YandexDelivery, :index
+          live "/fiscal", Fiscal, :index
         end
 
         scope "/categories", CategoryLive do
@@ -324,6 +385,7 @@ defmodule DelivestWeb.Router do
           live "/", Products, :index
           live "/bulk", Bulk, :index
           live "/stops", StopList, :index
+          live "/modifiers", Modifiers, :index
           live "/suggested", Suggested, :index
           live "/tags", Tags, :index
           live "/tags/new", Tags, :new
@@ -337,6 +399,8 @@ defmodule DelivestWeb.Router do
           live "/:id/edit", Stocks, :edit
           live "/new", Stocks, :new
         end
+
+        live "/loyalty", LoyaltyLive.Index, :index
 
         scope "/promotions", PromotionLive do
           live "/", Promotions, :index
@@ -370,6 +434,14 @@ defmodule DelivestWeb.Router do
     get "/", DelivestWeb.PageController, :home
   end
 
+  scope "/board", DelivestWeb do
+    pipe_through :browser
+
+    live_session :board, layout: {DelivestWeb.Layouts, :kitchen} do
+      live "/:token", BoardLive.Index, :index
+    end
+  end
+
   scope "/" do
     pipe_through :browser
 
@@ -391,6 +463,14 @@ defmodule DelivestWeb.Router do
 
       live_dashboard "/dashboard", metrics: DelivestWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+
+    scope "/dev/atol/possystem/v5", DelivestWeb.Dev do
+      pipe_through :api
+
+      post "/getToken", AtolStubController, :token
+      get "/:group/report/:uuid", AtolStubController, :report
+      post "/:group/:operation", AtolStubController, :register
     end
   end
 end

@@ -13,13 +13,13 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
         old_price: %Schema{
           type: :integer,
           nullable: true,
-          example: 690,
+          example: 69_000,
           description: "Цена без скидки, если на товар действует акция; `price` — цена со скидкой"
         },
         price: %Schema{
           type: :integer,
-          example: 590,
-          description: "Цена в копейках/минимальных единицах"
+          example: 59_000,
+          description: "Цена в копейках"
         },
         description: %Schema{type: :string, nullable: true, example: "Сочная пицца с колбасками"},
         quantity: %Schema{
@@ -39,6 +39,22 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           enum: ["g", "ml"],
           example: "g",
           description: "Единица измерения веса: граммы или миллилитры"
+        },
+        stars_reward: %Schema{
+          type: :integer,
+          nullable: true,
+          description: "Дополнительные звёзды за товар сверх общей ставки"
+        },
+        nutrition: %Schema{
+          type: :object,
+          nullable: true,
+          description: "КБЖУ на 100 г; пустые поля — null",
+          properties: %{
+            calories: %Schema{type: :number, nullable: true, example: 250.0},
+            proteins: %Schema{type: :number, nullable: true, example: 12.5},
+            fats: %Schema{type: :number, nullable: true, example: 9.0},
+            carbohydrates: %Schema{type: :number, nullable: true, example: 30.0}
+          }
         },
         is_active: %Schema{type: :boolean, example: true},
         tags: %Schema{
@@ -79,6 +95,39 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           nullable: true,
           example: "hinkali",
           description: "Человекочитаемый идентификатор товара для URL (?product=hinkali)"
+        },
+        modifier_groups: %Schema{
+          type: :array,
+          description:
+            "Группы модификаторов. `min`/`max` — сколько выбрать в группе, `is_size` — размер (переключатель)",
+          items: %Schema{
+            type: :object,
+            properties: %{
+              id: %Schema{type: :string, format: :uuid},
+              name: %Schema{type: :string, example: "Размер"},
+              min: %Schema{type: :integer, example: 1},
+              max: %Schema{type: :integer, example: 1},
+              is_size: %Schema{type: :boolean},
+              modifiers: %Schema{
+                type: :array,
+                items: %Schema{
+                  type: :object,
+                  properties: %{
+                    id: %Schema{type: :string, format: :uuid},
+                    name: %Schema{type: :string, example: "35 см"},
+                    price: %Schema{type: :integer, example: 20_000},
+                    max_quantity: %Schema{type: :integer, example: 1},
+                    is_default: %Schema{type: :boolean},
+                    weight: %Schema{type: :integer, nullable: true},
+                    photo_url: %Schema{type: :string, nullable: true},
+                    stopped: %Schema{type: :boolean}
+                  },
+                  required: [:id, :name, :price, :max_quantity, :is_default, :stopped]
+                }
+              }
+            },
+            required: [:id, :name, :min, :max, :is_size, :modifiers]
+          }
         }
       }
     })

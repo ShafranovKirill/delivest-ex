@@ -19,7 +19,53 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         latitude: %Schema{type: :number, format: :float, example: 55.7558, nullable: true},
         longitude: %Schema{type: :number, format: :float, example: 37.6173, nullable: true},
         phone_number: %Schema{type: :string, example: "+79990000000", nullable: true},
-        delivery_time: %Schema{type: :integer, example: "30", nullable: true},
+        delivery_time: %Schema{
+          type: :integer,
+          example: "30",
+          nullable: true,
+          description: "Минуты до готовности вместе с добавкой на загрузку"
+        },
+        intake: %Schema{
+          type: :object,
+          description:
+            "Режим приёма: normal, load (добавка к времени) или paused (заказы закрыты)",
+          properties: %{
+            mode: %Schema{type: :string, enum: ["normal", "load", "paused"]},
+            extra_minutes: %Schema{type: :integer},
+            until: %Schema{type: :string, format: :"date-time", nullable: true},
+            reason: %Schema{type: :string, nullable: true}
+          }
+        },
+        loyalty: %Schema{
+          type: :object,
+          description: "Бонусная система филиала: за каждые per_rubles ₽ начисляется stars звёзд",
+          properties: %{
+            enabled: %Schema{type: :boolean},
+            per_rubles: %Schema{type: :integer, nullable: true},
+            stars: %Schema{type: :integer, nullable: true},
+            expire_days: %Schema{type: :integer, nullable: true},
+            spend_enabled: %Schema{
+              type: :boolean,
+              description: "Можно списывать звёзды с суммы заказа"
+            },
+            max_percent: %Schema{
+              type: :integer,
+              nullable: true,
+              description: "Максимальная доля заказа в процентах, которую можно оплатить звёздами"
+            }
+          }
+        },
+        payment_methods: %Schema{
+          type: :array,
+          items: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
+          description: "Способы оплаты, включённые на филиале"
+        },
+        special_hours: %Schema{
+          type: :object,
+          additionalProperties: true,
+          description: "Исключения по датам (ISO-дата → enabled, open, close) поверх недели",
+          example: %{"2026-12-31" => %{enabled: true, open: "10:00", close: "18:00"}}
+        },
         working_hours: %Schema{
           type: :object,
           additionalProperties: true,

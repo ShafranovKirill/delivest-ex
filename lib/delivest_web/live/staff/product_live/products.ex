@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.ProductLive.Products do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Identity, Repo, Net}
+  alias Delivest.{Gateway, Identity, Money, Repo, Net}
   alias Delivest.Net.{Product, ProductCrmIds, Stops}
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.CopyComponent
@@ -32,6 +32,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        selected_ids: [],
        copy_open: false,
        bulk_delete_open: false,
+       crm_menu: Gateway.crm?(socket.assigns.current_branch, :menu),
        stops: Stops.by_product(branch_id),
        stopped_filter: false,
        params: %{}
@@ -99,7 +100,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   defp apply_action(socket, :new, _params) do
-    if Identity.can?(socket.assigns.current_staff, "products.create") do
+    if Identity.can?(socket.assigns.current_staff, "products.create") and
+         not socket.assigns.crm_menu do
       assign(socket, page_title: gettext("Create product"), product: %Product{})
     else
       socket
@@ -196,6 +198,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   def handle_event("delete_click", %{"id" => id}, socket) do
     with true <- Identity.can?(socket.assigns.current_staff, "products.delete"),
+         false <- socket.assigns.crm_menu,
          {:ok, product} <- Net.get_branch_product(socket.assigns.branch_id, id) do
       {:noreply, assign(socket, product_to_delete: product)}
     else
@@ -205,6 +208,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
          |> put_flash(:error, gettext("You don't have permission to delete products."))
          |> push_patch(to: ~p"/staff/b/#{socket.assigns.current_branch}/products")}
     end
+  end
+
+  def handle_event("confirm_delete", _, %{assigns: %{crm_menu: true}} = socket) do
+    {:noreply, assign(socket, product_to_delete: nil)}
   end
 
   def handle_event("confirm_delete", _, %{assigns: %{product_to_delete: product}} = socket) do
@@ -226,10 +233,17 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   def handle_event("bulk_delete_click", _, socket) do
-    {:noreply, assign(socket, bulk_delete_open: socket.assigns.selected_ids != [])}
+    {:noreply,
+     assign(socket,
+       bulk_delete_open: socket.assigns.selected_ids != [] and not socket.assigns.crm_menu
+     )}
   end
 
   def handle_event("cancel_bulk_delete", _, socket) do
+    {:noreply, assign(socket, bulk_delete_open: false)}
+  end
+
+  def handle_event("confirm_bulk_delete", _, %{assigns: %{crm_menu: true}} = socket) do
     {:noreply, assign(socket, bulk_delete_open: false)}
   end
 
@@ -432,7 +446,16 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </.button>
 
           <.link
-            :if={Identity.can?(@current_staff, "products.create")}
+            id="export-products"
+            href={~p"/staff/b/#{@current_branch}/products/export"}
+            class="btn btn-outline"
+          >
+            <.icon name="hero-arrow-down-tray" class="size-5 mr-1" />
+            {gettext("Export")}
+          </.link>
+
+          <.link
+            :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
             navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
             class="btn btn-outline"
           >
@@ -441,7 +464,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </.link>
 
           <.button
-            :if={Identity.can?(@current_staff, "products.create")}
+            :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
             patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
             class="btn btn-primary"
           >
@@ -518,7 +541,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Price")} sort="price">
-          <div class="font-mono">{prod.price}</div>
+          <div class="font-mono">{Money.format(prod.price)}</div>
         </:col>
 
         <:col :let={{_id, prod}} label={gettext("Quantity")} secondary>
@@ -599,7 +622,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
               <.icon name="hero-pencil-square" class="size-4" />
             </.button>
             <.button
-              :if={Identity.can?(@current_staff, "products.delete")}
+              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
               phx-click="delete_click"
               phx-value-id={prod.id}
               class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"
@@ -628,7 +651,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           {gettext("Copy")}
         </.button>
         <.button
-          :if={Identity.can?(@current_staff, "products.delete")}
+          :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
           phx-click="bulk_delete_click"
           class="btn btn-ghost btn-sm text-error hover:bg-error/10"
         >

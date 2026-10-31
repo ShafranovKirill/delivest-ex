@@ -69,8 +69,17 @@ msgstr "Стоп-лист"
 msgid "delivery"
 msgstr "Доставка"
 
+msgid "finance"
+msgstr "Финансы"
+
 msgid "integrations"
 msgstr "Интеграции"
 
 msgid "franchise"
 msgstr "Франшиза"
+
+msgid "pos"
+msgstr "Касса"
+
+msgid "use"
+msgstr "Работа на кассе"

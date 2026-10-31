@@ -24,7 +24,7 @@ defmodule Delivest.Integrations.YandexEda.OrderLookup do
     with {:ok, uuid} <- Ecto.UUID.cast(order_id),
          %Order{} = order <-
            Repo.one(from(o in Order, where: o.id == ^uuid and o.source == ^@provider)) do
-      {:ok, Repo.preload(order, :items)}
+      {:ok, Repo.preload(order, items: :modifiers)}
     else
       _ -> {:error, :order_not_found}
     end

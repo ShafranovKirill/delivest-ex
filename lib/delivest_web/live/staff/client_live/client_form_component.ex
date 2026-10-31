@@ -124,6 +124,7 @@ defmodule DelivestWeb.Staff.ClientLive.ClientFormComponent do
             placeholder={gettext("Client Name")}
           />
 
+          <.input field={@form[:operator_note]} type="textarea" label={gettext("Operator note")} />
           <.input
             field={@form[:status]}
             type="select"

@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
   alias Delivest.{Couriers, Identity}
   alias Delivest.Identity.Branch.CourierSettings
   alias Delivest.Integrations.YandexDelivery
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -66,14 +67,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
   defp taxi_class_options,
     do: [{gettext("Courier, up to 10 kg"), :courier}, {gettext("Express, up to 20 kg"), :express}]
 
-  defp vat_options,
-    do: [
-      {gettext("No VAT"), :vat_none},
-      {"0%", :vat0},
-      {"10%", :vat10},
-      {"20%", :vat20}
-    ]
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -102,8 +95,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
         <.icon name="hero-exclamation-triangle" class="size-5" />
         <span>
           {gettext("The branch uses its own couriers. Choose Yandex Delivery in the branch couriers.")}
-          <.link navigate={~p"/staff/branches/#{@current_branch.slug}/edit"} class="link">
-            {gettext("Branch settings")}
+          <.link navigate={~p"/staff/b/#{@current_branch}/delivery/couriers"} class="link">
+            {gettext("Branch couriers")}
           </.link>
         </span>
       </div>
@@ -116,6 +109,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
           )}
         </span>
       </div>
+
+      <.live_component
+        :if={YandexDelivery.Settings.configured?(@settings)}
+        module={HealthComponent}
+        id="yandex-delivery-health"
+        provider={:yandex_delivery}
+        branch_id={@current_branch.id}
+        scope={@current_branch.id}
+      />
 
       <.form
         for={@form}
@@ -164,13 +166,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
             options={taxi_class_options()}
             disabled={not @can_edit}
           />
-          <.input
-            field={@form[:vat]}
-            type="select"
-            label={gettext("VAT for the payment to the courier")}
-            options={vat_options()}
-            disabled={not @can_edit}
-          />
         </div>
 
         <.input
@@ -179,6 +174,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
           label={gettext("Confirm the pickup and the handover with SMS codes")}
           disabled={not @can_edit}
         />
+
+        <.input
+          field={@form[:auto_accept]}
+          type="checkbox"
+          label={gettext("Confirm the claim automatically")}
+          disabled={not @can_edit}
+        />
+        <p class="-mt-2 text-xs text-base-content/60">
+          {gettext(
+            "Only if the Yandex manager has enabled auto accept for your contract, otherwise claims are not created. Without it the claim is confirmed by the next poll within 10 seconds."
+          )}
+        </p>
 
         <p class="text-xs text-base-content/60">
           {gettext(
@@ -192,6 +199,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
           </button>
         </div>
       </.form>
+
+      <.live_component
+        module={JournalComponent}
+        id="yandex-delivery-journal"
+        provider={:yandex_delivery}
+        branch_id={@current_branch.id}
+      />
     </div>
     """
   end

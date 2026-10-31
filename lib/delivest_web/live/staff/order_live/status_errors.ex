@@ -17,6 +17,13 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
   def message(:not_found), do: gettext("Order not found")
   def message(:order_not_found), do: gettext("Order not found")
   def message(:order_locked), do: gettext("The order is managed by the CRM")
+  def message(:awaiting_payment), do: gettext("The order is waiting for the online payment")
+
+  def message(:paid),
+    do: gettext("The payment is already handed over or receipted, refund it before reverting")
+
+  def message(:refunded), do: gettext("The order has a refund, it cannot be restored")
+  def message(:with_courier), do: gettext("The order is with the courier")
   def message(:nothing_to_revert), do: gettext("There is no step to revert")
   def message(:not_available), do: gettext("This order is not delivered by our couriers")
   def message(:already_searching), do: gettext("A courier is already being searched for")
@@ -30,6 +37,7 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
     do: gettext("The courier has picked up the order, its status cannot be reverted")
 
   def message(:not_ready), do: gettext("The order is not ready yet")
+  def message(:no_offers), do: gettext("Yandex Delivery has no offers for this address")
   def message(:not_configured), do: gettext("Yandex Delivery is not set up for this branch")
 
   def message(:branch_address_missing),

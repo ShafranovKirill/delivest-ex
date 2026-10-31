@@ -51,9 +51,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
 
     lv
     |> form("#yandex-eda-product-#{product.id}")
-    |> render_change(%{"product_id" => product.id, "enabled" => "false", "price" => "250"})
+    |> render_change(%{"product_id" => product.id, "enabled" => "false", "price" => "250,50"})
 
-    assert %{enabled: false, price: 250} = Products.get(:yandex_eda, product.id)
+    assert %{enabled: false, price: 25_050} = Products.get(:yandex_eda, product.id)
   end
 
   test "a reader cannot change the branch", %{conn: conn} do

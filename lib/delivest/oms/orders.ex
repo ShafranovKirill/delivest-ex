@@ -2,7 +2,17 @@ defmodule Delivest.Oms.Orders do
   import Ecto.Query, warn: false
 
   alias Delivest.Audit
-  alias Delivest.Oms.{Order, OrderDeadline, OrderFlow, OrderScopes, OrderTransition}
+
+  alias Delivest.Oms.{
+    Order,
+    OrderDeadline,
+    OrderEvents,
+    OrderFlow,
+    OrderLock,
+    OrderScopes,
+    OrderTransition
+  }
+
   alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, StatusChange, Update}
   alias Delivest.Repo
 
@@ -16,6 +26,7 @@ defmodule Delivest.Oms.Orders do
   defdelegate advance_order(order, to, by, opts \\ []), to: StatusChange, as: :run
   defdelegate revert_order_status(order, staff, reason), to: StatusChange, as: :revert
   defdelegate acknowledge_cancel(order, staff), to: StatusChange
+  defdelegate courier_changed(order_id), to: Notifier
 
   def paginate_orders(params, page_params) do
     with {:ok, {orders, meta}} <-
@@ -24,8 +35,14 @@ defmodule Delivest.Oms.Orders do
            |> sorted(Filter.normalize_params(params))
            |> Flop.validate_and_run(page_params, for: Order) do
       {:ok,
-       {Repo.preload(orders, [:items, :client, transitions: [:staff], deliveries: [:courier]]),
-        meta}}
+       {Repo.preload(orders, [
+          :client,
+          :receipts,
+          payments: :refunds,
+          items: :modifiers,
+          transitions: [:staff],
+          deliveries: [:courier]
+        ]), meta}}
     end
   end
 
@@ -34,7 +51,7 @@ defmodule Delivest.Oms.Orders do
     |> filtered()
     |> order_by([o], desc: o.inserted_at, desc: o.id)
     |> limit(^limit)
-    |> preload([:items, :client])
+    |> preload([:client, items: :modifiers])
     |> Repo.all()
   end
 
@@ -81,7 +98,7 @@ defmodule Delivest.Oms.Orders do
     with {:ok, uuid} <- Ecto.UUID.cast(order_id) do
       Order
       |> where([o], o.id == ^uuid and o.client_id == ^client_id and is_nil(o.deleted_at))
-      |> preload(:items)
+      |> preload(items: :modifiers)
       |> Repo.one()
     else
       :error -> nil
@@ -99,7 +116,7 @@ defmodule Delivest.Oms.Orders do
     end)
     |> order_by([o], desc: o.inserted_at, desc: o.id)
     |> limit(^limit)
-    |> preload(:items)
+    |> preload(items: :modifiers)
     |> Repo.all()
   end
 
@@ -114,14 +131,60 @@ defmodule Delivest.Oms.Orders do
     |> where([o], is_nil(o.deleted_at))
     |> where([o], o.inserted_at >= ^since and o.status not in ^OrderFlow.final())
     |> order_by([o], desc: o.inserted_at)
-    |> preload(:items)
+    |> preload(items: :modifiers, deliveries: :courier)
     |> Repo.all()
   end
 
   def get_order(id) do
     Order
     |> Repo.get(id)
-    |> Repo.preload([:client, :items, transitions: [:staff], deliveries: [:courier]])
+    |> Repo.preload([
+      :client,
+      :receipts,
+      payments: :refunds,
+      items: :modifiers,
+      transitions: [:staff],
+      deliveries: [:courier]
+    ])
+  end
+
+  def client_cancellable?(%Order{} = order) do
+    order.status == :created and is_nil(order.crm) and is_nil(order.channel) and
+      (order.payment_method in [:cash, :card_offline] or order.awaiting_payment) and
+      is_nil(order.deleted_at)
+  end
+
+  def payment_link(session_id, client_id, order_id) do
+    with {:ok, id} <- Ecto.UUID.cast(order_id),
+         %Order{awaiting_payment: true, status: :created} = order <-
+           Order
+           |> where([o], o.id == ^id and is_nil(o.deleted_at))
+           |> where(^owned_by(session_id, client_id))
+           |> Repo.one() || {:error, :not_found} do
+      Delivest.Payments.Online.start(order)
+    else
+      %Order{} -> {:error, :not_awaiting}
+      :error -> {:error, :not_found}
+      error -> error
+    end
+  end
+
+  def cancel_by_client(session_id, client_id, order_id) do
+    with {:ok, id} <- Ecto.UUID.cast(order_id),
+         %Order{} = order <-
+           Order
+           |> where([o], o.id == ^id and is_nil(o.deleted_at))
+           |> where(^owned_by(session_id, client_id))
+           |> Repo.one() || {:error, :not_found},
+         true <- client_cancellable?(order) || {:error, :not_cancellable} do
+      advance_order(order, :cancelled, :client,
+        attrs: %{"cancel_reason" => "client"},
+        reason: nil
+      )
+    else
+      :error -> {:error, :not_found}
+      error -> error
+    end
   end
 
   def cancel_order(%Order{} = order, by, attrs) do
@@ -135,14 +198,24 @@ defmodule Delivest.Oms.Orders do
 
   def update_payment_method(order, attrs, actor \\ :system)
 
-  def update_payment_method(%Order{crm: %{}}, _attrs, actor),
-    do: Audit.track({:error, :order_locked}, actor, "order.details_changed")
-
   def update_payment_method(%Order{} = order, attrs, actor) do
     changeset = Order.payment_changeset(order, Filter.normalize_params(attrs))
 
+    case OrderLock.check(
+           order,
+           {:payment_method, Ecto.Changeset.get_field(changeset, :payment_method)}
+         ) do
+      :ok -> change_payment_method(order, changeset, actor)
+      error -> Audit.track(error, actor, "order.details_changed")
+    end
+  end
+
+  defp change_payment_method(order, changeset, actor) do
     changeset
-    |> persist([:order, :updated])
+    |> persist([:order, :updated], fn repo, updated ->
+      with {:ok, _payments} <- Delivest.Payments.sync(repo, updated),
+           do: OrderEvents.updated(repo, order, updated, actor)
+    end)
     |> Audit.track(actor, "order.details_changed", metadata: changeset.changes)
   end
 
@@ -188,7 +261,7 @@ defmodule Delivest.Oms.Orders do
   def soft_delete_order(%Order{} = order, actor \\ :system) do
     order
     |> Order.changeset(%{deleted_at: DateTime.truncate(DateTime.utc_now(), :second)})
-    |> persist([:order, :deleted])
+    |> persist([:order, :deleted], &OrderEvents.deleted(&1, &2, actor))
     |> Audit.track(actor, "order.deleted")
   end
 
@@ -212,6 +285,18 @@ defmodule Delivest.Oms.Orders do
   defp persist(changeset, event) do
     changeset
     |> Repo.update()
+    |> Notifier.publish(event)
+  end
+
+  defp persist(changeset, event, emit) do
+    Repo.transaction(fn ->
+      with {:ok, order} <- Repo.update(changeset),
+           {:ok, _event} <- emit.(Repo, order) do
+        order
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
     |> Notifier.publish(event)
   end
 end

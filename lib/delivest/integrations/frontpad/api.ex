@@ -1,25 +1,26 @@
 defmodule Delivest.Integrations.Frontpad.Api do
   alias Delivest.HTTP.Client
+  alias Delivest.Money
 
   @base_url "https://app.frontpad.ru"
 
   def new_order(form_params) do
     "/api/index.php?new_order"
-    |> Client.post(form_params, base_url: @base_url, format: :form, decode_json: true)
+    |> Client.post(form_params, base_url: @base_url, format: :form, journal: :frontpad)
     |> decode()
     |> result()
   end
 
   def get_products(secret) do
     "/api/index.php?get_products"
-    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, decode_json: true)
+    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, journal: :frontpad)
     |> decode()
     |> products()
   end
 
   def get_stops(secret) do
     "/api/index.php?get_stops"
-    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, decode_json: true)
+    |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, journal: :frontpad)
     |> decode()
     |> stops()
   end
@@ -56,11 +57,11 @@ defmodule Delivest.Integrations.Frontpad.Api do
   defp indexed(values) when is_map(values), do: Enum.to_list(values)
   defp indexed(_values), do: []
 
-  defp parse_price(price) when is_number(price), do: round(price)
+  defp parse_price(price) when is_number(price), do: Money.from_rubles(price)
 
   defp parse_price(price) when is_binary(price) do
     case Float.parse(price) do
-      {value, _rest} -> round(value)
+      {value, _rest} -> Money.from_rubles(value)
       :error -> nil
     end
   end

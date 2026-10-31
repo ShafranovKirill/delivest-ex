@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.ClientLive.Show do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Analytics, Identity}
+  alias Delivest.{Analytics, Identity, Loyalty}
   alias Delivest.Oms.Orders
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -29,7 +29,8 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
            branches: branches(staff),
            active_branch_id: socket.assigns[:active_branch_id],
            expanded: MapSet.new()
-         )}
+         )
+         |> assign_loyalty()}
 
       _ ->
         {:ok,
@@ -40,6 +41,27 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
   end
 
   @impl true
+  def handle_event("adjust_loyalty", %{"amount" => amount, "reason" => reason}, socket) do
+    %{current_staff: staff, current_branch: branch, client: client} = socket.assigns
+
+    result =
+      case Integer.parse(String.trim(amount)) do
+        {value, ""} when value != 0 -> Loyalty.adjust(staff, branch, client.id, value, reason)
+        _invalid -> {:error, :invalid_amount}
+      end
+
+    case result do
+      {:ok, _entry} ->
+        {:noreply, socket |> assign_loyalty() |> put_flash(:info, gettext("Balance updated"))}
+
+      {:error, :reason_required} ->
+        {:noreply, put_flash(socket, :error, gettext("Enter the reason for the correction"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to update the balance"))}
+    end
+  end
+
   def handle_event("toggle_order", %{"id" => id}, socket) do
     expanded = socket.assigns.expanded
 
@@ -49,6 +71,18 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
         else: MapSet.put(expanded, id)
 
     {:noreply, assign(socket, expanded: expanded)}
+  end
+
+  defp assign_loyalty(socket) do
+    branch = socket.assigns[:current_branch]
+    enabled = branch != nil and Loyalty.enabled?(branch)
+    client = socket.assigns.client
+
+    assign(socket,
+      loyalty_enabled: enabled,
+      loyalty_balance: Loyalty.balance(client.id),
+      loyalty_history: if(enabled, do: Loyalty.history(client.id, 10), else: [])
+    )
   end
 
   defp branch_scope(staff) do
@@ -134,6 +168,10 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
         </.stat_card>
       </div>
 
+      <.card :if={@client.operator_note not in [nil, ""]} class="p-4">
+        <h2 class="font-bold">{gettext("Operator note")}</h2>
+        <p class="whitespace-pre-wrap">{@client.operator_note}</p>
+      </.card>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div class="space-y-6">
           <.live_component
@@ -144,6 +182,50 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
             branch_id={@active_branch_id}
             current_staff={@current_staff}
           />
+          <.card :if={@loyalty_enabled} id="client-loyalty" class="p-4 space-y-3">
+            <h2 class="font-bold">{gettext("Loyalty")}</h2>
+            <div
+              id="client-loyalty-balance"
+              class="flex items-center gap-1 text-2xl font-bold text-amber-500"
+            >
+              <.icon name="hero-star-solid" class="size-5" />
+              {@loyalty_balance}
+            </div>
+            <ul :if={@loyalty_history != []} class="space-y-1 text-sm">
+              <li
+                :for={entry <- @loyalty_history}
+                id={"loyalty-entry-#{entry.id}"}
+                class="flex items-center justify-between gap-3"
+              >
+                <span class="text-base-content/60">
+                  {OrderHelpers.local_datetime(entry.inserted_at)} · {entry.reason || entry.kind}
+                </span>
+                <span class={[entry.amount < 0 && "text-error", entry.amount >= 0 && "text-success"]}>
+                  {if entry.amount > 0, do: "+"}{entry.amount}
+                </span>
+              </li>
+            </ul>
+            <form
+              :if={Identity.can?(@current_staff, "clients.update")}
+              id="loyalty-adjust-form"
+              phx-submit="adjust_loyalty"
+              class="flex flex-wrap items-end gap-2"
+            >
+              <input
+                name="amount"
+                type="number"
+                placeholder="+50 / -20"
+                class="input input-bordered input-sm w-24"
+              />
+              <input
+                name="reason"
+                type="text"
+                placeholder={gettext("Reason")}
+                class="input input-bordered input-sm grow"
+              />
+              <button type="submit" class="btn btn-sm btn-outline">{gettext("Apply")}</button>
+            </form>
+          </.card>
           <.card class="p-4 space-y-3">
             <h2 class="font-bold">{gettext("Favourite products")}</h2>
             <ul :if={@summary.favourites != []} class="space-y-2">

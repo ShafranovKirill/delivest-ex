@@ -5,7 +5,17 @@ defmodule Delivest.Identity.Branches do
   alias Delivest.{Repo, Identity}
   alias Delivest.Audit
 
-  @integrations ["crm", "channels", "yandex_delivery", :crm, :channels, :yandex_delivery]
+  @integrations [
+    "crm",
+    "channels",
+    "yandex_delivery",
+    "fiscal",
+    :crm,
+    :channels,
+    :yandex_delivery,
+    :fiscal
+  ]
+  @own_settings @integrations ++ ["couriers", :couriers]
 
   @spec list_branch_for_staff(Delivest.Identity.Staff.t(), keyword()) :: [Branch.t()]
   def list_branch_for_staff(staff, opts \\ []) do
@@ -77,7 +87,7 @@ defmodule Delivest.Identity.Branches do
       "branches.update",
       branch,
       branch_attrs,
-      Map.drop(info_attrs, @integrations)
+      Map.drop(info_attrs, @own_settings)
     )
     |> Audit.track(staff, "branch.updated")
   end
@@ -85,6 +95,112 @@ defmodule Delivest.Identity.Branches do
   def update_integrations(staff, %Branch{} = branch, info_attrs) do
     staff
     |> do_update_branch("integrations.update", branch, %{}, Map.take(info_attrs, @integrations))
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  def get_branch_by_board_token(token) when is_binary(token) and token != "" do
+    Branch
+    |> join(:inner, [b], i in assoc(b, :info))
+    |> where([b, i], i.board_token == ^token and is_nil(b.deleted_at))
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      branch -> {:ok, branch}
+    end
+  end
+
+  def get_branch_by_board_token(_token), do: {:error, :not_found}
+
+  def reset_board_token(staff, %Branch{} = branch) do
+    staff
+    |> do_reset_board_token(branch)
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  defp do_reset_board_token(staff, branch) do
+    with :ok <- Identity.authorize(staff, "branches.update", branch.id) do
+      branch = Repo.preload(branch, :info, force: true)
+
+      (branch.info || Ecto.build_assoc(branch, :info))
+      |> BranchInfo.board_token_changeset(new_board_token())
+      |> Repo.insert_or_update()
+      |> case do
+        {:ok, info} -> {:ok, %{branch | info: info}}
+        {:error, changeset} -> {:error, changeset}
+      end
+    end
+  end
+
+  @time ~r/^([01]\d|2[0-3]):[0-5]\d$/
+
+  def set_special_day(staff, %Branch{} = branch, %Date{} = date, attrs) do
+    with {:ok, day} <- special_day(attrs) do
+      staff
+      |> update_special_hours(branch, fn hours -> Map.put(hours, Date.to_iso8601(date), day) end)
+      |> Audit.track(staff, "branch.updated")
+    end
+  end
+
+  def remove_special_day(staff, %Branch{} = branch, %Date{} = date) do
+    staff
+    |> update_special_hours(branch, &Map.delete(&1, Date.to_iso8601(date)))
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  defp special_day(%{"enabled" => false}),
+    do: {:ok, %{"enabled" => false, "open" => nil, "close" => nil}}
+
+  defp special_day(%{"enabled" => true, "open" => open, "close" => close})
+       when is_binary(open) and is_binary(close) do
+    if open =~ @time and close =~ @time,
+      do: {:ok, %{"enabled" => true, "open" => open, "close" => close}},
+      else: {:error, :invalid_time}
+  end
+
+  defp special_day(_attrs), do: {:error, :invalid_time}
+
+  defp update_special_hours(staff, branch, change) do
+    with :ok <- Identity.authorize(staff, "branches.update", branch.id) do
+      branch = Repo.preload(branch, :info, force: true)
+      info = branch.info || Ecto.build_assoc(branch, :info)
+      today = Delivest.LocalTime.today(Delivest.LocalTime.timezone(branch.id))
+
+      hours =
+        (info.special_hours || %{})
+        |> change.()
+        |> Map.filter(fn {date, _day} -> Date.compare(Date.from_iso8601!(date), today) != :lt end)
+
+      info
+      |> BranchInfo.special_hours_changeset(hours)
+      |> Repo.insert_or_update()
+      |> case do
+        {:ok, info} ->
+          Cachex.del(:branch_cache, branch.id)
+          {:ok, %{branch | info: info}}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    end
+  end
+
+  defp new_board_token, do: 18 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
+
+  def update_couriers(staff, %Branch{} = branch, attrs) do
+    staff
+    |> do_update_branch("delivery.update", branch, %{}, %{"couriers" => attrs})
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  def update_payments(staff, %Branch{} = branch, attrs) do
+    staff
+    |> do_update_branch("finance.update", branch, %{}, %{"payments" => attrs})
+    |> Audit.track(staff, "branch.updated")
+  end
+
+  def update_loyalty(staff, %Branch{} = branch, attrs) do
+    staff
+    |> do_update_branch("promotions.update", branch, %{}, %{"loyalty" => attrs})
     |> Audit.track(staff, "branch.updated")
   end
 
@@ -130,7 +246,7 @@ defmodule Delivest.Identity.Branches do
   defp do_create_branch(staff, branch_attrs, info_attrs) do
     if Identity.can?(staff, "branches.create") do
       Ecto.Multi.new()
-      |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, branch_attrs))
+      |> Ecto.Multi.insert(:branch, Branch.changeset(%Branch{}, with_code(branch_attrs)))
       |> Ecto.Multi.insert(:branch_info, fn %{branch: branch} ->
         branch
         |> Ecto.build_assoc(:info)
@@ -147,6 +263,22 @@ defmodule Delivest.Identity.Branches do
     else
       {:error, :forbidden}
     end
+  end
+
+  defp with_code(attrs) do
+    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+
+    case attrs["code"] do
+      code when is_binary(code) and code != "" -> attrs
+      _blank -> Map.put(attrs, "code", free_code(attrs["slug"] || attrs["name"]))
+    end
+  end
+
+  defp free_code(text) do
+    base = text |> Branch.code_from() |> String.pad_trailing(2, "0")
+
+    [base | Enum.map(2..99, &(String.slice(base, 0, 4) <> Integer.to_string(&1)))]
+    |> Enum.find(base, &(not Repo.exists?(from(b in Branch, where: b.code == ^&1))))
   end
 
   @spec soft_delete_branch(Delivest.Identity.Staff.t(), Branch.t()) ::

@@ -78,6 +78,85 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              conn |> post(~p"/client/branches/#{inactive.id}/select") |> json_response(404)
   end
 
+  test "a paused branch does not take client orders", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    staff = insert(:staff, role: insert(:role, permissions: ["orders.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    {:ok, _status} = Delivest.Intake.pause(staff, branch, 10, "нет курьеров")
+
+    assert %{"error" => "branch_paused", "details" => %{"reason" => "нет курьеров"}} =
+             conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(422)
+  end
+
+  test "a payment method turned off at the branch is refused", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    staff = insert(:staff, role: insert(:role, permissions: ["finance.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    {:ok, _branch} = Delivest.Identity.update_payments(staff, branch, %{"cash" => "false"})
+
+    params = Map.put(order_params(branch, cart_id), "payment_method", "cash")
+
+    assert %{"error" => "payment_method_disabled"} =
+             conn |> post(~p"/client/orders", params) |> json_response(422)
+  end
+
+  test "the customer cancels an unaccepted order once", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    data = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+    id = data["data"]["id"]
+    conn = recycle_with_headers(conn)
+
+    assert [%{"can_cancel" => true}] =
+             conn |> get(~p"/client/orders/active") |> json_response(200) |> Map.fetch!("data")
+
+    assert %{"data" => %{"status" => "cancelled"}} =
+             conn |> post(~p"/client/orders/#{id}/cancel") |> json_response(200)
+
+    order = Repo.get!(Order, id)
+    assert order.cancel_reason == :client
+
+    assert %{"error" => "order_not_cancellable"} =
+             conn |> post(~p"/client/orders/#{id}/cancel") |> json_response(422)
+  end
+
+  test "someone else's order is not found when cancelled", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    data = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+
+    stranger =
+      build_conn()
+      |> put_req_header("x-forwarded-for", "stranger-#{System.unique_integer([:positive])}")
+
+    stranger = start_session(stranger, branch)
+
+    assert %{"error" => "order_not_found"} =
+             stranger
+             |> post(~p"/client/orders/#{data["data"]["id"]}/cancel")
+             |> json_response(404)
+  end
+
   test "creates an order and ignores server-controlled fields", %{
     conn: conn,
     branch: branch,
@@ -336,5 +415,23 @@ defmodule DelivestWeb.Client.OrderControllerTest do
 
     assert Enum.take(statuses, 10) |> Enum.all?(&(&1 == 422))
     assert List.last(statuses) == 429
+  end
+
+  test "a phone number alone cannot spend a client's stars", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    Repo.get_by!(BranchInfo, branch_id: branch.id)
+    |> BranchInfo.changeset(%{"loyalty" => %{"enabled" => true, "shop_enabled" => true}})
+    |> Repo.update!()
+
+    Cachex.clear(:branch_cache)
+    product |> Ecto.Changeset.change(stars_price: 1) |> Repo.update!()
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    {:ok, _, _} = Delivest.Oms.Carts.add_star_item(cart_id, product.id)
+    conn = post(conn, ~p"/client/orders", order_params(branch, cart_id))
+    assert json_response(conn, 422)["error"] == "points_unavailable"
   end
 end

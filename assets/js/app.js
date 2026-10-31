@@ -8,7 +8,10 @@ import { LocationMap } from "./hooks/location_map";
 import { ZoneMap } from "./hooks/zone_map";
 import { Alarm, ring } from "./hooks/alarm";
 import { KitchenScreen } from "./hooks/kitchen_screen";
+import { PickupBoard } from "./hooks/pickup_board";
 import { CourierMap } from "./hooks/courier_map";
+import { CourierLocation } from "./hooks/courier_location";
+import { CouriersMap } from "./hooks/couriers_map";
 
 let Uploaders = {};
 
@@ -182,11 +185,18 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ZoneMap,
     Alarm,
     KitchenScreen,
+    PickupBoard,
     CourierMap,
+    CourierLocation,
+    CouriersMap,
   },
 });
 
 const root = document.documentElement;
+
+if ("serviceWorker" in navigator && location.pathname.startsWith("/staff")) {
+  navigator.serviceWorker.register("/staff/sw.js", { scope: "/staff/" }).catch(() => {});
+}
 
 window.addEventListener("sidebar:toggle-collapse", () => {
   const collapsed = root.toggleAttribute("data-sidebar-collapsed");

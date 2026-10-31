@@ -1,24 +1,36 @@
 defmodule Delivest.Oms.Order.OrderNumber do
-  alias Delivest.Repo
+  import Ecto.Query
 
-  def generate do
-    case Repo.query("SELECT nextval('order_number_seq')") do
-      {:ok, %Postgrex.Result{rows: [[seq_val]]}} ->
-        {:ok, format_number(seq_val)}
+  alias Delivest.Identity.Branch
+  alias Delivest.LocalTime
+
+  @counter_sql """
+  INSERT INTO order_counters (branch_id, business_date, value) VALUES ($1, $2, 1)
+  ON CONFLICT (branch_id, business_date) DO UPDATE SET value = order_counters.value + 1
+  RETURNING value
+  """
+
+  def next(repo, branch_id, now \\ DateTime.utc_now()) do
+    date = LocalTime.business_date(now, LocalTime.timezone(branch_id))
+
+    code =
+      repo.one(from b in Branch, where: b.id == ^branch_id, select: b.code) || fallback(branch_id)
+
+    case repo.query(@counter_sql, [dump(branch_id), date]) do
+      {:ok, %{rows: [[value]]}} ->
+        {:ok, %{business_date: date, daily_number: value, number: full(date, code, value)}}
 
       _ ->
         {:error, :failed_to_generate_number}
     end
   end
 
-  defp format_number(seq_val) do
-    letter_index = div(seq_val, 1000)
-    number_part = rem(seq_val, 1000)
+  def full(%Date{} = date, code, value),
+    do: Calendar.strftime(date, "%y%m%d") <> "-" <> code <> "-" <> pad(value)
 
-    letter = <<65 + letter_index::utf8>>
+  defp pad(value), do: value |> Integer.to_string() |> String.pad_leading(3, "0")
 
-    num_str = String.pad_leading("#{number_part}", 3, "0")
+  defp fallback(branch_id), do: branch_id |> String.slice(-6, 6) |> String.upcase()
 
-    "#{letter}#{num_str}"
-  end
+  defp dump(branch_id), do: Ecto.UUID.dump!(branch_id)
 end

@@ -56,4 +56,42 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
 
     assert html =~ "has invalid format" or html =~ "неверный формат"
   end
+
+  test "the connection check shows the result here and on the integrations card", %{conn: conn} do
+    branch = insert(:branch)
+
+    Delivest.Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+      branch_id: branch.id,
+      crm: %Delivest.Integrations.Crm.BranchSettings{
+        enabled: true,
+        provider: :frontpad,
+        frontpad: %Delivest.Integrations.Frontpad.Settings{api_key: "key"}
+      }
+    })
+
+    conn = sign_in(conn, branch, ["integrations.read", "integrations.update"])
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
+    lv |> element("button[phx-value-tab=settings]") |> render_click()
+    assert render(lv) =~ "The connection has not been checked"
+
+    Req.Test.stub(
+      Delivest.HTTP.Client,
+      &Req.Test.json(&1, %{"result" => "error", "error" => "invalid_secret"})
+    )
+
+    assert lv |> element("#frontpad-health-check") |> render_click() =~
+             "reconnect the integration"
+
+    {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/integrations")
+    assert html =~ "Reconnect"
+
+    Req.Test.stub(
+      Delivest.HTTP.Client,
+      &Req.Test.json(&1, %{"result" => "success", "error" => "no_stops"})
+    )
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
+    lv |> element("button[phx-value-tab=settings]") |> render_click()
+    assert lv |> element("#frontpad-health-check") |> render_click() =~ "Connected"
+  end
 end

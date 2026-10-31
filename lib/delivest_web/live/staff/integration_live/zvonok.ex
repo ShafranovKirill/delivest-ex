@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Zvonok
+  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -80,6 +81,34 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
           </p>
         </div>
 
+        <div :if={Zvonok.dev_tools?()} class="space-y-1">
+          <.input
+            field={@form[:dev_skip_calls]}
+            type="checkbox"
+            label={gettext("Dev: do not call, confirm sign-in instantly")}
+          />
+          <p class="text-xs text-base-content/60">
+            {gettext("Only in the dev build. Turn off to test a real call from Zvonok.")}
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <.input
+            field={@form[:login_call_mode]}
+            type="select"
+            label={gettext("Sign-in call mode")}
+            options={[
+              {gettext("Customer calls us"), "inbound"},
+              {gettext("We flash-call the customer"), "flash"}
+            ]}
+          />
+          <p class="text-xs text-base-content/60">
+            {gettext(
+              "Flash call: the customer enters the last 4 digits of the incoming number. Turn it on only if flash calls are enabled in your Zvonok campaign."
+            )}
+          </p>
+        </div>
+
         <div class="grid gap-4 sm:grid-cols-2">
           <.input
             field={@form[:public_key]}
@@ -121,6 +150,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
           {Zvonok.webhook_url(@settings.webhook_token)}
         </code>
       </section>
+
+      <.live_component
+        module={JournalComponent}
+        id="zvonok-journal"
+        provider={:zvonok}
+        branch_id={nil}
+      />
     </div>
     """
   end

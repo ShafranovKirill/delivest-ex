@@ -22,7 +22,8 @@ defmodule Delivest.Factory do
   def branch_factory do
     %Branch{
       name: sequence(:branch_name, &"Branch_#{&1}"),
-      slug: sequence(:branch_slug, &"branch-#{&1}")
+      slug: sequence(:branch_slug, &"branch-#{&1}"),
+      code: sequence(:branch_code, &"B#{&1}")
     }
   end
 
@@ -37,7 +38,7 @@ defmodule Delivest.Factory do
   def product_factory do
     %Product{
       name: sequence(:product_name, &"Product #{&1}"),
-      price: 100,
+      price: 10_000,
       is_active: true
     }
   end
@@ -110,7 +111,7 @@ defmodule Delivest.Factory do
 
     if external_id do
       Delivest.Repo.insert!(%Delivest.Net.ProductExternalId{
-        product_id: product.id,
+        entity_id: product.id,
         branch_id: branch_id,
         provider: "frontpad",
         external_id: external_id

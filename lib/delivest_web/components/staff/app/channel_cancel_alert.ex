@@ -1,6 +1,8 @@
 defmodule DelivestWeb.ChannelCancelAlert do
   use DelivestWeb, :html
 
+  alias Delivest.Oms.Order
+
   alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, OrderHelpers}
 
@@ -33,7 +35,7 @@ defmodule DelivestWeb.ChannelCancelAlert do
           >
             <div class="flex flex-wrap items-baseline justify-between gap-2">
               <span class="font-bold">
-                {Channels.name(order.source)} · #{order.number}
+                {Channels.name(order.source)} · #{Order.short_number(order)}
               </span>
               <span class="font-mono text-sm">{OrderHelpers.money(order.total_amount)}</span>
             </div>

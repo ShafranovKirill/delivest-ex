@@ -1,6 +1,20 @@
 defmodule DelivestWeb.Schemas.CartSchemas do
   alias OpenApiSpex.Schema
 
+  defmodule ModifierChoice do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ModifierChoice",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid},
+        quantity: %Schema{type: :integer, minimum: 1, default: 1}
+      },
+      required: [:id]
+    })
+  end
+
   defmodule AddItemRequest do
     require OpenApiSpex
 
@@ -8,13 +22,33 @@ defmodule DelivestWeb.Schemas.CartSchemas do
       title: "AddItemRequest",
       type: :object,
       properties: %{
-        product_id: %Schema{
-          type: :string,
-          format: :uuid,
-          example: "c4a3b8e0-1234-5678-9abc-def012345678"
+        stars: %Schema{type: :boolean, description: "Купить за звёзды"},
+        quantity: %Schema{type: :integer, minimum: 1, default: 1},
+        modifiers: %Schema{
+          type: :array,
+          items: ModifierChoice,
+          nullable: true,
+          description:
+            "Выбранные модификаторы. Пусто — модификаторы по умолчанию. Тот же товар с другими модификаторами — отдельная строка"
         }
+      }
+    })
+  end
+
+  defmodule ItemModifier do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ItemModifier",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, format: :uuid, nullable: true},
+        group_name: %Schema{type: :string, nullable: true, example: "Размер"},
+        name: %Schema{type: :string, example: "35 см"},
+        price: %Schema{type: :integer, example: 20_000, description: "Цена за единицу, копейки"},
+        quantity: %Schema{type: :integer, example: 1}
       },
-      required: [:product_id]
+      required: [:name, :price, :quantity]
     })
   end
 
@@ -55,7 +89,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
     OpenApiSpex.schema(%{
       title: "PromoReason",
       description:
-        "Почему акция пока не применилась. `subtotal`/`quantity` — сколько не хватает (`missing`), " <>
+        "Почему акция пока не применилась. `subtotal`/`quantity` — сколько не хватает (`missing`, для `subtotal` в копейках), " <>
           "`product` — какого товара не хватает, `fulfillment` — допустимые способы получения, " <>
           "`time`/`weekday` — когда действует, `requires_client` — нужна авторизация.",
       type: :object,
@@ -72,7 +106,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
             "requires_client"
           ]
         },
-        missing: %Schema{type: :integer, nullable: true, example: 300},
+        missing: %Schema{type: :integer, nullable: true, example: 30_000},
         product_id: %Schema{type: :string, format: :uuid, nullable: true},
         name: %Schema{type: :string, nullable: true, example: "Кола 0.5"},
         allowed: %Schema{
@@ -157,7 +191,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
         name: %Schema{type: :string, example: "Летняя скидка"},
         description: %Schema{type: :string, nullable: true},
         code: %Schema{type: :string, nullable: true, example: "SUMMER2025"},
-        discount: %Schema{type: :integer, example: 150, description: "Скидка в рублях"},
+        discount: %Schema{type: :integer, example: 15_000, description: "Скидка в копейках"},
         gifts: %Schema{type: :array, items: PromoGift}
       },
       required: [:promotion_id, :name, :discount, :gifts]
@@ -189,9 +223,12 @@ defmodule DelivestWeb.Schemas.CartSchemas do
       title: "CartItemResponse",
       type: :object,
       properties: %{
+        stars: %Schema{type: :boolean},
+        stars_price: %Schema{type: :integer, nullable: true},
         key: %Schema{
           type: :string,
-          description: "Уникальный ключ строки: подарок и платный товар — разные строки"
+          description:
+            "Уникальный ключ строки: подарок, платный товар и товар с другими модификаторами — разные строки. Им же удаляется строка"
         },
         product_id: %Schema{
           type: :string,
@@ -204,17 +241,21 @@ defmodule DelivestWeb.Schemas.CartSchemas do
           example: "https://example.com/images/pizza.jpg",
           nullable: true
         },
-        price: %Schema{type: :integer, example: 590, description: "Цена за единицу по меню"},
+        price: %Schema{type: :integer, example: 59_000, description: "Цена за единицу по меню"},
         quantity: %Schema{type: :integer, example: 2},
         total_price: %Schema{
           type: :integer,
-          example: 1062,
+          example: 106_200,
           description: "Итог по строке с учётом скидок"
         },
         base_total: %Schema{
           type: :integer,
-          example: 1180,
+          example: 118_000,
           description: "Итог по строке без скидок"
+        },
+        stars_reward: %Schema{
+          type: :integer,
+          description: "Дополнительные звёзды за единицу товара"
         },
         gift: %Schema{
           type: :boolean,
@@ -222,7 +263,8 @@ defmodule DelivestWeb.Schemas.CartSchemas do
           description: "Подарок по акции: количество менять нельзя"
         },
         promotion_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
-        stopped: %Schema{type: :boolean, description: "Товар в стоп-листе: заказать нельзя"}
+        stopped: %Schema{type: :boolean, description: "Товар в стоп-листе: заказать нельзя"},
+        modifiers: %Schema{type: :array, items: ItemModifier}
       },
       required: [
         :key,
@@ -280,11 +322,14 @@ defmodule DelivestWeb.Schemas.CartSchemas do
             total_quantity: %Schema{type: :integer, example: 3},
             subtotal_amount: %Schema{
               type: :integer,
-              example: 1700,
+              example: 170_000,
               description: "Сумма без скидок"
             },
-            discount_amount: %Schema{type: :integer, example: 200},
-            total_amount: %Schema{type: :integer, example: 1500, description: "К оплате"},
+            discount_amount: %Schema{type: :integer, example: 20_000},
+            points_earned: %Schema{type: :integer},
+            base_stars: %Schema{type: :integer},
+            product_stars: %Schema{type: :integer},
+            total_amount: %Schema{type: :integer, example: 150_000, description: "К оплате"},
             promo_code: PromoCodeState,
             promotions: %Schema{type: :array, items: AppliedPromotion},
             hints: %Schema{type: :array, items: PromoHint}

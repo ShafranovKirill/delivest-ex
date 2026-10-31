@@ -20,7 +20,9 @@ defmodule Delivest.Oms.Cart do
     field :fulfillment_type, :string
     field :client_id, :binary_id
 
-    has_many :items, CartItem, on_delete: :delete_all
+    has_many :items, CartItem,
+      on_delete: :delete_all,
+      preload_order: [asc: :inserted_at, asc: :id]
 
     timestamps(type: :utc_datetime)
   end

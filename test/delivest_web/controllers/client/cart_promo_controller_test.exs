@@ -5,8 +5,8 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
 
   setup %{conn: conn} do
     branch = insert(:branch, is_active: true)
-    pizza = insert_branch_product(branch.id, slug: "pizza", name: "Pizza", price: 500)
-    insert_branch_product(branch.id, slug: "cola", name: "Cola", price: 90)
+    pizza = insert_branch_product(branch.id, slug: "pizza", name: "Pizza", price: 50_000)
+    insert_branch_product(branch.id, slug: "cola", name: "Cola", price: 9000)
 
     conn = put_req_header(conn, "x-forwarded-for", "promo-#{System.unique_integer([:positive])}")
     conn = get(conn, ~p"/client/cart?branch_id=#{branch.id}")
@@ -36,7 +36,7 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
     data =
       conn |> post(~p"/client/cart/#{cart_id}/promo_code", %{code: "cola"}) |> json_response(200)
 
-    assert %{"promo_code" => %{"code" => "COLA", "status" => "applied"}, "total_amount" => 500} =
+    assert %{"promo_code" => %{"code" => "COLA", "status" => "applied"}, "total_amount" => 50_000} =
              data["data"]
 
     assert [%{"gift" => false}, %{"gift" => true, "name" => "Cola", "total_price" => 0}] =
@@ -79,7 +79,7 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
       |> put(~p"/client/cart/#{cart_id}/context", %{fulfillment_type: "pickup"})
       |> json_response(200)
 
-    assert %{"total_amount" => 450, "discount_amount" => 50, "fulfillment_type" => "pickup"} =
+    assert %{"total_amount" => 45_000, "discount_amount" => 5000, "fulfillment_type" => "pickup"} =
              data["data"]
 
     assert %{"error" => "validation_failed"} =
@@ -94,7 +94,7 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
     insert_code(promo, code: "HUNDRED")
 
     conn = post(conn, ~p"/client/cart/#{cart_id}/promo_code", %{code: "hundred"})
-    assert json_response(conn, 200)["data"]["total_amount"] == 400
+    assert json_response(conn, 200)["data"]["total_amount"] == 40_000
 
     data =
       conn
@@ -102,7 +102,7 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
       |> delete(~p"/client/cart/#{cart_id}/promo_code")
       |> json_response(200)
 
-    assert %{"promo_code" => nil, "total_amount" => 500} = data["data"]
+    assert %{"promo_code" => nil, "total_amount" => 50_000} = data["data"]
   end
 
   test "creates an order with the promotion summary", %{
@@ -126,17 +126,17 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "pickup",
       "payment_method" => "cash",
-      "expected_total" => 400
+      "expected_total" => 40_000
     }
 
     data =
       conn |> recycle_with_headers() |> post(~p"/client/orders", params) |> json_response(200)
 
     assert %{
-             "total_amount" => 400,
-             "subtotal_amount" => 500,
-             "discount_amount" => 100,
-             "promotions" => [%{"name" => "Minus", "code" => "MINUS", "discount" => 100}]
+             "total_amount" => 40_000,
+             "subtotal_amount" => 50_000,
+             "discount_amount" => 10_000,
+             "promotions" => [%{"name" => "Minus", "code" => "MINUS", "discount" => 10_000}]
            } = data["data"]
   end
 
@@ -153,14 +153,14 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
       )
 
     burger =
-      insert_branch_product(branch.id, slug: "burger", price: 500, category_id: category.id)
+      insert_branch_product(branch.id, slug: "burger", price: 50_000, category_id: category.id)
 
     insert_promotion(branch.id, rules: ~s(then price "burger" 399))
 
     data = conn |> get(~p"/client/branches/#{branch.id}/menu") |> json_response(200)
     products = Enum.flat_map(data["data"], & &1["products"])
 
-    assert [%{"price" => 399, "old_price" => 500}] =
+    assert [%{"price" => 39_900, "old_price" => 50_000}] =
              Enum.filter(products, &(&1["id"] == burger.id))
   end
 end

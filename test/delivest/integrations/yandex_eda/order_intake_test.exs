@@ -13,8 +13,8 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
   setup do
     branch = yandex_branch()
     category = menu_category(branch)
-    soup = menu_product(branch, category, name: "Суп", price: 300)
-    tea = menu_product(branch, category, name: "Чай", price: 100)
+    soup = menu_product(branch, category, name: "Суп", price: 30_000)
+    tea = menu_product(branch, category, name: "Чай", price: 10_000)
     %{branch: branch, soup: soup, tea: tea}
   end
 
@@ -28,13 +28,40 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
     assert order.status == :accepted
     assert order.fulfillment_type == :pickup
     assert order.payment_method == :online
-    assert order.total_amount == 650
+    assert order.total_amount == 65_000
     assert order.channel.external_id == params["eatsId"]
     assert order.channel.platform == "YE"
     assert order.channel.details["phone"] == "+79990001122"
     assert order.comment =~ "Без лука"
-    assert order.comment =~ "2"
+    refute order.comment =~ "Cutlery"
+    assert order.persons == 2
+
+    assert [%{method: :aggregator, status: :paid, amount: 65_000, fiscalized_by: :aggregator}] =
+             Delivest.Payments.list(order.id)
+
+    assert order.customer_name
+    assert order.customer_phone == "+79990001122"
     assert Enum.sort(Enum.map(order.items, & &1.quantity)) == [1, 2]
+  end
+
+  test "modifications of yandex become item modifiers", %{branch: branch, soup: soup} do
+    params = order_params(branch, [soup], %{"paymentInfo" => pay(350)})
+
+    params =
+      update_in(params, ["items", Access.at(0)], fn item ->
+        Map.merge(item, %{
+          "price" => 300,
+          "modifications" => [
+            %{"id" => "sour-cream", "name" => "Сметана", "quantity" => 1, "price" => 50}
+          ]
+        })
+      end)
+
+    assert {:ok, %Order{} = order} = YandexEda.create_order(params)
+    order = Repo.preload(order, items: :modifiers)
+
+    assert [%{price: 35_000, modifiers: [%{name: "Сметана", price: 5_000, modifier_id: nil}]}] =
+             order.items
   end
 
   test "the same eatsId returns the same order", %{branch: branch, soup: soup} do
@@ -103,8 +130,8 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
 
     assert {:ok, %Order{} = order} = YandexEda.create_order(params)
     assert order.fulfillment_type == :delivery
-    assert order.delivery_amount == 99
-    assert order.total_amount == 399
+    assert order.delivery_amount == 9900
+    assert order.total_amount == 39_900
     assert order.payment_method == :cash
     assert order.address.formatted == "Москва, Тверская улица, 1"
     assert order.address.latitude == 55.757

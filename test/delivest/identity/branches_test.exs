@@ -273,6 +273,45 @@ defmodule Delivest.Identity.BranchesTest do
       assert working_hours["tuesday"]["enabled"] == false
     end
 
+    test "generates a unique branch code from the slug", %{admin: admin} do
+      assert {:ok, first} = Branches.create_branch(admin, %{name: "Center", slug: "center"}, %{})
+
+      assert {:ok, second} =
+               Branches.create_branch(admin, %{name: "Centre", slug: "center-2"}, %{})
+
+      assert first.code == "CENTER"
+      assert second.code != first.code
+      assert second.code =~ ~r/^[A-Z0-9]{2,6}$/
+    end
+
+    test "keeps the given branch code in upper case", %{admin: admin} do
+      assert {:ok, branch} =
+               Branches.create_branch(admin, %{name: "Moscow", slug: "msk", code: "msk1"}, %{})
+
+      assert branch.code == "MSK1"
+    end
+
+    test "rejects a branch code that is not 2 to 6 letters or digits", %{admin: admin} do
+      changeset =
+        assert_changeset_error(
+          Branches.create_branch(admin, %{name: "Moscow", slug: "msk", code: "MSK-1"}, %{})
+        )
+
+      assert errors_on(changeset).code != []
+    end
+
+    test "rejects a branch code taken by another branch", %{admin: admin} do
+      assert {:ok, _} =
+               Branches.create_branch(admin, %{name: "Moscow", slug: "msk", code: "MSK"}, %{})
+
+      changeset =
+        assert_changeset_error(
+          Branches.create_branch(admin, %{name: "Moscow 2", slug: "msk-2", code: "MSK"}, %{})
+        )
+
+      assert "has already been taken" in errors_on(changeset).code
+    end
+
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
       attrs = %{name: ""}
 
@@ -339,6 +378,21 @@ defmodule Delivest.Identity.BranchesTest do
         Branches.update_branch(admin, branch, %{name: "New Name"}, %{})
 
       assert {:ok, nil} = Cachex.get(:branch_cache, branch.id)
+    end
+
+    test "a branch zone overrides the franchise one", %{admin: admin} do
+      branch = insert(:branch)
+      assert Delivest.LocalTime.timezone(branch.id) == "Europe/Moscow"
+
+      assert {:ok, _branch} =
+               Branches.update_branch(admin, branch, %{}, %{"timezone" => "Asia/Omsk"})
+
+      assert Delivest.LocalTime.timezone(branch.id) == "Asia/Omsk"
+
+      assert {:error, :info, changeset} =
+               Branches.update_branch(admin, branch, %{}, %{"timezone" => "Mars/Base"})
+
+      assert "is not a known time zone" in errors_on(changeset).timezone
     end
 
     test "should return error changeset with invalid data when permitted", %{admin: admin} do
@@ -432,6 +486,43 @@ defmodule Delivest.Identity.BranchesTest do
 
       assert {:ok, %{info: %{crm: %{enabled: true}}}} =
                Branches.update_integrations(admin, branch, crm)
+    end
+
+    test "the pickup board link is created, replaced and found", %{admin: admin} do
+      branch = insert(:branch)
+
+      editor = insert(:staff, role: insert(:role, permissions: ["delivery.update"]))
+      insert(:staff_branch, staff: editor, branch: branch)
+      editor = Repo.preload(editor, [:role, :branches], force: true)
+      assert {:error, :forbidden} = Branches.reset_board_token(editor, branch)
+
+      assert {:ok, %{info: %{board_token: first}}} = Branches.reset_board_token(admin, branch)
+      assert {:ok, %{id: id}} = Branches.get_branch_by_board_token(first)
+      assert id == branch.id
+
+      assert {:ok, %{info: %{board_token: second}}} = Branches.reset_board_token(admin, branch)
+      refute second == first
+      assert {:error, :not_found} = Branches.get_branch_by_board_token(first)
+      assert {:error, :not_found} = Branches.get_branch_by_board_token("")
+    end
+
+    test "couriers are set with delivery editing, not with the branch form", %{admin: admin} do
+      branch = insert(:branch)
+      couriers = %{"source" => "yandex", "search" => "manual"}
+
+      assert {:ok, %{info: info}} =
+               Branches.update_branch(admin, branch, %{}, %{"couriers" => couriers})
+
+      assert info.couriers.source == :staff
+
+      editor = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+      insert(:staff_branch, staff: editor, branch: branch)
+      editor = Repo.preload(editor, [:role, :branches], force: true)
+
+      assert {:error, :forbidden} = Branches.update_couriers(editor, branch, couriers)
+
+      assert {:ok, %{info: %{couriers: %{source: :yandex, search: :manual}}}} =
+               Branches.update_couriers(admin, branch, couriers)
     end
   end
 

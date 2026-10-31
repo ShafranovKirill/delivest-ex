@@ -6,8 +6,7 @@ end
 
 # Admin credentials: read directly from OS environment at runtime
 config :delivest,
-  default_locale: System.get_env("DEFAULT_LOCALE") || "en",
-  timezone: System.get_env("APP_TIMEZONE") || "Europe/Moscow"
+  default_locale: System.get_env("DEFAULT_LOCALE") || "en"
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
@@ -27,6 +26,14 @@ config :delivest,
 # script that automatically sets the env var above.
 
 config :delivest, :version, System.get_env("APP_VERSION") || "dev"
+
+config :delivest, Delivest.Integrations.Iiko,
+  app_id: System.get_env("IIKO_APP_ID"),
+  client_secret: System.get_env("IIKO_CLIENT_SECRET")
+
+config :delivest, Delivest.Integrations.Rkeeper, token: System.get_env("RKEEPER_TOKEN")
+
+config :delivest, Delivest.Integrations.AtolOnline, host: System.get_env("ATOL_HOST")
 
 client_origin = System.get_env("CLIENT_ORIGIN") || "http://localhost:3000"
 

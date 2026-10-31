@@ -17,7 +17,7 @@ defmodule DelivestWeb.Staff.ClientLive.ShowTest do
   test "client card shows totals and the order history", %{conn: conn, branch: branch} do
     order =
       order_fixture(branch.id,
-        price: 250,
+        price: 25_000,
         quantity: 2,
         attrs: %{"customer_phone" => "+79991112233", "customer_name" => "Анна"}
       )

@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.DashboardLive.Index do
   use DelivestWeb, :live_view
 
+  alias Delivest.Oms.Order
+
   alias Delivest.{Analytics, Identity, LocalTime}
   alias Delivest.Oms.Orders
   alias DelivestWeb.Staff.DashboardLive.DayLabel
@@ -49,7 +51,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
   defp load(socket) do
     branch_id = socket.assigns.current_branch.id
-    today = LocalTime.today()
+    today = LocalTime.today(LocalTime.timezone(branch_id))
     today_period = {today, today}
     yesterday = Date.add(today, -1)
 
@@ -74,7 +76,15 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         latest =
           Orders.list_latest_orders(%{branch_id: branch_id, date_from: today, date_to: today}, 8)
 
+        problem_count =
+          %{branch_id: branch_id, problem: true, date_from: today, date_to: today}
+          |> Orders.count_by_status()
+          |> Map.drop([:completed, :cancelled])
+          |> Map.values()
+          |> Enum.sum()
+
         assign(socket,
+          problem_count: problem_count,
           status_counts: counts,
           in_work: counts |> Map.take(@active_statuses) |> Map.values() |> Enum.sum(),
           latest_orders: latest
@@ -123,6 +133,23 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
           </.link>
         </div>
       </div>
+
+      <.link
+        :if={@can_orders and @problem_count > 0}
+        id="dashboard-problem-orders"
+        navigate={~p"/staff/b/#{@current_branch}/orders?problem=true"}
+        class="flex items-center gap-3 rounded-box border border-warning/40 bg-warning/10 p-4 hover:bg-warning/15 transition-colors"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-6 text-warning" />
+        <span class="font-medium">
+          {ngettext(
+            "%{count} order needs attention",
+            "%{count} orders need attention",
+            @problem_count
+          )}
+        </span>
+        <.icon name="hero-chevron-right" class="size-4 ml-auto text-base-content/40" />
+      </.link>
 
       <div :if={@can_stats or @can_orders} class="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <%= if @can_stats do %>
@@ -194,7 +221,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
                   navigate={~p"/staff/b/#{@current_branch}/orders/#{order.id}"}
                   class="font-mono font-bold after:absolute after:inset-0"
                 >
-                  #{order.number}
+                  #{Order.short_number(order)}
                 </.link>
                 <span class="text-sm text-base-content/60 tabular-nums">
                   {OrderHelpers.local_time(order.inserted_at)}
@@ -211,17 +238,17 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
               </div>
               <div class="flex items-center gap-2 text-xs text-base-content/60 min-w-0">
                 <span class="shrink-0">{OrderHelpers.fulfillment_label(order.fulfillment_type)}</span>
-                <%= if order.client do %>
+                <%= if order.client_id do %>
                   <span>·</span>
                   <.link
                     :if={@can_clients}
                     navigate={~p"/staff/clients/#{order.client_id}"}
                     class="relative text-sm text-base-content hover:text-primary hover:underline truncate"
                   >
-                    {order.client.name || order.client.phone}
+                    {order.customer_name || order.customer_phone}
                   </.link>
                   <span :if={!@can_clients} class="text-sm text-base-content truncate">
-                    {order.client.name || order.client.phone}
+                    {order.customer_name || order.customer_phone}
                   </span>
                 <% end %>
               </div>

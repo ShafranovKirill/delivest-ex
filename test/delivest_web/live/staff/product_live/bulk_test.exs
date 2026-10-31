@@ -40,7 +40,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
 
     products = branch.id |> Net.list_branch_products() |> Map.new(&{&1.name, &1})
     assert map_size(products) == 6
-    assert products["Пепперони"].price == 1590
+    assert products["Пепперони"].price == 159_000
     assert products["Пепперони"].weight == 450
     assert products["Пепперони"].category_id == products["Маргарита"].category_id
   end
@@ -82,7 +82,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
     assert [%{"price" => "400", "name" => "Плов"}] =
              BulkRows.paste("Цена\tНазвание\n400\tПлов", "name")
 
-    assert {%{"price" => 1500, "weight" => 300}, %{}} =
+    assert {%{"price" => 150_000, "weight" => 300}, %{}} =
              BulkRows.validate(%{"name" => "Плов", "price" => "1 500 руб.", "weight" => "300гр"})
 
     assert {_attrs, %{"price" => _, "quantity" => _}} =

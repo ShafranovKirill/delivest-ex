@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.{CourierSettings, KitchenSettings, YcartSettings}
+  alias Delivest.Identity.Branch.{KitchenSettings, YcartSettings}
   alias Delivest.Identity
   alias Delivest.Repo
 
@@ -11,6 +11,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   embedded_schema do
     field :name, :string
     field :slug, :string
+    field :code, :string
     field :is_active, :boolean
 
     field :address, :string
@@ -19,6 +20,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :longitude, :float
     field :phone_number, :string
     field :delivery_time, :integer
+    field :timezone, :string
     field :working_hours, :map, default: %{}
     field :vk_url, :string
     field :whatsapp_url, :string
@@ -26,7 +28,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update
-    embeds_one :couriers, CourierSettings, on_replace: :update
   end
 
   def changeset(form, attrs) do
@@ -41,16 +42,17 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :longitude,
       :phone_number,
       :delivery_time,
+      :timezone,
       :working_hours,
       :vk_url,
       :whatsapp_url,
       :instagram_url,
       :slug,
+      :code,
       :is_active
     ])
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
-    |> cast_embed(:couriers, with: &CourierSettings.changeset/2)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(
@@ -67,6 +69,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     %__MODULE__{
       name: branch.name,
       slug: branch.slug,
+      code: branch.code,
       is_active: branch.is_active,
       address: info && info.address,
       city: info && info.city,
@@ -74,21 +77,20 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       longitude: info && info.longitude,
       phone_number: info && info.phone_number,
       delivery_time: info && info.delivery_time,
+      timezone: info && info.timezone,
       working_hours: (info && info.working_hours) || %{},
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
       ycart_settings: (info && info.ycart_settings) || %YcartSettings{},
-      kitchen: (info && info.kitchen) || %KitchenSettings{},
-      couriers: (info && info.couriers) || %CourierSettings{}
+      kitchen: (info && info.kitchen) || %KitchenSettings{}
     }
   end
 
   def new,
     do: %__MODULE__{
       ycart_settings: %YcartSettings{},
-      kitchen: %KitchenSettings{},
-      couriers: %CourierSettings{}
+      kitchen: %KitchenSettings{}
     }
 
   def for_branch(%{id: id} = branch) when not is_nil(id), do: from_branch(branch)
@@ -186,7 +188,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
     branch_params =
       data
-      |> Map.take([:name, :slug, :is_active])
+      |> Map.take([:name, :slug, :code, :is_active])
       |> Enum.reject(fn {_, v} -> is_nil(v) end)
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
 
@@ -199,6 +201,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :longitude,
         :phone_number,
         :delivery_time,
+        :timezone,
         :working_hours,
         :vk_url,
         :whatsapp_url,
@@ -207,7 +210,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
       |> Map.put("ycart_settings", embed_params(data.ycart_settings))
       |> Map.put("kitchen", embed_params(data.kitchen))
-      |> Map.put("couriers", embed_params(data.couriers))
 
     {branch_params, info_params}
   end

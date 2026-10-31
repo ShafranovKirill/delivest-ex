@@ -1,13 +1,17 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Couriers, Identity}
+  alias Delivest.Repo
+
+  alias Delivest.{Couriers, Identity, LocalTime, Money}
   alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
+  alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.OrderLive.{OrdersQuery, StatusErrors}
 
   alias DelivestWeb.Staff.OrderLive.Components.{
     CancelOrderModal,
+    IntakeControls,
     OrderCardComponent,
     RevertStatusModal,
     OrdersToolbar,
@@ -25,7 +29,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     if connected?(socket) do
       Orders.subscribe(branch_id)
       Couriers.subscribe(branch_id)
+      CourierPresence.subscribe(branch_id)
     end
+
+    {:ok, branch} = Identity.get_branch(branch_id, preload: :info)
+    couriers = Couriers.list_couriers(branch_id)
 
     {:ok,
      socket
@@ -36,7 +44,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        shown_id: nil,
        shown_order: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id),
-       couriers: Couriers.list_couriers(branch_id)
+       couriers: couriers,
+       estimable: Couriers.settings(branch_id).source == :yandex,
+       pickup: branch.info,
+       positions: CourierPresence.positions(branch_id, couriers)
      )
      |> stream(:orders, [])}
   end
@@ -66,6 +77,14 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         {:noreply,
          socket
          |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
+         |> assign(receipt_alerts: receipt_alerts(socket.assigns.current_branch.id))
+         |> assign(
+           intake: Delivest.Intake.status(socket.assigns.current_branch.id),
+           delivery_minutes: OrderDeadline.delivery_minutes(socket.assigns.current_branch.id)
+         )
+         |> assign(
+           busy_mode: Delivest.Integrations.YandexEda.busy_mode(socket.assigns.current_branch.id)
+         )
          |> stream(:orders, Enum.reject(orders, &(&1.id == socket.assigns.shown_id)), reset: true)
          |> assign_shown()}
 
@@ -124,6 +143,24 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("find_courier", %{"order-id" => id}, socket) do
     with {:ok, order} <- fetch_branch_order(socket, id),
          {:ok, _delivery} <- Couriers.find(socket.assigns.current_staff, order) do
+      load(socket)
+    else
+      error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("estimate_delivery", %{"order-id" => id}, socket) do
+    with {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, estimate} <- Couriers.estimate(socket.assigns.current_staff, order) do
+      {:noreply, put_flash(socket, estimate_kind(estimate), estimate_message(estimate, socket))}
+    else
+      error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("confirm_paid_cancel", %{"order-id" => id}, socket) do
+    with {:ok, order} <- fetch_branch_order(socket, id),
+         {:ok, _delivery} <- Couriers.confirm_cancel(socket.assigns.current_staff, order) do
       load(socket)
     else
       error -> failed(socket, error)
@@ -204,6 +241,52 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
+  def handle_event("intake_pause", %{"duration" => duration} = params, socket) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+
+    result =
+      intake_many(
+        staff,
+        branch,
+        params,
+        &Delivest.Intake.pause(staff, &1, duration(duration), params["reason"])
+      )
+
+    intake_result(socket, result)
+  end
+
+  def handle_event(
+        "intake_load",
+        %{"minutes" => minutes, "duration" => duration} = params,
+        socket
+      ) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+
+    result =
+      intake_many(
+        staff,
+        branch,
+        params,
+        &Delivest.Intake.start_load(staff, &1, String.to_integer(minutes), duration(duration))
+      )
+
+    intake_result(socket, result)
+  end
+
+  def handle_event("intake_resume", _params, socket) do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+    intake_result(socket, Delivest.Intake.resume(staff, branch))
+  end
+
+  def handle_event("retry_receipt", %{"id" => id}, socket),
+    do: receipt_action(socket, id, &Delivest.Fiscal.retry/2)
+
+  def handle_event("correct_receipt", %{"id" => id}, socket),
+    do: receipt_action(socket, id, &Delivest.Fiscal.correct/2)
+
+  def handle_event("refund_receipt", %{"id" => id}, socket),
+    do: receipt_action(socket, id, &Delivest.Fiscal.refund/2)
+
   def handle_event("courier_code", %{"order-id" => id, "code" => code}, socket) do
     socket.assigns.current_staff
     |> YandexEda.validate_courier_code(socket.assigns.current_branch.id, id, code)
@@ -260,6 +343,15 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
   def handle_info({:deliveries_changed, _branch_id}, socket), do: load(socket)
 
+  def handle_info({:courier_presence, branch_id}, socket) do
+    positions = CourierPresence.positions(branch_id, socket.assigns.couriers)
+
+    {:noreply,
+     socket
+     |> assign(positions: positions)
+     |> push_event("courier_positions", %{positions: positions})}
+  end
+
   defp courier_code_error(:forbidden), do: gettext("Permission denied")
   defp courier_code_error(:empty_code), do: gettext("Enter the courier code")
   defp courier_code_error(:no_attempts), do: gettext("No attempts left to check the courier code")
@@ -268,6 +360,74 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: gettext("Yandex Eda push access is not set up")
 
   defp courier_code_error(_reason), do: gettext("Yandex Eda did not accept the request")
+
+  defp duration("end_of_day"), do: :end_of_day
+  defp duration(minutes), do: String.to_integer(minutes)
+
+  defp intake_many(staff, branch, params, action) do
+    ids = params["branches"] || []
+
+    targets = [
+      branch
+      | Enum.filter(Identity.list_branch_for_staff(staff), &(&1.id in ids and &1.id != branch.id))
+    ]
+
+    Repo.transaction(fn ->
+      Enum.each(targets, fn target ->
+        case action.(target) do
+          {:ok, _} -> :ok
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+    end)
+  end
+
+  defp intake_result(socket, {:ok, _status}), do: load(socket)
+  defp intake_result(socket, {:error, :forbidden}), do: failed(socket, {:error, :forbidden})
+
+  defp intake_result(socket, _error),
+    do: {:noreply, put_flash(socket, :error, gettext("Failed to update the order"))}
+
+  defp receipt_action(socket, id, action) do
+    branch_id = socket.assigns.current_branch.id
+
+    with :ok <- authorize(socket, "orders.update"),
+         {:ok, uuid} <- Ecto.UUID.cast(id),
+         %{branch_id: ^branch_id} = receipt <- Delivest.Fiscal.get(uuid),
+         {:ok, _receipt} <- action.(receipt, socket.assigns.current_staff) do
+      load(socket)
+    else
+      {:error, :forbidden} = error -> failed(socket, error)
+      _error -> socket |> put_flash(:error, gettext("Failed to issue the receipt")) |> load()
+    end
+  end
+
+  defp estimate_kind(%{loss: 0}), do: :info
+  defp estimate_kind(_estimate), do: :error
+
+  defp estimate_message(%{price: price, loss: loss} = estimate, socket) do
+    text =
+      gettext("Yandex Delivery: %{price}, pickup %{pickup}",
+        price: Money.format(price),
+        pickup: interval(estimate.pickup_interval, socket.assigns.current_branch)
+      )
+
+    if loss > 0,
+      do: text <> " " <> gettext("Loss: %{loss}", loss: Money.format(loss)),
+      else: text
+  end
+
+  defp interval(%{"from" => from, "to" => to}, branch),
+    do: "#{clock(from, branch)}–#{clock(to, branch)}"
+
+  defp interval(_interval, _branch), do: "—"
+
+  defp clock(iso, branch) do
+    case DateTime.from_iso8601(iso) do
+      {:ok, at, _offset} -> at |> LocalTime.local(branch) |> Calendar.strftime("%H:%M")
+      _error -> iso
+    end
+  end
 
   defp failed(socket, error),
     do: socket |> put_flash(:error, StatusErrors.message(error)) |> load()
@@ -303,6 +463,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     |> then(&orders_path(branch, &1))
   end
 
+  defp receipt_alerts(branch_id), do: length(Delivest.Fiscal.pending_alerts(branch_id))
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -312,12 +474,44 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
       >
         <:actions>
+          <IntakeControls.menu
+            can_manage={Identity.can?(@current_staff, "orders.update")}
+            branches={Identity.list_branch_for_staff(@current_staff)}
+          />
           <.link navigate={~p"/staff/b/#{@current_branch}/orders/new"} class="btn btn-primary">
             <.icon name="hero-plus" class="size-5" />
             {gettext("New Order")}
           </.link>
         </:actions>
       </.page_header>
+
+      <IntakeControls.plate
+        intake={@intake}
+        branch_id={@current_branch.id}
+        can_manage={Identity.can?(@current_staff, "orders.update")}
+      />
+
+      <DelivestWeb.Staff.IntegrationLive.YandexEdaBusy.plate
+        busy={@busy_mode}
+        branch_id={@current_branch.id}
+      />
+
+      <div :if={@receipt_alerts > 0} id="receipt-alerts" role="alert" class="alert alert-error">
+        <.icon name="hero-exclamation-triangle" class="size-5" />
+        <span>
+          {ngettext(
+            "%{count} receipt is not issued",
+            "%{count} receipts are not issued",
+            @receipt_alerts
+          )}
+        </span>
+        <.link
+          navigate={~p"/staff/b/#{@current_branch}/finance/receipts?status=problem"}
+          class="btn btn-sm"
+        >
+          {gettext("Open receipts")}
+        </.link>
+      </div>
 
       <.card class="flex flex-col gap-4 p-3 sm:p-4">
         <StatusTabs.status_tabs
@@ -340,6 +534,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
+          estimable={@estimable}
         />
       </div>
 
@@ -349,7 +544,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         id="order-slideover"
         show={@shown_order != nil}
         wide
-        title={@shown_order && gettext("Order #%{number}", number: @shown_order.number)}
+        title={@shown_order && gettext("Order #%{number}", number: Order.short_number(@shown_order))}
         on_close={JS.patch(orders_path(@current_branch, @query))}
       >
         <OrderCardComponent.render_card
@@ -360,6 +555,9 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           current_branch={@current_branch}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
+          estimable={@estimable}
+          positions={@positions}
+          pickup={@pickup}
         />
       </.slide_over>
 

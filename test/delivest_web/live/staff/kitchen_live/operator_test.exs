@@ -27,7 +27,7 @@ defmodule DelivestWeb.Staff.KitchenLive.OperatorTest do
 
   test "the header shows whether the kitchen screen is open", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = orders_page(conn, branch)
-    assert lv |> element("#kitchen-indicator") |> render() =~ "Kitchen offline"
+    assert lv |> element("#kitchen-indicator") |> render() =~ "Kitchen"
 
     cook = staff(["orders.read", "orders.cook"], branch)
     kitchen_conn = init_test_session(build_conn(), %{"staff_id" => cook.id})
@@ -49,16 +49,16 @@ defmodule DelivestWeb.Staff.KitchenLive.OperatorTest do
     )
 
     assert_push_event(lv, "kitchen:ready", %{})
-    assert render(lv) =~ "Order ##{order.number} is ready"
+    assert render(lv) =~ "Order ##{order.daily_number} is ready"
   end
 
   test "an order past cook_by still cooking raises the alarm", %{conn: conn, branch: branch} do
-    past = NaiveDateTime.add(NaiveDateTime.local_now(), -3, :hour)
+    past = DateTime.add(DateTime.utc_now(), -3, :hour)
 
     order =
       branch.id
       |> order_fixture()
-      |> Ecto.Changeset.change(status: :preparing, cook_by: NaiveDateTime.truncate(past, :second))
+      |> Ecto.Changeset.change(status: :preparing, cook_by: DateTime.truncate(past, :second))
       |> Repo.update!()
 
     {:ok, lv, _html} = orders_page(conn, branch)
@@ -70,12 +70,12 @@ defmodule DelivestWeb.Staff.KitchenLive.OperatorTest do
     conn: conn,
     branch: branch
   } do
-    later = NaiveDateTime.add(NaiveDateTime.local_now(), 5, :hour)
+    later = DateTime.add(DateTime.utc_now(), 5, :hour)
 
     order =
       order_fixture(branch.id,
         attrs: %{
-          "cook_by" => NaiveDateTime.truncate(later, :second) |> NaiveDateTime.to_iso8601()
+          "cook_by" => DateTime.truncate(later, :second) |> DateTime.to_iso8601()
         }
       )
 

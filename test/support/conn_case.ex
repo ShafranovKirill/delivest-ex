@@ -28,6 +28,7 @@ defmodule DelivestWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import DelivestWeb.ConnCase
+      import Delivest.DataCase, only: [deliver_events: 0]
     end
   end
 

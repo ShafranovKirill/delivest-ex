@@ -17,7 +17,7 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
   def on_mount(:default, %{"branch_slug" => slug}, _session, socket) do
     staff = socket.assigns[:current_staff]
 
-    with {:ok, branch} <- Identity.get_branch_by_slug(slug),
+    with {:ok, branch} <- Identity.get_branch_by_slug(slug, preload: :info),
          true <- Identity.has_branch_access?(staff, branch.id) do
       {:cont,
        socket
@@ -35,7 +35,7 @@ defmodule DelivestWeb.Hooks.StaffActiveBranch do
 
   def accessible(staff, branch_id) when is_binary(branch_id) do
     with true <- Identity.has_branch_access?(staff, branch_id),
-         {:ok, branch} <- Identity.get_branch(branch_id) do
+         {:ok, branch} <- Identity.get_branch(branch_id, preload: :info) do
       {:ok, branch}
     else
       _ -> :error

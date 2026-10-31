@@ -1,14 +1,29 @@
 defmodule Delivest.Integrations.Crm.StopSync do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Registry}
+  alias Delivest.Integrations.Journal
   alias Delivest.Net.{ProductCrmIds, Stops}
 
   @cache :crm_cache
 
   def sync(branch_id) do
     case branch_id |> Crm.get_branch_settings() |> source() do
-      {:ok, provider, module, settings} -> fetch(branch_id, provider, module, settings)
-      :none -> clear(branch_id)
+      {:ok, provider, module, settings} ->
+        Journal.scope([branch_id: branch_id], fn ->
+          fetch(branch_id, provider, module, settings)
+        end)
+
+      :none ->
+        clear(branch_id)
+    end
+  end
+
+  def interval_ms(branch_id) do
+    with {:ok, _provider, module, settings} <- branch_id |> Crm.get_branch_settings() |> source(),
+         {_key, interval} <- module.rate_limit(settings) do
+      interval
+    else
+      _ -> 0
     end
   end
 

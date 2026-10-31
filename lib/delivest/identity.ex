@@ -30,6 +30,13 @@ defmodule Delivest.Identity do
   defdelegate get_branch_by_slug(slug, opts \\ []), to: Branches
   defdelegate update_branch(staff, branch, branch_attrs, info_attrs), to: Branches
   defdelegate update_integrations(staff, branch, info_attrs), to: Branches
+  defdelegate update_couriers(staff, branch, attrs), to: Branches
+  defdelegate update_payments(staff, branch, attrs), to: Branches
+  defdelegate update_loyalty(staff, branch, attrs), to: Branches
+  defdelegate get_branch_by_board_token(token), to: Branches
+  defdelegate reset_board_token(staff, branch), to: Branches
+  defdelegate set_special_day(staff, branch, date, attrs), to: Branches
+  defdelegate remove_special_day(staff, branch, date), to: Branches
   defdelegate create_branch(staff, branch_attrs, info_attrs), to: Branches
   defdelegate soft_delete_branch(staff, branch), to: Branches
 
@@ -48,6 +55,11 @@ defmodule Delivest.Identity do
 
   defdelegate start_client_auth(phone, session_id), to: ClientAuth, as: :start
   defdelegate confirm_client_call(call_id, phone), to: ClientAuth, as: :confirm_call
+
+  defdelegate confirm_client_code(confirmation_id, session_id, code),
+    to: ClientAuth,
+    as: :confirm_code
+
   defdelegate complete_client_auth(confirmation_id, session_id), to: ClientAuth, as: :complete
   defdelegate fetch_authenticated_client(client_id), to: ClientAuth, as: :fetch_client
   defdelegate client_auth_enabled?, to: ClientAuth, as: :enabled?

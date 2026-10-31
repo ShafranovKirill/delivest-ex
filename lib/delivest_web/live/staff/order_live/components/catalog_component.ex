@@ -205,7 +205,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
                     <button
                       type="button"
                       phx-click="remove_item"
-                      phx-value-product-id={item.product_id}
+                      phx-value-product-id={Map.get(item, :key, item.product_id)}
                       class="btn btn-xs btn-square btn-ghost"
                     >
                       <.icon name="hero-minus" class="size-3" />
@@ -214,7 +214,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
                     <button
                       type="button"
                       phx-click="add_item"
-                      phx-value-product-id={item.product_id}
+                      phx-value-product-id={Map.get(item, :key, item.product_id)}
                       class="btn btn-xs btn-square btn-ghost"
                     >
                       <.icon name="hero-plus" class="size-3" />

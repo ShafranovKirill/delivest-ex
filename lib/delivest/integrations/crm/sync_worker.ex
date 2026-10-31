@@ -6,7 +6,7 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
 
   require Logger
 
-  alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.{Crm, Health}
   alias Delivest.Integrations.Crm.SyncState
   alias Delivest.Oms.Orders
 
@@ -27,6 +27,14 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
   defp handle({:ok, delivery}, order, attempt, _max_attempts) do
     Logger.info("crm order #{order.number} delivered as #{delivery.external_id}")
     SyncState.sent(order, delivery, attempt)
+    Health.recovered(order.crm.provider, order.branch_id)
+    :ok
+  end
+
+  defp handle({:pending, ref}, order, attempt, _max_attempts) do
+    Logger.info("crm order #{order.number} awaits confirmation #{ref}")
+    SyncState.confirming(order, ref, attempt)
+    Crm.schedule_confirm_check(order)
     :ok
   end
 
@@ -40,6 +48,15 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
     case Crm.classify_error(order, reason) do
       :permanent ->
         SyncState.failed(order, message, attempt)
+        {:cancel, reason}
+
+      :unknown_outcome ->
+        SyncState.unknown(order, message, attempt)
+        {:cancel, reason}
+
+      :auth ->
+        SyncState.failed(order, message, attempt)
+        Health.auth_failed(order.crm.provider, order.branch_id, reason)
         {:cancel, reason}
 
       {:snooze, seconds} ->

@@ -28,6 +28,16 @@ defmodule Delivest.Integrations.Frontpad.StatusCodes do
 
   def hook_limit, do: @hook_limit
 
+  def to_map(nil), do: %{}
+
+  def to_map(%__MODULE__{} = codes) do
+    for status <- @statuses,
+        code = Map.get(codes, status),
+        code not in [nil, ""],
+        into: %{},
+        do: {code, status}
+  end
+
   def status_for(nil, _code), do: nil
 
   def status_for(%__MODULE__{} = codes, code) do

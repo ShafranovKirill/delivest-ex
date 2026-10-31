@@ -3,12 +3,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   use Gettext, backend: DelivestWeb.Gettext
 
-  alias Delivest.{Couriers, Identity}
+  alias Delivest.{Couriers, Identity, LocalTime, Payments}
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.YandexEda.OrderConfirmation
-  alias Delivest.Oms.OrderFlow
+  alias Delivest.Fiscal.Receipt
+  alias Delivest.Oms.{Order, OrderFlow}
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
+  alias DelivestWeb.Staff.CourierLive.LocationComponents
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
 
   attr :id, :string, required: true
@@ -17,6 +19,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :current_branch, :map, required: true
   attr :delivery_minutes, :integer, required: true
   attr :couriers, :list, default: []
+  attr :estimable, :boolean, default: false
+  attr :positions, :list, default: nil
+  attr :pickup, :map, default: nil
 
   def render_card(assigns) do
     assigns =
@@ -45,13 +50,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <span class="absolute inline-flex size-full animate-ping rounded-full bg-info opacity-75" />
           <span class="relative inline-flex size-2.5 rounded-full bg-info" />
         </span>
-        <span class="font-mono font-bold text-base text-primary">#{@order.number}</span>
+        <span class="font-mono font-bold text-base text-primary">
+          #{Delivest.Oms.Order.short_number(@order)}
+        </span>
+        <span class="font-mono text-xs text-base-content/50">{@order.number}</span>
         <span class="badge badge-sm badge-ghost gap-1 font-medium">
           <.icon name={fulfillment_icon(@order.fulfillment_type)} class="size-3.5" />
           {OrderHelpers.fulfillment_label(@order.fulfillment_type)}
         </span>
         <span class="text-xs text-base-content/50 tabular-nums">
-          {OrderHelpers.local_time(@order.inserted_at)}
+          {OrderHelpers.order_time(@order.inserted_at, @order.branch_id)}
         </span>
         <OrderClock.order_clock order={@order} status={@status} delivery_minutes={@delivery_minutes} />
         <OrderClock.kitchen_clock
@@ -96,7 +104,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         order={@order}
         delivery={@delivery}
         couriers={@couriers}
+        estimable={@estimable}
         can_manage={Identity.can?(@current_staff, "orders.update")}
+      />
+
+      <.courier_location
+        :if={@positions && tracked?(@delivery)}
+        order={@order}
+        delivery={@delivery}
+        positions={@positions}
+        pickup={@pickup}
       />
 
       <p
@@ -141,6 +158,56 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         )}
       </p>
 
+      <div
+        :if={Crm.alert?(@order)}
+        id={"order-crm-alert-#{@order.id}"}
+        class="mx-3 sm:mx-4 mb-3 space-y-2 rounded-box bg-error/10 px-3 py-2 text-sm text-error"
+      >
+        <p class="font-semibold">
+          <.icon name="hero-exclamation-triangle" class="size-4" />
+          {@order.crm.alert}
+        </p>
+        <form
+          :if={@order.crm.status == "unknown"}
+          id={"order-crm-exists-#{@order.id}"}
+          phx-submit="crm_alert"
+          class="flex flex-wrap items-center gap-2"
+        >
+          <input type="hidden" name="order_id" value={@order.id} />
+          <input type="hidden" name="action" value="exists" />
+          <input
+            type="text"
+            name="number"
+            class="input input-xs input-bordered w-32 text-base-content"
+            placeholder={gettext("Order number in the CRM")}
+          />
+          <button type="submit" class="btn btn-error btn-xs btn-outline">
+            {gettext("The order is in the CRM")}
+          </button>
+          <button
+            id={"order-crm-resend-#{@order.id}"}
+            type="button"
+            class="btn btn-error btn-xs"
+            phx-click="crm_alert"
+            phx-value-id={@order.id}
+            phx-value-action="resend"
+          >
+            {gettext("Send again")}
+          </button>
+        </form>
+        <button
+          :if={@order.crm.status != "unknown"}
+          id={"order-crm-acknowledge-#{@order.id}"}
+          type="button"
+          class="btn btn-error btn-xs"
+          phx-click="crm_alert"
+          phx-value-id={@order.id}
+          phx-value-action="acknowledge"
+        >
+          {gettext("Got it")}
+        </button>
+      </div>
+
       <footer class="px-3 sm:px-4 py-2.5 border-t border-base-200 flex flex-wrap items-center gap-2">
         <span
           :if={@order.source != "app"}
@@ -162,7 +229,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </span>
         <.status_control order={@order} current_staff={@current_staff} last={@last} />
         <form
-          :if={is_nil(@order.crm) and @order.payment_method != :online}
+          :if={not Order.crm_managed?(@order) and @order.payment_method != :online}
           id={"order-payment-#{@order.id}"}
           phx-change="update_payment"
           phx-value-order-id={@order.id}
@@ -174,6 +241,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
             </option>
           </select>
         </form>
+        <.payment_badge order={@order} />
         <span
           :for={promotion <- @order.promotions}
           class="badge badge-success badge-sm whitespace-nowrap"
@@ -185,7 +253,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </span>
         <div class="ml-auto flex items-center gap-1">
           <.link
-            :if={is_nil(@order.crm)}
+            :if={not Order.crm_managed?(@order)}
             navigate={~p"/staff/b/#{@current_branch}/orders/#{@order.id}/edit"}
             class="btn btn-ghost btn-sm btn-square"
             title={gettext("Edit Order")}
@@ -203,6 +271,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           </button>
         </div>
       </footer>
+
+      <.payments order={@order} />
+      <.receipts order={@order} current_staff={@current_staff} />
 
       <ol
         :if={@history != []}
@@ -231,6 +302,192 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     """
   end
 
+  defp payment_badge(%{order: %{payments: [_ | _] = payments}} = assigns) do
+    assigns = assign(assigns, balance: Payments.balance(assigns.order.total_amount, payments))
+
+    ~H"""
+    <span id={"order-balance-#{@order.id}"} class={["badge badge-sm", balance_badge(@balance)]}>
+      <.icon :if={@balance == :paid} name="hero-check-circle" class="size-3.5" />
+      {balance_label(@balance)}
+    </span>
+    """
+  end
+
+  defp payment_badge(assigns), do: ~H""
+
+  defp payments(%{order: %{payments: [_ | _]}} = assigns) do
+    ~H"""
+    <ul
+      id={"order-payments-#{@order.id}"}
+      class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
+    >
+      <li
+        :for={payment <- @order.payments}
+        id={"payment-#{payment.id}"}
+        class={[
+          "flex flex-wrap items-center gap-2",
+          payment.status in [:cancelled, :failed] && "opacity-50"
+        ]}
+      >
+        <.icon name="hero-banknotes" class="size-4 text-base-content/60" />
+        <span class="font-medium">{method_label(payment.method)}</span>
+        <span class="tabular-nums">{Delivest.Money.format(payment.amount)}</span>
+        <span class={["badge badge-xs", payment_status_badge(payment.status)]}>
+          {payment_status_label(payment.status)}
+        </span>
+        <span
+          :if={payment.cash_given && payment.cash_given > payment.amount}
+          class="text-base-content/60"
+        >
+          {gettext("change from %{amount}", amount: Delivest.Money.format(payment.cash_given))}
+        </span>
+        <span :if={payment.paid_at} class="tabular-nums text-base-content/60">
+          {OrderHelpers.local_time(payment.paid_at)}
+        </span>
+        <span
+          :for={refund <- payment.refunds}
+          class={[
+            "badge badge-xs",
+            refund.status == :failed && "badge-ghost",
+            refund.status != :failed && "badge-error"
+          ]}
+        >
+          {gettext("refund %{amount}", amount: Delivest.Money.format(refund.amount))}
+        </span>
+      </li>
+    </ul>
+    """
+  end
+
+  defp payments(assigns), do: ~H""
+
+  defp balance_label(:paid), do: gettext("Paid")
+  defp balance_label(:partially_paid), do: gettext("Partially paid")
+  defp balance_label(:unpaid), do: gettext("Not paid")
+  defp balance_label(:refunded), do: gettext("Refunded")
+  defp balance_label(:overpaid), do: gettext("Overpaid")
+
+  defp balance_badge(:paid), do: "badge-success"
+  defp balance_badge(:partially_paid), do: "badge-warning"
+  defp balance_badge(:unpaid), do: "badge-ghost"
+  defp balance_badge(_balance), do: "badge-error"
+
+  defp method_label(:cash), do: gettext("Cash")
+  defp method_label(:card), do: gettext("Card")
+  defp method_label(:online), do: gettext("Online")
+  defp method_label(:sbp), do: gettext("SBP")
+  defp method_label(:certificate), do: gettext("Certificate")
+  defp method_label(:aggregator), do: gettext("Aggregator")
+
+  defp payment_status_label(:pending), do: gettext("Awaiting payment")
+  defp payment_status_label(:authorized), do: gettext("Authorized")
+  defp payment_status_label(:paid), do: gettext("Paid")
+  defp payment_status_label(:failed), do: gettext("Failed")
+  defp payment_status_label(:cancelled), do: gettext("Cancelled")
+
+  defp payment_status_badge(:paid), do: "badge-success"
+  defp payment_status_badge(:pending), do: "badge-ghost"
+  defp payment_status_badge(:authorized), do: "badge-info"
+  defp payment_status_badge(_status), do: "badge-error"
+
+  defp receipts(%{order: %{receipts: [_ | _]}} = assigns) do
+    ~H"""
+    <ul
+      id={"order-receipts-#{@order.id}"}
+      class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-col gap-1 text-xs"
+    >
+      <li
+        :for={receipt <- @order.receipts}
+        id={"receipt-#{receipt.id}"}
+        class="flex items-center gap-2"
+      >
+        <.icon name="hero-receipt-percent" class="size-4 text-base-content/60" />
+        <span class="font-medium">{receipt_kind(receipt.kind)}</span>
+        <span class="tabular-nums">{Delivest.Money.format(receipt.amount)}</span>
+        <span class={["badge badge-xs", receipt_badge(receipt.status)]}>
+          {receipt_status(receipt.status)}
+        </span>
+        <span :if={receipt.status == :fail} class="text-error truncate" title={receipt.error}>
+          {receipt.error}
+        </span>
+        <a
+          :if={Receipt.ofd_url(receipt)}
+          href={Receipt.ofd_url(receipt)}
+          target="_blank"
+          rel="noopener"
+          class="link"
+        >
+          {gettext("Receipt")}
+        </a>
+        <button
+          :if={receipt.status == :fail and not retried?(@order.receipts, receipt)}
+          type="button"
+          phx-click="retry_receipt"
+          phx-value-id={receipt.id}
+          class="btn btn-ghost btn-xs"
+        >
+          {gettext("Retry")}
+        </button>
+        <button
+          :if={
+            receipt.kind == :sell and receipt.status == :fail and
+              not retried?(@order.receipts, receipt) and Identity.admin_staff?(@current_staff)
+          }
+          type="button"
+          phx-click="correct_receipt"
+          phx-value-id={receipt.id}
+          data-confirm={gettext("Issue a correction receipt? Make sure the original is not in ATOL.")}
+          class="btn btn-ghost btn-xs text-error"
+        >
+          {gettext("Correction")}
+        </button>
+        <button
+          :if={
+            receipt.kind == :sell and receipt.status == :done and
+              not refunded?(@order.receipts, receipt)
+          }
+          type="button"
+          phx-click="refund_receipt"
+          phx-value-id={receipt.id}
+          data-confirm={gettext("Issue a refund receipt?")}
+          class="btn btn-ghost btn-xs text-error"
+        >
+          {gettext("Issue a refund")}
+        </button>
+      </li>
+    </ul>
+    """
+  end
+
+  defp receipts(assigns), do: ~H""
+
+  defp receipt_kind(:sell), do: gettext("Sale receipt")
+  defp receipt_kind(:sell_refund), do: gettext("Refund receipt")
+  defp receipt_kind(_kind), do: gettext("Correction receipt")
+
+  defp receipt_status(:pending), do: gettext("Sending")
+  defp receipt_status(:wait), do: gettext("Processing")
+  defp receipt_status(:done), do: gettext("Issued")
+  defp receipt_status(:fail), do: gettext("Failed")
+
+  defp receipt_badge(:done), do: "badge-success"
+  defp receipt_badge(:fail), do: "badge-error"
+  defp receipt_badge(_status), do: "badge-warning"
+
+  defp retried?(receipts, receipt),
+    do:
+      Enum.any?(
+        receipts,
+        &(&1.id != receipt.id and same_chain?(&1, receipt) and &1.stage == receipt.stage and
+            &1.status != :fail and DateTime.compare(&1.inserted_at, receipt.inserted_at) != :lt)
+      )
+
+  defp same_chain?(other, receipt),
+    do: other.kind == receipt.kind or (receipt.kind == :sell and other.kind == :sell_correction)
+
+  defp refunded?(receipts, receipt),
+    do: Enum.any?(receipts, &(&1.refund_of_id == receipt.id and &1.status != :fail))
+
   defp fulfillment_icon(:delivery), do: "hero-truck"
   defp fulfillment_icon(:pickup), do: "hero-shopping-bag"
   defp fulfillment_icon(_type), do: "hero-building-storefront"
@@ -241,12 +498,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp customer(assigns) do
     assigns =
       assign(assigns,
-        phone:
-          (assigns.order.client && assigns.order.client.phone) || assigns.order.customer_phone ||
-            channel_detail(assigns.order, "phone"),
-        name:
-          (assigns.order.client && assigns.order.client.name) || assigns.order.customer_name ||
-            channel_detail(assigns.order, "client_name"),
+        phone: phone_line(assigns.order),
+        tel:
+          Enum.join(
+            Enum.reject(
+              [assigns.order.customer_phone, assigns.order.customer_phone_ext],
+              &is_nil/1
+            ),
+            ","
+          ),
+        name: assigns.order.customer_name,
         linked?: assigns.order.client_id && Identity.can?(assigns.current_staff, "clients.read")
       )
 
@@ -254,7 +515,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     <div class="min-w-0 flex items-start gap-2">
       <.icon name="hero-user" class="size-4 mt-0.5 shrink-0 text-base-content/40" />
       <div :if={@phone || @name} class="min-w-0">
-        <a :if={@phone} href={"tel:#{@phone}"} class="font-mono font-semibold hover:text-primary">
+        <a :if={@phone} href={"tel:#{@tel}"} class="font-mono font-semibold hover:text-primary">
           {@phone}
         </a>
         <.link
@@ -353,7 +614,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </p>
       <p :if={@order.cook_by} class="flex gap-1.5 text-base-content/80">
         <.icon name="hero-clock" class="size-4 shrink-0 text-base-content/40" />
-        {gettext("Prepare by:")} {Calendar.strftime(@order.cook_by, "%d.%m %H:%M")}
+        {gettext("Prepare by:")} {@order.cook_by
+        |> LocalTime.local(@order.branch_id)
+        |> Calendar.strftime("%d.%m %H:%M")}
       </p>
       <p
         :if={@order.comment not in [nil, ""]}
@@ -376,6 +639,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <span class="font-mono font-bold">{item.quantity}×</span>
           <.icon :if={item.gift} name="hero-gift" class="size-3.5 text-success" />
           {item.title}
+          <span
+            :for={name <- Delivest.Oms.OrderItem.modifier_names(item)}
+            class="block pl-6 text-xs text-base-content/60"
+          >
+            + {name}
+          </span>
         </span>
         <span class="font-mono text-xs text-base-content/60 shrink-0 pt-0.5">
           {OrderHelpers.money(item.price * item.quantity)}
@@ -406,9 +675,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       id={"order-status-#{@order.id}"}
       class={["badge badge-sm border font-medium", OrderHelpers.status_color(@order.status)]}
     >
-      {OrderHelpers.status_label(@order.status)}
+      {if @order.awaiting_payment,
+        do: gettext("Awaiting payment"),
+        else: OrderHelpers.status_label(@order.status)}
     </span>
     <.crm_state :if={@order.crm} order={@order} />
+    <DelivestWeb.GatewayNote.order_gateway_note order={@order} name={crm_name(@order)} />
     <button
       :if={@next}
       type="button"
@@ -447,13 +719,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :order, :map, required: true
   attr :delivery, :map, default: nil
   attr :couriers, :list, default: []
+  attr :estimable, :boolean, default: false
   attr :can_manage, :boolean, default: false
 
   defp courier_panel(assigns) do
     assigns =
       assign(assigns,
         assignable: assigns.can_manage and Couriers.assignable?(assigns.order),
-        courier_id: assigns.delivery && assigns.delivery.courier_id
+        courier_id: assigns.delivery && assigns.delivery.courier_id,
+        cancel_price: Couriers.cancel_pending(assigns.order)
       )
 
     ~H"""
@@ -479,6 +753,27 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       >
         {gettext("Yandex Delivery did not take the last request")}
       </span>
+      <div
+        :if={@cancel_price}
+        id={"order-paid-cancel-#{@order.id}"}
+        class="basis-full flex flex-wrap items-center gap-2 text-error"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-4" />
+        {gettext("Cancelling the Yandex courier is paid: %{price}",
+          price: Delivest.Money.format(@cancel_price)
+        )}
+        <button
+          :if={@can_manage}
+          type="button"
+          id={"order-confirm-paid-cancel-#{@order.id}"}
+          class="btn btn-xs btn-error"
+          phx-click="confirm_paid_cancel"
+          phx-value-order-id={@order.id}
+          data-confirm={gettext("Cancel the courier and pay for it?")}
+        >
+          {gettext("Confirm the paid cancel")}
+        </button>
+      </div>
       <div :if={@assignable} class="ml-auto flex flex-wrap items-center gap-2">
         <button
           :if={is_nil(@delivery)}
@@ -489,6 +784,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           phx-value-order-id={@order.id}
         >
           <.icon name="hero-magnifying-glass" class="size-3.5" /> {gettext("Find a courier")}
+        </button>
+        <button
+          :if={@estimable and is_nil(@delivery)}
+          type="button"
+          id={"order-estimate-delivery-#{@order.id}"}
+          class="btn btn-xs btn-ghost"
+          phx-click="estimate_delivery"
+          phx-value-order-id={@order.id}
+        >
+          <.icon name="hero-calculator" class="size-3.5" /> {gettext("Estimate delivery")}
         </button>
         <form
           :if={@couriers != [] and (is_nil(@delivery) or @delivery.status != :picked_up)}
@@ -528,6 +833,46 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     """
   end
 
+  attr :order, :map, required: true
+  attr :delivery, :map, required: true
+  attr :positions, :list, required: true
+  attr :pickup, :map, default: nil
+
+  defp courier_location(assigns) do
+    assigns =
+      assign(assigns,
+        position: Enum.find(assigns.positions, &(&1.id == assigns.delivery.courier_id))
+      )
+
+    ~H"""
+    <div id={"order-courier-location-#{@order.id}"} class="mx-3 sm:mx-4 mb-3 space-y-1">
+      <p :if={is_nil(@position)} class="text-xs text-base-content/60">
+        {gettext(
+          "The courier location is not known: the courier page is closed or the location is off"
+        )}
+      </p>
+      <LocationComponents.location_age :if={@position} at={@position.at} />
+      <LocationComponents.couriers_map
+        :if={@position}
+        id={"order-courier-map-#{@order.id}"}
+        from={@pickup}
+        to={located(@order.address)}
+        positions={[@position]}
+        courier_id={@delivery.courier_id}
+        class="h-56"
+      />
+    </div>
+    """
+  end
+
+  defp tracked?(%{provider: :staff, status: status}), do: status in [:assigned, :picked_up]
+  defp tracked?(_delivery), do: false
+
+  defp located(%{latitude: lat, longitude: lng} = address) when is_float(lat) and is_float(lng),
+    do: address
+
+  defp located(_address), do: nil
+
   attr :delivery, :map, required: true
 
   defp yandex_courier(assigns) do
@@ -552,6 +897,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     >
       <.icon name="hero-phone" class="size-3.5" /> {courier_phone(@details["phone"])}
     </a>
+    <span :if={eta = point_eta(@details)} id={"order-yandex-eta-#{@delivery.order_id}"}>
+      {gettext("arrives by %{time}", time: OrderHelpers.local_time(eta))}
+    </span>
     <span :if={@details["price"]} class="text-base-content/60">
       {@details["price"]} ₽
     </span>
@@ -658,6 +1006,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp actor_label(_order, %{source: :courier}), do: gettext("Courier")
   defp actor_label(_order, %{source: :delivery}), do: gettext("Yandex Delivery")
   defp actor_label(_order, %{source: :system}), do: gettext("System")
+  defp actor_label(_order, %{source: :client}), do: gettext("Customer")
   defp actor_label(_order, _transition), do: "—"
 
   defp unmapped_crm_code(%{crm: %{remote_status: nil, remote_status_code: code}})
@@ -665,6 +1014,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
        do: code
 
   defp unmapped_crm_code(_order), do: nil
+
+  defp phone_line(%{customer_phone: phone, customer_phone_ext: ext})
+       when is_binary(phone) and is_binary(ext),
+       do: gettext("%{number} ext. %{ext}", number: phone, ext: ext)
+
+  defp phone_line(%{customer_phone: phone}), do: phone
 
   defp channel_detail(%{channel: %{details: details}}, key) when is_map(details), do: details[key]
   defp channel_detail(_order, _key), do: nil
@@ -685,9 +1040,19 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   defp courier_eta(_courier), do: nil
 
+  defp point_eta(%{"point_eta" => value}) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} -> datetime
+      _error -> nil
+    end
+  end
+
+  defp point_eta(_details), do: nil
+
   defp overdue?(datetime), do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
 
   defp source_label("staff"), do: gettext("Admin")
+  defp source_label("pos"), do: gettext("POS")
   defp source_label(source), do: Channels.name(source)
 
   defp crm_name(%{crm: %{provider: provider}}) do

@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.{Couriers, Identity}
-  alias Delivest.Integrations.{Crm, Dadata, YandexDelivery, YandexEda, Zvonok}
+  alias Delivest.Integrations.{Crm, Dadata, Health, YandexDelivery, YandexEda, Yookassa, Zvonok}
   alias Delivest.Integrations.Crm.BranchSettings
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
@@ -15,8 +15,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
        crm: Crm.get_branch_settings(socket.assigns.current_branch.id),
        yandex_eda: YandexEda.get_branch_settings(socket.assigns.current_branch.id),
        yandex_delivery: yandex_delivery_status(socket.assigns.current_branch.id),
+       fiscal: Delivest.Fiscal.settings(socket.assigns.current_branch.id),
        zvonok_configured: Zvonok.configured?(),
        dadata_active: Dadata.active?(),
+       yookassa_configured: Yookassa.configured?(),
+       health: Health.for_branch(socket.assigns.current_branch.id),
        can_edit_shared: Identity.can?(socket.assigns.current_staff, "admin")
      )}
   end
@@ -40,6 +43,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   end
 
   defp provider_path(branch, :frontpad), do: ~p"/staff/b/#{branch}/integrations/frontpad"
+  defp provider_path(branch, :iiko), do: ~p"/staff/b/#{branch}/integrations/iiko"
+  defp provider_path(branch, :rkeeper), do: ~p"/staff/b/#{branch}/integrations/rkeeper"
+  defp provider_path(branch, _provider), do: ~p"/staff/b/#{branch}/integrations"
 
   @impl true
   def render(assigns) do
@@ -64,6 +70,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Sign-in by phone number")}
             description={gettext("Customers confirm the phone number with a call via zvonok.com.")}
             status={if @zvonok_configured, do: :configured, else: :off}
+            health={@health["zvonok"]}
             path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/zvonok"}
           />
           <.integration_card
@@ -71,10 +78,21 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Delivery address on the map")}
             description={gettext("Address suggestions and the map via dadata.ru.")}
             status={if @dadata_active, do: :configured, else: :off}
+            health={@health["dadata"]}
             path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/dadata"}
+          />
+          <.integration_card
+            id="integration-yookassa"
+            title={gettext("Online payment")}
+            description={gettext("Card and SBP payments through YooKassa.")}
+            status={if @yookassa_configured, do: :configured, else: :off}
+            health={@health["yookassa"]}
+            path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/yookassa"}
           />
         </div>
       </section>
+
+      <DelivestWeb.GatewayNote.gateway_summary branch={@current_branch} />
 
       <section class="space-y-3">
         <div>
@@ -97,13 +115,23 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Yandex Eda")}
             description={gettext("Orders from Yandex Eda and Delivery Club.")}
             status={if @yandex_eda.enabled, do: :receiving, else: :off}
+            health={@health["yandex_eda"]}
             path={~p"/staff/b/#{@current_branch}/integrations/yandex-eda"}
+          />
+          <.integration_card
+            id="integration-fiscal"
+            title={gettext("Receipts")}
+            description={gettext("Fiscal receipts through ATOL Online.")}
+            status={if @fiscal.mode == :own, do: :configured, else: :off}
+            health={@health["atol"]}
+            path={~p"/staff/b/#{@current_branch}/integrations/fiscal"}
           />
           <.integration_card
             id="integration-yandex-delivery"
             title={gettext("Yandex Delivery")}
             description={gettext("A Yandex courier for the delivery orders.")}
             status={@yandex_delivery}
+            health={@health["yandex_delivery"]}
             path={~p"/staff/b/#{@current_branch}/integrations/yandex-delivery"}
           />
           <.integration_card
@@ -112,6 +140,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={name}
             description={gettext("Orders to the CRM and products matching with the app menu.")}
             status={provider_status(@crm, provider)}
+            health={@health[to_string(provider)]}
             path={provider_path(@current_branch, provider)}
           />
         </div>
@@ -124,6 +153,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   attr :title, :string, required: true
   attr :description, :string, required: true
   attr :status, :atom, required: true
+  attr :health, :any, default: nil
   attr :path, :any, required: true
 
   defp integration_card(%{path: path} = assigns) when is_binary(path) do
@@ -133,7 +163,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
       navigate={@path}
       class="card bg-base-100 border border-base-300 hover:border-primary transition-colors"
     >
-      <.card_body title={@title} description={@description} status={@status} />
+      <.card_body title={@title} description={@description} status={@status} health={@health} />
     </.link>
     """
   end
@@ -149,6 +179,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   attr :title, :string, required: true
   attr :description, :string, required: true
   attr :status, :atom, required: true
+  attr :health, :any, default: nil
 
   defp card_body(assigns) do
     ~H"""
@@ -158,9 +189,38 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
         <.status_badge status={@status} />
       </div>
       <p class="text-sm text-base-content/60">{@description}</p>
+      <.health_badge :if={@status != :off} health={@health} />
     </div>
     """
   end
+
+  attr :health, :any, required: true
+
+  defp health_badge(%{health: %{status: :auth}} = assigns),
+    do: ~H"""
+    <span class="badge badge-error gap-1">
+      <.icon name="hero-key" class="size-3" /> {gettext("Reconnect")}
+    </span>
+    """
+
+  defp health_badge(%{health: %{status: :failed}} = assigns),
+    do: ~H"""
+    <span class="badge badge-warning gap-1">
+      <.icon name="hero-exclamation-triangle" class="size-3" /> {gettext("No connection")}
+    </span>
+    """
+
+  defp health_badge(%{health: %{status: :warning}} = assigns),
+    do: ~H"""
+    <span class="badge badge-warning gap-1">
+      <.icon name="hero-exclamation-triangle" class="size-3" /> {warning_text(@health)}
+    </span>
+    """
+
+  defp health_badge(assigns), do: ~H""
+
+  defp warning_text(%{message: "catalog_issues:" <> _count}), do: gettext("Menu differs")
+  defp warning_text(_health), do: gettext("Needs attention")
 
   attr :status, :atom, required: true
 

@@ -3,6 +3,8 @@ defmodule DelivestWeb.StaffNav do
 
   import Delivest.Identity.Acl
 
+  alias Delivest.Gateway
+
   def pages(staff, branch) do
     staff
     |> entries(branch)
@@ -52,12 +54,21 @@ defmodule DelivestWeb.StaffNav do
         )
         |> allowed(staff, "orders.read"),
         item(
+          :pos,
+          branch && ~p"/staff/b/#{branch}/pos",
+          "hero-calculator",
+          gettext("POS")
+        )
+        |> allowed(staff, "pos.use")
+        |> owned(branch, :pos),
+        item(
           :kitchen,
           branch && ~p"/staff/b/#{branch}/kitchen",
           "hero-fire",
           gettext("Kitchen")
         )
-        |> allowed(staff, "orders.cook"),
+        |> allowed(staff, "orders.cook")
+        |> owned(branch, :kitchen),
         item(
           :deliveries,
           branch && ~p"/staff/b/#{branch}/deliveries",
@@ -65,6 +76,32 @@ defmodule DelivestWeb.StaffNav do
           gettext("Deliveries")
         )
         |> allowed(staff, "orders.deliver")
+        |> owned(branch, :couriers),
+        item(
+          :couriers,
+          branch && ~p"/staff/b/#{branch}/couriers",
+          "hero-user-circle",
+          gettext("Couriers")
+        )
+        |> allowed(staff, "orders.update")
+        |> owned(branch, :couriers)
+      ]),
+      group(:finance, "hero-banknotes", gettext("Finance"), [
+        item(
+          :payments,
+          branch && ~p"/staff/b/#{branch}/finance/payments",
+          "hero-credit-card",
+          gettext("Payment")
+        )
+        |> allowed(staff, "finance.read"),
+        item(
+          :receipts,
+          branch && ~p"/staff/b/#{branch}/finance/receipts",
+          "hero-document-text",
+          gettext("Receipts")
+        )
+        |> allowed(staff, "orders.update")
+        |> owned(branch, :receipts)
       ]),
       group(:menu, "hero-book-open", gettext("Menu"), [
         item(
@@ -99,7 +136,15 @@ defmodule DelivestWeb.StaffNav do
           "hero-receipt-percent",
           gettext("Discounts & promo codes")
         )
+        |> allowed(staff, "promotions.read"),
+        item(
+          :loyalty,
+          branch && ~p"/staff/b/#{branch}/loyalty",
+          "hero-star",
+          gettext("Loyalty")
+        )
         |> allowed(staff, "promotions.read")
+        |> owned(branch, :loyalty)
       ]),
       item(
         :delivery,
@@ -168,6 +213,10 @@ defmodule DelivestWeb.StaffNav do
 
   defp group(id, icon, label, items),
     do: %{kind: :group, id: id, icon: icon, label: label, items: items}
+
+  defp owned(nil, _branch, _area), do: nil
+  defp owned(item, nil, _area), do: item
+  defp owned(item, branch, area), do: if(Gateway.own?(branch, area), do: item)
 
   defp allowed(item, staff, permission), do: if(can?(staff, permission), do: item)
 end

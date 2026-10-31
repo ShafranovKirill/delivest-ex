@@ -51,7 +51,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
     [
       addr.city,
       addr.street,
-      addr.house && "#{gettext("d.")} #{addr.house}",
+      addr.house && "#{gettext("d.")} #{Delivest.Oms.Order.Address.house_line(addr)}",
       addr.entrance && "#{gettext("ent.")} #{addr.entrance}",
       addr.floor && "#{gettext("fl.")} #{addr.floor}",
       addr.apartment && "#{gettext("apt.")} #{addr.apartment}",
@@ -64,23 +64,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
 
   def format_address(_address), do: "—"
 
-  def money(nil), do: "0 ₽"
-
-  def money(amount) when is_integer(amount) do
-    digits =
-      amount
-      |> abs()
-      |> Integer.to_string()
-      |> String.reverse()
-      |> String.graphemes()
-      |> Enum.chunk_every(3)
-      |> Enum.map_join(" ", &Enum.join/1)
-      |> String.reverse()
-
-    if amount < 0, do: "-#{digits} ₽", else: "#{digits} ₽"
-  end
-
-  def money(amount) when is_float(amount), do: money(round(amount))
+  defdelegate money(amount), to: Delivest.Money, as: :format
 
   def local_datetime(nil), do: "—"
 
@@ -88,6 +72,13 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
     dt
     |> DateTime.shift_zone!(Delivest.LocalTime.timezone())
     |> Calendar.strftime("%d.%m.%Y %H:%M")
+  end
+
+  def order_time(%DateTime{} = dt, branch_id) do
+    local = Delivest.LocalTime.local(dt, branch_id)
+    today = Delivest.LocalTime.local(DateTime.utc_now(), branch_id) |> DateTime.to_date()
+    format = if DateTime.to_date(local) == today, do: "%H:%M", else: "%d.%m.%Y %H:%M"
+    Calendar.strftime(local, format)
   end
 
   def local_time(%DateTime{} = dt) do

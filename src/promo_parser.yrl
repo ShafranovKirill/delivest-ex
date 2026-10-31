@@ -1,12 +1,12 @@
 Nonterminals
-program condition conj neg atom amount effects effect target cap strings idents.
+program condition conj neg atom amount sum effects effect target cap strings idents.
 
 Terminals
 'when' 'then' 'and' 'or' 'not' 'in' 'on' 'max' 'rub' 'x'
 'has' 'subtotal' 'quantity' 'fulfillment' 'time' 'weekday'
 'discount' 'gift' 'price'
 '(' ')' ',' '%' '..'
-int string ident clock cmp times.
+int money string ident clock cmp times.
 
 Rootsymbol program.
 
@@ -23,7 +23,7 @@ neg -> 'not' neg : {'not', '$2'}.
 neg -> atom : '$1'.
 
 atom -> '(' condition ')' : '$2'.
-atom -> 'subtotal' cmp int : {subtotal, value('$2'), value('$3')}.
+atom -> 'subtotal' cmp sum : {subtotal, value('$2'), element(1, '$3')}.
 atom -> 'quantity' cmp int : {quantity, value('$2'), value('$3')}.
 atom -> 'has' string amount : {has, located('$2'), '$3'}.
 atom -> 'fulfillment' 'in' '(' idents ')' : {fulfillment, '$4'}.
@@ -39,16 +39,19 @@ effects -> effect effects : ['$1' | '$2'].
 effects -> effect ',' effects : ['$1' | '$3'].
 
 effect -> 'discount' int '%' target cap : {percent, located('$2'), '$4', '$5'}.
-effect -> 'discount' int 'rub' target : {amount, located('$2'), '$4'}.
+effect -> 'discount' sum 'rub' target : {amount, '$2', '$4'}.
 effect -> 'gift' string amount : {gift, located('$2'), '$3'}.
-effect -> 'price' string int : {price, located('$2'), value('$3')}.
+effect -> 'price' string sum : {price, located('$2'), element(1, '$3')}.
 
 target -> '$empty' : cart.
 target -> 'on' string : {products, [located('$2')]}.
 target -> 'on' '(' strings ')' : {products, '$3'}.
 
 cap -> '$empty' : nil.
-cap -> 'max' int : located('$2').
+cap -> 'max' sum : '$2'.
+
+sum -> int : {value('$1') * 100, element(2, '$1')}.
+sum -> money : located('$1').
 
 strings -> string : [located('$1')].
 strings -> string ',' strings : [located('$1') | '$3'].

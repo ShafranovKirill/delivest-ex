@@ -3,21 +3,21 @@ defmodule Delivest.Oms.OrderFlow do
   alias Delivest.Identity.Staff
   alias Delivest.Oms.Order
 
-  @type source :: :staff | :courier | :crm | :channel | :delivery | :system
-  @type by :: {:staff | :courier, Staff.t()} | :crm | :channel | :delivery | :system
+  @type source :: :staff | :courier | :crm | :channel | :delivery | :system | :client
+  @type by :: {:staff | :courier, Staff.t()} | :crm | :channel | :delivery | :system | :client
   @type step :: {Order.status(), Order.status()}
 
   @path [:created, :accepted, :preparing, :ready, :delivering, :completed]
   @final [:completed, :cancelled]
-  @leaping [:crm, :channel, :delivery, :system]
+  @leaping [:crm, :channel, :delivery, :system, :client]
   @rank @path |> Enum.with_index() |> Map.new() |> Map.put(:cancelled, length(@path))
 
   @staff_permissions %{
-    accepted: ["orders.update"],
+    accepted: ["orders.update", "pos.use"],
     preparing: ["orders.cook", "orders.update"],
     ready: ["orders.cook", "orders.update"],
     delivering: ["orders.update"],
-    completed: ["orders.update"],
+    completed: ["orders.update", "pos.use"],
     cancelled: ["orders.update"]
   }
   @courier_steps [:delivering, :completed]
@@ -54,6 +54,7 @@ defmodule Delivest.Oms.OrderFlow do
     cond do
       to == order.status -> {:ok, []}
       order.status in @final -> refuse(by, :finished)
+      order.awaiting_payment and to != :cancelled -> refuse(by, :awaiting_payment)
       to == :cancelled -> permit(order, [{order.status, :cancelled}], by)
       true -> forward(order, to, by)
     end

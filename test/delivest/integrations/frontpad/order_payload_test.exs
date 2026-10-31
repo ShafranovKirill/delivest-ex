@@ -1,12 +1,12 @@
 defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
-  use ExUnit.Case, async: true
+  use Delivest.DataCase, async: true
 
   alias Delivest.Integrations.Frontpad.{OrderPayload, Settings}
   alias Delivest.Oms.{Order, OrderItem}
 
   test "maps cook_by to Frontpad datetime using the required format" do
     order = %Order{
-      cook_by: ~N[2026-10-15 15:30:00],
+      cook_by: ~U[2026-10-15 12:30:00Z],
       items: [%OrderItem{product_id: "product-1", quantity: 2}]
     }
 
@@ -27,10 +27,13 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     refute Enum.any?(OrderPayload.to_form_params(view), fn {key, _value} -> key == "datetime" end)
   end
 
-  test "takes phone and name from the linked client once the order is reloaded" do
+  test "takes phone, name and persons from the order snapshot" do
     order = %Order{
       items: [],
-      client: %Delivest.Identity.Client{phone: "+79991234567", name: "Иван"}
+      customer_phone: "+79991234567",
+      customer_phone_ext: "123",
+      customer_name: "Иван",
+      persons: 3
     }
 
     settings = %Settings{api_key: "secret"}
@@ -40,10 +43,19 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     params = OrderPayload.to_form_params(view)
     assert {"phone", "+79991234567"} in params
     assert {"name", "Иван"} in params
+    assert {"person", "3"} in params
+    assert {"descr", "Phone extension 123"} in params
+  end
+
+  test "the order number goes first in the description" do
+    order = %Order{items: [], number: "A123", comment: "Без лука"}
+
+    assert {:ok, view} = OrderPayload.build(order, %Settings{api_key: "secret"}, %{})
+    assert {"descr", "№A123. Без лука"} in OrderPayload.to_form_params(view)
   end
 
   test "delivery goes as the delivery product line or into the description" do
-    order = %Order{items: [], delivery_amount: 150, comment: "Без лука"}
+    order = %Order{items: [], delivery_amount: 15_000, comment: "Без лука"}
 
     assert {:ok, view} =
              OrderPayload.build(order, %Settings{api_key: "secret", delivery_article: "900"}, %{})
@@ -97,9 +109,9 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     setup do
       order = %Order{
         items: [
-          %OrderItem{product_id: "p1", quantity: 2, price: 80, base_price: 100},
-          %OrderItem{product_id: "p2", quantity: 1, price: 50, base_price: 50},
-          %OrderItem{product_id: "p3", quantity: 1, price: 0, base_price: 90, gift: true}
+          %OrderItem{product_id: "p1", quantity: 2, price: 7950, base_price: 10_000},
+          %OrderItem{product_id: "p2", quantity: 1, price: 5000, base_price: 5000},
+          %OrderItem{product_id: "p3", quantity: 1, price: 0, base_price: 9000, gift: true}
         ]
       }
 
@@ -118,7 +130,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
       assert {:ok, view} = OrderPayload.build(ctx.order, settings, ctx.products)
       params = OrderPayload.to_form_params(view)
 
-      assert {"product_price[0]", "80"} in params
+      assert {"product_price[0]", "79.5"} in params
       refute Enum.any?(params, fn {key, _} -> key == "product_price[1]" end)
       assert {"product_price[2]", "0"} in params
       refute Enum.any?(params, fn {key, _} -> key == "sale_amount" end)
@@ -130,7 +142,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
 
       params = OrderPayload.to_form_params(view)
 
-      assert {"sale_amount", "130"} in params
+      assert {"sale_amount", "131"} in params
       refute Enum.any?(params, fn {key, _} -> String.starts_with?(key, "product_price") end)
     end
   end
@@ -197,5 +209,57 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
       refute TagCodes.changeset(%TagCodes{}, %{"app" => "1 2"}).valid?
       assert TagCodes.changeset(%TagCodes{}, %{"app" => "1500", "staff" => ""}).valid?
     end
+  end
+
+  test "a modifier with an article goes as a product tied to its parent" do
+    order = %Order{
+      items: [
+        %OrderItem{
+          product_id: "pizza",
+          quantity: 2,
+          modifiers: [
+            %Delivest.Oms.OrderItemModifier{
+              modifier_id: "cheese",
+              name: "Сыр",
+              price: 5_000,
+              quantity: 1
+            },
+            %Delivest.Oms.OrderItemModifier{
+              modifier_id: "thin",
+              name: "Тонкое",
+              price: 0,
+              quantity: 1
+            }
+          ]
+        }
+      ]
+    }
+
+    products = %{"pizza" => %{external_id: "10"}, "cheese" => %{external_id: "77"}}
+    assert {:ok, view} = OrderPayload.build(order, %Settings{api_key: "secret"}, products)
+    params = OrderPayload.to_form_params(view)
+
+    assert {"product[0]", "10"} in params
+    assert {"product[1]", "77"} in params
+    assert {"product_kol[1]", "2"} in params
+    assert {"product_mod[1]", "0"} in params
+
+    paid_without_article =
+      put_in(order.items, [
+        %{
+          hd(order.items)
+          | modifiers: [
+              %Delivest.Oms.OrderItemModifier{
+                modifier_id: "bacon",
+                name: "Бекон",
+                price: 7_000,
+                quantity: 1
+              }
+            ]
+        }
+      ])
+
+    assert {:error, {:missing_external_id, "bacon"}} =
+             OrderPayload.build(paid_without_article, %Settings{api_key: "secret"}, products)
   end
 end

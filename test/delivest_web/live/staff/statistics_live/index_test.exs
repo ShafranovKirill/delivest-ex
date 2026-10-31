@@ -18,7 +18,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     category = insert(:category, name: "Горячее")
 
     product =
-      insert_branch_product(branch.id, name: "Хинкали", price: 300, category_id: category.id)
+      insert_branch_product(branch.id, name: "Хинкали", price: 30_000, category_id: category.id)
 
     order_fixture(branch.id, product: product, quantity: 2)
 
@@ -31,6 +31,23 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     html = lv |> element("a", "Categories") |> render_click()
     assert html =~ "Горячее"
+  end
+
+  test "the crm split shows only for a branch on a crm", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    refute has_element?(lv, "#crm-split")
+
+    Delivest.Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+      branch_id: branch.id,
+      crm: %{enabled: true, provider: :iiko}
+    })
+
+    Cachex.del(:branch_cache, branch.id)
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    assert has_element?(lv, "#crm-split", "CRM")
   end
 
   test "custom period comes from the filter form", %{conn: conn} do

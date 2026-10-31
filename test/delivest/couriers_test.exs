@@ -33,7 +33,8 @@ defmodule Delivest.CouriersTest do
   defp advance(order, statuses, operator) do
     Enum.reduce(statuses, order, fn to, order ->
       {:ok, order} = Orders.advance_order(order, to, {:staff, operator})
-      order
+      deliver_events()
+      Repo.reload!(order)
     end)
   end
 
@@ -162,11 +163,15 @@ defmodule Delivest.CouriersTest do
       assert {:ok, %Order{status: :delivering}} =
                Couriers.pick_up(courier, ctx.branch.id, ctx.delivery.id)
 
+      deliver_events()
+
       assert [{:picked_up, nil}] = deliveries(ctx.order)
       assert {:error, :not_yours} = Couriers.refuse(courier, ctx.branch.id, ctx.delivery.id)
 
       assert {:ok, %Order{status: :completed}} =
                Couriers.hand_over(courier, ctx.branch.id, ctx.delivery.id)
+
+      deliver_events()
 
       assert [{:delivered, nil}] = deliveries(ctx.order)
 
@@ -189,6 +194,7 @@ defmodule Delivest.CouriersTest do
           "cancel_reason" => "other"
         })
 
+      deliver_events()
       assert deliveries(ctx.order) == [{:cancelled, :order_cancelled}]
     end
 
@@ -212,11 +218,13 @@ defmodule Delivest.CouriersTest do
 
       advance(Repo.reload!(order), [:ready], admin)
       {:ok, _order} = Couriers.pick_up(courier, branch.id, delivery.id)
+      deliver_events()
 
       assert {:error, :handed_to_courier} =
                Orders.revert_order_status(Repo.reload!(order), admin, "mistake")
 
       {:ok, _order} = Couriers.hand_over(courier, branch.id, delivery.id)
+      deliver_events()
 
       assert {:error, :handed_to_courier} =
                Orders.revert_order_status(Repo.reload!(order), admin, "mistake")

@@ -29,6 +29,17 @@ defmodule Delivest.Integrations.YandexEda.Menu do
         do: {entry.category, entry.product, entry.index, entry.price}
   end
 
+  def modifier_ids(branch, settings) do
+    branch
+    |> product_ids(settings)
+    |> Net.Modifiers.for_products()
+    |> Map.values()
+    |> List.flatten()
+    |> Enum.flat_map(& &1.modifiers)
+    |> Enum.map(& &1.id)
+    |> Enum.uniq()
+  end
+
   def product_ids(branch, settings),
     do: for({_category, product, _index, _price} <- offer(branch, settings), do: product.id)
 
@@ -36,9 +47,11 @@ defmodule Delivest.Integrations.YandexEda.Menu do
     offer = offer(branch, settings)
     categories = offer |> Enum.map(&elem(&1, 0)) |> Enum.uniq_by(& &1.id)
 
+    groups = offer |> Enum.map(&elem(&1, 1).id) |> Net.Modifiers.for_products()
+
     %{
       categories: categories |> Enum.with_index() |> Enum.map(&category/1),
-      items: Enum.map(offer, &MenuItem.build(&1, settings)),
+      items: Enum.map(offer, &MenuItem.build(&1, settings, groups)),
       lastChange: offer |> last_change(categories, branch) |> Clock.format()
     }
   end

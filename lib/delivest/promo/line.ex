@@ -7,8 +7,10 @@ defmodule Delivest.Promo.Line do
           base_price: non_neg_integer(),
           quantity: pos_integer(),
           total: non_neg_integer(),
+          stars: non_neg_integer(),
           gift: boolean(),
-          promotion_ids: [binary()]
+          promotion_ids: [binary()],
+          modifiers: [map()]
         }
 
   defstruct [
@@ -19,14 +21,18 @@ defmodule Delivest.Promo.Line do
     base_price: 0,
     quantity: 1,
     total: 0,
+    stars: 0,
+    stars_reward: 0,
     gift: false,
-    promotion_ids: []
+    promotion_ids: [],
+    modifiers: []
   ]
 
   def paid(item) do
     %__MODULE__{
-      key: item.product_id,
+      key: Map.get(item, :key, item.product_id),
       product_id: item.product_id,
+      modifiers: Map.get(item, :modifiers, []),
       name: item.name,
       image_url: item.image_url,
       base_price: item.price,
@@ -48,6 +54,19 @@ defmodule Delivest.Promo.Line do
       promotion_ids: [promotion_id]
     }
   end
+
+  def extra(%__MODULE__{modifiers: modifiers}) when is_list(modifiers),
+    do: modifiers |> Enum.map(&(price(&1) * quantity(&1))) |> Enum.sum()
+
+  def extra(_line), do: 0
+
+  defp price(%{price: price}) when is_integer(price), do: price
+  defp price(%{"price" => price}) when is_integer(price), do: price
+  defp price(_modifier), do: 0
+
+  defp quantity(%{quantity: quantity}) when is_integer(quantity), do: quantity
+  defp quantity(%{"quantity" => quantity}) when is_integer(quantity), do: quantity
+  defp quantity(_modifier), do: 1
 
   def base_total(%__MODULE__{base_price: price, quantity: quantity}), do: price * quantity
 

@@ -7,6 +7,7 @@ defmodule Delivest.Integrations.CrmTest do
   alias Delivest.Audit.Event
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker}
+  alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Frontpad
   alias Delivest.Oms
   alias Delivest.Oms.{Carts, Order}
@@ -26,7 +27,12 @@ defmodule Delivest.Integrations.CrmTest do
         api_key: "key",
         affiliate: "3",
         webhook_token: "hook-token",
-        statuses: %Frontpad.StatusCodes{preparing: "2", delivering: "4", completed: "5"}
+        statuses: %Frontpad.StatusCodes{
+          preparing: "2",
+          delivering: "4",
+          completed: "5",
+          cancelled: "6"
+        }
       }
     }
   end
@@ -55,9 +61,11 @@ defmodule Delivest.Integrations.CrmTest do
     refute_enqueued(worker: SyncWorker)
   end
 
-  test "crm branch hands the order to the chosen crm in the same transaction" do
+  test "crm branch hands the order to the chosen crm through the created event" do
     assert {:ok, %Order{status: :created} = order} = place_order(branch(frontpad(true)))
     assert %{provider: "frontpad", status: "pending"} = order.crm
+    refute_enqueued(worker: SyncWorker)
+    deliver_events()
     assert_enqueued(worker: SyncWorker, queue: :crm, args: %{"order_id" => order.id})
   end
 
@@ -83,6 +91,70 @@ defmodule Delivest.Integrations.CrmTest do
 
     assert [%Event{action: "order.sent_to_crm"}] =
              Repo.all(from(e in Event, where: e.action == "order.sent_to_crm"))
+  end
+
+  test "dropped items raise an alert, tags only stay in the warnings" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+
+    stub_frontpad(%{
+      "result" => "success",
+      "order_id" => "556",
+      "warnings" => %{"invalid_product_keys" => [0]}
+    })
+
+    assert :ok = sync(order)
+    assert %{status: "sent", alert: alert} = Repo.reload!(order).crm
+    assert alert =~ "fp-1"
+
+    {:ok, other} = place_order(branch(frontpad(true)))
+
+    stub_frontpad(%{
+      "result" => "success",
+      "order_id" => "557",
+      "warnings" => %{"invalid_tags" => [0]}
+    })
+
+    assert :ok = sync(other)
+    assert %{status: "sent", alert: nil} = Repo.reload!(other).crm
+  end
+
+  test "a lost answer is not retried and asks the operator" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :timeout))
+
+    assert {:cancel, _reason} = sync(order)
+    assert %{status: "unknown", alert: alert} = Repo.reload!(order).crm
+    assert alert =~ order.number
+  end
+
+  test "a refused connection is retried" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :econnrefused))
+
+    assert {:error, _reason} = sync(order)
+    assert %{status: "pending"} = Repo.reload!(order).crm
+  end
+
+  test "a server error is not retried" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    Req.Test.stub(Delivest.HTTP.Client, &Plug.Conn.send_resp(&1, 502, "bad gateway"))
+
+    assert {:cancel, _reason} = sync(order)
+    assert %{status: "unknown"} = Repo.reload!(order).crm
+  end
+
+  test "the operator confirms that the order exists after a lost answer" do
+    branch = branch(frontpad(true))
+    {:ok, order} = place_order(branch)
+    Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :timeout))
+    sync(order)
+
+    staff = insert(:staff, role: build(:role, permissions: ["orders.update"]), branches: [branch])
+
+    assert {:ok, _order} =
+             Crm.resolve_alert(staff, branch.id, order.id, "exists", "321")
+
+    assert %{status: "sent", external_id: "321", alert: nil} = Repo.reload!(order).crm
   end
 
   test "temporary crm errors are retried" do
@@ -113,6 +185,19 @@ defmodule Delivest.Integrations.CrmTest do
     assert %{status: "failed"} = Repo.reload!(order).crm
   end
 
+  test "rejected credentials stop retries and ask to reconnect" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    stub_frontpad(%{"result" => "error", "error" => "invalid_secret"})
+
+    assert {:cancel, {:frontpad, "invalid_secret"}} = sync(order)
+    assert %{status: "failed"} = Repo.reload!(order).crm
+    assert %{status: :auth} = Delivest.Integrations.Health.get(:frontpad, order.branch_id)
+
+    stub_frontpad(%{"result" => "success", "order_id" => "901"})
+    assert :ok = sync(order)
+    assert %{status: :ok} = Delivest.Integrations.Health.get(:frontpad, order.branch_id)
+  end
+
   test "permanent crm errors stop retries" do
     {:ok, order} = place_order(branch(frontpad(true)), external_id: nil)
 
@@ -122,7 +207,7 @@ defmodule Delivest.Integrations.CrmTest do
 
   describe "status webhook" do
     alias Delivest.Integrations.Frontpad.Webhook
-    alias Delivest.Oms.{OrderFlow, OrderTransition}
+    alias Delivest.Oms.{OrderFlow, Orders, OrderTransition}
 
     defp sent_order(branch) do
       {:ok, order} = place_order(branch)
@@ -180,6 +265,23 @@ defmodule Delivest.Integrations.CrmTest do
       assert updated.status == :completed
     end
 
+    test "a crm cancel cancels the order without an operator alert" do
+      branch = branch(frontpad(true))
+      order = sent_order(branch)
+
+      {:ok, updated} = Webhook.change_status("token-#{branch.id}", "900", "6", nil)
+      assert updated.status == :cancelled
+      assert Orders.list_unacknowledged_cancellations(branch.id) == []
+
+      assert [{:accepted, :cancelled, :crm}] =
+               Repo.all(
+                 from(t in OrderTransition,
+                   where: t.order_id == ^order.id and t.to == :cancelled,
+                   select: {t.from, t.to, t.source}
+                 )
+               )
+    end
+
     test "unknown codes keep the previous status" do
       branch = branch(frontpad(true))
       sent_order(branch)
@@ -203,6 +305,51 @@ defmodule Delivest.Integrations.CrmTest do
       assert updated.status == :ready
     end
 
+    test "a webhook goes through the inbox once and waits for the order" do
+      alias Delivest.Integrations.Inbox
+      alias Delivest.Integrations.Inbox.{Message, Worker}
+
+      branch = branch(frontpad(true))
+      token = "token-#{branch.id}"
+
+      params = %{
+        "action" => "change_status",
+        "order_id" => "900",
+        "status" => "4",
+        "datetime" => nil
+      }
+
+      assert {:ok, %{result: "success"}} = Webhook.handle(token, params)
+      assert {:ok, %{result: "success"}} = Webhook.handle(token, params)
+      assert [%Message{status: :pending} = message] = Inbox.list(:frontpad)
+      assert message.branch_id == branch.id
+      assert_enqueued(worker: Worker, args: %{id: message.id})
+
+      assert {:error, :not_found} = perform_job(Worker, %{id: message.id})
+      assert %Message{status: :pending, error: ":not_found"} = Repo.reload!(message)
+
+      order = sent_order(branch)
+      assert :ok = perform_job(Worker, %{id: message.id})
+      assert %Message{status: :processed, error: nil} = Repo.reload!(message)
+      assert Repo.reload!(order).status == :ready
+
+      assert :ok = perform_job(Worker, %{id: message.id})
+      assert {:error, :not_found} = Webhook.handle("wrong", params)
+    end
+
+    test "a webhook that keeps failing is marked failed on the last attempt" do
+      alias Delivest.Integrations.Inbox
+      alias Delivest.Integrations.Inbox.{Message, Worker}
+
+      branch = branch(frontpad(true))
+      params = %{"action" => "change_status", "order_id" => "901", "status" => "4"}
+      {:ok, _reply} = Webhook.handle("token-#{branch.id}", params)
+      [message] = Inbox.list(:frontpad)
+
+      assert {:error, :not_found} = perform_job(Worker, %{id: message.id}, attempt: 8)
+      assert %Message{status: :failed} = Repo.reload!(message)
+    end
+
     test "a wrong token finds nothing" do
       sent_order(branch(frontpad(true)))
       assert {:error, :not_found} = Webhook.change_status("wrong", "900", "4", nil)
@@ -223,7 +370,7 @@ defmodule Delivest.Integrations.CrmTest do
 
       assert_receive {:params, params}
       hooks = for {"hook_status[" <> _, code} <- params, do: code
-      assert Enum.sort(hooks) == ["2", "4", "5"]
+      assert Enum.sort(hooks) == ["2", "4", "5", "6"]
       assert params["hook_url"] =~ "/integrations/crm/frontpad/token-#{branch.id}"
     end
   end

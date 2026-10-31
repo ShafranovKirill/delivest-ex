@@ -25,6 +25,7 @@ defmodule Delivest.Identity.Staff do
   schema "staff" do
     field :login, :string
     field :name, :string
+    field :phone, :string
     field :password_hash, :string
 
     field :password, :string, virtual: true
@@ -47,6 +48,7 @@ defmodule Delivest.Identity.Staff do
       :login,
       :password,
       :name,
+      :phone,
       :role_id,
       :branch_ids,
       :password_confirmation
@@ -55,6 +57,7 @@ defmodule Delivest.Identity.Staff do
     |> validate_password_required()
     |> validate_confirmation(:password, message: dgettext("errors", "does not match password"))
     |> validate_length(:login, min: 3, max: 50)
+    |> validate_format(:phone, Delivest.Identity.phone_regex())
     |> validate_format(:login, login_regex(),
       message:
         dgettext_noop(

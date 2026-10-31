@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       branch = insert(:branch, name: "Main Branch")
       staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
       insert(:staff_branch, staff: staff, branch: branch)
-      order = Delivest.OrderFixtures.order_fixture(branch.id, price: 450)
+      order = Delivest.OrderFixtures.order_fixture(branch.id, price: 45_000)
 
       conn =
         init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
@@ -46,7 +46,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
                ~s{#dashboard-order-#{order.id} a[href="/staff/b/#{branch.slug}/orders/#{order.id}"]}
              )
 
-      second = Delivest.OrderFixtures.order_fixture(branch.id, price: 50)
+      second = Delivest.OrderFixtures.order_fixture(branch.id, price: 5000)
       refute has_element?(lv, "#dashboard-order-#{second.id}")
 
       send(lv.pid, :reload)
@@ -68,13 +68,29 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
     end
 
     test "counts orders awaiting confirmation live", %{conn: conn, branch: branch} do
-      Delivest.OrderFixtures.order_fixture(branch.id, price: 100)
+      Delivest.OrderFixtures.order_fixture(branch.id, price: 10_000)
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
       assert has_element?(lv, "#header-new-orders-count", "1")
 
-      Delivest.OrderFixtures.order_fixture(branch.id, price: 100)
+      Delivest.OrderFixtures.order_fixture(branch.id, price: 10_000)
       assert has_element?(lv, "#header-new-orders-count", "2")
+    end
+
+    test "links to the problem orders only when there are some", %{conn: conn, branch: branch} do
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+      refute has_element?(lv, "#dashboard-problem-orders")
+
+      order = Delivest.OrderFixtures.order_fixture(branch.id, price: 10_000)
+
+      order
+      |> Ecto.Changeset.change(
+        crm: %Delivest.Oms.Order.CrmSync{provider: "frontpad", status: "failed"}
+      )
+      |> Delivest.Repo.update!()
+
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+      assert has_element?(lv, "#dashboard-problem-orders", "1")
     end
 
     test "log out lives in the header, not the sidebar", %{conn: conn, branch: branch} do

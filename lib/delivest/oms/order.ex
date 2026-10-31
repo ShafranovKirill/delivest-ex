@@ -15,7 +15,15 @@ defmodule Delivest.Oms.Order do
   @statuses [:created, :accepted, :preparing, :ready, :delivering, :completed, :cancelled]
   @payment_methods [:cash, :card_offline]
   @channel_payment_methods [:online]
-  @cancel_reasons [:customer_refused, :out_of_stock, :unreachable, :other, :not_confirmed]
+  @cancel_reasons [
+    :customer_refused,
+    :out_of_stock,
+    :unreachable,
+    :other,
+    :not_confirmed,
+    :not_paid,
+    :client
+  ]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -32,14 +40,19 @@ defmodule Delivest.Oms.Order do
 
   schema "orders" do
     field :number, :string
+    field :daily_number, :integer
+    field :business_date, :date
     field :staff_id, :binary_id
     belongs_to :client, Delivest.Identity.Client
     belongs_to :cart, Delivest.Oms.Cart
     field :branch_id, :binary_id
     field :session_id, :string
 
-    field :customer_phone, :string, virtual: true
-    field :customer_name, :string, virtual: true
+    field :customer_phone, :string
+    field :customer_phone_ext, :string
+    field :customer_name, :string
+    field :customer_email, :string
+    field :persons, :integer
 
     field :status, Ecto.Enum, values: @statuses, default: :created
     field :fulfillment_type, Ecto.Enum, values: @fulfillment_types, default: :dine_in
@@ -55,19 +68,24 @@ defmodule Delivest.Oms.Order do
     field :total_amount, :integer, default: 0
     field :subtotal_amount, :integer
     field :discount_amount, :integer, default: 0
+    field :points_spent, :integer, default: 0
+    field :points_earned, :integer
     field :delivery_amount, :integer, default: 0
     embeds_many :promotions, AppliedPromotion, on_replace: :delete
-    field :cook_by, :naive_datetime
+    field :cook_by, :utc_datetime
     field :comment, :string
     field :cancel_reason, Ecto.Enum, values: @cancel_reasons
     field :cancel_note, :string
     field :cancel_acknowledged_at, :utc_datetime
     field :deleted_at, :utc_datetime
+    field :awaiting_payment, :boolean, default: false
 
     embeds_one :address, Address, on_replace: :update
     has_many :items, OrderItem, on_delete: :delete_all, on_replace: :delete
     has_many :transitions, OrderTransition, preload_order: [asc: :id]
     has_many :deliveries, Delivest.Couriers.Delivery, preload_order: [asc: :inserted_at]
+    has_many :receipts, Delivest.Fiscal.Receipt, preload_order: [asc: :inserted_at]
+    has_many :payments, Delivest.Payments.Payment, preload_order: [asc: :inserted_at]
 
     timestamps(type: :utc_datetime)
   end
@@ -76,18 +94,25 @@ defmodule Delivest.Oms.Order do
     order
     |> cast(attrs, [
       :number,
+      :daily_number,
+      :business_date,
       :staff_id,
       :client_id,
       :branch_id,
       :cart_id,
       :session_id,
       :customer_phone,
+      :customer_phone_ext,
       :customer_name,
+      :customer_email,
+      :persons,
       :fulfillment_type,
       :payment_method,
       :total_amount,
       :subtotal_amount,
       :discount_amount,
+      :points_spent,
+      :points_earned,
       :delivery_amount,
       :cook_by,
       :comment,
@@ -101,9 +126,9 @@ defmodule Delivest.Oms.Order do
       :payment_method,
       :cart_id
     ])
-    |> validate_length(:customer_name, max: 100)
+    |> validate_customer()
+    |> validate_number(:persons, greater_than_or_equal_to: 0, less_than: 100)
     |> validate_length(:comment, max: 500)
-    |> validate_phone()
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
     |> validate_inclusion(:payment_method, @payment_methods)
     |> validate_number(:total_amount, greater_than_or_equal_to: 0)
@@ -114,6 +139,11 @@ defmodule Delivest.Oms.Order do
   end
 
   def statuses, do: @statuses
+
+  def short_number(%__MODULE__{daily_number: number}) when is_integer(number),
+    do: Integer.to_string(number)
+
+  def short_number(%__MODULE__{number: number}), do: number
 
   def crm_managed?(%__MODULE__{crm: crm}), do: not is_nil(crm)
 
@@ -129,6 +159,12 @@ defmodule Delivest.Oms.Order do
     end)
   end
 
+  def customer_changeset(changeset, attrs) do
+    changeset
+    |> cast(attrs, [:customer_name, :customer_phone, :customer_phone_ext, :persons])
+    |> validate_customer()
+  end
+
   def channel_changeset(order, attrs) do
     order
     |> cast(%{channel: attrs}, [])
@@ -137,6 +173,11 @@ defmodule Delivest.Oms.Order do
   end
 
   def paid_online_changeset(changeset), do: put_change(changeset, :payment_method, :online)
+
+  def awaiting_payment_changeset(changeset),
+    do: change(changeset, payment_method: :online, awaiting_payment: true)
+
+  def awaiting_payment?(%__MODULE__{awaiting_payment: awaiting}), do: awaiting == true
 
   def crm_changeset(order, attrs) do
     order
@@ -193,28 +234,21 @@ defmodule Delivest.Oms.Order do
     end
   end
 
-  defp validate_phone(changeset) do
-    case get_field(changeset, :customer_phone) do
-      nil ->
-        changeset
-
-      "" ->
-        changeset
-
-      _phone ->
-        changeset
-        |> validate_format(:customer_phone, ~r/^\+7\d{10}$/,
-          message: "must be in format +7XXXXXXXXXX"
-        )
-    end
+  defp validate_customer(changeset) do
+    changeset
+    |> validate_length(:customer_name, max: 100)
+    |> validate_length(:customer_email, max: 160)
+    |> validate_format(:customer_phone, ~r/^\+\d{7,15}$/, message: "must be in E.164 format")
+    |> validate_format(:customer_phone_ext, ~r/^\d{1,10}$/)
+    |> validate_format(:customer_email, ~r/^[^\s@]+@[^\s@]+$/)
   end
 
   defp validate_cook_by_range(changeset) do
     case get_field(changeset, :cook_by) do
-      %NaiveDateTime{} = cook_by ->
+      %DateTime{} = cook_by ->
         max_date = Date.add(Date.utc_today(), 30)
 
-        if Date.compare(NaiveDateTime.to_date(cook_by), max_date) == :gt do
+        if Date.compare(DateTime.to_date(cook_by), max_date) == :gt do
           add_error(changeset, :cook_by, "must be no more than 30 days from today")
         else
           changeset

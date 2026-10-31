@@ -1,5 +1,6 @@
 defmodule Delivest.Promo.Effects.CartDiscounts do
-  alias Delivest.Promo.{Allocation, Basket, Compiled, Line}
+  alias Delivest.Money
+  alias Delivest.Promo.{Basket, Compiled, Line}
 
   def apply(%Basket{} = basket, selected) do
     selected
@@ -22,7 +23,7 @@ defmodule Delivest.Promo.Effects.CartDiscounts do
   defp discount({promotion_id, effect}, basket) do
     paid = Basket.paid(basket)
     amount = amount(effect, Basket.total(basket))
-    shares = paid |> Enum.map(& &1.total) |> then(&Allocation.distribute(amount, &1))
+    shares = paid |> Enum.map(& &1.total) |> then(&Money.distribute(amount, &1))
     by_key = paid |> Enum.map(& &1.key) |> Enum.zip(shares) |> Map.new()
 
     %{basket | lines: Enum.map(basket.lines, &apply_share(&1, by_key, promotion_id))}
@@ -38,7 +39,9 @@ defmodule Delivest.Promo.Effects.CartDiscounts do
     end
   end
 
-  defp amount({:percent, percent, :cart, cap}, total), do: capped(div(total * percent, 100), cap)
+  defp amount({:percent, percent, :cart, cap}, total),
+    do: capped(Money.percent(total, percent), cap)
+
   defp amount({:amount, amount, :cart}, total), do: min(amount, total)
 
   defp capped(amount, nil), do: amount

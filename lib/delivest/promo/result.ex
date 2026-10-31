@@ -31,12 +31,23 @@ defmodule Delivest.Promo.Result do
           subtotal: non_neg_integer(),
           discount: non_neg_integer(),
           total: non_neg_integer(),
+          points: non_neg_integer(),
           applied: [applied()],
           hints: [hint()],
           code: code_state() | nil
         }
 
-  defstruct lines: [], subtotal: 0, discount: 0, total: 0, applied: [], hints: [], code: nil
+  defstruct lines: [],
+            subtotal: 0,
+            discount: 0,
+            total: 0,
+            points: 0,
+            points_earned: 0,
+            base_stars: 0,
+            product_stars: 0,
+            applied: [],
+            hints: [],
+            code: nil
 
   def build(%Basket{} = basket, selected, code, hints, code_state) do
     subtotal = Basket.subtotal(basket)

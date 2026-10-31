@@ -118,10 +118,12 @@ defmodule DelivestWeb.Client.AuthControllerTest do
 
     assert refreshed["data"]["client"]["id"] == session["client"]["id"]
 
-    assert %{"error" => "confirmation_not_found"} =
-             conn
-             |> post(~p"/client/auth/call/#{data["confirmation_id"]}/complete")
-             |> json_response(404)
+    retry =
+      conn
+      |> post(~p"/client/auth/call/#{data["confirmation_id"]}/complete")
+      |> json_response(200)
+
+    assert retry["data"]["client"]["id"] == session["client"]["id"]
   end
 
   test "confirmation cannot be completed from another session", %{conn: conn} do
@@ -267,6 +269,51 @@ defmodule DelivestWeb.Client.AuthControllerTest do
     assert %{"error" => "unauthorized"} = conn |> get(~p"/client/me") |> json_response(401)
   end
 
+  test "an active unconfirmed call is reused without a new Zvonok request", %{conn: conn} do
+    first = start_call(conn)
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("Zvonok must not be called again") end)
+
+    second =
+      conn |> post(~p"/client/auth/call", %{phone: "8 (999) 123-45-67"}) |> json_response(200)
+
+    assert second["data"]["confirmation_id"] == first["confirmation_id"]
+    assert second["data"]["call_number"] == first["call_number"]
+  end
+
+  test "the fourth call request for a phone in ten minutes gets 429", %{conn: conn} do
+    for n <- 1..3 do
+      {:ok, _} =
+        Delivest.Identity.PhoneConfirmations.create(%{
+          phone: @phone,
+          session_id: "other-#{n}",
+          call_id: "c-#{n}",
+          call_number: "7800"
+        })
+    end
+
+    stub_zvonok(1)
+
+    conn = post(conn, ~p"/client/auth/call", %{phone: "8 (999) 123-45-67"})
+
+    assert %{"error" => "too_many_requests", "details" => %{"retry_after" => wait}} =
+             json_response(conn, 429)
+
+    assert wait in 1..600
+    assert [_] = get_resp_header(conn, "retry-after")
+
+    stub_zvonok(2)
+
+    assert %{"data" => %{"confirmation_id" => _}} =
+             build_conn()
+             |> put_req_header(
+               "x-forwarded-for",
+               "auth-other-#{System.unique_integer([:positive])}"
+             )
+             |> with_session()
+             |> post(~p"/client/auth/call", %{phone: "+79990000001"})
+             |> json_response(200)
+  end
+
   test "integration webhooks allow any origin" do
     conn =
       build_conn()
@@ -274,5 +321,99 @@ defmodule DelivestWeb.Client.AuthControllerTest do
       |> get("/integrations/zvonok/wrong")
 
     assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
+  end
+
+  describe "flash call mode" do
+    setup do
+      Delivest.Repo.update_all(Delivest.Integrations.Zvonok.Settings,
+        set: [login_call_mode: :flash]
+      )
+
+      stub_flash(%{"call_id" => 777, "flashcall_phone" => "+79990004821"})
+      :ok
+    end
+
+    defp stub_flash(data) do
+      Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+        assert conn.request_path == "/manager/cabapi_external/api/v1/phones/flashcall/"
+        Req.Test.json(conn, %{"status" => "ok", "data" => data})
+      end)
+    end
+
+    defp start_flash(conn) do
+      conn |> post(~p"/client/auth/call", %{phone: "8 (999) 123-45-67"}) |> json_response(200)
+    end
+
+    defp code_of(id), do: Delivest.Repo.get!(Delivest.Identity.PhoneConfirmation, id).code
+
+    test "starts without a number to call and signs in with the code", %{conn: conn} do
+      assert %{"data" => %{"mode" => "flash", "call_number" => nil, "confirmation_id" => id}} =
+               start_flash(conn)
+
+      assert conn |> post(~p"/client/auth/call/#{id}/complete") |> json_response(202)
+
+      assert %{"data" => %{"status" => "confirmed"}} =
+               conn
+               |> post(~p"/client/auth/call/#{id}/confirm", %{code: code_of(id)})
+               |> json_response(200)
+
+      assert %{"data" => %{"status" => "confirmed", "access_token" => _}} =
+               conn |> post(~p"/client/auth/call/#{id}/complete") |> json_response(200)
+    end
+
+    test "the code is the last four digits of the calling number", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      assert code_of(id) == "4821"
+    end
+
+    test "a pincode in the answer is used as is", %{conn: conn} do
+      stub_flash(%{"call_id" => 778, "pincode" => "1357"})
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      assert code_of(id) == "1357"
+    end
+
+    test "an answer without a code fails the request", %{conn: conn} do
+      stub_flash(%{"call_id" => 779})
+
+      assert conn
+             |> post(~p"/client/auth/call", %{phone: "8 (999) 123-45-67"})
+             |> json_response(503)
+    end
+
+    test "a wrong code costs an attempt and three of them lock the confirmation", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      wrong = if code_of(id) == "0000", do: "1111", else: "0000"
+
+      for left <- [2, 1, 0] do
+        assert %{"error" => "invalid_code", "details" => %{"attempts_left" => ^left}} =
+                 conn
+                 |> post(~p"/client/auth/call/#{id}/confirm", %{code: wrong})
+                 |> json_response(422)
+      end
+
+      assert conn
+             |> post(~p"/client/auth/call/#{id}/confirm", %{code: code_of(id)})
+             |> json_response(429)
+
+      assert conn |> post(~p"/client/auth/call/#{id}/complete") |> json_response(202)
+    end
+
+    test "another session cannot confirm", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+
+      other =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("x-forwarded-for", "auth-#{System.unique_integer([:positive])}")
+        |> with_session()
+
+      assert other
+             |> post(~p"/client/auth/call/#{id}/confirm", %{code: code_of(id)})
+             |> json_response(404)
+    end
+
+    test "a repeated start returns the same confirmation", %{conn: conn} do
+      %{"data" => %{"confirmation_id" => id}} = start_flash(conn)
+      assert %{"data" => %{"confirmation_id" => ^id}} = start_flash(conn)
+    end
   end
 end

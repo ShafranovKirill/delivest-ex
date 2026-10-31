@@ -65,13 +65,6 @@ defmodule DelivestWeb.Staff.FranchiseLive.LogoComponent do
   def render(assigns) do
     ~H"""
     <section class="p-5 bg-base-100 rounded-box border border-base-300 space-y-5">
-      <div>
-        <h2 class="font-bold text-lg">{gettext("Logo")}</h2>
-        <p class="text-sm text-base-content/60">
-          {gettext("Shown in the site header and menu instead of the name.")}
-        </p>
-      </div>
-
       <form
         id="franchise-logo-form"
         phx-target={@myself}

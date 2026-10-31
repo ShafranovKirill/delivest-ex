@@ -10,17 +10,26 @@ import Config
 config :delivest, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10, crm: 2],
+  queues: [default: 10, crm: 2, events: 10, fiscal: 2],
   lifeline: [rescue_after: {2, :hours}],
   pruner: [max_age: {1, :day}],
   crontab: [
     {"30 3 * * *", Delivest.Oms.Workers.CartCleanupWorker},
     {"5 * * * *", Delivest.Oms.Workers.StaleOrderWorker},
+    {"20 3 * * *", Delivest.Loyalty.ExpireWorker},
     {"0 4 * * *", Delivest.Logs.PruneWorker},
     {"30 4 * * *", Delivest.Media.Workers.ThumbnailBackfillWorker},
-    {"*/10 * * * *", Delivest.Integrations.Crm.StopSyncWorker},
+    {"*/10 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_stops"}},
     {"* * * * *", Delivest.Oms.Kitchen.DispatchWorker},
-    {"* * * * *", Delivest.Integrations.YandexDelivery.PollWorker}
+    {"* * * * *", Delivest.Payments.Online.PollWorker},
+    {"17 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_catalog"}},
+    {"*/10 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_silence"}},
+    {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_delivery"}},
+    {"* * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "rkeeper"}},
+    {"*/5 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_eda_busy"}},
+    {"11 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "atol_kkt"}},
+    {"23 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "dadata"}},
+    {"41 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yookassa_reconcile"}}
   ],
   repo: Delivest.Repo
 

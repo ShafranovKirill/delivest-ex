@@ -35,6 +35,8 @@ defmodule DelivestWeb.StaffHeader do
         <DelivestWeb.CommandPalette.command_palette_trigger />
       </div>
 
+      <DelivestWeb.GatewayNote.gateway_badge branch={@current_branch} />
+
       <DelivestWeb.KitchenControl.kitchen_indicator status={@kitchen_status} />
 
       <DelivestWeb.NewOrdersBell.new_orders_bell
@@ -104,6 +106,15 @@ defmodule DelivestWeb.StaffHeader do
         </li>
         <li :if={can?(@current_staff, "orders.read")}>
           <DelivestWeb.OrderSoundToggle.order_sound_toggle />
+        </li>
+
+        <div class="divider my-1"></div>
+
+        <li class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
+          {gettext("This device")}
+        </li>
+        <li>
+          <DelivestWeb.StaffPushToggle.staff_push_toggle id="header-push-toggle" />
         </li>
 
         <div class="divider my-1"></div>

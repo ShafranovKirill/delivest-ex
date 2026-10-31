@@ -38,6 +38,29 @@ defmodule DelivestWeb.Client.Auth.AuthController do
     end
   end
 
+  operation(:confirm_code,
+    summary: "Подтвердить номер кодом флеш-звонка",
+    description:
+      "Режим flash: клиенту позвонили, код — последние 4 цифры входящего номера. Три попытки, потом нужен новый звонок.",
+    tags: ["Auth"],
+    parameters: [id: [in: :path, type: :string, description: "confirmation_id"]],
+    request_body: {"Код", "application/json", AuthSchemas.ConfirmCodeRequest},
+    responses: [
+      ok:
+        {"Код верный, можно вызывать complete", "application/json", AuthSchemas.SessionResponse},
+      not_found: {"Подтверждение не найдено или истекло", "application/json", ErrorResponse},
+      unprocessable_entity: {"Неверный код", "application/json", ErrorResponse},
+      too_many_requests: {"Попытки закончились", "application/json", ErrorResponse}
+    ]
+  )
+
+  def confirm_code(conn, %{"id" => id} = params) do
+    case Identity.confirm_client_code(id, session_id(conn), params["code"]) do
+      :ok -> render(conn, :confirmed)
+      {:error, reason} -> render_error(conn, reason)
+    end
+  end
+
   operation(:complete,
     summary: "Проверить подтверждение и войти",
     description: "Пока звонка не было — 202 и `status: pending`. После звонка — токены.",
@@ -93,6 +116,23 @@ defmodule DelivestWeb.Client.Auth.AuthController do
 
   defp render_error(conn, :invalid_phone),
     do: ApiError.send_error(conn, :unprocessable_entity, :invalid_phone, "Invalid phone")
+
+  defp render_error(conn, {:rate_limited, seconds}) do
+    conn
+    |> put_resp_header("retry-after", Integer.to_string(seconds))
+    |> ApiError.send_error(:too_many_requests, :too_many_requests, "Too many requests", %{
+      retry_after: seconds
+    })
+  end
+
+  defp render_error(conn, {:invalid_code, attempts_left}),
+    do:
+      ApiError.send_error(conn, :unprocessable_entity, :invalid_code, "Invalid code", %{
+        attempts_left: attempts_left
+      })
+
+  defp render_error(conn, :attempts_exhausted),
+    do: ApiError.send_error(conn, :too_many_requests, :attempts_exhausted, "No attempts left")
 
   defp render_error(conn, :not_found),
     do: ApiError.send_error(conn, :not_found, :confirmation_not_found, "Confirmation not found")

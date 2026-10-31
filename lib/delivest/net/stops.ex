@@ -55,7 +55,7 @@ defmodule Delivest.Net.Stops do
       product_id: product.id,
       branch_id: branch_id,
       source: ProductStop.manual(),
-      until: StopPeriod.until(period, DateTime.utc_now()),
+      until: StopPeriod.until(period, DateTime.utc_now(), branch_id),
       staff_id: staff.id
     }
     |> Repo.insert(

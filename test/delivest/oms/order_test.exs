@@ -72,7 +72,7 @@ defmodule Delivest.Oms.OrderTest do
 
       changeset = Order.changeset(%Order{}, attrs)
       refute changeset.valid?
-      assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
+      assert "must be in E.164 format" in errors_on(changeset).customer_phone
     end
 
     test "accepts cook_by as a datetime value" do
@@ -84,7 +84,7 @@ defmodule Delivest.Oms.OrderTest do
         cart_id: Ecto.UUID.generate(),
         customer_phone: "+79991234567",
         customer_name: "Иван",
-        cook_by: ~N[2026-10-05 18:30:00]
+        cook_by: ~U[2026-10-05 18:30:00Z]
       }
 
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
@@ -97,7 +97,7 @@ defmodule Delivest.Oms.OrderTest do
         fulfillment_type: :pickup,
         payment_method: :cash,
         cart_id: Ecto.UUID.generate(),
-        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 30), ~T[23:59:59])
+        cook_by: DateTime.new!(Date.add(Date.utc_today(), 30), ~T[23:59:59])
       }
 
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
@@ -110,7 +110,7 @@ defmodule Delivest.Oms.OrderTest do
         fulfillment_type: :pickup,
         payment_method: :cash,
         cart_id: Ecto.UUID.generate(),
-        cook_by: NaiveDateTime.new!(Date.add(Date.utc_today(), 31), ~T[00:00:00])
+        cook_by: DateTime.new!(Date.add(Date.utc_today(), 31), ~T[00:00:00])
       }
 
       changeset = Order.changeset(%Order{}, attrs)
@@ -146,6 +146,45 @@ defmodule Delivest.Oms.OrderTest do
       assert Repo.get!(Delivest.Oms.Cart, cart.id).staff_id == nil
     end
 
+    test "keeps the customer snapshot when the client renames" do
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "snapshot", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %Order{} = order} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "customer_phone" => "+79991230000",
+                 "customer_name" => "Иван",
+                 "persons" => 2,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+
+      Repo.update_all(Delivest.Identity.Client, set: [name: "Пётр"])
+      order = Repo.get!(Order, order.id)
+
+      assert order.customer_name == "Иван"
+      assert order.customer_phone == "+79991230000"
+      assert order.persons == 2
+    end
+
+    test "takes the missing name from the client" do
+      client = insert(:client, phone: "+79991230001", name: "Анна")
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "snapshot-client", branch_id: @branch_id})
+      {:ok, _, cart} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %Order{customer_phone: "+79991230001", customer_name: "Анна"}} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "client_id" => client.id,
+                 "customer_phone" => client.phone,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+    end
+
     test "treats a bare phone prefix as no phone" do
       product = insert_branch_product(@branch_id, price: 100)
       {:ok, cart} = Carts.create_cart(%{session_id: "bare-phone", branch_id: @branch_id})
@@ -173,7 +212,7 @@ defmodule Delivest.Oms.OrderTest do
                  "payment_method" => "cash"
                })
 
-      assert "must be in format +7XXXXXXXXXX" in errors_on(changeset).customer_phone
+      assert "must be in E.164 format" in errors_on(changeset).customer_phone
     end
 
     test "rejects orders of a blocked client" do
@@ -231,7 +270,7 @@ defmodule Delivest.Oms.OrderTest do
                  "cook_by" => "2026-10-05T18:30"
                })
 
-      assert order.cook_by == ~N[2026-10-05 18:30:00]
+      assert order.cook_by == ~U[2026-10-05 15:30:00Z]
     end
 
     test "updates order values when the cart is changed" do
@@ -305,12 +344,12 @@ defmodule Delivest.Oms.OrderTest do
 
       admin = insert(:staff, role: build(:role, permissions: ["admin"]))
 
-      assert {:error, :lock, :order_locked} =
+      assert {:error, :editable, :crm_order} =
                Orders.update_order(order, %{"cart_id" => order.cart_id})
 
       assert {:error, :order_locked} = Orders.advance_order(order, :accepted, {:staff, admin})
 
-      assert {:error, :order_locked} =
+      assert {:error, :crm_order} =
                Orders.update_payment_method(order, %{"payment_method" => "card_offline"})
     end
 
@@ -391,24 +430,27 @@ defmodule Delivest.Oms.OrderTest do
                })
     end
 
-    test "allows repeated order numbers once the number sequence wraps around" do
+    test "numbers orders of a branch day by day" do
       product = insert_branch_product(@branch_id, price: 100)
 
-      for session <- ["wrap-1", "wrap-2"] do
-        {:ok, cart} = Carts.create_cart(%{session_id: session, branch_id: @branch_id})
-        {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
+      numbers =
+        for session <- ["day-1", "day-2"] do
+          {:ok, cart} = Carts.create_cart(%{session_id: session, branch_id: @branch_id})
+          {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
 
-        {:ok, order} =
-          Orders.create_order(%{
-            "cart_id" => cart.id,
-            "fulfillment_type" => "pickup",
-            "payment_method" => "cash"
-          })
+          {:ok, order} =
+            Orders.create_order(%{
+              "cart_id" => cart.id,
+              "fulfillment_type" => "pickup",
+              "payment_method" => "cash"
+            })
 
-        order |> Ecto.Changeset.change(number: "A000") |> Repo.update!()
-      end
+          {order.daily_number, order.number, order.business_date}
+        end
 
-      assert Repo.aggregate(from(o in Order, where: o.number == "A000"), :count) == 2
+      assert [{1, first, date}, {2, second, date}] = numbers
+      assert first =~ ~r/^\d{6}-[A-Z0-9]+-001$/
+      assert second =~ ~r/^\d{6}-[A-Z0-9]+-002$/
     end
 
     test "update_payment_method changes only the payment without a cart" do
@@ -463,7 +505,7 @@ defmodule Delivest.Oms.OrderTest do
                  "cancel_note" => "Нет сыра"
                })
 
-      assert {:ok, %{payment_method: :card_offline, cancel_reason: :out_of_stock}} =
+      assert {:error, :order_finished} =
                Orders.update_payment_method(cancelled, %{"payment_method" => "card_offline"})
 
       assert {:ok, %{status: :accepted, cancel_reason: nil, cancel_note: nil}} =

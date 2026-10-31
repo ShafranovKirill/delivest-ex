@@ -45,7 +45,7 @@ defmodule Delivest.Oms.Workers.StaleOrderWorkerTest do
   end
 
   test "keeps preorders scheduled for later" do
-    preorder = order_at(~U[2026-10-18 10:00:00Z], cook_by: ~N[2026-10-21 12:00:00])
+    preorder = order_at(~U[2026-10-18 10:00:00Z], cook_by: ~U[2026-10-21 09:00:00Z])
 
     assert StaleOrderWorker.close_past_days(@now) == %{completed: 0, cancelled: 0}
     assert %Order{status: :created} = Repo.reload!(preorder)

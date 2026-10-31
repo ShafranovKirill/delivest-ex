@@ -45,8 +45,8 @@ defmodule Delivest.Integrations.YandexEda.OrderIntake do
   defp fill_cart(branch_id, items) do
     with {:ok, cart} <- Oms.create_cart(%{branch_id: branch_id}),
          {:ok, cart} <-
-           Oms.Carts.add_items(cart.id, Enum.map(items, &{&1.product_id, &1.quantity})) do
-      if length(cart.items) == length(items),
+           Oms.Carts.add_items(cart.id, Enum.map(items, &{&1.product_id, &1.quantity, :as_sold})) do
+      if length(cart.items) == items |> Enum.uniq_by(& &1.product_id) |> length(),
         do: {:ok, cart},
         else: {:error, {:unavailable, items}}
     end

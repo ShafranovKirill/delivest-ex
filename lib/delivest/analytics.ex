@@ -11,9 +11,10 @@ defmodule Delivest.Analytics do
 
   def presets, do: @presets
 
-  @spec resolve_period(String.t() | nil, String.t() | nil, String.t() | nil) :: period()
-  def resolve_period(preset, from \\ nil, to \\ nil) do
-    today = LocalTime.today()
+  @spec resolve_period(String.t() | nil, String.t() | nil, String.t() | nil, binary() | nil) ::
+          period()
+  def resolve_period(preset, from \\ nil, to \\ nil, branch_id \\ nil) do
+    today = LocalTime.today(LocalTime.timezone(branch_id))
 
     case preset do
       "today" ->
@@ -69,9 +70,20 @@ defmodule Delivest.Analytics do
     }
   end
 
+  @spec crm_split(binary(), period()) :: map()
+  def crm_split(branch_id, period) do
+    result = branch_id |> sales_orders(period) |> select(^crm_totals()) |> Repo.one()
+
+    %{
+      crm_orders: result.crm_orders,
+      crm_revenue: to_int(result.crm_revenue),
+      avg_confirm_seconds: result.avg_confirm_seconds && to_int(result.avg_confirm_seconds)
+    }
+  end
+
   @spec daily(binary(), period()) :: [%{date: Date.t(), revenue: integer(), orders: integer()}]
   def daily(branch_id, {from, to} = period) do
-    tz = LocalTime.timezone()
+    tz = LocalTime.timezone(branch_id)
 
     rows =
       branch_id
@@ -97,7 +109,7 @@ defmodule Delivest.Analytics do
 
   @spec hourly(binary(), period()) :: [%{hour: 0..23, revenue: integer(), orders: integer()}]
   def hourly(branch_id, period) do
-    tz = LocalTime.timezone()
+    tz = LocalTime.timezone(branch_id)
 
     rows =
       branch_id
@@ -234,8 +246,8 @@ defmodule Delivest.Analytics do
   defp period_orders(branch_id, {from, to}) do
     from(o in Order,
       where: o.branch_id == ^branch_id and is_nil(o.deleted_at),
-      where: o.inserted_at >= ^LocalTime.start_of_day_utc(from),
-      where: o.inserted_at <= ^LocalTime.end_of_day_utc(to)
+      where: o.inserted_at >= ^LocalTime.start_of_day_utc(from, LocalTime.timezone(branch_id)),
+      where: o.inserted_at <= ^LocalTime.end_of_day_utc(to, LocalTime.timezone(branch_id))
     )
   end
 
@@ -243,6 +255,35 @@ defmodule Delivest.Analytics do
     branch_id
     |> period_orders(period)
     |> OrderScopes.sold()
+  end
+
+  defp crm_totals do
+    crm = dynamic([o], not is_nil(o.crm))
+
+    confirmed =
+      dynamic(
+        [o],
+        fragment("?->>'status'", o.crm) == "sent" and not is_nil(fragment("?->>'sent_at'", o.crm))
+      )
+
+    %{
+      crm_orders: dynamic([o], filter(count(o.id), ^crm)),
+      crm_revenue: dynamic([o], coalesce(filter(sum(o.total_amount), ^crm), 0)),
+      avg_confirm_seconds:
+        dynamic(
+          [o],
+          filter(
+            avg(
+              fragment(
+                "extract(epoch from ((?->>'sent_at')::timestamptz - ?))",
+                o.crm,
+                o.inserted_at
+              )
+            ),
+            ^confirmed
+          )
+        )
+    }
   end
 
   defp period_totals do

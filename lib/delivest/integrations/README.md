@@ -5,12 +5,43 @@
 | Сервис | Папка | Зачем | Настройки | Документация |
 |---|---|---|---|---|
 | Frontpad | `frontpad/` | CRM: заказы, статусы, сверка меню | на филиал, `branch_info.crm.frontpad` | [frontpad/README.md](frontpad/README.md) |
+| iiko | `iiko/` | CRM и POS: заказы, статусы, стоп-лист, меню (не подключена) | на филиал | [iiko/README.md](iiko/README.md) |
+| r_keeper | `rkeeper/` | POS через облачный шлюз White Server: заказы, статусы опросом, стоп-лист (не подключена) | на филиал | [rkeeper/README.md](rkeeper/README.md) |
 | Zvonok | `zvonok/` | Вход клиента по звонку | общие, таблица `zvonok_settings` | [zvonok/README.md](zvonok/README.md) |
 | DaData | `dadata/` | Подсказки адресов, геокодинг | общие, таблица `dadata_settings` | [dadata/README.md](dadata/README.md) |
 | Яндекс Еда | `yandex_eda/` | Входящий канал: заказы из Яндекс Еды и Delivery Club (в разработке) | на филиал | [yandex_eda/README.md](yandex_eda/README.md) |
 | Яндекс Доставка | `yandex_delivery/` | Курьерский провайдер: вызов курьера на заказ | на филиал, `branch_info.yandex_delivery` | [yandex_delivery/README.md](yandex_delivery/README.md) |
+| АТОЛ Онлайн | `atol_online/` | Облачная касса: фискальные чеки 54-ФЗ (в разработке) | на филиал | [atol_online/README.md](atol_online/README.md) |
+| ЮKassa | `yookassa/` | Онлайн-оплата и чеки по ней (не подключена) | на филиал | [yookassa/README.md](yookassa/README.md) |
 
 Все HTTP-запросы идут через `Delivest.HTTP.Client`. В тестах он подменяется через `Req.Test.stub(Delivest.HTTP.Client, ...)`.
+
+---
+
+## Общий набор
+
+Части, которые нужны каждой интеграции, сделаны один раз.
+
+| Часть | Модуль | Как пользоваться |
+|---|---|---|
+| Журнал запросов | `Integrations.Journal`, таблица `integration_requests` | Исходящий: `Client.post(path, body, journal: :iiko)`. Входящий: plug `IntegrationJournal` в маршруте. Филиал и заказ — `Journal.scope([branch_id: ..., order_id: ...], fun)`. Секреты маскируются по имени ключа (`Journal.Mask`). Хранится как технические логи (`Logs.PruneWorker`). В админке — `IntegrationLive.JournalComponent` |
+| Токены | `Integrations.TokenCache` | `TokenCache.run({:iiko, api_login}, issue, fn token -> ... end)`. `issue` возвращает `{:ok, token, ttl}`. Обновление заранее (10% срока, не больше 5 мин) и один повтор на 401 или своём `expired?` |
+| Вебхуки | `Integrations.Inbox`, таблица `integration_inbox` | Контроллер проверяет токен и зовёт `Inbox.accept(provider, event_id, branch_id, payload)`, отвечает 200. Повтор того же события — `:duplicate`. Обработка — `Inbox.Worker` → `handle_inbox/1` модуля из `@handlers` в `inbox.ex`, до 8 попыток |
+| Опрос | `Integrations.Poller` | Модуль с `key/0`, `targets/0`, `poll/1`, `interval/0` в `@modules` в `poller.ex` и cron `Poller.Worker` с `args: %{poller: "<key>"}`. `poll/1`: `:done` — стоп, `:more` — снова через `interval/0`, `{:snooze, сек}`, `{:error, _}` — повтор Oban. Одна задача на цель |
+| Ошибки | `Integrations.Error` | `classify_error/1` провайдера возвращает `:permanent`, `:retry`, `{:snooze, сек}` или `:auth`. Неизвестное — в `Error.classify/1`: 401/403 → `:auth`, 429 → snooze, 5xx и сеть → retry, остальные 4xx → permanent |
+| Проверка связи | `Integrations.Health`, таблица `integration_health` | Колбэк `health_check(settings)` → `:ok` или `{:error, _}`. Кнопка «Проверить подключение» — `IntegrationLive.HealthComponent`, статус на карточке интеграции. `:auth` из задачи (`Health.auth_failed/3`) показывает на карточке «Переподключите», успешный запрос снимает (`Health.recovered/2`) |
+| Контрактные тесты | тег `:<provider>_contract` и `:contract` | `make contract P=atol`. Доступы — в `server/.env.contract` (не в git). В обычный `mix test` и CI не входят |
+
+Подключены: журнал — Frontpad, Яндекс Еда, Яндекс Доставка, Zvonok; токены — push API Яндекс Еды; inbox — вебхук статусов Frontpad; опрос — журнал заявок Яндекс Доставки (`yandex_delivery`) и стоп-лист CRM (`crm_stops`); проверка связи — Frontpad, Яндекс Еда, Яндекс Доставка. DaData в журнал не пишется: подсказка на каждую букву адреса. Zvonok обрабатывает вебхук сразу: клиент ждёт входа.
+
+### Правила для любой интеграции
+
+- Все HTTP — через `Delivest.HTTP.Client` с `journal:`.
+- Исходящий запрос, меняющий данные, — с ключом идемпотентности, если провайдер его поддерживает (iiko `order.id`, ЮKassa `Idempotence-Key`, АТОЛ `external_id`).
+- Вебхук — только сигнал: по нему перечитываем объект у провайдера.
+- Изменение, пришедшее от провайдера, не отправляется обратно ему же (`Events.Event.from?/3`).
+- Секреты в настройках — `redact: true`, в журнале — маска.
+- У провайдера `README.md` с доступом, тестовой средой, таблицами полей и статусов, `docs/` с исходной документацией.
 
 ---
 
@@ -25,10 +56,12 @@
 Crm.SyncWorker ── Crm.deliver ── Throttle ── Provider.deliver_order(order, settings)
   │                                              │
   │  ok    → SyncState.sent (external_id, номер, предупреждения)
-  │  error → Provider.classify_error → :permanent | :retry | {:snooze, сек}
+  │  error → Provider.classify_error → :permanent | :retry | {:snooze, сек} | :auth
   ▼
 CRM меняет статус → POST /integrations/crm/:provider/:token
-  │  CrmWebhookController → Crm.handle_webhook → Provider.handle_webhook
+  │  CrmWebhookController → Crm.handle_webhook → Provider.handle_webhook → Inbox.accept
+  ▼
+Inbox.Worker → handle_inbox
   ▼
 SyncState.remote_status → статус заказа в приложении
 ```
@@ -52,7 +85,7 @@ SyncState.remote_status → статус заказа в приложении
 | `Crm.Registry` | Единственный список провайдеров. Из него строятся настройки филиала, Enum провайдеров и карточки в админке |
 | `Crm.Provider` | Behaviour, который реализует каждая CRM |
 | `Crm.BranchSettings` | Настройки CRM филиала: `enabled`, `provider` и по embed на каждого провайдера из реестра |
-| `Crm.SyncWorker` | Oban-задача доставки заказа, backoff 10–130 с, до 7 попыток |
+| `Crm.SyncWorker` | Oban-задача доставки заказа, backoff 10–130 с, до 7 попыток. `:auth` — сразу ошибка и «Переподключите» на карточке |
 | `Crm.SyncState` | Запись результата в `order.crm` и в аудит |
 | `Crm.Lookup` | Поиск филиала по токену вебхука и заказа по внешнему id, общий для всех CRM |
 | `Crm.OrderNotes` | Примечание для курьера: домофон, комментарий к адресу, комментарий к заказу |
@@ -86,14 +119,23 @@ SyncState.remote_status → статус заказа в приложении
    - `name/0` — название для админки;
    - `settings_schema/0` — embedded-схема настроек с `changeset(settings, attrs, required?)`;
    - `configured?/1` — подключена ли CRM (обычно задан ключ API);
-   - `deliver_order/2` — отправка заказа, `{:ok, %{external_id: ...}}`;
-   - `classify_error/1` — какие ошибки повторять;
+   - `deliver_order/2` — отправка заказа, `{:ok, %{external_id: ...}}` или `{:pending, ref}`, если CRM подтверждает позже;
+   - `classify_error/1` — какие ошибки повторять, `:auth` — неверный ключ;
+   - `health_check/1` — дешёвый запрос на чтение для кнопки «Проверить подключение»;
    - `rate_limit/1` — `{ключ_аккаунта, интервал_мс}` или `nil`.
-3. Если CRM присылает статусы: `handle_webhook/2`. Поле `webhook_token` в настройках находит `Crm.Lookup`, ссылка строится через `Crm.webhook_url(key(), token)`.
-4. Если CRM отдаёт меню: `catalog_source/1` и `fetch_catalog/1`.
-5. Добавить модуль в `@modules` в `crm/registry.ex`. Embed в настройках филиала, значение Enum и карточка на странице интеграций появятся сами.
-6. Админка: LiveView настроек в `lib/delivest_web/live/staff/integration_live/`, маршрут в `router.ex` и клауза `provider_path/1` в `integration_live/index.ex`.
-7. Написать `README.md` по образцу Frontpad: API, лимиты и таблица соответствия наших полей полям CRM.
+3. Если CRM присылает статусы: `handle_webhook/2` проверяет токен и кладёт событие в `Inbox`, обработка — `handle_inbox/1`. Поле `webhook_token` в настройках находит `Crm.Lookup`, ссылка строится через `Crm.webhook_url(key(), token)`.
+4. Необязательные колбэки:
+   - `idempotent?/0` — можно ли повторить создание с тем же id. Неподтверждённый за 5 минут заказ (`crm.status = confirming`) отправляется снова, иначе помечается ошибкой;
+   - `capabilities/0` — `:cancel`, `:update_items`, `:update_comment`, `:update_address`, `:update_time`, `:update_payments`;
+   - `cancel_order/3` и `update_order/3` — вызываются `Crm.CommandWorker` по событиям `order.cancelled` и `order.updated`, правка получает только разрешённые поля;
+   - `status_map/1` — код статуса CRM → наш статус, `Crm.status_for/3`;
+   - `dictionaries/1` — справочники CRM (типы оплат, заказа, причины отмены).
+
+   Подтверждение асинхронного создания — `Crm.confirm_order(order, %{external_id: ...})` или `Crm.reject_order(order, error)` из вебхука или опроса.
+5. Если CRM отдаёт меню: `catalog_source/1` и `fetch_catalog/1`.
+6. Добавить модуль в `@modules` в `crm/registry.ex`. Embed в настройках филиала, значение Enum и карточка на странице интеграций появятся сами.
+7. Админка: LiveView настроек в `lib/delivest_web/live/staff/integration_live/`, маршрут в `router.ex` и клауза `provider_path/1` в `integration_live/index.ex`.
+8. Написать `README.md` по образцу Frontpad: API, лимиты и таблица соответствия наших полей полям CRM.
 
 Новая CRM ничего не меняет у других. Её настройки лежат в отдельном embed, вебхук идёт на свой сегмент URL, а ошибки классифицирует она сама.
 
@@ -112,7 +154,7 @@ SyncState.remote_status → статус заказа в приложении
 | Источник | Как ставится | Как снимается |
 |---|---|---|
 | `manual` | В списке товаров: «До конца дня» (до 05:00 по местному времени) или «До снятия» | Кнопкой «Снять» или само в 05:00 |
-| CRM | `Crm.StopSync` раз в 10 минут (`Crm.StopSyncWorker`) и кнопкой «Обновить сейчас» | В CRM. У нас только читается |
+| CRM | `Crm.StopSync` раз в 10 минут (`Crm.StopPoller`) и кнопкой «Обновить сейчас» | В CRM. У нас только читается |
 
 - Провайдер, который отдаёт стоп-лист, реализует необязательные `stops_enabled?/1` и `fetch_stops/1` (список артикулов). Артикулы переводятся в товары через `ProductCrmIds.by_external_id/2`, несвязанные показываются на странице CRM.
 - Если CRM не ответила, последний стоп-лист остаётся. Если опцию выключили, стопы этой CRM удаляются.

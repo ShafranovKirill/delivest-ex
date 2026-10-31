@@ -1,10 +1,10 @@
 defmodule Delivest.Integrations.YandexEda.PushApi do
   alias Delivest.HTTP.Client
+  alias Delivest.Integrations.TokenCache
   alias Delivest.Integrations.YandexEda.Settings
 
   @base_url "https://dc-partner.eda.yandex.net"
-  @cache :crm_cache
-  @token_margin 60
+  @default_ttl 60
 
   def reload_menu(%Settings{} = settings, restaurant_id, operation),
     do:
@@ -41,13 +41,36 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     end
   end
 
+  def orders_details(%Settings{} = settings, eats_ids) do
+    with {:ok, %{"orders" => orders}} <-
+           call(settings, "/v1/get-orders-details", %{eats_ids: eats_ids}) do
+      {:ok, orders}
+    else
+      {:ok, body} -> {:error, {:yandex_eda, body}}
+      error -> error
+    end
+  end
+
+  def busy_places(%Settings{} = settings, filter) do
+    case call(settings, "/partner-integration/v1/place-info/v1/busy-mode-status", filter) do
+      {:ok, %{"busy_places" => _places} = body} -> {:ok, body}
+      {:ok, body} -> {:error, {:yandex_eda, body}}
+      error -> error
+    end
+  end
+
   defp call(settings, path, body) do
-    with {:ok, token} <- token(settings) do
+    TokenCache.run(token_key(settings), fn -> issue(settings) end, fn token ->
       Client.post(path, body,
         base_url: @base_url,
+        journal: :yandex_eda,
         headers: [{"authorization", "Bearer " <> token}, {"partner-name", settings.partner_name}]
       )
-    end
+    end)
+  end
+
+  def check(%Settings{} = settings) do
+    with {:ok, _token, _ttl} <- issue(settings), do: :ok
   end
 
   def configured?(%Settings{} = settings),
@@ -57,24 +80,17 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
         &(&1 not in [nil, ""])
       )
 
-  defp token(settings) do
-    case Cachex.get(@cache, cache_key(settings)) do
-      {:ok, token} when is_binary(token) -> {:ok, token}
-      _ -> issue(settings)
-    end
-  end
-
   defp issue(settings) do
     "/oauth2/token"
     |> Client.post(
       [client_id: settings.push_client_id, client_secret: settings.push_client_secret],
       base_url: @base_url,
-      format: :form
+      format: :form,
+      journal: :yandex_eda
     )
     |> case do
       {:ok, %{"access_token" => token} = body} ->
-        Cachex.put(@cache, cache_key(settings), token, expire: :timer.seconds(ttl(body)))
-        {:ok, token}
+        {:ok, token, ttl(body)}
 
       {:ok, body} ->
         {:error, {:yandex_eda, body}}
@@ -84,10 +100,8 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
     end
   end
 
-  defp ttl(%{"expires_in" => seconds}) when is_integer(seconds) and seconds > @token_margin,
-    do: seconds - @token_margin
+  defp ttl(%{"expires_in" => seconds}) when is_integer(seconds) and seconds > 0, do: seconds
+  defp ttl(_body), do: @default_ttl
 
-  defp ttl(_body), do: @token_margin
-
-  defp cache_key(settings), do: {:yandex_eda_token, settings.push_client_id}
+  defp token_key(settings), do: {:yandex_eda, settings.push_client_id}
 end

@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
 
     {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/kitchen")
 
-    assert html =~ "##{order.number}"
+    assert html =~ "##{order.daily_number}"
     assert html =~ hd(order.items).title
     assert html =~ "без лука"
     assert has_element?(lv, "#ready-#{order.id}")
@@ -63,8 +63,8 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
   end
 
   test "a late order turns red", %{conn: conn, branch: branch} do
-    past = NaiveDateTime.add(NaiveDateTime.local_now(), -3, :hour)
-    order = cooking(branch, cook_by: NaiveDateTime.truncate(past, :second))
+    past = DateTime.add(DateTime.utc_now(), -3, :hour)
+    order = cooking(branch, cook_by: DateTime.truncate(past, :second))
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/kitchen")
 

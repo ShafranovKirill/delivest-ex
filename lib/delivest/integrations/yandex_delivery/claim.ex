@@ -7,6 +7,8 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
 
   @source 1
   @destination 2
+  @due_min 30
+  @due_max 240
 
   def build(
         %Order{} = order,
@@ -17,17 +19,38 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
          {:ok, destination} <- destination_point(order, settings) do
       {:ok,
        %{
-         items: items(order, settings),
+         items: items(order),
          route_points: [source, destination],
          emergency_contact: source.contact |> Map.delete(:email),
          client_requirements: %{taxi_class: to_string(settings.taxi_class)},
          comment: comment(order),
          referral_source: "delivest"
-       }}
+       }
+       |> put_auto_accept(settings)
+       |> put_due(order)}
     end
   end
 
   def build(_order, _branch, _settings), do: {:error, :branch_address_missing}
+
+  def estimate(
+        %Order{} = order,
+        %Branch{info: %BranchInfo{} = info} = branch,
+        %Settings{} = settings
+      ) do
+    with {:ok, source} <- source_point(branch, info, settings, order),
+         {:ok, destination} <- destination_point(order, settings) do
+      {:ok,
+       %{
+         items: [%{quantity: 1, pickup_point: @source, dropoff_point: @destination}],
+         route_points: Enum.map([source, destination], &estimate_point/1),
+         referral_source: "delivest",
+         requirements: compact(%{taxi_classes: [to_string(settings.taxi_class)], due: due(order)})
+       }}
+    end
+  end
+
+  def estimate(_order, _branch, _settings), do: {:error, :branch_address_missing}
 
   def collects_payment?(%Order{payment_method: method}), do: method in [:cash, :card_offline]
 
@@ -47,6 +70,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
            point_id: @source,
            visit_order: 1,
            type: "source",
+           should_notify_on_order_readiness: true,
            contact: %{
              name: settings.contact_name || branch.name,
              phone: phone,
@@ -57,7 +81,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
                fullname: Enum.join(Enum.reject([info.city, info.address], &blank?/1), ", "),
                city: info.city,
                coordinates: [info.longitude, info.latitude],
-               comment: "Заказ №#{order.number}"
+               comment: label(order)
              }),
            skip_confirmation: not settings.confirm_codes
          }}
@@ -65,7 +89,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
   end
 
   defp destination_point(%Order{address: %Address{} = address} = order, settings) do
-    phone = order.client && order.client.phone
+    phone = order.customer_phone
 
     cond do
       blank?(address.street) or blank?(address.house) -> {:error, :address_missing}
@@ -77,18 +101,20 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
   defp destination_point(_order, _settings), do: {:error, :address_missing}
 
   defp destination(order, address, phone, settings) do
+    house = Address.house_line(address)
+
     %{
       point_id: @destination,
       visit_order: 2,
       type: "destination",
-      contact: %{name: (order.client && order.client.name) || "Клиент", phone: phone},
+      contact: %{name: order.customer_name || "Клиент", phone: phone},
       address:
         compact(%{
           fullname:
-            Enum.join(Enum.reject([address.city, address.street, address.house], &blank?/1), ", "),
+            Enum.join(Enum.reject([address.city, address.street, house], &blank?/1), ", "),
           city: address.city,
           street: address.street,
-          building: address.house,
+          building: house,
           coordinates: coordinates(address),
           porch: address.entrance,
           sfloor: address.floor,
@@ -102,21 +128,55 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
     |> put_payment(order)
   end
 
+  defp put_due(body, order) do
+    case due(order) do
+      nil -> body
+      due -> Map.put(body, :due, due)
+    end
+  end
+
+  defp due(%Order{cook_by: %DateTime{} = cook_by}) do
+    minutes = DateTime.diff(cook_by, DateTime.utc_now(), :minute)
+    if minutes >= @due_min and minutes <= @due_max, do: DateTime.to_iso8601(cook_by)
+  end
+
+  defp due(_order), do: nil
+
+  defp estimate_point(point) do
+    compact(%{
+      id: point.point_id,
+      coordinates: point.address[:coordinates],
+      fullname: point.address.fullname
+    })
+  end
+
+  defp put_auto_accept(body, %Settings{auto_accept: true}), do: Map.put(body, :auto_accept, true)
+  defp put_auto_accept(body, _settings), do: body
+
   defp put_payment(point, order) do
     if collects_payment?(order),
       do: Map.put(point, :payment_on_delivery, %{payment_method: "card"}),
       else: point
   end
 
-  defp items(order, settings) do
-    goods = Enum.map(order.items, &%{title: &1.title, quantity: &1.quantity, price: &1.price})
+  defp items(order) do
+    goods =
+      Enum.map(
+        order.items,
+        &%{
+          title: Delivest.Oms.OrderItem.full_title(&1),
+          quantity: &1.quantity,
+          price: &1.price
+        }
+      )
 
     lines =
       if collects_payment?(order),
         do: fit(goods, order.total_amount - (order.delivery_amount || 0)) ++ delivery(order),
         else: goods
 
-    Enum.map(lines, &item(&1, order, settings))
+    fiscal = Delivest.Fiscal.settings(order.branch_id)
+    Enum.map(lines, &item(&1, order, fiscal))
   end
 
   defp delivery(%Order{delivery_amount: amount}) when is_integer(amount) and amount > 0,
@@ -162,7 +222,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
   defp put_fiscalization(item, line, order, settings) do
     if collects_payment?(order) do
       Map.put(item, :fiscalization, %{
-        vat_code_str: to_string(settings.vat),
+        vat_code_str: vat_code(if(line[:service], do: settings.delivery_vat, else: settings.vat)),
         item_type: if(line[:service], do: "service", else: "product")
       })
     else
@@ -170,9 +230,15 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
     end
   end
 
-  defp comment(%Order{comment: comment, number: number}) do
-    Enum.join(Enum.reject(["Заказ №#{number}", comment], &blank?/1), ". ")
+  defp vat_code(:none), do: "vat_none"
+  defp vat_code(rate), do: to_string(rate)
+
+  defp comment(%Order{comment: comment} = order) do
+    Enum.join(Enum.reject([label(order), comment], &blank?/1), ". ")
   end
+
+  defp label(%Order{number: number} = order),
+    do: "Заказ №#{Order.short_number(order)} (#{number})"
 
   defp coordinates(%Address{latitude: lat, longitude: lon})
        when is_number(lat) and is_number(lon),
@@ -180,7 +246,7 @@ defmodule Delivest.Integrations.YandexDelivery.Claim do
 
   defp coordinates(_address), do: nil
 
-  defp money(amount), do: :erlang.float_to_binary(amount / 1, decimals: 2)
+  defp money(amount), do: :erlang.float_to_binary(amount / 100, decimals: 2)
 
   defp compact(map), do: map |> Enum.reject(fn {_key, value} -> blank?(value) end) |> Map.new()
 

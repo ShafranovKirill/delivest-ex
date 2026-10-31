@@ -1,5 +1,6 @@
 defmodule Delivest.Oms.Orders.Pricing do
   alias Delivest.Oms.{CartView, Order}
+  alias Delivest.Loyalty.Redeem
   alias Delivest.Promo
 
   @default_fulfillment "dine_in"
@@ -16,7 +17,29 @@ defmodule Delivest.Oms.Orders.Pricing do
         except_order_id: order && order.id
       })
 
-    ensure_expected(result, attrs["expected_total"])
+    with {:ok, result} <- result |> redeem(attrs, client_id, cart.branch_id, order),
+         {:ok, result} <-
+           Delivest.Loyalty.Rewards.price(
+             result,
+             cart,
+             client_id,
+             if(order, do: order.points_spent, else: 0)
+           ) do
+      result = Delivest.Loyalty.Earnings.price(result, cart.branch_id)
+      ensure_expected(result, attrs["expected_total"])
+    end
+  end
+
+  defp redeem(result, _attrs, _client_id, _branch_id, %Order{points_spent: stars} = order)
+       when is_integer(stars) and stars > 0,
+       do: Redeem.reapply(result, max(stars - reward_cost(order), 0))
+
+  defp redeem(result, attrs, client_id, branch_id, _order),
+    do: Redeem.plan(result, attrs, client_id, branch_id)
+
+  defp reward_cost(order) do
+    order = Delivest.Repo.preload(order, :items)
+    Enum.sum(Enum.map(order.items, &(&1.stars_spent * &1.quantity)))
   end
 
   defp fulfillment(%{"fulfillment_type" => type}, _order) when type not in [nil, ""],

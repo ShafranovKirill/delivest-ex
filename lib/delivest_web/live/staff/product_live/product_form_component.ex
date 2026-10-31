@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Net, Media}
+  alias Delivest.{Media, Money, Net}
   alias Delivest.Integrations.Crm
   alias Delivest.Net.Product
 
@@ -54,7 +54,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           socket
           |> assign(:form, to_form(changeset))
           |> assign(:category_options, category_options)
+          |> assign(:crm_owner, Crm.menu_owner(branch_id, product && product.id))
           |> assign(:product_tags, Net.list_product_tags())
+          |> assign(:modifier_groups, Delivest.Net.Modifiers.list_groups())
+          |> assign(
+            :modifier_group_ids,
+            if(product && product.id, do: Delivest.Net.Modifiers.group_ids(product.id), else: [])
+          )
           |> assign(:crm_providers, Crm.providers())
           |> assign(:current_media, current_media)
           |> assign(:show_upload_modal, false)
@@ -93,7 +99,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   @impl true
-  def handle_event("save", %{"product" => params}, socket) do
+  def handle_event("save", %{"product" => params} = event, socket) do
+    socket =
+      assign(
+        socket,
+        :modifier_group_ids,
+        Enum.reject(List.wrap(event["modifier_group_ids"]), &(&1 == ""))
+      )
+
     params =
       params
       |> Map.put_new("category_id", nil)
@@ -134,6 +147,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
            params
          ) do
       {:ok, product} ->
+        Delivest.Net.Modifiers.attach(
+          socket.assigns.current_staff,
+          product.id,
+          socket.assigns.modifier_group_ids
+        )
+
         notify_parent({:saved, product})
         {:noreply, socket}
 
@@ -152,6 +171,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
            params
          ) do
       {:ok, product} ->
+        Delivest.Net.Modifiers.attach(
+          socket.assigns.current_staff,
+          product.id,
+          socket.assigns.modifier_group_ids
+        )
+
         notify_parent({:saved, product})
         {:noreply, socket}
 
@@ -210,6 +235,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :media_id,
       :slug,
       :tags,
+      :stars_price,
+      :stars_reward,
       :suggested
     ])
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
@@ -269,7 +296,17 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             </div>
           </div>
 
-          <.input field={@form[:name]} type="text" label={gettext("Name")} required />
+          <p :if={@crm_owner} id="product-crm-owner" class="text-sm text-base-content/60">
+            {gettext("Name, price and weight come from %{crm}", crm: @crm_owner)}
+          </p>
+
+          <.input
+            field={@form[:name]}
+            type="text"
+            label={gettext("Name")}
+            required
+            disabled={@crm_owner != nil}
+          />
 
           <div>
             <.input
@@ -286,7 +323,15 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <.input field={@form[:price]} type="number" label={gettext("Price")} required />
+            <.input
+              field={@form[:price]}
+              type="text"
+              inputmode="decimal"
+              value={Money.input(@form[:price].value)}
+              label={gettext("Price")}
+              required
+              disabled={@crm_owner != nil}
+            />
 
             <p class="text-xs text-base-content/60 sm:self-end sm:pb-3">
               {gettext("Discounts are set in «Discounts & promo codes» by the product URL slug.")}
@@ -297,7 +342,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             <.input field={@form[:quantity]} type="number" label={gettext("Quantity")} />
 
             <div class="grid grid-cols-[1fr_6rem] gap-2">
-              <.input field={@form[:weight]} type="number" label={gettext("Weight")} />
+              <.input
+                field={@form[:weight]}
+                type="number"
+                label={gettext("Weight")}
+                disabled={@crm_owner != nil}
+              />
               <.input
                 field={@form[:measure_unit]}
                 type="select"
@@ -362,7 +412,39 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
 
           <.tag_checkboxes field={@form[:tags]} tags={@product_tags} branch={@current_branch} />
 
+          <fieldset :if={@modifier_groups != []} class="space-y-2">
+            <legend class="label-text font-bold">{gettext("Modifiers")}</legend>
+            <input type="hidden" name="modifier_group_ids[]" value="" />
+            <div class="flex flex-wrap gap-2">
+              <label
+                :for={group <- @modifier_groups}
+                class="flex items-center gap-2 rounded-full border border-base-300 px-3 py-1.5 cursor-pointer has-checked:border-primary has-checked:bg-primary/10"
+              >
+                <input
+                  type="checkbox"
+                  name="modifier_group_ids[]"
+                  value={group.id}
+                  checked={group.id in @modifier_group_ids}
+                  class="checkbox checkbox-xs checkbox-primary"
+                />
+                <span class="text-sm">{group.name}</span>
+              </label>
+            </div>
+          </fieldset>
+
           <div>
+            <.input
+              field={@form[:stars_price]}
+              type="number"
+              min="1"
+              label={gettext("Price in stars")}
+            />
+            <.input
+              field={@form[:stars_reward]}
+              type="number"
+              min="0"
+              label={gettext("Extra stars per product")}
+            />
             <.input
               field={@form[:suggested]}
               type="checkbox"

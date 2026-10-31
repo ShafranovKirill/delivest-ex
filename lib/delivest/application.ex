@@ -15,6 +15,7 @@ defmodule Delivest.Application do
       log_buffer(),
       {DNSCluster, query: Application.get_env(:delivest, :dns_cluster_query) || :ignore},
       {Oban, Application.fetch_env!(:delivest, Oban)},
+      {Task.Supervisor, name: Delivest.TaskSupervisor},
       {Phoenix.PubSub, name: Delivest.PubSub},
       # Start a worker by calling: Delivest.Worker.start_link(arg)
       # {Delivest.Worker, arg},
@@ -29,8 +30,10 @@ defmodule Delivest.Application do
       cache(:rate_limit_cache, limit: 100_000),
       cache(:geo_cache, limit: 50_000),
       cache(:crm_cache),
+      cache(:token_cache),
       cache(:stop_cache),
       DelivestWeb.KitchenPresence,
+      DelivestWeb.CourierPresence,
       DelivestWeb.Endpoint
     ]
 

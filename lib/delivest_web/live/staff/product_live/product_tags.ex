@@ -18,6 +18,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
           {:products, ~p"/staff/b/#{assigns.branch}/products", "hero-cube", gettext("Products")},
           {:stops, ~p"/staff/b/#{assigns.branch}/products/stops", "hero-no-symbol",
            gettext("Stop list")},
+          {:modifiers, ~p"/staff/b/#{assigns.branch}/products/modifiers",
+           "hero-adjustments-horizontal", gettext("Modifiers")},
           {:tags, ~p"/staff/b/#{assigns.branch}/products/tags", "hero-tag", gettext("Tags")},
           {:suggested, ~p"/staff/b/#{assigns.branch}/products/suggested", "hero-sparkles",
            gettext("Recommended")}

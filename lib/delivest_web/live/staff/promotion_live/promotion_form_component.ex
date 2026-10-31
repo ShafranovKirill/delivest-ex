@@ -672,7 +672,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       </select>
       <label class="input input-sm flex-1">
         <input
-          type="number"
+          type={if @row["type"] == "subtotal", do: "text", else: "number"}
+          inputmode={if @row["type"] == "subtotal", do: "decimal", else: "numeric"}
           min="0"
           name={"builder[conditions][#{@index}][value]"}
           value={@row["value"]}
@@ -752,7 +753,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     ~H"""
     <label class="input input-sm w-full">
       <input
-        type="number"
+        type={if @row["type"] == "percent", do: "number", else: "text"}
+        inputmode={if @row["type"] == "percent", do: "numeric", else: "decimal"}
         min="1"
         max={if @row["type"] == "percent", do: "100"}
         name={"builder[effects][#{@index}][value]"}
@@ -790,8 +792,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     <label :if={@row["type"] == "percent" and @row["target"] == "cart"} class="input input-sm w-full">
       <span class="text-base-content/60 text-xs">{gettext("Max discount")}</span>
       <input
-        type="number"
-        min="1"
+        type="text"
+        inputmode="decimal"
         name={"builder[effects][#{@index}][cap]"}
         value={@row["cap"]}
         id={"builder-e#{@index}-cap"}
@@ -866,8 +868,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       </select>
       <label class="input input-sm w-28 shrink-0">
         <input
-          type="number"
-          min="0"
+          type="text"
+          inputmode="decimal"
           name={"builder[effects][#{@index}][price]"}
           value={@row["price"]}
           id={"builder-e#{@index}-price"}

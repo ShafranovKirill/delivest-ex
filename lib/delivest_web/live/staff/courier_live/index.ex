@@ -1,8 +1,14 @@
 defmodule DelivestWeb.Staff.CourierLive.Index do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Couriers, Identity}
+  on_mount {DelivestWeb.Hooks.GatewayArea, :couriers}
+
+  alias Delivest.Oms.Order
+
+  alias Delivest.{Couriers, Fiscal, Identity}
+  alias Delivest.Fiscal.{BranchSettings, Receipt}
   alias Delivest.Oms.{OrderDeadline, Orders}
+  alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.OrderLive.{OrderHelpers, StatusErrors}
 
   on_mount {DelivestWeb.Hooks.Permission, "orders.deliver"}
@@ -14,6 +20,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     if connected?(socket) do
       Couriers.subscribe(branch_id)
       Orders.subscribe(branch_id)
+      CourierPresence.track_courier(self(), branch_id, socket.assigns.current_staff)
     end
 
     {:ok, branch} = Identity.get_branch(branch_id, preload: :info)
@@ -23,26 +30,42 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
      |> assign(
        page_title: gettext("Deliveries"),
        pickup: branch.info,
+       fiscal: BranchSettings.own?(Fiscal.settings(branch_id)),
+       handed: nil,
+       receipt: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id)
      )
      |> load()}
   end
 
   @impl true
+  def handle_event("location", %{"lat" => lat, "lng" => lng}, socket)
+      when is_number(lat) and is_number(lng) and abs(lat) <= 90 and abs(lng) <= 180 do
+    %{current_staff: staff, current_branch: branch} = socket.assigns
+    CourierPresence.locate(self(), branch.id, staff, %{lat: lat / 1, lng: lng / 1})
+    {:noreply, socket}
+  end
+
+  def handle_event("location", _params, socket), do: {:noreply, socket}
+
   def handle_event(action, %{"id" => id}, socket)
       when action in ~w(take refuse pick_up hand_over) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
     socket =
       case run(action, staff, branch.id, id) do
-        {:ok, _result} -> socket
+        {:ok, _result} -> handed(socket, action, id)
         error -> put_flash(socket, :error, StatusErrors.message(error))
       end
 
     {:noreply, load(socket)}
   end
 
+  def handle_event("close_receipt", _params, socket),
+    do: {:noreply, assign(socket, handed: nil, receipt: nil)}
+
   @impl true
+  def handle_info(:refresh_receipt, socket), do: {:noreply, refresh_receipt(socket)}
   def handle_info({:deliveries_changed, _branch_id}, socket), do: {:noreply, load(socket)}
   def handle_info({Orders, _event, _order}, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
@@ -52,12 +75,33 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
   defp run("pick_up", staff, branch_id, id), do: Couriers.pick_up(staff, branch_id, id)
   defp run("hand_over", staff, branch_id, id), do: Couriers.hand_over(staff, branch_id, id)
 
+  defp handed(%{assigns: %{fiscal: true}} = socket, "hand_over", id) do
+    case Enum.find(socket.assigns.mine, &(&1.id == id)) do
+      nil -> socket
+      delivery -> socket |> assign(handed: delivery.order) |> refresh_receipt()
+    end
+  end
+
+  defp handed(socket, _action, _id), do: socket
+
+  defp refresh_receipt(%{assigns: %{handed: nil}} = socket), do: socket
+
+  defp refresh_receipt(socket) do
+    receipt = Fiscal.sale_receipt(socket.assigns.handed.id)
+
+    if !(receipt && receipt.status == :done) and connected?(socket),
+      do: Process.send_after(self(), :refresh_receipt, 3_000)
+
+    assign(socket, receipt: receipt)
+  end
+
   defp load(socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
     assign(socket,
       mine: Couriers.list_mine(staff, branch.id),
-      open: Couriers.list_open(branch.id)
+      open: Couriers.list_open(branch.id),
+      balance: Couriers.balance(branch.id, staff.id)
     )
   end
 
@@ -66,6 +110,34 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     ~H"""
     <div id="courier-page" class="mx-auto max-w-2xl space-y-6 py-4 sm:p-6">
       <.page_header title={gettext("Deliveries")} subtitle={@current_branch.name} />
+
+      <p
+        id="courier-location"
+        phx-hook="CourierLocation"
+        phx-update="ignore"
+        class="group -mt-4 text-sm"
+      >
+        <span class="hidden items-center gap-1 text-success group-data-[state=on]:flex">
+          <.icon name="hero-map-pin" class="size-4" /> {gettext("The operator sees you on the map")}
+        </span>
+        <span class="hidden items-center gap-1 text-error group-data-[state=denied]:flex">
+          <.icon name="hero-exclamation-triangle" class="size-4" />
+          {gettext("Allow access to the location so the operator sees you on the map")}
+        </span>
+        <span class="hidden items-center gap-1 text-warning group-data-[state=unavailable]:flex group-data-[state=unsupported]:flex">
+          <.icon name="hero-exclamation-triangle" class="size-4" />
+          {gettext("The location is not available on this device")}
+        </span>
+      </p>
+
+      <DelivestWeb.StaffPushToggle.staff_push_toggle
+        id="courier-push-toggle"
+        class="btn btn-outline btn-block justify-center data-[state=on]:btn-ghost data-[state=on]:btn-sm data-[state=on]:text-success"
+      />
+
+      <.receipt_panel :if={@handed} order={@handed} receipt={@receipt} />
+
+      <.cash_summary balance={@balance} />
 
       <section id="courier-mine" class="space-y-3">
         <h2 class="text-sm font-bold uppercase text-base-content/60">{gettext("My orders")}</h2>
@@ -97,6 +169,79 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     """
   end
 
+  attr :order, :map, required: true
+  attr :receipt, :map, default: nil
+
+  defp receipt_panel(assigns) do
+    assigns = assign(assigns, url: assigns.receipt && Receipt.ofd_url(assigns.receipt))
+
+    ~H"""
+    <section
+      id="courier-receipt"
+      class="space-y-3 rounded-box border border-base-300 bg-base-100 p-4 text-center"
+    >
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold">
+          {gettext("Receipt for order #%{number}", number: Order.short_number(@order))}
+        </h2>
+        <button type="button" phx-click="close_receipt" class="btn btn-ghost btn-sm btn-square">
+          <.icon name="hero-x-mark" class="size-5" />
+        </button>
+      </div>
+      <div :if={@url} id="courier-receipt-qr" class="space-y-2">
+        <div class="mx-auto w-56 bg-white p-2">{Phoenix.HTML.raw(Fiscal.qr_svg(@url))}</div>
+        <a href={@url} target="_blank" rel="noopener" class="link link-primary break-all text-sm">
+          {gettext("Open the receipt")}
+        </a>
+      </div>
+      <p :if={!@url && @receipt && @receipt.status == :done} class="text-success">
+        {gettext("The receipt is issued")}
+      </p>
+      <p
+        :if={!@url && !(@receipt && @receipt.status == :done)}
+        id="courier-receipt-wait"
+        class="text-base-content/70"
+      >
+        <span class="loading loading-spinner loading-sm"></span> {gettext(
+          "The receipt is being issued"
+        )}
+      </p>
+    </section>
+    """
+  end
+
+  attr :balance, :map, required: true
+
+  defp cash_summary(assigns) do
+    ~H"""
+    <section
+      :if={@balance.orders > 0}
+      id="courier-cash"
+      class="grid grid-cols-2 gap-2 rounded-box border border-base-300 bg-base-100 p-4"
+    >
+      <div>
+        <p class="text-xs uppercase text-base-content/50">{gettext("Cash on hand")}</p>
+        <p id="courier-cash-amount" class="font-mono text-2xl font-black">
+          {OrderHelpers.money(@balance.cash)}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs uppercase text-base-content/50">{gettext("By terminal")}</p>
+        <p class="font-mono text-2xl font-bold text-base-content/70">
+          {OrderHelpers.money(@balance.card)}
+        </p>
+      </div>
+      <p class="col-span-2 text-sm text-base-content/60">
+        {ngettext(
+          "%{count} order since the last handover",
+          "%{count} orders since the last handover",
+          @balance.orders
+        )}
+      </p>
+    </section>
+    """
+  end
+
   attr :delivery, :map, required: true
   attr :pickup, :map, default: nil
   attr :deadline, DateTime, required: true
@@ -120,7 +265,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
     >
       <header class="flex items-center justify-between gap-2 border-b border-base-200 bg-base-200/40 px-4 py-3">
         <div class="flex items-center gap-2">
-          <span class="font-mono text-xl font-black">#{@order.number}</span>
+          <span class="font-mono text-xl font-black">#{Order.short_number(@order)}</span>
           <span class={["badge badge-sm border font-medium", OrderHelpers.status_color(@order.status)]}>
             {OrderHelpers.status_label(@order.status)}
           </span>
@@ -271,7 +416,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
   defp street_line(nil), do: "—"
 
   defp street_line(address) do
-    [address.city, address.street, address.house]
+    [address.city, address.street, Delivest.Geo.House.line(address)]
     |> Enum.filter(&present?/1)
     |> Enum.join(", ")
     |> case do

@@ -42,8 +42,16 @@ defmodule Delivest.Push.Vapid do
 
   defp keys do
     case :persistent_term.get(__MODULE__, nil) do
-      nil -> tap(load_or_create(), &:persistent_term.put(__MODULE__, &1))
-      keys -> keys
+      nil ->
+        :global.trans({__MODULE__, self()}, fn ->
+          case :persistent_term.get(__MODULE__, nil) do
+            nil -> tap(load_or_create(), &:persistent_term.put(__MODULE__, &1))
+            keys -> keys
+          end
+        end)
+
+      keys ->
+        keys
     end
   end
 

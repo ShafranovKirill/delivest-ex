@@ -7,8 +7,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   alias Delivest.LocalTime
 
   alias DelivestWeb.Staff.IntegrationLive.{
+    HealthComponent,
+    JournalComponent,
     YandexEdaAccess,
     YandexEdaMenu,
+    YandexEdaBusy,
     YandexEdaPause,
     YandexEdaReconciliation
   }
@@ -29,8 +32,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
        push_available: YandexEda.push_available?(),
        can_reconcile: Identity.can?(staff, "orders.read"),
        can_pause: Identity.can?(staff, "stops.update"),
-       reconcile_date: LocalTime.today(),
-       reconciliation: nil
+       reconcile_date: LocalTime.today(LocalTime.timezone(socket.assigns.current_branch.id)),
+       reconciliation: nil,
+       busy_mode: YandexEda.busy_mode(socket.assigns.current_branch.id)
      )
      |> assign_shared(YandexEda.get_settings())
      |> assign_branch(YandexEda.get_branch_settings(socket.assigns.current_branch.id))
@@ -220,6 +224,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         }
       />
 
+      <.live_component
+        :if={@push_available}
+        module={HealthComponent}
+        id="yandex-eda-health"
+        provider={:yandex_eda}
+        branch_id={@current_branch.id}
+        scope={nil}
+      />
+
       <YandexEdaAccess.access
         :if={@can_edit_shared}
         settings={@shared}
@@ -296,6 +309,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         </div>
       </.form>
 
+      <YandexEdaBusy.plate
+        :if={@branch_settings.enabled}
+        busy={@busy_mode}
+        branch_id={@current_branch.id}
+      />
+
       <YandexEdaPause.pause
         :if={@push_available and @branch_settings.enabled}
         pauses={@pauses}
@@ -312,6 +331,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         menu={@menu}
         enabled={@branch_settings.enabled}
         can_edit={@can_edit_products}
+      />
+
+      <.live_component
+        module={JournalComponent}
+        id="yandex-eda-journal"
+        provider={:yandex_eda}
+        branch_id={nil}
       />
     </div>
     """

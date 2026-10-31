@@ -76,6 +76,7 @@ defmodule DelivestWeb.Staff.CourierLive.OperatorTest do
     admin = Repo.preload(admin, [:role, :branches])
 
     {:ok, order} = Delivest.Oms.Orders.advance_order(ctx.order, :preparing, {:staff, admin})
+    deliver_events()
     {:ok, _delivery} = Couriers.find(admin, order)
     {:ok, _delivery} = Couriers.assign(admin, order, courier.id)
 

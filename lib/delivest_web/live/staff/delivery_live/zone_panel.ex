@@ -1,8 +1,9 @@
 defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
   use DelivestWeb, :html
 
+  alias Delivest.Money
   alias Delivest.Delivery.Conditions
-  alias DelivestWeb.Staff.DeliveryLive.Index
+  alias DelivestWeb.Staff.DeliveryLive.Zones
 
   attr :zones, :list, required: true
   attr :selected_id, :string, default: nil
@@ -113,7 +114,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
           label={gettext("Delivers")}
           disabled={not @can_edit}
         />
-        <Index.conditions form={@form} disabled={not @can_edit} stacked />
+        <Zones.conditions form={@form} disabled={not @can_edit} stacked />
         <.input
           field={@form[:delivery_minutes]}
           type="number"
@@ -146,12 +147,13 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
 
     [
       price(conditions["price"]),
-      conditions["min_order"] && gettext("from %{sum} ₽", sum: conditions["min_order"])
+      conditions["min_order"] &&
+        gettext("from %{sum}", sum: Money.format(conditions["min_order"]))
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" · ")
   end
 
   defp price(price) when price in [nil, 0], do: gettext("free")
-  defp price(price), do: "#{price} ₽"
+  defp price(price), do: Money.format(price)
 end

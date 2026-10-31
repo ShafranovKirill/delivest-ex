@@ -2,6 +2,8 @@ defmodule DelivestWeb.CommandSearch do
   use DelivestWeb, :verified_routes
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias Delivest.Oms.Order
+
   import Delivest.Identity.Acl
 
   alias Delivest.{Identity, Net}
@@ -32,7 +34,7 @@ defmodule DelivestWeb.CommandSearch do
   end
 
   defp orders(staff, branch, query) do
-    if searchable?(query) and branch && can?(staff, "orders.read") do
+    if searchable?(query) and not is_nil(branch) and can?(staff, "orders.read") do
       %{branch_id: branch.id, search: query}
       |> Orders.list_latest_orders(@limit)
       |> Enum.map(&order_item(&1, branch))
@@ -45,7 +47,7 @@ defmodule DelivestWeb.CommandSearch do
     do:
       item(
         "order-#{order.id}",
-        gettext("Order #%{number}", number: order.number),
+        gettext("Order #%{number}", number: Order.short_number(order)),
         order.client && join([order.client.name, order.client.phone]),
         "hero-shopping-bag",
         ~p"/staff/b/#{branch}/orders/#{order.id}"
@@ -76,7 +78,7 @@ defmodule DelivestWeb.CommandSearch do
       page_size: @limit
     }
 
-    with true <- searchable?(query) and branch && can?(staff, "products.read"),
+    with true <- searchable?(query) and not is_nil(branch) and can?(staff, "products.read"),
          {:ok, {products, _meta}} <- Net.list_staff_products_for_branch(staff, branch.id, params) do
       Enum.map(products, &product_item(&1, staff, branch))
     else

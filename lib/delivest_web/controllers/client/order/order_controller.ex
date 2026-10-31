@@ -5,7 +5,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
   require Logger
 
   alias Delivest.{Identity, Oms}
-  alias Delivest.Oms.Carts
+  alias Delivest.Oms.{Carts, Order}
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
 
@@ -13,7 +13,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
     ActiveOrdersResponse,
     ClientOrdersResponse,
     CreateOrderRequest,
-    OrderResponse
+    OrderResponse,
+    PaymentLinkResponse
   }
 
   operation(:create,
@@ -29,7 +30,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
   )
 
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
-                    payment_method cook_by comment address expected_total)
+                    payment_method cook_by comment persons cash_given address expected_total spend_points)
 
   def create(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
@@ -41,12 +42,20 @@ defmodule DelivestWeb.Client.Order.OrderController do
       |> Map.put("session_id", session_id)
       |> put_client(client)
 
-    with {:ok, _branch} <- fetch_public_branch(attrs["branch_id"]),
+    with {:ok, branch} <- fetch_public_branch(attrs["branch_id"]),
+         :ok <- ensure_accepting(branch),
+         :ok <- ensure_payment_method(branch, attrs["payment_method"]),
          true <-
            Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
-         {:ok, order} <- Oms.create_order(attrs, update_client: false) do
+         :ok <- authorize_rewards(client, attrs["cart_id"]),
+         {:ok, order} <-
+           Oms.create_order(attrs,
+             update_client: false,
+             online: attrs["payment_method"] == "online"
+           ),
+         {:ok, confirmation_url} <- begin_payment(order) do
       remember_address(client, order)
-      render(conn, :create, order: order)
+      render(conn, :create, order: order, confirmation_url: confirmation_url)
     else
       {:error, reason} -> render_error(conn, reason)
       {:error, _step, reason} -> render_error(conn, reason)
@@ -68,6 +77,77 @@ defmodule DelivestWeb.Client.Order.OrderController do
     render(conn, :active, orders: orders)
   end
 
+  operation(:cancel,
+    summary: "Отменить заказ",
+    description:
+      "Только пока заказ в статусе created, без CRM и канала, оплата не онлайн. " <>
+        "Дальше отмена — звонком в филиал.",
+    tags: ["Orders"],
+    parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
+    responses: [
+      ok: {"Отменённый заказ", "application/json", OrderResponse},
+      not_found: {"Заказ не найден", "application/json", ErrorResponse},
+      unprocessable_entity: {"Заказ уже нельзя отменить", "application/json", ErrorResponse}
+    ]
+  )
+
+  def cancel(conn, %{"id" => id}) do
+    session_id = CookieHelper.get_cookie(conn, "session_id")
+
+    case Oms.cancel_by_client(session_id, client_id(conn.assigns.current_client), id) do
+      {:ok, order} ->
+        render(conn, :create, order: order)
+
+      {:error, :not_found} ->
+        ApiError.send_error(conn, :not_found, :order_not_found, "Order not found")
+
+      {:error, _reason} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :order_not_cancellable,
+          "The order can no longer be cancelled"
+        )
+    end
+  end
+
+  operation(:pay,
+    summary: "Ссылка на оплату",
+    description:
+      "Для заказа, который ждёт онлайн-оплаты: возвращает страницу оплаты ЮKassa, " <>
+        "чтобы клиент мог вернуться и оплатить.",
+    tags: ["Orders"],
+    parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
+    responses: [
+      ok: {"Страница оплаты", "application/json", PaymentLinkResponse},
+      not_found: {"Заказ не найден", "application/json", ErrorResponse},
+      unprocessable_entity: {"Заказ не ждёт оплаты", "application/json", ErrorResponse}
+    ]
+  )
+
+  def pay(conn, %{"id" => id}) do
+    session_id = CookieHelper.get_cookie(conn, "session_id")
+
+    case Oms.payment_link(session_id, client_id(conn.assigns.current_client), id) do
+      {:ok, url} ->
+        json(conn, %{data: %{confirmation_url: url}})
+
+      {:error, :not_found} ->
+        ApiError.send_error(conn, :not_found, :order_not_found, "Order not found")
+
+      {:error, :not_awaiting} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :order_not_awaiting_payment,
+          "The order is not waiting for the payment"
+        )
+
+      {:error, _reason} ->
+        render_error(conn, :payment_unavailable)
+    end
+  end
+
   operation(:index,
     summary: "Мои заказы",
     description: "Все заказы авторизованного клиента, новые сначала.",
@@ -84,7 +164,21 @@ defmodule DelivestWeb.Client.Order.OrderController do
     render(conn, :index, orders: orders)
   end
 
-  defp put_client(attrs, nil), do: attrs
+  defp authorize_rewards(nil, cart_id) do
+    case Carts.get_cart_by_id(cart_id) do
+      %Delivest.Oms.CartView{} = cart ->
+        if Delivest.Oms.CartView.star_items(cart) == [],
+          do: :ok,
+          else: {:error, :points_unavailable}
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp authorize_rewards(_client, _cart_id), do: :ok
+
+  defp put_client(attrs, nil), do: Map.delete(attrs, "spend_points")
 
   defp put_client(attrs, client),
     do: Map.merge(attrs, %{"client_id" => client.id, "customer_phone" => client.phone})
@@ -103,6 +197,38 @@ defmodule DelivestWeb.Client.Order.OrderController do
   end
 
   defp remember_address(_client, _order), do: :ok
+
+  defp ensure_accepting(branch) do
+    case Delivest.Intake.status(branch.id) do
+      %{mode: :paused} = status -> {:error, {:branch_paused, status}}
+      _status -> :ok
+    end
+  end
+
+  defp begin_payment(%Order{awaiting_payment: true} = order) do
+    case Delivest.Payments.Online.start(order) do
+      {:ok, url} ->
+        {:ok, url}
+
+      {:error, reason} ->
+        Logger.error(
+          "online payment of order #{order.number} was not started: #{inspect(reason)}"
+        )
+
+        Delivest.Payments.Online.abandon(order)
+        {:error, :payment_unavailable}
+    end
+  end
+
+  defp begin_payment(_order), do: {:ok, nil}
+
+  defp ensure_payment_method(_branch, nil), do: :ok
+
+  defp ensure_payment_method(branch, method) do
+    if method in Enum.map(Delivest.Payments.enabled_methods(branch), &to_string/1),
+      do: :ok,
+      else: {:error, :payment_method_disabled}
+  end
 
   defp fetch_public_branch(nil), do: {:error, :branch_id_required}
 
@@ -133,6 +259,34 @@ defmodule DelivestWeb.Client.Order.OrderController do
     )
   end
 
+  defp render_error(conn, {:branch_paused, status}) do
+    ApiError.send_error(
+      conn,
+      :unprocessable_entity,
+      :branch_paused,
+      "The branch is not taking orders now",
+      %{until: status.until, reason: status.reason}
+    )
+  end
+
+  defp render_error(conn, :payment_unavailable),
+    do:
+      ApiError.send_error(
+        conn,
+        :bad_gateway,
+        :payment_unavailable,
+        "The online payment is not available now, choose another way to pay"
+      )
+
+  defp render_error(conn, :payment_method_disabled),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :payment_method_disabled,
+        "This payment method is not available at the branch"
+      )
+
   defp render_error(conn, :outside_zones),
     do:
       ApiError.send_error(
@@ -162,7 +316,10 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :product_unavailable,
               :client_blocked,
               :price_changed,
-              :promo_unavailable
+              :promo_unavailable,
+              :points_unavailable,
+              :insufficient_points,
+              :points_over_limit
             ] do
     ApiError.send_error(conn, :unprocessable_entity, reason, Phoenix.Naming.humanize(reason))
   end

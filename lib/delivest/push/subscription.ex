@@ -13,6 +13,7 @@ defmodule Delivest.Push.Subscription do
     field :auth, :string
     field :locale, :string
     field :notified_status, :string
+    field :notified_courier, :string
 
     belongs_to :order, Delivest.Oms.Order
 
@@ -22,6 +23,12 @@ defmodule Delivest.Push.Subscription do
   def changeset(subscription, attrs) do
     subscription
     |> cast(attrs, [:endpoint, :p256dh, :auth, :locale])
+    |> validate_keys()
+    |> validate_inclusion(:locale, ~w(ru en))
+  end
+
+  def validate_keys(changeset) do
+    changeset
     |> validate_required([:endpoint, :p256dh, :auth])
     |> validate_format(:endpoint, ~r{^https://})
     |> validate_length(:endpoint, max: 2000)
@@ -30,7 +37,6 @@ defmodule Delivest.Push.Subscription do
     |> validate_length(:p256dh, is: 87)
     |> validate_format(:auth, @key_format)
     |> validate_length(:auth, is: 22)
-    |> validate_inclusion(:locale, ~w(ru en))
   end
 
   defp validate_push_service(field, endpoint) do
@@ -43,6 +49,6 @@ defmodule Delivest.Push.Subscription do
 
   defp hosts, do: :delivest |> Application.get_env(__MODULE__, []) |> Keyword.get(:hosts, @hosts)
 
-  def notified_changeset(subscription, status),
-    do: change(subscription, notified_status: to_string(status))
+  def notified_changeset(subscription, status, courier),
+    do: change(subscription, notified_status: to_string(status), notified_courier: courier)
 end

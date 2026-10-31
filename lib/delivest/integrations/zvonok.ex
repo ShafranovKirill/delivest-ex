@@ -1,13 +1,41 @@
 defmodule Delivest.Integrations.Zvonok do
   alias Delivest.{Identity, Repo}
+  alias Delivest.Integrations.Health
   alias Delivest.Integrations.Zvonok.{Api, Settings}
 
   @spec request_call(String.t()) ::
           {:ok, %{call_id: String.t(), call_number: String.t()}} | {:error, term()}
   def request_call(phone) do
     with {:ok, settings} <- fetch_settings() do
-      Api.confirm(settings, phone)
+      settings |> Api.confirm(phone) |> track()
     end
+  end
+
+  @spec request_flash(String.t()) ::
+          {:ok, %{call_id: String.t(), code: String.t()}} | {:error, term()}
+  def request_flash(phone) do
+    with {:ok, settings} <- fetch_settings() do
+      settings |> Api.flash(phone) |> track()
+    end
+  end
+
+  @dev_tools Application.compile_env(:delivest, :auto_confirm_phone, false)
+
+  def dev_tools?, do: @dev_tools
+
+  def login_call_mode, do: get_settings().login_call_mode
+
+  def health_check(settings),
+    do: if(Settings.complete?(settings), do: :ok, else: {:error, :zvonok_not_configured})
+
+  defp track({:ok, _call} = result) do
+    Health.recovered(:zvonok, nil)
+    result
+  end
+
+  defp track({:error, reason} = error) do
+    Health.report(:zvonok, nil, __MODULE__, {:error, reason})
+    error
   end
 
   @spec valid_webhook_token?(String.t()) :: boolean()

@@ -1,6 +1,7 @@
 defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   use Gettext, backend: DelivestWeb.Gettext
 
+  alias Delivest.Money
   alias Delivest.Promo.Dsl
 
   @condition_types ~w(subtotal quantity has fulfillment time weekday)
@@ -98,7 +99,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   end
 
   def condition_error(%{"type" => "subtotal", "value" => value}),
-    do: unless(integer(value, 0), do: gettext("Enter an amount"))
+    do: unless(money(value, 0), do: gettext("Enter an amount"))
 
   def condition_error(%{"type" => "quantity", "value" => value}),
     do: unless(integer(value, 0), do: gettext("Enter a number of items"))
@@ -121,7 +122,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
       !integer(value, 1, 100) ->
         gettext("Percent must be from 1 to 100")
 
-      row["target"] == "cart" and row["cap"] != "" and !integer(row["cap"], 1) ->
+      row["target"] == "cart" and row["cap"] != "" and !money(row["cap"], 1) ->
         gettext("Limit must be a positive amount")
 
       true ->
@@ -130,14 +131,14 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   end
 
   def effect_error(%{"type" => "amount", "value" => value} = row),
-    do: if(integer(value, 1), do: target_error(row), else: gettext("Enter an amount"))
+    do: if(money(value, 1), do: target_error(row), else: gettext("Enter an amount"))
 
   def effect_error(%{"type" => "gift"} = row), do: product_error(row, "count")
 
   def effect_error(%{"type" => "price", "price" => price} = row) do
     cond do
       blank?(row["product"]) -> gettext("Choose a product")
-      !integer(price, 0) -> gettext("Enter a price")
+      !money(price, 0) -> gettext("Enter a price")
       true -> nil
     end
   end
@@ -167,9 +168,11 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
     |> Map.new()
   end
 
-  defp condition_text(%{"type" => type, "op" => op, "value" => value})
-       when type in ~w(subtotal quantity),
-       do: "#{type} #{op} #{trim(value)}"
+  defp condition_text(%{"type" => "subtotal", "op" => op, "value" => value}),
+    do: "subtotal #{op} #{sum(value)}"
+
+  defp condition_text(%{"type" => "quantity", "op" => op, "value" => value}),
+    do: "quantity #{op} #{trim(value)}"
 
   defp condition_text(%{"type" => "has", "product" => product, "count" => count}),
     do: ~s(has "#{product}" x#{trim(count)})
@@ -182,18 +185,18 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
     do: "time #{from}..#{to}"
 
   defp effect_text(%{"type" => "percent", "value" => value} = row) do
-    cap = if row["target"] == "cart" and row["cap"] != "", do: " max #{trim(row["cap"])}"
+    cap = if row["target"] == "cart" and row["cap"] != "", do: " max #{sum(row["cap"])}"
     "discount #{trim(value)}%#{target_text(row)}#{cap}"
   end
 
   defp effect_text(%{"type" => "amount", "value" => value} = row),
-    do: "discount #{trim(value)} rub#{target_text(row)}"
+    do: "discount #{sum(value)} rub#{target_text(row)}"
 
   defp effect_text(%{"type" => "gift", "product" => product, "count" => count}),
     do: ~s(gift "#{product}" x#{trim(count)})
 
   defp effect_text(%{"type" => "price", "product" => product, "price" => price}),
-    do: ~s(price "#{product}" #{trim(price)})
+    do: ~s(price "#{product}" #{sum(price)})
 
   defp target_text(%{"target" => "products", "products" => [slug]}), do: ~s( on "#{slug}")
 
@@ -285,8 +288,11 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp atoms({:not, _a}, _expected), do: :error
   defp atoms(atom, _expected), do: {:ok, [atom]}
 
-  defp condition_row({type, op, value}) when type in [:subtotal, :quantity],
-    do: %{"type" => to_string(type), "op" => to_string(op), "value" => to_string(value)}
+  defp condition_row({:subtotal, op, value}),
+    do: %{"type" => "subtotal", "op" => to_string(op), "value" => Money.input(value)}
+
+  defp condition_row({:quantity, op, value}),
+    do: %{"type" => "quantity", "op" => to_string(op), "value" => to_string(value)}
 
   defp condition_row({:has, slug, count}),
     do: %{"type" => "has", "product" => slug, "count" => to_string(count)}
@@ -303,7 +309,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp effect_row({:percent, value, target, cap}) do
     "percent"
     |> blank_effect()
-    |> Map.merge(%{"value" => to_string(value), "cap" => if(cap, do: to_string(cap), else: "")})
+    |> Map.merge(%{"value" => to_string(value), "cap" => if(cap, do: Money.input(cap), else: "")})
     |> Map.merge(target_row(target))
   end
 
@@ -311,14 +317,14 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
     do:
       "amount"
       |> blank_effect()
-      |> Map.put("value", to_string(value))
+      |> Map.put("value", Money.input(value))
       |> Map.merge(target_row(target))
 
   defp effect_row({:gift, slug, count}),
     do: %{"type" => "gift", "product" => slug, "count" => to_string(count)}
 
   defp effect_row({:price, slug, price}),
-    do: %{"type" => "price", "product" => slug, "price" => to_string(price)}
+    do: %{"type" => "price", "product" => slug, "price" => Money.input(price)}
 
   defp target_row(:cart), do: %{"target" => "cart", "products" => []}
   defp target_row({:products, slugs}), do: %{"target" => "products", "products" => slugs}
@@ -333,6 +339,18 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
       {number, ""} -> number >= min and number <= max
       _ -> false
     end
+  end
+
+  defp money(value, min) do
+    case Money.parse(trim(value)) do
+      {:ok, amount} -> amount >= min * 100 and amount <= 100_000_000
+      :error -> false
+    end
+  end
+
+  defp sum(value) do
+    {:ok, amount} = Money.parse(trim(value))
+    Money.input(amount) |> String.replace(",", ".")
   end
 
   defp trim(value) when is_binary(value), do: String.trim(value)

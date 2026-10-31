@@ -5,10 +5,12 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   require Logger
 
-  alias Delivest.{Couriers, Identity, Repo}
+  alias Delivest.{Couriers, Identity, Push, Repo}
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
-  alias Delivest.Integrations.YandexDelivery.{Api, Claim, Journal, JournalWorker, Settings}
+  alias Delivest.Integrations.Journal, as: RequestJournal
+  alias Delivest.Integrations.{Error, Poller}
+  alias Delivest.Integrations.YandexDelivery.{Api, Claim, ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders}
 
   @searching ~w(new estimating ready_for_approval accepted performer_lookup performer_draft)
@@ -20,12 +22,27 @@ defmodule Delivest.Integrations.YandexDelivery do
   @returning ~w(returning return_arrived ready_for_return_confirmation returned returned_finish)
   @final ["delivered_finish", "returned_finish" | @lost ++ @failed ++ @cancelled]
   @stale_seconds 60
+  @create_retries 2
+  @retry_pause 2_000
 
   @impl true
   def key, do: :yandex
 
   @impl true
   def name, do: "Яндекс Доставка"
+
+  @impl true
+  def health_check(%Settings{} = settings) do
+    if Settings.configured?(settings),
+      do: with({:ok, _journal} <- Api.journal(settings.token, nil), do: :ok),
+      else: {:error, :not_configured}
+  end
+
+  @impl true
+  def classify_error({:yandex_delivery, status, code}) when is_integer(status),
+    do: Error.classify({:http_error, status, code})
+
+  def classify_error(reason), do: Error.classify(reason)
 
   def settings(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
@@ -71,26 +88,109 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   @impl true
   def start(%Delivery{} = delivery, %Order{} = order) do
-    order = Repo.preload(order, [:items, :client])
+    RequestJournal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+      create_claim(delivery, Repo.preload(order, [:client, items: :modifiers]))
+    end)
+  end
 
+  defp create_claim(delivery, order) do
     with {:ok, branch} <- Identity.get_branch(order.branch_id, preload: :info),
          %Settings{} = settings <- configured(branch),
          {:ok, body} <- Claim.build(order, branch, settings),
-         {:ok, %{"id" => claim_id} = claim} <- Api.create(settings.token, delivery.id, body) do
+         {:ok, claim} <- create_with_retry(settings.token, delivery.id, body, @create_retries) do
       switch_to_card(order)
-      JournalWorker.enqueue(order.branch_id)
-      {:ok, %{external_id: claim_id, details: details(claim)}}
+      Poller.enqueue(__MODULE__.Poller, order.branch_id)
+      {:ok, %{external_id: claim["id"], details: details(claim)}}
+    else
+      {:error, reason} = error ->
+        if ambiguous?(reason) do
+          ClaimLookupWorker.enqueue(delivery, order)
+          {:ok, %{details: %{"lookup" => true}}}
+        else
+          error
+        end
+
+      other ->
+        other
     end
   end
+
+  defp create_with_retry(token, request_id, body, retries) do
+    case Api.create(token, request_id, body) do
+      {:ok, %{"id" => _id}} = ok ->
+        ok
+
+      {:error, reason} = error ->
+        if retries > 0 and ambiguous?(reason) do
+          Process.sleep(retry_pause())
+          create_with_retry(token, request_id, body, retries - 1)
+        else
+          error
+        end
+
+      {:ok, body} ->
+        {:error, {:yandex_delivery, :unexpected, body}}
+    end
+  end
+
+  def ambiguous?({:connection_error, _message, _reason}), do: true
+  def ambiguous?({:yandex_delivery, status, _code}) when is_integer(status), do: status >= 500
+  def ambiguous?(_reason), do: false
+
+  defp retry_pause,
+    do: Application.get_env(:delivest, :yandex_delivery_retry_pause, @retry_pause)
+
+  def estimate(%Order{} = order) do
+    RequestJournal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+      with {:ok, branch} <- Identity.get_branch(order.branch_id, preload: :info),
+           %Settings{} = settings <- configured(branch),
+           {:ok, body} <- Claim.estimate(order, branch, settings),
+           {:ok, response} <- Api.calculate(settings.token, body) do
+        offer(response, order)
+      else
+        {:error, _reason} = error -> error
+        other -> other
+      end
+    end)
+  end
+
+  defp offer(%{"offers" => [_ | _] = offers}, order) do
+    offer = Enum.min_by(offers, &cents(&1["price"]["total_price"]))
+    price = cents(offer["price"]["total_price"])
+
+    {:ok,
+     %{
+       price: price,
+       pickup_interval: offer["pickup_interval"],
+       delivery_interval: offer["delivery_interval"],
+       loss: max(price - (order.delivery_amount || 0), 0)
+     }}
+  end
+
+  defp offer(_response, _order), do: {:error, :no_offers}
+
+  defp cents(price) when is_binary(price) do
+    {value, _rest} = Float.parse(price)
+    round(value * 100)
+  end
+
+  defp cents(_price), do: 0
 
   @impl true
   def cancel(%Delivery{external_id: nil}), do: :ok
   def cancel(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
 
-  def cancel(%Delivery{external_id: claim_id} = delivery) do
+  def cancel(%Delivery{} = delivery) do
+    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+      cancel_claim(delivery)
+    end)
+  end
+
+  defp cancel_claim(%Delivery{external_id: claim_id} = delivery) do
     token = settings(delivery.branch_id).token
 
-    with {:ok, %{"cancel_state" => cancel_state}} <- Api.cancel_info(token, claim_id),
+    with {:ok, %{"cancel_state" => cancel_state} = info} <- Api.cancel_info(token, claim_id),
+         :ok <- confirmed(delivery, cancel_state, info),
          {:ok, %{"version" => version}} <- Api.info(token, claim_id),
          {:ok, _response} <- Api.cancel(token, claim_id, version, cancel_state) do
       :ok
@@ -98,6 +198,26 @@ defmodule Delivest.Integrations.YandexDelivery do
       {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
       error -> error
     end
+  end
+
+  defp confirmed(%Delivery{details: details}, "paid", info) do
+    if details["cancel_price"], do: :ok, else: {:error, {:paid_cancel, cents(info["price"])}}
+  end
+
+  defp confirmed(_delivery, _state, _info), do: :ok
+
+  @impl true
+  def order_ready(%Delivery{external_id: nil}), do: :ok
+  def order_ready(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
+
+  def order_ready(%Delivery{external_id: claim_id} = delivery) do
+    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+      case Api.set_point_ready(settings(delivery.branch_id).token, claim_id) do
+        {:ok, _response} -> :ok
+        {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
+        error -> error
+      end
+    end)
   end
 
   def poll(branch_id) do
@@ -109,7 +229,10 @@ defmodule Delivest.Integrations.YandexDelivery do
 
       deliveries ->
         if Settings.configured?(settings),
-          do: poll(branch_id, settings, deliveries),
+          do:
+            RequestJournal.scope([branch_id: branch_id], fn ->
+              poll(branch_id, settings, deliveries)
+            end),
           else: :done
     end
   end
@@ -129,7 +252,13 @@ defmodule Delivest.Integrations.YandexDelivery do
     end
   end
 
-  def sync(%Delivery{external_id: claim_id} = delivery, %Settings{token: token}) do
+  def sync(%Delivery{} = delivery, %Settings{} = settings) do
+    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+      sync_claim(delivery, settings)
+    end)
+  end
+
+  defp sync_claim(%Delivery{external_id: claim_id} = delivery, %Settings{token: token}) do
     with {:ok, %{"status" => status} = claim} <- Api.info(token, claim_id) do
       if status == "ready_for_approval", do: accept(token, claim)
 
@@ -137,6 +266,7 @@ defmodule Delivest.Integrations.YandexDelivery do
         claim
         |> details()
         |> Map.merge(courier_details(token, claim, delivery.details))
+        |> Map.merge(point_eta(token, claim))
 
       Couriers.report(delivery, state(status), details)
     else
@@ -173,6 +303,21 @@ defmodule Delivest.Integrations.YandexDelivery do
   end
 
   defp courier_details(_token, _claim, known), do: Map.take(known, ["phone", "tracking_url"])
+
+  defp point_eta(token, %{"id" => claim_id, "status" => status})
+       when status in @assigned or status in @picked_up do
+    with {:ok, %{"route_points" => points}} <- Api.points_eta(token, claim_id),
+         %{"visited_at" => %{"expected" => expected}} when is_binary(expected) <-
+           points
+           |> Enum.filter(&(&1["visit_status"] == "pending"))
+           |> Enum.min_by(& &1["visit_order"], fn -> nil end) do
+      %{"point_eta" => expected}
+    else
+      _other -> %{}
+    end
+  end
+
+  defp point_eta(_token, _claim), do: %{}
 
   defp phone(token, %{"id" => claim_id} = claim) do
     with %{"id" => point_id} <- point(claim, "source"),
@@ -217,9 +362,12 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp configured(_branch), do: {:error, :not_configured}
 
   defp switch_to_card(%Order{payment_method: :cash} = order) do
-    with {:error, reason} <-
-           Orders.update_payment_method(order, %{"payment_method" => "card_offline"}) do
-      Logger.warning("order #{order.number}: cash to card switch failed (#{inspect(reason)})")
+    case Orders.update_payment_method(order, %{"payment_method" => "card_offline"}) do
+      {:ok, _order} ->
+        Push.notify_note(order, :card_only)
+
+      {:error, reason} ->
+        Logger.warning("order #{order.number}: cash to card switch failed (#{inspect(reason)})")
     end
   end
 

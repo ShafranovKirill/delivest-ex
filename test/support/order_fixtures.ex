@@ -4,7 +4,7 @@ defmodule Delivest.OrderFixtures do
   alias Delivest.Oms.{Carts, Orders}
 
   def order_fixture(branch_id, opts \\ []) do
-    price = Keyword.get(opts, :price, 150)
+    price = Keyword.get(opts, :price, 15_000)
     quantity = Keyword.get(opts, :quantity, 1)
 
     product =

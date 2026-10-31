@@ -9,10 +9,20 @@ defmodule Delivest.Integrations.Crm.OrderNotes do
   end
 
   def lines(order) do
-    [intercom(order.address), address_comment(order.address), order.comment]
+    [
+      phone_ext(order),
+      intercom(order.address),
+      address_comment(order.address),
+      order.comment
+    ]
     |> Enum.map(&trim/1)
     |> Enum.reject(&(&1 in [nil, ""]))
   end
+
+  defp phone_ext(%{customer_phone_ext: ext}) when is_binary(ext) and ext != "",
+    do: gettext("Phone extension %{ext}", ext: ext)
+
+  defp phone_ext(_order), do: nil
 
   defp intercom(%{intercom: code}) when is_binary(code) and code != "",
     do: gettext("Intercom %{code}", code: String.trim(code))

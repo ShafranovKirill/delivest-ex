@@ -5,7 +5,9 @@ defmodule DelivestWeb.Client.Franchise.FranchiseJSON do
         settings: settings,
         documents: documents,
         address_map: address_map,
-        client_auth: client_auth
+        client_auth: client_auth,
+        login_call_mode: login_call_mode,
+        rating: rating
       }) do
     %{
       data: %{
@@ -18,6 +20,8 @@ defmodule DelivestWeb.Client.Franchise.FranchiseJSON do
         legal: legal(settings),
         address_map: address_map,
         client_auth: client_auth,
+        login_call_mode: login_call_mode,
+        rating: rating,
         documents: Enum.map(documents, &Map.take(&1, [:kind, :updated_at]))
       }
     }

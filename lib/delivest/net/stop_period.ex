@@ -1,20 +1,20 @@
 defmodule Delivest.Net.StopPeriod do
   alias Delivest.LocalTime
 
-  @day_starts_at ~T[05:00:00]
-
   def periods, do: [:today, :until_resumed]
 
-  def until(:until_resumed, _now), do: nil
+  def until(period, now, branch_id \\ nil)
 
-  def until(:today, %DateTime{} = now) do
-    local = DateTime.shift_zone!(now, LocalTime.timezone())
+  def until(:until_resumed, _now, _branch_id), do: nil
 
-    local
-    |> DateTime.to_date()
-    |> Date.add(if Time.before?(DateTime.to_time(local), @day_starts_at), do: 0, else: 1)
-    |> NaiveDateTime.new!(@day_starts_at)
-    |> LocalTime.naive_to_utc()
+  def until(:today, %DateTime{} = now, branch_id) do
+    zone = LocalTime.timezone(branch_id)
+
+    now
+    |> LocalTime.business_date(zone)
+    |> Date.add(1)
+    |> NaiveDateTime.new!(LocalTime.day_starts_at())
+    |> LocalTime.naive_to_utc(zone)
     |> DateTime.truncate(:second)
   end
 

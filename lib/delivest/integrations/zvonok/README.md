@@ -46,4 +46,8 @@
 
 ## Разработка
 
-В `dev` звонок не нужен: `config :delivest, auto_confirm_phone: true` в `config/dev.exs`. `ClientAuth` не вызывает Zvonok и сразу подтверждает вход. Флаг читается при компиляции, поэтому в прод-сборке этой ветки кода нет.
+В `dev` (`config :delivest, auto_confirm_phone: true` в `config/dev.exs`) на странице Zvonok появляется галочка «Dev: не звонить» (`dev_skip_calls`, по умолчанию включена): `ClientAuth` не вызывает Zvonok и сразу подтверждает вход. Снимите её, чтобы проверить настоящий звонок. Флаг читается при компиляции, поэтому в прод-сборке этой ветки кода нет, а колонка `dev_skip_calls` там игнорируется.
+
+## Флеш-звонок
+
+`POST https://zvonok.com/manager/cabapi_external/api/v1/phones/flashcall/` с теми же `public_key`, `campaign_id`, `phone` (форма). Код берётся из ответа: `pincode` или `code`, иначе последние 4 цифры номера из `flashcall_phone`, `call_phone`, `caller_id`, `callerid`, `phone_from`, `from`. Формат ответа сверен только по документации подтверждения, при расхождении смотрите журнал на странице интеграции и поправьте `Api.flash_code/1`.

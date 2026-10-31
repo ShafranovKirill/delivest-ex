@@ -3,11 +3,11 @@ defmodule Delivest.Couriers do
 
   require Logger
 
-  alias Delivest.{Audit, Identity, Repo}
-  alias Delivest.Couriers.{Delivery, Registry}
+  alias Delivest.{Audit, Identity, Push, Repo}
+  alias Delivest.Couriers.{Cash, Contact, Delivery, Registry}
   alias Delivest.Identity.{Branch, Staff, StaffBranch}
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
-  alias Delivest.Integrations.Crm
+  alias Delivest.Gateway
   alias Delivest.Oms.{Order, OrderFlow, Orders}
 
   @permission "orders.deliver"
@@ -17,6 +17,15 @@ defmodule Delivest.Couriers do
   @lost_limit 3
 
   def permission, do: @permission
+
+  defdelegate balance(branch_id, courier_id), to: Cash
+  defdelegate balances(branch_id, courier_ids), to: Cash
+  defdelegate empty_balance, to: Cash, as: :empty
+
+  def settle(%Staff{} = staff, branch_id, courier_id) do
+    with {:ok, _settlement} = result <- Cash.settle(staff, branch_id, courier_id),
+         do: broadcast(result, branch_id)
+  end
 
   def subscribe(branch_id), do: Phoenix.PubSub.subscribe(Delivest.PubSub, topic(branch_id))
 
@@ -36,7 +45,7 @@ defmodule Delivest.Couriers do
 
   def automatic?(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
-      {:ok, branch} -> is_nil(Crm.active_provider(branch))
+      {:ok, branch} -> not Gateway.active?(branch)
       _error -> false
     end
   end
@@ -53,6 +62,11 @@ defmodule Delivest.Couriers do
     do: deliveries |> Enum.filter(&Delivery.active?/1) |> List.last()
 
   def current(%Order{id: order_id}), do: active(order_id)
+
+  def contact(%Order{deliveries: deliveries} = order) when is_list(deliveries),
+    do: order |> current() |> Contact.build()
+
+  def contact(_order), do: nil
 
   def handed_over?(%Order{deliveries: deliveries}) when is_list(deliveries),
     do: Enum.any?(deliveries, &(&1.status in @handed_over))
@@ -93,11 +107,20 @@ defmodule Delivest.Couriers do
     |> Repo.all()
   end
 
+  def list_carrying(branch_id) do
+    branch_id
+    |> deliveries()
+    |> where([d], d.provider == :staff and d.status in [:assigned, :picked_up])
+    |> Repo.all()
+    |> Enum.group_by(& &1.courier_id)
+  end
+
   def order_moved(%Order{} = order) do
     case order.status do
       :cancelled -> close_active(order.id, :cancelled, :order_cancelled)
       :completed -> complete_active(order.id)
       :delivering -> pick_up_active(order.id)
+      :ready -> [auto_start(order), notify_ready(order.id)]
       status when is_map_key(@rank, status) -> auto_start(order)
       _status -> :ok
     end
@@ -118,6 +141,18 @@ defmodule Delivest.Couriers do
     end
   end
 
+  def estimate(%Staff{} = staff, %Order{} = order) do
+    with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
+         true <- assignable?(order) || {:error, :not_available},
+         %CourierSettings{source: :yandex} <-
+           settings(order.branch_id) || {:error, :not_available} do
+      order |> Repo.preload([:items]) |> Delivest.Integrations.YandexDelivery.estimate()
+    else
+      %CourierSettings{} -> {:error, :not_available}
+      error -> error
+    end
+  end
+
   def assign(%Staff{} = staff, %Order{} = order, courier_id) do
     with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
          true <- assignable?(order) || {:error, :not_available},
@@ -125,6 +160,7 @@ defmodule Delivest.Couriers do
       order
       |> locked(&reassign(&1, order, courier, staff))
       |> audited(staff, "order.courier_assigned", order, %{courier: courier.name || courier.login})
+      |> notified(:delivery_assigned)
     end
   end
 
@@ -250,7 +286,7 @@ defmodule Delivest.Couriers do
          true <- mine?(delivery, courier, from) || {:error, :not_yours},
          %Order{} = order <- Repo.get(Order, delivery.order_id) || {:error, :order_not_found} do
       case Orders.advance_order(order, to, {:courier, courier}) do
-        {:ok, order} -> {:ok, order}
+        {:ok, order} -> order_moved(order)
         {:error, :skipped_step} -> {:error, :not_ready}
         error -> error
       end
@@ -290,7 +326,10 @@ defmodule Delivest.Couriers do
 
   defp restart(%Delivery{provider: :staff} = delivery, reason) do
     with {:ok, _closed} <- close(delivery, :failed, reason) do
-      delivery.order_id |> Delivery.new(delivery.branch_id, delivery.provider) |> Repo.insert()
+      delivery.order_id
+      |> Delivery.new(delivery.branch_id, delivery.provider)
+      |> Repo.insert()
+      |> notified(:delivery_requested)
     end
   end
 
@@ -317,7 +356,11 @@ defmodule Delivest.Couriers do
          {:ok, delivery} <- order.id |> Delivery.new(order.branch_id, key) |> Repo.insert() do
       case provider.start(delivery, order) do
         {:ok, attrs} ->
-          delivery |> Delivery.provider_changeset(attrs) |> Repo.update() |> changed()
+          delivery
+          |> Delivery.provider_changeset(attrs)
+          |> Repo.update()
+          |> changed()
+          |> requested()
 
         {:error, reason} ->
           Logger.warning(
@@ -331,6 +374,24 @@ defmodule Delivest.Couriers do
       {:error, %Ecto.Changeset{}} -> {:error, :already_searching}
       error -> error
     end
+  end
+
+  def give_up(%Delivery{} = delivery) do
+    if Delivery.active?(delivery),
+      do: close(delivery, :failed, :provider_error),
+      else: {:ok, delivery}
+  end
+
+  defp notify_ready(order_id) do
+    with %Delivery{provider: key, external_id: external_id} = delivery
+         when not is_nil(external_id) <- active(order_id),
+         {:ok, provider} <- Registry.fetch(key),
+         true <- function_exported?(provider, :order_ready, 1),
+         {:error, reason} <- provider.order_ready(delivery) do
+      Logger.warning("delivery #{delivery.id}: #{key} order ready failed (#{inspect(reason)})")
+    end
+
+    :ok
   end
 
   defp close_active(order_id, status, reason) do
@@ -362,10 +423,22 @@ defmodule Delivest.Couriers do
   end
 
   defp close(%Delivery{} = delivery, status, reason) do
-    if status != :delivered, do: cancel_at_provider(delivery)
+    case if(status != :delivered, do: cancel_at_provider(delivery), else: :ok) do
+      {:paid, price} when reason == :order_cancelled -> hold_cancel(delivery, price)
+      _result -> finish(delivery, status, reason)
+    end
+  end
 
+  defp finish(delivery, status, reason) do
     delivery
     |> Delivery.close_changeset(status, reason)
+    |> Repo.update()
+    |> changed()
+  end
+
+  defp hold_cancel(%Delivery{details: details} = delivery, price) do
+    delivery
+    |> Ecto.Changeset.change(details: Map.put(details || %{}, "cancel_price", price))
     |> Repo.update()
     |> changed()
   end
@@ -373,7 +446,37 @@ defmodule Delivest.Couriers do
   defp cancel_at_provider(%Delivery{provider: key} = delivery) do
     with {:ok, provider} <- Registry.fetch(key),
          {:error, reason} <- provider.cancel(delivery) do
-      Logger.warning("delivery #{delivery.id}: #{key} cancel failed (#{inspect(reason)})")
+      case reason do
+        {:paid_cancel, price} ->
+          {:paid, price}
+
+        _other ->
+          Logger.warning("delivery #{delivery.id}: #{key} cancel failed (#{inspect(reason)})")
+      end
+    end
+  end
+
+  def cancel_pending(%Order{deliveries: deliveries}) when is_list(deliveries) do
+    case Enum.find(deliveries, &(Delivery.active?(&1) and &1.details["cancel_price"])) do
+      %Delivery{details: %{"cancel_price" => price}} -> price
+      nil -> nil
+    end
+  end
+
+  def cancel_pending(_order), do: nil
+
+  def confirm_cancel(%Staff{} = staff, %Order{} = order) do
+    with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
+         %Delivery{details: %{"cancel_price" => _}, provider: key} = delivery <-
+           active(order.id) || {:error, :not_available},
+         {:ok, provider} <- Registry.fetch(key),
+         :ok <- provider.cancel(delivery) do
+      delivery
+      |> finish(:cancelled, :order_cancelled)
+      |> audited(staff, "order.courier_paid_cancel_confirmed", order)
+    else
+      %Delivery{} -> {:error, :not_available}
+      error -> error
     end
   end
 
@@ -391,7 +494,7 @@ defmodule Delivest.Couriers do
     |> join(:inner, [d], o in assoc(d, :order))
     |> where([d, o], d.branch_id == ^branch_id and is_nil(o.deleted_at))
     |> order_by([d], asc: d.inserted_at)
-    |> preload([_d, o], order: {o, [:items, :client]})
+    |> preload([_d, o], order: {o, [:client, items: :modifiers]})
   end
 
   defp fetch(branch_id, delivery_id) do
@@ -442,14 +545,27 @@ defmodule Delivest.Couriers do
 
   defp audited(error, _staff, _action, _order, _metadata), do: error
 
+  defp requested({:ok, %Delivery{provider: :staff}} = result),
+    do: notified(result, :delivery_requested)
+
+  defp requested(result), do: result
+
+  defp notified({:ok, %Delivery{id: id}} = result, event) do
+    Push.notify_staff(event, id)
+    result
+  end
+
+  defp notified(result, _event), do: result
+
   defp unwrap({:ok, value}), do: value
   defp unwrap({:error, reason}), do: Repo.rollback(reason)
 
   defp changed({:ok, %Delivery{branch_id: branch_id}} = result), do: broadcast(result, branch_id)
   defp changed(error), do: error
 
-  defp broadcast({:ok, _value} = result, branch_id) do
+  defp broadcast({:ok, value} = result, branch_id) do
     Phoenix.PubSub.broadcast(Delivest.PubSub, topic(branch_id), {:deliveries_changed, branch_id})
+    with %Delivery{order_id: order_id} <- value, do: Orders.courier_changed(order_id)
     result
   end
 

@@ -184,7 +184,7 @@ defmodule Delivest.Identity.Clients do
   end
 
   defp update_client_if_changed(%Client{} = client, attrs) do
-    sanitized_attrs = Map.drop(attrs, [:phone, "phone"])
+    sanitized_attrs = Map.take(attrs, [:name, "name"])
 
     client
     |> Client.changeset(sanitized_attrs)

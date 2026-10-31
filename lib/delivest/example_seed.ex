@@ -1,7 +1,7 @@
 defmodule Delivest.ExampleSeed do
   import Ecto.Query
 
-  alias Delivest.{Media, Relations, Repo}
+  alias Delivest.{Media, Money, Relations, Repo}
   alias Delivest.Franchise.{Assets, Settings, SettingsStore}
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
@@ -112,7 +112,12 @@ defmodule Delivest.ExampleSeed do
 
       nil ->
         %Branch{}
-        |> Branch.changeset(%{name: "Центральный филиал", slug: "central", is_active: true})
+        |> Branch.changeset(%{
+          name: "Центральный филиал",
+          slug: "central",
+          code: "CENTR",
+          is_active: true
+        })
         |> Repo.insert!()
         |> tap(&info("Created branch #{&1.name}"))
     end
@@ -157,7 +162,7 @@ defmodule Delivest.ExampleSeed do
             %Product{order: order}
             |> Product.changeset(%{
               name: row["name"],
-              price: row["price"],
+              price: Money.from_rubles(row["price"]),
               weight: row["weight"],
               quantity: row["quantity"],
               description: row["description"],

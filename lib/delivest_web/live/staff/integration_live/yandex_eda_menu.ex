@@ -1,6 +1,7 @@
 defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaMenu do
   use DelivestWeb, :html
 
+  alias Delivest.Money
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   attr :menu, :list, required: true
@@ -54,11 +55,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaMenu do
             {OrderHelpers.money(entry.product.price)}
           </span>
           <input
-            type="number"
+            type="text"
+            inputmode="decimal"
             name="price"
-            min="1"
-            value={entry.channel_product && entry.channel_product.price}
-            placeholder={entry.price}
+            value={entry.channel_product && Money.input(entry.channel_product.price)}
+            placeholder={Money.input(entry.price)}
             phx-debounce="blur"
             class="input input-sm w-full font-mono"
             aria-label={gettext("Price in Yandex Eda")}

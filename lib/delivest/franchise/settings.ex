@@ -23,6 +23,9 @@ defmodule Delivest.Franchise.Settings do
     field :legal_address, :string
     field :email, :string
     field :phone, :string
+    field :timezone, :string, default: "Europe/Moscow"
+    field :yandex_org_id, :string
+    field :yandex_api_key, :string, redact: true
     field :icon_key, :string
     field :share_image_key, :string
     field :logo_key, :string
@@ -36,9 +39,11 @@ defmodule Delivest.Franchise.Settings do
     |> cast(attrs, fields(), empty_values: [nil, ""])
     |> update_change(:primary_color, &downcase/1)
     |> update_change(:dark_primary_color, &downcase/1)
-    |> validate_required([:name, :primary_color])
+    |> validate_required([:name, :primary_color, :timezone])
+    |> Delivest.LocalTime.validate_timezone(:timezone)
     |> validate_length(:name, max: 60)
     |> validate_length(:description, max: 300)
+    |> validate_length(:yandex_org_id, max: 40)
     |> validate_length(:legal_form, max: 20)
     |> validate_length(:legal_name, max: 200)
     |> validate_length(:legal_address, max: 300)
@@ -60,6 +65,7 @@ defmodule Delivest.Franchise.Settings do
   defp fields do
     [
       :name,
+      :timezone,
       :description,
       :primary_color,
       :dark_primary_color,
@@ -69,7 +75,9 @@ defmodule Delivest.Franchise.Settings do
       :ogrn,
       :legal_address,
       :email,
-      :phone
+      :phone,
+      :yandex_org_id,
+      :yandex_api_key
     ]
   end
 end

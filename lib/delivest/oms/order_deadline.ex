@@ -1,7 +1,7 @@
 defmodule Delivest.Oms.OrderDeadline do
   import Ecto.Query
 
-  alias Delivest.{Identity, LocalTime}
+  alias Delivest.Identity
   alias Delivest.Oms.Order
 
   @default_delivery_minutes 60
@@ -10,10 +10,10 @@ defmodule Delivest.Oms.OrderDeadline do
   def delivery_minutes(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
       {:ok, %{info: %{delivery_time: minutes}}} when is_integer(minutes) and minutes > 0 ->
-        minutes
+        minutes + Delivest.Intake.extra_minutes(branch_id)
 
       _ ->
-        @default_delivery_minutes
+        @default_delivery_minutes + Delivest.Intake.extra_minutes(branch_id)
     end
   end
 
@@ -22,8 +22,7 @@ defmodule Delivest.Oms.OrderDeadline do
   def lead_minutes(_type, delivery_minutes),
     do: max(@min_kitchen_minutes, round(delivery_minutes / 2))
 
-  def at(%Order{cook_by: %NaiveDateTime{} = cook_by}, _delivery_minutes),
-    do: LocalTime.naive_to_utc(cook_by)
+  def at(%Order{cook_by: %DateTime{} = cook_by}, _delivery_minutes), do: cook_by
 
   def at(%Order{} = order, delivery_minutes),
     do:
@@ -37,19 +36,7 @@ defmodule Delivest.Oms.OrderDeadline do
     finished = dynamic([o], o.status in [:completed, :cancelled])
     unconfirmed = dynamic([o], o.status == :created)
 
-    deadline =
-      dynamic(
-        [o],
-        fragment(
-          "coalesce(timezone(?, ?), timezone('UTC', ?) + make_interval(mins => CASE WHEN ? = 'delivery' THEN ?::integer ELSE ?::integer END))",
-          ^LocalTime.timezone(),
-          o.cook_by,
-          o.inserted_at,
-          o.fulfillment_type,
-          ^lead_minutes(:delivery, delivery_minutes),
-          ^lead_minutes(:pickup, delivery_minutes)
-        )
-      )
+    deadline = deadline_expr(delivery_minutes)
 
     rank =
       dynamic(
@@ -63,5 +50,27 @@ defmodule Delivest.Oms.OrderDeadline do
       )
 
     order_by(query, ^[asc: finished, desc: unconfirmed, asc: rank])
+  end
+
+  def overdue_expr(delivery_minutes, now \\ DateTime.utc_now()) do
+    dynamic(
+      [o],
+      o.status in [:created, :accepted, :preparing, :ready] and
+        ^deadline_expr(delivery_minutes) < ^now
+    )
+  end
+
+  defp deadline_expr(delivery_minutes) do
+    dynamic(
+      [o],
+      fragment(
+        "coalesce(?, ? + make_interval(mins => CASE WHEN ? = 'delivery' THEN ?::integer ELSE ?::integer END))",
+        o.cook_by,
+        o.inserted_at,
+        o.fulfillment_type,
+        ^lead_minutes(:delivery, delivery_minutes),
+        ^lead_minutes(:pickup, delivery_minutes)
+      )
+    )
   end
 end

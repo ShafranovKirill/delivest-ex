@@ -2,7 +2,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
   use Gettext, backend: DelivestWeb.Gettext
 
   alias Delivest.{Identity, Oms}
-  alias Delivest.Oms.{CartView, Order, Orders}
+  alias Delivest.Oms.{CartView, Order, OrderLock, Orders}
+  alias DelivestWeb.Staff.OrderLive.SaveErrors
 
   def new(staff, branch_id) do
     {:ok, cart} = Oms.get_or_create_cart(staff_id: staff.id, branch_id: branch_id)
@@ -13,7 +14,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
     %{
       order: with_customer(order),
       cart: edit_cart(order, connected?),
-      title: gettext("Edit Order #%{number}", number: order.number)
+      title: gettext("Edit Order #%{number}", number: Order.short_number(order))
     }
   end
 
@@ -21,14 +22,16 @@ defmodule DelivestWeb.Staff.OrderLive.OrderDraft do
     with true <- Identity.can?(staff, "orders.update"),
          {:ok, uuid} <- Ecto.UUID.cast(id),
          %Order{branch_id: ^branch_id} = order <- Orders.get_order(uuid),
-         false <- Order.crm_managed?(order) do
+         :ok <- OrderLock.editable(order) do
       {:ok, order}
     else
       false -> {:error, gettext("Permission denied")}
-      true -> {:error, gettext("CRM orders cannot be edited")}
+      {:error, reason} when is_atom(reason) -> {:error, SaveErrors.message(reason)}
       _ -> {:error, gettext("Order not found")}
     end
   end
+
+  defp with_customer(%Order{customer_phone: phone} = order) when is_binary(phone), do: order
 
   defp with_customer(%Order{client: %{phone: phone, name: name}} = order),
     do: %{order | customer_phone: phone, customer_name: name}

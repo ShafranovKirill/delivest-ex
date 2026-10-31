@@ -3,10 +3,10 @@ defmodule Delivest.Oms.Kitchen do
 
   require Logger
 
-  alias Delivest.{Identity, LocalTime, Repo}
+  alias Delivest.{Identity, Push, Repo}
   alias Delivest.Identity.{Branch, Staff}
   alias Delivest.Identity.Branch.{BranchInfo, KitchenSettings}
-  alias Delivest.Integrations.Crm
+  alias Delivest.Gateway
   alias Delivest.Oms.{Order, OrderDeadline, OrderFlow, Orders, OrderTransition}
   alias Delivest.Oms.Kitchen.ReadyWorker
 
@@ -27,7 +27,7 @@ defmodule Delivest.Oms.Kitchen do
     with {:ok,
           %Branch{info: %BranchInfo{kitchen: %KitchenSettings{enabled: true} = kitchen}} = branch} <-
            Identity.get_branch(branch_id, preload: :info),
-         nil <- Crm.active_provider(branch) do
+         true <- Gateway.own?(branch, :kitchen) do
       kitchen
     else
       _ -> nil
@@ -39,7 +39,7 @@ defmodule Delivest.Oms.Kitchen do
   def sends_at(%Order{cook_by: nil}, _kitchen), do: nil
 
   def sends_at(%Order{cook_by: cook_by}, %KitchenSettings{lead_minutes: lead}),
-    do: cook_by |> LocalTime.naive_to_utc() |> DateTime.add(-lead, :minute)
+    do: DateTime.add(cook_by, -lead, :minute)
 
   def due?(%Order{} = order, %KitchenSettings{} = kitchen, now) do
     case sends_at(order, kitchen) do
@@ -74,8 +74,7 @@ defmodule Delivest.Oms.Kitchen do
       [o, i],
       is_nil(o.cook_by) or
         fragment(
-          "timezone(?, ?) - make_interval(mins => (?->>'lead_minutes')::integer) <= ?",
-          ^LocalTime.timezone(),
+          "? - make_interval(mins => (?->>'lead_minutes')::integer) <= ?",
           o.cook_by,
           i.kitchen,
           ^now
@@ -91,7 +90,7 @@ defmodule Delivest.Oms.Kitchen do
       Order
       |> where([o], o.branch_id == ^branch_id and o.status == :preparing)
       |> where([o], is_nil(o.crm) and is_nil(o.deleted_at))
-      |> preload(:items)
+      |> preload(items: :modifiers)
       |> Repo.all()
 
     started = started_at(Enum.map(orders, & &1.id))
@@ -110,7 +109,7 @@ defmodule Delivest.Oms.Kitchen do
 
   def list_upcoming(branch_id, %KitchenSettings{lead_minutes: lead} = kitchen, now) do
     horizon = DateTime.add(now, @upcoming_minutes, :minute)
-    latest = horizon |> DateTime.add(lead, :minute) |> LocalTime.utc_to_naive()
+    latest = DateTime.add(horizon, lead, :minute)
 
     Order
     |> where([o], o.branch_id == ^branch_id and o.status == :accepted)
@@ -122,12 +121,10 @@ defmodule Delivest.Oms.Kitchen do
   end
 
   def list_late(branch_id, now \\ DateTime.utc_now()) do
-    local_now = LocalTime.utc_to_naive(now)
-
     Order
     |> where([o], o.branch_id == ^branch_id and o.status == :preparing)
     |> where([o], is_nil(o.crm) and is_nil(o.deleted_at))
-    |> where([o], o.cook_by < ^local_now)
+    |> where([o], o.cook_by < ^now)
     |> order_by([o], asc: o.cook_by)
     |> Repo.all()
   end
@@ -175,8 +172,10 @@ defmodule Delivest.Oms.Kitchen do
       result = Orders.advance_order(order, :ready, {:staff, staff})
       changed(order.branch_id)
 
-      with {:ok, %Order{status: :ready} = ready} <- result,
-           do: broadcast(order.branch_id, {:kitchen_order_ready, ready})
+      with {:ok, %Order{status: :ready} = ready} <- result do
+        broadcast(order.branch_id, {:kitchen_order_ready, ready})
+        Push.notify_staff(:order_ready, ready.id)
+      end
 
       result
     else

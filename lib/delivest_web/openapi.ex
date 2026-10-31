@@ -11,7 +11,8 @@ defmodule DelivestWeb.OpenApi do
       ],
       info: %Info{
         title: "My App",
-        version: "1.0"
+        version: "1.0",
+        description: "Все суммы — в копейках, целым числом."
       },
       paths: Paths.from_router(Router)
     }

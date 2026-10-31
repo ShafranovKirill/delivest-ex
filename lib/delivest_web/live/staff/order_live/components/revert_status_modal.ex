@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.OrderLive.Components.RevertStatusModal do
   use DelivestWeb, :html
 
+  alias Delivest.Oms.Order
+
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   attr :order, :map, default: nil
@@ -10,7 +12,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.RevertStatusModal do
     <.modal
       id="revert-status-modal"
       show={@order != nil}
-      title={@order && gettext("Revert the status of order #%{number}", number: @order.number)}
+      title={
+        @order && gettext("Revert the status of order #%{number}", number: Order.short_number(@order))
+      }
       on_cancel={JS.push("dismiss_revert")}
     >
       <.form
