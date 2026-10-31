@@ -34,7 +34,7 @@ defmodule DelivestWeb.CommandSearch do
   end
 
   defp orders(staff, branch, query) do
-    if searchable?(query) and branch && can?(staff, "orders.read") do
+    if (searchable?(query) and branch) && can?(staff, "orders.read") do
       %{branch_id: branch.id, search: query}
       |> Orders.list_latest_orders(@limit)
       |> Enum.map(&order_item(&1, branch))
@@ -78,7 +78,7 @@ defmodule DelivestWeb.CommandSearch do
       page_size: @limit
     }
 
-    with true <- searchable?(query) and branch && can?(staff, "products.read"),
+    with true <- (searchable?(query) and branch) && can?(staff, "products.read"),
          {:ok, {products, _meta}} <- Net.list_staff_products_for_branch(staff, branch.id, params) do
       Enum.map(products, &product_item(&1, staff, branch))
     else
