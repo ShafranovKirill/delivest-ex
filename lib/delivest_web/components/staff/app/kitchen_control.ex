@@ -14,12 +14,12 @@ defmodule DelivestWeb.KitchenControl do
       class={[
         "hidden items-center gap-1.5 rounded-field px-2 py-1 text-xs font-semibold md:flex",
         @status == :online && "bg-success/15 text-success",
-        @status != :online && "bg-error text-error-content"
+        @status != :online && "bg-error/10 text-error"
       ]}
     >
       <span class={[
         "size-2 rounded-full",
-        if(@status == :online, do: "bg-success", else: "bg-error-content")
+        if(@status == :online, do: "bg-success", else: "bg-error")
       ]} />
       {label(@status)}
     </span>
@@ -59,10 +59,10 @@ defmodule DelivestWeb.KitchenControl do
   end
 
   defp label(:online), do: gettext("Kitchen online")
-  defp label({:offline, nil}), do: gettext("Kitchen offline")
+  defp label({:offline, nil}), do: gettext("Kitchen")
 
   defp label({:offline, %DateTime{} = since}) do
     minutes = max(0, div(DateTime.diff(DateTime.utc_now(), since), 60))
-    gettext("Kitchen offline %{minutes} min", minutes: minutes)
+    gettext("Kitchen · %{minutes} min", minutes: minutes)
   end
 end

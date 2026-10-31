@@ -108,19 +108,6 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
     end
   end
 
-  defp filtered_products(products, socket) do
-    query = String.downcase(String.trim(socket.assigns.product_search))
-
-    Enum.filter(products, fn product ->
-      (not socket.assigns.configured_only or configured?(product)) and
-        String.contains?(String.downcase(product.name), query)
-    end)
-  end
-
-  defp product_value(pending, product, field) do
-    Map.get(Map.get(pending, product.id, %{}), Atom.to_string(field), Map.get(product, field))
-  end
-
   def handle_event("save", %{"loyalty" => params}, socket) do
     case Identity.update_loyalty(
            socket.assigns.current_staff,
@@ -143,6 +130,19 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
     end
+  end
+
+  defp filtered_products(products, socket) do
+    query = String.downcase(String.trim(socket.assigns.product_search))
+
+    Enum.filter(products, fn product ->
+      (not socket.assigns.configured_only or configured?(product)) and
+        String.contains?(String.downcase(product.name), query)
+    end)
+  end
+
+  defp product_value(pending, product, field) do
+    Map.get(Map.get(pending, product.id, %{}), Atom.to_string(field), Map.get(product, field))
   end
 
   defp configured?(product),

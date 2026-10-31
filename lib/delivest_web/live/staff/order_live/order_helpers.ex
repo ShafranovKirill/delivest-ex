@@ -74,6 +74,13 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
     |> Calendar.strftime("%d.%m.%Y %H:%M")
   end
 
+  def order_time(%DateTime{} = dt, branch_id) do
+    local = Delivest.LocalTime.local(dt, branch_id)
+    today = Delivest.LocalTime.local(DateTime.utc_now(), branch_id) |> DateTime.to_date()
+    format = if DateTime.to_date(local) == today, do: "%H:%M", else: "%d.%m.%Y %H:%M"
+    Calendar.strftime(local, format)
+  end
+
   def local_time(%DateTime{} = dt) do
     dt |> DateTime.shift_zone!(Delivest.LocalTime.timezone()) |> Calendar.strftime("%H:%M")
   end

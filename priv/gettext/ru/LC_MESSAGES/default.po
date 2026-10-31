@@ -8751,3 +8751,7 @@ msgstr "Цена не указана — товар нельзя купить з
 #, elixir-autogen, elixir-format
 msgid "Extra stars per product"
 msgstr "Дополнительно звёзд за товар"
+
+#, elixir-autogen, elixir-format
+msgid "Kitchen · %{minutes} min"
+msgstr "Кухня · %{minutes} мин"

@@ -81,7 +81,16 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     |> render_submit()
 
     assert has_element?(lv, "#products-#{product.id} input[name=stars_price]")
-    render_submit(lv, "product", %{product_id: product.id, stars_price: "25", stars_reward: "3"})
+
+    lv
+    |> form("#bonus-form-#{product.id}", stars_price: "25", stars_reward: "3")
+    |> render_change()
+
+    assert is_nil(Repo.reload!(product).stars_price)
+    lv |> form("#loyalty-product-filter", search: "no matching product") |> render_change()
+    lv |> form("#loyalty-product-filter", search: "") |> render_change()
+    assert has_element?(lv, "#products-#{product.id} input[name=stars_price][value='25']")
+    lv |> element("#save-product-bonuses") |> render_click()
 
     saved = Repo.reload!(product)
     assert saved.stars_price == 25

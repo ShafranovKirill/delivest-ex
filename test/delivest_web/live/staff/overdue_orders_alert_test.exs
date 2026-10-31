@@ -38,6 +38,18 @@ defmodule DelivestWeb.Staff.OverdueOrdersAlertTest do
     assert has_element?(lv, "#overdue-order-#{ctx.order.id}", ctx.order.channel.external_id)
   end
 
+  test "yesterday's unconfirmed order stays in the bell without a popup", ctx do
+    overdue!(ctx.order)
+
+    ctx.order
+    |> Ecto.Changeset.change(inserted_at: DateTime.add(DateTime.utc_now(:second), -1, :day))
+    |> Repo.update!()
+
+    {:ok, lv, _} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/integrations")
+    refute has_element?(lv, "#overdue-orders")
+    assert has_element?(lv, "#header-new-orders-count", "1")
+  end
+
   test "confirm from the alert accepts the order", ctx do
     overdue!(ctx.order)
     {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/orders")
