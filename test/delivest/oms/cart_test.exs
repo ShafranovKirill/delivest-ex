@@ -31,6 +31,23 @@ defmodule Delivest.Oms.CartTest do
   end
 
   describe "cart context" do
+    test "rebuilds cached carts missing loyalty fields without losing items" do
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "legacy-cache", branch_id: @branch_id})
+      {:ok, _, view} = Carts.add_item(cart.id, product.id)
+
+      legacy = Map.drop(view, [:points_earned, :base_stars, :product_stars])
+      Cachex.put(:cart_cache, cart.id, legacy)
+
+      assert %CartView{} = restored = Carts.get_cart_by_id(cart.id)
+      assert [%{product_id: product_id, quantity: 1}] = restored.items
+      assert product_id == product.id
+      assert restored.total_amount == 100
+      assert restored.points_earned == 0
+      assert restored.base_stars == 0
+      assert restored.product_stars == 0
+    end
+
     test "items keep the order they were added in when the quantity changes" do
       first = insert_branch_product(@branch_id, price: 100)
       second = insert_branch_product(@branch_id, price: 200)

@@ -464,8 +464,11 @@ defmodule Delivest.Oms.Carts do
       fetch_and_recalculate(cart_id)
     else
       case Cachex.get(@cache_store, cart_id) do
-        {:ok, %CartView{} = cached_view} -> CartPricing.apply(cached_view)
-        _ -> fetch_and_recalculate(cart_id)
+        {:ok, %CartView{points_earned: _, base_stars: _, product_stars: _} = cached_view} ->
+          CartPricing.apply(cached_view)
+
+        _ ->
+          fetch_and_recalculate(cart_id)
       end
     end
   end
