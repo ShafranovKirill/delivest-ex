@@ -38,14 +38,14 @@ defmodule DelivestWeb.Staff.StaffPwaController do
       display: "standalone",
       background_color: "#ffffff",
       theme_color: settings.primary_color || "#1f2937",
-      icons: icons(settings)
+      icons: icons()
     }
   end
 
-  defp icons(settings) do
+  defp icons() do
     for size <- [192, 512] do
       %{
-        src: Franchise.icon_url(settings, "icon-#{size}.png") || "/images/seo/icon-#{size}.png",
+        src: "/images/admin/icon-#{size}.png",
         sizes: "#{size}x#{size}",
         type: "image/png",
         purpose: "any"

@@ -10,7 +10,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(message.title || "", {
       body: message.body,
-      icon: message.icon || "/favicon.ico",
+      icon: "/images/admin/icon-192.png",
       tag: message.tag,
       renotify: Boolean(message.tag),
       requireInteraction: true,

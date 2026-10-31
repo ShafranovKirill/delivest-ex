@@ -12,6 +12,8 @@ defmodule DelivestWeb.Staff.StaffPwaTest do
     assert %{"scope" => "/staff/", "start_url" => "/staff", "display" => "standalone"} = manifest
     assert [%{"sizes" => "192x192"}, %{"sizes" => "512x512"}] = manifest["icons"]
 
+    assert Enum.all?(manifest["icons"], &String.starts_with?(&1["src"], "/images/admin/"))
+
     worker = get(build_conn(), ~p"/staff/sw.js")
     assert worker.status == 200
     assert get_resp_header(worker, "content-type") |> hd() =~ "javascript"
