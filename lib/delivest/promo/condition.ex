@@ -27,6 +27,31 @@ defmodule Delivest.Promo.Condition do
   def evaluate({:quantity, op, value}, facts, _compiled),
     do: compare(op, facts.quantity, value, :quantity)
 
+  def evaluate({:has_any, slugs, quantity}, facts, compiled) do
+    products = Compiled.available_products(compiled, slugs)
+
+    missing = quantity - Enum.sum(Enum.map(products, &Map.get(facts.quantities, &1.id, 0)))
+
+    cond do
+      products == [] ->
+        {:unmet, [%{type: :other}]}
+
+      missing <= 0 ->
+        :met
+
+      true ->
+        {:unmet,
+         [
+           %{
+             type: :products,
+             missing: missing,
+             product_ids: Enum.map(products, & &1.id),
+             names: Enum.map(products, & &1.name)
+           }
+         ]}
+    end
+  end
+
   def evaluate({:has, slug, quantity}, facts, compiled) do
     case Compiled.product(compiled, slug) do
       nil ->

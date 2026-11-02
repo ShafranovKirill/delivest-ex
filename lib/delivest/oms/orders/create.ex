@@ -28,6 +28,16 @@ defmodule Delivest.Oms.Orders.Create do
     Multi.new()
     |> Multi.run(:client_id, fn _, _ -> ClientResolver.resolve(attrs, client_opts) end)
     |> Multi.run(:cart, fn _, _ -> CartGuard.acquire(attrs["cart_id"], attrs["branch_id"]) end)
+    |> Multi.run(:fulfillment, fn _, %{cart: cart} ->
+      if opts[:channel] || opts[:crm] do
+        {:ok, :external}
+      else
+        case Delivest.Fulfillment.check(cart.branch_id, attrs["fulfillment_type"] || "dine_in") do
+          :ok -> {:ok, :enabled}
+          error -> error
+        end
+      end
+    end)
     |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> pricing.(cart, attrs, id) end)
     |> Multi.run(:stops, fn _, %{pricing: pricing, cart: cart} ->
       StopGuard.check(cart.branch_id, pricing)

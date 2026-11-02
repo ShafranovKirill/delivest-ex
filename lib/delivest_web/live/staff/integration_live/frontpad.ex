@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Catalog, StopSync}
   alias Delivest.Integrations.{Channels, Frontpad}
-  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
@@ -23,6 +23,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
      )
      |> load_settings()
      |> load_catalog()
+     |> assign_context()
      |> then(&assign(&1, tab: if(api_key?(&1.assigns.crm), do: :check, else: :settings)))}
   end
 
@@ -66,7 +67,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   def handle_event("validate", %{"crm" => params}, socket) do
     changeset =
       socket.assigns.crm
-      |> Crm.change_branch_settings(settings_params(params))
+      |> Crm.change_branch_settings(settings_params(params, socket.assigns))
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, form: to_form(changeset, as: "crm"))}
@@ -76,12 +77,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     case Crm.update_branch_settings(
            socket.assigns.current_staff,
            socket.assigns.current_branch.id,
-           settings_params(params)
+           settings_params(params, socket.assigns)
          ) do
       {:ok, crm} ->
         {:noreply,
          socket
          |> assign_settings(crm)
+         |> assign_context()
          |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -105,12 +107,22 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     do: assign_settings(socket, Crm.get_branch_settings(socket.assigns.current_branch.id))
 
   defp assign_settings(socket, crm) do
-    crm = prefill(crm)
-    assign(socket, crm: crm, form: to_form(Crm.change_branch_settings(crm), as: "crm"))
+    active_provider = BranchSettings.active_provider(crm)
+    crm = prefill(crm, active_provider)
+
+    assign(socket,
+      crm: crm,
+      active_provider: active_provider,
+      form: to_form(Crm.change_branch_settings(crm), as: "crm")
+    )
   end
 
-  defp prefill(%BranchSettings{} = crm),
-    do: %{crm | provider: :frontpad, frontpad: prefill_frontpad(crm.frontpad)}
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+  end
+
+  defp prefill(%BranchSettings{} = crm, active_provider),
+    do: %{crm | enabled: active_provider == :frontpad, frontpad: prefill_frontpad(crm.frontpad)}
 
   defp prefill_frontpad(nil), do: prefill_frontpad(%Frontpad.Settings{})
 
@@ -122,7 +134,25 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         tags: settings.tags || %Frontpad.TagCodes{}
     }
 
-  defp settings_params(params), do: Map.put(params, "provider", "frontpad")
+  defp settings_params(params, assigns) do
+    provider = "frontpad"
+    submitted? = params["enabled"] in [true, "true"]
+    displayed? = assigns.crm.enabled == true
+
+    cond do
+      submitted? and not displayed? ->
+        params |> Map.put("enabled", "true") |> Map.put("provider", provider)
+
+      submitted? ->
+        Map.put(params, "provider", provider)
+
+      displayed? ->
+        Map.delete(params, "provider")
+
+      true ->
+        params |> Map.delete("provider") |> Map.delete("enabled")
+    end
+  end
 
   defp load_catalog(socket) do
     branch_id = socket.assigns.current_branch.id
@@ -258,12 +288,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
       </div>
 
       <.live_component
-        :if={@tab == :settings and api_key?(@crm)}
+        :if={@tab == :settings}
         module={HealthComponent}
         id="frontpad-health"
         provider={:frontpad}
         branch_id={@current_branch.id}
-        scope={@current_branch.id}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.guide :if={@tab == :settings} crm={@crm} branch={@current_branch} />
@@ -272,6 +303,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         :if={@tab == :settings}
         form={@form}
         crm={@crm}
+        active_provider={@active_provider}
         can_edit={@can_edit_branch}
       />
 
@@ -344,6 +376,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   attr :form, Phoenix.HTML.Form, required: true
   attr :crm, BranchSettings, required: true
+  attr :active_provider, :atom, default: nil
   attr :can_edit, :boolean, required: true
 
   defp settings_form(assigns) do
@@ -357,6 +390,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     >
       <fieldset disabled={!@can_edit} class="space-y-4">
         <.input field={@form[:enabled]} type="checkbox" label={gettext("Send orders to Frontpad")} />
+        <p
+          :if={@active_provider && @active_provider != :frontpad}
+          id="frontpad-provider-switch"
+          class="text-xs text-warning"
+        >
+          {gettext(
+            "Orders are now sent to %{crm}. Turning this on will switch sending to Frontpad.",
+            crm: Crm.provider_name(@active_provider)
+          )}
+        </p>
 
         <.inputs_for :let={frontpad} field={@form[:frontpad]}>
           <div class="grid gap-4 sm:grid-cols-2">

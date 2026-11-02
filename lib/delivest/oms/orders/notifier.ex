@@ -7,6 +7,9 @@ defmodule Delivest.Oms.Orders.Notifier do
   def subscribe(branch_id),
     do: Phoenix.PubSub.subscribe(Delivest.PubSub, events_topic(branch_id))
 
+  def unsubscribe(branch_id),
+    do: Phoenix.PubSub.unsubscribe(Delivest.PubSub, events_topic(branch_id))
+
   def subscribe_branch(branch_id),
     do: Phoenix.PubSub.subscribe(Delivest.PubSub, branch_topic(branch_id))
 

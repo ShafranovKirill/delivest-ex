@@ -9,6 +9,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   alias DelivestWeb.Staff.IntegrationLive.{
     HealthComponent,
     JournalComponent,
+    Presentation,
     YandexEdaAccess,
     YandexEdaMenu,
     YandexEdaBusy,
@@ -38,6 +39,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
      )
      |> assign_shared(YandexEda.get_settings())
      |> assign_branch(YandexEda.get_branch_settings(socket.assigns.current_branch.id))
+     |> assign_context()
      |> load_menu()
      |> load_pauses()}
   end
@@ -60,6 +62,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         {:noreply,
          socket
          |> assign_branch(settings)
+         |> assign_context()
          |> load_menu()
          |> load_pauses()
          |> put_flash(:info, gettext("Settings saved"))}
@@ -76,7 +79,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
     case YandexEda.update_settings(socket.assigns.current_staff, params) do
       {:ok, settings} ->
         {:noreply,
-         socket |> assign_shared(settings) |> put_flash(:info, gettext("Settings saved"))}
+         socket
+         |> assign_shared(settings)
+         |> assign_context()
+         |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, shared_form: to_form(changeset, as: "yandex_eda_shared"))}
@@ -92,6 +98,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         {:noreply,
          socket
          |> assign_shared(settings)
+         |> assign_context()
          |> put_flash(:info, gettext("New access for Yandex Eda is generated"))}
 
       {:error, reason} ->
@@ -140,6 +147,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
       {:error, reason} ->
         {:noreply, socket |> load_menu() |> put_flash(:error, error_message(reason))}
     end
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
 
   defp assign_shared(socket, settings),
@@ -225,12 +236,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
       />
 
       <.live_component
-        :if={@push_available}
         module={HealthComponent}
         id="yandex-eda-health"
         provider={:yandex_eda}
         branch_id={@current_branch.id}
-        scope={nil}
+        staff={@current_staff}
+        context={@context}
       />
 
       <YandexEdaAccess.access

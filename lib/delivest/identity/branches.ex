@@ -217,6 +217,7 @@ defmodule Delivest.Identity.Branches do
       |> case do
         {:ok, %{branch: updated_branch, info: updates_info}} ->
           Cachex.clear(:branch_cache)
+          Delivest.Oms.Kitchen.notify_availability(updated_branch.id)
           {:ok, %{updated_branch | info: updates_info}}
 
         {:error, failed_operation, changeset, _changes} ->

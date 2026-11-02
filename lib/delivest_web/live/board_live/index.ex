@@ -55,10 +55,15 @@ defmodule DelivestWeb.BoardLive.Index do
       socket
     else
       Process.send_after(self(), {:faded, arrived}, @highlight)
+      newest = Enum.find_value(ready, &if(MapSet.member?(arrived, &1.id), do: &1.id))
 
       socket
       |> assign(fresh: MapSet.union(socket.assigns.fresh, arrived))
-      |> push_event("board:ready", %{})
+      |> push_event("board:ready", %{
+        ids: MapSet.to_list(arrived),
+        newest: newest,
+        hold_ms: @highlight
+      })
     end
   end
 
@@ -92,7 +97,9 @@ defmodule DelivestWeb.BoardLive.Index do
           <span
             :for={order <- @preparing}
             id={"board-order-#{order.id}"}
-            class="rounded-box bg-base-100 px-4 py-3 text-center font-mono text-5xl font-black text-base-content/70"
+            data-board-order
+            data-order-id={order.id}
+            class="board-number rounded-box bg-base-100 px-4 py-3 text-center font-mono text-5xl font-black text-base-content/70"
           >
             {order.number}
           </span>
@@ -102,9 +109,11 @@ defmodule DelivestWeb.BoardLive.Index do
           <span
             :for={order <- @ready}
             id={"board-order-#{order.id}"}
+            data-board-order
+            data-order-id={order.id}
             data-fresh={MapSet.member?(@fresh, order.id)}
             class={[
-              "rounded-box px-4 py-3 text-center font-mono text-6xl font-black transition-all duration-700",
+              "board-number rounded-box px-4 py-3 text-center font-mono text-6xl font-black transition-all duration-700",
               if(MapSet.member?(@fresh, order.id),
                 do: "animate-pulse scale-105 bg-success text-success-content shadow-xl",
                 else: "bg-success/15 text-success"
@@ -126,14 +135,17 @@ defmodule DelivestWeb.BoardLive.Index do
 
   defp column(assigns) do
     ~H"""
-    <section id={@id} class="flex min-h-0 flex-col">
+    <section id={@id} data-board-column={@id} class="flex min-h-0 flex-col">
       <h2 class={[
         "px-6 py-5 text-center text-4xl font-black uppercase tracking-wide",
         if(@accent, do: "bg-success text-success-content", else: "bg-base-300")
       ]}>
         {@title}
       </h2>
-      <div class="grid content-start gap-4 overflow-hidden p-6 sm:grid-cols-2 xl:grid-cols-3">
+      <div
+        data-board-grid
+        class="board-grid grid min-h-0 flex-1 content-start gap-4 overflow-hidden p-6 sm:grid-cols-2 xl:grid-cols-3"
+      >
         {render_slot(@inner_block)}
       </div>
     </section>

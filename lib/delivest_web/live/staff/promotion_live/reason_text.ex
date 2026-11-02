@@ -10,6 +10,9 @@ defmodule DelivestWeb.Staff.PromotionLive.ReasonText do
   def unmet(%{type: :quantity, missing: missing}),
     do: gettext("add %{count} more items", count: missing)
 
+  def unmet(%{type: :products, names: names, missing: missing}),
+    do: gettext("add %{count} more from: %{names}", count: missing, names: Enum.join(names, ", "))
+
   def unmet(%{type: :product, name: name, missing: missing}),
     do: gettext("add «%{name}» × %{count}", name: name, count: missing)
 

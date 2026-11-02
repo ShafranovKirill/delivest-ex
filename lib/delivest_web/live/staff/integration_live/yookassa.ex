@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Yookassa
-  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -11,7 +11,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
     {:ok,
      socket
      |> assign(page_title: gettext("Online payment"), shop: nil)
-     |> assign_settings(Yookassa.get_settings())}
+     |> assign_settings(Yookassa.get_settings())
+     |> assign_context()}
   end
 
   @impl true
@@ -30,6 +31,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
         {:noreply,
          socket
          |> assign_settings(settings)
+         |> assign_context()
          |> assign(shop: nil)
          |> put_flash(:info, gettext("Settings saved"))}
 
@@ -58,6 +60,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
     )
   end
 
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -75,6 +81,27 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
           gettext("Card and SBP payments through YooKassa. The shop is shared by every branch.")
         }
       />
+
+      <.live_component
+        module={HealthComponent}
+        id="yookassa-health"
+        provider={:yookassa}
+        branch_id={@current_branch.id}
+        staff={@current_staff}
+        context={@context}
+      />
+
+      <div id="yookassa-payment-link" class="alert">
+        <.icon name="hero-information-circle" class="size-5" />
+        <span>
+          {gettext(
+            "The shop keys are shared by every branch. Online payment in this branch is turned on separately in Finance → Payment."
+          )}
+          <.link navigate={~p"/staff/b/#{@current_branch}/finance/payments"} class="link link-primary">
+            {gettext("Finance → Payment")}
+          </.link>
+        </span>
+      </div>
 
       <.form
         for={@form}
@@ -107,7 +134,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
             class="btn btn-ghost"
             phx-click="check"
           >
-            {gettext("Check connection")}
+            {gettext("Shop details")}
           </button>
           <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
             {gettext("Save")}

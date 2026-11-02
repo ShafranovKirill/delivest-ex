@@ -169,6 +169,96 @@ defmodule Delivest.Oms.KitchenTest do
     end
   end
 
+  describe "access" do
+    test "needs branch access, orders.cook and our own enabled kitchen" do
+      branch = kitchen_branch()
+      cook = staff(["orders.cook"], branch)
+
+      assert Kitchen.available?(cook, branch.id)
+      assert Kitchen.unavailable_reason(branch.id) == nil
+
+      refute Kitchen.available?(staff(["orders.read"], branch), branch.id)
+      refute Kitchen.available?(staff(["orders.cook"], insert(:branch)), branch.id)
+
+      assert Kitchen.unavailable_reason(branch(%{enabled: false}).id) == :disabled
+      assert Kitchen.unavailable_reason(branch(%{enabled: true, lead_minutes: 30}).id) == nil
+    end
+
+    test "a crm kitchen is never available, even when enabled" do
+      branch = insert(:branch)
+
+      Repo.insert!(%BranchInfo{
+        branch_id: branch.id,
+        kitchen: %{enabled: true},
+        crm: %{enabled: true, provider: :frontpad, frontpad: %{api_key: "key"}}
+      })
+
+      assert Kitchen.unavailable_reason(branch.id) == :crm
+      refute Kitchen.available?(staff(["admin"], branch), branch.id)
+    end
+
+    test "a branch change notifies open kitchen sessions" do
+      branch = kitchen_branch()
+      admin = staff(["admin"], branch)
+      Kitchen.subscribe_availability(branch.id)
+
+      assert {:ok, _branch} =
+               Delivest.Identity.update_branch(admin, branch, %{}, %{
+                 "kitchen" => %{"enabled" => false}
+               })
+
+      assert_receive {:kitchen_availability, branch_id}
+      assert branch_id == branch.id
+      refute Kitchen.available?(staff(["orders.cook"], branch), branch.id)
+    end
+  end
+
+  describe "a kitchen that was switched off" do
+    test "stale commands and the delayed worker leave orders alone" do
+      branch = kitchen_branch()
+      cook = staff(["orders.cook"], branch)
+      order = order(branch, status: :preparing)
+
+      assert {:ok, _order} = Kitchen.mark_ready(cook, branch.id, order.id)
+      set_kitchen(branch, false)
+
+      assert {:error, :kitchen_unavailable} = Kitchen.undo_ready(cook, branch.id, order.id)
+      assert {:error, :kitchen_unavailable} = Kitchen.finish_ready(order.id, cook.id)
+
+      assert {:cancel, :kitchen_unavailable} =
+               perform_job(ReadyWorker, %{order_id: order.id, staff_id: cook.id})
+
+      assert Repo.reload!(order).status == :preparing
+
+      set_kitchen(branch, true)
+      assert Repo.reload!(order).status == :preparing
+    end
+
+    test "re-enabling does not replay a cancelled ready" do
+      branch = kitchen_branch()
+      cook = staff(["orders.cook"], branch)
+      order = order(branch, status: :preparing)
+
+      assert {:ok, _order} = Kitchen.mark_ready(cook, branch.id, order.id)
+      assert :ok = Kitchen.undo_ready(cook, branch.id, order.id)
+
+      set_kitchen(branch, false)
+      set_kitchen(branch, true)
+
+      assert Kitchen.pending_ready(branch.id) == %{}
+      assert Repo.reload!(order).status == :preparing
+    end
+  end
+
+  defp set_kitchen(branch, enabled) do
+    admin = staff(["admin"], branch)
+
+    assert {:ok, _branch} =
+             Delivest.Identity.update_branch(admin, branch, %{}, %{
+               "kitchen" => %{"enabled" => enabled}
+             })
+  end
+
   defp transitions(order) do
     OrderTransition
     |> where([t], t.order_id == ^order.id)

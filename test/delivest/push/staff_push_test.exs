@@ -12,7 +12,7 @@ defmodule Delivest.Push.StaffPushTest do
 
   setup do
     branch = insert(:branch)
-    Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: %{}})
+    Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: %{}, kitchen: %{enabled: true}})
     test_pid = self()
 
     Req.Test.stub(Delivest.Push.Sender, fn conn ->

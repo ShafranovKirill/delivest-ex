@@ -17,6 +17,13 @@ defmodule DelivestWeb.Staff.OrderLive.SaveErrors do
 
   def message(:paid), do: gettext("The order is paid")
   def message(:refunded), do: gettext("The order has a refund")
+
+  def message(:promo_gift_not_available),
+    do: gettext("Gift is unavailable, choose again or remove it")
+
+  def message(:fulfillment_unavailable),
+    do: gettext("This fulfillment method is turned off for the branch")
+
   def message(:price_changed), do: gettext("Prices have changed, check the cart")
 
   def message(:promo_unavailable),

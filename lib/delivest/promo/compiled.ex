@@ -18,5 +18,15 @@ defmodule Delivest.Promo.Compiled do
     end
   end
 
+  def available_products(compiled, slugs) do
+    stopped = Delivest.Net.Stops.stopped_ids(compiled.promotion.branch_id)
+
+    slugs
+    |> Enum.map(&product(compiled, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.reject(&MapSet.member?(stopped, &1.id))
+    |> Enum.uniq_by(& &1.id)
+  end
+
   def automatic?(%__MODULE__{promotion: %{kind: kind}}), do: kind == :automatic
 end

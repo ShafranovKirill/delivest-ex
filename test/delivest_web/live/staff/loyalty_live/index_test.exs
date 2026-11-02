@@ -37,10 +37,10 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/loyalty")
 
     lv
-    |> form("#loyalty-form", loyalty: %{enabled: "true", per_rubles: "50", stars: "3"})
+    |> form("#loyalty-form", loyalty: %{enabled: "true", spend_enabled: "true"})
     |> render_submit()
 
-    assert %LoyaltySettings{enabled: true, per_rubles: 50, stars: 3} = Loyalty.settings(branch.id)
+    assert %LoyaltySettings{enabled: true, spend_enabled: true} = Loyalty.settings(branch.id)
     assert Loyalty.enabled?(branch.id)
   end
 

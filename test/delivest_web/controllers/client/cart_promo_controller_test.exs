@@ -163,4 +163,47 @@ defmodule DelivestWeb.Client.CartPromoControllerTest do
     assert [%{"price" => 39_900, "old_price" => 50_000}] =
              Enum.filter(products, &(&1["id"] == burger.id))
   end
+
+  test "gift API validates full sets, ownership, clear, availability and context", %{
+    conn: conn,
+    branch: branch,
+    cart_id: cart_id,
+    pizza: pizza
+  } do
+    promo = insert_promotion(branch.id, rules: ~s|then gift ("pizza", "cola") x2|)
+    cola = Delivest.Net.list_branch_products_by_slugs(branch.id, ["cola"])["cola"]
+    path = ~p"/client/cart/#{cart_id}/promotions/#{promo.id}/gifts"
+
+    for ids <- [[pizza.id], [pizza.id, pizza.id], [pizza.id, Ecto.UUID.generate()]] do
+      assert %{"error" => "promo_gift_invalid"} =
+               conn |> put(path, %{product_ids: ids}) |> json_response(422)
+    end
+
+    chosen = conn |> put(path, %{product_ids: [pizza.id, cola.id]}) |> json_response(200)
+
+    assert [%{"gift_choice" => %{"required" => 2, "selected" => selected}}] =
+             chosen["data"]["promotions"]
+
+    assert length(selected) == 2
+    assert length(Enum.filter(chosen["data"]["items"], & &1["gift"])) == 2
+
+    assert %{"error" => "cart_not_found"} =
+             build_conn() |> put(path, %{product_ids: []}) |> json_response(404)
+
+    Delivest.Net.Stops.replace_external(branch.id, "test", [cola.id])
+
+    assert %{"error" => "promo_gift_not_available"} =
+             conn |> put(path, %{product_ids: [pizza.id, cola.id]}) |> json_response(404)
+
+    cleared = conn |> put(path, %{product_ids: []}) |> json_response(200)
+    assert [%{"gift_choice" => %{"selected" => []}}] = cleared["data"]["promotions"]
+    assert Enum.all?(cleared["data"]["items"], &(not &1["gift"]))
+
+    assert %{"error" => "promo_gift_not_available"} =
+             conn
+             |> put(~p"/client/cart/#{cart_id}/promotions/#{Ecto.UUID.generate()}/gifts", %{
+               product_ids: []
+             })
+             |> json_response(404)
+  end
 end

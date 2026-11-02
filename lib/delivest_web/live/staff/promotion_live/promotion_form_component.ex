@@ -78,8 +78,12 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   def handle_event("remove_effect", %{"index" => index}, socket),
     do: update_builder(socket, &RulesBuilder.remove_effect(&1, String.to_integer(index)))
 
-  def handle_event("remove_product", %{"index" => index, "slug" => slug}, socket),
-    do: update_builder(socket, &RulesBuilder.remove_product(&1, String.to_integer(index), slug))
+  def handle_event("remove_product", %{"index" => index, "slug" => slug} = params, socket),
+    do:
+      update_builder(
+        socket,
+        &RulesBuilder.remove_product(&1, String.to_integer(index), slug, params["kind"])
+      )
 
   def handle_event("text_mode", _params, socket) do
     params =
@@ -189,6 +193,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
   defp condition_label("subtotal"), do: gettext("Cart total")
   defp condition_label("quantity"), do: gettext("Number of items")
+  defp condition_label("has_any"), do: gettext("N products from a list")
   defp condition_label("has"), do: gettext("Product in cart")
   defp condition_label("fulfillment"), do: gettext("Fulfillment method")
   defp condition_label("time"), do: gettext("Time of day")
@@ -196,6 +201,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
   defp condition_icon("subtotal"), do: "hero-banknotes"
   defp condition_icon("quantity"), do: "hero-square-3-stack-3d"
+  defp condition_icon("has_any"), do: "hero-shopping-bag"
   defp condition_icon("has"), do: "hero-shopping-bag"
   defp condition_icon("fulfillment"), do: "hero-truck"
   defp condition_icon("time"), do: "hero-clock"
@@ -203,11 +209,13 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
   defp effect_label("percent"), do: gettext("Percentage discount")
   defp effect_label("amount"), do: gettext("Fixed discount")
+  defp effect_label("gift_any"), do: gettext("Gift choice")
   defp effect_label("gift"), do: gettext("Gift product")
   defp effect_label("price"), do: gettext("Special price")
 
   defp effect_icon("percent"), do: "hero-receipt-percent"
   defp effect_icon("amount"), do: "hero-banknotes"
+  defp effect_icon("gift_any"), do: "hero-gift"
   defp effect_icon("gift"), do: "hero-gift"
   defp effect_icon("price"), do: "hero-tag"
 
@@ -364,7 +372,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
                     name={"builder[conditions][#{index}][type]"}
                     value={row["type"]}
                   />
-                  <.condition_fields row={row} index={index} products={@products} />
+                  <.condition_fields row={row} index={index} products={@products} target={@myself} />
                 </.rule_card>
               </div>
 
@@ -660,6 +668,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   attr :index, :integer, required: true
   attr :products, :list, required: true
 
+  attr :target, :any, required: true
+
   defp condition_fields(%{row: %{"type" => type}} = assigns) when type in ~w(subtotal quantity) do
     ~H"""
     <div class="flex gap-2">
@@ -685,6 +695,12 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         </span>
       </label>
     </div>
+    """
+  end
+
+  defp condition_fields(%{row: %{"type" => "has_any"}} = assigns) do
+    ~H"""
+    <.list_and_count row={@row} index={@index} products={@products} target={@target} kind="condition" />
     """
   end
 
@@ -841,6 +857,12 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     """
   end
 
+  defp effect_fields(%{row: %{"type" => "gift_any"}} = assigns) do
+    ~H"""
+    <.list_and_count row={@row} index={@index} products={@products} target={@target} kind="effect" />
+    """
+  end
+
   defp effect_fields(%{row: %{"type" => "gift"}} = assigns) do
     ~H"""
     <.product_and_count
@@ -877,6 +899,58 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         />
         <span class="text-base-content/50">₽</span>
       </label>
+    </div>
+    """
+  end
+
+  attr :row, :map, required: true
+  attr :index, :integer, required: true
+  attr :products, :list, required: true
+  attr :target, :any, required: true
+  attr :kind, :string, required: true
+
+  defp list_and_count(assigns) do
+    assigns = assign(assigns, :prefix, "builder[#{assigns.kind}s][#{assigns.index}]")
+
+    ~H"""
+    <div class="space-y-2">
+      <div class="flex flex-wrap gap-1">
+        <span :for={slug <- @row["products"]} class="badge badge-primary badge-outline gap-1">
+          <input type="hidden" name={@prefix <> "[products][]"} value={slug} />
+          {product_name(@products, slug)}
+          <button
+            type="button"
+            phx-click="remove_product"
+            phx-target={@target}
+            phx-value-kind={@kind}
+            phx-value-index={@index}
+            phx-value-slug={slug}
+          >
+            <.icon name="hero-x-mark" class="size-3" />
+          </button>
+        </span>
+      </div>
+      <input type="hidden" name={@prefix <> "[products][]"} value="" />
+      <select
+        id={"#{@kind}-#{@index}-add-#{length(@row["products"])}"}
+        name={@prefix <> "[add]"}
+        class="select select-sm w-full"
+      >
+        <option value="">{gettext("+ Add product")}</option>
+        {Phoenix.HTML.Form.options_for_select(
+          Enum.reject(@products, fn {_, slug} -> slug in @row["products"] end),
+          nil
+        )}
+      </select>
+      <.input
+        type="number"
+        id={"#{@kind}-#{@index}-count"}
+        name={@prefix <> "[count]"}
+        value={@row["count"]}
+        min="1"
+        max="99"
+        label={gettext("Number of items")}
+      />
     </div>
     """
   end

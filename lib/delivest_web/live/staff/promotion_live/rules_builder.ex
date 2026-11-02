@@ -4,8 +4,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   alias Delivest.Money
   alias Delivest.Promo.Dsl
 
-  @condition_types ~w(subtotal quantity has fulfillment time weekday)
-  @effect_types ~w(percent amount gift price)
+  @condition_types ~w(subtotal quantity has has_any fulfillment time weekday)
+  @effect_types ~w(percent amount gift gift_any price)
   @ops ~w(>= > <= < =)
   @fulfillments ~w(delivery pickup dine_in)
   @weekdays ~w(mon tue wed thu fri sat sun)
@@ -60,6 +60,20 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   def remove_effect(builder, index),
     do: %{builder | effects: List.delete_at(builder.effects, index)}
 
+  def remove_product(builder, index, slug, "condition") do
+    %{
+      builder
+      | conditions:
+          List.update_at(
+            builder.conditions,
+            index,
+            &Map.update(&1, "products", [], fn products -> List.delete(products, slug) end)
+          )
+    }
+  end
+
+  def remove_product(builder, index, slug, _kind), do: remove_product(builder, index, slug)
+
   def remove_product(builder, index, slug) do
     effects =
       List.update_at(builder.effects, index, fn row ->
@@ -104,6 +118,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   def condition_error(%{"type" => "quantity", "value" => value}),
     do: unless(integer(value, 0), do: gettext("Enter a number of items"))
 
+  def condition_error(%{"type" => "has_any"} = row), do: list_error(row, false)
+
   def condition_error(%{"type" => "has"} = row), do: product_error(row, "count")
 
   def condition_error(%{"type" => type, "values" => values}) when type in ~w(fulfillment weekday),
@@ -133,6 +149,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   def effect_error(%{"type" => "amount", "value" => value} = row),
     do: if(money(value, 1), do: target_error(row), else: gettext("Enter an amount"))
 
+  def effect_error(%{"type" => "gift_any"} = row), do: list_error(row, true)
+
   def effect_error(%{"type" => "gift"} = row), do: product_error(row, "count")
 
   def effect_error(%{"type" => "price", "price" => price} = row) do
@@ -140,6 +158,22 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
       blank?(row["product"]) -> gettext("Choose a product")
       !money(price, 0) -> gettext("Enter a price")
       true -> nil
+    end
+  end
+
+  defp list_error(row, gift?) do
+    cond do
+      row["products"] == [] ->
+        gettext("Choose at least one product")
+
+      !integer(row["count"], 1, 99) ->
+        gettext("Quantity must be from 1 to 99")
+
+      gift? and String.to_integer(row["count"]) > length(Enum.uniq(row["products"])) ->
+        gettext("Gifts cannot exceed the number of products")
+
+      true ->
+        nil
     end
   end
 
@@ -174,6 +208,9 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp condition_text(%{"type" => "quantity", "op" => op, "value" => value}),
     do: "quantity #{op} #{trim(value)}"
 
+  defp condition_text(%{"type" => "has_any", "products" => slugs, "count" => count}),
+    do: "has (" <> Enum.map_join(slugs, ", ", &~s("#{&1}")) <> ") x#{trim(count)}"
+
   defp condition_text(%{"type" => "has", "product" => product, "count" => count}),
     do: ~s(has "#{product}" x#{trim(count)})
 
@@ -192,6 +229,9 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp effect_text(%{"type" => "amount", "value" => value} = row),
     do: "discount #{sum(value)} rub#{target_text(row)}"
 
+  defp effect_text(%{"type" => "gift_any", "products" => slugs, "count" => count}),
+    do: "gift (" <> Enum.map_join(slugs, ", ", &~s("#{&1}")) <> ") x#{trim(count)}"
+
   defp effect_text(%{"type" => "gift", "product" => product, "count" => count}),
     do: ~s(gift "#{product}" x#{trim(count)})
 
@@ -207,6 +247,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
 
   defp blank_condition("subtotal"), do: %{"type" => "subtotal", "op" => ">=", "value" => ""}
   defp blank_condition("quantity"), do: %{"type" => "quantity", "op" => ">=", "value" => ""}
+  defp blank_condition("has_any"), do: %{"type" => "has_any", "products" => [], "count" => "1"}
   defp blank_condition("has"), do: %{"type" => "has", "product" => "", "count" => "1"}
   defp blank_condition("fulfillment"), do: %{"type" => "fulfillment", "values" => []}
   defp blank_condition("time"), do: %{"type" => "time", "from" => "", "to" => ""}
@@ -218,6 +259,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp blank_effect("amount"),
     do: %{"type" => "amount", "value" => "", "target" => "cart", "products" => []}
 
+  defp blank_effect("gift_any"), do: %{"type" => "gift_any", "products" => [], "count" => "1"}
   defp blank_effect("gift"), do: %{"type" => "gift", "product" => "", "count" => "1"}
   defp blank_effect("price"), do: %{"type" => "price", "product" => "", "price" => ""}
 
@@ -227,6 +269,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
     case row do
       %{"op" => op} when op not in @ops -> Map.put(row, "op", ">=")
       %{"values" => values} -> Map.put(row, "values", Enum.reject(List.wrap(values), &blank?/1))
+      %{"products" => _} -> normalize_products(row)
       row -> row
     end
   end
@@ -235,15 +278,20 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
     row = type_row(row, &blank_effect/1, @effect_types)
 
     case row do
-      %{"products" => products} ->
-        added = Map.get(row, "add", "")
-        products = Enum.reject(products, &blank?/1)
-        products = if blank?(added) or added in products, do: products, else: products ++ [added]
-        row |> Map.delete("add") |> Map.put("products", products)
+      %{"products" => _products} ->
+        normalize_products(row)
 
       row ->
         row
     end
+  end
+
+  defp normalize_products(row) do
+    products = List.wrap(row["products"])
+    added = Map.get(row, "add", "")
+    products = Enum.reject(products, &blank?/1)
+    products = if blank?(added) or added in products, do: products, else: products ++ [added]
+    row |> Map.delete("add") |> Map.put("products", products)
   end
 
   defp type_row(row, blank_fun, types) do
@@ -294,6 +342,9 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp condition_row({:quantity, op, value}),
     do: %{"type" => "quantity", "op" => to_string(op), "value" => to_string(value)}
 
+  defp condition_row({:has_any, slugs, count}),
+    do: %{"type" => "has_any", "products" => slugs, "count" => to_string(count)}
+
   defp condition_row({:has, slug, count}),
     do: %{"type" => "has", "product" => slug, "count" => to_string(count)}
 
@@ -319,6 +370,9 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
       |> blank_effect()
       |> Map.put("value", Money.input(value))
       |> Map.merge(target_row(target))
+
+  defp effect_row({:gift_any, slugs, count}),
+    do: %{"type" => "gift_any", "products" => slugs, "count" => to_string(count)}
 
   defp effect_row({:gift, slug, count}),
     do: %{"type" => "gift", "product" => slug, "count" => to_string(count)}

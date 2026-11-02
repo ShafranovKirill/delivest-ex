@@ -15,10 +15,16 @@ defmodule Delivest.Integrations.Crm do
   }
 
   alias Delivest.Integrations.Journal
+  alias Delivest.Integrations.Health
   alias Delivest.Oms.{Order, Orders}
 
   @permanent_errors [:branch_not_found, :unknown_provider, :missing_settings]
   @confirm_minutes 5
+  @credential_fields %{
+    frontpad: [:api_key, :affiliate],
+    iiko: [:api_key, :organization_id, :terminal_group_id],
+    rkeeper: [:object_id]
+  }
 
   def providers, do: Enum.map(Registry.modules(), &{&1.key(), &1.name()})
 
@@ -122,6 +128,7 @@ defmodule Delivest.Integrations.Crm do
     with {:ok, branch} <- Identity.get_branch(branch_id, preload: [:info]),
          {:ok, %Branch{info: %{crm: settings}}} <-
            Identity.update_integrations(staff, branch, %{"crm" => attrs}) do
+      invalidate_changed_credentials(branch, settings, branch_id)
       {:ok, settings}
     else
       {:error, :info, changeset} -> {:error, Ecto.Changeset.get_change(changeset, :crm)}
@@ -129,6 +136,21 @@ defmodule Delivest.Integrations.Crm do
       error -> error
     end
   end
+
+  defp invalidate_changed_credentials(%Branch{info: %{crm: previous}}, settings, branch_id)
+       when is_map(previous) do
+    Enum.each(@credential_fields, fn {provider, fields} ->
+      Health.invalidate_on_change(
+        provider,
+        branch_id,
+        Map.get(previous, provider),
+        Map.get(settings, provider),
+        fields
+      )
+    end)
+  end
+
+  defp invalidate_changed_credentials(_branch, _settings, _branch_id), do: :ok
 
   def create_order(attrs, provider, opts \\ []) do
     opts = Keyword.put(opts, :crm, %{provider: to_string(provider), status: "pending"})

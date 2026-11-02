@@ -9,9 +9,23 @@ defmodule Delivest.Promo.Dsl.Semantics do
   @max_quantity 99
 
   def build({condition, effects}) do
-    with_errors(condition(condition), all(effects, &effect/1), fn condition, effects ->
+    with_errors(condition(condition), effects(effects), fn condition, effects ->
       %Strategy{condition: condition, effects: effects}
     end)
+  end
+
+  defp effects(effects) do
+    if Enum.count(effects, &match?({:gift_any, _, _}, &1)) > 1 do
+      {:gift_any, [{_, location} | _], _} = Enum.find(effects, &match?({:gift_any, _, _}, &1))
+      {:error, [Error.at(location, gettext("Only one gift choice is allowed"))]}
+    else
+      all(effects, &effect/1)
+    end
+  end
+
+  defp condition({:has_any, items, count}) do
+    [{_, location} | _] = items
+    map(quantity(count, location), &{:has_any, list_slugs(items), &1})
   end
 
   defp condition(nil), do: {:ok, nil}
@@ -50,6 +64,22 @@ defmodule Delivest.Promo.Dsl.Semantics do
 
   defp effect({:gift, {slug, location}, quantity}),
     do: map(quantity(quantity, location), &{:gift, slug(slug), &1})
+
+  defp effect({:gift_any, items, count}) do
+    [{_, location} | _] = items
+    slugs = list_slugs(items)
+
+    with {:ok, count} <- quantity(count, location),
+         {:ok, count} <-
+           range(
+             count,
+             1..length(slugs),
+             location,
+             gettext("Gifts cannot exceed the number of products")
+           ) do
+      {:ok, {:gift_any, slugs, count}}
+    end
+  end
 
   defp effect({:price, {slug, _location}, price}), do: {:ok, {:price, slug(slug), price}}
 
@@ -107,6 +137,8 @@ defmodule Delivest.Promo.Dsl.Semantics do
     do: {:error, [Error.at(location, gettext("Time window is empty"))]}
 
   defp reject_empty_window(result, _from), do: result
+
+  defp list_slugs(items), do: items |> Enum.map(fn {chars, _} -> slug(chars) end) |> Enum.uniq()
 
   defp slug(chars), do: chars |> List.to_string() |> String.trim()
 

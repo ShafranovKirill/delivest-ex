@@ -4,7 +4,7 @@ defmodule Delivest.Integrations.HealthTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
-  alias Delivest.Integrations.{Error, Frontpad, Health, Journal}
+  alias Delivest.Integrations.{Crm, Error, Frontpad, Health, Journal}
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Integrations.Health.Status
 
@@ -21,6 +21,12 @@ defmodule Delivest.Integrations.HealthTest do
     })
 
     branch
+  end
+
+  defp staff(branch, permissions) do
+    staff = insert(:staff, role: insert(:role, permissions: permissions))
+    insert(:staff_branch, staff: staff, branch: branch)
+    staff
   end
 
   defp stub(response), do: Req.Test.stub(Delivest.HTTP.Client, &Req.Test.json(&1, response))
@@ -84,5 +90,148 @@ defmodule Delivest.Integrations.HealthTest do
     assert Error.classify({:connection_error, "timeout", :timeout}) == :retry
     assert Frontpad.classify_error({:frontpad, "invalid_secret"}) == :auth
     assert Frontpad.classify_error({:frontpad, "requests_limit"}) == {:snooze, 60}
+  end
+
+  test "a settings-only provider has no connection check" do
+    assert Health.checkable?(:frontpad)
+    assert Health.checkable?(:yookassa)
+    refute Health.checkable?(:zvonok)
+
+    assert {:error, :not_checkable} = Health.check(:zvonok, nil)
+    assert Health.get(:zvonok, nil) == nil
+  end
+
+  test "a manual check needs integrations.update and access to the branch" do
+    branch = branch("key")
+    other_branch = insert(:branch)
+    reader = staff(branch, ["integrations.read"])
+    editor = staff(branch, ["integrations.update"])
+    stranger = staff(other_branch, ["integrations.update"])
+
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn ->
+      flunk("the external API must not be called")
+    end)
+
+    refute Health.checkable_for?(reader, :frontpad, branch.id)
+    refute Health.checkable_for?(stranger, :frontpad, branch.id)
+    assert Health.checkable_for?(editor, :frontpad, branch.id)
+
+    assert {:error, :forbidden} = Health.check_as(reader, :frontpad, branch.id)
+    assert {:error, :forbidden} = Health.check_as(stranger, :frontpad, branch.id)
+    assert Health.get(:frontpad, branch.id) == nil
+    assert Journal.list(:frontpad, branch.id) == []
+  end
+
+  test "shared settings need an administrator" do
+    branch = branch("key")
+    editor = staff(branch, ["integrations.read", "integrations.update"])
+
+    refute Health.checkable_for?(editor, :yookassa, branch.id)
+    assert {:error, :forbidden} = Health.check_as(editor, :yookassa, nil)
+  end
+
+  test "an administrator checks the shared settings" do
+    admin = insert(:staff, role: build(:role, permissions: ["admin"]))
+
+    Repo.insert!(%Delivest.Integrations.Yookassa.Settings{
+      shop_id: "shop",
+      secret_key: "secret"
+    })
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      Req.Test.json(conn, %{"account_id" => "account"})
+    end)
+
+    assert Health.checkable_for?(admin, :yookassa, nil)
+    assert {:ok, %Status{status: :ok}} = Health.check_as(admin, :yookassa, nil)
+  end
+
+  test "a warning keeps the connection result and is cleared without it" do
+    branch = branch("key")
+    stub(%{"result" => "success", "error" => "no_stops"})
+    assert {:ok, %Status{status: :ok}} = Health.check(:frontpad, branch.id)
+
+    assert {:ok, _status} = Health.warn(:frontpad, branch.id, "catalog_issues:2")
+
+    assert %Status{status: :ok, warning: "catalog_issues:2", checked_at: %DateTime{}} =
+             Health.get(:frontpad, branch.id)
+
+    assert :ok = Health.clear_warning(:frontpad, branch.id)
+
+    assert %Status{status: :ok, warning: nil, checked_at: %DateTime{}} =
+             Health.get(:frontpad, branch.id)
+  end
+
+  test "a warning can live together with a failed connection" do
+    branch = branch("key")
+
+    assert {:ok, %Status{status: :failed}} =
+             Health.report(:frontpad, branch.id, Frontpad, {:error, :timeout})
+
+    assert {:ok, _status} = Health.warn(:frontpad, branch.id, "catalog_issues:2")
+
+    assert %Status{status: :failed, checked_at: %DateTime{}, warning: "catalog_issues:2"} =
+             Health.get(:frontpad, branch.id)
+  end
+
+  test "successful saves reset the previous check only when credentials changed" do
+    branch = branch("key")
+    staff = insert(:staff, role: build(:role, permissions: ["admin"]))
+    assert {:ok, %Status{status: :ok}} = Health.report(:frontpad, branch.id, Frontpad, :ok)
+
+    assert {:ok, _crm} =
+             Crm.update_branch_settings(staff, branch.id, %{
+               "enabled" => true,
+               "provider" => "frontpad",
+               "frontpad" => %{"api_key" => "key"}
+             })
+
+    assert %Status{status: :ok} = Health.get(:frontpad, branch.id)
+
+    assert {:ok, _crm} =
+             Crm.update_branch_settings(staff, branch.id, %{"enabled" => false})
+
+    assert %Status{status: :ok} = Health.get(:frontpad, branch.id)
+
+    assert {:ok, _crm} =
+             Crm.update_branch_settings(staff, branch.id, %{
+               "enabled" => true,
+               "provider" => "frontpad",
+               "frontpad" => %{"api_key" => "new-key"}
+             })
+
+    assert %Status{status: nil, checked_at: nil} = Health.get(:frontpad, branch.id)
+  end
+
+  test "changing credentials drops the result but keeps an independent warning" do
+    branch = branch("key")
+    staff = insert(:staff, role: build(:role, permissions: ["admin"]))
+    assert {:ok, %Status{status: :ok}} = Health.report(:frontpad, branch.id, Frontpad, :ok)
+    assert {:ok, _status} = Health.warn(:frontpad, branch.id, "catalog_issues:1")
+
+    assert {:ok, _crm} =
+             Crm.update_branch_settings(staff, branch.id, %{
+               "enabled" => true,
+               "provider" => "frontpad",
+               "frontpad" => %{"api_key" => "new-key"}
+             })
+
+    assert %Status{status: nil, checked_at: nil, warning: "catalog_issues:1"} =
+             Health.get(:frontpad, branch.id)
+  end
+
+  test "a failed save does not reset the previous check" do
+    branch = branch("key")
+    staff = insert(:staff, role: build(:role, permissions: ["admin"]))
+    assert {:ok, %Status{status: :ok}} = Health.report(:frontpad, branch.id, Frontpad, :ok)
+
+    assert {:error, %Ecto.Changeset{}} =
+             Crm.update_branch_settings(staff, branch.id, %{
+               "enabled" => true,
+               "provider" => "iiko",
+               "iiko" => %{"api_key" => ""}
+             })
+
+    assert %Status{status: :ok} = Health.get(:frontpad, branch.id)
   end
 end

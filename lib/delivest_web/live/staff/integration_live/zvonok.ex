@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Zvonok
-  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -11,7 +11,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
     {:ok,
      socket
      |> assign(page_title: gettext("Sign-in by phone number"))
-     |> assign_settings(Zvonok.get_settings())}
+     |> assign_settings(Zvonok.get_settings())
+     |> assign_context()}
   end
 
   @impl true
@@ -28,7 +29,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
     case Zvonok.update_settings(socket.assigns.current_staff, params) do
       {:ok, settings} ->
         {:noreply,
-         socket |> assign_settings(settings) |> put_flash(:info, gettext("Settings saved"))}
+         socket
+         |> assign_settings(settings)
+         |> assign_context()
+         |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "zvonok"))}
@@ -43,6 +47,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
       settings: settings,
       form: to_form(Zvonok.change_settings(settings), as: "zvonok")
     )
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
 
   @impl true
@@ -63,6 +71,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
             "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
           )
         }
+      />
+
+      <.live_component
+        module={HealthComponent}
+        id="zvonok-health"
+        provider={:zvonok}
+        branch_id={@current_branch.id}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.form

@@ -54,7 +54,9 @@ defmodule Delivest.Oms.Orders.Update do
       CartGuard.acquire(attrs["cart_id"], order.branch_id, order.id)
     end)
     |> Multi.run(:pricing, fn _, %{cart: cart, client_id: client_id} ->
-      Pricing.run(cart, attrs, client_id, order)
+      with {:ok, result} <- Pricing.run(cart, attrs, client_id, order),
+           {:ok, _} <- Delivest.Oms.Orders.StopGuard.check(cart.branch_id, result),
+           do: {:ok, result}
     end)
     |> Multi.run(:delivery, fn _, %{pricing: pricing} ->
       DeliveryFee.run(order.branch_id, attrs, pricing, [source: "staff"], order)

@@ -10,12 +10,13 @@ defmodule Delivest.Oms.Order.AppliedPromotion do
     field :promo_code_id, :binary_id
     field :name, :string
     field :code, :string
+    field :gift_product_ids, {:array, :binary_id}, default: []
     field :discount, :integer, default: 0
   end
 
   def changeset(applied, attrs) do
     applied
-    |> cast(attrs, [:promotion_id, :promo_code_id, :name, :code, :discount])
+    |> cast(attrs, [:promotion_id, :promo_code_id, :name, :code, :discount, :gift_product_ids])
     |> validate_required([:promotion_id, :name])
   end
 end

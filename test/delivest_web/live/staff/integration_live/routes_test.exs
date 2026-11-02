@@ -5,9 +5,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.RoutesTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.{Frontpad, Health}
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.BranchSettings
-  alias Delivest.Integrations.Frontpad
   alias Delivest.Repo
 
   defp sign_in(conn, branch, permissions) do
@@ -41,6 +41,36 @@ defmodule DelivestWeb.Staff.IntegrationLive.RoutesTest do
 
     lv |> element("#route-toggle-staff") |> render_click()
     assert Crm.get_branch_settings(branch.id).sources == ["app", "staff"]
+  end
+
+  test "the state shows the saved sources right after a toggle", %{conn: conn} do
+    branch = insert(:branch)
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :frontpad,
+        sources: ["app"],
+        frontpad: %Frontpad.Settings{api_key: "key"}
+      }
+    })
+
+    assert {:ok, _status} = Health.report(:frontpad, branch.id, Frontpad, :ok)
+
+    {:ok, lv, _html} =
+      live(
+        sign_in(conn, branch, ["integrations.read", "integrations.update"]),
+        ~p"/staff/b/#{branch}/integrations/routes"
+      )
+
+    assert render(lv) =~ "Connection checked"
+    assert has_element?(lv, "#routes-state-usage", "App")
+    refute has_element?(lv, "#routes-state-usage", "Admin")
+
+    lv |> element("#route-toggle-staff") |> render_click()
+
+    assert has_element?(lv, "#routes-state-usage", "Admin")
   end
 
   test "without a crm the routes cannot be switched on", %{conn: conn} do

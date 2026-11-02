@@ -9,6 +9,7 @@ defmodule Delivest.Promo.Strategy do
           | {:subtotal, atom(), non_neg_integer()}
           | {:quantity, atom(), non_neg_integer()}
           | {:has, slug(), pos_integer()}
+          | {:has_any, [slug()], pos_integer()}
           | {:fulfillment, [atom()]}
           | {:time, Time.t(), Time.t()}
           | {:weekday, [1..7]}
@@ -17,6 +18,7 @@ defmodule Delivest.Promo.Strategy do
           {:percent, 1..100, target(), pos_integer() | nil}
           | {:amount, pos_integer(), target()}
           | {:gift, slug(), pos_integer()}
+          | {:gift_any, [slug()], pos_integer()}
           | {:price, slug(), non_neg_integer()}
 
   @type t :: %__MODULE__{condition: condition() | nil, effects: [effect()]}
@@ -35,11 +37,13 @@ defmodule Delivest.Promo.Strategy do
 
   defp condition_slugs({:not, a}), do: condition_slugs(a)
   defp condition_slugs({:has, slug, _quantity}), do: [slug]
+  defp condition_slugs({:has_any, slugs, _}), do: slugs
   defp condition_slugs(_condition), do: []
 
   defp effect_slugs({:percent, _value, target, _cap}), do: target_slugs(target)
   defp effect_slugs({:amount, _value, target}), do: target_slugs(target)
   defp effect_slugs({:gift, slug, _quantity}), do: [slug]
+  defp effect_slugs({:gift_any, slugs, _}), do: slugs
   defp effect_slugs({:price, slug, _price}), do: [slug]
 
   defp target_slugs({:products, slugs}), do: slugs

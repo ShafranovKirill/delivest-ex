@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   alias Delivest.Integrations.{Channels, Crm}
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Oms.{OrderSource, SourceStats}
+  alias DelivestWeb.Staff.IntegrationLive.{Presentation, StateComponents}
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -12,14 +13,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   def mount(_params, _session, socket) do
     branch_id = socket.assigns.current_branch.id
 
+    context = Presentation.context(branch_id)
+
     {:ok,
      socket
      |> assign(
        page_title: gettext("Order routes"),
        can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update"),
-       stats: SourceStats.today(branch_id)
+       stats: SourceStats.today(branch_id),
+       context: context
      )
-     |> assign_crm(Crm.get_branch_settings(branch_id))}
+     |> assign_crm(context.crm)}
   end
 
   @impl true
@@ -43,11 +47,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
 
   defp assign_crm(socket, crm) do
     provider = BranchSettings.active_provider(crm)
+    context = %{socket.assigns.context | crm: crm}
+    state = provider && Presentation.state(provider, context)
 
     assign(socket,
+      context: context,
       crm: crm,
       provider: provider,
-      provider_name: provider && Crm.provider_name(provider)
+      provider_name: provider && Crm.provider_name(provider),
+      state: state
     )
   end
 
@@ -80,6 +88,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
         <.icon name="hero-information-circle" class="size-5" />
         <span>{gettext("No CRM is connected to this branch. All orders stay in the app.")}</span>
       </div>
+
+      <StateComponents.summary
+        :if={@state}
+        id="routes-state"
+        state={@state}
+        branch={@current_branch}
+      />
 
       <div class="grid gap-3 lg:grid-cols-[1fr_8rem_1fr] lg:items-stretch">
         <%= for source <- OrderSource.all() do %>

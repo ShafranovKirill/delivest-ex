@@ -3,7 +3,7 @@ defmodule Delivest.Integrations.YandexEda do
 
   alias Delivest.{Identity, Repo}
   alias Delivest.Integrations.Channels.Products
-  alias Delivest.Integrations.Journal
+  alias Delivest.Integrations.{Health, Journal}
 
   alias Delivest.Integrations.YandexEda.{
     BranchSettings,
@@ -140,15 +140,42 @@ defmodule Delivest.Integrations.YandexEda do
     do: Settings.changeset(settings, attrs)
 
   def update_settings(staff, attrs) do
-    if Identity.can?(staff, "admin"),
-      do: get_settings() |> Settings.changeset(attrs) |> Repo.insert_or_update(),
-      else: {:error, :forbidden}
+    if Identity.can?(staff, "admin") do
+      previous = get_settings()
+
+      case previous |> Settings.changeset(attrs) |> Repo.insert_or_update() do
+        {:ok, settings} = result ->
+          Health.invalidate_on_change(
+            :yandex_eda,
+            nil,
+            previous,
+            settings,
+            [:client_id, :client_secret, :push_client_id, :push_client_secret]
+          )
+
+          result
+
+        other ->
+          other
+      end
+    else
+      {:error, :forbidden}
+    end
   end
 
   def rotate_credentials(staff) do
-    if Identity.can?(staff, "admin"),
-      do: get_settings() |> Settings.changeset(%{}) |> Repo.insert_or_update() |> rotate(),
-      else: {:error, :forbidden}
+    if Identity.can?(staff, "admin") do
+      case get_settings() |> Settings.changeset(%{}) |> Repo.insert_or_update() |> rotate() do
+        {:ok, _settings} = result ->
+          Health.invalidate(:yandex_eda, nil)
+          result
+
+        other ->
+          other
+      end
+    else
+      {:error, :forbidden}
+    end
   end
 
   def issue_token(client_id, client_secret) do

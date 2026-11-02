@@ -316,6 +316,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :product_unavailable,
               :client_blocked,
               :price_changed,
+              :promo_gift_not_available,
+              :fulfillment_unavailable,
               :promo_unavailable,
               :points_unavailable,
               :insufficient_points,

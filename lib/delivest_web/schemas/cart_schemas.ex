@@ -52,6 +52,52 @@ defmodule DelivestWeb.Schemas.CartSchemas do
     })
   end
 
+  defmodule PromoGiftChoiceRequest do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "PromoGiftChoiceRequest",
+      type: :object,
+      properties: %{
+        product_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}}
+      },
+      required: [:product_ids]
+    })
+  end
+
+  defmodule PromoGiftOption do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "PromoGiftOption",
+      type: :object,
+      properties: %{
+        product_id: %Schema{type: :string, format: :uuid},
+        name: %Schema{type: :string},
+        price: %Schema{type: :integer},
+        image_url: %Schema{type: :string, nullable: true}
+      },
+      required: [:product_id, :name, :price]
+    })
+  end
+
+  defmodule PromoGiftChoice do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "PromoGiftChoice",
+      type: :object,
+      nullable: true,
+      properties: %{
+        required: %Schema{type: :integer},
+        available: %Schema{type: :boolean},
+        selected: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
+        options: %Schema{type: :array, items: DelivestWeb.Schemas.CartSchemas.PromoGiftOption}
+      },
+      required: [:required, :available, :selected, :options]
+    })
+  end
+
   defmodule PromoCodeRequest do
     require OpenApiSpex
 
@@ -100,12 +146,15 @@ defmodule DelivestWeb.Schemas.CartSchemas do
             "subtotal",
             "quantity",
             "product",
+            "products",
             "fulfillment",
             "time",
             "weekday",
             "requires_client"
           ]
         },
+        names: %Schema{type: :array, items: %Schema{type: :string}},
+        product_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
         missing: %Schema{type: :integer, nullable: true, example: 30_000},
         product_id: %Schema{type: :string, format: :uuid, nullable: true},
         name: %Schema{type: :string, nullable: true, example: "Кола 0.5"},
@@ -192,6 +241,7 @@ defmodule DelivestWeb.Schemas.CartSchemas do
         description: %Schema{type: :string, nullable: true},
         code: %Schema{type: :string, nullable: true, example: "SUMMER2025"},
         discount: %Schema{type: :integer, example: 15_000, description: "Скидка в копейках"},
+        gift_choice: DelivestWeb.Schemas.CartSchemas.PromoGiftChoice,
         gifts: %Schema{type: :array, items: PromoGift}
       },
       required: [:promotion_id, :name, :discount, :gifts]

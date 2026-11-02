@@ -6,6 +6,9 @@ defmodule DelivestWeb.KitchenPresence do
   def track_screen(pid, branch_id, staff),
     do: track(pid, topic(branch_id), staff.id, %{since: DateTime.utc_now()})
 
+  def untrack_screen(pid, branch_id, staff),
+    do: untrack(pid, topic(branch_id), staff.id)
+
   def subscribe(branch_id),
     do: Phoenix.PubSub.subscribe(Delivest.PubSub, status_topic(branch_id))
 

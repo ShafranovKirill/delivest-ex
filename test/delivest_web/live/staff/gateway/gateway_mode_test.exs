@@ -112,4 +112,24 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
 
     refute has_element?(lv, "#gateway-badge")
   end
+
+  test "a crm kitchen is not opened even when it is enabled", %{conn: conn} do
+    branch = insert(:branch)
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      kitchen: %{enabled: true},
+      crm: %{enabled: true, provider: :iiko}
+    })
+
+    staff = insert(:staff, role: insert(:role, permissions: @permissions))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    assert {:error, {:redirect, %{to: to, flash: flash}}} =
+             live(conn, ~p"/staff/b/#{branch}/kitchen")
+
+    assert to == ~p"/staff/b/#{branch}/dashboard"
+    assert flash["error"] == "The kitchen works in the CRM and is not available in the app"
+  end
 end

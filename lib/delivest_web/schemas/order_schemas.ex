@@ -339,6 +339,10 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         },
         fulfillment_type: %Schema{type: :string, enum: ["dine_in", "delivery", "pickup"]},
         payment_method: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
+        awaiting_payment: %Schema{
+          type: :boolean,
+          description: "Заказ ждёт онлайн-оплаты и ещё не принят в работу"
+        },
         points_earned: %Schema{
           type: :integer,
           description: "Звёзды после выполнения заказа, включая бонусы за товары"

@@ -51,6 +51,7 @@ defmodule Delivest.Oms.Carts do
     Repo.transaction(fn ->
       {_count, _} = Repo.delete_all(from ci in CartItem, where: ci.cart_id == ^cart_id)
 
+      Repo.update_all(from(c in Cart, where: c.id == ^cart_id), set: [promo_gifts: %{}])
       refresh_and_cache(cart_id)
     end)
   end
@@ -402,6 +403,7 @@ defmodule Delivest.Oms.Carts do
       client_id: cart.client_id,
       fulfillment_type: cart.fulfillment_type,
       promo_code: cart.promo_code,
+      promo_gifts: cart.promo_gifts || %{},
       items: Enum.reverse(view_items),
       total_quantity: total_qty,
       subtotal_amount: total_amt,
@@ -464,8 +466,20 @@ defmodule Delivest.Oms.Carts do
       fetch_and_recalculate(cart_id)
     else
       case Cachex.get(@cache_store, cart_id) do
-        {:ok, %CartView{points_earned: _, base_stars: _, product_stars: _} = cached_view} ->
-          CartPricing.apply(cached_view)
+        {:ok,
+         %CartView{points_earned: _, base_stars: _, product_stars: _, promo_gifts: _} =
+             cached_view} ->
+          case Repo.get(Cart, cart_id) do
+            nil ->
+              nil
+
+            cart ->
+              CartPricing.apply(%{
+                cached_view
+                | promo_gifts: cart.promo_gifts || %{},
+                  promo_code: cart.promo_code
+              })
+          end
 
         _ ->
           fetch_and_recalculate(cart_id)

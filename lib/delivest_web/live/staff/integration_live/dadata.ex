@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Dadata
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -10,7 +11,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
     {:ok,
      socket
      |> assign(page_title: gettext("Delivery address on the map"))
-     |> assign_settings(Dadata.get_settings())}
+     |> assign_settings(Dadata.get_settings())
+     |> assign_context()}
   end
 
   @impl true
@@ -27,7 +29,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
     case Dadata.update_settings(socket.assigns.current_staff, params) do
       {:ok, settings} ->
         {:noreply,
-         socket |> assign_settings(settings) |> put_flash(:info, gettext("Settings saved"))}
+         socket
+         |> assign_settings(settings)
+         |> assign_context()
+         |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "dadata"))}
@@ -42,6 +47,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
       settings: settings,
       form: to_form(Dadata.change_settings(settings), as: "dadata")
     )
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
 
   @impl true
@@ -62,6 +71,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
             "Customers pick the address on the map with dadata.ru suggestions. When it is off, the address is typed into plain fields. The settings are shared by every branch."
           )
         }
+      />
+
+      <.live_component
+        module={HealthComponent}
+        id="dadata-health"
+        provider={:dadata}
+        branch_id={@current_branch.id}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.form

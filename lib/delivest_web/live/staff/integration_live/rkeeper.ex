@@ -3,8 +3,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
 
   alias Delivest.Identity
   alias Delivest.Integrations.{Crm, Rkeeper}
-  alias Delivest.Integrations.Crm.StopSync
-  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
+  alias Delivest.Integrations.Crm.{BranchSettings, StopSync}
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -18,7 +18,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
        token?: Rkeeper.Api.configured?(),
        tab: :settings
      )
-     |> assign_settings(Crm.get_branch_settings(socket.assigns.current_branch.id))}
+     |> assign_settings(Crm.get_branch_settings(socket.assigns.current_branch.id))
+     |> assign_context()}
   end
 
   @impl true
@@ -28,7 +29,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
   def handle_event("validate", %{"crm" => params}, socket) do
     changeset =
       socket.assigns.crm
-      |> Crm.change_branch_settings(Map.put(params, "provider", "rkeeper"))
+      |> Crm.change_branch_settings(settings_params(params, socket.assigns))
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, form: to_form(changeset, as: "crm"))}
@@ -38,10 +39,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
     case Crm.update_branch_settings(
            socket.assigns.current_staff,
            socket.assigns.current_branch.id,
-           Map.put(params, "provider", "rkeeper")
+           settings_params(params, socket.assigns)
          ) do
       {:ok, crm} ->
-        {:noreply, socket |> assign_settings(crm) |> put_flash(:info, gettext("Settings saved"))}
+        {:noreply,
+         socket
+         |> assign_settings(crm)
+         |> assign_context()
+         |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(Map.put(changeset, :action, :update), as: "crm"))}
@@ -62,8 +67,43 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
   end
 
   defp assign_settings(socket, crm) do
-    crm = %{crm | provider: :rkeeper, rkeeper: crm.rkeeper || %Rkeeper.Settings{}}
-    assign(socket, crm: crm, form: to_form(Crm.change_branch_settings(crm), as: "crm"))
+    active_provider = BranchSettings.active_provider(crm)
+
+    crm = %{
+      crm
+      | enabled: active_provider == :rkeeper,
+        rkeeper: crm.rkeeper || %Rkeeper.Settings{}
+    }
+
+    assign(socket,
+      crm: crm,
+      active_provider: active_provider,
+      form: to_form(Crm.change_branch_settings(crm), as: "crm")
+    )
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+  end
+
+  defp settings_params(params, assigns) do
+    provider = "rkeeper"
+    submitted? = params["enabled"] in [true, "true"]
+    displayed? = assigns.crm.enabled == true
+
+    cond do
+      submitted? and not displayed? ->
+        params |> Map.put("enabled", "true") |> Map.put("provider", provider)
+
+      submitted? ->
+        Map.put(params, "provider", provider)
+
+      displayed? ->
+        Map.delete(params, "provider")
+
+      true ->
+        params |> Map.delete("provider") |> Map.delete("enabled")
+    end
   end
 
   defp ready?(crm), do: Rkeeper.configured?(crm.rkeeper)
@@ -119,12 +159,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
       </div>
 
       <.live_component
-        :if={@tab == :settings and ready?(@crm)}
+        :if={@tab == :settings}
         module={HealthComponent}
         id="rkeeper-health"
         provider={:rkeeper}
         branch_id={@current_branch.id}
-        scope={@current_branch.id}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.form
@@ -137,6 +178,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
       >
         <fieldset disabled={!@can_edit} class="space-y-4">
           <.input field={@form[:enabled]} type="checkbox" label={gettext("Send orders to r_keeper")} />
+          <p
+            :if={@active_provider && @active_provider != :rkeeper}
+            id="rkeeper-provider-switch"
+            class="text-xs text-warning"
+          >
+            {gettext(
+              "Orders are now sent to %{crm}. Turning this on will switch sending to r_keeper.",
+              crm: Crm.provider_name(@active_provider)
+            )}
+          </p>
 
           <.input
             field={@form[:menu_source]}

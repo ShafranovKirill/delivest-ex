@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
   alias Delivest.{Couriers, Identity}
   alias Delivest.Identity.Branch.CourierSettings
   alias Delivest.Integrations.YandexDelivery
-  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -20,7 +20,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
        couriers: Couriers.settings(branch_id),
        automatic: Couriers.automatic?(branch_id)
      )
-     |> assign_settings(YandexDelivery.settings(branch_id))}
+     |> assign_settings(YandexDelivery.settings(branch_id))
+     |> assign_context()}
   end
 
   @impl true
@@ -41,7 +42,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
          ) do
       {:ok, settings} ->
         {:noreply,
-         socket |> assign_settings(settings) |> put_flash(:info, gettext("Settings saved"))}
+         socket
+         |> assign_settings(settings)
+         |> assign_context()
+         |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -62,6 +66,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
       settings: settings,
       form: to_form(YandexDelivery.change_settings(settings), as: "yandex_delivery")
     )
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
 
   defp taxi_class_options,
@@ -111,12 +119,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
       </div>
 
       <.live_component
-        :if={YandexDelivery.Settings.configured?(@settings)}
         module={HealthComponent}
         id="yandex-delivery-health"
         provider={:yandex_delivery}
         branch_id={@current_branch.id}
-        scope={@current_branch.id}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.form

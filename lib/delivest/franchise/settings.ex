@@ -26,6 +26,9 @@ defmodule Delivest.Franchise.Settings do
     field :timezone, :string, default: "Europe/Moscow"
     field :yandex_org_id, :string
     field :yandex_api_key, :string, redact: true
+    field :loyalty_per_rubles, :integer, default: 100
+    field :loyalty_stars, :integer, default: 5
+    field :loyalty_expire_days, :integer, default: 180
     field :icon_key, :string
     field :share_image_key, :string
     field :logo_key, :string
@@ -41,6 +44,9 @@ defmodule Delivest.Franchise.Settings do
     |> update_change(:dark_primary_color, &downcase/1)
     |> validate_required([:name, :primary_color, :timezone])
     |> Delivest.LocalTime.validate_timezone(:timezone)
+    |> validate_number(:loyalty_per_rubles, greater_than: 0, less_than_or_equal_to: 100_000)
+    |> validate_number(:loyalty_stars, greater_than: 0, less_than_or_equal_to: 100_000)
+    |> validate_number(:loyalty_expire_days, greater_than: 0, less_than_or_equal_to: 3650)
     |> validate_length(:name, max: 60)
     |> validate_length(:description, max: 300)
     |> validate_length(:yandex_org_id, max: 40)
@@ -77,7 +83,10 @@ defmodule Delivest.Franchise.Settings do
       :email,
       :phone,
       :yandex_org_id,
-      :yandex_api_key
+      :yandex_api_key,
+      :loyalty_per_rubles,
+      :loyalty_stars,
+      :loyalty_expire_days
     ]
   end
 end

@@ -103,6 +103,8 @@ defmodule DelivestWeb.Router do
 
     get "/me", Profile.ProfileController, :show
     get "/loyalty", Loyalty.LoyaltyController, :show
+    post "/push", Push.PushController, :subscribe_client
+    delete "/push", Push.PushController, :unsubscribe_client
     get "/orders", Order.OrderController, :index
 
     scope "/addresses", Address do
@@ -132,6 +134,7 @@ defmodule DelivestWeb.Router do
       delete "/:cart_id/items/:product_id", CartController, :remove_item
       delete "/:cart_id/clear", CartController, :clear
       post "/:cart_id/repeat/:order_id", CartController, :repeat
+      put "/:cart_id/promotions/:promotion_id/gifts", CartController, :choose_promotion_gifts
       put "/:cart_id/context", CartController, :update_context
       delete "/:cart_id/promo_code", CartController, :remove_promo_code
 

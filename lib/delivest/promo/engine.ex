@@ -19,7 +19,7 @@ defmodule Delivest.Promo.Engine do
 
   @spec run([map()], Context.t()) :: Result.t()
   def run(items, %Context{} = context) do
-    compiled = Catalog.list(context.branch_id)
+    compiled = Catalog.list(context.branch_id) |> Catalog.refresh_products(context.branch_id)
     automatic = Enum.filter(compiled, &Compiled.automatic?/1)
     {code_entry, code_state} = resolve_code(context, compiled)
     usage = load_usage(automatic, code_entry, context)
@@ -32,12 +32,13 @@ defmodule Delivest.Promo.Engine do
     selected = Selection.pick(eligible(code_entry, code_verdict) ++ eligible(auto_verdicts))
 
     basket
-    |> Effects.apply(selected)
+    |> Effects.apply(selected, context.promo_gifts)
     |> Result.build(
       selected,
       code_of(code_entry),
       hints(auto_verdicts),
-      code_state(code_state, code_entry, code_verdict)
+      code_state(code_state, code_entry, code_verdict),
+      context.promo_gifts
     )
   end
 

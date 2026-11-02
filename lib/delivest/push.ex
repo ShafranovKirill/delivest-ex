@@ -1,9 +1,22 @@
 defmodule Delivest.Push do
   import Ecto.Query
 
-  alias Delivest.Identity.Staff
+  require Logger
+
+  alias Delivest.Identity.{Client, Staff}
   alias Delivest.Oms.Order
-  alias Delivest.Push.{NoteWorker, StaffSubscription, StaffWorker, Subscription, Vapid, Worker}
+
+  alias Delivest.Push.{
+    ClientSubscription,
+    NoteWorker,
+    Sender,
+    StaffSubscription,
+    StaffWorker,
+    Subscription,
+    Vapid,
+    Worker
+  }
+
   alias Delivest.Repo
 
   defdelegate public_key, to: Vapid
@@ -50,4 +63,56 @@ defmodule Delivest.Push do
     %{event: event, id: id} |> StaffWorker.new() |> Oban.insert()
     :ok
   end
+
+  def subscribe_client(%Client{} = client, attrs) do
+    %ClientSubscription{client_id: client.id}
+    |> ClientSubscription.changeset(attrs)
+    |> Repo.insert(
+      on_conflict: {:replace, [:client_id, :p256dh, :auth, :locale, :updated_at]},
+      conflict_target: [:client_id, :endpoint]
+    )
+  end
+
+  def unsubscribe_client(%Client{} = client, endpoint) when is_binary(endpoint) do
+    Repo.delete_all(
+      from(s in ClientSubscription,
+        where: s.client_id == ^client.id and s.endpoint == ^endpoint
+      )
+    )
+
+    :ok
+  end
+
+  def unsubscribe_client(_client, _endpoint), do: :ok
+
+  def client_subscriptions(client_id) when is_binary(client_id) do
+    Repo.all(from(s in ClientSubscription, where: s.client_id == ^client_id))
+  end
+
+  @doc """
+  Sends one message to every device of the client. `message` receives the
+  subscription locale and returns the push payload.
+  """
+  def deliver_to_client(client_id, message) when is_function(message, 1) do
+    client_id
+    |> client_subscriptions()
+    |> Enum.each(fn subscription ->
+      case Sender.deliver(subscription, message.(subscription.locale || "ru")) do
+        :ok ->
+          :ok
+
+        :expired ->
+          Repo.delete_all(from(s in ClientSubscription, where: s.id == ^subscription.id))
+
+        {:error, reason} ->
+          Logger.warning(
+            "client push to #{URI.parse(subscription.endpoint).host} failed: #{inspect(reason)}"
+          )
+      end
+    end)
+
+    :ok
+  end
+
+  def deliver_to_client(_client_id, _message), do: :ok
 end
