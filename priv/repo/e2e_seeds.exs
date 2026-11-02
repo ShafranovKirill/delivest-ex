@@ -2,6 +2,7 @@ alias Delivest.{Relations, Repo}
 alias Delivest.Identity.{Branch, RolePresets, Role, Staff, Staffs}
 alias Delivest.Identity.Branch.BranchInfo
 alias Delivest.Net.{Category, Product}
+alias Delivest.Oms.{Carts, Order, Orders}
 
 import Ecto.Query
 
@@ -99,6 +100,57 @@ unless Repo.exists?(from c in Category, where: c.id in ^category_ids) do
       {:ok, _} = Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id, %{})
     end
   end)
+end
+
+# A separate, inactive branch with enough orders to exercise the pickup board paging.
+# It stays inactive so it does not appear in the customer branch picker.
+board_branch =
+  Repo.get_by(Branch, slug: "e2e-board") ||
+    %Branch{}
+    |> Branch.changeset(%{name: "E2E Board", slug: "e2e-board", code: "E2EB", is_active: false})
+    |> Repo.insert!()
+
+if board_branch.is_active do
+  board_branch |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
+end
+
+unless Repo.get_by(BranchInfo, branch_id: board_branch.id) do
+  Repo.insert!(%BranchInfo{branch_id: board_branch.id, board_token: "e2e-board-many"})
+end
+
+category = Repo.get_by!(Category, name: "Пицца")
+product = Repo.get_by!(Product, slug: "e2e-1")
+
+unless Relations.related?("Branch", board_branch.id, "Product", product.id) do
+  {:ok, _} = Relations.create_relation(Repo, "Branch", board_branch.id, "Product", product.id, %{})
+end
+
+order_count = 40
+
+existing_orders =
+  Repo.aggregate(from(o in Order, where: o.branch_id == ^board_branch.id), :count)
+
+if existing_orders < order_count do
+  for index <- (existing_orders + 1)..order_count//1 do
+    {:ok, cart} =
+      Carts.create_cart(%{session_id: "e2e-board-#{index}", branch_id: board_branch.id})
+
+    {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
+
+    {:ok, order} =
+      Orders.create_order(%{
+        "cart_id" => cart.id,
+        "branch_id" => board_branch.id,
+        "fulfillment_type" => "pickup",
+        "payment_method" => "cash"
+      })
+
+    status = if rem(index, 2) == 0, do: :preparing, else: :ready
+
+    order
+    |> Ecto.Changeset.change(status: status)
+    |> Repo.update!()
+  end
 end
 
 IO.puts("E2E data is ready")

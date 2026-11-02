@@ -99,3 +99,19 @@
 [data-phx-teleported-src] {
   display: contents;
 }
+
+.board-compact h2 {
+  padding-block: 0.25rem;
+  font-size: clamp(1rem, 4vh, 2rem);
+}
+
+.board-compact .board-grid {
+  gap: 0.25rem;
+  padding: 0.25rem;
+}
+
+.board-compact .board-number {
+  padding: 0.25rem 0.5rem;
+  font-size: clamp(1rem, 4vh, 2rem);
+  line-height: 1.1;
+}
