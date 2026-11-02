@@ -7,34 +7,46 @@ defmodule DelivestWeb.Staff.IntegrationLive.HealthComponent do
 
   @impl true
   def update(assigns, socket) do
-    socket =
-      socket
-      |> assign(assigns)
-      |> assign(
-        state: Presentation.state(assigns.provider, assigns.branch),
-        checkable?: Health.checkable?(assigns.provider)
-      )
+    current = socket.assigns[:context]
 
-    {:ok, socket}
+    if current && current.version == assigns.context.version do
+      # The parent re-rendered the form only. Keep the last check result and do
+      # not read the saved settings again until a fresh context arrives.
+      {:ok, assign(socket, assigns)}
+    else
+      {:ok, socket |> assign(assigns) |> assign_status()}
+    end
   end
 
   @impl true
   def handle_event("check", _params, socket) do
-    case Health.check(socket.assigns.provider, socket.assigns.branch_id) do
+    case Health.check_as(socket.assigns.staff, socket.assigns.provider, socket.assigns.branch_id) do
       {:ok, %Status{}} ->
-        {:noreply,
-         assign(socket, state: Presentation.state(socket.assigns.provider, socket.assigns.branch))}
+        context = refresh_health(socket.assigns.context, socket.assigns.branch_id)
+        {:noreply, assign(socket, state: Presentation.state(socket.assigns.provider, context))}
 
       {:error, _reason} ->
         {:noreply, socket}
     end
   end
 
+  defp assign_status(socket) do
+    assigns = socket.assigns
+
+    assign(socket,
+      state: Presentation.state(assigns.provider, assigns.context),
+      checkable?: Health.checkable_for?(assigns.staff, assigns.provider, assigns.branch_id)
+    )
+  end
+
+  defp refresh_health(context, branch_id),
+    do: %{context | health: Health.for_branch(branch_id)}
+
   @impl true
   def render(assigns) do
     ~H"""
     <div id={@id}>
-      <StateComponents.summary id={"#{@id}-summary"} state={@state} branch={@branch}>
+      <StateComponents.summary id={"#{@id}-summary"} state={@state} branch={@context.branch}>
         <:action>
           <button
             :if={@checkable?}

@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Catalog, StopSync}
   alias Delivest.Integrations.{Channels, Frontpad}
-  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
@@ -23,6 +23,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
      )
      |> load_settings()
      |> load_catalog()
+     |> assign_context()
      |> then(&assign(&1, tab: if(api_key?(&1.assigns.crm), do: :check, else: :settings)))}
   end
 
@@ -82,6 +83,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         {:noreply,
          socket
          |> assign_settings(crm)
+         |> assign_context()
          |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -113,6 +115,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
       active_provider: active_provider,
       form: to_form(Crm.change_branch_settings(crm), as: "crm")
     )
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
 
   defp prefill(%BranchSettings{} = crm, active_provider),
@@ -287,7 +293,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         id="frontpad-health"
         provider={:frontpad}
         branch_id={@current_branch.id}
-        branch={@current_branch}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.guide :if={@tab == :settings} crm={@crm} branch={@current_branch} />

@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
 
   alias Delivest.{Fiscal, Identity}
   alias Delivest.Fiscal.{BranchSettings, Vat}
-  alias DelivestWeb.Staff.IntegrationLive.HealthComponent
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -15,7 +15,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
        page_title: gettext("Receipts"),
        can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update")
      )
-     |> assign_settings(Fiscal.settings(socket.assigns.current_branch.id))}
+     |> assign_settings(Fiscal.settings(socket.assigns.current_branch.id))
+     |> assign_context()}
   end
 
   @impl true
@@ -36,7 +37,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
          ) do
       {:ok, settings} ->
         {:noreply,
-         socket |> assign_settings(settings) |> put_flash(:info, gettext("Settings saved"))}
+         socket
+         |> assign_settings(settings)
+         |> assign_context()
+         |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -57,6 +61,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
       settings: settings,
       form: to_form(Fiscal.change_settings(settings), as: "fiscal")
     )
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
 
   defp mode_options,
@@ -111,7 +119,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
         id="fiscal-health"
         provider={:atol}
         branch_id={@current_branch.id}
-        branch={@current_branch}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.form

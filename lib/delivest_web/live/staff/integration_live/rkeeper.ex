@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
   alias Delivest.Identity
   alias Delivest.Integrations.{Crm, Rkeeper}
   alias Delivest.Integrations.Crm.{BranchSettings, StopSync}
-  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -18,7 +18,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
        token?: Rkeeper.Api.configured?(),
        tab: :settings
      )
-     |> assign_settings(Crm.get_branch_settings(socket.assigns.current_branch.id))}
+     |> assign_settings(Crm.get_branch_settings(socket.assigns.current_branch.id))
+     |> assign_context()}
   end
 
   @impl true
@@ -41,7 +42,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
            settings_params(params, socket.assigns)
          ) do
       {:ok, crm} ->
-        {:noreply, socket |> assign_settings(crm) |> put_flash(:info, gettext("Settings saved"))}
+        {:noreply,
+         socket
+         |> assign_settings(crm)
+         |> assign_context()
+         |> put_flash(:info, gettext("Settings saved"))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(Map.put(changeset, :action, :update), as: "crm"))}
@@ -75,6 +80,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
       active_provider: active_provider,
       form: to_form(Crm.change_branch_settings(crm), as: "crm")
     )
+  end
+
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
 
   defp settings_params(params, assigns) do
@@ -155,7 +164,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
         id="rkeeper-health"
         provider={:rkeeper}
         branch_id={@current_branch.id}
-        branch={@current_branch}
+        staff={@current_staff}
+        context={@context}
       />
 
       <.form

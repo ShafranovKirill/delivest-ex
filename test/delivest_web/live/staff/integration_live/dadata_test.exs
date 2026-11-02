@@ -29,6 +29,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.DadataTest do
 
     assert %{api_key: "key", enabled: true} = Dadata.get_settings()
     assert Dadata.active?()
+    assert has_element?(lv, "#dadata-health-summary-credentials", "Filled in")
+    assert has_element?(lv, "#dadata-health-summary-usage", "On")
 
     assert %{"data" => %{"address_map" => true}} =
              conn |> get(~p"/client/franchise") |> json_response(200)

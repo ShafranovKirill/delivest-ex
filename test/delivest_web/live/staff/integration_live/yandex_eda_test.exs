@@ -68,6 +68,32 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
     assert has_element?(lv, "#yandex_eda_enabled[disabled]")
   end
 
+  test "a reader cannot run the shared connection check", %{conn: conn} do
+    push_credentials()
+    branch = yandex_branch()
+
+    {:ok, lv, _html} =
+      live(
+        sign_in(conn, branch, ["integrations.read"]),
+        ~p"/staff/b/#{branch}/integrations/yandex-eda"
+      )
+
+    refute has_element?(lv, "#yandex-eda-health-check")
+
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn ->
+      send(test_pid, :external_call)
+      flunk("the external API must not be called")
+    end)
+
+    lv |> with_target("#yandex-eda-health") |> render_hook("check")
+
+    refute_received :external_call
+    assert Delivest.Integrations.Health.get(:yandex_eda, nil) == nil
+    assert Delivest.Integrations.Journal.list(:yandex_eda, nil) == []
+  end
+
   test "a branch editor pauses the branch and lifts the pause", %{conn: conn} do
     push_credentials()
     branch = yandex_branch()

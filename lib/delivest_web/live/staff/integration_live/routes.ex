@@ -13,14 +13,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   def mount(_params, _session, socket) do
     branch_id = socket.assigns.current_branch.id
 
+    context = Presentation.context(branch_id)
+
     {:ok,
      socket
      |> assign(
        page_title: gettext("Order routes"),
        can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update"),
-       stats: SourceStats.today(branch_id)
+       stats: SourceStats.today(branch_id),
+       context: context
      )
-     |> assign_crm(Crm.get_branch_settings(branch_id))}
+     |> assign_crm(context.crm)}
   end
 
   @impl true
@@ -44,12 +47,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
 
   defp assign_crm(socket, crm) do
     provider = BranchSettings.active_provider(crm)
-
-    state =
-      provider &&
-        Presentation.state(provider, socket.assigns.current_branch, crm)
+    context = %{socket.assigns.context | crm: crm}
+    state = provider && Presentation.state(provider, context)
 
     assign(socket,
+      context: context,
       crm: crm,
       provider: provider,
       provider_name: provider && Crm.provider_name(provider),

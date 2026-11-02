@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Yookassa
-  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -11,7 +11,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
     {:ok,
      socket
      |> assign(page_title: gettext("Online payment"), shop: nil)
-     |> assign_settings(Yookassa.get_settings())}
+     |> assign_settings(Yookassa.get_settings())
+     |> assign_context()}
   end
 
   @impl true
@@ -30,6 +31,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
         {:noreply,
          socket
          |> assign_settings(settings)
+         |> assign_context()
          |> assign(shop: nil)
          |> put_flash(:info, gettext("Settings saved"))}
 
@@ -58,6 +60,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
     )
   end
 
+  defp assign_context(socket) do
+    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -81,7 +87,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
         id="yookassa-health"
         provider={:yookassa}
         branch_id={@current_branch.id}
-        branch={@current_branch}
+        staff={@current_staff}
+        context={@context}
       />
 
       <div id="yookassa-payment-link" class="alert">

@@ -12,25 +12,24 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    branch = socket.assigns.current_branch
-    crm = Crm.get_branch_settings(branch.id)
+    context = Presentation.context(socket.assigns.current_branch.id)
 
     providers = @providers ++ Enum.map(Crm.providers(), &elem(&1, 0))
-    states = Map.new(providers, &{&1, Presentation.state(&1, branch, crm)})
+    states = Map.new(providers, &{&1, Presentation.state(&1, context)})
 
     {:ok,
      assign(socket,
        page_title: gettext("Integrations"),
        states: states,
-       routes_state: routes_state(crm, branch),
+       routes_state: routes_state(context),
        can_edit_shared: Identity.can?(socket.assigns.current_staff, "admin")
      )}
   end
 
-  defp routes_state(%BranchSettings{} = crm, branch) do
-    case BranchSettings.active_provider(crm) do
+  defp routes_state(context) do
+    case BranchSettings.active_provider(context.crm) do
       nil -> nil
-      provider -> Presentation.state(provider, branch, crm)
+      provider -> Presentation.state(provider, context)
     end
   end
 
