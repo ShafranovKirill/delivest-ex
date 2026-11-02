@@ -103,6 +103,8 @@ defmodule DelivestWeb.Router do
 
     get "/me", Profile.ProfileController, :show
     get "/loyalty", Loyalty.LoyaltyController, :show
+    post "/push", Push.PushController, :subscribe_client
+    delete "/push", Push.PushController, :unsubscribe_client
     get "/orders", Order.OrderController, :index
 
     scope "/addresses", Address do

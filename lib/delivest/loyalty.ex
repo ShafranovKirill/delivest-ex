@@ -1,7 +1,7 @@
 defmodule Delivest.Loyalty do
   import Ecto.Query
 
-  alias Delivest.{Audit, Gateway, Identity, Repo}
+  alias Delivest.{Audit, Franchise, Gateway, Identity, Repo}
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.{BranchInfo, LoyaltySettings}
   alias Delivest.Loyalty.{Account, Entry}
@@ -9,15 +9,43 @@ defmodule Delivest.Loyalty do
 
   @history_limit 100
 
-  def settings(%Branch{info: %BranchInfo{loyalty: %LoyaltySettings{} = loyalty}}), do: loyalty
+  @doc """
+  The accrual rate and the expiry period are set once for the whole franchise.
+  """
+  def policy do
+    settings = Franchise.get_settings()
+
+    %{
+      per_rubles: settings.loyalty_per_rubles || 100,
+      stars: settings.loyalty_stars || 5,
+      expire_days: settings.loyalty_expire_days || 180
+    }
+  end
+
+  def settings(%Branch{info: %BranchInfo{loyalty: %LoyaltySettings{} = loyalty}}),
+    do: with_policy(loyalty)
 
   def settings(%Branch{id: id}), do: settings(id)
 
   def settings(branch_id) when is_binary(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
-      {:ok, %Branch{info: %BranchInfo{loyalty: %LoyaltySettings{} = loyalty}}} -> loyalty
-      _ -> %LoyaltySettings{}
+      {:ok, %Branch{info: %BranchInfo{loyalty: %LoyaltySettings{} = loyalty}}} ->
+        with_policy(loyalty)
+
+      _ ->
+        with_policy(%LoyaltySettings{})
     end
+  end
+
+  defp with_policy(%LoyaltySettings{} = loyalty) do
+    policy = policy()
+
+    %{
+      loyalty
+      | per_rubles: policy.per_rubles,
+        stars: policy.stars,
+        expire_days: policy.expire_days
+    }
   end
 
   def enabled?(%Branch{} = branch),

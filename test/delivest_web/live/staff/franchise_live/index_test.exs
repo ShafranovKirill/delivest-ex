@@ -15,7 +15,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
   test "settings are split into sections", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
 
-    for section <- ~w(brand seller logo images documents) do
+    for section <- ~w(brand seller loyalty logo images documents) do
       assert has_element?(
                lv,
                ~s(#franchise-section-#{section}[href="/staff/franchise/#{section}"])

@@ -51,6 +51,52 @@ defmodule DelivestWeb.Client.Push.PushController do
     end
   end
 
+  operation(:subscribe_client,
+    summary: "Подписаться на уведомления клиента",
+    description:
+      "Сохраняет push-подписку браузера для текущего клиента: напоминания о сгорании звёзд.",
+    tags: ["Push"],
+    security: [%{"bearer" => []}],
+    request_body: {"Подписка браузера", "application/json", PushSubscriptionRequest},
+    responses: [
+      no_content: "Подписка сохранена",
+      unprocessable_entity: {"Неверная подписка", "application/json", ErrorResponse}
+    ]
+  )
+
+  def subscribe_client(conn, params) do
+    case Push.subscribe_client(conn.assigns.current_client, subscription_attrs(params)) do
+      {:ok, _subscription} ->
+        send_resp(conn, :no_content, "")
+
+      {:error, _changeset} ->
+        ApiError.send_error(
+          conn,
+          :unprocessable_entity,
+          :invalid_subscription,
+          "Invalid subscription"
+        )
+    end
+  end
+
+  operation(:unsubscribe_client,
+    summary: "Отписаться от уведомлений клиента",
+    description: "Удаляет push-подписку браузера текущего клиента.",
+    tags: ["Push"],
+    security: [%{"bearer" => []}],
+    parameters: [
+      endpoint: [in: :query, schema: %Schema{type: :string}, required: true]
+    ],
+    responses: [no_content: "Подписка удалена"]
+  )
+
+  def unsubscribe_client(conn, %{"endpoint" => endpoint}) do
+    Push.unsubscribe_client(conn.assigns.current_client, endpoint)
+    send_resp(conn, :no_content, "")
+  end
+
+  def unsubscribe_client(conn, _params), do: send_resp(conn, :no_content, "")
+
   defp owned_active_order(conn, order_id) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
 

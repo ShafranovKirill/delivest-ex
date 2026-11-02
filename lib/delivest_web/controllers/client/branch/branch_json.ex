@@ -42,7 +42,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
 
   defp payment_methods(_info), do: [:cash, :card_offline]
 
-  defp loyalty(%{loyalty: %Delivest.Identity.Branch.LoyaltySettings{} = loyalty}, branch) do
+  defp loyalty(%{loyalty: %Delivest.Identity.Branch.LoyaltySettings{}}, branch) do
+    loyalty = Delivest.Loyalty.settings(branch)
     enabled = loyalty.enabled and Delivest.Gateway.own?(branch, :loyalty)
 
     %{
