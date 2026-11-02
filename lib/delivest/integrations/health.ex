@@ -14,11 +14,20 @@ defmodule Delivest.Integrations.Health do
     Zvonok
   }
 
-  alias Delivest.Fiscal
+  alias Delivest.{Fiscal, Identity}
   alias Delivest.Integrations.Health.Status
   alias Delivest.Repo
 
   @settings_only [:zvonok]
+  @network_providers [:zvonok, :dadata, :yookassa, :yandex_eda]
+
+  @doc """
+  Whether the provider's settings are shared by every branch.
+
+  Shared settings are managed with the `admin` permission, branch integrations
+  need access to the branch and `integrations.update`.
+  """
+  def network?(provider), do: provider in @network_providers
 
   @doc """
   Whether the provider has a real API request behind its connection check.
@@ -27,6 +36,22 @@ defmodule Delivest.Integrations.Health do
   connection check: it must not be shown as a successful API call.
   """
   def checkable?(provider), do: to_string(provider) not in Enum.map(@settings_only, &to_string/1)
+
+  @doc """
+  Runs a manual connection check for a staff member.
+
+  This is the only entry point for the button in the UI: permissions are
+  checked before the external request, the health write and the journal entry.
+  """
+  def check_as(staff, provider, branch_id) do
+    with :ok <- authorize_check(staff, provider, branch_id) do
+      check(provider, branch_id)
+    end
+  end
+
+  def checkable_for?(staff, provider, branch_id) do
+    checkable?(provider) and authorize_check(staff, provider, branch_id) == :ok
+  end
 
   def check(provider, branch_id) do
     if checkable?(provider) do
@@ -57,7 +82,7 @@ defmodule Delivest.Integrations.Health do
     %Status{
       provider: to_string(provider),
       branch_id: branch_id,
-      status: :ok,
+      status: nil,
       message: nil,
       checked_at: nil,
       warning: message,
@@ -89,7 +114,7 @@ defmodule Delivest.Integrations.Health do
   end
 
   @doc """
-  Drops the previous connection result.
+  Drops the previous connection result, keeping an independent warning.
 
   Called after credentials changed successfully: the old success or failure no
   longer proves anything about the new settings. A failed save must never call it.
@@ -98,7 +123,7 @@ defmodule Delivest.Integrations.Health do
     Status
     |> where([s], s.provider == ^to_string(provider))
     |> by_branch(branch_id)
-    |> Repo.delete_all()
+    |> Repo.update_all(set: [status: nil, message: nil, checked_at: nil])
 
     :ok
   end
@@ -136,6 +161,19 @@ defmodule Delivest.Integrations.Health do
       conflict_target: [:provider, :branch_id],
       returning: true
     )
+  end
+
+  defp authorize_check(staff, provider, branch_id) do
+    cond do
+      not checkable?(provider) ->
+        {:error, :not_checkable}
+
+      network?(provider) ->
+        if Identity.can?(staff, "admin"), do: :ok, else: {:error, :forbidden}
+
+      true ->
+        Identity.authorize(staff, "integrations.update", branch_id)
+    end
   end
 
   defp kind(module, reason) do

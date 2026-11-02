@@ -12,8 +12,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
 
   use Gettext, backend: DelivestWeb.Gettext
 
-  alias Delivest.{Fiscal}
-  alias Delivest.Identity.Branch.PaymentSettings
+  alias Delivest.{Fiscal, Identity}
+  alias Delivest.Identity.Branch
+  alias Delivest.Identity.Branch.{BranchInfo, PaymentSettings}
 
   alias Delivest.Integrations.{
     Channels,
@@ -29,16 +30,51 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Integrations.Health.Status
 
-  @shared [:zvonok, :dadata, :yookassa]
   @crm_providers [:frontpad, :iiko, :rkeeper]
 
-  def shared?(provider), do: provider in @shared
+  @doc """
+  Loads everything the status block needs in one place.
 
-  def state(provider, %{info: info} = branch) do
-    info = info || %{}
-    crm = Map.get(info, :crm) || %BranchSettings{}
-    credentials = credentials(provider, branch, info)
-    status = Health.get(provider, connection_scope(provider, branch))
+  The same map is used by provider pages, the integrations list and the routes
+  page, so a saved integration is displayed from saved data only. The `version`
+  lets a LiveComponent notice a fresh context even when the form changed only.
+  """
+  def context(branch_id) do
+    branch =
+      case Identity.get_branch(branch_id, preload: [:info]) do
+        {:ok, %Branch{} = branch} -> branch
+        _error -> %Branch{id: branch_id, info: %BranchInfo{}}
+      end
+
+    info = branch.info || %{}
+
+    %{
+      branch: branch,
+      crm: Map.get(info, :crm) || %BranchSettings{},
+      health: Health.for_branch(branch_id),
+      shared: shared_settings(),
+      version: System.unique_integer([:positive, :monotonic])
+    }
+  end
+
+  def shared?(provider), do: Health.network?(provider)
+
+  def state(provider, %{branch: branch, crm: crm, health: health, shared: shared}) do
+    build_state(provider, branch, crm, health, shared)
+  end
+
+  def state(provider, %{info: _info} = branch) do
+    state(provider, branch, Map.get(branch.info || %{}, :crm) || %BranchSettings{})
+  end
+
+  def state(provider, branch, crm) do
+    build_state(provider, branch, crm, Health.for_branch(branch.id), shared_settings())
+  end
+
+  defp build_state(provider, branch, crm, health, shared) do
+    info = branch.info || %{}
+    credentials = credentials(provider, branch, info, shared)
+    status = Map.get(health, to_string(provider))
 
     %{
       provider: provider,
@@ -50,34 +86,25 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
     }
   end
 
-  def state(provider, branch, crm) do
-    credentials = credentials(provider, branch, branch.info || %{})
-    status = Health.get(provider, connection_scope(provider, branch))
-
+  defp shared_settings do
     %{
-      provider: provider,
-      scope: scope(provider, branch),
-      credentials: credentials,
-      connection: connection(status),
-      usage: usage(provider, branch, branch.info || %{}, crm, credentials),
-      warnings: warnings(status)
+      zvonok: Zvonok.get_settings(),
+      dadata: Dadata.get_settings(),
+      yookassa: Yookassa.get_settings(),
+      yandex_eda: YandexEda.get_settings()
     }
   end
 
-  def connection_scope(provider, _branch) when provider in @shared, do: nil
-  def connection_scope(:yandex_eda, _branch), do: nil
-  def connection_scope(_provider, branch), do: branch.id
+  def connection_scope(provider, branch), do: if(shared?(provider), do: nil, else: branch.id)
 
   ## Credentials
 
-  def credentials(provider, branch, info \\ nil) do
-    info = info || branch.info || %{}
-
-    {items, required?} = credential_items(provider, branch, info)
+  defp credentials(provider, branch, info, shared) do
+    {items, required?} = credential_items(provider, branch, info, shared)
     items = Enum.reject(items, fn {_label, value} -> blank?(value) end)
-    total = length(credential_items(provider, branch, info) |> elem(0))
+    total = length(credential_items(provider, branch, info, shared) |> elem(0))
     filled = length(items)
-    missing = credential_missing(provider, branch, info)
+    missing = credential_missing(provider, branch, info, shared)
 
     state =
       cond do
@@ -96,20 +123,20 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
     }
   end
 
-  defp credential_missing(provider, branch, info) do
-    {items, required?} = credential_items(provider, branch, info)
+  defp credential_missing(provider, branch, info, shared) do
+    {items, required?} = credential_items(provider, branch, info, shared)
 
     if required?,
       do: for({label, value} <- items, blank?(value), do: label),
       else: []
   end
 
-  defp credential_items(:frontpad, _branch, info) do
+  defp credential_items(:frontpad, _branch, info, _shared) do
     settings = crm_provider(info, :frontpad)
     {[{gettext("API key"), settings.api_key}], true}
   end
 
-  defp credential_items(:iiko, _branch, info) do
+  defp credential_items(:iiko, _branch, info, _shared) do
     settings = crm_provider(info, :iiko)
 
     {[
@@ -119,13 +146,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
      ], true}
   end
 
-  defp credential_items(:rkeeper, _branch, info) do
+  defp credential_items(:rkeeper, _branch, info, _shared) do
     settings = crm_provider(info, :rkeeper)
     {[{gettext("Restaurant objectId"), settings.object_id}], true}
   end
 
-  defp credential_items(:yookassa, _branch, _info) do
-    settings = Yookassa.get_settings()
+  defp credential_items(:yookassa, _branch, _info, shared) do
+    settings = shared.yookassa
 
     {[
        {gettext("Shop ID"), settings.shop_id},
@@ -133,8 +160,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
      ], true}
   end
 
-  defp credential_items(:zvonok, _branch, _info) do
-    settings = Zvonok.get_settings()
+  defp credential_items(:zvonok, _branch, _info, shared) do
+    settings = shared.zvonok
 
     {[
        {gettext("API key"), settings.public_key},
@@ -143,12 +170,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
      ], true}
   end
 
-  defp credential_items(:dadata, _branch, _info) do
-    {[{gettext("API key"), Dadata.get_settings().api_key}], true}
+  defp credential_items(:dadata, _branch, _info, shared) do
+    {[{gettext("API key"), shared.dadata.api_key}], true}
   end
 
-  defp credential_items(:yandex_eda, _branch, _info) do
-    settings = YandexEda.get_settings()
+  defp credential_items(:yandex_eda, _branch, _info, shared) do
+    settings = shared.yandex_eda
 
     {[
        {gettext("Client ID"), settings.client_id},
@@ -156,7 +183,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
      ], true}
   end
 
-  defp credential_items(:yandex_delivery, _branch, info) do
+  defp credential_items(:yandex_delivery, _branch, info, _shared) do
     settings = Map.get(info, :yandex_delivery) || %YandexDelivery.Settings{}
 
     {[
@@ -165,8 +192,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
      ], true}
   end
 
-  defp credential_items(:atol, branch, _info) do
-    fiscal = Fiscal.settings(branch.id)
+  defp credential_items(:atol, _branch, info, _shared) do
+    fiscal = Map.get(info, :fiscal) || %Fiscal.BranchSettings{}
 
     if fiscal.mode == :own do
       {[
@@ -179,7 +206,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
     end
   end
 
-  defp credential_items(_provider, _branch, _info), do: {[], false}
+  defp credential_items(_provider, _branch, _info, _shared), do: {[], false}
 
   defp crm_provider(info, provider) do
     crm = Map.get(info, :crm) || %BranchSettings{}
@@ -215,9 +242,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   def connection(%Status{status: :failed} = status),
     do: connection_map(:failed, status)
 
-  # Legacy rows created before warnings were split.
-  def connection(%Status{status: :warning} = status),
-    do: connection_map(:unchecked, nil) |> Map.put(:warning, status.message)
+  # A row may keep a warning while the connection result is unknown.
+  def connection(%Status{} = status),
+    do: connection_map(:unchecked, nil) |> Map.put(:warning, status.warning)
 
   defp connection_map(state, status) do
     %{
@@ -498,9 +525,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
 
   ## Scope
 
-  def scope(provider, _branch) when provider in @shared, do: {:network, nil}
   def scope(:yandex_eda, branch), do: {:network, branch.name}
-  def scope(_provider, branch), do: {:branch, branch.name}
+
+  def scope(provider, branch),
+    do: if(shared?(provider), do: {:network, nil}, else: {:branch, branch.name})
 
   def scope_text({:network, nil}), do: gettext("All branches")
 

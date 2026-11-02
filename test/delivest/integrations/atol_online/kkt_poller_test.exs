@@ -106,11 +106,12 @@ defmodule Delivest.Integrations.AtolOnline.KktPollerTest do
 
     assert :done = KktPoller.poll(branch.id)
 
-    assert %{status: :ok, warning: "kkt_issues:fn_full"} = Health.get(:atol, branch.id)
+    assert %{status: nil, checked_at: nil, warning: "kkt_issues:fn_full"} =
+             Health.get(:atol, branch.id)
 
     stub_kkt([register()])
     assert :done = KktPoller.poll(branch.id)
-    assert %{status: :ok} = Health.get(:atol, branch.id)
+    assert %{status: nil, warning: nil} = Health.get(:atol, branch.id)
   end
 
   test "a failed request is retried by the poller" do
