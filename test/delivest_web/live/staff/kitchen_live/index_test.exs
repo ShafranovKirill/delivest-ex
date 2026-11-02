@@ -8,6 +8,7 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.Kitchen
   alias Delivest.Repo
+  alias DelivestWeb.KitchenPresence
 
   setup %{conn: conn} do
     branch = insert(:branch)
@@ -80,6 +81,44 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
              live(conn, ~p"/staff/b/#{branch}/kitchen")
 
     assert flash["error"] == "The kitchen is off in the branch settings"
+    assert KitchenPresence.status(branch.id) == {:offline, nil}
+  end
+
+  test "a crm kitchen is not opened even when enabled", %{conn: conn} do
+    branch = insert(:branch)
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      kitchen: %{enabled: true},
+      crm: %{enabled: true, provider: :frontpad, frontpad: %{api_key: "key"}}
+    })
+
+    admin = insert(:staff, role: build(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => admin.id})
+
+    assert {:error, {:redirect, %{to: to, flash: flash}}} =
+             live(conn, ~p"/staff/b/#{branch}/kitchen")
+
+    assert to == ~p"/staff/b/#{branch}/dashboard"
+    assert flash["error"] == "The kitchen works in the CRM and is not available in the app"
+    assert KitchenPresence.status(branch.id) == {:offline, nil}
+  end
+
+  test "an open screen closes when the kitchen is switched off", %{
+    conn: conn,
+    branch: branch
+  } do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/kitchen")
+    assert has_element?(lv, "#kitchen-screen")
+
+    admin = insert(:staff, role: build(:role, permissions: ["admin"]))
+
+    assert {:ok, _branch} =
+             Delivest.Identity.update_branch(admin, branch, %{}, %{
+               "kitchen" => %{"enabled" => false}
+             })
+
+    assert_redirect(lv, ~p"/staff/branches/select")
   end
 
   test "an operator without kitchen rights is sent away", %{conn: conn, branch: branch} do
