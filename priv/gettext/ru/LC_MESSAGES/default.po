@@ -8614,6 +8614,11 @@ msgstr "Баланс обновлён"
 msgid "Customers earn stars for completed orders."
 msgstr "Клиенты получают звёзды за выполненные заказы."
 
+#: lib/delivest_web/live/staff/franchise_live/sections.ex:43
+#, elixir-autogen, elixir-format
+msgid "Customers earn stars for completed orders. The rate and expiry are the same for every branch."
+msgstr "Клиенты получают звёзды за выполненные заказы. Ставка и срок сгорания общие для всех филиалов."
+
 #: lib/delivest_web/live/staff/client_live/show.ex:58
 #, elixir-autogen, elixir-format
 msgid "Enter the reason for the correction"

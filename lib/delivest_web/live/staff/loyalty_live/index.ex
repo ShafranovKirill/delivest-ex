@@ -193,29 +193,12 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
           label={gettext("Loyalty program in this branch")}
           disabled={not @can_edit}
         />
-        <div class="grid sm:grid-cols-2 gap-4">
-          <.input
-            field={@form[:per_rubles]}
-            type="number"
-            min="1"
-            label={gettext("For every, ₽")}
-            disabled={not @can_edit}
-          />
-          <.input
-            field={@form[:stars]}
-            type="number"
-            min="1"
-            label={gettext("Stars")}
-            disabled={not @can_edit}
-          />
-        </div>
-        <.input
-          field={@form[:expire_days]}
-          type="number"
-          min="1"
-          label={gettext("Stars expire after, days")}
-          disabled={not @can_edit}
-        />
+        <p class="text-sm text-base-content/60">
+          {gettext("For every, ₽")} / {gettext("Stars")} / {gettext("Stars expire after, days")} —
+          <.link navigate={~p"/staff/franchise/loyalty"} class="link link-primary">
+            {gettext("Franchise settings")}
+          </.link>
+        </p>
         <.input
           field={@form[:shop_enabled]}
           type="checkbox"

@@ -35,6 +35,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "invalid_phone",
             "call_failed",
             "confirmation_not_found",
+            "invalid_code",
             "invalid_refresh_token",
             "address_not_found",
             "internal_error",

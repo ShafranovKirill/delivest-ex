@@ -3,9 +3,11 @@ defmodule DelivestWeb.Client.PushControllerTest do
 
   import Delivest.Factory
 
+  alias Delivest.Push.ClientSubscription
   alias Delivest.PushClient
   alias Delivest.Push.Subscription
   alias Delivest.Repo
+  alias DelivestWeb.ClientToken
 
   setup %{conn: conn} do
     branch = insert(:branch, is_active: true)
@@ -67,5 +69,47 @@ defmodule DelivestWeb.Client.PushControllerTest do
              conn
              |> post(~p"/client/orders/#{order_id}/push", %{"endpoint" => "https://x"})
              |> json_response(422)
+  end
+
+  test "subscribes a signed-in client to loyalty reminders once" do
+    client = insert(:client)
+    device = PushClient.new()
+
+    assert authed(client) |> post(~p"/client/push", device.attrs) |> response(204)
+    assert authed(client) |> post(~p"/client/push", device.attrs) |> response(204)
+
+    assert [%ClientSubscription{client_id: client_id, locale: "en"}] =
+             Repo.all(ClientSubscription)
+
+    assert client_id == client.id
+  end
+
+  test "unsubscribes a signed-in client by endpoint" do
+    client = insert(:client)
+    device = PushClient.new()
+
+    assert authed(client) |> post(~p"/client/push", device.attrs) |> response(204)
+
+    endpoint = URI.encode_query(%{endpoint: device.attrs["endpoint"]})
+    assert authed(client) |> delete("/client/push?" <> endpoint) |> response(204)
+
+    assert Repo.all(ClientSubscription) == []
+  end
+
+  test "rejects a broken client subscription" do
+    client = insert(:client)
+
+    assert %{"error" => "invalid_subscription"} =
+             authed(client)
+             |> post(~p"/client/push", %{"endpoint" => "https://x"})
+             |> json_response(422)
+  end
+
+  defp authed(client) do
+    put_req_header(
+      build_conn(),
+      "authorization",
+      "Bearer " <> ClientToken.issue(client.id).access_token
+    )
   end
 end
