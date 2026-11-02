@@ -600,7 +600,7 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
       end)
 
       assert :done = Reconciliation.poll("all")
-      assert %{status: :warning, message: "reconcile_issues:1"} = Health.get(:yookassa, nil)
+      assert %{status: :ok, warning: "reconcile_issues:1"} = Health.get(:yookassa, nil)
     end
   end
 end

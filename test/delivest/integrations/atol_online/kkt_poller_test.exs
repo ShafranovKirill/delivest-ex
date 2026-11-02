@@ -106,7 +106,7 @@ defmodule Delivest.Integrations.AtolOnline.KktPollerTest do
 
     assert :done = KktPoller.poll(branch.id)
 
-    assert %{status: :warning, message: "kkt_issues:fn_full"} = Health.get(:atol, branch.id)
+    assert %{status: :ok, warning: "kkt_issues:fn_full"} = Health.get(:atol, branch.id)
 
     stub_kkt([register()])
     assert :done = KktPoller.poll(branch.id)

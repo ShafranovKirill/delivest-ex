@@ -34,7 +34,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDeliveryTest do
 
   test "saves the settings and keeps the token", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert lv |> element("#integration-yandex-delivery") |> render() =~ "Not connected"
+    assert lv |> element("#integration-yandex-delivery") |> render() =~ "Not filled in"
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/yandex-delivery")
 
@@ -58,7 +58,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDeliveryTest do
     refute render(lv) =~ "y-token"
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert lv |> element("#integration-yandex-delivery") |> render() =~ "Calls couriers"
+    assert lv |> element("#integration-yandex-delivery") |> render() =~ "Automatic courier call"
   end
 
   test "the order card shows the yandex courier", %{conn: conn, branch: branch} do

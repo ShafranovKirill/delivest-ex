@@ -111,12 +111,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
       </div>
 
       <.live_component
-        :if={YandexDelivery.Settings.configured?(@settings)}
         module={HealthComponent}
         id="yandex-delivery-health"
         provider={:yandex_delivery}
         branch_id={@current_branch.id}
-        scope={@current_branch.id}
+        branch={@current_branch}
       />
 
       <.form

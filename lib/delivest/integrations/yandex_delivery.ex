@@ -55,10 +55,22 @@ defmodule Delivest.Integrations.YandexDelivery do
     do: Settings.changeset(settings, attrs)
 
   def update_settings(staff, branch_id, attrs) do
+    previous = settings(branch_id)
+
     with {:ok, branch} <- Identity.get_branch(branch_id, preload: :info),
          {:ok, branch} <-
            Identity.update_integrations(staff, branch, %{"yandex_delivery" => attrs}) do
-      {:ok, branch.info.yandex_delivery}
+      settings = branch.info.yandex_delivery
+
+      Delivest.Integrations.Health.invalidate_on_change(
+        :yandex_delivery,
+        branch_id,
+        previous,
+        settings,
+        [:token, :contact_email]
+      )
+
+      {:ok, settings}
     else
       {:error, :info, changeset} ->
         {:error, Ecto.Changeset.get_change(changeset, :yandex_delivery)}

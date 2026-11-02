@@ -44,7 +44,7 @@ defmodule Delivest.Integrations.Crm.CatalogPollerTest do
     stub_catalog("150")
 
     assert :done = CatalogPoller.poll(branch.id)
-    assert %{status: :warning, message: "catalog_issues:1"} = Health.get(:frontpad, branch.id)
+    assert %{status: :ok, warning: "catalog_issues:1"} = Health.get(:frontpad, branch.id)
 
     Repo.update_all(CatalogSnapshot,
       set: [checked_at: DateTime.add(DateTime.utc_now(), -2, :hour)]

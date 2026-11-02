@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Zvonok
-  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -63,6 +63,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
             "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
           )
         }
+      />
+
+      <.live_component
+        module={HealthComponent}
+        id="zvonok-health"
+        provider={:zvonok}
+        branch_id={@current_branch.id}
+        branch={@current_branch}
       />
 
       <.form

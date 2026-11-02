@@ -72,18 +72,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     conn = sign_in(conn, branch, ["integrations.read", "integrations.update"])
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
     lv |> element("button[phx-value-tab=settings]") |> render_click()
-    assert render(lv) =~ "The connection has not been checked"
+    assert render(lv) =~ "Connection not checked"
 
     Req.Test.stub(
       Delivest.HTTP.Client,
       &Req.Test.json(&1, %{"result" => "error", "error" => "invalid_secret"})
     )
 
-    assert lv |> element("#frontpad-health-check") |> render_click() =~
-             "reconnect the integration"
+    assert lv |> element("#frontpad-health-check") |> render_click() =~ "Access error"
 
     {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert html =~ "Reconnect"
+    assert html =~ "Access error"
 
     Req.Test.stub(
       Delivest.HTTP.Client,
@@ -92,6 +91,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
     lv |> element("button[phx-value-tab=settings]") |> render_click()
-    assert lv |> element("#frontpad-health-check") |> render_click() =~ "Connected"
+    assert lv |> element("#frontpad-health-check") |> render_click() =~ "Connection checked"
   end
 end

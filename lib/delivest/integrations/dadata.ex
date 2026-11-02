@@ -3,6 +3,7 @@ defmodule Delivest.Integrations.Dadata do
 
   alias Delivest.{Identity, Repo}
   alias Delivest.Integrations.Dadata.{Api, Settings}
+  alias Delivest.Integrations.Health
 
   @cache :geo_cache
   @cache_ttl :timer.hours(24 * 7)
@@ -29,9 +30,20 @@ defmodule Delivest.Integrations.Dadata do
     do: Settings.changeset(settings, attrs)
 
   def update_settings(staff, attrs) do
-    if Identity.can?(staff, "admin"),
-      do: get_settings() |> Settings.changeset(attrs) |> Repo.insert_or_update(),
-      else: {:error, :forbidden}
+    if Identity.can?(staff, "admin") do
+      previous = get_settings()
+
+      case previous |> Settings.changeset(attrs) |> Repo.insert_or_update() do
+        {:ok, settings} = result ->
+          Health.invalidate_on_change(:dadata, nil, previous, settings, [:api_key])
+          result
+
+        other ->
+          other
+      end
+    else
+      {:error, :forbidden}
+    end
   end
 
   def active?, do: Settings.active?(get_settings())

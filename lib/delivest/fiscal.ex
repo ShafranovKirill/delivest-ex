@@ -24,9 +24,21 @@ defmodule Delivest.Fiscal do
     do: BranchSettings.changeset(settings, attrs)
 
   def update_settings(staff, branch_id, attrs) do
+    previous = settings(branch_id)
+
     with {:ok, branch} <- Identity.get_branch(branch_id, preload: :info),
          {:ok, branch} <- Identity.update_integrations(staff, branch, %{"fiscal" => attrs}) do
-      {:ok, branch.info.fiscal}
+      settings = branch.info.fiscal
+
+      Delivest.Integrations.Health.invalidate_on_change(
+        :atol,
+        branch_id,
+        previous.atol,
+        settings.atol,
+        [:login, :password, :group_code]
+      )
+
+      {:ok, settings}
     else
       {:error, :info, changeset} -> {:error, Ecto.Changeset.get_change(changeset, :fiscal)}
       {:error, _step, changeset} -> {:error, changeset}

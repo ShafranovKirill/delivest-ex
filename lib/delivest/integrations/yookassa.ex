@@ -9,15 +9,37 @@ defmodule Delivest.Integrations.Yookassa do
     do: Settings.changeset(settings, attrs)
 
   def update_settings(staff, attrs) do
-    if Identity.can?(staff, "admin"),
-      do: get_settings() |> Settings.changeset(attrs) |> Repo.insert_or_update(),
-      else: {:error, :forbidden}
+    if Identity.can?(staff, "admin") do
+      previous = get_settings()
+
+      case previous |> Settings.changeset(attrs) |> Repo.insert_or_update() do
+        {:ok, settings} = result ->
+          Health.invalidate_on_change(
+            :yookassa,
+            nil,
+            previous,
+            settings,
+            [:shop_id, :secret_key]
+          )
+
+          result
+
+        other ->
+          other
+      end
+    else
+      {:error, :forbidden}
+    end
   end
 
   def configured?, do: Settings.complete?(get_settings())
 
   def ready? do
-    configured?() and match?(%{status: :ok}, Health.get(:yookassa, nil))
+    configured?() and
+      match?(
+        %{status: :ok, checked_at: checked_at} when not is_nil(checked_at),
+        Health.get(:yookassa, nil)
+      )
   end
 
   def webhook_url(token),

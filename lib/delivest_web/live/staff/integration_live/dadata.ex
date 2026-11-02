@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Dadata
+  alias DelivestWeb.Staff.IntegrationLive.HealthComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -62,6 +63,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
             "Customers pick the address on the map with dadata.ru suggestions. When it is off, the address is typed into plain fields. The settings are shared by every branch."
           )
         }
+      />
+
+      <.live_component
+        module={HealthComponent}
+        id="dadata-health"
+        provider={:dadata}
+        branch_id={@current_branch.id}
+        branch={@current_branch}
       />
 
       <.form

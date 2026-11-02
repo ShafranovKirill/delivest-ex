@@ -52,9 +52,27 @@ defmodule Delivest.Integrations.Zvonok do
     do: Settings.changeset(settings, attrs)
 
   def update_settings(staff, attrs) do
-    if Identity.can?(staff, "admin"),
-      do: get_settings() |> Settings.changeset(attrs) |> Repo.insert_or_update(),
-      else: {:error, :forbidden}
+    if Identity.can?(staff, "admin") do
+      previous = get_settings()
+
+      case previous |> Settings.changeset(attrs) |> Repo.insert_or_update() do
+        {:ok, settings} = result ->
+          Health.invalidate_on_change(
+            :zvonok,
+            nil,
+            previous,
+            settings,
+            [:public_key, :campaign_id]
+          )
+
+          result
+
+        other ->
+          other
+      end
+    else
+      {:error, :forbidden}
+    end
   end
 
   def configured?, do: Settings.complete?(get_settings())

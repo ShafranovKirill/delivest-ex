@@ -225,12 +225,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
       />
 
       <.live_component
-        :if={@push_available}
         module={HealthComponent}
         id="yandex-eda-health"
         provider={:yandex_eda}
         branch_id={@current_branch.id}
-        scope={nil}
+        branch={@current_branch}
       />
 
       <YandexEdaAccess.access

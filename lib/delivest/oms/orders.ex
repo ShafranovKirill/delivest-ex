@@ -17,6 +17,7 @@ defmodule Delivest.Oms.Orders do
   alias Delivest.Repo
 
   defdelegate subscribe(branch_id), to: Notifier
+  defdelegate unsubscribe(branch_id), to: Notifier
   defdelegate subscribe_owner(kind, id), to: Notifier
   defdelegate subscribe_branch(branch_id), to: Notifier
   defdelegate create_order(attrs, opts \\ []), to: Create, as: :run

@@ -14,56 +14,120 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     branch = socket.assigns.current_branch
+    staff = socket.assigns.current_staff
 
-    if connected?(socket) do
-      Orders.subscribe(branch.id)
-      Kitchen.subscribe(branch.id)
-      KitchenPresence.track_screen(self(), branch.id, socket.assigns.current_staff)
-      :timer.send_interval(@tick, :tick)
+    if Kitchen.available?(staff, branch.id) do
+      socket =
+        if connected?(socket) do
+          Orders.subscribe(branch.id)
+          Kitchen.subscribe(branch.id)
+          Kitchen.subscribe_availability(branch.id)
+          KitchenPresence.track_screen(self(), branch.id, staff)
+          assign(socket, :timer, Process.send_after(self(), :tick, @tick))
+        else
+          assign(socket, :timer, nil)
+        end
+
+      {:ok,
+       socket
+       |> assign(page_title: gettext("Kitchen"), fresh: MapSet.new(), tickets: [])
+       |> load()}
+    else
+      {:ok, redirect_unavailable(socket)}
     end
+  end
 
-    {:ok,
-     socket
-     |> assign(page_title: gettext("Kitchen"), fresh: MapSet.new(), tickets: [])
-     |> load()}
+  @impl true
+  def terminate(_reason, socket) do
+    cleanup(socket)
+    :ok
   end
 
   @impl true
   def handle_event("ready", %{"id" => id}, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
-    socket =
-      case Kitchen.mark_ready(staff, branch.id, id) do
-        {:ok, _order} -> socket
-        {:error, :forbidden} -> put_flash(socket, :error, gettext("Permission denied"))
-        {:error, _reason} -> put_flash(socket, :error, gettext("Failed to update the order"))
-      end
+    case Kitchen.mark_ready(staff, branch.id, id) do
+      {:ok, _order} ->
+        {:noreply, load(socket)}
 
-    {:noreply, load(socket)}
+      {:error, :kitchen_unavailable} ->
+        {:noreply, redirect_unavailable(socket)}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to update the order"))}
+    end
   end
 
   def handle_event("undo", %{"id" => id}, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
-    socket =
-      case Kitchen.undo_ready(staff, branch.id, id) do
-        :ok -> socket
-        {:error, :too_late} -> put_flash(socket, :error, gettext("The order is already ready"))
-        {:error, _reason} -> put_flash(socket, :error, gettext("Permission denied"))
-      end
+    case Kitchen.undo_ready(staff, branch.id, id) do
+      :ok ->
+        {:noreply, load(socket)}
 
-    {:noreply, load(socket)}
+      {:error, :kitchen_unavailable} ->
+        {:noreply, redirect_unavailable(socket)}
+
+      {:error, :too_late} ->
+        {:noreply, put_flash(socket, :error, gettext("The order is already ready"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
   end
 
   @impl true
   def handle_info({Orders, _event, _order}, socket), do: {:noreply, load(socket)}
   def handle_info({:kitchen_changed, _branch_id}, socket), do: {:noreply, load(socket)}
-  def handle_info(:tick, socket), do: {:noreply, load(socket)}
+
+  def handle_info(:tick, socket) do
+    socket = assign(socket, :timer, Process.send_after(self(), :tick, @tick))
+    {:noreply, load(socket)}
+  end
+
+  def handle_info({:kitchen_availability, branch_id}, socket) do
+    if branch_id == socket.assigns.current_branch.id and
+         not Kitchen.available?(socket.assigns.current_staff, branch_id) do
+      {:noreply, redirect_unavailable(socket)}
+    else
+      {:noreply, load(socket)}
+    end
+  end
 
   def handle_info({:faded, ids}, socket),
     do: {:noreply, assign(socket, fresh: MapSet.difference(socket.assigns.fresh, ids))}
 
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp redirect_unavailable(socket) do
+    staff = socket.assigns.current_staff
+    branch = socket.assigns.current_branch
+
+    socket
+    |> cleanup()
+    |> put_flash(:error, DelivestWeb.KitchenAccess.message(branch.id))
+    |> redirect(to: DelivestWeb.KitchenAccess.fallback_path(staff, branch))
+  end
+
+  defp cleanup(socket) do
+    branch = socket.assigns[:current_branch]
+    staff = socket.assigns[:current_staff]
+
+    if (connected?(socket) and branch) && staff do
+      KitchenPresence.untrack_screen(self(), branch.id, staff)
+      Orders.unsubscribe(branch.id)
+      Kitchen.unsubscribe(branch.id)
+      Kitchen.unsubscribe_availability(branch.id)
+    end
+
+    if timer = socket.assigns[:timer], do: Process.cancel_timer(timer)
+
+    assign(socket, :timer, nil)
+  end
 
   defp load(socket) do
     branch_id = socket.assigns.current_branch.id

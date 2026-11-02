@@ -11,5 +11,7 @@ defmodule Delivest.Integrations.Health.Status do
     field :status, Ecto.Enum, values: [:ok, :failed, :auth, :warning]
     field :message, :string
     field :checked_at, :utc_datetime_usec
+    field :warning, :string
+    field :warning_at, :utc_datetime_usec
   end
 end

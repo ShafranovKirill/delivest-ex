@@ -23,18 +23,80 @@ defmodule Delivest.Oms.Kitchen do
 
   def subscribe(branch_id), do: Phoenix.PubSub.subscribe(Delivest.PubSub, topic(branch_id))
 
-  def working(branch_id) do
-    with {:ok,
-          %Branch{info: %BranchInfo{kitchen: %KitchenSettings{enabled: true} = kitchen}} = branch} <-
-           Identity.get_branch(branch_id, preload: :info),
-         true <- Gateway.own?(branch, :kitchen) do
-      kitchen
-    else
-      _ -> nil
+  def unsubscribe(branch_id), do: Phoenix.PubSub.unsubscribe(Delivest.PubSub, topic(branch_id))
+
+  def subscribe_availability(branch_id),
+    do: Phoenix.PubSub.subscribe(Delivest.PubSub, availability_topic(branch_id))
+
+  def unsubscribe_availability(branch_id),
+    do: Phoenix.PubSub.unsubscribe(Delivest.PubSub, availability_topic(branch_id))
+
+  def notify_availability(branch_id),
+    do:
+      Phoenix.PubSub.broadcast(
+        Delivest.PubSub,
+        availability_topic(branch_id),
+        {:kitchen_availability, branch_id}
+      )
+
+  def working(%Branch{} = branch) do
+    case unavailable_reason(branch) do
+      nil -> branch.info.kitchen
+      _reason -> nil
     end
   end
 
+  def working(branch_id) do
+    case Identity.get_branch(branch_id, preload: :info) do
+      {:ok, %Branch{} = branch} -> working(branch)
+      _error -> nil
+    end
+  end
+
+  def working?(%Branch{} = branch), do: working(branch) != nil
   def working?(branch_id), do: working(branch_id) != nil
+
+  @doc """
+  Why the branch kitchen cannot be used in the app, or `nil` when it can.
+
+  `:disabled` — the kitchen is off in the branch settings.
+  `:crm` — the kitchen belongs to the CRM and is not available in the app.
+  """
+  def unavailable_reason(
+        %Branch{info: %BranchInfo{kitchen: %KitchenSettings{enabled: true}}} = branch
+      ) do
+    if Gateway.own?(branch, :kitchen), do: nil, else: :crm
+  end
+
+  def unavailable_reason(%Branch{}), do: :disabled
+
+  def unavailable_reason(branch_id) do
+    case Identity.get_branch(branch_id, preload: :info) do
+      {:ok, %Branch{} = branch} -> unavailable_reason(branch)
+      _error -> :disabled
+    end
+  end
+
+  @doc """
+  The single access rule for the kitchen screen and its commands.
+
+  The staff member needs branch access and `orders.cook`, and the branch kitchen
+  must be enabled and owned by this app.
+  """
+  def available?(%Staff{} = staff, %Branch{} = branch) do
+    Identity.has_branch_access?(staff, branch.id) and
+      Identity.can?(staff, "orders.cook") and
+      working?(branch)
+  end
+
+  def available?(%Staff{} = staff, branch_id) when is_binary(branch_id) do
+    case Identity.get_branch(branch_id, preload: :info) do
+      {:ok, %Branch{} = branch} -> available?(staff, branch)
+      _error -> false
+    end
+  end
+
+  def available?(_staff, _branch), do: false
 
   def sends_at(%Order{cook_by: nil}, _kitchen), do: nil
 
@@ -140,7 +202,9 @@ defmodule Delivest.Oms.Kitchen do
   end
 
   def mark_ready(%Staff{} = staff, branch_id, order_id) do
-    with {:ok, order} <- fetch(branch_id, order_id),
+    with :ok <- Identity.authorize(staff, "orders.cook", branch_id),
+         true <- available?(staff, branch_id) || {:error, :kitchen_unavailable},
+         {:ok, order} <- fetch(branch_id, order_id),
          true <- OrderFlow.can?(order, :ready, {:staff, staff}) || {:error, :forbidden},
          {:ok, _job} <-
            %{order_id: order.id, branch_id: branch_id, staff_id: staff.id}
@@ -152,7 +216,8 @@ defmodule Delivest.Oms.Kitchen do
   end
 
   def undo_ready(%Staff{} = staff, branch_id, order_id) do
-    with :ok <- Identity.authorize(staff, "orders.cook", branch_id) do
+    with :ok <- Identity.authorize(staff, "orders.cook", branch_id),
+         true <- available?(staff, branch_id) || {:error, :kitchen_unavailable} do
       {:ok, count} =
         Oban.Job
         |> where([j], j.worker == ^Oban.Worker.to_string(ReadyWorker))
@@ -168,7 +233,8 @@ defmodule Delivest.Oms.Kitchen do
 
   def finish_ready(order_id, staff_id) do
     with %Order{} = order <- Repo.get(Order, order_id),
-         {:ok, staff} <- Identity.get_staff(staff_id, preload: [:role, :branches]) do
+         {:ok, staff} <- Identity.get_staff(staff_id, preload: [:role, :branches]),
+         true <- available?(staff, order.branch_id) || {:error, :kitchen_unavailable} do
       result = Orders.advance_order(order, :ready, {:staff, staff})
       changed(order.branch_id)
 
@@ -179,6 +245,7 @@ defmodule Delivest.Oms.Kitchen do
 
       result
     else
+      {:error, :kitchen_unavailable} -> {:error, :kitchen_unavailable}
       _ -> {:error, :order_not_found}
     end
   end
@@ -212,4 +279,5 @@ defmodule Delivest.Oms.Kitchen do
     do: Phoenix.PubSub.broadcast(Delivest.PubSub, topic(branch_id), message)
 
   defp topic(branch_id), do: "kitchen:#{branch_id}"
+  defp availability_topic(branch_id), do: "kitchen_availability:#{branch_id}"
 end

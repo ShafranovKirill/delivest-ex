@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
 
   alias Delivest.{Fiscal, Identity}
   alias Delivest.Fiscal.{BranchSettings, Vat}
-  alias Delivest.Integrations.Health
+  alias DelivestWeb.Staff.IntegrationLive.HealthComponent
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -13,9 +13,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
      socket
      |> assign(
        page_title: gettext("Receipts"),
-       can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update"),
-       check: nil,
-       kkt_issues: kkt_issues(socket.assigns.current_branch.id)
+       can_edit: Identity.can?(socket.assigns.current_staff, "integrations.update")
      )
      |> assign_settings(Fiscal.settings(socket.assigns.current_branch.id))}
   end
@@ -51,36 +49,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
         {:noreply, put_flash(socket, :error, gettext("Please check the highlighted fields"))}
     end
   end
-
-  def handle_event("check", _params, socket) do
-    check =
-      case Fiscal.health_check(socket.assigns.current_branch.id) do
-        :ok ->
-          {:ok, gettext("Connected")}
-
-        {:error, reason} ->
-          {:error, gettext("Connection failed: %{reason}", reason: inspect(reason))}
-      end
-
-    {:noreply, assign(socket, check: check)}
-  end
-
-  defp kkt_issues(branch_id) do
-    case Health.get(:atol, branch_id) do
-      %{status: :warning, message: "kkt_issues:" <> codes} -> String.split(codes, ",")
-      _status -> []
-    end
-  end
-
-  defp kkt_issue_text("offline"),
-    do: gettext("The cash register is not sending documents to the OFD")
-
-  defp kkt_issue_text("fn_full"), do: gettext("The fiscal storage is more than 90% full")
-
-  defp kkt_issue_text("fn_expiring"),
-    do: gettext("The fiscal storage expires in less than 30 days")
-
-  defp kkt_issue_text(_code), do: gettext("Needs attention")
 
   defp assign_settings(socket, settings) do
     settings = %{settings | atol: settings.atol || %Delivest.Integrations.AtolOnline.Settings{}}
@@ -138,12 +106,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
         }
       />
 
-      <div :if={@kkt_issues != []} id="fiscal-kkt-issues" role="alert" class="alert alert-warning">
-        <.icon name="hero-exclamation-triangle" class="size-5" />
-        <ul>
-          <li :for={code <- @kkt_issues}>{kkt_issue_text(code)}</li>
-        </ul>
-      </div>
+      <.live_component
+        module={HealthComponent}
+        id="fiscal-health"
+        provider={:atol}
+        branch_id={@current_branch.id}
+        branch={@current_branch}
+      />
 
       <.form
         for={@form}
@@ -243,25 +212,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-3">
-          <span
-            :if={@check}
-            id="fiscal-check"
-            class={[
-              "text-sm",
-              elem(@check, 0) == :ok && "text-success",
-              elem(@check, 0) == :error && "text-error"
-            ]}
-          >
-            {elem(@check, 1)}
-          </span>
-          <button
-            :if={@settings.mode == :own}
-            type="button"
-            phx-click="check"
-            class="btn btn-ghost"
-          >
-            {gettext("Check the connection")}
-          </button>
           <button
             :if={@can_edit}
             type="submit"

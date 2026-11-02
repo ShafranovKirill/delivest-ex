@@ -76,9 +76,10 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
     admin = insert(:staff, role: build(:role, permissions: ["admin"]))
     conn = init_test_session(conn, %{"staff_id" => admin.id})
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/kitchen")
+    assert {:error, {:redirect, %{to: "/staff/b/" <> _, flash: flash}}} =
+             live(conn, ~p"/staff/b/#{branch}/kitchen")
 
-    assert has_element?(lv, "#kitchen-off")
+    assert flash["error"] == "The kitchen is off in the branch settings"
   end
 
   test "an operator without kitchen rights is sent away", %{conn: conn, branch: branch} do

@@ -14,22 +14,32 @@ defmodule Delivest.Integrations.Health do
     Zvonok
   }
 
+  alias Delivest.Fiscal
   alias Delivest.Integrations.Health.Status
   alias Delivest.Repo
 
+  @settings_only [:zvonok]
+
+  @doc """
+  Whether the provider has a real API request behind its connection check.
+
+  A check that only looks at the completeness of the saved fields is not a
+  connection check: it must not be shown as a successful API call.
+  """
+  def checkable?(provider), do: to_string(provider) not in Enum.map(@settings_only, &to_string/1)
+
   def check(provider, branch_id) do
-    with {:ok, module, settings, scope} <- source(to_string(provider), branch_id) do
-      result = Journal.scope([branch_id: scope], fn -> module.health_check(settings) end)
-      report(provider, scope, module, result)
+    if checkable?(provider) do
+      with {:ok, module, settings, scope} <- source(to_string(provider), branch_id) do
+        result = Journal.scope([branch_id: scope], fn -> module.health_check(settings) end)
+        report(provider, scope, module, result)
+      end
+    else
+      {:error, :not_checkable}
     end
   end
 
-  def report(provider, branch_id, _module, :ok) do
-    case get(provider, branch_id) do
-      %Status{status: :warning} = status -> {:ok, status}
-      _status -> save(provider, branch_id, :ok, nil)
-    end
-  end
+  def report(provider, branch_id, _module, :ok), do: save(provider, branch_id, :ok, nil)
 
   def report(provider, branch_id, module, {:error, reason}) do
     status = if kind(module, reason) == :auth, do: :auth, else: :failed
@@ -41,13 +51,30 @@ defmodule Delivest.Integrations.Health do
     save(provider, branch_id, :auth, inspect(reason))
   end
 
-  def warn(provider, branch_id, message), do: save(provider, branch_id, :warning, message)
+  def warn(provider, branch_id, message) do
+    now = DateTime.utc_now()
+
+    %Status{
+      provider: to_string(provider),
+      branch_id: branch_id,
+      status: :ok,
+      message: nil,
+      checked_at: nil,
+      warning: message,
+      warning_at: now
+    }
+    |> Repo.insert(
+      on_conflict: {:replace, [:warning, :warning_at]},
+      conflict_target: [:provider, :branch_id],
+      returning: true
+    )
+  end
 
   def clear_warning(provider, branch_id) do
     Status
-    |> where([s], s.provider == ^to_string(provider) and s.status == :warning)
+    |> where([s], s.provider == ^to_string(provider) and not is_nil(s.warning))
     |> by_branch(branch_id)
-    |> Repo.update_all(set: [status: :ok, message: nil, checked_at: DateTime.utc_now()])
+    |> Repo.update_all(set: [warning: nil, warning_at: nil])
 
     :ok
   end
@@ -59,6 +86,27 @@ defmodule Delivest.Integrations.Health do
     |> Repo.update_all(set: [status: :ok, message: nil, checked_at: DateTime.utc_now()])
 
     :ok
+  end
+
+  @doc """
+  Drops the previous connection result.
+
+  Called after credentials changed successfully: the old success or failure no
+  longer proves anything about the new settings. A failed save must never call it.
+  """
+  def invalidate(provider, branch_id) do
+    Status
+    |> where([s], s.provider == ^to_string(provider))
+    |> by_branch(branch_id)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  def invalidate_on_change(provider, branch_id, old, new, fields) do
+    if is_map(old) and is_map(new) and Map.take(old, fields) != Map.take(new, fields),
+      do: invalidate(provider, branch_id),
+      else: :ok
   end
 
   def get(provider, branch_id) do
@@ -103,6 +151,14 @@ defmodule Delivest.Integrations.Health do
 
   defp source("yandex_delivery", branch_id),
     do: {:ok, YandexDelivery, YandexDelivery.settings(branch_id), branch_id}
+
+  defp source("atol", branch_id) do
+    settings = Fiscal.settings(branch_id)
+
+    with {:ok, module} <- Fiscal.Registry.fetch(settings.provider) do
+      {:ok, module, Map.get(settings, module.key()), branch_id}
+    end
+  end
 
   defp source(provider, branch_id) do
     with {:ok, _key, module} <- Crm.provider_module(provider) do

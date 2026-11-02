@@ -68,7 +68,7 @@ defmodule DelivestWeb.StaffNav do
           gettext("Kitchen")
         )
         |> allowed(staff, "orders.cook")
-        |> owned(branch, :kitchen),
+        |> operating(branch),
         item(
           :deliveries,
           branch && ~p"/staff/b/#{branch}/deliveries",
@@ -217,6 +217,10 @@ defmodule DelivestWeb.StaffNav do
   defp owned(nil, _branch, _area), do: nil
   defp owned(item, nil, _area), do: item
   defp owned(item, branch, area), do: if(Gateway.own?(branch, area), do: item)
+
+  defp operating(nil, _branch), do: nil
+  defp operating(item, nil), do: item
+  defp operating(item, branch), do: if(Delivest.Oms.Kitchen.working?(branch), do: item)
 
   defp allowed(item, staff, permission), do: if(can?(staff, permission), do: item)
 end

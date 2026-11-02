@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Yookassa
-  alias DelivestWeb.Staff.IntegrationLive.JournalComponent
+  alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
@@ -76,6 +76,26 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
         }
       />
 
+      <.live_component
+        module={HealthComponent}
+        id="yookassa-health"
+        provider={:yookassa}
+        branch_id={@current_branch.id}
+        branch={@current_branch}
+      />
+
+      <div id="yookassa-payment-link" class="alert">
+        <.icon name="hero-information-circle" class="size-5" />
+        <span>
+          {gettext(
+            "The shop keys are shared by every branch. Online payment in this branch is turned on separately in Finance → Payment."
+          )}
+          <.link navigate={~p"/staff/b/#{@current_branch}/finance/payments"} class="link link-primary">
+            {gettext("Finance → Payment")}
+          </.link>
+        </span>
+      </div>
+
       <.form
         for={@form}
         id="yookassa-settings"
@@ -107,7 +127,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
             class="btn btn-ghost"
             phx-click="check"
           >
-            {gettext("Check connection")}
+            {gettext("Shop details")}
           </button>
           <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
             {gettext("Save")}
