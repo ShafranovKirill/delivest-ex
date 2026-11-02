@@ -49,7 +49,7 @@ defmodule Delivest.Promo.Result do
             hints: [],
             code: nil
 
-  def build(%Basket{} = basket, selected, code, hints, code_state) do
+  def build(%Basket{} = basket, selected, code, hints, code_state, choices \\ %{}) do
     subtotal = Basket.subtotal(basket)
     total = Basket.total(basket)
 
@@ -58,7 +58,8 @@ defmodule Delivest.Promo.Result do
       subtotal: subtotal,
       total: total,
       discount: subtotal - total,
-      applied: selected |> Enum.map(&applied(&1, basket, code)) |> Enum.filter(&effective?/1),
+      applied:
+        selected |> Enum.map(&applied(&1, basket, code, choices)) |> Enum.filter(&effective?/1),
       hints: hints,
       code: code_state
     }
@@ -90,7 +91,7 @@ defmodule Delivest.Promo.Result do
     end)
   end
 
-  defp applied(%Compiled{promotion: promotion}, basket, code) do
+  defp applied(%Compiled{promotion: promotion} = compiled, basket, code, choices) do
     {code_id, code_text} = code_of(promotion.id, code)
 
     %{
@@ -100,11 +101,13 @@ defmodule Delivest.Promo.Result do
       name: promotion.name,
       description: promotion.description,
       discount: Basket.discount_for(basket, promotion.id),
+      gift_choice: Delivest.Promo.Effects.Gifts.choice(compiled, choices),
       gifts: gifts(basket, promotion.id)
     }
   end
 
   defp effective?(%{code: code}) when is_binary(code), do: true
+  defp effective?(%{gift_choice: choice}) when not is_nil(choice), do: true
   defp effective?(%{discount: discount, gifts: gifts}), do: discount > 0 or gifts != []
 
   defp code_of(promotion_id, %PromoCode{promotion_id: promotion_id} = code),

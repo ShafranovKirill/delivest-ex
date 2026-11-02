@@ -18,7 +18,8 @@ defmodule DelivestWeb.Client.Cart.PromoJSON do
       description: applied.description,
       code: applied.code,
       discount: applied.discount,
-      gifts: applied.gifts
+      gifts: applied.gifts,
+      gift_choice: Map.get(applied, :gift_choice)
     }
   end
 

@@ -63,7 +63,14 @@ defmodule Delivest.Oms.Orders.Assembler do
       promo_code_id: applied.promo_code_id,
       name: applied.name,
       code: applied.code,
-      discount: applied.discount
+      discount: applied.discount,
+      gift_product_ids:
+        if(
+          applied.gift_choice &&
+            length(applied.gift_choice.selected) == applied.gift_choice.required,
+          do: applied.gift_choice.selected,
+          else: []
+        )
     }
   end
 end

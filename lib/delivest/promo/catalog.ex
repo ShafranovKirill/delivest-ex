@@ -28,6 +28,12 @@ defmodule Delivest.Promo.Catalog do
     end
   end
 
+  def refresh_products(compiled, branch_id) do
+    slugs = compiled |> Enum.flat_map(&Strategy.slugs(&1.strategy)) |> Enum.uniq()
+    products = Net.list_branch_products_by_slugs(branch_id, slugs)
+    Enum.map(compiled, &%{&1 | products: products})
+  end
+
   def find(branch_id, promotion_id),
     do: Enum.find(list(branch_id), &(&1.promotion.id == promotion_id))
 

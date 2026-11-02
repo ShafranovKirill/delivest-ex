@@ -42,6 +42,7 @@ defmodule Delivest.Oms.CartView do
     :fulfillment_type,
     :promo_code,
     :code,
+    promo_gifts: %{},
     items: [],
     total_quantity: 0,
     subtotal_amount: 0,

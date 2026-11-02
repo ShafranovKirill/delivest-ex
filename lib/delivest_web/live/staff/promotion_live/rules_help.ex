@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesHelp do
   use Gettext, backend: DelivestWeb.Gettext
 
   @examples [
+    {gettext_noop("3 + 1: choose a gift"), ~s|when has ("a", "b") x3\nthen gift ("a", "b") x1|},
     {gettext_noop("10% off orders from 1500 ₽"),
      "when subtotal >= 1500\nthen discount 10% max 500"},
     {gettext_noop("Gift for two pizzas"), "when has \"pepperoni\" x2\nthen gift \"cola\""},
@@ -35,6 +36,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesHelp do
               <li>subtotal >= 1500</li>
               <li>quantity >= 3</li>
               <li>has "slug" x2</li>
+              <li>has ("a", "b") x3</li>
               <li>fulfillment in (delivery, pickup, dine_in)</li>
               <li>time 11:00..16:00</li>
               <li>weekday in (mon, ..., sun)</li>
@@ -49,6 +51,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesHelp do
               <li>discount 20% on "slug"</li>
               <li>discount 50 rub on ("a", "b")</li>
               <li>gift "slug" x1</li>
+              <li>gift ("a", "b") x1</li>
               <li>price "slug" 399</li>
             </ul>
           </div>

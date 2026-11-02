@@ -55,6 +55,11 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
             }
           }
         },
+        fulfillment_methods: %Schema{
+          type: :array,
+          items: %Schema{type: :string, enum: ["delivery", "pickup", "dine_in"]},
+          description: "Включённые способы получения заказа"
+        },
         payment_methods: %Schema{
           type: :array,
           items: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},

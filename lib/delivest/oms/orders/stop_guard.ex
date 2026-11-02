@@ -5,5 +5,5 @@ defmodule Delivest.Oms.Orders.StopGuard do
   def check(nil, _pricing), do: {:ok, :available}
 
   def check(branch_id, %Result{lines: lines}),
-    do: Stops.ensure_available(branch_id, for(line <- lines, !line.gift, do: line.product_id))
+    do: Stops.ensure_available(branch_id, Enum.map(lines, & &1.product_id))
 end

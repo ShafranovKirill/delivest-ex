@@ -275,4 +275,66 @@ defmodule Delivest.Promo.EngineTest do
   end
 
   defp utc(datetime), do: DateTime.shift_zone!(datetime, "Etc/UTC")
+
+  test "list quantities sum paid products and choice is once per order", %{
+    branch: branch,
+    pizza: pizza,
+    cola: cola
+  } do
+    promotion =
+      insert_promotion(branch.id,
+        rules: ~s|when has ("pizza", "cola") x3 then gift ("pizza", "cola") x1|
+      )
+
+    assert [%{reasons: [%{type: :products, missing: 1, names: ["Pizza", "Cola"]}]}] =
+             price(branch, [item(pizza, 2)]).hints
+
+    result = price(branch, [item(pizza, 2), item(cola, 1)])
+
+    assert [%{gift_choice: %{required: 1, available: true, selected: []}, gifts: []}] =
+             result.applied
+
+    for quantity <- [3, 6, 9] do
+      result =
+        price(branch, [item(pizza, quantity)], %{promo_gifts: %{promotion.id => [cola.id]}})
+
+      assert [%{product_id: id, quantity: 1, total: 0, modifiers: []}] =
+               Enum.filter(result.lines, & &1.gift)
+
+      assert id == cola.id
+    end
+  end
+
+  test "full distinct set is required and current availability overrides warm catalog", %{
+    branch: branch,
+    pizza: pizza,
+    cola: cola
+  } do
+    promotion = insert_promotion(branch.id, rules: ~s|then gift ("pizza", "cola") x2|)
+
+    assert price(branch, [item(pizza, 1)], %{promo_gifts: %{promotion.id => [pizza.id]}}).applied
+           |> hd()
+           |> Map.get(:gifts) == []
+
+    result =
+      price(branch, [item(pizza, 1)], %{
+        promo_gifts: %{promotion.id => [Ecto.UUID.generate(), pizza.id, pizza.id, cola.id]}
+      })
+
+    assert length(Enum.filter(result.lines, & &1.gift)) == 2
+    Delivest.Net.Stops.replace_external(branch.id, "test", [cola.id])
+
+    result =
+      price(branch, [item(pizza, 1)], %{promo_gifts: %{promotion.id => [pizza.id, cola.id]}})
+
+    assert [%{gifts: [], gift_choice: %{available: false, selected: [id], options: [_]}}] =
+             result.applied
+
+    assert id == pizza.id
+  end
+
+  test "missing list member does not disable the condition", %{branch: branch, pizza: pizza} do
+    insert_promotion(branch.id, rules: ~s|when has ("missing", "pizza") x3 then discount 10%|)
+    assert price(branch, [item(pizza, 3)]).discount == 15_000
+  end
 end

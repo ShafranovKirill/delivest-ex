@@ -62,4 +62,23 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilderTest do
 
     assert RulesBuilder.to_rules(builder) == ""
   end
+
+  test "list rules round trip and validate counts" do
+    rules = ~s|when has ("pizza", "cola") x3 then gift ("pizza", "cola") x2|
+    assert {:ok, builder} = RulesBuilder.from_rules(rules)
+    assert RulesBuilder.errors(builder) == %{}
+    assert {:ok, strategy} = Delivest.Promo.Dsl.parse(RulesBuilder.to_rules(builder))
+    assert {:has_any, ["pizza", "cola"], 3} = strategy.condition
+
+    assert [%{"products" => ["cola"]}] =
+             RulesBuilder.remove_product(builder, 0, "pizza", "condition").conditions
+
+    assert RulesBuilder.effect_error(%{
+             "type" => "gift_any",
+             "products" => ["pizza"],
+             "count" => "2"
+           })
+
+    assert RulesBuilder.condition_error(%{"type" => "has_any", "products" => [], "count" => "3"})
+  end
 end

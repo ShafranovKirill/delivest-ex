@@ -30,6 +30,13 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesText do
   defp condition({:quantity, op, value}, _names),
     do: gettext("items in cart %{op} %{count}", op: op, count: value)
 
+  defp condition({:has_any, slugs, count}, names),
+    do:
+      gettext("cart has %{count} products from: %{products}",
+        count: count,
+        products: names(names, slugs)
+      )
+
   defp condition({:has, slug, quantity}, names),
     do: gettext("cart has «%{name}» × %{count}", name: name(names, slug), count: quantity)
 
@@ -65,6 +72,13 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesText do
     do:
       gettext("%{amount} off each %{products}",
         amount: OrderHelpers.money(amount),
+        products: names(names, slugs)
+      )
+
+  defp effect({:gift_any, slugs, count}, names),
+    do:
+      gettext("gift choice: %{count} from %{products}",
+        count: count,
         products: names(names, slugs)
       )
 

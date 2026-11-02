@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     refute html =~ "branch-form"
     refute html =~ "couriers"
 
-    for section <- ~w(general location hours kitchen board links ycart) do
+    for section <- ~w(general fulfillment location hours kitchen board links ycart) do
       assert has_element?(
                lv,
                ~s(#branch-section-#{section}[href="/staff/branches/split/edit/#{section}"])
@@ -153,5 +153,27 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
     lv |> element("#special-day-#{date} button") |> render_click()
     refute has_element?(lv, "#special-day-#{date}")
+  end
+
+  test "fulfillment settings save independently and allow all methods off", %{conn: conn} do
+    branch = insert(:branch, slug: "methods")
+
+    for attrs <- [
+          %{delivery: "false", pickup: "false", dine_in: "true"},
+          %{delivery: "false", pickup: "false", dine_in: "false"}
+        ] do
+      {:ok, lv, _} = live(conn, ~p"/staff/branches/methods/edit/fulfillment")
+      assert has_element?(lv, "input[name='branch_form[fulfillment][delivery]']")
+
+      assert {:error, {:live_redirect, %{to: "/staff/branches/methods/edit"}}} =
+               lv |> form("#branch-form", branch_form: %{fulfillment: attrs}) |> render_submit()
+
+      settings =
+        Repo.get_by!(Delivest.Identity.Branch.BranchInfo, branch_id: branch.id).fulfillment
+
+      assert settings.delivery == false
+      assert settings.pickup == false
+      assert settings.dine_in == (attrs.dine_in == "true")
+    end
   end
 end

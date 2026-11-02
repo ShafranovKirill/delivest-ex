@@ -78,4 +78,18 @@ defmodule Delivest.Promo.DslTest do
     assert {:error, [%Error{}]} = Dsl.parse(~s(then discount 10% on "a" max 100))
     assert {:error, [%Error{}]} = Dsl.parse("when time 10:00..10:00 then discount 5%")
   end
+
+  test "list conditions and choices deduplicate and validate quantities" do
+    assert {:ok, strategy} =
+             Delivest.Promo.Dsl.parse(
+               ~s|when has ("a", "b", "a") x 3 then gift ("a", "b", "a") x2|
+             )
+
+    assert strategy.condition == {:has_any, ["a", "b"], 3}
+    assert strategy.effects == [{:gift_any, ["a", "b"], 2}]
+    assert {:error, _} = Delivest.Promo.Dsl.parse(~s|then gift ("a", "a") x2|)
+    assert {:error, _} = Delivest.Promo.Dsl.parse(~s|then gift ("a") gift ("b")|)
+    assert {:error, _} = Delivest.Promo.Dsl.parse(~s|when has ("a") x0 then gift "a"|)
+    assert {:error, _} = Delivest.Promo.Dsl.parse(~s|then gift ("a") x100|)
+  end
 end

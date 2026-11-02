@@ -164,4 +164,98 @@ defmodule Delivest.Promo.OrderFlowTest do
 
     assert {:ok, %{code: nil, promo_code: nil}} = Oms.remove_promo_code(cart.id)
   end
+
+  test "chosen gifts survive checkout and draft editing, but not repeat", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    promo =
+      insert_promotion(branch.id,
+        rules: ~s|when has ("pizza", "cola") x3 then gift ("pizza", "cola") x1|
+      )
+
+    cola = Delivest.Net.list_branch_products_by_slugs(branch.id, ["cola"])["cola"]
+    cart = cart_with(branch, pizza, 3)
+    assert {:ok, _} = Oms.choose_promotion_gifts(cart.id, promo.id, [cola.id])
+    client = insert(:client, phone: "+79995556678")
+    assert Repo.all(Redemption) == []
+
+    assert {:ok, order} =
+             Orders.create_order(order_attrs(cart, %{"customer_phone" => client.phone}))
+
+    assert [%{gift_product_ids: [id]}] = order.promotions
+    assert id == cola.id
+    assert [%{price: 0, quantity: 1}] = Enum.filter(order.items, & &1.gift)
+    assert {:ok, draft} = Delivest.Oms.Orders.DraftCart.create(order)
+    assert draft.promo_gifts[promo.id] == [cola.id]
+    assert Enum.any?(draft.items, & &1.gift)
+
+    assert {:ok, updated} =
+             Orders.update_order(order, %{"cart_id" => draft.id, "customer_phone" => client.phone})
+
+    assert Enum.any?(updated.items, & &1.gift)
+    assert [%Redemption{}] = Repo.all(Redemption)
+    {:ok, target} = Carts.create_cart(%{branch_id: branch.id})
+    assert {:ok, repeated} = Oms.repeat_order(target.id, client.id, updated.id)
+    assert repeated.promo_gifts == %{}
+    refute Enum.any?(repeated.items, & &1.gift)
+  end
+
+  test "unavailable saved choice blocks checkout until explicit clear", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    promo = insert_promotion(branch.id, rules: ~s|then gift ("pizza", "cola") x1|)
+    cola = Delivest.Net.list_branch_products_by_slugs(branch.id, ["cola"])["cola"]
+    cart = cart_with(branch, pizza, 3)
+    assert {:ok, _} = Oms.choose_promotion_gifts(cart.id, promo.id, [cola.id])
+    Delivest.Net.Stops.replace_external(branch.id, "test", [cola.id])
+    assert {:error, :pricing, :promo_gift_not_available} = Orders.create_order(order_attrs(cart))
+    assert {:ok, _} = Oms.choose_promotion_gifts(cart.id, promo.id, [])
+    assert {:ok, order} = Orders.create_order(order_attrs(cart))
+    assert [%{gift_product_ids: []}] = order.promotions
+    refute Enum.any?(order.items, & &1.gift)
+  end
+
+  test "choice maps preserve other promotions and clear with cart", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    first =
+      insert_promotion(branch.id, combinable: true, rules: ~s|then gift ("pizza", "cola") x1|)
+
+    second =
+      insert_promotion(branch.id, combinable: true, rules: ~s|then gift ("pizza", "cola") x1|)
+
+    cart = cart_with(branch, pizza, 1)
+    assert {:ok, _} = Oms.choose_promotion_gifts(cart.id, first.id, [pizza.id])
+    assert {:ok, view} = Oms.choose_promotion_gifts(cart.id, second.id, [pizza.id])
+    assert map_size(view.promo_gifts) == 2
+    assert {:ok, view} = Carts.clear_cart(cart.id)
+    assert view.promo_gifts == %{}
+  end
+
+  test "rollback never leaks an uncommitted gift selection into cache", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    promo = insert_promotion(branch.id, rules: ~s|then gift ("pizza", "cola") x1|)
+    cart = cart_with(branch, pizza, 1)
+
+    assert {:error, :cancelled} =
+             Repo.transaction(fn ->
+               assert {:ok, view} = Oms.choose_promotion_gifts(cart.id, promo.id, [pizza.id])
+               assert view.promo_gifts[promo.id] == [pizza.id]
+               Repo.rollback(:cancelled)
+             end)
+
+    assert Carts.get_cart_by_id(cart.id).promo_gifts == %{}
+  end
+
+  test "pre-upgrade cached cart is rebuilt with gift context", %{branch: branch, pizza: pizza} do
+    cart = cart_with(branch, pizza, 1)
+    cached = Carts.get_cart_by_id(cart.id)
+    Cachex.put(:cart_cache, cart.id, Map.delete(cached, :promo_gifts))
+    assert Carts.get_cart_by_id(cart.id).promo_gifts == %{}
+  end
 end

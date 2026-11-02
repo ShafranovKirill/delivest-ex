@@ -27,6 +27,7 @@ defmodule Delivest.Oms do
   defdelegate detach_cart(cart_or_id), to: Carts
   defdelegate update_cart_context(cart_id, attrs), to: Carts, as: :update_context
 
+  defdelegate choose_promotion_gifts(cart_id, promotion_id, ids), to: CartPromo, as: :choose_gifts
   defdelegate apply_promo_code(cart_id, code), to: CartPromo, as: :apply_code
   defdelegate remove_promo_code(cart_id), to: CartPromo, as: :remove_code
   defdelegate set_cart_fulfillment(cart_id, fulfillment_type), to: CartPromo, as: :set_fulfillment

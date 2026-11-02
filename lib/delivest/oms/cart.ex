@@ -16,6 +16,7 @@ defmodule Delivest.Oms.Cart do
     field :staff_id, :binary_id
     field :branch_id, :binary_id
     field :expires_at, :utc_datetime
+    field :promo_gifts, :map, default: %{}
     field :promo_code, :string
     field :fulfillment_type, :string
     field :client_id, :binary_id
@@ -36,7 +37,7 @@ defmodule Delivest.Oms.Cart do
 
   def context_changeset(cart, attrs) do
     cart
-    |> cast(attrs, [:promo_code, :fulfillment_type, :client_id])
+    |> cast(attrs, [:promo_code, :fulfillment_type, :client_id, :promo_gifts])
     |> validate_length(:promo_code, max: 32)
     |> validate_inclusion(:fulfillment_type, @fulfillment_types)
   end

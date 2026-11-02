@@ -26,6 +26,7 @@ atom -> '(' condition ')' : '$2'.
 atom -> 'subtotal' cmp sum : {subtotal, value('$2'), element(1, '$3')}.
 atom -> 'quantity' cmp int : {quantity, value('$2'), value('$3')}.
 atom -> 'has' string amount : {has, located('$2'), '$3'}.
+atom -> 'has' '(' strings ')' amount : {has_any, '$3', '$5'}.
 atom -> 'fulfillment' 'in' '(' idents ')' : {fulfillment, '$4'}.
 atom -> 'time' clock '..' clock : {time, located('$2'), located('$4')}.
 atom -> 'weekday' 'in' '(' idents ')' : {weekday, '$4'}.
@@ -41,6 +42,7 @@ effects -> effect ',' effects : ['$1' | '$3'].
 effect -> 'discount' int '%' target cap : {percent, located('$2'), '$4', '$5'}.
 effect -> 'discount' sum 'rub' target : {amount, '$2', '$4'}.
 effect -> 'gift' string amount : {gift, located('$2'), '$3'}.
+effect -> 'gift' '(' strings ')' amount : {gift_any, '$3', '$5'}.
 effect -> 'price' string sum : {price, located('$2'), element(1, '$3')}.
 
 target -> '$empty' : cart.

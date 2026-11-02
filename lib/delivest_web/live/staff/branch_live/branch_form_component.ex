@@ -170,6 +170,19 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
           </div>
 
+          <.inputs_for :let={method} :if={@section.id == :fulfillment} field={@form[:fulfillment]}>
+            <div class="space-y-4">
+              <.input field={method[:delivery]} type="checkbox" label={gettext("Delivery")} />
+              <.input field={method[:pickup]} type="checkbox" label={gettext("Pickup")} />
+              <.input field={method[:dine_in]} type="checkbox" label={gettext("Dine in")} />
+              <p class="text-sm text-base-content/60">
+                {gettext(
+                  "When all methods are off, customers cannot place orders. Existing orders are kept."
+                )}
+              </p>
+            </div>
+          </.inputs_for>
+
           <.location_fields
             :if={@section.id == :location}
             form={@form}

@@ -10,6 +10,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
     AddItemRequest,
     CartContextRequest,
     CartResponse,
+    PromoGiftChoiceRequest,
     PromoCodeRequest
   }
 
@@ -78,6 +79,40 @@ defmodule DelivestWeb.Client.Cart.CartController do
     else
       {:error, {:promo, reason}} -> promo_error(conn, reason)
       _ -> cart_not_found(conn)
+    end
+  end
+
+  operation(:choose_promotion_gifts,
+    summary: "Выбрать подарки по акции",
+    tags: ["Cart"],
+    parameters: [
+      cart_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true],
+      promotion_id: [in: :path, schema: %Schema{type: :string, format: :uuid}, required: true]
+    ],
+    request_body: {"Выбор подарков", "application/json", PromoGiftChoiceRequest},
+    responses: [
+      ok: {"Корзина", "application/json", CartResponse},
+      not_found: {"Корзина или подарок недоступны", "application/json", ErrorResponse},
+      unprocessable_entity: {"Некорректный выбор", "application/json", ErrorResponse}
+    ]
+  )
+
+  def choose_promotion_gifts(
+        conn,
+        %{"cart_id" => cart_id, "promotion_id" => promotion_id} = params
+      ) do
+    with :ok <- authorize_cart(conn, cart_id),
+         {:ok, view} <- Oms.choose_promotion_gifts(cart_id, promotion_id, params["product_ids"]) do
+      render(conn, :show, cart: view)
+    else
+      {:error, {:promo, :gift_not_available}} ->
+        ApiError.send_error(conn, :not_found, :promo_gift_not_available, "Gift is unavailable")
+
+      {:error, {:promo, reason}} ->
+        promo_error(conn, reason)
+
+      _ ->
+        cart_not_found(conn)
     end
   end
 

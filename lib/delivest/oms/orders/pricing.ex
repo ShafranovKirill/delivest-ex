@@ -14,10 +14,12 @@ defmodule Delivest.Oms.Orders.Pricing do
         client_id: client_id,
         fulfillment_type: fulfillment(attrs, order),
         code: cart.promo_code,
+        promo_gifts: cart.promo_gifts,
         except_order_id: order && order.id
       })
 
-    with {:ok, result} <- result |> redeem(attrs, client_id, cart.branch_id, order),
+    with :ok <- validate_gifts(result, cart.promo_gifts),
+         {:ok, result} <- result |> redeem(attrs, client_id, cart.branch_id, order),
          {:ok, result} <-
            Delivest.Loyalty.Rewards.price(
              result,
@@ -28,6 +30,19 @@ defmodule Delivest.Oms.Orders.Pricing do
       result = Delivest.Loyalty.Earnings.price(result, cart.branch_id)
       ensure_expected(result, attrs["expected_total"])
     end
+  end
+
+  defp validate_gifts(result, choices) do
+    invalid =
+      Enum.any?(result.applied, fn applied ->
+        choice = applied.gift_choice
+        saved = Map.get(choices, applied.promotion_id, [])
+
+        choice && saved != [] &&
+          (not choice.available or length(choice.selected) != choice.required)
+      end)
+
+    if invalid, do: {:error, :promo_gift_not_available}, else: :ok
   end
 
   defp redeem(result, _attrs, _client_id, _branch_id, %Order{points_spent: stars} = order)

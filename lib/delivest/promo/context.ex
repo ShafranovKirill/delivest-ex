@@ -10,12 +10,21 @@ defmodule Delivest.Promo.Context do
           except_order_id: binary() | nil
         }
 
-  defstruct [:branch_id, :client_id, :fulfillment_type, :code, :now, :except_order_id]
+  defstruct [
+    :branch_id,
+    :client_id,
+    :fulfillment_type,
+    :code,
+    :now,
+    :except_order_id,
+    promo_gifts: %{}
+  ]
 
   def new(attrs) do
     attrs = Map.new(attrs)
 
     %__MODULE__{
+      promo_gifts: normalize_gifts(attrs[:promo_gifts]),
       branch_id: attrs[:branch_id],
       client_id: attrs[:client_id],
       fulfillment_type: fulfillment(attrs[:fulfillment_type]),
@@ -24,6 +33,29 @@ defmodule Delivest.Promo.Context do
       except_order_id: attrs[:except_order_id]
     }
   end
+
+  def normalize_gifts(value) when is_map(value) do
+    Enum.reduce(value, %{}, fn {key, ids}, acc ->
+      with {:ok, key} <- Ecto.UUID.cast(key),
+           true <- is_list(ids) and ids != [],
+           true <- Enum.all?(ids, &match?({:ok, _}, Ecto.UUID.cast(&1))) do
+        Map.put(
+          acc,
+          key,
+          ids
+          |> Enum.map(fn id ->
+            {:ok, uuid} = Ecto.UUID.cast(id)
+            uuid
+          end)
+          |> Enum.uniq()
+        )
+      else
+        _ -> acc
+      end
+    end)
+  end
+
+  def normalize_gifts(_), do: %{}
 
   def fulfillment(value) when is_atom(value) and not is_nil(value),
     do: if(value in Map.values(@fulfillments), do: value)

@@ -26,7 +26,8 @@ defmodule Delivest.Oms.Orders.DraftCart do
     %{
       promo_code: Enum.find_value(order.promotions || [], & &1.code),
       fulfillment_type: order.fulfillment_type && to_string(order.fulfillment_type),
-      client_id: order.client_id
+      client_id: order.client_id,
+      promo_gifts: Map.new(order.promotions || [], &{&1.promotion_id, &1.gift_product_ids || []})
     }
   end
 end

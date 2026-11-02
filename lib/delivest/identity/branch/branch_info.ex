@@ -40,6 +40,11 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     embeds_one :channels, Delivest.Integrations.Channels.BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update, defaults_to_struct: true
+
+    embeds_one :fulfillment, Delivest.Identity.Branch.FulfillmentSettings,
+      on_replace: :update,
+      defaults_to_struct: true
+
     embeds_one :intake, IntakeSettings, on_replace: :update, defaults_to_struct: true
     embeds_one :couriers, CourierSettings, on_replace: :update, defaults_to_struct: true
     embeds_one :payments, PaymentSettings, on_replace: :update, defaults_to_struct: true
@@ -88,6 +93,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> cast_embed(:channels, with: &Delivest.Integrations.Channels.BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
+    |> cast_embed(:fulfillment, with: &Delivest.Identity.Branch.FulfillmentSettings.changeset/2)
     |> cast_embed(:intake, with: &IntakeSettings.changeset/2)
     |> cast_embed(:loyalty, with: &LoyaltySettings.changeset/2)
     |> cast_embed(:couriers, with: &CourierSettings.changeset/2)

@@ -27,6 +27,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :instagram_url, :string
 
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
+    embeds_one :fulfillment, Delivest.Identity.Branch.FulfillmentSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update
   end
 
@@ -52,6 +53,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :is_active
     ])
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
+    |> cast_embed(:fulfillment, with: &Delivest.Identity.Branch.FulfillmentSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
@@ -83,6 +85,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
       ycart_settings: (info && info.ycart_settings) || %YcartSettings{},
+      fulfillment: (info && info.fulfillment) || %Delivest.Identity.Branch.FulfillmentSettings{},
       kitchen: (info && info.kitchen) || %KitchenSettings{}
     }
   end
@@ -90,6 +93,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   def new,
     do: %__MODULE__{
       ycart_settings: %YcartSettings{},
+      fulfillment: %Delivest.Identity.Branch.FulfillmentSettings{},
       kitchen: %KitchenSettings{}
     }
 
@@ -209,6 +213,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       ])
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
       |> Map.put("ycart_settings", embed_params(data.ycart_settings))
+      |> Map.put("fulfillment", embed_params(data.fulfillment))
       |> Map.put("kitchen", embed_params(data.kitchen))
 
     {branch_params, info_params}
