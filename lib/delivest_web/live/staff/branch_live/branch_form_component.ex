@@ -61,6 +61,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
     {:noreply, put_location(socket, Location.at(lat / 1, lng / 1))}
   end
 
+  def handle_event("clear_rating", _params, socket) do
+    changeset = Ecto.Changeset.put_change(socket.assigns.form.source, :manual_rating, nil)
+    {:noreply, assign(socket, form: to_form(changeset))}
+  end
+
   def handle_event("save", %{"branch_form" => params}, socket) do
     socket.assigns.branch
     |> BranchForm.for_branch()
@@ -160,6 +165,24 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                 type="number"
                 label={gettext("Delivery Time (minutes)")}
               />
+              <div class="flex items-end gap-2">
+                <.input
+                  field={@form[:manual_rating]}
+                  type="number"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  label={gettext("Manual rating")}
+                />
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  phx-click="clear_rating"
+                  phx-target={@myself}
+                >
+                  {gettext("Clear")}
+                </button>
+              </div>
               <.input
                 field={@form[:timezone]}
                 type="select"

@@ -55,6 +55,25 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     assert Repo.get_by(Branch, slug: "fresh")
   end
 
+  test "manual rating can be saved and cleared", %{conn: conn} do
+    branch = insert(:branch, slug: "rated")
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/branches/rated/edit/general")
+
+    assert {:error, {:live_redirect, _}} =
+             lv
+             |> form("#branch-form", branch_form: %{manual_rating: "4.5"})
+             |> render_submit()
+
+    assert %{manual_rating: 4.5} = Repo.preload(branch, :info, force: true).info
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/branches/rated/edit/general")
+    lv |> element("button[phx-click='clear_rating']") |> render_click()
+
+    assert {:error, {:live_redirect, _}} = lv |> form("#branch-form") |> render_submit()
+    assert %{manual_rating: nil} = Repo.preload(branch, :info, force: true).info
+  end
+
   test "taken slug is shown on the form", %{conn: conn} do
     insert(:branch, slug: "taken")
     insert(:branch, slug: "mine")

@@ -20,6 +20,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :longitude, :float
     field :phone_number, :string
     field :delivery_time, :integer
+    field :manual_rating, :float
     field :timezone, :string
     field :working_hours, :map, default: %{}
     field :vk_url, :string
@@ -43,6 +44,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :longitude,
       :phone_number,
       :delivery_time,
+      :manual_rating,
       :timezone,
       :working_hours,
       :vk_url,
@@ -55,6 +57,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:fulfillment, with: &Delivest.Identity.Branch.FulfillmentSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
+    |> validate_number(:manual_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(
@@ -79,6 +82,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       longitude: info && info.longitude,
       phone_number: info && info.phone_number,
       delivery_time: info && info.delivery_time,
+      manual_rating: info && info.manual_rating,
       timezone: info && info.timezone,
       working_hours: (info && info.working_hours) || %{},
       vk_url: info && info.vk_url,
@@ -205,6 +209,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :longitude,
         :phone_number,
         :delivery_time,
+        :manual_rating,
         :timezone,
         :working_hours,
         :vk_url,

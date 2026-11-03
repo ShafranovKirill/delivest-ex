@@ -9175,3 +9175,9 @@ msgstr "Загрузить слепок"
 #, elixir-autogen, elixir-format
 msgid "Catalog item %{type} (%{id}) is shared with another branch."
 msgstr "Объект каталога %{type} (%{id}) используется в другом филиале."
+
+msgid "Manual rating"
+msgstr "Рейтинг вручную"
+
+msgid "Clear"
+msgstr "Очистить"
