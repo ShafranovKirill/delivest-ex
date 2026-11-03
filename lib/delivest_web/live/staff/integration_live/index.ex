@@ -205,7 +205,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   defp compact_state(assigns) do
     ~H"""
     <div id={@id} class="flex items-center gap-2 text-sm">
-      <.status_badge state={overall_status(@state)} />
+      <.status_badge status={overall_status(@state)} />
     </div>
     """
   end
