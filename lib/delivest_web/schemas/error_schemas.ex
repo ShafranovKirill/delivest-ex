@@ -32,6 +32,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "order_not_cancellable",
             "too_many_requests",
             "unauthorized",
+            "client_auth_required",
             "invalid_phone",
             "call_failed",
             "confirmation_not_found",

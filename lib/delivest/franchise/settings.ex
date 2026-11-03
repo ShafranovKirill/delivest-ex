@@ -100,7 +100,9 @@ defmodule Delivest.Franchise.Settings do
       if zvonok.enabled and Delivest.Integrations.Zvonok.Settings.complete?(zvonok) do
         changeset
       else
-        add_error(changeset, :client_auth_required,
+        add_error(
+          changeset,
+          :client_auth_required,
           gettext("Sign-in must be configured and enabled before requiring it for checkout")
         )
       end

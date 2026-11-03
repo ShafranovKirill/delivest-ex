@@ -24,6 +24,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
     request_body: {"Создание заказа", "application/json", CreateOrderRequest},
     responses: [
       ok: {"Созданный заказ", "application/json", OrderResponse},
+      unauthorized: {"Требуется вход", "application/json", ErrorResponse},
       unprocessable_entity: {"Ошибка создания заказа", "application/json", ErrorResponse},
       too_many_requests: {"Слишком много запросов", "application/json", ErrorResponse}
     ]
