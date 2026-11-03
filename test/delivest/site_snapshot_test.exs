@@ -1,0 +1,178 @@
+defmodule Delivest.SiteSnapshotTest do
+  use Delivest.DataCase, async: false
+
+  import Delivest.Factory
+
+  alias Delivest.{Relations, Repo, SiteSnapshot}
+  alias Delivest.Net.{Product, Modifier, ModifierGroup, ProductModifierGroup}
+  alias Delivest.Media.File, as: MediaFile
+  alias Delivest.Franchise.Settings, as: FranchiseSettings
+  alias Delivest.Relations.EntityRelation
+
+  test "exports a branch and imports its catalog idempotently" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch, name: "Source")
+    target = insert(:branch, name: "Target")
+    category = insert(:category, name: "Pizza")
+    product = insert(:product, name: "Margherita", category_id: category.id, price: 50_000)
+
+    assert {:ok, _} =
+             Relations.create_relation(Repo, "Branch", source.id, "Category", category.id)
+
+    assert {:ok, _} = Relations.create_relation(Repo, "Branch", source.id, "Product", product.id)
+    assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
+
+    Repo.delete_all(from r in EntityRelation, where: r.from_id == ^source.id)
+    Repo.delete!(product)
+    Repo.delete!(category)
+    Repo.delete!(source)
+
+    assert {:ok, %{products: 1, categories: 1}} = SiteSnapshot.import(staff, target.id, archive)
+    assert Repo.get!(Product, product.id).price == 50_000
+    assert Relations.related?("Branch", target.id, "Category", category.id)
+    assert {:ok, %{products: 1}} = SiteSnapshot.import(staff, target.id, archive)
+    assert Repo.aggregate(Product, :count) == 1
+  end
+
+  test "copies product, modifier and brand images into the destination bucket" do
+    owner = self()
+    initial = Application.fetch_env!(:delivest, Delivest.Media)
+    on_exit(fn -> Application.put_env(:delivest, Delivest.Media, initial) end)
+    store = start_supervised!({Agent, fn -> %{} end})
+
+    Req.Test.stub(Delivest.S3Stub, fn conn ->
+      path = conn.request_path
+
+      case conn.method do
+        "GET" ->
+          case Agent.get(store, &Map.fetch(&1, path)) do
+            {:ok, body} -> Plug.Conn.send_resp(conn, 200, body)
+            :error -> Plug.Conn.send_resp(conn, 404, "missing")
+          end
+
+        "PUT" ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          Agent.update(store, &Map.put(&1, path, body))
+          send(owner, {:uploaded, path})
+          Plug.Conn.send_resp(conn, 200, "")
+
+        "DELETE" ->
+          Plug.Conn.send_resp(conn, 204, "")
+      end
+    end)
+
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch, name: "Source")
+    target = insert(:branch, name: "Target")
+    product = insert(:product)
+
+    photo = Delivest.S3Stub.png(2, 2)
+
+    media =
+      Repo.insert!(%MediaFile{
+        bucket: "delivest",
+        key: "products/photo.png",
+        original_name: "photo.png",
+        mime_type: "image/png",
+        size: byte_size(photo),
+        context: :product,
+        owner_id: product.id
+      })
+
+    product |> Ecto.Changeset.change(media_id: media.id) |> Repo.update!()
+    group = Repo.insert!(%ModifierGroup{name: "Extras", min: 0, max: 1})
+
+    modifier =
+      Repo.insert!(%Modifier{
+        group_id: group.id,
+        name: "Cheese",
+        price: 100,
+        photo_key: "modifiers/photo.png"
+      })
+
+    Repo.insert!(%ProductModifierGroup{product_id: product.id, group_id: group.id})
+
+    franchise =
+      Repo.one(FranchiseSettings) || Repo.insert!(%FranchiseSettings{name: "Source brand"})
+
+    franchise |> Ecto.Changeset.change(logo_key: "franchise/logo/main.png") |> Repo.update!()
+    assert {:ok, _} = Relations.create_relation(Repo, "Branch", source.id, "Product", product.id)
+
+    Agent.update(store, fn files ->
+      files
+      |> Map.put("/delivest/products/photo.png", photo)
+      |> Map.put("/delivest/modifiers/photo.png", Delivest.S3Stub.png(3, 3))
+      |> Map.put("/delivest/franchise/logo/main.png", Delivest.S3Stub.png(4, 4))
+    end)
+
+    assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
+    Repo.delete_all(from r in EntityRelation, where: r.from_id == ^source.id)
+    Repo.delete!(%ProductModifierGroup{product_id: product.id, group_id: group.id})
+    Repo.delete!(modifier)
+    Repo.delete!(group)
+    Repo.delete!(product)
+    Repo.delete!(media)
+    Repo.delete!(source)
+
+    Application.put_env(
+      :delivest,
+      Delivest.Media,
+      Keyword.put(initial, :public_bucket, "target-bucket")
+    )
+
+    assert {:ok, %{products: 1, media: 1}} = SiteSnapshot.import(staff, target.id, archive)
+    assert_receive {:uploaded, "/target-bucket/site-snapshot/" <> _}
+    assert String.starts_with?(Repo.get!(Modifier, modifier.id).photo_key, "site-snapshot/")
+    assert String.starts_with?(Repo.one!(FranchiseSettings).logo_key, "site-snapshot/")
+    assert Repo.get!(MediaFile, media.id).bucket == "target-bucket"
+    assert {:ok, _} = SiteSnapshot.import(staff, target.id, archive)
+  end
+
+  test "rejects a catalog UUID owned by another branch and rolls back settings" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch, name: "Source")
+    target = insert(:branch, name: "Target")
+    category = insert(:category)
+
+    assert {:ok, _} =
+             Relations.create_relation(Repo, "Branch", source.id, "Category", category.id)
+
+    assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
+    source |> Delivest.Identity.Branch.changeset(%{name: "Source after export"}) |> Repo.update!()
+
+    assert {:error, :id_collision} = SiteSnapshot.import(staff, target.id, archive)
+    assert Repo.reload!(target).name == "Target"
+    assert Relations.related?("Branch", source.id, "Category", category.id)
+    refute Relations.related?("Branch", target.id, "Category", category.id)
+  end
+
+  test "rejects a snapshot from another build before changing the branch" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    branch = insert(:branch)
+    assert {:ok, archive} = SiteSnapshot.export(staff, branch.id)
+    {:ok, files} = :zip.extract(archive, [:memory])
+
+    files =
+      Enum.map(files, fn
+        {~c"manifest.json", body} ->
+          changed = body |> Jason.decode!() |> Map.put("build", "different") |> Jason.encode!()
+          {~c"manifest.json", changed}
+
+        other ->
+          other
+      end)
+
+    {:ok, {_, changed_archive}} =
+      :zip.create(~c"changed.zip", files, [:memory, {:uncompress, :all}])
+
+    assert {:error, :different_build} = SiteSnapshot.import(staff, branch.id, changed_archive)
+    assert Repo.reload!(branch).name == branch.name
+  end
+
+  test "rejects a corrupt archive before any catalog change" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    branch = insert(:branch)
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, branch.id, "broken")
+    assert Repo.aggregate(Product, :count) == 0
+  end
+end

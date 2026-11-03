@@ -258,6 +258,7 @@ defmodule DelivestWeb.Router do
     get "/", StaffHomeController, :show
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
     get "/b/:branch_slug/products/export", StaffMenuExportController, :show
+    get "/b/:branch_slug/site-snapshot", StaffSiteSnapshotController, :show
 
     live_session :staff_public,
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
