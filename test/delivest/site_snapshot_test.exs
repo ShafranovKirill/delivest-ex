@@ -57,6 +57,7 @@ defmodule Delivest.SiteSnapshotTest do
           Plug.Conn.send_resp(conn, 200, "")
 
         "DELETE" ->
+          Agent.update(store, &Map.delete(&1, path))
           Plug.Conn.send_resp(conn, 204, "")
       end
     end)
@@ -120,6 +121,19 @@ defmodule Delivest.SiteSnapshotTest do
       Keyword.put(initial, :public_bucket, "target-bucket")
     )
 
+    conflicting_branch = insert(:branch, name: "Source")
+    assert {:error, %Ecto.Changeset{}} = SiteSnapshot.import(staff, target.id, archive)
+    assert_received {:uploaded, "/target-bucket/site-snapshot/" <> _}
+    assert Repo.reload!(target).name == "Target"
+    assert Repo.aggregate(Product, :count) == 0
+
+    refute Agent.get(
+             store,
+             &Enum.any?(Map.keys(&1), fn key -> String.starts_with?(key, "/target-bucket/") end)
+           )
+
+    Repo.delete!(conflicting_branch)
+
     assert {:ok, %{products: 1, media: 1}} = SiteSnapshot.import(staff, target.id, archive)
     assert_receive {:uploaded, "/target-bucket/site-snapshot/" <> _}
     assert String.starts_with?(Repo.get!(Modifier, modifier.id).photo_key, "site-snapshot/")
@@ -128,7 +142,7 @@ defmodule Delivest.SiteSnapshotTest do
     assert {:ok, _} = SiteSnapshot.import(staff, target.id, archive)
   end
 
-  test "rejects a catalog UUID owned by another branch and rolls back settings" do
+  test "maps a catalog UUID owned by another branch into the target" do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     source = insert(:branch, name: "Source")
     target = insert(:branch, name: "Target")
@@ -140,10 +154,16 @@ defmodule Delivest.SiteSnapshotTest do
     assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
     source |> Delivest.Identity.Branch.changeset(%{name: "Source after export"}) |> Repo.update!()
 
-    assert {:error, :id_collision} = SiteSnapshot.import(staff, target.id, archive)
-    assert Repo.reload!(target).name == "Target"
+    assert {:ok, %{created: 1, updated: 0}} = SiteSnapshot.import(staff, target.id, archive)
+    assert Repo.reload!(target).name == "Source"
     assert Relations.related?("Branch", source.id, "Category", category.id)
     refute Relations.related?("Branch", target.id, "Category", category.id)
+
+    assert [target_category] =
+             Repo.all(from c in Delivest.Net.Category, where: c.id != ^category.id)
+
+    assert Relations.related?("Branch", target.id, "Category", target_category.id)
+    assert {:ok, %{created: 0, updated: 1}} = SiteSnapshot.import(staff, target.id, archive)
   end
 
   test "rejects a snapshot from another build before changing the branch" do
@@ -174,5 +194,101 @@ defmodule Delivest.SiteSnapshotTest do
     branch = insert(:branch)
     assert {:error, :invalid_archive} = SiteSnapshot.import(staff, branch.id, "broken")
     assert Repo.aggregate(Product, :count) == 0
+  end
+
+  test "rejects invalid product price before importing records" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch)
+    target = insert(:branch, name: "Target")
+    product = insert(:product, price: 1000)
+    assert {:ok, _} = Relations.create_relation(Repo, "Branch", source.id, "Product", product.id)
+    assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
+    {:ok, files} = :zip.extract(archive, [:memory])
+
+    data =
+      files
+      |> Enum.find_value(fn {path, body} -> if path == ~c"data.json", do: Jason.decode!(body) end)
+
+    data = %{data | "products" => [Map.put(hd(data["products"]), "price", -1)]}
+    body = Jason.encode!(data)
+
+    files =
+      Enum.map(files, fn
+        {~c"data.json", _} ->
+          {~c"data.json", body}
+
+        {~c"manifest.json", manifest} ->
+          value =
+            manifest
+            |> Jason.decode!()
+            |> Map.put("data_size", byte_size(body))
+            |> Map.put("data_sha256", :crypto.hash(:sha256, body) |> Base.encode16(case: :lower))
+
+          {~c"manifest.json", Jason.encode!(value)}
+
+        other ->
+          other
+      end)
+
+    {:ok, {_, invalid}} = :zip.create(~c"invalid.zip", files, [:memory, {:uncompress, :all}])
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, target.id, invalid)
+    assert Repo.reload!(target).name == "Target"
+  end
+
+  test "rejects forged nested settings before applying the branch" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch, name: "Source")
+    target = insert(:branch, name: "Target")
+    assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
+    {:ok, files} = :zip.extract(archive, [:memory])
+
+    data =
+      files
+      |> Enum.find_value(fn
+        {~c"data.json", body} -> Jason.decode!(body)
+        _ -> nil
+      end)
+      |> Map.put("info", %{"fulfillment" => %{"secret" => "forged"}})
+      |> Jason.encode!()
+
+    files =
+      Enum.map(files, fn
+        {~c"data.json", _} ->
+          {~c"data.json", data}
+
+        {~c"manifest.json", body} ->
+          manifest =
+            body
+            |> Jason.decode!()
+            |> Map.put("data_size", byte_size(data))
+            |> Map.put("data_sha256", :crypto.hash(:sha256, data) |> Base.encode16(case: :lower))
+
+          {~c"manifest.json", Jason.encode!(manifest)}
+
+        other ->
+          other
+      end)
+
+    {:ok, {_, forged_archive}} =
+      :zip.create(~c"forged.zip", files, [:memory, {:uncompress, :all}])
+
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, target.id, forged_archive)
+    assert Repo.reload!(target).name == "Target"
+  end
+
+  test "rejects a Unix symlink even when OTP lists the entry as a regular file" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    branch = insert(:branch)
+    assert {:ok, archive} = SiteSnapshot.export(staff, branch.id)
+    end_offset = byte_size(archive) - 22
+
+    <<0x06054B50::little-32, _::binary-size(12), directory_offset::little-32, 0::16>> =
+      binary_part(archive, end_offset, 22)
+
+    attributes_offset = directory_offset + 38
+    <<prefix::binary-size(attributes_offset), _attributes::32, suffix::binary>> = archive
+    archive = <<prefix::binary, 0xA1FF0000::little-32, suffix::binary>>
+
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, branch.id, archive)
   end
 end

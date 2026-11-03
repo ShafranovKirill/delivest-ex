@@ -136,7 +136,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
       case result do
         {:ok, counts} ->
           gettext(
-            "Imported %{products} products, %{categories} categories and %{media} images.",
+            "Created records: %{created}. Updated records: %{updated}.",
             counts
           )
 
@@ -168,6 +168,9 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
 
   defp snapshot_error(:invalid_archive), do: gettext("The archive is damaged or incomplete.")
   defp snapshot_error(:archive_too_large), do: gettext("The archive exceeds the size limit.")
+
+  defp snapshot_error({:shared_catalog_conflict, type, id}),
+    do: gettext("Catalog item %{type} (%{id}) is shared with another branch.", type: type, id: id)
 
   defp snapshot_error(:shared_catalog_conflict),
     do: gettext("The catalog contains items shared with another branch.")
@@ -235,7 +238,11 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           <label for={@uploads.snapshot.ref} class="block text-sm font-semibold">
             {gettext("Load site snapshot")}
           </label>
-          <.live_file_input upload={@uploads.snapshot} class="file-input w-full" />
+          <.live_file_input
+            upload={@uploads.snapshot}
+            disabled={@snapshot_busy}
+            class="file-input w-full"
+          />
           <p :for={entry <- @uploads.snapshot.entries} class="text-xs text-base-content/60">
             {entry.client_name} · {entry.progress}%
           </p>

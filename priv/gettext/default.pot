@@ -9150,7 +9150,7 @@ msgid "Import failed. Check the archive and try again."
 msgstr ""
 
 #, elixir-autogen, elixir-format
-msgid "Imported %{products} products, %{categories} categories and %{media} images."
+msgid "Created records: %{created}. Updated records: %{updated}."
 msgstr ""
 
 #, elixir-autogen, elixir-format
@@ -9163,4 +9163,8 @@ msgstr ""
 
 #, elixir-autogen, elixir-format
 msgid "Load site snapshot"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Catalog item %{type} (%{id}) is shared with another branch."
 msgstr ""
