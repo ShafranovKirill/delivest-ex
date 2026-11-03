@@ -65,6 +65,17 @@ defmodule DelivestWeb.Router do
       format: :text
   end
 
+  pipeline :health do
+    plug :accepts, ["json"]
+  end
+
+  scope "/", DelivestWeb do
+    pipe_through :health
+
+    get "/health", HealthController, :show
+    get "/ready", HealthController, :ready
+  end
+
   scope "/client/auth", DelivestWeb.Client.Auth do
     pipe_through :client_api
 
