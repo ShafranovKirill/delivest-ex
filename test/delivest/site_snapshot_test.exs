@@ -128,7 +128,7 @@ defmodule Delivest.SiteSnapshotTest do
     assert {:ok, _} = SiteSnapshot.import(staff, target.id, archive)
   end
 
-  test "rejects a catalog UUID owned by another branch and rolls back settings" do
+  test "maps a catalog UUID owned by another branch into the target" do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     source = insert(:branch, name: "Source")
     target = insert(:branch, name: "Target")
@@ -140,10 +140,16 @@ defmodule Delivest.SiteSnapshotTest do
     assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
     source |> Delivest.Identity.Branch.changeset(%{name: "Source after export"}) |> Repo.update!()
 
-    assert {:error, :id_collision} = SiteSnapshot.import(staff, target.id, archive)
-    assert Repo.reload!(target).name == "Target"
+    assert {:ok, %{created: 1, updated: 0}} = SiteSnapshot.import(staff, target.id, archive)
+    assert Repo.reload!(target).name == "Source"
     assert Relations.related?("Branch", source.id, "Category", category.id)
     refute Relations.related?("Branch", target.id, "Category", category.id)
+
+    assert [target_category] =
+             Repo.all(from c in Delivest.Net.Category, where: c.id != ^category.id)
+
+    assert Relations.related?("Branch", target.id, "Category", target_category.id)
+    assert {:ok, %{created: 0, updated: 1}} = SiteSnapshot.import(staff, target.id, archive)
   end
 
   test "rejects a snapshot from another build before changing the branch" do
