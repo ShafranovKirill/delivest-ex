@@ -8,7 +8,7 @@ defmodule Delivest.Oms.Kitchen do
   alias Delivest.Identity.Branch.{BranchInfo, KitchenSettings}
   alias Delivest.Gateway
   alias Delivest.Oms.{Order, OrderDeadline, OrderFlow, Orders, OrderTransition}
-  alias Delivest.Oms.Kitchen.ReadyWorker
+  alias Delivest.Oms.Kitchen.{ReadyWorker, SendWorker}
 
   @undo_seconds 10
   @upcoming_minutes 60
@@ -111,21 +111,79 @@ defmodule Delivest.Oms.Kitchen do
   end
 
   def order_accepted(%Order{status: :accepted, crm: nil} = order) do
-    with %KitchenSettings{} = kitchen <- working(order.branch_id),
-         true <- due?(order, kitchen, DateTime.utc_now()),
-         {:ok, sent} <- send_to_kitchen(order) do
-      {:ok, sent}
-    else
-      {:error, reason} ->
-        Logger.warning("order #{order.number}: not sent to the kitchen (#{inspect(reason)})")
-        {:ok, order}
+    with %KitchenSettings{} = kitchen <- working(order.branch_id) do
+      case sends_at(order, kitchen) do
+        nil ->
+          send_now(order)
 
-      _ ->
-        {:ok, order}
+        at ->
+          if DateTime.compare(at, DateTime.utc_now()) == :gt do
+            schedule_send(order, at)
+          else
+            send_now(order)
+          end
+      end
+    else
+      _ -> {:ok, order}
     end
   end
 
   def order_accepted(order), do: {:ok, order}
+
+  @doc """
+  Sends an accepted order when its time has come, otherwise asks Oban to wait.
+
+  Called by `SendWorker`. A retry with an early time becomes a snooze instead
+  of a second job, so the uniqueness on `order_id` stays intact.
+  """
+  def send_due(order_id) do
+    with %Order{status: :accepted, crm: nil, deleted_at: nil} = order <-
+           Repo.get(Order, order_id),
+         %KitchenSettings{} = kitchen <- working(order.branch_id) do
+      case sends_at(order, kitchen) do
+        nil ->
+          send_to_kitchen(order)
+
+        at ->
+          now = DateTime.utc_now()
+
+          if DateTime.compare(at, now) == :gt,
+            do: {:snooze, max(DateTime.diff(at, now, :second), 1)},
+            else: send_to_kitchen(order)
+      end
+    else
+      _ -> :ok
+    end
+  end
+
+  @doc """
+  Plans the kitchen send again after the kitchen settings or the CRM changed.
+
+  A branch that lost its own kitchen drops every pending send; an enabled one
+  replans accepted orders, sending the ones whose time has already come.
+  """
+  def reschedule_branch(branch_id) do
+    case working(branch_id) do
+      %KitchenSettings{} = _kitchen ->
+        accepted(branch_id) |> Enum.each(&order_accepted/1)
+
+      _ ->
+        cancel_sends(fn query ->
+          where(query, [j], fragment("?->>'branch_id' = ?", j.args, ^branch_id))
+        end)
+    end
+
+    :ok
+  end
+
+  @doc "Drops planned sends when an order is no longer waiting for the kitchen."
+  def cancel_send(order_id) do
+    cancel_sends(fn query ->
+      where(query, [j], fragment("?->>'order_id' = ?", j.args, ^order_id))
+    end)
+
+    :ok
+  end
 
   def dispatch_due(now \\ DateTime.utc_now()) do
     Order
@@ -263,6 +321,42 @@ defmodule Delivest.Oms.Kitchen do
   end
 
   defp send_to_kitchen(order), do: Orders.advance_order(order, :preparing, :system)
+
+  defp send_now(order) do
+    case send_to_kitchen(order) do
+      {:ok, sent} ->
+        {:ok, sent}
+
+      {:error, reason} ->
+        Logger.warning("order #{order.number}: not sent to the kitchen (#{inspect(reason)})")
+        {:ok, order}
+    end
+  end
+
+  defp schedule_send(order, at) do
+    cancel_send(order.id)
+
+    %{order_id: order.id, branch_id: order.branch_id}
+    |> SendWorker.new(scheduled_at: at)
+    |> Oban.insert()
+
+    {:ok, order}
+  end
+
+  defp accepted(branch_id) do
+    Order
+    |> where([o], o.branch_id == ^branch_id and o.status == :accepted)
+    |> where([o], is_nil(o.crm) and is_nil(o.deleted_at))
+    |> Repo.all()
+  end
+
+  defp cancel_sends(filter) do
+    Oban.Job
+    |> where([j], j.worker == ^Oban.Worker.to_string(SendWorker))
+    |> where([j], j.state in ["available", "scheduled", "retryable"])
+    |> filter.()
+    |> Oban.cancel_all_jobs()
+  end
 
   defp started_at([]), do: %{}
 

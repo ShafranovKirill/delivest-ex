@@ -1,7 +1,7 @@
 defmodule Delivest.Identity.Branches do
   import Ecto.Query
+  alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
-  alias Delivest.Identity.{Branch}
   alias Delivest.{Repo, Identity}
   alias Delivest.Audit
 
@@ -217,14 +217,31 @@ defmodule Delivest.Identity.Branches do
       |> case do
         {:ok, %{branch: updated_branch, info: updates_info}} ->
           Cachex.clear(:branch_cache)
-          Delivest.Oms.Kitchen.notify_availability(updated_branch.id)
-          {:ok, %{updated_branch | info: updates_info}}
+          updated = %{updated_branch | info: updates_info}
+          Delivest.Oms.Kitchen.notify_availability(updated.id)
+
+          if kitchen_changed?(branch, updated),
+            do: Delivest.Oms.Kitchen.reschedule_branch(updated.id)
+
+          {:ok, updated}
 
         {:error, failed_operation, changeset, _changes} ->
           {:error, failed_operation, changeset}
       end
     end
   end
+
+  # Kitchen sends are planned in advance, so a branch that turned the kitchen on
+  # or off, changed the lead time or switched to a CRM must replan them.
+  defp kitchen_changed?(%Branch{info: %BranchInfo{} = before}, %Branch{
+         info: %BranchInfo{} = after_update
+       }) do
+    before.kitchen != after_update.kitchen or
+      Delivest.Gateway.own?(%Branch{info: before}, :kitchen) !=
+        Delivest.Gateway.own?(%Branch{info: after_update}, :kitchen)
+  end
+
+  defp kitchen_changed?(_before, _after_update), do: false
 
   defp upsert_branch_info(repo, branch, attrs) do
     if branch.info do

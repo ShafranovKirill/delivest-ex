@@ -21,7 +21,7 @@ config :delivest, Oban,
     {"0 4 * * *", Delivest.Logs.PruneWorker},
     {"30 4 * * *", Delivest.Media.Workers.ThumbnailBackfillWorker},
     {"*/10 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_stops"}},
-    {"* * * * *", Delivest.Oms.Kitchen.DispatchWorker},
+    {"*/5 * * * *", Delivest.Oms.Kitchen.DispatchWorker},
     {"* * * * *", Delivest.Payments.Online.PollWorker},
     {"17 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_catalog"}},
     {"*/10 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "crm_silence"}},
@@ -99,7 +99,7 @@ config :tailwind,
 # Configure Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:request_id, :worker, :job_id]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

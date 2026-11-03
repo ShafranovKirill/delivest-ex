@@ -4,10 +4,11 @@ defmodule Delivest.Oms.KitchenTest do
 
   import Delivest.Factory
   import Delivest.OrderFixtures
+  import Ecto.Query
 
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Kitchen, Order, Orders, OrderTransition}
-  alias Delivest.Oms.Kitchen.ReadyWorker
+  alias Delivest.Oms.Kitchen.{OrderSubscriber, ReadyWorker, SendWorker}
 
   defp branch(kitchen) do
     branch = insert(:branch)
@@ -37,6 +38,14 @@ defmodule Delivest.Oms.KitchenTest do
 
   defp operator(branch), do: {:staff, staff(["orders.update"], branch)}
 
+  defp send_job(order_id) do
+    Oban.Job
+    |> where([j], j.worker == ^Oban.Worker.to_string(SendWorker))
+    |> where([j], j.state in ["available", "scheduled", "retryable"])
+    |> where([j], fragment("?->>'order_id' = ?", j.args, ^order_id))
+    |> Repo.one()
+  end
+
   describe "sending to the kitchen" do
     test "an order for now goes to the kitchen when it is confirmed" do
       branch = kitchen_branch()
@@ -52,7 +61,7 @@ defmodule Delivest.Oms.KitchenTest do
                transitions(order)
     end
 
-    test "an order for later waits until the lead time" do
+    test "an order for later is scheduled for the lead time" do
       branch = kitchen_branch()
       later = order(branch, cook_by: in_minutes(120))
       soon = order(branch, cook_by: in_minutes(80))
@@ -64,14 +73,87 @@ defmodule Delivest.Oms.KitchenTest do
                Orders.advance_order(soon, :accepted, operator(branch))
 
       deliver_events()
-      assert Repo.reload!(later).status == :accepted
       assert Repo.reload!(soon).status == :preparing
+      assert Repo.reload!(later).status == :accepted
 
-      Kitchen.dispatch_due(DateTime.add(DateTime.utc_now(), 29, :minute))
+      job = send_job(later.id)
+      assert DateTime.diff(job.scheduled_at, DateTime.utc_now(), :minute) in 29..30
+
+      assert {:snooze, seconds} = Kitchen.send_due(later.id)
+      assert seconds > 0
       assert Repo.reload!(later).status == :accepted
 
       Kitchen.dispatch_due(DateTime.add(DateTime.utc_now(), 31, :minute))
       assert Repo.reload!(later).status == :preparing
+    end
+
+    test "moving the cooking time replans the send" do
+      branch = kitchen_branch()
+      order = order(branch, cook_by: in_minutes(120))
+
+      assert {:ok, %Order{status: :accepted}} =
+               Orders.advance_order(order, :accepted, operator(branch))
+
+      deliver_events()
+      before = send_job(order.id)
+
+      order
+      |> Ecto.Changeset.change(cook_by: in_minutes(100))
+      |> Repo.update!()
+
+      assert :ok =
+               OrderSubscriber.handle(%{
+                 type: "order.updated",
+                 aggregate_id: order.id,
+                 payload: %{"changes" => %{"cook_by" => %{}}}
+               })
+
+      after_update = send_job(order.id)
+      assert DateTime.compare(after_update.scheduled_at, before.scheduled_at) == :lt
+      assert after_update.id != before.id
+    end
+
+    test "leaving accepted drops the planned send" do
+      branch = kitchen_branch()
+      order = order(branch, cook_by: in_minutes(120))
+
+      assert {:ok, %Order{status: :accepted}} =
+               Orders.advance_order(order, :accepted, operator(branch))
+
+      deliver_events()
+      assert send_job(order.id)
+
+      order |> Ecto.Changeset.change(status: :cancelled) |> Repo.update!()
+
+      assert :ok =
+               OrderSubscriber.handle(%{
+                 type: "order.status_changed",
+                 aggregate_id: order.id,
+                 payload: %{}
+               })
+
+      assert send_job(order.id) == nil
+    end
+
+    test "turning the kitchen off drops planned sends" do
+      branch = kitchen_branch()
+      order = order(branch, cook_by: in_minutes(120))
+
+      assert {:ok, %Order{status: :accepted}} =
+               Orders.advance_order(order, :accepted, operator(branch))
+
+      deliver_events()
+      assert send_job(order.id)
+
+      BranchInfo
+      |> Repo.get_by!(branch_id: branch.id)
+      |> Ecto.Changeset.change(kitchen: %{enabled: false})
+      |> Repo.update!()
+
+      Cachex.clear(:branch_cache)
+      assert :ok = Kitchen.reschedule_branch(branch.id)
+      assert send_job(order.id) == nil
+      assert Repo.reload!(order).status == :accepted
     end
 
     test "nothing moves without a working kitchen" do
