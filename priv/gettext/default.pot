@@ -9096,3 +9096,71 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "When all methods are off, customers cannot place orders. Existing orders are kept."
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Site snapshot"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Export and import branch settings, catalog and images."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Transfer this branch's storefront settings, catalog and images between sites running the same build. The storefront appearance is shared across the destination site."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Download site snapshot"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Choose a ZIP archive."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "The archive could not be uploaded."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "The archive exceeds the size limit."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "The archive was created by another Delivest build."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "The archive is damaged or incomplete."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "The catalog contains items shared with another branch."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "The destination contains a conflicting catalog item."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "You do not have permission to import this archive."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Import failed. Check the archive and try again."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Imported %{products} products, %{categories} categories and %{media} images."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "ZIP archive, up to 100 MB."
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Importing…"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Load site snapshot"
+msgstr ""

@@ -9103,3 +9103,71 @@ msgstr "Этот способ получения отключён в филиа�
 #, elixir-autogen, elixir-format
 msgid "When all methods are off, customers cannot place orders. Existing orders are kept."
 msgstr "Если отключить все способы, клиенты не смогут оформить заказ. Созданные заказы сохранятся."
+
+#, elixir-autogen, elixir-format
+msgid "Site snapshot"
+msgstr "Слепок сайта"
+
+#, elixir-autogen, elixir-format
+msgid "Export and import branch settings, catalog and images."
+msgstr "Перенос настроек филиала, каталога и изображений."
+
+#, elixir-autogen, elixir-format
+msgid "Transfer this branch's storefront settings, catalog and images between sites running the same build. The storefront appearance is shared across the destination site."
+msgstr "Переносите настройки, каталог и изображения между сайтами на одной сборке Delivest. Оформление применяется ко всему целевому сайту."
+
+#, elixir-autogen, elixir-format
+msgid "Download site snapshot"
+msgstr "Выгрузить сайт"
+
+#, elixir-autogen, elixir-format
+msgid "Choose a ZIP archive."
+msgstr "Выберите ZIP-архив."
+
+#, elixir-autogen, elixir-format
+msgid "The archive could not be uploaded."
+msgstr "Не удалось загрузить архив."
+
+#, elixir-autogen, elixir-format
+msgid "The archive exceeds the size limit."
+msgstr "Архив превышает допустимый размер."
+
+#, elixir-autogen, elixir-format
+msgid "The archive was created by another Delivest build."
+msgstr "Архив создан другой сборкой Delivest."
+
+#, elixir-autogen, elixir-format
+msgid "The archive is damaged or incomplete."
+msgstr "Архив повреждён или неполный."
+
+#, elixir-autogen, elixir-format
+msgid "The catalog contains items shared with another branch."
+msgstr "В каталоге есть позиции, общие с другим филиалом."
+
+#, elixir-autogen, elixir-format
+msgid "The destination contains a conflicting catalog item."
+msgstr "В целевом филиале есть конфликтующая запись каталога."
+
+#, elixir-autogen, elixir-format
+msgid "You do not have permission to import this archive."
+msgstr "У вас нет прав на импорт архива."
+
+#, elixir-autogen, elixir-format
+msgid "Import failed. Check the archive and try again."
+msgstr "Не удалось применить слепок. Проверьте архив и попробуйте ещё раз."
+
+#, elixir-autogen, elixir-format
+msgid "Imported %{products} products, %{categories} categories and %{media} images."
+msgstr "Импорт завершён. Товаров — %{products}, категорий — %{categories}, изображений товаров — %{media}."
+
+#, elixir-autogen, elixir-format
+msgid "ZIP archive, up to 100 MB."
+msgstr "ZIP-архив до 100 МБ."
+
+#, elixir-autogen, elixir-format
+msgid "Importing…"
+msgstr "Импортируем…"
+
+#, elixir-autogen, elixir-format
+msgid "Load site snapshot"
+msgstr "Загрузить слепок"

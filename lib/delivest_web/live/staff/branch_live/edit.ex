@@ -232,6 +232,9 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           phx-change="snapshot_validate"
           class="space-y-3"
         >
+          <label for={@uploads.snapshot.ref} class="block text-sm font-semibold">
+            {gettext("Load site snapshot")}
+          </label>
           <.live_file_input upload={@uploads.snapshot} class="file-input w-full" />
           <p :for={entry <- @uploads.snapshot.entries} class="text-xs text-base-content/60">
             {entry.client_name} · {entry.progress}%
