@@ -8,7 +8,7 @@ config :delivest, Delivest.Repo,
   password: "postgres",
   hostname: external_host,
   database: System.get_env("DEV_DATABASE", "delivest"),
-  port: 5432,
+  port: String.to_integer(System.get_env("DEV_DATABASE_PORT", "5432")),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -94,7 +94,7 @@ config :ex_aws,
   s3: [
     scheme: System.get_env("S3_SCHEME", "http://"),
     host: System.get_env("S3_HOST", "localhost"),
-    port: 8333
+    port: String.to_integer(System.get_env("DEV_S3_PORT", "8333"))
   ]
 
 config :delivest, Delivest.Media, bucket: "delivest"
