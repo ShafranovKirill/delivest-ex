@@ -8,6 +8,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
   alias DelivestWeb.Staff.PromotionLive.ReasonText
 
   attr :cart, :map, required: true
+  attr :out_of_stock, :boolean, default: false
 
   def render_items(assigns) do
     ~H"""
@@ -61,6 +62,17 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CartComponent do
               <span :if={discounted?(item)} class="line-through opacity-60">{base_total(item)}</span>
               <span class="font-bold text-base-content">{OrderHelpers.money(item.total_price)}</span>
             </p>
+            <button
+              :if={@out_of_stock and !gift?(item)}
+              type="button"
+              phx-click="out_of_stock"
+              phx-value-product-id={Map.get(item, :key, item.product_id)}
+              title={gettext("Mark as unavailable and tell the client")}
+              class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-warning hover:underline"
+            >
+              <.icon name="hero-no-symbol" class="size-3.5" />
+              {gettext("Unavailable")}
+            </button>
           </div>
 
           <div :if={!gift?(item)} class="flex items-center gap-1 shrink-0">

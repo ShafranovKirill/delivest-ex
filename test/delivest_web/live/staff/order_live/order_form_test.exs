@@ -1,11 +1,13 @@
 defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
   use DelivestWeb.ConnCase, async: true
+  use Oban.Testing, repo: Delivest.Repo
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
   import Delivest.OrderFixtures
 
   alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Push.NoteWorker
   alias Delivest.Repo
 
   setup %{conn: conn} do
@@ -88,6 +90,43 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
 
     assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
     assert [%{quantity: 2}] = Repo.preload(Repo.reload!(order), :items, force: true).items
+  end
+
+  test "an unavailable position is removed and the client is notified", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    other = insert_branch_product(branch.id)
+    order = order_fixture(branch.id, product: product)
+    edit = ~p"/staff/b/#{branch}/orders/#{order.id}/edit"
+
+    {:ok, lv, _html} = live(conn, edit)
+    render_click(lv, "add_item", %{"product-id" => other.id})
+    lv |> form("#order-details-form") |> render_submit()
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
+
+    assert length(Repo.preload(Repo.reload!(order), :items, force: true).items) == 2
+
+    {:ok, lv, _html} = live(conn, edit)
+    assert has_element?(lv, "#cart-item-#{product.id}")
+
+    render_click(lv, "out_of_stock", %{"product-id" => product.id})
+    refute has_element?(lv, "#cart-item-#{product.id}")
+    assert render(lv) =~ "client will be notified"
+
+    lv |> form("#order-details-form") |> render_submit()
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
+
+    assert [%{title: title}] = Repo.preload(Repo.reload!(order), :items, force: true).items
+    assert title == other.name
+
+    deliver_events()
+
+    assert_enqueued(
+      worker: NoteWorker,
+      args: %{"order_id" => order.id, "note" => "items_removed", "titles" => [product.name]}
+    )
   end
 
   test "crm orders cannot be opened for edit", %{conn: conn, branch: branch} do

@@ -3,7 +3,7 @@ defmodule Delivest.Push.OrderMessage do
 
   alias Delivest.Oms.Order
 
-  alias Delivest.{Franchise, Identity}
+  alias Delivest.{Franchise, Identity, Money}
 
   @notified [:accepted, :preparing, :ready, :delivering, :completed, :cancelled]
 
@@ -37,6 +37,36 @@ defmodule Delivest.Push.OrderMessage do
       message(order, body, url(order))
     end)
   end
+
+  def items_removed(order, [title], locale) do
+    localized(locale, fn ->
+      body =
+        gettext(
+          "Order %{number}: %{item} is unavailable and was removed. New total: %{total}. If you no longer need the order, cancel it in the app.",
+          number: Order.short_number(order),
+          item: quoted(title),
+          total: Money.format(order.total_amount)
+        )
+
+      message(order, body, url(order))
+    end)
+  end
+
+  def items_removed(order, titles, locale) when is_list(titles) do
+    localized(locale, fn ->
+      body =
+        gettext(
+          "Order %{number}: unavailable positions were removed (%{items}). New total: %{total}. If you no longer need the order, cancel it in the app.",
+          number: Order.short_number(order),
+          items: Enum.map_join(titles, ", ", &quoted/1),
+          total: Money.format(order.total_amount)
+        )
+
+      message(order, body, url(order))
+    end)
+  end
+
+  defp quoted(title), do: "«#{title}»"
 
   defp localized(nil, fun), do: fun.()
   defp localized(locale, fun), do: Gettext.with_locale(DelivestWeb.Gettext, locale, fun)

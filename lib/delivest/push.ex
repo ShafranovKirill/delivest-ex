@@ -42,6 +42,30 @@ defmodule Delivest.Push do
     :ok
   end
 
+  @doc """
+  Tells the client that positions disappeared from the order.
+
+  Sent when an operator saved an order with unavailable positions. The client
+  sees the new total and can still cancel the order from the app.
+  """
+  def notify_items_removed(%Order{id: order_id}, titles) when is_list(titles) do
+    titles = titles |> Enum.filter(&(is_binary(&1) and &1 != "")) |> Enum.uniq() |> Enum.take(10)
+
+    case titles do
+      [] ->
+        :ok
+
+      titles ->
+        %{order_id: order_id, note: "items_removed", titles: titles}
+        |> NoteWorker.new()
+        |> Oban.insert()
+
+        :ok
+    end
+  end
+
+  def notify_items_removed(_order, _titles), do: :ok
+
   def subscribe_staff(%Staff{} = staff, attrs) do
     %StaffSubscription{staff_id: staff.id}
     |> StaffSubscription.changeset(attrs)

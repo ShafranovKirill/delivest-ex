@@ -132,6 +132,31 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     socket.assigns.cart.id |> Oms.remove_item(product_id, all: true) |> assign_cart(socket)
   end
 
+  def handle_event("out_of_stock", %{"product-id" => product_id}, socket) do
+    cart = socket.assigns.cart
+
+    title =
+      cart.items
+      |> Enum.find(&(Map.get(&1, :key, &1.product_id) == product_id))
+      |> case do
+        nil -> nil
+        item -> item.name
+      end
+
+    case Oms.remove_item(cart.id, product_id, all: true) do
+      {:ok, _status, cart} ->
+        message =
+          gettext("%{item} will be removed after saving, the client will be notified",
+            item: title || gettext("The position")
+          )
+
+        {:noreply, socket |> assign(cart: cart) |> put_flash(:info, message)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to change the cart"))}
+    end
+  end
+
   def handle_event("apply_promo", %{"promo" => %{"code" => code}}, socket) do
     case Oms.apply_promo_code(socket.assigns.cart.id, code) do
       {:ok, cart} ->
@@ -319,7 +344,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       ]}>
         <div class="flex-1 lg:overflow-y-auto p-3 lg:p-4">
           <div class="hidden lg:block">
-            <CartComponent.render_items cart={@cart} />
+            <CartComponent.render_items cart={@cart} out_of_stock={@is_edit} />
           </div>
           <CartComponent.render_summary cart={@cart} />
           <CartComponent.render_promo id="cart-promo" cart={@cart} />

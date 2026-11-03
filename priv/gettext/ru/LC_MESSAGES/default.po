@@ -9181,3 +9181,31 @@ msgstr "Рейтинг вручную"
 
 msgid "Clear"
 msgstr "Очистить"
+
+#: lib/delivest/push/order_message.ex
+msgid "Order %{number}: %{item} is unavailable and was removed. New total: %{total}. If you no longer need the order, cancel it in the app."
+msgstr "Заказ %{number}: позиция %{item} недоступна и убрана из заказа. Новая сумма: %{total}. Если заказ больше не нужен, отмените его в приложении."
+
+#: lib/delivest/push/order_message.ex
+msgid "Order %{number}: unavailable positions were removed (%{items}). New total: %{total}. If you no longer need the order, cancel it in the app."
+msgstr "Заказ %{number}: недоступные позиции убраны из заказа (%{items}). Новая сумма: %{total}. Если заказ больше не нужен, отмените его в приложении."
+
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex
+msgid "Mark as unavailable and tell the client"
+msgstr "Отметить недоступной и сообщить клиенту"
+
+#: lib/delivest_web/live/staff/order_live/components/cart_component.ex
+msgid "Unavailable"
+msgstr "Нет в наличии"
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex
+msgid "%{item} will be removed after saving, the client will be notified"
+msgstr "%{item} будет убрана после сохранения, клиент получит уведомление"
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex
+msgid "The position"
+msgstr "Позиция"
+
+#: lib/delivest_web/live/staff/order_live/order_form.ex
+msgid "Failed to change the cart"
+msgstr "Не удалось изменить корзину"

@@ -6,7 +6,7 @@ defmodule Delivest.PushTest do
 
   alias Delivest.{Oms, Push, PushClient}
   alias Delivest.Oms.Carts
-  alias Delivest.Push.{Subscription, Vapid, Worker}
+  alias Delivest.Push.{NoteWorker, Subscription, Vapid, Worker}
 
   setup do
     branch = insert(:branch, is_active: true)
@@ -55,6 +55,23 @@ defmodule Delivest.PushTest do
 
     assert :ok = perform_job(Worker, %{"order_id" => order.id})
     refute_received {:push, _headers, _body}
+  end
+
+  test "removed positions are reported with the new total", %{order: order, client: client} do
+    assert :ok = Push.notify_items_removed(order, ["Сыр", "Хлеб"])
+
+    args = %{"order_id" => order.id, "note" => "items_removed", "titles" => ["Сыр", "Хлеб"]}
+    assert_enqueued(worker: NoteWorker, args: args)
+
+    assert :ok = perform_job(NoteWorker, args)
+    assert_received {:push, _headers, body}
+
+    assert %{"body" => text} = PushClient.decrypt(client, body)
+
+    assert text ==
+             "Order #{order.daily_number}: unavailable positions were removed («Сыр», «Хлеб»). " <>
+               "New total: #{Delivest.Money.format(order.total_amount)}. " <>
+               "If you no longer need the order, cancel it in the app."
   end
 
   test "a gone subscription is dropped", %{order: order, subscription: subscription} do
