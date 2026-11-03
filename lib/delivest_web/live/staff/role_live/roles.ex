@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.RoleLive.Roles do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Identity}
+  alias Delivest.Identity
   alias Delivest.Identity.Role
 
   on_mount {DelivestWeb.Hooks.Permission, "roles.read"}

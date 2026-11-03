@@ -23,8 +23,7 @@ defmodule Delivest.Promo.Compiled do
 
     slugs
     |> Enum.map(&product(compiled, &1))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.reject(&MapSet.member?(stopped, &1.id))
+    |> Enum.reject(fn product -> is_nil(product) or MapSet.member?(stopped, product.id) end)
     |> Enum.uniq_by(& &1.id)
   end
 

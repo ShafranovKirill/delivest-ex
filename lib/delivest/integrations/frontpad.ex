@@ -111,7 +111,7 @@ defmodule Delivest.Integrations.Frontpad do
   def health_check(settings) do
     if configured?(settings) do
       with {:ok, _stops} <-
-             Crm.Throttle.run(rate_limit(settings), fn -> Api.get_stops(settings.api_key) end),
+             Crm.Throttle.run_wait(rate_limit(settings), fn -> Api.get_stops(settings.api_key) end),
            do: :ok
     else
       {:error, :not_configured}

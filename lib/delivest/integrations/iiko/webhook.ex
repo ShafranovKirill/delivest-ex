@@ -4,9 +4,9 @@ defmodule Delivest.Integrations.Iiko.Webhook do
   require Logger
 
   alias Delivest.Integrations.Crm
-  alias Delivest.Integrations.Crm.{Lookup, StopSync, SyncState}
+  alias Delivest.Integrations.Crm.{Lookup, StopPoller, SyncState}
   alias Delivest.Integrations.Iiko.Api
-  alias Delivest.Integrations.{Inbox, Journal}
+  alias Delivest.Integrations.{Inbox, Journal, Poller}
   alias Delivest.Oms.{Order, Orders}
 
   @order_events ~w(DeliveryOrderUpdate DeliveryOrderError)
@@ -32,7 +32,7 @@ defmodule Delivest.Integrations.Iiko.Webhook do
   end
 
   defp accept(info, %{"eventType" => "StopListUpdate"}) do
-    Task.start(fn -> StopSync.sync(info.branch_id) end)
+    Poller.enqueue(StopPoller, info.branch_id)
   end
 
   defp accept(_info, _event), do: :ok

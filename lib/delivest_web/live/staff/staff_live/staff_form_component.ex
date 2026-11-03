@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Identity}
+  alias Delivest.Identity
   alias Delivest.Identity.Staff
 
   import Ecto.Changeset

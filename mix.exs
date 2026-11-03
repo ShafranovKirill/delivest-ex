@@ -10,6 +10,11 @@ defmodule Delivest.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      dialyzer: [
+        plt_add_apps: [:mix, :ex_unit],
+        flags: ["-Wno_opaque"],
+        ignore_warnings: ".dialyzer_ignore.exs"
+      ],
       compilers: [:leex, :yecc, :phoenix_live_view] ++ Mix.compilers(),
       leex_options: [error_location: :column],
       listeners: [Phoenix.CodeReloader]
@@ -66,7 +71,6 @@ defmodule Delivest.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:argon2_elixir, "~> 4.0"},
       {:flop, "~> 0.25.0"},
@@ -80,6 +84,8 @@ defmodule Delivest.MixProject do
       {:cors_plug, "~> 3.0"},
       {:open_api_spex, "~> 3.18"},
       {:oban, "~> 2.18"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:tz, "~> 0.28"},
       {:vix, "~> 0.35"},
       {:igniter, "~> 0.5", only: [:dev]}
@@ -105,7 +111,13 @@ defmodule Delivest.MixProject do
         "esbuild delivest --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "credo --strict",
+        "test"
+      ]
     ]
   end
 end

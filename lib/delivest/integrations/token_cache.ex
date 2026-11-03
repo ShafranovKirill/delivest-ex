@@ -7,9 +7,17 @@ defmodule Delivest.Integrations.TokenCache do
 
   @spec fetch(key(), issue()) :: {:ok, String.t()} | {:error, term()}
   def fetch(key, issue) do
-    case Cachex.get(@cache, key) do
-      {:ok, token} when is_binary(token) -> {:ok, token}
-      _miss -> refresh(key, issue)
+    fallback = fn ->
+      case issue.() do
+        {:ok, token, ttl} -> {:commit, token, expire: :timer.seconds(ttl - margin(ttl))}
+        {:error, _reason} = error -> {:ignore, error}
+      end
+    end
+
+    case Cachex.fetch(@cache, key, fallback) do
+      {:ok, token} -> {:ok, token}
+      {:commit, token} -> {:ok, token}
+      {:ignore, error} -> error
     end
   end
 
@@ -34,15 +42,7 @@ defmodule Delivest.Integrations.TokenCache do
 
   defp refresh(key, issue) do
     invalidate(key)
-
-    case issue.() do
-      {:ok, token, ttl} ->
-        Cachex.put(@cache, key, token, expire: :timer.seconds(ttl - margin(ttl)))
-        {:ok, token}
-
-      {:error, _reason} = error ->
-        error
-    end
+    fetch(key, issue)
   end
 
   defp margin(ttl) when ttl > 1, do: min(div(ttl, 10), @max_margin)

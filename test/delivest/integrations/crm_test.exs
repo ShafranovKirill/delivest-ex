@@ -177,6 +177,22 @@ defmodule Delivest.Integrations.CrmTest do
     assert %{status: "pending"} = Repo.reload!(order).crm
   end
 
+  test "a recently failed provider is not called again" do
+    branch = branch(frontpad(true))
+    {:ok, order} = place_order(branch)
+
+    assert {:ok, _status} =
+             Delivest.Integrations.Health.report(
+               :frontpad,
+               branch.id,
+               Frontpad,
+               {:error, :connection_error}
+             )
+
+    assert {:snooze, 60} = sync(order)
+    assert %{status: "pending"} = Repo.reload!(order).crm
+  end
+
   test "invalid credentials fail the delivery at once" do
     {:ok, order} = place_order(branch(frontpad(true)))
     stub_frontpad(%{"result" => "error", "error" => "invalid_secret"})

@@ -218,6 +218,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
   defp overall_status(%{connection: %{state: :auth}}), do: :auth
   defp overall_status(%{connection: %{state: :failed}}), do: :failed
+
   defp overall_status(%{connection: %{state: :unchecked}, credentials: %{state: cred}}) do
     case cred do
       :complete -> :unchecked

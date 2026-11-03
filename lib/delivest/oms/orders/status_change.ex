@@ -156,6 +156,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
   defp finish(%{order: order, steps: steps}, by, opts) do
     {:ok, order} = Notifier.publish({:ok, order}, [:order, :updated])
     audit(order, steps, by, opts)
+    report(order, steps, by)
     order
   end
 
@@ -172,5 +173,41 @@ defmodule Delivest.Oms.Orders.StatusChange do
     Audit.record(OrderFlow.staff(by) || :system, "order.status_changed", order,
       metadata: metadata
     )
+  end
+
+  defp report(_order, [], _by), do: :ok
+
+  defp report(order, steps, by) do
+    {from, _} = List.first(steps)
+    {_, to} = List.last(steps)
+
+    :telemetry.execute(
+      [:delivest, :order, :status_changed],
+      %{count: 1},
+      %{from: from, to: to, source: OrderFlow.source(by), branch_id: order.branch_id}
+    )
+
+    :telemetry.execute(
+      [:delivest, :order, :stage_duration],
+      %{duration: stage_duration(order, from)},
+      %{stage: from}
+    )
+
+    :ok
+  end
+
+  defp stage_duration(order, stage) do
+    started_at =
+      OrderTransition
+      |> where([t], t.order_id == ^order.id and t.to == ^stage and is_nil(t.reverted_at))
+      |> order_by([t], desc: t.id)
+      |> limit(1)
+      |> Repo.one()
+      |> case do
+        %OrderTransition{inserted_at: at} -> at
+        nil -> order.inserted_at
+      end
+
+    DateTime.diff(DateTime.utc_now(), started_at, :millisecond)
   end
 end

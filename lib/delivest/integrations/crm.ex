@@ -272,9 +272,13 @@ defmodule Delivest.Integrations.Crm do
   defp call(%Order{crm: %{provider: provider}} = order, fun) do
     with {:ok, name, module} <- provider_module(provider),
          {:ok, settings} <- branch_settings(order.branch_id, name) do
-      Journal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
-        Throttle.run(module.rate_limit(settings), fn -> fun.(module, settings) end)
-      end)
+      if Health.down?(name, order.branch_id) do
+        {:error, :provider_down}
+      else
+        Journal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+          Throttle.run(module.rate_limit(settings), fn -> fun.(module, settings) end)
+        end)
+      end
     end
   end
 
@@ -295,6 +299,10 @@ defmodule Delivest.Integrations.Crm do
       provider -> provider_module(provider)
     end
   end
+
+  def classify_error(_order, {:throttled, ms}), do: {:snooze, max(div(ms + 999, 1000), 1)}
+
+  def classify_error(_order, :provider_down), do: {:snooze, 60}
 
   def classify_error(_order, reason) when reason in @permanent_errors, do: :permanent
 

@@ -13,7 +13,6 @@ defmodule Delivest.Application do
       DelivestWeb.Telemetry,
       Delivest.Repo,
       log_buffer(),
-      {DNSCluster, query: Application.get_env(:delivest, :dns_cluster_query) || :ignore},
       {Oban, Application.fetch_env!(:delivest, Oban)},
       {Task.Supervisor, name: Delivest.TaskSupervisor},
       {Phoenix.PubSub, name: Delivest.PubSub},

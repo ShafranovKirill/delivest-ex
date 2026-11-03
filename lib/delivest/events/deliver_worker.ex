@@ -22,8 +22,12 @@ defmodule Delivest.Events.DeliverWorker do
     end
   end
 
-  defp result(:ok, _event, _key, _job), do: :ok
-  defp result({:ok, _value}, _event, _key, _job), do: :ok
+  defp result(:ok, event, key, _job) do
+    report_delivery(event, key)
+    :ok
+  end
+
+  defp result({:ok, _value}, event, key, job), do: result(:ok, event, key, job)
 
   defp result({:cancel, reason} = cancel, event, key, _job) do
     Logger.error("event #{event.type} #{event.id} cancelled for #{key}: #{inspect(reason)}")
@@ -37,4 +41,14 @@ defmodule Delivest.Events.DeliverWorker do
   end
 
   defp result({:error, _reason} = error, _event, _key, _job), do: error
+
+  defp report_delivery(event, key) do
+    lag = DateTime.diff(DateTime.utc_now(), event.inserted_at, :millisecond)
+
+    :telemetry.execute(
+      [:delivest, :outbox, :delivered],
+      %{count: 1, lag: lag},
+      %{subscriber: to_string(key)}
+    )
+  end
 end

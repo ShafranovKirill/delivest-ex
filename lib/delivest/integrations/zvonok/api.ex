@@ -12,7 +12,8 @@ defmodule Delivest.Integrations.Zvonok.Api do
     |> Client.get(
       [public_key: config.public_key, campaign_id: config.campaign_id, phone: phone],
       base_url: @base_url,
-      journal: :zvonok
+      journal: :zvonok,
+      retry: false
     )
     |> result()
   end

@@ -19,8 +19,13 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"order_id" => order_id}, attempt: attempt} = job) do
     case Orders.get_order(order_id) do
-      nil -> {:cancel, :order_not_found}
-      order -> order |> Crm.deliver() |> handle(order, attempt, job.max_attempts)
+      nil ->
+        {:cancel, :order_not_found}
+
+      order ->
+        result = order |> Crm.deliver() |> handle(order, attempt, job.max_attempts)
+        report(order, result, attempt)
+        result
     end
   end
 
@@ -72,4 +77,21 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
         error
     end
   end
+
+  defp report(order, result, attempt) do
+    :telemetry.execute(
+      [:delivest, :crm, :sync],
+      %{count: 1},
+      %{
+        provider: (order.crm && order.crm.provider) || "unknown",
+        result: outcome(result),
+        attempt: attempt
+      }
+    )
+  end
+
+  defp outcome(:ok), do: :delivered
+  defp outcome({:snooze, _seconds}), do: :snoozed
+  defp outcome({:cancel, _reason}), do: :cancelled
+  defp outcome({:error, _reason}), do: :retrying
 end

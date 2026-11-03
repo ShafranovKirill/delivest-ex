@@ -20,7 +20,6 @@ defmodule Delivest.Net.Catalogs do
     case Cachex.fetch(@cache, branch_id, fn id -> {:commit, build(id), ttl: @ttl} end) do
       {:ok, menu} -> {:ok, menu}
       {:commit, menu} -> {:ok, menu}
-      {:commit, menu, _opts} -> {:ok, menu}
       {:error, reason} -> {:error, reason}
     end
   end

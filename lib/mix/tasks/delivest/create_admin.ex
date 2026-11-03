@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Delivest.CreateAdmin do
 
           {:error, changeset} ->
             Mix.shell().error("Failed to create admin staff:")
-            IO.inspect(changeset.errors)
+            Mix.shell().error(inspect(changeset.errors, pretty: true))
         end
 
       _staff ->
@@ -44,7 +44,7 @@ defmodule Mix.Tasks.Delivest.CreateAdmin do
 
       {:error, changeset} ->
         Mix.shell().error("Failed to create admin role:")
-        IO.inspect(changeset.errors)
+        Mix.shell().error(inspect(changeset.errors, pretty: true))
         raise "Cannot proceed without admin role"
     end
   end

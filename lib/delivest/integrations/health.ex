@@ -148,6 +148,23 @@ defmodule Delivest.Integrations.Health do
     |> Map.new(&{&1.provider, &1})
   end
 
+  @doc """
+  Whether a recent failed check says the provider is down right now.
+
+  Background workers wait instead of calling an API that has just failed, so a
+  dead provider does not consume retries and queue slots. A successful call
+  clears the status through `recovered/2`, and a manual check refreshes it.
+  """
+  def down?(provider, branch_id, max_age_seconds \\ 60) do
+    case get(provider, branch_id) do
+      %Status{status: :failed, checked_at: %DateTime{} = checked_at} ->
+        DateTime.diff(DateTime.utc_now(), checked_at, :second) < max_age_seconds
+
+      _ ->
+        false
+    end
+  end
+
   defp save(provider, branch_id, status, message) do
     %Status{
       provider: to_string(provider),

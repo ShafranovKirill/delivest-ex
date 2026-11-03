@@ -13,7 +13,8 @@ defmodule Delivest.HTTP.Client do
           timeout: non_neg_integer(),
           decode_json: boolean(),
           format: :json | :form | :multipart,
-          journal: atom()
+          journal: atom(),
+          retry: boolean() | keyword()
         ]
 
   @spec request(method(), String.t(), keyword() | map() | [{String.t(), String.t()}], options()) ::
@@ -36,6 +37,12 @@ defmodule Delivest.HTTP.Client do
     req_options = Keyword.merge(req_options, config_options())
 
     req_options =
+      case Keyword.fetch(opts, :retry) do
+        {:ok, retry} -> Keyword.put(req_options, :retry, retry)
+        :error -> req_options
+      end
+
+    req_options =
       case method do
         :get ->
           Keyword.put(req_options, :params, body_or_params)
@@ -52,10 +59,11 @@ defmodule Delivest.HTTP.Client do
 
     started_at = System.monotonic_time(:millisecond)
     result = Req.request(req_options)
+    duration = System.monotonic_time(:millisecond) - started_at
+
+    report_request(Keyword.get(opts, :journal, :unknown), result, duration)
 
     if provider = Keyword.get(opts, :journal) do
-      duration = System.monotonic_time(:millisecond) - started_at
-
       Journal.outgoing(
         provider,
         method,
@@ -90,6 +98,22 @@ defmodule Delivest.HTTP.Client do
 
   defp transport_reason(%{reason: reason}) when is_atom(reason), do: reason
   defp transport_reason(_exception), do: :unknown
+
+  defp report_request(provider, {:ok, %{status: status}}, duration) do
+    :telemetry.execute(
+      [:delivest, :integration, :request],
+      %{count: 1, duration: duration},
+      %{provider: to_string(provider), status: status}
+    )
+  end
+
+  defp report_request(provider, {:error, _reason}, duration) do
+    :telemetry.execute(
+      [:delivest, :integration, :request],
+      %{count: 1, duration: duration},
+      %{provider: to_string(provider), status: :error}
+    )
+  end
 
   def get(url, params \\ [], opts \\ []), do: request(:get, url, params, opts)
   def post(url, body \\ [], opts \\ []), do: request(:post, url, body, opts)

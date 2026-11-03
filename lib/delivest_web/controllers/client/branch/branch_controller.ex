@@ -24,18 +24,16 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   )
 
   def index(conn, _params) do
-    try do
-      branches = Identity.list_branches(preload: [:info])
-      render(conn, :index, branches: branches)
-    rescue
-      _ ->
-        ApiError.send_error(
-          conn,
-          :internal_server_error,
-          :internal_error,
-          "Failed to fetch branches"
-        )
-    end
+    branches = Identity.list_branches(preload: [:info])
+    render(conn, :index, branches: branches)
+  rescue
+    _ ->
+      ApiError.send_error(
+        conn,
+        :internal_server_error,
+        :internal_error,
+        "Failed to fetch branches"
+      )
   end
 
   operation(:select,

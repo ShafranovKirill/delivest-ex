@@ -72,4 +72,22 @@ defmodule Delivest.Integrations.TokenCacheTest do
     assert TokenCache.fetch(key, issue) == {:ok, "b"}
     assert issued.() == 2
   end
+
+  test "concurrent callers issue one token", %{key: key} do
+    counter = :counters.new(1, [])
+
+    issue = fn ->
+      :counters.add(counter, 1, 1)
+      Process.sleep(50)
+      {:ok, "token", 3600}
+    end
+
+    results =
+      1..20
+      |> Enum.map(fn _ -> Task.async(fn -> TokenCache.fetch(key, issue) end) end)
+      |> Task.await_many(5_000)
+
+    assert Enum.uniq(results) == [{:ok, "token"}]
+    assert :counters.get(counter, 1) == 1
+  end
 end

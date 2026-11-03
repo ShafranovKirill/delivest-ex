@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Router do
   use DelivestWeb, :router
 
+  import Phoenix.LiveDashboard.Router
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -261,6 +263,16 @@ defmodule DelivestWeb.Router do
     get "/b/:branch_slug/products/export", StaffMenuExportController, :show
     get "/b/:branch_slug/site-snapshot", StaffSiteSnapshotController, :show
 
+    live_dashboard "/metrics",
+      metrics: DelivestWeb.Telemetry,
+      live_session_name: :staff_metrics,
+      request_logger: false,
+      on_mount: [
+        {DelivestWeb.Hooks.StaffAuth, :default},
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+        {DelivestWeb.Hooks.Permission, "logs.read"}
+      ]
+
     live_session :staff_public,
       on_mount: [{DelivestWeb.Hooks.StaffAuth, :default}] do
       scope "/auth" do
@@ -461,8 +473,6 @@ defmodule DelivestWeb.Router do
   end
 
   if Application.compile_env(:delivest, :dev_routes) do
-    import Phoenix.LiveDashboard.Router
-
     scope "/dev" do
       pipe_through :browser
 

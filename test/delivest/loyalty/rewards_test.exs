@@ -22,7 +22,7 @@ defmodule Delivest.Loyalty.RewardsTest do
       )
 
     {:ok, _} = Loyalty.adjust(staff, branch, client.id, 100, "gift")
-    product = insert_branch_product(branch.id, price: 20000, stars_price: 40)
+    product = insert_branch_product(branch.id, price: 20_000, stars_price: 40)
     {:ok, cart} = Carts.create_cart(%{session_id: Ecto.UUID.generate(), branch_id: branch.id})
     %{branch: branch, client: client, product: product, cart: cart, staff: staff}
   end
@@ -44,7 +44,7 @@ defmodule Delivest.Loyalty.RewardsTest do
     assert {:ok, order} = place(ctx)
     assert order.points_spent == 80
     assert order.total_amount == 0
-    assert order.discount_amount == 40000
+    assert order.discount_amount == 40_000
     assert Loyalty.balance(ctx.client.id) == 20
     assert [%{price: 0, stars_spent: 40, quantity: 2}] = Repo.preload(order, :items).items
     {:ok, order} = Orders.cancel_order(order, {:staff, ctx.staff}, %{"cancel_reason" => "client"})
@@ -64,7 +64,7 @@ defmodule Delivest.Loyalty.RewardsTest do
     {:ok, _, cart} = Carts.add_star_item(ctx.cart.id, ctx.product.id)
     assert length(cart.items) == 2
     assert {:ok, order} = place(ctx)
-    assert order.total_amount == 20000
+    assert order.total_amount == 20_000
     assert order.points_spent == 40
   end
 

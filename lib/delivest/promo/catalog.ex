@@ -23,7 +23,6 @@ defmodule Delivest.Promo.Catalog do
     case Cachex.fetch(@cache, branch_id, fn _key -> {:commit, load(branch_id), ttl: @ttl} end) do
       {:ok, compiled} -> compiled
       {:commit, compiled} -> compiled
-      {:commit, compiled, _opts} -> compiled
       _ -> load(branch_id)
     end
   end

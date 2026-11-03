@@ -89,7 +89,7 @@ defmodule Mix.Tasks.Delivest.CreateMenu do
 
           {:error, changeset} ->
             Mix.shell().error("Failed to create branch:")
-            IO.inspect(changeset.errors)
+            Mix.shell().error(inspect(changeset.errors, pretty: true))
             raise "Cannot proceed without branch"
         end
     end
@@ -121,7 +121,7 @@ defmodule Mix.Tasks.Delivest.CreateMenu do
 
           {:error, _failed_op, error, _changes} ->
             Mix.shell().error("Failed to create category '#{name}':")
-            IO.inspect(error)
+            Mix.shell().error(inspect(error, pretty: true))
             raise "Cannot proceed without category"
         end
     end
@@ -160,7 +160,7 @@ defmodule Mix.Tasks.Delivest.CreateMenu do
 
           {:error, _failed_op, error, _changes} ->
             Mix.shell().error("Failed to create product '#{name}':")
-            IO.inspect(error)
+            Mix.shell().error(inspect(error, pretty: true))
             raise "Cannot proceed without product"
         end
     end

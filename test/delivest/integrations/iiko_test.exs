@@ -55,6 +55,16 @@ defmodule Delivest.Integrations.IikoTest do
     %{order: order, branch: branch}
   end
 
+  test "stop list webhooks enqueue one poll per branch", %{branch: branch} do
+    event = %{"eventType" => "StopListUpdate"}
+
+    assert {:ok, %{result: "success"}} = Iiko.Webhook.handle("hook", event)
+    assert {:ok, %{result: "success"}} = Iiko.Webhook.handle("hook", event)
+
+    assert [job] = all_enqueued(worker: Delivest.Integrations.Poller.Worker)
+    assert job.args == %{"poller" => "crm_stops", "target" => branch.id}
+  end
+
   defp stub(fun) do
     test = self()
 

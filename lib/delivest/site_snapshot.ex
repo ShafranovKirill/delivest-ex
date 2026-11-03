@@ -531,12 +531,10 @@ defmodule Delivest.SiteSnapshot do
          end) and
          Enum.all?(maps, &is_map(data[&1])) and
          valid_fields?(data) and valid_changesets?(data) and valid_links?(data) and
-         Enum.all?(~w(categories products groups modifiers media tags zones), fn key ->
-           ids = Enum.map(data[key], & &1["id"])
-
-           Enum.all?(ids, &(Ecto.UUID.cast(&1) != :error)) and
-             length(ids) == length(Enum.uniq(ids))
-         end) and
+         Enum.all?(
+           ~w(categories products groups modifiers media tags zones),
+           &unique_ids?(data[&1])
+         ) and
          references_valid?(data) do
       :ok
     else
@@ -545,6 +543,12 @@ defmodule Delivest.SiteSnapshot do
   end
 
   defp validate_data(_), do: {:error, :invalid_archive}
+
+  defp unique_ids?(records) do
+    ids = Enum.map(records, & &1["id"])
+
+    Enum.all?(ids, &(Ecto.UUID.cast(&1) != :error)) and length(ids) == length(Enum.uniq(ids))
+  end
 
   defp valid_fields?(data) do
     allowed = %{

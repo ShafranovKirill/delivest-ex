@@ -133,7 +133,6 @@ defmodule Delivest.Net.Stops do
     case Cachex.fetch(@cache, branch_id, &{:commit, load(&1), ttl: @ttl}) do
       {:ok, stops} -> stops
       {:commit, stops} -> stops
-      {:commit, stops, _opts} -> stops
       {:error, _reason} -> load(branch_id)
     end
   end

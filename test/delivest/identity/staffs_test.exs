@@ -368,8 +368,6 @@ defmodule Delivest.Identity.StaffsTest do
       staff = insert(:staff)
       Cachex.put(:staff_cache, staff.id, staff)
 
-      {:ok, nil} = Cachex.get(:staff_cache, staff.id) |> (fn _ -> {:ok, nil} end).()
-
       Staffs.change_password(admin, staff, %{password: "NewPass123!"})
 
       assert {:ok, nil} = Cachex.get(:staff_cache, staff.id)

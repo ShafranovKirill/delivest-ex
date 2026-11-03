@@ -388,7 +388,7 @@ defmodule Delivest.Oms.Carts do
         end
       end)
 
-    if length(inactive_item_ids) > 0 do
+    if inactive_item_ids != [] do
       from(ci in CartItem,
         where: ci.cart_id == ^cart.id and ci.id in ^inactive_item_ids
       )

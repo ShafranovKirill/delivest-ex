@@ -42,7 +42,7 @@ defmodule DelivestWeb.Staff.StaffPwaController do
     }
   end
 
-  defp icons() do
+  defp icons do
     for size <- [192, 512] do
       %{
         src: "/images/admin/icon-#{size}.png",

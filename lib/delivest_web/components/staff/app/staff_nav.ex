@@ -184,6 +184,8 @@ defmodule DelivestWeb.StaffNav do
       )
       |> allowed(staff, "franchise.update"),
       item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
+      |> allowed(staff, "logs.read"),
+      item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))
       |> allowed(staff, "logs.read")
     ]
     |> compact_all()

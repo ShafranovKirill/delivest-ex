@@ -149,8 +149,7 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
     do: gettext("%{text}, reason: %{reason}", text: text, reason: reason)
 
   defp changes(metadata) do
-    metadata
-    |> Enum.map(fn
+    Enum.map_join(metadata, ", ", fn
       {"status", value} ->
         gettext("status → %{value}", value: OrderHelpers.status_label(value))
 
@@ -160,6 +159,5 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
       {key, value} ->
         "#{key} → #{value}"
     end)
-    |> Enum.join(", ")
   end
 end

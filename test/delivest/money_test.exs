@@ -27,7 +27,7 @@ defmodule Delivest.MoneyTest do
   test "formats kopecks without zero kopecks" do
     assert Money.format(59_000) == "590 ₽"
     assert Money.format(59_990) == "599,90 ₽"
-    assert Money.format(150_000_05) == "150 000,05 ₽"
+    assert Money.format(15_000_005) == "150 000,05 ₽"
     assert Money.format(-1050) == "-10,50 ₽"
     assert Money.format(nil) == "0 ₽"
     assert Money.format(1234.6) == "12,35 ₽"

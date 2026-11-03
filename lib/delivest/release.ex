@@ -44,7 +44,7 @@ defmodule Delivest.Release do
 
       {:error, changeset} ->
         IO.puts("Failed to create admin role:")
-        IO.inspect(changeset.errors)
+        IO.puts(inspect(changeset.errors, pretty: true))
         Repo.rollback("failed to create admin role")
     end
   end
@@ -74,7 +74,7 @@ defmodule Delivest.Release do
 
           {:error, changeset} ->
             IO.puts("Failed to create admin staff:")
-            IO.inspect(changeset.errors)
+            IO.puts(inspect(changeset.errors, pretty: true))
             Repo.rollback("failed to create admin staff")
         end
 

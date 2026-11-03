@@ -82,7 +82,7 @@ defmodule Delivest.Identity.AclTest do
       scoped_query = Acl.scope_by_branch(query, staff_actor, "staff.read")
 
       results = Repo.all(scoped_query)
-      assert length(results) >= 1
+      assert results != []
       assert Enum.any?(results, &(&1.id == staff_record.id))
     end
 
