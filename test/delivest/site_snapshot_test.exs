@@ -182,6 +182,45 @@ defmodule Delivest.SiteSnapshotTest do
     assert Repo.aggregate(Product, :count) == 0
   end
 
+  test "rejects invalid product price before importing records" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch)
+    target = insert(:branch, name: "Target")
+    product = insert(:product, price: 1000)
+    assert {:ok, _} = Relations.create_relation(Repo, "Branch", source.id, "Product", product.id)
+    assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
+    {:ok, files} = :zip.extract(archive, [:memory])
+
+    data =
+      files
+      |> Enum.find_value(fn {path, body} -> if path == ~c"data.json", do: Jason.decode!(body) end)
+
+    data = %{data | "products" => [Map.put(hd(data["products"]), "price", -1)]}
+    body = Jason.encode!(data)
+
+    files =
+      Enum.map(files, fn
+        {~c"data.json", _} ->
+          {~c"data.json", body}
+
+        {~c"manifest.json", manifest} ->
+          value =
+            manifest
+            |> Jason.decode!()
+            |> Map.put("data_size", byte_size(body))
+            |> Map.put("data_sha256", :crypto.hash(:sha256, body) |> Base.encode16(case: :lower))
+
+          {~c"manifest.json", Jason.encode!(value)}
+
+        other ->
+          other
+      end)
+
+    {:ok, {_, invalid}} = :zip.create(~c"invalid.zip", files, [:memory, {:uncompress, :all}])
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, target.id, invalid)
+    assert Repo.reload!(target).name == "Target"
+  end
+
   test "rejects forged nested settings before applying the branch" do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     source = insert(:branch, name: "Source")

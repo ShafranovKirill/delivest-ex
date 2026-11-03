@@ -530,25 +530,14 @@ defmodule Delivest.SiteSnapshot do
            is_list(data[key]) and length(data[key]) <= 10_000 and Enum.all?(data[key], &is_map/1)
          end) and
          Enum.all?(maps, &is_map(data[&1])) and
-         valid_fields?(data) and
+         valid_fields?(data) and valid_changesets?(data) and valid_links?(data) and
          Enum.all?(~w(categories products groups modifiers media tags zones), fn key ->
            ids = Enum.map(data[key], & &1["id"])
 
            Enum.all?(ids, &(Ecto.UUID.cast(&1) != :error)) and
              length(ids) == length(Enum.uniq(ids))
          end) and
-         Enum.all?(data["products"], fn p ->
-           (is_nil(p["category_id"]) or
-              Enum.any?(data["categories"], &(&1["id"] == p["category_id"]))) and
-             (is_nil(p["media_id"]) or Enum.any?(data["media"], &(&1["id"] == p["media_id"])))
-         end) and
-         Enum.all?(data["modifiers"], fn m ->
-           Enum.any?(data["groups"], &(&1["id"] == m["group_id"]))
-         end) and
-         Enum.all?(data["links"], fn l ->
-           Enum.any?(data["products"], &(&1["id"] == l["product_id"])) and
-             Enum.any?(data["groups"], &(&1["id"] == l["group_id"]))
-         end) do
+         references_valid?(data) do
       :ok
     else
       {:error, :invalid_archive}
@@ -591,12 +580,55 @@ defmodule Delivest.SiteSnapshot do
       Enum.all?(data["zones"], &threshold_fields?(&1["thresholds"])) and
       Enum.all?(data["products"], fn product ->
         Map.has_key?(product, "category_id") and Map.has_key?(product, "media_id") and
-          is_list(product["tags"]) and
-          Enum.all?(product["tags"], fn id ->
-            Enum.any?(data["tags"], &(&1["id"] == id))
-          end)
+          is_list(product["tags"])
       end) and
       Enum.all?(data["media"], &Map.has_key?(&1, "owner_id"))
+  end
+
+  defp references_valid?(data) do
+    categories = MapSet.new(Enum.map(data["categories"], & &1["id"]))
+    products = MapSet.new(Enum.map(data["products"], & &1["id"]))
+    groups = MapSet.new(Enum.map(data["groups"], & &1["id"]))
+    media = MapSet.new(Enum.map(data["media"], & &1["id"]))
+    tags = MapSet.new(Enum.map(data["tags"], & &1["id"]))
+
+    Enum.all?(data["products"], fn product ->
+      (is_nil(product["category_id"]) or MapSet.member?(categories, product["category_id"])) and
+        (is_nil(product["media_id"]) or MapSet.member?(media, product["media_id"])) and
+        Enum.all?(product["tags"], &MapSet.member?(tags, &1))
+    end) and
+      Enum.all?(data["modifiers"], &MapSet.member?(groups, &1["group_id"])) and
+      Enum.all?(data["links"], fn link ->
+        MapSet.member?(products, link["product_id"]) and
+          MapSet.member?(groups, link["group_id"])
+      end)
+  end
+
+  defp valid_links?(data) do
+    links = Enum.map(data["links"], &{&1["product_id"], &1["group_id"]})
+    length(links) == MapSet.size(MapSet.new(links))
+  end
+
+  defp valid_changesets?(data) do
+    records = [
+      {"categories", Category},
+      {"products", Product},
+      {"groups", ModifierGroup},
+      {"modifiers", Modifier},
+      {"media", MediaFile},
+      {"tags", ProductTag},
+      {"zones", Zone}
+    ]
+
+    Enum.all?(records, fn {type, schema} ->
+      Enum.all?(data[type], fn item ->
+        schema.changeset(struct(schema), item).valid?
+      end)
+    end) and
+      FranchiseSettings.changeset(%FranchiseSettings{}, data["franchise"]).valid? and
+      Settings.changeset(%Settings{}, data["delivery_settings"]).valid? and
+      (data["info"] == %{} or
+         BranchInfo.changeset(%BranchInfo{branch_id: data["branch_id"]}, data["info"]).valid?)
   end
 
   defp nested_fields?(parent, key, allowed) do
