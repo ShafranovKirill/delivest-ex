@@ -16,4 +16,24 @@ defmodule DelivestWeb.Staff.BranchLive.SiteSnapshotTest do
     download = get(conn, ~p"/staff/b/#{branch.slug}/site-snapshot")
     assert response(download, 200) |> String.starts_with?("PK")
   end
+
+  test "download enforces branch access and franchise permissions", %{conn: conn} do
+    allowed = insert(:branch)
+    forbidden = insert(:branch)
+    read_permissions = ~w(branches.read categories.read products.read delivery.read)
+
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["franchise.update" | read_permissions]))
+
+    insert(:staff_branch, staff: staff, branch: allowed)
+    signed_in = init_test_session(conn, %{"staff_id" => staff.id})
+
+    assert signed_in |> get(~p"/staff/b/#{allowed.slug}/site-snapshot") |> response(200)
+    assert signed_in |> get(~p"/staff/b/#{forbidden.slug}/site-snapshot") |> response(404)
+
+    reader = insert(:staff, role: insert(:role, permissions: read_permissions))
+    insert(:staff_branch, staff: reader, branch: allowed)
+    read_only = init_test_session(conn, %{"staff_id" => reader.id})
+    assert read_only |> get(~p"/staff/b/#{allowed.slug}/site-snapshot") |> response(404)
+  end
 end

@@ -9157,8 +9157,8 @@ msgid "Import failed. Check the archive and try again."
 msgstr "Не удалось применить слепок. Проверьте архив и попробуйте ещё раз."
 
 #, elixir-autogen, elixir-format
-msgid "Imported %{products} products, %{categories} categories and %{media} images."
-msgstr "Импорт завершён. Товаров — %{products}, категорий — %{categories}, изображений товаров — %{media}."
+msgid "Created records: %{created}. Updated records: %{updated}."
+msgstr "Создано записей: %{created}. Обновлено записей: %{updated}."
 
 #, elixir-autogen, elixir-format
 msgid "ZIP archive, up to 100 MB."
@@ -9171,3 +9171,7 @@ msgstr "Импортируем…"
 #, elixir-autogen, elixir-format
 msgid "Load site snapshot"
 msgstr "Загрузить слепок"
+
+#, elixir-autogen, elixir-format
+msgid "Catalog item %{type} (%{id}) is shared with another branch."
+msgstr "Объект каталога %{type} (%{id}) используется в другом филиале."
