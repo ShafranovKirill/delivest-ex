@@ -57,6 +57,7 @@ defmodule Delivest.SiteSnapshotTest do
           Plug.Conn.send_resp(conn, 200, "")
 
         "DELETE" ->
+          Agent.update(store, &Map.delete(&1, path))
           Plug.Conn.send_resp(conn, 204, "")
       end
     end)
@@ -119,6 +120,19 @@ defmodule Delivest.SiteSnapshotTest do
       Delivest.Media,
       Keyword.put(initial, :public_bucket, "target-bucket")
     )
+
+    conflicting_branch = insert(:branch, name: "Source")
+    assert {:error, %Ecto.Changeset{}} = SiteSnapshot.import(staff, target.id, archive)
+    assert_received {:uploaded, "/target-bucket/site-snapshot/" <> _}
+    assert Repo.reload!(target).name == "Target"
+    assert Repo.aggregate(Product, :count) == 0
+
+    refute Agent.get(
+             store,
+             &Enum.any?(Map.keys(&1), fn key -> String.starts_with?(key, "/target-bucket/") end)
+           )
+
+    Repo.delete!(conflicting_branch)
 
     assert {:ok, %{products: 1, media: 1}} = SiteSnapshot.import(staff, target.id, archive)
     assert_receive {:uploaded, "/target-bucket/site-snapshot/" <> _}
