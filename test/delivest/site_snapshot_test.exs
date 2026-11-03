@@ -181,4 +181,20 @@ defmodule Delivest.SiteSnapshotTest do
     assert {:error, :invalid_archive} = SiteSnapshot.import(staff, branch.id, "broken")
     assert Repo.aggregate(Product, :count) == 0
   end
+
+  test "rejects a Unix symlink even when OTP lists the entry as a regular file" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    branch = insert(:branch)
+    assert {:ok, archive} = SiteSnapshot.export(staff, branch.id)
+    end_offset = byte_size(archive) - 22
+
+    <<0x06054B50::little-32, _::binary-size(12), directory_offset::little-32, 0::16>> =
+      binary_part(archive, end_offset, 22)
+
+    attributes_offset = directory_offset + 38
+    <<prefix::binary-size(attributes_offset), _attributes::32, suffix::binary>> = archive
+    archive = <<prefix::binary, 0xA1FF0000::little-32, suffix::binary>>
+
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, branch.id, archive)
+  end
 end

@@ -48,11 +48,11 @@ defmodule Delivest.SiteSnapshot do
   def build_id, do: @build_id
   def max_archive, do: @max_archive
 
-  def export(staff, branch_id) do
+  def export(staff, branch_id, destination \\ :memory) do
     with :ok <- authorize(staff, branch_id, :read),
          {:ok, data} <- snapshot_data(branch_id),
          {:ok, blobs} <- export_blobs(data),
-         {:ok, archive} <- encode_archive(data, blobs) do
+         {:ok, archive} <- encode_archive(data, blobs, destination) do
       Audit.record(staff, "site_snapshot.exported", Repo.get!(Branch, branch_id))
       {:ok, archive}
     end
@@ -146,89 +146,87 @@ defmodule Delivest.SiteSnapshot do
   end
 
   defp snapshot_data(branch_id) do
-    Repo.transaction(
-      fn ->
-        branch = Repo.get!(Branch, branch_id) |> Repo.preload(:info)
-        category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
-        product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
-        categories = Repo.all(from c in Category, where: c.id in ^category_ids)
+    Repo.transaction(fn ->
+      # The test sandbox already owns the surrounding transaction.
+      if Repo.config()[:pool] != Ecto.Adapters.SQL.Sandbox do
+        Repo.query!("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+      end
 
-        products =
-          Repo.all(from p in Product, where: p.id in ^product_ids and is_nil(p.deleted_at))
+      branch = Repo.get!(Branch, branch_id) |> Repo.preload(:info)
+      category_ids = Relations.list_target_ids("Branch", branch_id, "Category")
+      product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+      categories = Repo.all(from c in Category, where: c.id in ^category_ids)
 
-        group_ids =
-          Repo.all(
-            from l in ProductModifierGroup,
-              where: l.product_id in ^product_ids,
-              select: l.group_id
-          )
+      products =
+        Repo.all(from p in Product, where: p.id in ^product_ids and is_nil(p.deleted_at))
 
-        groups = Repo.all(from g in ModifierGroup, where: g.id in ^group_ids)
-        modifiers = Repo.all(from m in Modifier, where: m.group_id in ^group_ids)
-        links = Repo.all(from l in ProductModifierGroup, where: l.product_id in ^product_ids)
-        media_ids = products |> Enum.map(& &1.media_id) |> Enum.reject(&is_nil/1)
-        media = Repo.all(from m in MediaFile, where: m.id in ^media_ids)
-        tag_ids = products |> Enum.flat_map(&(&1.tags || [])) |> Enum.uniq()
-        tags = Repo.all(from t in ProductTag, where: t.id in ^tag_ids)
-        franchise = Repo.one(FranchiseSettings) || %FranchiseSettings{}
-        delivery_settings = Delivery.get_settings(branch_id)
-        zones = Delivery.list_zones(branch_id)
+      group_ids =
+        Repo.all(
+          from l in ProductModifierGroup,
+            where: l.product_id in ^product_ids,
+            select: l.group_id
+        )
 
-        %{
-          "public_bucket" => Media.public_bucket(),
-          "branch_id" => branch_id,
-          "branch" => fields(branch, @branch_fields),
-          "info" => info_fields(branch.info),
-          "franchise" => fields(franchise, @franchise_fields),
-          "delivery_settings" =>
-            Map.put(
-              fields(delivery_settings, @settings_fields),
-              "thresholds",
-              embeds(delivery_settings.thresholds)
-            ),
-          "zones" =>
-            Enum.map(zones, fn z ->
-              Map.merge(record(z, @zone_fields), %{"thresholds" => embeds(z.thresholds)})
-            end),
-          "categories" => Enum.map(categories, &record(&1, @category_fields)),
-          "products" =>
-            Enum.map(products, fn p ->
-              Map.merge(record(p, @product_fields), %{
-                "category_id" => p.category_id,
-                "media_id" => p.media_id
-              })
-            end),
-          "groups" => Enum.map(groups, &record(&1, @group_fields)),
-          "modifiers" =>
-            Enum.map(modifiers, fn m ->
-              Map.put(record(m, @modifier_fields), "group_id", m.group_id)
-            end),
-          "links" =>
-            Enum.map(
-              links,
-              &%{
-                "product_id" => &1.product_id,
-                "group_id" => &1.group_id,
-                "position" => &1.position
-              }
-            ),
-          "media" =>
-            Enum.map(
-              media,
-              &record(
-                &1,
-                ~w(bucket key original_name mime_type size context owner_id is_private)a
-              )
-            ),
-          "tags" => Enum.map(tags, &record(&1, @tag_fields))
-        }
-      end,
-      isolation: :repeatable_read
-    )
-    |> case do
-      {:ok, data} -> {:ok, data}
-      error -> error
-    end
+      groups = Repo.all(from g in ModifierGroup, where: g.id in ^group_ids)
+      modifiers = Repo.all(from m in Modifier, where: m.group_id in ^group_ids)
+      links = Repo.all(from l in ProductModifierGroup, where: l.product_id in ^product_ids)
+      media_ids = products |> Enum.map(& &1.media_id) |> Enum.reject(&is_nil/1)
+      media = Repo.all(from m in MediaFile, where: m.id in ^media_ids)
+      tag_ids = products |> Enum.flat_map(&(&1.tags || [])) |> Enum.uniq()
+      tags = Repo.all(from t in ProductTag, where: t.id in ^tag_ids)
+      franchise = Repo.one(FranchiseSettings) || %FranchiseSettings{}
+      delivery_settings = Delivery.get_settings(branch_id)
+      zones = Delivery.list_zones(branch_id)
+
+      %{
+        "public_bucket" => Media.public_bucket(),
+        "branch_id" => branch_id,
+        "branch" => fields(branch, @branch_fields),
+        "info" => info_fields(branch.info),
+        "franchise" => fields(franchise, @franchise_fields),
+        "delivery_settings" =>
+          Map.put(
+            fields(delivery_settings, @settings_fields),
+            "thresholds",
+            embeds(delivery_settings.thresholds)
+          ),
+        "zones" =>
+          Enum.map(zones, fn z ->
+            Map.merge(record(z, @zone_fields), %{"thresholds" => embeds(z.thresholds)})
+          end),
+        "categories" => Enum.map(categories, &record(&1, @category_fields)),
+        "products" =>
+          Enum.map(products, fn p ->
+            Map.merge(record(p, @product_fields), %{
+              "category_id" => p.category_id,
+              "media_id" => p.media_id
+            })
+          end),
+        "groups" => Enum.map(groups, &record(&1, @group_fields)),
+        "modifiers" =>
+          Enum.map(modifiers, fn m ->
+            Map.put(record(m, @modifier_fields), "group_id", m.group_id)
+          end),
+        "links" =>
+          Enum.map(
+            links,
+            &%{
+              "product_id" => &1.product_id,
+              "group_id" => &1.group_id,
+              "position" => &1.position
+            }
+          ),
+        "media" =>
+          Enum.map(
+            media,
+            &record(
+              &1,
+              ~w(bucket key original_name mime_type size context owner_id is_private)a
+            )
+          ),
+        "tags" => Enum.map(tags, &record(&1, @tag_fields))
+      }
+    end)
   end
 
   defp fields(nil, _keys), do: %{}
@@ -308,7 +306,7 @@ defmodule Delivest.SiteSnapshot do
     end
   end
 
-  defp encode_archive(data, blobs) do
+  defp encode_archive(data, blobs, destination) do
     entries =
       Enum.map(blobs, fn {reference, body} ->
         path = "media/" <> sha(reference)
@@ -339,15 +337,28 @@ defmodule Delivest.SiteSnapshot do
            @max_archive do
       {:error, :archive_too_large}
     else
-      case :zip.create(
-             ~c"snapshot.zip",
-             Enum.map(archive_files, fn {path, body} -> {String.to_charlist(path), body} end),
-             [:memory, {:uncompress, :all}]
-           ) do
-        {:ok, {_name, binary}} when byte_size(binary) <= @max_archive -> {:ok, binary}
-        {:ok, _} -> {:error, :archive_too_large}
-        _ -> {:error, :archive_failed}
-      end
+      write_archive(archive_files, destination)
+    end
+  end
+
+  defp write_archive(files, destination) do
+    files = Enum.map(files, fn {path, body} -> {String.to_charlist(path), body} end)
+
+    case destination do
+      :memory ->
+        case :zip.create(~c"snapshot.zip", files, [:memory, {:uncompress, :all}]) do
+          {:ok, {_name, binary}} when byte_size(binary) <= @max_archive -> {:ok, binary}
+          {:ok, _} -> {:error, :archive_too_large}
+          _ -> {:error, :archive_failed}
+        end
+
+      path when is_binary(path) ->
+        with {:ok, _} <- :zip.create(String.to_charlist(path), files, [{:uncompress, :all}]),
+             {:ok, stat} <- File.stat(path) do
+          if stat.size <= @max_archive, do: {:ok, path}, else: {:error, :archive_too_large}
+        else
+          _ -> {:error, :archive_failed}
+        end
     end
   end
 
@@ -382,7 +393,7 @@ defmodule Delivest.SiteSnapshot do
 
     valid? =
       length(files) <= @max_files + 2 and length(names) == length(Enum.uniq(names)) and
-        total <= @max_archive and
+        total <= @max_archive and regular_zip_entries?(archive, length(files)) and
         Enum.all?(files, fn file ->
           name = List.to_string(elem(file, 1))
           info = elem(file, 2)
@@ -395,6 +406,42 @@ defmodule Delivest.SiteSnapshot do
 
     if valid?, do: :ok, else: {:error, :invalid_archive}
   end
+
+  # OTP's ZIP directory listing reports Unix symlinks as regular files.
+  defp regular_zip_entries?(archive, count) when byte_size(archive) >= 22 do
+    end_offset = byte_size(archive) - 22
+
+    case binary_part(archive, end_offset, 22) do
+      <<0x06054B50::little-32, 0::32, ^count::little-16, ^count::little-16, size::little-32,
+        offset::little-32, 0::16>>
+      when offset + size == end_offset ->
+        archive |> binary_part(offset, size) |> regular_zip_directory?(count)
+
+      _ ->
+        false
+    end
+  end
+
+  defp regular_zip_entries?(_archive, _count), do: false
+
+  defp regular_zip_directory?(<<>>, 0), do: true
+
+  defp regular_zip_directory?(
+         <<0x02014B50::little-32, _header::binary-size(24), name_size::little-16,
+           extra_size::little-16, comment_size::little-16, 0::16, _internal_attributes::16,
+           attributes::little-32, _local_offset::little-32, rest::binary>>,
+         count
+       )
+       when count > 0 and div(attributes, 0x10000000) in [0, 8] do
+    skip = name_size + extra_size + comment_size
+
+    case rest do
+      <<_::binary-size(skip), tail::binary>> -> regular_zip_directory?(tail, count - 1)
+      _ -> false
+    end
+  end
+
+  defp regular_zip_directory?(_directory, _count), do: false
 
   defp stored_entry?(archive, file) do
     offset = elem(file, 4)
