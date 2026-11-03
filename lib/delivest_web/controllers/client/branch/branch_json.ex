@@ -78,6 +78,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       longitude: info.longitude,
       phone_number: info.phone_number,
       delivery_time: effective_time(info),
+      manual_rating: info.manual_rating,
       intake: intake(info),
       fulfillment_methods: Delivest.Identity.Branch.FulfillmentSettings.enabled(info.fulfillment),
       payment_methods: payment_methods(info),

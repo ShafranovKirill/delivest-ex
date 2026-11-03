@@ -28,6 +28,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     field :longitude, :float
     field :phone_number, :string
     field :delivery_time, :integer
+    field :manual_rating, :float
     field :working_hours, :map, default: %{}
     field :special_hours, :map, default: %{}
     field :vk_url, :string
@@ -79,6 +80,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
         :longitude,
         :phone_number,
         :delivery_time,
+        :manual_rating,
         :working_hours,
         :vk_url,
         :whatsapp_url,
@@ -106,6 +108,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> validate_length(:city, max: 100)
     |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)
     |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)
+    |> validate_number(:manual_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(

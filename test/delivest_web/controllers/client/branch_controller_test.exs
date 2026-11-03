@@ -8,12 +8,19 @@ defmodule DelivestWeb.Client.BranchControllerTest do
 
   test "lists branches with their info", %{conn: conn} do
     branch = insert(:branch, is_active: true)
-    Repo.insert!(%BranchInfo{branch_id: branch.id, address: "ул Ленина, 1", city: "Тюмень"})
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      address: "ул Ленина, 1",
+      city: "Тюмень",
+      manual_rating: 4.5
+    })
 
     data = conn |> get(~p"/client/branches") |> json_response(200) |> Map.fetch!("data")
     listed = Enum.find(data, &(&1["id"] == branch.id))
 
-    assert %{"address" => "ул Ленина, 1", "city" => "Тюмень"} = listed["branch_info"]
+    assert %{"address" => "ул Ленина, 1", "city" => "Тюмень", "manual_rating" => 4.5} =
+             listed["branch_info"]
   end
 
   test "publishes enabled fulfillment methods with backward compatible defaults", %{conn: conn} do

@@ -25,6 +25,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           nullable: true,
           description: "Минуты до готовности вместе с добавкой на загрузку"
         },
+        manual_rating: %Schema{type: :number, format: :float, nullable: true},
         intake: %Schema{
           type: :object,
           description:
