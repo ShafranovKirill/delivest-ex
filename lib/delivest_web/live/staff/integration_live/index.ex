@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   alias Delivest.Identity
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.BranchSettings
-  alias DelivestWeb.Staff.IntegrationLive.{Presentation, StateComponents}
+  alias DelivestWeb.Staff.IntegrationLive.Presentation
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
@@ -188,19 +188,74 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
   defp card_body(assigns) do
     ~H"""
-    <div class="card-body gap-3">
+    <div class="card-body gap-2">
       <h3 class="card-title text-base">{@title}</h3>
       <p class="text-sm text-base-content/60">{@description}</p>
+      <.compact_state :if={@state} id={"#{@id}-state"} state={@state} />
       <p :if={is_nil(@state)} class="text-sm text-base-content/50">
         {gettext("No CRM is connected to this branch.")}
       </p>
-      <StateComponents.summary
-        :if={@state}
-        id={"#{@id}-state"}
-        state={@state}
-        branch={@branch}
-      />
     </div>
     """
   end
+
+  attr :id, :string, required: true
+  attr :state, :map, required: true
+
+  defp compact_state(assigns) do
+    ~H"""
+    <div id={@id} class="flex items-center gap-2 text-sm">
+      <.status_badge state={overall_status(@state)} />
+    </div>
+    """
+  end
+
+  defp overall_status(%{connection: %{state: :ok}, warnings: warnings}) do
+    if warnings != [] and Enum.any?(warnings), do: :attention, else: :ok
+  end
+
+  defp overall_status(%{connection: %{state: :ok}}), do: :ok
+
+  defp overall_status(%{connection: %{state: :auth}}), do: :auth
+  defp overall_status(%{connection: %{state: :failed}}), do: :failed
+  defp overall_status(%{connection: %{state: :unchecked}, credentials: %{state: cred}}) do
+    case cred do
+      :complete -> :unchecked
+      _ -> :needs_setup
+    end
+  end
+
+  defp overall_status(_state), do: :needs_setup
+
+  defp status_badge(assigns) do
+    ~H"""
+    <span class={[
+      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+      @status == :ok && "bg-success/10 text-success",
+      @status == :attention && "bg-warning/10 text-warning",
+      @status == :auth && "bg-error/10 text-error",
+      @status == :failed && "bg-error/10 text-error",
+      @status == :unchecked && "bg-base-300/50 text-base-content/60",
+      @status == :needs_setup && "bg-base-300/50 text-base-content/50"
+    ]}>
+      <span class={[
+        "size-1.5 rounded-full",
+        @status == :ok && "bg-success",
+        @status == :attention && "bg-warning",
+        @status == :auth && "bg-error",
+        @status == :failed && "bg-error",
+        @status == :unchecked && "bg-base-content/30",
+        @status == :needs_setup && "bg-base-content/20"
+      ]} />
+      {status_text(@status)}
+    </span>
+    """
+  end
+
+  defp status_text(:ok), do: gettext("OK")
+  defp status_text(:attention), do: gettext("Needs attention")
+  defp status_text(:auth), do: gettext("Access error")
+  defp status_text(:failed), do: gettext("No connection")
+  defp status_text(:unchecked), do: gettext("Not checked")
+  defp status_text(:needs_setup), do: gettext("Not set up")
 end
