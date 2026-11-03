@@ -120,12 +120,32 @@ defmodule Delivest.SiteSnapshot do
           {:ok, counts}
 
         {:error, reason} ->
+          audit_import_failure(staff, branch_id, reason)
           {:error, reason}
       end
+    else
+      {:error, :forbidden} = error ->
+        error
+
+      {:error, reason} = error ->
+        audit_import_failure(staff, branch_id, reason)
+        error
     end
   end
 
   def import(_staff, _branch_id, _archive), do: {:error, :invalid_archive}
+
+  defp audit_import_failure(staff, branch_id, reason) do
+    case Repo.get(Branch, branch_id) do
+      %Branch{} = branch ->
+        Audit.record(staff, "site_snapshot.import_failed", branch,
+          metadata: %{reason: inspect(reason)}
+        )
+
+      nil ->
+        :ok
+    end
+  end
 
   defp authorize(staff, branch_id, mode) do
     permissions =
@@ -134,7 +154,7 @@ defmodule Delivest.SiteSnapshot do
           ~w(branches.read categories.read products.read delivery.read franchise.update)
 
         :write ->
-          ~w(branches.update categories.create categories.update products.create products.update delivery.update franchise.update)
+          ~w(branches.read branches.update categories.read categories.create categories.update products.read products.create products.update delivery.read delivery.update franchise.update)
       end
 
     with %Branch{deleted_at: nil} <- Repo.get(Branch, branch_id),
@@ -510,6 +530,7 @@ defmodule Delivest.SiteSnapshot do
            is_list(data[key]) and length(data[key]) <= 10_000 and Enum.all?(data[key], &is_map/1)
          end) and
          Enum.all?(maps, &is_map(data[&1])) and
+         valid_fields?(data) and
          Enum.all?(~w(categories products groups modifiers media tags zones), fn key ->
            ids = Enum.map(data[key], & &1["id"])
 
@@ -535,6 +556,61 @@ defmodule Delivest.SiteSnapshot do
   end
 
   defp validate_data(_), do: {:error, :invalid_archive}
+
+  defp valid_fields?(data) do
+    allowed = %{
+      "branch" => Enum.map(@branch_fields, &Atom.to_string/1),
+      "info" => Enum.map(@info_fields, &Atom.to_string/1) ++ ~w(fulfillment kitchen loyalty),
+      "franchise" => Enum.map(@franchise_fields, &Atom.to_string/1),
+      "delivery_settings" => Enum.map(@settings_fields, &Atom.to_string/1) ++ ["thresholds"],
+      "categories" => Enum.map(@category_fields, &Atom.to_string/1) ++ ["id"],
+      "products" => Enum.map(@product_fields, &Atom.to_string/1) ++ ~w(id category_id media_id),
+      "groups" => Enum.map(@group_fields, &Atom.to_string/1) ++ ["id"],
+      "modifiers" => Enum.map(@modifier_fields, &Atom.to_string/1) ++ ~w(id group_id),
+      "links" => ~w(product_id group_id position),
+      "media" => ~w(id bucket key original_name mime_type size context owner_id is_private),
+      "tags" => Enum.map(@tag_fields, &Atom.to_string/1) ++ ["id"],
+      "zones" => Enum.map(@zone_fields, &Atom.to_string/1) ++ ~w(id thresholds)
+    }
+
+    MapSet.new(Map.keys(data)) == MapSet.new(Map.keys(allowed) ++ ~w(public_bucket branch_id)) and
+      Enum.all?(allowed, fn {key, fields} ->
+        records = if is_list(data[key]), do: data[key], else: [data[key]]
+
+        Enum.all?(records, fn record ->
+          keys = Map.keys(record)
+          key_set = MapSet.new(keys)
+          allowed_set = MapSet.new(fields)
+          key_set == allowed_set or (key == "info" and keys == [])
+        end)
+      end) and
+      nested_fields?(data["info"], "fulfillment", ~w(delivery pickup dine_in)) and
+      nested_fields?(data["info"], "kitchen", ~w(enabled lead_minutes)) and
+      nested_fields?(data["info"], "loyalty", ~w(shop_enabled enabled spend_enabled max_percent)) and
+      threshold_fields?(data["delivery_settings"]["thresholds"]) and
+      Enum.all?(data["zones"], &threshold_fields?(&1["thresholds"])) and
+      Enum.all?(data["products"], fn product ->
+        Map.has_key?(product, "category_id") and Map.has_key?(product, "media_id") and
+          is_list(product["tags"]) and
+          Enum.all?(product["tags"], fn id ->
+            Enum.any?(data["tags"], &(&1["id"] == id))
+          end)
+      end) and
+      Enum.all?(data["media"], &Map.has_key?(&1, "owner_id"))
+  end
+
+  defp nested_fields?(parent, key, allowed) do
+    case parent[key] do
+      value when is_map(value) -> Map.keys(value) -- allowed == []
+      nil -> true
+      _ -> false
+    end
+  end
+
+  defp threshold_fields?(items) when is_list(items),
+    do: Enum.all?(items, &(is_map(&1) and Map.keys(&1) -- ~w(order_from price) == []))
+
+  defp threshold_fields?(_), do: false
 
   defp validate_references(data, manifest) do
     public_bucket = data["public_bucket"]
@@ -668,6 +744,13 @@ defmodule Delivest.SiteSnapshot do
           end
 
         if is_nil(existing) do
+          if Repo.get_by(Mapping,
+               target_branch_id: branch_id,
+               entity_type: type,
+               target_id: target_id
+             ),
+             do: abort!(:ambiguous_match)
+
           Repo.insert!(%Mapping{
             source_installation_id: source,
             target_branch_id: branch_id,
@@ -818,7 +901,14 @@ defmodule Delivest.SiteSnapshot do
         |> Map.take(~w(original_name mime_type size context owner_id is_private))
         |> Map.merge(%{"bucket" => Media.public_bucket(), "key" => key})
 
-      put_record(old || %MediaFile{id: item["id"]}, attrs, &MediaFile.changeset/2)
+      changes = MediaFile.changeset(old || %MediaFile{id: item["id"]}, attrs)
+
+      changes =
+        if old && old.key != key,
+          do: Ecto.Changeset.put_change(changes, :thumb_key, nil),
+          else: changes
+
+      save!(changes)
     end)
 
     Enum.each(data["tags"], fn item ->

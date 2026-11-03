@@ -182,6 +182,47 @@ defmodule Delivest.SiteSnapshotTest do
     assert Repo.aggregate(Product, :count) == 0
   end
 
+  test "rejects forged nested settings before applying the branch" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch, name: "Source")
+    target = insert(:branch, name: "Target")
+    assert {:ok, archive} = SiteSnapshot.export(staff, source.id)
+    {:ok, files} = :zip.extract(archive, [:memory])
+
+    data =
+      files
+      |> Enum.find_value(fn
+        {~c"data.json", body} -> Jason.decode!(body)
+        _ -> nil
+      end)
+      |> Map.put("info", %{"fulfillment" => %{"secret" => "forged"}})
+      |> Jason.encode!()
+
+    files =
+      Enum.map(files, fn
+        {~c"data.json", _} ->
+          {~c"data.json", data}
+
+        {~c"manifest.json", body} ->
+          manifest =
+            body
+            |> Jason.decode!()
+            |> Map.put("data_size", byte_size(data))
+            |> Map.put("data_sha256", :crypto.hash(:sha256, data) |> Base.encode16(case: :lower))
+
+          {~c"manifest.json", Jason.encode!(manifest)}
+
+        other ->
+          other
+      end)
+
+    {:ok, {_, forged_archive}} =
+      :zip.create(~c"forged.zip", files, [:memory, {:uncompress, :all}])
+
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, target.id, forged_archive)
+    assert Repo.reload!(target).name == "Target"
+  end
+
   test "rejects a Unix symlink even when OTP lists the entry as a regular file" do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     branch = insert(:branch)
