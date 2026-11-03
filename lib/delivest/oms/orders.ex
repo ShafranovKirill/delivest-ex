@@ -106,6 +106,20 @@ defmodule Delivest.Oms.Orders do
     end
   end
 
+  def get_order_for_owner(nil, nil, _order_id), do: nil
+
+  def get_order_for_owner(session_id, client_id, order_id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(order_id) do
+      Order
+      |> where([o], o.id == ^uuid and is_nil(o.deleted_at))
+      |> where(^owned_by(session_id, client_id))
+      |> preload(items: :modifiers)
+      |> Repo.one()
+    else
+      :error -> nil
+    end
+  end
+
   def list_client_orders(client_id, branch_scope, limit \\ 50) do
     Order
     |> where([o], o.client_id == ^client_id and is_nil(o.deleted_at))

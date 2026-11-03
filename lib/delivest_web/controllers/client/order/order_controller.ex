@@ -5,7 +5,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
   require Logger
 
   alias Delivest.{Identity, Oms}
-  alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Oms.{Carts, Order, Orders}
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
 
@@ -77,6 +77,26 @@ defmodule DelivestWeb.Client.Order.OrderController do
     session_id = CookieHelper.get_cookie(conn, "session_id")
     orders = Oms.list_active_orders(session_id, client_id(conn.assigns.current_client))
     render(conn, :active, orders: orders)
+  end
+
+  operation(:show,
+    summary: "Заказ текущей сессии",
+    description: "Возвращает конкретный заказ владельцу сессии или вошедшему клиенту.",
+    tags: ["Orders"],
+    parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
+    responses: [
+      ok: {"Заказ", "application/json", OrderResponse},
+      not_found: {"Заказ не найден", "application/json", ErrorResponse}
+    ]
+  )
+
+  def show(conn, %{"id" => id}) do
+    session_id = CookieHelper.get_cookie(conn, "session_id")
+
+    case Orders.get_order_for_owner(session_id, client_id(conn.assigns.current_client), id) do
+      %Order{} = order -> render(conn, :create, order: order)
+      nil -> ApiError.send_error(conn, :not_found, :order_not_found, "Order not found")
+    end
   end
 
   operation(:cancel,

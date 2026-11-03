@@ -151,6 +151,7 @@ defmodule DelivestWeb.Router do
 
     scope "/orders", Order do
       get "/active", OrderController, :active
+      get "/:id", OrderController, :show
       post "/:id/cancel", OrderController, :cancel
       post "/:id/pay", OrderController, :pay
 

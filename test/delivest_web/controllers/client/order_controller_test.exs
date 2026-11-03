@@ -157,6 +157,27 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              |> json_response(404)
   end
 
+  test "a guest can reopen only their own order", %{conn: conn, branch: branch, product: product} do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    order = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+    id = order["data"]["id"]
+
+    assert %{"data" => %{"id" => ^id, "total_amount" => 300, "items" => [_]}} =
+             conn |> recycle_with_headers() |> get(~p"/client/orders/#{id}") |> json_response(200)
+
+    stranger =
+      build_conn()
+      |> put_req_header("x-forwarded-for", "stranger-#{System.unique_integer([:positive])}")
+      |> start_session(branch)
+
+    assert %{"error" => "order_not_found"} =
+             stranger |> get(~p"/client/orders/#{id}") |> json_response(404)
+
+    assert %{"error" => "order_not_found"} =
+             build_conn() |> get(~p"/client/orders/#{id}") |> json_response(404)
+  end
+
   test "creates an order and ignores server-controlled fields", %{
     conn: conn,
     branch: branch,
