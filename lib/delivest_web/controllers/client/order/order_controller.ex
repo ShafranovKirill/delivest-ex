@@ -44,6 +44,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
     with {:ok, branch} <- fetch_public_branch(attrs["branch_id"]),
          :ok <- ensure_accepting(branch),
+         :ok <- ensure_client_auth(client),
          :ok <- ensure_payment_method(branch, attrs["payment_method"]),
          true <-
            Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
@@ -222,6 +223,12 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
   defp begin_payment(_order), do: {:ok, nil}
 
+  defp ensure_client_auth(client) do
+    if require_client_auth?() and is_nil(client), do: {:error, :client_auth_required}, else: :ok
+  end
+
+  defp require_client_auth?, do: Delivest.Franchise.get_settings().client_auth_required == true
+
   defp ensure_payment_method(_branch, nil), do: :ok
 
   defp ensure_payment_method(branch, method) do
@@ -303,6 +310,15 @@ defmodule DelivestWeb.Client.Order.OrderController do
         :unprocessable_entity,
         :delivery_no_coordinates,
         "Pick the address on the map"
+      )
+
+  defp render_error(conn, :client_auth_required),
+    do:
+      ApiError.send_error(
+        conn,
+        :unauthorized,
+        :client_auth_required,
+        "Sign in to place the order"
       )
 
   defp render_error(conn, reason)

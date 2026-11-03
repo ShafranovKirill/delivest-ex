@@ -33,6 +33,7 @@ defmodule Delivest.Franchise.Settings do
     field :share_image_key, :string
     field :logo_key, :string
     field :logo_dark_key, :string
+    field :client_auth_required, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -43,6 +44,7 @@ defmodule Delivest.Franchise.Settings do
     |> update_change(:primary_color, &downcase/1)
     |> update_change(:dark_primary_color, &downcase/1)
     |> validate_required([:name, :primary_color, :timezone])
+    |> validate_client_auth_available()
     |> Delivest.LocalTime.validate_timezone(:timezone)
     |> validate_number(:loyalty_per_rubles, greater_than: 0, less_than_or_equal_to: 100_000)
     |> validate_number(:loyalty_stars, greater_than: 0, less_than_or_equal_to: 100_000)
@@ -86,7 +88,24 @@ defmodule Delivest.Franchise.Settings do
       :yandex_api_key,
       :loyalty_per_rubles,
       :loyalty_stars,
-      :loyalty_expire_days
+      :loyalty_expire_days,
+      :client_auth_required
     ]
+  end
+
+  defp validate_client_auth_available(changeset) do
+    if get_field(changeset, :client_auth_required) do
+      zvonok = Delivest.Integrations.Zvonok.get_settings()
+
+      if zvonok.enabled and Delivest.Integrations.Zvonok.Settings.complete?(zvonok) do
+        changeset
+      else
+        add_error(changeset, :client_auth_required,
+          gettext("Sign-in must be configured and enabled before requiring it for checkout")
+        )
+      end
+    else
+      changeset
+    end
   end
 end

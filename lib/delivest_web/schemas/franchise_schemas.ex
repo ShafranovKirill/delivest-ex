@@ -64,6 +64,10 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
               type: :boolean,
               description: "Клиенты могут войти по звонку; иначе все заказывают как гости"
             },
+            client_auth_required: %Schema{
+              type: :boolean,
+              description: "Клиенты должны войти перед оформлением заказа"
+            },
             login_call_mode: %Schema{
               type: :string,
               enum: ["inbound", "flash"],
@@ -91,6 +95,7 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             :logo_dark_url,
             :address_map,
             :client_auth,
+            :client_auth_required,
             :login_call_mode,
             :rating,
             :legal,

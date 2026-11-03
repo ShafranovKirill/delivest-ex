@@ -23,6 +23,7 @@ defmodule DelivestWeb.Client.Franchise.FranchiseController do
       documents: Franchise.list_documents(),
       address_map: Dadata.active?(),
       client_auth: Identity.client_auth_enabled?(),
+      client_auth_required: Franchise.get_settings().client_auth_required,
       login_call_mode: Delivest.Integrations.Zvonok.login_call_mode(),
       rating: Delivest.Integrations.YandexRating.current()
     )

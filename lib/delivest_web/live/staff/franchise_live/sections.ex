@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.FranchiseLive.Sections do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @ids ~w(brand seller loyalty logo images documents)a
+  @ids ~w(brand auth seller loyalty logo images documents)a
 
   def all, do: Enum.map(@ids, &describe/1)
 
@@ -19,6 +19,15 @@ defmodule DelivestWeb.Staff.FranchiseLive.Sections do
         "hero-swatch",
         gettext("Brand"),
         gettext("Name, site description and brand color.")
+      )
+
+  def describe(:auth),
+    do:
+      section(
+        :auth,
+        "hero-user-circle",
+        gettext("Customer sign-in"),
+        gettext("Whether customers must sign in before placing an order.")
       )
 
   def describe(:seller),

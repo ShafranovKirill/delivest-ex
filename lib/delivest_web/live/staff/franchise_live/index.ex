@@ -115,7 +115,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       />
 
       <.live_component
-        :if={@section.id in [:brand, :seller, :loyalty]}
+        :if={@section.id in [:brand, :auth, :seller, :loyalty]}
         module={SettingsFormComponent}
         id="franchise-settings"
         section={@section.id}

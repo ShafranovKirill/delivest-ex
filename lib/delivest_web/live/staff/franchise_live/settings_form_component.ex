@@ -235,6 +235,28 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         </section>
 
         <section
+          :if={@section == :auth}
+          class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <p class="font-medium">{gettext("Require sign-in to place an order")}</p>
+              <p class="text-sm text-base-content/60">
+                {gettext(
+                  "When enabled, customers must sign in before they can place an order. " <>
+                    "Their cart and entered data are preserved through the sign-in flow."
+                )}
+              </p>
+            </div>
+            <.input
+              field={@form[:client_auth_required]}
+              type="checkbox"
+              label={gettext("Required")}
+            />
+          </div>
+        </section>
+
+        <section
           :if={@section == :seller}
           class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
         >
