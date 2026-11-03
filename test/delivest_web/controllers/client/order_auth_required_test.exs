@@ -4,6 +4,7 @@ defmodule DelivestWeb.Client.OrderAuthRequiredTest do
   import Delivest.Factory
 
   alias Delivest.Franchise
+  alias Delivest.Integrations.Zvonok
   alias Delivest.Oms.Order
   alias Delivest.Repo
   alias DelivestWeb.ClientToken
@@ -67,5 +68,23 @@ defmodule DelivestWeb.Client.OrderAuthRequiredTest do
              |> json_response(200)
 
     assert Repo.get!(Order, id).client_id == client.id
+  end
+
+  test "other settings remain editable if sign-in is later disabled", %{
+    conn: conn,
+    branch: branch,
+    admin: admin
+  } do
+    insert(:zvonok_settings)
+    assert {:ok, _} = Franchise.update_settings(admin, %{"client_auth_required" => true})
+    assert {:ok, _} = Zvonok.update_settings(admin, %{"enabled" => false})
+
+    assert {:ok, %{name: "Новая витрина", client_auth_required: true}} =
+             Franchise.update_settings(admin, %{"name" => "Новая витрина"})
+
+    assert %{"error" => "client_auth_required"} =
+             conn
+             |> post(~p"/client/orders", %{"branch_id" => branch.id})
+             |> json_response(401)
   end
 end

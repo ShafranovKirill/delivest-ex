@@ -94,7 +94,7 @@ defmodule Delivest.Franchise.Settings do
   end
 
   defp validate_client_auth_available(changeset) do
-    if get_field(changeset, :client_auth_required) do
+    if get_change(changeset, :client_auth_required) == true do
       zvonok = Delivest.Integrations.Zvonok.get_settings()
 
       if zvonok.enabled and Delivest.Integrations.Zvonok.Settings.complete?(zvonok) do
