@@ -153,4 +153,40 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
 
     assert {:error, {:redirect, _}} = live(conn, ~p"/staff/franchise")
   end
+
+  test "exports and imports the franchise snapshot", %{conn: conn} do
+    insert(:branch, name: "Main", slug: "main", code: "MAIN")
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
+    assert has_element?(lv, ~s(#franchise-section-snapshot[href="/staff/franchise/snapshot"]))
+
+    {:ok, lv, html} = live(conn, ~p"/staff/franchise/snapshot")
+    assert html =~ "secret keys"
+    assert has_element?(lv, "#snapshot-export-form")
+    assert has_element?(lv, "#snapshot-import-form input[type=file]")
+
+    for section <- ~w(storefront catalog franchise integrations) do
+      assert has_element?(
+               lv,
+               ~s(#snapshot-export-form input[name="sections[]"][value="#{section}"])
+             )
+    end
+
+    download = get(conn, ~p"/staff/franchise/site-snapshot?sections[]=franchise")
+    assert response(download, 200) |> String.starts_with?("PK")
+  end
+
+  test "the franchise snapshot is closed to non-admin staff", %{conn: conn} do
+    staff = insert(:staff, role: insert(:role, permissions: ["franchise.update"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
+    refute has_element?(lv, "#franchise-section-snapshot")
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+    assert has_element?(lv, "#snapshot-forbidden")
+    refute has_element?(lv, "#snapshot-export-form")
+
+    assert conn |> get(~p"/staff/franchise/site-snapshot?sections[]=franchise") |> response(302)
+  end
 end

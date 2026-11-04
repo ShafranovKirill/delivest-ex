@@ -1,9 +1,36 @@
 defmodule DelivestWeb.Staff.FranchiseLive.Sections do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @ids ~w(brand auth seller loyalty logo images documents)a
+  @ids ~w(brand auth seller loyalty logo images documents snapshot)a
 
   def all, do: Enum.map(@ids, &describe/1)
+
+  def export_sections do
+    [
+      %{
+        id: "storefront",
+        title: gettext("Storefront"),
+        description:
+          gettext("Address, contacts, working hours, delivery settings and delivery zones.")
+      },
+      %{
+        id: "catalog",
+        title: gettext("Catalog"),
+        description: gettext("Categories, products, modifiers and photos for every branch.")
+      },
+      %{
+        id: "franchise",
+        title: gettext("Franchise settings"),
+        description: gettext("Brand, seller details, loyalty and legal documents.")
+      },
+      %{
+        id: "integrations",
+        title: gettext("Integrations"),
+        description:
+          gettext("CRM, fiscal, channels, delivery and payment settings, including secret keys.")
+      }
+    ]
+  end
 
   def fetch(slug) do
     case Enum.find(@ids, &(Atom.to_string(&1) == slug)) do
@@ -77,6 +104,15 @@ defmodule DelivestWeb.Staff.FranchiseLive.Sections do
         gettext(
           "Default templates already contain your details. Have a lawyer check them before publishing."
         )
+      )
+
+  def describe(:snapshot),
+    do:
+      section(
+        :snapshot,
+        "hero-archive-box-arrow-down",
+        gettext("Franchise snapshot"),
+        gettext("Export and import every branch, shared settings, catalog and integrations.")
       )
 
   defp section(id, icon, title, description),
