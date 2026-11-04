@@ -1,5 +1,5 @@
 defmodule Delivest.Identity.RolePresetsTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   alias Delivest.Identity.{Definitions, RolePresets}
 

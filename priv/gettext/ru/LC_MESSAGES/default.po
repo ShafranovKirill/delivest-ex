@@ -9459,3 +9459,18 @@ msgstr "Размер архива превышает допустимый."
 #, elixir-autogen, elixir-format
 msgid "Snapshot file is unavailable"
 msgstr "Файл слепка недоступен."
+
+msgid "Create Base Roles"
+msgstr "Создать базовые роли"
+
+msgid "All base roles already exist"
+msgstr "Все базовые роли уже созданы"
+
+msgid "Base roles created: %{count}"
+msgstr "Создано базовых ролей: %{count}"
+
+msgid "Only administrators can create base roles"
+msgstr "Создавать базовые роли может только администратор"
+
+msgid "Failed to create base roles"
+msgstr "Не удалось создать базовые роли"

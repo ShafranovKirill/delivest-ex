@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
   use DelivestWeb, :live_view
 
   alias Delivest.Identity
-  alias Delivest.Identity.Role
+  alias Delivest.Identity.{Role, RolePresets}
 
   on_mount {DelivestWeb.Hooks.Permission, "roles.read"}
 
@@ -75,6 +75,32 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
   end
 
   @impl true
+  def handle_event("seed_roles", _, socket) do
+    staff = socket.assigns.current_staff
+
+    case RolePresets.seed(staff) do
+      {:ok, results} ->
+        count = Enum.count(results, &match?({:created, _}, &1))
+
+        message =
+          if count == 0,
+            do: gettext("All base roles already exist"),
+            else: gettext("Base roles created: %{count}", count: count)
+
+        {:noreply,
+         socket
+         |> assign(roles: Identity.list_all_roles(staff))
+         |> put_flash(:info, message)}
+
+      {:error, :forbidden} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Only administrators can create base roles"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to create base roles"))}
+    end
+  end
+
   def handle_event("delete_click", %{"id" => id}, socket) do
     with true <- Identity.can?(socket.assigns.current_staff, "roles.delete"),
          {:ok, role} <- Identity.get_role(socket.assigns.current_staff, id),
@@ -128,6 +154,15 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
         subtitle={gettext("List of available company roles")}
       >
         <:actions>
+          <button
+            :if={Identity.can?(@current_staff, "admin")}
+            id="seed-roles"
+            type="button"
+            phx-click="seed_roles"
+            class="btn btn-outline"
+          >
+            {gettext("Create Base Roles")}
+          </button>
           <.link
             :if={Identity.can?(@current_staff, "roles.create")}
             patch={~p"/staff/roles/new"}
