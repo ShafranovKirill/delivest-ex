@@ -359,6 +359,28 @@ defmodule Delivest.Oms.KitchenTest do
       assert %{scheduled_at: scheduled_at} = send_job(order.id)
       assert DateTime.diff(scheduled_at, order.cook_by, :minute) == -60
     end
+
+    test "replan jobs for a branch wait for the preceding replan" do
+      branch = kitchen_branch()
+
+      task =
+        :global.trans(
+          {{ReplanBranchWorker, branch.id}, self()},
+          fn ->
+            task =
+              Task.async(fn ->
+                ReplanBranchWorker.perform(%Oban.Job{args: %{"branch_id" => branch.id}})
+              end)
+
+            Ecto.Adapters.SQL.Sandbox.allow(Repo, self(), task.pid)
+            assert Task.yield(task, 100) == nil
+            task
+          end,
+          [node()]
+        )
+
+      assert :ok = Task.await(task)
+    end
   end
 
   describe "a kitchen that was switched off" do

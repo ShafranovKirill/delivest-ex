@@ -10,9 +10,20 @@ defmodule Delivest.Oms.Kitchen.ReplanBranchWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"branch_id" => branch_id}}) do
-    case Kitchen.reschedule_branch(branch_id) do
+    result =
+      :global.trans(
+        {{__MODULE__, branch_id}, self()},
+        fn -> Kitchen.reschedule_branch(branch_id) end,
+        [node()]
+      )
+
+    case result do
       :ok ->
         :ok
+
+      :aborted ->
+        Logger.error("kitchen replan for branch #{branch_id} could not acquire its lock")
+        {:error, :lock_unavailable}
 
       {:error, reason} = error ->
         Logger.error("kitchen replan for branch #{branch_id} failed: #{inspect(reason)}")
