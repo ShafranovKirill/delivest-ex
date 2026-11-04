@@ -97,7 +97,7 @@ defmodule Delivest.Oms.OrderTest do
         fulfillment_type: :pickup,
         payment_method: :cash,
         cart_id: Ecto.UUID.generate(),
-        cook_by: DateTime.new!(Date.add(Date.utc_today(), 30), ~T[23:59:59])
+        cook_by: local_noon(Date.add(Delivest.LocalTime.today("Europe/Moscow"), 30))
       }
 
       assert %Ecto.Changeset{valid?: true} = Order.changeset(%Order{}, attrs)
@@ -110,7 +110,7 @@ defmodule Delivest.Oms.OrderTest do
         fulfillment_type: :pickup,
         payment_method: :cash,
         cart_id: Ecto.UUID.generate(),
-        cook_by: DateTime.new!(Date.add(Date.utc_today(), 31), ~T[00:00:00])
+        cook_by: local_noon(Date.add(Delivest.LocalTime.today("Europe/Moscow"), 31))
       }
 
       changeset = Order.changeset(%Order{}, attrs)
@@ -271,6 +271,43 @@ defmodule Delivest.Oms.OrderTest do
                })
 
       assert order.cook_by == ~U[2026-10-05 15:30:00Z]
+    end
+
+    test "stores the exact UTC moment of a local branch slot" do
+      branch = insert(:branch)
+      zone = "Asia/Yekaterinburg"
+
+      Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+        branch_id: branch.id,
+        timezone: zone,
+        working_hours:
+          Map.new(
+            ~w(monday tuesday wednesday thursday friday saturday sunday),
+            &{&1, %{"enabled" => true, "open" => "00:00", "close" => "23:59"}}
+          )
+      })
+
+      Cachex.clear(:branch_cache)
+
+      product = insert_branch_product(branch.id, price: 150)
+      {:ok, cart} = Carts.create_cart(%{session_id: "local-slot-cart", branch_id: branch.id})
+      {:ok, _, _cart} = Carts.add_item(cart.id, product.id, 1)
+
+      date = Date.add(Delivest.LocalTime.today(zone), 1)
+      local = NaiveDateTime.new!(date, ~T[18:30:00])
+      expected = Delivest.LocalTime.naive_to_utc(local, zone)
+
+      assert {:ok, %Order{} = order} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "customer_phone" => "+79991234567",
+                 "customer_name" => "Павел",
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash",
+                 "cook_by" => NaiveDateTime.to_iso8601(local)
+               })
+
+      assert order.cook_by == expected
     end
 
     test "updates order values when the cart is changed" do
@@ -516,5 +553,9 @@ defmodule Delivest.Oms.OrderTest do
   defp draft_cart_for(order) do
     {:ok, cart} = Carts.create_cart(%{branch_id: order.branch_id})
     Orders.populate_cart_from_order(order, cart.id)
+  end
+
+  defp local_noon(date) do
+    Delivest.LocalTime.naive_to_utc(NaiveDateTime.new!(date, ~T[12:00:00]), "Europe/Moscow")
   end
 end

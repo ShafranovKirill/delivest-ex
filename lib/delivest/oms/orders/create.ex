@@ -12,6 +12,7 @@ defmodule Delivest.Oms.Orders.Create do
     Lines,
     Notifier,
     Pricing,
+    ScheduleGuard,
     StatusChange,
     StopGuard
   }
@@ -36,6 +37,12 @@ defmodule Delivest.Oms.Orders.Create do
           :ok -> {:ok, :enabled}
           error -> error
         end
+      end
+    end)
+    |> Multi.run(:schedule, fn _, %{cart: cart} ->
+      case ScheduleGuard.check(cart.branch_id, attrs["cook_by"], opts) do
+        :ok -> {:ok, :ok}
+        error -> error
       end
     end)
     |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> pricing.(cart, attrs, id) end)

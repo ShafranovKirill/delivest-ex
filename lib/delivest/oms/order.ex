@@ -246,9 +246,11 @@ defmodule Delivest.Oms.Order do
   defp validate_cook_by_range(changeset) do
     case get_field(changeset, :cook_by) do
       %DateTime{} = cook_by ->
-        max_date = Date.add(Date.utc_today(), 30)
+        zone = Delivest.LocalTime.timezone(get_field(changeset, :branch_id))
+        max_date = Date.add(Delivest.LocalTime.today(zone), 30)
+        local_date = cook_by |> DateTime.shift_zone!(zone) |> DateTime.to_date()
 
-        if Date.compare(DateTime.to_date(cook_by), max_date) == :gt do
+        if Date.compare(local_date, max_date) == :gt do
           add_error(changeset, :cook_by, "must be no more than 30 days from today")
         else
           changeset

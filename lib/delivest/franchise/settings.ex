@@ -67,6 +67,12 @@ defmodule Delivest.Franchise.Settings do
   def images_changeset(settings, attrs),
     do: cast(settings, attrs, [:icon_key, :share_image_key, :logo_key, :logo_dark_key])
 
+  def ratings_changeset(settings, attrs) do
+    settings
+    |> cast(attrs, [:yandex_org_id, :yandex_api_key])
+    |> validate_length(:yandex_org_id, max: 40)
+  end
+
   defp downcase(nil), do: nil
   defp downcase(value), do: String.downcase(value)
 

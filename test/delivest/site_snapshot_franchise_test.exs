@@ -10,8 +10,9 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.{BranchInfo, YcartSettings}
   alias Delivest.Integrations.Yookassa
-  alias Delivest.Net.{Category, Product}
+  alias Delivest.Net.{Category, Product, ProductModifierGroup}
   alias Delivest.Relations.EntityRelation
+  alias Delivest.SiteSnapshot.{Installation, Mapping}
 
   setup do
     %{staff: insert(:staff, role: insert(:role, permissions: ["admin"]))}
@@ -186,6 +187,227 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
 
     assert {:error, :invalid_archive} = SiteSnapshot.import_franchise(staff, changed)
     assert Repo.get!(Branch, branch.id).name == branch.name
+  end
+
+  test "shares catalog records between branches and keeps target ids on re-import", %{
+    staff: staff
+  } do
+    store = start_s3!()
+    source_bucket = Delivest.Media.public_bucket()
+    main = insert(:branch, name: "Main", slug: "main", code: "MAIN")
+    north = insert(:branch, name: "North", slug: "north", code: "NORTH")
+    category = insert(:category, name: "Pizza")
+    tag = Repo.insert!(%Delivest.Net.ProductTag{name: "Hot"})
+
+    product =
+      insert(:product,
+        name: "Margherita",
+        category_id: category.id,
+        price: 50_000,
+        tags: [tag.id]
+      )
+
+    photo = Delivest.S3Stub.png(2, 2)
+
+    media =
+      Repo.insert!(%Delivest.Media.File{
+        bucket: source_bucket,
+        key: "products/shared.png",
+        original_name: "shared.png",
+        mime_type: "image/png",
+        size: byte_size(photo),
+        context: :product,
+        owner_id: product.id
+      })
+
+    product |> Ecto.Changeset.change(media_id: media.id) |> Repo.update!()
+    group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Extras"})
+    Repo.insert!(%Delivest.Net.Modifier{group_id: group.id, name: "Cheese", price: 100})
+    Repo.insert!(%ProductModifierGroup{product_id: product.id, group_id: group.id})
+
+    relate!(main, "Category", category.id)
+    relate!(main, "Product", product.id)
+    relate!(north, "Category", category.id)
+    relate!(north, "Product", product.id)
+
+    Agent.update(store, &Map.put(&1, "/#{source_bucket}/products/shared.png", photo))
+
+    assert {:ok, archive} = SiteSnapshot.export_franchise(staff, [:catalog, :franchise])
+    clear_franchise!()
+    use_bucket!("target-bucket")
+
+    assert {:ok, counts} = SiteSnapshot.import_franchise(staff, archive)
+    assert counts.branches_created == 2
+    assert counts.products == 1
+    assert counts.categories == 1
+    assert counts.groups == 1
+    assert counts.modifiers == 1
+    assert counts.media == 1
+    assert counts.tags == 1
+
+    main = Repo.get_by!(Branch, slug: "main")
+    north = Repo.get_by!(Branch, slug: "north")
+    assert [product_id] = Relations.list_target_ids("Branch", main.id, "Product")
+    assert product_id == product.id
+    assert [^product_id] = Relations.list_target_ids("Branch", north.id, "Product")
+    assert Repo.get!(Product, product_id).price == 50_000
+    assert Repo.get!(Product, product_id).media_id == media.id
+    assert Repo.get!(Delivest.Media.File, media.id).bucket == "target-bucket"
+
+    assert_receive {:uploaded, "/target-bucket/site-snapshot/" <> _}
+    objects = Agent.get(store, &map_size/1)
+
+    assert {:ok, %{branches_created: 0, branches_updated: 2, products: 1}} =
+             SiteSnapshot.import_franchise(staff, archive)
+
+    assert Repo.get!(Product, product_id).price == 50_000
+    assert map_size(Agent.get(store, & &1)) == objects
+    refute_received {:uploaded, _}
+  end
+
+  test "applies integrations and franchise sections independently", %{staff: staff} do
+    source = insert(:branch, name: "Source", slug: "source", code: "SRC")
+    insert(:branch, name: "Target", slug: "target", code: "TGT")
+
+    source_franchise =
+      Repo.one(FranchiseSettings) || Repo.insert!(%FranchiseSettings{name: "Source"})
+
+    source_franchise
+    |> Ecto.Changeset.change(
+      name: "Source brand",
+      phone: "+79990000001",
+      yandex_org_id: "source-org",
+      yandex_api_key: "source-key"
+    )
+    |> Repo.update!()
+
+    Repo.insert!(%Delivest.Integrations.Yookassa.Settings{
+      shop_id: "111111",
+      secret_key: "source-secret",
+      webhook_token: "source-token"
+    })
+
+    assert {:ok, _} = Documents.save(:privacy, "Source privacy")
+
+    assert {:ok, integrations} = SiteSnapshot.export_franchise(staff, [:integrations])
+    assert {:ok, franchise} = SiteSnapshot.export_franchise(staff, [:franchise])
+
+    source_franchise
+    |> Ecto.Changeset.change(
+      name: "Target brand",
+      phone: "+79990000002",
+      yandex_org_id: "target-org",
+      yandex_api_key: "target-key"
+    )
+    |> Repo.update!()
+
+    Repo.delete_all(Delivest.Integrations.Yookassa.Settings)
+
+    Repo.insert!(%Delivest.Integrations.Yookassa.Settings{
+      shop_id: "222222",
+      secret_key: "target-secret",
+      webhook_token: "target-token"
+    })
+
+    assert {:ok, _} = Documents.save(:privacy, "Target privacy")
+
+    assert {:ok, _} =
+             SiteSnapshot.import_franchise(staff, integrations)
+
+    imported = Repo.one!(FranchiseSettings)
+    assert imported.name == "Target brand"
+    assert imported.phone == "+79990000002"
+    assert imported.yandex_org_id == "source-org"
+    assert imported.yandex_api_key == "source-key"
+    assert Repo.one!(Delivest.Integrations.Yookassa.Settings).shop_id == "111111"
+    assert Documents.get(:privacy).body == "Target privacy"
+    assert Repo.get!(Branch, source.id).name == "Source"
+
+    assert {:ok, _} =
+             SiteSnapshot.import_franchise(staff, franchise)
+
+    assert Repo.one!(FranchiseSettings).name == "Source brand"
+    assert Repo.one!(FranchiseSettings).yandex_org_id == "source-org"
+    assert Repo.one!(Delivest.Integrations.Yookassa.Settings).shop_id == "111111"
+    assert Documents.get(:privacy).body == "Source privacy"
+  end
+
+  test "keeps one branch mapping per source installation", %{staff: staff} do
+    branch = insert(:branch, name: "Main", slug: "main", code: "MAIN")
+    assert {:ok, first_archive} = SiteSnapshot.export_franchise(staff, [:franchise])
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, first_archive)
+
+    installation = Repo.one!(Installation)
+    installation |> Ecto.Changeset.change(installation_id: Ecto.UUID.generate()) |> Repo.update!()
+
+    assert {:ok, second_archive} = SiteSnapshot.export_franchise(staff, [:franchise])
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, second_archive)
+
+    branch |> Ecto.Changeset.change(slug: "renamed") |> Repo.update!()
+    assert {:ok, %{branches_created: 0}} = SiteSnapshot.import_franchise(staff, first_archive)
+    assert Repo.get!(Branch, branch.id).slug == "main"
+    assert Repo.aggregate(from(m in Mapping, where: m.entity_type == "branches"), :count) == 2
+  end
+
+  test "rejects a franchise archive at the branch entry point", %{staff: staff} do
+    branch = insert(:branch)
+    assert {:ok, archive} = SiteSnapshot.export_franchise(staff, [:franchise])
+    assert {:error, :invalid_archive} = SiteSnapshot.import(staff, branch.id, archive)
+  end
+
+  defp start_s3! do
+    store = start_supervised!({Agent, fn -> %{} end})
+    owner = self()
+
+    Req.Test.stub(Delivest.S3Stub, fn conn ->
+      path = conn.request_path
+
+      case conn.method do
+        "GET" ->
+          case Agent.get(store, &Map.fetch(&1, path)) do
+            {:ok, body} -> Plug.Conn.send_resp(conn, 200, body)
+            :error -> Plug.Conn.send_resp(conn, 404, "missing")
+          end
+
+        "PUT" ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          Agent.update(store, &Map.put(&1, path, body))
+          send(owner, {:uploaded, path})
+          Plug.Conn.send_resp(conn, 200, "")
+
+        "DELETE" ->
+          Agent.update(store, &Map.delete(&1, path))
+          Plug.Conn.send_resp(conn, 204, "")
+      end
+    end)
+
+    store
+  end
+
+  defp use_bucket!(bucket) do
+    initial = Application.fetch_env!(:delivest, Delivest.Media)
+
+    Application.put_env(
+      :delivest,
+      Delivest.Media,
+      Keyword.put(initial, :public_bucket, bucket)
+    )
+
+    on_exit(fn -> Application.put_env(:delivest, Delivest.Media, initial) end)
+  end
+
+  defp clear_franchise! do
+    Repo.delete_all(EntityRelation)
+    Repo.delete_all(ProductModifierGroup)
+    Repo.delete_all(Delivest.Net.Modifier)
+    Repo.delete_all(Delivest.Net.ModifierGroup)
+    Repo.delete_all(Product)
+    Repo.delete_all(Category)
+    Repo.delete_all(Delivest.Media.File)
+    Repo.delete_all(Delivest.Net.ProductTag)
+    Repo.delete_all(Delivest.Delivery.Zone)
+    Repo.delete_all(BranchInfo)
+    Repo.delete_all(Branch)
   end
 
   defp relate!(branch, type, id) do

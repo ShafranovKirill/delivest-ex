@@ -213,6 +213,19 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   defp snapshot_error({:shared_catalog_conflict, type, id}),
     do: gettext("Catalog item %{type} (%{id}) is shared with another branch.", type: type, id: id)
 
+  defp snapshot_error({:shared_catalog_conflict, type, id, _branches}),
+    do:
+      gettext("Catalog item %{type} (%{id}) is shared with a branch outside the archive.",
+        type: type,
+        id: id
+      )
+
+  defp snapshot_error({:conflicting_mapping, type, id, _targets}),
+    do: gettext("Conflicting destination mappings for %{type} (%{id}).", type: type, id: id)
+
+  defp snapshot_error({:ambiguous_branch, source_id, _target_id}),
+    do: gettext("Branch %{id} has an ambiguous destination.", id: source_id)
+
   defp snapshot_error(:shared_catalog_conflict),
     do: gettext("The catalog contains items shared with another branch.")
 

@@ -297,6 +297,33 @@ defmodule DelivestWeb.Client.Order.OrderController do
     )
   end
 
+  defp render_error(conn, :branch_closed),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :branch_closed,
+        "The branch is closed at the requested time"
+      )
+
+  defp render_error(conn, :cook_by_in_past),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :cook_by_in_past,
+        "Choose a time in the future"
+      )
+
+  defp render_error(conn, :cook_by_outside_hours),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :cook_by_outside_hours,
+        "The branch is closed at the requested time"
+      )
+
   defp render_error(conn, :payment_unavailable),
     do:
       ApiError.send_error(
