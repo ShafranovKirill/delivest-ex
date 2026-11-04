@@ -10,7 +10,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.{BranchInfo, YcartSettings}
   alias Delivest.Integrations.Yookassa
-  alias Delivest.Net.{Category, Product, ProductModifierGroup}
+  alias Delivest.Net.{Category, Product, ProductExternalId, ProductModifierGroup}
   alias Delivest.Relations.EntityRelation
   alias Delivest.SiteSnapshot.{Installation, Mapping}
 
@@ -138,6 +138,36 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     assert Repo.aggregate(Branch, :count) == 1
     assert Repo.aggregate(Product, :count) == 1
     assert Repo.aggregate(Category, :count) == 1
+  end
+
+  test "restores missing FrontPad IDs and updates them on repeat import", %{staff: staff} do
+    branch = insert(:branch)
+    product = insert(:product)
+    relate!(branch, "Product", product.id)
+
+    binding =
+      Repo.insert!(%ProductExternalId{
+        entity_id: product.id,
+        branch_id: branch.id,
+        provider: "frontpad",
+        external_id: "101"
+      })
+
+    assert {:ok, original} = SiteSnapshot.export_franchise(staff, [:catalog])
+    binding |> Ecto.Changeset.change(external_id: "202") |> Repo.update!()
+    assert {:ok, updated} = SiteSnapshot.export_franchise(staff, [:catalog])
+    Repo.delete!(binding)
+
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, original)
+
+    restored = Repo.get_by!(ProductExternalId, entity_id: product.id, provider: "frontpad")
+    assert restored.branch_id == branch.id
+    assert restored.external_id == "101"
+
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, updated)
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, updated)
+    assert Repo.get!(ProductExternalId, restored.id).external_id == "202"
+    assert Repo.aggregate(ProductExternalId, :count) == 1
   end
 
   test "requires an admin and rejects a single-branch archive", %{staff: staff} do

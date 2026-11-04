@@ -297,7 +297,7 @@ defmodule Delivest.SiteSnapshot.Archive do
   end
 
   defp validate_data(data, :branch, _sections) when is_map(data) do
-    collections = ~w(categories products groups modifiers links media tags zones)
+    collections = ~w(categories products groups modifiers links media tags frontpad_ids zones)
     maps = ~w(branch info franchise delivery_settings)
 
     if is_binary(data["public_bucket"]) and Ecto.UUID.cast(data["branch_id"]) != :error and
@@ -349,7 +349,10 @@ defmodule Delivest.SiteSnapshot.Archive do
     keys =
       ["branch_id", "branch"] ++
         if(storefront?, do: ~w(info delivery_settings zones), else: []) ++
-        if(catalog?, do: ~w(categories products groups modifiers links media tags), else: []) ++
+        if(catalog?,
+          do: ~w(categories products groups modifiers links media tags frontpad_ids),
+          else: []
+        ) ++
         if(integrations?, do: ["integrations"], else: [])
 
     branch_fields = Enum.map(Fields.branch_fields(:franchise), &Atom.to_string/1)
@@ -412,7 +415,7 @@ defmodule Delivest.SiteSnapshot.Archive do
   defp valid_info?(_info, _branch_id), do: false
 
   defp valid_catalog?(branch) do
-    collections = ~w(categories products groups modifiers links media tags)
+    collections = ~w(categories products groups modifiers links media tags frontpad_ids)
 
     Enum.all?(collections, fn key ->
       is_list(branch[key]) and length(branch[key]) <= 10_000 and
@@ -547,6 +550,7 @@ defmodule Delivest.SiteSnapshot.Archive do
       "modifiers" =>
         Enum.map(Fields.catalog_fields("modifiers"), &Atom.to_string/1) ++ ~w(id group_id),
       "links" => ~w(product_id group_id position),
+      "frontpad_ids" => ~w(entity_type entity_id external_id),
       "media" => ~w(id bucket key original_name mime_type size context owner_id is_private),
       "tags" => Enum.map(Fields.catalog_fields("tags"), &Atom.to_string/1) ++ ["id"],
       "zones" => Enum.map(Fields.zone_fields(), &Atom.to_string/1) ++ ~w(id thresholds)
@@ -586,16 +590,41 @@ defmodule Delivest.SiteSnapshot.Archive do
     media = MapSet.new(Enum.map(data["media"], & &1["id"]))
     tags = MapSet.new(Enum.map(data["tags"], & &1["id"]))
 
-    Enum.all?(data["products"], fn product ->
-      (is_nil(product["category_id"]) or MapSet.member?(categories, product["category_id"])) and
-        (is_nil(product["media_id"]) or MapSet.member?(media, product["media_id"])) and
-        Enum.all?(product["tags"], &MapSet.member?(tags, &1))
-    end) and
+    valid_frontpad_ids?(data) and
+      Enum.all?(data["products"], fn product ->
+        (is_nil(product["category_id"]) or MapSet.member?(categories, product["category_id"])) and
+          (is_nil(product["media_id"]) or MapSet.member?(media, product["media_id"])) and
+          Enum.all?(product["tags"], &MapSet.member?(tags, &1))
+      end) and
       Enum.all?(data["modifiers"], &MapSet.member?(groups, &1["group_id"])) and
       Enum.all?(data["links"], fn link ->
         MapSet.member?(products, link["product_id"]) and
           MapSet.member?(groups, link["group_id"])
       end)
+  end
+
+  defp valid_frontpad_ids?(data) do
+    types = Fields.frontpad_catalog_types()
+
+    ids_by_type =
+      Map.new(types, fn {type, collection} ->
+        {type, MapSet.new(Enum.map(data[collection], & &1["id"]))}
+      end)
+
+    bindings = data["frontpad_ids"]
+
+    Enum.all?(bindings, fn binding ->
+      type = binding["entity_type"]
+      external_id = binding["external_id"]
+
+      Fields.valid_record_keys?(binding, ~w(entity_type entity_id external_id)) and
+        Map.has_key?(types, type) and
+        MapSet.member?(ids_by_type[type], binding["entity_id"]) and
+        is_binary(external_id) and external_id != "" and String.trim(external_id) == external_id and
+        String.length(external_id) <= 64
+    end) and
+      length(bindings) == length(Enum.uniq_by(bindings, &{&1["entity_type"], &1["entity_id"]})) and
+      length(bindings) == length(Enum.uniq_by(bindings, &{&1["entity_type"], &1["external_id"]}))
   end
 
   defp valid_links?(data) do

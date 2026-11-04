@@ -14,6 +14,7 @@ defmodule Delivest.SiteSnapshot.Export do
     Modifier,
     ModifierGroup,
     Product,
+    ProductExternalId,
     ProductModifierGroup,
     ProductTag
   }
@@ -149,7 +150,7 @@ defmodule Delivest.SiteSnapshot.Export do
     tag_ids = products |> Enum.flat_map(&(&1.tags || [])) |> Enum.uniq()
     tags = Repo.all(from t in ProductTag, where: t.id in ^tag_ids)
 
-    %{
+    catalog = %{
       "categories" =>
         Enum.map(categories, &Fields.record(&1, Fields.catalog_fields("categories"))),
       "products" =>
@@ -180,6 +181,27 @@ defmodule Delivest.SiteSnapshot.Export do
       "media" => Enum.map(media, &Fields.record(&1, Fields.catalog_fields("media"))),
       "tags" => Enum.map(tags, &Fields.record(&1, Fields.catalog_fields("tags")))
     }
+
+    Map.put(catalog, "frontpad_ids", frontpad_ids(branch_id, catalog))
+  end
+
+  defp frontpad_ids(branch_id, catalog) do
+    Enum.flat_map(Fields.frontpad_catalog_types(), fn {entity_type, collection} ->
+      ids = Enum.map(catalog[collection], & &1["id"])
+
+      Repo.all(
+        from e in ProductExternalId,
+          where:
+            e.branch_id == ^branch_id and e.provider == "frontpad" and
+              e.entity_type == ^entity_type and e.entity_id in ^ids,
+          order_by: e.entity_id,
+          select: %{
+            "entity_type" => e.entity_type,
+            "entity_id" => e.entity_id,
+            "external_id" => e.external_id
+          }
+      )
+    end)
   end
 
   defp custom_documents do

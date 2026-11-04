@@ -50,6 +50,9 @@ defmodule Delivest.SiteSnapshot.Fields do
 
   def sections, do: @sections
 
+  def frontpad_catalog_types,
+    do: %{"product" => "products", "modifier" => "modifiers", "modifier_group" => "groups"}
+
   def branch_fields(:branch), do: @branch_fields
   def branch_fields(:franchise), do: @franchise_branch_fields
 
