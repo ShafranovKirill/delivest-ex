@@ -543,6 +543,12 @@ defmodule Delivest.SiteSnapshot.ImportPlan do
         Map.update!(item, "group_id", &mapped_id(catalog, "groups", &1))
       end)
     )
+    |> Map.update!("frontpad_ids", fn bindings ->
+      Enum.map(bindings, fn binding ->
+        collection = Map.fetch!(Fields.frontpad_catalog_types(), binding["entity_type"])
+        Map.update!(binding, "entity_id", &mapped_id(catalog, collection, &1))
+      end)
+    end)
     |> Map.put("links", [])
   end
 

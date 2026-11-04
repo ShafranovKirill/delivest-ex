@@ -20,6 +20,7 @@ defmodule Delivest.SiteSnapshot.Apply do
     Modifier,
     ModifierGroup,
     Product,
+    ProductExternalId,
     ProductModifierGroup,
     ProductTag
   }
@@ -133,6 +134,26 @@ defmodule Delivest.SiteSnapshot.Apply do
 
     Enum.each(plan.links, &put_link/1)
     put_relations(entries)
+
+    Enum.each(entries, fn entry ->
+      Enum.each(entry.data["frontpad_ids"], &put_frontpad_id(entry.target_id, &1))
+    end)
+  end
+
+  defp put_frontpad_id(branch_id, binding) do
+    attrs = %{branch_id: branch_id, provider: "frontpad", external_id: binding["external_id"]}
+
+    changeset =
+      %ProductExternalId{entity_type: binding["entity_type"], entity_id: binding["entity_id"]}
+      |> ProductExternalId.changeset(attrs)
+
+    case Repo.insert(changeset,
+           on_conflict: {:replace, [:branch_id, :external_id, :updated_at]},
+           conflict_target: [:entity_type, :entity_id, :provider]
+         ) do
+      {:ok, _binding} -> :ok
+      {:error, changeset} -> abort!({:invalid_record, changeset})
+    end
   end
 
   defp unique_items(entries, type) do
