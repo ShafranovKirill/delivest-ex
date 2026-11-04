@@ -58,7 +58,7 @@ defmodule Delivest.SiteSnapshot.Assets do
            reference
          ) do
       [_, filename] -> "franchise/icon/snapshot-#{sha(Path.dirname(reference))}/#{filename}"
-      _ -> "site-snapshot/#{sha(body)}"
+      _ -> "site-snapshot/#{sha([reference, <<0>>, body])}"
     end
   end
 

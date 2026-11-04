@@ -221,6 +221,22 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
       })
 
     product |> Ecto.Changeset.change(media_id: media.id) |> Repo.update!()
+    other = insert(:product, name: "Calzone", category_id: category.id)
+
+    other_media =
+      Repo.insert!(%Delivest.Media.File{
+        bucket: source_bucket,
+        key: "products/copy.png",
+        original_name: "copy.png",
+        mime_type: "image/png",
+        size: byte_size(photo),
+        context: :product,
+        owner_id: other.id
+      })
+
+    other |> Ecto.Changeset.change(media_id: other_media.id) |> Repo.update!()
+    relate!(north, "Product", other.id)
+
     group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Extras"})
     Repo.insert!(%Delivest.Net.Modifier{group_id: group.id, name: "Cheese", price: 100})
     Repo.insert!(%ProductModifierGroup{product_id: product.id, group_id: group.id})
@@ -230,7 +246,13 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     relate!(north, "Category", category.id)
     relate!(north, "Product", product.id)
 
-    Agent.update(store, &Map.put(&1, "/#{source_bucket}/products/shared.png", photo))
+    Agent.update(
+      store,
+      &Map.merge(&1, %{
+        "/#{source_bucket}/products/shared.png" => photo,
+        "/#{source_bucket}/products/copy.png" => photo
+      })
+    )
 
     assert {:ok, archive} = SiteSnapshot.export_franchise(staff, [:catalog, :franchise])
     clear_franchise!()
@@ -238,26 +260,34 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
 
     assert {:ok, counts} = SiteSnapshot.import_franchise(staff, archive)
     assert counts.branches_created == 2
-    assert counts.products == 1
+    assert counts.products == 2
     assert counts.categories == 1
     assert counts.groups == 1
     assert counts.modifiers == 1
-    assert counts.media == 1
+    assert counts.media == 2
     assert counts.tags == 1
 
     main = Repo.get_by!(Branch, slug: "main")
     north = Repo.get_by!(Branch, slug: "north")
     assert [product_id] = Relations.list_target_ids("Branch", main.id, "Product")
     assert product_id == product.id
-    assert [^product_id] = Relations.list_target_ids("Branch", north.id, "Product")
+
+    assert Enum.sort(Relations.list_target_ids("Branch", north.id, "Product")) ==
+             Enum.sort([product_id, other.id])
+
     assert Repo.get!(Product, product_id).price == 50_000
     assert Repo.get!(Product, product_id).media_id == media.id
     assert Repo.get!(Delivest.Media.File, media.id).bucket == "target-bucket"
 
     assert_receive {:uploaded, "/target-bucket/site-snapshot/" <> _}
+    assert_receive {:uploaded, "/target-bucket/site-snapshot/" <> _}
+
+    assert Repo.get!(Delivest.Media.File, media.id).key !=
+             Repo.get!(Delivest.Media.File, other_media.id).key
+
     objects = Agent.get(store, &map_size/1)
 
-    assert {:ok, %{branches_created: 0, branches_updated: 2, products: 1}} =
+    assert {:ok, %{branches_created: 0, branches_updated: 2, products: 2}} =
              SiteSnapshot.import_franchise(staff, archive)
 
     assert Repo.get!(Product, product_id).price == 50_000
