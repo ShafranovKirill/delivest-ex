@@ -14,7 +14,7 @@ defmodule DelivestWeb.Staff.StaffSiteSnapshotController do
       end
     else
       {:error, :not_found} -> send_resp(conn, :not_found, "")
-      _ -> send_resp(conn, :unprocessable_entity, "Snapshot file is unavailable")
+      _ -> send_resp(conn, :unprocessable_entity, gettext("Snapshot file is unavailable"))
     end
   end
 
@@ -32,7 +32,7 @@ defmodule DelivestWeb.Staff.StaffSiteSnapshotController do
         end
 
       _ ->
-        send_resp(conn, :unprocessable_entity, "Snapshot file is unavailable")
+        send_resp(conn, :unprocessable_entity, gettext("Snapshot file is unavailable"))
     end
   end
 
@@ -59,13 +59,13 @@ defmodule DelivestWeb.Staff.StaffSiteSnapshotController do
         |> halt()
 
       {:error, {:missing_media, _bucket, key}} ->
-        send_resp(conn, :unprocessable_entity, "Image is unavailable: #{key}")
+        send_resp(conn, :unprocessable_entity, gettext("Image is unavailable: %{key}", key: key))
 
       {:error, :archive_too_large} ->
-        send_resp(conn, :unprocessable_entity, "Snapshot exceeds the size limit")
+        send_resp(conn, :unprocessable_entity, gettext("Snapshot exceeds the size limit"))
 
       _ ->
-        send_resp(conn, :unprocessable_entity, "Snapshot file is unavailable")
+        send_resp(conn, :unprocessable_entity, gettext("Snapshot file is unavailable"))
     end
   end
 
@@ -77,10 +77,10 @@ defmodule DelivestWeb.Staff.StaffSiteSnapshotController do
       )
     else
       {:error, {:missing_media, _bucket, key}} ->
-        send_resp(conn, :unprocessable_entity, "Image is unavailable: #{key}")
+        send_resp(conn, :unprocessable_entity, gettext("Image is unavailable: %{key}", key: key))
 
       {:error, :archive_too_large} ->
-        send_resp(conn, :unprocessable_entity, "Snapshot exceeds the size limit")
+        send_resp(conn, :unprocessable_entity, gettext("Snapshot exceeds the size limit"))
 
       _ ->
         send_resp(conn, :not_found, "")

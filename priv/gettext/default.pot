@@ -9433,3 +9433,22 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "You do not have permission to export the franchise."
 msgstr ""
+
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:62
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:80
+#, elixir-autogen, elixir-format
+msgid "Image is unavailable: %{key}"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:65
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:83
+#, elixir-autogen, elixir-format
+msgid "Snapshot exceeds the size limit"
+msgstr ""
+
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:17
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:35
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:68
+#, elixir-autogen, elixir-format
+msgid "Snapshot file is unavailable"
+msgstr ""
