@@ -101,7 +101,7 @@ defmodule Delivest.Oms.KitchenTest do
       |> Ecto.Changeset.change(cook_by: in_minutes(100))
       |> Repo.update!()
 
-      assert :ok =
+      assert {:ok, %Order{}} =
                OrderSubscriber.handle(%{
                  type: "order.updated",
                  aggregate_id: order.id,
@@ -110,7 +110,46 @@ defmodule Delivest.Oms.KitchenTest do
 
       after_update = send_job(order.id)
       assert DateTime.compare(after_update.scheduled_at, before.scheduled_at) == :lt
-      assert after_update.id != before.id
+      assert after_update.id == before.id
+    end
+
+    test "a repeated event keeps the same planned send" do
+      branch = kitchen_branch()
+      order = order(branch, cook_by: in_minutes(120))
+
+      assert {:ok, %Order{status: :accepted}} =
+               Orders.advance_order(order, :accepted, operator(branch))
+
+      deliver_events()
+      job = send_job(order.id)
+
+      assert {:ok, %Order{}} =
+               OrderSubscriber.handle(%{
+                 type: "order.updated",
+                 aggregate_id: order.id,
+                 payload: %{"changes" => %{"cook_by" => %{}}}
+               })
+
+      assert send_job(order.id).id == job.id
+    end
+
+    test "dispatch and the worker send the order once" do
+      branch = kitchen_branch()
+      order = order(branch, cook_by: in_minutes(120))
+
+      assert {:ok, %Order{status: :accepted}} =
+               Orders.advance_order(order, :accepted, operator(branch))
+
+      deliver_events()
+      assert send_job(order.id)
+
+      order |> Ecto.Changeset.change(cook_by: in_minutes(-1)) |> Repo.update!()
+
+      assert :ok = Kitchen.dispatch_due()
+      assert :ok = perform_job(SendWorker, %{order_id: order.id})
+      assert Repo.reload!(order).status == :preparing
+
+      assert Enum.count(transitions(order), &match?({_, :preparing, _}, &1)) == 1
     end
 
     test "leaving accepted drops the planned send" do

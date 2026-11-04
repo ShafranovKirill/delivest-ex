@@ -29,10 +29,13 @@ defmodule Delivest.Push.OrderSubscriber do
   # The operator marked a position as unavailable and saved the order. The
   # client learns which position is gone and what the new total is, and keeps
   # the usual right to cancel the order from the app.
-  defp notify(%{type: "order.updated", actor: %{"kind" => "staff"}, payload: payload}, order) do
+  defp notify(
+         %{type: "order.updated", actor: %{"kind" => "staff"}, payload: payload} = event,
+         order
+       ) do
     payload
     |> removed_titles()
-    |> then(&Push.notify_items_removed(order, &1))
+    |> then(&Push.notify_items_removed(order, &1, event.id))
   end
 
   defp notify(_event, _order), do: :ok

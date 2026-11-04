@@ -23,7 +23,6 @@ defmodule Delivest.Oms.Kitchen.OrderSubscriber do
     case Repo.get(Order, event.aggregate_id) do
       %Order{deleted_at: nil, status: :accepted} = order ->
         Kitchen.order_accepted(order)
-        :ok
 
       %Order{} = order ->
         Kitchen.cancel_send(order.id)

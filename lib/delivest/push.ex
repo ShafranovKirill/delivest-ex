@@ -48,7 +48,9 @@ defmodule Delivest.Push do
   Sent when an operator saved an order with unavailable positions. The client
   sees the new total and can still cancel the order from the app.
   """
-  def notify_items_removed(%Order{id: order_id}, titles) when is_list(titles) do
+  def notify_items_removed(order, titles, event_id \\ nil)
+
+  def notify_items_removed(%Order{id: order_id}, titles, event_id) when is_list(titles) do
     titles = titles |> Enum.filter(&(is_binary(&1) and &1 != "")) |> Enum.uniq() |> Enum.take(10)
 
     case titles do
@@ -56,15 +58,38 @@ defmodule Delivest.Push do
         :ok
 
       titles ->
-        %{order_id: order_id, note: "items_removed", titles: titles}
-        |> NoteWorker.new()
-        |> Oban.insert()
+        args = %{order_id: order_id, note: "items_removed", titles: titles}
 
-        :ok
+        args =
+          if is_binary(event_id),
+            do: Map.put(args, :event_id, event_id),
+            else: args
+
+        args
+        |> NoteWorker.new(note_options(event_id))
+        |> Oban.insert()
+        |> case do
+          {:ok, _job} -> :ok
+          {:error, reason} -> {:error, {:push_not_enqueued, reason}}
+        end
     end
   end
 
-  def notify_items_removed(_order, _titles), do: :ok
+  def notify_items_removed(_order, _titles, _event_id), do: :ok
+
+  # A redelivery of the same outbox event must not create a second note, even
+  # after the first job has already completed.
+  defp note_options(event_id) when is_binary(event_id) do
+    [
+      unique: [
+        period: :infinity,
+        keys: [:order_id, :note, :titles, :event_id],
+        states: :all
+      ]
+    ]
+  end
+
+  defp note_options(_event_id), do: []
 
   def subscribe_staff(%Staff{} = staff, attrs) do
     %StaffSubscription{staff_id: staff.id}

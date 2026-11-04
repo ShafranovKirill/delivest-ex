@@ -44,6 +44,64 @@ defmodule Delivest.Integrations.TokenCacheTest do
     assert issued.() == 2
   end
 
+  test "a late 401 keeps the token issued by another request", %{key: key} do
+    {issue, issued} = issuer(["old", "new", "third"])
+    assert TokenCache.fetch(key, issue) == {:ok, "old"}
+
+    request = fn
+      "old" ->
+        TokenCache.invalidate(key)
+        assert TokenCache.fetch(key, issue) == {:ok, "new"}
+        {:error, {:http_error, 401, %{}}}
+
+      "new" ->
+        {:ok, :done}
+
+      "third" ->
+        {:ok, :unexpected}
+    end
+
+    assert TokenCache.run(key, issue, request) == {:ok, :done}
+    assert issued.() == 2
+    assert TokenCache.fetch(key, issue) == {:ok, "new"}
+  end
+
+  test "two requests and a late 401 issue the token once", %{key: key} do
+    {issue, issued} = issuer(["old", "new"])
+    test = self()
+    assert TokenCache.fetch(key, issue) == {:ok, "old"}
+
+    late =
+      Task.async(fn ->
+        TokenCache.run(key, issue, fn
+          "old" ->
+            send(test, :old_token_in_use)
+
+            receive do
+              :new_token_ready -> {:error, {:http_error, 401, %{}}}
+            end
+
+          "new" ->
+            {:ok, :done}
+        end)
+      end)
+
+    assert_receive :old_token_in_use
+
+    fresh =
+      Task.async(fn ->
+        TokenCache.invalidate(key)
+        assert TokenCache.fetch(key, issue) == {:ok, "new"}
+        send(late.pid, :new_token_ready)
+        {:ok, "new"}
+      end)
+
+    assert Task.await(fresh) == {:ok, "new"}
+    assert Task.await(late) == {:ok, :done}
+    assert issued.() == 2
+    assert TokenCache.fetch(key, issue) == {:ok, "new"}
+  end
+
   test "a second auth error is returned as is", %{key: key} do
     {issue, issued} = issuer(["a", "b"])
     error = {:error, {:http_error, 401, %{}}}

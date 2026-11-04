@@ -28,7 +28,7 @@ defmodule Delivest.Integrations.TokenCache do
       result = fun.(token)
 
       if expired?.(result) do
-        with {:ok, token} <- refresh(key, issue), do: fun.(token)
+        with {:ok, token} <- refresh(key, token, issue), do: fun.(token)
       else
         result
       end
@@ -40,9 +40,37 @@ defmodule Delivest.Integrations.TokenCache do
   def auth_error?({:error, {:http_error, 401, _body}}), do: true
   def auth_error?(_result), do: false
 
-  defp refresh(key, issue) do
-    invalidate(key)
-    fetch(key, issue)
+  # A 401 may arrive after another request has already replaced the token. The
+  # check and the new issue happen under one lock for the key, so a late answer
+  # for an outdated token reuses the newer one instead of removing it.
+  defp refresh(key, rejected, issue) do
+    case Cachex.transaction(@cache, [key], fn -> refresh_locked(key, rejected, issue) end) do
+      {:ok, result} -> result
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp refresh_locked(key, rejected, issue) do
+    case Cachex.get(@cache, key) do
+      {:ok, token} when is_binary(token) and token != rejected ->
+        {:ok, token}
+
+      _missing_or_rejected ->
+        issue_token(key, issue)
+    end
+  end
+
+  defp issue_token(key, issue) do
+    case issue.() do
+      {:ok, token, ttl} ->
+        case Cachex.put(@cache, key, token, expire: :timer.seconds(ttl - margin(ttl))) do
+          {:ok, true} -> {:ok, token}
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, _reason} = error ->
+        error
+    end
   end
 
   defp margin(ttl) when ttl > 1, do: min(div(ttl, 10), @max_margin)

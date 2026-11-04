@@ -190,16 +190,28 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
 
               <%= for item <- @cart.items do %>
                 <div class="flex items-center justify-between p-2 rounded-field bg-base-200/60 text-xs">
-                  <div class="flex-1 truncate pr-2">
+                  <div class="flex-1 min-w-0 pr-2">
                     <p class="font-medium truncate">{item.name}</p>
                     <p :if={Map.get(item, :gift)} class="text-success font-medium">
                       {gettext("Gift × %{count}", count: item.quantity)}
                     </p>
-                    <p :if={!Map.get(item, :gift)} class="text-base-content/60 font-mono">
+                    <p :if={!Map.get(item, :gift)} class="text-base-content/60 font-mono truncate">
                       {item.quantity} × {OrderHelpers.money(item.price)} = {OrderHelpers.money(
                         item.total_price
                       )}
                     </p>
+                    <button
+                      :if={@out_of_stock and !Map.get(item, :gift)}
+                      id={"mobile-cart-out-of-stock-#{Map.get(item, :key, item.product_id)}"}
+                      type="button"
+                      phx-click="out_of_stock"
+                      phx-value-product-id={Map.get(item, :key, item.product_id)}
+                      title={gettext("Mark as unavailable and tell the client")}
+                      class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-warning hover:underline"
+                    >
+                      <.icon name="hero-no-symbol" class="size-3.5" />
+                      {gettext("Unavailable")}
+                    </button>
                   </div>
                   <div :if={!Map.get(item, :gift)} class="flex items-center gap-1 shrink-0">
                     <button

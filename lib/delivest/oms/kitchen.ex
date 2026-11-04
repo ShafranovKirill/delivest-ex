@@ -165,15 +165,14 @@ defmodule Delivest.Oms.Kitchen do
   def reschedule_branch(branch_id) do
     case working(branch_id) do
       %KitchenSettings{} = _kitchen ->
-        accepted(branch_id) |> Enum.each(&order_accepted/1)
+        branch_id |> accepted() |> Enum.map(&order_accepted/1) |> collect()
 
       _ ->
         cancel_sends(fn query ->
           where(query, [j], fragment("?->>'branch_id' = ?", j.args, ^branch_id))
         end)
+        |> result()
     end
-
-    :ok
   end
 
   @doc "Drops planned sends when an order is no longer waiting for the kitchen."
@@ -181,8 +180,7 @@ defmodule Delivest.Oms.Kitchen do
     cancel_sends(fn query ->
       where(query, [j], fragment("?->>'order_id' = ?", j.args, ^order_id))
     end)
-
-    :ok
+    |> result()
   end
 
   def dispatch_due(now \\ DateTime.utc_now()) do
@@ -203,6 +201,7 @@ defmodule Delivest.Oms.Kitchen do
     |> Repo.all()
     |> Enum.filter(&working?(&1.branch_id))
     |> Enum.map(&send_to_kitchen/1)
+    |> collect()
   end
 
   def list_cooking(branch_id) do
@@ -329,19 +328,39 @@ defmodule Delivest.Oms.Kitchen do
 
       {:error, reason} ->
         Logger.warning("order #{order.number}: not sent to the kitchen (#{inspect(reason)})")
-        {:ok, order}
+        {:error, {:kitchen_send_failed, reason}}
     end
   end
 
+  # The uniqueness on `order_id` keeps one job per order. Replacing only the
+  # scheduled time updates the existing job in place: if the insert fails, the
+  # previous job still exists, and there is never a moment without a job.
   defp schedule_send(order, at) do
-    cancel_send(order.id)
-
     %{order_id: order.id, branch_id: order.branch_id}
-    |> SendWorker.new(scheduled_at: at)
+    |> SendWorker.new(scheduled_at: at, replace: [:scheduled_at])
     |> Oban.insert()
+    |> case do
+      {:ok, _job} ->
+        {:ok, order}
 
-    {:ok, order}
+      {:error, reason} ->
+        Logger.error("order #{order.number}: kitchen send was not planned (#{inspect(reason)})")
+
+        {:error, {:kitchen_schedule_failed, reason}}
+    end
   end
+
+  defp collect(results) do
+    case Enum.reject(results, &match?({:ok, _value}, &1)) do
+      [] ->
+        :ok
+
+      errors ->
+        {:error, {:partial_failure, Enum.map(errors, &elem(&1, 1))}}
+    end
+  end
+
+  defp result({:ok, _count}), do: :ok
 
   defp accepted(branch_id) do
     Order

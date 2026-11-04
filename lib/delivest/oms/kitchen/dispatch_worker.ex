@@ -4,8 +4,5 @@ defmodule Delivest.Oms.Kitchen.DispatchWorker do
   alias Delivest.Oms.Kitchen
 
   @impl Oban.Worker
-  def perform(_job) do
-    Kitchen.dispatch_due()
-    :ok
-  end
+  def perform(_job), do: Kitchen.dispatch_due()
 end

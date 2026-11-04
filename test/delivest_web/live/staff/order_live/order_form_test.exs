@@ -129,6 +129,54 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     )
   end
 
+  test "the mobile cart marks a position unavailable in edit", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    other = insert_branch_product(branch.id)
+    order = order_fixture(branch.id, product: product)
+    edit = ~p"/staff/b/#{branch}/orders/#{order.id}/edit"
+
+    {:ok, lv, _html} = live(conn, edit)
+    render_click(lv, "add_item", %{"product-id" => other.id})
+    render_click(lv, "toggle_mobile_cart", %{})
+
+    selector = "#mobile-cart-out-of-stock-#{product.id}"
+    assert has_element?(lv, selector)
+
+    render_click(lv, "out_of_stock", %{"product-id" => product.id})
+    refute has_element?(lv, selector)
+    assert render(lv) =~ "client will be notified"
+
+    lv |> form("#order-details-form") |> render_submit()
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
+
+    assert [%{product_id: product_id}] =
+             Repo.preload(Repo.reload!(order), :items, force: true).items
+
+    assert product_id == other.id
+
+    deliver_events()
+
+    assert_enqueued(
+      worker: NoteWorker,
+      args: %{"order_id" => order.id, "note" => "items_removed", "titles" => [product.name]}
+    )
+  end
+
+  test "the mobile cart has no unavailable action for a new order", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
+    render_click(lv, "add_item", %{"product-id" => product.id})
+    render_click(lv, "toggle_mobile_cart", %{})
+
+    refute has_element?(lv, "#mobile-cart-out-of-stock-#{product.id}")
+  end
+
   test "crm orders cannot be opened for edit", %{conn: conn, branch: branch} do
     order =
       branch.id

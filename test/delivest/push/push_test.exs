@@ -74,6 +74,29 @@ defmodule Delivest.PushTest do
                "If you no longer need the order, cancel it in the app."
   end
 
+  test "a redelivered removal event does not plan a second note", %{order: order} do
+    event_id = Ecto.UUID.generate()
+    args = %{"order_id" => order.id, "note" => "items_removed", "titles" => ["Сыр"]}
+
+    assert :ok = Push.notify_items_removed(order, ["Сыр"], event_id)
+    assert_enqueued(worker: NoteWorker, args: Map.put(args, "event_id", event_id))
+
+    assert :ok = perform_job(NoteWorker, Map.put(args, "event_id", event_id))
+    assert :ok = Push.notify_items_removed(order, ["Сыр"], event_id)
+
+    count =
+      Repo.aggregate(
+        from(j in Oban.Job,
+          where:
+            j.worker == ^Oban.Worker.to_string(NoteWorker) and
+              fragment("?->>'event_id' = ?", j.args, ^event_id)
+        ),
+        :count
+      )
+
+    assert count == 1
+  end
+
   test "a gone subscription is dropped", %{order: order, subscription: subscription} do
     Req.Test.stub(Delivest.Push.Sender, &Plug.Conn.send_resp(&1, 410, ""))
     {:ok, order} = Oms.advance_order(order, :ready, :system)

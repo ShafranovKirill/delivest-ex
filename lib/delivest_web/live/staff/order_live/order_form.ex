@@ -335,6 +335,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
           search_query={@search_query}
           cart={@cart}
           mobile_cart_expanded={@mobile_cart_expanded}
+          out_of_stock={@is_edit}
         />
       </div>
 
