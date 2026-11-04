@@ -8,7 +8,7 @@ defmodule Delivest.Oms.KitchenTest do
 
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Kitchen, Order, Orders, OrderTransition}
-  alias Delivest.Oms.Kitchen.{OrderSubscriber, ReadyWorker, SendWorker}
+  alias Delivest.Oms.Kitchen.{OrderSubscriber, ReadyWorker, ReplanBranchWorker, SendWorker}
 
   defp branch(kitchen) do
     branch = insert(:branch)
@@ -331,6 +331,33 @@ defmodule Delivest.Oms.KitchenTest do
       assert_receive {:kitchen_availability, branch_id}
       assert branch_id == branch.id
       refute Kitchen.available?(staff(["orders.cook"], branch), branch.id)
+      assert_enqueued(worker: ReplanBranchWorker, args: %{branch_id: branch.id})
+    end
+
+    test "the durable replan reads the latest kitchen settings" do
+      branch = kitchen_branch()
+      admin = staff(["admin"], branch)
+      stale_branch = Repo.preload(branch, :info)
+
+      order =
+        order(branch, status: :accepted, cook_by: in_minutes(240))
+
+      assert {:ok, _} =
+               Delivest.Identity.update_branch(admin, branch, %{}, %{
+                 "kitchen" => %{"enabled" => false}
+               })
+
+      assert {:ok, _} =
+               Delivest.Identity.update_branch(admin, branch, %{}, %{
+                 "kitchen" => %{"enabled" => true, "lead_minutes" => 60}
+               })
+
+      Cachex.put(:branch_cache, branch.id, stale_branch)
+      assert Kitchen.working(branch.id).lead_minutes == 90
+      assert_enqueued(worker: ReplanBranchWorker, args: %{branch_id: branch.id})
+      assert :ok = perform_job(ReplanBranchWorker, %{branch_id: branch.id})
+      assert %{scheduled_at: scheduled_at} = send_job(order.id)
+      assert DateTime.diff(scheduled_at, order.cook_by, :minute) == -60
     end
   end
 

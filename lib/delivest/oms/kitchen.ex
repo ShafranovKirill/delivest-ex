@@ -112,17 +112,7 @@ defmodule Delivest.Oms.Kitchen do
 
   def order_accepted(%Order{status: :accepted, crm: nil} = order) do
     with %KitchenSettings{} = kitchen <- working(order.branch_id) do
-      case sends_at(order, kitchen) do
-        nil ->
-          send_now(order)
-
-        at ->
-          if DateTime.compare(at, DateTime.utc_now()) == :gt do
-            schedule_send(order, at)
-          else
-            send_now(order)
-          end
-      end
+      plan_order(order, kitchen)
     else
       _ -> {:ok, order}
     end
@@ -163,9 +153,15 @@ defmodule Delivest.Oms.Kitchen do
   replans accepted orders, sending the ones whose time has already come.
   """
   def reschedule_branch(branch_id) do
-    case working(branch_id) do
-      %KitchenSettings{} = _kitchen ->
-        branch_id |> accepted() |> Enum.map(&order_accepted/1) |> collect()
+    branch =
+      case Repo.one(from b in Branch, where: b.id == ^branch_id and is_nil(b.deleted_at)) do
+        %Branch{} = found -> Repo.preload(found, :info)
+        nil -> nil
+      end
+
+    case branch && working(branch) do
+      %KitchenSettings{} = kitchen ->
+        branch_id |> accepted() |> Enum.map(&plan_order(&1, kitchen)) |> collect()
 
       _ ->
         cancel_sends(fn query ->
@@ -329,6 +325,18 @@ defmodule Delivest.Oms.Kitchen do
       {:error, reason} ->
         Logger.warning("order #{order.number}: not sent to the kitchen (#{inspect(reason)})")
         {:error, {:kitchen_send_failed, reason}}
+    end
+  end
+
+  defp plan_order(order, kitchen) do
+    case sends_at(order, kitchen) do
+      nil ->
+        send_now(order)
+
+      at ->
+        if DateTime.compare(at, DateTime.utc_now()) == :gt,
+          do: schedule_send(order, at),
+          else: send_now(order)
     end
   end
 

@@ -106,6 +106,9 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
          |> put_flash(:error, gettext("Please check the highlighted fields"))
          |> assign(form: to_form(copy_errors(changeset, error)))}
 
+      {:error, :kitchen_replan, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
     end

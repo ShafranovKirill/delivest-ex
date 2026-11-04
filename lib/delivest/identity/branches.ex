@@ -1,9 +1,11 @@
 defmodule Delivest.Identity.Branches do
   import Ecto.Query
+  require Logger
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.{Repo, Identity}
   alias Delivest.Audit
+  alias Delivest.Oms.Kitchen.ReplanBranchWorker
 
   @integrations [
     "crm",
@@ -213,17 +215,31 @@ defmodule Delivest.Identity.Branches do
       |> Ecto.Multi.run(:info, fn repo, _changes ->
         upsert_branch_info(repo, branch, info_attrs)
       end)
+      |> Ecto.Multi.run(:kitchen_replan, fn _repo, %{branch: updated_branch, info: info} ->
+        updated = %{updated_branch | info: info}
+
+        if kitchen_changed?(branch, updated) do
+          %{branch_id: updated.id}
+          |> ReplanBranchWorker.new()
+          |> Oban.insert()
+        else
+          {:ok, :unchanged}
+        end
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{branch: updated_branch, info: updates_info}} ->
           Cachex.clear(:branch_cache)
           updated = %{updated_branch | info: updates_info}
           Delivest.Oms.Kitchen.notify_availability(updated.id)
-
-          if kitchen_changed?(branch, updated),
-            do: Delivest.Oms.Kitchen.reschedule_branch(updated.id)
-
           {:ok, updated}
+
+        {:error, :kitchen_replan, reason, _changes} ->
+          Logger.error(
+            "could not queue kitchen replan for branch #{branch.id}: #{inspect(reason)}"
+          )
+
+          {:error, :kitchen_replan, :enqueue_failed}
 
         {:error, failed_operation, changeset, _changes} ->
           {:error, failed_operation, changeset}
