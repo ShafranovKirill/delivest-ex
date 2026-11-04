@@ -16,6 +16,12 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           nullable: true,
           description: "Город доставки, в нём ищутся адреса"
         },
+        timezone: %Schema{
+          type: :string,
+          example: "Asia/Yekaterinburg",
+          description:
+            "Часовой пояс филиала: по нему считаются часы работы, «сегодня» и время доставки"
+        },
         latitude: %Schema{type: :number, format: :float, example: 55.7558, nullable: true},
         longitude: %Schema{type: :number, format: :float, example: 37.6173, nullable: true},
         phone_number: %Schema{type: :string, example: "+79990000000", nullable: true},

@@ -74,6 +74,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       id: info.id,
       address: info.address,
       city: info.city,
+      timezone: Delivest.LocalTime.timezone(info),
       latitude: info.latitude,
       longitude: info.longitude,
       phone_number: info.phone_number,
