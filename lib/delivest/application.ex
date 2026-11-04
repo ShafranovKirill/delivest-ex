@@ -10,8 +10,8 @@ defmodule Delivest.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      DelivestWeb.Telemetry,
       Delivest.Repo,
+      DelivestWeb.Telemetry,
       log_buffer(),
       {Oban, Application.fetch_env!(:delivest, Oban)},
       {Task.Supervisor, name: Delivest.TaskSupervisor},
