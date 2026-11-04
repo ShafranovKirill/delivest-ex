@@ -83,3 +83,9 @@ msgstr "Касса"
 
 msgid "use"
 msgstr "Работа на кассе"
+
+msgid "receipts_retry"
+msgstr "Повторная отправка чеков"
+
+msgid "receipts_refund"
+msgstr "Чеки возврата"

@@ -1,7 +1,7 @@
 defmodule Delivest.Identity.RolePresets do
   import Ecto.Query
 
-  alias Delivest.Identity.{Definitions, Role}
+  alias Delivest.Identity.{Acl, Definitions, Role}
   alias Delivest.Repo
 
   @admin "Администратор"
@@ -35,20 +35,30 @@ defmodule Delivest.Identity.RolePresets do
                       stocks.read promotions.read
                       delivery.read delivery.update
                       integrations.read
-                      finance.read finance.update
+                      finance.read
                       statistics.read staff.read
                     )
+
+  @franchise_manager Enum.uniq(
+                       @branch_manager ++
+                         @catalog ++
+                         ~w(staff.create staff.update roles.read branches.create orders.revert
+                            orders.cook orders.deliver clients.read)
+                     )
+
+  @accountant ~w(branches.read orders.read statistics.read finance.read finance.receipts_retry finance.receipts_refund)
 
   def all do
     [
       %{name: @admin, permissions: [Definitions.admin()]},
-      %{name: "Управляющий", permissions: Definitions.grantable()},
+      %{name: "Управляющий франшизой", permissions: @franchise_manager},
       %{name: "Менеджер филиала", permissions: @branch_manager},
       %{name: "Оператор", permissions: @operator},
       %{name: "Кассир", permissions: @cashier},
       %{name: "Кухня", permissions: @kitchen},
       %{name: "Курьер", permissions: @courier},
       %{name: "Аналитик", permissions: @analyst},
+      %{name: "Бухгалтер", permissions: @accountant},
       %{name: "Контент-менеджер", permissions: @catalog}
     ]
   end
@@ -68,14 +78,33 @@ defmodule Delivest.Identity.RolePresets do
     end
   end
 
-  def seed, do: Enum.map(all(), &seed_one/1)
+  def seed(staff) do
+    if Acl.can?(staff, Definitions.admin()), do: seed_missing(), else: {:error, :forbidden}
+  end
+
+  def seed do
+    {:ok, roles} = seed_missing()
+    roles
+  end
+
+  defp seed_missing do
+    Repo.transaction(fn ->
+      Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", ["delivest_role_presets"])
+      Enum.map(all(), &seed_one/1)
+    end)
+  end
 
   defp seed_one(%{name: name} = preset) do
     if exists?(preset) do
       {:exists, name}
     else
-      {:ok, _role} = %Role{} |> Role.changeset(preset) |> Repo.insert()
-      {:created, name}
+      case %Role{} |> Role.changeset(preset) |> Repo.insert(mode: :savepoint) do
+        {:ok, _role} ->
+          {:created, name}
+
+        {:error, changeset} ->
+          if exists?(preset), do: {:exists, name}, else: Repo.rollback(changeset)
+      end
     end
   end
 

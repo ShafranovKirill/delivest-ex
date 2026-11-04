@@ -279,13 +279,13 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   end
 
   def handle_event("retry_receipt", %{"id" => id}, socket),
-    do: receipt_action(socket, id, &Delivest.Fiscal.retry/2)
+    do: receipt_action(socket, id, "finance.receipts_retry", &Delivest.Fiscal.retry/2)
 
   def handle_event("correct_receipt", %{"id" => id}, socket),
-    do: receipt_action(socket, id, &Delivest.Fiscal.correct/2)
+    do: receipt_action(socket, id, "admin", &Delivest.Fiscal.correct/2)
 
   def handle_event("refund_receipt", %{"id" => id}, socket),
-    do: receipt_action(socket, id, &Delivest.Fiscal.refund/2)
+    do: receipt_action(socket, id, "finance.receipts_refund", &Delivest.Fiscal.refund/2)
 
   def handle_event("courier_code", %{"order-id" => id, "code" => code}, socket) do
     socket.assigns.current_staff
@@ -388,10 +388,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   defp intake_result(socket, _error),
     do: {:noreply, put_flash(socket, :error, gettext("Failed to update the order"))}
 
-  defp receipt_action(socket, id, action) do
+  defp receipt_action(socket, id, permission, action) do
     branch_id = socket.assigns.current_branch.id
 
-    with :ok <- authorize(socket, "orders.update"),
+    with :ok <- authorize(socket, permission),
          {:ok, uuid} <- Ecto.UUID.cast(id),
          %{branch_id: ^branch_id} = receipt <- Delivest.Fiscal.get(uuid),
          {:ok, _receipt} <- action.(receipt, socket.assigns.current_staff) do

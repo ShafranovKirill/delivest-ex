@@ -420,7 +420,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           {gettext("Receipt")}
         </a>
         <button
-          :if={receipt.status == :fail and not retried?(@order.receipts, receipt)}
+          :if={
+            receipt.status == :fail and not retried?(@order.receipts, receipt) and
+              Identity.can?(@current_staff, "finance.receipts_retry")
+          }
           type="button"
           phx-click="retry_receipt"
           phx-value-id={receipt.id}
@@ -444,7 +447,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         <button
           :if={
             receipt.kind == :sell and receipt.status == :done and
-              not refunded?(@order.receipts, receipt)
+              not refunded?(@order.receipts, receipt) and
+              Identity.can?(@current_staff, "finance.receipts_refund")
           }
           type="button"
           phx-click="refund_receipt"
