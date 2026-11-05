@@ -44,14 +44,14 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     assert {"phone", "+79991234567"} in params
     assert {"name", "Иван"} in params
     assert {"person", "3"} in params
-    assert {"descr", "Phone extension 123"} in params
+    assert {"descr", "Добавочный 123"} in params
   end
 
-  test "the order number goes first in the description" do
+  test "omits the order number but keeps the customer comment" do
     order = %Order{items: [], number: "A123", comment: "Без лука"}
 
     assert {:ok, view} = OrderPayload.build(order, %Settings{api_key: "secret"}, %{})
-    assert {"descr", "№A123. Без лука"} in OrderPayload.to_form_params(view)
+    assert {"descr", "Без лука"} in OrderPayload.to_form_params(view)
   end
 
   test "delivery goes as the delivery product line or into the description" do
@@ -69,7 +69,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     assert {:ok, view} = OrderPayload.build(order, %Settings{api_key: "secret"}, %{})
     params = OrderPayload.to_form_params(view)
     refute Enum.any?(params, fn {key, _value} -> key == "product[0]" end)
-    assert {"descr", "Delivery 150 ₽. Без лука"} in params
+    assert {"descr", "Доставка 150 ₽. Без лука"} in params
   end
 
   test "sends the Frontpad branch as affiliate" do
@@ -102,7 +102,24 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     assert {"pod", "3"} in params
     assert {"et", "12"} in params
     assert {"apart", "45"} in params
-    assert {"descr", "Intercom 45В. Вход со двора. Без лука"} in params
+    assert {"descr", "Домофон 45В. Вход со двора. Без лука"} in params
+  end
+
+  test "localizes courier notes in Russian even when the caller uses English" do
+    order = %Order{
+      items: [],
+      number: "A123",
+      customer_phone_ext: "123",
+      address: %Delivest.Oms.Order.Address{intercom: "45В", comment: "Вход со двора"}
+    }
+
+    params =
+      Gettext.with_locale(DelivestWeb.Gettext, "en", fn ->
+        assert {:ok, payload} = OrderPayload.build(order, %Settings{api_key: "secret"}, %{})
+        OrderPayload.to_form_params(payload)
+      end)
+
+    assert {"descr", "Добавочный 123. Домофон 45В. Вход со двора"} in params
   end
 
   describe "discounts" do

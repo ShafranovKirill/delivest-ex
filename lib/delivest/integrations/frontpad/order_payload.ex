@@ -244,25 +244,22 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
   defp rubles(amount), do: amount |> Money.to_rubles() |> to_string()
 
   defp descr(order, settings) do
-    case {order, delivery_line(order, settings)} do
-      {%{delivery_amount: amount}, []} when is_integer(amount) and amount > 0 ->
-        note = gettext("Delivery %{amount}", amount: Money.format(amount))
+    Gettext.with_locale(DelivestWeb.Gettext, "ru", fn ->
+      delivery_note =
+        case {order, delivery_line(order, settings)} do
+          {%{delivery_amount: amount}, []} when is_integer(amount) and amount > 0 ->
+            gettext("Delivery %{amount}", amount: Money.format(amount))
 
-        [number_note(order), note | OrderNotes.lines(order)]
-        |> Enum.reject(&is_nil/1)
-        |> Enum.join(". ")
-        |> String.slice(0, 100)
+          _sent_as_product ->
+            nil
+        end
 
-      _sent_as_product ->
-        [number_note(order) | OrderNotes.lines(order)]
-        |> Enum.reject(&is_nil/1)
-        |> Enum.join(". ")
-        |> String.slice(0, 100)
-    end
+      [delivery_note | OrderNotes.lines(order)]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(". ")
+      |> String.slice(0, 100)
+    end)
   end
-
-  defp number_note(%{number: number}) when is_binary(number), do: "№#{number}"
-  defp number_note(_order), do: nil
 
   defp format_cook_by(%{cook_by: %DateTime{} = cook_by} = order),
     do:
