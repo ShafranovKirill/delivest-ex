@@ -109,6 +109,15 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
             label={gettext("Site description for search engines")}
             maxlength="300"
           />
+          <.input
+            field={@form[:default_theme]}
+            type="select"
+            label={gettext("Default theme")}
+            options={[
+              {gettext("Light theme"), "light"},
+              {gettext("Dark theme"), "dark"}
+            ]}
+          />
 
           <div class="space-y-2">
             <span class="text-sm font-medium">{gettext("Primary color")}</span>

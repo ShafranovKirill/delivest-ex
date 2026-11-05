@@ -16,6 +16,7 @@ defmodule Delivest.Franchise.Settings do
     field :description, :string
     field :primary_color, :string, default: "#48010c"
     field :dark_primary_color, :string
+    field :default_theme, :string, default: "light"
     field :legal_form, :string
     field :legal_name, :string
     field :inn, :string
@@ -43,7 +44,9 @@ defmodule Delivest.Franchise.Settings do
     |> cast(attrs, fields(), empty_values: [nil, ""])
     |> update_change(:primary_color, &downcase/1)
     |> update_change(:dark_primary_color, &downcase/1)
-    |> validate_required([:name, :primary_color, :timezone])
+    |> validate_required([:name, :primary_color, :default_theme, :timezone])
+    |> validate_default_theme_input(attrs)
+    |> validate_inclusion(:default_theme, ["light", "dark"])
     |> validate_client_auth_available()
     |> Delivest.LocalTime.validate_timezone(:timezone)
     |> validate_number(:loyalty_per_rubles, greater_than: 0, less_than_or_equal_to: 100_000)
@@ -76,6 +79,16 @@ defmodule Delivest.Franchise.Settings do
   defp downcase(nil), do: nil
   defp downcase(value), do: String.downcase(value)
 
+  defp validate_default_theme_input(changeset, attrs) do
+    theme = Map.get(attrs, :default_theme, Map.get(attrs, "default_theme", :absent))
+
+    if theme in [nil, ""] do
+      add_error(changeset, :default_theme, "can't be blank", validation: :required)
+    else
+      changeset
+    end
+  end
+
   defp fields do
     [
       :name,
@@ -83,6 +96,7 @@ defmodule Delivest.Franchise.Settings do
       :description,
       :primary_color,
       :dark_primary_color,
+      :default_theme,
       :legal_form,
       :legal_name,
       :inn,

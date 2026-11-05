@@ -33,11 +33,20 @@ defmodule DelivestWeb.Client.FranchiseControllerTest do
              "name" => "Sushi Like",
              "primary_color" => "#123456",
              "dark_primary_color" => nil,
+             "default_theme" => "light",
              "logo_url" => nil,
              "logo_dark_url" => nil,
              "legal" => %{"form" => "ООО", "name" => "Суши"},
              "documents" => [%{"kind" => "privacy"} | _]
            } = conn |> get(~p"/client/franchise") |> json_response(200) |> Map.fetch!("data")
+  end
+
+  test "returns the configured default theme", %{conn: conn} do
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    assert {:ok, _} = Delivest.Franchise.update_settings(admin, %{default_theme: "dark"})
+
+    assert %{"default_theme" => "dark"} =
+             conn |> get(~p"/client/franchise") |> json_response(200) |> Map.fetch!("data")
   end
 
   test "returns logo urls once uploaded", %{conn: conn} do

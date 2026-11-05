@@ -4044,6 +4044,11 @@ msgstr ""
 msgid "Theme"
 msgstr ""
 
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Default theme"
+msgstr ""
+
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:680
 #, elixir-autogen, elixir-format
 msgid "All products with a CRM ID are found in Frontpad."

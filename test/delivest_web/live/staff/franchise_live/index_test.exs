@@ -31,6 +31,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
   test "saves brand and seller details", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/brand")
 
+    assert has_element?(lv, ~s(#franchise-settings-form select[name="settings[default_theme]"]))
+
     lv
     |> form("#franchise-settings-form", settings: %{primary_color: "#eeeeee"})
     |> render_change()
@@ -38,7 +40,9 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     assert has_element?(lv, "#franchise-color-warning")
 
     lv
-    |> form("#franchise-settings-form", settings: %{name: "Pizza", primary_color: "#aa0000"})
+    |> form("#franchise-settings-form",
+      settings: %{name: "Pizza", primary_color: "#aa0000", default_theme: "dark"}
+    )
     |> render_submit()
 
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/seller")
@@ -48,7 +52,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     |> form("#franchise-settings-form", settings: %{inn: "7700000000"})
     |> render_submit()
 
-    assert %{name: "Pizza", primary_color: "#aa0000", inn: "7700000000"} =
+    assert %{name: "Pizza", primary_color: "#aa0000", default_theme: "dark", inn: "7700000000"} =
              Franchise.get_settings()
   end
 
