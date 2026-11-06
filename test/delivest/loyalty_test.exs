@@ -142,35 +142,6 @@ defmodule Delivest.LoyaltyTest do
     completion = Enum.find(events, &(&1.payload["to"] == "completed"))
     assert %Event{} = completion
 
-    for event <- events do
-      priority = if event.id == completion.id, do: 0, else: 9
-
-      Repo.update_all(
-        from(j in Oban.Job,
-          where: j.worker == ^Oban.Worker.to_string(DeliverWorker),
-          where: fragment("?->>'event_id' = ?", j.args, ^event.id),
-          where: fragment("?->>'subscriber' = 'loyalty'", j.args)
-        ),
-        set: [priority: priority]
-      )
-    end
-
-    first =
-      Oban.drain_queue(
-        queue: :events,
-        with_safety: false,
-        with_recursion: false,
-        with_scheduled: true
-      )
-
-    assert first.snoozed >= 1
-    assert Loyalty.balance(ctx.client.id) == 0
-
-    drain_order_events!(order)
-    assert Loyalty.balance(ctx.client.id) == 10
-    assert Enum.all?(loyalty_deliveries(order), &(&1.status == "delivered"))
-    assert [%Entry{kind: :accrual, amount: 10}] = Loyalty.history(ctx.client.id)
-
     job =
       Repo.one!(
         from(j in Oban.Job,
@@ -179,6 +150,14 @@ defmodule Delivest.LoyaltyTest do
           where: fragment("?->>'subscriber' = 'loyalty'", j.args)
         )
       )
+
+    assert {:snooze, _seconds} = DeliverWorker.perform(job)
+    assert Loyalty.balance(ctx.client.id) == 0
+
+    drain_order_events!(order)
+    assert Loyalty.balance(ctx.client.id) == 10
+    assert Enum.all?(loyalty_deliveries(order), &(&1.status == "delivered"))
+    assert [%Entry{kind: :accrual, amount: 10}] = Loyalty.history(ctx.client.id)
 
     assert :ok = DeliverWorker.perform(job)
     drain_order_events!(order)
