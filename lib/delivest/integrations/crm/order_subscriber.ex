@@ -24,28 +24,31 @@ defmodule Delivest.Integrations.Crm.OrderSubscriber do
 
   def handle(event) do
     case Repo.get(Order, event.aggregate_id) do
-      %Order{deleted_at: nil, crm: %{}} = order -> handle(event.type, order, event.payload)
-      _order -> :ok
+      %Order{deleted_at: nil, crm: %{}} = order ->
+        handle(event.type, order, event.payload, event.id)
+
+      _order ->
+        :ok
     end
   end
 
-  defp handle("order.created", %Order{crm: %{status: "pending"}} = order, _payload),
+  defp handle("order.created", %Order{crm: %{status: "pending"}} = order, _payload, _event_id),
     do: Crm.enqueue_sync(order)
 
-  defp handle("order.cancelled", %Order{crm: %{status: "sent"}} = order, _payload) do
+  defp handle("order.cancelled", %Order{crm: %{status: "sent"}} = order, _payload, event_id) do
     if Crm.can?(order, :cancel),
-      do: Crm.enqueue_command(order, "cancel", %{"reason" => order.cancel_reason}),
+      do: Crm.enqueue_command(order, "cancel", %{"reason" => order.cancel_reason}, event_id),
       else: :ok
   end
 
-  defp handle("order.updated", %Order{crm: %{status: "sent"}} = order, payload) do
+  defp handle("order.updated", %Order{crm: %{status: "sent"}} = order, payload, event_id) do
     case allowed(order, Map.get(payload, "changes", %{})) do
       changes when changes == %{} -> :ok
-      changes -> Crm.enqueue_command(order, "update", %{"changes" => changes})
+      changes -> Crm.enqueue_command(order, "update", %{"changes" => changes}, event_id)
     end
   end
 
-  defp handle(_type, _order, _payload), do: :ok
+  defp handle(_type, _order, _payload, _event_id), do: :ok
 
   defp allowed(order, changes) do
     Map.filter(changes, fn {field, _change} ->

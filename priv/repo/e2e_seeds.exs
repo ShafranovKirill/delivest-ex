@@ -62,7 +62,9 @@ Repo.get_by(BranchInfo, branch_id: branch.id) ||
     phone_number: "+74951234567",
     delivery_time: 45,
     working_hours: hours,
-    kitchen: %{enabled: true, lead_minutes: 90},
+    # Flow scenarios use the nearest checkout slot, including across midnight;
+    # dedicated scheduling tests cover delayed kitchen sends.
+    kitchen: %{enabled: true, lead_minutes: 1440},
     couriers: %{source: :staff, search: :preparing}
   })
   |> Repo.insert!()

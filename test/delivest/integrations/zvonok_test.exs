@@ -1,8 +1,9 @@
 defmodule Delivest.Integrations.ZvonokTest do
-  use ExUnit.Case, async: false
+  use Delivest.DataCase, async: false
 
   alias Delivest.Integrations.Zvonok
   alias Delivest.Integrations.Zvonok.Settings
+  alias Delivest.Integrations.Journal
 
   setup do
     previous = Application.get_env(:delivest, Delivest.HTTP.Client)
@@ -26,5 +27,6 @@ defmodule Delivest.Integrations.ZvonokTest do
 
     assert {:error, _reason} = Zvonok.Api.confirm(settings, "+79991234567")
     assert :counters.get(counter, 1) == 1
+    assert [%{status: 502}] = Journal.list(:zvonok, nil)
   end
 end

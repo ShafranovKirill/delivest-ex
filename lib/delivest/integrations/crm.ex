@@ -1,11 +1,12 @@
 defmodule Delivest.Integrations.Crm do
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query
 
   alias Delivest.{Identity, Repo}
   alias Delivest.Identity.Branch
 
   alias Delivest.Integrations.Crm.{
     BranchSettings,
+    CommandDelivery,
     CommandWorker,
     ConfirmWorker,
     Registry,
@@ -82,9 +83,27 @@ defmodule Delivest.Integrations.Crm do
 
   def resolve_alert(staff, branch_id, order_id, action, number \\ nil) do
     with :ok <- Identity.authorize(staff, "orders.update", branch_id),
-         {:ok, uuid} <- Ecto.UUID.cast(order_id),
-         %Order{crm: %{}} = order <- Repo.get_by(Order, id: uuid, branch_id: branch_id) do
-      resolve(order, action, number)
+         {:ok, uuid} <- Ecto.UUID.cast(order_id) do
+      Repo.transaction(fn ->
+        order =
+          Repo.one(
+            from(o in Order,
+              where: o.id == ^uuid and o.branch_id == ^branch_id,
+              lock: "FOR UPDATE"
+            )
+          )
+
+        case order do
+          %Order{crm: %{}} ->
+            case resolve(order, action, number) do
+              {:ok, updated} -> updated
+              {:error, reason} -> Repo.rollback(reason)
+            end
+
+          _ ->
+            Repo.rollback(:order_not_found)
+        end
+      end)
     else
       {:error, :forbidden} -> {:error, :forbidden}
       _ -> {:error, :order_not_found}
@@ -93,7 +112,28 @@ defmodule Delivest.Integrations.Crm do
 
   defp resolve(order, "acknowledge", _number), do: SyncState.acknowledge_alert(order)
 
-  defp resolve(order, "exists", number) when is_binary(number) and number != "" do
+  defp resolve(
+         %Order{crm: %{status: "sending", sending_started_at: started}} = order,
+         action,
+         number
+       )
+       when action in ["exists", "resend"] and not is_nil(started) do
+    if DateTime.diff(DateTime.utc_now(), started, :second) < 600 do
+      {:error, :request_in_progress}
+    else
+      with {:ok, updated} <-
+             SyncState.unknown(
+               order,
+               "CRM request may have completed before worker stopped",
+               order.crm.attempts
+             ) do
+        resolve(updated, action, number)
+      end
+    end
+  end
+
+  defp resolve(%Order{crm: %{status: status}} = order, "exists", number)
+       when status in ["failed", "unknown"] and is_binary(number) and number != "" do
     number = String.trim(number)
 
     SyncState.sent(
@@ -103,9 +143,12 @@ defmodule Delivest.Integrations.Crm do
     )
   end
 
-  defp resolve(_order, "exists", _number), do: {:error, :number_required}
+  defp resolve(%Order{crm: %{status: status}}, "exists", _number)
+       when status in ["failed", "unknown"],
+       do: {:error, :number_required}
 
-  defp resolve(order, "resend", _number) do
+  defp resolve(%Order{crm: %{status: status}} = order, "resend", _number)
+       when status in ["failed", "unknown"] do
     with {:ok, order} <-
            Orders.update_order_crm(order, %{status: "pending", alert: nil, last_error: nil}),
          {:ok, _job} <- enqueue_sync(order),
@@ -262,11 +305,228 @@ defmodule Delivest.Integrations.Crm do
     |> Oban.insert()
   end
 
-  def enqueue_command(%Order{} = order, action, args \\ %{}) do
-    args
-    |> Map.merge(%{"order_id" => order.id, "branch_id" => order.branch_id, "action" => action})
-    |> CommandWorker.new()
-    |> Oban.insert()
+  def enqueue_command(%Order{} = order, action, args \\ %{}, event_id \\ nil) do
+    Repo.transaction(fn ->
+      Ecto.Adapters.SQL.query!(
+        Repo,
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        ["crm_command:#{order.id}"]
+      )
+
+      existing = event_id && Repo.get_by(CommandDelivery, event_id: event_id)
+
+      if existing do
+        existing
+      else
+        job_args =
+          args
+          |> Map.merge(%{
+            "order_id" => order.id,
+            "branch_id" => order.branch_id,
+            "action" => action
+          })
+          |> then(&if(is_binary(event_id), do: Map.put(&1, "event_id", event_id), else: &1))
+
+        with {:ok, job} <- job_args |> CommandWorker.new() |> Oban.insert(),
+             {:ok, _delivery} <-
+               Repo.insert(%CommandDelivery{
+                 job_id: job.id,
+                 order_id: order.id,
+                 branch_id: order.branch_id,
+                 event_id: event_id,
+                 args: job.args,
+                 execution_job_id: job.id
+               }) do
+          job
+        else
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end
+    end)
+  end
+
+  def list_unknown_commands(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id) do
+      stale = DateTime.add(DateTime.utc_now(), -600, :second)
+
+      CommandDelivery
+      |> where([d], d.branch_id == ^branch_id and d.phase == "calling")
+      |> where([d], d.updated_at < ^stale)
+      |> Repo.update_all(set: [phase: "unknown", last_error: "Worker stopped during CRM request"])
+
+      Ecto.Adapters.SQL.query!(
+        Repo,
+        """
+        WITH candidates AS (
+          SELECT d.job_id
+          FROM crm_command_deliveries d
+          LEFT JOIN oban_jobs j ON j.id = COALESCE(d.execution_job_id, d.job_id)
+          WHERE d.branch_id = $1 AND d.phase = 'pending'
+            AND (j.id IS NULL OR j.state IN ('discarded', 'cancelled'))
+          ORDER BY d.job_id
+          LIMIT 100
+        )
+        UPDATE crm_command_deliveries d
+        SET phase = 'unknown', last_error = 'Command job stopped or was pruned', updated_at = now()
+        FROM candidates c WHERE d.job_id = c.job_id AND d.phase = 'pending'
+        """,
+        [Ecto.UUID.dump!(branch_id)]
+      )
+
+      {:ok,
+       Repo.all(
+         from(d in CommandDelivery,
+           where: d.branch_id == ^branch_id and d.phase in ["unknown", "failed"],
+           order_by: [asc: d.job_id],
+           limit: 100
+         )
+       )}
+    end
+  end
+
+  def list_unknown_syncs(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id) do
+      stale = DateTime.add(DateTime.utc_now(), -600, :second)
+
+      Repo.all(
+        from(o in Order,
+          where: o.branch_id == ^branch_id,
+          where: fragment("?->>'status' = 'sending'", o.crm),
+          where:
+            fragment(
+              "(?->>'sending_started_at') IS NULL OR (?->>'sending_started_at')::timestamptz < ?",
+              o.crm,
+              o.crm,
+              ^stale
+            ),
+          order_by: [asc: o.updated_at],
+          limit: 100,
+          select: o.id
+        )
+      )
+      |> Enum.each(fn order_id -> reconcile_stale_sync(order_id, stale) end)
+
+      {:ok,
+       Repo.all(
+         from(o in Order,
+           where: o.branch_id == ^branch_id,
+           where: fragment("?->>'status' IN ('unknown', 'failed')", o.crm),
+           where: fragment("COALESCE(?->>'alert', '') <> ''", o.crm),
+           order_by: [asc: o.updated_at],
+           limit: 100
+         )
+       )}
+    end
+  end
+
+  defp reconcile_stale_sync(order_id, stale) do
+    Repo.transaction(fn ->
+      order = Repo.one(from(o in Order, where: o.id == ^order_id, lock: "FOR UPDATE"))
+
+      case order do
+        %Order{crm: %{status: "sending", sending_started_at: started}} = current
+        when is_nil(started) ->
+          reconcile_unknown(current)
+
+        %Order{crm: %{status: "sending", sending_started_at: started}} = current ->
+          if DateTime.compare(started, stale) == :lt, do: reconcile_unknown(current)
+
+        _ ->
+          :ok
+      end
+    end)
+  end
+
+  defp reconcile_unknown(order) do
+    case SyncState.unknown(
+           order,
+           "CRM request may have completed before worker stopped",
+           order.crm.attempts
+         ) do
+      {:ok, _updated} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  def resolve_command(staff, branch_id, job_id, action) when action in ["done", "retry"] do
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id) do
+      Repo.transaction(fn ->
+        order_id =
+          Repo.one(
+            from(d in CommandDelivery,
+              where: d.job_id == ^job_id and d.branch_id == ^branch_id,
+              select: d.order_id
+            )
+          ) || Repo.rollback(:command_not_resolvable)
+
+        Ecto.Adapters.SQL.query!(
+          Repo,
+          "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+          ["crm_command:#{order_id}"]
+        )
+
+        delivery =
+          Repo.one(
+            from(d in CommandDelivery,
+              where: d.job_id == ^job_id and d.branch_id == ^branch_id,
+              lock: "FOR UPDATE"
+            )
+          )
+
+        if is_nil(delivery) or delivery.phase not in ["unknown", "failed"],
+          do: Repo.rollback(:command_not_resolvable)
+
+        execution_job_id =
+          if action == "retry", do: retry_command(delivery), else: delivery.execution_job_id
+
+        resolved =
+          delivery
+          |> Ecto.Changeset.change(
+            phase: if(action == "done", do: "done", else: "pending"),
+            last_error: nil,
+            execution_job_id: execution_job_id
+          )
+          |> Repo.update!()
+
+        if order = Repo.get(Order, order_id),
+          do:
+            Delivest.Audit.record(staff, "order.crm_command_resolved", order,
+              metadata: %{job_id: job_id, action: action}
+            )
+
+        resolved
+      end)
+    end
+  end
+
+  def resolve_command(_staff, _branch_id, _job_id, _action), do: {:error, :invalid_action}
+
+  defp retry_command(%CommandDelivery{} = delivery) do
+    args = delivery.args
+
+    unless is_map(args) and args["order_id"] == delivery.order_id and
+             args["action"] in ["update", "cancel"] do
+      Repo.rollback(:command_args_not_found)
+    end
+
+    case Repo.get(Oban.Job, delivery.execution_job_id || delivery.job_id) do
+      %Oban.Job{id: id, state: state} when state not in ["executing"] ->
+        :ok = Oban.retry_job(id)
+        id
+
+      %Oban.Job{state: "executing"} ->
+        Repo.rollback(:job_active)
+
+      nil ->
+        args
+        |> Map.put("command_delivery_id", delivery.job_id)
+        |> CommandWorker.new()
+        |> Oban.insert()
+        |> case do
+          {:ok, job} -> job.id
+          {:error, reason} -> Repo.rollback(reason)
+        end
+    end
   end
 
   defp call(%Order{crm: %{provider: provider}} = order, fun) do

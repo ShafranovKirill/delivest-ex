@@ -1,5 +1,5 @@
 defmodule DelivestWeb.Client.CartPromoControllerTest do
-  use DelivestWeb.ConnCase, async: true
+  use DelivestWeb.ConnCase, async: false
 
   import Delivest.Factory
 

@@ -254,15 +254,17 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       second = create_order(branch.id)
       conn = login(conn, ["admin"], branch)
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?page_size=1")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?period=week&page_size=1")
       assert has_element?(lv, "#orders-#{first.id}")
       refute has_element?(lv, "#orders-#{second.id}")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?page_size=1&page=2")
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?period=week&page_size=1&page=2")
       assert has_element?(lv, "#orders-#{second.id}")
       refute has_element?(lv, "#orders-#{first.id}")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders?page_size=1&sort=time")
+      {:ok, lv, _html} =
+        live(conn, ~p"/staff/b/#{branch}/orders?period=week&page_size=1&sort=time")
+
       assert has_element?(lv, "#orders-#{second.id}")
     end
 
