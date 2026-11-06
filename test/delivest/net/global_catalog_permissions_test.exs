@@ -38,4 +38,24 @@ defmodule Delivest.Net.GlobalCatalogPermissionsTest do
     assert Modifiers.crm_ids([modifier.id], :frontpad, a.id) == %{modifier.id => "A"}
     assert Modifiers.crm_ids([modifier.id], :frontpad, b.id) == %{}
   end
+
+  test "duplicate modifier article leaves prior mappings intact" do
+    staff = insert(:staff, role: insert(:role, permissions: ["products.update"]))
+    [a, b] = for _ <- 1..2, do: insert(:branch)
+    for branch <- [a, b], do: insert(:staff_branch, staff: staff, branch: branch)
+    group = Repo.insert!(%ModifierGroup{name: "Shared"})
+    modifier = Repo.insert!(%Modifier{group_id: group.id, name: "Extra"})
+    other = Repo.insert!(%Modifier{group_id: group.id, name: "Other"})
+
+    assert {:ok, _} = Modifiers.put_crm_id(staff, modifier, a.id, :frontpad, "A")
+    assert {:ok, _} = Modifiers.put_crm_id(staff, modifier, b.id, :frontpad, "B")
+    assert {:ok, _} = Modifiers.put_crm_id(staff, other, b.id, :frontpad, "X")
+
+    assert {:error, %Ecto.Changeset{}} =
+             Modifiers.put_crm_id(staff, modifier, b.id, :frontpad, "X")
+
+    assert Modifiers.crm_ids([modifier.id], :frontpad, a.id) == %{modifier.id => "A"}
+    assert Modifiers.crm_ids([modifier.id], :frontpad, b.id) == %{modifier.id => "B"}
+    assert Modifiers.crm_ids([other.id], :frontpad, b.id) == %{other.id => "X"}
+  end
 end

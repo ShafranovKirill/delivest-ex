@@ -162,27 +162,33 @@ defmodule Delivest.Net.Modifiers do
 
   def put_crm_id(staff, %Modifier{} = modifier, branch_id, provider, value) do
     with :ok <- Identity.authorize(staff, "products.update", branch_id) do
-      Repo.delete_all(
-        from(e in ProductExternalId,
-          where:
-            e.entity_type == "modifier" and e.entity_id == ^modifier.id and
-              e.provider == ^to_string(provider) and e.branch_id == ^branch_id
+      Repo.transaction(fn ->
+        Repo.delete_all(
+          from(e in ProductExternalId,
+            where:
+              e.entity_type == "modifier" and e.entity_id == ^modifier.id and
+                e.provider == ^to_string(provider) and e.branch_id == ^branch_id
+          )
         )
-      )
 
-      case value && String.trim(value) do
-        blank when blank in [nil, ""] ->
-          {:ok, nil}
+        case value && String.trim(value) do
+          blank when blank in [nil, ""] ->
+            nil
 
-        external_id ->
-          %ProductExternalId{entity_type: "modifier", entity_id: modifier.id}
-          |> ProductExternalId.changeset(%{
-            branch_id: branch_id,
-            provider: to_string(provider),
-            external_id: external_id
-          })
-          |> Repo.insert()
-      end
+          external_id ->
+            %ProductExternalId{entity_type: "modifier", entity_id: modifier.id}
+            |> ProductExternalId.changeset(%{
+              branch_id: branch_id,
+              provider: to_string(provider),
+              external_id: external_id
+            })
+            |> Repo.insert()
+            |> case do
+              {:ok, id} -> id
+              {:error, changeset} -> Repo.rollback(changeset)
+            end
+        end
+      end)
     end
   end
 
