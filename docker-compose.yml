@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
     container_name: delivest-postgres
     restart: always
     environment:
@@ -15,7 +15,7 @@ services:
       - delivest-network
 
   s3:
-    image: chrislusf/seaweedfs
+    image: chrislusf/seaweedfs:4.50@sha256:c2658820e763294a9e9de7b36c81e59b879e3459148351aee4e31a126ca64860
     container_name: delivest-s3
     restart: always
     entrypoint:
@@ -42,6 +42,33 @@ services:
       - "${S3_BIND_ADDRESS:-127.0.0.1}:${S3_PORT_EXTERNAL:-8333}:${S3_PORT:-8333}"
     volumes:
       - s3_data:/data
+    networks:
+      - delivest-network
+
+  agent:
+    build:
+      context: ..
+      dockerfile: Dockerfile.agent
+    restart: unless-stopped
+    environment:
+      - INSTANCE_BACKUP_DIR=/instance-backups
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=${S3_BUCKET:-delivest}
+      - S3_PRIVATE_BUCKET=${S3_PRIVATE_BUCKET:-delivest-private}
+      - S3_PORT=${S3_PORT:-8333}
+      - S3_BIND_ADDRESS=${S3_BIND_ADDRESS:-127.0.0.1}
+      - S3_PORT_EXTERNAL=${S3_PORT_EXTERNAL:-8333}
+      - PWD=${PWD}
+      - COMPOSE_IGNORE_ORPHANS=${COMPOSE_IGNORE_ORPHANS:-1}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PWD}:${PWD}
+      - ./.instance-backups:/instance-backups
     networks:
       - delivest-network
 

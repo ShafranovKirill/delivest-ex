@@ -37,3 +37,8 @@ npm-debug.log
 
 .env
 .env.contract
+/.instance-backups/*
+!/.instance-backups/.gitkeep
+/.delivest-recovery-*
+/.delivest-full-*.tar
+/.delivest-operation.lock
