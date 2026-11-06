@@ -26,7 +26,10 @@ config :delivest, Delivest.Repo,
   port: String.to_integer(System.get_env("TEST_DB_PORT", "5432")),
   database: "delivest_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  pool_size: System.schedulers_online() * 2,
+  # LiveView and worker bursts share sandbox connections in concurrent tests.
+  queue_target: 1_000,
+  queue_interval: 1_000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
