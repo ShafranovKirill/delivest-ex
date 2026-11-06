@@ -111,12 +111,16 @@ defmodule Delivest.Integrations.Crm.CommandsTest do
 
     assert_enqueued(worker: CommandWorker, args: %{"action" => "cancel", "order_id" => order.id})
 
-    assert :ok =
-             perform_job(CommandWorker, %{
-               "order_id" => order.id,
-               "action" => "cancel",
-               "reason" => "out_of_stock"
-             })
+    job =
+      Repo.one!(
+        from(j in Oban.Job,
+          where: j.worker == ^Oban.Worker.to_string(CommandWorker),
+          where: fragment("?->>'order_id' = ?", j.args, ^order.id),
+          where: fragment("?->>'action' = 'cancel'", j.args)
+        )
+      )
+
+    assert :ok = CommandWorker.perform(job)
 
     assert_received {:cancel, _id, :out_of_stock}
     refute Crm.manual_cancel_required?(%{order | channel: %{remote_status: "cancelled"}})

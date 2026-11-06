@@ -26,7 +26,7 @@ defmodule Delivest.Integrations.TestCrm do
   def configured?(settings), do: not is_nil(settings)
 
   @impl true
-  def idempotent?, do: true
+  def idempotent?, do: Application.get_env(:delivest, :test_crm_idempotent, true)
 
   @impl true
   def capabilities, do: [:cancel, :update_comment, :update_address]
@@ -60,6 +60,22 @@ defmodule Delivest.Integrations.TestCrm do
 
   defp reply(action, message, default) do
     send(self(), message)
+
+    if owner = Application.get_env(:delivest, :test_crm_observer),
+      do: send(owner, {:crm_call, action, message})
+
+    case Application.get_env(:delivest, :test_crm_barrier) do
+      %{owner: owner, action: ^action} ->
+        send(owner, {:crm_remote_success, self(), action, message})
+
+        receive do
+          {:crm_remote_release, ^action} -> :ok
+        end
+
+      _ ->
+        :ok
+    end
+
     Process.get({__MODULE__, action}, default)
   end
 end

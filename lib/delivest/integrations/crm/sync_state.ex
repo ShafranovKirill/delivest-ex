@@ -24,7 +24,8 @@ defmodule Delivest.Integrations.Crm.SyncState do
       alert: Map.get(delivery, :alert),
       attempts: attempt,
       last_error: nil,
-      sent_at: DateTime.utc_now(:second)
+      sent_at: DateTime.utc_now(:second),
+      sending_started_at: nil
     })
   end
 
@@ -32,6 +33,7 @@ defmodule Delivest.Integrations.Crm.SyncState do
     do:
       Orders.update_order_crm(order, %{
         status: "confirming",
+        sending_started_at: nil,
         ref: ref,
         attempts: attempt,
         last_error: nil
@@ -55,13 +57,20 @@ defmodule Delivest.Integrations.Crm.SyncState do
   end
 
   def retrying(order, error, attempt),
-    do: Orders.update_order_crm(order, %{status: "pending", attempts: attempt, last_error: error})
+    do:
+      Orders.update_order_crm(order, %{
+        status: "pending",
+        sending_started_at: nil,
+        attempts: attempt,
+        last_error: error
+      })
 
   def unknown(order, error, attempt) do
     Audit.record(:system, "order.crm_unknown", order, metadata: %{error: error})
 
     Orders.update_order_crm(order, %{
       status: "unknown",
+      sending_started_at: nil,
       attempts: attempt,
       last_error: error,
       alert:
@@ -76,7 +85,13 @@ defmodule Delivest.Integrations.Crm.SyncState do
 
   def failed(order, error, attempt) do
     Audit.record(:system, "order.crm_failed", order, metadata: %{error: error})
-    Orders.update_order_crm(order, %{status: "failed", attempts: attempt, last_error: error})
+
+    Orders.update_order_crm(order, %{
+      status: "failed",
+      sending_started_at: nil,
+      attempts: attempt,
+      last_error: error
+    })
   end
 
   defp advance(order, status, crm) do
