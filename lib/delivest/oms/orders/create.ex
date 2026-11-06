@@ -1,4 +1,6 @@
 defmodule Delivest.Oms.Orders.Create do
+  import Ecto.Query
+
   alias Delivest.Audit
   alias Delivest.Oms.{Carts, Order, OrderEvents}
   alias Delivest.Oms.Order.OrderNumber
@@ -26,9 +28,46 @@ defmodule Delivest.Oms.Orders.Create do
     client_opts = [update_existing: Keyword.get(opts, :update_client, true)]
     pricing = Keyword.get(opts, :pricing, &Pricing.run/3)
 
+    multi =
+      if idempotency = opts[:idempotency] do
+        Multi.new()
+        |> Multi.run(:idempotency, fn repo, _ ->
+          check_idempotency(repo, attrs, idempotency, opts)
+        end)
+        |> Multi.merge(fn %{idempotency: result} ->
+          case result do
+            {:replay, _order} -> Multi.new()
+            :fresh -> create_multi(attrs, opts, client_opts, pricing)
+          end
+        end)
+      else
+        create_multi(attrs, opts, client_opts, pricing)
+      end
+
+    multi
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{idempotency: {:replay, order}}} ->
+        {:ok, order, :replay}
+
+      {:ok, %{advanced: order}} ->
+        Notifier.publish({:ok, order}, [
+          :order,
+          if(order.awaiting_payment, do: :updated, else: :created)
+        ])
+        |> track(opts)
+
+      {:error, step, reason, _} ->
+        {:error, step, reason} |> track(opts)
+    end
+  end
+
+  defp create_multi(attrs, opts, client_opts, pricing) do
     Multi.new()
     |> Multi.run(:client_id, fn _, _ -> ClientResolver.resolve(attrs, client_opts) end)
-    |> Multi.run(:cart, fn _, _ -> CartGuard.acquire(attrs["cart_id"], attrs["branch_id"]) end)
+    |> Multi.run(:cart, fn _, _ ->
+      CartGuard.acquire(attrs["cart_id"], attrs["branch_id"], nil, opts)
+    end)
     |> Multi.run(:fulfillment, fn _, %{cart: cart} ->
       if opts[:channel] || opts[:crm] do
         {:ok, :external}
@@ -68,18 +107,41 @@ defmodule Delivest.Oms.Orders.Create do
       Promo.redeem(order, pricing)
     end)
     |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_after_checkout(cart) end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{advanced: order}} ->
-        Notifier.publish({:ok, order}, [
-          :order,
-          if(order.awaiting_payment, do: :updated, else: :created)
-        ])
+  end
 
-      {:error, step, reason, _} ->
-        {:error, step, reason}
+  defp check_idempotency(repo, attrs, %{owner: owner, key: key, fingerprint: fingerprint}, opts) do
+    branch_id = attrs["branch_id"]
+    lock_key = Enum.join([owner, branch_id, key], ":")
+
+    Ecto.Adapters.SQL.query!(repo, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+      lock_key
+    ])
+
+    case repo.one(
+           from o in Order,
+             where:
+               o.idempotency_owner == ^owner and o.branch_id == ^branch_id and
+                 o.idempotency_key == ^key,
+             preload: [items: :modifiers]
+         ) do
+      %Order{idempotency_fingerprint: ^fingerprint} = order ->
+        {:ok, {:replay, order}}
+
+      %Order{} ->
+        {:error, :idempotency_conflict}
+
+      nil ->
+        case opts[:preflight] do
+          nil ->
+            {:ok, :fresh}
+
+          preflight ->
+            case preflight.() do
+              :ok -> {:ok, :fresh}
+              error -> error
+            end
+        end
     end
-    |> track(opts)
   end
 
   defp online_attrs(attrs, true), do: Map.delete(attrs, "payment_method")
@@ -114,6 +176,9 @@ defmodule Delivest.Oms.Orders.Create do
     |> then(&if(opts[:crm], do: Order.crm_changeset(&1, opts[:crm]), else: &1))
     |> then(&if(opts[:paid_online], do: Order.paid_online_changeset(&1), else: &1))
     |> then(&if(opts[:online], do: Order.awaiting_payment_changeset(&1), else: &1))
+    |> then(
+      &if(opts[:idempotency], do: Order.idempotency_changeset(&1, opts[:idempotency]), else: &1)
+    )
   end
 
   defp cash_given(%{"cash_given" => value}) when is_integer(value) and value > 0, do: value

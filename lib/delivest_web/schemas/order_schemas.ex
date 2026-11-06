@@ -44,6 +44,11 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "8f3b2c10-91ab-4cd2-81e2-123456789abc",
           description: "UUID корзины"
         },
+        cart_revision: %Schema{
+          type: :string,
+          nullable: true,
+          description: "Отпечаток корзины из CartResponse; при изменении вернётся cart_changed"
+        },
         branch_id: %Schema{
           type: :string,
           format: :uuid,

@@ -48,6 +48,9 @@ defmodule Delivest.Oms.Order do
     field :branch_id, :binary_id
     field :session_id, :string
     field :guest_session_access, :boolean, default: false
+    field :idempotency_owner, :string
+    field :idempotency_key, Ecto.UUID
+    field :idempotency_fingerprint, :string
 
     field :customer_phone, :string
     field :customer_phone_ext, :string
@@ -177,6 +180,16 @@ defmodule Delivest.Oms.Order do
 
   def awaiting_payment_changeset(changeset),
     do: change(changeset, payment_method: :online, awaiting_payment: true)
+
+  def idempotency_changeset(changeset, %{owner: owner, key: key, fingerprint: fingerprint}) do
+    changeset
+    |> put_change(:idempotency_owner, owner)
+    |> put_change(:idempotency_key, key)
+    |> put_change(:idempotency_fingerprint, fingerprint)
+    |> unique_constraint([:idempotency_owner, :branch_id, :idempotency_key],
+      name: :orders_idempotency_owner_branch_key_index
+    )
+  end
 
   def awaiting_payment?(%__MODULE__{awaiting_payment: awaiting}), do: awaiting == true
 

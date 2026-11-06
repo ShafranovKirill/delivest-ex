@@ -16,6 +16,7 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
 
     %{
       id: cart.id,
+      revision: cart.revision,
       session_id: cart.session_id,
       branch_id: cart.branch_id,
       fulfillment_type: cart.fulfillment_type,

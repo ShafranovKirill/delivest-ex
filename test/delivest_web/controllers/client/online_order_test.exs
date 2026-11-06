@@ -121,6 +121,50 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
            )
   end
 
+  test "keyed payment failure keeps the same order and payment for retry", %{
+    conn: conn,
+    branch: branch,
+    cart_id: cart_id
+  } do
+    Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :timeout))
+    conn = put_req_header(conn, "idempotency-key", cart_id)
+    payload = params(branch, cart_id)
+
+    assert %{"error" => "payment_unavailable"} =
+             conn |> post(~p"/client/orders", payload) |> json_response(502)
+
+    assert [%Order{status: :created, awaiting_payment: true} = order] = Repo.all(Order)
+    assert [payment] = Payments.list(order.id)
+    stub_yookassa(self())
+
+    response =
+      conn
+      |> recycle_with_headers()
+      |> put_req_header("idempotency-key", cart_id)
+      |> post(~p"/client/orders", payload)
+      |> json_response(200)
+
+    assert response["data"]["id"] == order.id
+    assert response["data"]["payment"]["confirmation_url"] =~ "https://yoomoney.ru/checkout"
+    assert_received {:yookassa, _path, headers, _request}
+    assert {"idempotence-key", payment.id} in headers
+
+    conn
+    |> recycle_with_headers()
+    |> put_req_header("idempotency-key", cart_id)
+    |> post(~p"/client/orders", payload)
+    |> json_response(200)
+
+    refute_received {:yookassa, _path, _headers, _request}
+    assert Repo.aggregate(Order, :count) == 1
+    assert [%{id: payment_id}] = Payments.list(order.id)
+    assert payment_id == payment.id
+
+    refute Repo.exists?(
+             from(e in Event, where: e.type == "order.created" and e.aggregate_id == ^order.id)
+           )
+  end
+
   test "the customer gets the payment page again for an unpaid order", %{
     conn: conn,
     branch: branch,

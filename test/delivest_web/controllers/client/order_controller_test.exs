@@ -64,6 +64,167 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     )
   end
 
+  defp keyed(conn, key), do: put_req_header(conn, "idempotency-key", key)
+
+  test "keyed retry returns the original order after cart detach and branch pause", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    key = Ecto.UUID.generate()
+    params = order_params(branch, cart_id)
+
+    first = conn |> keyed(key) |> post(~p"/client/orders", params) |> json_response(200)
+    id = first["data"]["id"]
+
+    staff = insert(:staff, role: insert(:role, permissions: ["orders.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    {:ok, _status} = Delivest.Intake.pause(staff, branch, 10, "перерыв")
+
+    assert %{"data" => %{"id" => ^id}} =
+             conn
+             |> recycle_with_headers()
+             |> keyed(key)
+             |> post(~p"/client/orders", params)
+             |> json_response(200)
+
+    assert Repo.aggregate(Order, :count) == 1
+  end
+
+  test "keyed retry with changed accepted payload conflicts, ignored fields do not", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    key = Ecto.UUID.generate()
+    params = order_params(branch, cart_id)
+
+    id =
+      conn
+      |> keyed(key)
+      |> post(~p"/client/orders", params)
+      |> json_response(200)
+      |> get_in(["data", "id"])
+
+    assert %{"data" => %{"id" => ^id}} =
+             conn
+             |> recycle_with_headers()
+             |> keyed(key)
+             |> post(~p"/client/orders", Map.put(params, "status", "completed"))
+             |> json_response(200)
+
+    assert %{"error" => "idempotency_conflict"} =
+             conn
+             |> recycle_with_headers()
+             |> keyed(key)
+             |> post(~p"/client/orders", Map.put(params, "comment", "другой"))
+             |> json_response(409)
+
+    assert Repo.aggregate(Order, :count) == 1
+  end
+
+  test "failed keyed attempt does not reserve the key", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    key = Ecto.UUID.generate()
+    invalid = order_params(branch, cart_id, %{"customer_phone" => "123"})
+
+    assert %{"error" => "validation_failed"} =
+             conn |> keyed(key) |> post(~p"/client/orders", invalid) |> json_response(422)
+
+    assert Repo.aggregate(Order, :count) == 0
+
+    assert %{"data" => %{"id" => _}} =
+             conn
+             |> recycle_with_headers()
+             |> keyed(key)
+             |> post(~p"/client/orders", order_params(branch, cart_id))
+             |> json_response(200)
+  end
+
+  test "invalid key and invalid branch fail without a server error", %{conn: conn} do
+    assert %{"error" => "invalid_idempotency_key"} =
+             conn |> keyed("bad-key") |> post(~p"/client/orders", %{}) |> json_response(422)
+
+    assert %{"error" => "branch_not_found"} =
+             conn
+             |> keyed(Ecto.UUID.generate())
+             |> post(~p"/client/orders", %{"branch_id" => "not-a-uuid"})
+             |> json_response(422)
+
+    assert %{"error" => "invalid_idempotency_key"} =
+             conn
+             |> keyed("1234567890123456")
+             |> post(~p"/client/orders", %{})
+             |> json_response(422)
+  end
+
+  test "OpenAPI declares the exact UUID request header" do
+    operation = DelivestWeb.Client.Order.OrderController.open_api_operation(:create)
+
+    assert Enum.any?(operation.parameters, fn parameter ->
+             parameter.name == "Idempotency-Key" and parameter.in == :header and
+               parameter.schema.format == :uuid
+           end)
+  end
+
+  test "checkout rejects a changed cart revision even when the total stays equal", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    replacement = insert_branch_product(branch.id, price: 300)
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    old_revision =
+      conn
+      |> get(~p"/client/cart?branch_id=#{branch.id}")
+      |> json_response(200)
+      |> get_in(["data", "revision"])
+
+    assert is_binary(old_revision)
+
+    conn =
+      conn |> recycle_with_headers() |> delete(~p"/client/cart/#{cart_id}/items/#{product.id}")
+
+    changed =
+      conn
+      |> recycle_with_headers()
+      |> post(~p"/client/cart/#{cart_id}/items/#{replacement.id}")
+      |> json_response(200)
+
+    assert changed["data"]["total_amount"] == 300
+    refute changed["data"]["revision"] == old_revision
+
+    params = order_params(branch, cart_id, %{"cart_revision" => old_revision})
+
+    assert %{"error" => "cart_changed"} =
+             conn
+             |> recycle_with_headers()
+             |> post(~p"/client/orders", params)
+             |> json_response(409)
+
+    assert Repo.aggregate(Order, :count) == 0
+
+    assert %{"data" => %{"id" => _}} =
+             conn
+             |> recycle_with_headers()
+             |> post(~p"/client/orders", %{
+               params
+               | "cart_revision" => changed["data"]["revision"]
+             })
+             |> json_response(200)
+  end
+
   test "branch payload does not expose CRM credentials", %{conn: conn, branch: branch} do
     body = conn |> post(~p"/client/branches/#{branch.id}/select") |> json_response(200)
 

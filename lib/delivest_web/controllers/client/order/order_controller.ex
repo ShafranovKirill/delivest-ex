@@ -4,8 +4,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
   require Logger
 
-  alias Delivest.{Identity, Oms}
-  alias Delivest.Oms.{Carts, Order, Orders}
+  alias Delivest.Oms
+  alias Delivest.Oms.{Checkout, Order, Orders}
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
 
@@ -19,49 +19,59 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
   operation(:create,
     summary: "Создать заказ",
-    description: "Создаёт заказ по cart_id и branch_id из тела запроса.",
+    description:
+      "Создаёт заказ по cart_id и branch_id. Повтор с тем же Idempotency-Key возвращает созданный заказ.",
     tags: ["Orders"],
+    parameters: [
+      idempotency_key: [
+        in: :header,
+        name: "Idempotency-Key",
+        schema: %OpenApiSpex.Schema{type: :string, format: :uuid},
+        required: false,
+        description: "UUID ключ одного оформления для владельца и филиала"
+      ]
+    ],
     request_body: {"Создание заказа", "application/json", CreateOrderRequest},
     responses: [
       ok: {"Созданный заказ", "application/json", OrderResponse},
       unauthorized: {"Требуется вход", "application/json", ErrorResponse},
+      conflict: {"Ключ уже использован с другим запросом", "application/json", ErrorResponse},
       unprocessable_entity: {"Ошибка создания заказа", "application/json", ErrorResponse},
+      bad_gateway: {"Сервис оплаты недоступен", "application/json", ErrorResponse},
       too_many_requests: {"Слишком много запросов", "application/json", ErrorResponse}
     ]
   )
 
-  @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
-                    payment_method cook_by comment persons cash_given address expected_total spend_points)
-
   def create(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
-    client = conn.assigns.current_client
 
-    attrs =
-      params
-      |> Map.take(@public_fields)
-      |> Map.put("session_id", session_id)
-      |> put_client(client)
-
-    with {:ok, branch} <- fetch_public_branch(attrs["branch_id"]),
-         :ok <- ensure_accepting(branch),
-         :ok <- ensure_client_auth(client),
-         :ok <- ensure_payment_method(branch, attrs["payment_method"]),
-         true <-
-           Carts.owned_by_session?(attrs["cart_id"], session_id) || {:error, :cart_not_found},
-         :ok <- authorize_rewards(client, attrs["cart_id"]),
-         {:ok, order} <-
-           Oms.create_order(attrs,
-             update_client: false,
-             guest_session_access: is_nil(client),
-             online: attrs["payment_method"] == "online"
-           ),
-         {:ok, confirmation_url} <- begin_payment(order) do
-      remember_address(client, order)
+    with {:ok, key} <- idempotency_key(conn),
+         {:ok, order, confirmation_url} <-
+           Checkout.create(params, conn.assigns.current_client, session_id, key) do
       render(conn, :create, order: order, confirmation_url: confirmation_url)
     else
       {:error, reason} -> render_error(conn, reason)
       {:error, _step, reason} -> render_error(conn, reason)
+    end
+  end
+
+  defp idempotency_key(conn) do
+    case get_req_header(conn, "idempotency-key") do
+      [] ->
+        {:ok, nil}
+
+      [value] when byte_size(value) == 36 ->
+        Ecto.UUID.cast(value)
+        |> case do
+          {:ok, key} -> {:ok, key}
+          :error -> {:error, :invalid_idempotency_key}
+        end
+
+      [_value] ->
+        {:error, :invalid_idempotency_key}
+
+      _ ->
+        {:error, :invalid_idempotency_key}
     end
   end
 
@@ -187,86 +197,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
     render(conn, :index, orders: orders)
   end
 
-  defp authorize_rewards(nil, cart_id) do
-    case Carts.get_cart_by_id(cart_id) do
-      %Delivest.Oms.CartView{} = cart ->
-        if Delivest.Oms.CartView.star_items(cart) == [],
-          do: :ok,
-          else: {:error, :points_unavailable}
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp authorize_rewards(_client, _cart_id), do: :ok
-
-  defp put_client(attrs, nil), do: Map.delete(attrs, "spend_points")
-
-  defp put_client(attrs, client),
-    do: Map.merge(attrs, %{"client_id" => client.id, "customer_phone" => client.phone})
-
   defp client_id(nil), do: nil
   defp client_id(client), do: client.id
-
-  defp remember_address(nil, _order), do: :ok
-
-  defp remember_address(client, %{
-         fulfillment_type: :delivery,
-         address: %{street: street} = address
-       })
-       when is_binary(street) do
-    Identity.remember_client_address(client.id, Map.from_struct(address))
-  end
-
-  defp remember_address(_client, _order), do: :ok
-
-  defp ensure_accepting(branch) do
-    case Delivest.Intake.status(branch.id) do
-      %{mode: :paused} = status -> {:error, {:branch_paused, status}}
-      _status -> :ok
-    end
-  end
-
-  defp begin_payment(%Order{awaiting_payment: true} = order) do
-    case Delivest.Payments.Online.start(order) do
-      {:ok, url} ->
-        {:ok, url}
-
-      {:error, reason} ->
-        Logger.error(
-          "online payment of order #{order.number} was not started: #{inspect(reason)}"
-        )
-
-        Delivest.Payments.Online.abandon(order)
-        {:error, :payment_unavailable}
-    end
-  end
-
-  defp begin_payment(_order), do: {:ok, nil}
-
-  defp ensure_client_auth(client) do
-    if require_client_auth?() and is_nil(client), do: {:error, :client_auth_required}, else: :ok
-  end
-
-  defp require_client_auth?, do: Delivest.Franchise.get_settings().client_auth_required == true
-
-  defp ensure_payment_method(_branch, nil), do: :ok
-
-  defp ensure_payment_method(branch, method) do
-    if method in Enum.map(Delivest.Payments.enabled_methods(branch), &to_string/1),
-      do: :ok,
-      else: {:error, :payment_method_disabled}
-  end
-
-  defp fetch_public_branch(nil), do: {:error, :branch_id_required}
-
-  defp fetch_public_branch(branch_id) do
-    case Identity.get_branch(branch_id) do
-      {:ok, %{is_active: true} = branch} -> {:ok, branch}
-      _ -> {:error, :branch_not_found}
-    end
-  end
 
   defp render_error(conn, %Ecto.Changeset{} = changeset) do
     ApiError.send_error(
@@ -331,7 +263,25 @@ defmodule DelivestWeb.Client.Order.OrderController do
         conn,
         :bad_gateway,
         :payment_unavailable,
-        "The online payment is not available now, choose another way to pay"
+        "The online payment is not available now; retry this order"
+      )
+
+  defp render_error(conn, :idempotency_conflict),
+    do:
+      ApiError.send_error(
+        conn,
+        :conflict,
+        :idempotency_conflict,
+        "Idempotency key already used with another request"
+      )
+
+  defp render_error(conn, :cart_changed),
+    do:
+      ApiError.send_error(
+        conn,
+        :conflict,
+        :cart_changed,
+        "The cart changed; refresh it before ordering"
       )
 
   defp render_error(conn, :payment_method_disabled),
@@ -386,7 +336,8 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :promo_unavailable,
               :points_unavailable,
               :insufficient_points,
-              :points_over_limit
+              :points_over_limit,
+              :invalid_idempotency_key
             ] do
     ApiError.send_error(conn, :unprocessable_entity, reason, Phoenix.Naming.humanize(reason))
   end

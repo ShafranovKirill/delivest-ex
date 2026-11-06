@@ -352,6 +352,11 @@ defmodule DelivestWeb.Schemas.CartSchemas do
               format: :uuid,
               example: "8f3b2c10-91ab-4cd2-81e2-123456789abc"
             },
+            revision: %Schema{
+              type: :string,
+              nullable: true,
+              description: "Отпечаток состава и условий корзины для оформления заказа"
+            },
             session_id: %Schema{
               type: :string,
               example: "eceaec3d-dd25-4e19-8afc-f1d0f1412c9c",
