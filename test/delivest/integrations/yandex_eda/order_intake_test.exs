@@ -1,11 +1,13 @@
 defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   import Delivest.YandexEdaFixtures
 
+  alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.Channels.ChannelProduct
   alias Delivest.Integrations.Crm.BranchSettings, as: CrmSettings
   alias Delivest.Integrations.Frontpad
+  alias Delivest.Integrations.Dadata.Settings, as: DadataSettings
   alias Delivest.Integrations.YandexEda
   alias Delivest.Net.ProductStop
   alias Delivest.Oms.Order
@@ -103,6 +105,94 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
     assert items |> Enum.map(& &1.product_id) |> Enum.sort() == Enum.sort([soup.id, tea.id])
   end
 
+  test "a timed-out CRM refresh still rejects only locally stopped goods", %{
+    branch: branch,
+    soup: soup,
+    tea: tea
+  } do
+    branch_info = Repo.get_by!(BranchInfo, branch_id: branch.id)
+
+    branch_info
+    |> Ecto.Changeset.change(
+      crm: %{
+        enabled: true,
+        provider: :frontpad,
+        frontpad: %{api_key: "key", sync_stops: true}
+      }
+    )
+    |> Repo.update!()
+
+    Repo.insert!(%ProductStop{
+      branch_id: branch.id,
+      product_id: soup.id,
+      source: ProductStop.manual()
+    })
+
+    Cachex.del(:stop_cache, branch.id)
+
+    Cachex.put(:crm_cache, {:stops, branch.id}, %{
+      synced_at: DateTime.add(DateTime.utc_now(), -31, :second)
+    })
+
+    test_pid = self()
+    handler_id = "yandex-stop-degraded-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach(
+        handler_id,
+        [:delivest, :yandex_eda, :stop_list, :degraded],
+        fn _, measurements, metadata, _ ->
+          send(test_pid, {:stop_degraded, measurements, metadata})
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      send(test_pid, {:provider_started, self()})
+
+      receive do
+        :release -> Req.Test.json(conn, %{"result" => "success", "error" => "no_stops"})
+      after
+        5_000 -> Req.Test.json(conn, %{"result" => "success", "error" => "no_stops"})
+      end
+    end)
+
+    assert {:error, {:unavailable, [item]}} =
+             YandexEda.create_order(order_params(branch, [soup, tea]))
+
+    assert item.product_id == soup.id
+    assert_received {:provider_started, provider_pid}
+    send(provider_pid, :release)
+
+    assert_receive {:stop_degraded, %{snapshot_age_seconds: age},
+                    %{branch_id: branch_id, reason: :timeout}}
+
+    assert branch_id == branch.id
+    assert age >= 31
+  end
+
+  test "CRM refresh failure accepts an otherwise available order", %{branch: branch, tea: tea} do
+    branch_info = Repo.get_by!(BranchInfo, branch_id: branch.id)
+
+    branch_info
+    |> Ecto.Changeset.change(
+      crm: %{
+        enabled: true,
+        provider: :frontpad,
+        frontpad: %{api_key: "key", sync_stops: true}
+      }
+    )
+    |> Repo.update!()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      Req.Test.json(conn, %{"result" => "error", "error" => "requests_limit"})
+    end)
+
+    assert {:ok, %Order{}} = YandexEda.create_order(order_params(branch, [tea]))
+  end
+
   test "an unknown or disabled restaurant is not found", %{soup: soup} do
     branch = yandex_branch(enabled: false)
 
@@ -136,6 +226,36 @@ defmodule Delivest.Integrations.YandexEda.OrderIntakeTest do
     assert order.address.formatted == "Москва, Тверская улица, 1"
     assert order.address.latitude == 55.757
     assert order.comment =~ "500"
+  end
+
+  test "marketplace intake does not wait for slow optional geolocation", %{
+    branch: branch,
+    soup: soup
+  } do
+    Repo.insert!(%DadataSettings{api_key: "key", enabled: true})
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      send(test_pid, {:geolocation_started, self()})
+
+      receive do
+        :release -> Req.Test.json(conn, %{"suggestions" => []})
+      after
+        5_000 -> Req.Test.json(conn, %{"suggestions" => []})
+      end
+    end)
+
+    started = System.monotonic_time(:millisecond)
+
+    assert {:ok, %Order{} = order} =
+             branch |> order_params([soup]) |> marketplace() |> YandexEda.create_order()
+
+    assert System.monotonic_time(:millisecond) - started < 1_500
+    assert_received {:geolocation_started, provider_pid}
+    send(provider_pid, :release)
+    assert order.address.formatted == "Москва, Тверская улица, 1"
+    assert order.address.latitude == 55.757
+    assert order.address.longitude == 37.613
   end
 
   test "the order goes to the crm when yandex is one of its sources", %{soup: soup} do
