@@ -264,12 +264,15 @@ defmodule Delivest.Integrations.Rkeeper do
     case Api.task_response(settings, ref, wait: 15, retry: false) do
       {:ok, response} ->
         case delivery(response) do
-          {:ok, delivery} -> normalize_poll_result(Crm.confirm_order(order, delivery))
-          _waiting -> :ok
+          {:ok, delivery} ->
+            apply_if_current(order, &Crm.confirm_order(&1, delivery))
+
+          _waiting ->
+            :ok
         end
 
       {:error, {:rkeeper, text}} ->
-        normalize_poll_result(Crm.reject_order(order, text))
+        apply_if_current(order, &Crm.reject_order(&1, text))
 
       {:pending, _guid} ->
         :ok
@@ -283,10 +286,19 @@ defmodule Delivest.Integrations.Rkeeper do
     case Api.task(settings, "GetOrderState", %{orderGuid: guid}, wait: 15, retry: false) do
       {:ok, response} ->
         case state(response) do
-          code when is_binary(code) and code != order.crm.remote_status_code ->
-            normalize_poll_result(
-              SyncState.remote_status(order, status_for(code), code, DateTime.utc_now(:second))
-            )
+          code when is_binary(code) ->
+            apply_if_current(order, fn current ->
+              if code == current.crm.remote_status_code do
+                :ok
+              else
+                SyncState.remote_status(
+                  current,
+                  status_for(code),
+                  code,
+                  DateTime.utc_now(:second)
+                )
+              end
+            end)
 
           _unchanged ->
             :ok
@@ -300,8 +312,41 @@ defmodule Delivest.Integrations.Rkeeper do
     end
   end
 
-  defp normalize_poll_result({:ok, _order}), do: :ok
-  defp normalize_poll_result({:error, _reason} = error), do: error
+  defp apply_if_current(order, update) do
+    case Repo.transaction(fn ->
+           current = Repo.one(from(o in Order, where: o.id == ^order.id, lock: "FOR UPDATE"))
+
+           if current_for_poll?(current, order) do
+             case update.(current) do
+               {:ok, _updated} -> :ok
+               :ok -> :ok
+               {:error, reason} -> Repo.rollback(reason)
+             end
+           else
+             :ok
+           end
+         end) do
+      {:ok, :ok} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp current_for_poll?(
+         %Order{deleted_at: nil, status: status, crm: %{provider: "rkeeper", status: crm_status}} =
+           current,
+         %Order{crm: %{status: queried_status}} = queried
+       ) do
+    status not in [:completed, :cancelled] and crm_status == queried_status and
+      same_poll_reference?(current, queried)
+  end
+
+  defp current_for_poll?(_current, _queried), do: false
+
+  defp same_poll_reference?(%Order{crm: %{status: "confirming"}} = current, queried),
+    do: current.crm.ref == queried.crm.ref
+
+  defp same_poll_reference?(%Order{crm: %{status: "sent"}} = current, queried),
+    do: current.crm.external_id == queried.crm.external_id
 
   defp report_active_age(order) do
     :telemetry.execute(

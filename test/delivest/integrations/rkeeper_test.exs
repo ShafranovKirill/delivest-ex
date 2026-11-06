@@ -121,6 +121,50 @@ defmodule Delivest.Integrations.RkeeperTest do
     assert %Order{crm: %{status: "sent", external_id: "g-2"}} = Orders.get_order(order.id)
   end
 
+  test "a task response for an old ref cannot confirm a retried order", %{order: order} do
+    stub(%{
+      "IsMainSystemAvailable" => %{"taskResponse" => %{"isAvailable" => true}},
+      "CreateOrder" => %{"taskGuid" => "t-1"}
+    })
+
+    :ok = sync(order)
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      {:ok, _updated} =
+        order.id
+        |> Orders.get_order()
+        |> Orders.update_order_crm(%{ref: "t-2"})
+
+      Req.Test.json(conn, %{"taskResponse" => %{"order" => %{"orderGuid" => "g-old"}}})
+    end)
+
+    assert :ok = perform_job(PollWorker, %{"order_id" => order.id})
+
+    assert %Order{crm: %{status: "confirming", ref: "t-2", external_id: nil}} =
+             Orders.get_order(order.id)
+  end
+
+  test "removing CRM during a task response leaves the order unchanged", %{order: order} do
+    stub(%{
+      "IsMainSystemAvailable" => %{"taskResponse" => %{"isAvailable" => true}},
+      "CreateOrder" => %{"taskGuid" => "t-1"}
+    })
+
+    :ok = sync(order)
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      order.id
+      |> Orders.get_order()
+      |> Ecto.Changeset.change(crm: nil)
+      |> Repo.update!()
+
+      Req.Test.json(conn, %{"taskResponse" => %{"order" => %{"orderGuid" => "g-old"}}})
+    end)
+
+    assert :ok = perform_job(PollWorker, %{"order_id" => order.id})
+    assert %Order{crm: nil} = Orders.get_order(order.id)
+  end
+
   test "branch polling fans out unique jobs and skips an inactive order", %{order: order} do
     stub(%{
       "IsMainSystemAvailable" => %{"taskResponse" => %{"isAvailable" => true}},
