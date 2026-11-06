@@ -1,19 +1,58 @@
 defmodule Delivest.Oms.Orders.CartGuard do
   import Ecto.Query, warn: false
 
-  alias Delivest.Oms.{Cart, CartView, Carts, Order}
+  alias Delivest.Oms.{Cart, CartItem, CartRevision, CartView, Carts, Order}
   alias Delivest.Net.Products
   alias Delivest.Promo.{Catalog, Strategy}
   alias Delivest.Repo
 
-  def acquire(cart_id, branch_id, order_id \\ nil) do
+  def acquire(cart_id, branch_id, order_id \\ nil, opts \\ []) do
     with {:ok, cart_id} <- cast_id(cart_id),
          {:ok, {locked_cart, version}} <- lock(cart_id),
+         :ok <- ensure_owner(locked_cart, opts),
+         {:ok, items} <- lock_items(cart_id),
+         :ok <- ensure_revision(locked_cart, version, items, opts),
          :ok <- ensure_not_ordered(cart_id, order_id),
-         {:ok, cart} <- fetch(locked_cart, version),
-         :ok <- ensure_branch(cart, branch_id) do
+         {:ok, cart} <- fetch(%{locked_cart | items: items}, version),
+         :ok <- ensure_branch(cart, branch_id),
+         :ok <- ensure_guest_rewards(cart, opts) do
       {:ok, cart}
     end
+  end
+
+  defp lock_items(cart_id) do
+    {:ok,
+     Repo.all(
+       from ci in CartItem,
+         where: ci.cart_id == ^cart_id,
+         order_by: [asc: ci.inserted_at, asc: ci.id],
+         lock: "FOR UPDATE NOWAIT"
+     )}
+  rescue
+    error in Postgrex.Error ->
+      if error.postgres && error.postgres.code == :lock_not_available,
+        do: {:error, :cart_changed},
+        else: reraise(error, __STACKTRACE__)
+  end
+
+  defp ensure_revision(cart, version, items, opts) do
+    if is_nil(opts[:cart_revision]) or
+         opts[:cart_revision] == CartRevision.from_raw(cart, version, items),
+       do: :ok,
+       else: {:error, :cart_changed}
+  end
+
+  defp ensure_owner(%Cart{session_id: session_id}, opts) do
+    if not Keyword.has_key?(opts, :public_session_id) or
+         (is_binary(session_id) and session_id == opts[:public_session_id]),
+       do: :ok,
+       else: {:error, :cart_not_found}
+  end
+
+  defp ensure_guest_rewards(cart, opts) do
+    if opts[:public_guest] == true and CartView.star_items(cart) != [],
+      do: {:error, :points_unavailable},
+      else: :ok
   end
 
   defp cast_id(cart_id) do

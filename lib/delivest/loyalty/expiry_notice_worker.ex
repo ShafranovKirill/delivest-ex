@@ -6,17 +6,19 @@ defmodule Delivest.Loyalty.ExpiryNoticeWorker do
   day for the same batch does not produce duplicates.
   """
 
-  use Oban.Worker, queue: :default, max_attempts: 3
+  use Oban.Worker, queue: :maintenance, max_attempts: 3
 
   import Ecto.Query
 
-  alias Delivest.{Franchise, Identity, Push, Repo}
-  alias Delivest.Loyalty.{Entry, ExpiryNotification}
+  alias Delivest.{Franchise, Identity, Repo}
+  alias Delivest.Loyalty.{Entry, ExpiryDelivery, ExpiryDeliveryWorker, ExpiryNotification}
+  alias Delivest.Push.ClientSubscription
 
   @days 7
 
   @impl Oban.Worker
   def perform(_job) do
+    ExpiryDeliveryWorker.sweep_stale()
     now = DateTime.utc_now(:second)
     deadline = DateTime.add(now, @days, :day)
 
@@ -32,9 +34,12 @@ defmodule Delivest.Loyalty.ExpiryNoticeWorker do
     })
     |> Repo.all()
     |> Enum.group_by(& &1.client_id)
-    |> Enum.each(&remind/1)
-
-    :ok
+    |> Enum.reduce_while(:ok, fn group, _ ->
+      case remind(group) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp remind({client_id, entries}) do
@@ -42,12 +47,37 @@ defmodule Delivest.Loyalty.ExpiryNoticeWorker do
     expires_on = DateTime.to_date(first.expires_at)
     stars = Enum.sum(Enum.map(entries, & &1.remaining))
 
-    if record(client_id, expires_on) do
-      Push.deliver_to_client(client_id, &message(&1, first.branch_id, stars, expires_on))
+    Repo.transaction(fn ->
+      if record(client_id, expires_on, first.branch_id, stars, first.expires_at) do
+        notification =
+          Repo.get_by!(ExpiryNotification, client_id: client_id, expires_on: expires_on)
+
+        ClientSubscription
+        |> where([s], s.client_id == ^client_id)
+        |> Repo.all()
+        |> Enum.each(fn subscription ->
+          delivery =
+            Repo.insert!(%ExpiryDelivery{
+              notification_id: notification.id,
+              subscription_id: subscription.id
+            })
+
+          case delivery.id
+               |> then(&ExpiryDeliveryWorker.new(%{delivery_id: &1}))
+               |> Oban.insert() do
+            {:ok, _job} -> :ok
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+      end
+    end)
+    |> case do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  defp record(client_id, expires_on) do
+  defp record(client_id, expires_on, branch_id, stars, expires_at) do
     {count, _} =
       Repo.insert_all(
         ExpiryNotification,
@@ -56,6 +86,9 @@ defmodule Delivest.Loyalty.ExpiryNoticeWorker do
             id: Ecto.UUID.generate(),
             client_id: client_id,
             expires_on: expires_on,
+            branch_id: branch_id,
+            stars: stars,
+            expires_at: expires_at,
             inserted_at: DateTime.utc_now(:second)
           }
         ],
@@ -66,7 +99,7 @@ defmodule Delivest.Loyalty.ExpiryNoticeWorker do
     count == 1
   end
 
-  defp message(locale, branch_id, stars, expires_on) do
+  def message(locale, branch_id, stars, expires_on) do
     settings = Franchise.get_settings()
     date = Date.to_string(expires_on)
 
@@ -83,6 +116,8 @@ defmodule Delivest.Loyalty.ExpiryNoticeWorker do
     do: "Сгорят звёзды: #{stars}. Успейте обменять до #{date}."
 
   defp body(_locale, stars, date), do: "Stars expiring soon: #{stars}. Use them before #{date}."
+
+  defp url(nil), do: "/"
 
   defp url(branch_id) do
     case Identity.get_branch(branch_id) do

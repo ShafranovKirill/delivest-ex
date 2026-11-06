@@ -1,6 +1,6 @@
 defmodule Delivest.Push.Worker do
   use Oban.Worker,
-    queue: :default,
+    queue: :notifications,
     max_attempts: 3,
     unique: [period: 5, keys: [:order_id], states: [:available, :scheduled]]
 

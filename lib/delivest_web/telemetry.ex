@@ -105,6 +105,10 @@ defmodule DelivestWeb.Telemetry do
         tags: [:provider, :status],
         description: "External provider requests"
       ),
+      counter("delivest.yookassa.reconciliation.count",
+        tags: [:result],
+        description: "YooKassa reconciliation runs by completion result"
+      ),
 
       # Outbox: subscriber lag and delivery rate
       summary("delivest.outbox.delivered.lag",
@@ -127,6 +131,14 @@ defmodule DelivestWeb.Telemetry do
       last_value("delivest.oban.queue.count",
         tags: [:queue, :state],
         description: "Jobs waiting in an Oban queue"
+      ),
+      last_value("delivest.oban.backlog.count",
+        tags: [:queue],
+        description: "Eligible jobs in each configured Oban queue"
+      ),
+      last_value("delivest.oban.backlog.oldest_age_seconds",
+        tags: [:queue],
+        description: "Age of the oldest eligible Oban job, zero when empty"
       )
     ]
   end
@@ -151,11 +163,43 @@ defmodule DelivestWeb.Telemetry do
     end)
   end
 
+  def oban_backlog do
+    queues =
+      :delivest
+      |> Application.fetch_env!(Oban)
+      |> Keyword.fetch!(:queues)
+      |> Keyword.keys()
+      |> Enum.map(&to_string/1)
+
+    now = DateTime.utc_now()
+
+    counts =
+      Oban.Job
+      |> where([j], j.queue in ^queues and j.state in ["available", "scheduled", "retryable"])
+      |> where([j], j.scheduled_at <= ^now)
+      |> group_by([j], j.queue)
+      |> select([j], {j.queue, count(j.id), min(j.scheduled_at)})
+      |> Repo.all()
+      |> Map.new(fn {queue, count, oldest} -> {queue, {count, oldest}} end)
+
+    Enum.each(queues, fn queue ->
+      {count, oldest} = Map.get(counts, queue, {0, nil})
+      age = if oldest, do: max(DateTime.diff(now, oldest, :second), 0), else: 0
+
+      :telemetry.execute(
+        [:delivest, :oban, :backlog],
+        %{count: count, oldest_age_seconds: age},
+        %{queue: queue}
+      )
+    end)
+  end
+
   defp periodic_measurements do
     [
       # A module, function and arguments to be invoked periodically.
       # This function must call :telemetry.execute/3 and a metric must be added above.
-      {__MODULE__, :oban_queues, []}
+      {__MODULE__, :oban_queues, []},
+      {__MODULE__, :oban_backlog, []}
     ]
   end
 end

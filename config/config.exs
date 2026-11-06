@@ -10,7 +10,15 @@ import Config
 config :delivest, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10, crm: 2, events: 10, fiscal: 2],
+  queues: [
+    default: 5,
+    notifications: 2,
+    polling: 2,
+    maintenance: 1,
+    crm: 2,
+    events: 10,
+    fiscal: 2
+  ],
   lifeline: [rescue_after: {2, :hours}],
   pruner: [max_age: {1, :day}],
   crontab: [

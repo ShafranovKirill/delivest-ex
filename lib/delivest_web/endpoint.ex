@@ -25,7 +25,7 @@ defmodule DelivestWeb.Endpoint do
     origin: &__MODULE__.fetch_cors_origin/1,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
+    headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With", "Idempotency-Key"]
   )
 
   def fetch_cors_origin(%Plug.Conn{path_info: ["integrations" | _]}), do: ["*"]

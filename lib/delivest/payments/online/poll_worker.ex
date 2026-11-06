@@ -1,5 +1,5 @@
 defmodule Delivest.Payments.Online.PollWorker do
-  use Oban.Worker, queue: :default, max_attempts: 1
+  use Oban.Worker, queue: :polling, max_attempts: 1
 
   import Ecto.Query
 

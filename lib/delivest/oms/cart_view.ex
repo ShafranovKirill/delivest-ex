@@ -43,6 +43,7 @@ defmodule Delivest.Oms.CartView do
     :promo_code,
     :code,
     :catalog_version,
+    :revision,
     :product_snapshot,
     :compiled_promotions,
     promo_gifts: %{},

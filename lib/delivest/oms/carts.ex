@@ -4,7 +4,7 @@ defmodule Delivest.Oms.Carts do
   alias Delivest.{Repo, Net}
   alias Delivest.Identity.Branch
   alias Delivest.Net.Modifiers
-  alias Delivest.Oms.{Cart, CartItem, CartPricing, CartView}
+  alias Delivest.Oms.{Cart, CartItem, CartPricing, CartRevision, CartView}
 
   @cache_store :cart_cache
   @cache_ttl :timer.hours(2)
@@ -495,11 +495,22 @@ defmodule Delivest.Oms.Carts do
         nil
 
       {cart, version} ->
+        items =
+          Repo.all(
+            from ci in CartItem,
+              where: ci.cart_id == ^cart_id,
+              order_by: [asc: ci.inserted_at, asc: ci.id]
+          )
+
+        revision = CartRevision.from_raw(cart, version, items)
+        cart = %{cart | items: items}
+
         case {force?, cache_get(cart_id)} do
           {false,
            {:ok,
             %CartView{
               catalog_version: ^version,
+              revision: ^revision,
               points_earned: _,
               base_stars: _,
               product_stars: _,
@@ -550,7 +561,11 @@ defmodule Delivest.Oms.Carts do
     do: Repo.one(from b in Branch, where: b.id == ^branch_id, select: b.catalog_version)
 
   defp recalculate_and_cache(%Cart{} = cart, version) do
-    cart_view = %{build_cart_view(cart) | catalog_version: version}
+    cart = Repo.preload(cart, :items)
+    revision = CartRevision.from_raw(cart, version, cart.items)
+    cart_view = build_cart_view(cart)
+    # Pruned rows leave a conservative token: checkout fails until refreshed.
+    cart_view = %{cart_view | catalog_version: version, revision: revision}
     cache_put(cart.id, cart_view)
     CartPricing.apply(cart_view)
   end

@@ -55,7 +55,7 @@ config :cors_plug,
   origin: [client_origin],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With"]
+  headers: ["Authorization", "Content-Type", "Accept", "X-Requested-With", "Idempotency-Key"]
 
 if System.get_env("PHX_SERVER") do
   config :delivest, DelivestWeb.Endpoint, server: true
