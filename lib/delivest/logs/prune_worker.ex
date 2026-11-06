@@ -1,5 +1,5 @@
 defmodule Delivest.Logs.PruneWorker do
-  use Oban.Worker, queue: :default, max_attempts: 3
+  use Oban.Worker, queue: :maintenance, max_attempts: 3
 
   alias Delivest.{Audit, Logs}
   alias Delivest.Identity.PhoneConfirmations

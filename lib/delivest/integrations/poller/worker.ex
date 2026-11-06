@@ -1,6 +1,6 @@
 defmodule Delivest.Integrations.Poller.Worker do
   use Oban.Worker,
-    queue: :default,
+    queue: :polling,
     max_attempts: 5,
     unique: [period: :infinity, keys: [:poller, :target], states: [:available, :scheduled]]
 

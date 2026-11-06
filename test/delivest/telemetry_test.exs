@@ -63,11 +63,39 @@ defmodule Delivest.TelemetryTest do
     assert count >= 1
   end
 
+  test "backlog reports oldest eligible age and resets an empty configured queue", %{ref: ref} do
+    now = DateTime.utc_now()
+
+    {:ok, job} =
+      Oban.insert(Oban.Job.new(%{}, worker: "Delivest.TelemetryTest", queue: "notifications"))
+
+    Repo.update_all(from(j in Oban.Job, where: j.id == ^job.id),
+      set: [scheduled_at: DateTime.add(now, -90, :second)]
+    )
+
+    Telemetry.oban_backlog()
+
+    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: 1, oldest_age_seconds: age},
+                     %{queue: "notifications"}}
+
+    assert age >= 90
+
+    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: 0, oldest_age_seconds: 0},
+                     %{queue: "default"}}
+
+    Repo.delete!(job)
+    Telemetry.oban_backlog()
+
+    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: 0, oldest_age_seconds: 0},
+                     %{queue: "notifications"}}
+  end
+
   defp events do
     [
       [:delivest, :order, :status_changed],
       [:delivest, :integration, :request],
-      [:delivest, :oban, :queue]
+      [:delivest, :oban, :queue],
+      [:delivest, :oban, :backlog]
     ]
   end
 end

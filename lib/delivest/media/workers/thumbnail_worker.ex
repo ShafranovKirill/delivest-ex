@@ -1,6 +1,6 @@
 defmodule Delivest.Media.Workers.ThumbnailWorker do
   use Oban.Worker,
-    queue: :default,
+    queue: :maintenance,
     max_attempts: 3,
     unique: [keys: [:file_id], period: :infinity, states: :incomplete]
 

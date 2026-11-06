@@ -1,5 +1,5 @@
 defmodule Delivest.Media.Workers.ThumbnailBackfillWorker do
-  use Oban.Worker, queue: :default, max_attempts: 1
+  use Oban.Worker, queue: :maintenance, max_attempts: 1
 
   alias Delivest.Media.Thumbnails
 
