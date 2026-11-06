@@ -11,18 +11,31 @@ defmodule Delivest.Integrations.Rkeeper.Api do
     body = %{taskType: type, params: Map.put(params, :sync, sync)}
 
     @path
-    |> Client.post(body, options(settings, sync.timeout))
+    |> Client.post(body, options(settings, sync.timeout, opts))
     |> handle()
   end
 
-  def task_response(settings, task_guid) do
+  def task_response(settings, task_guid, opts \\ []) do
+    wait = Keyword.get(opts, :wait, @wait_seconds)
+
     @path
     |> Client.post(
       %{taskType: "GetTaskResponse", params: %{taskGuid: task_guid}},
-      options(settings, @wait_seconds)
+      options(settings, wait, opts)
     )
-    |> handle()
+    |> handle_task_response()
   end
+
+  defp handle_task_response({:ok, %{"taskResponse" => %{"error" => %{} = error}}}),
+    do: {:error, {:rkeeper, error_text(error)}}
+
+  defp handle_task_response({:ok, %{"taskResponse" => %{} = response}}), do: {:ok, response}
+
+  defp handle_task_response({:ok, %{"taskGuid" => guid}}) when is_binary(guid),
+    do: {:pending, guid}
+
+  defp handle_task_response({:ok, response}), do: {:error, {:unexpected_response, response}}
+  defp handle_task_response({:error, _reason} = error), do: error
 
   defp handle({:ok, %{"error" => %{} = error}}), do: {:error, {:rkeeper, error_text(error)}}
 
@@ -37,8 +50,9 @@ defmodule Delivest.Integrations.Rkeeper.Api do
   defp handle({:ok, %{} = body}), do: {:ok, body}
   defp handle({:ok, body}), do: {:error, {:rkeeper, inspect(body)}}
 
-  defp handle({:error, {:http_error, status, %{"error" => %{} = error}}}) when status < 500,
-    do: {:error, {:rkeeper, error_text(error)}}
+  defp handle({:error, {:http_error, status, %{"error" => %{} = error}}})
+       when status < 500 and status != 429,
+       do: {:error, {:rkeeper, error_text(error)}}
 
   defp handle(error), do: error
 
@@ -46,13 +60,18 @@ defmodule Delivest.Integrations.Rkeeper.Api do
   defp error_text(%{"desc" => desc}) when is_binary(desc), do: desc
   defp error_text(error), do: inspect(error)
 
-  defp options(settings, wait) do
-    [
+  defp options(settings, wait, opts) do
+    options = [
       base_url: if(settings.sandbox, do: @sandbox, else: @host),
       journal: :rkeeper,
       timeout: (wait + 10) * 1_000,
       headers: [{"aggregatorauthentication", token()}]
     ]
+
+    case Keyword.fetch(opts, :retry) do
+      {:ok, retry} -> Keyword.put(options, :retry, retry)
+      :error -> options
+    end
   end
 
   def token, do: Keyword.get(config(), :token) || ""

@@ -230,52 +230,86 @@ defmodule Delivest.Integrations.Rkeeper do
     |> Repo.all()
   end
 
-  def poll(branch_id) do
-    orders =
-      Repo.all(
-        from(o in Order,
-          where: o.branch_id == ^branch_id and is_nil(o.deleted_at),
-          where: o.status not in [:completed, :cancelled],
-          where: fragment("?->>'provider' = 'rkeeper'", o.crm),
-          where: fragment("?->>'status' IN ('confirming', 'sent')", o.crm)
-        )
-      )
-
-    with [_ | _] <- orders,
-         {:ok, settings} <- settings(branch_id) do
-      Enum.each(orders, &poll_order(&1, settings))
-      :more
-    else
-      [] -> :done
-      error -> error
-    end
+  def active_order_ids(branch_id, after_id, limit) do
+    from(o in Order,
+      where: o.branch_id == ^branch_id and is_nil(o.deleted_at),
+      where: o.status not in [:completed, :cancelled],
+      where: fragment("?->>'provider' = 'rkeeper'", o.crm),
+      where: fragment("?->>'status' IN ('confirming', 'sent')", o.crm),
+      where: o.id > ^after_id,
+      order_by: o.id,
+      limit: ^limit,
+      select: o.id
+    )
+    |> Repo.all()
   end
 
-  defp poll_order(%Order{crm: %{status: "confirming", ref: ref}} = order, settings) do
-    case Api.task_response(settings, ref) do
-      {:ok, response} ->
-        case delivery(response) do
-          {:ok, delivery} -> Crm.confirm_order(order, delivery)
-          _waiting -> :ok
+  def poll_order(order_id) do
+    case Repo.get(Order, order_id) do
+      %Order{deleted_at: nil, status: status, crm: %{provider: "rkeeper", status: crm_status}} =
+          order
+      when status not in [:completed, :cancelled] and crm_status in ["confirming", "sent"] ->
+        report_active_age(order)
+
+        with {:ok, settings} <- settings(order.branch_id) do
+          poll_active_order(order, settings)
         end
 
-      {:error, {:rkeeper, text}} ->
-        Crm.reject_order(order, text)
-
-      _pending ->
+      _inactive ->
         :ok
     end
   end
 
-  defp poll_order(%Order{crm: %{status: "sent", external_id: guid}} = order, settings) do
-    with {:ok, response} <- Api.task(settings, "GetOrderState", %{orderGuid: guid}),
-         code when is_binary(code) <- state(response),
-         false <- code == order.crm.remote_status_code do
-      SyncState.remote_status(order, status_for(code), code, DateTime.utc_now(:second))
+  defp poll_active_order(%Order{crm: %{status: "confirming", ref: ref}} = order, settings) do
+    case Api.task_response(settings, ref, wait: 15, retry: false) do
+      {:ok, response} ->
+        case delivery(response) do
+          {:ok, delivery} -> normalize_poll_result(Crm.confirm_order(order, delivery))
+          _waiting -> :ok
+        end
+
+      {:error, {:rkeeper, text}} ->
+        normalize_poll_result(Crm.reject_order(order, text))
+
+      {:pending, _guid} ->
+        :ok
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
-  defp poll_order(_order, _settings), do: :ok
+  defp poll_active_order(%Order{crm: %{status: "sent", external_id: guid}} = order, settings) do
+    case Api.task(settings, "GetOrderState", %{orderGuid: guid}, wait: 15, retry: false) do
+      {:ok, response} ->
+        case state(response) do
+          code when is_binary(code) and code != order.crm.remote_status_code ->
+            normalize_poll_result(
+              SyncState.remote_status(order, status_for(code), code, DateTime.utc_now(:second))
+            )
+
+          _unchanged ->
+            :ok
+        end
+
+      {:pending, _guid} ->
+        :ok
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp normalize_poll_result({:ok, _order}), do: :ok
+  defp normalize_poll_result({:error, _reason} = error), do: error
+
+  defp report_active_age(order) do
+    :telemetry.execute(
+      [:delivest, :rkeeper, :active_order],
+      %{age_seconds: max(DateTime.diff(DateTime.utc_now(), order.inserted_at), 0)},
+      %{branch_id: order.branch_id, order_id: order.id, crm_status: order.crm.status}
+    )
+  end
 
   defp state(%{"order" => %{} = order}), do: state(order)
   defp state(%{"status" => status}) when is_binary(status), do: status
