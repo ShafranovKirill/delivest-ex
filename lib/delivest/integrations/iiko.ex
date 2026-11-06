@@ -4,6 +4,7 @@ defmodule Delivest.Integrations.Iiko do
   import Ecto.Query
 
   alias Delivest.Integrations.Crm
+  alias Delivest.Identity
   alias Delivest.Integrations.Iiko.{Api, OrderPayload, Webhook}
   alias Delivest.Net.{Modifier, ModifierGroup, ProductCrmIds, ProductExternalId}
   alias Delivest.Repo
@@ -104,6 +105,17 @@ defmodule Delivest.Integrations.Iiko do
          do: {:ok, Enum.map(list, &%{id: &1["id"], name: &1["name"]})}
   end
 
+  def load_settings(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "integrations.update", branch_id),
+         settings = Crm.get_branch_settings(branch_id).iiko,
+         {:ok, organizations} <- organizations(settings),
+         ids = Enum.map(organizations, & &1.id),
+         {:ok, groups} <- terminal_groups(settings, ids),
+         {:ok, %{payment_types: types}} <- dictionaries(settings, ids) do
+      {:ok, %{organizations: organizations, terminal_groups: groups, payment_types: types}}
+    end
+  end
+
   def terminal_groups(settings, organization_ids \\ nil) do
     with {:ok, %{"terminalGroups" => groups}} <- Api.terminal_groups(settings, organization_ids) do
       {:ok,
@@ -115,6 +127,11 @@ defmodule Delivest.Integrations.Iiko do
 
   def register_webhooks(settings),
     do: Api.update_webhooks(settings, webhook_url(settings.webhook_token))
+
+  def register_webhooks(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "integrations.update", branch_id),
+         do: register_webhooks(Crm.get_branch_settings(branch_id).iiko)
+  end
 
   @impl true
   def catalog_source(%{api_key: key, organization_id: org}), do: {:iiko, key, org}

@@ -14,6 +14,21 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
   end
 
+  test "read-only staff cannot trigger refresh or stop sync events", %{conn: conn} do
+    branch = insert(:branch)
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("Frontpad must not be called") end)
+
+    {:ok, lv, _html} =
+      live(
+        sign_in(conn, branch, ["integrations.read"]),
+        ~p"/staff/b/#{branch}/integrations/frontpad"
+      )
+
+    render_hook(lv, "refresh", %{})
+    render_hook(lv, "sync_stops", %{})
+    assert has_element?(lv, "#frontpad-guide")
+  end
+
   test "payment codes and order marks are saved", %{conn: conn} do
     branch = insert(:branch)
 

@@ -1,4 +1,5 @@
 defmodule Delivest.Integrations.Crm.StopSync do
+  alias Delivest.Identity
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Registry}
   alias Delivest.Integrations.Journal
@@ -6,6 +7,7 @@ defmodule Delivest.Integrations.Crm.StopSync do
 
   @cache :crm_cache
 
+  @doc "Trusted scheduled sync. Staff callers must use sync/2."
   def sync(branch_id) do
     case branch_id |> Crm.get_branch_settings() |> source() do
       {:ok, provider, module, settings} ->
@@ -16,6 +18,11 @@ defmodule Delivest.Integrations.Crm.StopSync do
       :none ->
         clear(branch_id)
     end
+  end
+
+  def sync(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "integrations.update", branch_id),
+         do: sync(branch_id)
   end
 
   def interval_ms(branch_id) do

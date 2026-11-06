@@ -59,12 +59,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Iiko do
   end
 
   def handle_event("load", _params, socket) do
-    settings = socket.assigns.crm.iiko
-
-    with {:ok, organizations} <- Iiko.organizations(settings),
-         ids = Enum.map(organizations, & &1.id),
-         {:ok, groups} <- Iiko.terminal_groups(settings, ids),
-         {:ok, %{payment_types: types}} <- Iiko.dictionaries(settings, ids) do
+    with {:ok, %{organizations: organizations, terminal_groups: groups, payment_types: types}} <-
+           Iiko.load_settings(socket.assigns.current_staff, socket.assigns.current_branch.id) do
       {:noreply,
        assign(socket, organizations: organizations, terminal_groups: groups, payment_types: types)}
     else
@@ -73,14 +69,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Iiko do
   end
 
   def handle_event("webhooks", _params, socket) do
-    case Iiko.register_webhooks(socket.assigns.crm.iiko) do
+    case Iiko.register_webhooks(socket.assigns.current_staff, socket.assigns.current_branch.id) do
       {:ok, _body} -> {:noreply, put_flash(socket, :info, gettext("iiko will send updates"))}
       {:error, reason} -> {:noreply, put_flash(socket, :error, error_text(reason))}
     end
   end
 
   def handle_event("sync_stops", _params, socket) do
-    case StopSync.sync(socket.assigns.current_branch.id) do
+    case StopSync.sync(socket.assigns.current_staff, socket.assigns.current_branch.id) do
       {:ok, _result} -> {:noreply, put_flash(socket, :info, gettext("Stop list updated"))}
       {:error, reason} -> {:noreply, put_flash(socket, :error, error_text(reason))}
     end
@@ -136,6 +132,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Iiko do
 
   defp error_text({:iiko, _status, text}), do: gettext("iiko error: %{error}", error: text)
   defp error_text({:iiko, text}), do: gettext("iiko error: %{error}", error: text)
+  defp error_text(:forbidden), do: gettext("Permission denied")
   defp error_text(_reason), do: gettext("iiko did not respond, try again later")
 
   @impl true
