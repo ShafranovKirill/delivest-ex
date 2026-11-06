@@ -153,8 +153,39 @@ defmodule Delivest.AnalyticsTest do
     assert Analytics.resolve_period("custom", "2026-10-10", "2026-10-01") ==
              {~D[2026-10-01], ~D[2026-10-10]}
 
+    assert Analytics.resolve_period("custom", "2024-01-01", "2025-01-01") ==
+             {Date.add(today, -6), today}
+
     assert Analytics.previous_period({~D[2026-10-08], ~D[2026-10-14]}) ==
              {~D[2026-10-01], ~D[2026-10-07]}
+  end
+
+  test "custom periods normalize reversed dates and enforce the daily limit" do
+    assert {:ok, {~D[2026-01-01], ~D[2026-12-31]}} =
+             Analytics.validate_custom_period("2026-12-31", "2026-01-01")
+
+    assert {:ok, {~D[2024-01-01], ~D[2024-12-31]}} =
+             Analytics.validate_custom_period("2024-01-01", "2024-12-31")
+
+    for {from, to} <- [
+          {"bad", "2026-01-01"},
+          {"", "2026-01-01"},
+          {"2025-01-01", "2026-01-02"},
+          {"0001-01-01", "0001-01-01"},
+          {"9999-12-31", "10000-01-01"}
+        ] do
+      assert {:error, :invalid_period} = Analytics.validate_custom_period(from, to)
+    end
+  end
+
+  test "daily rejects oversized and reversed direct ranges before materializing dates" do
+    assert_raise ArgumentError, fn ->
+      Analytics.daily(@branch_id, {~D[2025-01-01], ~D[2026-01-02]})
+    end
+
+    assert_raise ArgumentError, fn ->
+      Analytics.daily(@branch_id, {~D[2026-01-02], ~D[2026-01-01]})
+    end
   end
 
   test "order items keep their category", ctx do

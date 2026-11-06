@@ -74,6 +74,62 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, ~s{input[name="from"][value="#{from}"]})
   end
 
+  test "invalid custom period shows an error and can be corrected", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+
+    {:ok, lv, _html} =
+      live(conn, ~p"/staff/b/#{branch}/statistics?period=custom&from=bad&to=2026-01-01")
+
+    assert has_element?(lv, "#statistics-period-error[role=alert]")
+    assert has_element?(lv, ~s{input[name="from"][value=""]})
+    refute has_element?(lv, "#crm-split")
+    refute has_element?(lv, "h2", "Revenue by day")
+
+    lv
+    |> form("#statistics-filter", %{
+      "period" => "custom",
+      "from" => "2026-01-02",
+      "to" => "2026-01-01"
+    })
+    |> render_change()
+
+    refute has_element?(lv, "#statistics-period-error")
+    assert has_element?(lv, "h2", "Revenue by day")
+    assert has_element?(lv, ~s{input[name="from"][value="2026-01-02"]})
+  end
+
+  test "nested custom date params are rejected without rendering them", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    path = ~p"/staff/b/#{branch}/statistics"
+
+    {:ok, lv, _html} =
+      live(
+        conn,
+        path <> "?period=custom&from[x]=2026-01-01&to[]=2026-01-02"
+      )
+
+    assert has_element?(lv, "#statistics-period-error")
+    assert has_element?(lv, ~s{input[name="from"][value=""]})
+    assert has_element?(lv, ~s{input[name="to"][value=""]})
+    refute has_element?(lv, "h2", "Revenue by day")
+
+    lv |> element("a", "Products") |> render_click()
+    assert has_element?(lv, "#statistics-period-error")
+  end
+
+  test "oversized custom period hides all report tabs", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+
+    {:ok, lv, _html} =
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/statistics?tab=products&period=custom&from=2024-01-01&to=2025-01-01"
+      )
+
+    assert has_element?(lv, "#statistics-period-error")
+    refute has_element?(lv, "h2", "Products sold")
+  end
+
   test "requires the statistics.read permission", %{conn: conn} do
     {conn, branch} = login(conn, ["orders.read"])
     dashboard = ~p"/staff/b/#{branch}/dashboard"

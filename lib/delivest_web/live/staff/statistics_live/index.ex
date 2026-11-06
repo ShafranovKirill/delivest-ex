@@ -22,20 +22,38 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     preset =
       if params["period"] in Analytics.presets(), do: params["period"], else: "week"
 
-    period =
-      Analytics.resolve_period(
-        preset,
-        params["from"],
-        params["to"],
-        socket.assigns.current_branch.id
-      )
+    {period, period_error} =
+      if preset == "custom" do
+        case Analytics.validate_custom_period(params["from"], params["to"]) do
+          {:ok, period} ->
+            {period, nil}
+
+          {:error, :invalid_period} ->
+            {Analytics.resolve_period("week", nil, nil, socket.assigns.current_branch.id),
+             gettext("Choose a valid period of up to 366 days")}
+        end
+      else
+        {Analytics.resolve_period(preset, nil, nil, socket.assigns.current_branch.id), nil}
+      end
+
+    custom_from = if preset == "custom", do: safe_date_param(params["from"]), else: nil
+    custom_to = if preset == "custom", do: safe_date_param(params["to"]), else: nil
 
     sort = if params["sort"] == "quantity", do: :quantity, else: :revenue
 
     {:noreply,
      socket
-     |> assign(tab: tab, preset: preset, period: period, sort: sort)
-     |> load_tab()}
+     |> assign(
+       tab: tab,
+       preset: preset,
+       period: period,
+       period_error: period_error,
+       custom_from: custom_from,
+       custom_to: custom_to,
+       form: to_form(%{"period" => preset, "from" => custom_from, "to" => custom_to}),
+       sort: sort
+     )
+     |> then(fn socket -> if period_error, do: socket, else: load_tab(socket) end)}
   end
 
   @impl true
@@ -54,14 +72,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   defp maybe_put_custom(query, %{"period" => "custom"} = params, {from, to}) do
     query
-    |> Map.put("from", present_or(params["from"], Date.to_iso8601(from)))
-    |> Map.put("to", present_or(params["to"], Date.to_iso8601(to)))
+    |> Map.put("from", params |> Map.get("from", Date.to_iso8601(from)) |> safe_date_param())
+    |> Map.put("to", params |> Map.get("to", Date.to_iso8601(to)) |> safe_date_param())
   end
 
   defp maybe_put_custom(query, _params, _period), do: query
 
-  defp present_or(value, fallback) when value in [nil, ""], do: fallback
-  defp present_or(value, _fallback), do: value
+  defp safe_date_param(value) when is_binary(value) do
+    if Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, value), do: value, else: ""
+  end
+
+  defp safe_date_param(_value), do: ""
 
   defp load_tab(%{assigns: %{tab: "sales"}} = socket) do
     %{period: period, current_branch: branch} = socket.assigns
@@ -96,7 +117,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       %{"tab" => tab, "period" => assigns.preset, "sort" => to_string(assigns.sort)}
       |> then(fn q ->
         if assigns.preset == "custom",
-          do: Map.merge(q, %{"from" => Date.to_iso8601(from), "to" => Date.to_iso8601(to)}),
+          do:
+            Map.merge(q, %{
+              "from" => assigns.custom_from || Date.to_iso8601(from),
+              "to" => assigns.custom_to || Date.to_iso8601(to)
+            }),
           else: q
       end)
       |> Map.merge(overrides)
@@ -137,12 +162,15 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             {gettext("Statistics")}
           </h1>
           <p class="text-sm text-base-content/60">
-            {@current_branch.name} · {format_period(@period)}
+            {@current_branch.name}
+            <%= if is_nil(@period_error) do %>
+              · {format_period(@period)}
+            <% end %>
           </p>
         </div>
 
         <.form
-          for={%{}}
+          for={@form}
           id="statistics-filter"
           phx-change="filter"
           class="flex flex-wrap items-center gap-2"
@@ -156,18 +184,22 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             <input
               type="date"
               name="from"
-              value={Date.to_iso8601(elem(@period, 0))}
+              value={@custom_from}
               class="input input-bordered input-sm w-40"
             />
             <input
               type="date"
               name="to"
-              value={Date.to_iso8601(elem(@period, 1))}
+              value={@custom_to}
               class="input input-bordered input-sm w-40"
             />
           <% end %>
         </.form>
       </div>
+
+      <p :if={@period_error} id="statistics-period-error" role="alert" class="text-sm text-error">
+        {@period_error}
+      </p>
 
       <div role="tablist" class="tabs tabs-box w-fit">
         <.link
@@ -186,7 +218,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         </.link>
       </div>
 
-      <%= if @tab == "sales" do %>
+      <%= if @tab == "sales" and is_nil(@period_error) do %>
         <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <.stat_card
             icon="hero-banknotes"
@@ -285,7 +317,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         </div>
       <% end %>
 
-      <%= if @tab == "products" do %>
+      <%= if @tab == "products" and is_nil(@period_error) do %>
         <.card class="overflow-x-auto">
           <div class="p-4 flex items-center justify-between gap-3 border-b border-base-200">
             <h2 class="font-bold">{gettext("Products sold")}</h2>
@@ -337,7 +369,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         </.card>
       <% end %>
 
-      <%= if @tab == "categories" do %>
+      <%= if @tab == "categories" and is_nil(@period_error) do %>
         <.card class="overflow-x-auto">
           <table class="table table-sm">
             <thead>

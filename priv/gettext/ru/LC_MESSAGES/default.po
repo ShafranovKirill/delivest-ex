@@ -1335,6 +1335,10 @@ msgstr "Новый"
 msgid "Custom"
 msgstr "Произвольный период"
 
+#: lib/delivest_web/live/staff/statistics_live/index.ex
+msgid "Choose a valid period of up to 366 days"
+msgstr "Выберите корректный период не длиннее 366 дней"
+
 #: lib/delivest_web/live/staff/client_live/clients.ex:377
 #, elixir-autogen, elixir-format
 msgid "Delete Client"
