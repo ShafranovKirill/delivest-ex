@@ -75,6 +75,50 @@ defmodule Delivest.LoyaltyTest do
     assert [%Entry{kind: :accrual, amount: 10}] = Loyalty.history(ctx.client.id)
   end
 
+  test "completion after a reversal restores the earned points in a new cycle", ctx do
+    order = order(ctx)
+
+    assert {:ok, %Entry{cycle: 0, amount: 10}} = Loyalty.accrue(order)
+    assert {:ok, %Entry{cycle: 0, amount: -10}} = Loyalty.reverse(order)
+    assert {:ok, %Entry{cycle: 1, amount: 10}} = Loyalty.accrue(order)
+    assert {:ok, nil} = Loyalty.accrue(order)
+    assert Loyalty.balance(ctx.client.id) == 10
+
+    assert {:ok, %Entry{cycle: 1, amount: -10}} = Loyalty.reverse(order)
+    assert {:ok, nil} = Loyalty.reverse(order)
+    assert Loyalty.balance(ctx.client.id) == 0
+  end
+
+  test "completion after partial reversal restores only clawed back points", ctx do
+    order = order(ctx)
+    assert {:ok, %Entry{amount: 10}} = Loyalty.accrue(order)
+
+    Repo.update_all(Delivest.Loyalty.Account, set: [balance: 4])
+    assert {:ok, %Entry{amount: -4}} = Loyalty.reverse(order)
+    assert Loyalty.balance(ctx.client.id) == 0
+
+    assert {:ok, %Entry{cycle: 1, amount: 4}} = Loyalty.accrue(order)
+    assert Loyalty.balance(ctx.client.id) == 4
+  end
+
+  test "reversal and re-completion keep reward on its original client", ctx do
+    order = order(ctx)
+    other_client = insert(:client)
+    assert {:ok, %Entry{client_id: original_id}} = Loyalty.accrue(order)
+    assert original_id == ctx.client.id
+
+    order = order |> Ecto.Changeset.change(client_id: other_client.id) |> Repo.update!()
+    assert {:ok, %Entry{client_id: ^original_id, amount: -10}} = Loyalty.reverse(order)
+    assert Loyalty.balance(ctx.client.id) == 0
+    assert Loyalty.balance(other_client.id) == 0
+
+    assert {:ok, %Entry{client_id: ^original_id, cycle: 1, amount: 10}} =
+             Loyalty.accrue(order)
+
+    assert Loyalty.balance(ctx.client.id) == 10
+    assert Loyalty.balance(other_client.id) == 0
+  end
+
   test "nothing is credited when the program is off", ctx do
     update_info(ctx.branch, %{"loyalty" => %{"enabled" => false}})
     order(ctx) |> finish(ctx.manager, :completed)

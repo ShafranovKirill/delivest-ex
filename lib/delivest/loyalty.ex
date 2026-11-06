@@ -131,7 +131,6 @@ defmodule Delivest.Loyalty do
     stars_for(order, settings) + extra
   end
 
-  def accrue(%Order{client_id: nil}), do: {:ok, nil}
   def accrue(%Order{channel: %{}}), do: {:ok, nil}
   def accrue(%Order{crm: %{}}), do: {:ok, nil}
 
@@ -139,21 +138,53 @@ defmodule Delivest.Loyalty do
     settings = settings(order.branch_id)
 
     with true <- enabled?(order.branch_id),
-         stars when stars > 0 <- order_stars(order, settings),
-         false <- entry_exists?(order.id, :accrual) do
-      now = DateTime.utc_now(:second)
+         stars when stars > 0 <- order_stars(order, settings) do
+      Repo.transaction(fn ->
+        lock_order(order.id)
+        latest = latest_accrual(order.id)
+        client_id = if latest, do: latest.client_id, else: order.client_id
 
-      insert_entry(%{
-        client_id: order.client_id,
-        branch_id: order.branch_id,
-        order_id: order.id,
-        kind: :accrual,
-        amount: stars,
-        remaining: stars,
-        expires_at: DateTime.add(now, settings.expire_days, :day)
-      })
+        if client_id do
+          lock_account(client_id)
+          accrue_locked(order, settings, stars, client_id, latest)
+        end
+      end)
     else
       _ -> {:ok, nil}
+    end
+  end
+
+  defp accrue_locked(order, settings, stars, client_id, latest) do
+    if latest && not reversal_exists?(order.id, latest.cycle) do
+      nil
+    else
+      net =
+        Repo.one(
+          from(e in Entry,
+            where: e.order_id == ^order.id and e.kind in [:accrual, :accrual_reversal],
+            select: sum(e.amount)
+          )
+        ) || 0
+
+      amount = max(stars - net, 0)
+
+      if amount > 0 do
+        now = DateTime.utc_now(:second)
+
+        case insert_entry(%{
+               client_id: client_id,
+               branch_id: order.branch_id,
+               order_id: order.id,
+               kind: :accrual,
+               cycle: if(latest, do: latest.cycle + 1, else: 0),
+               amount: amount,
+               remaining: amount,
+               expires_at: DateTime.add(now, settings.expire_days, :day)
+             }) do
+          {:ok, entry} -> entry
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end
     end
   end
 
@@ -202,12 +233,12 @@ defmodule Delivest.Loyalty do
     end
   end
 
-  def reverse(%Order{client_id: nil}), do: {:ok, nil}
-
   def reverse(%Order{} = order) do
-    with %Entry{} = accrual <- find_entry(order.id, :accrual),
-         false <- entry_exists?(order.id, :accrual_reversal) do
-      Repo.transaction(fn ->
+    Repo.transaction(fn ->
+      lock_order(order.id)
+      accrual = latest_accrual(order.id)
+
+      if accrual && not reversal_exists?(order.id, accrual.cycle) do
         lock_account(accrual.client_id)
         taken = min(accrual.amount, balance(accrual.client_id))
 
@@ -218,15 +249,14 @@ defmodule Delivest.Loyalty do
                branch_id: accrual.branch_id,
                order_id: order.id,
                kind: :accrual_reversal,
+               cycle: accrual.cycle,
                amount: -taken
              }) do
           {:ok, entry} -> entry
           {:error, reason} -> Repo.rollback(reason)
         end
-      end)
-    else
-      _ -> {:ok, nil}
-    end
+      end
+    end)
   end
 
   def adjust(staff, %Branch{} = branch, client_id, amount, reason)
@@ -355,6 +385,32 @@ defmodule Delivest.Loyalty do
 
   defp find_entry(order_id, kind),
     do: Repo.one(from(e in Entry, where: e.order_id == ^order_id and e.kind == ^kind))
+
+  defp latest_accrual(order_id),
+    do:
+      Repo.one(
+        from(e in Entry,
+          where: e.order_id == ^order_id and e.kind == :accrual,
+          order_by: [desc: e.cycle],
+          limit: 1
+        )
+      )
+
+  defp reversal_exists?(order_id, cycle),
+    do:
+      Repo.exists?(
+        from(e in Entry,
+          where: e.order_id == ^order_id and e.kind == :accrual_reversal and e.cycle == ^cycle
+        )
+      )
+
+  defp lock_order(order_id) do
+    Ecto.Adapters.SQL.query!(
+      Repo,
+      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+      ["loyalty_order:#{order_id}"]
+    )
+  end
 
   defp lock_account(client_id) do
     Repo.insert_all(
