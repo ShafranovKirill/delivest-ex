@@ -1,6 +1,6 @@
 # Яндекс Доставка
 
-Исходящий курьерский провайдер: вызываем курьера Яндекса на заказ филиала. Задача — [docs/tasks/courier-delivery.md](../../../../docs/tasks/courier-delivery.md).
+Исходящий курьерский провайдер: вызываем курьера Яндекса на заказ филиала. Задача — [docs/tasks/courier-delivery.md](../../../../../docs/tasks/courier-delivery.md).
 
 - Источник: https://yandex.com/support/delivery-profile/ru/api/express/quickstart, раздел «Экспресс-доставка / Доставка в течение дня»
 - Полная копия документации: [docs/](docs/), скачана 2026-10-28 из `llms.txt`. Методы — `docs/openapi/*.md`
