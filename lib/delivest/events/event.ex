@@ -7,6 +7,7 @@ defmodule Delivest.Events.Event do
 
   schema "domain_events" do
     field :type, :string
+    field :sequence, :integer, read_after_writes: true
     field :aggregate_type, :string
     field :aggregate_id, Ecto.UUID
     field :branch_id, Ecto.UUID
