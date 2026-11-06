@@ -36,12 +36,21 @@ defmodule Delivest.Application do
       DelivestWeb.Endpoint
     ]
 
+    children = Enum.reject(children, &is_nil/1) |> Enum.map(&Supervisor.child_spec(&1, []))
+    held = Delivest.InstanceBackup.Maintenance.hold_boot?()
+
+    maintenance =
+      {Delivest.InstanceBackup.Maintenance,
+       supervisor: Delivest.Supervisor, children: children, held: held}
+
+    startup_children = if held, do: [maintenance], else: children ++ [maintenance]
+
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Delivest.Supervisor]
 
     Delivest.Logs.ObanErrors.attach()
-    Supervisor.start_link(Enum.reject(children, &is_nil/1), opts)
+    Supervisor.start_link(startup_children, opts)
   end
 
   defp cache(name, opts \\ []) do
