@@ -85,6 +85,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
       )
 
     refute has_element?(lv, "#yandex-eda-health-check")
+    render_async(lv)
 
     lv |> with_target("#yandex-eda-health") |> render_hook("check")
 
