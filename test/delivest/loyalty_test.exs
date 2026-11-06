@@ -1,12 +1,14 @@
 defmodule Delivest.LoyaltyTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   import Delivest.Factory
   import Delivest.OrderFixtures
 
+  alias Delivest.Events.{DeliverWorker, Delivery, Event}
   alias Delivest.Identity.Branch.{BranchInfo, LoyaltySettings}
   alias Delivest.Loyalty
   alias Delivest.Loyalty.Entry
+  alias Delivest.Oms.Order
   alias Delivest.Oms.Orders
 
   setup do
@@ -42,20 +44,79 @@ defmodule Delivest.LoyaltyTest do
   end
 
   defp finish(order, manager, to) do
+    order = transition(order, manager, to)
+    drain_order_events!(order)
+    order
+  end
+
+  defp transition(order, manager, to) do
     steps = [:accepted, :preparing, :ready, :completed]
 
-    order =
-      steps
-      |> Enum.take_while(&(&1 != to))
-      |> Kernel.++([to])
-      |> Enum.uniq()
-      |> Enum.reduce(order, fn status, acc ->
-        {:ok, acc} = Orders.advance_order(acc, status, {:staff, manager})
-        Repo.reload!(acc)
-      end)
+    steps
+    |> Enum.take_while(&(&1 != to))
+    |> Kernel.++([to])
+    |> Enum.uniq()
+    |> Enum.reduce(order, fn status, acc ->
+      {:ok, acc} = Orders.advance_order(acc, status, {:staff, manager})
+      Repo.reload!(acc)
+    end)
+  end
 
-    deliver_events()
-    order
+  defp drain_order_events!(order, passes \\ 10)
+
+  defp drain_order_events!(order, 0) do
+    flunk("loyalty delivery did not settle: #{loyalty_diagnostics(order)}")
+  end
+
+  defp drain_order_events!(order, passes) do
+    Oban.drain_queue(
+      queue: :events,
+      with_safety: false,
+      with_recursion: false,
+      with_scheduled: true
+    )
+
+    deliveries = loyalty_deliveries(order)
+
+    if deliveries != [] and Enum.all?(deliveries, &(&1.status == "delivered")) do
+      :ok
+    else
+      drain_order_events!(order, passes - 1)
+    end
+  end
+
+  defp loyalty_deliveries(order) do
+    Repo.all(
+      from(e in Event,
+        left_join: d in Delivery,
+        on: d.event_id == e.id and d.subscriber == "loyalty",
+        where:
+          e.aggregate_type == "order" and e.aggregate_id == ^order.id and
+            e.type == "order.status_changed",
+        order_by: [asc: e.sequence],
+        select: {e, d.status}
+      )
+    )
+    |> Enum.map(fn {event, status} ->
+      %{sequence: event.sequence, type: event.type, to: event.payload["to"], status: status}
+    end)
+  end
+
+  defp loyalty_diagnostics(order) do
+    current = Repo.get!(Order, order.id)
+
+    entries =
+      Repo.all(from(e in Entry, where: e.order_id == ^order.id))
+      |> Enum.map(&Map.take(&1, [:kind, :amount, :cycle, :client_id, :order_id]))
+
+    settings = Loyalty.settings(order.branch_id)
+
+    inspect(%{
+      deliveries: loyalty_deliveries(order),
+      entries: entries,
+      order: Map.take(current, [:client_id, :status, :points_earned, :points_spent]),
+      loyalty_settings: Map.take(settings, [:enabled, :per_rubles, :stars, :spend_enabled])
+    })
   end
 
   test "stars come from the order total below the delivery, rounded down", ctx do
@@ -71,6 +132,56 @@ defmodule Delivest.LoyaltyTest do
 
     assert Loyalty.balance(ctx.client.id) == 10
     assert {:ok, nil} = Loyalty.accrue(order)
+    assert Loyalty.balance(ctx.client.id) == 10
+    assert [%Entry{kind: :accrual, amount: 10}] = Loyalty.history(ctx.client.id)
+  end
+
+  test "completion waits for earlier loyalty deliveries after out-of-order dispatch", ctx do
+    order = order(ctx) |> transition(ctx.manager, :completed)
+    events = Delivest.Events.list("order", order.id)
+    completion = Enum.find(events, &(&1.payload["to"] == "completed"))
+    assert %Event{} = completion
+
+    for event <- events do
+      priority = if event.id == completion.id, do: 0, else: 9
+
+      Repo.update_all(
+        from(j in Oban.Job,
+          where: j.worker == ^Oban.Worker.to_string(DeliverWorker),
+          where: fragment("?->>'event_id' = ?", j.args, ^event.id),
+          where: fragment("?->>'subscriber' = 'loyalty'", j.args)
+        ),
+        set: [priority: priority]
+      )
+    end
+
+    first =
+      Oban.drain_queue(
+        queue: :events,
+        with_safety: false,
+        with_recursion: false,
+        with_scheduled: true
+      )
+
+    assert first.snoozed >= 1
+    assert Loyalty.balance(ctx.client.id) == 0
+
+    drain_order_events!(order)
+    assert Loyalty.balance(ctx.client.id) == 10
+    assert Enum.all?(loyalty_deliveries(order), &(&1.status == "delivered"))
+    assert [%Entry{kind: :accrual, amount: 10}] = Loyalty.history(ctx.client.id)
+
+    job =
+      Repo.one!(
+        from(j in Oban.Job,
+          where: j.worker == ^Oban.Worker.to_string(DeliverWorker),
+          where: fragment("?->>'event_id' = ?", j.args, ^completion.id),
+          where: fragment("?->>'subscriber' = 'loyalty'", j.args)
+        )
+      )
+
+    assert :ok = DeliverWorker.perform(job)
+    drain_order_events!(order)
     assert Loyalty.balance(ctx.client.id) == 10
     assert [%Entry{kind: :accrual, amount: 10}] = Loyalty.history(ctx.client.id)
   end
@@ -290,9 +401,9 @@ defmodule Delivest.LoyaltyTest do
 
     test "completing credits stars only for the part paid with money", ctx do
       {:ok, order} = place(ctx, 100, 50_000)
-      finish(order, ctx.manager, :completed)
+      order = finish(order, ctx.manager, :completed)
 
-      assert Loyalty.balance(ctx.client.id) == 20
+      assert Loyalty.balance(ctx.client.id) == 20, loyalty_diagnostics(order)
     end
 
     test "editing the items of such an order is closed", ctx do
