@@ -274,6 +274,7 @@ defmodule DelivestWeb.Router do
     get "/b/:branch_slug/products/export", StaffMenuExportController, :show
     get "/b/:branch_slug/site-snapshot", StaffSiteSnapshotController, :show
     get "/franchise/site-snapshot", StaffSiteSnapshotController, :show_franchise
+    get "/franchise/instance-backup/:id", StaffSiteSnapshotController, :download_instance
 
     live_dashboard "/metrics",
       metrics: DelivestWeb.Telemetry,

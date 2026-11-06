@@ -111,8 +111,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.Sections do
       section(
         :snapshot,
         "hero-archive-box-arrow-down",
-        gettext("Franchise snapshot"),
-        gettext("Export and import every branch, shared settings, catalog and integrations.")
+        gettext("Full instance backup"),
+        gettext("Export or restore the entire database and every stored file.")
       )
 
   defp section(id, icon, title, description),

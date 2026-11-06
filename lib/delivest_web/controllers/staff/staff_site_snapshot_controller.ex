@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.StaffSiteSnapshotController do
   use DelivestWeb, :controller
 
   alias Delivest.Identity
+  alias Delivest.InstanceBackup
   alias Delivest.SiteSnapshot
 
   def show(%{assigns: %{current_staff: %{} = staff}} = conn, %{"branch_slug" => slug}) do
@@ -37,6 +38,21 @@ defmodule DelivestWeb.Staff.StaffSiteSnapshotController do
   end
 
   def show_franchise(conn, _), do: send_resp(conn, :unauthorized, "")
+
+  def download_instance(%{assigns: %{current_staff: %{} = staff}} = conn, %{"id" => id}) do
+    case InstanceBackup.download(staff, id) do
+      {:ok, path} ->
+        send_download(conn, {:file, path},
+          filename: "delivest-instance-#{id}.tar",
+          content_type: "application/x-tar"
+        )
+
+      _ ->
+        send_resp(conn, :not_found, "")
+    end
+  end
+
+  def download_instance(conn, _), do: send_resp(conn, :unauthorized, "")
 
   defp download_franchise(conn, staff, sections, path) do
     case SiteSnapshot.export_franchise(staff, sections, path) do
