@@ -72,15 +72,27 @@ defmodule Delivest.Loyalty do
 
   def set_product(staff, branch_id, product_id, attrs) do
     with :ok <- Identity.authorize(staff, "promotions.update", branch_id),
+         :ok <-
+           Delivest.Net.SharedOwnership.authorize(
+             staff,
+             "promotions.update",
+             "Product",
+             product_id
+           ),
          true <- enabled?(branch_id) || {:error, :points_unavailable},
          {:ok, product} <- Delivest.Net.get_branch_product(branch_id, product_id) do
+      branch_ids = Delivest.Net.SharedOwnership.branches("Product", product_id)
+
       product
       |> Delivest.Net.Product.changeset(Map.take(attrs, ["stars_price", "stars_reward"]))
-      |> Repo.update()
+      |> then(&Delivest.Net.SharedOwnership.write(branch_ids, fn -> Repo.update(&1) end))
       |> Audit.track(staff, "product.updated")
       |> tap(fn
-        {:ok, _} -> Delivest.Net.Catalogs.clear_menu_cache(branch_id)
-        _ -> :ok
+        {:ok, _} ->
+          Enum.each(branch_ids, &Delivest.Net.Catalogs.invalidate_menu_cache/1)
+
+        _ ->
+          :ok
       end)
     end
   end

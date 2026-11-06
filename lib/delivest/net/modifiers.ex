@@ -12,6 +12,8 @@ defmodule Delivest.Net.Modifiers do
     ProductModifierGroup
   }
 
+  alias Delivest.Net.SharedOwnership
+
   @type choice :: %{
           id: binary(),
           group_name: String.t(),
@@ -36,14 +38,18 @@ defmodule Delivest.Net.Modifiers do
     with :ok <- authorize(staff) do
       group
       |> ModifierGroup.changeset(attrs)
-      |> Repo.insert_or_update()
+      |> then(&SharedOwnership.write(:all, fn -> Repo.insert_or_update(&1) end))
       |> Audit.track(staff, "modifier_group.saved")
+      |> tap(&invalidate_on_success/1)
     end
   end
 
   def delete_group(staff, %ModifierGroup{} = group) do
     with :ok <- authorize(staff) do
-      group |> Repo.delete() |> Audit.track(staff, "modifier_group.deleted")
+      group
+      |> then(&SharedOwnership.write(:all, fn -> Repo.delete(&1) end))
+      |> Audit.track(staff, "modifier_group.deleted")
+      |> tap(&invalidate_on_success/1)
     end
   end
 
@@ -52,13 +58,16 @@ defmodule Delivest.Net.Modifiers do
 
   def save_modifier(staff, %Modifier{} = modifier, attrs) do
     with :ok <- authorize(staff) do
-      modifier |> Modifier.changeset(attrs) |> Repo.insert_or_update()
+      modifier
+      |> Modifier.changeset(attrs)
+      |> then(&SharedOwnership.write(:all, fn -> Repo.insert_or_update(&1) end))
+      |> tap(&invalidate_on_success/1)
     end
   end
 
   def delete_modifier(staff, %Modifier{} = modifier) do
     with :ok <- authorize(staff) do
-      with {:ok, deleted} <- Repo.delete(modifier) do
+      with {:ok, deleted} <- SharedOwnership.write(:all, fn -> Repo.delete(modifier) end) do
         delete_photo(modifier.photo_key)
         clear_caches()
         {:ok, deleted}
@@ -78,7 +87,9 @@ defmodule Delivest.Net.Modifiers do
          {:ok, webp} <- shrink(binary),
          key = "modifiers/#{Ecto.UUID.generate()}.webp",
          :ok <- put(key, webp) do
-      case modifier |> Ecto.Changeset.change(photo_key: key) |> Repo.update() do
+      case modifier
+           |> Ecto.Changeset.change(photo_key: key)
+           |> then(&SharedOwnership.write(:all, fn -> Repo.update(&1) end)) do
         {:ok, updated} ->
           delete_photo(modifier.photo_key)
           clear_caches()
@@ -93,7 +104,10 @@ defmodule Delivest.Net.Modifiers do
 
   def remove_photo(staff, %Modifier{} = modifier) do
     with :ok <- authorize(staff),
-         {:ok, updated} <- modifier |> Ecto.Changeset.change(photo_key: nil) |> Repo.update() do
+         {:ok, updated} <-
+           modifier
+           |> Ecto.Changeset.change(photo_key: nil)
+           |> then(&SharedOwnership.write(:all, fn -> Repo.update(&1) end)) do
       delete_photo(modifier.photo_key)
       clear_caches()
       {:ok, updated}
@@ -128,18 +142,18 @@ defmodule Delivest.Net.Modifiers do
   end
 
   defp clear_caches do
-    Cachex.clear(:menu_cache)
+    Delivest.Net.Catalogs.invalidate_all_menu_cache()
     Cachex.clear(:cart_cache)
   end
 
   def get_modifier(id), do: Repo.get(Modifier, id)
 
-  def crm_ids(modifier_ids, provider) do
+  def crm_ids(modifier_ids, provider, branch_id) do
     Repo.all(
       from(e in ProductExternalId,
         where:
           e.entity_type == "modifier" and e.entity_id in ^modifier_ids and
-            e.provider == ^to_string(provider),
+            e.provider == ^to_string(provider) and e.branch_id == ^branch_id,
         select: {e.entity_id, e.external_id}
       )
     )
@@ -147,28 +161,34 @@ defmodule Delivest.Net.Modifiers do
   end
 
   def put_crm_id(staff, %Modifier{} = modifier, branch_id, provider, value) do
-    with :ok <- authorize(staff) do
-      Repo.delete_all(
-        from(e in ProductExternalId,
-          where:
-            e.entity_type == "modifier" and e.entity_id == ^modifier.id and
-              e.provider == ^to_string(provider)
+    with :ok <- Identity.authorize(staff, "products.update", branch_id) do
+      Repo.transaction(fn ->
+        Repo.delete_all(
+          from(e in ProductExternalId,
+            where:
+              e.entity_type == "modifier" and e.entity_id == ^modifier.id and
+                e.provider == ^to_string(provider) and e.branch_id == ^branch_id
+          )
         )
-      )
 
-      case value && String.trim(value) do
-        blank when blank in [nil, ""] ->
-          {:ok, nil}
+        case value && String.trim(value) do
+          blank when blank in [nil, ""] ->
+            nil
 
-        external_id ->
-          %ProductExternalId{entity_type: "modifier", entity_id: modifier.id}
-          |> ProductExternalId.changeset(%{
-            branch_id: branch_id,
-            provider: to_string(provider),
-            external_id: external_id
-          })
-          |> Repo.insert()
-      end
+          external_id ->
+            %ProductExternalId{entity_type: "modifier", entity_id: modifier.id}
+            |> ProductExternalId.changeset(%{
+              branch_id: branch_id,
+              provider: to_string(provider),
+              external_id: external_id
+            })
+            |> Repo.insert()
+            |> case do
+              {:ok, id} -> id
+              {:error, changeset} -> Repo.rollback(changeset)
+            end
+        end
+      end)
     end
   end
 
@@ -183,7 +203,7 @@ defmodule Delivest.Net.Modifiers do
   end
 
   def attach(staff, product_id, group_ids) do
-    with :ok <- authorize(staff) do
+    with :ok <- SharedOwnership.authorize(staff, "products.update", "Product", product_id) do
       rows =
         group_ids
         |> Enum.uniq()
@@ -195,7 +215,19 @@ defmodule Delivest.Net.Modifiers do
       Repo.transaction(fn ->
         Repo.delete_all(from(l in ProductModifierGroup, where: l.product_id == ^product_id))
         Repo.insert_all(ProductModifierGroup, rows)
+        Delivest.Net.Catalogs.bump_versions(SharedOwnership.branches("Product", product_id))
         rows
+      end)
+      |> tap(fn
+        {:ok, _} ->
+          Enum.each(SharedOwnership.branches("Product", product_id), fn branch_id ->
+            Delivest.Net.Catalogs.invalidate_menu_cache(branch_id)
+          end)
+
+          Cachex.clear(:cart_cache)
+
+        _ ->
+          :ok
       end)
     end
   end
@@ -353,6 +385,9 @@ defmodule Delivest.Net.Modifiers do
   defp quantity(_value), do: 0
 
   defp authorize(staff) do
-    if Identity.can?(staff, "products.update"), do: :ok, else: {:error, :forbidden}
+    if Identity.can?(staff, "catalog.global.manage"), do: :ok, else: {:error, :forbidden}
   end
+
+  defp invalidate_on_success({:ok, _}), do: clear_caches()
+  defp invalidate_on_success(_), do: :ok
 end

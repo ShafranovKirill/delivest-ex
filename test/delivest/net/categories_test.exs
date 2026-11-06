@@ -3,6 +3,7 @@ defmodule Delivest.Net.CategoriesTest do
 
   import Delivest.Factory
 
+  alias Delivest.Net.Catalogs
   alias Delivest.Net.Categories
   alias Delivest.Net.Category
   alias Delivest.Repo
@@ -14,6 +15,17 @@ defmodule Delivest.Net.CategoriesTest do
   end
 
   describe "list_category_for_branch/2" do
+    test "does not preload a product belonging only to another branch" do
+      branch = insert(:branch)
+      other = insert(:branch)
+      category = insert(:category)
+      product = insert(:product, category: category, is_active: true)
+      Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+      Relations.create_relation(Repo, "Branch", other.id, "Product", product.id)
+
+      assert [%{products: []}] = Categories.list_category_for_branch(branch.id)
+    end
+
     test "returns active categories ordered by order field for a branch" do
       branch = insert(:branch)
       cat1 = insert(:category, name: "First", order: 2.0, is_active: true)
@@ -108,6 +120,41 @@ defmodule Delivest.Net.CategoriesTest do
   end
 
   describe "update_category/3" do
+    test "one branch editor cannot mutate a shared category" do
+      staff = staff_with_permissions(["categories.update", "categories.delete"])
+      category = insert(:category)
+      own = insert(:branch)
+      other = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: own)
+      Relations.create_relation(Repo, "Branch", own.id, "Category", category.id)
+      Relations.create_relation(Repo, "Branch", other.id, "Category", category.id)
+
+      assert {:error, :forbidden} = Categories.update_category(staff, category, %{"name" => "X"})
+      assert {:error, :forbidden} = Categories.update_category_order(staff, category, nil, nil)
+      assert {:error, :forbidden} = Categories.delete_category(staff, category)
+      assert Repo.get!(Category, category.id).name == category.name
+    end
+
+    test "shared category update refreshes both branch menus" do
+      staff = staff_with_permissions(["categories.update"])
+      category = insert(:category, name: "Old", is_active: true)
+      branches = for _ <- 1..2, do: insert(:branch)
+
+      Enum.each(branches, fn branch ->
+        insert(:staff_branch, staff: staff, branch: branch)
+        Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+        assert {:ok, [%{id: id, name: "Old"}]} = Catalogs.get_menu_for_branch(branch.id)
+        assert id == category.id
+      end)
+
+      assert {:ok, _} = Categories.update_category(staff, category, %{"name" => "New"})
+
+      Enum.each(branches, fn branch ->
+        assert {:ok, [%{id: id, name: "New"}]} = Catalogs.get_menu_for_branch(branch.id)
+        assert id == category.id
+      end)
+    end
+
     test "successfully updates category if permitted and invalidates cache" do
       staff = staff_with_permissions(["categories.update"])
       category = insert(:category, name: "Old Name")

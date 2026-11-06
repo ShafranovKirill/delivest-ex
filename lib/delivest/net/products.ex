@@ -1,11 +1,10 @@
 defmodule Delivest.Net.Products do
   import Ecto.Query
 
-  alias Delivest.Net.{Product, ProductCrmIds}
+  alias Delivest.Net.{Product, ProductCrmIds, SharedOwnership}
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Audit
-  alias Delivest.Integrations.Channels
   alias Delivest.Relations.EntityRelation
 
   def list_staff_products_for_branch(staff, branch_id, params \\ %{}, opts \\ []) do
@@ -44,6 +43,39 @@ defmodule Delivest.Net.Products do
       |> Repo.all()
       |> Map.new(fn product -> {product.id, product} end)
     end
+  end
+
+  def list_branch_products_by_ids(branch_id, ids, opts \\ [])
+
+  def list_branch_products_by_ids(_branch_id, [], _opts), do: %{}
+
+  def list_branch_products_by_ids(branch_id, ids, opts) when is_list(ids) do
+    Product
+    |> join(:inner, [p], r in EntityRelation,
+      on:
+        r.to_id == p.id and r.to_entity_type == "Product" and
+          r.from_entity_type == "Branch" and r.from_id == ^branch_id
+    )
+    |> where([p], p.id in ^ids and is_nil(p.deleted_at) and p.is_active == true)
+    |> maybe_preload_query(opts)
+    |> Repo.all()
+    |> Map.new(&{&1.id, &1})
+  end
+
+  def list_branch_products_by_refs(branch_id, ids, slugs) do
+    Product
+    |> join(:inner, [p], r in EntityRelation,
+      on:
+        r.to_id == p.id and r.to_entity_type == "Product" and
+          r.from_entity_type == "Branch" and r.from_id == ^branch_id
+    )
+    |> where(
+      [p],
+      (p.id in ^ids or p.slug in ^slugs) and is_nil(p.deleted_at) and p.is_active == true
+    )
+    |> preload([:category, :media])
+    |> Repo.all()
+    |> Map.new(&{&1.id, &1})
   end
 
   def product_available_in_branch?(product_id, nil),
@@ -103,6 +135,9 @@ defmodule Delivest.Net.Products do
           {:error, reason} -> {:error, reason}
         end
       end)
+      |> Multi.run(:catalog_version, fn _repo, _changes ->
+        {:ok, Delivest.Net.Catalogs.bump_versions([branch_id])}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{product: created_product}} ->
@@ -124,6 +159,7 @@ defmodule Delivest.Net.Products do
         {products, _categories} =
           Enum.map_reduce(rows, %{}, &import_row(staff, branch_id, &1, &2))
 
+        Delivest.Net.Catalogs.bump_versions([branch_id])
         products
       end)
       |> case do
@@ -189,21 +225,39 @@ defmodule Delivest.Net.Products do
   end
 
   defp do_update_product(staff, %Product{} = updateble_product, attrs) do
-    if Identity.authorize(staff, "products.update", get_product_branch_id(updateble_product.id)) ==
-         :ok do
-      branch_id = get_product_branch_id(updateble_product.id)
+    branch_ids = SharedOwnership.branches("Product", updateble_product.id)
+    crm_branch_id = Map.get(attrs, "branch_id") || Map.get(attrs, :branch_id)
+    crm_ids? = Map.has_key?(attrs, "crm_ids") || Map.has_key?(attrs, :crm_ids)
+    loaded = Repo.preload(updateble_product, :external_ids, force: true)
+    changeset = Product.changeset(loaded, attrs)
+    shared_change? = Enum.any?(Map.keys(changeset.changes), &(&1 != :crm_ids))
 
-      updateble_product
-      |> Repo.preload(:external_ids)
-      |> Product.changeset(attrs)
-      |> ProductCrmIds.put(branch_id)
-      |> put_slug()
-      |> put_order()
-      |> Repo.update()
+    crm_branch_id = crm_branch_id || if(length(branch_ids) == 1, do: hd(branch_ids))
+
+    crm_allowed? =
+      not crm_ids? or
+        (crm_branch_id in branch_ids and
+           Identity.authorize(staff, "products.update", crm_branch_id) == :ok)
+
+    shared_allowed? =
+      if shared_change? or not crm_ids?,
+        do:
+          SharedOwnership.authorize(staff, "products.update", "Product", updateble_product.id) ==
+            :ok,
+        else: true
+
+    if crm_allowed? and shared_allowed? do
+      changeset
+      |> maybe_put_crm_ids(crm_branch_id)
+      |> then(&if(shared_change?, do: &1 |> put_slug() |> put_order(), else: &1))
+      |> then(&SharedOwnership.write(branch_ids, fn -> Repo.update(&1) end))
       |> case do
         {:ok, updated_product} ->
-          invalidate_menu_cache(branch_id)
-          broadcast_change(branch_id, {:product_updated, updated_product})
+          Enum.each(branch_ids, fn branch_id ->
+            invalidate_menu_cache(branch_id)
+            broadcast_change(branch_id, {:product_updated, updated_product})
+          end)
+
           {:ok, updated_product}
 
         {:error, changeset} ->
@@ -281,15 +335,19 @@ defmodule Delivest.Net.Products do
   end
 
   def update_product_order(staff, %Product{} = product, above_order, below_order) do
-    if Identity.authorize(staff, "products.update", get_product_branch_id(product.id)) == :ok do
+    if SharedOwnership.authorize(staff, "products.update", "Product", product.id) == :ok do
+      branch_ids = SharedOwnership.branches("Product", product.id)
+
       product
       |> Ecto.Changeset.change(order: calculate_new_order(above_order, below_order))
-      |> Repo.update()
+      |> then(&SharedOwnership.write(branch_ids, fn -> Repo.update(&1) end))
       |> case do
         {:ok, updated_product} ->
-          branch_id = get_product_branch_id(updated_product.id)
-          invalidate_menu_cache(branch_id)
-          broadcast_change(branch_id, {:product_updated, updated_product})
+          Enum.each(branch_ids, fn branch_id ->
+            invalidate_menu_cache(branch_id)
+            broadcast_change(branch_id, {:product_updated, updated_product})
+          end)
+
           {:ok, updated_product}
 
         {:error, changeset} ->
@@ -349,14 +407,18 @@ defmodule Delivest.Net.Products do
   end
 
   defp do_soft_delete_product(staff, %Product{} = product) do
-    if Identity.authorize(staff, "products.delete", get_product_branch_id(product.id)) == :ok do
+    if SharedOwnership.authorize(staff, "products.delete", "Product", product.id) == :ok do
+      branch_ids = SharedOwnership.branches("Product", product.id)
+
       with {:ok, deleted_product} <-
              product
              |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
-             |> Repo.update() do
-        branch_id = get_product_branch_id(product.id)
-        invalidate_menu_cache(branch_id)
-        broadcast_change(branch_id, {:product_deleted, deleted_product})
+             |> then(&SharedOwnership.write(branch_ids, fn -> Repo.update(&1) end)) do
+        Enum.each(branch_ids, fn branch_id ->
+          invalidate_menu_cache(branch_id)
+          broadcast_change(branch_id, {:product_deleted, deleted_product})
+        end)
+
         {:ok, deleted_product}
       end
     else
@@ -365,20 +427,34 @@ defmodule Delivest.Net.Products do
   end
 
   def soft_delete_products(staff, branch_id, ids) when is_list(ids) do
-    if Identity.authorize(staff, "products.delete", branch_id) == :ok do
-      branch_product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+    branch_product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
+    selected_ids = Enum.filter(ids, &(&1 in branch_product_ids))
+
+    if Identity.authorize(staff, "products.delete", branch_id) == :ok and
+         Enum.all?(
+           selected_ids,
+           &(SharedOwnership.authorize(staff, "products.delete", "Product", &1) == :ok)
+         ) do
+      affected = Map.new(selected_ids, &{&1, SharedOwnership.branches("Product", &1)})
       now = DateTime.utc_now(:second)
 
-      {_count, deleted} =
-        Product
-        |> where([p], p.id in ^ids and p.id in ^branch_product_ids and is_nil(p.deleted_at))
-        |> select([p], p)
-        |> Repo.update_all(set: [deleted_at: now, updated_at: now])
+      owner_ids = affected |> Map.values() |> List.flatten() |> Enum.uniq()
 
-      invalidate_menu_cache(branch_id)
+      {:ok, {_count, deleted}} =
+        SharedOwnership.write(owner_ids, fn ->
+          Product
+          |> where([p], p.id in ^ids and p.id in ^branch_product_ids and is_nil(p.deleted_at))
+          |> select([p], p)
+          |> Repo.update_all(set: [deleted_at: now, updated_at: now])
+          |> then(&{:ok, &1})
+        end)
 
       Enum.each(deleted, fn product ->
-        broadcast_change(branch_id, {:product_deleted, product})
+        Enum.each(Map.get(affected, product.id, []), fn owner_id ->
+          invalidate_menu_cache(owner_id)
+          broadcast_change(owner_id, {:product_deleted, product})
+        end)
+
         Audit.record(staff, "product.deleted", product, branch_id: branch_id)
       end)
 
@@ -400,14 +476,10 @@ defmodule Delivest.Net.Products do
 
   defp broadcast_change(_, _), do: :ok
 
-  defp get_product_branch_id(product_id) do
-    Relations.list_source_ids("Product", product_id, "Branch")
-    |> List.first()
-  end
+  defp maybe_put_crm_ids(changeset, branch_id), do: ProductCrmIds.put(changeset, branch_id)
 
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
-    Channels.menu_changed(branch_id)
-    Cachex.del(:menu_cache, branch_id)
+    Delivest.Net.Catalogs.invalidate_menu_cache(branch_id)
     Cachex.del(:stock_cache, branch_id)
     Cachex.del(:promo_cache, branch_id)
     Cachex.clear(:cart_cache)

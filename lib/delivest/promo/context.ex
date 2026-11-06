@@ -17,6 +17,9 @@ defmodule Delivest.Promo.Context do
     :code,
     :now,
     :except_order_id,
+    :compiled_promotions,
+    :product_snapshot,
+    :catalog_version,
     promo_gifts: %{}
   ]
 
@@ -30,7 +33,10 @@ defmodule Delivest.Promo.Context do
       fulfillment_type: fulfillment(attrs[:fulfillment_type]),
       code: blank_to_nil(attrs[:code]),
       now: attrs[:now] || DateTime.utc_now(:second),
-      except_order_id: attrs[:except_order_id]
+      except_order_id: attrs[:except_order_id],
+      compiled_promotions: attrs[:compiled_promotions],
+      product_snapshot: attrs[:product_snapshot],
+      catalog_version: attrs[:catalog_version]
     }
   end
 

@@ -4,6 +4,7 @@ defmodule Delivest.Promo.Catalog do
   require Logger
 
   alias Delivest.{Net, Repo}
+  alias Delivest.Identity.Branch
   alias Delivest.Promo.{Compiled, Dsl, Promotion, Strategy}
 
   @cache :promo_cache
@@ -14,13 +15,35 @@ defmodule Delivest.Promo.Catalog do
 
   def list(branch_id) do
     case Ecto.UUID.cast(branch_id) do
-      {:ok, uuid} -> cached(uuid)
+      {:ok, uuid} ->
+        version = Repo.one(from b in Branch, where: b.id == ^uuid, select: b.catalog_version)
+        cached(uuid, version)
+
+      :error ->
+        []
+    end
+  end
+
+  def list(nil, _version), do: []
+
+  def list(branch_id, version) do
+    case Ecto.UUID.cast(branch_id) do
+      {:ok, uuid} -> cached(uuid, version)
       :error -> []
     end
   end
 
-  defp cached(branch_id) do
-    case Cachex.fetch(@cache, branch_id, fn _key -> {:commit, load(branch_id), ttl: @ttl} end) do
+  defp cached(branch_id, version) do
+    key = {:compiled_promo, branch_id, version}
+
+    result =
+      try do
+        Cachex.fetch(@cache, key, fn _key -> {:commit, load(branch_id), ttl: @ttl} end)
+      catch
+        :exit, _ -> {:error, :cache_unavailable}
+      end
+
+    case result do
       {:ok, compiled} -> compiled
       {:commit, compiled} -> compiled
       _ -> load(branch_id)
@@ -37,17 +60,20 @@ defmodule Delivest.Promo.Catalog do
     do: Enum.find(list(branch_id), &(&1.promotion.id == promotion_id))
 
   def invalidate(branch_id) do
-    Cachex.del(@cache, branch_id)
+    Delivest.Net.Catalogs.clear_menu_cache(branch_id)
+    Cachex.clear(:cart_cache)
+  end
+
+  def invalidate_after_commit(branch_id) do
+    Delivest.Net.Catalogs.invalidate_menu_cache(branch_id)
     Cachex.clear(:cart_cache)
   end
 
   defp load(branch_id) do
     parsed = branch_id |> active() |> Repo.all() |> Enum.flat_map(&parse/1)
-    slugs = parsed |> Enum.flat_map(fn {_promotion, strategy} -> Strategy.slugs(strategy) end)
-    products = Net.list_branch_products_by_slugs(branch_id, Enum.uniq(slugs))
 
     Enum.map(parsed, fn {promotion, strategy} ->
-      %Compiled{promotion: promotion, strategy: strategy, products: products}
+      %Compiled{promotion: promotion, strategy: strategy}
     end)
   end
 

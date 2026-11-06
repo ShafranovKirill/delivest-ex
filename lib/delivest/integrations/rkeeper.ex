@@ -315,8 +315,11 @@ defmodule Delivest.Integrations.Rkeeper do
       |> Enum.reject(&is_nil/1)
 
     %{
-      products: order.items |> Enum.map(& &1.product_id) |> ProductCrmIds.by_product(key()),
-      modifiers: Modifiers.crm_ids(modifier_ids, key())
+      products:
+        order.items
+        |> Enum.map(& &1.product_id)
+        |> ProductCrmIds.by_product(key(), order.branch_id),
+      modifiers: Modifiers.crm_ids(modifier_ids, key(), order.branch_id)
     }
   end
 end

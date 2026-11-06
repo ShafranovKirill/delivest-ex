@@ -11,6 +11,7 @@ defmodule Delivest.Promo.MenuPrices do
     candidates =
       branch_id
       |> Catalog.list()
+      |> Catalog.refresh_products(branch_id)
       |> Enum.filter(&(Compiled.automatic?(&1) and Strategy.unconditional?(&1.strategy)))
 
     context = Context.new(branch_id: branch_id)

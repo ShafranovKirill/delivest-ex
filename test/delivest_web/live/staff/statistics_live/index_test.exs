@@ -6,7 +6,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
   import Delivest.OrderFixtures
 
   defp login(conn, permissions) do
-    branch = insert(:branch, name: "Main")
+    branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: permissions))
     insert(:staff_branch, staff: staff, branch: branch)
 

@@ -19,12 +19,16 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
      |> assign(
        page_title: gettext("Modifiers"),
        branch_id: socket.assigns.current_branch.id,
-       can_edit: Identity.can?(staff, "products.update"),
+       can_edit: Identity.can?(staff, "catalog.global.manage"),
+       can_article:
+         Identity.authorize(staff, "products.update", socket.assigns.current_branch.id) == :ok,
        can_stop: Identity.can?(staff, "stops.update"),
        new_group: to_form(Modifiers.change_group(%ModifierGroup{}), as: :group),
        photo_for: nil,
        group_form: nil,
-       modifier_form: nil
+       modifier_form: nil,
+       article_modifier: nil,
+       article_form: nil
      )
      |> allow_upload(:photo,
        accept: ~w(.png .webp .jpg .jpeg),
@@ -49,8 +53,31 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   def handle_event("edit_modifier", %{"id" => id}, socket),
     do: {:noreply, assign(socket, modifier_form: Modifiers.get_modifier(id))}
 
+  def handle_event("edit_article", %{"id" => id}, socket) do
+    modifier = Modifiers.get_modifier(id)
+
+    if socket.assigns.can_article && modifier do
+      article = socket.assigns.articles[modifier.id] || ""
+
+      {:noreply,
+       assign(socket,
+         article_modifier: modifier,
+         article_form: to_form(%{"value" => article}, as: :article)
+       )}
+    else
+      {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
   def handle_event("close_form", _params, socket),
-    do: {:noreply, assign(socket, group_form: nil, modifier_form: nil)}
+    do:
+      {:noreply,
+       assign(socket,
+         group_form: nil,
+         modifier_form: nil,
+         article_modifier: nil,
+         article_form: nil
+       )}
 
   def handle_event("save_group", %{"group" => params}, socket) do
     group = socket.assigns.group_form
@@ -76,20 +103,52 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   def handle_event("save_modifier", %{"modifier" => params}, socket) do
     modifier = socket.assigns.modifier_form
     staff = socket.assigns.current_staff
-    attrs = params |> Map.delete("article") |> Map.put("max_quantity", "1")
+    attrs = Map.put(params, "max_quantity", "1")
 
-    with {:ok, modifier} <- Modifiers.save_modifier(staff, modifier, attrs),
-         {:ok, _id} <-
-           Modifiers.put_crm_id(
-             staff,
-             modifier,
-             socket.assigns.branch_id,
-             @provider,
-             params["article"]
-           ) do
-      {:noreply,
-       socket |> assign(modifier_form: nil) |> put_flash(:info, gettext("Saved")) |> load()}
-    else
+    result =
+      if socket.assigns.can_edit && modifier,
+        do: Modifiers.save_modifier(staff, modifier, attrs),
+        else: {:error, :forbidden}
+
+    case result do
+      {:ok, _modifier} ->
+        {:noreply,
+         socket |> assign(modifier_form: nil) |> put_flash(:info, gettext("Saved")) |> load()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, put_flash(socket, :error, errors(changeset))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
+  def handle_event("save_article", %{"article" => params}, socket) do
+    staff = socket.assigns.current_staff
+    branch_id = socket.assigns.branch_id
+
+    result =
+      if socket.assigns.article_modifier &&
+           Identity.authorize(staff, "products.update", branch_id) == :ok do
+        Modifiers.put_crm_id(
+          staff,
+          socket.assigns.article_modifier,
+          branch_id,
+          @provider,
+          params["value"]
+        )
+      else
+        {:error, :forbidden}
+      end
+
+    case result do
+      {:ok, _id} ->
+        {:noreply,
+         socket
+         |> assign(article_modifier: nil, article_form: nil)
+         |> put_flash(:info, gettext("Saved"))
+         |> load()}
+
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, put_flash(socket, :error, errors(changeset))}
 
@@ -177,7 +236,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     assign(socket,
       groups: groups,
       stopped: Modifiers.stopped_ids(socket.assigns.branch_id),
-      articles: Modifiers.crm_ids(ids, @provider)
+      articles: Modifiers.crm_ids(ids, @provider, socket.assigns.branch_id)
     )
   end
 
@@ -404,6 +463,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
               </button>
               <button
                 :if={@can_edit}
+                id={"modifier-edit-#{modifier.id}"}
                 type="button"
                 phx-click="edit_modifier"
                 phx-value-id={modifier.id}
@@ -411,6 +471,16 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
                 title={gettext("Edit")}
               >
                 <.icon name="hero-pencil-square" class="size-4" />
+              </button>
+              <button
+                :if={@can_article}
+                id={"modifier-article-#{modifier.id}"}
+                type="button"
+                phx-click="edit_article"
+                phx-value-id={modifier.id}
+                class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+              >
+                {gettext("Frontpad article")}
               </button>
               <button
                 :if={@can_edit}
@@ -500,11 +570,6 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
             label={gettext("Price")}
           />
           <.input
-            name="modifier[article]"
-            value={@modifier_form.id && @articles[@modifier_form.id]}
-            label={gettext("Frontpad article")}
-          />
-          <.input
             name="modifier[is_default]"
             type="checkbox"
             checked={@modifier_form.is_default}
@@ -523,6 +588,31 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
             <button type="submit" class="btn btn-primary btn-sm">{gettext("Save")}</button>
           </div>
         </form>
+      </.modal>
+
+      <.modal
+        id="article-modal"
+        show={@article_form != nil}
+        title={gettext("Frontpad article")}
+        on_cancel={JS.push("close_form")}
+      >
+        <.form
+          :if={@article_form}
+          for={@article_form}
+          id="article-form"
+          phx-submit="save_article"
+          class="mt-4 space-y-4"
+        >
+          <.input field={@article_form[:value]} label={gettext("Frontpad article")} />
+          <div class="flex justify-end gap-2">
+            <button type="button" class="rounded border px-3 py-2" phx-click="close_form">
+              {gettext("Cancel")}
+            </button>
+            <button type="submit" class="rounded bg-blue-600 px-3 py-2 text-white">
+              {gettext("Save")}
+            </button>
+          </div>
+        </.form>
       </.modal>
     </div>
     """

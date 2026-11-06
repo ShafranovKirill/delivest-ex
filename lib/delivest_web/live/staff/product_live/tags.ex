@@ -121,7 +121,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
     end)
   end
 
-  defp can_edit?(socket), do: Identity.can?(socket.assigns.current_staff, "products.update")
+  defp can_edit?(socket), do: Identity.can?(socket.assigns.current_staff, "catalog.global.manage")
 
   @impl true
   def render(assigns) do
@@ -133,7 +133,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
       >
         <:actions>
           <.button
-            :if={Identity.can?(@current_staff, "products.update")}
+            :if={Identity.can?(@current_staff, "catalog.global.manage")}
             patch={~p"/staff/b/#{@current_branch}/products/tags/new"}
             class="btn btn-primary"
           >
@@ -160,7 +160,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
               {ngettext("%{count} product", "%{count} products", Map.get(@usage, tag.id, 0))}
             </div>
           </div>
-          <div :if={Identity.can?(@current_staff, "products.update")} class="flex gap-1">
+          <div :if={Identity.can?(@current_staff, "catalog.global.manage")} class="flex gap-1">
             <.button
               patch={~p"/staff/b/#{@current_branch}/products/tags/#{tag.id}/edit"}
               class="btn btn-ghost btn-xs btn-square"

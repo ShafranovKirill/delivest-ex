@@ -4,9 +4,10 @@ defmodule Delivest.Net.Categories do
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Net.Category
+  alias Delivest.Net.SharedOwnership
+  alias Delivest.Relations.EntityRelation
   alias Delivest.Identity.Staff
   alias Delivest.Audit
-  alias Delivest.Integrations.Channels
 
   @spec list_category_for_branch(binary(), keyword()) :: [Category.t()]
   def list_category_for_branch(branch_id, _opts \\ []) do
@@ -14,6 +15,10 @@ defmodule Delivest.Net.Categories do
 
     products_query =
       from p in Delivest.Net.Product,
+        join: r in EntityRelation,
+        on:
+          r.to_entity_type == "Product" and r.to_id == p.id and
+            r.from_entity_type == "Branch" and r.from_id == ^branch_id,
         where: p.is_active == true and is_nil(p.deleted_at),
         order_by: [asc_nulls_last: p.order, asc: p.name],
         preload: [:media]
@@ -87,6 +92,9 @@ defmodule Delivest.Net.Categories do
           {:error, reason} -> {:error, reason}
         end
       end)
+      |> Multi.run(:catalog_version, fn _repo, _changes ->
+        {:ok, Delivest.Net.Catalogs.bump_versions([branch_id])}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{category: created_category}} ->
@@ -136,18 +144,16 @@ defmodule Delivest.Net.Categories do
   end
 
   defp do_update_category(staff, %Category{} = updateble_category, attrs) do
-    if Identity.authorize(
-         staff,
-         "categories.update",
-         get_category_branch_id(updateble_category.id)
-       ) == :ok do
+    if SharedOwnership.authorize(staff, "categories.update", "Category", updateble_category.id) ==
+         :ok do
+      branch_ids = SharedOwnership.branches("Category", updateble_category.id)
+
       updateble_category
       |> Category.changeset(attrs)
-      |> Repo.update()
+      |> then(&SharedOwnership.write(branch_ids, fn -> Repo.update(&1) end))
       |> case do
         {:ok, updated_category} ->
-          branch_id = get_category_branch_id(updated_category.id)
-          invalidate_menu_cache(branch_id)
+          invalidate_category(updated_category.id)
           {:ok, updated_category}
 
         {:error, changeset} ->
@@ -167,12 +173,12 @@ defmodule Delivest.Net.Categories do
   end
 
   defp do_delete_category(staff, %Category{} = category) do
-    if Identity.authorize(staff, "categories.delete", get_category_branch_id(category.id)) == :ok do
-      case Repo.delete(category) do
-        {:ok, deleted_category} ->
-          branch_id = get_category_branch_id(deleted_category.id)
+    branch_ids = SharedOwnership.branches("Category", category.id)
 
-          invalidate_menu_cache(branch_id)
+    if SharedOwnership.authorize(staff, "categories.delete", "Category", category.id) == :ok do
+      case SharedOwnership.write(branch_ids, fn -> Repo.delete(category) end) do
+        {:ok, deleted_category} ->
+          Enum.each(branch_ids, &invalidate_menu_cache/1)
           {:ok, deleted_category}
 
         {:error, changeset} ->
@@ -186,16 +192,16 @@ defmodule Delivest.Net.Categories do
   @spec update_category_order(Staff.t(), Category.t(), float() | nil, float() | nil) ::
           {:ok, Category.t()} | {:error, Ecto.Changeset.t()} | {:error, :forbidden}
   def update_category_order(staff, %Category{} = category, above_order, below_order) do
-    if Identity.authorize(staff, "categories.update", get_category_branch_id(category.id)) == :ok do
+    if SharedOwnership.authorize(staff, "categories.update", "Category", category.id) == :ok do
+      branch_ids = SharedOwnership.branches("Category", category.id)
       new_order = calculate_new_order(above_order, below_order)
 
       category
       |> Category.changeset(%{"order" => new_order})
-      |> Repo.update()
+      |> then(&SharedOwnership.write(branch_ids, fn -> Repo.update(&1) end))
       |> case do
         {:ok, updated_category} ->
-          branch_id = get_category_branch_id(updated_category.id)
-          invalidate_menu_cache(branch_id)
+          invalidate_category(updated_category.id)
 
           {:ok, updated_category}
 
@@ -207,10 +213,8 @@ defmodule Delivest.Net.Categories do
     end
   end
 
-  defp get_category_branch_id(category_id) do
-    Relations.list_source_ids("Category", category_id, "Branch")
-    |> List.first()
-  end
+  defp invalidate_category(category_id),
+    do: Enum.each(SharedOwnership.branches("Category", category_id), &invalidate_menu_cache/1)
 
   defp calculate_new_order(above_order, below_order)
        when not is_nil(above_order) and not is_nil(below_order) do
@@ -234,8 +238,7 @@ defmodule Delivest.Net.Categories do
   end
 
   defp invalidate_menu_cache(branch_id) when not is_nil(branch_id) do
-    Channels.menu_changed(branch_id)
-    Cachex.del(:menu_cache, branch_id)
+    Delivest.Net.Catalogs.invalidate_menu_cache(branch_id)
   end
 
   defp invalidate_menu_cache(_), do: :ok

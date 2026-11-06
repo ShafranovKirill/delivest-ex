@@ -30,7 +30,8 @@ defmodule Delivest.SiteSnapshot do
 
   def import(staff, branch_id, archive) when is_binary(archive) do
     with :ok <- authorize(staff, branch_id, :write),
-         {:ok, manifest, data, blobs} <- Archive.decode(archive, :branch) do
+         {:ok, manifest, data, blobs} <- Archive.decode(archive, :branch),
+         :ok <- authorize_global_catalog(staff, data) do
       result =
         Repo.transaction(
           fn ->
@@ -207,6 +208,15 @@ defmodule Delivest.SiteSnapshot do
       :ok
     else
       _ -> {:error, :forbidden}
+    end
+  end
+
+  defp authorize_global_catalog(staff, data) do
+    if Enum.any?(~w(groups tags modifiers), &(Map.get(data, &1, []) != [])) and
+         not Identity.can?(staff, "catalog.global.manage") do
+      {:error, :forbidden}
+    else
+      :ok
     end
   end
 

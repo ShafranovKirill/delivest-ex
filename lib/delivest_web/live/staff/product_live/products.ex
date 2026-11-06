@@ -118,7 +118,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         {:ok, product} ->
           assign(socket,
             page_title: gettext("Edit product"),
-            product: ProductCrmIds.load(product)
+            product: ProductCrmIds.load(product, socket.assigns.current_branch.id)
           )
 
         _ ->
@@ -330,6 +330,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def handle_info(:stops_changed, socket) do
     socket = assign(socket, stops: Stops.by_product(socket.assigns.branch_id))
+    handle_params(socket.assigns.params, nil, socket)
+  end
+
+  @impl true
+  def handle_info(:catalog_changed, socket) do
     handle_params(socket.assigns.params, nil, socket)
   end
 

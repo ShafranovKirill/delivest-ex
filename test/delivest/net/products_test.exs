@@ -4,7 +4,9 @@ defmodule Delivest.Net.ProductsTest do
   import Delivest.Factory
 
   alias Delivest.Net
+  alias Delivest.Net.Catalogs
   alias Delivest.Net.Product
+  alias Delivest.Identity.Branch
   alias Delivest.Relations
 
   defp staff_with_permissions(permissions) do
@@ -113,6 +115,52 @@ defmodule Delivest.Net.ProductsTest do
 
       assert {:error, :forbidden} = Net.update_product(staff, product, %{"name" => "X"})
       assert {:error, :forbidden} = Net.soft_delete_product(staff, product)
+    end
+
+    test "an editor of one owner branch cannot update or delete a shared product" do
+      staff = staff_with_permissions(["products.update", "products.delete"])
+      product = insert_product()
+      grant_product_branch(staff, product)
+      grant_product_branch(staff_with_permissions([]), product)
+
+      assert {:error, :forbidden} = Net.update_product(staff, product, %{"name" => "X"})
+      assert {:error, :forbidden} = Net.soft_delete_product(staff, product)
+      assert Repo.get!(Product, product.id).name == product.name
+    end
+
+    test "shared product update invalidates and broadcasts to both owner branches" do
+      staff = staff_with_permissions(["products.update"])
+      category = insert(:category, is_active: true)
+      product = insert_product(%{name: "Old", price: 100, category_id: category.id})
+      branches = for _ <- 1..2, do: grant_product_branch(staff, product).branch
+      Enum.each(branches, &Delivest.Net.Products.subscribe_branch(&1.id))
+      versions = Map.new(branches, &{&1.id, Repo.get!(Branch, &1.id).catalog_version})
+
+      Enum.each(branches, fn branch ->
+        Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+
+        assert {:ok, [%{products: [%{id: id, name: "Old", price: 100}]}]} =
+                 Catalogs.get_menu_for_branch(branch.id)
+
+        assert id == product.id
+      end)
+
+      assert {:ok, updated} =
+               Net.update_product(staff, product, %{"name" => "New", "price" => 125})
+
+      assert updated.name == "New"
+      assert_receive {:product_updated, %Product{id: id1}}
+      assert_receive {:product_updated, %Product{id: id2}}
+      assert id1 == product.id and id2 == product.id
+
+      Enum.each(branches, fn branch ->
+        assert Repo.get!(Branch, branch.id).catalog_version > versions[branch.id]
+
+        assert {:ok, [%{products: [%{id: id, name: "New", price: 125}]}]} =
+                 Catalogs.get_menu_for_branch(branch.id)
+
+        assert id == product.id
+      end)
     end
 
     test "returns forbidden without products.update permission" do
@@ -257,8 +305,8 @@ defmodule Delivest.Net.ProductsTest do
       %{staff: staff, branch: branch}
     end
 
-    defp crm_ids(product),
-      do: product.id |> List.wrap() |> ProductCrmIds.by_product(:frontpad)
+    defp crm_ids(product, branch_id),
+      do: product.id |> List.wrap() |> ProductCrmIds.by_product(:frontpad, branch_id)
 
     test "are stored per provider and updated in place", %{staff: staff, branch: branch} do
       {:ok, product} =
@@ -268,16 +316,16 @@ defmodule Delivest.Net.ProductsTest do
           "crm_ids" => %{"frontpad" => " 101 "}
         })
 
-      assert crm_ids(product) == %{product.id => "101"}
+      assert crm_ids(product, branch.id) == %{product.id => "101"}
 
       {:ok, product} = Net.update_product(staff, product, %{"crm_ids" => %{"frontpad" => "102"}})
-      assert crm_ids(product) == %{product.id => "102"}
+      assert crm_ids(product, branch.id) == %{product.id => "102"}
 
       {:ok, product} = Net.update_product(staff, product, %{"name" => "Borsch"})
-      assert crm_ids(product) == %{product.id => "102"}
+      assert crm_ids(product, branch.id) == %{product.id => "102"}
 
       {:ok, product} = Net.update_product(staff, product, %{"crm_ids" => %{"frontpad" => ""}})
-      assert crm_ids(product) == %{}
+      assert crm_ids(product, branch.id) == %{}
     end
 
     test "cannot repeat inside a branch but can across branches", %{staff: staff, branch: branch} do
@@ -290,6 +338,77 @@ defmodule Delivest.Net.ProductsTest do
       other = insert(:branch)
       insert(:staff_branch, staff: staff, branch: other)
       assert {:ok, _other} = Net.create_product(staff, other.id, attrs)
+    end
+
+    test "shared product CRM IDs remain scoped to the explicit branch", %{
+      staff: staff,
+      branch: branch
+    } do
+      other = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: other)
+
+      {:ok, product} =
+        Net.create_product(staff, branch.id, %{
+          "name" => "Shared",
+          "price" => 100,
+          "crm_ids" => %{"frontpad" => "A"}
+        })
+
+      Relations.create_relation(Repo, "Branch", other.id, "Product", product.id)
+
+      assert {:error, :forbidden} =
+               Net.update_product(staff, product, %{"crm_ids" => %{"frontpad" => "wrong"}})
+
+      assert {:ok, _} =
+               Net.update_product(staff, product, %{
+                 "branch_id" => other.id,
+                 "crm_ids" => %{"frontpad" => "B"}
+               })
+
+      assert ProductCrmIds.by_product([product.id], :frontpad, branch.id) == %{product.id => "A"}
+      assert ProductCrmIds.by_product([product.id], :frontpad, other.id) == %{product.id => "B"}
+
+      assert {:ok, _} =
+               Net.update_product(staff, product, %{
+                 "branch_id" => branch.id,
+                 "crm_ids" => %{"frontpad" => "A2"}
+               })
+
+      assert ProductCrmIds.by_product([product.id], :frontpad, branch.id) == %{product.id => "A2"}
+      assert ProductCrmIds.by_product([product.id], :frontpad, other.id) == %{product.id => "B"}
+    end
+
+    test "one branch editor may update only that branch's CRM ID", %{branch: a} do
+      admin = staff_with_permissions(["admin"])
+      b = insert(:branch)
+      editor = staff_with_permissions(["products.update"])
+      insert(:staff_branch, staff: editor, branch: b)
+
+      {:ok, product} =
+        Net.create_product(admin, a.id, %{
+          "name" => "Shared",
+          "price" => 100,
+          "crm_ids" => %{"frontpad" => "A"}
+        })
+
+      Relations.create_relation(Repo, "Branch", b.id, "Product", product.id)
+
+      assert {:ok, _} =
+               Net.update_product(editor, product, %{
+                 "branch_id" => b.id,
+                 "crm_ids" => %{"frontpad" => "B"}
+               })
+
+      assert {:error, :forbidden} =
+               Net.update_product(editor, product, %{
+                 "branch_id" => b.id,
+                 "crm_ids" => %{"frontpad" => "C"},
+                 "name" => "Foreign edit"
+               })
+
+      assert Repo.reload!(product).name == "Shared"
+      assert ProductCrmIds.by_product([product.id], :frontpad, a.id) == %{product.id => "A"}
+      assert ProductCrmIds.by_product([product.id], :frontpad, b.id) == %{product.id => "B"}
     end
   end
 end

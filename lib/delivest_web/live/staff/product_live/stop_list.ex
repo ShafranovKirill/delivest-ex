@@ -53,6 +53,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
 
   @impl true
   def handle_info(:stops_changed, socket), do: {:noreply, load(socket)}
+  def handle_info(:catalog_changed, socket), do: {:noreply, load(socket)}
   def handle_info({event, _product}, socket) when is_atom(event), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
 

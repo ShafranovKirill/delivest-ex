@@ -2,6 +2,7 @@ defmodule Delivest.Oms.Carts do
   import Ecto.Query, warn: false
 
   alias Delivest.{Repo, Net}
+  alias Delivest.Identity.Branch
   alias Delivest.Net.Modifiers
   alias Delivest.Oms.{Cart, CartItem, CartPricing, CartView}
 
@@ -325,12 +326,22 @@ defmodule Delivest.Oms.Carts do
 
   def build_cart_view(%Cart{} = cart) do
     cart = Repo.preload(cart, :items)
-    build_cart_view(cart, cart.items)
+    do_build_cart_view(cart, cart.items)
   end
 
-  defp build_cart_view(%Cart{} = cart, items) when is_list(items) do
+  def build_cart_view(%Cart{} = cart, products) when is_map(products) do
+    cart = Repo.preload(cart, :items)
+    do_build_cart_view(cart, cart.items, products)
+  end
+
+  defp do_build_cart_view(%Cart{} = cart, items) when is_list(items) do
     product_ids = Enum.map(items, & &1.product_id) |> Enum.uniq()
     products_map = Net.list_products_by_ids(product_ids, preload: [:media])
+    do_build_cart_view(cart, items, products_map)
+  end
+
+  defp do_build_cart_view(%Cart{} = cart, items, products_map) when is_list(items) do
+    product_ids = Enum.map(items, & &1.product_id) |> Enum.uniq()
     groups = Modifiers.for_products(product_ids)
 
     {view_items, total_qty, total_amt, inactive_item_ids} =
@@ -461,37 +472,67 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
-  defp fetch_cached_or_recalculate(cart_id, force?) do
-    if force? do
-      fetch_and_recalculate(cart_id)
+  # Checkout already holds the cart row lock and never consumes a repriced
+  # detached view. Keep the public detach_cart/1 behavior intact.
+  def detach_after_checkout(%CartView{id: cart_id}) do
+    {count, _} =
+      from(c in Cart, where: c.id == ^cart_id)
+      |> Repo.update_all(
+        set: [session_id: nil, staff_id: nil, updated_at: DateTime.utc_now(:second)]
+      )
+
+    if count == 1 do
+      Cachex.del(@cache_store, cart_id)
+      {:ok, :detached}
     else
-      case Cachex.get(@cache_store, cart_id) do
-        {:ok,
-         %CartView{points_earned: _, base_stars: _, product_stars: _, promo_gifts: _} =
-             cached_view} ->
-          case Repo.get(Cart, cart_id) do
-            nil ->
-              nil
+      {:error, :cart_not_found}
+    end
+  end
 
-            cart ->
-              CartPricing.apply(%{
-                cached_view
-                | promo_gifts: cart.promo_gifts || %{},
-                  promo_code: cart.promo_code
-              })
-          end
+  defp fetch_cached_or_recalculate(cart_id, force?) do
+    case cart_and_catalog_version(cart_id) do
+      nil ->
+        nil
 
-        _ ->
-          fetch_and_recalculate(cart_id)
-      end
+      {cart, version} ->
+        case {force?, cache_get(cart_id)} do
+          {false,
+           {:ok,
+            %CartView{
+              catalog_version: ^version,
+              points_earned: _,
+              base_stars: _,
+              product_stars: _,
+              promo_gifts: _
+            } = cached_view}} ->
+            CartPricing.apply(%{
+              cached_view
+              | promo_gifts: cart.promo_gifts || %{},
+                promo_code: cart.promo_code
+            })
+
+          _ ->
+            recalculate_and_cache(cart, version)
+        end
     end
   end
 
   defp fetch_and_recalculate(cart_id) do
-    case Repo.get(Cart, cart_id) do
-      %Cart{} = cart -> recalculate_and_cache(cart)
+    case cart_and_catalog_version(cart_id) do
+      {cart, version} -> recalculate_and_cache(cart, version)
       nil -> nil
     end
+  end
+
+  defp cart_and_catalog_version(cart_id) do
+    Repo.one(
+      from(c in Cart,
+        left_join: b in Branch,
+        on: b.id == c.branch_id,
+        where: c.id == ^cart_id,
+        select: {c, b.catalog_version}
+      )
+    )
   end
 
   defp refresh_and_cache(cart_id) do
@@ -499,9 +540,31 @@ defmodule Delivest.Oms.Carts do
   end
 
   defp recalculate_and_cache(%Cart{} = cart) do
-    cart_view = build_cart_view(cart)
-    Cachex.put(@cache_store, cart.id, cart_view, ttl: @cache_ttl)
+    version = catalog_version(cart.branch_id)
+    recalculate_and_cache(cart, version)
+  end
+
+  defp catalog_version(nil), do: nil
+
+  defp catalog_version(branch_id),
+    do: Repo.one(from b in Branch, where: b.id == ^branch_id, select: b.catalog_version)
+
+  defp recalculate_and_cache(%Cart{} = cart, version) do
+    cart_view = %{build_cart_view(cart) | catalog_version: version}
+    cache_put(cart.id, cart_view)
     CartPricing.apply(cart_view)
+  end
+
+  defp cache_get(key) do
+    Cachex.get(@cache_store, key)
+  catch
+    :exit, _ -> {:error, :cache_unavailable}
+  end
+
+  defp cache_put(key, view) do
+    Cachex.put(@cache_store, key, view, ttl: @cache_ttl)
+  catch
+    :exit, _ -> :ok
   end
 
   defp fetch_raw_cart(opts) do

@@ -15,7 +15,8 @@ defmodule Delivest.Oms.CartPricing do
         client_id: view.client_id,
         fulfillment_type: view.fulfillment_type,
         code: view.promo_code,
-        promo_gifts: view.promo_gifts
+        promo_gifts: view.promo_gifts,
+        catalog_version: view.catalog_version
       },
       Map.new(overrides)
     )

@@ -1,10 +1,10 @@
 defmodule Delivest.Loyalty.Earnings do
   alias Delivest.{Loyalty, Net}
 
-  def price(result, branch_id) do
+  def price(result, branch_id, products \\ nil) do
     if branch_id && Loyalty.enabled?(branch_id) do
       settings = Loyalty.settings(branch_id)
-      products = Net.list_products_by_ids(Enum.map(result.lines, & &1.product_id))
+      products = products || Net.list_products_by_ids(Enum.map(result.lines, & &1.product_id))
 
       lines =
         Enum.map(result.lines, fn line ->

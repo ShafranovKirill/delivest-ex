@@ -43,7 +43,7 @@ defmodule Delivest.Integrations.Frontpad do
     |> Enum.flat_map(&modifiers/1)
     |> Enum.map(& &1.modifier_id)
     |> Enum.reject(&is_nil/1)
-    |> Delivest.Net.Modifiers.crm_ids(key())
+    |> Delivest.Net.Modifiers.crm_ids(key(), order.branch_id)
     |> Map.new(fn {modifier_id, external_id} -> {modifier_id, %{external_id: external_id}} end)
   end
 
@@ -55,7 +55,7 @@ defmodule Delivest.Integrations.Frontpad do
     products =
       order.items
       |> Enum.map(& &1.product_id)
-      |> ProductCrmIds.by_product(key())
+      |> ProductCrmIds.by_product(key(), order.branch_id)
       |> Map.new(fn {product_id, external_id} -> {product_id, %{external_id: external_id}} end)
       |> Map.merge(modifier_articles(order))
 

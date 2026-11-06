@@ -29,6 +29,37 @@ defmodule DelivestWeb.Staff.MenuExportControllerTest do
     assert body =~ ";A-1;"
   end
 
+  test "neutralizes spreadsheet formulas in user text while preserving CSV quoting", %{
+    conn: conn,
+    branch: branch
+  } do
+    insert_branch_product(branch.id,
+      name: "  =СУММ(1;2)\"",
+      description: "\t@danger;пример\n+value"
+    )
+
+    body = conn |> get(~p"/staff/b/#{branch.slug}/products/export") |> response(200)
+    assert body =~ "\"'  =СУММ(1;2)\"\"\""
+    assert body =~ "\"'\t@danger;пример\n+value\""
+  end
+
+  test "neutralizes every formula prefix and keeps ordinary Unicode", %{
+    conn: conn,
+    branch: branch
+  } do
+    for name <- ["+SUM(1)", "-CMD", "@user", "\r\n=evil", "\u00A0=evil", "Обычный товар"] do
+      insert_branch_product(branch.id, name: name)
+    end
+
+    body = conn |> get(~p"/staff/b/#{branch.slug}/products/export") |> response(200)
+    assert body =~ "'+SUM(1)"
+    assert body =~ "'-CMD"
+    assert body =~ "'@user"
+    assert body =~ "'\r\n=evil"
+    assert body =~ "'\u00A0=evil"
+    assert body =~ "Обычный товар"
+  end
+
   test "is closed without the products permission", %{conn: conn, branch: branch} do
     staff = insert(:staff, role: insert(:role, permissions: ["orders.read"]))
     insert(:staff_branch, staff: staff, branch: branch)

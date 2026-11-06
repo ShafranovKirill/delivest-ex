@@ -98,6 +98,21 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
     assert render(lv) =~ "Signed in"
   end
 
+  test "nested CRM warnings render in the audit events table", %{conn: conn} do
+    {conn, _staff} = login(conn, ["logs.read"])
+    order = order_fixture(insert(:branch).id)
+    warnings = %{"invalid_product_keys" => [0]}
+
+    Audit.record(:system, "order.sent_to_crm", order,
+      metadata: %{external_id: "crm-1", warnings: warnings}
+    )
+
+    Audit.record(:system, "order.crm_status_changed", order, metadata: %{warnings: warnings})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/logs")
+    assert has_element?(lv, "#audit-events", ~r/invalid_product_keys/)
+  end
+
   test "tabs split raw logs and errors", %{conn: conn} do
     {conn, _staff} = login(conn, ["logs.read"])
     log("error", "database exploded")

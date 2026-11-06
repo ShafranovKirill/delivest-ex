@@ -5,11 +5,11 @@ defmodule Delivest.Net.ProductCrmIds do
   alias Delivest.Net.{Product, ProductExternalId}
   alias Delivest.Repo
 
-  def by_product(product_ids, provider) do
+  def by_product(product_ids, provider, branch_id) do
     from(e in ProductExternalId,
       where:
         e.entity_type == "product" and e.entity_id in ^product_ids and
-          e.provider == ^to_string(provider),
+          e.provider == ^to_string(provider) and e.branch_id == ^branch_id,
       select: {e.entity_id, e.external_id}
     )
     |> Repo.all()
@@ -32,15 +32,24 @@ defmodule Delivest.Net.ProductCrmIds do
 
   def get(_product, _provider), do: nil
 
-  def load(%Product{external_ids: ids} = product) when is_list(ids),
-    do: %{product | crm_ids: Map.new(ids, &{&1.provider, &1.external_id})}
+  def load(%Product{external_ids: ids} = product, branch_id) when is_list(ids) do
+    %{
+      product
+      | crm_ids:
+          ids
+          |> Enum.filter(&(&1.branch_id == branch_id))
+          |> Map.new(&{&1.provider, &1.external_id})
+    }
+  end
 
-  def load(product), do: product
+  def load(product, _branch_id), do: product
 
   def put(%Ecto.Changeset{} = changeset, branch_id) do
     case fetch_change(changeset, :crm_ids) do
       {:ok, crm_ids} ->
-        put_assoc(changeset, :external_ids, changes(changeset.data, crm_ids, branch_id))
+        ids = if is_list(changeset.data.external_ids), do: changeset.data.external_ids, else: []
+        other = Enum.reject(ids, &(&1.branch_id == branch_id))
+        put_assoc(changeset, :external_ids, other ++ changes(changeset.data, crm_ids, branch_id))
 
       :error ->
         changeset
@@ -58,7 +67,7 @@ defmodule Delivest.Net.ProductCrmIds do
   def lift_errors(changeset), do: changeset
 
   defp changes(product, crm_ids, branch_id) do
-    existing = existing(product)
+    existing = existing(product, branch_id)
 
     existing
     |> Map.keys()
@@ -71,10 +80,10 @@ defmodule Delivest.Net.ProductCrmIds do
     end)
   end
 
-  defp existing(%Product{external_ids: ids}) when is_list(ids),
-    do: Map.new(ids, &{&1.provider, &1})
+  defp existing(%Product{external_ids: ids}, branch_id) when is_list(ids),
+    do: ids |> Enum.filter(&(&1.branch_id == branch_id)) |> Map.new(&{&1.provider, &1})
 
-  defp existing(_product), do: %{}
+  defp existing(_product, _branch_id), do: %{}
 
   defp change_for(_current, _provider, nil, _branch_id), do: []
 

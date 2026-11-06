@@ -68,7 +68,9 @@ defmodule Delivest.Net.ProductTags do
           []
         )
 
-        Repo.delete!(tag)
+        deleted = Repo.delete!(tag)
+        Delivest.Net.Catalogs.bump_all_versions()
+        deleted
       end)
       |> tap(fn _result ->
         delete_icon(tag.icon_key)
@@ -82,7 +84,10 @@ defmodule Delivest.Net.ProductTags do
     previous_key = changeset.data.icon_key
 
     with {:ok, changeset} <- put_icon(changeset, upload),
-         {:ok, tag} <- changeset |> ProductTag.require_icon() |> Repo.insert_or_update() do
+         {:ok, tag} <-
+           changeset
+           |> ProductTag.require_icon()
+           |> then(&Delivest.Net.SharedOwnership.write(:all, fn -> Repo.insert_or_update(&1) end)) do
       if previous_key != tag.icon_key, do: delete_icon(previous_key)
       clear_caches()
       {:ok, tag}
@@ -153,11 +158,11 @@ defmodule Delivest.Net.ProductTags do
   end
 
   defp clear_caches do
-    Cachex.clear(:menu_cache)
+    Delivest.Net.Catalogs.invalidate_all_menu_cache()
     Cachex.clear(:cart_cache)
   end
 
   defp authorized(staff, fun) do
-    if Identity.can?(staff, "products.update"), do: fun.(), else: {:error, :forbidden}
+    if Identity.can?(staff, "catalog.global.manage"), do: fun.(), else: {:error, :forbidden}
   end
 end

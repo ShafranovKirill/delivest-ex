@@ -67,7 +67,7 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:redemptions, fn _, %{order: order, pricing: pricing} ->
       Promo.redeem(order, pricing)
     end)
-    |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_cart(cart) end)
+    |> Multi.run(:detached_cart, fn _, %{cart: cart} -> Carts.detach_after_checkout(cart) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{advanced: order}} ->

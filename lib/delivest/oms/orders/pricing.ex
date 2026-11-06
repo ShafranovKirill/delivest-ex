@@ -2,6 +2,7 @@ defmodule Delivest.Oms.Orders.Pricing do
   alias Delivest.Oms.{CartView, Order}
   alias Delivest.Loyalty.Redeem
   alias Delivest.Promo
+  alias Delivest.Net
 
   @default_fulfillment "dine_in"
 
@@ -15,21 +16,40 @@ defmodule Delivest.Oms.Orders.Pricing do
         fulfillment_type: fulfillment(attrs, order),
         code: cart.promo_code,
         promo_gifts: cart.promo_gifts,
-        except_order_id: order && order.id
+        except_order_id: order && order.id,
+        compiled_promotions: cart.compiled_promotions,
+        product_snapshot: cart.product_snapshot
       })
 
-    with :ok <- validate_gifts(result, cart.promo_gifts),
+    product_ids =
+      (Enum.map(result.lines, & &1.product_id) ++
+         Enum.map(CartView.star_items(cart), & &1.product_id))
+      |> Enum.uniq()
+
+    products =
+      cart.product_snapshot ||
+        Net.list_branch_products_by_ids(cart.branch_id, product_ids, preload: [:category])
+
+    result = %{result | products: products}
+
+    with :ok <- validate_products(products, product_ids),
+         :ok <- validate_gifts(result, cart.promo_gifts),
          {:ok, result} <- result |> redeem(attrs, client_id, cart.branch_id, order),
          {:ok, result} <-
            Delivest.Loyalty.Rewards.price(
              result,
              cart,
              client_id,
-             if(order, do: order.points_spent, else: 0)
+             if(order, do: order.points_spent, else: 0),
+             products
            ) do
-      result = Delivest.Loyalty.Earnings.price(result, cart.branch_id)
+      result = Delivest.Loyalty.Earnings.price(result, cart.branch_id, products)
       ensure_expected(result, attrs["expected_total"])
     end
+  end
+
+  defp validate_products(products, ids) do
+    if Enum.all?(ids, &Map.has_key?(products, &1)), do: :ok, else: {:error, :product_unavailable}
   end
 
   defp validate_gifts(result, choices) do

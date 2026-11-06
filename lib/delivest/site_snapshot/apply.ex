@@ -39,21 +39,43 @@ defmodule Delivest.SiteSnapshot.Apply do
     end
 
     if :integrations in plan.sections, do: put_global_integrations(Map.get(plan, :integrations))
+
+    if :catalog in plan.sections, do: Delivest.Net.Catalogs.bump_all_versions()
   end
 
   def post_commit(plan) do
     branch_ids = plan.branches |> Map.values() |> Enum.uniq()
 
+    global_catalog? =
+      :catalog in plan.sections and
+        Enum.any?(~w(groups modifiers tags), &(Map.get(plan.catalog, &1, %{}) != %{}))
+
+    affected_branch_ids =
+      if global_catalog?,
+        do: Repo.all(from b in Branch, select: b.id),
+        else: branch_ids
+
     case plan.scope do
       :branch ->
-        Enum.each(branch_ids, &Delivest.Net.Catalogs.clear_menu_cache/1)
+        Enum.each(affected_branch_ids, fn id ->
+          if :catalog in plan.sections,
+            do: Delivest.Net.Catalogs.invalidate_menu_cache(id),
+            else: Delivest.Net.Catalogs.clear_menu_cache(id)
+        end)
+
         Cachex.del(:branch_cache, List.first(branch_ids))
 
       :franchise ->
         Cachex.clear(:branch_cache)
 
         if :catalog in plan.sections,
-          do: Enum.each(branch_ids, &Delivest.Net.Catalogs.clear_menu_cache/1)
+          do: Enum.each(affected_branch_ids, &Delivest.Net.Catalogs.invalidate_menu_cache/1)
+    end
+
+    if :catalog in plan.sections do
+      Cachex.clear(:cart_cache)
+      Cachex.clear(:promo_cache)
+      Cachex.clear(:stock_cache)
     end
 
     Cachex.del(:franchise_cache, :settings)
@@ -149,7 +171,7 @@ defmodule Delivest.SiteSnapshot.Apply do
 
     case Repo.insert(changeset,
            on_conflict: {:replace, [:branch_id, :external_id, :updated_at]},
-           conflict_target: [:entity_type, :entity_id, :provider]
+           conflict_target: [:entity_type, :entity_id, :branch_id, :provider]
          ) do
       {:ok, _binding} -> :ok
       {:error, changeset} -> abort!({:invalid_record, changeset})

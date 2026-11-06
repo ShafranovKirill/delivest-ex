@@ -34,12 +34,12 @@ defmodule Delivest.Integrations.Crm.Catalog do
   def issues(branch_id, %CatalogSnapshot{provider: provider, products: crm_products}) do
     branch_id
     |> Net.list_branch_products()
-    |> with_crm_ids(provider)
+    |> with_crm_ids(provider, branch_id)
     |> CatalogCheck.issues(crm_products)
   end
 
-  defp with_crm_ids(products, provider) do
-    crm_ids = products |> Enum.map(& &1.id) |> ProductCrmIds.by_product(provider)
+  defp with_crm_ids(products, provider, branch_id) do
+    crm_ids = products |> Enum.map(& &1.id) |> ProductCrmIds.by_product(provider, branch_id)
 
     Enum.map(
       products,

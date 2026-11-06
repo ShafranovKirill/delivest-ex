@@ -47,7 +47,8 @@ defmodule Delivest.Promo.Result do
             product_stars: 0,
             applied: [],
             hints: [],
-            code: nil
+            code: nil,
+            products: nil
 
   def build(%Basket{} = basket, selected, code, hints, code_state, choices \\ %{}) do
     subtotal = Basket.subtotal(basket)
