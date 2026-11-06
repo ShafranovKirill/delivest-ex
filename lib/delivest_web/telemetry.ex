@@ -105,6 +105,10 @@ defmodule DelivestWeb.Telemetry do
         tags: [:provider, :status],
         description: "External provider requests"
       ),
+      counter("delivest.yookassa.reconciliation.count",
+        tags: [:result],
+        description: "YooKassa reconciliation runs by completion result"
+      ),
 
       # Outbox: subscriber lag and delivery rate
       summary("delivest.outbox.delivered.lag",

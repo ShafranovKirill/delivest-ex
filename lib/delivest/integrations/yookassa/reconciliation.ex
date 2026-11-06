@@ -34,10 +34,21 @@ defmodule Delivest.Integrations.Yookassa.Reconciliation do
   def poll(_target) do
     now = DateTime.utc_now()
 
-    with {:ok, remote} <-
-           fetch(Yookassa.get_settings(), DateTime.add(now, -@window_hours, :hour), now) do
-      report(run(remote, now))
-      :done
+    case fetch(Yookassa.get_settings(), DateTime.add(now, -@window_hours, :hour), now) do
+      {:ok, remote} ->
+        report(run(remote, now))
+        emit(:complete)
+        :done
+
+      {:error, {:incomplete, reason}} = error ->
+        Logger.error("yookassa reconciliation incomplete: #{inspect(reason)}")
+        Health.warn(:yookassa, nil, "reconcile_incomplete:#{reason}")
+        emit(:incomplete)
+        error
+
+      error ->
+        emit(:error)
+        error
     end
   end
 
@@ -109,12 +120,13 @@ defmodule Delivest.Integrations.Yookassa.Reconciliation do
   end
 
   defp fetch(settings, from, to) do
-    Journal.scope([], fn -> page(settings, from, to, nil, [], 0) end)
+    Journal.scope([], fn -> page(settings, from, to, nil, [], 0, MapSet.new()) end)
   end
 
-  defp page(_settings, _from, _to, _cursor, acc, @max_pages), do: {:ok, acc}
+  defp page(_settings, _from, _to, _cursor, _acc, @max_pages, _seen),
+    do: {:error, {:incomplete, :page_limit}}
 
-  defp page(settings, from, to, cursor, acc, count) do
+  defp page(settings, from, to, cursor, acc, count, seen) do
     params =
       [
         {"created_at.gte", DateTime.to_iso8601(from)},
@@ -122,13 +134,31 @@ defmodule Delivest.Integrations.Yookassa.Reconciliation do
         {"limit", @page}
       ] ++ if(cursor, do: [{"cursor", cursor}], else: [])
 
-    with {:ok, %{"items" => items} = body} <- Api.list_payments(settings, params) do
-      acc = acc ++ items
+    with {:ok, %{"items" => items} = body} when is_list(items) <-
+           Api.list_payments(settings, params) do
+      if Enum.all?(items, &(is_map(&1) and is_binary(&1["id"]))) do
+        acc = [items | acc]
 
-      case body["next_cursor"] do
-        next when is_binary(next) -> page(settings, from, to, next, acc, count + 1)
-        _last -> {:ok, acc}
+        case body["next_cursor"] do
+          nil ->
+            {:ok, acc |> Enum.reverse() |> List.flatten()}
+
+          next when is_binary(next) and next != "" ->
+            if MapSet.member?(seen, next) or next == cursor do
+              {:error, {:incomplete, :repeated_cursor}}
+            else
+              page(settings, from, to, next, acc, count + 1, MapSet.put(seen, next))
+            end
+
+          _cursor ->
+            {:error, {:incomplete, :invalid_cursor}}
+        end
+      else
+        {:error, {:incomplete, :invalid_page}}
       end
+    else
+      {:ok, _body} -> {:error, {:incomplete, :invalid_page}}
+      error -> error
     end
   end
 
@@ -140,5 +170,9 @@ defmodule Delivest.Integrations.Yookassa.Reconciliation do
     )
 
     Health.warn(:yookassa, nil, "reconcile_issues:#{length(issues)}")
+  end
+
+  defp emit(result) do
+    :telemetry.execute([:delivest, :yookassa, :reconciliation], %{count: 1}, %{result: result})
   end
 end

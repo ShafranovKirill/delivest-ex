@@ -10,11 +10,23 @@ defmodule Delivest.Integrations.Poller.Worker do
   def perform(%Oban.Job{args: %{"poller" => key, "target" => target}}) do
     with {:ok, module} <- Poller.fetch(key) do
       case module.poll(target) do
-        :done -> :ok
-        {:ok, _result} -> :ok
-        :more -> next(module, target, module.interval())
-        {:snooze, seconds} -> next(module, target, seconds)
-        {:error, _reason} = error -> error
+        :done ->
+          :ok
+
+        {:ok, _result} ->
+          :ok
+
+        :more ->
+          next(module, target, module.interval())
+
+        {:snooze, seconds} ->
+          next(module, target, seconds)
+
+        {:error, {:incomplete, reason}} when key == "yookassa_reconcile" ->
+          {:cancel, "yookassa reconciliation incomplete: #{reason}"}
+
+        {:error, _reason} = error ->
+          error
       end
     end
   end
