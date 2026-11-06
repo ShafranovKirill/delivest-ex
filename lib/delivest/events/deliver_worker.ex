@@ -9,6 +9,8 @@ defmodule Delivest.Events.DeliverWorker do
   import Ecto.Query
 
   alias Delivest.Events.{Delivery, Event, Registry}
+  alias Delivest.Oms.Order
+  alias Delivest.Oms.Orders.Notifier
   alias Delivest.Repo
 
   @impl Oban.Worker
@@ -27,47 +29,68 @@ defmodule Delivest.Events.DeliverWorker do
   end
 
   defp deliver(event, module, key) do
-    case Repo.transaction(fn ->
-           lock_aggregate(event, key)
+    transaction = fn ->
+      Repo.transaction(fn ->
+        lock_aggregate(event, key)
 
-           {:ok, _delivery} =
-             Repo.insert(%Delivery{event_id: event.id, subscriber: key},
-               on_conflict: :nothing,
-               conflict_target: [:event_id, :subscriber]
-             )
+        {:ok, _delivery} =
+          Repo.insert(%Delivery{event_id: event.id, subscriber: key},
+            on_conflict: :nothing,
+            conflict_target: [:event_id, :subscriber]
+          )
 
-           delivery = Repo.get_by!(Delivery, event_id: event.id, subscriber: key)
+        delivery = Repo.get_by!(Delivery, event_id: event.id, subscriber: key)
 
-           cond do
-             delivery.status == "delivered" ->
-               :already_delivered
+        cond do
+          delivery.status == "delivered" ->
+            :already_delivered
 
-             delivery.status == "blocked" ->
-               {:cancel, :delivery_blocked}
+          delivery.status == "blocked" ->
+            {:cancel, :delivery_blocked}
 
-             earlier?(event, key) ->
-               {:snooze, 5}
+          earlier?(event, key) ->
+            {:snooze, 5}
 
-             true ->
-               case module.handle(event) do
-                 result when result == :ok or (is_tuple(result) and elem(result, 0) == :ok) ->
-                   delivery
-                   |> Ecto.Changeset.change(status: "delivered", last_error: nil)
-                   |> Repo.update!()
+          true ->
+            case module.handle(event) do
+              result when result == :ok or (is_tuple(result) and elem(result, 0) == :ok) ->
+                delivery
+                |> Ecto.Changeset.change(status: "delivered", last_error: nil)
+                |> Repo.update!()
 
-                   :delivered
+                :delivered
 
-                 error ->
-                   Repo.rollback(error)
-               end
-           end
-         end) do
-      {:ok, :delivered} -> :ok
-      {:ok, :already_delivered} -> :already_delivered
-      {:ok, outcome} -> outcome
-      {:error, error} -> error
+              error ->
+                Repo.rollback(error)
+            end
+        end
+      end)
+    end
+
+    case Notifier.with_commit_notifications(transaction) do
+      {:ok, :delivered} ->
+        :ok
+
+      {:ok, :already_delivered} ->
+        invalidate_delivered_order(event)
+        :already_delivered
+
+      {:ok, outcome} ->
+        outcome
+
+      {:error, error} ->
+        error
     end
   end
+
+  defp invalidate_delivered_order(%Event{aggregate_type: "order", aggregate_id: order_id}) do
+    case Repo.get(Order, order_id) do
+      %Order{} = order -> Notifier.publish({:ok, order}, [:order, :updated])
+      nil -> :ok
+    end
+  end
+
+  defp invalidate_delivered_order(_event), do: :ok
 
   defp lock_aggregate(event, key) do
     lock_key = "#{event.aggregate_type}:#{event.aggregate_id}:#{key}"
