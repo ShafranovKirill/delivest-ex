@@ -108,7 +108,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     insert_branch_product(branch.id, name: "Tea", external_id: "9", price: 50)
     stub_catalog()
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
+    {:ok, lv, _html} =
+      live(sign_in_editor(conn, branch), ~p"/staff/b/#{branch}/integrations/frontpad")
+
     assert has_element?(lv, "#frontpad-empty")
     refute has_element?(lv, "#frontpad-settings")
 

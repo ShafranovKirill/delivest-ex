@@ -3,6 +3,7 @@ alias Delivest.Identity.{Branch, RolePresets, Role, Staff, Staffs}
 alias Delivest.Identity.Branch.BranchInfo
 alias Delivest.Net.{Category, Product}
 alias Delivest.Oms.{Carts, Order, Orders}
+alias Delivest.Integrations.Zvonok
 
 import Ecto.Query
 
@@ -15,6 +16,20 @@ hours =
   )
 
 RolePresets.seed()
+
+# The dev-only phone confirmation shortcut lets browser tests sign in as distinct
+# clients without contacting an external calling provider.
+unless Repo.one(Zvonok.Settings) do
+  %Zvonok.Settings{}
+  |> Zvonok.Settings.changeset(%{
+    public_key: "e2e-public-key",
+    campaign_id: "e2e-campaign",
+    webhook_token: "e2e-webhook-token",
+    enabled: true,
+    dev_skip_calls: true
+  })
+  |> Repo.insert!()
+end
 
 branch =
   Repo.get_by(Branch, slug: "e2e") ||
@@ -122,7 +137,8 @@ category = Repo.get_by!(Category, name: "Пицца")
 product = Repo.get_by!(Product, slug: "e2e-1")
 
 unless Relations.related?("Branch", board_branch.id, "Product", product.id) do
-  {:ok, _} = Relations.create_relation(Repo, "Branch", board_branch.id, "Product", product.id, %{})
+  {:ok, _} =
+    Relations.create_relation(Repo, "Branch", board_branch.id, "Product", product.id, %{})
 end
 
 order_count = 40

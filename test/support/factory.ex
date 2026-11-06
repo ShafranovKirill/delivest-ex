@@ -46,10 +46,7 @@ defmodule Delivest.Factory do
   def client_factory do
     %Client{
       phone:
-        sequence(
-          :client_phone,
-          &"+7999000#{&1}#{String.pad_leading(Integer.to_string(rem(&1, 10)), 1, "0")}"
-        ),
+        sequence(:client_phone, &"+7888#{String.pad_leading(Integer.to_string(&1), 7, "0")}"),
       name: sequence(:client_name, &"Client #{&1}"),
       status: :active
     }

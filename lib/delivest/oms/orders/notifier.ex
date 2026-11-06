@@ -51,7 +51,11 @@ defmodule Delivest.Oms.Orders.Notifier do
   end
 
   defp publish_client(order) do
-    for {kind, id} <- [session: order.session_id, client: order.client_id],
+    owners =
+      [client: order.client_id] ++
+        if(order.guest_session_access, do: [session: order.session_id], else: [])
+
+    for {kind, id} <- owners,
         is_binary(id),
         do:
           Phoenix.PubSub.broadcast(Delivest.PubSub, owner_topic(kind, id), {:client_order, order})

@@ -91,7 +91,12 @@ defmodule DelivestWeb.Client.Push.PushController do
   )
 
   def unsubscribe_client(conn, %{"endpoint" => endpoint}) do
-    Push.unsubscribe_client(conn.assigns.current_client, endpoint)
+    Push.unsubscribe_client(
+      conn.assigns.current_client,
+      endpoint,
+      CookieHelper.get_cookie(conn, "session_id")
+    )
+
     send_resp(conn, :no_content, "")
   end
 

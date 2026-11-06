@@ -57,9 +57,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
   end
 
   def handle_event("sync_stops", _params, socket) do
-    case StopSync.sync(socket.assigns.current_branch.id) do
+    case StopSync.sync(socket.assigns.current_staff, socket.assigns.current_branch.id) do
       {:ok, _result} ->
         {:noreply, put_flash(socket, :info, gettext("Stop list updated"))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("r_keeper did not respond"))}

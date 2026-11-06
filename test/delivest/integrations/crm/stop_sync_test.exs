@@ -72,4 +72,38 @@ defmodule Delivest.Integrations.Crm.StopSyncTest do
     assert {:ok, :disabled} = StopSync.sync(branch.id)
     assert Stops.stopped_ids(branch.id) == MapSet.new()
   end
+
+  test "read-only staff cannot sync stops through the facade" do
+    {branch, _info} = branch(true)
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    soup = insert_branch_product(branch.id, external_id: "101")
+    {:ok, _} = Stops.replace_external(branch.id, :frontpad, [soup.id])
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      send(test_pid, :stops_requested)
+      Req.Test.json(conn, stops([]))
+    end)
+
+    assert {:error, :forbidden} = StopSync.sync(staff, branch.id)
+    refute_received :stops_requested
+    assert Stops.stopped_ids(branch.id) == MapSet.new([soup.id])
+  end
+
+  test "staff cannot sync another branch through the facade" do
+    {own_branch, _} = branch(true)
+    {other_branch, _} = branch(true)
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: own_branch)
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      send(test_pid, :stops_requested)
+      Req.Test.json(conn, stops([]))
+    end)
+
+    assert {:error, :forbidden} = StopSync.sync(staff, other_branch.id)
+    refute_received :stops_requested
+  end
 end

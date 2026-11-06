@@ -17,6 +17,32 @@ defmodule DelivestWeb.Staff.IntegrationLive.IikoTest do
     %{conn: init_test_session(conn, %{"staff_id" => staff.id}), branch: branch}
   end
 
+  test "read-only staff cannot call iiko through events or the facade", ctx do
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))
+    insert(:staff_branch, staff: staff, branch: ctx.branch)
+    conn = init_test_session(build_conn(), %{"staff_id" => staff.id})
+
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("iiko must not be called") end)
+
+    assert {:error, :forbidden} = Iiko.load_settings(staff, ctx.branch.id)
+    assert {:error, :forbidden} = Iiko.register_webhooks(staff, ctx.branch.id)
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{ctx.branch}/integrations/iiko")
+    render_hook(lv, "load", %{})
+    render_hook(lv, "webhooks", %{})
+    render_hook(lv, "sync_stops", %{})
+    assert has_element?(lv, "#iiko-settings")
+  end
+
+  test "staff cannot register iiko webhooks for another branch", ctx do
+    other_branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: ctx.branch)
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("iiko must not be called") end)
+
+    assert {:error, :forbidden} = Iiko.register_webhooks(staff, other_branch.id)
+  end
+
   test "the key is saved, then organization and terminal group are picked from iiko", ctx do
     Req.Test.stub(Delivest.HTTP.Client, fn conn ->
       case conn.request_path do

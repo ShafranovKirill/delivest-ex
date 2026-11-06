@@ -30,7 +30,12 @@ defmodule DelivestWeb.ClientSocketTest do
   end
 
   test "pushes status changes of the session's orders" do
-    order = order_fixture(@branch_id, attrs: %{"session_id" => "sess-1"})
+    order =
+      @branch_id
+      |> order_fixture(attrs: %{"session_id" => "sess-1"})
+      |> Ecto.Changeset.change(guest_session_access: true)
+      |> Repo.update!()
+
     {:ok, _reply, _socket} = "sess-1" |> connect_as() |> subscribe_and_join("orders", %{})
     {:ok, _reply, _other} = "sess-2" |> connect_as() |> subscribe_and_join("orders", %{})
 
@@ -64,7 +69,8 @@ defmodule DelivestWeb.ClientSocketTest do
       branch.id
       |> order_fixture(attrs: %{"session_id" => "crm-sess"})
       |> Ecto.Changeset.change(
-        crm: %CrmSync{provider: "frontpad", external_id: "900", status: "sent"}
+        crm: %CrmSync{provider: "frontpad", external_id: "900", status: "sent"},
+        guest_session_access: true
       )
       |> Repo.update!()
 
@@ -93,6 +99,33 @@ defmodule DelivestWeb.ClientSocketTest do
     {:ok, _} = Orders.advance_order(order, :preparing, :system)
 
     assert_push "order", %{order: %{status: :preparing}}, 1_000
+  end
+
+  test "a new client on the same session does not receive the previous client's events" do
+    client_a = insert(:client)
+    client_b = insert(:client)
+
+    order =
+      @branch_id
+      |> order_fixture(attrs: %{"session_id" => "shared-session"})
+      |> Ecto.Changeset.change(client_id: client_a.id)
+      |> Repo.update!()
+
+    {:ok, _reply, _socket} =
+      "shared-session" |> connect_as(client_b.id) |> subscribe_and_join("orders", %{})
+
+    {:ok, _} = Orders.advance_order(order, :preparing, :system)
+    refute_push "order", _
+
+    guest_order =
+      @branch_id
+      |> order_fixture(attrs: %{"session_id" => "shared-session"})
+      |> Ecto.Changeset.change(guest_session_access: true)
+      |> Repo.update!()
+
+    {:ok, _} = Orders.advance_order(guest_order, :ready, :system)
+    assert_push "order", %{order: %{id: id}}, 1_000
+    assert id == guest_order.id
   end
 
   test "auth channel signals the confirmation and leaves it for the http exchange" do

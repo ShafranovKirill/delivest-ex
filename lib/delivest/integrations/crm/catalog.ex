@@ -18,6 +18,7 @@ defmodule Delivest.Integrations.Crm.Catalog do
   def refresh_available_at(%CatalogSnapshot{checked_at: checked_at}),
     do: DateTime.add(checked_at, @refresh_interval_s)
 
+  @doc "Trusted scheduled refresh. Staff callers must use refresh/3."
   def refresh(branch_id, provider) do
     snapshot = Repo.get_by(CatalogSnapshot, branch_id: branch_id)
 
@@ -27,6 +28,11 @@ defmodule Delivest.Integrations.Crm.Catalog do
            Journal.scope([branch_id: branch_id], fn -> module.fetch_catalog(settings) end) do
       {:ok, save(snapshot, branch_id, provider, catalog)}
     end
+  end
+
+  def refresh(staff, branch_id, provider) do
+    with :ok <- Identity.authorize(staff, "integrations.update", branch_id),
+         do: refresh(branch_id, provider)
   end
 
   def issues(_branch_id, nil), do: []

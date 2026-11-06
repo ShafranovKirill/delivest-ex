@@ -1,6 +1,7 @@
 defmodule Delivest.Identity.ClientAuth do
   alias Delivest.Integrations.Zvonok
   alias Delivest.Identity.{Client, Clients, Phone, PhoneConfirmation, PhoneConfirmations}
+  alias Delivest.Repo
 
   @dev_tools Application.compile_env(:delivest, :auto_confirm_phone, false)
 
@@ -9,9 +10,32 @@ defmodule Delivest.Identity.ClientAuth do
   def start(phone, session_id) do
     with :ok <- ensure_enabled(),
          {:ok, phone} <- validate_phone(phone),
-         {:ok, confirmation} <- confirmation(phone, session_id) do
+         {:ok, confirmation} <- serialized_confirmation(phone, session_id) do
+      :ok = auto_confirm(confirmation)
       {:ok, confirmation, confirmation.call_number}
     end
+  end
+
+  defp serialized_confirmation(phone, session_id) do
+    {:ok, result} =
+      Repo.transaction(
+        fn ->
+          lock_keys =
+            ["phone:" <> phone] ++
+              if(is_binary(session_id), do: ["session:" <> session_id], else: [])
+
+          lock_keys
+          |> Enum.sort()
+          |> Enum.each(fn key ->
+            Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [key])
+          end)
+
+          confirmation(phone, session_id)
+        end,
+        timeout: 120_000
+      )
+
+    result
   end
 
   defp confirmation(phone, session_id) do
@@ -23,11 +47,9 @@ defmodule Delivest.Identity.ClientAuth do
 
   defp request_new(phone, session_id) do
     with :ok <- PhoneConfirmations.throttle(phone, session_id),
-         {:ok, call} <- request_call(phone, Zvonok.login_call_mode()),
-         {:ok, confirmation} <-
-           PhoneConfirmations.create(Map.merge(call, %{phone: phone, session_id: session_id})),
-         :ok <- auto_confirm(confirmation) do
-      {:ok, confirmation}
+         {:ok, reservation} <- PhoneConfirmations.reserve(phone, session_id),
+         {:ok, call} <- request_call(phone, Zvonok.login_call_mode()) do
+      PhoneConfirmations.finish_request(reservation, call)
     end
   end
 

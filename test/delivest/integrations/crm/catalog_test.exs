@@ -101,4 +101,27 @@ defmodule Delivest.Integrations.Crm.CatalogTest do
     refute_received :catalog_requested
     assert Catalog.get_snapshot(branch.id, :frontpad) == nil
   end
+
+  test "read-only staff cannot refresh through the facade" do
+    branch = branch("key")
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    stub_catalog()
+
+    assert {:error, :forbidden} = Catalog.refresh(staff, branch.id, :frontpad)
+    refute_received :catalog_requested
+    assert Catalog.get_snapshot(branch.id, :frontpad) == nil
+  end
+
+  test "staff cannot refresh another branch through the facade" do
+    own_branch = branch("own-key")
+    other_branch = branch("other-key")
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: own_branch)
+    stub_catalog()
+
+    assert {:error, :forbidden} = Catalog.refresh(staff, other_branch.id, :frontpad)
+    refute_received :catalog_requested
+    assert Catalog.get_snapshot(other_branch.id, :frontpad) == nil
+  end
 end

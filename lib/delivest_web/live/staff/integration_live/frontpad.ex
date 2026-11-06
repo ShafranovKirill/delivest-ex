@@ -29,7 +29,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   @impl true
   def handle_event("refresh", _params, socket) do
-    case Catalog.refresh(socket.assigns.current_branch.id, :frontpad) do
+    case Catalog.refresh(
+           socket.assigns.current_staff,
+           socket.assigns.current_branch.id,
+           :frontpad
+         ) do
       {:ok, _snapshot} ->
         {:noreply,
          socket |> load_catalog() |> put_flash(:info, gettext("Products received from Frontpad"))}
@@ -37,13 +41,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
       {:error, {:too_early, _available_at}} ->
         {:noreply, socket |> load_catalog() |> put_flash(:error, gettext("Too early to update"))}
 
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, refresh_error(reason))}
     end
   end
 
   def handle_event("sync_stops", _params, socket) do
-    case StopSync.sync(socket.assigns.current_branch.id) do
+    case StopSync.sync(socket.assigns.current_staff, socket.assigns.current_branch.id) do
       {:ok, :disabled} ->
         {:noreply,
          socket |> assign(stop_sync: nil) |> put_flash(:info, gettext("Stop list sync is off"))}
@@ -53,7 +60,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
          socket |> assign(stop_sync: result) |> put_flash(:info, gettext("Stop list updated"))}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, refresh_error(reason))}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           if(reason == :forbidden, do: gettext("Permission denied"), else: refresh_error(reason))
+         )}
     end
   end
 

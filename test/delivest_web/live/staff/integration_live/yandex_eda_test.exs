@@ -71,6 +71,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
   test "a reader cannot run the shared connection check", %{conn: conn} do
     push_credentials()
     branch = yandex_branch()
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn ->
+      send(test_pid, :external_call)
+      flunk("the external API must not be called")
+    end)
 
     {:ok, lv, _html} =
       live(
@@ -79,13 +85,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
       )
 
     refute has_element?(lv, "#yandex-eda-health-check")
-
-    test_pid = self()
-
-    Req.Test.stub(Delivest.HTTP.Client, fn _conn ->
-      send(test_pid, :external_call)
-      flunk("the external API must not be called")
-    end)
+    render_async(lv)
 
     lv |> with_target("#yandex-eda-health") |> render_hook("check")
 

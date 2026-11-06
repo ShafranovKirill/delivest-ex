@@ -15,6 +15,16 @@ defmodule Delivest.Identity.PhoneConfirmations do
     |> Repo.insert()
   end
 
+  def reserve(phone, session_id) do
+    create(%{phone: phone, session_id: session_id, call_id: "pending:" <> Ecto.UUID.generate()})
+  end
+
+  def finish_request(%PhoneConfirmation{} = confirmation, call) do
+    confirmation
+    |> PhoneConfirmation.changeset(call)
+    |> Repo.update()
+  end
+
   @spec reusable(String.t(), String.t() | nil) :: PhoneConfirmation.t() | nil
   def reusable(phone, session_id) when is_binary(session_id) do
     PhoneConfirmation
@@ -62,6 +72,12 @@ defmodule Delivest.Identity.PhoneConfirmations do
 
   @spec confirm(String.t(), String.t()) :: {:ok, [String.t()]} | {:error, :not_found}
   def confirm(call_id, phone) do
+    if String.starts_with?(call_id, "pending:"),
+      do: {:error, :not_found},
+      else: confirm_provider_call(call_id, phone)
+  end
+
+  defp confirm_provider_call(call_id, phone) do
     PhoneConfirmation
     |> fresh()
     |> where([c], c.call_id == ^call_id and c.phone == ^phone and is_nil(c.confirmed_at))
