@@ -28,7 +28,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
 
   describe "order actions" do
     setup %{conn: conn} do
-      branch = insert(:branch, name: "Main")
+      branch = insert(:branch)
       order = create_order(branch.id)
 
       %{conn: conn, branch: branch, order: order}

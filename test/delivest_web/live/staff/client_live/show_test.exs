@@ -6,7 +6,7 @@ defmodule DelivestWeb.Staff.ClientLive.ShowTest do
   import Delivest.OrderFixtures
 
   setup %{conn: conn} do
-    branch = insert(:branch, name: "Main")
+    branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     insert(:staff_branch, staff: staff, branch: branch)
 
