@@ -47,6 +47,7 @@ defmodule Delivest.Oms.Order do
     belongs_to :cart, Delivest.Oms.Cart
     field :branch_id, :binary_id
     field :session_id, :string
+    field :guest_session_access, :boolean, default: false
 
     field :customer_phone, :string
     field :customer_phone_ext, :string

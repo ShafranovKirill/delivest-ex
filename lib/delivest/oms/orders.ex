@@ -112,7 +112,7 @@ defmodule Delivest.Oms.Orders do
     with {:ok, uuid} <- Ecto.UUID.cast(order_id) do
       Order
       |> where([o], o.id == ^uuid and is_nil(o.deleted_at))
-      |> where(^owned_by(session_id, client_id))
+      |> where(^owner_filter(session_id, client_id))
       |> preload(items: :modifiers)
       |> Repo.one()
     else
@@ -142,7 +142,7 @@ defmodule Delivest.Oms.Orders do
     since = DateTime.add(DateTime.utc_now(), -active_hours(), :hour)
 
     Order
-    |> where(^owned_by(session_id, client_id))
+    |> where(^owner_filter(session_id, client_id))
     |> where([o], is_nil(o.deleted_at))
     |> where([o], o.inserted_at >= ^since and o.status not in ^OrderFlow.final())
     |> order_by([o], desc: o.inserted_at)
@@ -174,7 +174,7 @@ defmodule Delivest.Oms.Orders do
          %Order{awaiting_payment: true, status: :created} = order <-
            Order
            |> where([o], o.id == ^id and is_nil(o.deleted_at))
-           |> where(^owned_by(session_id, client_id))
+           |> where(^owner_filter(session_id, client_id))
            |> Repo.one() || {:error, :not_found} do
       Delivest.Payments.Online.start(order)
     else
@@ -189,7 +189,7 @@ defmodule Delivest.Oms.Orders do
          %Order{} = order <-
            Order
            |> where([o], o.id == ^id and is_nil(o.deleted_at))
-           |> where(^owned_by(session_id, client_id))
+           |> where(^owner_filter(session_id, client_id))
            |> Repo.one() || {:error, :not_found},
          true <- client_cancellable?(order) || {:error, :not_cancellable} do
       advance_order(order, :cancelled, :client,
@@ -280,11 +280,33 @@ defmodule Delivest.Oms.Orders do
     |> Audit.track(actor, "order.deleted")
   end
 
-  defp owned_by(session_id, nil), do: dynamic([o], o.session_id == ^session_id)
-  defp owned_by(nil, client_id), do: dynamic([o], o.client_id == ^client_id)
+  def owner_filter(nil, nil), do: dynamic([o], false)
 
-  defp owned_by(session_id, client_id),
-    do: dynamic([o], o.session_id == ^session_id or o.client_id == ^client_id)
+  def owner_filter(session_id, nil),
+    do: dynamic([o], o.guest_session_access and o.session_id == ^session_id)
+
+  def owner_filter(nil, client_id), do: dynamic([o], o.client_id == ^client_id)
+
+  def owner_filter(session_id, client_id),
+    do:
+      dynamic(
+        [o],
+        o.client_id == ^client_id or (o.guest_session_access and o.session_id == ^session_id)
+      )
+
+  def owned_by?(%Order{client_id: client_id}, _session_id, client_id)
+      when is_binary(client_id),
+      do: true
+
+  def owned_by?(
+        %Order{guest_session_access: true, session_id: session_id},
+        session_id,
+        _client_id
+      )
+      when is_binary(session_id),
+      do: true
+
+  def owned_by?(%Order{}, _session_id, _client_id), do: false
 
   defp blank_to_nil(value) when is_binary(value) do
     case String.trim(value) do

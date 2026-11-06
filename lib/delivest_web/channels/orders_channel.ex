@@ -13,13 +13,17 @@ defmodule DelivestWeb.OrdersChannel do
 
   @impl true
   def handle_info({:client_order, order}, socket) do
-    payload = %{order: OrderJSON.active_order_data(order), active: OrderFlow.active?(order)}
+    if Orders.owned_by?(order, socket.assigns.session_id, socket.assigns.client_id) do
+      payload = %{order: OrderJSON.active_order_data(order), active: OrderFlow.active?(order)}
 
-    if payload == socket.assigns.last_pushed do
-      {:noreply, socket}
+      if payload == socket.assigns.last_pushed do
+        {:noreply, socket}
+      else
+        push(socket, "order", payload)
+        {:noreply, assign(socket, last_pushed: payload)}
+      end
     else
-      push(socket, "order", payload)
-      {:noreply, assign(socket, last_pushed: payload)}
+      {:noreply, socket}
     end
   end
 end

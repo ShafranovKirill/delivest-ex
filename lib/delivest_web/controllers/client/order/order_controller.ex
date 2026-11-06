@@ -53,6 +53,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
          {:ok, order} <-
            Oms.create_order(attrs,
              update_client: false,
+             guest_session_access: is_nil(client),
              online: attrs["payment_method"] == "online"
            ),
          {:ok, confirmation_url} <- begin_payment(order) do

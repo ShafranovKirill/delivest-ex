@@ -106,7 +106,7 @@ defmodule Delivest.Oms.Orders.Create do
   defp customer(_result), do: nil
 
   defp build(attrs, changes, opts) do
-    %Order{}
+    %Order{guest_session_access: opts[:guest_session_access] == true}
     |> Assembler.changeset(own_attrs(attrs, changes), changes)
     |> Order.source_changeset(Keyword.get(opts, :source, "app"))
     |> then(&if(opts[:customer], do: Order.customer_changeset(&1, opts[:customer]), else: &1))

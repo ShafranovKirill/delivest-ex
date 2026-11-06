@@ -31,7 +31,11 @@ defmodule Delivest.Push.CourierPushTest do
     order =
       branch.id
       |> order_fixture()
-      |> Ecto.Changeset.change(fulfillment_type: :delivery, session_id: "courier-push")
+      |> Ecto.Changeset.change(
+        fulfillment_type: :delivery,
+        session_id: "courier-push",
+        guest_session_access: true
+      )
       |> Repo.update!()
 
     client = PushClient.new()

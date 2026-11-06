@@ -343,6 +343,92 @@ defmodule DelivestWeb.Client.OrderControllerTest do
           "Bearer " <> ClientToken.issue(client.id).access_token
         )
 
+    test "switching clients in one session cannot expose or mutate the first client's order", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      insert(:zvonok_settings)
+      client_a = insert(:client, phone: "+79995550001")
+      client_b = insert(:client, phone: "+79995550002")
+      assert Delivest.Identity.client_auth_enabled?()
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+
+      assert %{"data" => %{"id" => _}} =
+               conn |> authorize(client_a) |> get(~p"/client/me") |> json_response(200)
+
+      order_id =
+        conn
+        |> authorize(client_a)
+        |> post(
+          ~p"/client/orders",
+          order_params(branch, cart_id, %{"guest_session_access" => true})
+        )
+        |> json_response(200)
+        |> get_in(["data", "id"])
+
+      assert Repo.get!(Order, order_id).client_id == client_a.id
+      refute Repo.get!(Order, order_id).guest_session_access
+      guest = recycle_with_headers(conn)
+      switched = authorize(guest, client_b)
+
+      for actor <- [guest, switched] do
+        assert %{"error" => "order_not_found"} =
+                 actor |> get(~p"/client/orders/#{order_id}") |> json_response(404)
+
+        assert actor |> get(~p"/client/orders/active") |> json_response(200) == %{"data" => []}
+
+        assert %{"error" => "order_not_found"} =
+                 actor |> post(~p"/client/orders/#{order_id}/cancel") |> json_response(404)
+
+        assert %{"error" => "order_not_found"} =
+                 actor |> post(~p"/client/orders/#{order_id}/pay") |> json_response(404)
+
+        assert %{"error" => "order_not_found"} =
+                 actor
+                 |> post(~p"/client/orders/#{order_id}/push", %{})
+                 |> json_response(404)
+      end
+
+      assert switched |> get(~p"/client/orders") |> json_response(200) == %{"data" => []}
+      assert Repo.get!(Order, order_id).status == :created
+    end
+
+    test "guest order remains available to that session after sign-in", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      insert(:zvonok_settings)
+      client = insert(:client)
+      conn = start_session(conn, branch)
+      {conn, cart_id} = cart_with_product(conn, branch, product)
+
+      order_id =
+        conn
+        |> post(~p"/client/orders", order_params(branch, cart_id))
+        |> json_response(200)
+        |> get_in(["data", "id"])
+
+      assert Repo.get!(Order, order_id).guest_session_access
+      signed_in = conn |> recycle_with_headers() |> authorize(client)
+
+      assert %{"data" => %{"id" => ^order_id}} =
+               signed_in |> get(~p"/client/orders/#{order_id}") |> json_response(200)
+
+      assert [%{"id" => ^order_id}] =
+               signed_in
+               |> get(~p"/client/orders/active")
+               |> json_response(200)
+               |> Map.fetch!("data")
+
+      other_session = build_conn() |> authorize(client)
+
+      assert %{"error" => "order_not_found"} =
+               other_session |> get(~p"/client/orders/#{order_id}") |> json_response(404)
+    end
+
     test "orders are linked to the client and the address is remembered", %{
       conn: conn,
       branch: branch,
