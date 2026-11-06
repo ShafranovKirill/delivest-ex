@@ -1,5 +1,5 @@
 defmodule Delivest.Promo.EngineTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   import Delivest.Factory
 

@@ -1,5 +1,5 @@
 defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
-  use DelivestWeb.ConnCase, async: true
+  use DelivestWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
