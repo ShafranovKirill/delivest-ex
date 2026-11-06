@@ -3,13 +3,13 @@ defmodule Delivest.Loyalty.Rewards do
   alias Delivest.Oms.CartView
   alias Delivest.Promo.Line
 
-  def price(result, cart, client_id, reserved \\ 0) do
+  def price(result, cart, client_id, reserved \\ 0, products \\ nil) do
     items = CartView.star_items(cart)
 
     if items == [] do
       {:ok, result}
     else
-      products = Net.list_products_by_ids(Enum.map(items, & &1.product_id))
+      products = products || Net.list_products_by_ids(Enum.map(items, & &1.product_id))
 
       valid =
         Enum.all?(items, fn item ->

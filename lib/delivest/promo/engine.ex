@@ -19,7 +19,20 @@ defmodule Delivest.Promo.Engine do
 
   @spec run([map()], Context.t()) :: Result.t()
   def run(items, %Context{} = context) do
-    compiled = Catalog.list(context.branch_id) |> Catalog.refresh_products(context.branch_id)
+    compiled =
+      case {context.compiled_promotions, context.product_snapshot} do
+        {entries, products} when is_list(entries) and is_map(products) ->
+          by_slug = Map.new(products, fn {_id, product} -> {product.slug, product} end)
+          Enum.map(entries, &%{&1 | products: by_slug})
+
+        _ ->
+          if(is_nil(context.catalog_version),
+            do: Catalog.list(context.branch_id),
+            else: Catalog.list(context.branch_id, context.catalog_version)
+          )
+          |> Catalog.refresh_products(context.branch_id)
+      end
+
     automatic = Enum.filter(compiled, &Compiled.automatic?/1)
     {code_entry, code_state} = resolve_code(context, compiled)
     usage = load_usage(automatic, code_entry, context)

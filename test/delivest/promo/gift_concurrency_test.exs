@@ -55,7 +55,7 @@ defmodule Delivest.Promo.GiftConcurrencyTest do
       end)
 
       Cachex.del(:cart_cache, cart.id)
-      Delivest.Promo.Catalog.invalidate(branch.id)
+      Sandbox.unboxed_run(Repo, fn -> Delivest.Promo.Catalog.invalidate(branch.id) end)
     end
   end
 end

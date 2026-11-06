@@ -121,6 +121,27 @@ defmodule Delivest.Oms.OrderTest do
   end
 
   describe "order context" do
+    test "checkout uses fresh branch product data and keeps snapshots out of cart cache" do
+      product = insert_branch_product(@branch_id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "fresh-checkout", branch_id: @branch_id})
+      {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
+
+      assert {:ok, %CartView{product_snapshot: nil, compiled_promotions: nil}} =
+               Cachex.get(:cart_cache, cart.id)
+
+      product |> Ecto.Changeset.change(price: 250) |> Repo.update!()
+
+      assert {:ok, order} =
+               Orders.create_order(%{
+                 "cart_id" => cart.id,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               })
+
+      assert order.total_amount == 250
+      assert hd(order.items).price == 250
+    end
+
     test "creates an order from a non-empty cart and detaches it" do
       product = insert_branch_product(@branch_id, price: 175)
 

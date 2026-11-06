@@ -31,6 +31,20 @@ defmodule Delivest.Oms.CartTest do
   end
 
   describe "cart context" do
+    test "a delayed old cache fill cannot restore an outdated product price" do
+      branch = insert(:branch)
+      product = insert_branch_product(branch.id, price: 100)
+      {:ok, cart} = Carts.create_cart(%{session_id: "stale-fill", branch_id: branch.id})
+      {:ok, _, _} = Carts.add_item(cart.id, product.id)
+      {:ok, old_view} = Cachex.get(:cart_cache, cart.id)
+
+      product |> Ecto.Changeset.change(price: 250) |> Repo.update!()
+      Delivest.Net.Catalogs.clear_menu_cache(branch.id)
+      Cachex.put(:cart_cache, cart.id, old_view)
+
+      assert %CartView{total_amount: 250} = Carts.get_cart_by_id(cart.id)
+    end
+
     test "rebuilds cached carts missing loyalty fields without losing items" do
       product = insert_branch_product(@branch_id, price: 100)
       {:ok, cart} = Carts.create_cart(%{session_id: "legacy-cache", branch_id: @branch_id})

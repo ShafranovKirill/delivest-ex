@@ -79,14 +79,24 @@ defmodule Delivest.Promo.Promotions do
 
   def toggle(staff, %Promotion{} = promotion) do
     authorized(staff, "promotions.update", promotion.branch_id, fn ->
-      promotion |> Promotion.toggle_changeset() |> Repo.update() |> invalidated()
+      promotion
+      |> Promotion.toggle_changeset()
+      |> then(
+        &Delivest.Net.SharedOwnership.write([promotion.branch_id], fn -> Repo.update(&1) end)
+      )
+      |> invalidated()
     end)
     |> Audit.track(staff, "promotion.updated", branch_id: promotion.branch_id)
   end
 
   def delete(staff, %Promotion{} = promotion) do
     authorized(staff, "promotions.delete", promotion.branch_id, fn ->
-      promotion |> Promotion.delete_changeset() |> Repo.update() |> invalidated()
+      promotion
+      |> Promotion.delete_changeset()
+      |> then(
+        &Delivest.Net.SharedOwnership.write([promotion.branch_id], fn -> Repo.update(&1) end)
+      )
+      |> invalidated()
     end)
     |> Audit.track(staff, "promotion.deleted", branch_id: promotion.branch_id)
   end
@@ -99,6 +109,9 @@ defmodule Delivest.Promo.Promotions do
     |> persist.(changeset)
     |> Multi.run(:code, fn _repo, %{promotion: promotion} ->
       upsert_public_code(promotion, Ecto.Changeset.get_field(changeset, :code), changeset)
+    end)
+    |> Multi.run(:catalog_version, fn _repo, %{promotion: promotion} ->
+      {:ok, Delivest.Net.Catalogs.bump_versions([promotion.branch_id])}
     end)
     |> Repo.transaction()
     |> case do
@@ -140,7 +153,7 @@ defmodule Delivest.Promo.Promotions do
   end
 
   defp invalidated({:ok, %Promotion{} = promotion} = result) do
-    Catalog.invalidate(promotion.branch_id)
+    Catalog.invalidate_after_commit(promotion.branch_id)
     result
   end
 
