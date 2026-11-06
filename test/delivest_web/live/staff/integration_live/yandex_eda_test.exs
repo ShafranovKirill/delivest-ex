@@ -24,6 +24,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
       )
 
     refute has_element?(lv, "#yandex-eda-client-id")
+    assert has_element?(lv, "#yandex-eda-health-summary-capabilities li", "Promotions")
     lv |> element("#yandex-eda-rotate") |> render_click()
     assert has_element?(lv, "#yandex-eda-client-id", YandexEda.get_settings().client_id)
 

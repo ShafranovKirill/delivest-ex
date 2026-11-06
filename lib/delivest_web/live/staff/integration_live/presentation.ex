@@ -82,6 +82,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
       credentials: credentials,
       connection: connection(status),
       usage: usage(provider, branch, info, crm, credentials),
+      capabilities: capabilities(provider),
       warnings: warnings(status)
     }
   end
@@ -522,6 +523,62 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   defp source_label(source), do: Channels.name(source)
 
   defp item(label, state, detail), do: %{label: label, state: state, detail: detail}
+
+  def capabilities(provider) when provider in @crm_providers do
+    for {label, capability} <- [
+          {gettext("New orders"), :deliver_order},
+          {gettext("Cancel orders"), :cancel},
+          {gettext("Update items"), :update_items},
+          {gettext("Update comments"), :update_comment},
+          {gettext("Update address"), :update_address},
+          {gettext("Update delivery time"), :update_time},
+          {gettext("Update payments"), :update_payments},
+          {gettext("Import full menu"), :full_menu},
+          {gettext("Catalog for product matching"), :catalog},
+          {gettext("Read stop list"), :stops},
+          {gettext("Order status updates"), :status_updates}
+        ] do
+      {label, capability_value(:frontpad, capability), capability_value(:iiko, capability),
+       capability_value(:rkeeper, capability)}
+    end
+  end
+
+  def capabilities(:yandex_eda) do
+    [
+      {gettext("Order item edits"), false},
+      {gettext("Promotions"), false},
+      {gettext("Combos"), false}
+    ]
+  end
+
+  def capabilities(_provider), do: []
+
+  defp capability_value(provider, capability)
+       when capability in [
+              :cancel,
+              :update_items,
+              :update_comment,
+              :update_address,
+              :update_time,
+              :update_payments
+            ],
+       do: capability in Crm.capabilities(provider)
+
+  defp capability_value(provider, :full_menu), do: Crm.menu_source?(provider)
+  defp capability_value(provider, :stops), do: Crm.stops_source?(provider)
+
+  defp capability_value(provider, capability) when capability in [:deliver_order, :catalog] do
+    {:ok, module} = Delivest.Integrations.Crm.Registry.fetch(provider)
+
+    function_exported?(module, capability_fun(capability), 2) or
+      function_exported?(module, capability_fun(capability), 1)
+  end
+
+  defp capability_value(:rkeeper, :status_updates), do: :polling
+  defp capability_value(_provider, :status_updates), do: :webhook
+
+  defp capability_fun(:deliver_order), do: :deliver_order
+  defp capability_fun(:catalog), do: :fetch_catalog
 
   ## Scope
 

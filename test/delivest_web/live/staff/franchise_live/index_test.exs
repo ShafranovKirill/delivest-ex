@@ -56,6 +56,18 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
              Franchise.get_settings()
   end
 
+  test "admin enters a manual Yandex rating on the brand page", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/brand")
+
+    assert has_element?(lv, "#franchise-yandex-rating-form")
+
+    lv
+    |> form("#franchise-yandex-rating-form", rating: %{rating: "4.8", reviews_count: "26"})
+    |> render_submit()
+
+    assert %{rating: 4.8, reviews_count: 26} = Delivest.Franchise.Rating.current(:yandex)
+  end
+
   test "the dark theme color is automatic until a custom one is chosen", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/brand")
 

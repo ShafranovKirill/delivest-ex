@@ -27,6 +27,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
         branch={@branch}
       />
       <.usage_rows id={"#{@id}-usage"} usage={@state.usage} />
+      <.capability_rows
+        :if={@state.capabilities != []}
+        id={"#{@id}-capabilities"}
+        provider={@state.provider}
+        capabilities={@state.capabilities}
+      />
       <.warning_rows id={"#{@id}-warnings"} warnings={@state.warnings} />
     </div>
     """
@@ -92,6 +98,51 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
     </div>
     """
   end
+
+  attr :id, :string, required: true
+  attr :provider, :atom, required: true
+  attr :capabilities, :list, required: true
+
+  def capability_rows(assigns) do
+    ~H"""
+    <section id={@id} class="border-t border-base-200 pt-3">
+      <h3 class="text-xs font-semibold text-base-content/70">{gettext("Adapter capabilities")}</h3>
+      <p class="text-xs text-base-content/60">
+        {gettext("Capabilities are independent of connection and branch settings.")}
+      </p>
+      <div :if={@provider in [:frontpad, :iiko, :rkeeper]} class="overflow-x-auto">
+        <table class="table table-xs mt-2">
+          <thead>
+            <tr>
+              <th>{gettext("Capability")}</th><th>Frontpad</th><th>iiko</th><th>r_keeper</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={{label, frontpad, iiko, rkeeper} <- @capabilities}>
+              <th>{label}</th>
+              <td>{capability_text(frontpad)}</td>
+              <td>{capability_text(iiko)}</td>
+              <td>{capability_text(rkeeper)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="text-xs text-base-content/60">
+          {gettext("Use the Frontpad catalog to match products.")}
+        </p>
+      </div>
+      <ul :if={@provider == :yandex_eda} class="mt-2 space-y-1 text-xs">
+        <li :for={{label, supported?} <- @capabilities} class="flex justify-between gap-3">
+          <span>{label}</span><span>{capability_text(supported?)}</span>
+        </li>
+      </ul>
+    </section>
+    """
+  end
+
+  defp capability_text(true), do: gettext("Supported")
+  defp capability_text(false), do: gettext("Not supported")
+  defp capability_text(:webhook), do: gettext("Webhook")
+  defp capability_text(:polling), do: gettext("Polling")
 
   attr :id, :string, required: true
   attr :warnings, :list, required: true

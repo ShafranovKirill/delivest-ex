@@ -1,6 +1,7 @@
 defmodule Delivest.Franchise do
   alias Delivest.Identity
   alias Delivest.Franchise.{Assets, Documents, SettingsStore, Templates}
+  alias Delivest.Franchise.Rating
 
   defdelegate get_settings, to: SettingsStore, as: :get
   defdelegate change_settings(settings, attrs \\ %{}), to: SettingsStore, as: :change
@@ -15,6 +16,8 @@ defmodule Delivest.Franchise do
   @logo_fields %{light: :logo_key, dark: :logo_dark_key}
 
   def update_settings(staff, attrs), do: authorized(staff, fn -> SettingsStore.save(attrs) end)
+
+  def update_yandex_rating(staff, attrs), do: Rating.store_manual(staff, attrs)
 
   def update_icon(staff, binary),
     do: authorized(staff, fn -> replace_image(:icon_key, Assets.store_icon(binary)) end)

@@ -184,13 +184,29 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <button type="submit" class="btn btn-error btn-xs btn-outline">
             {gettext("The order is in the CRM")}
           </button>
+        </form>
+        <form
+          :if={@order.crm.status == "unknown"}
+          id={"order-crm-resend-form-#{@order.id}"}
+          phx-submit="crm_alert"
+          class="space-y-2"
+        >
+          <input type="hidden" name="order_id" value={@order.id} />
+          <input type="hidden" name="action" value="resend" />
+          <label class="flex items-start gap-2 text-xs">
+            <input
+              type="checkbox"
+              name="confirmed"
+              value="true"
+              required
+              class="checkbox checkbox-xs"
+            />
+            <span>{gettext("I checked the CRM and confirmed this order does not exist there.")}</span>
+          </label>
           <button
             id={"order-crm-resend-#{@order.id}"}
-            type="button"
+            type="submit"
             class="btn btn-error btn-xs"
-            phx-click="crm_alert"
-            phx-value-id={@order.id}
-            phx-value-action="resend"
           >
             {gettext("Send again")}
           </button>

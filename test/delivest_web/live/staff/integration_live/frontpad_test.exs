@@ -27,6 +27,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     render_hook(lv, "refresh", %{})
     render_hook(lv, "sync_stops", %{})
     assert has_element?(lv, "#frontpad-guide")
+    assert has_element?(lv, "#frontpad-health-summary-capabilities table")
   end
 
   test "payment codes and order marks are saved", %{conn: conn} do
