@@ -55,6 +55,8 @@ defmodule Delivest.Identity.ClientAuthStartTest do
 
       receive do
         :release_provider -> :ok
+      after
+        5_000 -> flunk("provider barrier was not released")
       end
 
       provider_response(conn, "provider-1")
