@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
   alias Delivest.Franchise
   alias Delivest.Identity
-  alias Delivest.SiteSnapshot
+  alias Delivest.InstanceBackup
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   alias DelivestWeb.Staff.FranchiseLive.{
@@ -21,26 +21,27 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
   @impl true
   def mount(params, _session, socket) do
+    if connected?(socket) and Identity.can?(socket.assigns.current_staff, "admin"),
+      do: Process.send_after(self(), :backup_poll, 2_000)
+
     socket =
       socket
       |> assign(
         page_title: gettext("Franchise settings"),
-        settings: Franchise.get_settings(),
-        export_sections: Sections.export_sections()
+        settings: Franchise.get_settings()
       )
       |> load_documents()
 
-    if socket.assigns.live_action == :section and params["section"] == "snapshot" do
+    if socket.assigns.live_action == :section and params["section"] == "snapshot" and
+         Identity.can?(socket.assigns.current_staff, "admin") do
       {:ok,
        socket
-       |> allow_upload(:snapshot,
-         accept: ~w(.zip),
+       |> allow_upload(:instance_archive,
+         accept: ~w(.tar),
          max_entries: 1,
-         max_file_size: SiteSnapshot.max_archive(),
-         auto_upload: true,
-         progress: &handle_snapshot_progress/3
+         max_file_size: InstanceBackup.max_archive()
        )
-       |> assign(snapshot_busy: false, snapshot_ref: nil)}
+       |> assign(backup_job: InstanceBackup.active(), backup_agent: InstanceBackup.heartbeat?())}
     else
       {:ok, socket}
     end
@@ -101,41 +102,17 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
      |> push_patch(to: ~p"/staff/franchise/documents")}
   end
 
-  def handle_info({:snapshot_result, result}, socket) do
-    message =
-      case result do
-        {:ok, counts} ->
-          gettext(
-            "Branches created: %{created}. Branches updated: %{updated}.",
-            created: Map.get(counts, :branches_created, 0),
-            updated: Map.get(counts, :branches_updated, 0)
-          )
+  def handle_info(:backup_poll, socket) do
+    if Identity.can?(socket.assigns.current_staff, "admin") do
+      if connected?(socket), do: Process.send_after(self(), :backup_poll, 2_000)
 
-        {:error, reason} ->
-          snapshot_error(reason)
-      end
-
-    socket =
-      if match?({:ok, _}, result) do
-        socket
-        |> assign(settings: Franchise.get_settings())
-        |> load_documents()
-      else
-        socket
-      end
-
-    kind = if match?({:ok, _}, result), do: :info, else: :error
-    {:noreply, socket |> assign(snapshot_busy: false) |> put_flash(kind, message)}
-  end
-
-  def handle_info({:DOWN, ref, :process, _pid, reason}, %{assigns: %{snapshot_ref: ref}} = socket) do
-    socket = assign(socket, snapshot_ref: nil)
-
-    if reason == :normal or !socket.assigns.snapshot_busy do
-      {:noreply, socket}
-    else
       {:noreply,
-       socket |> assign(snapshot_busy: false) |> put_flash(:error, snapshot_error(:import_failed))}
+       assign(socket,
+         backup_job: InstanceBackup.active(),
+         backup_agent: InstanceBackup.heartbeat?()
+       )}
+    else
+      {:noreply, socket}
     end
   end
 
@@ -150,95 +127,84 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   end
 
   @impl true
-  def handle_event("snapshot_validate", _params, socket), do: {:noreply, socket}
+  def handle_event("backup_validate", _params, socket), do: {:noreply, backup_authorize(socket)}
 
-  defp handle_snapshot_progress(:snapshot, entry, %{assigns: %{snapshot_busy: false}} = socket) do
-    if entry.done? do
-      case consume_uploaded_entries(socket, :snapshot, fn %{path: path}, _entry ->
-             {:ok, File.read!(path)}
-           end) do
-        [archive] ->
-          owner = self()
-          staff = socket.assigns.current_staff
+  def handle_event("backup_export", _, socket) do
+    result = InstanceBackup.submit(socket.assigns.current_staff, "export")
+    {:noreply, backup_result(socket, result)}
+  end
 
-          {:ok, pid} =
-            Task.start(fn ->
-              result =
-                try do
-                  SiteSnapshot.import_franchise(staff, archive)
-                rescue
-                  _ -> {:error, :import_failed}
-                catch
-                  _, _ -> {:error, :import_failed}
-                end
+  def handle_event("backup_import", %{"confirm" => "replace"}, socket) do
+    if InstanceBackup.authorized?(socket.assigns.current_staff) do
+      results =
+        consume_uploaded_entries(socket, :instance_archive, fn %{path: path}, _entry ->
+          {:ok, InstanceBackup.submit(socket.assigns.current_staff, "import", path)}
+        end)
 
-              send(owner, {:snapshot_result, result})
-            end)
+      result =
+        case results do
+          [result] -> result
+          _ -> {:error, :invalid_archive}
+        end
 
-          {:noreply, socket |> assign(snapshot_busy: true, snapshot_ref: Process.monitor(pid))}
-
-        _ ->
-          {:noreply, put_flash(socket, :error, gettext("Choose a ZIP archive."))}
-      end
+      {:noreply, backup_result(socket, result)}
     else
-      {:noreply, socket}
+      {:noreply, backup_result(socket, {:error, :forbidden})}
     end
   end
 
-  defp handle_snapshot_progress(:snapshot, _entry, socket), do: {:noreply, socket}
+  def handle_event("backup_import", _, socket) do
+    socket = backup_authorize(socket)
 
-  defp snapshot_upload_error(:too_large), do: gettext("The archive exceeds the size limit.")
-  defp snapshot_upload_error(:not_accepted), do: gettext("Choose a ZIP archive.")
-  defp snapshot_upload_error(_), do: gettext("The archive could not be uploaded.")
+    if Identity.can?(socket.assigns.current_staff, "admin"),
+      do:
+        {:noreply,
+         put_flash(socket, :error, gettext("Confirm full replacement before restoring."))},
+      else: {:noreply, socket}
+  end
 
-  defp snapshot_error(:different_build),
-    do: gettext("The archive was created by another Delivest build.")
+  defp backup_authorize(socket) do
+    if Identity.can?(socket.assigns.current_staff, "admin"),
+      do: socket,
+      else: put_flash(socket, :error, gettext("Administrator access is required."))
+  end
 
-  defp snapshot_error(:invalid_archive), do: gettext("The archive is damaged or incomplete.")
-  defp snapshot_error(:archive_too_large), do: gettext("The archive exceeds the size limit.")
-  defp snapshot_error(:invalid_sections), do: gettext("Choose at least one section.")
+  defp backup_available?(agent, nil), do: agent
 
-  defp snapshot_error(:too_many_branches),
-    do: gettext("The archive contains too many branches.")
+  defp backup_available?(agent, job),
+    do: agent and InstanceBackup.terminal?(job) and InstanceBackup.safe?(job)
 
-  defp snapshot_error(:branch_code_conflict),
-    do: gettext("The archive contains a branch code that is already in use.")
+  defp backup_phase("queued"), do: gettext("Queued")
+  defp backup_phase("waiting"), do: gettext("Waiting for the site to stop")
+  defp backup_phase("running"), do: gettext("Running")
+  defp backup_phase("complete"), do: gettext("Complete")
+  defp backup_phase("failed"), do: gettext("Failed")
+  defp backup_phase("interrupted"), do: gettext("Interrupted; manual recovery required")
+  defp backup_phase(_), do: gettext("Unknown status")
 
-  defp snapshot_error({:branch_conflict, :slug}),
-    do: gettext("A branch with the same link already exists.")
+  defp backup_upload_error(:too_large), do: gettext("The archive exceeds the size limit.")
+  defp backup_upload_error(:not_accepted), do: gettext("Choose a TAR archive.")
+  defp backup_upload_error(_), do: gettext("The archive could not be uploaded.")
+  defp backup_size_gib, do: div(InstanceBackup.max_archive() + 1_073_741_823, 1_073_741_824)
 
-  defp snapshot_error({:branch_conflict, :name}),
-    do: gettext("A branch with the same name already exists.")
+  defp backup_result(socket, {:ok, _id}) do
+    socket
+    |> assign(backup_job: InstanceBackup.active())
+    |> put_flash(:info, gettext("Backup job queued."))
+  end
 
-  defp snapshot_error({:shared_catalog_conflict, type, id}),
-    do: gettext("Catalog item %{type} (%{id}) is shared with another branch.", type: type, id: id)
+  defp backup_result(socket, {:error, reason}) do
+    message =
+      case reason do
+        :forbidden -> gettext("Administrator access is required.")
+        :agent_unavailable -> gettext("Backup agent is unavailable. Start the agent and retry.")
+        :disabled -> gettext("Instance backup is not configured.")
+        :busy -> gettext("A backup job is active or needs manual recovery.")
+        _ -> gettext("Could not submit backup job. Check the archive and retry.")
+      end
 
-  defp snapshot_error({:shared_catalog_conflict, type, id, _branches}),
-    do:
-      gettext("Catalog item %{type} (%{id}) is shared with a branch outside the archive.",
-        type: type,
-        id: id
-      )
-
-  defp snapshot_error({:conflicting_mapping, type, id, _targets}),
-    do: gettext("Conflicting destination mappings for %{type} (%{id}).", type: type, id: id)
-
-  defp snapshot_error({:ambiguous_branch, source_id, _target_id}),
-    do: gettext("Branch %{id} has an ambiguous destination.", id: source_id)
-
-  defp snapshot_error(:shared_catalog_conflict),
-    do: gettext("The catalog contains items shared with another branch.")
-
-  defp snapshot_error(:id_collision),
-    do: gettext("The destination contains a conflicting catalog item.")
-
-  defp snapshot_error(:zone_conflict),
-    do: gettext("A delivery zone belongs to another branch.")
-
-  defp snapshot_error(:forbidden),
-    do: gettext("You do not have permission to import this archive.")
-
-  defp snapshot_error(_), do: gettext("Import failed. Check the archive and try again.")
+    put_flash(socket, :error, message)
+  end
 
   @impl true
   def render(%{section: nil} = assigns) do
@@ -281,86 +247,92 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       </p>
 
       <div :if={Identity.can?(@current_staff, "admin")} class="space-y-6">
-        <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
-          <h2 class="font-semibold">{gettext("Export")}</h2>
+        <p :if={!@backup_agent} id="backup-agent-unavailable" class="text-sm text-warning">
+          {gettext("Backup agent is unavailable. Start the agent and check its shared directory.")}
+        </p>
+        <section
+          id="instance-backup-status"
+          class="rounded-box border border-base-300 bg-base-100 p-5"
+        >
+          <h2 class="font-semibold">{gettext("Full instance backup")}</h2>
           <p class="text-sm text-base-content/70">
             {gettext(
-              "Download every branch, the shared franchise settings, legal documents and integrations into one archive."
+              "The archive contains the entire database and every stored file, including private files. Protect it as a secret."
             )}
           </p>
-
-          <form
-            id="snapshot-export-form"
-            action={~p"/staff/franchise/site-snapshot"}
-            method="get"
-            class="space-y-4"
+          <div :if={@backup_job} class="mt-3 text-sm">
+            <span id="backup-phase">{backup_phase(@backup_job.status["phase"])}</span>
+            <span :if={@backup_job.status["phase"] in ~w(failed interrupted)} id="backup-message">{@backup_job.status[
+              "message"
+            ]}</span>
+            <.link
+              :if={
+                @backup_job.request["action"] == "export" and
+                  @backup_job.status["phase"] == "complete" and
+                  @backup_job.request["requested_by"] == @current_staff.id
+              }
+              id="backup-download"
+              href={~p"/staff/franchise/instance-backup/#{@backup_job.id}"}
+              class="btn btn-outline btn-sm ml-3"
+            >{gettext("Download archive")}</.link>
+          </div>
+          <button
+            id="backup-export"
+            type="button"
+            phx-click="backup_export"
+            disabled={!backup_available?(@backup_agent, @backup_job)}
+            class="btn btn-outline mt-4"
           >
-            <div class="grid gap-2 sm:grid-cols-2">
-              <label
-                :for={section <- @export_sections}
-                class="flex items-start gap-3 rounded-box border border-base-300 p-3 transition-colors hover:border-base-content/30"
-              >
-                <input
-                  type="checkbox"
-                  name="sections[]"
-                  value={section.id}
-                  checked
-                  class="checkbox checkbox-sm mt-0.5"
-                />
-                <span class="min-w-0">
-                  <span class="block text-sm font-medium">{section.title}</span>
-                  <span class="block text-xs text-base-content/60">{section.description}</span>
-                </span>
-              </label>
-            </div>
-
-            <p class="flex items-start gap-2 text-xs text-warning">
-              <.icon name="hero-exclamation-triangle" class="size-4 shrink-0" />
-              <span>
-                {gettext(
-                  "An archive with integrations contains payment and service secret keys. Store it as carefully as a password."
-                )}
-              </span>
-            </p>
-
-            <button id="snapshot-export" type="submit" class="btn btn-outline">
-              {gettext("Download franchise snapshot")}
-            </button>
-          </form>
+            {gettext("Create full backup")}
+          </button>
         </section>
-
-        <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
-          <h2 class="font-semibold">{gettext("Import")}</h2>
-          <p class="text-sm text-base-content/70">
+        <section class="rounded-box border border-warning/50 bg-base-100 p-5 space-y-3">
+          <h2 class="font-semibold">{gettext("Restore full instance")}</h2>
+          <p class="text-sm text-warning">
             {gettext(
-              "Branches are matched by link: existing branches are updated, missing ones are created. Nothing in the current site is deleted."
+              "Restoring replaces the entire database and all stored files. The site will disconnect temporarily. Sign in with staff credentials from the restored archive after it restarts."
             )}
           </p>
-
           <.form
-            for={to_form(%{}, as: :snapshot)}
-            id="snapshot-import-form"
-            phx-change="snapshot_validate"
+            for={to_form(%{}, as: :backup)}
+            id="backup-import-form"
+            phx-change="backup_validate"
+            phx-submit="backup_import"
             class="space-y-3"
           >
-            <label for={@uploads.snapshot.ref} class="block text-sm font-semibold">
-              {gettext("Load franchise snapshot")}
-            </label>
-            <.live_file_input
-              upload={@uploads.snapshot}
-              disabled={@snapshot_busy}
-              class="file-input w-full"
-            />
-            <p :for={entry <- @uploads.snapshot.entries} class="text-xs text-base-content/60">
+            <.live_file_input upload={@uploads.instance_archive} class="file-input w-full" />
+            <p class="text-xs text-base-content/60">
+              {gettext("TAR archive, up to %{size} GiB.", size: backup_size_gib())}
+            </p>
+            <p :for={entry <- @uploads.instance_archive.entries} class="text-xs">
               {entry.client_name} · {entry.progress}%
             </p>
-            <p class="text-xs text-base-content/60">{gettext("ZIP archive, up to 100 MB.")}</p>
-            <p :if={@snapshot_busy} id="snapshot-importing" class="text-sm text-base-content/70">
-              {gettext("Importing…")}
+            <p :for={entry <- @uploads.instance_archive.entries} class="text-sm text-error">
+              <span :for={error <- upload_errors(@uploads.instance_archive, entry)}>{backup_upload_error(
+                error
+              )}</span>
             </p>
-            <p :for={error <- upload_errors(@uploads.snapshot)} class="text-sm text-error">
-              {snapshot_upload_error(error)}
+            <p :for={error <- upload_errors(@uploads.instance_archive)} class="text-sm text-error">
+              {backup_upload_error(error)}
             </p>
+            <label class="flex items-center gap-2 text-sm">
+              <input
+                id="backup-confirm"
+                type="checkbox"
+                name="confirm"
+                value="replace"
+                class="checkbox checkbox-sm"
+              />
+              {gettext("I understand this replaces the full instance")}
+            </label>
+            <button
+              id="backup-import"
+              type="submit"
+              disabled={!backup_available?(@backup_agent, @backup_job)}
+              class="btn btn-warning"
+            >
+              {gettext("Restore archive")}
+            </button>
           </.form>
         </section>
       </div>

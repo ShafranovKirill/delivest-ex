@@ -27,6 +27,18 @@ config :delivest,
 
 config :delivest, :version, System.get_env("APP_VERSION") || "dev"
 
+backup_dir =
+  case System.get_env("INSTANCE_BACKUP_DIR") do
+    nil -> if(config_env() == :dev, do: Path.expand("../.instance-backups", __DIR__))
+    value -> value
+  end
+
+config :delivest,
+  instance_backup_dir: backup_dir,
+  instance_backup_managed: System.get_env("INSTANCE_BACKUP_MANAGED") == "true",
+  instance_backup_max_archive:
+    String.to_integer(System.get_env("INSTANCE_BACKUP_MAX_ARCHIVE", "21474836480"))
+
 config :delivest, Delivest.Integrations.Iiko,
   app_id: System.get_env("IIKO_APP_ID"),
   client_secret: System.get_env("IIKO_CLIENT_SECRET")

@@ -186,7 +186,7 @@ msgstr ""
 msgid "Are you sure you want to delete this product? This action cannot be easily undone."
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:206
+#: lib/delivest_web/live/staff/role_live/roles.ex:241
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this role? This action cannot be undone."
 msgstr ""
@@ -261,7 +261,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/category_live/category_form_component.ex:98
 #: lib/delivest_web/live/staff/client_live/client_form_component.ex:138
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:81
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:703
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:707
 #: lib/delivest_web/live/staff/order_live/order_form.ex:385
 #: lib/delivest_web/live/staff/pos_live/index.ex:341
 #: lib/delivest_web/live/staff/product_live/copy_component.ex:91
@@ -278,7 +278,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:105
+#: lib/delivest_web/live/staff/role_live/roles.ex:131
 #, elixir-autogen, elixir-format
 msgid "Cannot delete role because it is assigned to staff members."
 msgstr ""
@@ -377,7 +377,7 @@ msgstr ""
 msgid "Create Product"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:136
+#: lib/delivest_web/live/staff/role_live/roles.ex:171
 #, elixir-autogen, elixir-format
 msgid "Create Role"
 msgstr ""
@@ -432,8 +432,8 @@ msgstr ""
 #: lib/delivest_web/live/staff/product_live/tags.ex:272
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:303
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:347
-#: lib/delivest_web/live/staff/role_live/roles.ex:174
-#: lib/delivest_web/live/staff/role_live/roles.ex:208
+#: lib/delivest_web/live/staff/role_live/roles.ex:209
+#: lib/delivest_web/live/staff/role_live/roles.ex:243
 #: lib/delivest_web/live/staff/staff_live/staffs.ex:287
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:283
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:329
@@ -456,7 +456,7 @@ msgstr ""
 msgid "Delete Product"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:204
+#: lib/delivest_web/live/staff/role_live/roles.ex:239
 #, elixir-autogen, elixir-format
 msgid "Delete Role"
 msgstr ""
@@ -487,11 +487,11 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branches.ex:95
 #: lib/delivest_web/live/staff/category_live/categories.ex:236
 #: lib/delivest_web/live/staff/client_live/show.ex:152
-#: lib/delivest_web/live/staff/franchise_live/index.ex:430
+#: lib/delivest_web/live/staff/franchise_live/index.ex:402
 #: lib/delivest_web/live/staff/order_live/components/cart_component.ex:193
 #: lib/delivest_web/live/staff/product_live/modifiers.ex:411
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:293
-#: lib/delivest_web/live/staff/role_live/roles.ex:160
+#: lib/delivest_web/live/staff/role_live/roles.ex:195
 #: lib/delivest_web/live/staff/stock_live/stocks.ex:272
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -547,7 +547,7 @@ msgstr ""
 msgid "Failed to delete promotion"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:112
+#: lib/delivest_web/live/staff/role_live/roles.ex:138
 #, elixir-autogen, elixir-format
 msgid "Failed to delete role"
 msgstr ""
@@ -610,7 +610,7 @@ msgstr ""
 msgid "List of available company branches"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:128
+#: lib/delivest_web/live/staff/role_live/roles.ex:154
 #, elixir-autogen, elixir-format
 msgid "List of available company roles"
 msgstr ""
@@ -826,7 +826,7 @@ msgstr ""
 msgid "Role created successfully"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:97
+#: lib/delivest_web/live/staff/role_live/roles.ex:123
 #, elixir-autogen, elixir-format
 msgid "Role deleted successfully"
 msgstr ""
@@ -848,7 +848,7 @@ msgstr ""
 msgid "Roles"
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:127
+#: lib/delivest_web/live/staff/role_live/roles.ex:153
 #, elixir-autogen, elixir-format
 msgid "Roles Management"
 msgstr ""
@@ -861,7 +861,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:303
 #: lib/delivest_web/live/staff/finance_live/payments.ex:122
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:83
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:300
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:309
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:105
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:230
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:532
@@ -896,7 +896,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:302
 #: lib/delivest_web/live/staff/finance_live/payments.ex:121
 #: lib/delivest_web/live/staff/franchise_live/document_form_component.ex:82
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:299
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:308
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:104
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:228
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:531
@@ -1099,7 +1099,7 @@ msgstr ""
 msgid "You don't have permission to delete products."
 msgstr ""
 
-#: lib/delivest_web/live/staff/role_live/roles.ex:86
+#: lib/delivest_web/live/staff/role_live/roles.ex:112
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to delete role."
 msgstr ""
@@ -1356,7 +1356,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:201
 #: lib/delivest_web/live/staff/delivery_live/index.ex:10
 #: lib/delivest_web/live/staff/delivery_live/index.ex:16
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:178
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:187
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:38
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:37
 #, elixir-autogen, elixir-format
@@ -1635,7 +1635,7 @@ msgstr ""
 msgid "Clear Cart"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:531
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:535
 #, elixir-autogen, elixir-format
 msgid "Customer not specified"
 msgstr ""
@@ -1681,7 +1681,7 @@ msgstr ""
 msgid "Longitude"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:617
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:621
 #, elixir-autogen, elixir-format
 msgid "Prepare by:"
 msgstr ""
@@ -1712,12 +1712,12 @@ msgstr ""
 msgid "Yandex Org ID"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:963
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:967
 #, elixir-autogen, elixir-format
 msgid "error"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:965
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:969
 #, elixir-autogen, elixir-format
 msgid "sending"
 msgstr ""
@@ -1893,7 +1893,7 @@ msgstr ""
 msgid "Open"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:526
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:530
 #, elixir-autogen, elixir-format
 msgid "Open client card"
 msgstr ""
@@ -2306,7 +2306,7 @@ msgid "Staff %{name}"
 msgstr ""
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:31
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1008
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1012
 #, elixir-autogen, elixir-format
 msgid "System"
 msgstr ""
@@ -3729,7 +3729,7 @@ msgstr ""
 msgid "Remove row"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:254
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:263
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:81
 #, elixir-autogen, elixir-format
 msgid "Required"
@@ -3830,12 +3830,12 @@ msgstr ""
 msgid "Which products?"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:62
+#: lib/delivest/franchise/settings.ex:65
 #, elixir-autogen, elixir-format
 msgid "10 or 12 digits"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:63
+#: lib/delivest/franchise/settings.ex:66
 #, elixir-autogen, elixir-format
 msgid "13 or 15 digits"
 msgstr ""
@@ -3850,7 +3850,7 @@ msgstr ""
 msgid "Consent to personal data processing"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:424
+#: lib/delivest_web/live/staff/franchise_live/index.ex:396
 #, elixir-autogen, elixir-format
 msgid "Default template"
 msgstr ""
@@ -3860,43 +3860,43 @@ msgstr ""
 msgid "Default templates already contain your details. Have a lawyer check them before publishing."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:100
+#: lib/delivest_web/live/staff/franchise_live/index.ex:101
 #, elixir-autogen, elixir-format
 msgid "Document saved"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:421
+#: lib/delivest_web/live/staff/franchise_live/index.ex:393
 #, elixir-autogen, elixir-format
 msgid "Edited %{date}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:286
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:295
 #, elixir-autogen, elixir-format
 msgid "Email for requests"
 msgstr ""
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:183
-#: lib/delivest_web/live/staff/franchise_live/index.ex:27
-#: lib/delivest_web/live/staff/franchise_live/index.ex:69
-#: lib/delivest_web/live/staff/franchise_live/index.ex:248
+#: lib/delivest_web/live/staff/franchise_live/index.ex:30
+#: lib/delivest_web/live/staff/franchise_live/index.ex:70
+#: lib/delivest_web/live/staff/franchise_live/index.ex:214
 #: lib/delivest_web/live/staff/franchise_live/sections.ex:23
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:199
 #, elixir-autogen, elixir-format
 msgid "Franchise settings"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:279
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:288
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:179
 #, elixir-autogen, elixir-format
 msgid "INN"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:268
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:277
 #, elixir-autogen, elixir-format
 msgid "LLC"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:293
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:302
 #, elixir-autogen, elixir-format
 msgid "Legal address"
 msgstr ""
@@ -3906,12 +3906,12 @@ msgstr ""
 msgid "Legal documents"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:267
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:276
 #, elixir-autogen, elixir-format
 msgid "Legal form"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:274
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:283
 #, elixir-autogen, elixir-format
 msgid "Legal name"
 msgstr ""
@@ -3921,17 +3921,17 @@ msgstr ""
 msgid "Lines starting with «## » become headings. Placeholders:"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:249
+#: lib/delivest_web/live/staff/franchise_live/index.ex:215
 #, elixir-autogen, elixir-format
 msgid "Name, brand color, seller details and legal documents for all branches."
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:64
+#: lib/delivest/franchise/settings.ex:67
 #, elixir-autogen, elixir-format
 msgid "Not an email"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:283
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:292
 #, elixir-autogen, elixir-format
 msgid "OGRN / OGRNIP"
 msgstr ""
@@ -3941,18 +3941,18 @@ msgstr ""
 msgid "Personal data policy"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:287
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:296
 #, elixir-autogen, elixir-format
 msgid "Phone for requests"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:129
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:184
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:138
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:193
 #, elixir-autogen, elixir-format
 msgid "Place order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:114
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:123
 #, elixir-autogen, elixir-format
 msgid "Primary color"
 msgstr ""
@@ -3980,7 +3980,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:32
 #: lib/delivest_web/live/staff/delivery_live/zones.ex:45
 #: lib/delivest_web/live/staff/finance_live/payments.ex:46
-#: lib/delivest_web/live/staff/franchise_live/index.ex:84
+#: lib/delivest_web/live/staff/franchise_live/index.ex:85
 #: lib/delivest_web/live/staff/integration_live/dadata.ex:35
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:43
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:87
@@ -4012,13 +4012,13 @@ msgstr ""
 msgid "Terms of use"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:58
-#: lib/delivest/franchise/settings.ex:60
+#: lib/delivest/franchise/settings.ex:61
+#: lib/delivest/franchise/settings.ex:63
 #, elixir-autogen, elixir-format
 msgid "Use the #RRGGBB format"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:137
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:146
 #, elixir-autogen, elixir-format
 msgid "White text is hard to read on this color. Choose a darker one."
 msgstr ""
@@ -4042,6 +4042,11 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_header.ex:123
 #, elixir-autogen, elixir-format
 msgid "Theme"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:115
+#, elixir-autogen, elixir-format
+msgid "Default theme"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:680
@@ -4368,7 +4373,7 @@ msgstr ""
 msgid "Icon and link preview"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:89
+#: lib/delivest_web/live/staff/franchise_live/index.ex:90
 #, elixir-autogen, elixir-format
 msgid "Image saved"
 msgstr ""
@@ -4414,11 +4419,13 @@ msgid "Upload"
 msgstr ""
 
 #: lib/delivest_web/live/staff/franchise_live/logo_component.ex:97
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:118
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr ""
 
 #: lib/delivest_web/live/staff/franchise_live/logo_component.ex:75
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:117
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr ""
@@ -4919,12 +4926,12 @@ msgstr ""
 msgid "The address and the point of the branch for customers and the pickup map."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:974
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:978
 #, elixir-autogen, elixir-format
 msgid "%{crm} status %{code} is not mapped"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:972
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:976
 #, elixir-autogen, elixir-format
 msgid "Set this code in the branch %{crm} settings"
 msgstr ""
@@ -5080,7 +5087,7 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex:190
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:520
 #: lib/delivest_web/live/staff/integration_live/routes.ex:63
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1054
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1058
 #, elixir-autogen, elixir-format
 msgid "Admin"
 msgstr ""
@@ -5318,19 +5325,19 @@ msgstr ""
 msgid "ml"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:562
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1006
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:566
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1010
 #, elixir-autogen, elixir-format
 msgid "Courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:577
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:901
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:581
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:905
 #, elixir-autogen, elixir-format
 msgid "arrives by %{time}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:571
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:575
 #, elixir-autogen, elixir-format
 msgid "at the restaurant"
 msgstr ""
@@ -5604,8 +5611,8 @@ msgstr ""
 msgid "Yandex stops taking orders for the branch until the pause ends or is lifted."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:592
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:593
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:596
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:597
 #, elixir-autogen, elixir-format
 msgid "Courier code"
 msgstr ""
@@ -5640,12 +5647,12 @@ msgstr ""
 msgid "Yandex Eda push access is not set up"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:597
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:601
 #, elixir-autogen, elixir-format
 msgid "Check the code"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:606
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:610
 #, elixir-autogen, elixir-format
 msgid "Review"
 msgstr ""
@@ -5951,27 +5958,27 @@ msgstr ""
 msgid "When off, the site has no sign-in at all: everyone orders as a guest, signed in customers are signed out."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:161
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:170
 #, elixir-autogen, elixir-format
 msgid "Choose my own"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:148
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:157
 #, elixir-autogen, elixir-format
 msgid "Color in the dark theme"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:198
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:207
 #, elixir-autogen, elixir-format
 msgid "If the color is hard to read on a dark background, the site makes it lighter."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:194
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:203
 #, elixir-autogen, elixir-format
 msgid "Pick automatically"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:152
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:161
 #, elixir-autogen, elixir-format
 msgid "Picked automatically from the primary color so it reads well."
 msgstr ""
@@ -6183,7 +6190,7 @@ msgstr ""
 msgid "Revert the status of order #%{number}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:712
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:716
 #, elixir-autogen, elixir-format
 msgid "Revert to «%{status}»"
 msgstr ""
@@ -6334,7 +6341,7 @@ msgid "Couriers"
 msgstr ""
 
 #: lib/delivest_web/live/staff/delivery_live/couriers.ex:87
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:786
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:790
 #, elixir-autogen, elixir-format
 msgid "Find a courier"
 msgstr ""
@@ -6374,23 +6381,23 @@ msgstr ""
 msgid "Another courier has already taken this order"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:807
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:810
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:811
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:814
 #, elixir-autogen, elixir-format
 msgid "Assign a courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:943
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:947
 #, elixir-autogen, elixir-format
 msgid "Courier assigned"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:944
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:948
 #, elixir-autogen, elixir-format
 msgid "Courier is on the way"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:942
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:946
 #, elixir-autogen, elixir-format
 msgid "Looking for a courier"
 msgstr ""
@@ -6400,12 +6407,12 @@ msgstr ""
 msgid "No courier is assigned"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:937
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:941
 #, elixir-autogen, elixir-format
 msgid "No courier yet"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:829
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:833
 #, elixir-autogen, elixir-format
 msgid "Remove the courier"
 msgstr ""
@@ -6555,8 +6562,8 @@ msgstr ""
 msgid "The courier has picked up the order, its status cannot be reverted"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:927
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1020
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:931
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1024
 #, elixir-autogen, elixir-format
 msgid "%{number} ext. %{ext}"
 msgstr ""
@@ -6607,7 +6614,7 @@ msgstr ""
 msgid "Express, up to 20 kg"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:940
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:944
 #, elixir-autogen, elixir-format
 msgid "Looking for a Yandex courier"
 msgstr ""
@@ -6649,7 +6656,7 @@ msgstr ""
 msgid "The branch uses its own couriers. Choose Yandex Delivery in the branch couriers."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:920
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:924
 #, elixir-autogen, elixir-format
 msgid "The courier is bringing the order back"
 msgstr ""
@@ -6664,12 +6671,12 @@ msgstr ""
 msgid "The order has no delivery address"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:913
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:917
 #, elixir-autogen, elixir-format
 msgid "Tracking"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:886
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:890
 #, elixir-autogen, elixir-format
 msgid "Yandex"
 msgstr ""
@@ -6677,12 +6684,12 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/index.ex:123
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:18
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:90
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1007
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1011
 #, elixir-autogen, elixir-format
 msgid "Yandex Delivery"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:754
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:758
 #, elixir-autogen, elixir-format
 msgid "Yandex Delivery did not take the last request"
 msgstr ""
@@ -6814,7 +6821,7 @@ msgstr ""
 msgid "The branch has no couriers. Give a role with the deliveries permission to staff."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:850
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:854
 #, elixir-autogen, elixir-format
 msgid "The courier location is not known: the courier page is closed or the location is off"
 msgstr ""
@@ -6993,7 +7000,7 @@ msgstr ""
 msgid "Change from %{amount}"
 msgstr ""
 
-#: lib/delivest/integrations/frontpad/order_payload.ex:249
+#: lib/delivest/integrations/frontpad/order_payload.ex:251
 #, elixir-autogen, elixir-format
 msgid "Delivery %{amount}"
 msgstr ""
@@ -7302,7 +7309,7 @@ msgstr ""
 msgid "Card payment to our courier"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:466
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:470
 #: lib/delivest_web/live/staff/receipt_live/index.ex:113
 #, elixir-autogen, elixir-format
 msgid "Correction receipt"
@@ -7313,8 +7320,9 @@ msgstr ""
 msgid "Delivery VAT"
 msgstr ""
 
+#: lib/delivest_web/live/staff/franchise_live/index.ex:181
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:385
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:471
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:475
 #: lib/delivest_web/live/staff/receipt_live/index.ex:108
 #: lib/delivest_web/live/staff/receipt_live/index.ex:118
 #, elixir-autogen, elixir-format
@@ -7337,17 +7345,17 @@ msgstr ""
 msgid "Group code"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:455
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:459
 #, elixir-autogen, elixir-format
 msgid "Issue a refund"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:452
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:456
 #, elixir-autogen, elixir-format
 msgid "Issue a refund receipt?"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:470
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:474
 #: lib/delivest_web/live/staff/receipt_live/index.ex:107
 #: lib/delivest_web/live/staff/receipt_live/index.ex:117
 #, elixir-autogen, elixir-format
@@ -7375,7 +7383,7 @@ msgstr ""
 msgid "Place of settlement"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:469
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:473
 #: lib/delivest_web/live/staff/receipt_live/index.ex:106
 #: lib/delivest_web/live/staff/receipt_live/index.ex:116
 #, elixir-autogen, elixir-format
@@ -7411,18 +7419,18 @@ msgstr ""
 msgid "Receipts are issued when the order is handed over: for cash and card payments to the operator or our courier. Yandex Eda, Yandex Delivery and CRM orders are receipted on their side."
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:465
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:469
 #: lib/delivest_web/live/staff/receipt_live/index.ex:112
 #, elixir-autogen, elixir-format
 msgid "Refund receipt"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:429
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:432
 #, elixir-autogen, elixir-format
 msgid "Retry"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:464
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:468
 #: lib/delivest_web/live/staff/receipt_live/index.ex:111
 #, elixir-autogen, elixir-format
 msgid "Sale receipt"
@@ -7433,7 +7441,7 @@ msgstr ""
 msgid "Sender email"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:468
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:472
 #: lib/delivest_web/live/staff/receipt_live/index.ex:105
 #: lib/delivest_web/live/staff/receipt_live/index.ex:115
 #, elixir-autogen, elixir-format
@@ -7496,7 +7504,7 @@ msgid "Authorized"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:382
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:679
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:683
 #, elixir-autogen, elixir-format
 msgid "Awaiting payment"
 msgstr ""
@@ -7662,7 +7670,7 @@ msgstr ""
 #: lib/delivest_web/components/staff/app/staff_nav.ex:60
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:521
 #: lib/delivest_web/live/staff/integration_live/routes.ex:64
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1055
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1059
 #: lib/delivest_web/live/staff/pos_live/index.ex:22
 #: lib/delivest_web/live/staff/pos_live/index.ex:232
 #, elixir-autogen, elixir-format
@@ -7983,12 +7991,12 @@ msgstr ""
 msgid "Yandex Eda high demand: +%{minutes} min until %{time}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:442
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:445
 #, elixir-autogen, elixir-format
 msgid "Correction"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:439
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:442
 #, elixir-autogen, elixir-format
 msgid "Issue a correction receipt? Make sure the original is not in ATOL."
 msgstr ""
@@ -8086,12 +8094,12 @@ msgstr ""
 msgid "Cancelled by the customer"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1009
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:1013
 #, elixir-autogen, elixir-format
 msgid "Customer"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:796
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:800
 #, elixir-autogen, elixir-format
 msgid "Estimate delivery"
 msgstr ""
@@ -8111,17 +8119,17 @@ msgstr ""
 msgid "Yandex Delivery: %{price}, pickup %{pickup}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:772
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:776
 #, elixir-autogen, elixir-format
 msgid "Cancel the courier and pay for it?"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:762
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:766
 #, elixir-autogen, elixir-format
 msgid "Cancelling the Yandex courier is paid: %{price}"
 msgstr ""
 
-#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:774
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:778
 #, elixir-autogen, elixir-format
 msgid "Confirm the paid cancel"
 msgstr ""
@@ -8529,7 +8537,6 @@ msgstr ""
 msgid "Frontpad has not changed the status of order %{number} for a long time. Check the order in Frontpad"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:285
 #: lib/delivest_web/live/staff/product_live/products.ex:454
 #, elixir-autogen, elixir-format
 msgid "Export"
@@ -8575,7 +8582,7 @@ msgstr ""
 msgid "Failed to update the balance"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:220
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:229
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:197
 #, elixir-autogen, elixir-format
 msgid "For every, ₽"
@@ -8595,19 +8602,19 @@ msgstr ""
 msgid "Loyalty program in this branch"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:222
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:231
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:197
 #, elixir-autogen, elixir-format
 msgid "Stars"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:231
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:240
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:224
 #, elixir-autogen, elixir-format
 msgid "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:228
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:237
 #: lib/delivest_web/live/staff/loyalty_live/index.ex:197
 #, elixir-autogen, elixir-format
 msgid "Stars expire after, days"
@@ -9128,58 +9135,49 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:124
 #: lib/delivest_web/live/staff/branch_live/edit.ex:163
-#: lib/delivest_web/live/staff/franchise_live/index.ex:181
-#: lib/delivest_web/live/staff/franchise_live/index.ex:191
 #, elixir-autogen, elixir-format
 msgid "Choose a ZIP archive."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:164
-#: lib/delivest_web/live/staff/franchise_live/index.ex:192
+#: lib/delivest_web/live/staff/franchise_live/index.ex:187
 #, elixir-autogen, elixir-format
 msgid "The archive could not be uploaded."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:162
 #: lib/delivest_web/live/staff/branch_live/edit.ex:170
-#: lib/delivest_web/live/staff/franchise_live/index.ex:190
-#: lib/delivest_web/live/staff/franchise_live/index.ex:198
+#: lib/delivest_web/live/staff/franchise_live/index.ex:185
 #, elixir-autogen, elixir-format
 msgid "The archive exceeds the size limit."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:167
-#: lib/delivest_web/live/staff/franchise_live/index.ex:195
 #, elixir-autogen, elixir-format
 msgid "The archive was created by another Delivest build."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:169
-#: lib/delivest_web/live/staff/franchise_live/index.ex:197
 #, elixir-autogen, elixir-format
 msgid "The archive is damaged or incomplete."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:176
-#: lib/delivest_web/live/staff/franchise_live/index.ex:230
 #, elixir-autogen, elixir-format
 msgid "The catalog contains items shared with another branch."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:179
-#: lib/delivest_web/live/staff/franchise_live/index.ex:233
 #, elixir-autogen, elixir-format
 msgid "The destination contains a conflicting catalog item."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:182
-#: lib/delivest_web/live/staff/franchise_live/index.ex:239
 #, elixir-autogen, elixir-format
 msgid "You do not have permission to import this archive."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:184
-#: lib/delivest_web/live/staff/franchise_live/index.ex:241
 #, elixir-autogen, elixir-format
 msgid "Import failed. Check the archive and try again."
 msgstr ""
@@ -9190,13 +9188,11 @@ msgid "Created records: %{created}. Updated records: %{updated}."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:249
-#: lib/delivest_web/live/staff/franchise_live/index.ex:357
 #, elixir-autogen, elixir-format
 msgid "ZIP archive, up to 100 MB."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:251
-#: lib/delivest_web/live/staff/franchise_live/index.ex:359
 #, elixir-autogen, elixir-format
 msgid "Importing…"
 msgstr ""
@@ -9207,7 +9203,6 @@ msgid "Load site snapshot"
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:173
-#: lib/delivest_web/live/staff/franchise_live/index.ex:214
 #, elixir-autogen, elixir-format
 msgid "Catalog item %{type} (%{id}) is shared with another branch."
 msgstr ""
@@ -9217,44 +9212,9 @@ msgstr ""
 msgid "%{item} will be removed after saving, the client will be notified"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:208
-#, elixir-autogen, elixir-format
-msgid "A branch with the same link already exists."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:211
-#, elixir-autogen, elixir-format
-msgid "A branch with the same name already exists."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:236
-#, elixir-autogen, elixir-format
-msgid "A delivery zone belongs to another branch."
-msgstr ""
-
 #: lib/delivest_web/live/staff/franchise_live/sections.ex:14
 #, elixir-autogen, elixir-format
 msgid "Address, contacts, working hours, delivery settings and delivery zones."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:320
-#, elixir-autogen, elixir-format
-msgid "An archive with integrations contains payment and service secret keys. Store it as carefully as a password."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:227
-#, elixir-autogen, elixir-format
-msgid "Branch %{id} has an ambiguous destination."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:335
-#, elixir-autogen, elixir-format
-msgid "Branches are matched by link: existing branches are updated, missing ones are created. Nothing in the current site is deleted."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:108
-#, elixir-autogen, elixir-format
-msgid "Branches created: %{created}. Branches updated: %{updated}."
 msgstr ""
 
 #: lib/delivest_web/live/staff/franchise_live/sections.ex:24
@@ -9272,24 +9232,14 @@ msgstr ""
 msgid "Catalog"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:218
-#, elixir-autogen, elixir-format
-msgid "Catalog item %{type} (%{id}) is shared with a branch outside the archive."
-msgstr ""
-
 #: lib/delivest_web/live/staff/franchise_live/sections.ex:19
 #, elixir-autogen, elixir-format
 msgid "Categories, products, modifiers and photos for every branch."
 msgstr ""
 
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:57
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:73
 #, elixir-autogen, elixir-format
 msgid "Choose at least one section to export."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:199
-#, elixir-autogen, elixir-format
-msgid "Choose at least one section."
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:186
@@ -9297,44 +9247,9 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:224
-#, elixir-autogen, elixir-format
-msgid "Conflicting destination mappings for %{type} (%{id})."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:287
-#, elixir-autogen, elixir-format
-msgid "Download every branch, the shared franchise settings, legal documents and integrations into one archive."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:327
-#, elixir-autogen, elixir-format
-msgid "Download franchise snapshot"
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/sections.ex:115
-#, elixir-autogen, elixir-format
-msgid "Export and import every branch, shared settings, catalog and integrations."
-msgstr ""
-
 #: lib/delivest_web/live/staff/order_live/order_form.ex:156
 #, elixir-autogen, elixir-format
 msgid "Failed to change the cart"
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/sections.ex:114
-#, elixir-autogen, elixir-format
-msgid "Franchise snapshot"
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:333
-#, elixir-autogen, elixir-format
-msgid "Import"
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:347
-#, elixir-autogen, elixir-format
-msgid "Load franchise snapshot"
 msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:178
@@ -9368,7 +9283,7 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/index.ex:280
+#: lib/delivest_web/live/staff/franchise_live/index.ex:246
 #, elixir-autogen, elixir-format
 msgid "Only administrators can export and import the franchise snapshot."
 msgstr ""
@@ -9383,12 +9298,12 @@ msgstr ""
 msgid "Order %{number}: unavailable positions were removed (%{items}). New total: %{total}. If you no longer need the order, cancel it in the app."
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:243
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:252
 #, elixir-autogen, elixir-format
 msgid "Require sign-in to place an order"
 msgstr ""
 
-#: lib/delivest/franchise/settings.ex:112
+#: lib/delivest/franchise/settings.ex:126
 #, elixir-autogen, elixir-format
 msgid "Sign-in must be configured and enabled before requiring it for checkout"
 msgstr ""
@@ -9396,16 +9311,6 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/sections.ex:12
 #, elixir-autogen, elixir-format
 msgid "Storefront"
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:205
-#, elixir-autogen, elixir-format
-msgid "The archive contains a branch code that is already in use."
-msgstr ""
-
-#: lib/delivest_web/live/staff/franchise_live/index.ex:202
-#, elixir-autogen, elixir-format
-msgid "The archive contains too many branches."
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/order_form.ex:150
@@ -9419,7 +9324,7 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:245
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:254
 #, elixir-autogen, elixir-format
 msgid "When enabled, customers must sign in before they can place an order. Their cart and entered data are preserved through the sign-in flow."
 msgstr ""
@@ -9429,26 +9334,178 @@ msgstr ""
 msgid "Whether customers must sign in before placing an order."
 msgstr ""
 
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:51
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:67
 #, elixir-autogen, elixir-format
 msgid "You do not have permission to export the franchise."
 msgstr ""
 
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:62
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:80
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:78
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:96
 #, elixir-autogen, elixir-format
 msgid "Image is unavailable: %{key}"
 msgstr ""
 
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:65
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:83
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:81
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:99
 #, elixir-autogen, elixir-format
 msgid "Snapshot exceeds the size limit"
 msgstr ""
 
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:17
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:35
-#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:68
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:18
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:36
+#: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:84
 #, elixir-autogen, elixir-format
 msgid "Snapshot file is unavailable"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:202
+#, elixir-autogen, elixir-format
+msgid "A backup job is active or needs manual recovery."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:169
+#: lib/delivest_web/live/staff/franchise_live/index.ex:199
+#, elixir-autogen, elixir-format
+msgid "Administrator access is required."
+msgstr ""
+
+#: lib/delivest_web/live/staff/role_live/roles.ex:87
+#, elixir-autogen, elixir-format
+msgid "All base roles already exist"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:251
+#, elixir-autogen, elixir-format
+msgid "Backup agent is unavailable. Start the agent and check its shared directory."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgid "Backup agent is unavailable. Start the agent and retry."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:193
+#, elixir-autogen, elixir-format
+msgid "Backup job queued."
+msgstr ""
+
+#: lib/delivest_web/live/staff/role_live/roles.ex:88
+#, elixir-autogen, elixir-format
+msgid "Base roles created: %{count}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:186
+#, elixir-autogen, elixir-format
+msgid "Choose a TAR archive."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:180
+#, elixir-autogen, elixir-format
+msgid "Complete"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:162
+#, elixir-autogen, elixir-format
+msgid "Confirm full replacement before restoring."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:203
+#, elixir-autogen, elixir-format
+msgid "Could not submit backup job. Check the archive and retry."
+msgstr ""
+
+#: lib/delivest_web/live/staff/role_live/roles.ex:164
+#, elixir-autogen, elixir-format
+msgid "Create Base Roles"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:286
+#, elixir-autogen, elixir-format
+msgid "Create full backup"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:277
+#, elixir-autogen, elixir-format
+msgid "Download archive"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/sections.ex:115
+#, elixir-autogen, elixir-format
+msgid "Export or restore the entire database and every stored file."
+msgstr ""
+
+#: lib/delivest_web/live/staff/role_live/roles.ex:100
+#, elixir-autogen, elixir-format
+msgid "Failed to create base roles"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:257
+#: lib/delivest_web/live/staff/franchise_live/sections.ex:114
+#, elixir-autogen, elixir-format
+msgid "Full instance backup"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:326
+#, elixir-autogen, elixir-format
+msgid "I understand this replaces the full instance"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:201
+#, elixir-autogen, elixir-format
+msgid "Instance backup is not configured."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:182
+#, elixir-autogen, elixir-format
+msgid "Interrupted; manual recovery required"
+msgstr ""
+
+#: lib/delivest_web/live/staff/role_live/roles.ex:97
+#, elixir-autogen, elixir-format
+msgid "Only administrators can create base roles"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:177
+#, elixir-autogen, elixir-format
+msgid "Queued"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:334
+#, elixir-autogen, elixir-format
+msgid "Restore archive"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:290
+#, elixir-autogen, elixir-format
+msgid "Restore full instance"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:179
+#, elixir-autogen, elixir-format
+msgid "Running"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:183
+#, elixir-autogen, elixir-format
+msgid "Unknown status"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:178
+#, elixir-autogen, elixir-format
+msgid "Waiting for the site to stop"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:292
+#, elixir-autogen, elixir-format
+msgid "Restoring replaces the entire database and all stored files. The site will disconnect temporarily. Sign in with staff credentials from the restored archive after it restarts."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:305
+#, elixir-autogen, elixir-format
+msgid "TAR archive, up to %{size} GiB."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:259
+#, elixir-autogen, elixir-format
+msgid "The archive contains the entire database and every stored file, including private files. Protect it as a secret."
 msgstr ""

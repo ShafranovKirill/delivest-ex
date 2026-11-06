@@ -9,7 +9,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
   setup %{conn: conn} do
     Cachex.clear(:franchise_cache)
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
-    %{conn: init_test_session(conn, %{"staff_id" => staff.id})}
+    %{conn: init_test_session(conn, %{"staff_id" => staff.id}), staff: staff}
   end
 
   test "settings are split into sections", %{conn: conn} do
@@ -31,6 +31,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
   test "saves brand and seller details", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/brand")
 
+    assert has_element?(lv, ~s(#franchise-settings-form select[name="settings[default_theme]"]))
+
     lv
     |> form("#franchise-settings-form", settings: %{primary_color: "#eeeeee"})
     |> render_change()
@@ -38,7 +40,9 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     assert has_element?(lv, "#franchise-color-warning")
 
     lv
-    |> form("#franchise-settings-form", settings: %{name: "Pizza", primary_color: "#aa0000"})
+    |> form("#franchise-settings-form",
+      settings: %{name: "Pizza", primary_color: "#aa0000", default_theme: "dark"}
+    )
     |> render_submit()
 
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/seller")
@@ -48,7 +52,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     |> form("#franchise-settings-form", settings: %{inn: "7700000000"})
     |> render_submit()
 
-    assert %{name: "Pizza", primary_color: "#aa0000", inn: "7700000000"} =
+    assert %{name: "Pizza", primary_color: "#aa0000", default_theme: "dark", inn: "7700000000"} =
              Franchise.get_settings()
   end
 
@@ -154,29 +158,53 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     assert {:error, {:redirect, _}} = live(conn, ~p"/staff/franchise")
   end
 
-  test "exports and imports the franchise snapshot", %{conn: conn} do
-    insert(:branch, name: "Main", slug: "main", code: "MAIN")
+  test "shows full instance controls and agent outage", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+    assert has_element?(lv, "#backup-export")
+    assert has_element?(lv, "#backup-import-form input[type=file]")
+    assert has_element?(lv, "#backup-confirm")
+    assert has_element?(lv, "#backup-agent-unavailable")
+    refute has_element?(lv, ~s(input[name="sections[]"]))
+  end
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
-    assert has_element?(lv, ~s(#franchise-section-snapshot[href="/staff/franchise/snapshot"]))
+  test "admin creates a durable full backup from the page", %{conn: conn, staff: staff} do
+    dir = prepare_backup_agent!()
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+    refute has_element?(lv, "#backup-agent-unavailable")
 
-    {:ok, lv, html} = live(conn, ~p"/staff/franchise/snapshot")
-    assert html =~ "secret keys"
-    assert has_element?(lv, "#snapshot-export-form")
-    assert has_element?(lv, "#snapshot-import-form input[type=file]")
+    lv |> element("#backup-export") |> render_click()
 
-    for section <- ~w(storefront catalog franchise integrations) do
-      assert has_element?(
-               lv,
-               ~s(#snapshot-export-form input[name="sections[]"][value="#{section}"])
-             )
-    end
+    assert %{"action" => "export", "requested_by" => owner} =
+             Delivest.InstanceBackup.active().request
 
-    download = get(conn, ~p"/staff/franchise/site-snapshot?sections[]=franchise")
-    assert response(download, 200) |> String.starts_with?("PK")
+    assert owner == staff.id
+    assert has_element?(lv, "#backup-phase")
+    assert File.dir?(Path.join(dir, "jobs"))
+  end
+
+  test "restore requires confirmation then stores the upload on disk", %{conn: conn} do
+    prepare_backup_agent!()
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+
+    upload =
+      file_input(lv, "#backup-import-form", :instance_archive, [
+        %{name: "restore.tar", content: "tar payload", type: "application/x-tar"}
+      ])
+
+    assert render_upload(upload, "restore.tar")
+    lv |> form("#backup-import-form") |> render_submit()
+    assert Delivest.InstanceBackup.active() == nil
+
+    lv |> form("#backup-import-form", %{"confirm" => "replace"}) |> render_submit()
+    assert %{"action" => "import"} = Delivest.InstanceBackup.active().request
+    id = Delivest.InstanceBackup.active().id
+
+    assert File.read!(Path.join(Delivest.InstanceBackup.job_dir(id), "archive.tar")) ==
+             "tar payload"
   end
 
   test "the franchise snapshot is closed to non-admin staff", %{conn: conn} do
+    prepare_backup_agent!()
     staff = insert(:staff, role: insert(:role, permissions: ["franchise.update"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
@@ -185,8 +213,35 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
 
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
     assert has_element?(lv, "#snapshot-forbidden")
-    refute has_element?(lv, "#snapshot-export-form")
+    refute has_element?(lv, "#backup-export")
+
+    render_hook(lv, "backup_export", %{})
+    render_hook(lv, "backup_import", %{"confirm" => "replace"})
+    assert Delivest.InstanceBackup.active() == nil
+
+    assert conn
+           |> get("/staff/franchise/instance-backup/#{Ecto.UUID.generate()}")
+           |> response(404)
 
     assert conn |> get(~p"/staff/franchise/site-snapshot?sections[]=franchise") |> response(302)
+  end
+
+  defp prepare_backup_agent! do
+    dir = Path.join(System.tmp_dir!(), "live-backup-#{System.unique_integer([:positive])}")
+    File.mkdir_p!(dir)
+    previous = Application.get_env(:delivest, :instance_backup_dir)
+    Application.put_env(:delivest, :instance_backup_dir, dir)
+
+    Delivest.InstanceBackup.write_json(Path.join(dir, "heartbeat.json"), %{
+      protocol: 1,
+      updated_at: DateTime.utc_now()
+    })
+
+    on_exit(fn ->
+      Application.put_env(:delivest, :instance_backup_dir, previous)
+      File.rm_rf!(dir)
+    end)
+
+    dir
   end
 end

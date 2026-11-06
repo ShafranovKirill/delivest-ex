@@ -53,6 +53,7 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
               example: "#b86a69",
               description: "Цвет для тёмной темы; если пусто, подбирается из основного"
             },
+            default_theme: %Schema{type: :string, enum: ["light", "dark"], example: "light"},
             logo_url: %Schema{type: :string, format: :uri, nullable: true},
             logo_dark_url: %Schema{type: :string, format: :uri, nullable: true},
             legal: Legal,
@@ -91,6 +92,7 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
             :description,
             :primary_color,
             :dark_primary_color,
+            :default_theme,
             :logo_url,
             :logo_dark_url,
             :address_map,
