@@ -18,7 +18,12 @@ defmodule DelivestWeb.Staff.ProductLive.ModifiersTest do
 
     {:ok, lv, _html} =
       live(
-        sign_in(conn, branch, ["products.read", "products.update", "stops.update"]),
+        sign_in(conn, branch, [
+          "products.read",
+          "products.update",
+          "catalog.global.manage",
+          "stops.update"
+        ]),
         ~p"/staff/b/#{branch}/products/modifiers"
       )
 
@@ -39,7 +44,7 @@ defmodule DelivestWeb.Staff.ProductLive.ModifiersTest do
 
     cheese = Repo.get_by!(Modifier, name: "Сыр")
     assert {cheese.price, cheese.max_quantity} == {5_000, 1}
-    assert Modifiers.crm_ids([cheese.id], "frontpad") == %{cheese.id => "77"}
+    assert Modifiers.crm_ids([cheese.id], "frontpad", branch.id) == %{cheese.id => "77"}
 
     lv |> element("#modifier-#{cheese.id} button[phx-click=stop]") |> render_click()
     assert MapSet.member?(Modifiers.stopped_ids(branch.id), cheese.id)

@@ -18,6 +18,7 @@ defmodule Delivest.Identity.Branch do
     field :slug, :string
     field :code, :string
     field :is_active, :boolean
+    field :catalog_version, :integer, default: 0
 
     many_to_many :staff, Staff, join_through: StaffBranch
 

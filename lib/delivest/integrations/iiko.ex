@@ -200,21 +200,28 @@ defmodule Delivest.Integrations.Iiko do
       |> Enum.reject(&is_nil/1)
 
     %{
-      products: order.items |> Enum.map(& &1.product_id) |> ProductCrmIds.by_product(key()),
-      modifiers: modifier_articles(modifier_ids)
+      products:
+        order.items
+        |> Enum.map(& &1.product_id)
+        |> ProductCrmIds.by_product(key(), order.branch_id),
+      modifiers: modifier_articles(modifier_ids, order.branch_id)
     }
   end
 
-  defp modifier_articles([]), do: %{}
+  defp modifier_articles([], _branch_id), do: %{}
 
-  defp modifier_articles(ids) do
+  defp modifier_articles(ids, branch_id) do
     from(m in Modifier,
       join: g in ModifierGroup,
       on: g.id == m.group_id,
       join: e in ProductExternalId,
-      on: e.entity_type == "modifier" and e.entity_id == m.id and e.provider == "iiko",
+      on:
+        e.entity_type == "modifier" and e.entity_id == m.id and e.provider == "iiko" and
+          e.branch_id == ^branch_id,
       left_join: ge in ProductExternalId,
-      on: ge.entity_type == "modifier_group" and ge.entity_id == g.id and ge.provider == "iiko",
+      on:
+        ge.entity_type == "modifier_group" and ge.entity_id == g.id and ge.provider == "iiko" and
+          ge.branch_id == ^branch_id,
       where: m.id in ^ids,
       select: {m.id, %{external_id: e.external_id, group_id: ge.external_id, size: g.is_size}}
     )

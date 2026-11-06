@@ -22,6 +22,7 @@ defmodule Delivest.Net do
   defdelegate soft_delete_products(staff, branch_id, ids), to: Products
   defdelegate get_product(id, opts), to: Products
   defdelegate list_products_by_ids(ids, opts \\ []), to: Products
+  defdelegate list_branch_products_by_ids(branch_id, ids, opts \\ []), to: Products
   defdelegate list_branch_products(branch_id), to: Products
   defdelegate list_category_products(branch_id, category_id), to: Products
 

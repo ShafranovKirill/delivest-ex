@@ -5,6 +5,8 @@ defmodule Delivest.Net.MenuImportTest do
 
   alias Delivest.Integrations.Iiko.Menu
   alias Delivest.Net.{MenuImport, Modifiers, Product}
+  alias Delivest.{Relations, Repo}
+  alias Delivest.Identity.Branch
 
   defp nomenclature(pizza_price) do
     %{
@@ -106,5 +108,49 @@ defmodule Delivest.Net.MenuImportTest do
 
     assert Crm.menu_owner(branch.id, pizza.id) == "iiko"
     assert Crm.menu_owner(branch.id, insert(:product).id) == nil
+  end
+
+  test "create-only actor cannot import updates or hide products" do
+    branch = insert(:branch)
+    admin = insert(:staff, role: build(:role, permissions: ["admin"]))
+    actor = insert(:staff, role: insert(:role, permissions: ["products.create"]))
+    insert(:staff_branch, staff: actor, branch: branch)
+    menu = Menu.parse(nomenclature(500))
+
+    assert {:ok, _} = MenuImport.apply(admin, branch.id, :iiko, menu)
+    pizza = Repo.get_by!(Product, name: "Маргарита")
+    changed = Menu.parse(nomenclature(550))
+    changed = %{changed | products: Enum.reject(changed.products, &(&1.name == "Чай"))}
+
+    assert {:error, :forbidden} = MenuImport.apply(actor, branch.id, :iiko, changed)
+    assert Repo.reload!(pizza).price == 50_000
+    assert Repo.get_by!(Product, name: "Чай").is_active
+  end
+
+  test "shared import requires every owner and invalidates both branches" do
+    a = insert(:branch)
+    b = insert(:branch)
+    admin = insert(:staff, role: build(:role, permissions: ["admin"]))
+    initial = Menu.parse(nomenclature(500))
+    assert {:ok, _} = MenuImport.apply(admin, a.id, :iiko, initial)
+    pizza = Repo.get_by!(Product, name: "Маргарита")
+    Relations.create_relation(Repo, "Branch", b.id, "Product", pizza.id)
+    Relations.create_relation(Repo, "Branch", b.id, "Category", pizza.category_id)
+
+    permissions =
+      ~w(products.create products.update products.delete categories.create categories.update catalog.global.manage)
+
+    editor = insert(:staff, role: insert(:role, permissions: permissions))
+    insert(:staff_branch, staff: editor, branch: a)
+    changed = Menu.parse(nomenclature(550))
+    before_b = Repo.get!(Branch, b.id).catalog_version
+
+    assert {:error, :forbidden} = MenuImport.apply(editor, a.id, :iiko, changed)
+    assert Repo.reload!(pizza).price == 50_000
+    assert Repo.get!(Branch, b.id).catalog_version == before_b
+
+    assert {:ok, _} = MenuImport.apply(admin, a.id, :iiko, changed)
+    assert Repo.reload!(pizza).price == 55_000
+    assert Repo.get!(Branch, b.id).catalog_version > before_b
   end
 end

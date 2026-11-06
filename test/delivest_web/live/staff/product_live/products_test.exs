@@ -4,6 +4,50 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
+  alias Delivest.{Repo, Relations}
+
+  test "branch editor sees a refusal when editing a shared product", %{conn: conn} do
+    own = insert(:branch)
+    other = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["products.read", "products.update"]))
+    insert(:staff_branch, staff: staff, branch: own)
+    product = insert(:product, name: "Old", price: 100)
+    Relations.create_relation(Repo, "Branch", own.id, "Product", product.id)
+    Relations.create_relation(Repo, "Branch", other.id, "Product", product.id)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => own.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{own}/products/#{product.id}/edit")
+
+    lv |> form("#product-form", product: %{name: "New", price: 100}) |> render_submit()
+    assert has_element?(lv, "#product-save-error")
+    assert Repo.get!(Delivest.Net.Product, product.id).name == "Old"
+  end
+
+  test "branch editor cannot attach groups while saving a shared product", %{conn: conn} do
+    own = insert(:branch)
+    other = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["products.read", "products.update"]))
+    insert(:staff_branch, staff: staff, branch: own)
+    product = insert(:product, name: "Old", price: 100)
+    group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Size", min: 0, max: 1})
+    Relations.create_relation(Repo, "Branch", own.id, "Product", product.id)
+    Relations.create_relation(Repo, "Branch", other.id, "Product", product.id)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => own.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{own}/products/#{product.id}/edit")
+
+    lv
+    |> form("#product-form",
+      product: %{name: "Old", price: 100},
+      modifier_group_ids: [group.id]
+    )
+    |> render_submit()
+
+    assert has_element?(lv, "#product-save-error")
+    assert Delivest.Net.Modifiers.group_ids(product.id) == []
+    assert Repo.get!(Delivest.Net.Product, product.id).name == "Old"
+  end
+
   describe "products management page" do
     test "renders the products page and filter controls with a selected branch", %{conn: conn} do
       branch = insert(:branch, name: "North Branch")

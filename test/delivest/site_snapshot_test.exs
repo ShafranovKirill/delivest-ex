@@ -34,6 +34,25 @@ defmodule Delivest.SiteSnapshotTest do
     assert Repo.aggregate(Product, :count) == 1
   end
 
+  test "branch editor cannot import installation-global modifier entries" do
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch)
+    target = insert(:branch)
+    product = insert_branch_product(source.id)
+    group = Repo.insert!(%ModifierGroup{name: "Shared", min: 0, max: 1})
+    Repo.insert!(%ProductModifierGroup{product_id: product.id, group_id: group.id, position: 0})
+    assert {:ok, archive} = SiteSnapshot.export(admin, source.id)
+
+    permissions =
+      ~w(branches.read branches.update categories.read categories.create categories.update products.read products.create products.update delivery.read delivery.update franchise.update)
+
+    editor = insert(:staff, role: insert(:role, permissions: permissions))
+    insert(:staff_branch, staff: editor, branch: target)
+
+    assert {:error, :forbidden} = SiteSnapshot.import(editor, target.id, archive)
+    assert Repo.get!(ModifierGroup, group.id).name == "Shared"
+  end
+
   test "copies product, modifier and brand images into the destination bucket" do
     owner = self()
     initial = Application.fetch_env!(:delivest, Delivest.Media)

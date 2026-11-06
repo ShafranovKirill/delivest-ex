@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
      |> assign(
        page_title: gettext("Modifiers"),
        branch_id: socket.assigns.current_branch.id,
-       can_edit: Identity.can?(staff, "products.update"),
+       can_edit: Identity.can?(staff, "catalog.global.manage"),
        can_stop: Identity.can?(staff, "stops.update"),
        new_group: to_form(Modifiers.change_group(%ModifierGroup{}), as: :group),
        photo_for: nil,
@@ -177,7 +177,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     assign(socket,
       groups: groups,
       stopped: Modifiers.stopped_ids(socket.assigns.branch_id),
-      articles: Modifiers.crm_ids(ids, @provider)
+      articles: Modifiers.crm_ids(ids, @provider, socket.assigns.branch_id)
     )
   end
 

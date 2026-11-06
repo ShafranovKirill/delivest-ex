@@ -1,7 +1,7 @@
 defmodule Delivest.Net.Stops do
   import Ecto.Query
 
-  alias Delivest.{Audit, Identity, Repo}
+  alias Delivest.{Audit, Identity, Relations, Repo}
   alias Delivest.Integrations.Channels
   alias Delivest.Net.{Product, ProductStop, StopPeriod}
 
@@ -34,7 +34,8 @@ defmodule Delivest.Net.Stops do
 
   def stop(staff, branch_id, %Product{} = product, period)
       when period in [:today, :until_resumed] do
-    if Identity.authorize(staff, "stops.update", branch_id) == :ok do
+    if Identity.authorize(staff, "stops.update", branch_id) == :ok and
+         product.id in Relations.list_target_ids("Branch", branch_id, "Product") do
       with {:ok, stop} <- insert_manual(staff, branch_id, product, period) do
         changed(branch_id)
 
@@ -60,15 +61,18 @@ defmodule Delivest.Net.Stops do
     }
     |> Repo.insert(
       on_conflict: {:replace, [:until, :staff_id, :updated_at]},
-      conflict_target: [:product_id, :source],
+      conflict_target: [:branch_id, :product_id, :source],
       returning: true
     )
   end
 
   def resume(staff, branch_id, %Product{} = product) do
-    if Identity.authorize(staff, "stops.update", branch_id) == :ok do
+    if Identity.authorize(staff, "stops.update", branch_id) == :ok and
+         product.id in Relations.list_target_ids("Branch", branch_id, "Product") do
       from(s in ProductStop,
-        where: s.product_id == ^product.id and s.source == ^ProductStop.manual()
+        where:
+          s.branch_id == ^branch_id and s.product_id == ^product.id and
+            s.source == ^ProductStop.manual()
       )
       |> Repo.delete_all()
 
@@ -83,6 +87,17 @@ defmodule Delivest.Net.Stops do
   def replace_external(branch_id, source, product_ids) do
     product_ids = MapSet.new(product_ids)
 
+    if MapSet.subset?(
+         product_ids,
+         MapSet.new(Relations.list_target_ids("Branch", branch_id, "Product"))
+       ) do
+      do_replace_external(branch_id, source, product_ids)
+    else
+      {:error, :invalid_product_branch}
+    end
+  end
+
+  defp do_replace_external(branch_id, source, product_ids) do
     current =
       branch_id |> source_query(source) |> select([s], s.product_id) |> Repo.all() |> MapSet.new()
 
@@ -97,7 +112,7 @@ defmodule Delivest.Net.Stops do
 
       Repo.insert_all(ProductStop, Enum.map(added, &external_row(branch_id, source, &1)),
         on_conflict: :nothing,
-        conflict_target: [:product_id, :source]
+        conflict_target: [:branch_id, :product_id, :source]
       )
     end)
 
@@ -130,7 +145,14 @@ defmodule Delivest.Net.Stops do
   end
 
   defp cached(branch_id) do
-    case Cachex.fetch(@cache, branch_id, &{:commit, load(&1), ttl: @ttl}) do
+    result =
+      try do
+        Cachex.fetch(@cache, branch_id, &{:commit, load(&1), ttl: @ttl})
+      catch
+        :exit, _ -> {:error, :cache_unavailable}
+      end
+
+    case result do
       {:ok, stops} -> stops
       {:commit, stops} -> stops
       {:error, _reason} -> load(branch_id)
@@ -146,7 +168,12 @@ defmodule Delivest.Net.Stops do
   end
 
   defp changed(branch_id) do
-    Cachex.del(@cache, branch_id)
+    try do
+      Cachex.del(@cache, branch_id)
+    catch
+      :exit, _ -> :ok
+    end
+
     Phoenix.PubSub.broadcast(Delivest.PubSub, "branch_products:#{branch_id}", :stops_changed)
     Channels.stops_changed(branch_id)
   end

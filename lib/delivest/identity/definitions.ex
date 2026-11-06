@@ -5,6 +5,7 @@ defmodule Delivest.Identity.Definitions do
   branches.create branches.read branches.update branches.delete
   categories.create categories.read categories.update categories.delete
   products.create products.read products.update products.delete
+  catalog.global.manage
   stops.update
   stocks.create stocks.read stocks.update stocks.delete
   promotions.create promotions.read promotions.update promotions.delete

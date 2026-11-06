@@ -16,6 +16,22 @@ defmodule Delivest.Net.StopsTest do
   end
 
   describe "manual stops" do
+    test "shared product stop and resume stay within one branch", %{staff: staff, branch: branch} do
+      other = insert(:branch, is_active: true)
+      other_staff = insert(:staff, role: staff.role)
+      insert(:staff_branch, staff: other_staff, branch: other)
+      product = insert_branch_product(branch.id)
+      Delivest.Relations.create_relation(Delivest.Repo, "Branch", other.id, "Product", product.id)
+
+      assert {:ok, _} = Stops.stop(staff, branch.id, product, :until_resumed)
+      assert {:ok, _} = Stops.stop(other_staff, other.id, product, :until_resumed)
+      assert Stops.stopped?(branch.id, product.id)
+      assert Stops.stopped?(other.id, product.id)
+      assert {:ok, _} = Stops.resume(other_staff, other.id, product)
+      assert Stops.stopped?(branch.id, product.id)
+      refute Stops.stopped?(other.id, product.id)
+    end
+
     test "stop until resumed and resume", %{staff: staff, branch: branch} do
       product = insert_branch_product(branch.id)
       refute Stops.stopped?(branch.id, product.id)
@@ -57,6 +73,28 @@ defmodule Delivest.Net.StopsTest do
   end
 
   describe "external stops" do
+    test "replacing the shared product stops in B leaves A untouched", %{
+      staff: staff,
+      branch: branch
+    } do
+      other = insert(:branch)
+      product = insert_branch_product(branch.id)
+      Delivest.Relations.create_relation(Delivest.Repo, "Branch", other.id, "Product", product.id)
+
+      assert {:ok, true} = Stops.replace_external(branch.id, :frontpad, [product.id])
+      assert {:ok, true} = Stops.replace_external(other.id, :frontpad, [product.id])
+      assert {:ok, true} = Stops.replace_external(other.id, :frontpad, [])
+      assert Stops.stopped?(branch.id, product.id)
+      refute Stops.stopped?(other.id, product.id)
+
+      foreign = insert(:product)
+
+      assert {:error, :invalid_product_branch} =
+               Stops.replace_external(branch.id, :frontpad, [foreign.id])
+
+      assert {:error, :forbidden} = Stops.stop(staff, branch.id, foreign, :today)
+    end
+
     test "replace the set of a source and keep manual stops", %{staff: staff, branch: branch} do
       [soup, tea, pizza] =
         for name <- ~w(Soup Tea Pizza), do: insert_branch_product(branch.id, name: name)

@@ -21,7 +21,11 @@ defmodule Delivest.Net.MenuExport do
     products = products(branch_id)
 
     crm_ids =
-      ProductCrmIds.by_product(Enum.map(products, & &1.id), Crm.default_provider(branch_id))
+      ProductCrmIds.by_product(
+        Enum.map(products, & &1.id),
+        Crm.default_provider(branch_id),
+        branch_id
+      )
 
     Enum.map(products, fn product ->
       [
@@ -54,6 +58,9 @@ defmodule Delivest.Net.MenuExport do
 
   defp cell(value) do
     text = to_string(value)
+
+    text =
+      if String.match?(text, ~r/\A[\p{Z}\p{C}\x00-\x20]*[=+\-@]/u), do: "'" <> text, else: text
 
     if String.contains?(text, [@delimiter, "\"", "\n", "\r"]),
       do: "\"" <> String.replace(text, "\"", "\"\"") <> "\"",

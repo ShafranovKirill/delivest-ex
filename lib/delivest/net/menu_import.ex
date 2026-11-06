@@ -2,9 +2,10 @@ defmodule Delivest.Net.MenuImport do
   import Ecto.Query
 
   alias Delivest.{Audit, Identity, Repo}
-  alias Delivest.Integrations.Channels
+  alias Delivest.Identity.Branch
   alias Delivest.Net.{Category, Modifier, ModifierGroup, Product, ProductExternalId}
   alias Delivest.Net.ProductModifierGroup
+  alias Delivest.Net.SharedOwnership
   alias Delivest.Relations.EntityRelations
 
   @type menu :: %{categories: [map()], products: [map()]}
@@ -41,9 +42,10 @@ defmodule Delivest.Net.MenuImport do
   end
 
   def apply(staff, branch_id, provider, %{categories: categories, products: products} = menu) do
-    with :ok <- Identity.authorize(staff, "products.create", branch_id) do
+    with :ok <- authorize_import(staff, branch_id, provider, menu) do
       provider = to_string(provider)
       plan = diff(branch_id, provider, menu)
+      affected_branches = affected_branches(branch_id, provider, categories, products, plan)
 
       Repo.transaction(fn ->
         category_ids =
@@ -63,11 +65,13 @@ defmodule Delivest.Net.MenuImport do
         hidden_ids = Enum.map(plan.hidden, & &1.id)
         Repo.update_all(from(p in Product, where: p.id in ^hidden_ids), set: [is_active: false])
 
+        Delivest.Net.Catalogs.bump_versions(affected_branches)
+
         %{added: length(plan.added), changed: length(plan.changed), hidden: length(hidden_ids)}
       end)
       |> tap(fn
         {:ok, summary} ->
-          invalidate(branch_id)
+          Enum.each(affected_branches, &invalidate/1)
           branch = Repo.get(Delivest.Identity.Branch, branch_id)
           Audit.record(staff, "menu.imported", branch, metadata: summary)
 
@@ -76,6 +80,96 @@ defmodule Delivest.Net.MenuImport do
       end)
     end
   end
+
+  defp affected_branches(branch_id, provider, categories, products, plan) do
+    if Enum.any?(products, &(&1.groups != [])) do
+      Repo.all(from b in Branch, select: b.id)
+    else
+      affected_local_branches(branch_id, provider, categories, products, plan)
+    end
+  end
+
+  defp affected_local_branches(branch_id, provider, categories, products, plan) do
+    product_links = linked(branch_id, provider, "product")
+    category_links = linked(branch_id, provider, "category")
+
+    product_ids =
+      Enum.map(products, &Map.get(product_links, &1.external_id)) ++
+        Enum.map(plan.hidden, & &1.id)
+
+    category_ids = Enum.map(categories, &Map.get(category_links, &1.external_id))
+
+    ([branch_id] ++
+       Enum.flat_map(
+         Enum.reject(product_ids, &is_nil/1),
+         &SharedOwnership.branches("Product", &1)
+       ) ++
+       Enum.flat_map(
+         Enum.reject(category_ids, &is_nil/1),
+         &SharedOwnership.branches("Category", &1)
+       ))
+    |> Enum.uniq()
+  end
+
+  defp authorize_import(
+         staff,
+         branch_id,
+         provider,
+         %{categories: categories, products: products} = menu
+       ) do
+    provider = to_string(provider)
+    plan = diff(branch_id, provider, menu)
+    linked_products = linked(branch_id, provider, "product")
+    linked_categories = linked(branch_id, provider, "category")
+
+    updated_product_ids =
+      products |> Enum.map(&Map.get(linked_products, &1.external_id)) |> Enum.reject(&is_nil/1)
+
+    updated_category_ids =
+      categories
+      |> Enum.map(&Map.get(linked_categories, &1.external_id))
+      |> Enum.reject(&is_nil/1)
+
+    checks =
+      []
+      |> maybe_require(plan.added != [], Identity.authorize(staff, "products.create", branch_id))
+      |> maybe_require(
+        updated_product_ids != [],
+        Identity.authorize(staff, "products.update", branch_id)
+      )
+      |> maybe_require(plan.hidden != [], Identity.authorize(staff, "products.delete", branch_id))
+      |> maybe_require(
+        Enum.any?(categories, &(not Map.has_key?(linked_categories, &1.external_id))),
+        Identity.authorize(staff, "categories.create", branch_id)
+      )
+      |> maybe_require(
+        updated_category_ids != [],
+        Identity.authorize(staff, "categories.update", branch_id)
+      )
+      |> maybe_require(
+        Enum.any?(products, &(&1.groups != [])),
+        if(Identity.can?(staff, "catalog.global.manage"), do: :ok, else: {:error, :forbidden})
+      )
+
+    shared_checks =
+      Enum.map(
+        updated_product_ids,
+        &SharedOwnership.authorize(staff, "products.update", "Product", &1)
+      ) ++
+        Enum.map(
+          plan.hidden,
+          &SharedOwnership.authorize(staff, "products.delete", "Product", &1.id)
+        ) ++
+        Enum.map(
+          updated_category_ids,
+          &SharedOwnership.authorize(staff, "categories.update", "Category", &1)
+        )
+
+    if Enum.all?(checks ++ shared_checks, &(&1 == :ok)), do: :ok, else: {:error, :forbidden}
+  end
+
+  defp maybe_require(checks, true, result), do: [result | checks]
+  defp maybe_require(checks, false, _result), do: checks
 
   defp changes(%Product{} = our, product) do
     [
@@ -215,8 +309,9 @@ defmodule Delivest.Net.MenuImport do
     do: "#{product.name}-#{product.external_id |> to_string() |> String.slice(0, 8)}"
 
   defp invalidate(branch_id) do
-    Delivest.Net.Catalogs.clear_menu_cache(branch_id)
+    Delivest.Net.Catalogs.invalidate_menu_cache(branch_id)
     Cachex.clear(:cart_cache)
-    Channels.menu_changed(branch_id)
+    Cachex.del(:promo_cache, branch_id)
+    Cachex.del(:stock_cache, branch_id)
   end
 end

@@ -144,7 +144,7 @@ SyncState.remote_status → статус заказа в приложении
 Артикулы CRM хранятся в таблице `product_external_ids`: товар, филиал, `provider` и `external_id`. У товара может быть по артикулу на каждую CRM. Поэтому артикулы новой CRM можно заполнить заранее, пока работает старая, и переключиться без простоя.
 
 - База запрещает повторять артикул одной CRM внутри филиала: `unique (branch_id, provider, external_id)`.
-- `Net.ProductCrmIds.by_product(product_ids, provider)` возвращает артикулы товаров для отправки заказа и сверки меню, `by_external_id(branch_id, provider)` делает обратный поиск, например для стоп-листа.
+- `Net.ProductCrmIds.by_product(product_ids, provider, branch_id)` возвращает филиальные артикулы товаров для отправки заказа и сверки меню, `by_external_id(branch_id, provider)` делает обратный поиск, например для стоп-листа.
 - В форме товара поле артикула строится для каждой CRM из `Crm.Registry`, а колонка «CRM ID» массового импорта пишет в активную CRM филиала.
 
 ### Стоп-лист

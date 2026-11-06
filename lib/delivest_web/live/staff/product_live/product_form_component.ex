@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   alias Delivest.{Media, Money, Net}
   alias Delivest.Integrations.Crm
   alias Delivest.Net.Product
+  alias Delivest.Net.SharedOwnership
 
   import Ecto.Changeset
   import DelivestWeb.Staff.ProductLive.ProductTags, only: [tag_checkboxes: 1]
@@ -12,7 +13,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
 
   @impl true
   def update(assigns, socket) do
-    socket = assign(socket, assigns)
+    socket = socket |> assign(assigns) |> assign_new(:save_error, fn -> nil end)
 
     if uploaded_media = assigns[:uploaded_media] do
       changeset =
@@ -86,7 +87,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       |> Product.changeset(normalized_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, form: to_form(changeset))}
+    {:noreply, assign(socket, form: to_form(changeset), save_error: nil)}
   end
 
   def handle_event("open_upload_modal", _, socket) do
@@ -139,25 +140,55 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   defp do_save_product(%Ecto.Changeset{valid?: true} = changeset, socket, :edit) do
-    params = to_params(changeset)
+    params = changeset |> to_params() |> Map.put("branch_id", socket.assigns.branch_id)
+    product = socket.assigns.product
+    group_ids = socket.assigns.modifier_group_ids
 
-    case Net.update_product(
-           socket.assigns.current_staff,
-           socket.assigns.product,
-           params
-         ) do
+    group_change =
+      MapSet.new(group_ids) != MapSet.new(Delivest.Net.Modifiers.group_ids(product.id))
+
+    group_permission =
+      if group_change,
+        do:
+          SharedOwnership.authorize(
+            socket.assigns.current_staff,
+            "products.update",
+            "Product",
+            product.id
+          ),
+        else: :ok
+
+    result =
+      with :ok <- group_permission,
+           {:ok, product} <- Net.update_product(socket.assigns.current_staff, product, params) do
+        attach_result =
+          if group_change,
+            do:
+              Delivest.Net.Modifiers.attach(socket.assigns.current_staff, product.id, group_ids),
+            else: {:ok, product}
+
+        case attach_result do
+          {:ok, _} -> {:ok, product}
+          error -> error
+        end
+      end
+
+    case result do
       {:ok, product} ->
-        Delivest.Net.Modifiers.attach(
-          socket.assigns.current_staff,
-          product.id,
-          socket.assigns.modifier_group_ids
-        )
-
         notify_parent({:saved, product})
         {:noreply, socket}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+      {:error, %Ecto.Changeset{} = error_changeset} ->
+        {:noreply, assign(socket, form: to_form(error_changeset))}
+
+      {:error, :forbidden} ->
+        message = gettext("You don't have permission to perform this action.")
+        form = changeset |> add_error(:name, message) |> to_form()
+        {:noreply, socket |> assign(form: form, save_error: message)}
+
+      {:error, reason} ->
+        {:noreply,
+         put_flash(socket, :error, "#{gettext("Failed to save product:")} #{inspect(reason)}")}
     end
   end
 
@@ -248,6 +279,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   def render(assigns) do
     ~H"""
     <div class="h-full flex flex-col">
+      <p
+        :if={@save_error}
+        id="product-save-error"
+        role="alert"
+        class="m-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700"
+      >
+        {@save_error}
+      </p>
       <.form
         for={@form}
         id="product-form"
