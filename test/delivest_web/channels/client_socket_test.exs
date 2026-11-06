@@ -41,7 +41,7 @@ defmodule DelivestWeb.ClientSocketTest do
 
     {:ok, _} = Orders.advance_order(order, :ready, :system)
 
-    assert_push "order", %{order: %{id: id, status: :ready}, active: true}, 1_000
+    assert_push "order", %{v: 1, order: %{id: id, status: :ready}, active: true}, 1_000
     assert id == order.id
     refute_push "order", _
 
