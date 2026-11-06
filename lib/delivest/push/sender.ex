@@ -3,7 +3,9 @@ defmodule Delivest.Push.Sender do
 
   @ttl_seconds 3600
 
-  def deliver(%{endpoint: _, p256dh: _, auth: _} = subscription, payload) do
+  def deliver(subscription, payload, options \\ [])
+
+  def deliver(%{endpoint: _, p256dh: _, auth: _} = subscription, payload, options) do
     body =
       payload |> Jason.encode!() |> Encryption.encrypt(subscription.p256dh, subscription.auth)
 
@@ -20,6 +22,7 @@ defmodule Delivest.Push.Sender do
       ]
     ]
     |> Keyword.merge(config_options())
+    |> Keyword.merge(options)
     |> Req.request()
     |> result()
   end

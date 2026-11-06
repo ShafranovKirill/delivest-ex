@@ -6,6 +6,9 @@ defmodule Delivest.Loyalty.ExpiryNotification do
 
   schema "loyalty_expiry_notifications" do
     field :expires_on, :date
+    field :branch_id, :binary_id
+    field :stars, :integer
+    field :expires_at, :utc_datetime
 
     belongs_to :client, Delivest.Identity.Client
 
