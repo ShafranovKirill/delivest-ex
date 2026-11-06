@@ -4,7 +4,7 @@ defmodule Delivest.Push do
   require Logger
 
   alias Delivest.Identity.{Client, Staff}
-  alias Delivest.Oms.Order
+  alias Delivest.Oms.{Order, Orders}
 
   alias Delivest.Push.{
     ClientSubscription,
@@ -122,17 +122,35 @@ defmodule Delivest.Push do
     )
   end
 
-  def unsubscribe_client(%Client{} = client, endpoint) when is_binary(endpoint) do
-    Repo.delete_all(
-      from(s in ClientSubscription,
-        where: s.client_id == ^client.id and s.endpoint == ^endpoint
-      )
-    )
+  def unsubscribe_client(client, endpoint, session_id \\ nil)
+
+  def unsubscribe_client(%Client{} = client, endpoint, session_id) when is_binary(endpoint) do
+    owned_order_ids =
+      Order
+      |> where(^Orders.owner_filter(session_id, client.id))
+      |> select([o], o.id)
+
+    {:ok, :ok} =
+      Repo.transaction(fn ->
+        Repo.delete_all(
+          from(s in ClientSubscription,
+            where: s.client_id == ^client.id and s.endpoint == ^endpoint
+          )
+        )
+
+        Repo.delete_all(
+          from(s in Subscription,
+            where: s.endpoint == ^endpoint and s.order_id in subquery(owned_order_ids)
+          )
+        )
+
+        :ok
+      end)
 
     :ok
   end
 
-  def unsubscribe_client(_client, _endpoint), do: :ok
+  def unsubscribe_client(_client, _endpoint, _session_id), do: :ok
 
   def client_subscriptions(client_id) when is_binary(client_id) do
     Repo.all(from(s in ClientSubscription, where: s.client_id == ^client_id))
