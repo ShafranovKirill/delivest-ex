@@ -175,7 +175,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   end
 
   defp load_pauses(
-         %{assigns: %{push_available: true, branch_settings: %{enabled: true}}} = socket
+         %{assigns: %{push_available: true, can_pause: true, branch_settings: %{enabled: true}}} =
+           socket
        ) do
     branch_id = socket.assigns.current_branch.id
 
