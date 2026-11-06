@@ -17,7 +17,7 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
     text(event.action, %{
       subject: subject(event),
       changes: changes(event.metadata),
-      error: event.metadata["error"]
+      error: format_value(event.metadata["error"])
     })
   end
 
@@ -146,7 +146,10 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
   defp with_reason(text, nil), do: text
 
   defp with_reason(text, reason),
-    do: gettext("%{text}, reason: %{reason}", text: text, reason: reason)
+    do: gettext("%{text}, reason: %{reason}", text: text, reason: format_value(reason))
+
+  defp format_value(value) when is_map(value) or is_list(value), do: Jason.encode!(value)
+  defp format_value(value), do: value
 
   defp changes(metadata) do
     Enum.map_join(metadata, ", ", fn
@@ -157,7 +160,7 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
         gettext("payment → %{value}", value: OrderHelpers.payment_label(value))
 
       {key, value} ->
-        "#{key} → #{value}"
+        "#{key} → #{format_value(value)}"
     end)
   end
 end
