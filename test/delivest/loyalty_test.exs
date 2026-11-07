@@ -7,6 +7,7 @@ defmodule Delivest.LoyaltyTest do
   alias Delivest.Identity.Branch.{BranchInfo, LoyaltySettings}
   alias Delivest.Loyalty
   alias Delivest.Loyalty.Entry
+  alias Delivest.Loyalty.ExpireWorker
   alias Delivest.Oms.Orders
 
   setup do
@@ -127,6 +128,79 @@ defmodule Delivest.LoyaltyTest do
     assert Loyalty.balance(ctx.client.id) == 0
     assert Loyalty.expire_due(later) == 0
     assert Enum.any?(Loyalty.history(ctx.client.id), &(&1.kind == :expire and &1.amount == -10))
+  end
+
+  test "expiration is bounded and subsequent calls drain due entries", ctx do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    for _ <- 1..3 do
+      Repo.insert!(%Entry{
+        client_id: ctx.client.id,
+        branch_id: ctx.branch.id,
+        kind: :adjust,
+        amount: 1,
+        remaining: 1,
+        expires_at: now
+      })
+    end
+
+    assert Loyalty.expire_due(now, 2) == 0
+    assert Loyalty.due_entries?(now)
+    assert Loyalty.expire_due(now, 2) == 0
+    refute Loyalty.due_entries?(now)
+    assert_raise ArgumentError, fn -> Loyalty.expire_due(now, 0) end
+  end
+
+  test "bounded expiration debits the ledger in successive batches", ctx do
+    now = DateTime.utc_now(:second)
+
+    for _ <- 1..3 do
+      {:ok, entry} = Loyalty.adjust(ctx.manager, ctx.branch, ctx.client.id, 1, "credit")
+      entry |> Ecto.Changeset.change(expires_at: now) |> Repo.update!()
+    end
+
+    assert Loyalty.balance(ctx.client.id) == 3
+    assert Loyalty.expire_due(now, 2) == 2
+    assert Loyalty.balance(ctx.client.id) == 1
+    assert Loyalty.due_entries?(now)
+    assert Loyalty.expire_due(now, 2) == 1
+    assert Loyalty.balance(ctx.client.id) == 0
+    refute Loyalty.due_entries?(now)
+  end
+
+  test "concurrent expiration debits one entry once", ctx do
+    now = DateTime.utc_now(:second)
+    {:ok, entry} = Loyalty.adjust(ctx.manager, ctx.branch, ctx.client.id, 1, "credit")
+    entry |> Ecto.Changeset.change(expires_at: now) |> Repo.update!()
+
+    results =
+      1..2
+      |> Task.async_stream(fn _ -> Loyalty.expire_due(now, 1) end, timeout: :infinity)
+      |> Enum.map(fn {:ok, amount} -> amount end)
+
+    assert Enum.sort(results) == [0, 1]
+    assert Loyalty.balance(ctx.client.id) == 0
+    assert Enum.count(Loyalty.history(ctx.client.id), &(&1.kind == :expire)) == 1
+  end
+
+  test "expiry worker snoozes until even zero-balance due entries are drained", ctx do
+    now = DateTime.add(DateTime.utc_now(:second), -1, :day)
+
+    for _ <- 1..101 do
+      Repo.insert!(%Entry{
+        client_id: ctx.client.id,
+        branch_id: ctx.branch.id,
+        kind: :adjust,
+        amount: 1,
+        remaining: 1,
+        expires_at: now
+      })
+    end
+
+    assert {:snooze, 1} = ExpireWorker.perform(%Oban.Job{})
+    assert Loyalty.due_entries?()
+    assert {:ok, 0} = ExpireWorker.perform(%Oban.Job{})
+    refute Loyalty.due_entries?()
   end
 
   test "the summary adds up what was issued and what is still owed", ctx do

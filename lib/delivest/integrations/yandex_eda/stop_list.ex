@@ -5,7 +5,7 @@ defmodule Delivest.Integrations.YandexEda.StopList do
   alias Delivest.Integrations.YandexEda.Menu
   alias Delivest.Net.Stops
 
-  @min_timeout 2_000
+  @refresh_budget_ms 2_000
   @fresh_seconds 30
 
   def availability(branch, settings) do
@@ -38,21 +38,45 @@ defmodule Delivest.Integrations.YandexEda.StopList do
     task =
       Task.Supervisor.async_nolink(Delivest.TaskSupervisor, fn -> StopSync.sync(branch_id) end)
 
-    case Task.yield(task, timeout(branch_id)) || Task.shutdown(task) do
+    case Task.yield(task, @refresh_budget_ms) || Task.shutdown(task, :brutal_kill) do
       {:ok, result} ->
+        if match?({:error, _}, result), do: degraded(branch_id, result)
         result
 
-      {:exit, reason} ->
-        Logger.error("yandex eda stop list refresh crashed: #{inspect(reason)}")
+      {:exit, _reason} ->
+        degraded(branch_id, :crashed)
         {:error, :crashed}
 
       _timeout ->
-        Logger.warning("yandex eda stop list was not refreshed before the order")
+        degraded(branch_id, :timeout)
         {:error, :timeout}
     end
   end
 
-  defp timeout(branch_id), do: max(@min_timeout, StopSync.interval_ms(branch_id) + 1_000)
+  defp degraded(branch_id, reason) do
+    age =
+      case StopSync.last(branch_id) do
+        %{synced_at: synced_at} -> DateTime.diff(DateTime.utc_now(), synced_at, :second)
+        _ -> -1
+      end
+
+    reason = degradation_reason(reason)
+
+    :telemetry.execute(
+      [:delivest, :yandex_eda, :stop_list, :degraded],
+      %{count: 1, snapshot_age_seconds: age},
+      %{branch_id: branch_id, reason: reason}
+    )
+
+    Logger.warning(
+      "yandex eda stop list refresh degraded for branch #{branch_id}; " <>
+        "snapshot_age_seconds=#{age}; reason=#{reason}; using local stops"
+    )
+  end
+
+  defp degradation_reason({:error, {:http_error, status, _body}}), do: "http_#{status}"
+  defp degradation_reason({:error, _reason}), do: "provider_error"
+  defp degradation_reason(reason), do: reason
 
   def unavailable(branch_id, product_ids),
     do: unavailable_in(product_ids, Stops.stopped_ids(branch_id))

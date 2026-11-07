@@ -8,6 +8,7 @@ defmodule DelivestWeb.Hooks.NewOrders do
 
   alias Delivest.Identity
   alias Delivest.Integrations.{Crm, YandexEda}
+  alias Delivest.Integrations.Crm.Reconciliation
   alias Delivest.Oms.{Kitchen, Orders}
   alias DelivestWeb.KitchenPresence
 
@@ -150,7 +151,7 @@ defmodule DelivestWeb.Hooks.NewOrders do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
     socket =
-      case Crm.resolve_alert(staff, branch.id, order_id, action, params["number"]) do
+      case crm_alert_action(staff, branch.id, order_id, action, params) do
         {:ok, _order} ->
           socket
 
@@ -160,6 +161,12 @@ defmodule DelivestWeb.Hooks.NewOrders do
         {:error, :number_required} ->
           put_flash(socket, :error, gettext("Enter the order number in the CRM"))
 
+        {:error, :confirmation_required} ->
+          put_flash(socket, :error, gettext("Confirm you checked the CRM before sending again."))
+
+        {:error, :not_reconcilable} ->
+          put_flash(socket, :error, gettext("This order no longer needs CRM reconciliation."))
+
         {:error, _reason} ->
           put_flash(socket, :error, gettext("Failed to update the order"))
       end
@@ -168,6 +175,18 @@ defmodule DelivestWeb.Hooks.NewOrders do
   end
 
   defp handle_event(_event, _params, socket), do: {:cont, socket}
+
+  defp crm_alert_action(staff, branch_id, order_id, "resend", %{"confirmed" => "true"}),
+    do: Reconciliation.resolve(staff, branch_id, order_id, "resend")
+
+  defp crm_alert_action(_staff, _branch_id, _order_id, "resend", _params),
+    do: {:error, :confirmation_required}
+
+  defp crm_alert_action(staff, branch_id, order_id, "exists", params),
+    do: Reconciliation.resolve(staff, branch_id, order_id, "exists", params["number"])
+
+  defp crm_alert_action(staff, branch_id, order_id, action, params),
+    do: Crm.resolve_alert(staff, branch_id, order_id, action, params["number"])
 
   defp overdue_action("overdue_keep", staff, branch_id, order_id),
     do: YandexEda.keep_unconfirmed(staff, branch_id, order_id)

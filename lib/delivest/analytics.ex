@@ -8,6 +8,9 @@ defmodule Delivest.Analytics do
   @type period :: {Date.t(), Date.t()}
 
   @presets ~w(today yesterday week month this_month custom)
+  @max_period_days 366
+  @min_date ~D[0001-01-01]
+  @max_date ~D[9999-12-31]
 
   def presets, do: @presets
 
@@ -30,14 +33,33 @@ defmodule Delivest.Analytics do
         {Date.beginning_of_month(today), today}
 
       "custom" ->
-        with {:ok, f} <- parse_date(from), {:ok, t} <- parse_date(to) do
-          if Date.compare(f, t) == :gt, do: {t, f}, else: {f, t}
-        else
-          _ -> {Date.add(today, -6), today}
+        case validate_custom_period(from, to) do
+          {:ok, period} -> period
+          {:error, :invalid_period} -> {Date.add(today, -6), today}
         end
 
       _week_or_unknown ->
         {Date.add(today, -6), today}
+    end
+  end
+
+  @spec validate_custom_period(term(), term()) :: {:ok, period()} | {:error, :invalid_period}
+  def validate_custom_period(from, to) do
+    with {:ok, from} <- parse_date(from),
+         {:ok, to} <- parse_date(to) do
+      {from, to} = if Date.compare(from, to) == :gt, do: {to, from}, else: {from, to}
+      days = Date.diff(to, from) + 1
+
+      if days <= @max_period_days and
+           Date.compare(from, @min_date) != :lt and
+           Date.compare(to, @max_date) != :gt and
+           Date.diff(from, @min_date) >= days do
+        {:ok, {from, to}}
+      else
+        {:error, :invalid_period}
+      end
+    else
+      _ -> {:error, :invalid_period}
     end
   end
 
@@ -83,6 +105,12 @@ defmodule Delivest.Analytics do
 
   @spec daily(binary(), period()) :: [%{date: Date.t(), revenue: integer(), orders: integer()}]
   def daily(branch_id, {from, to} = period) do
+    days = Date.diff(to, from) + 1
+
+    if days < 1 or days > @max_period_days do
+      raise ArgumentError, "daily period must contain 1 to #{@max_period_days} days"
+    end
+
     tz = LocalTime.timezone(branch_id)
 
     rows =

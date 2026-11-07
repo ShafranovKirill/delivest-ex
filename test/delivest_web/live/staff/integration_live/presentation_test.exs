@@ -150,4 +150,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.PresentationTest do
     assert Presentation.scope(:frontpad, branch) == {:branch, "North"}
     assert Presentation.scope_text(Presentation.scope(:frontpad, branch)) == "Branch: North"
   end
+
+  test "capabilities remain separate from connection and branch usage" do
+    branch = branch()
+    state = Presentation.state(:frontpad, branch)
+
+    assert state.connection.state == :unchecked
+    assert Enum.find(state.usage, &(&1.label == "Sending new orders")).state == :off
+    assert {"Import full menu", false, true, true} in state.capabilities
+    assert {"Catalog for product matching", true, true, true} in state.capabilities
+
+    assert {"Order item edits", false} in Presentation.state(:yandex_eda, branch).capabilities
+    assert {"Promotions", false} in Presentation.state(:yandex_eda, branch).capabilities
+    assert {"Combos", false} in Presentation.state(:yandex_eda, branch).capabilities
+  end
 end

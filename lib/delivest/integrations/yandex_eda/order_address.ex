@@ -2,6 +2,7 @@ defmodule Delivest.Integrations.YandexEda.OrderAddress do
   alias Delivest.Integrations.Dadata
 
   @located [:city, :street, :house, :fias_id, :postal_code, :district, :geo_precision]
+  @geolocation_budget_ms 300
 
   def build(nil), do: nil
 
@@ -11,8 +12,13 @@ defmodule Delivest.Integrations.YandexEda.OrderAddress do
   end
 
   defp locate(latitude, longitude) do
-    case Dadata.geolocate(latitude, longitude) do
-      {:ok, [address | _]} ->
+    task =
+      Task.Supervisor.async_nolink(Delivest.TaskSupervisor, fn ->
+        Dadata.geolocate(latitude, longitude)
+      end)
+
+    case Task.yield(task, @geolocation_budget_ms) || Task.shutdown(task, :brutal_kill) do
+      {:ok, {:ok, [address | _]}} ->
         for field <- @located,
             value = Map.get(address, field),
             into: %{},

@@ -10,7 +10,8 @@ defmodule Delivest.Integrations.YandexRating.Poller do
   def interval, do: 86_400
 
   @impl true
-  def targets, do: if(YandexRating.configured?(), do: ["all"], else: [])
+  # No production API source exists for Yandex ratings. Staff enter this value manually.
+  def targets, do: []
 
   @impl true
   def poll(_target) do

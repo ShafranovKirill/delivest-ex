@@ -2,6 +2,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
   use DelivestWeb, :live_component
 
   alias Delivest.Franchise
+  alias Delivest.Franchise.Rating
+  alias Delivest.Identity
   alias DelivestWeb.Staff.FranchiseLive.FranchiseHelpers
 
   @impl true
@@ -10,7 +12,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
 
     if socket.assigns[:form],
       do: {:ok, socket},
-      else: {:ok, assign_form(socket, Franchise.change_settings(assigns.settings))}
+      else:
+        {:ok,
+         socket
+         |> assign_form(Franchise.change_settings(assigns.settings))
+         |> assign_rating_form(Rating.current(:yandex))}
   end
 
   @impl true
@@ -40,6 +46,27 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
     end
   end
 
+  def handle_event("save_yandex_rating", %{"rating" => params}, socket) do
+    case Franchise.update_yandex_rating(socket.assigns.current_staff, params) do
+      {:ok, rating} ->
+        {:noreply,
+         socket
+         |> assign_rating_form(rating)
+         |> put_flash(:info, gettext("Yandex rating saved"))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Administrator access is required."))}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Enter a rating from 1 to 5 and a non-negative review count.")
+         )}
+    end
+  end
+
   def handle_event("custom_dark_color", _params, socket),
     do: {:noreply, put_dark_color(socket, socket.assigns.color)}
 
@@ -62,6 +89,19 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
       form: to_form(changeset, as: "settings"),
       color: Ecto.Changeset.get_field(changeset, :primary_color),
       dark_color: Ecto.Changeset.get_field(changeset, :dark_primary_color)
+    )
+  end
+
+  defp assign_rating_form(socket, rating) do
+    assign(socket,
+      rating_form:
+        to_form(
+          %{
+            "rating" => rating && rating.rating,
+            "reviews_count" => rating && rating.reviews_count
+          },
+          as: :rating
+        )
     )
   end
 
@@ -310,6 +350,42 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           </button>
         </div>
       </.form>
+      <section
+        :if={@section == :brand and Identity.can?(@current_staff, "admin")}
+        id="franchise-yandex-rating"
+        class="mt-6 rounded-box border border-base-300 bg-base-100 p-5 space-y-3"
+      >
+        <h2 class="font-semibold">{gettext("Yandex rating")}</h2>
+        <p class="text-sm text-base-content/70">
+          {gettext(
+            "Automatic Yandex rating import is unavailable. Enter the rating and review count manually. The values are published for 7 days."
+          )}
+        </p>
+        <.form
+          for={@rating_form}
+          id="franchise-yandex-rating-form"
+          phx-target={@myself}
+          phx-submit="save_yandex_rating"
+          class="grid gap-3 sm:grid-cols-2"
+        >
+          <.input
+            field={@rating_form[:rating]}
+            type="number"
+            step="0.1"
+            min="1"
+            max="5"
+            label={gettext("Rating (1–5)")}
+          />
+          <.input
+            field={@rating_form[:reviews_count]}
+            type="number"
+            step="1"
+            min="0"
+            label={gettext("Review count")}
+          />
+          <button type="submit" class="btn btn-primary sm:col-span-2">{gettext("Save rating")}</button>
+        </.form>
+      </section>
     </div>
     """
   end

@@ -1335,6 +1335,10 @@ msgstr "Новый"
 msgid "Custom"
 msgstr "Произвольный период"
 
+#: lib/delivest_web/live/staff/statistics_live/index.ex
+msgid "Choose a valid period of up to 366 days"
+msgstr "Выберите корректный период не длиннее 366 дней"
+
 #: lib/delivest_web/live/staff/client_live/clients.ex:377
 #, elixir-autogen, elixir-format
 msgid "Delete Client"
@@ -9516,3 +9520,96 @@ msgstr "TAR-архив до %{size} ГиБ."
 #, elixir-autogen, elixir-format
 msgid "The archive contains the entire database and every stored file, including private files. Protect it as a secret."
 msgstr "Архив содержит всю базу данных и все сохранённые файлы, включая закрытые. Храните его как секрет."
+
+msgid "Confirm you checked the CRM before sending again."
+msgstr "Подтвердите, что проверили заказ в CRM перед повторной отправкой."
+
+msgid "This order no longer needs CRM reconciliation."
+msgstr "Этому заказу больше не требуется сверка с CRM."
+
+msgid "Yandex rating saved"
+msgstr "Рейтинг Яндекса сохранён"
+
+msgid "Enter a rating from 1 to 5 and a non-negative review count."
+msgstr "Введите рейтинг от 1 до 5 и неотрицательное число отзывов."
+
+msgid "Yandex rating"
+msgstr "Рейтинг Яндекса"
+
+msgid "Automatic Yandex rating import is unavailable. Enter the rating and review count manually. The values are published for 7 days."
+msgstr "Автоматический импорт рейтинга Яндекса недоступен. Введите рейтинг и число отзывов вручную. Значения публикуются 7 дней."
+
+msgid "Rating (1–5)"
+msgstr "Рейтинг (1–5)"
+
+msgid "Review count"
+msgstr "Число отзывов"
+
+msgid "Save rating"
+msgstr "Сохранить рейтинг"
+
+msgid "Cancel orders"
+msgstr "Отмена заказов"
+
+msgid "Update items"
+msgstr "Изменение состава"
+
+msgid "Update comments"
+msgstr "Изменение комментария"
+
+msgid "Update address"
+msgstr "Изменение адреса"
+
+msgid "Update delivery time"
+msgstr "Изменение времени доставки"
+
+msgid "Update payments"
+msgstr "Изменение оплаты"
+
+msgid "Import full menu"
+msgstr "Импорт полного меню"
+
+msgid "Catalog for product matching"
+msgstr "Каталог для сопоставления товаров"
+
+msgid "Read stop list"
+msgstr "Получение стоп-листа"
+
+msgid "Order status updates"
+msgstr "Обновление статусов заказов"
+
+msgid "Order item edits"
+msgstr "Изменение состава заказа"
+
+msgid "Promotions"
+msgstr "Акции"
+
+msgid "Combos"
+msgstr "Комбо"
+
+msgid "Adapter capabilities"
+msgstr "Возможности адаптеров"
+
+msgid "Capabilities are independent of connection and branch settings."
+msgstr "Возможности адаптера не зависят от соединения и настроек филиала."
+
+msgid "Capability"
+msgstr "Возможность"
+
+msgid "Use the Frontpad catalog to match products."
+msgstr "Используйте каталог Frontpad для сопоставления товаров."
+
+msgid "Supported"
+msgstr "Поддерживается"
+
+msgid "Not supported"
+msgstr "Не поддерживается"
+
+msgid "Webhook"
+msgstr "Вебхук"
+
+msgid "Polling"
+msgstr "Опрос"
+
+msgid "I checked the CRM and confirmed this order does not exist there."
+msgstr "Я проверил CRM и убедился, что этого заказа там нет."

@@ -212,6 +212,32 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       refute has_element?(lv, "#order-payment-#{order.id}")
     end
 
+    test "Frontpad resend requires CRM reconciliation confirmation", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      {:ok, _order} =
+        Delivest.Oms.Orders.update_order_crm(order, %{
+          provider: "frontpad",
+          status: "unknown",
+          alert: "Check in Frontpad"
+        })
+
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
+
+      assert has_element?(lv, "#order-crm-resend-form-#{order.id} input[name=confirmed]")
+
+      render_hook(lv, "crm_alert", %{"id" => order.id, "action" => "resend"})
+      assert Delivest.Repo.reload!(order).crm.status == "unknown"
+
+      lv
+      |> form("#order-crm-resend-form-#{order.id}", %{confirmed: "true"})
+      |> render_submit()
+
+      assert Delivest.Repo.reload!(order).crm.status == "pending"
+    end
+
     test "an order of our own carries no gateway note", %{
       conn: conn,
       branch: branch,
