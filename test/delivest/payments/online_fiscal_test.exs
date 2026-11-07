@@ -128,7 +128,7 @@ defmodule Delivest.Payments.OnlineFiscalTest do
 
   defp drain do
     for _round <- 1..3,
-        queue <- [:default, :events, :fiscal],
+        queue <- [:default, :events, :payments, :events, :fiscal],
         do: Oban.drain_queue(queue: queue, with_safety: false, with_recursion: true)
   end
 

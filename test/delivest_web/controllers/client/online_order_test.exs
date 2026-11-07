@@ -350,6 +350,9 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
     defp drain do
       Oban.drain_queue(queue: :default, with_safety: false)
       Oban.drain_queue(queue: :events, with_safety: false)
+      Oban.drain_queue(queue: :payments, with_safety: false)
+      Oban.drain_queue(queue: :events, with_safety: false)
+      Oban.drain_queue(queue: :fiscal, with_safety: false)
     end
 
     defp remote_api(test_pid, id, status, refund_amount \\ "3.00") do
