@@ -187,6 +187,35 @@ defmodule Delivest.EventsTest do
     refute_received {:handled, ^second_id}
   end
 
+  test "deliver_events retries a snoozed successor after its predecessor" do
+    Application.put_env(:delivest, :event_subscribers, [Receiver])
+    on_exit(fn -> Application.delete_env(:delivest, :event_subscribers) end)
+    order = order_fixture(branch().id)
+    {:ok, first} = Events.record("order.status_changed", order, %{}, %{kind: :system})
+    {:ok, second} = Events.record("order.status_changed", order, %{}, %{kind: :system})
+
+    Repo.update_all(
+      from(j in Oban.Job,
+        where: j.worker == "Delivest.Events.DeliverWorker",
+        where: fragment("?->>'event_id'", j.args) == ^first.id
+      ),
+      set: [priority: 9]
+    )
+
+    assert %{snoozed: 1} = Oban.drain_queue(queue: :events, with_limit: 1, with_safety: false)
+    refute_received {:receiver_handled, _}
+
+    assert %{success: 2} = deliver_events()
+    assert_receive {:receiver_handled, first_id} when first_id == first.id
+    assert_receive {:receiver_handled, second_id} when second_id == second.id
+
+    assert %EventDelivery{status: "delivered"} =
+             Repo.get_by(EventDelivery, event_id: first.id, subscriber: "receiver")
+
+    assert %EventDelivery{status: "delivered"} =
+             Repo.get_by(EventDelivery, event_id: second.id, subscriber: "receiver")
+  end
+
   test "a legacy job with missing ledger enters the same delivery path" do
     Application.put_env(:delivest, :event_subscribers, [Receiver])
     on_exit(fn -> Application.delete_env(:delivest, :event_subscribers) end)
