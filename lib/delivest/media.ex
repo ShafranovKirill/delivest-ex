@@ -125,13 +125,9 @@ defmodule Delivest.Media do
 
   @spec delete_file(File.t()) :: {:ok, File.t()} | {:error, term()}
   def delete_file(%File{} = file) do
-    case ExAws.S3.delete_object(file.bucket, file.key) |> ExAws.request() do
-      {:ok, _} ->
-        Thumbnails.delete(file)
-        Repo.delete(file)
-
-      error ->
-        error
+    with :ok <- Thumbnails.delete(file),
+         {:ok, _} <- ExAws.S3.delete_object(file.bucket, file.key) |> ExAws.request() do
+      Repo.delete(file)
     end
   end
 

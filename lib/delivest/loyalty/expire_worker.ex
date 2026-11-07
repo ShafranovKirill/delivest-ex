@@ -3,6 +3,9 @@ defmodule Delivest.Loyalty.ExpireWorker do
 
   @impl Oban.Worker
   def perform(_job) do
-    {:ok, Delivest.Loyalty.expire_due()}
+    now = DateTime.utc_now()
+    amount = Delivest.Loyalty.expire_due(now)
+
+    if Delivest.Loyalty.due_entries?(now), do: {:snooze, 1}, else: {:ok, amount}
   end
 end

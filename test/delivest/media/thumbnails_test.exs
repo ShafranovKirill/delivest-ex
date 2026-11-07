@@ -64,6 +64,29 @@ defmodule Delivest.Media.ThumbnailsTest do
     assert Repo.reload!(file).thumb_key == nil
   end
 
+  test "thumbnail deletion failure retains original and database row for retry" do
+    file =
+      create_file() |> File.thumb_changeset("product/menu/pizza_thumb.webp") |> Repo.update!()
+
+    test_pid = self()
+
+    Req.Test.stub(S3Stub, fn conn ->
+      send(test_pid, {:delete, conn.request_path})
+      Plug.Conn.send_resp(conn, 500, "")
+    end)
+
+    assert {:error, _} = Media.delete_file(file)
+    assert_received {:delete, "/delivest/product/menu/pizza_thumb.webp"}
+    refute_received {:delete, "/delivest/product/menu/pizza.png"}
+    assert Repo.get!(File, file.id)
+
+    S3Stub.record(self())
+    assert {:ok, _} = Media.delete_file(file)
+    assert_received {:s3, "DELETE", "/delivest/product/menu/pizza_thumb.webp", _}
+    assert_received {:s3, "DELETE", "/delivest/product/menu/pizza.png", _}
+    assert Repo.get(File, file.id) == nil
+  end
+
   test "the thumbnail url falls back to the original until it is ready" do
     file = %File{bucket: "delivest", key: "product/a.png", is_private: false}
 

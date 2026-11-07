@@ -259,13 +259,16 @@ defmodule Delivest.Loyalty do
 
   def adjust(_staff, _branch, _client_id, _amount, _reason), do: {:error, :invalid_amount}
 
-  def expire_due(now \\ DateTime.utc_now()) do
+  def expire_due(now \\ DateTime.utc_now(), limit \\ expire_batch_limit()) do
+    if not (is_integer(limit) and limit > 0), do: raise(ArgumentError, "limit must be positive")
+
     due =
       Repo.all(
         from(e in Entry,
           where:
             e.kind in [:accrual, :adjust, :refund] and e.remaining > 0 and e.expires_at <= ^now,
-          order_by: [asc: e.expires_at]
+          order_by: [asc: e.expires_at, asc: e.id],
+          limit: ^limit
         )
       )
 
@@ -275,6 +278,21 @@ defmodule Delivest.Loyalty do
         _error -> total
       end
     end)
+  end
+
+  def expire_batch_limit do
+    case Application.get_env(:delivest, :loyalty_expire_batch_limit, 100) do
+      limit when is_integer(limit) and limit > 0 -> limit
+      _ -> raise ArgumentError, "loyalty_expire_batch_limit must be a positive integer"
+    end
+  end
+
+  def due_entries?(now \\ DateTime.utc_now()) do
+    Repo.exists?(
+      from(e in Entry,
+        where: e.kind in [:accrual, :adjust, :refund] and e.remaining > 0 and e.expires_at <= ^now
+      )
+    )
   end
 
   def summary(branch_id) do
