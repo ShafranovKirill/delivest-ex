@@ -41,12 +41,12 @@ defmodule DelivestWeb.ClientSocketTest do
 
     {:ok, _} = Orders.advance_order(order, :ready, :system)
 
-    assert_push "order", %{order: %{id: id, status: :ready}, active: true}, 1_000
+    assert_push "order", %{v: 1, order: %{id: id, status: :ready}, active: true}, 1_000
     assert id == order.id
     refute_push "order", _
 
     {:ok, _} = Orders.advance_order(Repo.reload!(order), :completed, :system)
-    assert_push "order", %{order: %{status: :completed}, active: false}, 1_000
+    assert_push "order", %{v: 1, order: %{status: :completed}, active: false}, 1_000
   end
 
   test "pushes frontpad status changes of crm orders" do
@@ -77,11 +77,11 @@ defmodule DelivestWeb.ClientSocketTest do
     {:ok, _reply, _socket} = "crm-sess" |> connect_as() |> subscribe_and_join("orders", %{})
 
     {:ok, _} = Webhook.change_status("hook-#{branch.id}", 900, 2, nil)
-    assert_push "order", %{order: %{id: id, status: :preparing}, active: true}, 1_000
+    assert_push "order", %{v: 1, order: %{id: id, status: :preparing}, active: true}, 1_000
     assert id == order.id
 
     {:ok, _} = Webhook.change_status("hook-#{branch.id}", "900", "5", nil)
-    assert_push "order", %{order: %{status: :completed}, active: false}, 1_000
+    assert_push "order", %{v: 1, order: %{status: :completed}, active: false}, 1_000
   end
 
   test "pushes orders of the signed in client from any session" do

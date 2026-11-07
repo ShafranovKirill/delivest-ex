@@ -14,7 +14,7 @@ defmodule DelivestWeb.OrdersChannel do
   @impl true
   def handle_info({:client_order, order}, socket) do
     if Orders.owned_by?(order, socket.assigns.session_id, socket.assigns.client_id) do
-      payload = %{order: OrderJSON.active_order_data(order), active: OrderFlow.active?(order)}
+      payload = %{v: 1, order: OrderJSON.active_order_data(order), active: OrderFlow.active?(order)}
 
       if payload == socket.assigns.last_pushed do
         {:noreply, socket}
