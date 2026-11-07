@@ -9,6 +9,7 @@ defmodule Delivest.Events.Event do
     field :type, :string
     field :aggregate_type, :string
     field :aggregate_id, Ecto.UUID
+    field :sequence, :integer
     field :branch_id, Ecto.UUID
     field :payload, :map, default: %{}
     field :actor, :map, default: %{}

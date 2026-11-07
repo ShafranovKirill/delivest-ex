@@ -18,6 +18,7 @@ config :delivest, Oban,
     maintenance: 1,
     crm: 2,
     events: 10,
+    payments: 2,
     fiscal: 2
   ],
   lifeline: [rescue_after: {2, :hours}],

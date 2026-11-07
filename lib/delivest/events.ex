@@ -1,7 +1,7 @@
 defmodule Delivest.Events do
   import Ecto.Query
 
-  alias Delivest.Events.{DeliverWorker, Event, Registry}
+  alias Delivest.Events.{DeliverWorker, Delivery, Event, Registry}
   alias Delivest.Repo
   alias Ecto.Multi
 
@@ -15,42 +15,75 @@ defmodule Delivest.Events do
   end
 
   def record(repo \\ Repo, type, aggregate, payload, actor) do
-    attrs = %{
-      type: type,
-      aggregate_type: aggregate_type(aggregate),
-      aggregate_id: aggregate.id,
-      branch_id: Map.get(aggregate, :branch_id),
-      payload: Map.put_new(payload, :v, 1),
-      actor: actor
-    }
+    case repo.transaction(fn ->
+           attrs = %{
+             type: type,
+             aggregate_type: aggregate_type(aggregate),
+             aggregate_id: aggregate.id,
+             sequence: next_sequence(repo, aggregate_type(aggregate), aggregate.id),
+             branch_id: Map.get(aggregate, :branch_id),
+             payload: Map.put_new(payload, :v, 1),
+             actor: actor
+           }
 
-    with {:ok, event} <- repo.insert(struct(Event, attrs)),
-         :ok <- enqueue(event) do
-      {:ok, event}
+           event = repo.insert!(struct(Event, attrs))
+           subscribers = Registry.listening(type) |> Enum.map(&to_string(&1.key()))
+           now = DateTime.utc_now()
+
+           rows =
+             Enum.map(subscribers, fn key ->
+               %{
+                 event_id: event.id,
+                 subscriber: key,
+                 status: "pending",
+                 inserted_at: now,
+                 updated_at: now
+               }
+             end)
+
+           if rows != [], do: repo.insert_all(Delivery, rows)
+
+           Enum.each(subscribers, fn key ->
+             case Oban.insert(
+                    DeliverWorker.new(%{event_id: event.id, subscriber: key}, queue: queue(key))
+                  ) do
+               {:ok, _job} -> :ok
+               {:error, reason} -> repo.rollback(reason)
+             end
+           end)
+
+           event
+         end) do
+      {:ok, event} -> {:ok, event}
+      {:error, reason} -> {:error, reason}
     end
   end
 
   def list(aggregate_type, aggregate_id) do
     Event
     |> where([e], e.aggregate_type == ^aggregate_type and e.aggregate_id == ^aggregate_id)
-    |> order_by([e], asc: e.id)
+    |> order_by([e], asc: e.sequence)
     |> Repo.all()
   end
 
-  defp enqueue(%Event{} = event) do
-    event.type
-    |> Registry.listening()
-    |> Enum.reduce_while(:ok, fn module, :ok ->
-      %{event_id: event.id, subscriber: to_string(module.key())}
-      |> DeliverWorker.new()
-      |> Oban.insert()
-      |> case do
-        {:ok, _job} -> {:cont, :ok}
-        error -> {:halt, error}
-      end
-    end)
+  defp next_sequence(repo, type, id) do
+    %{rows: [[sequence]]} =
+      repo.query!(
+        """
+        INSERT INTO event_sequences (aggregate_type, aggregate_id, value) VALUES ($1, $2, 1)
+        ON CONFLICT (aggregate_type, aggregate_id)
+        DO UPDATE SET value = event_sequences.value + 1
+        RETURNING value
+        """,
+        [type, Ecto.UUID.dump!(id)]
+      )
+
+    sequence
   end
 
   defp aggregate_type(%{__struct__: module}),
     do: module |> Module.split() |> List.last() |> Macro.underscore()
+
+  def queue("payments"), do: :payments
+  def queue(_subscriber), do: :events
 end
