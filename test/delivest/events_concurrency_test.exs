@@ -33,6 +33,20 @@ defmodule Delivest.EventsConcurrencyTest do
     end
   end
 
+  defp await_delivery_lock(aggregate_id, subscriber) do
+    lock_key = "order:#{aggregate_id}:#{subscriber}"
+
+    {:ok, _} =
+      Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+        Repo.transaction(fn ->
+          Repo.query!("SET LOCAL lock_timeout = '5s'")
+          Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [lock_key])
+        end)
+      end)
+
+    :ok
+  end
+
   test "process death before commit rolls back the effect and ack; a new connection retries" do
     Application.put_env(:delivest, :event_subscribers, [Probe])
     Application.put_env(:delivest, :event_probe_parent, self())
@@ -57,6 +71,8 @@ defmodule Delivest.EventsConcurrencyTest do
       end)
 
     on_exit(fn ->
+      await_delivery_lock(aggregate.id, "probe")
+
       Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
         Repo.delete!(admin)
         Repo.delete!(admin.role)
@@ -100,6 +116,7 @@ defmodule Delivest.EventsConcurrencyTest do
 
     Process.exit(child, :kill)
     assert_receive {:DOWN, ^ref, :process, ^child, :killed}, 5_000
+    await_delivery_lock(aggregate.id, "probe")
 
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
       assert %Event{payload: payload} = Repo.get!(Event, event.id)
