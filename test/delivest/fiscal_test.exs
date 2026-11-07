@@ -183,6 +183,76 @@ defmodule Delivest.FiscalTest do
     assert id == receipt.id
   end
 
+  test "a worker killed after remote acceptance retries with the same external id", %{
+    order: order,
+    payments: payments
+  } do
+    remote = start_supervised!({Agent, fn -> %{accepted: MapSet.new(), attempts: []} end})
+    parent = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      if String.ends_with?(conn.request_path, "getToken") do
+        Req.Test.json(conn, %{"token" => "tok"})
+      else
+        {:ok, raw, conn} = Plug.Conn.read_body(conn)
+        %{"external_id" => external_id} = Jason.decode!(raw)
+
+        first? =
+          Agent.get_and_update(remote, fn state ->
+            first? = not MapSet.member?(state.accepted, external_id)
+
+            {first?,
+             %{
+               state
+               | accepted: MapSet.put(state.accepted, external_id),
+                 attempts: [external_id | state.attempts]
+             }}
+          end)
+
+        if first? do
+          send(parent, {:remote_accepted, external_id, self()})
+
+          receive do
+            :return_provider_result ->
+              Req.Test.json(conn, %{"uuid" => "u-accepted", "status" => "wait"})
+          end
+        else
+          conn
+          |> Plug.Conn.put_status(400)
+          |> Req.Test.json(%{"error" => @duplicate_error})
+        end
+      end
+    end)
+
+    {:ok, receipt} = Fiscal.issue(order, payments)
+
+    {child, monitor} =
+      spawn_monitor(fn ->
+        receive do
+          :go -> register(receipt)
+        end
+      end)
+
+    on_exit(fn -> Process.exit(child, :kill) end)
+    :ok = Ecto.Adapters.SQL.Sandbox.allow(Repo, self(), child)
+    :ok = Req.Test.allow(Delivest.HTTP.Client, self(), child)
+    send(child, :go)
+
+    assert_receive {:remote_accepted, external_id, ^child}, 5_000
+    assert external_id == receipt.id
+    Process.exit(child, :kill)
+    assert_receive {:DOWN, ^monitor, :process, ^child, :killed}, 5_000
+
+    assert %Receipt{status: :pending, uuid: nil} = Fiscal.get(receipt.id)
+    assert :ok = register(receipt)
+    assert %Receipt{status: :wait, uuid: nil} = Fiscal.get(receipt.id)
+    assert [%Receipt{id: id}] = Fiscal.list(order.id)
+    assert id == receipt.id
+
+    assert %{accepted: accepted, attempts: [^external_id, ^external_id]} = Agent.get(remote, & &1)
+    assert MapSet.size(accepted) == 1
+  end
+
   test "a callback finds the receipt by external_id when the uuid is unknown", %{
     conn: conn,
     order: order,
