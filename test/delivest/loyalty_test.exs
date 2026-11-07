@@ -183,6 +183,47 @@ defmodule Delivest.LoyaltyTest do
     assert Enum.count(Loyalty.history(ctx.client.id), &(&1.kind == :expire)) == 1
   end
 
+  test "bulk product loyalty settings reject foreign product and roll back", ctx do
+    product = insert_branch_product(ctx.branch.id, price: 25_000)
+    original = Repo.reload!(product).stars_reward
+    foreign = insert(:branch)
+    foreign_product = insert_branch_product(foreign.id, price: 25_000)
+    editor = insert(:staff, role: insert(:role, permissions: ["promotions.update"]))
+    insert(:staff_branch, staff: editor, branch: ctx.branch)
+
+    assert {:error, _} =
+             Loyalty.set_products(editor, ctx.branch.id, %{
+               product.id => %{"stars_reward" => "10"},
+               foreign_product.id => %{"stars_reward" => "20"}
+             })
+
+    assert Repo.reload!(product).stars_reward == original
+  end
+
+  test "bulk product loyalty settings reject missing permission", ctx do
+    product = insert_branch_product(ctx.branch.id, price: 25_000)
+    reader = insert(:staff, role: insert(:role, permissions: ["orders.read"]))
+    insert(:staff_branch, staff: reader, branch: ctx.branch)
+
+    assert {:error, :forbidden} =
+             Loyalty.set_products(reader, ctx.branch.id, %{
+               product.id => %{"stars_reward" => "10"}
+             })
+  end
+
+  test "bulk product loyalty settings save authorized products", ctx do
+    product = insert_branch_product(ctx.branch.id, price: 25_000)
+    editor = insert(:staff, role: insert(:role, permissions: ["promotions.update"]))
+    insert(:staff_branch, staff: editor, branch: ctx.branch)
+
+    assert {:ok, _} =
+             Loyalty.set_products(editor, ctx.branch.id, %{
+               product.id => %{"stars_reward" => "10"}
+             })
+
+    assert Repo.reload!(product).stars_reward == 10
+  end
+
   test "expiry worker snoozes until even zero-balance due entries are drained", ctx do
     now = DateTime.add(DateTime.utc_now(:second), -1, :day)
 

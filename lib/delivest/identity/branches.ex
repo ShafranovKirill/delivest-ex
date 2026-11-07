@@ -143,6 +143,36 @@ defmodule Delivest.Identity.Branches do
     end
   end
 
+  def set_special_day_many(staff, %Branch{} = branch, selected_ids, date, attrs)
+      when is_list(selected_ids) and is_binary(date) do
+    staff = Repo.preload(staff, :branches)
+    accessible = list_branch_for_staff(staff)
+    ids = Enum.map(accessible, & &1.id)
+
+    with true <- branch.id in ids and Enum.all?(selected_ids, &(&1 in ids)),
+         :ok <- Identity.authorize(staff, "branches.update", branch.id),
+         {:ok, parsed_date} <- Date.from_iso8601(date) do
+      targets = [
+        branch | Enum.filter(accessible, &(&1.id in selected_ids and &1.id != branch.id))
+      ]
+
+      Repo.transaction(fn ->
+        Enum.reduce(targets, nil, fn target, first ->
+          case set_special_day(staff, target, parsed_date, attrs) do
+            {:ok, updated} -> first || updated
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+      end)
+    else
+      false -> {:error, :forbidden}
+      error -> error
+    end
+  end
+
+  def set_special_day_many(_staff, _branch, _selected_ids, _date, _attrs),
+    do: {:error, :forbidden}
+
   def remove_special_day(staff, %Branch{} = branch, %Date{} = date) do
     staff
     |> update_special_hours(branch, &Map.delete(&1, Date.to_iso8601(date)))

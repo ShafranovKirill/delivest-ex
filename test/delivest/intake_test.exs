@@ -49,5 +49,38 @@ defmodule Delivest.IntakeTest do
     insert(:staff_branch, staff: other, branch: branch)
     assert {:error, :forbidden} = Intake.pause(other, branch, 15)
     assert Intake.accepting?(branch.id)
+    assert {:error, :forbidden} = Intake.pause_many(other, branch, [], 15, "busy")
+    assert Intake.accepting?(branch.id)
+  end
+
+  test "bulk pause rejects a foreign branch without changing the primary", %{
+    branch: branch,
+    staff: staff
+  } do
+    foreign = insert(:branch)
+    assert {:error, :forbidden} = Intake.pause_many(staff, branch, [foreign.id], 15, "busy")
+    assert Intake.accepting?(branch.id)
+  end
+
+  test "bulk pause rolls back earlier branches after a later validation error", %{
+    branch: branch,
+    staff: staff
+  } do
+    second = insert(:branch, is_active: true)
+    insert(:staff_branch, staff: staff, branch: second)
+
+    assert {:error, :not_found} = Intake.start_load_many(staff, branch, [second.id], 20, 30)
+    assert Intake.status(branch.id).mode == :normal
+    assert Intake.status(second.id).mode == :normal
+  end
+
+  test "bulk pause changes all authorized branches", %{branch: branch, staff: staff} do
+    second = insert(:branch, is_active: true)
+    Repo.insert!(%BranchInfo{branch_id: second.id, delivery_time: 40})
+    insert(:staff_branch, staff: staff, branch: second)
+
+    assert {:ok, _} = Intake.pause_many(staff, branch, [second.id], 15, "busy")
+    refute Intake.accepting?(branch.id)
+    refute Intake.accepting?(second.id)
   end
 end

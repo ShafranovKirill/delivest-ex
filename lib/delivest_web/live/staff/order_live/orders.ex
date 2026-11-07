@@ -1,8 +1,6 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
-  alias Delivest.Repo
-
   alias Delivest.{Couriers, Identity, LocalTime, Money}
   alias Delivest.Integrations.YandexEda
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
@@ -245,11 +243,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
     result =
-      intake_many(
+      Delivest.Intake.pause_many(
         staff,
         branch,
-        params,
-        &Delivest.Intake.pause(staff, &1, duration(duration), params["reason"])
+        params["branches"] || [],
+        duration(duration),
+        params["reason"]
       )
 
     intake_result(socket, result)
@@ -263,11 +262,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
     result =
-      intake_many(
+      Delivest.Intake.start_load_many(
         staff,
         branch,
-        params,
-        &Delivest.Intake.start_load(staff, &1, String.to_integer(minutes), duration(duration))
+        params["branches"] || [],
+        String.to_integer(minutes),
+        duration(duration)
       )
 
     intake_result(socket, result)
@@ -363,24 +363,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   defp duration("end_of_day"), do: :end_of_day
   defp duration(minutes), do: String.to_integer(minutes)
-
-  defp intake_many(staff, branch, params, action) do
-    ids = params["branches"] || []
-
-    targets = [
-      branch
-      | Enum.filter(Identity.list_branch_for_staff(staff), &(&1.id in ids and &1.id != branch.id))
-    ]
-
-    Repo.transaction(fn ->
-      Enum.each(targets, fn target ->
-        case action.(target) do
-          {:ok, _} -> :ok
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
-    end)
-  end
 
   defp intake_result(socket, {:ok, _status}), do: load(socket)
   defp intake_result(socket, {:error, :forbidden}), do: failed(socket, {:error, :forbidden})

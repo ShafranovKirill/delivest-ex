@@ -64,6 +64,43 @@ defmodule Delivest.Intake do
     })
   end
 
+  def pause_many(staff, %Branch{} = branch, selected_ids, duration, reason) do
+    update_many(staff, branch, selected_ids, fn target ->
+      pause(staff, target, duration, reason)
+    end)
+  end
+
+  def start_load_many(staff, %Branch{} = branch, selected_ids, minutes, duration) do
+    update_many(staff, branch, selected_ids, fn target ->
+      start_load(staff, target, minutes, duration)
+    end)
+  end
+
+  defp update_many(staff, branch, selected_ids, action) when is_list(selected_ids) do
+    staff = Repo.preload(staff, :branches)
+    accessible = Identity.list_branch_for_staff(staff)
+    ids = Enum.map(accessible, & &1.id)
+
+    if branch.id in ids and Enum.all?(selected_ids, &(&1 in ids)) do
+      targets = [
+        branch | Enum.filter(accessible, &(&1.id in selected_ids and &1.id != branch.id))
+      ]
+
+      Repo.transaction(fn ->
+        Enum.each(targets, fn target ->
+          case action.(target) do
+            {:ok, _} -> :ok
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+      end)
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  defp update_many(_staff, _branch, _selected_ids, _action), do: {:error, :forbidden}
+
   defp update(staff, branch, action, attrs) do
     with :ok <- Identity.authorize(staff, "orders.update", branch.id),
          %BranchInfo{} = info <- Repo.preload(branch, :info, force: true).info,

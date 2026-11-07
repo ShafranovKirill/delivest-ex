@@ -97,6 +97,19 @@ defmodule Delivest.Loyalty do
     end
   end
 
+  def set_products(staff, branch_id, products) when is_map(products) do
+    with :ok <- Identity.authorize(staff, "promotions.update", branch_id) do
+      Repo.transaction(fn ->
+        Enum.each(products, fn {product_id, attrs} ->
+          case set_product(staff, branch_id, product_id, attrs) do
+            {:ok, _} -> :ok
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+      end)
+    end
+  end
+
   def balance(client_id) do
     Repo.one(from(a in Account, where: a.client_id == ^client_id, select: a.balance)) || 0
   end
