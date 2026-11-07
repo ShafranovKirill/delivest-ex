@@ -43,14 +43,16 @@ defmodule Delivest.Events do
 
            if rows != [], do: repo.insert_all(Delivery, rows)
 
-           Enum.each(subscribers, fn key ->
-             case Oban.insert(
-                    DeliverWorker.new(%{event_id: event.id, subscriber: key}, queue: queue(key))
-                  ) do
-               {:ok, _job} -> :ok
-               {:error, reason} -> repo.rollback(reason)
-             end
-           end)
+           # Every job targets this newly inserted event and its unique delivery row.
+           # This producer cannot collide with an older job, so bulk insert is safe here;
+           # manual retries still use Oban.insert/1 to enforce uniqueness.
+           jobs =
+             Enum.map(subscribers, fn key ->
+               DeliverWorker.new(%{event_id: event.id, subscriber: key}, queue: queue(key))
+             end)
+
+           if jobs != [] and length(Oban.insert_all(jobs)) != length(jobs),
+             do: repo.rollback(:incomplete_event_jobs)
 
            event
          end) do

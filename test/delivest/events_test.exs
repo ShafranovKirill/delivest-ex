@@ -8,7 +8,7 @@ defmodule Delivest.EventsTest do
   alias Delivest.Couriers.Delivery
   alias Delivest.Audit.Event, as: AuditEvent
   alias Delivest.Events
-  alias Delivest.Events.{DeliverWorker, Event, Recovery}
+  alias Delivest.Events.{DeliverWorker, Event, Recovery, Registry}
   alias Delivest.Events.Delivery, as: EventDelivery
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Order, Orders}
@@ -86,7 +86,23 @@ defmodule Delivest.EventsTest do
       args: %{event_id: event.id, subscriber: "payments"}
     )
 
-    assert Repo.aggregate(where(EventDelivery, event_id: ^event.id), :count) > 0
+    expected =
+      Registry.listening(event.type)
+      |> Enum.map(fn module ->
+        key = to_string(module.key())
+        {key, to_string(Events.queue(key))}
+      end)
+      |> Enum.sort()
+
+    jobs =
+      Repo.all(
+        from j in Oban.Job,
+          where: j.worker == "Delivest.Events.DeliverWorker",
+          where: fragment("?->>'event_id'", j.args) == ^event.id
+      )
+
+    assert jobs |> Enum.map(&{&1.args["subscriber"], &1.queue}) |> Enum.sort() == expected
+    assert Repo.aggregate(where(EventDelivery, event_id: ^event.id), :count) == length(expected)
 
     refute_enqueued(worker: DeliverWorker, args: %{event_id: event.id, subscriber: "crm"})
   end
