@@ -20,31 +20,14 @@ defmodule DelivestWeb.Staff.BranchLive.SpecialHoursComponent do
       "close" => params["close"]
     }
 
-    selected = params["branches"] || []
-
-    targets =
-      Enum.filter(
-        socket.assigns.targets,
-        &(&1.id in selected and &1.id != socket.assigns.branch.id)
-      )
-
     result =
-      Delivest.Repo.transaction(fn ->
-        with {:ok, date} <- Date.from_iso8601(date),
-             {:ok, branch} <-
-               Identity.set_special_day(socket.assigns.staff, socket.assigns.branch, date, attrs) do
-          Enum.each(targets, fn target ->
-            case Identity.set_special_day(socket.assigns.staff, target, date, attrs) do
-              {:ok, _} -> :ok
-              {:error, reason} -> Delivest.Repo.rollback(reason)
-            end
-          end)
-
-          branch
-        else
-          error -> Delivest.Repo.rollback(error)
-        end
-      end)
+      Identity.set_special_day_many(
+        socket.assigns.staff,
+        socket.assigns.branch,
+        params["branches"] || [],
+        date,
+        attrs
+      )
 
     with {:ok, branch} <- result do
       {:noreply, socket |> assign(branch: branch, error: nil)}

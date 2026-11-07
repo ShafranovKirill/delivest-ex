@@ -16,6 +16,11 @@ defmodule Delivest.DataCase do
 
   use ExUnit.CaseTemplate
 
+  import Ecto.Query
+
+  @event_drain_batch 100
+  @event_drain_max_rounds 50
+
   using do
     quote do
       alias Delivest.Repo
@@ -49,7 +54,39 @@ defmodule Delivest.DataCase do
 
   """
   def deliver_events do
-    Oban.drain_queue(queue: :events, with_recursion: true, with_safety: false)
+    Enum.reduce_while(1..@event_drain_max_rounds, %{}, fn round, totals ->
+      result =
+        Oban.drain_queue(
+          queue: :events,
+          with_limit: @event_drain_batch,
+          with_scheduled: true,
+          with_safety: false
+        )
+
+      totals = Map.merge(totals, result, fn _key, previous, current -> previous + current end)
+
+      remaining =
+        Delivest.Repo.aggregate(
+          from(j in Oban.Job,
+            where: j.queue == "events" and j.state in ["available", "scheduled", "retryable"]
+          ),
+          :count
+        )
+
+      cond do
+        remaining == 0 ->
+          {:halt, totals}
+
+        Enum.sum(Map.values(result)) == 0 ->
+          raise "events queue did not progress: #{remaining} jobs remain after round #{round}"
+
+        round == @event_drain_max_rounds ->
+          raise "events queue did not quiesce: #{remaining} jobs remain after #{round} rounds"
+
+        true ->
+          {:cont, totals}
+      end
+    end)
   end
 
   def errors_on(changeset) do

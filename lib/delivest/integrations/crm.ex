@@ -6,7 +6,7 @@ defmodule Delivest.Integrations.Crm do
 
   alias Delivest.Integrations.Crm.{
     BranchSettings,
-    CommandWorker,
+    Commands,
     ConfirmWorker,
     Registry,
     SyncState,
@@ -262,12 +262,8 @@ defmodule Delivest.Integrations.Crm do
     |> Oban.insert()
   end
 
-  def enqueue_command(%Order{} = order, action, args \\ %{}) do
-    args
-    |> Map.merge(%{"order_id" => order.id, "branch_id" => order.branch_id, "action" => action})
-    |> CommandWorker.new()
-    |> Oban.insert()
-  end
+  def enqueue_command(%Order{} = order, action, args \\ %{}, event_id \\ nil),
+    do: Commands.enqueue(order, action, args, event_id)
 
   defp call(%Order{crm: %{provider: provider}} = order, fun) do
     with {:ok, name, module} <- provider_module(provider),

@@ -71,6 +71,41 @@ defmodule Delivest.Identity.BranchesTest do
     end
   end
 
+  test "bulk special day rejects foreign branch and leaves primary unchanged" do
+    primary = insert(:branch)
+    foreign = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    insert(:staff_branch, staff: staff, branch: primary)
+
+    assert {:error, :forbidden} =
+             Branches.set_special_day_many(staff, primary, [foreign.id], "2027-01-01", %{
+               "enabled" => false
+             })
+
+    assert is_nil(Repo.preload(primary, :info).info)
+  end
+
+  test "bulk special day writes authorized branches and rejects missing permission" do
+    primary = insert(:branch)
+    second = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    insert(:staff_branch, staff: staff, branch: primary)
+    insert(:staff_branch, staff: staff, branch: second)
+    attrs = %{"enabled" => false}
+
+    assert {:ok, _} =
+             Branches.set_special_day_many(staff, primary, [second.id], "2027-01-01", attrs)
+
+    assert Repo.preload(primary, :info).info.special_hours["2027-01-01"]["enabled"] == false
+    assert Repo.preload(second, :info).info.special_hours["2027-01-01"]["enabled"] == false
+
+    reader = insert(:staff, role: insert(:role, permissions: ["branch.read"]))
+    insert(:staff_branch, staff: reader, branch: primary)
+
+    assert {:error, :forbidden} =
+             Branches.set_special_day_many(reader, primary, [], "2027-01-02", attrs)
+  end
+
   describe "get_branch/1" do
     test "should return branch from DB and populate cache on cache miss" do
       branch = insert(:branch)

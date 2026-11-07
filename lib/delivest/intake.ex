@@ -40,19 +40,39 @@ defmodule Delivest.Intake do
   end
 
   def pause(staff, %Branch{} = branch, duration, reason \\ nil) do
+    pause(staff, branch, duration, reason, true)
+  end
+
+  defp pause(staff, branch, duration, reason, notify?) do
     until = pause_until(duration, branch.id)
 
-    update(staff, branch, "intake.paused", %{
-      paused_until: until,
-      pause_reason: blank_to_nil(reason)
-    })
+    update(
+      staff,
+      branch,
+      "intake.paused",
+      %{
+        paused_until: until,
+        pause_reason: blank_to_nil(reason)
+      },
+      notify?
+    )
   end
 
   def start_load(staff, %Branch{} = branch, minutes, duration) when is_integer(minutes) do
-    update(staff, branch, "intake.load_started", %{
-      load_minutes: minutes,
-      load_until: pause_until(duration, branch.id)
-    })
+    start_load(staff, branch, minutes, duration, true)
+  end
+
+  defp start_load(staff, branch, minutes, duration, notify?) do
+    update(
+      staff,
+      branch,
+      "intake.load_started",
+      %{
+        load_minutes: minutes,
+        load_until: pause_until(duration, branch.id)
+      },
+      notify?
+    )
   end
 
   def resume(staff, %Branch{} = branch) do
@@ -64,12 +84,54 @@ defmodule Delivest.Intake do
     })
   end
 
-  defp update(staff, branch, action, attrs) do
+  @doc "Top-level bulk update; do not nest in another transaction because notification follows this commit."
+  def pause_many(staff, %Branch{} = branch, selected_ids, duration, reason) do
+    update_many(staff, branch, selected_ids, fn target ->
+      pause(staff, target, duration, reason, false)
+    end)
+  end
+
+  @doc "Top-level bulk update; do not nest in another transaction because notification follows this commit."
+  def start_load_many(staff, %Branch{} = branch, selected_ids, minutes, duration) do
+    update_many(staff, branch, selected_ids, fn target ->
+      start_load(staff, target, minutes, duration, false)
+    end)
+  end
+
+  defp update_many(staff, branch, selected_ids, action) when is_list(selected_ids) do
+    staff = Repo.preload(staff, :branches)
+    accessible = Identity.list_branch_for_staff(staff)
+    ids = Enum.map(accessible, & &1.id)
+
+    if branch.id in ids and Enum.all?(selected_ids, &(&1 in ids)) do
+      targets = [
+        branch | Enum.filter(accessible, &(&1.id in selected_ids and &1.id != branch.id))
+      ]
+
+      result =
+        Repo.transaction(fn ->
+          Enum.each(targets, fn target ->
+            case action.(target) do
+              {:ok, _} -> :ok
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          end)
+        end)
+
+      if match?({:ok, _}, result), do: Enum.each(targets, &notify_changed(&1.id))
+      result
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  defp update_many(_staff, _branch, _selected_ids, _action), do: {:error, :forbidden}
+
+  defp update(staff, branch, action, attrs, notify? \\ true) do
     with :ok <- Identity.authorize(staff, "orders.update", branch.id),
          %BranchInfo{} = info <- Repo.preload(branch, :info, force: true).info,
          {:ok, info} <- info |> change_intake(attrs) |> Repo.update() do
-      Cachex.del(:branch_cache, branch.id)
-      Notifier.branch_changed(branch.id)
+      if notify?, do: notify_changed(branch.id)
 
       Audit.record(staff, action, branch,
         metadata: Map.new(attrs, fn {k, v} -> {k, to_string(v)} end)
@@ -80,6 +142,11 @@ defmodule Delivest.Intake do
       nil -> {:error, :not_found}
       error -> error
     end
+  end
+
+  defp notify_changed(branch_id) do
+    Cachex.del(:branch_cache, branch_id)
+    Notifier.branch_changed(branch_id)
   end
 
   defp change_intake(info, attrs) do

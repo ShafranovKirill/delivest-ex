@@ -74,19 +74,11 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
 
   def handle_event("save_products", _params, socket) do
     result =
-      Delivest.Repo.transaction(fn ->
-        Enum.each(socket.assigns.pending_products, fn {id, params} ->
-          case Loyalty.set_product(
-                 socket.assigns.current_staff,
-                 socket.assigns.current_branch.id,
-                 id,
-                 params
-               ) do
-            {:ok, _product} -> :ok
-            {:error, reason} -> Delivest.Repo.rollback(reason)
-          end
-        end)
-      end)
+      Loyalty.set_products(
+        socket.assigns.current_staff,
+        socket.assigns.current_branch.id,
+        socket.assigns.pending_products
+      )
 
     case result do
       {:ok, _} ->

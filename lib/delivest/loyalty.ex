@@ -71,6 +71,10 @@ defmodule Delivest.Loyalty do
   end
 
   def set_product(staff, branch_id, product_id, attrs) do
+    set_product(staff, branch_id, product_id, attrs, true)
+  end
+
+  defp set_product(staff, branch_id, product_id, attrs, invalidate?) do
     with :ok <- Identity.authorize(staff, "promotions.update", branch_id),
          :ok <-
            Delivest.Net.SharedOwnership.authorize(
@@ -88,12 +92,37 @@ defmodule Delivest.Loyalty do
       |> then(&Delivest.Net.SharedOwnership.write(branch_ids, fn -> Repo.update(&1) end))
       |> Audit.track(staff, "product.updated")
       |> tap(fn
-        {:ok, _} ->
+        {:ok, _} when invalidate? ->
           Enum.each(branch_ids, &Delivest.Net.Catalogs.invalidate_menu_cache/1)
 
         _ ->
           :ok
       end)
+    end
+  end
+
+  @doc "Top-level bulk update; do not nest in another transaction because invalidation follows this commit."
+  def set_products(staff, branch_id, products) when is_map(products) do
+    with :ok <- Identity.authorize(staff, "promotions.update", branch_id) do
+      result =
+        Repo.transaction(fn ->
+          Enum.each(products, fn {product_id, attrs} ->
+            case set_product(staff, branch_id, product_id, attrs, false) do
+              {:ok, _} -> :ok
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          end)
+        end)
+
+      if match?({:ok, _}, result) do
+        products
+        |> Map.keys()
+        |> Enum.flat_map(&Delivest.Net.SharedOwnership.branches("Product", &1))
+        |> Enum.uniq()
+        |> Enum.each(&Delivest.Net.Catalogs.invalidate_menu_cache/1)
+      end
+
+      result
     end
   end
 
