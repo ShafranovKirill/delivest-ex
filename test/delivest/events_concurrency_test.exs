@@ -3,7 +3,7 @@ defmodule Delivest.EventsConcurrencyTest do
   use Oban.Testing, repo: Delivest.Repo
 
   alias Delivest.Events
-  alias Delivest.Events.{DeliverWorker, Delivery, Event}
+  alias Delivest.Events.{DeliverWorker, Delivery, Event, Recovery}
   alias Delivest.Oms.Order
 
   defmodule Probe do
@@ -49,8 +49,18 @@ defmodule Delivest.EventsConcurrencyTest do
         Events.record("order.status_changed", aggregate, %{}, %{kind: :system})
       end)
 
+    admin =
+      Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+        Delivest.Factory.insert(:staff,
+          role: Delivest.Factory.build(:role, permissions: ["admin"])
+        )
+      end)
+
     on_exit(fn ->
       Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+        Repo.delete!(admin)
+        Repo.delete!(admin.role)
+
         Repo.delete_all(
           from j in Oban.Job, where: fragment("?->>'event_id'", j.args) == ^event.id
         )
@@ -65,12 +75,14 @@ defmodule Delivest.EventsConcurrencyTest do
       end)
     end)
 
-    child =
-      spawn(fn ->
+    {child, ref} =
+      spawn_monitor(fn ->
         Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
           perform_job(DeliverWorker, %{event_id: event.id, subscriber: "probe"})
         end)
       end)
+
+    on_exit(fn -> Process.exit(child, :kill) end)
 
     assert_receive {:inside_delivery, ^child}, 5_000
 
@@ -81,7 +93,11 @@ defmodule Delivest.EventsConcurrencyTest do
                Repo.query!("SELECT pg_try_advisory_xact_lock(hashtextextended($1, 0))", [lock_key])
     end)
 
-    ref = Process.monitor(child)
+    assert {:error, :busy_delivery} =
+             Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+               Recovery.resolve(event.id, "probe", admin.id, "handler is active")
+             end)
+
     Process.exit(child, :kill)
     assert_receive {:DOWN, ^ref, :process, ^child, :killed}, 5_000
 
@@ -121,8 +137,8 @@ defmodule Delivest.EventsConcurrencyTest do
       end)
     end)
 
-    first =
-      spawn(fn ->
+    {first, first_ref} =
+      spawn_monitor(fn ->
         Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
           Repo.transaction(fn ->
             {:ok, event} = Events.record("order.status_changed", aggregate, %{}, %{kind: :system})
@@ -135,10 +151,12 @@ defmodule Delivest.EventsConcurrencyTest do
         end)
       end)
 
+    on_exit(fn -> Process.exit(first, :kill) end)
+
     assert_receive {:first_inserted, first_id, 1}, 5_000
 
-    second =
-      spawn(fn ->
+    {second, second_ref} =
+      spawn_monitor(fn ->
         Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
           send(parent, :second_started)
           result = Events.record("order.status_changed", aggregate, %{}, %{kind: :system})
@@ -146,13 +164,13 @@ defmodule Delivest.EventsConcurrencyTest do
         end)
       end)
 
+    on_exit(fn -> Process.exit(second, :kill) end)
+
     assert_receive :second_started, 5_000
     refute_receive {:second_finished, _}, 100
-    first_ref = Process.monitor(first)
     send(first, :commit)
     assert_receive {:DOWN, ^first_ref, :process, ^first, :normal}, 5_000
     assert_receive {:second_finished, {:ok, %Event{sequence: 2}}}, 5_000
-    second_ref = Process.monitor(second)
     assert_receive {:DOWN, ^second_ref, :process, ^second, :normal}, 5_000
 
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
