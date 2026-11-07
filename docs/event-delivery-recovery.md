@@ -9,6 +9,16 @@ mix delivest.events retry --event UUID --subscriber KEY --actor STAFF_UUID --rea
 mix delivest.events resolve --event UUID --subscriber KEY --actor STAFF_UUID --reason 'why this event can be skipped'
 ```
 
+The production server image is built with `mix release` and starts `bin/delivest` (`Dockerfile.server`); it does not require Mix at runtime. Against an already running release, use its RPC command and the same public recovery functions:
+
+```
+docker compose exec server bin/delivest rpc 'Delivest.Events.Recovery.list() |> IO.inspect(limit: :infinity)'
+docker compose exec server bin/delivest rpc 'Delivest.Events.Recovery.retry("EVENT_UUID", "SUBSCRIBER", "STAFF_UUID", "INCIDENT_REASON") |> IO.inspect()'
+docker compose exec server bin/delivest rpc 'Delivest.Events.Recovery.resolve("EVENT_UUID", "SUBSCRIBER", "STAFF_UUID", "SKIP_REASON") |> IO.inspect()'
+```
+
+Replace the quoted placeholders before use. Check that a mutation returns `{:ok, :ok}`; an `{:error, reason}` means no recovery action was committed. The Mix task remains useful in a development or maintenance environment with Mix installed.
+
 The actor must be an active staff member with the admin role. Both commands require a nonempty reason and write a durable audit event in the same transaction. They refuse active or completed jobs. `retry` inserts a new delivery job, including when the previous job was pruned. `resolve` explicitly skips the delivery and permits later events for that subscriber to proceed. Keep the events worker running while inspecting; stop new execution of the specific delivery before retrying or resolving it.
 
 During migration, stop old application writers and workers, apply the migration, and then start the new version. The schema requires sequence values immediately. Existing events receive sequence numbers ordered by `(inserted_at, id)`; the original order of events with identical timestamps cannot be reconstructed. Only event/subscriber pairs found in retained Oban jobs get backfilled delivery rows. Completed jobs become delivered; unfinished, cancelled, and discarded jobs remain pending. Pruned historical jobs are not requeued. Old job arguments continue through the same delivery ledger, creating a missing row under the aggregate/subscriber lock.
