@@ -136,13 +136,22 @@ defmodule Delivest.Identity.Branches do
   @time ~r/^([01]\d|2[0-3]):[0-5]\d$/
 
   def set_special_day(staff, %Branch{} = branch, %Date{} = date, attrs) do
+    set_special_day(staff, branch, date, attrs, true)
+  end
+
+  defp set_special_day(staff, branch, date, attrs, invalidate?) do
     with {:ok, day} <- special_day(attrs) do
       staff
-      |> update_special_hours(branch, fn hours -> Map.put(hours, Date.to_iso8601(date), day) end)
+      |> update_special_hours(
+        branch,
+        fn hours -> Map.put(hours, Date.to_iso8601(date), day) end,
+        invalidate?
+      )
       |> Audit.track(staff, "branch.updated")
     end
   end
 
+  @doc "Top-level bulk update; do not nest in another transaction because invalidation follows this commit."
   def set_special_day_many(staff, %Branch{} = branch, selected_ids, date, attrs)
       when is_list(selected_ids) and is_binary(date) do
     staff = Repo.preload(staff, :branches)
@@ -156,14 +165,18 @@ defmodule Delivest.Identity.Branches do
         branch | Enum.filter(accessible, &(&1.id in selected_ids and &1.id != branch.id))
       ]
 
-      Repo.transaction(fn ->
-        Enum.reduce(targets, nil, fn target, first ->
-          case set_special_day(staff, target, parsed_date, attrs) do
-            {:ok, updated} -> first || updated
-            {:error, reason} -> Repo.rollback(reason)
-          end
+      result =
+        Repo.transaction(fn ->
+          Enum.reduce(targets, nil, fn target, first ->
+            case set_special_day(staff, target, parsed_date, attrs, false) do
+              {:ok, updated} -> first || updated
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          end)
         end)
-      end)
+
+      if match?({:ok, _}, result), do: Enum.each(targets, &Cachex.del(:branch_cache, &1.id))
+      result
     else
       false -> {:error, :forbidden}
       error -> error
@@ -191,7 +204,7 @@ defmodule Delivest.Identity.Branches do
 
   defp special_day(_attrs), do: {:error, :invalid_time}
 
-  defp update_special_hours(staff, branch, change) do
+  defp update_special_hours(staff, branch, change, invalidate? \\ true) do
     with :ok <- Identity.authorize(staff, "branches.update", branch.id) do
       branch = Repo.preload(branch, :info, force: true)
       info = branch.info || Ecto.build_assoc(branch, :info)
@@ -207,7 +220,7 @@ defmodule Delivest.Identity.Branches do
       |> Repo.insert_or_update()
       |> case do
         {:ok, info} ->
-          Cachex.del(:branch_cache, branch.id)
+          if invalidate?, do: Cachex.del(:branch_cache, branch.id)
           {:ok, %{branch | info: info}}
 
         {:error, changeset} ->

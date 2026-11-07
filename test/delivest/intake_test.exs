@@ -6,6 +6,7 @@ defmodule Delivest.IntakeTest do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Intake
   alias Delivest.Oms.OrderDeadline
+  alias Delivest.Oms.Orders.Notifier
 
   setup do
     branch = insert(:branch, is_active: true)
@@ -68,19 +69,27 @@ defmodule Delivest.IntakeTest do
   } do
     second = insert(:branch, is_active: true)
     insert(:staff_branch, staff: staff, branch: second)
+    Notifier.subscribe_branch(branch.id)
 
     assert {:error, :not_found} = Intake.start_load_many(staff, branch, [second.id], 20, 30)
     assert Intake.status(branch.id).mode == :normal
     assert Intake.status(second.id).mode == :normal
+    refute_receive {:branch_orders_changed, _}
   end
 
   test "bulk pause changes all authorized branches", %{branch: branch, staff: staff} do
     second = insert(:branch, is_active: true)
     Repo.insert!(%BranchInfo{branch_id: second.id, delivery_time: 40})
     insert(:staff_branch, staff: staff, branch: second)
+    Notifier.subscribe_branch(branch.id)
+    Notifier.subscribe_branch(second.id)
 
     assert {:ok, _} = Intake.pause_many(staff, branch, [second.id], 15, "busy")
     refute Intake.accepting?(branch.id)
     refute Intake.accepting?(second.id)
+    assert_receive {:branch_orders_changed, branch_id}
+    assert branch_id in [branch.id, second.id]
+    assert_receive {:branch_orders_changed, other_id}
+    assert other_id in [branch.id, second.id] and other_id != branch_id
   end
 end
