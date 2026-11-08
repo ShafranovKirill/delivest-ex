@@ -2,6 +2,7 @@ defmodule Delivest.Oms.Kitchen.OrderSubscriber do
   @behaviour Delivest.Events.Subscriber
 
   alias Delivest.Oms.{Kitchen, Order}
+  alias Delivest.Oms.Orders.Notifier
   alias Delivest.Repo
 
   @impl true
@@ -18,6 +19,18 @@ defmodule Delivest.Oms.Kitchen.OrderSubscriber do
   end
 
   def handle(event), do: plan(event)
+
+  @impl true
+  def after_commit(event) do
+    case Repo.get(Order, event.aggregate_id) do
+      %Order{} = order ->
+        Notifier.publish({:ok, order}, [:order, :updated])
+        :ok
+
+      nil ->
+        :ok
+    end
+  end
 
   defp plan(event) do
     case Repo.get(Order, event.aggregate_id) do
