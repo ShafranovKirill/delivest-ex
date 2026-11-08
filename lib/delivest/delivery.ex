@@ -1,8 +1,9 @@
 defmodule Delivest.Delivery do
   import Ecto.Query
 
-  alias Delivest.{Identity, Repo}
+  alias Delivest.{Audit, Identity, Repo}
   alias Delivest.Delivery.{Quote, Settings, Zone}
+  alias Delivest.Identity.Branch
 
   @palette ~w(#2563eb #16a34a #f59e0b #dc2626 #9333ea #0891b2 #db2777 #65a30d)
 
@@ -24,7 +25,7 @@ defmodule Delivest.Delivery do
   def list_zones(branch_id) do
     from(z in Zone,
       where: z.branch_id == ^branch_id and is_nil(z.deleted_at),
-      order_by: [asc: z.position, asc: z.inserted_at]
+      order_by: [asc: z.position, asc: z.inserted_at, asc: z.id]
     )
     |> Repo.all()
   end
@@ -72,7 +73,7 @@ defmodule Delivest.Delivery do
 
   def create_zone(staff, branch_id, polygon) do
     with :ok <- authorize(staff, branch_id) do
-      branch_id |> new_zone() |> Zone.polygon_changeset(polygon) |> Repo.insert()
+      insert_first_zone(staff, branch_id, fn zone -> Zone.polygon_changeset(zone, polygon) end)
     end
   end
 
@@ -80,12 +81,41 @@ defmodule Delivest.Delivery do
     with :ok <- authorize(staff, branch_id),
          {lat, _lng} = center when is_number(lat) <-
            branch_point(branch_id) || {:error, :no_branch_point} do
-      zone = new_zone(branch_id)
+      insert_first_zone(staff, branch_id, fn zone ->
+        zone
+        |> Zone.radius_changeset(center, radius)
+        |> Ecto.Changeset.put_change(:name, "#{zone.name} · #{radius} км")
+      end)
+    end
+  end
 
-      zone
-      |> Zone.radius_changeset(center, radius)
-      |> Ecto.Changeset.put_change(:name, "#{zone.name} · #{radius} км")
-      |> Repo.insert()
+  def reorder_zones(staff, branch_id, ids) do
+    with :ok <- authorize(staff, branch_id),
+         true <- is_list(ids) and Enum.all?(ids, &is_binary/1) do
+      Repo.transaction(fn ->
+        branch = lock_branch(branch_id)
+        zones = list_zones(branch_id)
+        current_ids = Enum.map(zones, & &1.id)
+
+        if length(ids) != length(current_ids) or MapSet.new(ids) != MapSet.new(current_ids) do
+          Repo.rollback(:invalid_zone_order)
+        end
+
+        zones_by_id = Map.new(zones, &{&1.id, &1})
+
+        Enum.each(Enum.with_index(ids), fn {id, position} ->
+          zones_by_id
+          |> Map.fetch!(id)
+          |> Ecto.Changeset.change(position: position)
+          |> Repo.update!()
+        end)
+
+        Audit.record(staff, "delivery.zones_reordered", branch, metadata: %{zone_ids: ids})
+        list_zones(branch_id)
+      end)
+    else
+      false -> {:error, :invalid_zone_order}
+      error -> error
     end
   end
 
@@ -107,11 +137,23 @@ defmodule Delivest.Delivery do
   end
 
   def delete_zone(staff, branch_id, id) do
-    with :ok <- authorize(staff, branch_id),
-         {:ok, zone} <- get_zone(branch_id, id) do
-      zone
-      |> Ecto.Changeset.change(deleted_at: DateTime.utc_now(:second), enabled: false)
-      |> Repo.update()
+    with :ok <- authorize(staff, branch_id) do
+      Repo.transaction(fn ->
+        lock_branch(branch_id)
+
+        case get_zone(branch_id, id) do
+          {:ok, zone} ->
+            case zone
+                 |> Ecto.Changeset.change(deleted_at: DateTime.utc_now(:second), enabled: false)
+                 |> Repo.update() do
+              {:ok, deleted} -> deleted
+              {:error, changeset} -> Repo.rollback(changeset)
+            end
+
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
     end
   end
 
@@ -120,30 +162,77 @@ defmodule Delivest.Delivery do
   end
 
   def check(branch_id, point, subtotal) do
-    case quote(branch_id, point, subtotal) do
+    settings = get_settings(branch_id)
+    zones = list_zones(branch_id)
+
+    case Quote.run(settings, zones, point, subtotal) do
       {:ok, quote} ->
-        Map.merge(%{status: :ok}, Map.take(quote, [:price, :min_order, :free_from, :minutes]))
+        quote_fields(quote) |> Map.put(:status, :ok)
 
       {:error, {:below_minimum, min_order}} ->
-        {:ok, quote} = quote(branch_id, point, min_order)
+        {:ok, quote} = Quote.run(settings, zones, point, min_order)
 
         quote
-        |> Map.take([:price, :min_order, :free_from, :minutes])
+        |> quote_fields()
         |> Map.put(:status, :below_minimum)
 
       {:error, reason} ->
-        %{status: reason, price: nil, min_order: nil, free_from: nil, minutes: nil}
+        %{
+          status: reason,
+          price: nil,
+          min_order: nil,
+          free_from: nil,
+          minutes: nil,
+          zone_id: nil,
+          zone_name: nil,
+          zone_color: nil
+        }
     end
   end
 
-  defp new_zone(branch_id) do
-    count = length(list_zones(branch_id))
+  defp quote_fields(quote) do
+    quote
+    |> Map.take([:price, :min_order, :free_from, :minutes])
+    |> Map.merge(%{
+      zone_id: quote.zone && quote.zone.id,
+      zone_name: quote.zone && quote.zone.name,
+      zone_color: quote.zone && quote.zone.color
+    })
+  end
 
+  defp insert_first_zone(staff, branch_id, changeset_fun) do
+    Repo.transaction(fn ->
+      branch = lock_branch(branch_id)
+      zones = list_zones(branch_id)
+      zone = new_zone(branch_id, length(zones))
+      changeset = changeset_fun.(zone)
+
+      if not changeset.valid?, do: Repo.rollback(changeset)
+
+      Enum.each(Enum.with_index(zones, 1), fn {existing, position} ->
+        existing |> Ecto.Changeset.change(position: position) |> Repo.update!()
+      end)
+
+      case Repo.insert(changeset) do
+        {:ok, inserted} ->
+          Audit.record(staff, "delivery.zone_created", branch, metadata: %{zone_id: inserted.id})
+          inserted
+
+        {:error, invalid} ->
+          Repo.rollback(invalid)
+      end
+    end)
+  end
+
+  defp lock_branch(branch_id),
+    do: Repo.one!(from(b in Branch, where: b.id == ^branch_id, lock: "FOR UPDATE"))
+
+  defp new_zone(branch_id, count) do
     %Zone{
       branch_id: branch_id,
       name: "Зона #{count + 1}",
       color: Enum.at(@palette, rem(count, length(@palette))),
-      position: count
+      position: 0
     }
   end
 

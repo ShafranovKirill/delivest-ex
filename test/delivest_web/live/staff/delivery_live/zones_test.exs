@@ -139,7 +139,28 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonesTest do
       live(sign_in(conn, branch, ["delivery.read"]), ~p"/staff/b/#{branch}/delivery/zones")
 
     refute has_element?(lv, "#delivery-draw-zone")
+    refute has_element?(lv, ".drag-handle")
     render_hook(lv, "zone_drawn", %{"polygon" => @square})
     assert [] = Delivery.list_zones(branch.id)
+  end
+
+  test "staff can move zones and the list follows priority", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    {:ok, _} = Delivery.update_settings(staff, branch.id, %{"mode" => "zones"})
+    {:ok, first} = Delivery.create_zone(staff, branch.id, @square)
+    {:ok, second} = Delivery.create_zone(staff, branch.id, @square)
+
+    {:ok, lv, _} =
+      live(
+        sign_in(conn, branch, ["delivery.read", "delivery.update"]),
+        ~p"/staff/b/#{branch}/delivery/zones"
+      )
+
+    assert has_element?(lv, "#delivery-zones-list")
+    lv |> element("#delivery-zone-down-#{second.id}") |> render_click()
+    assert Enum.map(Delivery.list_zones(branch.id), & &1.id) == [first.id, second.id]
+    assert_push_event(lv, "zones:reset", %{zones: [%{id: first_id}, %{id: second_id}]})
+    assert {first_id, second_id} == {first.id, second.id}
   end
 end

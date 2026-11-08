@@ -85,11 +85,67 @@ defmodule Delivest.DeliveryTest do
 
     test "the first zone by position wins", %{branch: branch, staff: staff, zone: zone} do
       {:ok, inner} = Delivery.create_zone(staff, branch.id, @square)
-      {:ok, _} = Delivery.update_zone(staff, branch.id, inner.id, %{"position" => -1})
+
+      assert Enum.map(Delivery.list_zones(branch.id), &{&1.id, &1.position}) ==
+               [{inner.id, 0}, {zone.id, 1}]
 
       assert {:ok, %{zone: found, price: 0}} = Delivery.quote(branch.id, @inside, 800)
       assert found.id == inner.id
       refute found.id == zone.id
+
+      assert {:ok, _} = Delivery.reorder_zones(staff, branch.id, [zone.id, inner.id])
+
+      assert Enum.map(Delivery.list_zones(branch.id), &{&1.id, &1.position}) ==
+               [{zone.id, 0}, {inner.id, 1}]
+
+      assert {:ok, %{zone: reordered, price: 300}} = Delivery.quote(branch.id, @inside, 800)
+      assert reordered.id == zone.id
+    end
+
+    test "the winning zone alone determines the minimum", %{
+      branch: branch,
+      staff: staff,
+      zone: zone
+    } do
+      {:ok, inner} = Delivery.create_zone(staff, branch.id, @square)
+
+      {:ok, _} =
+        Delivery.update_zone(staff, branch.id, inner.id, %{
+          "thresholds" => thresholds([{1000, 100}])
+        })
+
+      assert {:error, {:below_minimum, 1000}} = Delivery.quote(branch.id, @inside, 800)
+
+      assert %{status: :below_minimum, zone_id: id, price: 100} =
+               Delivery.check(branch.id, @inside, 800)
+
+      assert id == inner.id
+      assert id != zone.id
+    end
+
+    test "reorder rejects missing, duplicate and cross-branch ids", %{
+      branch: branch,
+      staff: staff,
+      zone: zone
+    } do
+      {:ok, second} = Delivery.create_zone(staff, branch.id, @square)
+      other_branch = insert(:branch)
+      {:ok, other} = Delivery.create_zone(staff, other_branch.id, @square)
+
+      for ids <- [[zone.id], [zone.id, zone.id], [zone.id, other.id], ["bad", second.id]] do
+        assert {:error, :invalid_zone_order} = Delivery.reorder_zones(staff, branch.id, ids)
+      end
+
+      assert Enum.map(Delivery.list_zones(branch.id), & &1.id) == [second.id, zone.id]
+
+      assert {:error, :forbidden} =
+               Delivery.reorder_zones(insert(:staff), branch.id, [zone.id, second.id])
+
+      other_staff = insert(:staff, role: insert(:role, permissions: ["delivery.update"]))
+      insert(:staff_branch, staff: other_staff, branch: other_branch)
+
+      assert {:error, :forbidden} =
+               Delivery.reorder_zones(other_staff, branch.id, [zone.id, second.id])
     end
 
     test "a new shape bumps the geometry version", %{branch: branch, staff: staff, zone: zone} do

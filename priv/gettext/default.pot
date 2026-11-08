@@ -9540,3 +9540,28 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "only for the first website order in this branch"
 msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:80
+#, elixir-autogen, elixir-format
+msgid "Drag to reorder"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:65
+#, elixir-autogen, elixir-format
+msgid "Higher zones have priority where zones overlap. Drag to reorder or use the arrow buttons."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:117
+#, elixir-autogen, elixir-format
+msgid "Move zone down"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:107
+#, elixir-autogen, elixir-format
+msgid "Move zone up"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zones.ex:230
+#, elixir-autogen, elixir-format
+msgid "Zone order changed; refresh and try again"
+msgstr ""

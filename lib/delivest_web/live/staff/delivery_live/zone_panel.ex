@@ -61,15 +61,32 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
         {gettext("No zones yet, every delivery address is refused")}
       </p>
 
-      <ul :if={@zones != []} class="space-y-1">
-        <li :for={zone <- @zones}>
+      <p :if={@zones != []} class="text-xs text-base-content/60">
+        {gettext(
+          "Higher zones have priority where zones overlap. Drag to reorder or use the arrow buttons."
+        )}
+      </p>
+
+      <ul :if={@zones != []} id="delivery-zones-list" phx-hook="SortableZones" class="space-y-1">
+        <li
+          :for={{zone, index} <- Enum.with_index(@zones)}
+          id={"delivery-zone-row-#{zone.id}"}
+          data-id={zone.id}
+          class="flex items-center gap-1"
+        >
+          <span
+            :if={@can_edit}
+            class="drag-handle cursor-grab text-base-content/50"
+            aria-label={gettext("Drag to reorder")}
+          ><.icon name="hero-bars-3" class="size-4" /></span>
+          <span class="w-5 text-center text-xs text-base-content/60">{index + 1}</span>
           <button
             id={"delivery-zone-#{zone.id}"}
             type="button"
             phx-click="select_zone"
             phx-value-id={zone.id}
             class={[
-              "flex w-full items-center gap-2 rounded-box px-3 py-2 text-left text-sm transition-colors",
+              "flex min-w-0 flex-1 items-center gap-2 rounded-box px-3 py-2 text-left text-sm transition-colors",
               zone.id == @selected_id && "bg-base-200 font-medium",
               zone.id != @selected_id && "hover:bg-base-200/60",
               not zone.enabled && "opacity-50"
@@ -79,6 +96,28 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
             <span class="min-w-0 flex-1 truncate">{zone.name}</span>
             <span class="text-xs text-base-content/60">{summary(zone)}</span>
           </button>
+          <div :if={@can_edit} class="flex flex-col">
+            <button
+              id={"delivery-zone-up-#{zone.id}"}
+              type="button"
+              phx-click="move_zone"
+              phx-value-id={zone.id}
+              phx-value-direction="up"
+              disabled={index == 0}
+              aria-label={gettext("Move zone up")}
+              class="btn btn-ghost btn-xs"
+            ><.icon name="hero-chevron-up" class="size-3" /></button>
+            <button
+              id={"delivery-zone-down-#{zone.id}"}
+              type="button"
+              phx-click="move_zone"
+              phx-value-id={zone.id}
+              phx-value-direction="down"
+              disabled={index == length(@zones) - 1}
+              aria-label={gettext("Move zone down")}
+              class="btn btn-ghost btn-xs"
+            ><.icon name="hero-chevron-down" class="size-3" /></button>
+          </div>
         </li>
       </ul>
 

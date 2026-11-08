@@ -150,6 +150,22 @@ export const SortableProducts = {
   },
 };
 
+export const SortableZones = {
+  mounted() {
+    const hook = this;
+    new Sortable(this.el, {
+      animation: 150,
+      handle: ".drag-handle",
+      ghostClass: "bg-base-200",
+      onEnd() {
+        hook.pushEvent("reorder_zones", {
+          ids: [...hook.el.querySelectorAll("[data-id]")].map((item) => item.dataset.id),
+        });
+      },
+    });
+  },
+};
+
 const BulkPaste = {
   mounted() {
     this.el.addEventListener("paste", (event) => {
@@ -180,6 +196,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     SortableCategories,
     SortableStocks,
     SortableProducts,
+    SortableZones,
     BulkPaste,
     LocationMap,
     ZoneMap,

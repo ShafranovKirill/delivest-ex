@@ -12,7 +12,7 @@ defmodule Delivest.Delivery.Quote do
   def find_zone(zones, {_lat, _lng} = point) do
     zones
     |> Enum.filter(& &1.enabled)
-    |> Enum.sort_by(& &1.position)
+    |> Enum.sort_by(&{&1.position, timestamp(&1.inserted_at), &1.id})
     |> Enum.find(&Geometry.contains?(&1.polygon, point))
   end
 
@@ -60,4 +60,7 @@ defmodule Delivest.Delivery.Quote do
         do: threshold.order_from
     end)
   end
+
+  defp timestamp(nil), do: 0
+  defp timestamp(datetime), do: DateTime.to_unix(datetime, :microsecond)
 end
