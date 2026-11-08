@@ -1,15 +1,10 @@
 defmodule Delivest.Integrations.YandexRating do
-  alias Delivest.Franchise
   alias Delivest.Franchise.Rating
   alias Delivest.Integrations.Health
   alias Delivest.Integrations.YandexRating.Api
 
-  def configured?(settings \\ Franchise.get_settings()),
-    do: settings.yandex_org_id not in [nil, ""] and settings.yandex_api_key not in [nil, ""]
-
-  def refresh(settings \\ Franchise.get_settings()) do
-    with true <- configured?(settings) || {:error, :yandex_rating_not_configured},
-         {:ok, fetched} <- Api.fetch(settings),
+  def refresh do
+    with {:ok, fetched} <- Api.fetch(),
          {:ok, _rating} <- Rating.store(:yandex, fetched) do
       Health.recovered(:yandex_rating, nil)
       :ok
@@ -26,12 +21,7 @@ defmodule Delivest.Integrations.YandexRating do
         nil
 
       rating ->
-        %{value: rating.rating, count: rating.reviews_count, url: url(Franchise.get_settings())}
+        %{value: rating.rating, count: rating.reviews_count, url: nil}
     end
   end
-
-  def url(%{yandex_org_id: id}) when id not in [nil, ""],
-    do: "https://yandex.ru/maps/org/#{id}/reviews/"
-
-  def url(_settings), do: nil
 end

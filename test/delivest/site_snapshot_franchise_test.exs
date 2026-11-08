@@ -12,7 +12,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
   alias Delivest.Integrations.Yookassa
   alias Delivest.Net.{Category, Product, ProductExternalId, ProductModifierGroup}
   alias Delivest.Relations.EntityRelation
-  alias Delivest.SiteSnapshot.{Installation, Mapping}
+  alias Delivest.SiteSnapshot.{Archive, Installation, Mapping}
 
   setup do
     %{staff: insert(:staff, role: insert(:role, permissions: ["admin"]))}
@@ -352,6 +352,11 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     assert {:ok, integrations} = SiteSnapshot.export_franchise(staff, [:integrations])
     assert {:ok, franchise} = SiteSnapshot.export_franchise(staff, [:franchise])
 
+    assert {:ok, _, integration_data, _} =
+             Delivest.SiteSnapshot.Archive.decode(integrations, :franchise)
+
+    refute Map.has_key?(integration_data["integrations"], "yandex_rating")
+
     source_franchise
     |> Ecto.Changeset.change(
       name: "Target brand",
@@ -377,8 +382,8 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     imported = Repo.one!(FranchiseSettings)
     assert imported.name == "Target brand"
     assert imported.phone == "+79990000002"
-    assert imported.yandex_org_id == "source-org"
-    assert imported.yandex_api_key == "source-key"
+    assert imported.yandex_org_id == "target-org"
+    assert imported.yandex_api_key == "target-key"
     assert Repo.one!(Delivest.Integrations.Yookassa.Settings).shop_id == "111111"
     assert Documents.get(:privacy).body == "Target privacy"
     assert Repo.get!(Branch, source.id).name == "Source"
@@ -387,9 +392,21 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
              SiteSnapshot.import_franchise(staff, franchise)
 
     assert Repo.one!(FranchiseSettings).name == "Source brand"
-    assert Repo.one!(FranchiseSettings).yandex_org_id == "source-org"
+    assert Repo.one!(FranchiseSettings).yandex_org_id == "target-org"
     assert Repo.one!(Delivest.Integrations.Yookassa.Settings).shop_id == "111111"
     assert Documents.get(:privacy).body == "Source privacy"
+
+    legacy =
+      update_in(integration_data["integrations"], fn integrations ->
+        Map.put(integrations, "yandex_rating", %{
+          "yandex_org_id" => "legacy-org",
+          "yandex_api_key" => "legacy-key"
+        })
+      end)
+
+    assert {:ok, legacy_archive} = Archive.encode(legacy, %{}, :memory, :franchise)
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, legacy_archive)
+    assert Repo.one!(FranchiseSettings).yandex_org_id == "target-org"
   end
 
   test "keeps one branch mapping per source installation", %{staff: staff} do

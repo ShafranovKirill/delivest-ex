@@ -282,15 +282,11 @@ defmodule Delivest.SiteSnapshot.Apply do
 
   defp put_global_integrations(integrations) do
     Enum.each(integrations || %{}, fn {key, attrs} ->
-      {module, _fields} = global_integration_schema(key)
-      current = Repo.one(module) || struct(module)
-
-      changeset =
-        if module == FranchiseSettings,
-          do: FranchiseSettings.ratings_changeset(current, attrs),
-          else: module.changeset(current, attrs)
-
-      save!(changeset)
+      if key != "yandex_rating" do
+        {module, _fields} = global_integration_schema(key)
+        current = Repo.one(module) || struct(module)
+        save!(module.changeset(current, attrs))
+      end
     end)
   end
 

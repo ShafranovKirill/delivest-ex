@@ -212,7 +212,6 @@ defmodule Delivest.SiteSnapshot.Export do
   defp global_integrations do
     integrations =
       Fields.global_integrations()
-      |> Enum.reject(fn {_key, module, _fields} -> module == FranchiseSettings end)
       |> Enum.flat_map(fn {key, module, fields} ->
         with %{} = settings <- Repo.one(module),
              attrs = settings |> Map.take(fields) |> Jason.encode!() |> Jason.decode!(),
@@ -224,14 +223,6 @@ defmodule Delivest.SiteSnapshot.Export do
       end)
       |> Map.new()
 
-    franchise = Repo.one(FranchiseSettings) || %FranchiseSettings{}
-
-    rating =
-      Fields.franchise_integration_fields()
-      |> Map.new(&{to_string(&1), Map.get(franchise, &1)})
-
-    if Enum.all?(rating, fn {_key, value} -> is_nil(value) or value == "" end),
-      do: integrations,
-      else: Map.put(integrations, "yandex_rating", rating)
+    integrations
   end
 end
