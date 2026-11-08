@@ -60,14 +60,21 @@ defmodule Delivest.Oms.CartView do
   ]
 
   def base_items(%__MODULE__{items: items}),
-    do: Enum.reject(items, &(Map.get(&1, :gift, false) or Map.get(&1, :stars, false)))
+    do:
+      Enum.reject(
+        items,
+        &(Map.get(&1, :gift, false) or Map.get(&1, :stars, false) or
+            Map.get(&1, :unavailable, false))
+      )
 
   def star_items(%__MODULE__{items: items}), do: Enum.filter(items, &Map.get(&1, :stars, false))
 
   def with_pricing(%__MODULE__{} = view, %Result{} = result) do
     %{
       view
-      | items: Enum.map(result.lines, &item/1) ++ star_items(view),
+      | items:
+          Enum.map(result.lines, &item/1) ++
+            star_items(view) ++ Enum.filter(view.items, &Map.get(&1, :unavailable, false)),
         subtotal_amount: result.subtotal,
         discount_amount: result.discount,
         total_amount: result.total,

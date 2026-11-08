@@ -314,6 +314,11 @@ defmodule DelivestWeb.Schemas.CartSchemas do
         },
         promotion_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
         stopped: %Schema{type: :boolean, description: "Товар в стоп-листе: заказать нельзя"},
+        unavailable: %Schema{
+          type: :boolean,
+          description: "Товар или модификатор больше недоступен"
+        },
+        unavailable_reason: %Schema{type: :string, nullable: true},
         modifiers: %Schema{type: :array, items: ItemModifier}
       },
       required: [

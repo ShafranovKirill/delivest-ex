@@ -62,6 +62,25 @@ defmodule Delivest.Net.Products do
     |> Map.new(&{&1.id, &1})
   end
 
+  # Cart rows must remain visible after a product is deactivated or soft-deleted.
+  # The branch join also prevents showing another branch's product metadata.
+  def list_branch_cart_products_by_ids(branch_id, ids, opts \\ [])
+
+  def list_branch_cart_products_by_ids(_branch_id, [], _opts), do: %{}
+
+  def list_branch_cart_products_by_ids(branch_id, ids, opts) when is_list(ids) do
+    Product
+    |> join(:inner, [p], r in EntityRelation,
+      on:
+        r.to_id == p.id and r.to_entity_type == "Product" and
+          r.from_entity_type == "Branch" and r.from_id == ^branch_id
+    )
+    |> where([p], p.id in ^ids)
+    |> maybe_preload_query(opts)
+    |> Repo.all()
+    |> Map.new(&{&1.id, &1})
+  end
+
   def list_branch_products_by_refs(branch_id, ids, slugs) do
     Product
     |> join(:inner, [p], r in EntityRelation,

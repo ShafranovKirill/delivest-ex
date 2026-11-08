@@ -72,6 +72,19 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     assert {"descr", "Доставка 150 ₽. Без лука"} in params
   end
 
+  test "free delivery omits both the configured delivery article and the delivery note" do
+    order = %Order{items: [], delivery_amount: 0, comment: "Без лука"}
+    settings = %Settings{api_key: "secret", delivery_article: "900"}
+
+    assert {:ok, view} = OrderPayload.build(order, settings, %{})
+    params = OrderPayload.to_form_params(view)
+
+    refute Enum.any?(params, fn {key, _value} -> String.starts_with?(key, "product[") end)
+    refute Enum.any?(params, fn {key, _value} -> String.starts_with?(key, "product_price[") end)
+    assert {"descr", "Без лука"} in params
+    refute Enum.any?(params, fn {_key, value} -> String.contains?(value, "Доставка") end)
+  end
+
   test "sends the Frontpad branch as affiliate" do
     settings = %Settings{api_key: "secret", affiliate: "7"}
 

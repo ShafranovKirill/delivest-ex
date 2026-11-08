@@ -170,6 +170,67 @@ defmodule Delivest.Oms.CartTest do
       assert {:error, :product_unavailable} = Carts.add_item(cart.id, "not-a-uuid", 1)
     end
 
+    test "keeps inactive and deleted rows removable without charging for them" do
+      active = insert_branch_product(@branch_id, price: 100)
+      inactive = insert_branch_product(@branch_id, price: 200)
+      deleted = insert_branch_product(@branch_id, price: 300)
+      {:ok, cart} = Carts.create_cart(%{session_id: "unavailable-rows", branch_id: @branch_id})
+
+      for product <- [active, inactive, deleted],
+          do: {:ok, _, _} = Carts.add_item(cart.id, product.id)
+
+      inactive |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
+      deleted |> Ecto.Changeset.change(deleted_at: DateTime.utc_now(:second)) |> Repo.update!()
+
+      view = Carts.get_cart_by_id(cart.id, force: true)
+      assert view.total_quantity == 1
+      assert view.total_amount == 100
+      assert Enum.count(view.items) == 3
+      assert Enum.count(view.items, &Map.get(&1, :unavailable, false)) == 2
+
+      assert %{data: %{items: json_items, total_amount: 100}} =
+               DelivestWeb.Client.Cart.CartJSON.show(%{cart: view})
+
+      assert Enum.count(json_items, & &1.unavailable) == 2
+      assert Enum.any?(json_items, &(&1.unavailable_reason == :product_unavailable))
+      assert Repo.aggregate(from(ci in CartItem, where: ci.cart_id == ^cart.id), :count) == 3
+
+      assert {:ok, :deleted, remaining} = Carts.remove_item(cart.id, inactive.id, all: true)
+      assert Enum.count(remaining.items) == 2
+    end
+
+    test "keeps missing and invalid-modifier rows with safe fallback metadata" do
+      product = insert_branch_product(@branch_id, price: 100)
+      foreign = insert_branch_product(Ecto.UUID.generate(), price: 900)
+      {:ok, cart} = Carts.create_cart(%{session_id: "missing-rows", branch_id: @branch_id})
+      {:ok, _, _} = Carts.add_item(cart.id, product.id)
+      existing = Repo.get_by!(CartItem, cart_id: cart.id, product_id: product.id)
+
+      existing
+      |> Ecto.Changeset.change(modifiers: [%{"id" => Ecto.UUID.generate(), "quantity" => 1}])
+      |> Repo.update!()
+
+      Repo.insert!(%CartItem{cart_id: cart.id, product_id: foreign.id, quantity: 1})
+      missing_id = Ecto.UUID.generate()
+      Repo.insert!(%CartItem{cart_id: cart.id, product_id: missing_id, quantity: 1})
+
+      view = Carts.get_cart_by_id(cart.id, force: true)
+      assert view.total_amount == 0
+      assert view.total_quantity == 0
+      assert Enum.count(view.items) == 3
+
+      assert Enum.find(view.items, &(&1.product_id == product.id)).unavailable_reason ==
+               :modifier_unavailable
+
+      for id <- [foreign.id, missing_id] do
+        item = Enum.find(view.items, &(&1.product_id == id))
+        assert item.unavailable_reason == :product_missing
+        assert item.name == "Unavailable product"
+      end
+
+      assert Repo.aggregate(from(ci in CartItem, where: ci.cart_id == ^cart.id), :count) == 3
+    end
+
     test "limits the quantity of a single product" do
       product = insert_branch_product(@branch_id, price: 10)
       {:ok, cart} = Carts.create_cart(%{session_id: "quantity-limit", branch_id: @branch_id})
