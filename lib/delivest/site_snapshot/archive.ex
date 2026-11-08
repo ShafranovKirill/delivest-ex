@@ -493,6 +493,11 @@ defmodule Delivest.SiteSnapshot.Archive do
 
   defp valid_global_integration?({key, attrs}) when is_map(attrs) do
     case global_integration_schema(key) do
+      {:legacy_yandex_rating, fields} ->
+        MapSet.new(Map.keys(attrs)) == MapSet.new(fields) and
+          Enum.all?(attrs, fn {_key, value} -> is_nil(value) or is_binary(value) end) and
+          (is_nil(attrs["yandex_org_id"]) or byte_size(attrs["yandex_org_id"]) <= 40)
+
       {module, fields} ->
         MapSet.new(Map.keys(attrs)) == MapSet.new(fields) and
           valid_integration_changeset(module, attrs)
@@ -503,9 +508,6 @@ defmodule Delivest.SiteSnapshot.Archive do
   end
 
   defp valid_global_integration?(_entry), do: false
-
-  defp valid_integration_changeset(FranchiseSettings, attrs),
-    do: FranchiseSettings.ratings_changeset(%FranchiseSettings{}, attrs).valid?
 
   defp valid_integration_changeset(module, attrs),
     do: module.changeset(struct(module), attrs).valid?
@@ -524,7 +526,7 @@ defmodule Delivest.SiteSnapshot.Archive do
     do: {YandexEda.Settings, ~w(partner_name push_client_id push_client_secret)}
 
   defp global_integration_schema("yandex_rating"),
-    do: {FranchiseSettings, ~w(yandex_org_id yandex_api_key)}
+    do: {:legacy_yandex_rating, ~w(yandex_org_id yandex_api_key)}
 
   defp global_integration_schema(_key), do: nil
 

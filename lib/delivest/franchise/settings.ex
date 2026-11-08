@@ -54,7 +54,6 @@ defmodule Delivest.Franchise.Settings do
     |> validate_number(:loyalty_expire_days, greater_than: 0, less_than_or_equal_to: 3650)
     |> validate_length(:name, max: 60)
     |> validate_length(:description, max: 300)
-    |> validate_length(:yandex_org_id, max: 40)
     |> validate_length(:legal_form, max: 20)
     |> validate_length(:legal_name, max: 200)
     |> validate_length(:legal_address, max: 300)
@@ -69,12 +68,6 @@ defmodule Delivest.Franchise.Settings do
 
   def images_changeset(settings, attrs),
     do: cast(settings, attrs, [:icon_key, :share_image_key, :logo_key, :logo_dark_key])
-
-  def ratings_changeset(settings, attrs) do
-    settings
-    |> cast(attrs, [:yandex_org_id, :yandex_api_key])
-    |> validate_length(:yandex_org_id, max: 40)
-  end
 
   defp downcase(nil), do: nil
   defp downcase(value), do: String.downcase(value)
@@ -104,8 +97,6 @@ defmodule Delivest.Franchise.Settings do
       :legal_address,
       :email,
       :phone,
-      :yandex_org_id,
-      :yandex_api_key,
       :loyalty_per_rubles,
       :loyalty_stars,
       :loyalty_expire_days,

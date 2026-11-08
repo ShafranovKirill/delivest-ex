@@ -44,8 +44,7 @@ defmodule Delivest.SiteSnapshot.Fields do
      ~w(public_key campaign_id webhook_token enabled dev_skip_calls login_call_mode)a},
     {"dadata", Delivest.Integrations.Dadata.Settings, ~w(api_key enabled)a},
     {"yandex_eda", Delivest.Integrations.YandexEda.Settings,
-     ~w(partner_name push_client_id push_client_secret)a},
-    {"yandex_rating", Delivest.Franchise.Settings, ~w(yandex_org_id yandex_api_key)a}
+     ~w(partner_name push_client_id push_client_secret)a}
   ]
 
   def sections, do: @sections
@@ -59,8 +58,6 @@ defmodule Delivest.SiteSnapshot.Fields do
   def franchise_fields(_sections), do: @franchise_fields
 
   def franchise_brand_fields, do: @franchise_fields
-  def franchise_integration_fields, do: ~w(yandex_org_id yandex_api_key)a
-
   def info_fields, do: @info_fields
   def image_fields, do: @image_fields
   def settings_fields, do: @settings_fields

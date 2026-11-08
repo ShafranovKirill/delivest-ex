@@ -7,20 +7,13 @@ defmodule Delivest.Integrations.YandexRatingTest do
   alias Delivest.Integrations.YandexRating
   alias Delivest.Integrations.YandexRating.Poller
 
-  defp settings(attrs \\ %{}),
-    do: Map.merge(%Delivest.Franchise.Settings{yandex_org_id: "123", yandex_api_key: "k"}, attrs)
-
-  test "nothing is configured, nothing is polled" do
-    refute YandexRating.configured?(settings(%{yandex_api_key: nil}))
-
-    assert {:error, :yandex_rating_not_configured} =
-             YandexRating.refresh(settings(%{yandex_org_id: nil}))
-
+  test "the poller has no production targets" do
+    assert Poller.targets() == []
     assert YandexRating.current() == nil
   end
 
   test "a refresh stores the rating and a second one overwrites it" do
-    assert :ok = YandexRating.refresh(settings())
+    assert :ok = YandexRating.refresh()
     assert {:ok, _} = Rating.store(:yandex, %{rating: 4.1, reviews_count: 7})
     assert %{rating: 4.1, reviews_count: 7} = Rating.current(:yandex)
     assert [_] = Delivest.Repo.all(Rating)
