@@ -7,6 +7,12 @@ defmodule Delivest.Promo.Condition do
   @spec evaluate(Delivest.Promo.Strategy.condition() | nil, Facts.t(), Compiled.t()) :: verdict()
   def evaluate(nil, _facts, _compiled), do: :met
 
+  def evaluate(:first_order, %Facts{authenticated_client?: false}, _compiled),
+    do: {:unmet, [%{type: :requires_client}]}
+
+  def evaluate(:first_order, facts, _compiled),
+    do: verdict(facts.first_order, %{type: :first_order})
+
   def evaluate({:and, a, b}, facts, compiled),
     do: both(evaluate(a, facts, compiled), evaluate(b, facts, compiled))
 

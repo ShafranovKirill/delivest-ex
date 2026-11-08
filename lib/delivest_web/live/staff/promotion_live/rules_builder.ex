@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   alias Delivest.Money
   alias Delivest.Promo.Dsl
 
-  @condition_types ~w(subtotal quantity has has_any fulfillment time weekday)
+  @condition_types ~w(subtotal quantity has has_any fulfillment time weekday first_order)
   @effect_types ~w(percent amount gift gift_any price)
   @ops ~w(>= > <= < =)
   @fulfillments ~w(delivery pickup dine_in)
@@ -19,6 +19,14 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   def weekdays, do: @weekdays
 
   def new, do: %__MODULE__{effects: [blank_effect("percent")]}
+
+  def template("discount"), do: new()
+
+  def template("first_order"),
+    do: %__MODULE__{
+      conditions: [blank_condition("first_order")],
+      effects: [blank_effect("percent")]
+    }
 
   def from_rules(rules) do
     with {:ok, strategy} <- Dsl.parse(rules),
@@ -133,6 +141,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
     end
   end
 
+  def condition_error(%{"type" => "first_order"}), do: nil
+
   def effect_error(%{"type" => "percent", "value" => value} = row) do
     cond do
       !integer(value, 1, 100) ->
@@ -221,6 +231,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp condition_text(%{"type" => "time", "from" => from, "to" => to}),
     do: "time #{from}..#{to}"
 
+  defp condition_text(%{"type" => "first_order"}), do: "first_order"
+
   defp effect_text(%{"type" => "percent", "value" => value} = row) do
     cap = if row["target"] == "cart" and row["cap"] != "", do: " max #{sum(row["cap"])}"
     "discount #{trim(value)}%#{target_text(row)}#{cap}"
@@ -252,6 +264,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp blank_condition("fulfillment"), do: %{"type" => "fulfillment", "values" => []}
   defp blank_condition("time"), do: %{"type" => "time", "from" => "", "to" => ""}
   defp blank_condition("weekday"), do: %{"type" => "weekday", "values" => []}
+  defp blank_condition("first_order"), do: %{"type" => "first_order"}
 
   defp blank_effect("percent"),
     do: %{"type" => "percent", "value" => "", "target" => "cart", "products" => [], "cap" => ""}
@@ -356,6 +369,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
 
   defp condition_row({:time, from, to}),
     do: %{"type" => "time", "from" => clock(from), "to" => clock(to)}
+
+  defp condition_row(:first_order), do: blank_condition("first_order")
 
   defp effect_row({:percent, value, target, cap}) do
     "percent"

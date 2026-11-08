@@ -13,6 +13,7 @@ defmodule Delivest.Promo.Strategy do
           | {:fulfillment, [atom()]}
           | {:time, Time.t(), Time.t()}
           | {:weekday, [1..7]}
+          | :first_order
 
   @type effect ::
           {:percent, 1..100, target(), pos_integer() | nil}

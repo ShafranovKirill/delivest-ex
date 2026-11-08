@@ -69,6 +69,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   def handle_event("add_condition", %{"type" => type}, socket),
     do: update_builder(socket, &RulesBuilder.add_condition(&1, type))
 
+  def handle_event("template", %{"type" => type}, socket) when type in ~w(discount first_order),
+    do: update_builder(socket, fn _builder -> RulesBuilder.template(type) end)
+
   def handle_event("remove_condition", %{"index" => index}, socket),
     do: update_builder(socket, &RulesBuilder.remove_condition(&1, String.to_integer(index)))
 
@@ -198,6 +201,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   defp condition_label("fulfillment"), do: gettext("Fulfillment method")
   defp condition_label("time"), do: gettext("Time of day")
   defp condition_label("weekday"), do: gettext("Days of week")
+  defp condition_label("first_order"), do: gettext("First website order")
 
   defp condition_icon("subtotal"), do: "hero-banknotes"
   defp condition_icon("quantity"), do: "hero-square-3-stack-3d"
@@ -206,6 +210,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   defp condition_icon("fulfillment"), do: "hero-truck"
   defp condition_icon("time"), do: "hero-clock"
   defp condition_icon("weekday"), do: "hero-calendar-days"
+  defp condition_icon("first_order"), do: "hero-sparkles"
 
   defp effect_label("percent"), do: gettext("Percentage discount")
   defp effect_label("amount"), do: gettext("Fixed discount")
@@ -329,6 +334,27 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
           </.step>
 
           <%= if @mode == :builder do %>
+            <div id="promotion-templates" class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-semibold text-base-content/60">{gettext("Quick start")}</span>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline"
+                phx-click="template"
+                phx-value-type="discount"
+                phx-target={@myself}
+              >
+                {gettext("Regular discount")}
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline"
+                phx-click="template"
+                phx-value-type="first_order"
+                phx-target={@myself}
+              >
+                {gettext("First order offer")}
+              </button>
+            </div>
             <.step
               number={2}
               title={gettext("When does it apply?")}
@@ -701,6 +727,16 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   defp condition_fields(%{row: %{"type" => "has_any"}} = assigns) do
     ~H"""
     <.list_and_count row={@row} index={@index} products={@products} target={@target} kind="condition" />
+    """
+  end
+
+  defp condition_fields(%{row: %{"type" => "first_order"}} = assigns) do
+    ~H"""
+    <p class="text-xs text-base-content/60">
+      {gettext(
+        "Only a signed-in customer with no previous non-cancelled website order in this branch qualifies. Choose any reward below."
+      )}
+    </p>
     """
   end
 

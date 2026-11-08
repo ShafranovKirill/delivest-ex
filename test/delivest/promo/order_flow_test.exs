@@ -111,6 +111,128 @@ defmodule Delivest.Promo.OrderFlowTest do
              Orders.create_order(order_attrs(cart_with(branch, pizza, 1)))
   end
 
+  test "first order requires authenticated client and only counts website orders in its branch",
+       %{
+         branch: branch,
+         pizza: pizza
+       } do
+    insert_promotion(branch.id, rules: "when first_order then discount 10%")
+    client = insert(:client)
+    guest = insert(:client)
+    other = insert(:branch)
+    other_product = insert_branch_product(other.id, slug: "other", price: 10_000)
+
+    assert {:ok, %{total_amount: 10_000}} =
+             Orders.create_order(
+               order_attrs(cart_with(branch, pizza, 1), %{"customer_phone" => guest.phone})
+             )
+
+    assert {:ok, _} =
+             Orders.create_order(
+               order_attrs(cart_with(other, other_product, 1), %{"customer_phone" => client.phone}),
+               authenticated_client_id: client.id
+             )
+
+    assert {:ok, _} =
+             Orders.create_order(
+               order_attrs(cart_with(branch, pizza, 1), %{"customer_phone" => client.phone}),
+               source: "staff"
+             )
+
+    assert {:ok, _} =
+             Orders.create_order(
+               order_attrs(cart_with(branch, pizza, 1), %{"customer_phone" => client.phone}),
+               source: "pos"
+             )
+
+    preview_cart = cart_with(branch, pizza, 1)
+
+    assert {:ok, %{total_amount: 9000}} =
+             Carts.update_context(preview_cart.id, %{client_id: client.id})
+
+    assert {:ok, %{total_amount: 9000} = first} =
+             Orders.create_order(
+               order_attrs(preview_cart, %{"customer_phone" => client.phone}),
+               authenticated_client_id: client.id
+             )
+
+    later_preview = cart_with(branch, pizza, 1)
+
+    assert {:ok, %{total_amount: 10_000, hints: []}} =
+             Carts.update_context(later_preview.id, %{client_id: client.id})
+
+    code_promotion =
+      insert_promotion(branch.id,
+        kind: :public_code,
+        rules: "when first_order then discount 10%"
+      )
+
+    insert_code(code_promotion, code: "FIRST")
+
+    assert {:ok, %{code: %{status: :pending, reasons: [%{type: :first_order}]}}} =
+             Oms.apply_promo_code(later_preview.id, "FIRST")
+
+    assert {:ok, %{total_amount: 10_000}} =
+             Orders.create_order(
+               order_attrs(later_preview, %{"customer_phone" => client.phone}),
+               authenticated_client_id: client.id
+             )
+
+    insert_promotion(branch.id,
+      priority: 100,
+      rules: "when first_order then discount 30%"
+    )
+
+    assert {:ok, draft} = Orders.create_draft_cart(first)
+
+    assert {:ok, %{total_amount: 9000}} =
+             Orders.update_order(first, %{"cart_id" => draft.id, "customer_phone" => client.phone})
+  end
+
+  test "cancelled website orders do not block first order promotion", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    client = insert(:client)
+    first = cart_with(branch, pizza, 1)
+
+    assert {:ok, cancelled} =
+             Orders.create_order(order_attrs(first, %{"customer_phone" => client.phone}))
+
+    assert {:ok, _} = Orders.cancel_order(cancelled, :system, %{"cancel_reason" => "other"})
+
+    insert_promotion(branch.id, rules: ~s(when first_order then gift "cola"))
+
+    assert {:ok, order} =
+             Orders.create_order(
+               order_attrs(cart_with(branch, pizza, 1), %{"customer_phone" => client.phone}),
+               authenticated_client_id: client.id
+             )
+
+    assert Enum.any?(order.items, & &1.gift)
+  end
+
+  test "deleted website orders do not block first order promotion", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    client = insert(:client)
+
+    assert {:ok, deleted} =
+             Orders.create_order(
+               order_attrs(cart_with(branch, pizza, 1), %{"customer_phone" => client.phone})
+             )
+
+    deleted |> Ecto.Changeset.change(deleted_at: DateTime.utc_now(:second)) |> Repo.update!()
+    insert_promotion(branch.id, rules: "when first_order then discount 10%")
+
+    assert {:ok, %{total_amount: 9000}} =
+             Orders.create_order(
+               order_attrs(cart_with(branch, pizza, 1), %{"customer_phone" => client.phone}),
+               authenticated_client_id: client.id
+             )
+  end
+
   test "cancelled orders release their redemption", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, usage_limit: 1, rules: "then discount 10 rub")
 

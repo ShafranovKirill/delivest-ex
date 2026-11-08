@@ -29,6 +29,7 @@ defmodule Delivest.Promo.Dsl.Semantics do
   end
 
   defp condition(nil), do: {:ok, nil}
+  defp condition(:first_order), do: {:ok, :first_order}
 
   defp condition({op, a, b}) when op in [:and, :or],
     do: with_errors(condition(a), condition(b), &{op, &1, &2})

@@ -13,6 +13,12 @@ defmodule Delivest.Oms.Orders.Pricing do
       |> Promo.price(%{
         branch_id: cart.branch_id,
         client_id: client_id,
+        authenticated_client_id:
+          if(order,
+            do: unless(order.guest_session_access, do: order.client_id),
+            else: attrs["_authenticated_client_id"]
+          ),
+        source: (order && order.source) || attrs["source"] || "app",
         fulfillment_type: fulfillment(attrs, order),
         code: cart.promo_code,
         promo_gifts: cart.promo_gifts,

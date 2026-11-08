@@ -48,7 +48,7 @@
 -file("src/promo_lexer.xrl", 28).
 
 -define(KEYWORDS, ["when", "then", "and", "or", "not", "in", "on", "max", "rub", "x",
-                   "has", "subtotal", "quantity", "fulfillment", "time", "weekday",
+                   "has", "subtotal", "quantity", "fulfillment", "time", "weekday", "first_order",
                    "discount", "gift", "price"]).
 
 kopecks(Chars) ->

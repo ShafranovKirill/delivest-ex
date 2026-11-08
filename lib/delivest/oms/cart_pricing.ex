@@ -13,6 +13,8 @@ defmodule Delivest.Oms.CartPricing do
       %{
         branch_id: view.branch_id,
         client_id: view.client_id,
+        authenticated_client_id: view.client_id,
+        source: if(view.staff_id, do: "staff", else: "app"),
         fulfillment_type: view.fulfillment_type,
         code: view.promo_code,
         promo_gifts: view.promo_gifts,

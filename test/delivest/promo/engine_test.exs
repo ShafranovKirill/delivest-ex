@@ -31,6 +31,20 @@ defmodule Delivest.Promo.EngineTest do
              result
   end
 
+  test "first-order promotion offers sign-in to guests", %{branch: branch, pizza: pizza} do
+    insert_promotion(branch.id, rules: "when first_order then discount 10%")
+    client = insert(:client)
+
+    assert %{total: 50_000, hints: [%{reasons: [%{type: :requires_client}]}]} =
+             price(branch, [item(pizza, 1)], %{client_id: client.id})
+
+    assert %{total: 45_000, applied: [_]} =
+             price(branch, [item(pizza, 1)], %{
+               client_id: client.id,
+               authenticated_client_id: client.id
+             })
+  end
+
   test "applies a percent discount with a cap", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, rules: "then discount 20% max 150")
 
