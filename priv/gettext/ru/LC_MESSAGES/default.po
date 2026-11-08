@@ -9644,3 +9644,28 @@ msgstr "первый заказ на сайте в этом филиале"
 #, elixir-autogen, elixir-format
 msgid "only for the first website order in this branch"
 msgstr "только для первого заказа на сайте в этом филиале"
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:80
+#, elixir-autogen, elixir-format
+msgid "Drag to reorder"
+msgstr "Перетащить для изменения порядка"
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:65
+#, elixir-autogen, elixir-format
+msgid "Higher zones have priority where zones overlap. Drag to reorder or use the arrow buttons."
+msgstr "Зоны выше в списке имеют приоритет при пересечении. Перетащите зону или используйте кнопки со стрелками."
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:117
+#, elixir-autogen, elixir-format
+msgid "Move zone down"
+msgstr "Переместить зону вниз"
+
+#: lib/delivest_web/live/staff/delivery_live/zone_panel.ex:107
+#, elixir-autogen, elixir-format
+msgid "Move zone up"
+msgstr "Переместить зону вверх"
+
+#: lib/delivest_web/live/staff/delivery_live/zones.ex:230
+#, elixir-autogen, elixir-format
+msgid "Zone order changed; refresh and try again"
+msgstr "Порядок зон изменился. Обновите страницу и попробуйте снова"

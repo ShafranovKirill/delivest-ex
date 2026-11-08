@@ -93,6 +93,33 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
   def handle_event("select_zone", %{"id" => id}, socket),
     do: {:noreply, socket |> select(id) |> push_zones()}
 
+  def handle_event("reorder_zones", %{"ids" => ids}, socket) do
+    case Delivery.reorder_zones(socket.assigns.current_staff, branch_id(socket), ids) do
+      {:ok, zones} ->
+        {:noreply, socket |> assign_zones(zones, socket.assigns.selected_id) |> push_zones()}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> reload_zones(socket.assigns.selected_id)
+         |> push_zones()
+         |> put_flash(:error, error_message(reason))}
+    end
+  end
+
+  def handle_event("move_zone", %{"id" => id, "direction" => direction}, socket) do
+    ids = Enum.map(socket.assigns.zones, & &1.id)
+    index = Enum.find_index(ids, &(&1 == id))
+    target = if direction == "up", do: index && index - 1, else: index && index + 1
+
+    if is_integer(target) and target >= 0 and target < length(ids) do
+      reordered = List.replace_at(ids, index, Enum.at(ids, target)) |> List.replace_at(target, id)
+      handle_event("reorder_zones", %{"ids" => reordered}, socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_event("save_zone", %{"zone" => params}, socket) do
     attrs =
       params
@@ -198,6 +225,9 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
     do: %{id: zone.id, color: zone.color, enabled: zone.enabled, polygon: zone.polygon}
 
   defp error_message(:forbidden), do: gettext("Permission denied")
+
+  defp error_message(:invalid_zone_order),
+    do: gettext("Zone order changed; refresh and try again")
 
   defp error_message(:no_branch_point),
     do: gettext("Set the branch address on the map first, the radius is counted from it")

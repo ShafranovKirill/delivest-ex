@@ -20,7 +20,15 @@ defmodule DelivestWeb.Client.DeliveryControllerTest do
     do: conn |> get(~p"/client/delivery/quote", params) |> json_response(200)
 
   test "flat delivery is free by default", %{conn: conn, branch: branch} do
-    assert %{"data" => %{"status" => "ok", "price" => 0}} =
+    assert %{
+             "data" => %{
+               "status" => "ok",
+               "price" => 0,
+               "zone_id" => nil,
+               "zone_name" => nil,
+               "zone_color" => nil
+             }
+           } =
              fetch_quote(conn, %{branch_id: branch.id, subtotal: 100})
   end
 
@@ -43,16 +51,43 @@ defmodule DelivestWeb.Client.DeliveryControllerTest do
 
     inside = %{branch_id: branch.id, latitude: "55.5", longitude: "37.5"}
 
-    assert %{"data" => %{"status" => "ok", "price" => 150, "free_from" => 1500, "minutes" => 45}} =
+    assert %{
+             "data" => %{
+               "status" => "ok",
+               "price" => 150,
+               "free_from" => 1500,
+               "minutes" => 45,
+               "zone_id" => zone_id,
+               "zone_name" => zone_name,
+               "zone_color" => zone_color
+             }
+           } =
              fetch_quote(conn, Map.put(inside, :subtotal, 800))
+
+    assert {zone_id, zone_name, zone_color} == {zone.id, zone.name, zone.color}
 
     assert %{"data" => %{"status" => "ok", "price" => 150}} =
              fetch_quote(conn, Map.merge(inside, %{subtotal: 800, city: "Соседний город"}))
 
-    assert %{"data" => %{"status" => "below_minimum", "min_order" => 500, "price" => 150}} =
+    assert %{
+             "data" => %{
+               "status" => "below_minimum",
+               "min_order" => 500,
+               "price" => 150,
+               "zone_id" => ^zone_id
+             }
+           } =
              fetch_quote(conn, Map.put(inside, :subtotal, 300))
 
-    assert %{"data" => %{"status" => "outside_zones", "price" => nil}} =
+    assert %{
+             "data" => %{
+               "status" => "outside_zones",
+               "price" => nil,
+               "zone_id" => nil,
+               "zone_name" => nil,
+               "zone_color" => nil
+             }
+           } =
              fetch_quote(conn, %{
                branch_id: branch.id,
                latitude: "50",
@@ -60,7 +95,14 @@ defmodule DelivestWeb.Client.DeliveryControllerTest do
                subtotal: 800
              })
 
-    assert %{"data" => %{"status" => "no_coordinates"}} =
+    assert %{
+             "data" => %{
+               "status" => "no_coordinates",
+               "zone_id" => nil,
+               "zone_name" => nil,
+               "zone_color" => nil
+             }
+           } =
              fetch_quote(conn, %{branch_id: branch.id, subtotal: 800})
 
     refute Map.has_key?(fetch_quote(conn, Map.put(inside, :subtotal, 800))["data"], "zone")
@@ -73,6 +115,12 @@ defmodule DelivestWeb.Client.DeliveryControllerTest do
   } do
     {:ok, _} = Delivery.update_settings(admin, branch.id, %{"mode" => "zones"})
     {:ok, zone} = Delivery.create_zone(admin, branch.id, @square)
+
+    {:ok, _} =
+      Delivery.update_zone(admin, branch.id, zone.id, %{
+        "delivery_minutes" => 35,
+        "thresholds" => [%{"order_from" => 500, "price" => 150}]
+      })
 
     fetch = fn ->
       conn |> get(~p"/client/delivery/zones", %{branch_id: branch.id}) |> json_response(200)
@@ -91,7 +139,35 @@ defmodule DelivestWeb.Client.DeliveryControllerTest do
              fetch.()
 
     assert id == zone.id
-    refute Map.has_key?(shown, "thresholds")
+    assert shown["thresholds"] == [%{"order_from" => 500, "price" => 150}]
+    assert shown["delivery_minutes"] == 35
+  end
+
+  test "overlap quotes expose only the winning zone", %{conn: conn, branch: branch, admin: admin} do
+    {:ok, _} = Delivery.update_settings(admin, branch.id, %{"mode" => "zones"})
+    {:ok, outer} = Delivery.create_zone(admin, branch.id, @square)
+
+    {:ok, _} =
+      Delivery.update_zone(admin, branch.id, outer.id, %{
+        "thresholds" => [%{"order_from" => 0, "price" => 300}]
+      })
+
+    {:ok, inner} = Delivery.create_zone(admin, branch.id, @square)
+
+    {:ok, _} =
+      Delivery.update_zone(admin, branch.id, inner.id, %{
+        "thresholds" => [%{"order_from" => 1000, "price" => 100}]
+      })
+
+    point = %{branch_id: branch.id, latitude: "55.5", longitude: "37.5"}
+
+    assert %{"data" => %{"status" => "below_minimum", "zone_id" => id, "min_order" => 1000}} =
+             fetch_quote(conn, Map.put(point, :subtotal, 500))
+
+    assert id == inner.id
+
+    assert %{"data" => %{"status" => "ok", "zone_id" => ^id, "price" => 100}} =
+             fetch_quote(conn, Map.put(point, :subtotal, 1500))
   end
 
   test "an unknown branch is 404", %{conn: conn} do
