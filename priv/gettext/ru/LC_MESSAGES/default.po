@@ -9613,3 +9613,34 @@ msgstr "Опрос"
 
 msgid "I checked the CRM and confirmed this order does not exist there."
 msgstr "Я проверил CRM и убедился, что этого заказа там нет."
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:204
+#: lib/delivest_web/live/staff/promotion_live/rules_help.ex:16
+#, elixir-autogen, elixir-format
+msgid "First website order"
+msgstr "Первый заказ на сайте"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:736
+#, elixir-autogen, elixir-format
+msgid "Only a signed-in customer with no previous non-cancelled website order in this branch qualifies. Choose any reward below."
+msgstr "Акция доступна вошедшему клиенту без предыдущих неотменённых заказов на сайте в этом филиале. Выберите любое вознаграждение ниже."
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:338
+#, elixir-autogen, elixir-format
+msgid "Quick start"
+msgstr "Быстрый старт"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:346
+#, elixir-autogen, elixir-format
+msgid "Regular discount"
+msgstr "Обычная скидка"
+
+#: lib/delivest_web/live/staff/promotion_live/rules_text.ex:27
+#, elixir-autogen, elixir-format
+msgid "first website order in this branch"
+msgstr "первый заказ на сайте в этом филиале"
+
+#: lib/delivest_web/live/staff/promotion_live/reason_text.ex:32
+#, elixir-autogen, elixir-format
+msgid "only for the first website order in this branch"
+msgstr "только для первого заказа на сайте в этом филиале"

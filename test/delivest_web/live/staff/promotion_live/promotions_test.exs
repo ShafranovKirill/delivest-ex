@@ -69,6 +69,27 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     assert has_element?(lv, "#promotion-#{promotion.id}")
   end
 
+  test "first-order quick template can save a gift reward", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/new")
+
+    lv |> element("#promotion-templates button[phx-value-type=first_order]") |> render_click()
+    assert has_element?(lv, "#condition-0")
+    assert has_element?(lv, "#effect-0")
+
+    lv |> element("#effect-0 button[phx-click=remove_effect]") |> render_click()
+    lv |> element("#add-effect button[phx-value-type=gift]") |> render_click()
+
+    lv
+    |> form("#promotion-form",
+      promotion: %{name: "First gift", kind: "automatic"},
+      builder: %{effects: %{"0" => %{product: "cola", count: "1"}}}
+    )
+    |> render_submit()
+
+    assert %Promotion{rules: ~s(when first_order\nthen gift "cola" x1)} =
+             Repo.get_by!(Promotion, name: "First gift")
+  end
+
   test "puts a product on sale from the quick form", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/sale")
 

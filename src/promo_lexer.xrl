@@ -28,7 +28,7 @@ x{D}+ : {token, {times, TokenLoc, list_to_integer(tl(TokenChars))}}.
 Erlang code.
 
 -define(KEYWORDS, ["when", "then", "and", "or", "not", "in", "on", "max", "rub", "x",
-                   "has", "subtotal", "quantity", "fulfillment", "time", "weekday",
+                   "has", "subtotal", "quantity", "fulfillment", "time", "weekday", "first_order",
                    "discount", "gift", "price"]).
 
 kopecks(Chars) ->

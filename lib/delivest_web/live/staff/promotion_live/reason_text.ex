@@ -29,6 +29,7 @@ defmodule DelivestWeb.Staff.PromotionLive.ReasonText do
     do: gettext("works on: %{days}", days: Enum.map_join(days, ", ", &RulesText.weekday/1))
 
   def unmet(%{type: :requires_client}), do: gettext("needs the client's phone")
+  def unmet(%{type: :first_order}), do: gettext("only for the first website order in this branch")
   def unmet(_reason), do: gettext("conditions are not met")
 
   def rejected(:not_found), do: gettext("Promo code not found")

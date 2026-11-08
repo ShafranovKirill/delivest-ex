@@ -32,6 +32,19 @@ defmodule Delivest.Promo.DslTest do
     assert strategy.effects == [{:amount, 5000, {:products, ["a", "b"]}}]
   end
 
+  test "parses first order with every reward kind" do
+    for effect <- [
+          "discount 10%",
+          "discount 50 rub",
+          ~s|gift "a"|,
+          ~s|gift ("a", "b") x1|,
+          ~s|price "a" 100|
+        ] do
+      assert {:ok, %Strategy{condition: :first_order}} =
+               Dsl.parse("when first_order then " <> effect)
+    end
+  end
+
   test "reads sums in rubles with kopecks" do
     assert {:ok, strategy} =
              Dsl.parse(~s(when subtotal >= 999.9 then discount 49.99 rub, price "a" 0.5))

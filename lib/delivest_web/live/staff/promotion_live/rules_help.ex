@@ -12,7 +12,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesHelp do
      "when time 11:00..16:00 and weekday in (mon, tue, wed, thu, fri)\n  and fulfillment in (pickup, dine_in)\nthen discount 15%"},
     {gettext_noop("Sale prices shown in the menu"),
      "then price \"margarita\" 399\n     discount 20% on (\"cola\", \"juice\")"},
-    {gettext_noop("Fixed discount"), "then discount 300 rub"}
+    {gettext_noop("Fixed discount"), "then discount 300 rub"},
+    {gettext_noop("First website order"), "when first_order\nthen discount 10%"}
   ]
 
   def render_help(assigns) do
@@ -40,6 +41,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesHelp do
               <li>fulfillment in (delivery, pickup, dine_in)</li>
               <li>time 11:00..16:00</li>
               <li>weekday in (mon, ..., sun)</li>
+              <li>first_order</li>
               <li>and · or · not · ( )</li>
             </ul>
           </div>

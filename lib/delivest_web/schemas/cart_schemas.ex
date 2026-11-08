@@ -137,7 +137,8 @@ defmodule DelivestWeb.Schemas.CartSchemas do
       description:
         "Почему акция пока не применилась. `subtotal`/`quantity` — сколько не хватает (`missing`, для `subtotal` в копейках), " <>
           "`product` — какого товара не хватает, `fulfillment` — допустимые способы получения, " <>
-          "`time`/`weekday` — когда действует, `requires_client` — нужна авторизация.",
+          "`time`/`weekday` — когда действует, `requires_client` — нужна авторизация, " <>
+          "`first_order` — только для первого заказа клиента на сайте в этом филиале.",
       type: :object,
       properties: %{
         type: %Schema{
@@ -150,7 +151,8 @@ defmodule DelivestWeb.Schemas.CartSchemas do
             "fulfillment",
             "time",
             "weekday",
-            "requires_client"
+            "requires_client",
+            "first_order"
           ]
         },
         names: %Schema{type: :array, items: %Schema{type: :string}},

@@ -4,6 +4,7 @@ program condition conj neg atom amount sum effects effect target cap strings ide
 Terminals
 'when' 'then' 'and' 'or' 'not' 'in' 'on' 'max' 'rub' 'x'
 'has' 'subtotal' 'quantity' 'fulfillment' 'time' 'weekday'
+'first_order'
 'discount' 'gift' 'price'
 '(' ')' ',' '%' '..'
 int money string ident clock cmp times.
@@ -30,6 +31,7 @@ atom -> 'has' '(' strings ')' amount : {has_any, '$3', '$5'}.
 atom -> 'fulfillment' 'in' '(' idents ')' : {fulfillment, '$4'}.
 atom -> 'time' clock '..' clock : {time, located('$2'), located('$4')}.
 atom -> 'weekday' 'in' '(' idents ')' : {weekday, '$4'}.
+atom -> 'first_order' : first_order.
 
 amount -> '$empty' : 1.
 amount -> times : value('$1').

@@ -31,6 +31,7 @@ defmodule Delivest.Oms.Checkout do
       online: attrs["payment_method"] == "online",
       public_session_id: session_id,
       public_guest: is_nil(client),
+      authenticated_client_id: client && client.id,
       cart_revision: attrs["cart_revision"]
     ]
 

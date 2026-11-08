@@ -4,6 +4,8 @@ defmodule Delivest.Promo.Context do
   @type t :: %__MODULE__{
           branch_id: binary() | nil,
           client_id: binary() | nil,
+          authenticated_client_id: binary() | nil,
+          source: String.t(),
           fulfillment_type: atom() | nil,
           code: String.t() | nil,
           now: DateTime.t(),
@@ -13,6 +15,8 @@ defmodule Delivest.Promo.Context do
   defstruct [
     :branch_id,
     :client_id,
+    :authenticated_client_id,
+    :source,
     :fulfillment_type,
     :code,
     :now,
@@ -30,6 +34,8 @@ defmodule Delivest.Promo.Context do
       promo_gifts: normalize_gifts(attrs[:promo_gifts]),
       branch_id: attrs[:branch_id],
       client_id: attrs[:client_id],
+      authenticated_client_id: attrs[:authenticated_client_id],
+      source: attrs[:source] || "app",
       fulfillment_type: fulfillment(attrs[:fulfillment_type]),
       code: blank_to_nil(attrs[:code]),
       now: attrs[:now] || DateTime.utc_now(:second),

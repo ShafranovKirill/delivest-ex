@@ -9,6 +9,7 @@ defmodule Delivest.Promo.Engine do
     Effects,
     Eligibility,
     Facts,
+    FirstOrder,
     PromoCode,
     Result,
     Selection,
@@ -37,10 +38,19 @@ defmodule Delivest.Promo.Engine do
     {code_entry, code_state} = resolve_code(context, compiled)
     usage = load_usage(automatic, code_entry, context)
     basket = Basket.new(items)
-    facts = Facts.build(basket, context)
 
-    code_verdict = judge_code(code_entry, context, usage, facts)
-    auto_verdicts = Enum.map(automatic, &{&1, judge(&1, nil, context, usage, facts)})
+    first_order_condition? =
+      Enum.any?(compiled, &FirstOrder.condition?(&1.strategy.condition))
+
+    facts = Facts.build(basket, context, first_order_condition?)
+
+    existing =
+      if context.source == "app" and context.client_id == context.authenticated_client_id,
+        do: FirstOrder.existing_ids(context.except_order_id),
+        else: MapSet.new()
+
+    code_verdict = judge_code(code_entry, context, usage, facts, existing)
+    auto_verdicts = Enum.map(automatic, &{&1, judge(&1, nil, context, usage, facts, existing)})
 
     selected = Selection.pick(eligible(code_entry, code_verdict) ++ eligible(auto_verdicts))
 
@@ -89,12 +99,18 @@ defmodule Delivest.Promo.Engine do
   defp code_of(nil), do: nil
   defp code_of({_entry, code}), do: code
 
-  defp judge_code(nil, _context, _usage, _facts), do: nil
+  defp judge_code(nil, _context, _usage, _facts, _existing), do: nil
 
-  defp judge_code({entry, code}, context, usage, facts),
-    do: judge(entry, code, context, usage, facts)
+  defp judge_code({entry, code}, context, usage, facts, existing),
+    do: judge(entry, code, context, usage, facts, existing)
 
-  defp judge(%Compiled{} = entry, code, context, usage, facts) do
+  defp judge(%Compiled{} = entry, code, context, usage, facts, existing) do
+    facts =
+      if MapSet.member?(existing, entry.promotion.id) and
+           FirstOrder.required?(entry.strategy.condition),
+         do: %{facts | first_order: true},
+         else: facts
+
     case Eligibility.check(entry.promotion, code, context, usage) do
       :ok -> Condition.evaluate(entry.strategy.condition, facts, entry)
       {:error, reason} -> {:rejected, reason}
@@ -120,7 +136,9 @@ defmodule Delivest.Promo.Engine do
   end
 
   defp actionable(entry, reasons) do
-    if Enum.any?(reasons, &(&1.type == :other)), do: [], else: [Result.hint(entry, reasons)]
+    if Enum.any?(reasons, &(&1.type in [:other, :first_order])),
+      do: [],
+      else: [Result.hint(entry, reasons)]
   end
 
   defp code_state(state, nil, _verdict), do: state
