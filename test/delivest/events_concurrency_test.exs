@@ -4,7 +4,7 @@ defmodule Delivest.EventsConcurrencyTest do
 
   alias Delivest.Events
   alias Delivest.Events.{DeliverWorker, Delivery, Event, Recovery}
-  alias Delivest.Oms.Order
+  alias Delivest.Oms.{Cart, Order}
 
   defmodule Probe do
     @behaviour Delivest.Events.Subscriber
@@ -16,8 +16,14 @@ defmodule Delivest.EventsConcurrencyTest do
 
     def handle(%Event{} = event) do
       event
-      |> Ecto.Changeset.change(payload: Map.put(event.payload, "handled", true))
+      |> Ecto.Changeset.change(
+        payload: event.payload |> Map.put("handled", true) |> Map.put("status", "preparing")
+      )
       |> Repo.update!()
+
+      if order = Repo.get(Delivest.Oms.Order, event.aggregate_id) do
+        order |> Ecto.Changeset.change(status: :preparing) |> Repo.update!()
+      end
 
       case Application.get_env(:delivest, :event_probe_parent) do
         nil ->
@@ -30,6 +36,20 @@ defmodule Delivest.EventsConcurrencyTest do
             :continue -> :ok
           end
       end
+    end
+
+    def after_commit(%Event{} = event) do
+      if parent = Application.get_env(:delivest, :event_probe_parent) do
+        send(parent, {:after_commit, event.id})
+
+        if event.payload["post_commit_barrier"] do
+          receive do
+            :finish_after_commit -> :ok
+          end
+        end
+      end
+
+      :ok
     end
   end
 
@@ -130,7 +150,9 @@ defmodule Delivest.EventsConcurrencyTest do
 
     Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
       assert :ok = perform_job(DeliverWorker, %{event_id: event.id, subscriber: "probe"})
-      assert %Event{payload: %{"handled" => true}} = Repo.get!(Event, event.id)
+
+      assert %Event{payload: %{"handled" => true, "status" => "preparing"}} =
+               Repo.get!(Event, event.id)
 
       assert %Delivery{status: "delivered"} =
                Repo.get_by!(Delivery, event_id: event.id, subscriber: "probe")
@@ -199,5 +221,101 @@ defmodule Delivest.EventsConcurrencyTest do
                    select: e.id
                )
     end)
+  end
+
+  test "subscriber notification follows commit and is visible to an independent reader" do
+    Application.put_env(:delivest, :event_subscribers, [Probe])
+    Application.put_env(:delivest, :event_probe_parent, self())
+
+    on_exit(fn ->
+      Application.delete_env(:delivest, :event_subscribers)
+      Application.delete_env(:delivest, :event_probe_parent)
+    end)
+
+    {branch, cart, order, event} =
+      Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+        branch = Delivest.Factory.insert(:branch)
+        cart = Repo.insert!(%Cart{branch_id: branch.id})
+
+        order =
+          Repo.insert!(%Order{
+            branch_id: branch.id,
+            cart_id: cart.id,
+            number: "post-commit-#{System.unique_integer([:positive])}",
+            business_date: Date.utc_today(),
+            daily_number: 1,
+            status: :accepted
+          })
+
+        {:ok, event} =
+          Events.record(
+            "order.status_changed",
+            order,
+            %{"status" => "accepted", "post_commit_barrier" => true},
+            %{kind: :system}
+          )
+
+        {branch, cart, order, event}
+      end)
+
+    on_exit(fn ->
+      await_delivery_lock(order.id, "probe")
+
+      Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+        Repo.delete_all(
+          from j in Oban.Job, where: fragment("?->>'event_id'", j.args) == ^event.id
+        )
+
+        Repo.delete_all(from d in Delivery, where: d.event_id == ^event.id)
+        Repo.delete_all(from e in Event, where: e.id == ^event.id)
+        Repo.delete!(order)
+        Repo.delete!(cart)
+        Repo.delete!(branch)
+
+        Repo.query!(
+          "DELETE FROM event_sequences WHERE aggregate_type = $1 AND aggregate_id = $2",
+          ["order", Ecto.UUID.dump!(order.id)]
+        )
+      end)
+    end)
+
+    {child, ref} =
+      spawn_monitor(fn ->
+        Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+          perform_job(DeliverWorker, %{event_id: event.id, subscriber: "probe"})
+        end)
+      end)
+
+    on_exit(fn -> Process.exit(child, :kill) end)
+    assert_receive {:inside_delivery, ^child}, 5_000
+
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      assert %Event{payload: %{"status" => "accepted"}} = Repo.get!(Event, event.id)
+      assert %Order{status: :accepted} = Repo.get!(Order, order.id)
+    end)
+
+    send(child, :continue)
+    assert_receive {:after_commit, id}, 5_000
+    assert id == event.id
+
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+      assert %Event{payload: %{"handled" => true, "status" => "preparing"}} =
+               Repo.get!(Event, event.id)
+
+      assert %Order{status: :preparing} = Repo.get!(Order, order.id)
+
+      assert %Delivery{status: "delivered"} =
+               Repo.get_by!(Delivery, event_id: event.id, subscriber: "probe")
+    end)
+
+    send(child, :finish_after_commit)
+    assert_receive {:DOWN, ^ref, :process, ^child, :normal}, 5_000
+
+    assert :ok =
+             Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
+               perform_job(DeliverWorker, %{event_id: event.id, subscriber: "probe"})
+             end)
+
+    refute_receive {:after_commit, ^id}
   end
 end

@@ -43,6 +43,7 @@ defmodule Delivest.Events.DeliverWorker do
 
     case result do
       {:ok, {:delivered, event}} ->
+        notify_after_commit(module, event, key)
         report_delivery(event, key)
         :ok
 
@@ -142,5 +143,21 @@ defmodule Delivest.Events.DeliverWorker do
       %{count: 1, lag: lag},
       %{subscriber: to_string(key)}
     )
+  end
+
+  defp notify_after_commit(module, event, key) do
+    if function_exported?(module, :after_commit, 1) do
+      try do
+        case module.after_commit(event) do
+          :ok -> :ok
+          _other -> Logger.error("post-commit notification failed for #{key} event #{event.id}")
+        end
+      rescue
+        _error -> Logger.error("post-commit notification raised for #{key} event #{event.id}")
+      catch
+        kind, _reason ->
+          Logger.error("post-commit notification failed (#{kind}) for #{key} event #{event.id}")
+      end
+    end
   end
 end
