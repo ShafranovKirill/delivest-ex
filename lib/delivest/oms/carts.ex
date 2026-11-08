@@ -336,7 +336,12 @@ defmodule Delivest.Oms.Carts do
 
   defp do_build_cart_view(%Cart{} = cart, items) when is_list(items) do
     product_ids = Enum.map(items, & &1.product_id) |> Enum.uniq()
-    products_map = Net.list_products_by_ids(product_ids, preload: [:media])
+
+    products_map =
+      Net.Products.list_branch_cart_products_by_ids(cart.branch_id, product_ids,
+        preload: [:media]
+      )
+
     do_build_cart_view(cart, items, products_map)
   end
 
@@ -344,11 +349,11 @@ defmodule Delivest.Oms.Carts do
     product_ids = Enum.map(items, & &1.product_id) |> Enum.uniq()
     groups = Modifiers.for_products(product_ids)
 
-    {view_items, total_qty, total_amt, inactive_item_ids} =
-      Enum.reduce(items, {[], 0, 0, []}, fn item, {acc_items, acc_qty, acc_amt, inactive_acc} ->
+    {view_items, total_qty, total_amt} =
+      Enum.reduce(items, {[], 0, 0}, fn item, {acc_items, acc_qty, acc_amt} ->
         case Map.get(products_map, item.product_id) do
           nil ->
-            {acc_items, acc_qty, acc_amt, [item.id | inactive_acc]}
+            {[unavailable_item(item, nil, :product_missing) | acc_items], acc_qty, acc_amt}
 
           product ->
             choices = current_choices(item, Map.get(groups, item.product_id, []))
@@ -370,9 +375,10 @@ defmodule Delivest.Oms.Carts do
                   modifiers: []
                 }
 
-                {[view_item | acc_items], acc_qty + item.quantity, acc_amt, inactive_acc}
+                {[view_item | acc_items], acc_qty + item.quantity, acc_amt}
               else
-                {acc_items, acc_qty, acc_amt, [item.id | inactive_acc]}
+                {[unavailable_item(item, product, :product_unavailable) | acc_items], acc_qty,
+                 acc_amt}
               end
             else
               if product.is_active && is_nil(product.deleted_at) && choices != :gone do
@@ -390,21 +396,16 @@ defmodule Delivest.Oms.Carts do
                   modifiers: choices
                 }
 
-                {[view_item | acc_items], acc_qty + item.quantity, acc_amt + item_total,
-                 inactive_acc}
+                {[view_item | acc_items], acc_qty + item.quantity, acc_amt + item_total}
               else
-                {acc_items, acc_qty, acc_amt, [item.id | inactive_acc]}
+                reason =
+                  if choices == :gone, do: :modifier_unavailable, else: :product_unavailable
+
+                {[unavailable_item(item, product, reason) | acc_items], acc_qty, acc_amt}
               end
             end
         end
       end)
-
-    if inactive_item_ids != [] do
-      from(ci in CartItem,
-        where: ci.cart_id == ^cart.id and ci.id in ^inactive_item_ids
-      )
-      |> Repo.delete_all()
-    end
 
     %CartView{
       id: cart.id,
@@ -419,6 +420,22 @@ defmodule Delivest.Oms.Carts do
       total_quantity: total_qty,
       subtotal_amount: total_amt,
       total_amount: total_amt
+    }
+  end
+
+  defp unavailable_item(item, product, reason) do
+    %{
+      key: item_key(item.product_id, item.modifier_key),
+      product_id: item.product_id,
+      name: if(product, do: product.name, else: "Unavailable product"),
+      image_url: if(product, do: Delivest.Media.thumb_url_from_file(product.media), else: nil),
+      price: if(product, do: product.price, else: 0),
+      quantity: item.quantity,
+      total_price: 0,
+      base_total: 0,
+      modifiers: [],
+      unavailable: true,
+      unavailable_reason: reason
     }
   end
 
