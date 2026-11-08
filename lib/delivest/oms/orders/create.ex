@@ -84,7 +84,26 @@ defmodule Delivest.Oms.Orders.Create do
         error -> error
       end
     end)
-    |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} -> pricing.(cart, attrs, id) end)
+    |> Multi.run(:client_order_lock, fn repo, %{cart: cart, client_id: id} ->
+      if id && Keyword.get(opts, :source, "app") == "app" do
+        Ecto.Adapters.SQL.query!(
+          repo,
+          "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+          ["first-order:#{cart.branch_id}:#{id}"]
+        )
+      end
+
+      {:ok, :locked}
+    end)
+    |> Multi.run(:pricing, fn _, %{cart: cart, client_id: id} ->
+      pricing.(
+        cart,
+        attrs
+        |> Map.put("source", Keyword.get(opts, :source, "app"))
+        |> Map.put("_authenticated_client_id", Keyword.get(opts, :authenticated_client_id)),
+        id
+      )
+    end)
     |> Multi.run(:stops, fn _, %{pricing: pricing, cart: cart} ->
       StopGuard.check(cart.branch_id, pricing)
     end)

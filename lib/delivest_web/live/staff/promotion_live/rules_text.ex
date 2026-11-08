@@ -24,6 +24,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesText do
   defp condition({:not, a}, names),
     do: gettext("not (%{condition})", condition: condition(a, names))
 
+  defp condition(:first_order, _names), do: gettext("first website order in this branch")
+
   defp condition({:subtotal, op, value}, _names),
     do: gettext("cart total %{op} %{amount}", op: op, amount: OrderHelpers.money(value))
 

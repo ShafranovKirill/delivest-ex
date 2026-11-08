@@ -46,6 +46,9 @@ defmodule DelivestWeb.Client.DeliveryControllerTest do
     assert %{"data" => %{"status" => "ok", "price" => 150, "free_from" => 1500, "minutes" => 45}} =
              fetch_quote(conn, Map.put(inside, :subtotal, 800))
 
+    assert %{"data" => %{"status" => "ok", "price" => 150}} =
+             fetch_quote(conn, Map.merge(inside, %{subtotal: 800, city: "Соседний город"}))
+
     assert %{"data" => %{"status" => "below_minimum", "min_order" => 500, "price" => 150}} =
              fetch_quote(conn, Map.put(inside, :subtotal, 300))
 

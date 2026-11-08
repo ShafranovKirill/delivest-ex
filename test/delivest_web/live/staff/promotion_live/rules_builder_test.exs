@@ -23,6 +23,23 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilderTest do
              "when quantity > 3\n  or fulfillment in (pickup)\nthen discount 5%"
   end
 
+  test "quick templates use the normal reward editor and round trip first order" do
+    assert RulesBuilder.template("discount").conditions == []
+    builder = RulesBuilder.template("first_order")
+    assert [%{"type" => "first_order"}] = builder.conditions
+    assert [%{"type" => "percent"}] = builder.effects
+
+    for rules <- [
+          "when first_order then discount 10%",
+          ~s(when first_order then gift "cola"),
+          ~s(when first_order then price "pizza" 399)
+        ] do
+      assert {:ok, parsed} = RulesBuilder.from_rules(rules)
+      assert RulesBuilder.to_rules(parsed) =~ "when first_order"
+      assert {:ok, _} = Delivest.Promo.Dsl.parse(RulesBuilder.to_rules(parsed))
+    end
+  end
+
   test "rejects mixed and negated conditions" do
     assert :error = RulesBuilder.from_rules("when not subtotal < 1 then discount 5%")
 

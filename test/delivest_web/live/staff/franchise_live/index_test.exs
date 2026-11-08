@@ -32,6 +32,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/brand")
 
     assert has_element?(lv, ~s(#franchise-settings-form select[name="settings[default_theme]"]))
+    refute has_element?(lv, ~s(#franchise-settings-form input[name="settings[yandex_org_id]"]))
+    refute has_element?(lv, ~s(#franchise-settings-form input[name="settings[yandex_api_key]"]))
 
     lv
     |> form("#franchise-settings-form", settings: %{primary_color: "#eeeeee"})

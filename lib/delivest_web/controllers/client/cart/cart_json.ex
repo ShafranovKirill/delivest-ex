@@ -53,6 +53,8 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       stars_price: Map.get(item, :stars_price),
       promotion_ids: Map.get(item, :promotion_ids, []),
       stopped: MapSet.member?(stopped, item.product_id),
+      unavailable: Map.get(item, :unavailable, false),
+      unavailable_reason: Map.get(item, :unavailable_reason),
       modifiers: Enum.map(Map.get(item, :modifiers, []), &modifier/1)
     }
   end

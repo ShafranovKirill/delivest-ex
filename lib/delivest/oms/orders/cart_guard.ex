@@ -105,13 +105,17 @@ defmodule Delivest.Oms.Orders.CartGuard do
           {:error, :product_unavailable}
 
         %CartView{} = view ->
-          {:ok,
-           %{
-             view
-             | product_snapshot: products,
-               compiled_promotions: compiled,
-               catalog_version: version
-           }}
+          if Enum.any?(view.items, &Map.get(&1, :unavailable, false)) do
+            {:error, :product_unavailable}
+          else
+            {:ok,
+             %{
+               view
+               | product_snapshot: products,
+                 compiled_promotions: compiled,
+                 catalog_version: version
+             }}
+          end
       end
     end
   end
