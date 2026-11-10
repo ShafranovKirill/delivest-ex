@@ -9,6 +9,7 @@ defmodule Delivest.Segments do
   alias Delivest.Segments.Segment
 
   @page_size 50
+  @client_page_size 20
 
   @doc "Pin a published dynamic snapshot while an internal bounded consumer scans it. Caller owns transaction."
   def lease_snapshot(%Segment{} = segment, owner_type, owner_id)
@@ -330,6 +331,139 @@ defmodule Delivest.Segments do
       end
     end
   end
+
+  @doc "A fixed-size, searchable page for the staff segment's Clients tab."
+  def paginated_clients(%Staff{} = staff, segment_id, params \\ %{}) when is_map(params) do
+    mode = Map.get(params, "mode", "members")
+
+    search =
+      case Map.get(params, "search", "") do
+        nil -> ""
+        value when is_binary(value) -> String.trim(value)
+        _ -> :invalid
+      end
+
+    with {:ok, segment} <- get(staff, segment_id),
+         :ok <- authorize_client_page(staff, segment, mode),
+         true <- is_binary(search) and String.length(search) <= 100 do
+      sort = if Map.get(params, "sort") in ["name", "phone"], do: params["sort"], else: "name"
+      direction = if params["direction"] == "desc", do: "desc", else: "asc"
+      query = client_page_query(segment, mode, search)
+      total_count = Repo.aggregate(query, :count, :id)
+      total_pages = max(1, div(total_count + @client_page_size - 1, @client_page_size))
+      page = params |> Map.get("page") |> client_page_number() |> min(total_pages)
+      sort_field = if sort == "phone", do: :phone, else: :name
+      sort_direction = if direction == "desc", do: :desc_nulls_last, else: :asc_nulls_last
+      offset_count = (page - 1) * @client_page_size
+
+      clients =
+        query
+        |> order_by([c], [{^sort_direction, field(c, ^sort_field)}, asc: c.id])
+        |> limit(^@client_page_size)
+        |> offset(^offset_count)
+        |> Repo.all()
+
+      {:ok,
+       %{
+         clients: clients,
+         page: page,
+         page_size: @client_page_size,
+         total_pages: total_pages,
+         total_count: total_count,
+         sort: sort,
+         direction: direction,
+         search: search,
+         mode: mode
+       }}
+    else
+      false -> {:error, :invalid_search}
+      error -> error
+    end
+  end
+
+  defp authorize_client_page(_staff, _segment, "members"), do: :ok
+
+  defp authorize_client_page(staff, %Segment{kind: :manual}, "available"),
+    do: authorize(staff, "segments.manage")
+
+  defp authorize_client_page(_staff, _segment, _mode), do: {:error, :forbidden}
+
+  defp client_page_query(
+         %Segment{kind: :dynamic, published_snapshot_id: nil} = segment,
+         "members",
+         search
+       ),
+       do: segment |> client_page_base_query(search) |> where([c], false)
+
+  defp client_page_query(segment, mode, search) do
+    membership_query =
+      if segment.kind == :manual do
+        from m in "segment_manual_members",
+          where: m.segment_id == type(^segment.id, :binary_id),
+          select: m.client_id
+      else
+        from m in "segment_dynamic_members",
+          where:
+            m.segment_id == type(^segment.id, :binary_id) and
+              m.snapshot_id == type(^segment.published_snapshot_id, :binary_id),
+          select: m.client_id
+      end
+
+    query = client_page_base_query(segment, search)
+
+    case mode do
+      "members" -> where(query, [c], c.id in subquery(membership_query))
+      "available" -> where(query, [c], c.id not in subquery(membership_query))
+    end
+  end
+
+  defp client_page_base_query(segment, search) do
+    query =
+      from c in Client,
+        as: :client,
+        where: c.status == :active and is_nil(c.deleted_at)
+
+    query =
+      if segment.scope == :branches do
+        branch_ids = Enum.map(segment.branches, & &1.id)
+
+        where(
+          query,
+          [c],
+          exists(
+            from o in Order,
+              where:
+                o.client_id == parent_as(:client).id and o.branch_id in ^branch_ids and
+                  is_nil(o.deleted_at)
+          )
+        )
+      else
+        query
+      end
+
+    if search == "" do
+      query
+    else
+      escaped =
+        search
+        |> String.replace("\\", "\\\\")
+        |> String.replace("%", "\\%")
+        |> String.replace("_", "\\_")
+
+      where(query, [c], ilike(c.name, ^"%#{escaped}%") or ilike(c.phone, ^"%#{escaped}%"))
+    end
+  end
+
+  defp client_page_number(page) when is_integer(page) and page > 0, do: page
+
+  defp client_page_number(page) when is_binary(page) do
+    case Integer.parse(page) do
+      {number, ""} when number > 0 -> number
+      _ -> 1
+    end
+  end
+
+  defp client_page_number(_), do: 1
 
   def search_eligible_clients(%Staff{} = staff, segment_id, term, opts \\ [])
       when is_binary(term) do

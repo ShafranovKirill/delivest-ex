@@ -23,25 +23,27 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           group: nil,
           policy_impact: nil,
           pending_member: nil,
-          members: [],
-          has_more_members: false,
-          candidates: [],
-          selected_clients: %{},
+          active_tab: nil,
+          client_page: nil,
+          client_params: %{},
+          client_search_error: nil,
           selected_branches: [],
           conditions: [],
           condition_metric: "order_count",
-          step: 1,
+          condition_error: nil,
+          name_error: nil,
+          scope_error: nil,
+          reviewing: false,
           after_id: nil,
           last_group_id: nil,
-          member_after: nil,
           draft: %{"name" => "", "kind" => "manual", "scope" => "branches", "match" => "all"},
           form:
             to_form(%{"name" => "", "kind" => "manual", "scope" => "branches", "match" => "all"},
               as: :segment
             ),
           condition_form:
-            to_form(%{"metric" => "order_count", "op" => "gte", "value" => "1"}, as: :condition),
-          search_form: to_form(%{"query" => ""}, as: :search)
+            to_form(%{"metric" => "order_count", "op" => "gte", "value" => ""}, as: :condition),
+          client_filter_form: to_form(%{"search" => ""}, as: :filter)
         )
         |> attach_hook(:segments_feature_gate, :handle_event, &check_event/3)
 
@@ -82,7 +84,31 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
       :new ->
         if socket.assigns.can_manage,
-          do: {:noreply, assign(socket, group: nil, step: 1)},
+          do:
+            {:noreply,
+             assign(socket,
+               group: nil,
+               policy_impact: nil,
+               pending_member: nil,
+               reviewing: false,
+               draft: %{"name" => "", "kind" => "manual", "scope" => "branches", "match" => "all"},
+               form:
+                 to_form(
+                   %{"name" => "", "kind" => "manual", "scope" => "branches", "match" => "all"},
+                   as: :segment
+                 ),
+               selected_branches: [],
+               conditions: [],
+               condition_metric: "order_count",
+               condition_error: nil,
+               name_error: nil,
+               scope_error: nil,
+               condition_form:
+                 to_form(%{"metric" => "order_count", "op" => "gte", "value" => ""},
+                   as: :condition
+                 ),
+               client_page: nil
+             )},
           else: {:noreply, push_navigate(socket, to: ~p"/staff/segments")}
 
       :edit ->
@@ -101,11 +127,21 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
                |> assign(
                  group: group,
                  policy_impact: nil,
+                 pending_member: nil,
+                 reviewing: false,
                  draft: draft,
                  selected_branches: Enum.map(group.branches, & &1.id),
                  conditions: (group.rules && group.rules["conditions"]) || [],
+                 condition_error: nil,
+                 name_error: nil,
+                 scope_error: nil,
+                 condition_metric: "order_count",
+                 condition_form:
+                   to_form(%{"metric" => "order_count", "op" => "gte", "value" => ""},
+                     as: :condition
+                   ),
                  form: to_form(draft, as: :segment),
-                 step: 1
+                 client_page: nil
                )}
 
             _ ->
@@ -118,18 +154,48 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
       :show ->
         case Segments.get(staff, params["id"]) do
           {:ok, group} ->
-            {:ok, members} = Segments.list_members(staff, group.id)
+            tab = if params["tab"] in ["clients", "settings"], do: params["tab"]
 
-            {:noreply,
-             socket
-             |> assign(
-               group: group,
-               policy_impact: nil,
-               pending_member: nil,
-               members: members,
-               has_more_members: length(members) == 50,
-               member_after: nil
-             )}
+            if tab == "clients" do
+              client_params =
+                params
+                |> Map.take(~w(page search sort direction mode))
+                |> Map.put_new("mode", "members")
+
+              case Segments.paginated_clients(staff, group.id, client_params) do
+                {:ok, page} ->
+                  {:noreply,
+                   assign(socket,
+                     group: group,
+                     active_tab: tab,
+                     client_page: page,
+                     client_params: client_page_params(page),
+                     client_filter_form: to_form(%{"search" => page.search}, as: :filter),
+                     client_search_error: nil,
+                     pending_member: nil,
+                     policy_impact: nil
+                   )}
+
+                _ ->
+                  {:noreply,
+                   socket
+                   |> put_flash(
+                     :error,
+                     "Не удалось открыть список с этими параметрами. Поиск сброшен."
+                   )
+                   |> push_patch(to: ~p"/staff/segments/#{group.id}?tab=clients")}
+              end
+            else
+              {:noreply,
+               assign(socket,
+                 group: group,
+                 active_tab: tab,
+                 client_page: nil,
+                 client_params: %{},
+                 pending_member: nil,
+                 policy_impact: nil
+               )}
+            end
 
           _ ->
             {:noreply, push_navigate(socket, to: ~p"/staff/segments")}
@@ -138,62 +204,30 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   end
 
   @impl true
-  def handle_event("details", %{"segment" => params}, socket) do
-    fields = if socket.assigns.live_action == :edit, do: ~w(name), else: ~w(name kind scope match)
-    draft = socket.assigns.draft |> Map.merge(Map.take(params, fields))
-    {:noreply, socket |> assign(draft: draft, form: to_form(draft, as: :segment), step: 2)}
-  end
-
-  def handle_event("set_match", %{"segment" => %{"match" => match}}, socket)
-      when match in ["all", "any"] do
-    draft = Map.put(socket.assigns.draft, "match", match)
-    {:noreply, assign(socket, draft: draft, form: to_form(draft, as: :segment))}
+  def handle_event("change_settings", params, socket) do
+    {:noreply, update_settings(socket, params)}
   end
 
   def handle_event("toggle_branch", %{"id" => id}, socket) do
-    if socket.assigns.live_action == :edit do
-      {:noreply, socket}
-    else
+    if socket.assigns.live_action == :new and
+         Enum.any?(socket.assigns.branches, &(&1.id == id)) do
       selected = socket.assigns.selected_branches
-
-      if Enum.any?(socket.assigns.branches, &(&1.id == id)) do
-        selected = if id in selected, do: List.delete(selected, id), else: [id | selected]
-        {:noreply, assign(socket, selected_branches: selected)}
-      else
-        {:noreply, socket}
-      end
-    end
-  end
-
-  def handle_event("add_condition", %{"condition" => params}, socket) do
-    rule = %{
-      "metric" => params["metric"],
-      "op" => params["op"],
-      "value" => parse_value(params["metric"], params["value"])
-    }
-
-    candidate = socket.assigns.conditions ++ [rule]
-
-    if match?(
-         {:ok, _},
-         Segments.Rules.validate(%{
-           "version" => 1,
-           "match" => socket.assigns.draft["match"],
-           "conditions" => candidate
-         })
-       ) do
-      {:noreply, assign(socket, conditions: candidate)}
+      selected = if id in selected, do: List.delete(selected, id), else: [id | selected]
+      {:noreply, assign(socket, selected_branches: selected, scope_error: nil)}
     else
-      {:noreply, put_flash(socket, :error, "Некорректное условие или превышен лимит 8 условий")}
+      {:noreply, socket}
     end
   end
 
-  def handle_event("change_condition", %{"condition" => params}, socket) do
-    {:noreply,
-     assign(socket,
-       condition_metric: params["metric"],
-       condition_form: to_form(params, as: :condition)
-     )}
+  def handle_event("add_condition", _, socket) do
+    if socket.assigns.draft["kind"] == "dynamic" do
+      case append_condition(socket, socket.assigns.condition_form.params) do
+        {:ok, socket} -> {:noreply, socket}
+        {:error, message} -> {:noreply, assign(socket, condition_error: message)}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("remove_condition", %{"index" => index}, socket) do
@@ -206,61 +240,46 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
     end
   end
 
-  def handle_event("search_clients", %{"search" => %{"query" => query}}, socket) do
-    staff = socket.assigns.current_staff
+  def handle_event("submit_settings", params, socket) do
+    socket = update_settings(socket, params)
 
-    result =
-      if socket.assigns.live_action == :new do
-        Segments.search_candidates(
-          staff,
-          socket.assigns.draft,
-          socket.assigns.selected_branches,
-          query
-        )
-      else
-        Segments.search_eligible_clients(staff, socket.assigns.group.id, query)
-      end
+    cond do
+      String.trim(socket.assigns.draft["name"] || "") == "" ->
+        {:noreply, assign(socket, name_error: "Введите название сегмента.")}
 
-    {:noreply,
-     assign(socket,
-       candidates:
-         case result do
-           {:ok, clients} -> clients
-           _ -> []
-         end,
-       search_form: to_form(%{"query" => query}, as: :search)
-     )}
-  end
+      socket.assigns.live_action == :new and socket.assigns.draft["scope"] == "branches" and
+          socket.assigns.selected_branches == [] ->
+        {:noreply, assign(socket, scope_error: "Выберите хотя бы один филиал.")}
 
-  def handle_event("select_client", %{"id" => id}, socket) do
-    case Enum.find(socket.assigns.candidates, &(&1.id == id)) do
-      nil ->
-        {:noreply, socket}
-
-      client ->
-        {:noreply,
-         assign(socket, selected_clients: Map.put(socket.assigns.selected_clients, id, client))}
+      true ->
+        review_conditions(socket)
     end
   end
 
-  def handle_event("remove_selected_client", %{"id" => id}, socket),
-    do:
-      {:noreply,
-       assign(socket, selected_clients: Map.delete(socket.assigns.selected_clients, id))}
+  def handle_event("back", _, socket), do: {:noreply, assign(socket, reviewing: false)}
 
-  def handle_event("review", _, socket) do
-    rules = rules(socket)
+  def handle_event("client_sort", %{"field" => field}, socket)
+      when field in ["name", "phone"] do
+    direction =
+      if socket.assigns.client_params["sort"] == field and
+           socket.assigns.client_params["direction"] == "asc",
+         do: "desc",
+         else: "asc"
 
-    valid? =
-      socket.assigns.draft["kind"] == "manual" or match?({:ok, _}, Segments.Rules.validate(rules))
-
-    if valid?,
-      do: {:noreply, assign(socket, step: 3)},
-      else: {:noreply, put_flash(socket, :error, "Добавьте корректные условия")}
+    {:noreply, patch_clients(socket, %{"sort" => field, "direction" => direction, "page" => "1"})}
   end
 
-  def handle_event("back", _, socket),
-    do: {:noreply, assign(socket, step: max(1, socket.assigns.step - 1))}
+  def handle_event("client_search", %{"filter" => %{"search" => search}}, socket) do
+    if String.length(search) > 100 do
+      {:noreply, assign(socket, client_search_error: "Поиск: не больше 100 символов.")}
+    else
+      {:noreply, patch_clients(socket, %{"search" => search, "page" => "1"})}
+    end
+  end
+
+  def handle_event("client_page", %{"page" => page}, socket) do
+    {:noreply, patch_clients(socket, %{"page" => page})}
+  end
 
   def handle_event("save", _, socket) do
     if socket.assigns.can_manage do
@@ -287,13 +306,22 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           Segments.create(
             socket.assigns.current_staff,
             attrs,
-            socket.assigns.selected_branches,
-            Map.keys(socket.assigns.selected_clients)
+            socket.assigns.selected_branches
           )
         end
 
       case result do
         {:ok, group} ->
+          socket =
+            if socket.assigns.live_action == :new and group.kind == :manual,
+              do:
+                put_flash(
+                  socket,
+                  :info,
+                  "Сегмент создан. Добавьте клиентов во вкладке «Клиенты»."
+                ),
+              else: socket
+
           {:noreply, push_navigate(socket, to: ~p"/staff/segments/#{group.id}")}
 
         {:error, :stale} ->
@@ -332,24 +360,6 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
     end
   end
 
-  def handle_event("more_members", _, socket) do
-    after_id = List.last(socket.assigns.members) && List.last(socket.assigns.members).id
-
-    case Segments.list_members(socket.assigns.current_staff, socket.assigns.group.id,
-           after: after_id
-         ) do
-      {:ok, more} ->
-        {:noreply,
-         assign(socket,
-           members: socket.assigns.members ++ more,
-           has_more_members: length(more) == 50
-         )}
-
-      _ ->
-        {:noreply, socket}
-    end
-  end
-
   defp mutate_member(socket, action, id, opts \\ %{}) do
     result =
       case action do
@@ -362,14 +372,32 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
     case result do
       :ok ->
+        {:ok, group} = Segments.get(socket.assigns.current_staff, socket.assigns.group.id)
+
+        {:ok, page} =
+          Segments.paginated_clients(
+            socket.assigns.current_staff,
+            group.id,
+            socket.assigns.client_params
+          )
+
+        requested_page = socket.assigns.client_params["page"]
+
+        socket =
+          assign(socket,
+            group: group,
+            pending_member: nil,
+            policy_impact: nil,
+            client_page: page,
+            client_params: client_page_params(page)
+          )
+
         {:noreply,
-         socket
-         |> assign(
-           group: elem(Segments.get(socket.assigns.current_staff, socket.assigns.group.id), 1),
-           pending_member: nil,
-           policy_impact: nil
-         )
-         |> reload_members()}
+         if to_string(page.page) != to_string(requested_page) do
+           patch_clients(socket, %{"page" => to_string(page.page)})
+         else
+           socket
+         end}
 
       {:error, {:policy_confirmation_required, impact}} ->
         {:noreply,
@@ -386,17 +414,157 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
     end
   end
 
-  defp reload_members(socket) do
-    {:ok, members} = Segments.list_members(socket.assigns.current_staff, socket.assigns.group.id)
-    assign(socket, members: members, has_more_members: length(members) == 50)
-  end
-
   defp rules(socket),
     do: %{
       "version" => 1,
       "match" => socket.assigns.draft["match"],
       "conditions" => socket.assigns.conditions
     }
+
+  defp update_settings(socket, params) do
+    values = Map.get(params, "segment", %{})
+
+    fields =
+      if socket.assigns.live_action == :edit, do: ~w(name match), else: ~w(name kind scope match)
+
+    draft = Map.merge(socket.assigns.draft, Map.take(values, fields))
+    kind_changed = draft["kind"] != socket.assigns.draft["kind"]
+
+    condition =
+      if kind_changed do
+        %{"metric" => "order_count", "op" => "gte", "value" => ""}
+      else
+        Map.merge(socket.assigns.condition_form.params, Map.get(params, "condition", %{}))
+      end
+
+    assign(socket,
+      draft: draft,
+      form: to_form(draft, as: :segment),
+      selected_branches:
+        if(draft["scope"] == "franchise", do: [], else: socket.assigns.selected_branches),
+      conditions: if(kind_changed, do: [], else: socket.assigns.conditions),
+      condition_form: to_form(condition, as: :condition),
+      condition_metric: condition["metric"],
+      condition_error: nil,
+      name_error: nil,
+      scope_error: nil
+    )
+  end
+
+  defp client_page_params(page) do
+    %{
+      "page" => to_string(page.page),
+      "search" => page.search,
+      "sort" => page.sort,
+      "direction" => page.direction,
+      "mode" => page.mode
+    }
+  end
+
+  defp patch_clients(socket, changes) do
+    query = client_query(socket.assigns.client_params, changes)
+
+    push_patch(socket, to: ~p"/staff/segments/#{socket.assigns.group.id}?#{query}")
+  end
+
+  defp client_query(params, changes),
+    do: params |> Map.merge(changes) |> Map.put("tab", "clients")
+
+  defp sort_marker(page, field) do
+    if page.sort == field, do: if(page.direction == "asc", do: "↑", else: "↓"), else: ""
+  end
+
+  defp client_pager(assigns) do
+    ~H"""
+    <nav
+      class="flex flex-wrap items-center justify-between gap-3"
+      aria-label="Страницы клиентов"
+    >
+      <button
+        type="button"
+        phx-click="client_page"
+        phx-value-page={@page.page - 1}
+        disabled={@page.page <= 1}
+        class="btn btn-outline btn-sm"
+      >← Назад</button>
+      <span class="text-sm">Страница {@page.page} из {@page.total_pages}</span>
+      <button
+        type="button"
+        phx-click="client_page"
+        phx-value-page={@page.page + 1}
+        disabled={@page.page >= @page.total_pages}
+        class="btn btn-outline btn-sm"
+      >Вперёд →</button>
+    </nav>
+    """
+  end
+
+  defp review_conditions(socket) do
+    if socket.assigns.draft["kind"] == "manual" do
+      {:noreply, assign(socket, reviewing: true)}
+    else
+      params = socket.assigns.condition_form.params
+      pending = String.trim(to_string(params["value"] || ""))
+
+      result =
+        if pending == "" and socket.assigns.conditions != [],
+          do: {:ok, socket},
+          else: append_condition(socket, params)
+
+      case result do
+        {:ok, updated} -> {:noreply, assign(updated, reviewing: true)}
+        {:error, message} -> {:noreply, assign(socket, condition_error: message)}
+      end
+    end
+  end
+
+  defp append_condition(socket, params) do
+    value = String.trim(to_string(params["value"] || ""))
+    metric = params["metric"]
+
+    message =
+      cond do
+        value == "" ->
+          "Укажите значение условия. Например, 1 заказ."
+
+        parse_value(metric, value) < 0 ->
+          if metric in ["total_spent", "avg_check"],
+            do: "Введите неотрицательную сумму в рублях с точностью до копеек.",
+            else: "Введите целое неотрицательное число."
+
+        parse_value(metric, value) >
+            if(metric in ["total_spent", "avg_check"], do: 1_000_000_000_000, else: 1_000_000) ->
+          if metric in ["total_spent", "avg_check"],
+            do: "Сумма слишком большая. Максимум — 10 000 000 000 ₽.",
+            else: "Значение слишком большое. Максимум — 1 000 000."
+
+        length(socket.assigns.conditions) >= 8 ->
+          "Можно добавить не больше 8 условий."
+
+        true ->
+          nil
+      end
+
+    if message do
+      {:error, message}
+    else
+      rule = %{"metric" => metric, "op" => params["op"], "value" => parse_value(metric, value)}
+      candidate = socket.assigns.conditions ++ [rule]
+      rules = Map.put(rules(socket), "conditions", candidate)
+
+      if match?({:ok, _}, Segments.Rules.validate(rules)) do
+        {:ok,
+         assign(socket,
+           conditions: candidate,
+           condition_error: nil,
+           condition_form:
+             to_form(%{"metric" => metric, "op" => params["op"], "value" => ""}, as: :condition)
+         )}
+      else
+        {:error, "Выберите показатель и сравнение для условия."}
+      end
+    end
+  end
 
   defp parse_value(metric, text) when metric in ["total_spent", "avg_check"] do
     case Decimal.parse(text || "") do
@@ -425,6 +593,12 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   defp metric_label("avg_check"), do: "Средний чек"
   defp metric_label(_), do: "Показатель"
 
+  defp branch_names(branches, selected_ids) do
+    branches
+    |> Enum.filter(&(&1.id in selected_ids))
+    |> Enum.map_join(", ", & &1.name)
+  end
+
   defp condition_label(%{"metric" => metric, "op" => op, "value" => value}) do
     comparison = %{"eq" => "равно", "gte" => "не меньше", "lte" => "не больше"}[op]
 
@@ -438,11 +612,14 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
-      <header class="flex items-center justify-between gap-4">
+      <header class="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p class="text-sm uppercase tracking-wide text-zinc-500">Клиенты</p><h1 class="text-3xl font-semibold">
+          <p class="text-sm uppercase tracking-wide text-base-content/60">Клиенты</p><h1 class="text-3xl font-semibold">
             Сегменты
           </h1>
+          <p class="mt-2 text-sm text-base-content/70">
+            Группируйте клиентов вручную или по их выполненным заказам.
+          </p>
         </div>
         <.link
           :if={@can_manage and @live_action not in [:new, :edit]}
@@ -451,26 +628,36 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
         >Создать сегмент</.link>
       </header>
 
-      <section :if={@live_action == :index} id="segment-list" class="space-y-3" phx-update="stream">
+      <section :if={@live_action == :index} id="segment-list" class="space-y-3">
         <div
-          :for={{dom_id, group} <- @streams.groups}
-          id={dom_id}
-          class="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+          id="segment-type-help"
+          class="rounded-xl border border-base-300 bg-base-200 p-4 text-sm text-base-content/75"
         >
-          <.link navigate={~p"/staff/segments/#{group.id}"} class="block font-semibold">{group.name}</.link>
-          <p class="text-sm text-zinc-500">
-            {if group.kind == :manual, do: "Ручной", else: "Динамический"} · {if group.scope ==
-                                                                                   :franchise,
-                                                                                 do: "Вся сеть",
-                                                                                 else:
-                                                                                   "Выбранные филиалы"}
-          </p>
+          <strong>Ручной:</strong>
+          выбираете клиентов сами. <strong>Динамический:</strong>
+          клиенты подбираются по условиям выполненных заказов; состав обновляется фоновым пересчётом, обычно раз в сутки.
+        </div>
+        <div id="segment-cards" class="grid gap-3 sm:grid-cols-2" phx-update="stream">
+          <div
+            :for={{dom_id, group} <- @streams.groups}
+            id={dom_id}
+            class="min-w-0 rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
+          >
+            <.link navigate={~p"/staff/segments/#{group.id}"} class="block break-words font-semibold">{group.name}</.link>
+            <p class="mt-1 text-sm text-base-content/65">
+              {if group.kind == :manual, do: "Ручной", else: "Динамический"} · {if group.scope ==
+                                                                                     :franchise,
+                                                                                   do: "Вся сеть",
+                                                                                   else:
+                                                                                     "Выбранные филиалы"}
+            </p>
+          </div>
         </div>
       </section>
       <.link
         :if={@live_action == :index and @after_id}
         patch={~p"/staff/segments"}
-        class="text-sm text-zinc-600"
+        class="text-sm text-primary"
       >К началу списка</.link>
       <.link
         :if={@live_action == :index and @last_group_id}
@@ -481,160 +668,161 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
       <section
         :if={@live_action in [:new, :edit]}
         id="segment-wizard"
-        class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+        class="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm sm:p-7"
       >
-        <p class="mb-5 text-sm text-zinc-500">Шаг {@step} из 3</p>
-        <.form
-          :if={@step == 1}
-          for={@form}
-          id="segment-details-form"
-          phx-submit="details"
-          class="space-y-4"
-        >
-          <.input field={@form[:name]} type="text" label="Название" required />
-          <.input
-            :if={@live_action == :new}
-            field={@form[:kind]}
-            type="select"
-            label="Тип"
-            options={[{"Ручной", "manual"}, {"Динамический", "dynamic"}]}
-          />
-          <.input
-            :if={@live_action == :new}
-            field={@form[:scope]}
-            type="select"
-            label="Охват"
-            options={[{"Выбранные филиалы", "branches"}, {"Вся сеть", "franchise"}]}
-          />
-          <p :if={@live_action == :edit} class="text-sm text-zinc-500">
-            Тип и охват сохраняются после создания.
+        <.link navigate={~p"/staff/segments"} class="mb-4 inline-block text-sm text-primary">← Все сегменты</.link>
+        <div :if={!@reviewing}>
+          <h2 class="mb-2 text-xl font-semibold">Настройки сегмента</h2>
+          <p class="mb-5 text-sm text-base-content/70">
+            Укажите тип, охват и условия, затем проверьте результат.
           </p>
-          <button class="btn btn-primary">Далее</button>
-        </.form>
-
-        <div :if={@step == 2} class="space-y-5">
-          <div
-            :if={@draft["scope"] == "branches" and @live_action == :new}
-            id="segment-branches"
-            class="space-y-2"
+          <.form
+            for={@form}
+            id="segment-settings-form"
+            phx-change="change_settings"
+            phx-submit="submit_settings"
+            class="space-y-5"
           >
-            <h2 class="font-medium">Филиалы</h2>
-            <button
-              :for={branch <- @branches}
-              id={"branch-#{branch.id}"}
-              type="button"
-              phx-click="toggle_branch"
-              phx-value-id={branch.id}
-              class={[
-                "mr-2 rounded-full border px-3 py-1 text-sm",
-                branch.id in @selected_branches && "bg-indigo-600 text-white"
-              ]}
-            >{branch.name}</button>
-          </div>
-          <div :if={@draft["kind"] == "dynamic"} id="segment-conditions" class="space-y-3">
-            <h2 class="font-medium">Условия</h2>
-            <p class="text-sm text-zinc-500">
-              Суммы вводятся в рублях; срок с последнего заказа — полные сутки.
+            <div>
+              <.input field={@form[:name]} type="text" label="Название" required />
+              <p :if={@name_error} class="text-sm text-error" role="alert">{@name_error}</p>
+            </div>
+            <div :if={@live_action == :new}>
+              <.input
+                field={@form[:kind]}
+                type="select"
+                label="Тип"
+                options={[{"Ручной", "manual"}, {"Динамический", "dynamic"}]}
+              />
+              <p class="text-sm text-base-content/70">
+                <strong>Ручной:</strong>
+                создаётся пустым; клиентов добавите после сохранения. <strong>Динамический:</strong>
+                состав рассчитывается по условиям выполненных заказов.
+              </p>
+            </div>
+            <div :if={@live_action == :new}>
+              <.input
+                field={@form[:scope]}
+                type="select"
+                label="Охват"
+                options={
+                  [{"Выбранные филиалы", "branches"}] ++
+                    if(Identity.can?(@current_staff, "segments.network"),
+                      do: [{"Вся сеть", "franchise"}],
+                      else: []
+                    )
+                }
+              />
+              <p class="text-sm text-base-content/70">
+                Выберите филиалы или охватите всю доступную сеть.
+              </p>
+            </div>
+            <p :if={@live_action == :edit} class="text-sm text-base-content/70">
+              Тип и охват сохраняются после создания.
             </p>
-            <.form for={@form} id="segment-match-form" phx-change="set_match">
+            <div
+              :if={@draft["scope"] == "branches" and @live_action == :new}
+              id="segment-branches"
+              class="space-y-2"
+            >
+              <h3 class="font-semibold">Филиалы</h3>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  :for={branch <- @branches}
+                  id={"branch-#{branch.id}"}
+                  type="button"
+                  phx-click="toggle_branch"
+                  phx-value-id={branch.id}
+                  class={[
+                    "btn btn-sm rounded-full",
+                    if(branch.id in @selected_branches, do: "btn-primary", else: "btn-outline")
+                  ]}
+                  aria-pressed={branch.id in @selected_branches}
+                >{branch.name}</button>
+              </div>
+              <p :if={@scope_error} class="text-sm text-error" role="alert">{@scope_error}</p>
+            </div>
+            <div :if={@draft["kind"] == "dynamic"} id="segment-conditions" class="space-y-3">
+              <h3 class="font-semibold">Условия</h3>
+              <p class="text-sm text-base-content/70">
+                Учитываются только выполненные заказы. Суммы вводятся в рублях; срок с последнего заказа — полные сутки.
+              </p>
               <.input
                 field={@form[:match]}
                 type="select"
                 label="Совпадение условий"
                 options={[{"Все условия", "all"}, {"Любое условие", "any"}]}
               />
-            </.form>
-            <.form
-              for={@condition_form}
-              id="segment-condition-form"
-              phx-change="change_condition"
-              phx-submit="add_condition"
-              class="flex flex-wrap gap-2"
-            >
-              <.input
-                field={@condition_form[:metric]}
-                type="select"
-                label="Показатель"
-                options={[
-                  {"Дней с последнего заказа", "days_since_last_order"},
-                  {"Количество заказов", "order_count"},
-                  {"Сумма покупок", "total_spent"},
-                  {"Средний чек", "avg_check"}
-                ]}
-              />
-              <.input
-                field={@condition_form[:op]}
-                type="select"
-                label="Сравнение"
-                options={[{"Равно", "eq"}, {"Не меньше", "gte"}, {"Не больше", "lte"}]}
-              />
-              <.input
-                field={@condition_form[:value]}
-                type="number"
-                label={
-                  if @condition_metric in ["total_spent", "avg_check"], do: "Рубли", else: "Значение"
-                }
-                min="0"
-                step={if @condition_metric in ["total_spent", "avg_check"], do: "0.01", else: "1"}
-              />
-              <button class="btn btn-outline self-end">Добавить условие</button>
-            </.form>
-            <div
-              :for={{condition, index} <- Enum.with_index(@conditions)}
-              id={"condition-#{index}"}
-              class="flex justify-between border-b py-2 text-sm"
-            >
-              <span>{condition_label(condition)}</span>
-              <button type="button" phx-click="remove_condition" phx-value-index={index}>Удалить</button>
+              <p class="text-sm text-base-content/70">
+                «Все» — каждое условие обязательно. «Любое» — достаточно одного.
+              </p>
+              <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(7rem,0.7fr)_auto] md:items-end [&_fieldset]:mb-0 [&_fieldset]:pb-0">
+                <.input
+                  field={@condition_form[:metric]}
+                  type="select"
+                  label="Показатель"
+                  options={[
+                    {"Дней с последнего заказа", "days_since_last_order"},
+                    {"Количество заказов", "order_count"},
+                    {"Сумма покупок", "total_spent"},
+                    {"Средний чек", "avg_check"}
+                  ]}
+                />
+                <.input
+                  field={@condition_form[:op]}
+                  type="select"
+                  label="Сравнение"
+                  options={[{"Равно", "eq"}, {"Не меньше", "gte"}, {"Не больше", "lte"}]}
+                />
+                <.input
+                  field={@condition_form[:value]}
+                  type="number"
+                  label={
+                    if @condition_metric in ["total_spent", "avg_check"],
+                      do: "Сумма, ₽",
+                      else: "Значение"
+                  }
+                  min="0"
+                  step={if @condition_metric in ["total_spent", "avg_check"], do: "0.01", else: "1"}
+                />
+                <button
+                  type="button"
+                  phx-click="add_condition"
+                  class="btn btn-outline w-full md:w-auto"
+                  phx-disable-with="Добавляем…"
+                >Добавить условие</button>
+              </div>
+              <p :if={@condition_error} id="condition-error" class="text-sm text-error" role="alert">
+                {@condition_error}
+              </p>
+              <p class="text-xs text-base-content/60">
+                Если строка заполнена, «Проверить» добавит её автоматически.
+              </p>
+              <div
+                :for={{condition, index} <- Enum.with_index(@conditions)}
+                id={"condition-#{index}"}
+                class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-base-300 bg-base-200 p-3 text-sm"
+              >
+                <span>{condition_label(condition)}</span>
+                <button
+                  type="button"
+                  phx-click="remove_condition"
+                  phx-value-index={index}
+                  class="btn btn-ghost btn-sm text-error"
+                >Убрать</button>
+              </div>
             </div>
-          </div>
-          <div :if={@draft["kind"] == "manual" and @live_action == :new} id="segment-client-picker">
-            <h2 class="font-medium">Клиенты</h2>
-            <.form
-              for={@search_form}
-              id="segment-client-search"
-              phx-submit="search_clients"
-              class="flex gap-2"
-            >
-              <.input field={@search_form[:query]} type="text" label="Имя или телефон" />
-              <button class="btn btn-outline self-end">Найти</button>
-            </.form>
-            <div
-              :for={client <- @candidates}
-              id={"candidate-#{client.id}"}
-              class="flex justify-between py-2 text-sm"
-            >
-              <span>{client.name} · {client.phone}</span><button
-                type="button"
-                phx-click="select_client"
-                phx-value-id={client.id}
-              >Добавить</button>
-            </div>
-            <div
-              :for={{id, client} <- @selected_clients}
-              id={"selected-#{id}"}
-              class="flex justify-between py-2 text-sm"
-            >
-              <span>{client.name}</span><button
-                type="button"
-                phx-click="remove_selected_client"
-                phx-value-id={id}
-              >Убрать</button>
-            </div>
-          </div>
-          <p :if={@draft["kind"] == "manual" and @live_action == :edit} class="text-sm text-zinc-500">
-            Участников можно изменить на странице сегмента.
-          </p>
-          <div class="flex gap-2">
-            <button type="button" phx-click="back" class="btn btn-ghost">Назад</button><button
+            <button
               id="segment-review"
-              type="button"
-              phx-click="review"
+              type="submit"
+              name="action"
+              value="review"
               class="btn btn-primary"
+              phx-disable-with="Проверяем…"
             >Проверить</button>
-          </div>
+          </.form>
         </div>
-        <div :if={@step == 3} id="segment-review-panel" class="space-y-4">
+        <div :if={@reviewing} id="segment-review-panel" class="space-y-4">
           <h2 class="text-xl font-semibold">Проверьте сегмент</h2>
           <p>
             {@draft["name"]} · {if @draft["kind"] == "manual", do: "Ручной", else: "Динамический"}
@@ -642,14 +830,34 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           <p>
             Охват: {if @draft["scope"] == "franchise",
               do: "Все доступные филиалы",
-              else: "Выбранные филиалы"}
+              else: branch_names(@branches, @selected_branches)}
           </p>
-          <p :if={@draft["kind"] == "manual"}>Клиентов: {map_size(@selected_clients)}</p>
-          <p :if={@draft["kind"] == "dynamic"}>Условий: {length(@conditions)}</p>
+          <p :if={@draft["kind"] == "manual" and @live_action == :new}>
+            Сегмент будет пустым. Добавьте клиентов после сохранения во вкладке «Клиенты».
+          </p>
+          <p :if={@draft["kind"] == "manual" and @live_action == :edit}>
+            Состав участников сохранится. Изменить его можно во вкладке «Клиенты».
+          </p>
+          <div
+            :if={@draft["kind"] == "dynamic"}
+            class="rounded-xl border border-base-300 bg-base-200 p-4"
+          >
+            <p class="font-medium">
+              {if @draft["match"] == "all", do: "Все условия", else: "Любое условие"} · {length(
+                @conditions
+              )} услов.
+            </p>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+              <li :for={condition <- @conditions}>{condition_label(condition)}</li>
+            </ul>
+            <p class="mt-3 text-xs text-base-content/65">
+              Состав обновляется фоновым пересчётом, обычно раз в сутки.
+            </p>
+          </div>
           <div
             :if={@policy_impact}
             id="segment-policy-impact"
-            class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+            class="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm text-base-content"
           >
             <p>
               Изменение затронет действующие политики. Новые условия применятся к будущим проверкам; прошлые выдачи сохранятся.
@@ -661,12 +869,14 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
               Нажмите «Подтвердить и сохранить», чтобы применить изменение.
             </p>
           </div>
-          <div class="flex gap-2">
-            <button type="button" phx-click="back" class="btn btn-ghost">Назад</button><button
+          <div class="flex flex-wrap gap-2">
+            <button type="button" phx-click="back" class="btn btn-ghost">Изменить настройки</button>
+            <button
               id="segment-save"
               type="button"
               phx-click="save"
               class="btn btn-primary"
+              phx-disable-with="Сохраняем…"
             >{if @policy_impact, do: "Подтвердить и сохранить", else: "Сохранить"}</button>
           </div>
         </div>
@@ -675,41 +885,156 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
       <section
         :if={@live_action == :show and @group}
         id="segment-detail"
-        class="space-y-5 rounded-2xl border bg-white p-6"
+        class="space-y-5 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm sm:p-7"
       >
-        <.link navigate={~p"/staff/segments"} class="text-sm text-indigo-600">← Все сегменты</.link>
-        <h2 class="text-2xl font-semibold">{@group.name}</h2>
-        <.link
-          :if={@can_manage}
-          navigate={~p"/staff/segments/#{@group.id}/edit"}
-          id="segment-edit-link"
-          class="text-sm text-indigo-600"
-        >Изменить</.link>
-        <p class="text-sm text-zinc-500">
-          {if @group.kind == :manual, do: "Ручной", else: "Динамический"} · {if @group.scope ==
-                                                                                  :franchise,
-                                                                                do: "Вся сеть",
-                                                                                else:
-                                                                                  "Выбранные филиалы"}
-        </p>
-        <p :if={@group.kind == :dynamic} class="text-sm">
-          Последнее обновление: {if @group.last_refreshed_at,
-            do:
-              Calendar.strftime(
-                Delivest.LocalTime.local(@group.last_refreshed_at, nil),
-                "%d.%m.%Y %H:%M"
-              ) <> " (" <> Delivest.LocalTime.timezone(nil) <> ")",
-            else: "Ещё не рассчитан"}
-        </p>
-        <p :if={@group.last_refresh_error} class="text-sm text-red-600">
-          Последнее обновление не удалось: {@group.last_refresh_error}
-        </p>
-        <div id="segment-members" class="space-y-2">
-          <h3 class="font-medium">Участники</h3>
+        <.link navigate={~p"/staff/segments"} class="text-sm text-primary">← Все сегменты</.link>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="min-w-0 break-words text-2xl font-semibold">{@group.name}</h2>
+          <.link
+            :if={@can_manage}
+            navigate={~p"/staff/segments/#{@group.id}/edit"}
+            id="segment-edit-link"
+            class="btn btn-outline btn-sm"
+          >Изменить</.link>
+        </div>
+        <div
+          class="tabs tabs-box border border-base-300 bg-base-200"
+          role="tablist"
+          aria-label="Раздел сегмента"
+        >
+          <.link
+            patch={
+              if @active_tab == "settings",
+                do: ~p"/staff/segments/#{@group.id}",
+                else: ~p"/staff/segments/#{@group.id}?tab=settings"
+            }
+            class={["tab", @active_tab == "settings" && "tab-active"]}
+            role="tab"
+            aria-selected={@active_tab == "settings"}
+          >Параметры</.link>
+          <.link
+            patch={
+              if @active_tab == "clients",
+                do: ~p"/staff/segments/#{@group.id}",
+                else: ~p"/staff/segments/#{@group.id}?tab=clients"
+            }
+            class={["tab", @active_tab == "clients" && "tab-active"]}
+            role="tab"
+            aria-selected={@active_tab == "clients"}
+          >Клиенты</.link>
+        </div>
+        <div :if={@active_tab == "settings"} id="segment-settings" class="space-y-4">
+          <p class="text-sm text-base-content/70">
+            {if @group.kind == :manual, do: "Ручной", else: "Динамический"} · {if @group.scope ==
+                                                                                    :franchise,
+                                                                                  do: "Вся сеть",
+                                                                                  else:
+                                                                                    branch_names(
+                                                                                      @group.branches,
+                                                                                      Enum.map(
+                                                                                        @group.branches,
+                                                                                        & &1.id
+                                                                                      )
+                                                                                    )}
+          </p>
+          <p :if={@group.kind == :manual} class="text-sm text-base-content/70">
+            Вы сами добавляете и убираете участников во вкладке «Клиенты».
+          </p>
+          <div
+            :if={@group.kind == :dynamic and @group.rules}
+            class="rounded-xl border border-base-300 bg-base-200 p-4"
+          >
+            <h3 class="font-semibold">Условия отбора</h3>
+            <p class="mt-1 text-sm text-base-content/70">
+              {if @group.rules["match"] == "all",
+                do: "Нужно выполнить все условия",
+                else: "Достаточно любого условия"}. Учитываются выполненные заказы.
+            </p>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+              <li :for={condition <- @group.rules["conditions"]}>{condition_label(condition)}</li>
+            </ul>
+            <p class="mt-2 text-xs text-base-content/65">
+              Состав обновляется фоновым пересчётом, обычно раз в сутки.
+            </p>
+          </div>
+          <p :if={@group.kind == :dynamic} class="text-sm">
+            Последнее обновление: {if @group.last_refreshed_at,
+              do:
+                Calendar.strftime(
+                  Delivest.LocalTime.local(@group.last_refreshed_at, nil),
+                  "%d.%m.%Y %H:%M"
+                ) <> " (" <> Delivest.LocalTime.timezone(nil) <> ")",
+              else: "Ещё не рассчитан"}
+          </p>
+          <p :if={@group.last_refresh_error} class="text-sm text-error">
+            Последнее обновление не удалось: {@group.last_refresh_error}
+          </p>
+        </div>
+        <div :if={@active_tab == "clients" and @client_page} id="segment-clients" class="space-y-4">
+          <p class="text-sm text-base-content/70">
+            {cond do
+              @group.kind == :dynamic ->
+                "Состав рассчитывается по условиям и обновляется фоновым пересчётом."
+
+              @can_manage ->
+                "Здесь можно посмотреть состав и вручную добавить или убрать клиентов."
+
+              true ->
+                "Состав ручного сегмента."
+            end}
+          </p>
+          <div :if={@group.kind == :manual and @can_manage} class="flex flex-wrap gap-2">
+            <.link
+              patch={
+                ~p"/staff/segments/#{@group.id}?#{client_query(@client_params, %{"mode" => "members", "page" => "1"})}"
+              }
+              class={[
+                "btn btn-sm",
+                @client_page.mode == "members" && "btn-primary",
+                @client_page.mode != "members" && "btn-outline"
+              ]}
+            >В сегменте</.link>
+            <.link
+              :if={@group.kind == :manual and @can_manage}
+              patch={
+                ~p"/staff/segments/#{@group.id}?#{client_query(@client_params, %{"mode" => "available", "page" => "1"})}"
+              }
+              class={[
+                "btn btn-sm",
+                @client_page.mode == "available" && "btn-primary",
+                @client_page.mode != "available" && "btn-outline"
+              ]}
+            >Добавить клиентов</.link>
+          </div>
+          <.form
+            for={@client_filter_form}
+            id="segment-client-search"
+            phx-submit="client_search"
+            class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end [&_fieldset]:mb-0 [&_fieldset]:pb-0"
+          >
+            <.input
+              field={@client_filter_form[:search]}
+              type="text"
+              label="Поиск по имени или телефону"
+              maxlength="100"
+            />
+            <button class="btn btn-outline w-full sm:w-auto" phx-disable-with="Ищем…">Найти</button>
+          </.form>
+          <p :if={@client_search_error} class="text-sm text-error" role="alert">
+            {@client_search_error}
+          </p>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-base-content/70">
+              {if @client_page.mode == "members", do: "В сегменте", else: "Можно добавить"}: {@client_page.total_count} · по 20 на странице
+            </p>
+            <div id="segment-clients-pagination-top" class="min-w-60 flex-1 sm:max-w-sm">
+              <.client_pager page={@client_page} />
+            </div>
+          </div>
           <div
             :if={@pending_member}
             id="segment-member-impact"
-            class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm"
+            class="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm"
           >
             <p>Изменение состава затронет политики. Прошлые выдачи сохранятся:</p>
             <ul class="list-disc pl-5">
@@ -720,48 +1045,78 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
               type="button"
               phx-click="confirm_member"
               class="btn btn-primary mt-2"
+              phx-disable-with="Применяем…"
             >Подтвердить изменение</button>
           </div>
-          <div
-            :for={client <- @members}
-            id={"member-#{client.id}"}
-            class="flex justify-between rounded-lg border p-3 text-sm"
-          >
-            <span>{client.name} · {client.phone}</span>
-            <button
-              :if={@can_manage and @group.kind == :manual}
-              type="button"
-              phx-click="remove_member"
-              phx-value-id={client.id}
-            >Удалить</button>
+          <div class="overflow-x-auto rounded-xl border border-base-300">
+            <table class="table table-zebra table-sm w-full">
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <button
+                      type="button"
+                      phx-click="client_sort"
+                      phx-value-field="name"
+                      class="btn btn-ghost btn-sm"
+                    >Имя {sort_marker(@client_page, "name")}</button>
+                  </th>
+                  <th scope="col">
+                    <button
+                      type="button"
+                      phx-click="client_sort"
+                      phx-value-field="phone"
+                      class="btn btn-ghost btn-sm"
+                    >Телефон {sort_marker(@client_page, "phone")}</button>
+                  </th>
+                  <th :if={@group.kind == :manual and @can_manage} scope="col" class="text-right">
+                    Действие
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="segment-client-rows">
+                <tr :for={client <- @client_page.clients} id={"client-row-#{client.id}"}>
+                  <td class="font-medium">{client.name}</td>
+                  <td>{client.phone}</td>
+                  <td :if={@group.kind == :manual and @can_manage} class="text-right">
+                    <button
+                      type="button"
+                      phx-click={
+                        if @client_page.mode == "available", do: "add_member", else: "remove_member"
+                      }
+                      phx-value-id={client.id}
+                      class={[
+                        "btn btn-sm",
+                        if(@client_page.mode == "available",
+                          do: "btn-outline",
+                          else: "btn-ghost text-error"
+                        )
+                      ]}
+                      phx-disable-with="Обновляем…"
+                    >{if @client_page.mode == "available", do: "Добавить", else: "Убрать"}</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <button
-            :if={@has_more_members}
-            type="button"
-            phx-click="more_members"
-            class="btn btn-ghost"
-          >Показать ещё</button>
-        </div>
-        <div :if={@can_manage and @group.kind == :manual} id="segment-add-member">
-          <.form
-            for={@search_form}
-            id="segment-member-search"
-            phx-submit="search_clients"
-            class="flex gap-2"
-          >
-            <.input field={@search_form[:query]} type="text" label="Найти клиента" /><button class="btn btn-outline self-end">Найти</button>
-          </.form>
-          <div
-            :for={client <- @candidates}
-            id={"candidate-#{client.id}"}
-            class="flex justify-between py-2 text-sm"
-          >
-            <span>{client.name} · {client.phone}</span><button
-              type="button"
-              phx-click="add_member"
-              phx-value-id={client.id}
-            >Добавить</button>
-          </div>
+          <p :if={@client_page.clients == []} class="text-sm text-base-content/65">
+            {cond do
+              @client_page.search != "" ->
+                "По этому запросу клиентов нет. Попробуйте другое имя или телефон."
+
+              @client_page.mode == "available" ->
+                "Все подходящие клиенты уже в сегменте или недоступны для добавления."
+
+              @group.kind == :dynamic ->
+                "Совпадений пока нет или первый пересчёт ещё не завершён."
+
+              @can_manage ->
+                "Здесь пока нет клиентов. Откройте «Добавить клиентов»."
+
+              true ->
+                "Здесь пока нет клиентов."
+            end}
+          </p>
+          <div id="segment-clients-pagination-bottom"><.client_pager page={@client_page} /></div>
         </div>
       </section>
     </div>
