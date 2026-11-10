@@ -12,17 +12,13 @@ defmodule Delivest.Segments.Refresh do
   @zero "00000000-0000-0000-0000-000000000000"
 
   def perform(:franchise, context) do
-    try do
-      if Background.still_enabled?(context) do
-        refresh(context)
-      else
-        {:error, :disabled}
-      end
-    rescue
-      error ->
-        Logger.error(Exception.format(:error, error, __STACKTRACE__))
-        {:error, :refresh_failed}
+    with :ok <- Background.checkpoint(context) do
+      refresh(context)
     end
+  rescue
+    error ->
+      Logger.error(Exception.format(:error, error, __STACKTRACE__))
+      {:error, :refresh_failed}
   end
 
   def perform(_, _), do: {:error, :invalid_scope}
@@ -53,7 +49,7 @@ defmodule Delivest.Segments.Refresh do
   end
 
   defp enabled_branches do
-    Repo.all(from b in Branch, where: is_nil(b.deleted_at) and b.is_active, select: b.id)
+    Repo.all(from b in Branch, where: is_nil(b.deleted_at), select: b.id)
     |> Enum.filter(&Features.enabled?("segments", {:branch, &1}))
   end
 
@@ -203,17 +199,16 @@ defmodule Delivest.Segments.Refresh do
         from o in Order,
           where:
             o.client_id in ^ids and o.branch_id == ^branch_id and
-              o.status == :completed and is_nil(o.deleted_at),
+              is_nil(o.deleted_at),
           group_by: o.client_id,
           select:
-            {o.client_id, count(o.id),
-             sum(
-               fragment(
-                 "GREATEST(0, ? - COALESCE((SELECT SUM(r.amount) FROM order_refunds r WHERE r.order_id = ? AND r.status = 'succeeded'), 0))",
-                 o.total_amount,
-                 o.id
-               )
-             ), max(o.inserted_at)}
+            {o.client_id, fragment("COUNT(?) FILTER (WHERE ? = 'completed')", o.id, o.status),
+             fragment(
+               "COALESCE(SUM(GREATEST(0, ? - COALESCE((SELECT SUM(r.amount) FROM order_refunds r WHERE r.order_id = ? AND r.status = 'succeeded'), 0))) FILTER (WHERE ? = 'completed'), 0)",
+               o.total_amount,
+               o.id,
+               o.status
+             ), fragment("MAX(?) FILTER (WHERE ? = 'completed')", o.inserted_at, o.status)}
       )
 
     if metrics != [] do
@@ -225,8 +220,8 @@ defmodule Delivest.Segments.Refresh do
             branch_id: Ecto.UUID.dump!(branch_id),
             client_id: Ecto.UUID.dump!(id),
             order_count: count,
-            total_spent: if(total, do: Decimal.to_integer(total), else: 0),
-            last_order_at: DateTime.to_naive(last)
+            total_spent: money_integer(total),
+            last_order_at: naive(last)
           }
         end),
         on_conflict: :nothing
@@ -255,7 +250,9 @@ defmodule Delivest.Segments.Refresh do
           client_id: id,
           revision: rev
         }
-      end), on_conflict: :nothing)
+      end),
+      on_conflict: :nothing
+    )
 
     :ok
   end
@@ -282,20 +279,6 @@ defmodule Delivest.Segments.Refresh do
   end
 
   defp evaluate_batch(group, ids, states, snapshot, clients) do
-    clients =
-      if group.scope == :branches do
-        Repo.all(
-          from o in Order,
-            where:
-              o.client_id in ^clients and o.branch_id in ^ids and
-                is_nil(o.deleted_at),
-            distinct: true,
-            select: o.client_id
-        )
-      else
-        clients
-      end
-
     snapshots = Enum.map(ids, &states[&1].snapshot)
 
     metrics =
@@ -307,6 +290,11 @@ defmodule Delivest.Segments.Refresh do
           select: {m.client_id, m.order_count, m.total_spent, m.last_order_at}
       )
       |> Enum.group_by(fn {id, _, _, _} -> Ecto.UUID.load!(id) end)
+
+    clients =
+      if group.scope == :branches,
+        do: Enum.filter(clients, &Map.has_key?(metrics, &1)),
+        else: clients
 
     now = DateTime.utc_now()
 
@@ -449,6 +437,13 @@ defmodule Delivest.Segments.Refresh do
   defp utc(nil), do: nil
   defp utc(%DateTime{} = at), do: at
   defp utc(%NaiveDateTime{} = at), do: DateTime.from_naive!(at, "Etc/UTC")
+
+  defp naive(nil), do: nil
+  defp naive(%DateTime{} = at), do: DateTime.to_naive(at)
+  defp naive(%NaiveDateTime{} = at), do: at
+
+  defp money_integer(%Decimal{} = value), do: Decimal.to_integer(value)
+  defp money_integer(value) when is_integer(value), do: value
 
   defp cleanup_batches(query, context) do
     with :ok <- Background.checkpoint(context),

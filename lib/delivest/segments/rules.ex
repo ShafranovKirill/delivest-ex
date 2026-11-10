@@ -7,9 +7,9 @@ defmodule Delivest.Segments.Rules do
   @max_money 1_000_000_000_000
 
   def validate(%{"version" => 1, "match" => match, "conditions" => conditions} = rules)
-      when match in ["all", "any"] and is_list(conditions) and
-             length(conditions) >= 1 and length(conditions) <= @max_conditions do
-    if Map.keys(rules) |> Enum.sort() == ["conditions", "match", "version"] and
+      when match in ["all", "any"] and is_list(conditions) do
+    if conditions != [] and Enum.at(conditions, @max_conditions) == nil and
+         Map.keys(rules) |> Enum.sort() == ["conditions", "match", "version"] and
          Enum.all?(conditions, &valid_condition?/1) do
       {:ok, rules}
     else

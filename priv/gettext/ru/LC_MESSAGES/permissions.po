@@ -30,6 +30,9 @@ msgstr "Скидки и промокоды"
 msgid "clients"
 msgstr "Клиенты"
 
+msgid "segments"
+msgstr "Сегменты"
+
 msgid "orders"
 msgstr "Заказы"
 
@@ -44,6 +47,12 @@ msgstr "Создание"
 
 msgid "read"
 msgstr "Просмотр"
+
+msgid "manage"
+msgstr "Управление"
+
+msgid "network"
+msgstr "Вся франшиза"
 
 msgid "update"
 msgstr "Изменение"

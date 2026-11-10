@@ -4,6 +4,7 @@ defmodule Delivest.Identity.Roles do
   alias Delivest.Identity.{Role, Staff, Acl}
   import Ecto.Query
   alias Delivest.Audit
+  alias Delivest.Features
 
   @spec list_all_roles(map()) :: [Role.t()] | {:error, :forbidden}
   def list_all_roles(user) do
@@ -49,6 +50,8 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_create_role(user, attrs) do
+    attrs = preserve_disabled_segment_permissions(attrs, [])
+
     if Acl.can?(user, "roles.create") and Delegation.grants?(user, permissions(attrs, [])) do
       system_create_role(attrs)
     else
@@ -71,6 +74,8 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_update_role(user, %Role{} = role, attrs) do
+    attrs = preserve_disabled_segment_permissions(attrs, role.permissions)
+
     if Acl.can?(user, "roles.update") and Delegation.role?(user, role) and
          Delegation.grants?(user, permissions(attrs, role.permissions)) do
       role
@@ -119,6 +124,28 @@ defmodule Delivest.Identity.Roles do
       permissions -> permissions |> List.wrap() |> Enum.reject(&(&1 == ""))
     end
   end
+
+  defp preserve_disabled_segment_permissions(attrs, existing) do
+    if Features.enabled?("segments", :franchise) do
+      attrs
+    else
+      submitted = permissions(attrs, existing)
+      allowed = Enum.reject(submitted, &segment_permission?/1)
+      retained = Enum.filter(existing, &segment_permission?/1)
+      value = Enum.uniq(allowed ++ retained)
+
+      if Enum.all?(Map.keys(attrs), &is_atom/1) do
+        Map.put(attrs, :permissions, value)
+      else
+        attrs |> Map.delete(:permissions) |> Map.put("permissions", value)
+      end
+    end
+  end
+
+  defp segment_permission?(permission) when is_binary(permission),
+    do: String.starts_with?(permission, "segments.")
+
+  defp segment_permission?(_), do: false
 
   defp finalize_delete({:ok, role}), do: {:ok, role}
 

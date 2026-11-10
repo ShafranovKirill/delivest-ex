@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
   use DelivestWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   import Delivest.Factory
+  import Ecto.Query
 
   alias Delivest.{Features, Repo}
   alias Delivest.Segments.Segment
@@ -17,6 +18,36 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
   test "disabled feature redirects direct route", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/staff/branches/select"}}} =
              live(conn, ~p"/staff/segments")
+  end
+
+  test "branch staff sees no segment entry when only the parent gate is enabled", %{
+    conn: conn,
+    staff: staff
+  } do
+    {:ok, _} = Features.configure("segments", :franchise, true, actor: "test")
+    pages = DelivestWeb.StaffNav.pages(Repo.preload(staff, [:role, :branches]), nil)
+    refute Enum.any?(pages, &(&1.page == :segments))
+
+    assert {:error, {:redirect, %{to: "/staff/branches/select"}}} =
+             live(conn, ~p"/staff/segments")
+  end
+
+  test "an already open wizard cannot save after the parent gate is disabled", %{
+    conn: conn,
+    branch: branch
+  } do
+    enable(branch)
+    {:ok, view, _} = live(conn, ~p"/staff/segments/new")
+    {:ok, _} = Features.configure("segments", :franchise, false, actor: "test")
+
+    view
+    |> form("#segment-details-form",
+      segment: %{name: "Blocked", kind: "manual", scope: "branches"}
+    )
+    |> render_submit()
+
+    assert_redirect(view, ~p"/staff/branches/select")
+    refute Repo.exists?(from s in Segment, where: s.name == "Blocked")
   end
 
   test "manual wizard creates a branch segment", %{conn: conn, branch: branch} do

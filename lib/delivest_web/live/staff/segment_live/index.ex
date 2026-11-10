@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    if Features.enabled?("segments", :franchise) do
+    if Segments.available?(socket.assigns.current_staff) do
       branches =
         Enum.filter(
           socket.assigns.staff_branches,
@@ -50,8 +50,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   end
 
   defp check_event(_event, _params, socket) do
-    if Features.enabled?("segments", :franchise) and
-         Identity.can?(socket.assigns.current_staff, "segments.read") do
+    if Segments.available?(socket.assigns.current_staff) do
       {:cont, socket}
     else
       {:halt, redirect(socket, to: ~p"/staff/branches/select")}

@@ -4,6 +4,35 @@ defmodule DelivestWeb.Staff.RoleLive.RolesTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
+  test "disabled segment permissions stay hidden and forged additions are ignored", %{conn: conn} do
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    role = insert(:role, permissions: ["roles.read", "segments.read"])
+    conn = init_test_session(conn, %{"staff_id" => admin.id})
+    {:ok, view, _} = live(conn, ~p"/staff/roles/#{role.id}/edit")
+    refute has_element?(view, "#checkbox-segments.read")
+    refute has_element?(view, "#checkbox-segments.manage")
+
+    assert {:ok, updated} =
+             Delivest.Identity.update_role(admin, role, %{
+               "permissions" => ["roles.read", "segments.manage"]
+             })
+
+    assert "segments.read" in updated.permissions
+    refute "segments.manage" in updated.permissions
+
+    assert {:ok, renamed} = Delivest.Identity.update_role(admin, updated, %{name: "Renamed role"})
+    assert renamed.name == "Renamed role"
+    assert "segments.read" in renamed.permissions
+
+    assert {:ok, created} =
+             Delivest.Identity.create_role(
+               admin,
+               %{name: "No hidden segment grant", permissions: ["roles.read", "segments.manage"]}
+             )
+
+    assert created.permissions == ["roles.read"]
+  end
+
   test "an administrator can create missing base roles without replacing custom roles", %{
     conn: conn
   } do

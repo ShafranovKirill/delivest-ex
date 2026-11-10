@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.RoleLive.RoleFormComponent do
 
   alias Delivest.Identity
   alias Delivest.Identity.{Role, Definitions}
+  alias Delivest.Features
 
   use Gettext, backend: DelivestWeb.Gettext
 
@@ -14,6 +15,9 @@ defmodule DelivestWeb.Staff.RoleLive.RoleFormComponent do
     grouped_permissions =
       Definitions.permissions()
       |> Enum.filter(&Delivest.Identity.grants_permissions?(assigns.current_staff, [&1]))
+      |> Enum.reject(
+        &(String.starts_with?(&1, "segments.") and not Features.enabled?("segments", :franchise))
+      )
       |> Enum.group_by(fn perm ->
         parts = String.split(perm, ".")
         if length(parts) == 1, do: "system", else: hd(parts)

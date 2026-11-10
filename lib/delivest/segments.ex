@@ -3,16 +3,34 @@ defmodule Delivest.Segments do
   import Ecto.Query
 
   alias Delivest.{Audit, Features, Identity, Repo}
-  alias Delivest.Identity.{Branch, Client, Staff}
   alias Delivest.Features.Gate
+  alias Delivest.Identity.{Branch, Client, Staff}
   alias Delivest.Oms.Order
   alias Delivest.Segments.Segment
 
   @page_size 50
 
+  def available?(%Staff{} = staff) do
+    Identity.can?(staff, "segments.read") and Features.enabled?("segments", :franchise) and
+      (Identity.can?(staff, "segments.network") or
+         Repo.exists?(
+           from sb in "staff_branches",
+             join: b in Branch,
+             on: b.id == sb.branch_id,
+             join: g in Gate,
+             on:
+               g.feature == "segments" and g.scope_key == fragment("'branch:' || ?::text", b.id),
+             where:
+               sb.staff_id == type(^staff.id, :binary_id) and
+                 is_nil(b.deleted_at) and g.enabled
+         ))
+  end
+
+  def available?(_), do: false
+
   def list(%Staff{} = staff, opts \\ []) do
     with :ok <- authorize(staff, "segments.read"),
-         :ok <- feature_on?(),
+         true <- available?(staff),
          {:ok, after_id} <- cursor(Keyword.get(opts, :after)),
          {:ok, limit} <- limit(Keyword.get(opts, :limit, @page_size)) do
       allowed = allowed_branch_ids(staff)
@@ -46,12 +64,15 @@ defmodule Delivest.Segments do
       |> limit(^limit)
       |> Repo.all()
       |> then(&{:ok, &1})
+    else
+      false -> {:error, :disabled}
+      error -> error
     end
   end
 
   def get(%Staff{} = staff, id) do
     with :ok <- authorize(staff, "segments.read"),
-         :ok <- feature_on?(),
+         true <- available?(staff),
          {:ok, id} <- uuid(id),
          %Segment{} = segment <- Repo.get(Segment, id) |> Repo.preload(:branches),
          true <- visible?(staff, segment, allowed_branch_ids(staff)) do
