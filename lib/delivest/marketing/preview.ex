@@ -131,7 +131,7 @@ defmodule Delivest.Marketing.Preview do
              end) do
           {:ok, :ok} ->
             if length(ids) < @page do
-              :ok
+              pending_or_done()
             else
               {:snooze, 1}
             end
@@ -183,9 +183,13 @@ defmodule Delivest.Marketing.Preview do
            if result.num_rows == 1,
              do: Segments.release_snapshot("marketing_preview", policy_id)
          end) do
-      {:ok, _} -> :ok
+      {:ok, _} -> pending_or_done()
       error -> error
     end
+  end
+
+  defp pending_or_done do
+    if next_preview(), do: {:snooze, 1}, else: :ok
   end
 
   defp cleanup_or_done(context) do

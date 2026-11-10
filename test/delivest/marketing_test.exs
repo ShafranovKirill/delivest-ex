@@ -99,6 +99,42 @@ defmodule Delivest.MarketingTest do
            )
   end
 
+  test "pending previews for distinct policies are processed without waiting for the daily run",
+       ctx do
+    {:ok, segment} =
+      Segments.create(ctx.staff, %{name: "Queued previews", kind: :manual, scope: :branches}, [
+        ctx.branch.id
+      ])
+
+    {:ok, first} =
+      Marketing.create(ctx.staff, attrs(ctx, segment, "all_current"), [ctx.branch.id])
+
+    {:ok, second} =
+      Marketing.create(
+        ctx.staff,
+        Map.put(attrs(ctx, segment, "all_current"), "name", "Another return offer"),
+        [ctx.branch.id]
+      )
+
+    assert {:ok, %{status: :pending}} = Marketing.preview(ctx.staff, first.id)
+    assert {:ok, %{status: :pending}} = Marketing.preview(ctx.staff, second.id)
+    assert {:ok, _} = Background.dispatch_due()
+
+    assert {:snooze, 1} = run_task("marketing.preview")
+
+    statuses =
+      Enum.map([first, second], fn policy ->
+        {:ok, preview} = Marketing.preview(ctx.staff, policy.id)
+        preview.status
+      end)
+
+    assert Enum.sort(statuses) == [:pending, :ready]
+
+    assert :ok = run_task("marketing.preview")
+    assert {:ok, %{status: :ready}} = Marketing.preview(ctx.staff, first.id)
+    assert {:ok, %{status: :ready}} = Marketing.preview(ctx.staff, second.id)
+  end
+
   test "future-only freezes the manual cohort and allows a new completed-order cycle", ctx do
     completed_order(ctx, 31)
 
