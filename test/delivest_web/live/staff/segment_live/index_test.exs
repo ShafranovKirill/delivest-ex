@@ -247,9 +247,28 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
 
     try do
       {:ok, view, _} = live(conn, ~p"/staff/segments/#{group.id}")
+      assert has_element?(view, "#segment-edit-link", "Изменить")
+      refute has_element?(view, "#segment-settings")
+      refute has_element?(view, "#segment-clients")
       refute_received {:membership_query, ^id}
+
+      view |> element("a[role='tab']", "Параметры") |> render_click()
+      assert has_element?(view, "#segment-settings")
+      refute_received {:membership_query, ^id}
+
+      view |> element("a[role='tab']", "Параметры") |> render_click()
+      refute has_element?(view, "#segment-settings")
+      refute_received {:membership_query, ^id}
+
       view |> element("a[role='tab']", "Клиенты") |> render_click()
       assert_received {:membership_query, ^id}
+      assert has_element?(view, "#segment-clients")
+      drain_membership_queries(id)
+
+      view |> element("a[role='tab']", "Клиенты") |> render_click()
+      refute has_element?(view, "#segment-clients")
+      refute has_element?(view, "#segment-settings")
+      refute_received {:membership_query, ^id}
     after
       :telemetry.detach(id)
     end
@@ -338,6 +357,7 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
 
     readonly_conn = init_test_session(conn, %{"staff_id" => readonly.id})
     {:ok, readonly_view, _} = live(readonly_conn, ~p"/staff/segments/#{manual.id}?tab=clients")
+    refute has_element?(readonly_view, "#segment-edit-link")
     refute has_element?(readonly_view, "a", "Добавить клиентов")
     refute has_element?(readonly_view, "#segment-client-rows button")
   end
@@ -357,5 +377,13 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     )
 
     Repo.preload(staff, :role, force: true)
+  end
+
+  defp drain_membership_queries(id) do
+    receive do
+      {:membership_query, ^id} -> drain_membership_queries(id)
+    after
+      0 -> :ok
+    end
   end
 end

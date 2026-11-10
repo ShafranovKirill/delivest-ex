@@ -23,7 +23,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           group: nil,
           policy_impact: nil,
           pending_member: nil,
-          active_tab: "settings",
+          active_tab: nil,
           client_page: nil,
           client_params: %{},
           client_search_error: nil,
@@ -154,7 +154,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
       :show ->
         case Segments.get(staff, params["id"]) do
           {:ok, group} ->
-            tab = if params["tab"] == "clients", do: "clients", else: "settings"
+            tab = if params["tab"] in ["clients", "settings"], do: params["tab"]
 
             if tab == "clients" do
               client_params =
@@ -628,7 +628,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
         >Создать сегмент</.link>
       </header>
 
-      <section :if={@live_action == :index} id="segment-list" class="space-y-3" phx-update="stream">
+      <section :if={@live_action == :index} id="segment-list" class="space-y-3">
         <div
           id="segment-type-help"
           class="rounded-xl border border-base-300 bg-base-200 p-4 text-sm text-base-content/75"
@@ -637,19 +637,21 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           выбираете клиентов сами. <strong>Динамический:</strong>
           клиенты подбираются по условиям выполненных заказов; состав обновляется фоновым пересчётом, обычно раз в сутки.
         </div>
-        <div
-          :for={{dom_id, group} <- @streams.groups}
-          id={dom_id}
-          class="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
-        >
-          <.link navigate={~p"/staff/segments/#{group.id}"} class="block font-semibold">{group.name}</.link>
-          <p class="mt-1 text-sm text-base-content/65">
-            {if group.kind == :manual, do: "Ручной", else: "Динамический"} · {if group.scope ==
-                                                                                   :franchise,
-                                                                                 do: "Вся сеть",
-                                                                                 else:
-                                                                                   "Выбранные филиалы"}
-          </p>
+        <div id="segment-cards" class="grid gap-3 sm:grid-cols-2" phx-update="stream">
+          <div
+            :for={{dom_id, group} <- @streams.groups}
+            id={dom_id}
+            class="min-w-0 rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
+          >
+            <.link navigate={~p"/staff/segments/#{group.id}"} class="block break-words font-semibold">{group.name}</.link>
+            <p class="mt-1 text-sm text-base-content/65">
+              {if group.kind == :manual, do: "Ручной", else: "Динамический"} · {if group.scope ==
+                                                                                     :franchise,
+                                                                                   do: "Вся сеть",
+                                                                                   else:
+                                                                                     "Выбранные филиалы"}
+            </p>
+          </div>
         </div>
       </section>
       <.link
@@ -886,32 +888,42 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
         class="space-y-5 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm sm:p-7"
       >
         <.link navigate={~p"/staff/segments"} class="text-sm text-primary">← Все сегменты</.link>
-        <h2 class="text-2xl font-semibold">{@group.name}</h2>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="min-w-0 break-words text-2xl font-semibold">{@group.name}</h2>
+          <.link
+            :if={@can_manage}
+            navigate={~p"/staff/segments/#{@group.id}/edit"}
+            id="segment-edit-link"
+            class="btn btn-outline btn-sm"
+          >Изменить</.link>
+        </div>
         <div
           class="tabs tabs-box border border-base-300 bg-base-200"
           role="tablist"
           aria-label="Раздел сегмента"
         >
           <.link
-            patch={~p"/staff/segments/#{@group.id}"}
+            patch={
+              if @active_tab == "settings",
+                do: ~p"/staff/segments/#{@group.id}",
+                else: ~p"/staff/segments/#{@group.id}?tab=settings"
+            }
             class={["tab", @active_tab == "settings" && "tab-active"]}
             role="tab"
             aria-selected={@active_tab == "settings"}
-          >Настройки</.link>
+          >Параметры</.link>
           <.link
-            patch={~p"/staff/segments/#{@group.id}?tab=clients"}
+            patch={
+              if @active_tab == "clients",
+                do: ~p"/staff/segments/#{@group.id}",
+                else: ~p"/staff/segments/#{@group.id}?tab=clients"
+            }
             class={["tab", @active_tab == "clients" && "tab-active"]}
             role="tab"
             aria-selected={@active_tab == "clients"}
           >Клиенты</.link>
         </div>
         <div :if={@active_tab == "settings"} id="segment-settings" class="space-y-4">
-          <.link
-            :if={@can_manage}
-            navigate={~p"/staff/segments/#{@group.id}/edit"}
-            id="segment-edit-link"
-            class="btn btn-outline btn-sm"
-          >Изменить настройки</.link>
           <p class="text-sm text-base-content/70">
             {if @group.kind == :manual, do: "Ручной", else: "Динамический"} · {if @group.scope ==
                                                                                     :franchise,
