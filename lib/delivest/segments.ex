@@ -130,6 +130,12 @@ defmodule Delivest.Segments do
         {:error, :stale}
       else
         case Features.with_enabled("segments", :franchise, token, fn ->
+               current =
+                 Repo.one(from s in Segment, where: s.id == ^segment.id, lock: "FOR UPDATE")
+
+               if is_nil(current) or current.revision != segment.revision,
+                 do: Repo.rollback(:stale)
+
                case segment
                     |> Segment.update_changeset(attrs)
                     |> Repo.update(stale_error_field: :name) do

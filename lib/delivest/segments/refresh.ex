@@ -95,7 +95,18 @@ defmodule Delivest.Segments.Refresh do
       old_snapshot == nil or old_generation != token.branch or old_parent != token.franchise
 
     if baseline? do
-      walk_clients(@zero, fn clients -> write_metrics(branch_id, snapshot, clients) end, context)
+      walk_clients(
+        @zero,
+        fn clients ->
+          pending = dirty_versions(branch_id, clients)
+
+          with :ok <- write_metrics(branch_id, snapshot, clients) do
+            stage_ack(snapshot, branch_id, pending)
+            :ok
+          end
+        end,
+        context
+      )
     else
       copy_metrics(old_snapshot, snapshot, branch_id, @zero, context)
       |> case do
@@ -179,18 +190,7 @@ defmodule Delivest.Segments.Refresh do
 
           :ok = write_metrics(branch_id, snapshot, ids)
 
-          Repo.insert_all(
-            "segment_dirty_ack",
-            Enum.map(rows, fn [id, rev] ->
-              %{
-                snapshot_id: Ecto.UUID.dump!(snapshot),
-                branch_id: Ecto.UUID.dump!(branch_id),
-                client_id: id,
-                revision: rev
-              }
-            end),
-            on_conflict: :nothing
-          )
+          stage_ack(snapshot, branch_id, rows)
 
           process_dirty(branch_id, snapshot, List.last(ids), context)
       end
@@ -232,6 +232,30 @@ defmodule Delivest.Segments.Refresh do
         on_conflict: :nothing
       )
     end
+
+    :ok
+  end
+
+  defp dirty_versions(branch_id, ids) do
+    Repo.query!(
+      "SELECT client_id, revision FROM segment_dirty_clients WHERE branch_id=$1 AND client_id = ANY($2::uuid[])",
+      [Ecto.UUID.dump!(branch_id), Enum.map(ids, &Ecto.UUID.dump!/1)]
+    ).rows
+  end
+
+  defp stage_ack(_snapshot, _branch_id, []), do: :ok
+
+  defp stage_ack(snapshot, branch_id, rows) do
+    Repo.insert_all(
+      "segment_dirty_ack",
+      Enum.map(rows, fn [id, rev] ->
+        %{
+          snapshot_id: Ecto.UUID.dump!(snapshot),
+          branch_id: Ecto.UUID.dump!(branch_id),
+          client_id: id,
+          revision: rev
+        }
+      end), on_conflict: :nothing)
 
     :ok
   end
