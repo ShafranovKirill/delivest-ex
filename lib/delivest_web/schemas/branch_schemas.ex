@@ -32,6 +32,10 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           description: "Минуты до готовности вместе с добавкой на загрузку"
         },
         manual_rating: %Schema{type: :number, format: :float, nullable: true},
+        notifications_enabled: %Schema{
+          type: :boolean,
+          description: "Customer notification capability for this branch"
+        },
         intake: %Schema{
           type: :object,
           description:

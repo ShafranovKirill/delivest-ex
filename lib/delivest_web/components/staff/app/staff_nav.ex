@@ -173,6 +173,11 @@ defmodule DelivestWeb.StaffNav do
       item(:segments, ~p"/staff/segments", "hero-user-group", "Сегменты")
       |> allowed(staff, "segments.read")
       |> then(fn item -> if Segments.available?(staff), do: item end),
+      item(:marketing, ~p"/staff/marketing", "hero-megaphone", "Маркетинг")
+      |> allowed(staff, "marketing.read")
+      |> then(fn item ->
+        if Delivest.Features.enabled?("marketing_policies", :franchise), do: item
+      end),
       group(:people, "hero-user-group", gettext("Team"), [
         item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
         |> allowed(staff, "staff.read"),

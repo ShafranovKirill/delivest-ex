@@ -21,6 +21,8 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           can_manage: Identity.can?(socket.assigns.current_staff, "segments.manage"),
           branches: branches,
           group: nil,
+          policy_impact: nil,
+          pending_member: nil,
           members: [],
           has_more_members: false,
           candidates: [],
@@ -98,6 +100,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
                socket
                |> assign(
                  group: group,
+                 policy_impact: nil,
                  draft: draft,
                  selected_branches: Enum.map(group.branches, & &1.id),
                  conditions: (group.rules && group.rules["conditions"]) || [],
@@ -121,6 +124,8 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
              socket
              |> assign(
                group: group,
+               policy_impact: nil,
+               pending_member: nil,
                members: members,
                has_more_members: length(members) == 50,
                member_after: nil
@@ -271,7 +276,12 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           Segments.update(
             socket.assigns.current_staff,
             socket.assigns.group.id,
-            Map.put(updates, "expected_revision", socket.assigns.group.revision)
+            updates
+            |> Map.put("expected_revision", socket.assigns.group.revision)
+            |> Map.put(
+              "policy_confirmation",
+              socket.assigns.policy_impact && socket.assigns.policy_impact.fingerprint
+            )
           )
         else
           Segments.create(
@@ -290,6 +300,9 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           {:noreply,
            put_flash(socket, :error, "Сегмент изменился. Откройте его заново перед сохранением")}
 
+        {:error, {:policy_confirmation_required, impact}} ->
+          {:noreply, assign(socket, policy_impact: impact)}
+
         _ ->
           {:noreply, put_flash(socket, :error, "Не удалось сохранить сегмент")}
       end
@@ -299,16 +312,23 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   end
 
   def handle_event("add_member", %{"id" => id}, socket) do
-    case Segments.add_member(socket.assigns.current_staff, socket.assigns.group.id, id) do
-      :ok -> {:noreply, reload_members(socket)}
-      _ -> {:noreply, put_flash(socket, :error, "Клиент не подходит для этого сегмента")}
-    end
+    mutate_member(socket, :add, id)
   end
 
   def handle_event("remove_member", %{"id" => id}, socket) do
-    case Segments.remove_member(socket.assigns.current_staff, socket.assigns.group.id, id) do
-      :ok -> {:noreply, reload_members(socket)}
-      _ -> {:noreply, socket}
+    mutate_member(socket, :remove, id)
+  end
+
+  def handle_event("confirm_member", _, socket) do
+    case socket.assigns.pending_member do
+      {action, id, revision, fingerprint} ->
+        mutate_member(socket, action, id, %{
+          expected_revision: revision,
+          policy_confirmation: fingerprint
+        })
+
+      nil ->
+        {:noreply, socket}
     end
   end
 
@@ -327,6 +347,42 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
       _ ->
         {:noreply, socket}
+    end
+  end
+
+  defp mutate_member(socket, action, id, opts \\ %{}) do
+    result =
+      case action do
+        :add ->
+          Segments.add_member(socket.assigns.current_staff, socket.assigns.group.id, id, opts)
+
+        :remove ->
+          Segments.remove_member(socket.assigns.current_staff, socket.assigns.group.id, id, opts)
+      end
+
+    case result do
+      :ok ->
+        {:noreply,
+         socket
+         |> assign(
+           group: elem(Segments.get(socket.assigns.current_staff, socket.assigns.group.id), 1),
+           pending_member: nil,
+           policy_impact: nil
+         )
+         |> reload_members()}
+
+      {:error, {:policy_confirmation_required, impact}} ->
+        {:noreply,
+         assign(socket,
+           policy_impact: impact,
+           pending_member: {action, id, socket.assigns.group.revision, impact.fingerprint}
+         )}
+
+      {:error, :stale} ->
+        {:noreply, put_flash(socket, :error, "Сегмент изменился. Откройте его заново")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Не удалось изменить участника")}
     end
   end
 
@@ -590,13 +646,28 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           </p>
           <p :if={@draft["kind"] == "manual"}>Клиентов: {map_size(@selected_clients)}</p>
           <p :if={@draft["kind"] == "dynamic"}>Условий: {length(@conditions)}</p>
+          <div
+            :if={@policy_impact}
+            id="segment-policy-impact"
+            class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+          >
+            <p>
+              Изменение затронет действующие политики. Новые условия применятся к будущим проверкам; прошлые выдачи сохранятся.
+            </p>
+            <ul class="mt-2 list-disc pl-5">
+              <li :for={policy <- @policy_impact.policies}>{policy.name}</li>
+            </ul>
+            <p class="mt-2 font-medium">
+              Нажмите «Подтвердить и сохранить», чтобы применить изменение.
+            </p>
+          </div>
           <div class="flex gap-2">
             <button type="button" phx-click="back" class="btn btn-ghost">Назад</button><button
               id="segment-save"
               type="button"
               phx-click="save"
               class="btn btn-primary"
-            >Сохранить</button>
+            >{if @policy_impact, do: "Подтвердить и сохранить", else: "Сохранить"}</button>
           </div>
         </div>
       </section>
@@ -635,6 +706,22 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
         </p>
         <div id="segment-members" class="space-y-2">
           <h3 class="font-medium">Участники</h3>
+          <div
+            :if={@pending_member}
+            id="segment-member-impact"
+            class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm"
+          >
+            <p>Изменение состава затронет политики. Прошлые выдачи сохранятся:</p>
+            <ul class="list-disc pl-5">
+              <li :for={policy <- @policy_impact.policies}>{policy.name}</li>
+            </ul>
+            <button
+              id="segment-confirm-member"
+              type="button"
+              phx-click="confirm_member"
+              class="btn btn-primary mt-2"
+            >Подтвердить изменение</button>
+          </div>
           <div
             :for={client <- @members}
             id={"member-#{client.id}"}

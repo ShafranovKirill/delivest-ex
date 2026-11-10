@@ -9513,3 +9513,553 @@ msgstr "Move zone up"
 #, elixir-autogen, elixir-format
 msgid "Zone order changed; refresh and try again"
 msgstr "Zone order changed; refresh and try again"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Marketing policies"
+msgstr "Marketing policies"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy saved"
+msgstr "Policy saved"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not save the policy. Check its fields and try again."
+msgstr "Could not save the policy. Check its fields and try again."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not prepare the audience preview."
+msgstr "Could not prepare the audience preview."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy status updated"
+msgstr "Policy status updated"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Complete the audience preview before activation."
+msgstr "Complete the audience preview before activation."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not update the policy status."
+msgstr "Could not update the policy status."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not load the report."
+msgstr "Could not load the report."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not compare policies."
+msgstr "Could not compare policies."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Draft"
+msgstr "Draft"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Preparing audience"
+msgstr "Preparing audience"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Selected branches"
+msgstr "Selected branches"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Entire network"
+msgstr "Entire network"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Not selected"
+msgstr "Not selected"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Future participants only"
+msgstr "Future participants only"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "All current audience"
+msgstr "All current audience"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Branch unavailable"
+msgstr "Branch unavailable"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Customers"
+msgstr "Customers"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "New policy"
+msgstr "New policy"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} issues"
+msgstr "%{count} issues"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "More policies"
+msgstr "More policies"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Step %{step} of 5"
+msgstr "Step %{step} of 5"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience"
+msgstr "Audience"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy name"
+msgstr "Policy name"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Scope"
+msgstr "Scope"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience segment"
+msgstr "Audience segment"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Select a segment"
+msgstr "Select a segment"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "More segments"
+msgstr "More segments"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy branches"
+msgstr "Policy branches"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "A network-wide policy does not need selected branches."
+msgstr "A network-wide policy does not need selected branches."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Next"
+msgstr "Next"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward"
+msgstr "Reward"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward branch"
+msgstr "Reward branch"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Bonus points"
+msgstr "Bonus points"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Active personal promotion"
+msgstr "Active personal promotion"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No promotion"
+msgstr "No promotion"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Choose one reward. A promo code expires with the policy reward."
+msgstr "Choose one reward. A promo code expires with the policy reward."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Search promotions by name"
+msgstr "Search promotions by name"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Notification"
+msgstr "Notification"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Channels"
+msgstr "Channels"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "On site"
+msgstr "On site"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "SMS (unavailable)"
+msgstr "SMS (unavailable)"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Message title"
+msgstr "Message title"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Message body"
+msgstr "Message body"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Limits and first run"
+msgstr "Limits and first run"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Days since last completed order"
+msgstr "Days since last completed order"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward duration, days"
+msgstr "Reward duration, days"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Observation window, days"
+msgstr "Observation window, days"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "First run"
+msgstr "First run"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Issue limit (optional)"
+msgstr "Issue limit (optional)"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude client IDs"
+msgstr "Exclude client IDs"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude segment IDs"
+msgstr "Exclude segment IDs"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Review and enable"
+msgstr "Review and enable"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience: %{segment} · %{scope}"
+msgstr "Audience: %{segment} · %{scope}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward branch: %{branch}"
+msgstr "Reward branch: %{branch}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Initial audience: %{mode}"
+msgstr "Initial audience: %{mode}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "A preview is required before the first activation. Save the draft, run the preview, then enable the policy on its page."
+msgstr "A preview is required before the first activation. Save the draft, run the preview, then enable the policy on its page."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Save draft and continue"
+msgstr "Save draft and continue"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "← All policies"
+msgstr "← All policies"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Status: %{status} · revision %{revision}"
+msgstr "Status: %{status} · revision %{revision}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "After %{days} days without an order · reward valid for %{ttl} days · initial audience: %{mode}"
+msgstr "After %{days} days without an order · reward valid for %{ttl} days · initial audience: %{mode}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "A reward could not be issued. Check that it is available."
+msgstr "A reward could not be issued. Check that it is available."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience preview"
+msgstr "Audience preview"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Activate"
+msgstr "Activate"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The audience preview is being prepared. Refresh it later."
+msgstr "The audience preview is being prepared. Refresh it later."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Eligible customers: %{count}"
+msgstr "Eligible customers: %{count}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Bonus points: %{points}"
+msgstr "Bonus points: %{points}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Not applicable"
+msgstr "Not applicable"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "SMS cost: unknown (provider unavailable). Calculated: %{time}"
+msgstr "SMS cost: unknown (provider unavailable). Calculated: %{time}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Report"
+msgstr "Report"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "From"
+msgstr "From"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "To"
+msgstr "To"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The report is being prepared. Refresh it later."
+msgstr "The report is being prepared. Refresh it later."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Snapshot as of %{time}"
+msgstr "Snapshot as of %{time}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Issues: %{value}"
+msgstr "Issues: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclusions: %{value}"
+msgstr "Exclusions: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Linked orders: %{value}"
+msgstr "Linked orders: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Returning customers: %{value}"
+msgstr "Returning customers: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Net revenue after refunds: %{value}"
+msgstr "Net revenue after refunds: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Redeemed promo codes: %{value}"
+msgstr "Redeemed promo codes: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Recorded discount: %{value}"
+msgstr "Recorded discount: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Points issued: %{value}"
+msgstr "Points issued: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Points spent: unknown (spending is not linked to this reward)"
+msgstr "Points spent: unknown (spending is not linked to this reward)"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Clicks: %{value}"
+msgstr "Clicks: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "On-site cards: %{value}"
+msgstr "On-site cards: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Push accepted by transport: %{value}"
+msgstr "Push accepted by transport: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Push outcome unknown: %{value}"
+msgstr "Push outcome unknown: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Push skipped: %{value}"
+msgstr "Push skipped: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "SMS unavailable: %{value}"
+msgstr "SMS unavailable: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Date"
+msgstr "Date"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Issues"
+msgstr "Issues"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Compare policies"
+msgstr "Compare policies"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Select up to 10 policies. The current policy is included."
+msgstr "Select up to 10 policies. The current policy is included."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Compare"
+msgstr "Compare"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The comparison is being prepared. Refresh it later."
+msgstr "The comparison is being prepared. Refresh it later."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Snapshot as of %{time}. Shared orders are counted once."
+msgstr "Snapshot as of %{time}. Shared orders are counted once."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Linked orders: %{orders} · net revenue after refunds: %{revenue}"
+msgstr "Linked orders: %{orders} · net revenue after refunds: %{revenue}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Return branch"
+msgstr "Return branch"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Orders in the observation window are associated with the reward; this does not prove additional sales. Delivery without provider confirmation has an unknown outcome."
+msgstr "Orders in the observation window are associated with the reward; this does not prove additional sales. Delivery without provider confirmation has an unknown outcome."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Customer unavailable"
+msgstr "Customer unavailable"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Segment unavailable"
+msgstr "Segment unavailable"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclusions were cleared because the audience or branches changed. Review them again."
+msgstr "Exclusions were cleared because the audience or branches changed. Review them again."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude customers"
+msgstr "Exclude customers"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Search customers by name or phone"
+msgstr "Search customers by name or phone"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Choose an audience segment before searching."
+msgstr "Choose an audience segment before searching."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No customers excluded"
+msgstr "No customers excluded"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Remove %{name}"
+msgstr "Remove %{name}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude groups"
+msgstr "Exclude groups"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Search groups by name"
+msgstr "Search groups by name"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No groups excluded"
+msgstr "No groups excluded"

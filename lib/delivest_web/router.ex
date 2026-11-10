@@ -119,6 +119,11 @@ defmodule DelivestWeb.Router do
     post "/push", Push.PushController, :subscribe_client
     delete "/push", Push.PushController, :unsubscribe_client
     get "/orders", Order.OrderController, :index
+    get "/notifications", Notifications.NotificationController, :index
+    get "/notifications/consents", Notifications.NotificationController, :consents
+    put "/notifications/consents", Notifications.NotificationController, :update_consents
+    post "/notifications/:id/dismiss", Notifications.NotificationController, :dismiss
+    post "/notifications/:id/click", Notifications.NotificationController, :click
 
     scope "/addresses", Address do
       get "/", AddressController, :index
@@ -344,6 +349,13 @@ defmodule DelivestWeb.Router do
         live "/new", Index, :new
         live "/:id/edit", Index, :edit
         live "/:id", Index, :show
+      end
+
+      scope "/marketing", MarketingLive do
+        live "/", Index, :index
+        live "/new", Index, :new
+        live "/:id", Index, :show
+        live "/:id/edit", Index, :edit
       end
 
       scope "/logs", LogLive do

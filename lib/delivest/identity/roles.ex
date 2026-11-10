@@ -5,6 +5,7 @@ defmodule Delivest.Identity.Roles do
   import Ecto.Query
   alias Delivest.Audit
   alias Delivest.Features
+  alias Delivest.Features.Registry
 
   @spec list_all_roles(map()) :: [Role.t()] | {:error, :forbidden}
   def list_all_roles(user) do
@@ -50,7 +51,7 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_create_role(user, attrs) do
-    attrs = preserve_disabled_segment_permissions(attrs, [])
+    attrs = preserve_disabled_feature_permissions(attrs, [])
 
     if Acl.can?(user, "roles.create") and Delegation.grants?(user, permissions(attrs, [])) do
       system_create_role(attrs)
@@ -74,7 +75,7 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_update_role(user, %Role{} = role, attrs) do
-    attrs = preserve_disabled_segment_permissions(attrs, role.permissions)
+    attrs = preserve_disabled_feature_permissions(attrs, role.permissions)
 
     if Acl.can?(user, "roles.update") and Delegation.role?(user, role) and
          Delegation.grants?(user, permissions(attrs, role.permissions)) do
@@ -125,13 +126,18 @@ defmodule Delivest.Identity.Roles do
     end
   end
 
-  defp preserve_disabled_segment_permissions(attrs, existing) do
-    if Features.enabled?("segments", :franchise) do
+  defp preserve_disabled_feature_permissions(attrs, existing) do
+    disabled_features =
+      Registry.permission_features()
+      |> Enum.reject(&Features.enabled?(&1, :franchise))
+
+    if disabled_features == [] do
       attrs
     else
       submitted = permissions(attrs, existing)
-      allowed = Enum.reject(submitted, &segment_permission?/1)
-      retained = Enum.filter(existing, &segment_permission?/1)
+      hidden? = &(Registry.permission_feature(&1) in disabled_features)
+      allowed = Enum.reject(submitted, hidden?)
+      retained = Enum.filter(existing, hidden?)
       value = Enum.uniq(allowed ++ retained)
 
       if Enum.all?(Map.keys(attrs), &is_atom/1) do
@@ -141,11 +147,6 @@ defmodule Delivest.Identity.Roles do
       end
     end
   end
-
-  defp segment_permission?(permission) when is_binary(permission),
-    do: String.starts_with?(permission, "segments.")
-
-  defp segment_permission?(_), do: false
 
   defp finalize_delete({:ok, role}), do: {:ok, role}
 

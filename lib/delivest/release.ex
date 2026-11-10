@@ -19,9 +19,15 @@ defmodule Delivest.Release do
   end
 
   @doc "Host-only release RPC for feature availability; no staff route exposes this."
-  def configure_feature(feature, scope, enabled, actor) do
+  def configure_feature(feature, scope, enabled, actor, opts \\ []) when is_list(opts) do
     load_app()
-    Delivest.Features.configure(feature, scope, enabled, actor: actor)
+    Delivest.Features.configure(feature, scope, enabled, Keyword.put(opts, :actor, actor))
+  end
+
+  @doc "Preview dependent features and a generation fingerprint before a host disable."
+  def preview_feature_disable(feature, scope) do
+    load_app()
+    Delivest.Features.disable_preview(feature, scope)
   end
 
   def create_admin(login \\ nil, password \\ nil) do

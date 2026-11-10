@@ -7,7 +7,7 @@ defmodule Delivest.Push.NoteWorker do
   import Ecto.Query
 
   alias Delivest.Oms.Order
-  alias Delivest.Push.{OrderMessage, Sender, Subscription}
+  alias Delivest.Push.{OrderMessage, Subscription}
   alias Delivest.Repo
 
   @notes ~w(card_only items_removed)
@@ -43,7 +43,7 @@ defmodule Delivest.Push.NoteWorker do
   end
 
   defp deliver(subscription, message) do
-    case Sender.deliver(subscription, message) do
+    case Delivest.Notifications.deliver_push(subscription, message, :transactional) do
       :expired ->
         Repo.delete!(subscription)
         :ok

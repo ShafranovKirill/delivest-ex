@@ -6,6 +6,10 @@ The installation is one franchise with branches. `segments` is initially disable
 Delivest.Release.configure_feature("segments", :franchise, true, "operator-name")
 Delivest.Release.configure_feature("segments", {:branch, "branch-uuid"}, true, "operator-name")
 Delivest.Release.configure_feature("segments", {:branch, "branch-uuid"}, false, "operator-name")
+
+{:ok, preview} = Delivest.Release.preview_feature_disable("segments", :franchise)
+Delivest.Release.configure_feature("segments", :franchise, false, "operator-name",
+  confirm_dependents: preview)
 ```
 
 The franchise gate must be enabled before any branch is effective. Unknown features and branches fail closed. A repeated write of the same value is idempotent. Every actual change has a `feature_audits` row with actor and generation. Branch changes also advance the franchise generation to stop a shared calculation.

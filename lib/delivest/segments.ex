@@ -10,6 +10,92 @@ defmodule Delivest.Segments do
 
   @page_size 50
 
+  @doc "Pin a published dynamic snapshot while an internal bounded consumer scans it. Caller owns transaction."
+  def lease_snapshot(%Segment{} = segment, owner_type, owner_id)
+      when is_binary(owner_type) and is_binary(owner_id) do
+    current = Repo.one(from s in Segment, where: s.id == ^segment.id, lock: "FOR SHARE")
+
+    if current && (current.kind == :manual or current.published_snapshot_id) do
+      if current.kind == :dynamic do
+        Repo.insert_all(
+          "segment_snapshot_leases",
+          [
+            %{
+              snapshot_id: Ecto.UUID.dump!(current.published_snapshot_id),
+              owner_type: owner_type,
+              owner_id: Ecto.UUID.dump!(owner_id),
+              inserted_at: DateTime.utc_now(:second)
+            }
+          ],
+          on_conflict: {:replace, [:snapshot_id, :inserted_at]},
+          conflict_target: [:owner_type, :owner_id]
+        )
+      end
+
+      {:ok, current.published_snapshot_id}
+    else
+      {:error, :snapshot_unavailable}
+    end
+  end
+
+  def release_snapshot(owner_type, owner_id) do
+    Repo.delete_all(
+      from l in "segment_snapshot_leases",
+        where: l.owner_type == ^owner_type and l.owner_id == type(^owner_id, :binary_id)
+    )
+
+    :ok
+  end
+
+  @doc "Published membership for internal consumers; never builds an ad hoc segment snapshot."
+  def published_member_page(%Segment{} = segment, after_id, limit, snapshot_id \\ nil)
+      when is_integer(limit) and limit > 0 and limit <= 250 do
+    snapshot_id = snapshot_id || segment.published_snapshot_id
+
+    membership =
+      if segment.kind == :manual do
+        from m in "segment_manual_members",
+          where: m.segment_id == type(^segment.id, :binary_id),
+          select: m.client_id
+      else
+        from m in "segment_dynamic_members",
+          where:
+            m.segment_id == type(^segment.id, :binary_id) and
+              m.snapshot_id == type(^snapshot_id, :binary_id),
+          select: m.client_id
+      end
+
+    Repo.all(
+      from c in Client,
+        where:
+          c.id in subquery(membership) and c.id > ^after_id and
+            c.status == :active and is_nil(c.deleted_at),
+        order_by: [asc: c.id],
+        limit: ^limit,
+        select: c.id
+    )
+  end
+
+  def published_member?(%Segment{} = segment, client_id) do
+    if segment.kind == :manual do
+      Repo.exists?(
+        from m in "segment_manual_members",
+          where:
+            m.segment_id == type(^segment.id, :binary_id) and
+              m.client_id == type(^client_id, :binary_id)
+      )
+    else
+      segment.published_snapshot_id != nil and
+        Repo.exists?(
+          from m in "segment_dynamic_members",
+            where:
+              m.segment_id == type(^segment.id, :binary_id) and
+                m.snapshot_id == type(^segment.published_snapshot_id, :binary_id) and
+                m.client_id == type(^client_id, :binary_id)
+        )
+    end
+  end
+
   def available?(%Staff{} = staff) do
     Identity.can?(staff, "segments.read") and Features.enabled?("segments", :franchise) and
       (Identity.can?(staff, "segments.network") or
@@ -157,6 +243,8 @@ defmodule Delivest.Segments do
                if is_nil(current) or current.revision != segment.revision,
                  do: Repo.rollback(:stale)
 
+               require_policy_confirmation!(current, attrs)
+
                case segment
                     |> Segment.update_changeset(attrs)
                     |> Repo.update(stale_error_field: :name) do
@@ -185,11 +273,11 @@ defmodule Delivest.Segments do
     end
   end
 
-  def add_member(%Staff{} = staff, segment_id, client_id),
-    do: change_member(staff, segment_id, client_id, :add)
+  def add_member(%Staff{} = staff, segment_id, client_id, opts \\ %{}),
+    do: change_member(staff, segment_id, client_id, :add, opts)
 
-  def remove_member(%Staff{} = staff, segment_id, client_id),
-    do: change_member(staff, segment_id, client_id, :remove)
+  def remove_member(%Staff{} = staff, segment_id, client_id, opts \\ %{}),
+    do: change_member(staff, segment_id, client_id, :remove, opts)
 
   def list_members(%Staff{} = staff, segment_id, opts \\ []) do
     with {:ok, segment} <- get(staff, segment_id),
@@ -301,7 +389,7 @@ defmodule Delivest.Segments do
     end
   end
 
-  defp change_member(staff, segment_id, client_id, action) do
+  defp change_member(staff, segment_id, client_id, action, opts) do
     with :ok <- authorize(staff, "segments.manage"),
          {:ok, token} <- Features.snapshot("segments", :franchise),
          {:ok, segment} <- get(staff, segment_id),
@@ -311,9 +399,29 @@ defmodule Delivest.Segments do
          true <- eligible?(segment, client_id) do
       result =
         Features.with_enabled("segments", :franchise, token, fn ->
+          current = Repo.one!(from s in Segment, where: s.id == ^segment.id, lock: "FOR UPDATE")
+
+          expected = Map.get(opts, "expected_revision", Map.get(opts, :expected_revision))
+
+          if expected && expected != current.revision &&
+               expected != Integer.to_string(current.revision),
+             do: Repo.rollback(:stale)
+
+          member? =
+            Repo.exists?(
+              from m in "segment_manual_members",
+                where:
+                  m.segment_id == type(^segment.id, :binary_id) and
+                    m.client_id == type(^client_id, :binary_id)
+            )
+
+          changes? = (action == :add and not member?) or (action == :remove and member?)
+
+          if changes?, do: require_policy_confirmation!(current, opts)
+
           outcome =
-            case action do
-              :add ->
+            case {action, changes?} do
+              {:add, true} ->
                 now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
 
                 Repo.insert_all(
@@ -329,24 +437,35 @@ defmodule Delivest.Segments do
                   on_conflict: :nothing
                 )
 
-              :remove ->
+              {:remove, true} ->
                 Repo.delete_all(
                   from m in "segment_manual_members",
                     where:
                       m.segment_id == type(^segment.id, :binary_id) and
                         m.client_id == type(^client_id, :binary_id)
                 )
+
+              {_, false} ->
+                {0, nil}
             end
 
-          {:ok, _} =
-            Audit.record(staff, "segment.member_#{action}", :franchise,
-              metadata: %{
-                segment_id: segment.id,
-                client_id: client_id,
-                scope: segment.scope,
-                branch_ids: Enum.map(segment.branches, & &1.id)
-              }
+          if elem(outcome, 0) > 0 do
+            Repo.update_all(from(s in Segment, where: s.id == ^segment.id),
+              inc: [revision: 1]
             )
+          end
+
+          if changes? do
+            {:ok, _} =
+              Audit.record(staff, "segment.member_#{action}", :franchise,
+                metadata: %{
+                  segment_id: segment.id,
+                  client_id: client_id,
+                  scope: segment.scope,
+                  branch_ids: Enum.map(segment.branches, & &1.id)
+                }
+              )
+          end
 
           outcome
         end)
@@ -358,6 +477,17 @@ defmodule Delivest.Segments do
     else
       _ -> {:error, :forbidden}
     end
+  end
+
+  defp require_policy_confirmation!(segment, attrs) do
+    impact = Delivest.Marketing.segment_impact(segment.id)
+    confirmed = Map.get(attrs, "policy_confirmation", Map.get(attrs, :policy_confirmation))
+    expected = Map.get(attrs, "expected_revision", Map.get(attrs, :expected_revision))
+
+    if impact.policies != [] and
+         (confirmed != impact.fingerprint or
+            (expected != segment.revision and expected != Integer.to_string(segment.revision))),
+       do: Repo.rollback({:policy_confirmation_required, impact})
   end
 
   defp eligible?(%Segment{scope: :franchise}, _client_id), do: true

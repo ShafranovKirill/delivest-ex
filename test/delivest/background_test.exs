@@ -18,6 +18,17 @@ defmodule Delivest.BackgroundTest do
     assert Repo.one!(Schedule).running
   end
 
+  test "interactive wakeups coalesce on the shared dispatcher" do
+    assert {:ok, first} = Background.kick()
+    assert {:ok, second} = Background.kick()
+    assert first.id == second.id
+
+    assert Repo.aggregate(
+             from(j in Oban.Job, where: j.worker == "Delivest.Background.Dispatcher"),
+             :count
+           ) == 1
+  end
+
   test "reconcile restores only an enabled schedule after a database swap" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
     Repo.delete_all(Schedule)

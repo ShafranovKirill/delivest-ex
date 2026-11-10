@@ -49,6 +49,33 @@ defmodule Delivest.FeaturesTest do
              end)
   end
 
+  test "union publication checks both immutable source and notification epochs" do
+    branch = insert(:branch)
+    assert {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "host")
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", {:branch, branch.id}, true, actor: "host")
+
+    assert {:ok, source} = Features.snapshot("marketing_policies", {:branch, branch.id})
+    assert {:ok, notice} = Features.snapshot("notifications", {:branch, branch.id})
+
+    locks = [
+      {"marketing_policies", {:branch, branch.id}, source},
+      {"notifications", {:branch, branch.id}, notice}
+    ]
+
+    assert {:ok, :ok} = Features.with_enabled_many(locks, fn -> :ok end)
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", {:branch, branch.id}, false, actor: "host")
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", {:branch, branch.id}, true, actor: "host")
+
+    assert {:error, :disabled} =
+             Features.with_enabled_many(locks, fn -> flunk("stale source") end)
+  end
+
   test "publication and host revocation serialize on independent database connections" do
     unboxed(fn ->
       assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "race")
@@ -99,6 +126,59 @@ defmodule Delivest.FeaturesTest do
                Features.with_enabled("segments", :franchise, token, fn ->
                  flunk("revoked write")
                end)
+             end)
+  end
+
+  test "marketing enables dependency closure and dependent disable needs a current preview" do
+    branch = insert(:branch)
+    assert {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "host")
+    assert Features.enabled?("segments", :franchise)
+    assert Features.enabled?("notifications", :franchise)
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", {:branch, branch.id}, true, actor: "host")
+
+    assert Features.enabled?("segments", {:branch, branch.id})
+    assert Features.enabled?("notifications", {:branch, branch.id})
+
+    assert Features.enabled_branches("marketing_policies", [branch.id, Ecto.UUID.generate()]) ==
+             MapSet.new([branch.id])
+
+    assert {:ok, token} = Features.snapshot("marketing_policies", {:branch, branch.id})
+
+    assert {:ok, preview} = Features.disable_preview("segments", {:branch, branch.id})
+    assert preview.features == ["marketing_policies"]
+
+    assert {:error, {:dependent_features, ^preview}} =
+             Features.configure("segments", {:branch, branch.id}, false, actor: "host")
+
+    # A dependent changed since review, even if the same dependent is still enabled.
+    assert {:ok, _} =
+             Features.configure("marketing_policies", {:branch, branch.id}, false, actor: "host")
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", {:branch, branch.id}, true, actor: "host")
+
+    assert {:error, {:dependent_features, current}} =
+             Features.configure("segments", {:branch, branch.id}, false,
+               actor: "host",
+               confirm_dependents: preview
+             )
+
+    assert current.features == preview.features
+    refute current.fingerprint == preview.fingerprint
+
+    assert {:ok, _} =
+             Features.configure("segments", {:branch, branch.id}, false,
+               actor: "host",
+               confirm_dependents: current
+             )
+
+    refute Features.enabled?("marketing_policies", {:branch, branch.id})
+
+    assert {:error, :disabled} =
+             Features.with_enabled("marketing_policies", {:branch, branch.id}, token, fn ->
+               flunk("stale dependency publish")
              end)
   end
 

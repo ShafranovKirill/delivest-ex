@@ -2,13 +2,18 @@ defmodule Delivest.Background do
   @moduledoc "Shared, bounded dispatcher for optional feature calculations."
   import Ecto.Query
   alias Delivest.{Features, Repo}
-  alias Delivest.Background.{Registry, Runner, Schedule}
+  alias Delivest.Background.{Dispatcher, Registry, Runner, Schedule}
   alias Delivest.Features.Gate
 
   @batch_size 10
   @critical_queues ~w(default notifications polling rkeeper_polling crm events payments fiscal)
 
   def feature_changed(feature, scope, enabled) do
+    if not enabled do
+      Registry.feature_disabled(feature, scope)
+      Delivest.Notifications.SourceRegistry.feature_disabled(feature, scope)
+    end
+
     Enum.each(Registry.tasks_for_feature(feature), fn {kind, task} ->
       cond do
         scope == task.scope and enabled ->
@@ -44,6 +49,14 @@ defmodule Delivest.Background do
     else
       _ -> {:error, :invalid_schedule}
     end
+  end
+
+  @doc "Wake the shared dispatcher for an interactive request; the periodic dispatcher remains the fallback."
+  def kick do
+    Dispatcher.new(%{},
+      unique: [period: 30, fields: [:worker, :args], states: [:available, :scheduled]]
+    )
+    |> Oban.insert()
   end
 
   def schedule(kind, scope) do
@@ -96,12 +109,30 @@ defmodule Delivest.Background do
         fun.()
       end)
 
-  def publish(%{feature: feature} = context, scope, token, fun),
-    do:
-      Features.with_enabled(feature, scope, token, fn ->
-        assert_owner!(context)
-        fun.()
-      end)
+  def publish(context, scope, token, fun),
+    do: publish(context, scope, token, [], fun)
+
+  @doc "Publish a branch result with its original planner epoch and owner still fenced."
+  def publish(
+        %{feature: feature, scope: original_scope, generation: original} = context,
+        scope,
+        %{franchise: franchise} = token,
+        extra,
+        fun
+      )
+      when is_list(extra) and is_function(fun, 0) do
+    if franchise != original.franchise do
+      {:error, :disabled}
+    else
+      Features.with_enabled_many(
+        [{feature, original_scope, original}, {feature, scope, token} | extra],
+        fn ->
+          assert_owner!(context)
+          fun.()
+        end
+      )
+    end
+  end
 
   def owner?(%{schedule_id: schedule_id, job_id: job_id})
       when is_integer(schedule_id) and is_integer(job_id) do

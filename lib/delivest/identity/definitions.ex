@@ -11,6 +11,7 @@ defmodule Delivest.Identity.Definitions do
   promotions.create promotions.read promotions.update promotions.delete
   clients.create clients.read clients.update clients.delete
   segments.read segments.manage segments.network
+  marketing.read marketing.manage marketing.network marketing.reports
   orders.create orders.read orders.update orders.delete orders.cook orders.deliver orders.revert
   pos.use
   delivery.read delivery.update

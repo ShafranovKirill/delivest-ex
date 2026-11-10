@@ -393,7 +393,7 @@ defmodule Delivest.Segments.Refresh do
           owner_column = if owner == "segments", do: "published_snapshot_id", else: "snapshot_id"
 
           query =
-            "DELETE FROM #{table} WHERE ctid IN (SELECT ctid FROM #{table} WHERE snapshot_id NOT IN (SELECT #{owner_column} FROM #{owner} WHERE #{owner_column} IS NOT NULL) LIMIT #{@batch})"
+            "DELETE FROM #{table} WHERE ctid IN (SELECT ctid FROM #{table} WHERE snapshot_id NOT IN (SELECT #{owner_column} FROM #{owner} WHERE #{owner_column} IS NOT NULL) AND snapshot_id NOT IN (SELECT snapshot_id FROM segment_snapshot_leases) LIMIT #{@batch})"
 
           case cleanup_batches(query, context) do
             :ok -> {:cont, :ok}
