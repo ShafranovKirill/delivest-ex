@@ -47,7 +47,10 @@ defmodule Delivest.Marketing.Preview do
     segment = policy && Repo.get(Segment, policy.segment_id)
 
     cond do
-      is_nil(policy) or is_nil(segment) ->
+      is_nil(policy) ->
+        pending_or_done()
+
+      is_nil(segment) ->
         {:error, :missing_policy_or_segment}
 
       policy.revision != revision or segment.revision != segment_revision or
