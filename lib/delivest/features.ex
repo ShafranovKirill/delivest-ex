@@ -3,16 +3,14 @@ defmodule Delivest.Features do
   import Ecto.Query
 
   alias Delivest.{Background, Repo}
-  alias Delivest.Features.Gate
+  alias Delivest.Features.{Gate, Registry}
   alias Delivest.Identity.Branch
-
-  @features ["segments"]
 
   def enabled?(feature, scope), do: match?({:ok, _}, snapshot(feature, scope))
 
   def snapshot(feature, scope) do
     with {:ok, key} <- scope_key(scope),
-         true <- feature in @features,
+         true <- Registry.known?(feature),
          :ok <- valid_branch(scope) do
       parent = Repo.get_by(Gate, feature: feature, scope_key: "franchise")
 
@@ -35,7 +33,7 @@ defmodule Delivest.Features do
   @doc "Short, locked transaction for publishing a result calculated at a captured generation."
   def with_enabled(feature, scope, generation, fun) when is_function(fun, 0) do
     with {:ok, key} <- scope_key(scope),
-         true <- feature in @features,
+         true <- Registry.known?(feature),
          :ok <- valid_branch(scope) do
       Repo.transaction(fn ->
         parent = locked_gate(feature, "franchise")
@@ -55,8 +53,9 @@ defmodule Delivest.Features do
 
   @doc "Only call from the host Release command; no staff endpoint delegates to this function."
   def configure(feature, scope, enabled, opts)
-      when feature in @features and is_boolean(enabled) and is_list(opts) do
+      when is_boolean(enabled) and is_list(opts) do
     with {:ok, key} <- scope_key(scope),
+         true <- Registry.known?(feature),
          actor when is_binary(actor) and byte_size(actor) > 0 <- Keyword.get(opts, :actor),
          :ok <- valid_branch(scope) do
       Repo.transaction(fn ->
@@ -74,7 +73,10 @@ defmodule Delivest.Features do
               inserted_at: now,
               updated_at: now
             }
-          ], on_conflict: :nothing, conflict_target: [:feature, :scope_key])
+          ],
+          on_conflict: :nothing,
+          conflict_target: [:feature, :scope_key]
+        )
 
         parent = locked_gate(feature, "franchise")
         gate = if key == "franchise", do: parent, else: locked_gate(feature, key)

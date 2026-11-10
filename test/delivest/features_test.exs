@@ -48,4 +48,59 @@ defmodule Delivest.FeaturesTest do
                flunk("stale write")
              end)
   end
+
+  test "publication and host revocation serialize on independent database connections" do
+    unboxed(fn ->
+      assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "race")
+    end)
+
+    token =
+      unboxed(fn ->
+        {:ok, token} = Features.snapshot("segments", :franchise)
+        token
+      end)
+
+    parent = self()
+
+    publisher =
+      Task.async(fn ->
+        unboxed(fn ->
+          Features.with_enabled("segments", :franchise, token, fn ->
+            send(parent, {:publication_locked, self()})
+
+            receive do
+              :release_publication -> :published
+            after
+              5_000 -> raise "publication test barrier timed out"
+            end
+          end)
+        end)
+      end)
+
+    assert_receive {:publication_locked, publishing_pid}
+
+    revoker =
+      Task.async(fn ->
+        unboxed(fn ->
+          result = Features.configure("segments", :franchise, false, actor: "race")
+          send(parent, :revocation_done)
+          result
+        end)
+      end)
+
+    refute_receive :revocation_done, 100
+    send(publishing_pid, :release_publication)
+    assert {:ok, :published} = Task.await(publisher, 5_000)
+    assert {:ok, _} = Task.await(revoker, 5_000)
+    assert_receive :revocation_done
+
+    assert {:error, :disabled} =
+             unboxed(fn ->
+               Features.with_enabled("segments", :franchise, token, fn ->
+                 flunk("revoked write")
+               end)
+             end)
+  end
+
+  defp unboxed(fun), do: Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fun)
 end

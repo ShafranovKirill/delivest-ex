@@ -3,11 +3,27 @@ defmodule Delivest.Background.Runner do
 
   alias Delivest.{Background, Features}
   alias Delivest.Background.Registry
+  alias Delivest.Repo
+
+  @impl Oban.Worker
+  def timeout(%Oban.Job{args: %{"kind" => kind}}) do
+    case Registry.fetch(kind) do
+      {:ok, task} -> Application.get_env(:delivest, :background_task_timeout_ms, task.timeout)
+      :error -> :timer.minutes(1)
+    end
+  end
+
+  def timeout(_job), do: :timer.minutes(1)
 
   @impl Oban.Worker
   def perform(%Oban.Job{
         id: job_id,
-        args: %{"kind" => kind, "scope_key" => key, "generation" => raw}
+        args: %{
+          "kind" => kind,
+          "scope_key" => key,
+          "generation" => raw,
+          "schedule_id" => schedule_id
+        }
       }) do
     with {:ok, task} <- Registry.fetch(kind) do
       token = %{franchise: raw["franchise"], branch: raw["branch"]}
@@ -17,14 +33,14 @@ defmodule Delivest.Background.Runner do
         feature: task.feature,
         scope: scope,
         generation: token,
-        schedule_id: raw["schedule_id"],
+        schedule_id: schedule_id,
         job_id: job_id
       }
 
-      cond do
-        not Background.still_enabled?(context) -> :ok
-        Background.pressure_high?() -> {:snooze, 300}
-        true -> run(task.handler, scope, context, kind, key, job_id)
+      case Background.checkpoint(context) do
+        :ok -> run(task, scope, context, kind, key, job_id)
+        {:snooze, seconds} -> {:snooze, seconds}
+        {:error, :disabled} -> :ok
       end
     else
       :error -> {:cancel, :unknown_background_task}
@@ -33,11 +49,34 @@ defmodule Delivest.Background.Runner do
 
   def perform(_), do: {:cancel, :unknown_background_task}
 
-  defp run(handler, scope, context, kind, key, job_id) do
+  defp run(task, scope, context, kind, key, job_id) do
     try do
-      case handler.perform(scope, context) do
+      result =
+        Repo.checkout(
+          fn ->
+            [[previous]] = Repo.query!("SHOW statement_timeout").rows
+
+            Repo.query!(
+              "SELECT set_config('statement_timeout', $1, false)",
+              [Integer.to_string(task.statement_timeout)],
+              timeout: task.statement_timeout + 5_000
+            )
+
+            try do
+              task.handler.perform(scope, context)
+            after
+              Repo.query!("SELECT set_config('statement_timeout', $1, false)", [previous])
+            end
+          end,
+          timeout: task.timeout + 5_000
+        )
+
+      case result do
         :ok ->
           Background.finish(kind, key, job_id, :ok)
+
+        {:snooze, seconds} ->
+          {:snooze, seconds}
 
         {:error, _reason} ->
           Background.record_error(kind, key, job_id)

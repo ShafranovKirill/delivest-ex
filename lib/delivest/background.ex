@@ -7,73 +7,86 @@ defmodule Delivest.Background do
   @batch_size 10
   @critical_queues ~w(default notifications polling rkeeper_polling crm events payments fiscal)
 
-  def feature_changed("segments", :franchise, enabled) do
-    if enabled,
-      do: schedule("segments.refresh", :franchise),
-      else: unschedule("segments.refresh", :franchise)
+  def feature_changed(feature, scope, enabled) do
+    Enum.each(Registry.tasks_for_feature(feature), fn {kind, task} ->
+      cond do
+        scope == task.scope and enabled ->
+          schedule(kind, scope)
+
+        scope == task.scope ->
+          unschedule(kind, scope)
+
+        match?({:branch, _}, scope) and task.scope == :franchise and
+            Features.enabled?(feature, :franchise) ->
+          invalidate(kind, :franchise)
+
+        true ->
+          :ok
+      end
+    end)
+
+    :ok
   end
 
-  def feature_changed("segments", {:branch, _id}, _enabled) do
-    if Features.enabled?("segments", :franchise) do
-      invalidate("segments.refresh", :franchise)
+  def invalidate(kind, scope) do
+    with {:ok, task} <- Registry.fetch(kind),
+         true <- task.scope == scope,
+         {:ok, key} <- Features.scope_key(scope) do
+      now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+      Repo.update_all(from(s in Schedule, where: s.kind == ^kind and s.scope_key == ^key),
+        set: [running: false, current_job_id: nil, next_at: now]
+      )
+
+      cancel_pending(kind, key)
+      :ok
+    else
+      _ -> {:error, :invalid_schedule}
     end
-
-    :ok
   end
 
-  def feature_changed(_, _, _), do: :ok
-
-  def invalidate("segments.refresh", :franchise) do
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
-
-    Repo.update_all(
-      from(s in Schedule,
-        where: s.kind == "segments.refresh" and s.scope_key == "franchise"
-      ),
-      set: [running: false, current_job_id: nil, next_at: now]
-    )
-
-    cancel_pending("segments.refresh", "franchise")
-    :ok
-  end
-
-  def schedule("segments.refresh", :franchise) do
-    if Features.enabled?("segments", :franchise) do
+  def schedule(kind, scope) do
+    with {:ok, task} <- Registry.fetch(kind),
+         true <- task.scope == scope,
+         {:ok, key} <- Features.scope_key(scope),
+         true <- Features.enabled?(task.feature, scope) do
       now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
       Repo.insert_all(
         Schedule,
-        [
-          %{
-            kind: "segments.refresh",
-            scope_key: "franchise",
-            next_at: now,
-            inserted_at: now,
-            updated_at: now
-          }
-        ], on_conflict: :nothing, conflict_target: [:kind, :scope_key])
+        [%{kind: kind, scope_key: key, next_at: now, inserted_at: now, updated_at: now}],
+        on_conflict: :nothing,
+        conflict_target: [:kind, :scope_key]
+      )
 
       :ok
     else
-      {:error, :disabled}
+      _ -> {:error, :invalid_schedule}
     end
   end
 
-  def schedule(_, _), do: {:error, :invalid_schedule}
-
-  def unschedule("segments.refresh", :franchise) do
-    Repo.delete_all(
-      from s in Schedule, where: s.kind == "segments.refresh" and s.scope_key == "franchise"
-    )
-
-    cancel_pending("segments.refresh", "franchise")
-    :ok
+  def unschedule(kind, scope) do
+    with {:ok, task} <- Registry.fetch(kind),
+         true <- task.scope == scope,
+         {:ok, key} <- Features.scope_key(scope) do
+      Repo.delete_all(from s in Schedule, where: s.kind == ^kind and s.scope_key == ^key)
+      cancel_pending(kind, key)
+      :ok
+    else
+      _ -> {:error, :invalid_schedule}
+    end
   end
-
-  def unschedule(_, _), do: {:error, :invalid_schedule}
 
   def still_enabled?(%{feature: feature, scope: scope, generation: token} = context),
     do: Features.still_enabled?(feature, scope, token) and owner?(context)
+
+  def checkpoint(context) do
+    cond do
+      not still_enabled?(context) -> {:error, :disabled}
+      pressure_high?() -> {:snooze, 300}
+      true -> :ok
+    end
+  end
 
   def publish(%{feature: feature, scope: scope, generation: token} = context, fun),
     do:
@@ -210,7 +223,9 @@ defmodule Delivest.Background do
     Repo.update_all(
       from(s in Schedule,
         where: s.kind == ^kind and s.scope_key == ^scope_key and s.current_job_id == ^job_id
-      ), set: updates)
+      ),
+      set: updates
+    )
 
     :ok
   end
