@@ -2,6 +2,7 @@ defmodule Delivest.Background.Registry do
   @moduledoc "Allowlist of optional calculations; add consumers here when implemented."
   @tasks %{
     "marketing.preview" => %{
+      manual?: true,
       feature: "marketing_policies",
       handler: Delivest.Marketing.Preview,
       interval: 86_400,
@@ -10,6 +11,7 @@ defmodule Delivest.Background.Registry do
       statement_timeout: :timer.seconds(20)
     },
     "marketing.report" => %{
+      manual?: true,
       feature: "marketing_policies",
       handler: Delivest.Marketing.Report,
       interval: 86_400,
@@ -26,6 +28,7 @@ defmodule Delivest.Background.Registry do
       statement_timeout: :timer.seconds(20)
     },
     "marketing.evaluate" => %{
+      manual?: true,
       feature: "marketing_policies",
       handler: Delivest.Marketing.Evaluate,
       interval: 86_400,
@@ -34,6 +37,7 @@ defmodule Delivest.Background.Registry do
       statement_timeout: :timer.seconds(20)
     },
     "segments.refresh" => %{
+      manual?: true,
       feature: "segments",
       handler: Delivest.Segments.Refresh,
       interval: 86_400,

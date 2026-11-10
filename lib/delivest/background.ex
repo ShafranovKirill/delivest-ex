@@ -8,6 +8,87 @@ defmodule Delivest.Background do
   @batch_size 10
   @critical_queues ~w(default notifications polling rkeeper_polling crm events payments fiscal)
 
+  @doc "Coalesce an interactive calculation into the existing scheduled runner."
+  def run_now(kind, scope, opts \\ [])
+
+  def run_now(kind, scope, opts) when is_list(opts) do
+    with {:ok, %{manual?: true} = task} <- Registry.fetch(kind),
+         true <- task.scope == scope,
+         {:ok, key} <- Features.scope_key(scope),
+         {:ok, token} <- Features.snapshot(task.feature, scope) do
+      result =
+        Features.with_enabled(task.feature, scope, token, fn ->
+          now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+          Repo.insert_all(
+            Schedule,
+            [%{kind: kind, scope_key: key, next_at: now, inserted_at: now, updated_at: now}],
+            on_conflict: :nothing,
+            conflict_target: [:kind, :scope_key]
+          )
+
+          row =
+            Repo.one!(
+              from s in Schedule,
+                where: s.kind == ^kind and s.scope_key == ^key,
+                lock: "FOR UPDATE"
+            )
+
+          owner_job = if row.running, do: owner_job(row.current_job_id)
+
+          cond do
+            row.running and terminal_owner?(owner_job) ->
+              row
+              |> Ecto.Changeset.change(
+                running: false,
+                current_job_id: nil,
+                rerun_requested: false,
+                next_at: now
+              )
+              |> Repo.update!()
+
+              :queued
+
+            row.running ->
+              if Keyword.get(opts, :new_work, false) and not row.rerun_requested do
+                row |> Ecto.Changeset.change(rerun_requested: true) |> Repo.update!()
+              end
+
+              if owner_job.state in ["scheduled", "retryable"] do
+                :ok = Oban.retry_job(owner_job.id)
+                :queued
+              else
+                if owner_job.state == "executing", do: :running, else: :queued
+              end
+
+            true ->
+              row
+              |> Ecto.Changeset.change(next_at: now, rerun_requested: false)
+              |> Repo.update!()
+
+              :queued
+          end
+        end)
+
+      case result do
+        {:ok, :queued} ->
+          kick()
+          {:ok, :queued}
+
+        {:ok, :running} ->
+          {:ok, :running}
+
+        error ->
+          error
+      end
+    else
+      {:error, :disabled} -> {:error, :disabled}
+      _ -> {:error, :invalid_schedule}
+    end
+  end
+
+  def run_now(_, _, _), do: {:error, :invalid_schedule}
+
   def feature_changed(feature, scope, enabled) do
     if not enabled do
       Registry.feature_disabled(feature, scope)
@@ -41,7 +122,7 @@ defmodule Delivest.Background do
       now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
       Repo.update_all(from(s in Schedule, where: s.kind == ^kind and s.scope_key == ^key),
-        set: [running: false, current_job_id: nil, next_at: now]
+        set: [running: false, current_job_id: nil, rerun_requested: false, next_at: now]
       )
 
       cancel_pending(kind, key)
@@ -177,13 +258,71 @@ defmodule Delivest.Background do
     )
   end
 
+  @doc "Read calculation state without creating a schedule or job."
+  def calculation_status(kind, scope) do
+    with {:ok, %{manual?: true} = task} <- Registry.fetch(kind),
+         true <- task.scope == scope,
+         {:ok, key} <- Features.scope_key(scope),
+         {:ok, _} <- Features.snapshot(task.feature, scope) do
+      row = Repo.one(from s in Schedule, where: s.kind == ^kind and s.scope_key == ^key)
+      now = DateTime.utc_now()
+
+      state =
+        cond do
+          row == nil ->
+            :queued
+
+          row.running ->
+            job_state(row.current_job_id)
+
+          DateTime.compare(row.next_at, now) != :gt ->
+            :queued
+
+          row.last_error_at &&
+              (is_nil(row.last_success_at) or
+                 DateTime.compare(row.last_error_at, row.last_success_at) == :gt) ->
+            :error
+
+          row.last_success_at ->
+            :ready
+
+          true ->
+            :queued
+        end
+
+      {:ok,
+       %{
+         state: state,
+         last_success_at: if(row, do: row.last_success_at),
+         last_error: if(row, do: row.last_error)
+       }}
+    else
+      _ -> {:error, :disabled}
+    end
+  end
+
+  defp job_state(nil), do: :queued
+
+  defp job_state(job_id) do
+    case Repo.get(Oban.Job, job_id) do
+      %{state: "executing"} -> :running
+      _ -> :queued
+    end
+  end
+
+  defp owner_job(nil), do: nil
+  defp owner_job(job_id), do: Repo.get(Oban.Job, job_id)
+
+  defp terminal_owner?(nil), do: true
+  defp terminal_owner?(%{state: state}), do: state in ["completed", "cancelled", "discarded"]
+
   def dispatch_due do
     if pressure?() do
       {:deferred, :critical_backlog}
     else
       Repo.transaction(fn ->
         now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
-        recover_terminal_runs()
+        recover_terminal_runs(now)
 
         rows =
           Repo.all(
@@ -266,31 +405,39 @@ defmodule Delivest.Background do
   def finish(kind, scope_key, job_id, result) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
     {:ok, task} = Registry.fetch(kind)
-    next_at = DateTime.add(now, task.interval, :second)
 
-    updates =
-      if result == :ok,
-        do: [
-          running: false,
-          current_job_id: nil,
-          next_at: next_at,
-          last_success_at: now,
-          last_error: nil
-        ],
-        else: [
-          running: false,
-          current_job_id: nil,
-          next_at: next_at,
-          last_error_at: now,
-          last_error: "background calculation failed"
-        ]
+    {:ok, rerun?} =
+      Repo.transaction(fn ->
+        row =
+          Repo.one(
+            from s in Schedule,
+              where:
+                s.kind == ^kind and s.scope_key == ^scope_key and s.current_job_id == ^job_id,
+              lock: "FOR UPDATE"
+          )
 
-    Repo.update_all(
-      from(s in Schedule,
-        where: s.kind == ^kind and s.scope_key == ^scope_key and s.current_job_id == ^job_id
-      ),
-      set: updates
-    )
+        if row do
+          updates = [
+            running: false,
+            current_job_id: nil,
+            rerun_requested: false,
+            next_at:
+              if(row.rerun_requested, do: now, else: DateTime.add(now, task.interval, :second))
+          ]
+
+          updates =
+            if result == :ok,
+              do: updates ++ [last_success_at: now, last_error: nil],
+              else: updates ++ [last_error_at: now, last_error: "background calculation failed"]
+
+          row |> Ecto.Changeset.change(updates) |> Repo.update!()
+          row.rerun_requested
+        else
+          false
+        end
+      end)
+
+    if rerun?, do: kick()
 
     :ok
   end
@@ -310,7 +457,7 @@ defmodule Delivest.Background do
 
   def pressure_high?, do: pressure?()
 
-  defp recover_terminal_runs do
+  defp recover_terminal_runs(now) do
     stale =
       Repo.all(
         from s in Schedule,
@@ -321,12 +468,10 @@ defmodule Delivest.Background do
           order_by: s.next_at,
           limit: @batch_size,
           lock: "FOR UPDATE OF b0 SKIP LOCKED",
-          select: {s.id, s.kind, s.current_job_id}
+          select: {s.id, s.kind, s.current_job_id, s.rerun_requested}
       )
 
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
-
-    Enum.each(stale, fn {id, kind, observed_job_id} ->
+    Enum.each(stale, fn {id, kind, observed_job_id, rerun?} ->
       query =
         from s in Schedule,
           where: s.id == ^id and s.running and s.current_job_id == ^observed_job_id
@@ -337,7 +482,8 @@ defmodule Delivest.Background do
             set: [
               running: false,
               current_job_id: nil,
-              next_at: DateTime.add(now, task.interval, :second),
+              rerun_requested: false,
+              next_at: if(rerun?, do: now, else: DateTime.add(now, task.interval, :second)),
               last_error_at: now,
               last_error: "background calculation terminated before completion"
             ]

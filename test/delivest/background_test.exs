@@ -29,6 +29,120 @@ defmodule Delivest.BackgroundTest do
            ) == 1
   end
 
+  test "manual idle nudges coalesce into one runner and status reads create no work" do
+    assert {:error, :disabled} = Background.run_now("segments.refresh", :franchise)
+
+    assert {:error, :invalid_schedule} =
+             Background.run_now("notifications.dispatch", :franchise)
+
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    schedule = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
+    future = DateTime.add(DateTime.utc_now(), 86_400, :second)
+    Repo.update!(Ecto.Changeset.change(schedule, next_at: future))
+
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
+    assert {:ok, 1} = Background.dispatch_due()
+    current = Repo.reload!(schedule)
+    assert current.running
+    assert is_integer(current.current_job_id)
+
+    jobs_before = Repo.aggregate(Oban.Job, :count)
+
+    assert {:ok, %{state: :queued}} =
+             Background.calculation_status("segments.refresh", :franchise)
+
+    assert Repo.aggregate(Oban.Job, :count) == jobs_before
+    assert Repo.reload!(schedule).current_job_id == current.current_job_id
+
+    assert Repo.aggregate(
+             from(j in Oban.Job,
+               where:
+                 j.worker == "Delivest.Background.Runner" and
+                   fragment("?->>'schedule_id'", j.args) == ^Integer.to_string(schedule.id)
+             ),
+             :count
+           ) == 1
+  end
+
+  test "new work during an executing owner requests one immediate rerun" do
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, 1} = Background.dispatch_due()
+    first = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
+
+    Repo.update_all(from(j in Oban.Job, where: j.id == ^first.current_job_id),
+      set: [state: "executing"]
+    )
+
+    assert {:ok, :running} = Background.run_now("segments.refresh", :franchise)
+    refute Repo.reload!(first).rerun_requested
+    assert {:ok, :running} = Background.run_now("segments.refresh", :franchise, new_work: true)
+    assert {:ok, :running} = Background.run_now("segments.refresh", :franchise, new_work: true)
+    assert Repo.reload!(first).current_job_id == first.current_job_id
+    assert Repo.reload!(first).rerun_requested
+
+    assert :ok = Background.finish(first.kind, first.scope_key, first.current_job_id, :ok)
+    finished = Repo.reload!(first)
+    refute finished.running
+    refute finished.rerun_requested
+    assert DateTime.compare(finished.next_at, DateTime.utc_now()) != :gt
+    assert {:ok, 1} = Background.dispatch_due()
+    assert Repo.reload!(first).current_job_id != first.current_job_id
+  end
+
+  test "scheduled owner is expedited in place and a terminal owner is replaced" do
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, 1} = Background.dispatch_due()
+    first = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
+    future = DateTime.add(DateTime.utc_now(), 86_400, :second)
+
+    Repo.update_all(from(j in Oban.Job, where: j.id == ^first.current_job_id),
+      set: [state: "scheduled", scheduled_at: future]
+    )
+
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
+    assert Repo.reload!(first).current_job_id == first.current_job_id
+    job = Repo.get!(Oban.Job, first.current_job_id)
+    assert job.state == "available"
+    assert DateTime.compare(job.scheduled_at, DateTime.utc_now()) != :gt
+    assert {:ok, 0} = Background.dispatch_due()
+
+    Repo.update_all(from(j in Oban.Job, where: j.id == ^first.current_job_id),
+      set: [state: "retryable", scheduled_at: future]
+    )
+
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
+    assert Repo.reload!(first).current_job_id == first.current_job_id
+    assert Repo.get!(Oban.Job, first.current_job_id).state == "available"
+
+    Repo.update_all(from(j in Oban.Job, where: j.id == ^first.current_job_id),
+      set: [state: "discarded"]
+    )
+
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
+    refute Repo.reload!(first).running
+    assert {:ok, 1} = Background.dispatch_due()
+    assert Repo.reload!(first).current_job_id != first.current_job_id
+  end
+
+  test "terminal recovery honors a durable rerun request" do
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, 1} = Background.dispatch_due()
+    first = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
+
+    Repo.update!(Ecto.Changeset.change(first, rerun_requested: true))
+
+    Repo.update_all(from(j in Oban.Job, where: j.id == ^first.current_job_id),
+      set: [state: "discarded"]
+    )
+
+    assert {:ok, 1} = Background.dispatch_due()
+    recovered = Repo.reload!(first)
+    assert recovered.running
+    refute recovered.rerun_requested
+    assert recovered.current_job_id != first.current_job_id
+  end
+
   test "reconcile restores only an enabled schedule after a database swap" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
     Repo.delete_all(Schedule)

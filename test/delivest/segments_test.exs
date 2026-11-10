@@ -54,6 +54,37 @@ defmodule Delivest.SegmentsTest do
            )
   end
 
+  test "manual refresh checks segment scope and polling creates no jobs" do
+    branch = insert(:branch, is_active: true)
+
+    manager =
+      insert(:staff, role: insert(:role, permissions: ["segments.read", "segments.manage"]))
+
+    reader = insert(:staff, role: insert(:role, permissions: ["segments.read"]))
+    outsider = insert(:staff, role: insert(:role, permissions: ["segments.read"]))
+
+    for staff <- [manager, reader] do
+      Repo.insert!(%Delivest.Identity.StaffBranch{staff_id: staff.id, branch_id: branch.id})
+    end
+
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "test")
+    assert {:ok, _} = Features.configure("segments", {:branch, branch.id}, true, actor: "test")
+
+    assert {:ok, group} =
+             Segments.create(
+               manager,
+               %{name: "On demand", kind: :dynamic, scope: :branches, rules: @rules},
+               [branch.id]
+             )
+
+    jobs_before = Repo.aggregate(Oban.Job, :count)
+    assert {:ok, %{state: :queued}} = Segments.calculation_status(reader, group.id)
+    assert Repo.aggregate(Oban.Job, :count) == jobs_before
+    assert {:error, :forbidden} = Segments.recalculate_now(reader, group.id)
+    assert {:error, :not_found} = Segments.calculation_status(outsider, group.id)
+    assert {:ok, %{state: :queued}} = Segments.recalculate_now(manager, group.id)
+  end
+
   test "feature gate, branch scope, network permission and manual membership" do
     branch_a = insert(:branch, is_active: true)
     branch_b = insert(:branch, is_active: true)

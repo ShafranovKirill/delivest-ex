@@ -2,7 +2,7 @@ defmodule Delivest.Segments do
   @moduledoc "Staff-facing segment operations. Every entry point checks the feature and domain scope."
   import Ecto.Query
 
-  alias Delivest.{Audit, Features, Identity, Repo}
+  alias Delivest.{Audit, Background, Features, Identity, Repo}
   alias Delivest.Features.Gate
   alias Delivest.Identity.{Branch, Client, Staff}
   alias Delivest.Oms.Order
@@ -166,6 +166,26 @@ defmodule Delivest.Segments do
       {:ok, segment}
     else
       _ -> {:error, :not_found}
+    end
+  end
+
+  def recalculate_now(%Staff{} = staff, id) do
+    with :ok <- authorize(staff, "segments.manage"),
+         {:ok, %Segment{kind: :dynamic}} <- get(staff, id),
+         {:ok, _} <- Background.run_now("segments.refresh", :franchise) do
+      calculation_status(staff, id)
+    else
+      {:ok, _} -> {:error, :not_dynamic}
+      error -> error
+    end
+  end
+
+  def calculation_status(%Staff{} = staff, id) do
+    with {:ok, %Segment{kind: :dynamic}} <- get(staff, id) do
+      Background.calculation_status("segments.refresh", :franchise)
+    else
+      {:ok, _} -> {:error, :not_dynamic}
+      error -> error
     end
   end
 

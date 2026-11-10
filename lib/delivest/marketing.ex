@@ -406,7 +406,16 @@ defmodule Delivest.Marketing do
   defp revision_matches?(policy, expected),
     do: expected == policy.revision or expected == Integer.to_string(policy.revision)
 
-  def preview(%Staff{} = staff, id) do
+  def preview(%Staff{} = staff, id), do: preview(staff, id, [])
+
+  def recalculate_preview(%Staff{} = staff, id), do: preview(staff, id, force: true)
+
+  def preview_status(%Staff{} = staff, id), do: preview(staff, id, create: false)
+
+  defp preview(%Staff{} = staff, id, opts) do
+    force? = Keyword.get(opts, :force, false)
+    create? = Keyword.get(opts, :create, true)
+
     with {:ok, policy} <- get(staff, id),
          true <- Identity.can?(staff, "marketing.manage"),
          :draft <- policy.status,
@@ -434,7 +443,8 @@ defmodule Delivest.Marketing do
             counted_at
           ]
         ]
-        when revision == policy.revision and segment_revision == policy.segment.revision and
+        when not force? and revision == policy.revision and
+               segment_revision == policy.segment.revision and
                snapshot_raw == current_snapshot and feature_generation == generation.franchise ->
           {:ok,
            %{
@@ -451,7 +461,11 @@ defmodule Delivest.Marketing do
         [[revision, segment_revision, feature_generation, snapshot_raw, "pending", _, _]]
         when revision == policy.revision and segment_revision == policy.segment.revision and
                snapshot_raw == current_snapshot and feature_generation == generation.franchise ->
+          if create?, do: Background.run_now("marketing.preview", :franchise)
           {:ok, %{status: :pending}}
+
+        _ when not create? ->
+          {:ok, nil}
 
         _ ->
           now = DateTime.utc_now(:second)
@@ -492,15 +506,15 @@ defmodule Delivest.Marketing do
                      "pending"
                    ]
                  ] or
-                   existing == [
-                     [
-                       locked.revision,
-                       segment.revision,
-                       generation.franchise,
-                       snapshot_raw,
-                       "ready"
-                     ]
-                   ] do
+                   (existing == [
+                      [
+                        locked.revision,
+                        segment.revision,
+                        generation.franchise,
+                        snapshot_raw,
+                        "ready"
+                      ]
+                    ] and not force?) do
                 :existing
               else
                 snapshot_id =
@@ -542,11 +556,11 @@ defmodule Delivest.Marketing do
 
           case request do
             {:ok, :new} ->
-              Background.invalidate("marketing.preview", :franchise)
-              Background.kick()
+              Background.run_now("marketing.preview", :franchise, new_work: true)
               {:ok, %{status: :pending}}
 
             {:ok, :existing} ->
+              Background.run_now("marketing.preview", :franchise)
               {:ok, %{status: :pending}}
 
             {:error, reason} ->
@@ -926,6 +940,75 @@ defmodule Delivest.Marketing do
     end
   end
 
+  def recalculate_report(%Staff{} = staff, id, filters \\ %{}) do
+    with {:ok, policy} <- get(staff, id),
+         true <- Identity.can?(staff, "marketing.reports"),
+         true <- report_branch_allowed?(staff, filters) do
+      Delivest.Marketing.Report.recalculate(policy, filters)
+    else
+      false -> {:error, :forbidden}
+      error -> error
+    end
+  end
+
+  def report_status(%Staff{} = staff, policy_id, request_id) do
+    with {:ok, policy} <- get(staff, policy_id),
+         true <- Identity.can?(staff, "marketing.reports"),
+         {:ok, result} <- Delivest.Marketing.Report.status(policy, request_id),
+         true <- result == nil or report_branch_allowed?(staff, %{branch_id: result.branch_key}) do
+      {:ok, if(result, do: Map.delete(result, :branch_key))}
+    else
+      false -> {:error, :forbidden}
+      error -> error
+    end
+  end
+
+  def comparison_status(%Staff{} = staff, id) do
+    with true <- Identity.can?(staff, "marketing.reports"),
+         {:ok, result, request_ids} <- Delivest.Marketing.Report.comparison_status(id),
+         true <- comparison_requests_allowed?(staff, request_ids) do
+      {:ok, result}
+    else
+      {:ok, nil} -> {:ok, nil}
+      _ -> {:error, :forbidden}
+    end
+  end
+
+  def recalculate_now(%Staff{} = staff) do
+    with :ok <- authorize_global_calculation(staff),
+         {:ok, _} <- Background.run_now("marketing.evaluate", :franchise) do
+      calculation_status(staff)
+    end
+  end
+
+  def calculation_status(%Staff{} = staff) do
+    with :ok <- authorize_global_calculation(staff) do
+      Background.calculation_status("marketing.evaluate", :franchise)
+    end
+  end
+
+  defp authorize_global_calculation(staff) do
+    if Identity.can?(staff, "marketing.manage") and Identity.can?(staff, "marketing.network"),
+      do: :ok,
+      else: {:error, :forbidden}
+  end
+
+  defp comparison_requests_allowed?(staff, request_ids) do
+    ids = Enum.map(request_ids, &Ecto.UUID.dump!/1)
+
+    rows =
+      Repo.query!(
+        "SELECT policy_id,branch_key FROM marketing_report_requests WHERE id = ANY($1::uuid[])",
+        [ids]
+      ).rows
+
+    length(rows) == length(ids) and
+      Enum.all?(rows, fn [policy_raw, branch_key] ->
+        match?({:ok, _}, get(staff, Ecto.UUID.load!(policy_raw))) and
+          report_branch_allowed?(staff, %{branch_id: branch_key})
+      end)
+  end
+
   def compare_reports(staff, ids, filters \\ %{})
 
   def compare_reports(%Staff{} = staff, ids, filters)
@@ -985,6 +1068,9 @@ defmodule Delivest.Marketing do
         true
 
       "" ->
+        true
+
+      "all" ->
         true
 
       id ->

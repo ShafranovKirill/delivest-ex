@@ -11,7 +11,17 @@ defmodule Delivest.Marketing.Report do
 
   def request(policy, filters \\ %{})
 
-  def request(%Policy{} = policy, filters) when is_map(filters) do
+  def request(%Policy{} = policy, filters) when is_map(filters),
+    do: request(policy, filters, [])
+
+  def request(_, _), do: {:error, :invalid_report_filters}
+
+  def recalculate(%Policy{} = policy, filters) when is_map(filters),
+    do: request(policy, filters, force: true)
+
+  def recalculate(_, _), do: {:error, :invalid_report_filters}
+
+  defp request(%Policy{} = policy, filters, opts) when is_map(filters) do
     with {:ok, from_on, to_on, branch_key} <- normalize_filters(policy, filters),
          {:ok, generation} <- Features.snapshot("marketing_policies", :franchise) do
       result =
@@ -53,7 +63,9 @@ defmodule Delivest.Marketing.Report do
               params
             ).rows
 
-          refresh_started? = status == "ready" and phase != "cleaning" and stale?(as_of)
+          refresh_started? =
+            status == "ready" and phase != "cleaning" and
+              (Keyword.get(opts, :force, false) or stale?(as_of))
 
           if refresh_started?, do: begin_refresh(id, now)
 
@@ -63,9 +75,10 @@ defmodule Delivest.Marketing.Report do
 
       case result do
         {:ok, {inserted?, response}} ->
-          if inserted? do
-            Background.invalidate("marketing.report", :franchise)
-            Background.kick()
+          cond do
+            inserted? -> Background.run_now("marketing.report", :franchise, new_work: true)
+            response.status == :pending -> Background.run_now("marketing.report", :franchise)
+            true -> :ok
           end
 
           {:ok, response}
@@ -76,7 +89,42 @@ defmodule Delivest.Marketing.Report do
     end
   end
 
-  def request(_, _), do: {:error, :invalid_report_filters}
+  def status(%Policy{} = policy, request_id) do
+    with {:ok, id} <- Ecto.UUID.cast(request_id) do
+      rows =
+        Repo.query!(
+          "SELECT status,as_of,data,branch_key FROM marketing_report_requests WHERE id=$1 AND policy_id=$2",
+          [Ecto.UUID.dump!(id), Ecto.UUID.dump!(policy.id)]
+        ).rows
+
+      case rows do
+        [[status, as_of, data, branch_key]] when status in ["pending", "ready"] ->
+          {:ok,
+           public_result(Ecto.UUID.dump!(id), status, as_of, data)
+           |> Map.put(:branch_key, branch_key)}
+
+        _ ->
+          {:ok, nil}
+      end
+    else
+      _ -> {:ok, nil}
+    end
+  end
+
+  def comparison_status(id) do
+    with {:ok, id} <- Ecto.UUID.cast(id),
+         [[status, as_of, data, member_ids]] <-
+           Repo.query!(
+             "SELECT status,as_of,data,member_request_ids FROM marketing_report_comparisons WHERE id=$1",
+             [Ecto.UUID.dump!(id)]
+           ).rows,
+         true <- status in ["pending", "ready"] do
+      {:ok, public_result(Ecto.UUID.dump!(id), status, as_of, data),
+       Enum.map(member_ids, &Ecto.UUID.load!/1)}
+    else
+      _ -> {:ok, nil}
+    end
+  end
 
   @doc "Compare at most ten ready policy snapshots; shared orders are deduplicated in background work."
   def compare(policies, filters \\ %{})
@@ -92,7 +140,13 @@ defmodule Delivest.Marketing.Report do
 
       rows =
         Enum.zip_with(policies, reports, fn policy, report ->
-          %{policy_id: policy.id, status: report.status, as_of: report.as_of, data: report.data}
+          %{
+            policy_id: policy.id,
+            request_id: report.id,
+            status: report.status,
+            as_of: report.as_of,
+            data: report.data
+          }
         end)
 
       if Enum.any?(reports, &(&1.status == :pending)) do
@@ -162,8 +216,7 @@ defmodule Delivest.Marketing.Report do
            end) do
         {:ok, {inserted?, result}} ->
           if inserted? do
-            Background.invalidate("marketing.report", :franchise)
-            Background.kick()
+            Background.run_now("marketing.report", :franchise, new_work: true)
           end
 
           {:ok, result}

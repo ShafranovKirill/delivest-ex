@@ -30,6 +30,83 @@ defmodule Delivest.MarketingTest do
     %{branch: branch, client: client, staff: staff, promotion: promotion}
   end
 
+  test "polling reads existing preview and report requests without creating new work", ctx do
+    {:ok, segment} =
+      Segments.create(ctx.staff, %{name: "Polling audience", kind: :manual, scope: :branches}, [
+        ctx.branch.id
+      ])
+
+    {:ok, policy} =
+      Marketing.create(ctx.staff, attrs(ctx, segment, "all_current"), [ctx.branch.id])
+
+    jobs_before = Repo.aggregate(Oban.Job, :count)
+    assert {:ok, nil} = Marketing.preview_status(ctx.staff, policy.id)
+    assert {:ok, nil} = Marketing.report_status(ctx.staff, policy.id, Ecto.UUID.generate())
+    assert Repo.aggregate(Oban.Job, :count) == jobs_before
+
+    assert {:ok, %{status: :pending}} = Marketing.recalculate_preview(ctx.staff, policy.id)
+
+    [[preview_id]] =
+      Repo.query!("SELECT request_id FROM marketing_previews WHERE policy_id=$1", [
+        Ecto.UUID.dump!(policy.id)
+      ]).rows
+
+    assert {:ok, %{status: :pending}} = Marketing.recalculate_preview(ctx.staff, policy.id)
+    assert {:ok, %{status: :pending}} = Marketing.preview_status(ctx.staff, policy.id)
+
+    assert [[^preview_id]] =
+             Repo.query!("SELECT request_id FROM marketing_previews WHERE policy_id=$1", [
+               Ecto.UUID.dump!(policy.id)
+             ]).rows
+
+    Repo.query!(
+      "UPDATE marketing_previews SET status='ready',eligible_count=3,completed_at=now() WHERE policy_id=$1",
+      [Ecto.UUID.dump!(policy.id)]
+    )
+
+    assert {:ok, %{status: :ready, eligible_clients: 3}} =
+             Marketing.preview_status(ctx.staff, policy.id)
+
+    assert {:ok, %{status: :pending}} = Marketing.recalculate_preview(ctx.staff, policy.id)
+
+    assert [[new_preview_id]] =
+             Repo.query!("SELECT request_id FROM marketing_previews WHERE policy_id=$1", [
+               Ecto.UUID.dump!(policy.id)
+             ]).rows
+
+    assert new_preview_id != preview_id
+
+    assert {:ok, %{id: request_id, status: :pending}} =
+             Marketing.recalculate_report(ctx.staff, policy.id)
+
+    jobs_before_poll = Repo.aggregate(Oban.Job, :count)
+
+    assert {:ok, %{id: ^request_id, status: :pending}} =
+             Marketing.report_status(ctx.staff, policy.id, request_id)
+
+    assert Repo.aggregate(Oban.Job, :count) == jobs_before_poll
+    assert {:ok, %{id: ^request_id}} = Marketing.recalculate_report(ctx.staff, policy.id)
+
+    reader = insert(:staff, role: insert(:role, permissions: ["marketing.read"]))
+    insert(:staff_branch, staff: reader, branch: ctx.branch)
+    assert {:error, :forbidden} = Marketing.preview_status(reader, policy.id)
+    assert {:error, :forbidden} = Marketing.report_status(reader, policy.id, request_id)
+  end
+
+  test "global manual evaluator requires network manage authority", ctx do
+    assert {:error, :forbidden} = Marketing.recalculate_now(ctx.staff)
+    assert {:error, :forbidden} = Marketing.calculation_status(ctx.staff)
+
+    manager =
+      insert(:staff,
+        role: insert(:role, permissions: ["marketing.manage", "marketing.network"])
+      )
+
+    assert {:ok, %{state: :queued}} = Marketing.recalculate_now(manager)
+    assert {:ok, %{state: :queued}} = Marketing.recalculate_now(manager)
+    assert {:ok, %{state: :queued}} = Marketing.calculation_status(manager)
+  end
+
   test "preview is async, activation requires it, and a unique issue owns reward and notice",
        ctx do
     old_order = completed_order(ctx, 31)

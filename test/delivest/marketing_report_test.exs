@@ -2,7 +2,7 @@ defmodule Delivest.Marketing.ReportTest do
   use Delivest.DataCase, async: false
   import Delivest.Factory
 
-  alias Delivest.{Features, Repo}
+  alias Delivest.{Features, Marketing, Repo}
   alias Delivest.Background.Schedule
   alias Delivest.Marketing.{Policy, Report}
   alias Delivest.Oms.{Cart, Order, OrderTransition}
@@ -57,6 +57,80 @@ defmodule Delivest.Marketing.ReportTest do
     }
 
     %{branch: branch, client: client, policy: policy, context: context}
+  end
+
+  test "comparison polling authorizes every member policy without creating work", %{
+    branch: branch,
+    policy: policy
+  } do
+    other_branch = insert(:branch)
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", {:branch, other_branch.id}, true,
+               actor: "test"
+             )
+
+    other_policy =
+      Repo.insert!(%Policy{
+        name: "Other offer",
+        segment_id: policy.segment_id,
+        scope: :branches,
+        reward_branch_id: other_branch.id,
+        bonus_amount: 1,
+        inactivity_days: 1,
+        reward_ttl_days: 1,
+        attribution_days: 7,
+        status: :active,
+        message_title: "Other offer",
+        message_body: "Text"
+      })
+
+    Repo.insert_all("marketing_policy_branches", [
+      %{policy_id: Ecto.UUID.dump!(other_policy.id), branch_id: Ecto.UUID.dump!(other_branch.id)}
+    ])
+
+    assert {:ok, %{status: :pending, id: first_id}} = Report.request(policy)
+    assert {:ok, %{status: :pending, id: second_id}} = Report.request(other_policy)
+
+    Repo.query!(
+      "UPDATE marketing_report_requests SET status='ready',phase='orders',as_of=now(),data='{}'::jsonb WHERE id=ANY($1::uuid[])",
+      [[Ecto.UUID.dump!(first_id), Ecto.UUID.dump!(second_id)]]
+    )
+
+    assert {:ok, %{id: comparison_id, status: :pending}} =
+             Report.compare([policy, other_policy])
+
+    role = insert(:role, permissions: ["marketing.read", "marketing.reports"])
+    full = insert(:staff, role: role)
+    limited = insert(:staff, role: role)
+
+    for target <- [branch, other_branch], do: insert(:staff_branch, staff: full, branch: target)
+    insert(:staff_branch, staff: limited, branch: branch)
+
+    jobs_before = Repo.aggregate(Oban.Job, :count)
+
+    assert {:ok, %{id: ^comparison_id, status: :pending}} =
+             Marketing.comparison_status(full, comparison_id)
+
+    assert {:error, :forbidden} = Marketing.comparison_status(limited, comparison_id)
+    assert {:ok, nil} = Marketing.comparison_status(full, Ecto.UUID.generate())
+    assert Repo.aggregate(Oban.Job, :count) == jobs_before
+  end
+
+  test "manual report refreshes a ready cache and preserves its request identity", %{
+    policy: policy
+  } do
+    assert {:ok, %{id: id, status: :pending}} = Report.request(policy)
+
+    Repo.query!(
+      "UPDATE marketing_report_requests SET status='ready',phase='orders',as_of=now(),data='{}'::jsonb WHERE id=$1",
+      [Ecto.UUID.dump!(id)]
+    )
+
+    assert {:ok, %{id: ^id, status: :ready}} = Report.status(policy, id)
+    assert {:ok, %{id: ^id, status: :pending}} = Report.recalculate(policy, %{})
+    assert {:ok, %{id: ^id, status: :pending}} = Report.status(policy, id)
+    assert {:ok, %{id: ^id, status: :pending}} = Report.recalculate(policy, %{})
   end
 
   test "empty report is pending until bounded background publication", %{
@@ -330,6 +404,7 @@ defmodule Delivest.Marketing.ReportTest do
     assert {:ok, %{status: :pending, data: nil}} = Report.request(policy)
     assert {:ok, %{status: :pending}} = Report.compare([policy])
 
+    activate_context(context)
     assert {:snooze, 1} = Report.perform(:franchise, context)
     assert {:ok, %{status: :pending}} = Report.request(policy)
   end
