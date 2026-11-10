@@ -37,13 +37,14 @@ defmodule Delivest.Identity.RolePresets do
                       integrations.read
                       finance.read
                       statistics.read staff.read
+                      segments.read segments.manage
                     )
 
   @franchise_manager Enum.uniq(
                        @branch_manager ++
                          @catalog ++
                          ~w(staff.create staff.update roles.read branches.create orders.revert
-                            orders.cook orders.deliver clients.read)
+                            orders.cook orders.deliver clients.read segments.network)
                      )
 
   @accountant ~w(branches.read orders.read statistics.read finance.read finance.receipts_retry finance.receipts_refund)
