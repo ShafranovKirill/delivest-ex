@@ -272,7 +272,9 @@ defmodule Delivest.Background do
             set: [
               running: false,
               current_job_id: nil,
-              next_at: DateTime.add(now, task.interval, :second)
+              next_at: DateTime.add(now, task.interval, :second),
+              last_error_at: now,
+              last_error: "background calculation terminated before completion"
             ]
           )
 

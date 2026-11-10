@@ -38,7 +38,10 @@ defmodule Delivest.BackgroundTest do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
     assert {:ok, token} = Features.snapshot("segments", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
+    pending = Repo.one!(Schedule)
+    stale_job = Repo.get!(Oban.Job, pending.current_job_id)
     assert {:ok, _} = Features.configure("segments", :franchise, false, actor: "host")
+    assert {:cancel, :disabled} = Runner.perform(stale_job)
     assert Repo.aggregate(Schedule, :count) == 0
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
     context = %{feature: "segments", scope: :franchise, generation: token}
@@ -51,8 +54,7 @@ defmodule Delivest.BackgroundTest do
     assert {:ok, 1} = Background.dispatch_due()
     first = Repo.one!(Schedule)
     assert is_integer(first.current_job_id)
-    Background.record_error(first.kind, first.scope_key, first.current_job_id)
-    assert Repo.one!(Schedule).last_error_at
+    assert is_nil(first.last_error_at)
 
     Repo.update_all(from(j in Oban.Job, where: j.id == ^first.current_job_id),
       set: [state: "discarded"]
@@ -62,6 +64,8 @@ defmodule Delivest.BackgroundTest do
     recovered = Repo.one!(Schedule)
     refute recovered.running
     assert is_nil(recovered.current_job_id)
+    assert recovered.last_error_at
+    assert recovered.last_error == "background calculation terminated before completion"
     assert DateTime.compare(recovered.next_at, DateTime.utc_now()) == :gt
 
     assert {:ok, _} = Features.configure("segments", :franchise, false, actor: "host")
@@ -126,6 +130,19 @@ defmodule Delivest.BackgroundTest do
     Repo.query!("SELECT set_config('statement_timeout', $1, false)", [previous_timeout])
     assert Repo.reload!(schedule).last_success_at
     refute Repo.reload!(schedule).running
+  end
+
+  test "unknown stored scope fails closed and is removed without a job" do
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    Repo.insert!(%Schedule{kind: "segments.refresh", scope_key: "unrecognized", next_at: now})
+    assert {:ok, 1} = Background.dispatch_due()
+    refute Repo.exists?(from s in Schedule, where: s.scope_key == "unrecognized")
+
+    refute Repo.exists?(
+             from j in Oban.Job,
+               where: fragment("?->>'scope_key'", j.args) == "unrecognized"
+           )
   end
 
   test "disable waits for a schedule lock and old job cannot finish a replacement" do

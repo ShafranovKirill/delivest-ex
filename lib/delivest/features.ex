@@ -145,4 +145,5 @@ defmodule Delivest.Features do
 
   def parse_scope("franchise"), do: :franchise
   def parse_scope("branch:" <> id), do: {:branch, id}
+  def parse_scope(_), do: nil
 end

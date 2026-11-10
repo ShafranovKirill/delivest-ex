@@ -40,7 +40,7 @@ defmodule Delivest.Background.Runner do
       case Background.checkpoint(context) do
         :ok -> run(task, scope, context, kind, key, job_id)
         {:snooze, seconds} -> {:snooze, seconds}
-        {:error, :disabled} -> :ok
+        {:error, :disabled} -> {:cancel, :disabled}
       end
     else
       :error -> {:cancel, :unknown_background_task}
@@ -77,6 +77,9 @@ defmodule Delivest.Background.Runner do
 
         {:snooze, seconds} ->
           {:snooze, seconds}
+
+        {:error, :disabled} ->
+          {:cancel, :disabled}
 
         {:error, _reason} ->
           Background.record_error(kind, key, job_id)
