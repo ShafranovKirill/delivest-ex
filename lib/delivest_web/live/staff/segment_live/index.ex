@@ -3,6 +3,8 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
   alias Delivest.{Features, Identity, Segments}
 
+  @poll_duration 1_800_000
+
   on_mount {DelivestWeb.Hooks.Permission, "segments.read"}
 
   @impl true
@@ -21,6 +23,10 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           can_manage: Identity.can?(socket.assigns.current_staff, "segments.manage"),
           branches: branches,
           group: nil,
+          calculation: nil,
+          poll_token: nil,
+          poll_until: nil,
+          poll_count: 0,
           policy_impact: nil,
           pending_member: nil,
           active_tab: nil,
@@ -64,6 +70,9 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     staff = socket.assigns.current_staff
+
+    socket =
+      assign(socket, poll_token: make_ref(), poll_until: nil, poll_count: 0, calculation: nil)
 
     case socket.assigns.live_action do
       :index ->
@@ -154,6 +163,11 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
       :show ->
         case Segments.get(staff, params["id"]) do
           {:ok, group} ->
+            socket =
+              socket
+              |> assign(group: group, calculation: segment_status(staff, group))
+              |> poll_segment()
+
             tab = if params["tab"] in ["clients", "settings"], do: params["tab"]
 
             if tab == "clients" do
@@ -202,6 +216,102 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
         end
     end
   end
+
+  defp segment_status(staff, %{kind: :dynamic, id: id}) do
+    case Segments.calculation_status(staff, id) do
+      {:ok, status} -> status
+      _ -> nil
+    end
+  end
+
+  defp segment_status(_, _), do: nil
+
+  defp poll_segment(socket) do
+    if connected?(socket) && socket.assigns.calculation &&
+         socket.assigns.calculation.state in [:queued, :running] do
+      until_at = socket.assigns.poll_until || System.monotonic_time(:millisecond) + @poll_duration
+
+      Process.send_after(
+        self(),
+        {:segment_poll, socket.assigns.poll_token, socket.assigns.group.id},
+        if(socket.assigns.poll_count < 10, do: 1_500, else: 5_000)
+      )
+
+      assign(socket, poll_until: until_at, poll_count: socket.assigns.poll_count + 1)
+    else
+      socket
+    end
+  end
+
+  @impl true
+  def handle_info({:segment_poll, token, id}, socket) do
+    if token == socket.assigns.poll_token && socket.assigns.live_action == :show &&
+         socket.assigns.group && socket.assigns.group.id == id &&
+         socket.assigns.poll_until &&
+         System.monotonic_time(:millisecond) < socket.assigns.poll_until &&
+         socket.assigns.calculation && socket.assigns.calculation.state in [:queued, :running] do
+      case Segments.calculation_status(socket.assigns.current_staff, id) do
+        {:ok, status} ->
+          socket = assign(socket, calculation: status)
+
+          socket =
+            if status.state in [:ready, :error] do
+              case Segments.get(socket.assigns.current_staff, id) do
+                {:ok, group} ->
+                  socket = assign(socket, group: group)
+
+                  if socket.assigns.active_tab == "clients" && socket.assigns.client_page do
+                    case Segments.paginated_clients(
+                           socket.assigns.current_staff,
+                           id,
+                           socket.assigns.client_params
+                         ) do
+                      {:ok, page} ->
+                        assign(socket, client_page: page, client_params: client_page_params(page))
+
+                      _ ->
+                        socket
+                    end
+                  else
+                    socket
+                  end
+
+                _ ->
+                  socket
+              end
+            else
+              socket
+            end
+
+          {:noreply, poll_segment(socket)}
+
+        _ ->
+          {:noreply, assign(socket, calculation: nil)}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event(
+        "recalculate_segment",
+        _,
+        %{assigns: %{live_action: :show, can_manage: true, group: %{kind: :dynamic} = group}} =
+          socket
+      ) do
+    case Segments.recalculate_now(socket.assigns.current_staff, group.id) do
+      {:ok, status} ->
+        {:noreply,
+         socket
+         |> assign(calculation: status, poll_until: nil, poll_count: 0, poll_token: make_ref())
+         |> poll_segment()}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Не удалось запустить пересчёт сегмента")}
+    end
+  end
+
+  def handle_event("recalculate_segment", _, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("change_settings", params, socket) do
@@ -966,6 +1076,27 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
                 ) <> " (" <> Delivest.LocalTime.timezone(nil) <> ")",
               else: "Ещё не рассчитан"}
           </p>
+          <div :if={@group.kind == :dynamic} class="flex flex-wrap items-center gap-3">
+            <button
+              :if={@can_manage}
+              id="segment-recalculate-now"
+              type="button"
+              phx-click="recalculate_segment"
+              phx-disable-with="Запускаем…"
+              class="btn btn-outline btn-sm"
+            >{if @calculation && @calculation.state in [:queued, :running],
+              do: "Проверить расчёт",
+              else: "Рассчитать сейчас"}</button>
+            <p :if={@calculation} id="segment-calculation-status" class="text-sm" role="status">
+              {case @calculation.state do
+                :queued -> "Пересчёт поставлен в очередь"
+                :running -> "Пересчёт выполняется"
+                :ready -> "Состав обновлён"
+                :error -> "Не удалось обновить состав"
+                _ -> ""
+              end}
+            </p>
+          </div>
           <p :if={@group.last_refresh_error} class="text-sm text-error">
             Последнее обновление не удалось: {@group.last_refresh_error}
           </p>

@@ -132,6 +132,205 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     refute has_element?(view, "#marketing-more-segments")
   end
 
+  test "global reward calculation is explicit and requires network permission", ctx do
+    enable_marketing(ctx)
+    {:ok, ordinary, _} = live(ctx.conn, ~p"/staff/marketing")
+    refute has_element?(ordinary, "#marketing-recalculate-now")
+    render_hook(ordinary, "recalculate_marketing", %{})
+    refute has_element?(ordinary, "#marketing-calculation-status")
+
+    network_staff =
+      insert(:staff,
+        role:
+          insert(:role,
+            permissions: ~w(marketing.read marketing.manage marketing.network marketing.reports)
+          )
+      )
+
+    insert(:staff_branch, staff: network_staff, branch: ctx.branch)
+
+    network_conn =
+      init_test_session(ctx.conn, %{"staff_id" => network_staff.id, "locale" => "ru"})
+
+    {:ok, network, _} = live(network_conn, ~p"/staff/marketing")
+    assert has_element?(network, "#marketing-recalculate-now")
+    assert has_element?(network, "#marketing-calculation-panel", "выдаст положенные награды")
+    network |> element("#marketing-recalculate-now") |> render_click()
+    assert has_element?(network, "#marketing-calculation-status")
+    assert has_element?(network, "#marketing-recalculate-now")
+  end
+
+  test "completed global calculation refreshes issued counts in the current policy list", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Fresh issue count")
+
+    network_staff =
+      insert(:staff,
+        role:
+          insert(:role,
+            permissions: ~w(marketing.read marketing.manage marketing.network marketing.reports)
+          )
+      )
+
+    insert(:staff_branch, staff: network_staff, branch: ctx.branch)
+    conn = init_test_session(ctx.conn, %{"staff_id" => network_staff.id})
+    {:ok, view, _} = live(conn, ~p"/staff/marketing")
+    assert has_element?(view, "#marketing-policies", "0 issues")
+    view |> element("#marketing-recalculate-now") |> render_click()
+
+    token = :sys.get_state(view.pid).socket.assigns.poll_tokens.calculation
+    assert token
+
+    Repo.query!("UPDATE marketing_policies SET issued_count=7 WHERE id=$1", [
+      Ecto.UUID.dump!(policy.id)
+    ])
+
+    Repo.query!(
+      "UPDATE background_schedules SET running=false, current_job_id=NULL, rerun_requested=false, next_at=now() + interval '1 hour', last_success_at=now() WHERE kind='marketing.evaluate' AND scope_key='franchise'"
+    )
+
+    send(view.pid, {:marketing_poll, :calculation, token, nil})
+    _ = :sys.get_state(view.pid)
+    assert has_element?(view, "#marketing-calculation-status", "Calculation completed")
+    assert has_element?(view, "#marketing-policies", "7 issues")
+  end
+
+  test "pending preview becomes ready from a read-only poll without another request", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Preview poll")
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    view |> element("#marketing-preview") |> render_click()
+    assert has_element?(view, "#marketing-preview", "Check calculation")
+
+    [[request_id]] =
+      Repo.query!("SELECT request_id FROM marketing_previews WHERE policy_id=$1", [
+        Ecto.UUID.dump!(policy.id)
+      ]).rows
+
+    view |> element("#marketing-preview") |> render_click()
+
+    [[coalesced_request_id]] =
+      Repo.query!("SELECT request_id FROM marketing_previews WHERE policy_id=$1", [
+        Ecto.UUID.dump!(policy.id)
+      ]).rows
+
+    assert coalesced_request_id == request_id
+
+    Repo.query!(
+      "UPDATE marketing_previews SET status='ready', eligible_count=2, completed_at=now() WHERE policy_id=$1",
+      [Ecto.UUID.dump!(policy.id)]
+    )
+
+    token = :sys.get_state(view.pid).socket.assigns.poll_tokens.preview
+    send(view.pid, {:marketing_poll, :preview, token, policy.id})
+    _ = :sys.get_state(view.pid)
+    assert has_element?(view, "#marketing-preview-result", "Eligible customers: 2")
+    assert has_element?(view, "#marketing-preview", "Calculate audience now")
+
+    [[same_request_id]] =
+      Repo.query!("SELECT request_id FROM marketing_previews WHERE policy_id=$1", [
+        Ecto.UUID.dump!(policy.id)
+      ]).rows
+
+    assert same_request_id == request_id
+  end
+
+  test "pending report updates via scoped status read and ignores poll after panel closes", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Report poll")
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    view |> element("#marketing-report-toggle") |> render_click()
+    view |> form("#marketing-report-form", report: %{}) |> render_submit()
+    assert has_element?(view, "#marketing-report-pending")
+
+    state = :sys.get_state(view.pid).socket.assigns
+    report_id = state.report.id
+
+    view |> element("#marketing-report-recalculate-now") |> render_click()
+    assert :sys.get_state(view.pid).socket.assigns.report.id == report_id
+    token = :sys.get_state(view.pid).socket.assigns.poll_tokens.report
+
+    Repo.query!(
+      "UPDATE marketing_report_requests SET status='ready', phase='orders', as_of=now(), data=$2::jsonb WHERE id=$1",
+      [Ecto.UUID.dump!(report_id), Jason.encode!(%{"issued" => 3, "series" => []})]
+    )
+
+    send(view.pid, {:marketing_poll, :report, token, policy.id})
+    _ = :sys.get_state(view.pid)
+    assert has_element?(view, "#marketing-report-result", "Issues: 3")
+
+    view |> element("#marketing-report-toggle") |> render_click()
+    send(view.pid, {:marketing_poll, :report, token, policy.id})
+    _ = :sys.get_state(view.pid)
+    refute has_element?(view, "#marketing-report-panel")
+  end
+
+  test "comparison waits for member reports and then polls its own result", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Comparison poll")
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    view |> element("#marketing-report-toggle") |> render_click()
+    view |> element("#marketing-compare-run") |> render_click()
+    assert has_element?(view, "#marketing-compare-pending")
+
+    comparison = :sys.get_state(view.pid).socket.assigns.comparison
+    assert comparison[:id] == nil
+    policy_id = policy.id
+    assert [%{policy_id: ^policy_id, request_id: request_id}] = comparison.rows
+
+    Repo.query!(
+      "UPDATE marketing_report_requests SET status='ready', phase='orders', as_of=now(), data=$2::jsonb WHERE id=$1",
+      [Ecto.UUID.dump!(request_id), Jason.encode!(%{"issued" => 1, "series" => []})]
+    )
+
+    token = :sys.get_state(view.pid).socket.assigns.poll_tokens.comparison
+    send(view.pid, {:marketing_poll, :comparison, token, policy.id})
+    state = :sys.get_state(view.pid).socket.assigns
+    assert state.comparison.id
+    assert state.comparison.status == :pending
+
+    Repo.query!(
+      "UPDATE marketing_report_comparisons SET status='ready', as_of=now(), data=$2::jsonb WHERE id=$1",
+      [
+        Ecto.UUID.dump!(state.comparison.id),
+        Jason.encode!(%{
+          "linked_orders" => 1,
+          "linked_net_revenue" => 10_000,
+          "series" => [],
+          "return_branches" => []
+        })
+      ]
+    )
+
+    send(view.pid, {:marketing_poll, :comparison, token, policy.id})
+    _ = :sys.get_state(view.pid)
+    assert has_element?(view, "#marketing-compare-result", "Linked orders: 1")
+  end
+
+  test "old comparison poll cannot start work after navigating to another policy", ctx do
+    {_staff, first} = policy_fixture(ctx, "Old comparison")
+    {_staff, second} = policy_fixture(ctx, "New comparison")
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{first.id}")
+    view |> element("#marketing-report-toggle") |> render_click()
+    view |> element("#marketing-compare-run") |> render_click()
+
+    state = :sys.get_state(view.pid).socket.assigns
+    token = state.poll_tokens.comparison
+    assert [%{request_id: request_id}] = state.comparison.rows
+
+    Repo.query!(
+      "UPDATE marketing_report_requests SET status='ready', phase='orders', as_of=now(), data=$2::jsonb WHERE id=$1",
+      [Ecto.UUID.dump!(request_id), Jason.encode!(%{"issued" => 1, "series" => []})]
+    )
+
+    render_patch(view, ~p"/staff/marketing/#{second.id}")
+    send(view.pid, {:marketing_poll, :comparison, token, first.id})
+    state = :sys.get_state(view.pid).socket.assigns
+
+    assert state.policy.id == second.id
+    assert state.comparison == nil
+    assert state.poll_tokens == %{}
+    assert state.poll_deadlines == %{}
+    assert state.poll_counts == %{}
+    assert [[0]] = Repo.query!("SELECT count(*) FROM marketing_report_comparisons").rows
+  end
+
   test "back keeps changed audience, message and limits fields", ctx do
     enable_marketing(ctx)
     {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/new")

@@ -6,6 +6,8 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
   on_mount {DelivestWeb.Hooks.Permission, "marketing.read"}
 
+  @poll_duration 1_800_000
+
   @defaults %{
     "name" => "",
     "scope" => "branches",
@@ -54,6 +56,12 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
          can_manage: Identity.can?(staff, "marketing.manage"),
          can_delete: Identity.can?(staff, "marketing.delete"),
          can_report: Identity.can?(staff, "marketing.reports"),
+         can_network_calculate:
+           Identity.can?(staff, "marketing.manage") && Identity.can?(staff, "marketing.network"),
+         calculation: nil,
+         poll_tokens: %{},
+         poll_deadlines: %{},
+         poll_counts: %{},
          segments: segments,
          branches: branches,
          policy: nil,
@@ -64,6 +72,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
          report: nil,
          report_open: false,
          comparison: nil,
+         comparison_intent: nil,
          comparison_policies: [],
          comparison_after: nil,
          compare_ids: [],
@@ -95,6 +104,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     staff = socket.assigns.current_staff
+    socket = assign(socket, poll_tokens: %{}, poll_deadlines: %{}, poll_counts: %{})
 
     case socket.assigns.live_action do
       :index ->
@@ -102,6 +112,16 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
         case Marketing.list(staff, if(deleted_filter, do: [deleted: :only], else: [])) do
           {:ok, policies} ->
+            socket =
+              if socket.assigns.can_network_calculate do
+                case Marketing.calculation_status(staff) do
+                  {:ok, status} -> assign(socket, calculation: status)
+                  _ -> assign(socket, calculation: nil)
+                end
+              else
+                assign(socket, calculation: nil)
+              end
+
             {:noreply,
              socket
              |> assign(
@@ -112,7 +132,8 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                report_open: false,
                policy_after: length(policies) == 50 && List.last(policies).id
              )
-             |> stream(:policies, policies, reset: true)}
+             |> stream(:policies, policies, reset: true)
+             |> poll(:calculation)}
 
           _ ->
             {:noreply, redirect(socket, to: ~p"/staff/branches/select")}
@@ -169,6 +190,17 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                   do: socket.assigns.segments,
                   else: [policy.segment | socket.assigns.segments]
 
+              socket =
+                if action == :show && policy.status == :draft && socket.assigns.can_manage &&
+                     is_nil(Map.get(policy, :deleted_at)) do
+                  case Marketing.preview_status(staff, policy.id) do
+                    {:ok, preview} -> assign(socket, preview: preview)
+                    _ -> assign(socket, preview: nil)
+                  end
+                else
+                  assign(socket, preview: nil)
+                end
+
               {:noreply,
                socket
                |> assign(
@@ -177,9 +209,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                  report_open:
                    socket.assigns.report_open && socket.assigns.policy &&
                      socket.assigns.policy.id == policy.id,
-                 preview: nil,
                  report: nil,
                  comparison: nil,
+                 comparison_intent: nil,
                  comparison_policies: comparison_policies,
                  comparison_after: comparison_after,
                  compare_ids: [policy.id],
@@ -209,7 +241,8 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                  exclusions_reset?: false,
                  channels: policy.channels,
                  form: to_form(draft, as: :policy)
-               )}
+               )
+               |> poll(:preview)}
             end
 
           _ ->
@@ -532,15 +565,44 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
   def handle_event("confirm_delete", _, socket), do: {:noreply, socket}
 
-  def handle_event("preview", _, %{assigns: %{policy: policy}} = socket) do
-    case Marketing.preview(socket.assigns.current_staff, policy.id) do
+  def handle_event(
+        "preview",
+        _,
+        %{
+          assigns: %{
+            live_action: :show,
+            can_manage: true,
+            policy: %{status: :draft, deleted_at: nil} = policy
+          }
+        } = socket
+      ) do
+    case Marketing.recalculate_preview(socket.assigns.current_staff, policy.id) do
       {:ok, preview} ->
-        {:noreply, assign(socket, preview: preview)}
+        {:noreply, socket |> assign(preview: preview) |> reset_poll(:preview) |> poll(:preview)}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Could not prepare the audience preview."))}
     end
   end
+
+  def handle_event("preview", _, socket), do: {:noreply, socket}
+
+  def handle_event(
+        "recalculate_marketing",
+        _,
+        %{assigns: %{live_action: :index, can_network_calculate: true}} = socket
+      ) do
+    case Marketing.recalculate_now(socket.assigns.current_staff) do
+      {:ok, status} ->
+        {:noreply,
+         socket |> assign(calculation: status) |> reset_poll(:calculation) |> poll(:calculation)}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Could not start reward calculation."))}
+    end
+  end
+
+  def handle_event("recalculate_marketing", _, socket), do: {:noreply, socket}
 
   def handle_event("status", %{"action" => action}, %{assigns: %{policy: policy}} = socket)
       when action in ["activate", "pause"] and not is_nil(policy) and
@@ -569,20 +631,57 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
   def handle_event("status", _, socket), do: {:noreply, socket}
 
-  def handle_event("report", %{"report" => filters}, %{assigns: %{policy: policy}} = socket) do
+  def handle_event(
+        "report",
+        %{"report" => filters},
+        %{assigns: %{live_action: :show, can_report: true, policy: policy}} = socket
+      )
+      when not is_nil(policy) do
     case Marketing.report(socket.assigns.current_staff, policy.id, filters) do
       {:ok, report} ->
         {:noreply,
-         assign(socket,
+         socket
+         |> assign(
            report: report,
            report_filters: filters,
            report_form: to_form(filters, as: :report)
-         )}
+         )
+         |> reset_poll(:report)
+         |> poll(:report)}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Could not load the report."))}
     end
   end
+
+  def handle_event("report", _, socket), do: {:noreply, socket}
+
+  def handle_event(
+        "recalculate_report",
+        _,
+        %{assigns: %{live_action: :show, can_report: true, policy: policy}} = socket
+      )
+      when not is_nil(policy) do
+    filters = Map.merge(socket.assigns.report_filters, socket.assigns.report_form.params)
+
+    case Marketing.recalculate_report(
+           socket.assigns.current_staff,
+           policy.id,
+           filters
+         ) do
+      {:ok, report} ->
+        {:noreply,
+         socket
+         |> assign(report: report, report_filters: filters)
+         |> reset_poll(:report)
+         |> poll(:report)}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Could not load the report."))}
+    end
+  end
+
+  def handle_event("recalculate_report", _, socket), do: {:noreply, socket}
 
   def handle_event(
         "change_report",
@@ -590,7 +689,19 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         %{assigns: %{can_report: true, live_action: :show, policy: policy}} = socket
       )
       when not is_nil(policy) do
-    {:noreply, assign(socket, report_form: to_form(filters, as: :report))}
+    {:noreply,
+     socket
+     |> assign(
+       report_form: to_form(filters, as: :report),
+       report:
+         if(socket.assigns.report && socket.assigns.report.status == :ready,
+           do: socket.assigns.report
+         ),
+       comparison: nil,
+       comparison_intent: nil
+     )
+     |> reset_poll(:report)
+     |> reset_poll(:comparison)}
   end
 
   def handle_event("change_report", _, socket), do: {:noreply, socket}
@@ -601,14 +712,25 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         %{assigns: %{can_report: true, live_action: :show, policy: policy}} = socket
       )
       when not is_nil(policy) do
-    {:noreply, assign(socket, report_open: not socket.assigns.report_open)}
+    socket = assign(socket, report_open: not socket.assigns.report_open)
+
+    {:noreply,
+     if socket.assigns.report_open do
+       socket |> poll(:report) |> poll(:comparison)
+     else
+       socket |> reset_poll(:report) |> reset_poll(:comparison)
+     end}
   end
 
   def handle_event("toggle_report", _, socket), do: {:noreply, socket}
 
   def handle_event("toggle_compare", %{"id" => id}, socket) do
     ids = toggle(socket.assigns.compare_ids, id)
-    {:noreply, assign(socket, compare_ids: Enum.take(ids, 10))}
+
+    {:noreply,
+     socket
+     |> assign(compare_ids: Enum.take(ids, 10), comparison: nil, comparison_intent: nil)
+     |> reset_poll(:comparison)}
   end
 
   def handle_event(
@@ -633,17 +755,234 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
   def handle_event("more_comparison_policies", _, socket), do: {:noreply, socket}
 
-  def handle_event("compare", _, socket) do
+  def handle_event(
+        "compare",
+        _,
+        %{assigns: %{live_action: :show, can_report: true, policy: policy}} = socket
+      )
+      when not is_nil(policy) do
+    ids = socket.assigns.compare_ids
+    filters = socket.assigns.report_filters
+
     case Marketing.compare_reports(
            socket.assigns.current_staff,
-           socket.assigns.compare_ids,
-           socket.assigns.report_filters
+           ids,
+           filters
          ) do
       {:ok, comparison} ->
-        {:noreply, assign(socket, comparison: comparison)}
+        {:noreply,
+         socket
+         |> assign(comparison: comparison, comparison_intent: {ids, filters})
+         |> reset_poll(:comparison)
+         |> poll(:comparison)}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Could not compare policies."))}
+    end
+  end
+
+  def handle_event("compare", _, socket), do: {:noreply, socket}
+
+  defp reset_poll(socket, kind) do
+    assign(socket,
+      poll_tokens: Map.delete(socket.assigns.poll_tokens, kind),
+      poll_deadlines: Map.delete(socket.assigns.poll_deadlines, kind),
+      poll_counts: Map.delete(socket.assigns.poll_counts, kind)
+    )
+  end
+
+  defp calculation_label(%{state: :queued}), do: gettext("Calculation queued")
+  defp calculation_label(%{state: :running}), do: gettext("Calculation in progress")
+  defp calculation_label(%{state: :ready}), do: gettext("Calculation completed")
+  defp calculation_label(%{state: :error}), do: gettext("Calculation failed")
+  defp calculation_label(_), do: ""
+
+  defp poll(socket, kind) do
+    active? =
+      case kind do
+        :calculation ->
+          socket.assigns.live_action == :index && socket.assigns.can_network_calculate &&
+            socket.assigns.calculation && socket.assigns.calculation.state in [:queued, :running]
+
+        :preview ->
+          socket.assigns.live_action == :show && socket.assigns.can_manage &&
+            socket.assigns.preview && socket.assigns.preview.status == :pending
+
+        :report ->
+          socket.assigns.live_action == :show && socket.assigns.can_report &&
+            socket.assigns.report_open && socket.assigns.report &&
+            socket.assigns.report.status == :pending
+
+        :comparison ->
+          socket.assigns.live_action == :show && socket.assigns.can_report &&
+            socket.assigns.report_open && socket.assigns.comparison &&
+            socket.assigns.comparison.status == :pending
+      end
+
+    if connected?(socket) && active? do
+      now = System.monotonic_time(:millisecond)
+      deadline = Map.get(socket.assigns.poll_deadlines, kind, now + @poll_duration)
+
+      if now < deadline do
+        token = Map.get(socket.assigns.poll_tokens, kind, make_ref())
+        policy_id = socket.assigns.policy && socket.assigns.policy.id
+        count = Map.get(socket.assigns.poll_counts, kind, 0)
+
+        Process.send_after(
+          self(),
+          {:marketing_poll, kind, token, policy_id},
+          if(count < 10, do: 1_500, else: 5_000)
+        )
+
+        assign(socket,
+          poll_tokens: Map.put(socket.assigns.poll_tokens, kind, token),
+          poll_deadlines: Map.put(socket.assigns.poll_deadlines, kind, deadline),
+          poll_counts: Map.put(socket.assigns.poll_counts, kind, count + 1)
+        )
+      else
+        reset_poll(socket, kind)
+      end
+    else
+      socket
+    end
+  end
+
+  @impl true
+  def handle_info({:marketing_poll, kind, token, policy_id}, socket) do
+    if Map.get(socket.assigns.poll_tokens, kind) == token &&
+         (socket.assigns.policy && socket.assigns.policy.id) == policy_id &&
+         System.monotonic_time(:millisecond) < Map.get(socket.assigns.poll_deadlines, kind, 0) do
+      {:noreply, refresh_poll(socket, kind)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp refresh_poll(socket, :calculation) do
+    if socket.assigns.live_action == :index && socket.assigns.can_network_calculate do
+      case Marketing.calculation_status(socket.assigns.current_staff) do
+        {:ok, status} ->
+          completed? =
+            socket.assigns.calculation &&
+              socket.assigns.calculation.state in [:queued, :running] && status.state == :ready
+
+          socket = assign(socket, calculation: status)
+          socket = if completed?, do: refresh_policy_list(socket), else: socket
+          poll(socket, :calculation)
+
+        _ ->
+          socket |> assign(calculation: nil) |> reset_poll(:calculation)
+      end
+    else
+      reset_poll(socket, :calculation)
+    end
+  end
+
+  defp refresh_poll(socket, :preview) do
+    if socket.assigns.live_action == :show && socket.assigns.can_manage &&
+         socket.assigns.policy && socket.assigns.policy.status == :draft &&
+         is_nil(socket.assigns.policy.deleted_at) do
+      case Marketing.preview_status(socket.assigns.current_staff, socket.assigns.policy.id) do
+        {:ok, preview} -> socket |> assign(preview: preview) |> poll(:preview)
+        _ -> socket |> assign(preview: nil) |> reset_poll(:preview)
+      end
+    else
+      reset_poll(socket, :preview)
+    end
+  end
+
+  defp refresh_poll(socket, :report) do
+    if socket.assigns.live_action == :show && socket.assigns.can_report &&
+         socket.assigns.report_open && socket.assigns.report &&
+         socket.assigns.report.status == :pending do
+      case Marketing.report_status(
+             socket.assigns.current_staff,
+             socket.assigns.policy.id,
+             socket.assigns.report.id
+           ) do
+        {:ok, report} -> socket |> assign(report: report) |> poll(:report)
+        _ -> socket |> assign(report: nil) |> reset_poll(:report)
+      end
+    else
+      reset_poll(socket, :report)
+    end
+  end
+
+  defp refresh_poll(socket, :comparison) do
+    if socket.assigns.live_action == :show && socket.assigns.can_report &&
+         socket.assigns.report_open && socket.assigns.comparison &&
+         socket.assigns.comparison.status == :pending && socket.assigns.comparison_intent do
+      comparison = socket.assigns.comparison
+
+      if comparison[:id] do
+        case Marketing.comparison_status(socket.assigns.current_staff, comparison.id) do
+          {:ok, result} ->
+            socket |> assign(comparison: result) |> poll(:comparison)
+
+          _ ->
+            socket |> assign(comparison: nil, comparison_intent: nil) |> reset_poll(:comparison)
+        end
+      else
+        refresh_comparison_members(socket)
+      end
+    else
+      reset_poll(socket, :comparison)
+    end
+  end
+
+  defp refresh_comparison_members(socket) do
+    rows = socket.assigns.comparison.rows
+
+    results =
+      Enum.map(rows, fn row ->
+        Marketing.report_status(socket.assigns.current_staff, row.policy_id, row.request_id)
+      end)
+
+    cond do
+      Enum.any?(results, &(&1 == {:ok, nil} or match?({:error, _}, &1))) ->
+        socket |> assign(comparison: nil, comparison_intent: nil) |> reset_poll(:comparison)
+
+      Enum.all?(results, &match?({:ok, %{status: :ready}}, &1)) ->
+        {ids, filters} = socket.assigns.comparison_intent
+
+        case Marketing.compare_reports(socket.assigns.current_staff, ids, filters) do
+          {:ok, %{status: :pending, rows: rows} = comparison}
+          when is_list(rows) ->
+            if comparison[:id] || Enum.any?(rows, &(&1.status == :pending)) do
+              socket |> assign(comparison: comparison) |> poll(:comparison)
+            else
+              socket
+              |> assign(comparison: nil, comparison_intent: nil)
+              |> reset_poll(:comparison)
+              |> put_flash(:error, gettext("Could not compare policies."))
+            end
+
+          {:ok, comparison} ->
+            socket |> assign(comparison: comparison) |> poll(:comparison)
+
+          _ ->
+            socket |> assign(comparison: nil, comparison_intent: nil) |> reset_poll(:comparison)
+        end
+
+      true ->
+        poll(socket, :comparison)
+    end
+  end
+
+  defp refresh_policy_list(socket) do
+    opts = if socket.assigns.deleted_filter, do: [deleted: :only], else: []
+
+    case Marketing.list(socket.assigns.current_staff, opts) do
+      {:ok, policies} ->
+        socket
+        |> assign(
+          policy_empty: policies == [],
+          policy_after: length(policies) == 50 && List.last(policies).id
+        )
+        |> stream(:policies, policies, reset: true)
+
+      _ ->
+        socket
     end
   end
 
@@ -819,12 +1158,35 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           <p class="text-sm uppercase tracking-wide text-base-content/60">{gettext("Customers")}</p>
           <h1 class="text-3xl font-semibold">{gettext("Marketing policies")}</h1>
         </div>
-        <.link
-          :if={@can_manage and @live_action == :index}
-          navigate={~p"/staff/marketing/new"}
-          class="btn btn-primary"
-        >{gettext("New policy")}</.link>
+        <div class="flex flex-wrap gap-2">
+          <button
+            :if={@can_network_calculate and @live_action == :index}
+            id="marketing-recalculate-now"
+            type="button"
+            phx-click="recalculate_marketing"
+            phx-disable-with={gettext("Starting…")}
+            class="btn btn-outline"
+          >{if @calculation && @calculation.state in [:queued, :running],
+            do: gettext("Check calculation"),
+            else: gettext("Calculate rewards now")}</button>
+          <.link
+            :if={@can_manage and @live_action == :index}
+            navigate={~p"/staff/marketing/new"}
+            class="btn btn-primary"
+          >{gettext("New policy")}</.link>
+        </div>
       </header>
+
+      <div
+        :if={@can_network_calculate and @live_action == :index}
+        id="marketing-calculation-panel"
+        class="text-sm text-base-content/70"
+      >
+        <p>{gettext("Checks active policies and issues due rewards to eligible customers.")}</p>
+        <p :if={@calculation} id="marketing-calculation-status" role="status" class="mt-1 font-medium">
+          {calculation_label(@calculation)}
+        </p>
+      </div>
 
       <div :if={@live_action == :index} id="marketing-list-filter" class="flex flex-wrap gap-2">
         <.link
@@ -1345,9 +1707,13 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             <button
               :if={@policy.status == :draft}
               id="marketing-preview"
+              type="button"
               phx-click="preview"
+              phx-disable-with={gettext("Starting…")}
               class="btn btn-outline"
-            >{gettext("Audience preview")}</button>
+            >{if @preview && @preview.status == :pending,
+              do: gettext("Check calculation"),
+              else: gettext("Calculate audience now")}</button>
             <button
               :if={@policy.status in [:draft, :paused]}
               id="marketing-activate"
@@ -1369,7 +1735,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             class="mt-4 rounded-xl bg-primary/10 p-4 text-sm"
           >
             <%= if @preview.status == :pending do %>
-              {gettext("The audience preview is being prepared. Refresh it later.")}
+              {gettext("The audience preview is being calculated.")}
             <% else %>
               {gettext("Eligible customers: %{count}", count: @preview.eligible_clients)}. {gettext(
                 "Bonus points: %{points}",
@@ -1402,14 +1768,26 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               label={gettext("Branch")}
               options={[{gettext("All branches"), ""} | Enum.map(@branches, &{&1.name, &1.id})]}
             />
-            <button id="marketing-report" class="btn btn-outline self-end">{gettext("Show")}</button>
+            <button
+              id="marketing-report"
+              class="btn btn-outline self-end"
+            >{gettext("Show")}</button>
           </.form>
+          <button
+            id="marketing-report-recalculate-now"
+            type="button"
+            phx-click="recalculate_report"
+            phx-disable-with={gettext("Starting…")}
+            class="btn btn-outline btn-sm mt-3"
+          >{if @report && @report.status == :pending,
+            do: gettext("Check calculation"),
+            else: gettext("Calculate now")}</button>
           <p
             :if={@report && @report.status == :pending}
             id="marketing-report-pending"
             class="mt-4 rounded-xl bg-primary/10 p-4 text-sm"
           >
-            {gettext("The report is being prepared. Refresh it later.")}
+            {gettext("The report is being calculated.")}
           </p>
           <div
             :if={@report && @report.status == :ready}
@@ -1501,6 +1879,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               id="marketing-compare-run"
               type="button"
               phx-click="compare"
+              phx-disable-with={gettext("Starting…")}
               class="btn btn-outline mt-3"
             >{gettext("Compare")}</button>
             <p
@@ -1508,7 +1887,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               id="marketing-compare-pending"
               class="mt-3 text-sm"
             >
-              {gettext("The comparison is being prepared. Refresh it later.")}
+              {gettext("The comparison is being calculated.")}
             </p>
             <div
               :if={@comparison && @comparison.status == :ready}

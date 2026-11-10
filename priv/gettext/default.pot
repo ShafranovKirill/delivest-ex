@@ -10186,3 +10186,73 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Choose a reward for each client's first website or app order in this branch."
 msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculate rewards now"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Checks active policies and issues due rewards to eligible customers."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation queued"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation in progress"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation completed"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation failed"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not start reward calculation."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculate audience now"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The audience preview is being calculated."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculate now"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The report is being calculated."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The comparison is being calculated."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Check calculation"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Starting…"
+msgstr ""

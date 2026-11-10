@@ -362,6 +362,41 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     refute has_element?(readonly_view, "#segment-client-rows button")
   end
 
+  test "dynamic detail starts a background recalculation and read-only staff cannot start one",
+       ctx do
+    enable(ctx.branch)
+
+    rules = %{
+      "version" => 1,
+      "match" => "all",
+      "conditions" => [%{"metric" => "order_count", "op" => "gte", "value" => 1}]
+    }
+
+    {:ok, group} =
+      Segments.create(
+        ctx.staff,
+        %{name: "Now", kind: :dynamic, scope: :branches, rules: rules},
+        [ctx.branch.id]
+      )
+
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/segments/#{group.id}?tab=settings")
+    assert has_element?(view, "#segment-recalculate-now")
+    assert has_element?(view, "#segment-calculation-status")
+    assert has_element?(view, "#segment-recalculate-now", "Проверить расчёт")
+    old_token = :sys.get_state(view.pid).socket.assigns.poll_token
+    view |> element("#segment-recalculate-now") |> render_click()
+    refute :sys.get_state(view.pid).socket.assigns.poll_token == old_token
+    assert has_element?(view, "#segment-calculation-status")
+
+    readonly = insert(:staff, role: insert(:role, permissions: ["segments.read"]))
+    insert(:staff_branch, staff: readonly, branch: ctx.branch)
+    conn = init_test_session(ctx.conn, %{"staff_id" => readonly.id})
+    {:ok, readonly_view, _} = live(conn, ~p"/staff/segments/#{group.id}?tab=settings")
+    refute has_element?(readonly_view, "#segment-recalculate-now")
+    render_hook(readonly_view, "recalculate_segment", %{})
+    refute has_element?(readonly_view, "#segment-recalculate-now")
+  end
+
   defp enable(branch) do
     {:ok, _} = Features.configure("segments", :franchise, true, actor: "test")
     {:ok, _} = Features.configure("segments", {:branch, branch.id}, true, actor: "test")
