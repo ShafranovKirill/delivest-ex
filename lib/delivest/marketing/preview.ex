@@ -71,7 +71,8 @@ defmodule Delivest.Marketing.Preview do
         next_count = count + length(eligible_cycles)
 
         case Background.publish(context, fn ->
-               latest = Repo.get(Policy, policy_id)
+               latest =
+                 Repo.one(from p in Policy, where: p.id == ^policy_id, lock: "FOR KEY SHARE")
 
                latest_segment =
                  latest &&

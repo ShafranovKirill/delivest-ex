@@ -10219,3 +10219,95 @@ msgstr "Поиск групп по названию"
 #, elixir-autogen, elixir-format
 msgid "No groups excluded"
 msgstr "Нет исключённых групп"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Working list"
+msgstr "Рабочий список"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleted policies"
+msgstr "Удалённые"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "No deleted policies."
+msgstr "Удалённых политик пока нет."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "No working policies yet."
+msgstr "В рабочем списке пока нет политик."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Removed"
+msgstr "Удалена"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Changes will apply to future issues. Previously issued rewards remain; this policy stays paused until you activate it."
+msgstr "Изменения затронут будущие выдачи. Ранее выданные награды сохранятся; политика останется на паузе до запуска."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Scope, selected branches, and first-run audience are fixed after the policy has started."
+msgstr "После первого запуска нельзя изменить охват, выбранные филиалы и аудиторию первого запуска."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "This policy was removed from the working list. Its history, reports, and issued rewards remain available."
+msgstr "Политика убрана из рабочего списка. История, отчёты и выданные награды сохранены."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Pause this policy to change future issues."
+msgstr "Чтобы изменить будущие выдачи, поставьте политику на паузу."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy changed. Reload it before saving again."
+msgstr "Политика изменилась. Откройте её заново перед сохранением."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Scope and selected branches cannot change after the policy has started."
+msgstr "После первого запуска нельзя изменить охват и выбранные филиалы."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "The first-run audience cannot change after the policy has started."
+msgstr "После первого запуска нельзя изменить аудиторию первого запуска."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleted policies cannot be edited."
+msgstr "Удалённую политику нельзя изменить."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy deleted"
+msgstr "Политика удалена"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy changed. Review it before deleting again."
+msgstr "Политика изменилась. Проверьте её перед повторным удалением."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Could not delete the policy."
+msgstr "Не удалось удалить политику."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Delete policy?"
+msgstr "Удалить политику?"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "The policy will stop and disappear from the working list. History, reports, and issued rewards will remain."
+msgstr "Политика остановится и исчезнет из рабочего списка. История, отчёты и выданные награды сохранятся."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "This draft will be deleted permanently."
+msgstr "Черновик будет удалён полностью."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleting..."
+msgstr "Удаляем…"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Review changes"
+msgstr "Проверьте изменения"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Save changes"
+msgstr "Сохранить изменения"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Delete «%{name}»?"
+msgstr "Удалить «%{name}»?"

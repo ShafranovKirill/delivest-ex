@@ -2,7 +2,7 @@ defmodule Delivest.Marketing do
   @moduledoc "Persistent inactivity policies and their immutable reward issues."
   import Ecto.Query
 
-  alias Delivest.{Background, Features, Identity, Loyalty, Notifications, Repo, Segments}
+  alias Delivest.{Audit, Background, Features, Identity, Loyalty, Notifications, Repo, Segments}
   alias Delivest.Identity.{Branch, Client, Staff}
   alias Delivest.Marketing.{Issue, Policy}
   alias Delivest.Oms.{Order, OrderTransition}
@@ -14,7 +14,8 @@ defmodule Delivest.Marketing do
          Features.enabled?("marketing_policies", :franchise) do
       with {:ok, cursor} <- list_cursor(Keyword.get(opts, :after)),
            limit when is_integer(limit) and limit > 0 and limit <= 50 <-
-             Keyword.get(opts, :limit, 50) do
+             Keyword.get(opts, :limit, 50),
+           deleted when deleted in [nil, :only] <- Keyword.get(opts, :deleted) do
         allowed =
           Repo.all(from b in Branch, where: is_nil(b.deleted_at), select: b.id)
           |> Enum.filter(
@@ -38,6 +39,7 @@ defmodule Delivest.Marketing do
           Policy
           |> from(as: :policy)
           |> where([p], p.id > ^cursor)
+          |> where([p], is_nil(p.deleted_at) == ^(deleted != :only))
           |> where(
             [p],
             (p.scope == :franchise and ^Identity.can?(staff, "marketing.network")) or
@@ -65,7 +67,7 @@ defmodule Delivest.Marketing do
       Repo.all(
         from p in Policy,
           where:
-            p.status in [:active, :initializing, :paused] and
+            is_nil(p.deleted_at) and p.status in [:active, :initializing, :paused] and
               (p.segment_id == ^segment_id or
                  p.id in subquery(
                    from e in "marketing_policy_excluded_segments",
@@ -255,17 +257,23 @@ defmodule Delivest.Marketing do
     attrs = normalize_policy_attrs(attrs)
 
     with {:ok, current} <- get(staff, id),
-         true <- current.status == :draft,
+         true <- current.status in [:draft, :paused] and is_nil(current.deleted_at),
          true <- expected_revision?(current, attrs),
          {:ok, token} <- Features.snapshot("marketing_policies", :franchise),
          {:ok, branches, segment} <- validate_policy(staff, attrs, branch_ids),
+         :ok <- immutable_policy_fields(current, attrs, branches),
          {:ok, excludes} <-
            validate_exclusions(excluded_client_ids, excluded_segment_ids, segment) do
       case Features.with_enabled("marketing_policies", :franchise, token, fn ->
              locked = Repo.one(from p in Policy, where: p.id == ^current.id, lock: "FOR UPDATE")
 
-             if locked.revision != current.revision or locked.status != :draft,
-               do: Repo.rollback(:stale)
+             if locked == nil or locked.revision != current.revision or
+                  locked.status not in [:draft, :paused] or not is_nil(locked.deleted_at),
+                do: Repo.rollback(:stale)
+
+             if locked.activated_at &&
+                  (locked.scope != current.scope or locked.initial_mode != current.initial_mode),
+                do: Repo.rollback(:stale)
 
              changeset =
                locked
@@ -273,6 +281,18 @@ defmodule Delivest.Marketing do
                |> Policy.changeset(attrs)
                |> Ecto.Changeset.put_assoc(:branches, branches)
                |> Ecto.Changeset.put_change(:revision, locked.revision + 1)
+
+             changeset =
+               if locked.status == :paused and
+                    (locked.initial_mode != :future_only or locked.baseline_complete) do
+                 changeset
+                 |> Ecto.Changeset.put_change(:cursor_client_id, nil)
+                 |> Ecto.Changeset.put_change(:evaluated_run_id, nil)
+               else
+                 if locked.status == :paused,
+                   do: Ecto.Changeset.put_change(changeset, :evaluated_run_id, nil),
+                   else: changeset
+               end
 
              case Repo.update(changeset) do
                {:ok, saved} ->
@@ -293,6 +313,98 @@ defmodule Delivest.Marketing do
       error -> error
     end
   end
+
+  defp immutable_policy_fields(%Policy{activated_at: nil}, _attrs, _branches), do: :ok
+
+  defp immutable_policy_fields(policy, attrs, branches) do
+    scope = Map.get(attrs, "scope", policy.scope)
+    branch_ids = Enum.sort(Enum.map(branches, & &1.id))
+    current_ids = Enum.sort(Enum.map(policy.branches, & &1.id))
+    initial_mode = Map.get(attrs, "initial_mode", policy.initial_mode)
+
+    cond do
+      scope not in [policy.scope, Atom.to_string(policy.scope)] or branch_ids != current_ids ->
+        {:error, :immutable_policy_scope}
+
+      initial_mode not in [policy.initial_mode, Atom.to_string(policy.initial_mode)] ->
+        {:error, :immutable_initial_mode}
+
+      true ->
+        :ok
+    end
+  end
+
+  def delete(%Staff{} = staff, id, expected_revision) do
+    with {:ok, policy} <- get(staff, id),
+         true <- is_nil(policy.deleted_at),
+         :ok <- delete_authorized?(staff, policy),
+         true <- revision_matches?(policy, expected_revision),
+         {:ok, token} <- Features.snapshot("marketing_policies", :franchise) do
+      Features.with_enabled("marketing_policies", :franchise, token, fn ->
+        locked = Repo.one(from p in Policy, where: p.id == ^policy.id, lock: "FOR UPDATE")
+
+        if locked == nil or locked.revision != policy.revision or not is_nil(locked.deleted_at),
+          do: Repo.rollback(:stale)
+
+        unstarted? =
+          locked.status == :draft and is_nil(locked.activated_at) and locked.issued_count == 0 and
+            not Repo.exists?(from i in Issue, where: i.policy_id == ^locked.id)
+
+        if unstarted? do
+          clear_exclusions(locked.id)
+
+          for table <- [
+                "marketing_suppressions",
+                "marketing_exclusions",
+                "marketing_policy_audits"
+              ] do
+            Repo.delete_all(
+              from row in table, where: row.policy_id == type(^locked.id, :binary_id)
+            )
+          end
+
+          Segments.release_snapshot("marketing_preview", locked.id)
+
+          case Audit.record(staff, "marketing.policy_deleted", :franchise,
+                 metadata: %{policy_id: locked.id, name: locked.name, revision: locked.revision}
+               ) do
+            {:ok, _} -> :ok
+            {:error, _} -> Repo.rollback(:audit_failed)
+          end
+
+          Repo.delete!(locked)
+          :deleted
+        else
+          archived =
+            Repo.update!(
+              Ecto.Changeset.change(locked,
+                status: :paused,
+                deleted_at: DateTime.utc_now(:second),
+                revision: locked.revision + 1
+              )
+            )
+
+          audit(archived, staff.id, "deleted", %{})
+          :archived
+        end
+      end)
+    else
+      false -> {:error, :stale}
+      error -> error
+    end
+  end
+
+  defp delete_authorized?(staff, policy) do
+    branches = [policy.reward_branch_id | Enum.map(policy.branches, & &1.id)] |> Enum.uniq()
+
+    if Identity.can?(staff, "marketing.delete") and
+         Enum.all?(branches, &(Identity.authorize(staff, "marketing.delete", &1) == :ok)),
+       do: :ok,
+       else: {:error, :forbidden}
+  end
+
+  defp revision_matches?(policy, expected),
+    do: expected == policy.revision or expected == Integer.to_string(policy.revision)
 
   def preview(%Staff{} = staff, id) do
     with {:ok, policy} <- get(staff, id),
@@ -459,6 +571,7 @@ defmodule Delivest.Marketing do
   defp change_status(staff, id, status, expected_revision) do
     with {:ok, policy} <- get(staff, id),
          true <- Identity.can?(staff, "marketing.manage"),
+         true <- is_nil(policy.deleted_at),
          true <-
            expected_revision == policy.revision or
              expected_revision == Integer.to_string(policy.revision),
@@ -466,7 +579,12 @@ defmodule Delivest.Marketing do
          {:ok, token} <- Features.snapshot("marketing_policies", :franchise) do
       case Features.with_enabled("marketing_policies", :franchise, token, fn ->
              locked = Repo.one(from p in Policy, where: p.id == ^policy.id, lock: "FOR UPDATE")
-             if locked.revision != policy.revision, do: Repo.rollback(:stale)
+
+             if locked == nil or locked.revision != policy.revision or
+                  not is_nil(locked.deleted_at) or
+                  (status == :active and locked.status not in [:draft, :paused]),
+                do: Repo.rollback(:stale)
+
              now = DateTime.utc_now(:second)
 
              next_status =
@@ -544,7 +662,10 @@ defmodule Delivest.Marketing do
         policy = Repo.get(Policy, issue.policy_id)
         now = DateTime.utc_now(:second)
 
-        policy && policy.status == :active && DateTime.compare(now, issue.expires_at) == :lt &&
+        policy &&
+          ((policy.status == :active and is_nil(policy.deleted_at)) or
+             (phase == :show and not is_nil(policy.deleted_at))) &&
+          DateTime.compare(now, issue.expires_at) == :lt &&
           Features.enabled?("marketing_policies", :franchise) &&
           Features.enabled?("marketing_policies", {:branch, issue.branch_id}) &&
           latest_cycle(client_id, branch_scope(policy)) == issue.cycle_order_id &&
@@ -604,7 +725,7 @@ defmodule Delivest.Marketing do
       |> Enum.filter(fn id ->
         policy = policies[id]
 
-        policy.status == :active and
+        (policy.status == :active or not is_nil(policy.deleted_at)) and
           (policy.scope == :franchise or
              (Map.get(links, id, []) != [] and
                 Enum.all?(links[id], &MapSet.member?(enabled, &1))))
@@ -668,7 +789,7 @@ defmodule Delivest.Marketing do
 
   def notification_current_many?(_, _, _), do: MapSet.new()
 
-  defp current_reward_ids(issues, policies, now) do
+  defp current_reward_ids(issues, _policies, now) do
     bonus_ids = for issue <- issues, issue.reward_type == "bonus", do: issue.reward_id
 
     valid_bonus =
@@ -683,9 +804,9 @@ defmodule Delivest.Marketing do
     codes = Repo.all(from c in PromoCode, where: c.id in ^promo_ids) |> Map.new(&{&1.id, &1})
 
     promotion_ids =
-      issues
-      |> Enum.map(& &1.policy_id)
-      |> Enum.map(fn id -> policies[id] && policies[id].promotion_id end)
+      codes
+      |> Map.values()
+      |> Enum.map(& &1.promotion_id)
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
@@ -710,8 +831,7 @@ defmodule Delivest.Marketing do
 
         "promo" ->
           code = codes[issue.reward_id]
-          policy = policies[issue.policy_id]
-          promotion = policy && promotions[policy.promotion_id]
+          promotion = code && promotions[code.promotion_id]
 
           code && code.client_id == issue.client_id && code.expires_at &&
             DateTime.compare(code.expires_at, now) == :gt &&
@@ -734,7 +854,7 @@ defmodule Delivest.Marketing do
         %{feature: "marketing_policies", scope: :franchise, generation: %{franchise: _}} = context,
         now
       ) do
-    with true <- policy.status == :active,
+    with true <- policy.status == :active and is_nil(policy.deleted_at),
          true <- eligible?(policy, client_id, now),
          {:ok, token} <-
            Features.snapshot("marketing_policies", {:branch, policy.reward_branch_id}),
@@ -755,8 +875,9 @@ defmodule Delivest.Marketing do
                client_lock(client_id)
                current = Repo.one(from p in Policy, where: p.id == ^policy.id, lock: "FOR UPDATE")
 
-               if current.status != :active or current.revision != policy.revision,
-                 do: Repo.rollback(:stale)
+               if current == nil or current.status != :active or
+                    not is_nil(current.deleted_at) or current.revision != policy.revision,
+                  do: Repo.rollback(:stale)
 
                cycle_id = latest_cycle(client_id, branch_scope(current))
 
@@ -1152,9 +1273,9 @@ defmodule Delivest.Marketing do
     )
   end
 
-  defp reward_current?(%Issue{reward_type: "promo"} = issue, policy, now) do
+  defp reward_current?(%Issue{reward_type: "promo"} = issue, _policy, now) do
     code = Repo.get(PromoCode, issue.reward_id)
-    promotion = Repo.get(Promotion, policy.promotion_id)
+    promotion = code && Repo.get(Promotion, code.promotion_id)
 
     code && code.client_id == issue.client_id && code.expires_at &&
       DateTime.compare(code.expires_at, now) == :gt &&
