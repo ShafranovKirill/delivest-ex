@@ -52,10 +52,14 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
        |> assign(
          page_title: gettext("Marketing policies"),
          can_manage: Identity.can?(staff, "marketing.manage"),
+         can_delete: Identity.can?(staff, "marketing.delete"),
          can_report: Identity.can?(staff, "marketing.reports"),
          segments: segments,
          branches: branches,
          policy: nil,
+         pending_delete: nil,
+         deleted_filter: false,
+         policy_empty: false,
          preview: nil,
          report: nil,
          report_open: false,
@@ -94,12 +98,17 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
     case socket.assigns.live_action do
       :index ->
-        case Marketing.list(staff) do
+        deleted_filter = params["deleted"] == "1"
+
+        case Marketing.list(staff, if(deleted_filter, do: [deleted: :only], else: [])) do
           {:ok, policies} ->
             {:noreply,
              socket
              |> assign(
                policy: nil,
+               pending_delete: nil,
+               deleted_filter: deleted_filter,
+               policy_empty: policies == [],
                report_open: false,
                policy_after: length(policies) == 50 && List.last(policies).id
              )
@@ -115,6 +124,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
            socket
            |> assign(
              policy: nil,
+             pending_delete: nil,
              report_open: false,
              promotions: [],
              preview: nil,
@@ -138,7 +148,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
       action when action in [:show, :edit] ->
         case Marketing.get(staff, params["id"]) do
           {:ok, policy} ->
-            if action == :edit and (not socket.assigns.can_manage or policy.status != :draft) do
+            if action == :edit and
+                 (not socket.assigns.can_manage or policy.status not in [:draft, :paused] or
+                    not is_nil(Map.get(policy, :deleted_at))) do
               {:noreply, push_navigate(socket, to: ~p"/staff/marketing/#{policy.id}")}
             else
               exclusions =
@@ -161,6 +173,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                socket
                |> assign(
                  policy: policy,
+                 pending_delete: nil,
                  report_open:
                    socket.assigns.report_open && socket.assigns.policy &&
                      socket.assigns.policy.id == policy.id,
@@ -371,7 +384,10 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   end
 
   def handle_event("more_policies", _, socket) do
-    case Marketing.list(socket.assigns.current_staff, after: socket.assigns.policy_after) do
+    opts = [after: socket.assigns.policy_after]
+    opts = if socket.assigns.deleted_filter, do: [{:deleted, :only} | opts], else: opts
+
+    case Marketing.list(socket.assigns.current_staff, opts) do
       {:ok, rows} ->
         {:noreply,
          socket
@@ -383,7 +399,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
     end
   end
 
-  def handle_event("toggle_branch", %{"id" => id}, socket) do
+  def handle_event("toggle_branch", %{"id" => id}, socket)
+      when socket.assigns.live_action == :new or
+             (socket.assigns.live_action == :edit and is_nil(socket.assigns.policy.activated_at)) do
     selected = toggle(socket.assigns.selected_branches, id)
 
     {:noreply,
@@ -392,12 +410,15 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
      |> clear_exclusions_if_selected()}
   end
 
+  def handle_event("toggle_branch", _, socket), do: {:noreply, socket}
+
   def handle_event("toggle_channel", %{"id" => id}, socket) when id in ~w(in_app push sms) do
     channels = toggle(socket.assigns.channels, id)
     {:noreply, assign(socket, channels: channels)}
   end
 
-  def handle_event("save", params, socket) do
+  def handle_event("save", params, socket)
+      when socket.assigns.can_manage and socket.assigns.live_action in [:new, :edit] do
     staff = socket.assigns.current_staff
 
     attrs =
@@ -424,16 +445,92 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
          |> put_flash(:info, gettext("Policy saved"))
          |> push_navigate(to: ~p"/staff/marketing/#{policy.id}")}
 
-      {:error, _reason} ->
+      {:error, reason} ->
         {:noreply,
          socket
          |> assign(draft: attrs, form: to_form(attrs, as: :policy))
          |> put_flash(
            :error,
-           gettext("Could not save the policy. Check its fields and try again.")
+           save_error(reason)
          )}
     end
   end
+
+  def handle_event("save", _, socket), do: {:noreply, socket}
+
+  def handle_event(
+        "open_delete",
+        _,
+        %{assigns: %{live_action: :show, can_delete: true, policy: policy}} = socket
+      )
+      when not is_nil(policy) do
+    if is_nil(Map.get(policy, :deleted_at)) do
+      {:noreply,
+       assign(socket,
+         pending_delete: %{
+           id: policy.id,
+           name: policy.name,
+           revision: policy.revision,
+           started:
+             policy.status != :draft or not is_nil(policy.activated_at) or policy.issued_count > 0
+         }
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("open_delete", _, socket), do: {:noreply, socket}
+
+  def handle_event("cancel_delete", _, socket),
+    do: {:noreply, assign(socket, pending_delete: nil)}
+
+  def handle_event(
+        "confirm_delete",
+        _,
+        %{
+          assigns: %{
+            live_action: :show,
+            can_delete: true,
+            pending_delete: pending,
+            policy: policy
+          }
+        } = socket
+      )
+      when not is_nil(pending) and not is_nil(policy) do
+    if pending.id == policy.id do
+      case Marketing.delete(socket.assigns.current_staff, pending.id, pending.revision) do
+        {:ok, _kind} ->
+          {:noreply,
+           socket
+           |> assign(pending_delete: nil)
+           |> put_flash(:info, gettext("Policy deleted"))
+           |> push_navigate(to: ~p"/staff/marketing")}
+
+        {:error, :stale} ->
+          socket = assign(socket, pending_delete: nil)
+
+          socket =
+            case Marketing.get(socket.assigns.current_staff, policy.id) do
+              {:ok, fresh} -> assign(socket, policy: fresh)
+              _ -> socket
+            end
+
+          {:noreply,
+           put_flash(socket, :error, gettext("Policy changed. Review it before deleting again."))}
+
+        {:error, _reason} ->
+          {:noreply,
+           socket
+           |> assign(pending_delete: nil)
+           |> put_flash(:error, gettext("Could not delete the policy."))}
+      end
+    else
+      {:noreply, assign(socket, pending_delete: nil)}
+    end
+  end
+
+  def handle_event("confirm_delete", _, socket), do: {:noreply, socket}
 
   def handle_event("preview", _, %{assigns: %{policy: policy}} = socket) do
     case Marketing.preview(socket.assigns.current_staff, policy.id) do
@@ -446,7 +543,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   end
 
   def handle_event("status", %{"action" => action}, %{assigns: %{policy: policy}} = socket)
-      when action in ["activate", "pause"] do
+      when action in ["activate", "pause"] and not is_nil(policy) and
+             socket.assigns.can_manage and socket.assigns.live_action == :show and
+             is_nil(policy.deleted_at) do
     result =
       if action == "activate",
         do: Marketing.activate(socket.assigns.current_staff, policy.id, policy.revision),
@@ -467,6 +566,8 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         {:noreply, put_flash(socket, :error, gettext("Could not update the policy status."))}
     end
   end
+
+  def handle_event("status", _, socket), do: {:noreply, socket}
 
   def handle_event("report", %{"report" => filters}, %{assigns: %{policy: policy}} = socket) do
     case Marketing.report(socket.assigns.current_staff, policy.id, filters) do
@@ -653,6 +754,23 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   defp status_label(:active), do: gettext("Active")
   defp status_label(:paused), do: gettext("Paused")
 
+  defp policy_status_label(policy) do
+    if is_nil(Map.get(policy, :deleted_at)),
+      do: status_label(policy.status),
+      else: gettext("Removed")
+  end
+
+  defp save_error(:stale), do: gettext("Policy changed. Reload it before saving again.")
+
+  defp save_error(:immutable_policy_scope),
+    do: gettext("Scope and selected branches cannot change after the policy has started.")
+
+  defp save_error(:immutable_initial_mode),
+    do: gettext("The first-run audience cannot change after the policy has started.")
+
+  defp save_error(:deleted), do: gettext("Deleted policies cannot be edited.")
+  defp save_error(_), do: gettext("Could not save the policy. Check its fields and try again.")
+
   defp scope_label(:branches), do: gettext("Selected branches")
   defp scope_label(:franchise), do: gettext("Entire network")
   defp scope_label("branches"), do: scope_label(:branches)
@@ -708,6 +826,26 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         >{gettext("New policy")}</.link>
       </header>
 
+      <div :if={@live_action == :index} id="marketing-list-filter" class="flex flex-wrap gap-2">
+        <.link
+          patch={~p"/staff/marketing"}
+          class={["btn btn-sm", if(@deleted_filter, do: "btn-outline", else: "btn-primary")]}
+        >{gettext("Working list")}</.link>
+        <.link
+          patch={~p"/staff/marketing?deleted=1"}
+          class={["btn btn-sm", if(@deleted_filter, do: "btn-primary", else: "btn-outline")]}
+        >{gettext("Deleted policies")}</.link>
+      </div>
+      <p
+        :if={@live_action == :index and @policy_empty}
+        id="marketing-empty"
+        class="rounded-xl border border-base-300 bg-base-100 p-5 text-sm text-base-content/70"
+      >
+        {if @deleted_filter,
+          do: gettext("No deleted policies."),
+          else: gettext("No working policies yet.")}
+      </p>
+
       <section
         :if={@live_action == :index}
         id="marketing-policies"
@@ -724,7 +862,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             class="text-lg font-semibold text-primary"
           >{policy.name}</.link>
           <p class="mt-2 text-sm text-base-content/60">
-            {status_label(policy.status)} · {scope_label(policy.scope)} · {gettext("%{count} issues",
+            {policy_status_label(policy)} · {scope_label(policy.scope)} · {gettext("%{count} issues",
               count: policy.issued_count
             )}
           </p>
@@ -742,6 +880,24 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         id="marketing-policy-wizard"
         class="rounded-2xl border border-base-300 bg-base-100 text-base-content p-6 shadow-sm"
       >
+        <p
+          :if={@live_action == :edit and @policy.status == :paused}
+          id="marketing-paused-edit-note"
+          class="mb-4 rounded-xl border border-info/30 bg-info/10 p-4 text-sm"
+        >
+          {gettext(
+            "Changes will apply to future issues. Previously issued rewards remain; this policy stays paused until you activate it."
+          )}
+        </p>
+        <p
+          :if={@live_action == :edit and not is_nil(@policy.activated_at)}
+          id="marketing-immutable-note"
+          class="mb-4 rounded-xl border border-base-300 bg-base-200 p-4 text-sm text-base-content/70"
+        >
+          {gettext(
+            "Scope, selected branches, and first-run audience are fixed after the policy has started."
+          )}
+        </p>
         <p class="mb-4 text-sm text-base-content/60">{gettext("Step %{step} of 5", step: @step)}</p>
         <p
           :if={@exclusions_reset?}
@@ -763,6 +919,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           <h2 class="md:col-span-2 text-lg font-semibold">{gettext("Audience")}</h2>
           <.input field={@form[:name]} type="text" label={gettext("Policy name")} required />
           <.input
+            :if={@live_action == :new or is_nil(@policy.activated_at)}
             field={@form[:scope]}
             type="select"
             label={gettext("Scope")}
@@ -771,6 +928,15 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               {gettext("Entire network"), "franchise"}
             ]}
           />
+          <div
+            :if={@live_action == :edit and not is_nil(@policy.activated_at)}
+            class="fieldset mb-2 w-full"
+          >
+            <span class="label label-text font-bold">{gettext("Scope")}</span>
+            <p class="rounded-lg border border-base-300 bg-base-200 px-3 py-2 text-sm">
+              {scope_label(@policy.scope)}
+            </p>
+          </div>
           <.input
             field={@form[:segment_id]}
             type="select"
@@ -789,6 +955,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             <div class="flex flex-wrap gap-2">
               <button
                 :for={branch <- @branches}
+                :if={@live_action == :new or is_nil(@policy.activated_at)}
                 type="button"
                 phx-click="toggle_branch"
                 phx-value-id={branch.id}
@@ -797,6 +964,11 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                   branch.id in @selected_branches && "border-primary bg-primary/10 text-primary"
                 ]}
               >{branch.name}</button>
+              <span
+                :for={branch <- (@policy && @policy.branches) || []}
+                :if={@live_action == :edit and not is_nil(@policy.activated_at)}
+                class="badge badge-outline"
+              >{branch.name}</span>
             </div>
             <p class="mt-2 text-xs text-base-content/60">
               {gettext("A network-wide policy does not need selected branches.")}
@@ -927,6 +1099,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             required
           />
           <.input
+            :if={@live_action == :new or is_nil(@policy.activated_at)}
             field={@form[:initial_mode]}
             type="select"
             label={gettext("First run")}
@@ -935,6 +1108,15 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               {gettext("All current audience"), "all_current"}
             ]}
           />
+          <div
+            :if={@live_action == :edit and not is_nil(@policy.activated_at)}
+            class="fieldset mb-2 w-full"
+          >
+            <span class="label label-text font-bold">{gettext("First run")}</span>
+            <p class="rounded-lg border border-base-300 bg-base-200 px-3 py-2 text-sm">
+              {initial_mode_label(@policy.initial_mode)}
+            </p>
+          </div>
           <.input
             field={@form[:max_issues]}
             type="number"
@@ -1036,7 +1218,11 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         </div>
 
         <div :if={@step == 5} id="marketing-policy-review" class="space-y-4">
-          <h2 class="text-lg font-semibold">{gettext("Review and enable")}</h2>
+          <h2 class="text-lg font-semibold">
+            {if @live_action == :edit,
+              do: gettext("Review changes"),
+              else: gettext("Review and enable")}
+          </h2>
           <p>
             {gettext("Audience: %{segment} · %{scope}",
               segment:
@@ -1064,9 +1250,16 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           </p>
           <div class="flex gap-2">
             <button type="button" phx-click="back" class="btn btn-outline">{gettext("Back")}</button>
-            <button id="marketing-save" type="button" phx-click="save" class="btn btn-primary">{gettext(
-              "Save draft and continue"
-            )}</button>
+            <button id="marketing-save" type="button" phx-click="save" class="btn btn-primary">{if @live_action ==
+                                                                                                     :edit,
+                                                                                                   do:
+                                                                                                     gettext(
+                                                                                                       "Save changes"
+                                                                                                     ),
+                                                                                                   else:
+                                                                                                     gettext(
+                                                                                                       "Save draft and continue"
+                                                                                                     )}</button>
           </div>
         </div>
       </section>
@@ -1079,17 +1272,27 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               <h2 class="text-2xl font-semibold">{@policy.name}</h2>
               <p class="text-sm text-base-content/60">
                 {gettext("Status: %{status} · revision %{revision}",
-                  status: status_label(@policy.status),
+                  status: policy_status_label(@policy),
                   revision: @policy.revision
                 )}
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
               <.link
-                :if={@can_manage and @policy.status == :draft}
+                :if={
+                  @can_manage and @policy.status in [:draft, :paused] and
+                    is_nil(Map.get(@policy, :deleted_at))
+                }
                 navigate={~p"/staff/marketing/#{@policy.id}/edit"}
                 class="btn btn-outline"
               >{gettext("Edit")}</.link>
+              <button
+                :if={@can_delete and is_nil(Map.get(@policy, :deleted_at))}
+                id="marketing-delete"
+                type="button"
+                phx-click="open_delete"
+                class="btn btn-outline text-error"
+              >{gettext("Delete")}</button>
               <button
                 :if={@can_report}
                 id="marketing-report-toggle"
@@ -1101,6 +1304,25 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               >{gettext("Report")}</button>
             </div>
           </div>
+          <p
+            :if={not is_nil(Map.get(@policy, :deleted_at))}
+            id="marketing-deleted-note"
+            class="mt-4 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm"
+          >
+            {gettext(
+              "This policy was removed from the working list. Its history, reports, and issued rewards remain available."
+            )}
+          </p>
+          <p
+            :if={
+              @policy.status in [:active, :initializing] and @can_manage and
+                is_nil(Map.get(@policy, :deleted_at))
+            }
+            id="marketing-active-edit-hint"
+            class="mt-4 text-sm text-base-content/70"
+          >
+            {gettext("Pause this policy to change future issues.")}
+          </p>
           <p class="mt-4 text-sm">
             {gettext(
               "After %{days} days without an order · reward valid for %{ttl} days · initial audience: %{mode}",
@@ -1116,7 +1338,10 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           >
             {gettext("A reward could not be issued. Check that it is available.")}
           </p>
-          <div :if={@can_manage} class="mt-5 flex flex-wrap gap-2">
+          <div
+            :if={@can_manage and is_nil(Map.get(@policy, :deleted_at))}
+            class="mt-5 flex flex-wrap gap-2"
+          >
             <button
               :if={@policy.status == :draft}
               id="marketing-preview"
@@ -1345,6 +1570,50 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           </p>
         </div>
       </section>
+      <div
+        :if={@pending_delete}
+        id="marketing-delete-dialog"
+        class="modal modal-open"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="marketing-delete-title"
+        phx-window-keydown="cancel_delete"
+        phx-key="escape"
+        phx-mounted={JS.focus(to: "#marketing-cancel-delete")}
+        phx-remove={JS.focus(to: "#marketing-delete")}
+      >
+        <.focus_wrap
+          id="marketing-delete-focus"
+          class="modal-box max-w-lg border border-base-300 bg-base-100 text-base-content"
+        >
+          <h3 id="marketing-delete-title" class="text-lg font-semibold">
+            {gettext("Delete «%{name}»?", name: @pending_delete.name)}
+          </h3>
+          <p class="mt-3 text-sm text-base-content/75">
+            {if @pending_delete.started,
+              do:
+                gettext(
+                  "The policy will stop and disappear from the working list. History, reports, and issued rewards will remain."
+                ),
+              else: gettext("This draft will be deleted permanently.")}
+          </p>
+          <div class="modal-action">
+            <button
+              id="marketing-cancel-delete"
+              type="button"
+              phx-click="cancel_delete"
+              class="btn btn-ghost"
+            >{gettext("Cancel")}</button>
+            <button
+              id="marketing-confirm-delete"
+              type="button"
+              phx-click="confirm_delete"
+              class="btn btn-error"
+              phx-disable-with={gettext("Deleting...")}
+            >{gettext("Delete")}</button>
+          </div>
+        </.focus_wrap>
+      </div>
     </div>
     """
   end

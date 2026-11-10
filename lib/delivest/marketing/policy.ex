@@ -27,6 +27,7 @@ defmodule Delivest.Marketing.Policy do
     field :last_error, :string
     field :revision, :integer, default: 1
     field :cursor_client_id, :binary_id
+    field :deleted_at, :utc_datetime
     belongs_to :segment, Delivest.Segments.Segment
     belongs_to :promotion, Delivest.Promo.Promotion
     many_to_many :branches, Delivest.Identity.Branch, join_through: "marketing_policy_branches"

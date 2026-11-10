@@ -16,6 +16,12 @@ defmodule Delivest.Marketing.Report do
          {:ok, generation} <- Features.snapshot("marketing_policies", :franchise) do
       result =
         Features.with_enabled("marketing_policies", :franchise, generation, fn ->
+          current =
+            Repo.one(from p in Policy, where: p.id == ^policy.id, lock: "FOR KEY SHARE")
+
+          if current == nil or current.revision != policy.revision,
+            do: Repo.rollback(:stale)
+
           now = DateTime.utc_now(:microsecond)
           params = [Ecto.UUID.dump!(policy.id), from_on, to_on, branch_key]
 

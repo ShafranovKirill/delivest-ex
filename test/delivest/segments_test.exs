@@ -396,7 +396,7 @@ defmodule Delivest.SegmentsTest do
 
   defp refresh_context do
     {:ok, generation} = Features.snapshot("segments", :franchise)
-    schedule = Repo.one!(Schedule)
+    schedule = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
 
     Repo.update_all(from(s in Schedule, where: s.id == ^schedule.id),
       set: [running: true, current_job_id: 999]

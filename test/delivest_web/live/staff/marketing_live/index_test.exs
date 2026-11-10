@@ -553,6 +553,200 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     refute has_element?(view, "#marketing-report-form")
   end
 
+  test "paused policy can be edited without changing historical scope or restarting", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Paused policy")
+    started_at = DateTime.utc_now(:second)
+
+    Repo.update!(
+      Ecto.Changeset.change(policy,
+        status: :paused,
+        activated_at: started_at,
+        issued_count: 3
+      )
+    )
+
+    {:ok, detail, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    assert has_element?(detail, "a[href='/staff/marketing/#{policy.id}/edit']")
+    {:ok, edit, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}/edit")
+    assert has_element?(edit, "#marketing-paused-edit-note")
+    assert has_element?(edit, "#marketing-immutable-note")
+    refute has_element?(edit, "#marketing-policy-audience select[name='policy[scope]']")
+    refute has_element?(edit, "#marketing-policy-limits select[name='policy[initial_mode]']")
+    refute has_element?(edit, "#marketing-policy-audience button[phx-click='toggle_branch']")
+
+    edit
+    |> form("#marketing-policy-audience", policy: %{name: "Changed future policy"})
+    |> render_submit()
+
+    edit |> form("#marketing-policy-reward", policy: %{}) |> render_submit()
+
+    edit
+    |> form("#marketing-policy-message", policy: %{message_body: "Future reward"})
+    |> render_submit()
+
+    edit |> form("#marketing-policy-limits", policy: %{inactivity_days: "45"}) |> render_submit()
+    edit |> element("#marketing-save") |> render_click()
+    assert_redirect(edit)
+
+    updated = Repo.get!(Delivest.Marketing.Policy, policy.id)
+    assert updated.status == :paused
+    assert updated.activated_at == started_at
+    assert updated.issued_count == 3
+    assert updated.name == "Changed future policy"
+    assert updated.message_body == "Future reward"
+    assert updated.inactivity_days == 45
+    assert updated.scope == policy.scope and updated.initial_mode == policy.initial_mode
+  end
+
+  test "active policy explains pause before editing and redirects direct edit", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Active policy")
+
+    Repo.update!(
+      Ecto.Changeset.change(policy, status: :active, activated_at: DateTime.utc_now(:second))
+    )
+
+    {:ok, detail, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    assert has_element?(detail, "#marketing-active-edit-hint")
+    assert has_element?(detail, "#marketing-pause")
+    refute has_element?(detail, "a[href='/staff/marketing/#{policy.id}/edit']")
+
+    show_path = ~p"/staff/marketing/#{policy.id}"
+
+    assert {:error, {:live_redirect, %{to: ^show_path}}} =
+             live(ctx.conn, ~p"/staff/marketing/#{policy.id}/edit")
+  end
+
+  test "draft delete confirmation can be cancelled before a hard delete", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Draft deletion")
+    grant_delete(ctx.staff)
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+
+    view |> element("#marketing-delete") |> render_click()
+
+    assert has_element?(
+             view,
+             "#marketing-delete-dialog",
+             "This draft will be deleted permanently"
+           )
+
+    assert has_element?(view, "#marketing-delete-title", "Draft deletion")
+
+    assert has_element?(
+             view,
+             "#marketing-delete-dialog[phx-window-keydown='cancel_delete'][phx-key='escape']"
+           )
+
+    assert has_element?(view, "#marketing-delete-focus[phx-hook='Phoenix.FocusWrap']")
+
+    view |> element("#marketing-cancel-delete") |> render_click()
+    refute has_element?(view, "#marketing-delete-dialog")
+    assert Repo.get(Delivest.Marketing.Policy, policy.id)
+
+    view |> element("#marketing-delete") |> render_click()
+    view |> element("#marketing-confirm-delete") |> render_click()
+    assert_redirect(view, ~p"/staff/marketing")
+    refute Repo.get(Delivest.Marketing.Policy, policy.id)
+  end
+
+  test "started delete hides management but keeps deleted history and report", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Started deletion")
+    grant_delete(ctx.staff)
+
+    Repo.update!(
+      Ecto.Changeset.change(policy, status: :paused, activated_at: DateTime.utc_now(:second))
+    )
+
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    view |> element("#marketing-delete") |> render_click()
+
+    assert has_element?(
+             view,
+             "#marketing-delete-dialog",
+             "History, reports, and issued rewards will remain"
+           )
+
+    view |> element("#marketing-confirm-delete") |> render_click()
+    assert_redirect(view, ~p"/staff/marketing")
+
+    {:ok, working, _} = live(ctx.conn, ~p"/staff/marketing")
+    refute has_element?(working, "a", "Started deletion")
+    working |> element("#marketing-list-filter a", "Deleted policies") |> render_click()
+    assert has_element?(working, "a", "Started deletion")
+    {:ok, history, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    assert has_element?(history, "#marketing-deleted-note")
+    assert has_element?(history, "#marketing-report-toggle")
+    refute has_element?(history, "#marketing-delete")
+    refute has_element?(history, "#marketing-activate")
+    refute has_element?(history, "a[href='/staff/marketing/#{policy.id}/edit']")
+  end
+
+  test "forged delete without permission or pending confirmation does nothing", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Protected")
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    refute has_element?(view, "#marketing-delete")
+    render_hook(view, "open_delete", %{})
+    render_hook(view, "confirm_delete", %{})
+    refute has_element?(view, "#marketing-delete-dialog")
+    assert Repo.get(Delivest.Marketing.Policy, policy.id)
+  end
+
+  test "stale confirmation never deletes a changed policy", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Stale deletion")
+    grant_delete(ctx.staff)
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    view |> element("#marketing-delete") |> render_click()
+    Repo.update!(Ecto.Changeset.change(policy, revision: policy.revision + 1))
+    view |> element("#marketing-confirm-delete") |> render_click()
+    refute has_element?(view, "#marketing-delete-dialog")
+    assert has_element?(view, "#flash-error", "Policy changed")
+    assert Repo.get(Delivest.Marketing.Policy, policy.id)
+  end
+
+  test "lifecycle controls and confirmation read naturally in Russian", ctx do
+    {_staff, policy} = policy_fixture(ctx, "Russian policy")
+    grant_delete(ctx.staff)
+    conn = init_test_session(ctx.conn, %{"locale" => "ru"})
+    {:ok, index, _} = live(conn, ~p"/staff/marketing")
+    assert has_element?(index, "#marketing-list-filter", "Рабочий список")
+    assert has_element?(index, "#marketing-list-filter", "Удалённые")
+
+    {:ok, detail, _} = live(conn, ~p"/staff/marketing/#{policy.id}")
+    detail |> element("#marketing-delete") |> render_click()
+    assert has_element?(detail, "#marketing-delete-title", "Russian policy")
+    assert has_element?(detail, "#marketing-delete-dialog", "Черновик будет удалён полностью")
+    detail |> element("#marketing-cancel-delete") |> render_click()
+    assert Repo.get(Delivest.Marketing.Policy, policy.id)
+  end
+
+  defp policy_fixture(ctx, name) do
+    enable_marketing(ctx)
+    staff = Repo.preload(ctx.staff, [:role, :branches])
+
+    {:ok, segment} =
+      Segments.create(staff, %{name: "#{name} audience", kind: :manual, scope: :branches}, [
+        ctx.branch.id
+      ])
+
+    promotion = insert_promotion(ctx.branch.id, kind: :personal_code, rules: "then discount 10%")
+
+    {:ok, policy} =
+      Marketing.create(staff, policy_attrs(name, segment.id, ctx.branch.id, promotion.id), [
+        ctx.branch.id
+      ])
+
+    {staff, policy}
+  end
+
+  defp grant_delete(staff) do
+    staff = Repo.preload(staff, :role)
+
+    Repo.update!(
+      Ecto.Changeset.change(staff.role,
+        permissions: staff.role.permissions ++ ["marketing.delete"]
+      )
+    )
+  end
+
   defp policy_attrs(name, segment_id, branch_id, promotion_id) do
     %{
       "name" => name,

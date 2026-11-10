@@ -13,6 +13,18 @@ defmodule Delivest.MarketingRaceTest do
   setup do
     fixture =
       unboxed(fn ->
+        baseline_schedule_ids =
+          Repo.all(from s in Schedule, where: s.scope_key == "franchise", select: s.id)
+
+        assert baseline_schedule_ids == []
+
+        refute Repo.exists?(
+                 from g in Delivest.Features.Gate,
+                   where:
+                     g.scope_key == "franchise" and g.enabled == true and
+                       g.feature in ["marketing_policies", "segments", "notifications"]
+               )
+
         branch = insert(:branch, is_active: true)
         client = insert(:client)
         {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "race")
@@ -90,6 +102,8 @@ defmodule Delivest.MarketingRaceTest do
           segment: segment,
           job: job,
           policy: policy,
+          schedule: schedule,
+          baseline_schedule_ids: baseline_schedule_ids,
           context: context
         }
       end)
@@ -148,6 +162,12 @@ defmodule Delivest.MarketingRaceTest do
 
         {:ok, _} = Features.configure("segments", :franchise, false, actor: "race-cleanup")
         {:ok, _} = Features.configure("notifications", :franchise, false, actor: "race-cleanup")
+
+        refute Repo.exists?(from s in Schedule, where: s.id == ^fixture.schedule.id)
+
+        assert Repo.all(from s in Schedule, where: s.scope_key == "franchise", select: s.id)
+               |> Enum.sort() ==
+                 fixture.baseline_schedule_ids
       end)
     end)
 

@@ -47,7 +47,10 @@ defmodule Delivest.Marketing.Preview do
     segment = policy && Repo.get(Segment, policy.segment_id)
 
     cond do
-      is_nil(policy) or is_nil(segment) ->
+      is_nil(policy) ->
+        pending_or_done()
+
+      is_nil(segment) ->
         {:error, :missing_policy_or_segment}
 
       policy.revision != revision or segment.revision != segment_revision or
@@ -71,7 +74,8 @@ defmodule Delivest.Marketing.Preview do
         next_count = count + length(eligible_cycles)
 
         case Background.publish(context, fn ->
-               latest = Repo.get(Policy, policy_id)
+               latest =
+                 Repo.one(from p in Policy, where: p.id == ^policy_id, lock: "FOR KEY SHARE")
 
                latest_segment =
                  latest &&
