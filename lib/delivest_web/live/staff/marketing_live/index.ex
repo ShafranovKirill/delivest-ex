@@ -58,6 +58,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
          policy: nil,
          preview: nil,
          report: nil,
+         report_open: false,
          comparison: nil,
          comparison_policies: [],
          comparison_after: nil,
@@ -99,6 +100,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
              socket
              |> assign(
                policy: nil,
+               report_open: false,
                policy_after: length(policies) == 50 && List.last(policies).id
              )
              |> stream(:policies, policies, reset: true)}
@@ -113,6 +115,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
            socket
            |> assign(
              policy: nil,
+             report_open: false,
              promotions: [],
              preview: nil,
              step: 1,
@@ -158,6 +161,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                socket
                |> assign(
                  policy: policy,
+                 report_open:
+                   socket.assigns.report_open && socket.assigns.policy &&
+                     socket.assigns.policy.id == policy.id,
                  preview: nil,
                  report: nil,
                  comparison: nil,
@@ -476,6 +482,28 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         {:noreply, put_flash(socket, :error, gettext("Could not load the report."))}
     end
   end
+
+  def handle_event(
+        "change_report",
+        %{"report" => filters},
+        %{assigns: %{can_report: true, live_action: :show, policy: policy}} = socket
+      )
+      when not is_nil(policy) do
+    {:noreply, assign(socket, report_form: to_form(filters, as: :report))}
+  end
+
+  def handle_event("change_report", _, socket), do: {:noreply, socket}
+
+  def handle_event(
+        "toggle_report",
+        _,
+        %{assigns: %{can_report: true, live_action: :show, policy: policy}} = socket
+      )
+      when not is_nil(policy) do
+    {:noreply, assign(socket, report_open: not socket.assigns.report_open)}
+  end
+
+  def handle_event("toggle_report", _, socket), do: {:noreply, socket}
 
   def handle_event("toggle_compare", %{"id" => id}, socket) do
     ids = toggle(socket.assigns.compare_ids, id)
@@ -1056,11 +1084,22 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                 )}
               </p>
             </div>
-            <.link
-              :if={@can_manage and @policy.status == :draft}
-              navigate={~p"/staff/marketing/#{@policy.id}/edit"}
-              class="btn btn-outline"
-            >{gettext("Edit")}</.link>
+            <div class="flex flex-wrap gap-2">
+              <.link
+                :if={@can_manage and @policy.status == :draft}
+                navigate={~p"/staff/marketing/#{@policy.id}/edit"}
+                class="btn btn-outline"
+              >{gettext("Edit")}</.link>
+              <button
+                :if={@can_report}
+                id="marketing-report-toggle"
+                type="button"
+                phx-click="toggle_report"
+                aria-controls="marketing-report-panel"
+                aria-expanded={to_string(@report_open)}
+                class="btn btn-outline"
+              >{gettext("Report")}</button>
+            </div>
           </div>
           <p class="mt-4 text-sm">
             {gettext(
@@ -1118,13 +1157,15 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           </div>
         </div>
         <div
-          :if={@can_report}
+          :if={@can_report and @report_open}
+          id="marketing-report-panel"
           class="rounded-2xl border border-base-300 bg-base-100 text-base-content p-6 shadow-sm"
         >
           <h3 class="text-lg font-semibold">{gettext("Report")}</h3>
           <.form
             for={@report_form}
             id="marketing-report-form"
+            phx-change="change_report"
             phx-submit="report"
             class="mt-3 grid gap-3 sm:grid-cols-4"
           >

@@ -414,6 +414,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
       )
 
     {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{current.id}")
+    view |> element("#marketing-report-toggle") |> render_click()
     assert has_element?(view, "#marketing-more-comparison-policies")
     assert has_element?(view, "#marketing-compare button[phx-value-id='#{first_page_choice.id}']")
     refute has_element?(view, "#marketing-compare button[phx-value-id='#{later_choice.id}']")
@@ -489,10 +490,67 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     )
 
     {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    refute has_element?(view, "#marketing-report-form")
+    assert has_element?(view, "#marketing-report-toggle[aria-expanded='false']")
+    view |> element("#marketing-report-toggle") |> render_click()
+    assert has_element?(view, "#marketing-report-toggle[aria-expanded='true']")
     view |> form("#marketing-report-form", report: %{}) |> render_submit()
     assert has_element?(view, "#marketing-report-result", "11 340 ₽")
     assert has_element?(view, "#marketing-report-result", "123,45 ₽")
     assert has_element?(view, "#marketing-report-daily", "11 340 ₽")
+
+    view
+    |> form("#marketing-report-form", report: %{"from" => "2026-10-01", "to" => "2026-10-31"})
+    |> render_change()
+
+    assert has_element?(view, "#marketing-report-result", "11 340 ₽")
+
+    view |> element("#marketing-report-toggle") |> render_click()
+    refute has_element?(view, "#marketing-report-form")
+    view |> element("#marketing-report-toggle") |> render_click()
+
+    assert has_element?(
+             view,
+             "#marketing-report-form input[name='report[from]'][value='2026-10-01']"
+           )
+
+    assert has_element?(
+             view,
+             "#marketing-report-form input[name='report[to]'][value='2026-10-31']"
+           )
+
+    assert has_element?(view, "#marketing-report-result", "11 340 ₽")
+  end
+
+  test "report action is unavailable without report permission", ctx do
+    enable_marketing(ctx)
+    staff = Repo.preload(ctx.staff, [:role, :branches])
+
+    {:ok, segment} =
+      Segments.create(staff, %{name: "Read-only audience", kind: :manual, scope: :branches}, [
+        ctx.branch.id
+      ])
+
+    promotion = insert_promotion(ctx.branch.id, kind: :personal_code, rules: "then discount 10%")
+
+    {:ok, policy} =
+      Marketing.create(
+        staff,
+        policy_attrs("Read-only report", segment.id, ctx.branch.id, promotion.id),
+        [ctx.branch.id]
+      )
+
+    reportless_staff =
+      insert(:staff, role: insert(:role, permissions: ~w(marketing.read)))
+
+    insert(:staff_branch, staff: reportless_staff, branch: ctx.branch)
+    conn = init_test_session(ctx.conn, %{"staff_id" => reportless_staff.id})
+    {:ok, view, _} = live(conn, ~p"/staff/marketing/#{policy.id}")
+
+    refute has_element?(view, "#marketing-report-toggle")
+    refute has_element?(view, "#marketing-report-form")
+    render_hook(view, "toggle_report", %{})
+    refute has_element?(view, "#marketing-report-form")
   end
 
   defp policy_attrs(name, segment_id, branch_id, promotion_id) do
