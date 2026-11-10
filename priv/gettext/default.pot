@@ -10115,3 +10115,52 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "No groups excluded"
 msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:36
+#, elixir-autogen, elixir-format
+msgid "Choose a promotion scenario"
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:215
+#, elixir-autogen, elixir-format
+msgid "Choose products, a discount and how customers receive it."
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:237
+#, elixir-autogen, elixir-format
+msgid "Configure rules, limits and compatibility yourself."
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:258
+#, elixir-autogen, elixir-format
+msgid "Create promotion"
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:151
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:46
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:224
+#, elixir-autogen, elixir-format
+msgid "First order offer"
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:47
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:235
+#, elixir-autogen, elixir-format
+msgid "Full promotion form"
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:132
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:303
+#, elixir-autogen, elixir-format
+msgid "How should customers receive it?"
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:328
+#, elixir-autogen, elixir-format
+msgid "Once per client in this branch, on the first website or app order. Does not combine with other promotions."
+msgstr ""
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:226
+#, elixir-autogen, elixir-format
+msgid "Choose a reward for each client's first website or app order in this branch."
+msgstr ""

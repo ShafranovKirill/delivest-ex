@@ -45,6 +45,100 @@ defmodule Delivest.Promo.EngineTest do
              })
   end
 
+  test "two legacy combinable first-order automatics grant only one reward", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    first =
+      insert_promotion(branch.id,
+        combinable: true,
+        priority: 20,
+        rules: "when first_order then discount 10%"
+      )
+
+    insert_promotion(branch.id,
+      combinable: true,
+      priority: 10,
+      rules: "when first_order then discount 20%"
+    )
+
+    client = insert(:client)
+
+    assert %{total: 45_000, applied: [%{promotion_id: id}]} =
+             price(branch, [item(pizza, 1)], %{
+               client_id: client.id,
+               authenticated_client_id: client.id
+             })
+
+    assert id == first.id
+  end
+
+  test "entered first-order code wins over a combinable automatic", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    code_promotion =
+      insert_promotion(branch.id,
+        kind: :public_code,
+        combinable: true,
+        rules: "when first_order then discount 10%"
+      )
+
+    insert_code(code_promotion, code: "FIRSTCODE")
+
+    insert_promotion(branch.id,
+      combinable: true,
+      priority: 100,
+      rules: "when first_order then discount 20%"
+    )
+
+    client = insert(:client)
+
+    assert %{total: 45_000, applied: [%{promotion_id: id}]} =
+             price(branch, [item(pizza, 1)], %{
+               client_id: client.id,
+               authenticated_client_id: client.id,
+               code: "FIRSTCODE"
+             })
+
+    assert id == code_promotion.id
+  end
+
+  test "first-order priority 100 wins over older ordinary discounts", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    for combinable <- [false, true] do
+      ordinary =
+        insert_promotion(branch.id,
+          combinable: combinable,
+          priority: 0,
+          rules: "then discount 5%"
+        )
+
+      first =
+        insert_promotion(branch.id,
+          priority: 100,
+          combinable: false,
+          rules: "when first_order then discount 10%"
+        )
+
+      client = insert(:client)
+
+      assert %{total: 45_000, applied: [%{promotion_id: id}]} =
+               price(branch, [item(pizza, 1)], %{
+                 client_id: client.id,
+                 authenticated_client_id: client.id
+               })
+
+      assert id == first.id
+
+      Repo.delete!(first)
+      Repo.delete!(ordinary)
+      Delivest.Promo.Catalog.invalidate(branch.id)
+    end
+  end
+
   test "applies a percent discount with a cap", %{branch: branch, pizza: pizza} do
     insert_promotion(branch.id, rules: "then discount 20% max 150")
 
@@ -250,6 +344,23 @@ defmodule Delivest.Promo.EngineTest do
     ]
 
     assert [%{products: [%{price: 39_900, old_price: 50_000}, %{price: 9000, old_price: nil}]}] =
+             Promo.overlay_menu(menu, branch.id)
+  end
+
+  test "code-based product discounts do not change the public menu price", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    menu = [%{id: "c", products: [%{id: pizza.id, price: pizza.price}]}]
+
+    insert_promotion(branch.id, kind: :public_code, rules: ~s(then price "pizza" 399))
+    insert_promotion(branch.id, kind: :personal_code, rules: ~s(then discount 20% on "pizza"))
+
+    assert [%{products: [%{price: 50_000, old_price: nil}]}] = Promo.overlay_menu(menu, branch.id)
+
+    insert_promotion(branch.id, kind: :automatic, rules: ~s(then price "pizza" 399))
+
+    assert [%{products: [%{price: 39_900, old_price: 50_000}]}] =
              Promo.overlay_menu(menu, branch.id)
   end
 

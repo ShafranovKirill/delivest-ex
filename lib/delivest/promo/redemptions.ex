@@ -23,17 +23,22 @@ defmodule Delivest.Promo.Redemptions do
       |> Repo.all()
       |> MapSet.new()
 
-    Repo.delete_all(from(r in Redemption, where: r.order_id == ^order.id))
-    record(order, applied, existing)
+    promotions = lock_promotions(Enum.map(applied, & &1.promotion_id))
+
+    if first_order_unique?(applied, promotions) do
+      Repo.delete_all(from(r in Redemption, where: r.order_id == ^order.id))
+      record(order, applied, existing, promotions)
+    else
+      {:error, :promo_unavailable}
+    end
   end
 
   def list_for_order(order_id),
     do: Repo.all(from(r in Redemption, where: r.order_id == ^order_id))
 
-  defp record(_order, [], _existing), do: {:ok, []}
+  defp record(_order, [], _existing, _promotions), do: {:ok, []}
 
-  defp record(order, applied, existing) do
-    promotions = lock_promotions(Enum.map(applied, & &1.promotion_id))
+  defp record(order, applied, existing, promotions) do
     codes = load_codes(applied)
 
     usage =
@@ -43,6 +48,23 @@ defmodule Delivest.Promo.Redemptions do
       do: {:ok, Enum.map(applied, &insert!(&1, order))},
       else: {:error, :promo_unavailable}
   end
+
+  defp first_order_unique?(applied, promotions) do
+    Enum.count(applied, fn %{promotion_id: id} ->
+      case Map.get(promotions, id) do
+        %Promotion{rules: rules} ->
+          case Dsl.parse(rules) do
+            {:ok, %{condition: condition}} -> FirstOrder.required?(condition)
+            _ -> false
+          end
+
+        _ ->
+          false
+      end
+    end) <= 1
+  end
+
+  defp lock_promotions([]), do: %{}
 
   defp lock_promotions(ids) do
     from(p in Promotion, where: p.id in ^ids, lock: "FOR UPDATE")

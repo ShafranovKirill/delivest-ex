@@ -19,7 +19,10 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     if socket.assigns[:form] && socket.assigns[:loaded_id] == assigns.promotion.id do
       {:ok, socket}
     else
-      {mode, builder} = initial_builder(assigns.promotion.rules)
+      {mode, builder} =
+        if assigns.scenario == :first_order,
+          do: {:builder, RulesBuilder.template("first_order")},
+          else: initial_builder(assigns.promotion.rules)
 
       {:ok,
        socket
@@ -29,6 +32,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
          mode: mode,
          builder: builder,
          params: %{},
+         default_code: "FIRST#{Ecto.UUID.generate() |> String.slice(0, 8) |> String.upcase()}",
          show_errors: false,
          mode_error: false
        )
@@ -137,6 +141,24 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     assign_form(socket, changeset)
   end
 
+  defp full_params(%{scenario: :first_order, builder: builder, params: params} = assigns) do
+    kind = Map.get(params, "kind", "automatic")
+
+    rules =
+      RulesBuilder.to_rules(%{builder | match: "all", conditions: [%{"type" => "first_order"}]})
+
+    %{
+      "name" => gettext("First order offer"),
+      "kind" => kind,
+      "code" => if(kind == "public_code", do: first_order_code(assigns), else: nil),
+      "rules" => rules,
+      "per_client_limit" => 1,
+      "combinable" => false,
+      "enabled" => true,
+      "priority" => 100
+    }
+  end
+
   defp full_params(%{mode: :builder, builder: builder, params: params}),
     do:
       params
@@ -145,8 +167,14 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
   defp full_params(%{params: params}), do: PromotionHelpers.window_to_utc(params)
 
+  defp builder_errors(%{scenario: :first_order, builder: builder}),
+    do: RulesBuilder.errors(%{builder | conditions: []})
+
   defp builder_errors(%{mode: :builder, builder: builder}), do: RulesBuilder.errors(builder)
   defp builder_errors(_assigns), do: %{}
+
+  defp first_order_code(%{params: params, default_code: default_code}),
+    do: if(String.trim(params["code"] || "") == "", do: default_code, else: params["code"])
 
   defp save(%{action: :new} = assigns, params),
     do: Promo.create_promotion(assigns.current_staff, assigns.branch_id, params)
@@ -269,7 +297,41 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] items-start"
       >
         <div class="space-y-4 min-w-0">
-          <.step number={1} title={gettext("Basics")}>
+          <.step
+            :if={@scenario == :first_order}
+            number={1}
+            title={gettext("How should customers receive it?")}
+          >
+            <div id="first-order-kind" class="grid gap-2 sm:grid-cols-3">
+              <label
+                :for={kind <- PromotionHelpers.kinds()}
+                class="rounded-box border border-base-300 p-3 cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  name={@form[:kind].name}
+                  value={kind}
+                  checked={to_string(@form[:kind].value) == to_string(kind)}
+                />
+                <span class="font-semibold">{PromotionHelpers.kind_label(kind)}</span>
+                <span class="block text-xs text-base-content/60">{PromotionHelpers.kind_hint(kind)}</span>
+              </label>
+            </div>
+            <.input
+              :if={to_string(@form[:kind].value) == "public_code"}
+              field={@form[:code]}
+              type="text"
+              label={gettext("Promo code")}
+              placeholder={@default_code}
+            />
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Once per client in this branch, on the first website or app order. Does not combine with other promotions."
+              )}
+            </p>
+          </.step>
+
+          <.step :if={@scenario != :first_order} number={1} title={gettext("Basics")}>
             <div id="promotion-kind" class="grid gap-2 sm:grid-cols-3">
               <label
                 :for={kind <- PromotionHelpers.kinds()}
@@ -334,28 +396,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
           </.step>
 
           <%= if @mode == :builder do %>
-            <div id="promotion-templates" class="flex flex-wrap items-center gap-2">
-              <span class="text-xs font-semibold text-base-content/60">{gettext("Quick start")}</span>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline"
-                phx-click="template"
-                phx-value-type="discount"
-                phx-target={@myself}
-              >
-                {gettext("Regular discount")}
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline"
-                phx-click="template"
-                phx-value-type="first_order"
-                phx-target={@myself}
-              >
-                {gettext("First order offer")}
-              </button>
-            </div>
             <.step
+              :if={@scenario != :first_order}
               number={2}
               title={gettext("When does it apply?")}
               hint={gettext("Leave empty to apply to every order.")}
@@ -412,7 +454,10 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
               />
             </.step>
 
-            <.step number={3} title={gettext("What does the customer get?")}>
+            <.step
+              number={if(@scenario == :first_order, do: 2, else: 3)}
+              title={gettext("What does the customer get?")}
+            >
               <div id="builder-effects" class="grid gap-2 xl:grid-cols-2">
                 <.rule_card
                   :for={{row, index} <- Enum.with_index(@builder.effects)}
@@ -447,6 +492,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
             </.step>
 
             <button
+              :if={@scenario != :first_order}
               type="button"
               class="btn btn-ghost btn-xs text-base-content/60"
               phx-click="text_mode"
@@ -487,13 +533,17 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
         <aside class="space-y-4 lg:sticky lg:top-4">
           <.step title={gettext("Summary")}>
-            <.rules_preview preview={@preview} rules={@mode == :builder && @rules} />
+            <.rules_preview
+              preview={@preview}
+              rules={@scenario != :first_order && @mode == :builder && @rules}
+            />
             <p :if={!@preview} class="text-sm text-base-content/60">
               {gettext("Add a reward to see what the customer gets.")}
             </p>
           </.step>
 
           <.step
+            :if={@scenario != :first_order}
             title={gettext("Limits")}
             hint={gettext("Leave empty for no limit. Per-client limits need the client's phone.")}
           >
@@ -526,6 +576,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
           </.step>
 
           <.step
+            :if={@scenario != :first_order}
             title={gettext("Compatibility")}
             hint={
               gettext(
@@ -554,6 +605,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
           <div class="flex gap-3">
             <.link patch={@patch} class="btn btn-ghost flex-1">{gettext("Cancel")}</.link>
             <button
+              id="promotion-save"
               type="submit"
               class="btn btn-primary flex-1"
               phx-disable-with={gettext("Saving...")}

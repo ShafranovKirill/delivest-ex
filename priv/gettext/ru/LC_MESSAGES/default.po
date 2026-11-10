@@ -10311,3 +10311,52 @@ msgstr "Сохранить изменения"
 #: lib/delivest_web/live/staff/marketing_live/index.ex
 msgid "Delete «%{name}»?"
 msgstr "Удалить «%{name}»?"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:36
+#, elixir-autogen, elixir-format
+msgid "Choose a promotion scenario"
+msgstr "Выберите сценарий акции"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:215
+#, elixir-autogen, elixir-format
+msgid "Choose products, a discount and how customers receive it."
+msgstr "Выберите товары, скидку и способ получения акции."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:237
+#, elixir-autogen, elixir-format
+msgid "Configure rules, limits and compatibility yourself."
+msgstr "Настройте правила, ограничения и совместимость вручную."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:258
+#, elixir-autogen, elixir-format
+msgid "Create promotion"
+msgstr "Создать акцию"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:151
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:46
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:224
+#, elixir-autogen, elixir-format
+msgid "First order offer"
+msgstr "Первый заказ"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:47
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:235
+#, elixir-autogen, elixir-format
+msgid "Full promotion form"
+msgstr "Полная форма акции"
+
+#: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:132
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:303
+#, elixir-autogen, elixir-format
+msgid "How should customers receive it?"
+msgstr "Как клиенты получат акцию?"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:328
+#, elixir-autogen, elixir-format
+msgid "Once per client in this branch, on the first website or app order. Does not combine with other promotions."
+msgstr "Один раз на клиента в этом филиале при первом заказе на сайте или в приложении. Не суммируется с другими акциями."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:226
+#, elixir-autogen, elixir-format
+msgid "Choose a reward for each client's first website or app order in this branch."
+msgstr "Выберите награду за первый заказ клиента на сайте или в приложении в этом филиале."

@@ -454,6 +454,8 @@ defmodule DelivestWeb.Router do
         scope "/promotions", PromotionLive do
           live "/", Promotions, :index
           live "/new", Promotions, :new
+          live "/new/full", Promotions, :full
+          live "/new/first-order", Promotions, :first_order
           live "/sale", Promotions, :sale
           live "/:id/edit", Promotions, :edit
           live "/:id/codes", Promotions, :codes

@@ -22,6 +22,7 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
          prices: Map.new(products, &{&1.slug, &1.price}),
          sale: %ProductSale{},
          params: %{},
+         default_code: "SALE#{Ecto.UUID.generate() |> String.slice(0, 8) |> String.upcase()}",
          show_errors: false
        )
        |> refresh(nil)}
@@ -82,22 +83,21 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
   end
 
   defp promotion_params(assigns) do
-    assigns.params
-    |> Map.merge(%{
+    kind = Map.get(assigns.params, "kind", "automatic")
+
+    %{
       "name" => name(assigns),
-      "kind" => "automatic",
+      "kind" => kind,
+      "code" => if(kind == "public_code", do: blank_code(assigns), else: nil),
       "rules" => ProductSale.to_rules(assigns.sale),
       "combinable" => "true"
-    })
-    |> PromotionHelpers.window_to_utc()
+    }
   end
 
-  defp name(%{params: params, sale: sale, names: names}) do
-    case String.trim(params["name"] || "") do
-      "" -> ProductSale.default_name(sale, names)
-      name -> name
-    end
-  end
+  defp name(%{sale: sale, names: names}), do: ProductSale.default_name(sale, names)
+
+  defp blank_code(%{params: params, default_code: default_code}),
+    do: if(String.trim(params["code"] || "") == "", do: default_code, else: params["code"])
 
   defp mode_label("percent"), do: gettext("Percent off")
   defp mode_label("amount"), do: gettext("Amount off")
@@ -128,6 +128,31 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
         class="flex flex-col h-full"
       >
         <div class="flex-1 overflow-y-auto space-y-6">
+          <section id="sale-kind" class="space-y-2">
+            <h3 class="font-bold">{gettext("How should customers receive it?")}</h3>
+            <div class="grid gap-2 sm:grid-cols-3">
+              <label
+                :for={kind <- PromotionHelpers.kinds()}
+                class="rounded-box border border-base-300 p-3 cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  name="promotion[kind]"
+                  value={kind}
+                  checked={to_string(@form[:kind].value) == to_string(kind)}
+                />
+                <span class="font-semibold">{PromotionHelpers.kind_label(kind)}</span>
+                <span class="block text-xs text-base-content/60">{PromotionHelpers.kind_hint(kind)}</span>
+              </label>
+            </div>
+            <.input
+              :if={to_string(@form[:kind].value) == "public_code"}
+              field={@form[:code]}
+              type="text"
+              label={gettext("Promo code")}
+              placeholder={@default_code}
+            />
+          </section>
           <section class="space-y-2">
             <h3 class="font-bold">{gettext("Which products?")}</h3>
             <div id="sale-products" class="flex flex-wrap gap-1">
@@ -214,38 +239,16 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
           >
             {@error}
           </p>
-
-          <section class="space-y-2">
-            <h3 class="font-bold">{gettext("Period")}</h3>
-            <p class="text-xs text-base-content/60">{gettext("Leave empty for no limit.")}</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
-              <.input
-                field={@form[:starts_at]}
-                type="datetime-local"
-                label={gettext("Starts")}
-                value={PromotionHelpers.local_input(@form[:starts_at].value)}
-              />
-              <.input
-                field={@form[:ends_at]}
-                type="datetime-local"
-                label={gettext("Ends")}
-                value={PromotionHelpers.local_input(@form[:ends_at].value)}
-              />
-            </div>
-            <.input
-              field={@form[:name]}
-              type="text"
-              label={gettext("Name")}
-              value={@params["name"]}
-              placeholder={ProductSale.default_name(@sale, @names)}
-              maxlength="100"
-            />
-          </section>
         </div>
 
         <div class="shrink-0 pt-4 mt-4 border-t border-base-200 flex justify-end gap-3">
           <.link patch={@patch} class="btn btn-ghost">{gettext("Cancel")}</.link>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
+          <button
+            id="sale-save"
+            type="submit"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
             {gettext("Save")}
           </button>
         </div>

@@ -1,5 +1,5 @@
 defmodule Delivest.Promo.Selection do
-  alias Delivest.Promo.Compiled
+  alias Delivest.Promo.{Compiled, FirstOrder}
 
   @spec pick([Compiled.t()]) :: [Compiled.t()]
   def pick(candidates) do
@@ -15,7 +15,10 @@ defmodule Delivest.Promo.Selection do
   end
 
   defp compatible?(candidate, selected),
-    do: combinable?(candidate) and Enum.all?(selected, &combinable?/1)
+    do:
+      combinable?(candidate) and Enum.all?(selected, &combinable?/1) and
+        not (first_order?(candidate) and Enum.any?(selected, &first_order?/1))
 
   defp combinable?(%Compiled{promotion: promotion}), do: promotion.combinable
+  defp first_order?(%Compiled{strategy: strategy}), do: FirstOrder.required?(strategy.condition)
 end
