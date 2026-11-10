@@ -57,7 +57,7 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
               <th>{gettext("Receipt")}</th>
               <th class="text-right">{gettext("Amount")}</th>
               <th>{gettext("Status")}</th>
-              <th>{gettext("Created")}</th>
+              <th>{gettext("Created at")}</th>
             </tr>
           </thead>
           <tbody>

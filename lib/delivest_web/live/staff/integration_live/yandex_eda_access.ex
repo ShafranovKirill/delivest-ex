@@ -25,9 +25,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaAccess do
       <dl :if={Settings.credentials?(@settings)} class="grid gap-3 text-sm sm:grid-cols-[10rem_1fr]">
         <dt class="text-base-content/60">{gettext("Address")}</dt>
         <dd><code id="yandex-eda-base-url" class="break-all">{YandexEda.base_url()}</code></dd>
-        <dt class="text-base-content/60">client_id</dt>
+        <dt class="text-base-content/60">{gettext("Client ID (client_id)")}</dt>
         <dd><code id="yandex-eda-client-id" class="break-all">{@settings.client_id}</code></dd>
-        <dt class="text-base-content/60">client_secret</dt>
+        <dt class="text-base-content/60">{gettext("Client secret (client_secret)")}</dt>
         <dd>
           <code id="yandex-eda-client-secret" class="break-all">{@settings.client_secret}</code>
         </dd>
@@ -54,13 +54,21 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaAccess do
           {gettext("Yandex gives these to ask it to reload the menu right after changes.")}
         </p>
         <div class="grid gap-4 sm:grid-cols-3">
-          <.input field={@form[:partner_name]} type="text" label="Partner-Name" />
-          <.input field={@form[:push_client_id]} type="text" label="client_id" />
+          <.input
+            field={@form[:partner_name]}
+            type="text"
+            label={gettext("Partner name (Partner-Name)")}
+          />
+          <.input
+            field={@form[:push_client_id]}
+            type="text"
+            label={gettext("Client ID (client_id)")}
+          />
           <.input
             field={@form[:push_client_secret]}
             type="password"
             value={@form[:push_client_secret].value}
-            label="client_secret"
+            label={gettext("Client secret (client_secret)")}
           />
         </div>
         <div class="flex justify-end">

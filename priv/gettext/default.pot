@@ -1324,9 +1324,13 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:65
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:25
-#: lib/delivest_web/live/staff/receipt_live/index.ex:60
 #, elixir-autogen, elixir-format
 msgid "Created"
+msgstr ""
+
+#: lib/delivest_web/live/staff/receipt_live/index.ex:60
+#, elixir-autogen, elixir-format
+msgid "Created at"
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:94
@@ -3658,6 +3662,7 @@ msgid "Bulk add products"
 msgstr ""
 
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:27
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:783
 #, elixir-autogen, elixir-format
 msgid "CRM ID"
 msgstr ""
@@ -5214,6 +5219,23 @@ msgstr ""
 #: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:49
 #, elixir-autogen, elixir-format
 msgid "Generate access"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:28
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:65
+#, elixir-autogen, elixir-format
+msgid "Client ID (client_id)"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:30
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:71
+#, elixir-autogen, elixir-format
+msgid "Client secret (client_secret)"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:60
+#, elixir-autogen, elixir-format
+msgid "Partner name (Partner-Name)"
 msgstr ""
 
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:209

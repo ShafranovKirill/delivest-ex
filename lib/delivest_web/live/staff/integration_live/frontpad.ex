@@ -780,7 +780,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         <table id="frontpad-products" class="table">
           <thead>
             <tr>
-              <th>CRM ID</th>
+              <th>{gettext("CRM ID")}</th>
               <th>{gettext("Name")}</th>
               <th class="text-right">{gettext("Price")}</th>
             </tr>

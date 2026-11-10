@@ -9,6 +9,7 @@
 msgid ""
 msgstr ""
 "Language: ru\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
 #: lib/delivest_web/components/core_components.ex:506
@@ -99,7 +100,7 @@ msgstr "Все права защищены."
 #: lib/delivest_web/components/staff/app/staff_header.ex:132
 #, elixir-autogen, elixir-format
 msgid "Dark Mode"
-msgstr "Темная тема"
+msgstr "Тёмная тема"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:32
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:26
@@ -1324,10 +1325,14 @@ msgstr "Создать клиента"
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:65
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:25
-#: lib/delivest_web/live/staff/receipt_live/index.ex:60
 #, elixir-autogen, elixir-format
 msgid "Created"
 msgstr "Новый"
+
+#: lib/delivest_web/live/staff/receipt_live/index.ex:60
+#, elixir-autogen, elixir-format
+msgid "Created at"
+msgstr "Дата создания"
 
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:94
 #: lib/delivest_web/live/staff/statistics_live/index.ex:112
@@ -1714,7 +1719,7 @@ msgstr "Настройки YCart"
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:248
 #, elixir-autogen, elixir-format
 msgid "Yandex Org ID"
-msgstr "Yandex Org ID"
+msgstr "ID организации в Яндексе"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:967
 #, elixir-autogen, elixir-format
@@ -3662,6 +3667,7 @@ msgid "Bulk add products"
 msgstr "Добавление товаров таблицей"
 
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:27
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:783
 #, elixir-autogen, elixir-format
 msgid "CRM ID"
 msgstr "ID в CRM"
@@ -3877,7 +3883,7 @@ msgstr "Изменён %{date}"
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:295
 #, elixir-autogen, elixir-format
 msgid "Email for requests"
-msgstr "Email для обращений"
+msgstr "Эл. почта для обращений"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:183
 #: lib/delivest_web/live/staff/franchise_live/index.ex:30
@@ -3933,7 +3939,7 @@ msgstr "Название, фирменный цвет, реквизиты про
 #: lib/delivest/franchise/settings.ex:67
 #, elixir-autogen, elixir-format
 msgid "Not an email"
-msgstr "Некорректный email"
+msgstr "Некорректный адрес эл. почты"
 
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:292
 #, elixir-autogen, elixir-format
@@ -5221,6 +5227,23 @@ msgstr "Сгенерировать новый секрет"
 #, elixir-autogen, elixir-format
 msgid "Generate access"
 msgstr "Сгенерировать доступ"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:28
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:65
+#, elixir-autogen, elixir-format
+msgid "Client ID (client_id)"
+msgstr "ID приложения (client_id)"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:30
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:71
+#, elixir-autogen, elixir-format
+msgid "Client secret (client_secret)"
+msgstr "Секретный ключ приложения (client_secret)"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:60
+#, elixir-autogen, elixir-format
+msgid "Partner name (Partner-Name)"
+msgstr "Имя партнёра (Partner-Name)"
 
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:209
 #, elixir-autogen, elixir-format
@@ -6613,7 +6636,7 @@ msgstr "Курьер, до 10 кг"
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:167
 #, elixir-autogen, elixir-format
 msgid "Email"
-msgstr "Email"
+msgstr "Эл. почта"
 
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:76
 #, elixir-autogen, elixir-format
@@ -7447,7 +7470,7 @@ msgstr "Чек прихода"
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:196
 #, elixir-autogen, elixir-format
 msgid "Sender email"
-msgstr "Email отправителя"
+msgstr "Эл. почта отправителя"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:472
 #: lib/delivest_web/live/staff/receipt_live/index.ex:105
@@ -7509,7 +7532,7 @@ msgstr "Агрегатор"
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:383
 #, elixir-autogen, elixir-format
 msgid "Authorized"
-msgstr "Заблокировано"
+msgstr "Средства зарезервированы"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:382
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:683
@@ -8416,7 +8439,7 @@ msgstr "ID организации в Яндексе"
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:105
 #, elixir-autogen, elixir-format
 msgid "Dev: do not call, confirm sign-in instantly"
-msgstr "Dev: не звонить, подтверждать вход сразу"
+msgstr "Режим разработки: не звонить, подтверждать вход сразу"
 
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:108
 #, elixir-autogen, elixir-format
@@ -8759,12 +8782,12 @@ msgstr "Касса: %{issues}"
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:181
 #, elixir-autogen, elixir-format
 msgid "Client ID"
-msgstr "Client ID"
+msgstr "ID приложения"
 
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:182
 #, elixir-autogen, elixir-format
 msgid "Client secret"
-msgstr "Client secret"
+msgstr "Секретный ключ приложения"
 
 #: lib/delivest_web/live/staff/integration_live/state_components.ex:64
 #, elixir-autogen, elixir-format
@@ -8824,7 +8847,7 @@ msgstr "Заполните ключи магазина"
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:399
 #, elixir-autogen, elixir-format
 msgid "Fill in the token and the email"
-msgstr "Заполните токен и email"
+msgstr "Заполните токен и адрес эл. почты"
 
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:224
 #, elixir-autogen, elixir-format
@@ -9077,7 +9100,7 @@ msgstr "Подарков не может быть больше, чем това�
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:196
 #, elixir-autogen, elixir-format
 msgid "N products from a list"
-msgstr "N товаров из списка"
+msgstr "Заданное количество товаров из списка"
 
 #: lib/delivest/promo/references.ex:41
 #, elixir-autogen, elixir-format
