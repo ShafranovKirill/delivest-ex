@@ -3,7 +3,7 @@ defmodule DelivestWeb.StaffNav do
 
   import Delivest.Identity.Acl
 
-  alias Delivest.Gateway
+  alias Delivest.{Features, Gateway}
 
   def pages(staff, branch) do
     staff
@@ -170,6 +170,9 @@ defmodule DelivestWeb.StaffNav do
       |> allowed(staff, "branches.read"),
       item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
       |> allowed(staff, "clients.read"),
+      item(:segments, ~p"/staff/segments", "hero-user-group", "Сегменты")
+      |> allowed(staff, "segments.read")
+      |> then(fn item -> if Features.enabled?("segments", :franchise), do: item end),
       group(:people, "hero-user-group", gettext("Team"), [
         item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
         |> allowed(staff, "staff.read"),

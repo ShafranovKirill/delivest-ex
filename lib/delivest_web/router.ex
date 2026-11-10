@@ -339,6 +339,13 @@ defmodule DelivestWeb.Router do
         live "/:id/edit", Clients, :edit
       end
 
+      scope "/segments", SegmentLive do
+        live "/", Index, :index
+        live "/new", Index, :new
+        live "/:id/edit", Index, :edit
+        live "/:id", Index, :show
+      end
+
       scope "/logs", LogLive do
         live "/", Index, :events
         live "/raw", Index, :raw
