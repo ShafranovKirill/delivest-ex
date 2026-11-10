@@ -1,0 +1,297 @@
+defmodule Delivest.Background do
+  @moduledoc "Shared, bounded dispatcher for optional feature calculations."
+  import Ecto.Query
+  alias Delivest.{Features, Repo}
+  alias Delivest.Background.{Registry, Runner, Schedule}
+
+  @batch_size 10
+  @critical_queues ~w(default notifications polling rkeeper_polling crm events payments fiscal)
+
+  def feature_changed("segments", :franchise, enabled) do
+    if enabled,
+      do: schedule("segments.refresh", :franchise),
+      else: unschedule("segments.refresh", :franchise)
+  end
+
+  def feature_changed("segments", {:branch, _id}, _enabled) do
+    if Features.enabled?("segments", :franchise) do
+      invalidate("segments.refresh", :franchise)
+    end
+
+    :ok
+  end
+
+  def feature_changed(_, _, _), do: :ok
+
+  def invalidate("segments.refresh", :franchise) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    Repo.update_all(
+      from(s in Schedule,
+        where: s.kind == "segments.refresh" and s.scope_key == "franchise"
+      ),
+      set: [running: false, current_job_id: nil, next_at: now]
+    )
+
+    cancel_pending("segments.refresh", "franchise")
+    :ok
+  end
+
+  def schedule("segments.refresh", :franchise) do
+    if Features.enabled?("segments", :franchise) do
+      now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+      Repo.insert_all(
+        Schedule,
+        [
+          %{
+            kind: "segments.refresh",
+            scope_key: "franchise",
+            next_at: now,
+            inserted_at: now,
+            updated_at: now
+          }
+        ], on_conflict: :nothing, conflict_target: [:kind, :scope_key])
+
+      :ok
+    else
+      {:error, :disabled}
+    end
+  end
+
+  def schedule(_, _), do: {:error, :invalid_schedule}
+
+  def unschedule("segments.refresh", :franchise) do
+    Repo.delete_all(
+      from s in Schedule, where: s.kind == "segments.refresh" and s.scope_key == "franchise"
+    )
+
+    cancel_pending("segments.refresh", "franchise")
+    :ok
+  end
+
+  def unschedule(_, _), do: {:error, :invalid_schedule}
+
+  def still_enabled?(%{feature: feature, scope: scope, generation: token} = context),
+    do: Features.still_enabled?(feature, scope, token) and owner?(context)
+
+  def publish(%{feature: feature, scope: scope, generation: token} = context, fun),
+    do:
+      Features.with_enabled(feature, scope, token, fn ->
+        assert_owner!(context)
+        fun.()
+      end)
+
+  def publish(%{feature: feature} = context, scope, token, fun),
+    do:
+      Features.with_enabled(feature, scope, token, fn ->
+        assert_owner!(context)
+        fun.()
+      end)
+
+  def owner?(%{schedule_id: schedule_id, job_id: job_id})
+      when is_integer(schedule_id) and is_integer(job_id) do
+    Repo.exists?(
+      from s in Schedule,
+        where: s.id == ^schedule_id and s.current_job_id == ^job_id and s.running
+    )
+  end
+
+  def owner?(_), do: false
+
+  defp assert_owner!(%{schedule_id: schedule_id, job_id: job_id})
+       when is_integer(schedule_id) and is_integer(job_id) do
+    owner = Repo.one(from s in Schedule, where: s.id == ^schedule_id, lock: "FOR UPDATE")
+
+    if not (owner && owner.current_job_id == job_id && owner.running),
+      do: Repo.rollback(:disabled)
+  end
+
+  defp assert_owner!(_), do: Repo.rollback(:disabled)
+
+  def overdue_count do
+    Repo.aggregate(from(s in Schedule, where: s.next_at <= ^DateTime.utc_now()), :count)
+  end
+
+  def status do
+    now = DateTime.utc_now()
+
+    Repo.all(
+      from s in Schedule,
+        select: %{
+          kind: s.kind,
+          scope_key: s.scope_key,
+          next_at: s.next_at,
+          running: s.running,
+          last_success_at: s.last_success_at,
+          last_error_at: s.last_error_at,
+          last_error: s.last_error,
+          overdue: s.next_at < ^now
+        },
+        order_by: s.next_at
+    )
+  end
+
+  def dispatch_due do
+    if pressure?() do
+      {:deferred, :critical_backlog}
+    else
+      Repo.transaction(fn ->
+        now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+        recover_terminal_runs()
+
+        rows =
+          Repo.all(
+            from s in Schedule,
+              where: s.next_at <= ^now and not s.running,
+              order_by: s.next_at,
+              limit: @batch_size,
+              lock: "FOR UPDATE SKIP LOCKED"
+          )
+
+        Enum.reduce(rows, 0, fn row, count ->
+          scope = Features.parse_scope(row.scope_key)
+
+          case Registry.fetch(row.kind) do
+            {:ok, task} ->
+              case Features.snapshot(task.feature, scope) do
+                {:ok, token} ->
+                  args = %{
+                    kind: row.kind,
+                    scope_key: row.scope_key,
+                    generation: token,
+                    schedule_id: row.id
+                  }
+
+                  {:ok, job} = Oban.insert(Runner.new(args))
+
+                  row
+                  |> Ecto.Changeset.change(running: true, current_job_id: job.id)
+                  |> Repo.update!()
+
+                  count + 1
+
+                _ ->
+                  Repo.delete!(row)
+                  count
+              end
+
+            :error ->
+              Repo.delete!(row)
+              count
+          end
+        end)
+      end)
+    end
+  end
+
+  def finish(kind, scope_key, job_id, result) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    {:ok, task} = Registry.fetch(kind)
+    next_at = DateTime.add(now, task.interval, :second)
+
+    updates =
+      if result == :ok,
+        do: [
+          running: false,
+          current_job_id: nil,
+          next_at: next_at,
+          last_success_at: now,
+          last_error: nil
+        ],
+        else: [
+          running: false,
+          current_job_id: nil,
+          next_at: next_at,
+          last_error_at: now,
+          last_error: "background calculation failed"
+        ]
+
+    Repo.update_all(
+      from(s in Schedule,
+        where: s.kind == ^kind and s.scope_key == ^scope_key and s.current_job_id == ^job_id
+      ), set: updates)
+
+    :ok
+  end
+
+  def record_error(kind, scope_key, job_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    Repo.update_all(
+      from(s in Schedule,
+        where: s.kind == ^kind and s.scope_key == ^scope_key and s.current_job_id == ^job_id
+      ),
+      set: [last_error_at: now, last_error: "background calculation failed"]
+    )
+
+    :ok
+  end
+
+  def pressure_high?, do: pressure?()
+
+  defp recover_terminal_runs do
+    stale =
+      Repo.all(
+        from s in Schedule,
+          left_join: j in Oban.Job,
+          on: j.id == s.current_job_id,
+          where:
+            s.running and (is_nil(j.id) or j.state in ["completed", "cancelled", "discarded"]),
+          order_by: s.next_at,
+          limit: @batch_size,
+          lock: "FOR UPDATE OF b0 SKIP LOCKED",
+          select: {s.id, s.kind, s.current_job_id}
+      )
+
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    Enum.each(stale, fn {id, kind, observed_job_id} ->
+      query =
+        from s in Schedule,
+          where: s.id == ^id and s.running and s.current_job_id == ^observed_job_id
+
+      case Registry.fetch(kind) do
+        {:ok, task} ->
+          Repo.update_all(query,
+            set: [
+              running: false,
+              current_job_id: nil,
+              next_at: DateTime.add(now, task.interval, :second)
+            ]
+          )
+
+        :error ->
+          Repo.delete_all(query)
+      end
+    end)
+  end
+
+  defp pressure? do
+    limit = Application.get_env(:delivest, :background_pressure_limit, 50)
+    now = DateTime.utc_now()
+
+    query =
+      from j in Oban.Job,
+        where:
+          j.queue in ^@critical_queues and
+            (j.state == "executing" or
+               (j.state in ["available", "retryable"] and j.scheduled_at <= ^now)),
+        limit: ^max(limit, 1),
+        select: j.id
+
+    Repo.aggregate(subquery(query), :count) >= limit
+  end
+
+  defp cancel_pending(kind, scope_key) do
+    query =
+      from j in Oban.Job,
+        where:
+          j.worker == "Delivest.Background.Runner" and
+            j.state in ["available", "scheduled", "retryable"] and
+            fragment("?->>'kind'", j.args) == ^kind and
+            fragment("?->>'scope_key'", j.args) == ^scope_key
+
+    Oban.cancel_all_jobs(query)
+  end
+end

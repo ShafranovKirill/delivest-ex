@@ -18,6 +18,12 @@ defmodule Delivest.Release do
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
+  @doc "Host-only release RPC for feature availability; no staff route exposes this."
+  def configure_feature(feature, scope, enabled, actor) do
+    load_app()
+    Delivest.Features.configure(feature, scope, enabled, actor: actor)
+  end
+
   def create_admin(login \\ nil, password \\ nil) do
     load_app()
 
