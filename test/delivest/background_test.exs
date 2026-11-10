@@ -7,6 +7,7 @@ defmodule Delivest.BackgroundTest do
   alias Delivest.Background.{Dispatcher, Runner, Schedule}
 
   test "disabled installation has no work; due scheduling coalesces" do
+    assert :ok = Background.reconcile()
     assert {:ok, 0} = Background.dispatch_due()
     refute_enqueued(worker: Runner)
 
@@ -15,6 +16,18 @@ defmodule Delivest.BackgroundTest do
     assert {:ok, 0} = Background.dispatch_due()
     assert_enqueued(worker: Runner)
     assert Repo.one!(Schedule).running
+  end
+
+  test "reconcile restores only an enabled schedule after a database swap" do
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    Repo.delete_all(Schedule)
+    assert :ok = Background.reconcile()
+    assert Repo.aggregate(Schedule, :count) == 1
+    assert :ok = Background.reconcile()
+    assert Repo.aggregate(Schedule, :count) == 1
+    assert {:ok, _} = Features.configure("segments", :franchise, false, actor: "host")
+    assert :ok = Background.reconcile()
+    assert Repo.aggregate(Schedule, :count) == 0
   end
 
   test "critical backlog defers without consuming due schedule" do

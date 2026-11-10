@@ -12,6 +12,7 @@ defmodule Delivest.Background.Registry do
   }
 
   def fetch(kind), do: Map.fetch(@tasks, kind)
+  def all, do: @tasks
 
   def tasks_for_feature(feature),
     do: Enum.filter(@tasks, fn {_kind, task} -> task.feature == feature end)

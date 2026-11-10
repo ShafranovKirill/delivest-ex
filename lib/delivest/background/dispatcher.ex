@@ -6,6 +6,7 @@ defmodule Delivest.Background.Dispatcher do
 
   @impl Oban.Worker
   def perform(_job) do
+    Delivest.Background.reconcile()
     Delivest.Background.dispatch_due()
     :ok
   end

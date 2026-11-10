@@ -3,6 +3,7 @@ defmodule Delivest.Background do
   import Ecto.Query
   alias Delivest.{Features, Repo}
   alias Delivest.Background.{Registry, Runner, Schedule}
+  alias Delivest.Features.Gate
 
   @batch_size 10
   @critical_queues ~w(default notifications polling rkeeper_polling crm events payments fiscal)
@@ -196,6 +197,39 @@ defmodule Delivest.Background do
         end)
       end)
     end
+  end
+
+  @doc "Restore missing schedules after a database swap using the preserved host gates."
+  def reconcile do
+    Enum.each(Registry.all(), fn {kind, task} ->
+      if task.scope == :franchise do
+        {:ok, _} =
+          Repo.transaction(fn ->
+            gate =
+              Repo.one(
+                from g in Gate,
+                  where: g.feature == ^task.feature and g.scope_key == "franchise",
+                  lock: "FOR UPDATE"
+              )
+
+            cond do
+              gate && gate.enabled ->
+                schedule(kind, :franchise)
+
+              Repo.exists?(
+                from s in Schedule,
+                  where: s.kind == ^kind and s.scope_key == "franchise"
+              ) ->
+                unschedule(kind, :franchise)
+
+              true ->
+                :ok
+            end
+          end)
+      end
+    end)
+
+    :ok
   end
 
   def finish(kind, scope_key, job_id, result) do
