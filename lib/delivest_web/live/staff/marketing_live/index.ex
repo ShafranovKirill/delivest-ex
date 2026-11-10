@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.{Features, Identity, Marketing, Segments}
+  alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   on_mount {DelivestWeb.Hooks.Permission, "marketing.read"}
 
@@ -1162,7 +1163,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               </p>
               <p>
                 {gettext("Net revenue after refunds: %{value}",
-                  value: @report.data["linked_net_revenue"]
+                  value: OrderHelpers.money(@report.data["linked_net_revenue"])
                 )}
               </p>
               <p>
@@ -1170,7 +1171,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               </p>
               <p>
                 {gettext("Recorded discount: %{value}",
-                  value: @report.data["recorded_promo_discount"]
+                  value: OrderHelpers.money(@report.data["recorded_promo_discount"])
                 )}
               </p>
               <p>{gettext("Points issued: %{value}", value: @report.data["bonus_points_issued"])}</p>
@@ -1198,7 +1199,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                 <tr :for={day <- @report.data["series"]}>
                   <td class="border-t py-2">{day["day"]}</td><td class="border-t">{day["issued"]}</td>
                   <td class="border-t">{day["linked_orders"]}</td><td class="border-t">
-                    {day["linked_net_revenue"]}
+                    {OrderHelpers.money(day["linked_net_revenue"])}
                   </td>
                 </tr>
               </tbody>
@@ -1256,7 +1257,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
               <p>
                 {gettext("Linked orders: %{orders} · net revenue after refunds: %{revenue}",
                   orders: @comparison.data["linked_orders"],
-                  revenue: @comparison.data["linked_net_revenue"]
+                  revenue: OrderHelpers.money(@comparison.data["linked_net_revenue"])
                 )}
               </p>
               <table class="w-full text-left">
@@ -1270,7 +1271,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                 <tbody>
                   <tr :for={day <- @comparison.data["series"]}>
                     <td>{day["day"]}</td><td>{day["linked_orders"]}</td><td>
-                      {day["linked_net_revenue"]}
+                      {OrderHelpers.money(day["linked_net_revenue"])}
                     </td>
                   </tr>
                 </tbody>
@@ -1289,7 +1290,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                     <td>{branch_label(@branches, branch["branch_id"])}</td><td>
                       {branch["linked_orders"]}
                     </td><td>
-                      {branch["linked_net_revenue"]}
+                      {OrderHelpers.money(branch["linked_net_revenue"])}
                     </td>
                   </tr>
                 </tbody>

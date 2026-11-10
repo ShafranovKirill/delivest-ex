@@ -444,6 +444,57 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     refute has_element?(view, "#marketing-compare button[phx-value-id='#{hidden_policy.id}']")
   end
 
+  test "ready report displays revenue and discounts in rubles", ctx do
+    enable_marketing(ctx)
+    staff = Repo.preload(ctx.staff, [:role, :branches])
+
+    {:ok, segment} =
+      Segments.create(staff, %{name: "Revenue audience", kind: :manual, scope: :branches}, [
+        ctx.branch.id
+      ])
+
+    promotion = insert_promotion(ctx.branch.id, kind: :personal_code, rules: "then discount 10%")
+
+    {:ok, policy} =
+      Marketing.create(
+        staff,
+        policy_attrs("Revenue report", segment.id, ctx.branch.id, promotion.id),
+        [ctx.branch.id]
+      )
+
+    filters = %{
+      "from" => Date.add(Date.utc_today(), -29) |> Date.to_iso8601(),
+      "to" => Date.utc_today() |> Date.to_iso8601(),
+      "branch_id" => ""
+    }
+
+    {:ok, %{status: :pending}} = Marketing.report(staff, policy.id, filters)
+
+    report_data = %{
+      "linked_net_revenue" => 1_134_000,
+      "recorded_promo_discount" => 12_345,
+      "series" => [
+        %{
+          "day" => "2026-11-10",
+          "issued" => 1,
+          "linked_orders" => 1,
+          "linked_net_revenue" => 1_134_000
+        }
+      ]
+    }
+
+    Repo.query!(
+      "UPDATE marketing_report_requests SET status='ready', as_of=now(), data=$2::jsonb WHERE policy_id=$1",
+      [Ecto.UUID.dump!(policy.id), Jason.encode!(report_data)]
+    )
+
+    {:ok, view, _} = live(ctx.conn, ~p"/staff/marketing/#{policy.id}")
+    view |> form("#marketing-report-form", report: %{}) |> render_submit()
+    assert has_element?(view, "#marketing-report-result", "11 340 ₽")
+    assert has_element?(view, "#marketing-report-result", "123,45 ₽")
+    assert has_element?(view, "#marketing-report-daily", "11 340 ₽")
+  end
+
   defp policy_attrs(name, segment_id, branch_id, promotion_id) do
     %{
       "name" => name,
