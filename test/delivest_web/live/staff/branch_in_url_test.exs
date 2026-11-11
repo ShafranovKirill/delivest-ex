@@ -71,13 +71,28 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
     assert redirected_to(conn) == ~p"/staff/branches/select"
   end
 
-  test "the home page goes to the branch choice when access is gone", ctx do
+  test "the home page goes to the all-branch dashboard when access is gone", ctx do
     conn =
       ctx.conn
       |> init_test_session(%{"staff_id" => ctx.staff.id, "active_branch_id" => ctx.foreign.id})
       |> get(~p"/staff")
 
-    assert redirected_to(conn) == ~p"/staff/branches/select"
+    assert redirected_to(conn) == ~p"/staff/dashboard"
+  end
+
+  test "all branches clears the active branch and ignores a stale session", ctx do
+    conn =
+      init_test_session(ctx.conn, %{"staff_id" => ctx.staff.id, "active_branch_id" => ctx.own.id})
+
+    {:ok, all, _} = live(conn, ~p"/staff/dashboard")
+    assert has_element?(all, "#header-branch-all.menu-active")
+    assert has_element?(all, ~s(#main-sidebar a[href="/staff/dashboard"]))
+    refute has_element?(all, ~s(#main-sidebar a[href="/staff/b/#{ctx.own.slug}/dashboard"]))
+
+    conn = get(conn, ~p"/staff/branches/all")
+    assert redirected_to(conn) == ~p"/staff/dashboard"
+    assert get_session(conn, :active_branch_id) == nil
+    assert redirected_to(conn |> recycle() |> get(~p"/staff")) == ~p"/staff/dashboard"
   end
 
   test "an open card leads to the list of the section in another branch" do

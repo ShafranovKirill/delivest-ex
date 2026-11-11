@@ -29,7 +29,7 @@ defmodule DelivestWeb.BranchSwitcher do
           <%= if @current_branch do %>
             {@current_branch.name}
           <% else %>
-            <span class="font-semibold">{gettext("No branch selected")}</span>
+            <span class="font-semibold">{gettext("All branches")}</span>
           <% end %>
         </span>
         <.icon name="hero-chevron-down" class="size-4 text-base-content/50 shrink-0" />
@@ -53,6 +53,15 @@ defmodule DelivestWeb.BranchSwitcher do
         </label>
 
         <ul class="menu w-full max-h-80 flex-nowrap overflow-y-auto p-0">
+          <li data-name={String.downcase(gettext("All branches"))}>
+            <.link
+              id="header-branch-all"
+              href={~p"/staff/branches/all"}
+              class={[is_nil(@current_branch) && "menu-active"]}
+            >
+              {gettext("All branches")}
+            </.link>
+          </li>
           <li :for={branch <- @branches} data-name={String.downcase(branch.name)}>
             <.link
               id={"header-branch-#{branch.id}"}

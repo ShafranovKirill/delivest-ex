@@ -46,6 +46,16 @@ defmodule DelivestWeb.Staff.StaffHomeController do
     end
   end
 
-  defp only_branch(%{branches: [branch]}), do: ~p"/staff/branches/select/#{branch.id}"
-  defp only_branch(_staff), do: ~p"/staff/branches/select"
+  defp only_branch(staff) do
+    cond do
+      Kitchen.account?(staff) or Couriers.account?(staff) ->
+        case staff.branches do
+          [branch] -> ~p"/staff/branches/select/#{branch.id}"
+          _ -> ~p"/staff/branches/select"
+        end
+
+      true ->
+        ~p"/staff/dashboard"
+    end
+  end
 end
