@@ -18,8 +18,7 @@ defmodule DelivestWeb.StaffNav do
   def entries(staff, branch) do
     [
       section(:branch, branch && branch.name, branch_entries(staff, branch)),
-      section(:common, gettext("Common"), common_entries(staff)),
-      section(:network, gettext("Network"), network_entries(staff))
+      section(:network, gettext("Network"), common_entries(staff) ++ network_entries(staff))
     ]
     |> Enum.reject(&(&1.entries == []))
   end

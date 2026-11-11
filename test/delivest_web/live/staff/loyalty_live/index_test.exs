@@ -47,7 +47,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
   test "the nav links to the page and the summary is shown", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/loyalty")
 
-    assert has_element?(lv, "#nav-section-common a[href='/staff/marketing']")
+    assert has_element?(lv, "#nav-section-network a[href='/staff/marketing']")
     assert has_element?(lv, "#marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']")
     refute has_element?(lv, "#main-sidebar a[href='/staff/b/#{branch.slug}/loyalty']")
     assert has_element?(lv, "#loyalty-summary-liability")

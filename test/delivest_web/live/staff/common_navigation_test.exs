@@ -108,7 +108,8 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, stocks, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
     assert has_element?(stocks, "#marketing-navigation")
-    assert has_element?(stocks, "#main-sidebar a[href='/staff/marketing']")
+    assert has_element?(stocks, "#nav-section-network a[href='/staff/marketing']")
+    refute has_element?(stocks, "#nav-section-common")
     refute has_element?(stocks, "#main-sidebar a[href='/staff/b/#{branch.slug}/stocks']")
   end
 

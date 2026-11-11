@@ -54,7 +54,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     assert has_element?(lv, "#integration-frontpad", "Frontpad")
     assert has_element?(lv, "#integration-zvonok")
     refute has_element?(lv, "a#integration-zvonok")
-    assert has_element?(lv, "#nav-section-common a[href='/staff/integrations']")
+    assert has_element?(lv, "#nav-section-network a[href='/staff/integrations']")
     refute has_element?(lv, "#main-sidebar a[href='/staff/b/#{branch.slug}/integrations']")
   end
 
