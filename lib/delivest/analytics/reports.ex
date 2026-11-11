@@ -75,10 +75,7 @@ defmodule Delivest.Analytics.Reports do
       ids = Enum.filter(all_ids, &MapSet.member?(enabled, &1))
       job = Query.schedule_health(ids, "analytics.extended")
 
-      current? =
-        Enum.any?(ids, fn id ->
-          Date.compare(to, LocalTime.today(LocalTime.timezone(id))) != :lt
-        end)
+      current? = Query.current_period?(ids, to)
 
       report = present("analytics_extended", ids, {from, to}, "franchise", filters, job, current?)
 
