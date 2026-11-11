@@ -64,10 +64,11 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
     <div class="space-y-6">
       <.page_header
         title={gettext("Recommended")}
-        subtitle={gettext("Recommended products are offered in the cart on the site.")}
-      />
-
-      <.tabs current={:suggested} branch={@current_branch} />
+        layout={:two_rows}
+        navigation_label={gettext("Products")}
+      >
+        <:navigation><.tabs current={:suggested} branch={@current_branch} /></:navigation>
+      </.page_header>
 
       <BranchProducts.filter_form
         id="suggested-filter"

@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
   alias Delivest.{Media, Net}
   alias Delivest.Integrations.Crm
   alias DelivestWeb.Staff.ProductLive.BulkRows
+  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.create"}
 
@@ -275,12 +276,10 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
     <div class="space-y-6">
       <.page_header
         title={gettext("Bulk add products")}
-        subtitle={
-          gettext(
-            "Paste a table from Excel or Google Sheets into any cell (Ctrl+V) or fill it in by hand. Add a photo with the button in the last column."
-          )
-        }
+        layout={:two_rows}
+        navigation_label={gettext("Products")}
       >
+        <:navigation><.tabs current={:products} branch={@current_branch} /></:navigation>
         <:actions>
           <.link navigate={~p"/staff/b/#{@current_branch}/products"} class="btn btn-ghost">
             <.icon name="hero-arrow-left" class="size-5" /> {gettext("Back to products")}

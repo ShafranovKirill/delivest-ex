@@ -93,6 +93,53 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       refute has_element?(lv, "main #products-filter [role='tablist']")
     end
 
+    test "each product section selects its tab in the header portal", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      for {path, key, title, actions?} <- [
+            {"", "products", "Products", true},
+            {"/stops", "stops", "Stop list", false},
+            {"/modifiers", "modifiers", "Modifiers", true},
+            {"/tags", "tags", "Tags", true},
+            {"/suggested", "suggested", "Recommended", false},
+            {"/bulk", "products", "Bulk add products", true}
+          ] do
+        {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> path)
+        header = render(element(lv, "#staff-page-header"))
+
+        assert header =~ ~s(data-phx-portal="#staff-header-title")
+        assert header =~ ~s(aria-label="Products")
+        assert header =~ ~s(title="#{title}")
+        assert header =~ ~s(id="product-section-tab-#{key}")
+        assert header =~ ~r/id="product-section-tab-#{key}"[^>]*aria-current="page"/
+        assert header =~ ~r/id="product-section-tab-#{key}"[^>]*aria-selected="true"/
+        assert length(Regex.scan(~r/aria-current="page"/, header)) == 1
+        assert length(Regex.scan(~r/role="tab"/, header)) == 5
+
+        if actions? do
+          assert render(element(lv, "#staff-page-header-actions")) =~
+                   ~s(data-phx-portal="#staff-header-actions")
+        else
+          refute has_element?(lv, "#staff-page-header-actions")
+        end
+      end
+    end
+
+    test "read-only sections have no header actions", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+      insert(:staff_branch, staff: staff, branch: branch)
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      for section <- ["modifiers", "tags"] do
+        {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> "/" <> section)
+        assert render(element(lv, "#staff-page-header")) =~ ~s(role="tablist")
+        refute render(element(lv, "#staff-page-header-actions")) =~ ~s(class="btn)
+      end
+    end
+
     test "read-only staff sees export but no create actions", %{conn: conn} do
       branch = insert(:branch)
       staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))

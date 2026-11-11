@@ -88,10 +88,11 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
     <div class="space-y-6">
       <.page_header
         title={gettext("Stop list")}
-        subtitle={gettext("Products in the stop list are not sold on the site and in the channels.")}
-      />
-
-      <.tabs current={:stops} branch={@current_branch} />
+        layout={:two_rows}
+        navigation_label={gettext("Products")}
+      >
+        <:navigation><.tabs current={:stops} branch={@current_branch} /></:navigation>
+      </.page_header>
 
       <BranchProducts.filter_form
         id="stop-list-filter"

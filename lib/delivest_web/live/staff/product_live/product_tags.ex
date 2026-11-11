@@ -27,11 +27,15 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
       )
 
     ~H"""
-    <div role="tablist" class="tabs tabs-boxed w-fit max-w-full overflow-x-auto">
+    <div role="tablist" class="tabs w-fit max-w-full overflow-x-auto">
       <.link
         :for={{key, path, icon, label} <- @tabs}
+        id={"product-section-tab-#{key}"}
+        data-section={key}
         navigate={path}
         role="tab"
+        aria-current={if @current == key, do: "page"}
+        aria-selected={if @current == key, do: "true", else: "false"}
         class={["tab gap-2 whitespace-nowrap", @current == key && "tab-active font-bold"]}
       >
         <.icon name={icon} class="size-4" /> {label}

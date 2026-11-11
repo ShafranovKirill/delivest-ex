@@ -365,18 +365,40 @@ defmodule DelivestWeb.CoreComponents do
           title={@title}
           class={[
             "min-w-0 truncate text-base font-semibold text-base-content sm:text-lg",
-            @layout == :two_rows && "shrink-0"
+            @layout == :two_rows && "staff-page-header-title shrink-0"
           ]}
         >
           {@title}
         </h1>
         <nav
           :if={@layout == :two_rows and @navigation != []}
+          id="staff-page-header-navigation"
+          phx-hook=".ActiveHeaderTab"
           class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
           aria-label={@navigation_label || gettext("Page sections")}
         >
           {render_slot(@navigation)}
         </nav>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
+          export default {
+            mounted() {
+              this.resizeObserver = new ResizeObserver(() => this.revealActiveTab())
+              this.resizeObserver.observe(this.el)
+              this.revealActiveTab()
+            },
+            updated() { this.revealActiveTab() },
+            destroyed() { this.resizeObserver.disconnect() },
+            revealActiveTab() {
+              const active = this.el.querySelector('[aria-current="page"]')
+              if (!active) return
+              const left = active.getBoundingClientRect().left - this.el.getBoundingClientRect().left + this.el.scrollLeft
+              const right = left + active.offsetWidth
+              if (left < this.el.scrollLeft || right > this.el.scrollLeft + this.el.clientWidth) {
+                this.el.scrollLeft = Math.max(0, left - (this.el.clientWidth - active.offsetWidth) / 2)
+              }
+            }
+          }
+        </script>
       </div>
     </.portal>
 

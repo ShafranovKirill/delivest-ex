@@ -128,9 +128,11 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
     ~H"""
     <div class="space-y-6">
       <.page_header
-        title={gettext("Products")}
-        subtitle={gettext("Tags are shown on product cards on the website.")}
+        title={gettext("Tags")}
+        layout={:two_rows}
+        navigation_label={gettext("Products")}
       >
+        <:navigation><.tabs current={:tags} branch={@current_branch} /></:navigation>
         <:actions>
           <.button
             :if={Identity.can?(@current_staff, "catalog.global.manage")}
@@ -142,8 +144,6 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
           </.button>
         </:actions>
       </.page_header>
-
-      <.tabs current={:tags} branch={@current_branch} />
 
       <div id="product-tags" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div

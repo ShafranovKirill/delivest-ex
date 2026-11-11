@@ -264,10 +264,10 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     <div class="space-y-6">
       <.page_header
         title={gettext("Modifiers")}
-        subtitle={
-          gettext("Size, dough and extras. A group is made once and attached to many products.")
-        }
+        layout={:two_rows}
+        navigation_label={gettext("Products")}
       >
+        <:navigation><.tabs current={:modifiers} branch={@current_branch} /></:navigation>
         <:actions>
           <button :if={@can_edit} type="button" phx-click="new_group" class="btn btn-primary btn-sm">
             <.icon name="hero-plus" class="size-4" />
@@ -275,8 +275,6 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
           </button>
         </:actions>
       </.page_header>
-
-      <.tabs current={:modifiers} branch={@current_branch} />
 
       <form :if={@can_edit} id="photo-upload" phx-change="validate_photo" class="hidden">
         <.live_file_input upload={@uploads.photo} />

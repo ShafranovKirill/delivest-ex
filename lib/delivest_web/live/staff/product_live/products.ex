@@ -438,7 +438,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     <div class="space-y-6">
       <.page_header
         title={gettext("Products")}
-        subtitle={gettext("Manage branch products, prices, and categories.")}
         layout={:two_rows}
         navigation_label={gettext("Products")}
       >
