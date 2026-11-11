@@ -5,7 +5,14 @@ defmodule Delivest.NotificationsTest do
 
   alias Delivest.{Features, Notifications, Push, PushClient, Repo}
   alias Delivest.Notifications.{DeliverWorker, Intent}
-  alias Delivest.Notifications.{Dispatch, PushDelivery, PushDeliveryWorker}
+
+  alias Delivest.Notifications.{
+    Dispatch,
+    MarketingPushReservation,
+    PushDelivery,
+    PushDeliveryWorker
+  }
+
   alias Delivest.Background.Schedule
   alias Delivest.Marketing.{Issue, Policy}
   alias Delivest.Loyalty.Entry
@@ -430,6 +437,7 @@ defmodule Delivest.NotificationsTest do
     assert {:ok, _} = Notifications.update_consents(client.id, branch.id, %{push: false})
     assert :ok = PushDeliveryWorker.perform(Repo.get!(Oban.Job, second.job_id))
     assert Repo.get!(PushDelivery, second.id).last_error == "no_consent"
+    assert Repo.aggregate(MarketingPushReservation, :count) == 0
   end
 
   test "expired push endpoint is removed only while its account and keys still match", %{
@@ -488,6 +496,78 @@ defmodule Delivest.NotificationsTest do
     second_job = Repo.get!(Oban.Job, by_subscription[second.id].job_id)
     assert :ok = PushDeliveryWorker.perform(second_job)
     assert Repo.get!(ClientSubscription, second.id).client_id == other_client.id
+    assert Repo.aggregate(MarketingPushReservation, :count) == 1
+  end
+
+  test "unknown first attempt suppresses another branch's marketing push without hiding rewards",
+       %{
+         branch: branch,
+         client: client
+       } do
+    sibling = insert(:branch)
+
+    assert {:ok, _} =
+             Features.configure("notifications", {:branch, sibling.id}, true, actor: "test")
+
+    assert {:ok, _} = Notifications.update_consents(client.id, branch.id, %{push: true})
+
+    assert {:ok, _} =
+             Push.subscribe_client(client, PushClient.new() |> PushClient.subscription_attrs())
+
+    first_source = active_source(branch, client)
+    second_source = active_source(sibling, client)
+
+    assert {:ok, current_source_generation} =
+             Features.snapshot("marketing_policies", {:branch, branch.id})
+
+    Repo.update!(
+      Ecto.Changeset.change(Repo.get!(Issue, first_source),
+        source_generation_franchise: current_source_generation.franchise,
+        source_generation_branch: current_source_generation.branch
+      )
+    )
+
+    for {source, source_branch} <- [{first_source, branch}, {second_source, sibling}] do
+      assert {:ok, _} =
+               Notifications.publish(client.id, %{title: "Offer", body: "Text"},
+                 idempotency_key: source,
+                 source_type: "marketing_reward",
+                 source_id: source,
+                 branch_id: source_branch.id,
+                 channels: [:in_app, :push]
+               )
+    end
+
+    schedule = Repo.get_by!(Schedule, kind: "notifications.dispatch", scope_key: "franchise")
+    Repo.update!(Ecto.Changeset.change(schedule, running: true, current_job_id: 918_273))
+    assert {:ok, generation} = Features.snapshot("notifications", :franchise)
+
+    context = %{
+      feature: "notifications",
+      scope: :franchise,
+      generation: generation,
+      schedule_id: schedule.id,
+      job_id: 918_273
+    }
+
+    assert :ok = Dispatch.perform(:franchise, context)
+    first = Repo.get_by!(Delivest.Notifications.Notification, source_id: first_source)
+    second = Repo.get_by!(Delivest.Notifications.Notification, source_id: second_source)
+    first_intent = Repo.get_by!(Intent, notification_id: first.id, channel: "push")
+    second_intent = Repo.get_by!(Intent, notification_id: second.id, channel: "push")
+    first_delivery = Repo.get_by!(PushDelivery, intent_id: first_intent.id)
+    second_delivery = Repo.get_by!(PushDelivery, intent_id: second_intent.id)
+
+    Req.Test.stub(Delivest.Push.Sender, &Plug.Conn.send_resp(&1, 500, ""))
+    assert :ok = PushDeliveryWorker.perform(Repo.get!(Oban.Job, first_delivery.job_id))
+    assert Repo.get!(PushDelivery, first_delivery.id).status == "unknown"
+    assert :ok = PushDeliveryWorker.perform(Repo.get!(Oban.Job, second_delivery.job_id))
+    assert Repo.get!(Intent, second_intent.id).status == "skipped"
+    assert Repo.get!(Intent, second_intent.id).last_error == "frequency_limit"
+    assert Repo.get!(PushDelivery, second_delivery.id).last_error == "frequency_limit"
+    assert Repo.aggregate(MarketingPushReservation, :count) == 1
+    assert Repo.get_by!(Intent, notification_id: second.id, channel: "in_app").status == "sent"
+    assert Repo.get!(Issue, second_source).reward_id
   end
 
   defp active_source(branch, client) do

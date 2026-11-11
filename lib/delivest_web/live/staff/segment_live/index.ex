@@ -677,7 +677,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   end
 
   defp parse_value(metric, text) when metric in ["total_spent", "avg_check"] do
-    case Decimal.parse(text || "") do
+    case Decimal.parse(text) do
       {rubles, ""} ->
         kopecks = Decimal.mult(rubles, 100)
 
@@ -691,7 +691,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   end
 
   defp parse_value(_metric, text) do
-    case Integer.parse(text || "") do
+    case Integer.parse(text) do
       {number, ""} -> number
       _ -> -1
     end

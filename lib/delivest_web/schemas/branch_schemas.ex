@@ -40,6 +40,10 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           type: :boolean,
           description: "Funnel event capture is enabled for this branch"
         },
+        analytics_links_enabled: %Schema{
+          type: :boolean,
+          description: "Trusted advertising link tracking is enabled for this branch"
+        },
         intake: %Schema{
           type: :object,
           description:

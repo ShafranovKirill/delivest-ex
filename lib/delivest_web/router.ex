@@ -73,11 +73,22 @@ defmodule DelivestWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :advertising_redirect do
+    plug :accepts, ["html"]
+    plug :fetch_cookies
+    plug :put_secure_browser_headers
+  end
+
   scope "/", DelivestWeb do
     pipe_through :health
 
     get "/health", HealthController, :show
     get "/ready", HealthController, :ready
+  end
+
+  scope "/r", DelivestWeb.Advertising do
+    pipe_through :advertising_redirect
+    get "/:token", RedirectController, :show
   end
 
   scope "/client/auth", DelivestWeb.Client.Auth do
@@ -125,6 +136,12 @@ defmodule DelivestWeb.Router do
     get "/orders", Order.OrderController, :index
     get "/notifications", Notifications.NotificationController, :index
     get "/notifications/consents", Notifications.NotificationController, :consents
+
+    scope "/analytics", Analytics do
+      pipe_through :analytics_rate_limit
+      post "/source/claim", SourceController, :claim
+    end
+
     put "/notifications/consents", Notifications.NotificationController, :update_consents
     post "/notifications/:id/dismiss", Notifications.NotificationController, :dismiss
     post "/notifications/:id/click", Notifications.NotificationController, :click
@@ -410,6 +427,7 @@ defmodule DelivestWeb.Router do
         ] do
         live "/dashboard", DashboardLive.Index, :index
         live "/statistics", StatisticsLive.Index, :index
+        live "/advertising-links", AdvertisingLive.Index, :index
         live "/delivery", DeliveryLive.Index, :index
         live "/delivery/zones", DeliveryLive.Zones, :index
         live "/delivery/couriers", DeliveryLive.Couriers, :index

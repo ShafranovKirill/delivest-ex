@@ -2,6 +2,7 @@ defmodule Delivest.Oms.Orders.Create do
   import Ecto.Query
 
   alias Delivest.Audit
+  alias Delivest.Analytics.OrderReceipts
   alias Delivest.Oms.{Carts, Order, OrderEvents}
   alias Delivest.Oms.Order.OrderNumber
 
@@ -112,7 +113,11 @@ defmodule Delivest.Oms.Orders.Create do
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn repo, %{cart: cart} -> OrderNumber.next(repo, cart.branch_id) end)
+    |> Multi.run(:analytics_cutoff, fn _, _ -> {:ok, OrderReceipts.cutoff()} end)
     |> Multi.insert(:order, &build(attrs, &1, opts))
+    |> Multi.run(:analytics_receipts, fn _, %{order: order, analytics_cutoff: as_of_at} ->
+      OrderReceipts.capture(order, opts, as_of_at)
+    end)
     |> Multi.run(:points, fn _, %{order: order} -> Loyalty.spend(order) end)
     |> Multi.run(:payments, fn repo, %{order: order} ->
       Payments.open(repo, order, paid_online: opts[:paid_online], cash_given: cash_given(attrs))

@@ -6,7 +6,8 @@ defmodule Delivest.Features.Registry do
     "marketing_policies",
     "analytics_funnel",
     "analytics_extended",
-    "analytics_franchise"
+    "analytics_franchise",
+    "analytics_links"
   ]
 
   @dependencies %{

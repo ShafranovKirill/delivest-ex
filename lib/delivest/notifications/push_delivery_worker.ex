@@ -4,7 +4,7 @@ defmodule Delivest.Notifications.PushDeliveryWorker do
   import Ecto.Query
 
   alias Delivest.{Features, Notifications, Repo}
-  alias Delivest.Notifications.{Dispatch, Intent, PushDelivery}
+  alias Delivest.Notifications.{Dispatch, Intent, MarketingPushLimiter, PushDelivery}
   alias Delivest.Push.ClientSubscription
 
   @impl Oban.Worker
@@ -105,9 +105,56 @@ defmodule Delivest.Notifications.PushDeliveryWorker do
           Repo.update!(Ecto.Changeset.change(row, status: "skipped", last_error: "no_consent"))
           nil
 
+        is_nil(
+          Repo.get_by(ClientSubscription,
+            id: row.subscription_id,
+            client_id: row.intent.notification.client_id
+          )
+        ) ->
+          Repo.update!(
+            Ecto.Changeset.change(row, status: "skipped", last_error: "subscription_removed")
+          )
+
+          nil
+
         true ->
-          Repo.update!(Ecto.Changeset.change(row, status: "inflight"))
+          claim_frequency(row)
       end
+    end
+  end
+
+  defp claim_frequency(row) do
+    notice = row.intent.notification
+
+    result =
+      if notice.source_feature == "marketing_policies" do
+        MarketingPushLimiter.claim(row.intent_id, notice.client_id)
+      else
+        :reserved
+      end
+
+    case result do
+      :reserved ->
+        Repo.update!(Ecto.Changeset.change(row, status: "inflight"))
+
+      :stale ->
+        Repo.update!(
+          Ecto.Changeset.change(row, status: "skipped", last_error: "stale_reservation")
+        )
+
+        nil
+
+      :limited ->
+        Repo.update_all(
+          from(d in PushDelivery, where: d.intent_id == ^row.intent_id and d.status == "queued"),
+          set: [status: "skipped", last_error: "frequency_limit"]
+        )
+
+        Repo.update!(
+          Ecto.Changeset.change(row.intent, status: "skipped", last_error: "frequency_limit")
+        )
+
+        nil
     end
   end
 

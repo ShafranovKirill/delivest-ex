@@ -451,9 +451,10 @@ defmodule Delivest.MarketingLifecycleRaceTest do
       end)
 
     parent = self()
+    supervisor = start_supervised!({Task.Supervisor, []})
 
     holder =
-      Task.async(fn ->
+      Task.Supervisor.async_nolink(supervisor, fn ->
         unboxed(fn ->
           Repo.transaction(fn ->
             Repo.one!(from p in Policy, where: p.id == ^policy.id, lock: "FOR UPDATE")
@@ -470,10 +471,11 @@ defmodule Delivest.MarketingLifecycleRaceTest do
       end)
 
     assert_receive {:locked, holder_pid, holder_backend_pid}
+
     on_exit(fn -> send(holder_pid, :release) end)
 
     deleting =
-      Task.async(fn ->
+      Task.Supervisor.async_nolink(supervisor, fn ->
         unboxed(fn ->
           on_connection(parent, :delete_started, fn ->
             Marketing.delete(ctx.staff, policy.id, policy.revision)
@@ -485,8 +487,38 @@ defmodule Delivest.MarketingLifecycleRaceTest do
     refute deleting_backend_pid == holder_backend_pid
     await_blocked(deleting_backend_pid)
 
+    marker = make_ref()
+    handler_id = "marketing-report-hard-delete-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach(
+        handler_id,
+        [:delivest, :repo, :query],
+        fn _, _, metadata, {owner, ref} ->
+          if Process.get(:report_delete_marker) == ref and
+               String.contains?(
+                 metadata.query,
+                 "FROM marketing_report_requests WHERE status='pending'"
+               ) do
+            Process.delete(:report_delete_marker)
+            send(owner, {:report_request_selected, self()})
+
+            receive do
+              {^ref, :continue} -> :ok
+            after
+              5_000 -> raise "report select barrier timed out"
+            end
+          end
+        end,
+        {parent, marker}
+      )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
     reporting =
-      Task.async(fn ->
+      Task.Supervisor.async_nolink(supervisor, fn ->
+        Process.put(:report_delete_marker, marker)
+
         unboxed(fn ->
           on_connection(parent, :report_worker_started, fn ->
             Delivest.Marketing.Report.perform(:franchise, report_context)
@@ -494,27 +526,38 @@ defmodule Delivest.MarketingLifecycleRaceTest do
         end)
       end)
 
-    assert_receive {:report_worker_started, reporting_backend_pid}
-    refute reporting_backend_pid in [holder_backend_pid, deleting_backend_pid]
-    await_blocked(reporting_backend_pid)
-    send(holder_pid, :release)
+    try do
+      assert_receive {:report_worker_started, reporting_backend_pid}
+      refute reporting_backend_pid in [holder_backend_pid, deleting_backend_pid]
+      assert_receive {:report_request_selected, reporting_pid}
+      assert reporting_pid == reporting.pid
+      send(holder_pid, :release)
 
-    assert {:ok, _} = Task.await(holder, 10_000)
-    assert {:ok, :deleted} = Task.await(deleting, 10_000)
-    assert :ok = Task.await(reporting, 10_000)
+      assert {:ok, _} = Task.await(holder, 10_000)
+      assert {:ok, :deleted} = Task.await(deleting, 10_000)
+      send(reporting_pid, {marker, :continue})
+      assert :ok = Task.await(reporting, 10_000)
 
-    unboxed(fn ->
-      refute Repo.exists?(
-               from row in "marketing_report_requests",
-                 where: row.id == type(^request_id, :binary_id)
-             )
-
-      for table <- ["marketing_report_links", "marketing_report_daily"] do
+      unboxed(fn ->
         refute Repo.exists?(
-                 from row in table, where: row.request_id == type(^request_id, :binary_id)
+                 from row in "marketing_report_requests",
+                   where: row.id == type(^request_id, :binary_id)
                )
-      end
-    end)
+
+        for table <- ["marketing_report_links", "marketing_report_daily"] do
+          refute Repo.exists?(
+                   from row in table, where: row.request_id == type(^request_id, :binary_id)
+                 )
+        end
+      end)
+    after
+      :telemetry.detach(handler_id)
+      send(holder.pid, :release)
+      send(reporting.pid, {marker, :continue})
+
+      for task <- [reporting, deleting, holder],
+          do: Task.Supervisor.terminate_child(supervisor, task.pid)
+    end
   end
 
   test "preview selected just before hard deletion finishes without retry", ctx do

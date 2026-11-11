@@ -249,6 +249,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
       <.form
         for={nil}
+        id="clients-filter-form"
         phx-change="filter"
         class="flex gap-4 items-center justify-between flex-wrap w-full"
       >
