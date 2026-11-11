@@ -9,6 +9,7 @@ defmodule Delivest.Integrations.Crm do
     Commands,
     ConfirmWorker,
     Registry,
+    StopSync,
     SyncState,
     SyncWorker,
     Throttle
@@ -16,6 +17,7 @@ defmodule Delivest.Integrations.Crm do
 
   alias Delivest.Integrations.Journal
   alias Delivest.Integrations.Health
+  alias Delivest.Integrations.Frontpad
   alias Delivest.Oms.{Order, Orders}
 
   @permanent_errors [:branch_not_found, :unknown_provider, :missing_settings]
@@ -129,6 +131,7 @@ defmodule Delivest.Integrations.Crm do
          {:ok, %Branch{info: %{crm: settings}}} <-
            Identity.update_integrations(staff, branch, %{"crm" => attrs}) do
       invalidate_changed_credentials(branch, settings, branch_id)
+      clear_disabled_frontpad_stops(branch.info && branch.info.crm, settings, branch_id)
       {:ok, settings}
     else
       {:error, :info, changeset} -> {:error, Ecto.Changeset.get_change(changeset, :crm)}
@@ -136,6 +139,15 @@ defmodule Delivest.Integrations.Crm do
       error -> error
     end
   end
+
+  defp clear_disabled_frontpad_stops(%BranchSettings{provider: :frontpad}, settings, branch_id) do
+    if BranchSettings.active_provider(settings) != :frontpad or
+         not Frontpad.stops_enabled?(settings.frontpad) do
+      StopSync.clear_frontpad(branch_id)
+    end
+  end
+
+  defp clear_disabled_frontpad_stops(_previous, _settings, _branch_id), do: :ok
 
   defp invalidate_changed_credentials(%Branch{info: %{crm: previous}}, settings, branch_id)
        when is_map(previous) do
