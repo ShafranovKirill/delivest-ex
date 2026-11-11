@@ -10453,3 +10453,23 @@ msgstr "Проверить расчёт"
 #, elixir-autogen, elixir-format
 msgid "Starting…"
 msgstr "Запускаем…"
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Marketing Push messages"
+msgstr "Маркетинговые Push"
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "The limit applies to each customer across all branches. A Push with an unknown delivery result counts toward the limit. Rewards and messages on the site are unaffected."
+msgstr "Лимит действует для каждого клиента во всех филиалах. Push с неизвестным результатом доставки учитывается в лимите. Награды и сообщения на сайте не затрагиваются."
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Maximum marketing push messages"
+msgstr "Максимум маркетинговых Push"
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rolling window, hours"
+msgstr "Период ограничения, часы"

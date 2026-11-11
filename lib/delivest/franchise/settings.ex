@@ -35,6 +35,8 @@ defmodule Delivest.Franchise.Settings do
     field :logo_key, :string
     field :logo_dark_key, :string
     field :client_auth_required, :boolean, default: false
+    field :marketing_push_limit_count, :integer, default: 1
+    field :marketing_push_window_hours, :integer, default: 24
 
     timestamps(type: :utc_datetime)
   end
@@ -44,14 +46,24 @@ defmodule Delivest.Franchise.Settings do
     |> cast(attrs, fields(), empty_values: [nil, ""])
     |> update_change(:primary_color, &downcase/1)
     |> update_change(:dark_primary_color, &downcase/1)
-    |> validate_required([:name, :primary_color, :default_theme, :timezone])
+    |> validate_required([
+      :name,
+      :primary_color,
+      :default_theme,
+      :timezone,
+      :marketing_push_limit_count,
+      :marketing_push_window_hours
+    ])
     |> validate_default_theme_input(attrs)
+    |> validate_marketing_push_input(attrs)
     |> validate_inclusion(:default_theme, ["light", "dark"])
     |> validate_client_auth_available()
     |> Delivest.LocalTime.validate_timezone(:timezone)
     |> validate_number(:loyalty_per_rubles, greater_than: 0, less_than_or_equal_to: 100_000)
     |> validate_number(:loyalty_stars, greater_than: 0, less_than_or_equal_to: 100_000)
     |> validate_number(:loyalty_expire_days, greater_than: 0, less_than_or_equal_to: 3650)
+    |> validate_number(:marketing_push_limit_count, greater_than: 0, less_than_or_equal_to: 100)
+    |> validate_number(:marketing_push_window_hours, greater_than: 0, less_than_or_equal_to: 720)
     |> validate_length(:name, max: 60)
     |> validate_length(:description, max: 300)
     |> validate_length(:legal_form, max: 20)
@@ -82,6 +94,19 @@ defmodule Delivest.Franchise.Settings do
     end
   end
 
+  defp validate_marketing_push_input(changeset, attrs) do
+    Enum.reduce([:marketing_push_limit_count, :marketing_push_window_hours], changeset, fn field,
+                                                                                           changeset ->
+      value = Map.get(attrs, field, Map.get(attrs, Atom.to_string(field), :absent))
+
+      if value in [nil, ""] do
+        add_error(changeset, field, "can't be blank", validation: :required)
+      else
+        changeset
+      end
+    end)
+  end
+
   defp fields do
     [
       :name,
@@ -100,7 +125,9 @@ defmodule Delivest.Franchise.Settings do
       :loyalty_per_rubles,
       :loyalty_stars,
       :loyalty_expire_days,
-      :client_auth_required
+      :client_auth_required,
+      :marketing_push_limit_count,
+      :marketing_push_window_hours
     ]
   end
 

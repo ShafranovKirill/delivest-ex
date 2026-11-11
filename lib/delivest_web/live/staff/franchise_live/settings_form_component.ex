@@ -2,13 +2,21 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
   use DelivestWeb, :live_component
 
   alias Delivest.Franchise
+  alias Delivest.Features
   alias Delivest.Franchise.Rating
   alias Delivest.Identity
   alias DelivestWeb.Staff.FranchiseLive.FranchiseHelpers
 
   @impl true
   def update(assigns, socket) do
-    socket = assign(socket, assigns)
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(
+        marketing_push_available?:
+          Features.enabled?("marketing_policies", :franchise) and
+            Features.enabled?("notifications", :franchise)
+      )
 
     if socket.assigns[:form],
       do: {:ok, socket},
@@ -247,6 +255,34 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           :if={@section == :loyalty}
           class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
         >
+          <div
+            :if={@marketing_push_available?}
+            id="marketing-push-frequency"
+            class="space-y-3 border-b border-base-300 pb-5"
+          >
+            <h2 class="font-semibold">{gettext("Marketing Push messages")}</h2>
+            <p class="text-sm text-base-content/60">
+              {gettext(
+                "The limit applies to each customer across all branches. A Push with an unknown delivery result counts toward the limit. Rewards and messages on the site are unaffected."
+              )}
+            </p>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <.input
+                field={@form[:marketing_push_limit_count]}
+                type="number"
+                min="1"
+                max="100"
+                label={gettext("Maximum marketing push messages")}
+              />
+              <.input
+                field={@form[:marketing_push_window_hours]}
+                type="number"
+                min="1"
+                max="720"
+                label={gettext("Rolling window, hours")}
+              />
+            </div>
+          </div>
           <div class="grid sm:grid-cols-2 gap-4">
             <.input
               field={@form[:loyalty_per_rubles]}
