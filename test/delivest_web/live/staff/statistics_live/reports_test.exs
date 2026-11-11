@@ -78,13 +78,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
              Features.configure("analytics_franchise", {:branch, branch.id}, true, actor: "host")
 
     analyst_conn = login(conn, ["statistics.read"], branch)
-    {:ok, analyst, _} = live(analyst_conn, ~p"/staff/b/#{branch}/statistics?tab=franchise")
+    {:ok, analyst, _} = live(analyst_conn, ~p"/staff/statistics")
     refute has_element?(analyst, "#statistics-report")
 
     manager_conn = login(conn, ["statistics.read", "statistics.network"], branch)
 
     {:ok, manager, _} =
-      live(manager_conn, ~p"/staff/b/#{branch}/statistics?tab=franchise&period=today")
+      live(manager_conn, ~p"/staff/statistics?period=today")
 
     assert has_element?(manager, "#statistics-report")
     assert has_element?(manager, "#statistics-report-state")

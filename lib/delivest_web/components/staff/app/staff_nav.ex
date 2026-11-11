@@ -3,7 +3,7 @@ defmodule DelivestWeb.StaffNav do
 
   import Delivest.Identity.Acl
 
-  alias Delivest.{Features, Gateway, Segments}
+  alias Delivest.{Features, Gateway, Identity, Segments}
 
   def pages(staff, branch) do
     staff
@@ -18,6 +18,7 @@ defmodule DelivestWeb.StaffNav do
   def entries(staff, branch) do
     [
       section(:branch, branch && branch.name, branch_entries(staff, branch)),
+      section(:common, gettext("Common"), common_entries(staff)),
       section(:network, gettext("Network"), network_entries(staff))
     ]
     |> Enum.reject(&(&1.entries == []))
@@ -31,21 +32,6 @@ defmodule DelivestWeb.StaffNav do
         "hero-squares-2x2",
         gettext("Dashboard")
       ),
-      item(
-        :statistics,
-        branch && ~p"/staff/b/#{branch}/statistics",
-        "hero-chart-bar",
-        gettext("Statistics")
-      )
-      |> allowed(staff, "statistics.read"),
-      item(
-        :advertising_links,
-        branch && ~p"/staff/b/#{branch}/advertising-links",
-        "hero-link",
-        gettext("Advertising links")
-      )
-      |> allowed(staff, "statistics.read")
-      |> links_enabled(branch),
       group(:orders, "hero-shopping-bag", gettext("Orders"), [
         item(
           :orders_new,
@@ -135,41 +121,38 @@ defmodule DelivestWeb.StaffNav do
         )
         |> allowed(staff, "products.read")
       ]),
-      group(:marketing, "hero-megaphone", gettext("Marketing"), [
-        item(:stocks, branch && ~p"/staff/b/#{branch}/stocks", "hero-photo", gettext("Banners"))
-        |> allowed(staff, "stocks.read"),
-        item(
-          :promotions,
-          branch && ~p"/staff/b/#{branch}/promotions",
-          "hero-receipt-percent",
-          gettext("Discounts & promo codes")
-        )
-        |> allowed(staff, "promotions.read"),
-        item(
-          :loyalty,
-          branch && ~p"/staff/b/#{branch}/loyalty",
-          "hero-star",
-          gettext("Loyalty")
-        )
-        |> allowed(staff, "promotions.read")
-        |> owned(branch, :loyalty)
-      ]),
       item(
         :delivery,
         branch && ~p"/staff/b/#{branch}/delivery",
         "hero-truck",
         gettext("Delivery")
       )
-      |> allowed(staff, "delivery.read"),
-      item(
-        :integrations,
-        branch && ~p"/staff/b/#{branch}/integrations",
-        "hero-puzzle-piece",
-        gettext("Integrations")
-      )
+      |> allowed(staff, "delivery.read")
+    ]
+    |> compact_all()
+  end
+
+  defp common_entries(staff) do
+    [
+      item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
+      |> allowed(staff, "statistics.read"),
+      item(:marketing, ~p"/staff/marketing", "hero-megaphone", gettext("Marketing"))
+      |> covering([:stocks, :promotions, :loyalty, :advertising_links])
+      |> then(fn item -> if marketing_access?(staff), do: item end),
+      item(:integrations, ~p"/staff/integrations", "hero-puzzle-piece", gettext("Integrations"))
       |> allowed(staff, "integrations.read")
     ]
     |> compact_all()
+  end
+
+  defp marketing_access?(staff) do
+    (can?(staff, "marketing.read") and Features.enabled?("marketing_policies", :franchise)) or
+      can?(staff, "stocks.read") or can?(staff, "promotions.read") or
+      (can?(staff, "statistics.read") and
+         Enum.any?(
+           Identity.list_branch_for_staff(staff),
+           &Features.enabled?("analytics_links", {:branch, &1.id})
+         ))
   end
 
   defp network_entries(staff) do
@@ -183,11 +166,6 @@ defmodule DelivestWeb.StaffNav do
         |> allowed(staff, "segments.read")
         |> then(fn item -> if Segments.available?(staff), do: item end)
       ]),
-      item(:marketing, ~p"/staff/marketing", "hero-megaphone", "Маркетинг")
-      |> allowed(staff, "marketing.read")
-      |> then(fn item ->
-        if Delivest.Features.enabled?("marketing_policies", :franchise), do: item
-      end),
       group(:people, "hero-user-group", gettext("Team"), [
         item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
         |> allowed(staff, "staff.read"),
@@ -243,10 +221,4 @@ defmodule DelivestWeb.StaffNav do
   defp operating(item, branch), do: if(Delivest.Oms.Kitchen.working?(branch), do: item)
 
   defp allowed(item, staff, permission), do: if(can?(staff, permission), do: item)
-
-  defp links_enabled(nil, _branch), do: nil
-  defp links_enabled(_item, nil), do: nil
-
-  defp links_enabled(item, branch),
-    do: if(Features.enabled?("analytics_links", {:branch, branch.id}), do: item)
 end

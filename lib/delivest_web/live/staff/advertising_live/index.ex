@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.AdvertisingLive.Index do
+  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.Advertising.{Link, Links}
@@ -96,6 +97,12 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6">
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:links}
+      />
       <div>
         <h1 class="text-2xl sm:text-3xl font-display font-bold">{gettext("Advertising links")}</h1>
         <p class="text-sm text-base-content/60">{@current_branch.name}</p>
@@ -156,6 +163,15 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
           >
           </p>
           <div :if={is_nil(link.archived_at)} class="flex gap-2">
+            <.link
+              id={"advertising-statistics-#{link.id}"}
+              navigate={
+                ~p"/staff/b/#{@current_branch}/statistics?#{%{tab: "sources", link_id: link.id}}"
+              }
+              class="btn btn-sm btn-outline"
+            >
+              {gettext("View source statistics")}
+            </.link>
             <button
               id={"advertising-toggle-#{link.id}"}
               type="button"

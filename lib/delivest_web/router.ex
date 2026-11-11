@@ -378,10 +378,21 @@ defmodule DelivestWeb.Router do
       end
 
       scope "/marketing", MarketingLive do
-        live "/", Index, :index
+        live "/", Hub, :index
+        live "/policies", Index, :index
         live "/new", Index, :new
         live "/:id", Index, :show
         live "/:id/edit", Index, :edit
+      end
+
+      live "/statistics", StatisticsLive.Index, :index
+
+      scope "/integrations", IntegrationLive do
+        live "/", Index, :index
+        live "/zvonok", Zvonok, :index
+        live "/dadata", Dadata, :index
+        live "/yookassa", Yookassa, :index
+        live "/yandex-eda", YandexEdaShared, :index
       end
 
       scope "/logs", LogLive do

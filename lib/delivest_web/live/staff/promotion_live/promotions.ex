@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.PromotionLive.Promotions do
+  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Net, Promo}
@@ -170,6 +171,14 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   @impl true
   def render(assigns) do
     ~H"""
+    <div class="px-4 pt-4 sm:px-6">
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:promotions}
+      />
+    </div>
     <div
       :if={@promotion && @live_action in [:full, :first_order, :edit]}
       id="promotion-editor"

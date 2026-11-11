@@ -10832,3 +10832,63 @@ msgstr "Данные об источнике недоступны"
 
 msgid "These first-event labels are unverified observations, not confirmed advertising attribution."
 msgstr "Метки первого события — непроверенные наблюдения, а не подтверждённая рекламная атрибуция."
+
+msgid "Common"
+msgstr "Общие"
+
+msgid "Choose a marketing area and branch."
+msgstr "Выберите направление маркетинга и филиал."
+
+msgid "Rewards and customer segments across the franchise."
+msgstr "Вознаграждения и сегменты клиентов по всей сети."
+
+msgid "Segments"
+msgstr "Сегменты"
+
+msgid "Marketing areas"
+msgstr "Направления маркетинга"
+
+msgid "Statistics scope"
+msgstr "Область статистики"
+
+msgid "Choose a branch to view statistics."
+msgstr "Выберите филиал для просмотра статистики."
+
+msgid "Choose a branch for branch marketing settings."
+msgstr "Выберите филиал для настройки его маркетинга."
+
+msgid "View source statistics"
+msgstr "Статистика источника"
+
+msgid "Open audience segment"
+msgstr "Открыть сегмент аудитории"
+
+msgid "Branch settings"
+msgstr "Настройки филиала"
+
+msgid "Choose a branch to view and change its integrations."
+msgstr "Выберите филиал, чтобы просмотреть и изменить его интеграции."
+
+msgid "Yandex Eda access"
+msgstr "Доступ Яндекс Еды"
+
+msgid "Access credentials shared by every branch."
+msgstr "Данные доступа общие для всех филиалов."
+
+msgid "Access settings shared by every branch."
+msgstr "Настройки доступа общие для всех филиалов."
+
+msgid "Choose a branch to manage its Yandex Eda settings."
+msgstr "Выберите филиал для управления его настройками Яндекс Еды."
+
+msgid "Shared Yandex Eda access settings"
+msgstr "Общие настройки доступа Яндекс Еды"
+
+msgid "The shop keys are shared by every branch. Enable online payment separately in each branch's Finance → Payment settings."
+msgstr "Ключи магазина общие для всех филиалов. Включайте онлайн-оплату отдельно в настройках «Финансы → Оплата» каждого филиала."
+
+msgid "Finance → Payment · %{name}"
+msgstr "Финансы → Оплата · %{name}"
+
+msgid "Delivery city · %{name}"
+msgstr "Город доставки · %{name}"

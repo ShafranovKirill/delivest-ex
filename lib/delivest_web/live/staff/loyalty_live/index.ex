@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.LoyaltyLive.Index do
+  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Loyalty}
@@ -146,6 +147,12 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6 max-w-5xl">
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:loyalty}
+      />
       <.page_header
         title={gettext("Loyalty")}
         subtitle={gettext("Customers earn stars for completed orders.")}

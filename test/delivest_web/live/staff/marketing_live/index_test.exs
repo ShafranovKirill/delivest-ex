@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
 
   test "feature gate hides policy screen", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/staff/branches/select"}}} =
-             live(conn, ~p"/staff/marketing")
+             live(conn, ~p"/staff/marketing/policies")
   end
 
   test "wizard creates a draft with branch scope and async preview", ctx do
@@ -122,7 +122,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
     conn = init_test_session(ctx.conn, %{"locale" => "ru"})
 
-    {:ok, index, _} = live(conn, ~p"/staff/marketing")
+    {:ok, index, _} = live(conn, ~p"/staff/marketing/policies")
     assert has_element?(index, "h1", "Маркетинговые политики")
     assert has_element?(index, "a", "Новая политика")
 
@@ -134,7 +134,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
 
   test "global reward calculation is explicit and requires network permission", ctx do
     enable_marketing(ctx)
-    {:ok, ordinary, _} = live(ctx.conn, ~p"/staff/marketing")
+    {:ok, ordinary, _} = live(ctx.conn, ~p"/staff/marketing/policies")
     refute has_element?(ordinary, "#marketing-recalculate-now")
     render_hook(ordinary, "recalculate_marketing", %{})
     refute has_element?(ordinary, "#marketing-calculation-status")
@@ -152,7 +152,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     network_conn =
       init_test_session(ctx.conn, %{"staff_id" => network_staff.id, "locale" => "ru"})
 
-    {:ok, network, _} = live(network_conn, ~p"/staff/marketing")
+    {:ok, network, _} = live(network_conn, ~p"/staff/marketing/policies")
     assert has_element?(network, "#marketing-recalculate-now")
     assert has_element?(network, "#marketing-calculation-panel", "выдаст положенные награды")
     network |> element("#marketing-recalculate-now") |> render_click()
@@ -173,7 +173,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
 
     insert(:staff_branch, staff: network_staff, branch: ctx.branch)
     conn = init_test_session(ctx.conn, %{"staff_id" => network_staff.id})
-    {:ok, view, _} = live(conn, ~p"/staff/marketing")
+    {:ok, view, _} = live(conn, ~p"/staff/marketing/policies")
     assert has_element?(view, "#marketing-policies", "0 issues")
     view |> element("#marketing-recalculate-now") |> render_click()
 
@@ -843,7 +843,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
 
     view |> element("#marketing-delete") |> render_click()
     view |> element("#marketing-confirm-delete") |> render_click()
-    assert_redirect(view, ~p"/staff/marketing")
+    assert_redirect(view, ~p"/staff/marketing/policies")
     refute Repo.get(Delivest.Marketing.Policy, policy.id)
   end
 
@@ -865,9 +865,9 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
            )
 
     view |> element("#marketing-confirm-delete") |> render_click()
-    assert_redirect(view, ~p"/staff/marketing")
+    assert_redirect(view, ~p"/staff/marketing/policies")
 
-    {:ok, working, _} = live(ctx.conn, ~p"/staff/marketing")
+    {:ok, working, _} = live(ctx.conn, ~p"/staff/marketing/policies")
     refute has_element?(working, "a", "Started deletion")
     working |> element("#marketing-list-filter a", "Deleted policies") |> render_click()
     assert has_element?(working, "a", "Started deletion")
@@ -905,7 +905,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     {_staff, policy} = policy_fixture(ctx, "Russian policy")
     grant_delete(ctx.staff)
     conn = init_test_session(ctx.conn, %{"locale" => "ru"})
-    {:ok, index, _} = live(conn, ~p"/staff/marketing")
+    {:ok, index, _} = live(conn, ~p"/staff/marketing/policies")
     assert has_element?(index, "#marketing-list-filter", "Рабочий список")
     assert has_element?(index, "#marketing-list-filter", "Удалённые")
 

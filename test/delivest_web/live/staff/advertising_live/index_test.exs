@@ -31,6 +31,12 @@ defmodule DelivestWeb.Staff.AdvertisingLive.IndexTest do
     assert has_element?(view, "#advertising-links input[readonly]")
     [[id]] = Repo.query!("SELECT id::text FROM advertising_links").rows
     assert has_element?(view, "#advertising-copy-#{id}")
+
+    assert has_element?(
+             view,
+             "#advertising-statistics-#{id}[href*='tab=sources'][href*='link_id=#{id}']"
+           )
+
     view |> element("#advertising-archive-#{id}") |> render_click()
     assert has_element?(view, "#advertising-links .badge", "Archived")
   end

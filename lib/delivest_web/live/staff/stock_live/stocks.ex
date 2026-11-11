@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.StockLive.Stocks do
+  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Net}
@@ -197,6 +198,12 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:stocks}
+      />
       <.page_header
         title={gettext("Banners")}
         subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}

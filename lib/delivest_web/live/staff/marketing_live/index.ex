@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.MarketingLive.Index do
+  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Features, Identity, Marketing, Segments}
@@ -53,6 +54,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
        socket
        |> assign(
          page_title: gettext("Marketing policies"),
+         current_branch: socket.assigns[:current_branch],
          can_manage: Identity.can?(staff, "marketing.manage"),
          can_delete: Identity.can?(staff, "marketing.delete"),
          can_report: Identity.can?(staff, "marketing.reports"),
@@ -163,7 +165,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
              form: to_form(@defaults, as: :policy)
            )}
         else
-          {:noreply, push_navigate(socket, to: ~p"/staff/marketing")}
+          {:noreply, push_navigate(socket, to: ~p"/staff/marketing/policies")}
         end
 
       action when action in [:show, :edit] ->
@@ -246,7 +248,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             end
 
           _ ->
-            {:noreply, push_navigate(socket, to: ~p"/staff/marketing")}
+            {:noreply, push_navigate(socket, to: ~p"/staff/marketing/policies")}
         end
     end
   end
@@ -538,7 +540,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
            socket
            |> assign(pending_delete: nil)
            |> put_flash(:info, gettext("Policy deleted"))
-           |> push_navigate(to: ~p"/staff/marketing")}
+           |> push_navigate(to: ~p"/staff/marketing/policies")}
 
         {:error, :stale} ->
           socket = assign(socket, pending_delete: nil)
@@ -1153,6 +1155,12 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:policies}
+      />
       <header class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p class="text-sm uppercase tracking-wide text-base-content/60">{gettext("Customers")}</p>
@@ -1190,11 +1198,11 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
       <div :if={@live_action == :index} id="marketing-list-filter" class="flex flex-wrap gap-2">
         <.link
-          patch={~p"/staff/marketing"}
+          patch={~p"/staff/marketing/policies"}
           class={["btn btn-sm", if(@deleted_filter, do: "btn-outline", else: "btn-primary")]}
         >{gettext("Working list")}</.link>
         <.link
-          patch={~p"/staff/marketing?deleted=1"}
+          patch={~p"/staff/marketing/policies?deleted=1"}
           class={["btn btn-sm", if(@deleted_filter, do: "btn-primary", else: "btn-outline")]}
         >{gettext("Deleted policies")}</.link>
       </div>
@@ -1305,6 +1313,13 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             label={gettext("Audience segment")}
             options={[{gettext("Select a segment"), ""} | Enum.map(@segments, &{&1.name, &1.id})]}
           />
+          <.link
+            :if={@draft["segment_id"] != "" and Identity.can?(@current_staff, "segments.read")}
+            navigate={~p"/staff/segments/#{@draft["segment_id"]}"}
+            class="link link-primary"
+          >
+            {gettext("Open audience segment")}
+          </.link>
           <button
             :if={@segment_after}
             type="button"
@@ -1627,7 +1642,16 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
       </section>
 
       <section :if={@live_action == :show and @policy} id="marketing-policy-detail" class="space-y-4">
-        <.link navigate={~p"/staff/marketing"} class="text-sm text-primary">{gettext("← All policies")}</.link>
+        <.link
+          :if={@policy.segment_id && Identity.can?(@current_staff, "segments.read")}
+          navigate={~p"/staff/segments/#{@policy.segment_id}"}
+          class="text-sm text-primary"
+        >
+          {gettext("Open audience segment")}
+        </.link>
+        <.link navigate={~p"/staff/marketing/policies"} class="text-sm text-primary">{gettext(
+          "← All policies"
+        )}</.link>
         <div class="rounded-2xl border border-base-300 bg-base-100 text-base-content p-6 shadow-sm">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>

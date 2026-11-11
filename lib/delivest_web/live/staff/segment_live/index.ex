@@ -973,7 +973,14 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
               Изменение затронет действующие политики. Новые условия применятся к будущим проверкам; прошлые выдачи сохранятся.
             </p>
             <ul class="mt-2 list-disc pl-5">
-              <li :for={policy <- @policy_impact.policies}>{policy.name}</li>
+              <li :for={policy <- @policy_impact.policies}>
+                <.link
+                  :if={Identity.can?(@current_staff, "marketing.read")}
+                  navigate={~p"/staff/marketing/#{policy.id}"}
+                  class="link link-primary"
+                >{policy.name}</.link>
+                <span :if={not Identity.can?(@current_staff, "marketing.read")}>{policy.name}</span>
+              </li>
             </ul>
             <p class="mt-2 font-medium">
               Нажмите «Подтвердить и сохранить», чтобы применить изменение.
@@ -1169,7 +1176,14 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           >
             <p>Изменение состава затронет политики. Прошлые выдачи сохранятся:</p>
             <ul class="list-disc pl-5">
-              <li :for={policy <- @policy_impact.policies}>{policy.name}</li>
+              <li :for={policy <- @policy_impact.policies}>
+                <.link
+                  :if={Identity.can?(@current_staff, "marketing.read")}
+                  navigate={~p"/staff/marketing/#{policy.id}"}
+                  class="link link-primary"
+                >{policy.name}</.link>
+                <span :if={not Identity.can?(@current_staff, "marketing.read")}>{policy.name}</span>
+              </li>
             </ul>
             <button
               id="segment-confirm-member"
