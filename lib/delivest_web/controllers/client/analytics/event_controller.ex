@@ -3,12 +3,10 @@ defmodule DelivestWeb.Client.Analytics.EventController do
   use OpenApiSpex.ControllerSpecs
 
   alias Delivest.Funnel
-  alias DelivestWeb.{Endpoint, Helpers.ApiError, Helpers.CookieHelper}
+  alias DelivestWeb.AnalyticsIdentity
+  alias DelivestWeb.Helpers.ApiError
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias DelivestWeb.Schemas.FunnelSchemas.{EventRequest, EventResponse}
-
-  @cookie "analytics_owner"
-  @salt "funnel_guest_owner_v1"
 
   operation(:create,
     summary: "Записать событие воронки",
@@ -25,11 +23,12 @@ defmodule DelivestWeb.Client.Analytics.EventController do
   )
 
   def create(conn, params) do
-    {owner, cookie} = owner(conn)
+    {owner, guest_id} = AnalyticsIdentity.owner(conn)
 
     case Funnel.capture(params, owner) do
       {:ok, data} ->
-        conn = if cookie, do: CookieHelper.put_cookie(conn, @cookie, cookie), else: conn
+        conn = if guest_id, do: AnalyticsIdentity.put_guest_cookie(conn, guest_id), else: conn
+
         conn |> put_status(:accepted) |> json(%{data: data})
 
       {:error, :disabled} ->
@@ -38,31 +37,5 @@ defmodule DelivestWeb.Client.Analytics.EventController do
       {:error, :invalid_payload} ->
         ApiError.send_error(conn, :unprocessable_entity, :invalid_event, "Invalid event")
     end
-  end
-
-  defp owner(%{assigns: %{current_client: %{id: id}}}), do: {"client:" <> id, nil}
-
-  defp owner(conn) do
-    case CookieHelper.get_cookie(conn, @cookie) do
-      token when is_binary(token) ->
-        case Phoenix.Token.verify(Endpoint, @salt, token, max_age: 30 * 86_400) do
-          {:ok, id} ->
-            case Ecto.UUID.cast(id) do
-              {:ok, canonical} -> {"guest:" <> canonical, nil}
-              :error -> new_guest()
-            end
-
-          _ ->
-            new_guest()
-        end
-
-      _ ->
-        new_guest()
-    end
-  end
-
-  defp new_guest do
-    id = Ecto.UUID.generate()
-    {"guest:" <> id, Phoenix.Token.sign(Endpoint, @salt, id)}
   end
 end

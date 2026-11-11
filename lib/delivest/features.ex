@@ -73,51 +73,67 @@ defmodule Delivest.Features do
   @doc "Publish under the union of feature dependencies, locking each gate once in canonical order."
   def with_enabled_many(requests, fun)
       when is_list(requests) and requests != [] and is_function(fun, 0) do
-    prepared =
-      Enum.reduce_while(requests, {:ok, []}, fn {feature, scope, token}, {:ok, acc} ->
-        with true <- Registry.known?(feature),
-             {:ok, key} <- scope_key(scope),
-             :ok <- valid_branch(scope),
-             %{franchise: franchise} <- token,
-             true <- is_integer(franchise) do
-          {:cont, {:ok, [{feature, key, token} | acc]}}
-        else
-          _ -> {:halt, {:error, :disabled}}
-        end
-      end)
-
-    with {:ok, entries} <- prepared do
-      Repo.transaction(fn ->
-        gate_keys =
-          entries
-          |> Enum.flat_map(fn {feature, key, _} ->
-            for name <- closure(feature),
-                scope_key <- Enum.uniq(["franchise", key]),
-                do: {name, scope_key}
-          end)
-          |> Enum.uniq()
-          |> Enum.sort()
-
-        gates = lock_keys(gate_keys)
-
-        valid =
-          Enum.all?(entries, fn {feature, key, token} ->
-            parent = gates[{feature, "franchise"}]
-            child = gates[{feature, key}]
-
-            ((Enum.all?(closure(feature), &enabled_in?(&1, key, gates)) and
-                parent) && parent.generation == token.franchise) and
-              (key == "franchise" or (child && child.generation == token.branch))
-          end)
-
-        if valid, do: fun.(), else: Repo.rollback(:disabled)
-      end)
-    else
-      _ -> {:error, :disabled}
-    end
+    Repo.transaction(fn ->
+      case validate_and_publish(requests, fun) do
+        {:ok, value} -> value
+        {:error, :disabled} -> Repo.rollback(:disabled)
+      end
+    end)
   end
 
   def with_enabled_many(_, _), do: {:error, :disabled}
+
+  @doc "Publish inside an existing transaction without rolling it back when a gate changed."
+  def publish_if_enabled(requests, fun)
+      when is_list(requests) and requests != [] and is_function(fun, 0) do
+    if Repo.in_transaction?(),
+      do: validate_and_publish(requests, fun),
+      else: {:error, :not_in_transaction}
+  end
+
+  def publish_if_enabled(_, _), do: {:error, :disabled}
+
+  defp validate_and_publish(requests, fun) do
+    with {:ok, entries} <- prepare_publication(requests) do
+      gate_keys =
+        entries
+        |> Enum.flat_map(fn {feature, key, _} ->
+          for name <- closure(feature),
+              scope_key <- Enum.uniq(["franchise", key]),
+              do: {name, scope_key}
+        end)
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      gates = lock_keys(gate_keys, :share)
+
+      valid =
+        Enum.all?(entries, fn {feature, key, token} ->
+          parent = gates[{feature, "franchise"}]
+          child = gates[{feature, key}]
+
+          ((Enum.all?(closure(feature), &enabled_in?(&1, key, gates)) and parent) &&
+             parent.generation == token.franchise) and
+            (key == "franchise" or (child && child.generation == token.branch))
+        end)
+
+      if valid, do: {:ok, fun.()}, else: {:error, :disabled}
+    end
+  end
+
+  defp prepare_publication(requests) do
+    Enum.reduce_while(requests, {:ok, []}, fn {feature, scope, token}, {:ok, acc} ->
+      with true <- Registry.known?(feature),
+           {:ok, key} <- scope_key(scope),
+           :ok <- valid_branch(scope),
+           %{franchise: franchise} <- token,
+           true <- is_integer(franchise) do
+        {:cont, {:ok, [{feature, key, token} | acc]}}
+      else
+        _ -> {:halt, {:error, :disabled}}
+      end
+    end)
+  end
 
   @doc "Host-only mutation. Dependencies enable together; disabling requires a matching dependent preview."
   def configure(feature, scope, enabled, opts) when is_boolean(enabled) and is_list(opts) do
@@ -260,23 +276,27 @@ defmodule Delivest.Features do
   defp lock_existing(names, key) do
     # Lock acquisition order must not depend on the query planner's row order.
     keys = for name <- names, scope_key <- Enum.uniq(["franchise", key]), do: {name, scope_key}
-    lock_keys(keys |> Enum.uniq() |> Enum.sort())
+    lock_keys(keys |> Enum.uniq() |> Enum.sort(), :update)
   end
 
-  defp lock_keys(keys) do
+  defp lock_keys(keys, mode) do
     for(
       {name, scope_key} <- keys,
       gate =
-        Repo.one(
-          from g in Gate,
-            where: g.feature == ^name and g.scope_key == ^scope_key,
-            lock: "FOR UPDATE"
-        ),
+        Repo.one(gate_lock_query(name, scope_key, mode)),
       gate != nil,
       do: gate
     )
     |> Map.new(&{{&1.feature, &1.scope_key}, &1})
   end
+
+  defp gate_lock_query(name, scope_key, :share),
+    do:
+      from(g in Gate, where: g.feature == ^name and g.scope_key == ^scope_key, lock: "FOR SHARE")
+
+  defp gate_lock_query(name, scope_key, :update),
+    do:
+      from(g in Gate, where: g.feature == ^name and g.scope_key == ^scope_key, lock: "FOR UPDATE")
 
   defp read_gates(names, key) do
     keys = Enum.uniq(["franchise", key])

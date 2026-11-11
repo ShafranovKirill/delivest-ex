@@ -3,7 +3,7 @@ defmodule DelivestWeb.StaffNav do
 
   import Delivest.Identity.Acl
 
-  alias Delivest.{Gateway, Segments}
+  alias Delivest.{Features, Gateway, Segments}
 
   def pages(staff, branch) do
     staff
@@ -38,6 +38,14 @@ defmodule DelivestWeb.StaffNav do
         gettext("Statistics")
       )
       |> allowed(staff, "statistics.read"),
+      item(
+        :advertising_links,
+        branch && ~p"/staff/b/#{branch}/advertising-links",
+        "hero-link",
+        gettext("Advertising links")
+      )
+      |> allowed(staff, "statistics.read")
+      |> links_enabled(branch),
       group(:orders, "hero-shopping-bag", gettext("Orders"), [
         item(
           :orders_new,
@@ -235,4 +243,10 @@ defmodule DelivestWeb.StaffNav do
   defp operating(item, branch), do: if(Delivest.Oms.Kitchen.working?(branch), do: item)
 
   defp allowed(item, staff, permission), do: if(can?(staff, permission), do: item)
+
+  defp links_enabled(nil, _branch), do: nil
+  defp links_enabled(_item, nil), do: nil
+
+  defp links_enabled(item, branch),
+    do: if(Features.enabled?("analytics_links", {:branch, branch.id}), do: item)
 end

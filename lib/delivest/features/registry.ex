@@ -1,6 +1,12 @@
 defmodule Delivest.Features.Registry do
   @moduledoc "Allowlisted host-managed feature keys, independent of background jobs."
-  @features ["segments", "notifications", "marketing_policies", "analytics_funnel"]
+  @features [
+    "segments",
+    "notifications",
+    "marketing_policies",
+    "analytics_funnel",
+    "analytics_links"
+  ]
 
   @dependencies %{"marketing_policies" => ["segments", "notifications"]}
   @permission_prefixes %{"segments." => "segments", "marketing." => "marketing_policies"}

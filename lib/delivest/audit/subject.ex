@@ -1,4 +1,5 @@
 defmodule Delivest.Audit.Subject do
+  alias Delivest.Advertising.Link
   alias Delivest.Identity.{Branch, Client, Role, Staff}
   alias Delivest.Net.{Category, Product, ProductTag, Stock}
   alias Delivest.Oms.Order
@@ -10,6 +11,7 @@ defmodule Delivest.Audit.Subject do
     do: build("order", order.id, "#" <> to_string(order.number), order.branch_id)
 
   def describe(%Product{} = product), do: build("product", product.id, product.name)
+  def describe(%Link{} = link), do: build("advertising_link", link.id, link.name, link.branch_id)
   def describe(%Category{} = category), do: build("category", category.id, category.name)
   def describe(%ProductTag{} = tag), do: build("product_tag", tag.id, tag.name)
   def describe(%Stock{} = stock), do: build("stock", stock.id, stock.text)

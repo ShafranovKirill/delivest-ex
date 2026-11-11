@@ -9,7 +9,7 @@ defmodule Delivest.Oms.Checkout do
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
                     payment_method cook_by comment persons cash_given address expected_total spend_points cart_revision)
 
-  def create(params, client, session_id, key) do
+  def create(params, client, session_id, key, analytics_guest_id \\ nil) do
     request_attrs = Map.take(params, @public_fields)
 
     attrs =
@@ -17,14 +17,15 @@ defmodule Delivest.Oms.Checkout do
       |> Map.put("session_id", session_id)
       |> put_client(client)
 
-    with {:ok, order, replay?} <- create_order(attrs, request_attrs, client, session_id, key),
+    with {:ok, order, replay?} <-
+           create_order(attrs, request_attrs, client, session_id, key, analytics_guest_id),
          {:ok, confirmation_url} <- begin_payment(order, not is_nil(key)) do
       unless replay?, do: remember_address(client, order)
       {:ok, order, confirmation_url}
     end
   end
 
-  defp create_order(attrs, request_attrs, client, session_id, key) do
+  defp create_order(attrs, request_attrs, client, session_id, key, analytics_guest_id) do
     opts = [
       update_client: false,
       guest_session_access: is_nil(client),
@@ -32,6 +33,7 @@ defmodule Delivest.Oms.Checkout do
       public_session_id: session_id,
       public_guest: is_nil(client),
       authenticated_client_id: client && client.id,
+      analytics_guest_id: analytics_guest_id,
       cart_revision: attrs["cart_revision"]
     ]
 

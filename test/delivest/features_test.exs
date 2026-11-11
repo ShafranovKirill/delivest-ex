@@ -129,6 +129,84 @@ defmodule Delivest.FeaturesTest do
              end)
   end
 
+  test "in-transaction publication rejects a stale gate without rolling back core work" do
+    branch = insert(:branch)
+    {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "host")
+    {:ok, _} = Features.configure("analytics_links", {:branch, branch.id}, true, actor: "host")
+    {:ok, token} = Features.snapshot("analytics_links", {:branch, branch.id})
+    {:ok, _} = Features.configure("analytics_links", {:branch, branch.id}, false, actor: "host")
+
+    assert {:ok, id} =
+             Repo.transaction(fn ->
+               client = insert(:client)
+
+               assert {:error, :disabled} =
+                        Features.publish_if_enabled(
+                          [{"analytics_links", {:branch, branch.id}, token}],
+                          fn ->
+                            flunk("stale publication")
+                          end
+                        )
+
+               client.id
+             end)
+
+    assert Repo.get(Delivest.Identity.Client, id)
+  end
+
+  test "independent publishers share gate locks while disable waits" do
+    unboxed(fn ->
+      {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "race")
+    end)
+
+    token =
+      unboxed(fn ->
+        {:ok, token} = Features.snapshot("analytics_links", :franchise)
+        token
+      end)
+
+    parent = self()
+
+    publishers =
+      for _ <- 1..2 do
+        Task.async(fn ->
+          unboxed(fn ->
+            Repo.transaction(fn ->
+              Features.publish_if_enabled([{"analytics_links", :franchise, token}], fn ->
+                send(parent, {:publisher_locked, self()})
+
+                receive do
+                  :release -> :ok
+                after
+                  5_000 -> raise "publication barrier timed out"
+                end
+              end)
+            end)
+          end)
+        end)
+      end
+
+    assert_receive {:publisher_locked, first}
+    assert_receive {:publisher_locked, second}
+    refute first == second
+
+    revoker =
+      Task.async(fn ->
+        unboxed(fn ->
+          result = Features.configure("analytics_links", :franchise, false, actor: "race")
+          send(parent, :revocation_done)
+          result
+        end)
+      end)
+
+    refute_receive :revocation_done, 100
+    send(first, :release)
+    send(second, :release)
+    for task <- publishers, do: assert({:ok, {:ok, :ok}} = Task.await(task, 5_000))
+    assert {:ok, _} = Task.await(revoker, 5_000)
+    assert_receive :revocation_done
+  end
+
   test "marketing enables dependency closure and dependent disable needs a current preview" do
     branch = insert(:branch)
     assert {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "host")

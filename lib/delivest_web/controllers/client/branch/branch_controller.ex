@@ -28,11 +28,13 @@ defmodule DelivestWeb.Client.Branch.BranchController do
     branches = Identity.list_branches(preload: [:info])
     capabilities = Features.enabled_branches("notifications", Enum.map(branches, & &1.id))
     analytics = Features.enabled_branches("analytics_funnel", Enum.map(branches, & &1.id))
+    links = Features.enabled_branches("analytics_links", Enum.map(branches, & &1.id))
 
     render(conn, :index,
       branches: branches,
       notification_capabilities: capabilities,
-      analytics_capabilities: analytics
+      analytics_capabilities: analytics,
+      links_capabilities: links
     )
   rescue
     _ ->
@@ -75,7 +77,8 @@ defmodule DelivestWeb.Client.Branch.BranchController do
         |> render(:show,
           branch: branch,
           notification_capabilities: Features.enabled_branches("notifications", [branch.id]),
-          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id])
+          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id]),
+          links_capabilities: Features.enabled_branches("analytics_links", [branch.id])
         )
 
       _inactive_or_missing ->
@@ -126,7 +129,8 @@ defmodule DelivestWeb.Client.Branch.BranchController do
         |> render(:show,
           branch: branch,
           notification_capabilities: Features.enabled_branches("notifications", [branch.id]),
-          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id])
+          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id]),
+          links_capabilities: Features.enabled_branches("analytics_links", [branch.id])
         )
 
       _inactive_or_missing ->

@@ -2,26 +2,28 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
   def index(%{
         branches: branches,
         notification_capabilities: capabilities,
-        analytics_capabilities: analytics
+        analytics_capabilities: analytics,
+        links_capabilities: links
       }) do
-    %{data: for(branch <- branches, do: branch_data(branch, capabilities, analytics))}
+    %{data: for(branch <- branches, do: branch_data(branch, capabilities, analytics, links))}
   end
 
   def show(%{
         branch: branch,
         notification_capabilities: capabilities,
-        analytics_capabilities: analytics
+        analytics_capabilities: analytics,
+        links_capabilities: links
       }) do
-    %{data: branch_data(branch, capabilities, analytics)}
+    %{data: branch_data(branch, capabilities, analytics, links)}
   end
 
-  defp branch_data(branch, capabilities, analytics) do
+  defp branch_data(branch, capabilities, analytics, links) do
     %{
       id: branch.id,
       name: branch.name,
       slug: branch.slug,
       is_active: branch.is_active,
-      branch_info: branch_info(branch.info, branch, capabilities, analytics)
+      branch_info: branch_info(branch.info, branch, capabilities, analytics, links)
     }
   end
 
@@ -74,10 +76,12 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       max_percent: nil
     }
 
-  defp branch_info(%Ecto.Association.NotLoaded{}, _branch, _capabilities, _analytics), do: nil
-  defp branch_info(nil, _branch, _capabilities, _analytics), do: nil
+  defp branch_info(%Ecto.Association.NotLoaded{}, _branch, _capabilities, _analytics, _links),
+    do: nil
 
-  defp branch_info(info, branch, capabilities, analytics) do
+  defp branch_info(nil, _branch, _capabilities, _analytics, _links), do: nil
+
+  defp branch_info(info, branch, capabilities, analytics, links) do
     %{
       id: info.id,
       address: info.address,
@@ -94,6 +98,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       loyalty: loyalty(info, branch),
       notifications_enabled: MapSet.member?(capabilities, branch.id),
       analytics_funnel_enabled: MapSet.member?(analytics, branch.id),
+      analytics_links_enabled: MapSet.member?(links, branch.id),
       working_hours: info.working_hours || %{},
       special_hours: info.special_hours || %{},
       vk_url: info.vk_url,

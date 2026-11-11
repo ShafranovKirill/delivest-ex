@@ -10063,3 +10063,58 @@ msgstr "Search groups by name"
 #, elixir-autogen, elixir-format
 msgid "No groups excluded"
 msgstr "No groups excluded"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Advertising links"
+msgstr "Advertising links"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Advertising links are unavailable"
+msgstr "Advertising links are unavailable"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not update advertising link"
+msgstr "Could not update advertising link"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Campaign slug"
+msgstr "Campaign slug"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Link name"
+msgstr "Link name"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Archived"
+msgstr "Archived"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Advertising URL"
+msgstr "Advertising URL"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Disable"
+msgstr "Disable"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Enable"
+msgstr "Enable"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Archive"
+msgstr "Archive"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Archive this link?"
+msgstr "Archive this link?"
