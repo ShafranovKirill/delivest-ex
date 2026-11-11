@@ -9,6 +9,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     BranchSettings,
     Catalog,
     CatalogSnapshot,
+    FrontpadStopRefresh,
     StopSync
   }
 
@@ -21,6 +22,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   @impl true
   def mount(_params, _session, socket) do
+    branch_id = socket.assigns.current_branch.id
+
+    if connected?(socket),
+      do: Phoenix.PubSub.subscribe(Delivest.PubSub, FrontpadStopRefresh.topic(branch_id))
+
     {:ok,
      socket
      |> assign(
@@ -30,12 +36,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
        accepting_price: nil,
        query: "",
        refresh_timer: nil,
-       stop_sync: StopSync.last(socket.assigns.current_branch.id)
+       stop_refresh_timer: nil,
+       stop_refresh: FrontpadStopRefresh.state(branch_id),
+       stop_sync: stop_result(branch_id)
      )
      |> load_settings()
      |> load_catalog()
      |> assign_context()
-     |> then(&assign(&1, tab: if(api_key?(&1.assigns.crm), do: :check, else: :settings)))}
+     |> then(&assign(&1, tab: if(api_key?(&1.assigns.crm), do: :check, else: :settings)))
+     |> track_stop_refresh()}
   end
 
   @impl true
@@ -83,14 +92,23 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   end
 
   def handle_event("sync_stops", _params, socket) do
-    case StopSync.sync(socket.assigns.current_staff, socket.assigns.current_branch.id) do
+    case FrontpadStopRefresh.request(
+           socket.assigns.current_staff,
+           socket.assigns.current_branch.id
+         ) do
       {:ok, :disabled} ->
         {:noreply,
          socket |> assign(stop_sync: nil) |> put_flash(:info, gettext("Stop list sync is off"))}
 
-      {:ok, result} ->
+      {:ok, :throttled} ->
         {:noreply,
-         socket |> assign(stop_sync: result) |> put_flash(:info, gettext("Stop list updated"))}
+         put_flash(socket, :info, "Повторное обновление пока недоступно, подождите минуту")}
+
+      {:ok, _status} ->
+        {:noreply,
+         socket
+         |> assign(stop_refresh: FrontpadStopRefresh.state(socket.assigns.current_branch.id))
+         |> track_stop_refresh()}
 
       {:error, reason} ->
         {:noreply,
@@ -146,7 +164,80 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   def handle_info(:refresh_available, socket),
     do: {:noreply, socket |> assign(refresh_timer: nil) |> assign_available_at()}
 
+  def handle_info(:stop_refresh_tick, socket) do
+    state = FrontpadStopRefresh.state(socket.assigns.current_branch.id)
+
+    {:noreply,
+     socket
+     |> assign(stop_refresh_timer: nil)
+     |> apply_stop_refresh(state)
+     |> track_stop_refresh()}
+  end
+
+  def handle_info({:frontpad_stop_refresh, state}, socket) do
+    if state.branch_id == socket.assigns.current_branch.id do
+      {:noreply, socket |> apply_stop_refresh(state) |> track_stop_refresh()}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp apply_stop_refresh(socket, nil) do
+    assign(socket,
+      stop_refresh: nil,
+      stop_sync: StopSync.last(socket.assigns.current_branch.id)
+    )
+  end
+
+  defp apply_stop_refresh(socket, state) do
+    previous_status = socket.assigns.stop_refresh && socket.assigns.stop_refresh.status
+
+    socket =
+      socket
+      |> assign(stop_refresh: state, stop_sync: stop_result(state.branch_id))
+
+    if previous_status != state.status do
+      case state.status do
+        "success" -> put_flash(socket, :info, gettext("Stop list updated"))
+        "failed" -> put_flash(socket, :error, "Не удалось обновить стоп-лист Frontpad")
+        _ -> socket
+      end
+    else
+      socket
+    end
+  end
+
+  defp track_stop_refresh(socket) do
+    pending? =
+      !!(socket.assigns.stop_refresh &&
+           socket.assigns.stop_refresh.status in ~w(queued running retrying))
+
+    timer = socket.assigns.stop_refresh_timer
+
+    cond do
+      connected?(socket) and pending? and is_nil(timer) ->
+        assign(socket, stop_refresh_timer: Process.send_after(self(), :stop_refresh_tick, 5_000))
+
+      not pending? and timer ->
+        Process.cancel_timer(timer)
+        assign(socket, stop_refresh_timer: nil)
+
+      true ->
+        socket
+    end
+  end
+
+  defp stop_result(branch_id) do
+    case FrontpadStopRefresh.state(branch_id) do
+      %{last_success_at: %DateTime{} = at} = state ->
+        %{synced_at: at, stopped: state.last_good_count, unlinked: state.last_good_unlinked || []}
+
+      _ ->
+        StopSync.last(branch_id)
+    end
+  end
 
   @impl true
   def handle_async({:accept_price, id}, result, socket) do
@@ -433,6 +524,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
       <.stop_sync_panel
         :if={@tab == :settings and @crm.frontpad.sync_stops}
         result={@stop_sync}
+        state={@stop_refresh}
         can_edit={@can_edit_branch}
       />
 
@@ -748,6 +840,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   end
 
   attr :result, :map, default: nil
+  attr :state, :any, default: nil
   attr :can_edit, :boolean, required: true
 
   defp stop_sync_panel(assigns) do
@@ -766,6 +859,23 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             <p :if={is_nil(@result)} class="text-sm text-base-content/60">
               {gettext("Not received yet")}
             </p>
+            <p
+              :if={@state && @state.status in ~w(queued running retrying)}
+              id="frontpad-stops-pending"
+              class="text-sm text-info"
+            >
+              Обновление стоп-листа выполняется
+            </p>
+            <p :if={@state && @state.status == "retrying"} class="text-sm text-warning">
+              Frontpad не ответил. Повторяем обновление; последний успешный результат сохранён.
+            </p>
+            <p
+              :if={@state && @state.status == "failed"}
+              id="frontpad-stops-error"
+              class="text-sm text-error"
+            >
+              Не удалось обновить стоп-лист Frontpad. Показан последний успешный результат.
+            </p>
           </div>
           <button
             :if={@can_edit}
@@ -773,6 +883,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             type="button"
             class="btn btn-sm"
             phx-click="sync_stops"
+            disabled={@state && @state.status in ~w(queued running retrying)}
             phx-disable-with={gettext("Loading...")}
           >
             <.icon name="hero-arrow-path" class="size-4" /> {gettext("Update now")}

@@ -5,9 +5,17 @@ defmodule Delivest.Maintenance.Registry do
 
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.Crm.FrontpadStopRefresh
   alias Delivest.Repo
 
   @global [
+    %{
+      key: "frontpad_stop_refresh",
+      worker: Delivest.Integrations.Crm.FrontpadStopRefresh.DailyAdapter,
+      scope: :branch,
+      hour: 6,
+      max_attempts: 3
+    },
     %{
       key: "cart_cleanup",
       worker: Delivest.Oms.Workers.CartCleanupWorker,
@@ -70,6 +78,9 @@ defmodule Delivest.Maintenance.Registry do
       select: {b.id, i.timezone}
     )
     |> Repo.all()
+    |> Enum.filter(fn {id, _timezone} ->
+      task.key != "frontpad_stop_refresh" or FrontpadStopRefresh.eligible?(id)
+    end)
     |> Enum.map(fn {id, timezone} ->
       {task, "branch", id, timezone || Delivest.LocalTime.timezone()}
     end)

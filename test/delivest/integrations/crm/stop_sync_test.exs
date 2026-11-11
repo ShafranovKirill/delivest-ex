@@ -1,10 +1,11 @@
 defmodule Delivest.Integrations.Crm.StopSyncTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.Crm.{BranchSettings, StopSync}
+  alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Frontpad
   alias Delivest.Net.Stops
 
@@ -105,5 +106,48 @@ defmodule Delivest.Integrations.Crm.StopSyncTest do
 
     assert {:error, :forbidden} = StopSync.sync(staff, other_branch.id)
     refute_received :stops_requested
+  end
+
+  test "a response arriving after Frontpad sync is disabled cannot restore old stops" do
+    {branch, _info} = branch(true)
+    product = insert_branch_product(branch.id, external_id: "101")
+    {:ok, _} = Stops.replace_external(branch.id, :frontpad, [product.id])
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      assert {:ok, _} =
+               Crm.update_branch_settings(staff, branch.id, %{
+                 "enabled" => true,
+                 "provider" => "frontpad",
+                 "frontpad" => %{"sync_stops" => false}
+               })
+
+      Req.Test.json(conn, stops(["101"]))
+    end)
+
+    assert {:ok, :disabled} = StopSync.sync(branch.id)
+    assert Stops.stopped_ids(branch.id) == MapSet.new()
+  end
+
+  test "a response from an old Frontpad key is discarded" do
+    {branch, _info} = branch(true)
+    insert_branch_product(branch.id, external_id: "101")
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      assert {:ok, _} =
+               Crm.update_branch_settings(staff, branch.id, %{
+                 "enabled" => true,
+                 "provider" => "frontpad",
+                 "frontpad" => %{"api_key" => "new-key", "sync_stops" => true}
+               })
+
+      Req.Test.json(conn, stops(["101"]))
+    end)
+
+    assert {:error, :settings_changed} = StopSync.sync(branch.id)
+    assert Stops.stopped_ids(branch.id) == MapSet.new()
   end
 end

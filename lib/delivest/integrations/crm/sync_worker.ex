@@ -7,7 +7,7 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
   require Logger
 
   alias Delivest.Integrations.{Crm, Health}
-  alias Delivest.Integrations.Crm.SyncState
+  alias Delivest.Integrations.Crm.{FrontpadStopRefresh, SyncState}
   alias Delivest.Oms.Orders
 
   @intervals [1, 1, 2, 3, 5, 8, 13]
@@ -44,6 +44,7 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
   end
 
   defp handle({:error, reason} = error, order, attempt, max_attempts) do
+    maybe_refresh_frontpad_stops(order, reason)
     message = inspect(reason)
 
     Logger.error(
@@ -77,6 +78,21 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
         error
     end
   end
+
+  defp maybe_refresh_frontpad_stops(
+         %{crm: %{provider: provider}, branch_id: branch_id},
+         {:frontpad, "invalid_product_keys"}
+       )
+       when provider in [:frontpad, "frontpad"] do
+    FrontpadStopRefresh.request_internal(branch_id, :product_rejected)
+  rescue
+    _error -> Logger.warning("Frontpad stop refresh dispatch failed")
+  catch
+    kind, _reason when kind in [:exit, :throw] ->
+      Logger.warning("Frontpad stop refresh dispatch failed")
+  end
+
+  defp maybe_refresh_frontpad_stops(_order, _reason), do: :ok
 
   defp report(order, result, attempt) do
     :telemetry.execute(

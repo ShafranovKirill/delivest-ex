@@ -36,6 +36,21 @@ defmodule Delivest.Integrations.Crm.StopSync do
 
   def last(branch_id), do: Cachex.get!(@cache, {:stops, branch_id})
 
+  @doc "Remove only Frontpad stops when its synchronization is switched off."
+  def clear_frontpad(branch_id) do
+    with {:ok, _changed?} <- Stops.replace_external(branch_id, :frontpad, []) do
+      forget_frontpad(branch_id)
+      :ok
+    end
+  end
+
+  defp forget_frontpad(branch_id) do
+    Cachex.del(@cache, {:stops, branch_id})
+    :ok
+  catch
+    :exit, _reason -> :ok
+  end
+
   defp source(crm) do
     with provider when not is_nil(provider) <- BranchSettings.active_provider(crm),
          {:ok, module} <- Registry.fetch(provider),
@@ -49,7 +64,8 @@ defmodule Delivest.Integrations.Crm.StopSync do
   end
 
   defp fetch(branch_id, provider, module, settings) do
-    with {:ok, external_ids} <- module.fetch_stops(settings) do
+    with {:ok, external_ids} <- module.fetch_stops(settings),
+         :ok <- current_source(branch_id, provider, settings) do
       index = ProductCrmIds.by_external_id(branch_id, provider)
       {linked, unlinked} = Enum.split_with(external_ids, &Map.has_key?(index, &1))
       {:ok, _changed?} = Stops.replace_external(branch_id, provider, Enum.map(linked, &index[&1]))
@@ -62,6 +78,24 @@ defmodule Delivest.Integrations.Crm.StopSync do
       })
     end
   end
+
+  defp current_source(branch_id, :frontpad, settings) do
+    current = Crm.get_branch_settings(branch_id)
+
+    cond do
+      BranchSettings.active_provider(current) != :frontpad or
+          not Delivest.Integrations.Frontpad.stops_enabled?(current.frontpad) ->
+        with :ok <- clear_frontpad(branch_id), do: {:ok, :disabled}
+
+      current.frontpad != settings ->
+        {:error, :settings_changed}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp current_source(_branch_id, _provider, _settings), do: :ok
 
   defp clear(branch_id) do
     Enum.each(Registry.keys(), &Stops.replace_external(branch_id, &1, []))
