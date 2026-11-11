@@ -116,6 +116,10 @@ defmodule Delivest.Segments do
   def available?(_), do: false
 
   def list(%Staff{} = staff, opts \\ []) do
+    with {:ok, page} <- list_page(staff, opts), do: {:ok, page.entries}
+  end
+
+  def list_page(%Staff{} = staff, opts \\ []) do
     with :ok <- authorize(staff, "segments.read"),
          true <- available?(staff),
          {:ok, after_id} <- cursor(Keyword.get(opts, :after)),
@@ -138,19 +142,23 @@ defmodule Delivest.Segments do
           where: sb.branch_id not in ^allowed_raw or is_nil(g.feature) or g.enabled == false,
           select: 1
 
-      Segment
-      |> from(as: :segment)
-      |> preload(:branches)
-      |> where([s], s.id > ^after_id)
-      |> where(
-        [s],
-        (s.scope == :franchise and ^Identity.can?(staff, "segments.network")) or
-          (s.scope == :branches and exists(branch_links) and not exists(hidden_links))
-      )
-      |> order_by([s], asc: s.id)
-      |> limit(^limit)
-      |> Repo.all()
-      |> then(&{:ok, &1})
+      entries =
+        Segment
+        |> from(as: :segment)
+        |> preload(:branches)
+        |> where([s], s.id > ^after_id)
+        |> where(
+          [s],
+          (s.scope == :franchise and ^Identity.can?(staff, "segments.network")) or
+            (s.scope == :branches and exists(branch_links) and not exists(hidden_links))
+        )
+        |> order_by([s], asc: s.id)
+        |> limit(^(limit + 1))
+        |> Repo.all()
+
+      {page, overflow} = Enum.split(entries, limit)
+      next_cursor = if overflow == [], do: nil, else: List.last(page).id
+      {:ok, %{entries: page, next_cursor: next_cursor}}
     else
       false -> {:error, :disabled}
       error -> error

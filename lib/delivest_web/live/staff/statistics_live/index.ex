@@ -280,9 +280,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "sort" => to_string(assigns.sort),
         "channel" => assigns.report_filters["channel"],
         "branch_id" => assigns.report_filters["branch_id"],
+        "branch_ids" => assigns.report_filters["branch_ids"],
         "link_id" => assigns.report_filters["link_id"],
-        "link_search" => assigns.report_filters["link_search"],
-        "page" => assigns.report_filters["page"]
+        "link_search" => assigns.report_filters["link_search"]
       }
       |> compact_query()
       |> then(fn q ->

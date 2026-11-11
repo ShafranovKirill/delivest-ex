@@ -77,14 +77,14 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
     case socket.assigns.live_action do
       :index ->
-        case Segments.list(staff, after: params["after"]) do
-          {:ok, groups} ->
+        case Segments.list_page(staff, after: params["after"]) do
+          {:ok, %{entries: groups, next_cursor: next_cursor}} ->
             {:noreply,
              socket
              |> assign(
                group: nil,
                after_id: params["after"],
-               last_group_id: List.last(groups) && List.last(groups).id
+               last_group_id: next_cursor
              )
              |> stream(:groups, groups, reset: true)}
 

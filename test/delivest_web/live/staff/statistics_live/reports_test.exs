@@ -180,6 +180,105 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     refute has_element?(view, ~s{input[name="link_id"]})
   end
 
+  test "switching report tabs resets page while preserving filters and pager links", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    other_branch = insert(:branch, is_active: true)
+
+    for feature <- ["analytics_extended", "analytics_links"] do
+      assert {:ok, _} = Features.configure(feature, :franchise, true, actor: "host")
+      assert {:ok, _} = Features.configure(feature, {:branch, branch.id}, true, actor: "host")
+    end
+
+    published(
+      branch,
+      "analytics_extended",
+      for(
+        index <- 1..51,
+        do: {"extended", "channel", "channel-#{index}", %{"created" => 1}}
+      )
+    )
+
+    link =
+      Repo.insert!(%Delivest.Advertising.Link{
+        branch_id: branch.id,
+        token: Ecto.UUID.generate(),
+        campaign: "summer",
+        name: "Source one"
+      })
+
+    published(branch, "analytics_links", [
+      {"links", "link", link.id, %{"created" => 1}}
+    ])
+
+    day = LocalTime.today(LocalTime.timezone(branch.id)) |> Date.to_iso8601()
+    conn = login(conn, ["statistics.read"], branch)
+
+    {:ok, view, _} =
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/statistics?#{%{"tab" => "channels", "period" => "custom", "from" => day, "to" => day, "branch_id" => branch.id, "branch_ids" => [branch.id, other_branch.id], "link_search" => "summer"}}"
+      )
+
+    assert has_element?(view, "#statistics-report-pagination a[href*='page=2']", "Next")
+    view |> element("#statistics-report-pagination a", "Next") |> render_click()
+    assert has_element?(view, "#statistics-report-pagination", "2 / 2")
+
+    tab = "a[role='tab'][href*='tab=sources']:not([href*='page='])"
+
+    [_, header] =
+      view
+      |> element("#staff-page-header")
+      |> render()
+      |> then(&Regex.run(~r/<template[^>]*>(.*)<\/template>/s, &1))
+
+    href =
+      header
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query(tab)
+      |> LazyHTML.attribute("href")
+      |> List.first()
+
+    assert href
+    query = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+    assert query["period"] == "custom"
+    assert query["from"] == day and query["to"] == day
+    assert query["branch_id"] == branch.id
+    assert query["link_search"] == "summer"
+
+    branch_ids =
+      href
+      |> URI.parse()
+      |> Map.fetch!(:query)
+      |> URI.query_decoder()
+      |> Enum.filter(fn {key, _} -> String.starts_with?(key, "branch_ids") end)
+      |> Enum.map(&elem(&1, 1))
+
+    assert Enum.sort(branch_ids) == Enum.sort([branch.id, other_branch.id])
+    refute Map.has_key?(query, "page")
+
+    render_patch(view, href)
+    assert has_element?(view, "#statistics-report-table", "Source one")
+    refute has_element?(view, "#statistics-report-pagination")
+
+    render_patch(
+      view,
+      ~p"/staff/b/#{branch}/statistics?tab=channels&period=today&page=2&channel=app&branch_id=#{branch.id}&link_id=#{link.id}&link_search=summer&branch_ids[]=#{branch.id}"
+    )
+
+    [_, header] =
+      view
+      |> element("#staff-page-header")
+      |> render()
+      |> then(&Regex.run(~r/<template[^>]*>(.*)<\/template>/s, &1))
+
+    assert header
+           |> LazyHTML.from_fragment()
+           |> LazyHTML.query(
+             "a[role='tab'][href*='tab=sources'][href*='channel=app'][href*='link_id=#{link.id}']:not([href*='page='])"
+           )
+           |> Enum.any?()
+  end
+
   test "unavailable report DTO renders after a gate or read failure", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["statistics.read"]))

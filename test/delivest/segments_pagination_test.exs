@@ -6,6 +6,7 @@ defmodule Delivest.SegmentsPaginationTest do
 
   alias Delivest.{Features, OrderFixtures, Repo, Segments}
   alias Delivest.Oms.Order
+  alias Delivest.Segments.Segment
 
   setup do
     branch = insert(:branch, is_active: true)
@@ -22,6 +23,71 @@ defmodule Delivest.SegmentsPaginationTest do
     {:ok, _} = Features.configure("segments", :franchise, true, actor: "test")
     {:ok, _} = Features.configure("segments", {:branch, branch.id}, true, actor: "test")
     %{branch: branch, staff: staff}
+  end
+
+  test "segment list cursor exists only when another visible page exists", %{staff: staff} do
+    assert {:ok, %{entries: [], next_cursor: nil}} = Segments.list_page(staff)
+
+    insert_list_segments(1)
+    assert {:ok, %{entries: [_], next_cursor: nil}} = Segments.list_page(staff)
+
+    insert_list_segments(49)
+    assert {:ok, %{entries: exact, next_cursor: nil}} = Segments.list_page(staff)
+    assert length(exact) == 50
+    assert {:ok, legacy} = Segments.list(staff)
+    assert Enum.map(legacy, & &1.id) == Enum.map(exact, & &1.id)
+
+    insert_list_segments(1)
+    assert {:ok, %{entries: first, next_cursor: cursor}} = Segments.list_page(staff)
+    assert length(first) == 50 and cursor == List.last(first).id
+    assert {:ok, %{entries: [last], next_cursor: nil}} = Segments.list_page(staff, after: cursor)
+    refute last.id in Enum.map(first, & &1.id)
+    assert {:ok, %{entries: [], next_cursor: nil}} = Segments.list_page(staff, after: last.id)
+    assert {:error, :invalid_limit} = Segments.list_page(staff, limit: 51)
+  end
+
+  test "cursor ignores forbidden rows between allowed branch segments", %{branch: branch} do
+    other = insert(:branch, is_active: true)
+    {:ok, _} = Features.configure("segments", {:branch, other.id}, true, actor: "test")
+    viewer = insert(:staff, role: insert(:role, permissions: ["segments.read"]))
+    Repo.insert!(%Delivest.Identity.StaffBranch{staff_id: viewer.id, branch_id: branch.id})
+
+    [first, hidden, last] =
+      for index <- 1..3 do
+        Repo.insert!(%Segment{name: "Scoped #{index}", kind: :manual, scope: :branches})
+      end
+      |> Enum.sort_by(& &1.id)
+
+    for {segment, branch_id} <- [{first, branch.id}, {hidden, other.id}, {last, branch.id}] do
+      Repo.insert_all("segment_branches", [
+        %{
+          segment_id: Ecto.UUID.dump!(segment.id),
+          branch_id: Ecto.UUID.dump!(branch_id)
+        }
+      ])
+    end
+
+    assert {:ok, %{entries: [listed], next_cursor: cursor}} =
+             Segments.list_page(viewer, limit: 1)
+
+    assert listed.id == first.id and cursor == first.id
+
+    assert {:ok, %{entries: [listed], next_cursor: nil}} =
+             Segments.list_page(viewer, limit: 1, after: cursor)
+
+    assert listed.id == last.id
+    assert {:ok, [legacy]} = Segments.list(viewer, limit: 1)
+    assert legacy.id == first.id
+  end
+
+  defp insert_list_segments(count) do
+    for index <- 1..count do
+      Repo.insert!(%Segment{
+        name: "Listed #{index}-#{System.unique_integer([:positive])}",
+        kind: :manual,
+        scope: :franchise
+      })
+    end
   end
 
   test "members have fixed pages of 20, stable sorting, search and page clamping", %{

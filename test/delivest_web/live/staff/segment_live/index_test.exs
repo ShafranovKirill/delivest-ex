@@ -14,6 +14,30 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     %{conn: init_test_session(conn, %{"staff_id" => staff.id}), branch: branch, staff: staff}
   end
 
+  test "next link appears only while another segment page exists", %{
+    conn: conn,
+    branch: branch,
+    staff: staff
+  } do
+    enable(branch)
+    grant_network(staff)
+    Repo.insert!(%Segment{name: "First visible", kind: :manual, scope: :franchise})
+
+    {:ok, single, _} = live(conn, ~p"/staff/segments")
+    refute has_element?(single, "a", "Следующая страница")
+
+    for index <- 1..50 do
+      Repo.insert!(%Segment{name: "Paged #{index}", kind: :manual, scope: :franchise})
+    end
+
+    {:ok, view, _} = live(conn, ~p"/staff/segments")
+    assert has_element?(view, "a", "Следующая страница")
+    view |> element("a", "Следующая страница") |> render_click()
+    refute has_element?(view, "a", "Следующая страница")
+
+    assert has_element?(view, "#segment-cards > div")
+  end
+
   test "disabled feature redirects direct route", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/staff/branches/select"}}} =
              live(conn, ~p"/staff/segments")
