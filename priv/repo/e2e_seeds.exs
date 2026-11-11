@@ -169,4 +169,108 @@ if existing_orders < order_count do
   end
 end
 
+# Isolated staff catalog for browser pagination checks. Inactive branches stay
+# out of the customer branch picker and do not change the /e2e menu fixture.
+pagination_branch =
+  Repo.get_by(Branch, slug: "e2e-pagination") ||
+    %Branch{}
+    |> Branch.changeset(%{
+      name: "E2E Pagination",
+      slug: "e2e-pagination",
+      code: "E2EP",
+      is_active: false
+    })
+    |> Repo.insert!()
+
+other_pagination_branch =
+  Repo.get_by(Branch, slug: "e2e-pagination-other") ||
+    %Branch{}
+    |> Branch.changeset(%{
+      name: "E2E Pagination Other",
+      slug: "e2e-pagination-other",
+      code: "E2EO",
+      is_active: false
+    })
+    |> Repo.insert!()
+
+for test_branch <- [pagination_branch, other_pagination_branch] do
+  Repo.get_by(BranchInfo, branch_id: test_branch.id) ||
+    Repo.insert!(%BranchInfo{branch_id: test_branch.id})
+end
+
+unless Repo.get_by(Staff, login: "e2e_pagination") do
+  {:ok, _staff} =
+    Staffs.system_create_staff(%{
+      login: "e2e_pagination",
+      name: "Пагинация",
+      password: password,
+      password_confirmation: password,
+      role_id: role.("Оператор").id,
+      branch_ids: [pagination_branch.id]
+    })
+end
+
+pagination_categories =
+  for {name, order} <- [{"E2E Pagination A", 1.0}, {"E2E Pagination B", 2.0}] do
+    category =
+      Repo.get_by(Category, name: name) ||
+        %Category{}
+        |> Category.changeset(%{name: name, order: order, is_active: true})
+        |> Repo.insert!()
+
+    unless Relations.related?("Branch", pagination_branch.id, "Category", category.id) do
+      {:ok, _} =
+        Relations.create_relation(Repo, "Branch", pagination_branch.id, "Category", category.id)
+    end
+
+    category
+  end
+
+for index <- 1..11 do
+  slug = "e2e-pagination-#{index}"
+
+  product =
+    Repo.get_by(Product, slug: slug) ||
+      %Product{}
+      |> Product.changeset(%{
+        name: "Pagination #{String.pad_leading(to_string(index), 2, "0")}",
+        price: 10_000,
+        slug: slug,
+        category_id:
+          if(index <= 6,
+            do: hd(pagination_categories).id,
+            else: List.last(pagination_categories).id
+          ),
+        is_active: rem(index, 2) == 1
+      })
+      |> Repo.insert!()
+
+  unless Relations.related?("Branch", pagination_branch.id, "Product", product.id) do
+    {:ok, _} =
+      Relations.create_relation(Repo, "Branch", pagination_branch.id, "Product", product.id)
+  end
+end
+
+other_product =
+  Repo.get_by(Product, slug: "e2e-pagination-hidden") ||
+    %Product{}
+    |> Product.changeset(%{
+      name: "Pagination Hidden",
+      price: 10_000,
+      slug: "e2e-pagination-hidden",
+      is_active: true
+    })
+    |> Repo.insert!()
+
+unless Relations.related?("Branch", other_pagination_branch.id, "Product", other_product.id) do
+  {:ok, _} =
+    Relations.create_relation(
+      Repo,
+      "Branch",
+      other_pagination_branch.id,
+      "Product",
+      other_product.id
+    )
+end
+
 IO.puts("E2E data is ready")

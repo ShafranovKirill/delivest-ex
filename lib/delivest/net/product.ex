@@ -12,11 +12,11 @@ defmodule Delivest.Net.Product do
   @derive {
     Flop.Schema,
     filterable: [:name, :category_id, :is_active],
-    sortable: [:name, :price, :inserted_at],
+    sortable: [:name, :price, :inserted_at, :id],
     default_limit: 10,
     default_order: %{
-      order_by: [:inserted_at],
-      order_directions: [:asc]
+      order_by: [:inserted_at, :id],
+      order_directions: [:asc, :asc]
     }
   }
 

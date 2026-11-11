@@ -16,9 +16,32 @@ defmodule Delivest.Net.Products do
       |> where([p], is_nil(p.deleted_at))
       |> only_ids(Keyword.get(opts, :only_ids))
       |> maybe_preload_query(opts)
-      |> Flop.validate_and_run(params, for: Product)
+      |> run_staff_product_page(params)
     else
       {:error, :forbidden}
+    end
+  end
+
+  defp run_staff_product_page(query, params) do
+    case Flop.validate(params, for: Product) do
+      {:ok, flop} ->
+        {:ok, Flop.run(query, stable_product_order(flop), for: Product)}
+
+      {:error, meta} ->
+        {:error, meta}
+    end
+  end
+
+  defp stable_product_order(%Flop{order_by: fields} = flop) when fields in [nil, []], do: flop
+
+  defp stable_product_order(%Flop{order_by: fields} = flop) do
+    if :id in fields do
+      flop
+    else
+      directions = flop.order_directions || []
+      padded_directions = Enum.map(0..(length(fields) - 1), &Enum.at(directions, &1, :asc))
+
+      %{flop | order_by: fields ++ [:id], order_directions: padded_directions ++ [:asc]}
     end
   end
 
