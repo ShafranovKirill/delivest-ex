@@ -439,10 +439,14 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       <.page_header
         title={gettext("Products")}
         subtitle={gettext("Manage branch products, prices, and categories.")}
+        layout={:two_rows}
+        navigation_label={gettext("Products")}
       >
+        <:navigation><.tabs current={:products} branch={@current_branch} /></:navigation>
         <:actions>
           <.button
             :if={Identity.can?(@current_staff, "products.create")}
+            id="copy-products-trigger"
             phx-click="open_copy"
             class="btn btn-outline"
           >
@@ -461,6 +465,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <.link
             :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+            id="bulk-add-products"
             navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
             class="btn btn-outline"
           >
@@ -470,6 +475,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <.button
             :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+            id="create-product"
             patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
             class="btn btn-primary"
           >
@@ -478,8 +484,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </.button>
         </:actions>
       </.page_header>
-
-      <.tabs current={:products} branch={@current_branch} />
 
       <.form
         for={nil}

@@ -333,18 +333,25 @@ defmodule DelivestWeb.CoreComponents do
 
   @doc """
   Renders the page title in the staff header and its subtitle and actions in the page body.
-  Set `portal: false` for a page outside the staff layout.
+  With `layout: :two_rows`, navigation shares the title row and actions move to a second
+  staff header row. Set `portal: false` to keep all content in the page body.
   """
   attr :title, :string, required: true
   attr :subtitle, :string, default: nil
   attr :back, :string, default: nil
   attr :portal, :boolean, default: true
+  attr :layout, :atom, default: :standard, values: [:standard, :two_rows]
+  attr :navigation_label, :string, default: nil
+  slot :navigation
   slot :actions
 
   def page_header(assigns) do
     ~H"""
     <.portal :if={@portal} id="staff-page-header" target="#staff-header-title">
-      <div class="flex w-full min-w-0 items-center gap-1.5">
+      <div class={[
+        "flex w-full min-w-0 items-center gap-1.5",
+        @layout == :two_rows && "staff-page-header-two-rows"
+      ]}>
         <.link
           :if={@back}
           navigate={@back}
@@ -356,15 +363,35 @@ defmodule DelivestWeb.CoreComponents do
         </.link>
         <h1
           title={@title}
-          class="min-w-0 truncate text-base font-semibold text-base-content sm:text-lg"
+          class={[
+            "min-w-0 truncate text-base font-semibold text-base-content sm:text-lg",
+            @layout == :two_rows && "shrink-0"
+          ]}
         >
           {@title}
         </h1>
+        <nav
+          :if={@layout == :two_rows and @navigation != []}
+          class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
+          aria-label={@navigation_label || gettext("Page sections")}
+        >
+          {render_slot(@navigation)}
+        </nav>
+      </div>
+    </.portal>
+
+    <.portal
+      :if={@portal and @layout == :two_rows and @actions != []}
+      id="staff-page-header-actions"
+      target="#staff-header-actions"
+    >
+      <div class="staff-page-header-actions flex w-max min-w-full items-center gap-2 whitespace-nowrap">
+        {render_slot(@actions)}
       </div>
     </.portal>
 
     <div
-      :if={not @portal or not is_nil(@subtitle) or @actions != []}
+      :if={not @portal or not is_nil(@subtitle) or (@layout == :standard and @actions != [])}
       class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <div :if={!@portal} class="flex min-w-0 items-center gap-3">
@@ -379,9 +406,19 @@ defmodule DelivestWeb.CoreComponents do
         <h1 title={@title} class="text-2xl font-display font-bold text-base-content sm:text-3xl">
           {@title}
         </h1>
+        <nav
+          :if={@layout == :two_rows and @navigation != []}
+          class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
+          aria-label={@navigation_label || gettext("Page sections")}
+        >
+          {render_slot(@navigation)}
+        </nav>
       </div>
       <p :if={@subtitle} class="min-w-0 text-sm text-base-content/60">{@subtitle}</p>
-      <div :if={@actions != []} class="staff-page-actions flex min-w-0 flex-wrap gap-2">
+      <div
+        :if={@actions != [] and (@layout == :standard or not @portal)}
+        class="staff-page-actions flex min-w-0 flex-wrap gap-2"
+      >
         {render_slot(@actions)}
       </div>
     </div>

@@ -41,6 +41,8 @@ defmodule DelivestWeb.StaffHeader do
         </div>
       </div>
 
+      <div id="staff-header-actions" class="staff-header-actions" />
+
       <div class="flex shrink-0 items-center gap-2">
         {render_slot(@actions)}
         <DelivestWeb.GatewayNote.gateway_badge branch={@current_branch} />

@@ -69,6 +69,8 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert render(element(lv, "#staff-page-header")) =~ "Settings for branches"
     assert has_element?(lv, "#branch-settings-list #create-branch")
     refute has_element?(lv, "#branch-settings-list h1")
+    refute has_element?(lv, "#staff-page-header-actions")
+    refute has_element?(lv, "#staff-page-header nav")
   end
 
   test "header context follows page scope rather than the active branch", %{conn: conn} do

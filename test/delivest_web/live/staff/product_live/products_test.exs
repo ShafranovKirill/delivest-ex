@@ -67,6 +67,46 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert html =~ "All categories"
       assert html =~ "All statuses"
     end
+
+    test "puts tabs and actions in separate header portals while filters stay in the body", %{
+      conn: conn
+    } do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+
+      title_portal = render(element(lv, "#staff-page-header"))
+      actions_portal = render(element(lv, "#staff-page-header-actions"))
+
+      assert title_portal =~ ~s(data-phx-portal="#staff-header-title")
+      assert title_portal =~ ~s(aria-label="Products")
+      assert title_portal =~ ~s(role="tablist")
+      assert title_portal =~ ~s(role="tab")
+      assert actions_portal =~ ~s(data-phx-portal="#staff-header-actions")
+      assert actions_portal =~ ~s(id="copy-products-trigger")
+      assert actions_portal =~ ~s(id="export-products")
+      assert actions_portal =~ ~s(id="bulk-add-products")
+      assert actions_portal =~ ~s(id="create-product")
+      assert has_element?(lv, "main #products-filter")
+      refute has_element?(lv, "main #products-filter [role='tablist']")
+    end
+
+    test "read-only staff sees export but no create actions", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+      insert(:staff_branch, staff: staff, branch: branch)
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+
+      actions_portal = render(element(lv, "#staff-page-header-actions"))
+      assert actions_portal =~ ~s(id="export-products")
+      refute actions_portal =~ ~s(id="copy-products-trigger")
+      refute actions_portal =~ ~s(id="bulk-add-products")
+      refute actions_portal =~ ~s(id="create-product")
+    end
   end
 
   test "uploaded image goes to the product form", %{conn: conn} do

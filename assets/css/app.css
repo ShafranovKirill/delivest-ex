@@ -117,7 +117,8 @@
 }
 
 /* The staff shell keeps a usable icon rail on small screens. */
-:root { --staff-sidebar-width: 5rem; }
+:root { --staff-sidebar-width: 5rem; --staff-header-height: 4rem; }
+:root:has(#staff-header-actions .staff-page-header-actions) { --staff-header-height: 7.5rem; }
 @media (min-width: 1024px) {
   :root { --staff-sidebar-width: 18rem; }
   :root[data-sidebar-collapsed] { --staff-sidebar-width: 5rem; }
@@ -125,6 +126,9 @@
 .staff-sidebar { width: var(--staff-sidebar-width); }
 .staff-shell-content { margin-left: 5rem; }
 .staff-header { left: 5rem; }
+.staff-header { height: var(--staff-header-height); align-items: flex-start; }
+.staff-header > div:not(#staff-header-actions) { height: 4rem; }
+.staff-shell-content { padding-top: var(--staff-header-height); }
 .staff-sidebar-overlay { display: none; }
 .staff-profile-menu[hidden] { display: none; }
 .staff-profile-menu {
@@ -189,6 +193,22 @@
 }
 
 #staff-header-title:has([data-phx-teleported-src]) .staff-header-fallback { display: none; }
+#staff-header:has(.staff-page-header-two-rows) #staff-header-context,
+#staff-header:has(.staff-page-header-two-rows) #staff-header-context + span { display: none; }
+.staff-header-actions { display: none; }
+.staff-header-actions:has([data-phx-teleported-src]) {
+  display: block;
+  position: absolute;
+  inset: 4rem 0 0;
+  height: 3.5rem;
+  overflow-x: auto;
+  border-top: 1px solid var(--color-base-300);
+  padding: .4375rem 1rem;
+}
+.staff-header-actions, .staff-page-header-navigation { scrollbar-width: none; }
+.staff-header-actions::-webkit-scrollbar, .staff-page-header-navigation::-webkit-scrollbar { display: none; }
+.staff-page-header-actions > * { flex: none; white-space: nowrap; }
+.staff-page-header-navigation .tabs { width: max-content; max-width: none; overflow: visible; flex-wrap: nowrap; }
 /* Portal source has no visible box, so it must not add a page gap. */
 .space-y-6 > template[data-phx-portal] + * { margin-block-start: 0; }
 
