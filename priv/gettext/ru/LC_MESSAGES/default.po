@@ -10979,3 +10979,15 @@ msgstr "Текущая страница"
 
 msgid "Profile: %{name}"
 msgstr "Профиль: %{name}"
+
+msgid "Scroll actions left"
+msgstr "Прокрутить действия влево"
+
+msgid "Scroll actions right"
+msgstr "Прокрутить действия вправо"
+
+msgid "Scroll sections left"
+msgstr "Прокрутить разделы влево"
+
+msgid "Scroll sections right"
+msgstr "Прокрутить разделы вправо"

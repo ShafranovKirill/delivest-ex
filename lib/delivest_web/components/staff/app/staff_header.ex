@@ -64,7 +64,7 @@ defmodule DelivestWeb.StaffHeader do
           title={gettext("Expand menu")}
           class="btn btn-ghost btn-square btn-sm shrink-0"
         >
-          <.icon name="panel-left" class="size-5" />
+          <.icon name="panel-left" class="size-6" />
         </button>
       </div>
       <div :if={@product_section} class="flex min-w-0 flex-1 items-center text-sm">
@@ -98,7 +98,33 @@ defmodule DelivestWeb.StaffHeader do
         </div>
       </div>
 
-      <div id="staff-header-actions" class="staff-header-actions" />
+      <div
+        id="staff-header-actions"
+        phx-hook="HeaderScroll"
+        class="staff-header-actions staff-header-scroll"
+      >
+        <button
+          type="button"
+          data-scroll-left
+          class="staff-header-scroll-arrow"
+          aria-label={gettext("Scroll actions left")}
+        >
+          <.icon name="hero-chevron-left" class="size-4" />
+        </button>
+        <div
+          id="staff-header-actions-scroll"
+          class="staff-header-actions-scroll"
+          data-scroll-viewport
+        />
+        <button
+          type="button"
+          data-scroll-right
+          class="staff-header-scroll-arrow"
+          aria-label={gettext("Scroll actions right")}
+        >
+          <.icon name="hero-chevron-right" class="size-4" />
+        </button>
+      </div>
 
       <div class="flex shrink-0 items-center gap-2">
         {render_slot(@actions)}

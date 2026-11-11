@@ -125,7 +125,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       refute has_element?(lv, "#staff-header-context")
       refute has_element?(lv, "#staff-header-title")
       assert has_element?(lv, "main h1.sr-only")
-      assert actions_portal =~ ~s(data-phx-portal="#staff-header-actions")
+      assert actions_portal =~ ~s(data-phx-portal="#staff-header-actions-scroll")
       assert actions_portal =~ ~s(id="copy-products-trigger")
       assert actions_portal =~ ~s(id="export-products")
       assert actions_portal =~ ~s(id="bulk-add-products")
@@ -178,7 +178,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
         if actions? do
           assert render(element(lv, "#staff-page-header-actions")) =~
-                   ~s(data-phx-portal="#staff-header-actions")
+                   ~s(data-phx-portal="#staff-header-actions-scroll")
         else
           refute has_element?(lv, "#staff-page-header-actions")
         end

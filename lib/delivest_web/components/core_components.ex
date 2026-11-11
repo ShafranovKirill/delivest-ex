@@ -382,7 +382,7 @@ defmodule DelivestWeb.CoreComponents do
     <.portal
       :if={@portal and @layout == :two_rows and @actions != []}
       id="staff-page-header-actions"
-      target="#staff-header-actions"
+      target="#staff-header-actions-scroll"
     >
       <div class="staff-page-header-actions flex w-max min-w-full items-center gap-2 whitespace-nowrap">
         {render_slot(@actions)}
@@ -431,14 +431,37 @@ defmodule DelivestWeb.CoreComponents do
 
   def header_navigation(assigns) do
     ~H"""
-    <nav
-      id="staff-page-header-navigation"
-      phx-hook=".ActiveHeaderTab"
-      class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
-      aria-label={@label || gettext("Page sections")}
+    <div
+      id="staff-page-header-navigation-scroll"
+      phx-hook="HeaderScroll"
+      class="staff-header-scroll min-w-0 flex-1"
     >
-      {render_slot(@inner_block)}
-    </nav>
+      <button
+        type="button"
+        data-scroll-left
+        class="staff-header-scroll-arrow"
+        aria-label={gettext("Scroll sections left")}
+      >
+        <.icon name="hero-chevron-left" class="size-4" />
+      </button>
+      <nav
+        id="staff-page-header-navigation"
+        phx-hook=".ActiveHeaderTab"
+        data-scroll-viewport
+        class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
+        aria-label={@label || gettext("Page sections")}
+      >
+        {render_slot(@inner_block)}
+      </nav>
+      <button
+        type="button"
+        data-scroll-right
+        class="staff-header-scroll-arrow"
+        aria-label={gettext("Scroll sections right")}
+      >
+        <.icon name="hero-chevron-right" class="size-4" />
+      </button>
+    </div>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
       export default {
         mounted() {

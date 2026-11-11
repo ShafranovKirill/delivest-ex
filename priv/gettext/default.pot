@@ -10635,3 +10635,15 @@ msgstr ""
 
 msgid "These first-event labels are unverified observations, not confirmed advertising attribution."
 msgstr ""
+
+msgid "Scroll actions left"
+msgstr ""
+
+msgid "Scroll actions right"
+msgstr ""
+
+msgid "Scroll sections left"
+msgstr ""
+
+msgid "Scroll sections right"
+msgstr ""
