@@ -13,9 +13,11 @@ defmodule DelivestWeb.Hooks.StaffPath do
     stripped = DelivestWeb.StaffBranchPath.strip(path)
 
     page =
-      if stripped == "/staff/marketing",
-        do: marketing_section_page(params["section"]),
-        else: determine_page_by_path(stripped)
+      cond do
+        stripped == "/staff/marketing" -> marketing_section_page(params["section"])
+        String.match?(stripped, ~r{^/staff/branches/[^/]+/edit(?:/|$)}) -> :settings
+        true -> determine_page_by_path(stripped)
+      end
 
     socket =
       socket
@@ -41,15 +43,17 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/stocks", :stocks},
     {"/staff/promotions", :promotions},
     {"/staff/loyalty", :loyalty},
+    {"/staff/settings", :settings},
     {"/staff/delivery", :delivery},
     {"/staff/branches/select", :branches_select},
     {"/staff/branches", :branches},
     {"/staff/clients", :clients},
+    {"/staff/marketing/bonuses", :loyalty},
     {"/staff/marketing", :marketing_policies},
     {"/staff/advertising-links", :advertising_links},
     {"/staff/employee", :employee},
     {"/staff/roles", :roles},
-    {"/staff/franchise", :franchise},
+    {"/staff/franchise", :settings},
     {"/staff/integrations", :integrations},
     {"/staff/metrics", :metrics},
     {"/staff/logs", :logs}
@@ -60,8 +64,6 @@ defmodule DelivestWeb.Hooks.StaffPath do
       if String.starts_with?(path, prefix), do: page
     end)
   end
-
-  defp determine_page_by_path(_path), do: :unknown
 
   defp marketing_section_page("stocks"), do: :stocks
   defp marketing_section_page("promotions"), do: :promotions

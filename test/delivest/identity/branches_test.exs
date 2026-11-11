@@ -85,6 +85,28 @@ defmodule Delivest.Identity.BranchesTest do
     assert is_nil(Repo.preload(primary, :info).info)
   end
 
+  test "YCart settings require integrations.update even through the generic branch API" do
+    branch = insert(:branch)
+    branch_editor = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    integration_editor = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: branch_editor, branch: branch)
+    insert(:staff_branch, staff: integration_editor, branch: branch)
+
+    attrs = %{"ycart_settings" => %{"enabled" => true, "yandex_org_id" => "123"}}
+
+    assert {:ok, _} = Branches.update_branch(branch_editor, branch, %{}, attrs)
+
+    assert %{enabled: false, yandex_org_id: nil} =
+             Repo.preload(branch, :info, force: true).info.ycart_settings
+
+    assert {:ok, _} = Branches.update_integrations(integration_editor, branch, attrs)
+
+    assert %{enabled: true, yandex_org_id: "123"} =
+             Repo.preload(branch, :info, force: true).info.ycart_settings
+
+    assert {:error, :forbidden} = Branches.update_integrations(branch_editor, branch, attrs)
+  end
+
   test "bulk special day writes authorized branches and rejects missing permission" do
     primary = insert(:branch)
     second = insert(:branch)

@@ -1,5 +1,4 @@
 defmodule DelivestWeb.Staff.LoyaltyLive.Index do
-  # TODO: Объединить в «Маркетинг → Бонусы» общие настройки программы и настройки выбранного филиала; сохранить promotions.read/update и филиальные настройки товаров.
   import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
@@ -159,6 +158,16 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         subtitle={gettext("Customers earn stars for completed orders.")}
       />
 
+      <.live_component
+        module={DelivestWeb.Staff.MarketingLive.BonusSettingsComponent}
+        id="global-bonuses"
+        current_staff={@current_staff}
+      />
+
+      <h2 id="branch-bonuses-title" class="text-lg font-semibold">
+        {gettext("Branch bonuses: %{name}", name: @current_branch.name)}
+      </h2>
+
       <div id="loyalty-summary" class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div
           :for={
@@ -195,8 +204,8 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         />
         <p class="text-sm text-base-content/60">
           {gettext("For every, ₽")} / {gettext("Stars")} / {gettext("Stars expire after, days")} —
-          <.link navigate={~p"/staff/franchise/loyalty"} class="link link-primary">
-            {gettext("Franchise settings")}
+          <.link navigate={~p"/staff/marketing/bonuses"} class="link link-primary">
+            {gettext("Common bonus settings")}
           </.link>
         </p>
         <.input

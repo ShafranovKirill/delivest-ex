@@ -19,15 +19,50 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     refute html =~ "branch-form"
     refute html =~ "couriers"
 
-    for section <- ~w(general fulfillment location hours kitchen board links ycart) do
+    for section <- ~w(general fulfillment location hours kitchen board links) do
       assert has_element?(
                lv,
                ~s(#branch-section-#{section}[href="/staff/branches/split/edit/#{section}"])
              )
     end
 
+    refute has_element?(lv, "#branch-section-ycart")
+
     assert {:error, {:live_redirect, %{to: "/staff/branches/split/edit"}}} =
              live(conn, ~p"/staff/branches/split/edit/unknown")
+  end
+
+  test "legacy YCart URL redirects only staff with integration read access", %{conn: conn} do
+    branch = insert(:branch, slug: "legacy-ycart")
+
+    assert {:error, {:live_redirect, %{to: "/staff/b/legacy-ycart/integrations/ycart"}}} =
+             live(conn, ~p"/staff/branches/#{branch.slug}/edit/ycart")
+
+    branch_editor =
+      insert(:staff,
+        role: insert(:role, permissions: ["branches.read", "branches.update"])
+      )
+
+    insert(:staff_branch, staff: branch_editor, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => branch_editor.id})
+
+    assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
+             live(conn, ~p"/staff/branches/#{branch.slug}/edit/ycart")
+  end
+
+  test "branch form ignores submitted YCart fields" do
+    alias DelivestWeb.Staff.BranchLive.BranchForm
+
+    changeset =
+      BranchForm.new()
+      |> BranchForm.changeset(%{
+        "name" => "Without YCart",
+        "slug" => "without-ycart",
+        "ycart_settings" => %{"enabled" => true, "yandex_org_id" => "123"}
+      })
+
+    {_branch_params, info_params} = BranchForm.to_params(changeset)
+    refute Map.has_key?(info_params, "ycart_settings")
   end
 
   test "a section saves and goes back to the sections", %{conn: conn} do

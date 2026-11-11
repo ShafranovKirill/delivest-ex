@@ -155,7 +155,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
           "/staff/marketing/policies",
           "/staff/b/#{branch.slug}/stocks",
           "/staff/b/#{branch.slug}/promotions",
-          "/staff/b/#{branch.slug}/loyalty",
+          "/staff/marketing/bonuses",
           "/staff/b/#{branch.slug}/advertising-links"
         ] do
       assert has_element?(view, "#nav-group-marketing a[href='#{path}']")

@@ -40,7 +40,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
     {:noreply,
      assign(socket,
-       selected_branch: branch,
+       selected_branch: context.branch,
        selectable_branches: branches,
        states: Map.new(providers, &{&1, Presentation.state(&1, context)}),
        routes_state: if(branch, do: routes_state(context), else: nil)
@@ -157,6 +157,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
         <div :if={@selected_branch} class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <.integration_card
+            id="integration-ycart"
+            title={gettext("YCart")}
+            description={gettext("Branch map and organization link on Yandex Maps.")}
+            state={ycart_state(@selected_branch)}
+            branch={@selected_branch}
+            path={~p"/staff/b/#{@selected_branch}/integrations/ycart"}
+          />
+          <.integration_card
             id="integration-routes"
             title={gettext("Order routes")}
             description={gettext("Which orders go further to the CRM.")}
@@ -272,6 +280,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     """
   end
 
+  defp overall_status(%{configuration: :enabled}), do: :enabled
+  defp overall_status(%{configuration: :disabled}), do: :disabled
+
   defp overall_status(%{connection: %{state: :ok}, warnings: warnings}) do
     if warnings != [] and Enum.any?(warnings), do: :attention, else: :ok
   end
@@ -290,11 +301,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
   defp overall_status(_state), do: :needs_setup
 
+  defp ycart_state(branch) do
+    settings = branch.info && branch.info.ycart_settings
+    %{configuration: if(settings && settings.enabled, do: :enabled, else: :disabled)}
+  end
+
   defp status_badge(assigns) do
     ~H"""
     <span class={[
       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-      @status == :ok && "bg-success/10 text-success",
+      @status in [:ok, :enabled] && "bg-success/10 text-success",
+      @status == :disabled && "bg-base-300/50 text-base-content/60",
       @status == :attention && "bg-warning/10 text-warning",
       @status == :auth && "bg-error/10 text-error",
       @status == :failed && "bg-error/10 text-error",
@@ -303,7 +320,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     ]}>
       <span class={[
         "size-1.5 rounded-full",
-        @status == :ok && "bg-success",
+        @status in [:ok, :enabled] && "bg-success",
+        @status == :disabled && "bg-base-content/30",
         @status == :attention && "bg-warning",
         @status == :auth && "bg-error",
         @status == :failed && "bg-error",
@@ -315,6 +333,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     """
   end
 
+  defp status_text(:enabled), do: gettext("Enabled")
+  defp status_text(:disabled), do: gettext("Disabled")
   defp status_text(:ok), do: gettext("OK")
   defp status_text(:attention), do: gettext("Needs attention")
   defp status_text(:auth), do: gettext("Access error")

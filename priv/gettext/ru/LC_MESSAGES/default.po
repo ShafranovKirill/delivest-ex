@@ -10892,3 +10892,45 @@ msgstr "Финансы → Оплата · %{name}"
 
 msgid "Delivery city · %{name}"
 msgstr "Город доставки · %{name}"
+
+msgid "Bonuses"
+msgstr "Бонусы"
+
+msgid "Common bonus settings"
+msgstr "Общие настройки бонусов"
+
+msgid "Common bonus rules and branch settings."
+msgstr "Общие правила бонусов и настройки филиалов."
+
+msgid "These rules apply to every branch."
+msgstr "Эти правила действуют во всех филиалах."
+
+msgid "Branch bonus settings"
+msgstr "Бонусы филиала"
+
+msgid "Choose an available branch to manage its bonus program and reward products."
+msgstr "Выберите доступный филиал, чтобы настроить бонусную программу и бонусы товаров."
+
+msgid "Choose common settings or an available branch."
+msgstr "Выберите общие настройки или доступный филиал."
+
+msgid "Common settings"
+msgstr "Общие настройки"
+
+msgid "Manage branches"
+msgstr "Управление филиалами"
+
+msgid "Message frequency limits across all branches."
+msgstr "Лимиты частоты сообщений для всех филиалов."
+
+msgid "Brand, seller details and legal documents."
+msgstr "Бренд, реквизиты продавца и юридические документы."
+
+msgid "YCart"
+msgstr "YCart"
+
+msgid "Branch map and organization link on Yandex Maps."
+msgstr "Карта филиала и ссылка на организацию в Яндекс Картах."
+
+msgid "Branch bonuses: %{name}"
+msgstr "Бонусы филиала: %{name}"

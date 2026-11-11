@@ -11,11 +11,30 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
 
   @impl true
+  def mount(%{"slug" => slug, "section" => "ycart"}, _session, socket) do
+    staff = socket.assigns.current_staff
+
+    if Identity.can?(staff, "integrations.read") and
+         Enum.any?(Identity.list_branch_for_staff(staff), &(&1.slug == slug)) do
+      {:ok, push_navigate(socket, to: ~p"/staff/b/#{slug}/integrations/ycart")}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, gettext("Permission denied"))
+       |> push_navigate(to: ~p"/staff/branches")}
+    end
+  end
+
   def mount(params, _session, socket) do
     with {:ok, branch} <- load(socket.assigns.live_action, params, socket.assigns.current_staff),
          {:ok, section} <- section(socket.assigns.live_action, params) do
       socket =
-        assign(socket, branch: branch, section: section, page_title: title(branch, section))
+        assign(socket,
+          branch: branch,
+          section: section,
+          page_title: title(branch, section),
+          settings_branches: Identity.list_branch_for_staff(socket.assigns.current_staff)
+        )
 
       if section && section.id == :snapshot do
         {:ok,
@@ -198,6 +217,12 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
         </:actions>
       </.page_header>
 
+      <.settings_navigation
+        staff={@current_staff}
+        branches={@settings_branches}
+        selected={@branch.id}
+      />
+
       <.settings_cards>
         <.settings_card
           :for={section <- Sections.all()}
@@ -216,6 +241,11 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     ~H"""
     <div class="mx-auto max-w-3xl space-y-6 p-6">
       <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
+      <.settings_navigation
+        staff={@current_staff}
+        branches={@settings_branches}
+        selected={@branch.id}
+      />
       <section class="space-y-5 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
         <p class="text-sm text-base-content/70">
           {gettext(
@@ -265,6 +295,11 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     ~H"""
     <div class="mx-auto max-w-3xl space-y-6 p-6">
       <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
+      <.settings_navigation
+        staff={@current_staff}
+        branches={@settings_branches}
+        selected={@branch.id}
+      />
 
       <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
         <p class="text-sm text-base-content/60">{@section.description}</p>
@@ -305,6 +340,11 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     ~H"""
     <div class="mx-auto max-w-3xl space-y-6 p-6">
       <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
+      <.settings_navigation
+        staff={@current_staff}
+        branches={@settings_branches}
+        selected={@branch.id}
+      />
 
       <.live_component
         module={BranchFormComponent}

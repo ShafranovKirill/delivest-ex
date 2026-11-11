@@ -1,5 +1,4 @@
 defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
-  # TODO: Перенести общие настройки бонусов из настроек франшизы в «Сеть → Маркетинг → Бонусы»; сохранить общее хранение и право franchise.update.
   use DelivestWeb, :live_component
 
   alias Delivest.Franchise
@@ -284,26 +283,6 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
               />
             </div>
           </div>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <.input
-              field={@form[:loyalty_per_rubles]}
-              type="number"
-              min="1"
-              label={gettext("For every, ₽")}
-            />
-            <.input field={@form[:loyalty_stars]} type="number" min="1" label={gettext("Stars")} />
-          </div>
-          <.input
-            field={@form[:loyalty_expire_days]}
-            type="number"
-            min="1"
-            label={gettext("Stars expire after, days")}
-          />
-          <p class="text-sm text-base-content/60">
-            {gettext(
-              "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
-            )}
-          </p>
         </section>
 
         <section

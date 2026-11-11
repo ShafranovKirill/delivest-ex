@@ -1,5 +1,4 @@
 defmodule DelivestWeb.Staff.FranchiseLive.Index do
-  # TODO: Объединить настройки франшизы и BranchLive.Edit в единый раздел «Настройки» с явным выбором общей области или доступного филиала; сохранить разграничение прав.
   use DelivestWeb, :live_view
 
   import DelivestWeb.Staff.SettingsComponents
@@ -216,6 +215,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
         subtitle={gettext("Name, brand color, seller details and legal documents for all branches.")}
       />
 
+      <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
       <.settings_cards>
         <.settings_card
           :for={section <- visible_sections(@current_staff)}
@@ -233,6 +233,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   def render(%{section: %{id: :snapshot}} = assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+      <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
       <.page_header
         title={@section.title}
         subtitle={@section.description}
@@ -344,6 +345,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+      <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
       <.page_header
         title={@section.title}
         subtitle={@section.description}

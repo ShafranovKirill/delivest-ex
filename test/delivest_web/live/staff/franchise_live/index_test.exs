@@ -63,6 +63,9 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     staff: staff
   } do
     {:ok, inactive, _html} = live(conn, ~p"/staff/franchise/loyalty")
+    refute has_element?(inactive, ~s(input[name="settings[loyalty_per_rubles]"]))
+    refute has_element?(inactive, ~s(input[name="settings[loyalty_stars]"]))
+    refute has_element?(inactive, ~s(input[name="settings[loyalty_expire_days]"]))
     refute has_element?(inactive, "#marketing-push-frequency")
 
     assert {:ok, _} = Features.configure("notifications", :franchise, true, actor: "test")

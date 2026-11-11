@@ -21,7 +21,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Sections do
       %{
         id: "franchise",
         title: gettext("Franchise settings"),
-        description: gettext("Brand, seller details, loyalty and legal documents.")
+        description: gettext("Brand, seller details and legal documents.")
       },
       %{
         id: "integrations",
@@ -71,10 +71,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.Sections do
       section(
         :loyalty,
         "hero-star",
-        gettext("Loyalty"),
-        gettext(
-          "Customers earn stars for completed orders. The rate and expiry are the same for every branch."
-        )
+        gettext("Marketing Push messages"),
+        gettext("Message frequency limits across all branches.")
       )
 
   def describe(:logo),

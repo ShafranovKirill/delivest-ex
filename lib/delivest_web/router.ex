@@ -336,6 +336,8 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.CommandPalette, :default},
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
+      live "/settings", SettingsLive.Index, :index
+      live "/marketing/bonuses", MarketingLive.Bonuses, :index
       live "/branches/select", BranchLive.BranchSelect, :index
 
       scope "/branches", BranchLive do
@@ -450,6 +452,7 @@ defmodule DelivestWeb.Router do
         scope "/integrations", IntegrationLive do
           live "/", Index, :index
           live "/frontpad", Frontpad, :index
+          live "/ycart", Ycart, :index
           live "/iiko", Iiko, :index
           live "/rkeeper", Rkeeper, :index
           live "/routes", Routes, :index

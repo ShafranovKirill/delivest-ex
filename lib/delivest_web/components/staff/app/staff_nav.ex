@@ -151,6 +151,8 @@ defmodule DelivestWeb.StaffNav do
       if(branch, do: [branch], else: Identity.list_branch_for_staff(staff))
       |> Delivest.Repo.preload(:info)
 
+    bonus_branches = Identity.list_branch_for_staff(staff) |> Delivest.Repo.preload(:info)
+
     [
       item(
         :marketing_policies,
@@ -173,9 +175,15 @@ defmodule DelivestWeb.StaffNav do
       )
       |> allowed(staff, "promotions.read")
       |> available_in(available_branches, fn _ -> true end),
-      item(:loyalty, marketing_path(branch, "loyalty"), "hero-star", gettext("Loyalty"))
-      |> allowed(staff, "promotions.read")
-      |> available_in(available_branches, &Gateway.own?(&1, :loyalty)),
+      item(:loyalty, ~p"/staff/marketing/bonuses", "hero-star", gettext("Bonuses"))
+      |> then(fn item ->
+        if can?(staff, "franchise.update") or
+             Enum.any?(bonus_branches, fn branch ->
+               Identity.authorize(staff, "promotions.read", branch.id) == :ok and
+                 Gateway.own?(branch, :loyalty)
+             end),
+           do: item
+      end),
       item(
         :advertising_links,
         marketing_path(branch, "links"),
@@ -199,8 +207,6 @@ defmodule DelivestWeb.StaffNav do
 
   defp network_entries(staff) do
     [
-      item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
-      |> allowed(staff, "branches.read"),
       group(:customers, "hero-users", gettext("Clients"), [
         item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
         |> allowed(staff, "clients.read"),
@@ -214,13 +220,14 @@ defmodule DelivestWeb.StaffNav do
         item(:roles, ~p"/staff/roles", "hero-shield-check", gettext("Roles"))
         |> allowed(staff, "roles.read")
       ]),
-      item(
-        :franchise,
-        ~p"/staff/franchise",
-        "hero-building-storefront",
-        gettext("Franchise settings")
-      )
-      |> allowed(staff, "franchise.update"),
+      item(:settings, ~p"/staff/settings", "hero-cog-6-tooth", gettext("Settings"))
+      |> then(fn item ->
+        if can?(staff, "franchise.update") or
+             (can?(staff, "branches.read") and can?(staff, "branches.update")),
+           do: item
+      end),
+      item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
+      |> allowed(staff, "branches.read"),
       item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
       |> allowed(staff, "logs.read"),
       item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))

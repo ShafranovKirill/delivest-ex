@@ -86,6 +86,21 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     refute has_element?(lv, "#integration-selected-branch")
   end
 
+  test "global branch selection shows gateway ownership from the selected branch", %{
+    conn: conn,
+    branch: branch
+  } do
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{enabled: true, provider: :iiko}
+    })
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/integrations?branch=#{branch.slug}")
+
+    assert has_element?(lv, "#gateway-area-kitchen", "iiko")
+    assert has_element?(lv, "#gateway-area-menu", "Delivest")
+  end
+
   test "opens settings when frontpad is not set up", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
 

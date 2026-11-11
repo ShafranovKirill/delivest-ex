@@ -1,5 +1,4 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
-  # TODO: Перенести настройки YCart (enabled/yandex_org_id) из формы филиала в «Интеграции»; до переноса проверить branches.update против integrations.update, не расширяя доступ.
   use DelivestWeb, :live_component
 
   import DelivestWeb.Staff.BranchLive.LocationFields
@@ -242,13 +241,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
             <.input field={@form[:whatsapp_url]} type="text" label={gettext("WhatsApp Link")} />
             <.input field={@form[:instagram_url]} type="text" label={gettext("Instagram Link")} />
           </div>
-
-          <.inputs_for :let={ycart} :if={@section.id == :ycart} field={@form[:ycart_settings]}>
-            <.input field={ycart[:enabled]} type="checkbox" label={gettext("YCart Enabled")} />
-            <div class="grid gap-4 sm:grid-cols-2">
-              <.input field={ycart[:yandex_org_id]} type="text" label={gettext("Yandex Org ID")} />
-            </div>
-          </.inputs_for>
         </section>
 
         <div class="flex justify-end gap-3">

@@ -4,8 +4,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
   alias Delivest.{Features, Gateway, Identity, Segments}
 
   def available?(staff, branches) do
-    (Identity.can?(staff, "marketing.read") and
-       Features.enabled?("marketing_policies", :franchise)) or
+    Identity.can?(staff, "franchise.update") or
+      (Identity.can?(staff, "marketing.read") and
+         Features.enabled?("marketing_policies", :franchise)) or
       (Identity.can?(staff, "segments.read") and Segments.available?(staff)) or
       Enum.any?(branches, fn branch ->
         Identity.authorize(staff, "stocks.read", branch.id) == :ok or
@@ -53,12 +54,15 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
         >{gettext("Discounts & promo codes")}</.link>
         <.link
           :if={
-            @selected && Identity.authorize(@staff, "promotions.read", @selected.id) == :ok &&
-              Gateway.own?(@selected, :loyalty)
+            Identity.can?(@staff, "franchise.update") or
+              Enum.any?(@branches, fn branch ->
+                Identity.authorize(@staff, "promotions.read", branch.id) == :ok and
+                  Gateway.own?(branch, :loyalty)
+              end)
           }
-          navigate={~p"/staff/b/#{@selected}/loyalty"}
+          navigate={~p"/staff/marketing/bonuses"}
           class={["btn btn-sm", @active == :loyalty && "btn-primary"]}
-        >{gettext("Loyalty")}</.link>
+        >{gettext("Bonuses")}</.link>
         <.link
           :if={
             @selected && Identity.authorize(@staff, "statistics.read", @selected.id) == :ok &&
