@@ -1,14 +1,17 @@
 defmodule DelivestWeb.Staff.StatisticsLive.Index do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Analytics, Gateway}
+  alias Delivest.{Analytics, Features, Gateway, Identity}
+  alias Delivest.Analytics.Reports
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   import DelivestWeb.Staff.StatsComponents
+  import DelivestWeb.Staff.StatisticsLive.ReportComponents
 
   on_mount {DelivestWeb.Hooks.Permission, "statistics.read"}
 
-  @tabs ~w(sales products categories)
+  @base_tabs ~w(sales products categories)
+  @report_tabs ~w(funnel sources customers channels comparison franchise)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,7 +20,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    tab = if params["tab"] in @tabs, do: params["tab"], else: "sales"
+    visible_tabs = visible_tabs(socket)
+    tab = if params["tab"] in visible_tabs, do: params["tab"], else: "sales"
 
     preset =
       if params["period"] in Analytics.presets(), do: params["period"], else: "week"
@@ -50,8 +54,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
        period_error: period_error,
        custom_from: custom_from,
        custom_to: custom_to,
-       form: to_form(%{"period" => preset, "from" => custom_from, "to" => custom_to}),
-       sort: sort
+       form:
+         to_form(%{
+           "period" => preset,
+           "from" => custom_from,
+           "to" => custom_to,
+           "channel" => params["channel"],
+           "branch_id" => params["branch_id"],
+           "link_id" => params["link_id"]
+         }),
+       sort: sort,
+       visible_tabs: visible_tabs,
+       report_filters: report_filters(params)
      )
      |> then(fn socket -> if period_error, do: socket, else: load_tab(socket) end)}
   end
@@ -62,12 +76,41 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       %{
         "tab" => socket.assigns.tab,
         "period" => params["period"],
-        "sort" => to_string(socket.assigns.sort)
+        "sort" => to_string(socket.assigns.sort),
+        "channel" => params["channel"] || socket.assigns.report_filters["channel"],
+        "branch_id" => params["branch_id"] || socket.assigns.report_filters["branch_id"],
+        "link_id" => params["link_id"] || socket.assigns.report_filters["link_id"]
       }
+      |> compact_query()
       |> maybe_put_custom(params, socket.assigns.period)
 
     {:noreply,
      push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/statistics?#{query}")}
+  end
+
+  @impl true
+  def handle_event("rebuild", _, socket) do
+    tab = socket.assigns.tab
+
+    result =
+      if tab in @report_tabs and tab != "franchise" do
+        Reports.request_rebuild(
+          socket.assigns.current_staff,
+          Reports.feature_for_tab(tab),
+          socket.assigns.current_branch.id,
+          socket.assigns.period
+        )
+      else
+        {:error, :forbidden}
+      end
+
+    case result do
+      {:ok, _} ->
+        {:noreply, socket |> put_flash(:info, gettext("Calculation queued")) |> load_tab()}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Calculation could not be queued"))}
+    end
   end
 
   defp maybe_put_custom(query, %{"period" => "custom"} = params, {from, to}) do
@@ -77,6 +120,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   end
 
   defp maybe_put_custom(query, _params, _period), do: query
+
+  defp compact_query(query), do: Map.reject(query, fn {_key, value} -> value in [nil, ""] end)
 
   defp safe_date_param(value) when is_binary(value) do
     if Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, value), do: value, else: ""
@@ -110,11 +155,91 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     assign(socket, categories: Analytics.categories(branch.id, period))
   end
 
+  defp load_tab(%{assigns: %{tab: tab}} = socket) when tab in @report_tabs do
+    scope =
+      if tab == "franchise", do: :franchise, else: {:branch, socket.assigns.current_branch.id}
+
+    case Reports.read(
+           socket.assigns.current_staff,
+           scope,
+           socket.assigns.period,
+           tab,
+           socket.assigns.report_filters
+         ) do
+      {:ok, report} ->
+        previous =
+          if tab == "comparison" do
+            case Reports.read(
+                   socket.assigns.current_staff,
+                   scope,
+                   Analytics.previous_period(socket.assigns.period),
+                   tab,
+                   socket.assigns.report_filters
+                 ) do
+              {:ok, value} -> value
+              _ -> nil
+            end
+          end
+
+        assign(socket, report: report, report_previous: previous)
+
+      _ ->
+        assign(socket,
+          report: %{
+            state: :not_collected,
+            rows: [],
+            last_success_at: nil,
+            verified_buyers: 0,
+            repeat_buyers: nil,
+            retention: nil,
+            covered_days: 0,
+            expected_days: 0,
+            excluded_branches: 0,
+            branch_rows: [],
+            total_rows: 0,
+            page: 1,
+            pages: 1,
+            totals: %{},
+            job: nil
+          }
+        )
+    end
+  end
+
+  defp visible_tabs(socket) do
+    branch_id = socket.assigns.current_branch.id
+    staff = socket.assigns.current_staff
+
+    @base_tabs ++
+      Enum.filter(@report_tabs, fn tab ->
+        cond do
+          tab == "franchise" ->
+            Identity.can?(staff, "statistics.network") and
+              Features.enabled?("analytics_franchise", :franchise)
+
+          true ->
+            Features.enabled?(Reports.feature_for_tab(tab), {:branch, branch_id})
+        end
+      end)
+  end
+
+  defp report_filters(params),
+    do: Map.take(params, ["channel", "link_id", "branch_ids", "branch_id", "page"])
+
   defp tab_path(assigns, tab, overrides \\ %{}) do
     {from, to} = assigns.period
 
     query =
-      %{"tab" => tab, "period" => assigns.preset, "sort" => to_string(assigns.sort)}
+      %{
+        "tab" => tab,
+        "period" => assigns.preset,
+        "sort" => to_string(assigns.sort),
+        "channel" => assigns.report_filters["channel"],
+        "branch_id" => assigns.report_filters["branch_id"],
+        "link_id" => assigns.report_filters["link_id"],
+        "page" => assigns.report_filters["page"]
+      }
+      |> compact_query()
       |> then(fn q ->
         if assigns.preset == "custom",
           do:
@@ -194,6 +319,28 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               class="input input-bordered input-sm w-40"
             />
           <% end %>
+          <.input
+            :if={@tab in ~w(channels comparison franchise)}
+            field={@form[:channel]}
+            type="text"
+            placeholder={gettext("Channel")}
+            class="input input-bordered input-sm w-36"
+          />
+          <.input
+            :if={@tab == "franchise"}
+            field={@form[:branch_id]}
+            type="select"
+            prompt={gettext("All branches")}
+            options={Enum.map(@staff_branches, &{&1.name, &1.id})}
+            class="select select-bordered select-sm w-44"
+          />
+          <.input
+            :if={@tab == "sources"}
+            field={@form[:link_id]}
+            type="text"
+            placeholder={gettext("Link ID")}
+            class="input input-bordered input-sm w-56"
+          />
         </.form>
       </div>
 
@@ -203,20 +350,26 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
       <div role="tablist" class="tabs tabs-box w-fit">
         <.link
-          :for={
-            {tab, label} <- [
-              {"sales", gettext("Sales")},
-              {"products", gettext("Products")},
-              {"categories", gettext("Categories")}
-            ]
-          }
+          :for={tab <- @visible_tabs}
           patch={tab_path(assigns, tab)}
           role="tab"
           class={["tab", @tab == tab && "tab-active"]}
         >
-          {label}
+          {tab_label(tab)}
         </.link>
       </div>
+
+      <.report_panel
+        :if={@tab in @report_tabs and is_nil(@period_error)}
+        tab={@tab}
+        title={tab_label(@tab)}
+        report={@report}
+        report_previous={@report_previous}
+        current_staff={@current_staff}
+        current_branch={@current_branch}
+        staff_branches={@staff_branches}
+        page_path={fn page -> tab_path(assigns, @tab, %{"page" => Integer.to_string(page)}) end}
+      />
 
       <%= if @tab == "sales" and is_nil(@period_error) do %>
         <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -416,4 +569,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       hint -> hint
     end
   end
+
+  defp tab_label("sales"), do: gettext("Sales")
+  defp tab_label("products"), do: gettext("Products")
+  defp tab_label("categories"), do: gettext("Categories")
+  defp tab_label("funnel"), do: gettext("Funnel")
+  defp tab_label("sources"), do: gettext("Sources")
+  defp tab_label("customers"), do: gettext("Customers")
+  defp tab_label("channels"), do: gettext("Channels")
+  defp tab_label("comparison"), do: gettext("Comparison")
+  defp tab_label("franchise"), do: gettext("Franchise")
 end

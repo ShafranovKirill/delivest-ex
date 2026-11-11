@@ -45,7 +45,7 @@ defmodule Delivest.Identity.RolePresets do
                        @branch_manager ++
                          @catalog ++
                          ~w(staff.create staff.update roles.read branches.create orders.revert
-                            orders.cook orders.deliver clients.read segments.network marketing.network)
+                            orders.cook orders.deliver clients.read segments.network marketing.network statistics.network)
                      )
 
   @accountant ~w(branches.read orders.read statistics.read finance.read finance.receipts_retry finance.receipts_refund)

@@ -1,6 +1,33 @@
 defmodule Delivest.Background.Registry do
   @moduledoc "Allowlist of optional calculations; add consumers here when implemented."
   @tasks %{
+    "analytics.funnel" => %{
+      manual?: true,
+      feature: "analytics_funnel",
+      handler: Delivest.Analytics.Reports.Refresh,
+      interval: 900,
+      scope: :branch,
+      timeout: :timer.minutes(2),
+      statement_timeout: :timer.seconds(20)
+    },
+    "analytics.links" => %{
+      manual?: true,
+      feature: "analytics_links",
+      handler: Delivest.Analytics.Reports.Refresh,
+      interval: 900,
+      scope: :branch,
+      timeout: :timer.minutes(2),
+      statement_timeout: :timer.seconds(20)
+    },
+    "analytics.extended" => %{
+      manual?: true,
+      feature: "analytics_extended",
+      handler: Delivest.Analytics.Reports.Refresh,
+      interval: 86_400,
+      scope: :branch,
+      timeout: :timer.minutes(2),
+      statement_timeout: :timer.seconds(20)
+    },
     "marketing.preview" => %{
       manual?: true,
       feature: "marketing_policies",

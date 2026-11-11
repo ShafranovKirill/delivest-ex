@@ -18,7 +18,7 @@ defmodule Delivest.Identity.Definitions do
   integrations.read integrations.update
   finance.read finance.update finance.receipts_retry finance.receipts_refund
   franchise.update
-  statistics.read
+  statistics.read statistics.network
   logs.read
   admin
   """
