@@ -7,6 +7,17 @@ defmodule DelivestWeb.Staff.StaffActiveBranchController do
   alias DelivestWeb.KitchenAccess
   alias DelivestWeb.StaffBranchPath
 
+  def all(conn, _params) do
+    with staff_id when is_binary(staff_id) <- get_session(conn, :staff_id),
+         {:ok, _staff} <- Identity.get_staff(staff_id, preload: [:role, :branches]) do
+      conn
+      |> delete_session(:active_branch_id)
+      |> redirect(to: ~p"/staff/dashboard")
+    else
+      _ -> redirect(conn, to: ~p"/staff/auth/login")
+    end
+  end
+
   def set(conn, %{"branch_id" => branch_id} = params) do
     with staff_id when is_binary(staff_id) <- get_session(conn, :staff_id),
          {:ok, staff} <- Identity.get_staff(staff_id, preload: [:role, :branches]),

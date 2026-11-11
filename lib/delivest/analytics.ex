@@ -181,11 +181,14 @@ defmodule Delivest.Analytics do
       orders: count(o.id, :distinct)
     })
     |> sort_products(Keyword.get(opts, :sort_by, :revenue))
-    |> limit(^limit)
+    |> maybe_limit(limit)
     |> Repo.all()
     |> Enum.map(&normalize_amounts/1)
     |> with_share(:revenue)
   end
+
+  defp maybe_limit(query, :all), do: query
+  defp maybe_limit(query, limit), do: limit(query, ^limit)
 
   @spec categories(binary(), period()) :: [map()]
   def categories(branch_id, period) do
