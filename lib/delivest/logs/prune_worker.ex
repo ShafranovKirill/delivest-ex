@@ -1,7 +1,7 @@
 defmodule Delivest.Logs.PruneWorker do
   use Oban.Worker, queue: :maintenance, max_attempts: 3
 
-  alias Delivest.{Audit, Logs}
+  alias Delivest.{Audit, Funnel, Logs}
   alias Delivest.Identity.PhoneConfirmations
   alias Delivest.Integrations.{Inbox, Journal}
 
@@ -14,6 +14,22 @@ defmodule Delivest.Logs.PruneWorker do
     requests = Journal.prune(Logs.retention_days())
     inbox = Inbox.prune(Logs.retention_days())
     confirmations = PhoneConfirmations.prune(@confirmation_days)
+    funnel = Funnel.prune()
+
+    # Each job stays bounded. If a backlog remains, continue through the core
+    # maintenance queue without depending on the capture feature gate.
+    if funnel.events == Funnel.prune_batch() or funnel.sessions == Funnel.prune_batch() do
+      {:ok, _} =
+        __MODULE__.new(%{"continuation" => true},
+          schedule_in: 1,
+          unique: [
+            period: 60,
+            fields: [:worker, :args],
+            states: [:available, :scheduled, :retryable]
+          ]
+        )
+        |> Oban.insert()
+    end
 
     {:ok,
      %{
@@ -21,7 +37,8 @@ defmodule Delivest.Logs.PruneWorker do
        events: events,
        requests: requests,
        inbox: inbox,
-       confirmations: confirmations
+       confirmations: confirmations,
+       funnel: funnel
      }}
   end
 end

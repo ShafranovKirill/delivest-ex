@@ -36,6 +36,10 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           type: :boolean,
           description: "Customer notification capability for this branch"
         },
+        analytics_funnel_enabled: %Schema{
+          type: :boolean,
+          description: "Funnel event capture is enabled for this branch"
+        },
         intake: %Schema{
           type: :object,
           description:

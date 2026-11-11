@@ -1,19 +1,27 @@
 defmodule DelivestWeb.Client.Branch.BranchJSON do
-  def index(%{branches: branches, notification_capabilities: capabilities}) do
-    %{data: for(branch <- branches, do: branch_data(branch, capabilities))}
+  def index(%{
+        branches: branches,
+        notification_capabilities: capabilities,
+        analytics_capabilities: analytics
+      }) do
+    %{data: for(branch <- branches, do: branch_data(branch, capabilities, analytics))}
   end
 
-  def show(%{branch: branch, notification_capabilities: capabilities}) do
-    %{data: branch_data(branch, capabilities)}
+  def show(%{
+        branch: branch,
+        notification_capabilities: capabilities,
+        analytics_capabilities: analytics
+      }) do
+    %{data: branch_data(branch, capabilities, analytics)}
   end
 
-  defp branch_data(branch, capabilities) do
+  defp branch_data(branch, capabilities, analytics) do
     %{
       id: branch.id,
       name: branch.name,
       slug: branch.slug,
       is_active: branch.is_active,
-      branch_info: branch_info(branch.info, branch, capabilities)
+      branch_info: branch_info(branch.info, branch, capabilities, analytics)
     }
   end
 
@@ -66,10 +74,10 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       max_percent: nil
     }
 
-  defp branch_info(%Ecto.Association.NotLoaded{}, _branch, _capabilities), do: nil
-  defp branch_info(nil, _branch, _capabilities), do: nil
+  defp branch_info(%Ecto.Association.NotLoaded{}, _branch, _capabilities, _analytics), do: nil
+  defp branch_info(nil, _branch, _capabilities, _analytics), do: nil
 
-  defp branch_info(info, branch, capabilities) do
+  defp branch_info(info, branch, capabilities, analytics) do
     %{
       id: info.id,
       address: info.address,
@@ -85,6 +93,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       payment_methods: payment_methods(info),
       loyalty: loyalty(info, branch),
       notifications_enabled: MapSet.member?(capabilities, branch.id),
+      analytics_funnel_enabled: MapSet.member?(analytics, branch.id),
       working_hours: info.working_hours || %{},
       special_hours: info.special_hours || %{},
       vk_url: info.vk_url,

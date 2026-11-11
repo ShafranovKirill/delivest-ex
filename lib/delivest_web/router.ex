@@ -49,6 +49,10 @@ defmodule DelivestWeb.Router do
     plug DelivestWeb.Plugs.RateLimit, bucket: :cart, limit: 300, period: :timer.minutes(1)
   end
 
+  pipeline :analytics_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :analytics, limit: 60, period: :timer.minutes(1)
+  end
+
   pipeline :geo_rate_limit do
     plug DelivestWeb.Plugs.RateLimit, bucket: :geo, limit: 120, period: :timer.minutes(1)
   end
@@ -135,6 +139,11 @@ defmodule DelivestWeb.Router do
 
   scope "/client", DelivestWeb.Client do
     pipe_through [:client_api, :client_identity]
+
+    scope "/analytics", Analytics do
+      pipe_through :analytics_rate_limit
+      post "/events", EventController, :create
+    end
 
     scope "/branches", Branch do
       get "/", BranchController, :index

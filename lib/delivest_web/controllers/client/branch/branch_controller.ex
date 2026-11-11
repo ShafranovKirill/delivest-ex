@@ -27,7 +27,13 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   def index(conn, _params) do
     branches = Identity.list_branches(preload: [:info])
     capabilities = Features.enabled_branches("notifications", Enum.map(branches, & &1.id))
-    render(conn, :index, branches: branches, notification_capabilities: capabilities)
+    analytics = Features.enabled_branches("analytics_funnel", Enum.map(branches, & &1.id))
+
+    render(conn, :index,
+      branches: branches,
+      notification_capabilities: capabilities,
+      analytics_capabilities: analytics
+    )
   rescue
     _ ->
       ApiError.send_error(
@@ -68,7 +74,8 @@ defmodule DelivestWeb.Client.Branch.BranchController do
         )
         |> render(:show,
           branch: branch,
-          notification_capabilities: Features.enabled_branches("notifications", [branch.id])
+          notification_capabilities: Features.enabled_branches("notifications", [branch.id]),
+          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id])
         )
 
       _inactive_or_missing ->
@@ -118,7 +125,8 @@ defmodule DelivestWeb.Client.Branch.BranchController do
         |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
         |> render(:show,
           branch: branch,
-          notification_capabilities: Features.enabled_branches("notifications", [branch.id])
+          notification_capabilities: Features.enabled_branches("notifications", [branch.id]),
+          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id])
         )
 
       _inactive_or_missing ->
