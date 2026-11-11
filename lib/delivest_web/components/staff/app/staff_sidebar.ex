@@ -1,8 +1,6 @@
 defmodule DelivestWeb.StaffSidebar do
   use DelivestWeb, :html
 
-  alias Delivest.Identity
-
   attr :current_page, :atom, default: nil
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
@@ -62,21 +60,6 @@ defmodule DelivestWeb.StaffSidebar do
           branches={@staff_branches}
           section={DelivestWeb.StaffBranchPath.section(@current_path)}
         />
-        <.link
-          :if={
-            @current_branch &&
-              ((Identity.can?(@current_staff, "branches.read") &&
-                  Identity.can?(@current_staff, "branches.update")) ||
-                 Identity.authorize(@current_staff, "delivery.read", @current_branch.id) == :ok)
-          }
-          id="sidebar-branch-settings"
-          navigate={~p"/staff/branches/#{@current_branch.slug}/edit"}
-          title={gettext("Branch settings")}
-          class="staff-sidebar-top-link flex items-center gap-2 rounded-field px-2 py-2 text-sm hover:bg-base-200"
-        >
-          <.icon name="hero-cog-6-tooth" class="size-5 shrink-0" />
-          <span class="staff-sidebar-label truncate">{gettext("Branch settings")}</span>
-        </.link>
       </div>
 
       <nav class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-3 [scrollbar-width:thin]">

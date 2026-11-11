@@ -16,10 +16,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "details#header-branch > summary[aria-controls='header-branch-menu']")
     assert has_element?(lv, "#header-branch-menu[phx-hook]")
 
-    assert has_element?(
-             lv,
-             "#sidebar-branch-settings[href='/staff/branches/#{branch.slug}/edit']"
-           )
+    refute has_element?(lv, "#sidebar-branch-settings")
 
     assert has_element?(lv, "#main-sidebar #command-palette-trigger")
     assert has_element?(lv, "#staff-profile-trigger[aria-expanded='false']")
