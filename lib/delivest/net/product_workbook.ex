@@ -99,7 +99,6 @@ defmodule Delivest.Net.ProductWorkbook do
       {:ok, records}
     else
       {:error, reason} -> {:error, reason}
-      _ -> {:error, :invalid_workbook}
     end
   rescue
     _ -> {:error, :invalid_workbook}
