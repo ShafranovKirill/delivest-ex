@@ -9,15 +9,28 @@ defmodule Delivest.Funnel.OrderCapture do
     cutoff = DateTime.add(as_of_at, -30 * 60, :second)
 
     session =
-      Repo.one(
-        from s in "funnel_sessions",
-          where:
-            s.branch_id == type(^order.branch_id, :binary_id) and s.owner_key == ^owner_key and
-              s.last_at <= ^as_of_at and s.last_at >= ^cutoff,
-          order_by: [desc: s.last_at, desc: s.id],
-          select: %{id: type(s.id, :binary_id), started_at: s.started_at, last_at: s.last_at},
-          limit: 1
-      )
+      Repo.query!(
+        """
+        SELECT s.id::text, s.started_at, latest.received_at
+        FROM funnel_sessions s
+        JOIN LATERAL (
+          SELECT e.received_at
+          FROM funnel_events e
+          WHERE e.session_id=s.id AND e.received_at >= $3 AND e.received_at <= $4
+          ORDER BY e.received_at DESC, e.id DESC
+          LIMIT 1
+        ) latest ON TRUE
+        WHERE s.branch_id=$1::text::uuid AND s.owner_key=$2
+          AND s.started_at <= $4 AND s.last_at >= $3
+        ORDER BY latest.received_at DESC, s.id DESC
+        LIMIT 1
+        """,
+        [order.branch_id, owner_key, DateTime.to_naive(cutoff), DateTime.to_naive(as_of_at)]
+      ).rows
+      |> case do
+        [[id, started_at, last_at]] -> %{id: id, started_at: started_at, last_at: last_at}
+        _ -> nil
+      end
 
     if session do
       source =
