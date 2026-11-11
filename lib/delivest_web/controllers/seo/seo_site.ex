@@ -20,6 +20,8 @@ defmodule DelivestWeb.Seo.SeoSite do
       name: settings.name,
       description: settings.description,
       color: settings.primary_color,
+      dark_color: settings.dark_primary_color,
+      default_theme: settings.default_theme,
       url: origin() <> path,
       favicon: icon_url(settings, "favicon.ico"),
       icon_32: icon_url(settings, "icon-32.png"),

@@ -36,7 +36,9 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
         Franchise.update_settings(admin, %{
           "name" => "Суши <Like>",
           "description" => "Доставка роллов",
-          "primary_color" => "#123456"
+          "primary_color" => "#123456",
+          "dark_primary_color" => "#abcdef",
+          "default_theme" => "dark"
         })
 
       {:ok, %{icon_key: icon}} = Franchise.update_icon(admin, Delivest.S3Stub.png(512, 512))
@@ -49,6 +51,8 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
       assert html =~ "<title>Суши &lt;Like&gt;</title>"
       assert html =~ ~s(<meta name="description" content="Доставка роллов">)
       assert html =~ ~s(<meta name="theme-color" content="#123456">)
+      assert html =~ ~s(<meta name="delivest-brand-color-dark" content="#abcdef">)
+      assert html =~ ~s(<meta name="delivest-default-theme" content="dark">)
       assert html =~ ~s(<link rel="canonical" href="http://localhost:3000/">)
       assert html =~ "http://s3.test:8333/delivest/#{icon}/favicon.ico"
       assert html =~ "http://s3.test:8333/delivest/#{icon}/apple-touch-icon.png"
