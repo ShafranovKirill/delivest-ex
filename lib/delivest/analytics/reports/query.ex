@@ -70,7 +70,7 @@ defmodule Delivest.Analytics.Reports.Query do
       rows: [],
       total_rows: 0,
       totals: %{},
-      coverage: %{days: 0, asof: nil, dirty: false},
+      coverage: %{days: 0, complete_days: 0, partial_days: 0, asof: nil, dirty: false},
       branch_rows: [],
       branch_total: 0,
       verified_buyers: nil,
@@ -142,7 +142,8 @@ defmodule Delivest.Analytics.Reports.Query do
           COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
           COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint,
           COALESCE(sum((r.counts->>'refunded')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'sessions')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'sessions')::bigint) FILTER
+            (WHERE r.dimension='stage' AND r.key='session_started'),0)::bigint,
           COALESCE(sum((r.counts->>'clicks')::bigint),0)::bigint,
           COALESCE(sum((r.counts->>'first_source_clients')::bigint),0)::bigint
         FROM analytics_report_states s
@@ -167,19 +168,53 @@ defmodule Delivest.Analytics.Reports.Query do
   end
 
   defp coverage(feature, ids, from, to) do
-    [[days, asof, dirty]] =
+    [[days, partial_days, asof, dirty]] =
       Repo.query!(
         """
-        SELECT count(*)::bigint,min(s.source_asof),
-          COALESCE(bool_or(s.revision>p.revision),false)
-        FROM analytics_report_states s
-        JOIN analytics_report_snapshots p ON p.id=s.snapshot_id
-        WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
+        WITH buckets AS (
+          SELECT s.revision,s.source_asof,p.revision published_revision,s.branch_id,s.day,
+            ((s.day::timestamp AT TIME ZONE
+              COALESCE(bi.timezone,(SELECT timezone FROM franchise_settings LIMIT 1),'Europe/Moscow'))
+              AT TIME ZONE 'UTC') start_at,
+            (((s.day+1)::timestamp AT TIME ZONE
+              COALESCE(bi.timezone,(SELECT timezone FROM franchise_settings LIMIT 1),'Europe/Moscow'))
+              AT TIME ZONE 'UTC') end_at
+          FROM analytics_report_states s
+          JOIN analytics_report_snapshots p ON p.id=s.snapshot_id
+          LEFT JOIN branch_info bi ON bi.branch_id=s.branch_id
+          WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
+        )
+        SELECT count(*)::bigint,
+          count(*) FILTER (WHERE
+            parent.enabled IS DISTINCT FROM true OR branch.enabled IS DISTINCT FROM true OR
+            EXISTS (SELECT 1 FROM feature_audits a WHERE a.feature=$1
+              AND a.scope_key IN ('franchise','branch:'||b.branch_id::text)
+              AND a.inserted_at > b.start_at AND a.inserted_at < b.end_at)
+          )::bigint,
+          min(b.source_asof),COALESCE(bool_or(b.revision>b.published_revision),false)
+        FROM buckets b
+        LEFT JOIN LATERAL (
+          SELECT a.enabled FROM feature_audits a
+          WHERE a.feature=$1 AND a.scope_key='franchise' AND a.inserted_at < b.end_at
+          ORDER BY a.inserted_at DESC,a.id DESC LIMIT 1
+        ) parent ON true
+        LEFT JOIN LATERAL (
+          SELECT a.enabled FROM feature_audits a
+          WHERE a.feature=$1 AND a.scope_key='branch:'||b.branch_id::text
+            AND a.inserted_at < b.end_at
+          ORDER BY a.inserted_at DESC,a.id DESC LIMIT 1
+        ) branch ON true
         """,
         [feature, ids, from, to]
       ).rows
 
-    %{days: days, asof: utc(asof), dirty: dirty}
+    %{
+      days: days,
+      complete_days: days - partial_days,
+      partial_days: partial_days,
+      asof: utc(asof),
+      dirty: dirty
+    }
   end
 
   defp branch_rows(_feature, _ids, _from, _to, tab, _filters, _page) when tab != "franchise",
@@ -269,8 +304,8 @@ defmodule Delivest.Analytics.Reports.Query do
         [ids, from, to, previous_from, previous_to, dimension]
       ).rows
 
-    current_coverage = coverage("analytics_extended", ids, from, to).days
-    prior_coverage = coverage("analytics_extended", ids, previous_from, previous_to).days
+    current_coverage = coverage("analytics_extended", ids, from, to).complete_days
+    prior_coverage = coverage("analytics_extended", ids, previous_from, previous_to).complete_days
     expected = length(ids) * days
 
     retention =

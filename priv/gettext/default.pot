@@ -10601,3 +10601,27 @@ msgstr ""
 
 msgid "All channels"
 msgstr ""
+
+msgid "Only %{covered} of %{expected} branch days have complete collection"
+msgstr ""
+
+msgid "Collection was interrupted during %{count} branch days; observed activity remains visible"
+msgstr ""
+
+msgid "Observed session sources"
+msgstr ""
+
+msgid "Direct visit"
+msgstr ""
+
+msgid "Campaign label (unverified)"
+msgstr ""
+
+msgid "Unknown source"
+msgstr ""
+
+msgid "Source data unavailable"
+msgstr ""
+
+msgid "These first-event labels are unverified observations, not confirmed advertising attribution."
+msgstr ""

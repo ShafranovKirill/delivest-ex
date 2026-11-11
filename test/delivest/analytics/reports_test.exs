@@ -32,6 +32,18 @@ defmodule Delivest.Analytics.ReportsTest do
     assert {:ok, _} = Features.configure(feature, {:branch, branch.id}, true, actor: "host")
   end
 
+  defp collected_before(feature, branch, day) do
+    before_day =
+      day
+      |> LocalTime.start_of_day_utc(LocalTime.timezone(branch.id))
+      |> DateTime.add(-1, :second)
+
+    Repo.query!(
+      "UPDATE feature_audits SET inserted_at=$1 WHERE feature=$2 AND scope_key IN ('franchise',$3)",
+      [before_day, feature, "branch:" <> branch.id]
+    )
+  end
+
   defp run_report(kind, branch) do
     assert {:ok, :queued} = Background.run_now(kind, {:branch, branch.id}, new_work: true)
     assert {:ok, count} = Background.dispatch_due()
@@ -63,6 +75,131 @@ defmodule Delivest.Analytics.ReportsTest do
 
     assert {:error, :disabled} =
              Background.run_now("analytics.extended", {:branch, ctx.branch.id})
+  end
+
+  test "same-day branch off and on keeps observations but marks collection incomplete", ctx do
+    enable("analytics_extended", ctx.branch)
+    day = today(ctx.branch)
+    collected_before("analytics_extended", ctx.branch, day)
+
+    first = order_fixture(ctx.branch.id, price: 100)
+    Repo.update!(Ecto.Changeset.change(first, status: :completed))
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, ctx.branch.id}, false,
+               actor: "host"
+             )
+
+    gap = order_fixture(ctx.branch.id, price: 200)
+    Repo.update!(Ecto.Changeset.change(gap, status: :completed))
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, ctx.branch.id}, true,
+               actor: "host"
+             )
+
+    last = order_fixture(ctx.branch.id, price: 300)
+    Repo.update!(Ecto.Changeset.change(last, status: :completed))
+    run_report("analytics.extended", ctx.branch)
+
+    assert {:ok,
+            %{
+              state: :partial,
+              partial_days: 1,
+              covered_days: 0,
+              totals: %{"revenue" => 400, "completed" => 2}
+            }} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+
+    assert Repo.query!(
+             "SELECT count(*) FROM analytics_order_identities WHERE order_id=$1::text::uuid",
+             [gap.id]
+           ).rows == [[0]]
+  end
+
+  test "same-day franchise off and on marks the branch day incomplete", ctx do
+    enable("analytics_extended", ctx.branch)
+    day = today(ctx.branch)
+    collected_before("analytics_extended", ctx.branch, day)
+
+    assert {:ok, _} = Features.configure("analytics_extended", :franchise, false, actor: "host")
+    gap = order_fixture(ctx.branch.id, price: 200)
+    Repo.update!(Ecto.Changeset.change(gap, status: :completed))
+    assert {:ok, _} = Features.configure("analytics_extended", :franchise, true, actor: "host")
+    after_gap = order_fixture(ctx.branch.id, price: 300)
+    Repo.update!(Ecto.Changeset.change(after_gap, status: :completed))
+    run_report("analytics.extended", ctx.branch)
+
+    assert {:ok, %{state: :partial, partial_days: 1, totals: %{"revenue" => 300}}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+  end
+
+  test "manual rebuild of a fully disabled historical day cannot claim complete zero", ctx do
+    enable("analytics_extended", ctx.branch)
+    old_day = Date.add(today(ctx.branch), -1)
+
+    assert {:ok, :queued} =
+             Reports.request_rebuild(
+               ctx.admin,
+               "analytics_extended",
+               ctx.branch.id,
+               {old_day, old_day}
+             )
+
+    run_report("analytics.extended", ctx.branch)
+
+    assert {:ok, %{state: :partial, partial_days: 1, covered_days: 0, totals: %{"revenue" => 0}}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {old_day, old_day}, "channels")
+  end
+
+  test "manual extended rebuild publishes an available order beyond raw retention", ctx do
+    enable("analytics_extended", ctx.branch)
+    old_day = Date.add(today(ctx.branch), -100)
+    order = order_fixture(ctx.branch.id, price: 987)
+    Repo.update!(Ecto.Changeset.change(order, status: :completed))
+    old_time = LocalTime.start_of_day_utc(old_day, LocalTime.timezone(ctx.branch.id))
+
+    Repo.query!(
+      "UPDATE orders SET inserted_at=$1 WHERE id=$2::text::uuid",
+      [DateTime.add(old_time, 3_600, :second), order.id]
+    )
+
+    assert {:ok, :queued} =
+             Reports.request_rebuild(
+               ctx.admin,
+               "analytics_extended",
+               ctx.branch.id,
+               {old_day, old_day}
+             )
+
+    run_report("analytics.extended", ctx.branch)
+
+    assert {:ok, %{state: :partial, totals: %{"completed" => 1, "revenue" => 987}}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {old_day, old_day}, "channels")
+  end
+
+  test "enabling exactly at local midnight covers the day, later activation does not", ctx do
+    enable("analytics_extended", ctx.branch)
+    day = today(ctx.branch)
+    midnight = LocalTime.start_of_day_utc(day, LocalTime.timezone(ctx.branch.id))
+
+    Repo.query!(
+      "UPDATE feature_audits SET inserted_at=$1 WHERE feature='analytics_extended' AND scope_key IN ('franchise',$2)",
+      [midnight, "branch:" <> ctx.branch.id]
+    )
+
+    run_report("analytics.extended", ctx.branch)
+
+    assert {:ok, %{state: :empty, partial_days: 0, covered_days: 1}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+
+    Repo.query!(
+      "UPDATE feature_audits SET inserted_at=$1 WHERE feature='analytics_extended' AND scope_key=$2",
+      [DateTime.add(midnight, 1, :microsecond), "branch:" <> ctx.branch.id]
+    )
+
+    assert {:ok, %{state: :partial, partial_days: 1, covered_days: 0}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
   end
 
   test "published completed revenue is corrected without double counting", ctx do
@@ -135,7 +272,7 @@ defmodule Delivest.Analytics.ReportsTest do
                [ctx.branch.id, today(ctx.branch)]
              ).rows
 
-    assert {:ok, %{totals: %{"revenue" => 1_234}, state: :ready}} =
+    assert {:ok, %{totals: %{"revenue" => 1_234}, state: :partial, partial_days: 1}} =
              Reports.read(
                ctx.analyst,
                {:branch, ctx.branch.id},
@@ -263,6 +400,39 @@ defmodule Delivest.Analytics.ReportsTest do
              Reports.request_rebuild(ctx.admin, "analytics_extended", ctx.branch.id, period)
   end
 
+  test "manual rebuild rejects future local days without creating work", ctx do
+    enable("analytics_extended", ctx.branch)
+    future = Date.add(today(ctx.branch), 1)
+
+    assert {:error, :forbidden} =
+             Reports.request_rebuild(
+               ctx.admin,
+               "analytics_extended",
+               ctx.branch.id,
+               {future, future}
+             )
+
+    assert Repo.query!(
+             "SELECT count(*) FROM analytics_report_states WHERE feature='analytics_extended' AND branch_id=$1::text::uuid AND day=$2",
+             [ctx.branch.id, future]
+           ).rows == [[0]]
+
+    assert Repo.query!(
+             "SELECT count(*) FROM background_schedules WHERE kind='analytics.extended' AND scope_key=$1 AND rerun_requested",
+             ["branch:" <> ctx.branch.id]
+           ).rows == [[0]]
+
+    expired = Date.shift(Date.utc_today(), month: -36) |> Date.add(-1)
+
+    assert {:error, :forbidden} =
+             Reports.request_rebuild(
+               ctx.admin,
+               "analytics_extended",
+               ctx.branch.id,
+               {expired, expired}
+             )
+  end
+
   test "raw expiry boundary preserves published funnel stages and link clicks", ctx do
     enable("analytics_funnel", ctx.branch)
     enable("analytics_links", ctx.branch)
@@ -298,6 +468,11 @@ defmodule Delivest.Analytics.ReportsTest do
       )
     end
 
+    Repo.query!(
+      "INSERT INTO analytics_report_rows(snapshot_id,family,dimension,key,counts) SELECT snapshot_id,'funnel','session_source','direct',$1::text::jsonb FROM analytics_report_states WHERE feature='analytics_funnel' AND branch_id=$2::text::uuid AND day=$3",
+      [Jason.encode!(%{"sessions" => 7}), ctx.branch.id, old_day]
+    )
+
     run_report("analytics.funnel", ctx.branch)
     run_report("analytics.links", ctx.branch)
 
@@ -305,6 +480,7 @@ defmodule Delivest.Analytics.ReportsTest do
              Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {old_day, old_day}, "funnel")
 
     assert Enum.find(funnel_rows, &(&1.dimension == "stage")).counts["sessions"] == 7
+    assert Enum.find(funnel_rows, &(&1.dimension == "session_source")).counts["sessions"] == 7
 
     assert {:ok, %{rows: [%{counts: %{"clicks" => 5}}]}} =
              Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {old_day, old_day}, "sources")
@@ -356,6 +532,7 @@ defmodule Delivest.Analytics.ReportsTest do
   test "historic published data stays ready regardless of its publication age", ctx do
     enable("analytics_extended", ctx.branch)
     day = Date.add(today(ctx.branch), -30)
+    collected_before("analytics_extended", ctx.branch, day)
     snapshot = Ecto.UUID.generate()
     old_asof = DateTime.utc_now() |> DateTime.add(-30, :day) |> DateTime.truncate(:microsecond)
 
@@ -381,6 +558,8 @@ defmodule Delivest.Analytics.ReportsTest do
   test "current report freshness follows successful checks without new events", ctx do
     enable("analytics_funnel", ctx.branch)
     enable("analytics_extended", ctx.branch)
+    collected_before("analytics_funnel", ctx.branch, today(ctx.branch))
+    collected_before("analytics_extended", ctx.branch, today(ctx.branch))
     run_report("analytics.funnel", ctx.branch)
     run_report("analytics.extended", ctx.branch)
     day = today(ctx.branch)
@@ -558,6 +737,59 @@ defmodule Delivest.Analytics.ReportsTest do
              Reports.read(ctx.analyst, {:branch, ctx.branch.id}, period, "funnel")
 
     assert Enum.find(paid_rows, &(&1.dimension == "order")).counts["paid_online_sessions"] == 1
+  end
+
+  test "session source uses the first event and distinguishes direct unknown unavailable", ctx do
+    enable("analytics_funnel", ctx.branch)
+    direct = Ecto.UUID.generate()
+    campaign = Ecto.UUID.generate()
+    unknown = Ecto.UUID.generate()
+
+    for {guest, source} <- [{direct, "direct"}, {campaign, "campaign"}, {unknown, "unknown"}] do
+      assert {:ok, _} =
+               Funnel.capture(
+                 %{
+                   "event_id" => Ecto.UUID.generate(),
+                   "branch_id" => ctx.branch.id,
+                   "event" => "visit",
+                   "source_type" => source
+                 },
+                 "guest:" <> guest
+               )
+    end
+
+    for {guest, later} <- [{direct, "campaign"}, {campaign, "direct"}] do
+      assert {:ok, _} =
+               Funnel.capture(
+                 %{
+                   "event_id" => Ecto.UUID.generate(),
+                   "branch_id" => ctx.branch.id,
+                   "event" => "menu_view",
+                   "source_type" => later
+                 },
+                 "guest:" <> guest
+               )
+    end
+
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    Repo.query!(
+      "INSERT INTO funnel_sessions(id,branch_id,owner_key,started_at,last_at) VALUES ($1::text::uuid,$2::text::uuid,$3,$4,$4)",
+      [Ecto.UUID.generate(), ctx.branch.id, "guest:" <> Ecto.UUID.generate(), now]
+    )
+
+    run_report("analytics.funnel", ctx.branch)
+    day = today(ctx.branch)
+
+    assert {:ok, %{rows: rows, totals: %{"sessions" => 4}}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "funnel")
+
+    sources =
+      rows
+      |> Enum.filter(&(&1.dimension == "session_source"))
+      |> Map.new(&{&1.key, &1.counts["sessions"]})
+
+    assert sources == %{"direct" => 1, "campaign" => 1, "unknown" => 1, "unavailable" => 1}
   end
 
   test "sources report uses immutable trusted link receipt, not UTM label", ctx do

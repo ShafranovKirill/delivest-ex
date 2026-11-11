@@ -32,6 +32,25 @@ defmodule Delivest.Analytics.Reports.Calculator do
 
     stages = [row("funnel", "stage", "session_started", %{"sessions" => started}) | stages]
 
+    source_rows =
+      Repo.query!(
+        """
+        SELECT COALESCE(first_event.source_type,'unavailable'),count(*)::bigint
+        FROM funnel_sessions s
+        LEFT JOIN LATERAL (
+          SELECT e.source_type FROM funnel_events e
+          WHERE e.session_id=s.id ORDER BY e.received_at,e.id LIMIT 1
+        ) first_event ON true
+        WHERE s.branch_id=$1::text::uuid AND s.started_at >= $2 AND s.started_at < $3
+        GROUP BY COALESCE(first_event.source_type,'unavailable')
+        """,
+        [branch_id, start_at, end_at]
+      ).rows
+
+    sources =
+      for [source, count] <- source_rows,
+          do: row("funnel", "session_source", source, %{"sessions" => count})
+
     order_rows =
       Repo.query!(
         """
@@ -79,6 +98,7 @@ defmodule Delivest.Analytics.Reports.Calculator do
       ).rows
 
     stages ++
+      sources ++
       [
         row("funnel", "order", "all", %{
           "created" => created,

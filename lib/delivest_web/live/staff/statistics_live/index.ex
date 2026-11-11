@@ -217,6 +217,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       repeat_buyers: nil,
       retention: nil,
       covered_days: 0,
+      partial_days: 0,
       expected_days: 0,
       excluded_branches: 0,
       branch_rows: [],

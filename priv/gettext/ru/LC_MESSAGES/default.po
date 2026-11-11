@@ -10798,3 +10798,27 @@ msgstr "Выбор способа получения"
 
 msgid "All channels"
 msgstr "Все каналы"
+
+msgid "Only %{covered} of %{expected} branch days have complete collection"
+msgstr "Полный сбор был в %{covered} из %{expected} дней филиалов"
+
+msgid "Collection was interrupted during %{count} branch days; observed activity remains visible"
+msgstr "Сбор прерывался в %{count} днях филиалов; собранная активность остаётся видимой"
+
+msgid "Observed session sources"
+msgstr "Наблюдаемые источники сессий"
+
+msgid "Direct visit"
+msgstr "Прямой визит"
+
+msgid "Campaign label (unverified)"
+msgstr "Метка кампании (непроверенная)"
+
+msgid "Unknown source"
+msgstr "Неизвестный источник"
+
+msgid "Source data unavailable"
+msgstr "Данные об источнике недоступны"
+
+msgid "These first-event labels are unverified observations, not confirmed advertising attribution."
+msgstr "Метки первого события — непроверенные наблюдения, а не подтверждённая рекламная атрибуция."
