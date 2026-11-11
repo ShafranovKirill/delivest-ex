@@ -60,7 +60,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefresh do
 
   def eligible?(branch_id) do
     case Repo.get(Branch, branch_id) do
-      %Branch{is_active: true, deleted_at: nil} ->
+      %Branch{deleted_at: nil} ->
         settings = Crm.get_branch_settings(branch_id)
 
         BranchSettings.active_provider(settings) == :frontpad and

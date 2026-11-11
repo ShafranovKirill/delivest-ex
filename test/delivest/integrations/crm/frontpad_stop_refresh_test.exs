@@ -179,7 +179,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefreshTest do
 
     Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("provider must not be called") end)
     assert {:ok, :disabled} = FrontpadStopRefresh.request_internal(branch.id, :daily)
-    refute branch.id in StopPoller.targets()
+    assert branch.id in StopPoller.targets()
     assert other.id in StopPoller.targets()
     assert :done = StopPoller.poll(branch.id)
     assert {:ok, :disabled} = StopPoller.poll(other.id)
@@ -188,6 +188,32 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefreshTest do
              from(j in Oban.Job, where: j.worker == ^Oban.Worker.to_string(RefreshJob)),
              :count
            ) == 0
+  end
+
+  test "inactive configured branch can queue a refresh without HTTP" do
+    branch = branch()
+    branch |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("provider must not be called") end)
+
+    assert FrontpadStopRefresh.eligible?(branch.id)
+    assert {:ok, :queued} = FrontpadStopRefresh.request_internal(branch.id, :daily)
+    assert refresh_job(branch.id).queue == "polling"
+
+    branch |> Ecto.Changeset.change(deleted_at: DateTime.utc_now(:second)) |> Repo.update!()
+    refute FrontpadStopRefresh.eligible?(branch.id)
+  end
+
+  test "legacy poll target clears disabled Frontpad stops without provider HTTP" do
+    branch = branch(false)
+    frontpad_product = insert_branch_product(branch.id, external_id: "101")
+    other_product = insert_branch_product(branch.id, external_id: "102")
+    {:ok, _} = Stops.replace_external(branch.id, :frontpad, [frontpad_product.id])
+    {:ok, _} = Stops.replace_external(branch.id, :iiko, [other_product.id])
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("provider must not be called") end)
+
+    assert branch.id in StopPoller.targets()
+    assert :done = StopPoller.poll(branch.id)
+    assert Stops.stopped_ids(branch.id) == MapSet.new([other_product.id])
   end
 
   test "turning Frontpad stop sync off clears its old stops without HTTP" do
@@ -231,7 +257,8 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefreshTest do
     scopes = Registry.scopes(task)
     assert {task, "branch", moscow.id, "Europe/Moscow"} in scopes
     assert {task, "branch", kamchatka.id, "Asia/Kamchatka"} in scopes
-    refute Enum.any?(scopes, &(elem(&1, 2) in [disabled.id, inactive.id]))
+    assert {task, "branch", inactive.id, "Europe/Moscow"} in scopes
+    refute Enum.any?(scopes, &(elem(&1, 2) == disabled.id))
     assert DispatchWorker.due_at(~D[2026-11-11], "Europe/Moscow", 6) == ~U[2026-11-11 03:00:00Z]
     assert DispatchWorker.due_at(~D[2026-11-11], "Asia/Kamchatka", 6) == ~U[2026-11-10 18:00:00Z]
 
