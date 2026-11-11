@@ -1,6 +1,6 @@
 defmodule Delivest.Analytics.Reports do
   @moduledoc "Authorized read model over published daily analytics buckets."
-  alias Delivest.{Background, Features, Identity, Repo}
+  alias Delivest.{Background, Features, Identity, LocalTime, Repo}
   alias Delivest.Analytics.Reports.Query
 
   @feature_by_tab %{
@@ -20,6 +20,28 @@ defmodule Delivest.Analytics.Reports do
 
   def feature_for_tab(tab), do: Map.get(@feature_by_tab, tab)
 
+  def link_options(staff, branch_id, search, selected) do
+    with :ok <- Identity.authorize(staff, "statistics.read", branch_id),
+         true <- Features.enabled?("analytics_links", {:branch, branch_id}) do
+      term = if is_binary(search), do: String.slice(search, 0, 80), else: ""
+      selected = if is_binary(selected), do: selected, else: ""
+
+      Repo.query!(
+        """
+        SELECT id::text,name,campaign FROM advertising_links
+        WHERE branch_id=$1::text::uuid AND
+          (name ILIKE $2 OR campaign ILIKE $2 OR id::text=$3)
+        ORDER BY CASE WHEN id::text=$3 THEN 0 ELSE 1 END,inserted_at DESC,id
+        LIMIT 50
+        """,
+        [branch_id, "%" <> term <> "%", selected]
+      ).rows
+      |> Enum.map(fn [id, name, campaign] -> {"#{name} · #{campaign}", id} end)
+    else
+      _ -> []
+    end
+  end
+
   def read(staff, scope, period, tab, filters \\ %{})
 
   def read(staff, {:branch, branch_id}, {from, to}, tab, filters) do
@@ -29,8 +51,9 @@ defmodule Delivest.Analytics.Reports do
          :ok <- Identity.authorize(staff, "statistics.read", branch_id),
          true <- Features.enabled?(feature, {:branch, branch_id}),
          :ok <- valid_period(from, to) do
-      report = present(feature, [branch_id], {from, to}, tab, filters)
       job = Background.calculation_status(@kind_by_feature[feature], {:branch, branch_id})
+      current? = Date.compare(to, LocalTime.today(LocalTime.timezone(branch_id))) != :lt
+      report = present(feature, [branch_id], {from, to}, tab, filters, job, current?)
       {:ok, Map.put(report, :job, job)}
     else
       _ -> {:error, :forbidden}
@@ -50,11 +73,18 @@ defmodule Delivest.Analytics.Reports do
 
       enabled = Features.enabled_branches("analytics_franchise", all_ids)
       ids = Enum.filter(all_ids, &MapSet.member?(enabled, &1))
-      report = present("analytics_extended", ids, {from, to}, "franchise", filters)
+      job = Query.schedule_health(ids, "analytics.extended")
+
+      current? =
+        Enum.any?(ids, fn id ->
+          Date.compare(to, LocalTime.today(LocalTime.timezone(id))) != :lt
+        end)
+
+      report = present("analytics_extended", ids, {from, to}, "franchise", filters, job, current?)
 
       excluded = length(all_ids) - MapSet.size(enabled)
       state = if excluded > 0 and report.state != :not_collected, do: :partial, else: report.state
-      {:ok, %{report | excluded_branches: excluded, state: state} |> Map.put(:job, nil)}
+      {:ok, %{report | excluded_branches: excluded, state: state} |> Map.put(:job, job)}
     else
       _ -> {:error, :forbidden}
     end
@@ -68,7 +98,9 @@ defmodule Delivest.Analytics.Reports do
          :ok <- Identity.authorize(staff, "statistics.read", branch_id),
          {:ok, token} <- Features.snapshot(feature, {:branch, branch_id}),
          :ok <- valid_period(from, to),
-         true <- feature != "analytics_funnel" or Date.diff(Date.utc_today(), from) <= 90 do
+         true <-
+           feature not in ["analytics_funnel", "analytics_links"] or
+             Date.diff(LocalTime.today(LocalTime.timezone(branch_id)), from) < 90 do
       Features.with_enabled(feature, {:branch, branch_id}, token, fn ->
         Repo.query!(
           """
@@ -110,7 +142,7 @@ defmodule Delivest.Analytics.Reports do
 
   defp restrict_branches(ids, _), do: ids
 
-  defp present(feature, ids, {from, to}, tab, filters) do
+  defp present(feature, ids, {from, to}, tab, filters, job, current?) do
     page = page(filters)
     data = Query.read(feature, ids, from, to, tab, filters, page)
     coverage = data.coverage
@@ -123,19 +155,20 @@ defmodule Delivest.Analytics.Reports do
         state(
           coverage.days,
           expected,
-          data.total_rows,
-          coverage.asof,
+          Enum.sum(Map.values(data.totals)),
+          checked_at(job),
           feature,
-          to,
+          current?,
           coverage.dirty
         ),
       covered_days: coverage.days,
       expected_days: expected,
       last_success_at: coverage.asof,
+      last_checked_at: checked_at(job),
       rows: label_links(data.rows, tab),
       total_rows: data.total_rows,
       page: page,
-      pages: max(ceil(data.total_rows / Query.page_size()), 1),
+      pages: max(ceil(max(data.total_rows, data.branch_total) / Query.page_size()), 1),
       totals: data.totals,
       branch_rows: data.branch_rows,
       verified_buyers: if(coverage.days == 0, do: nil, else: data.verified_buyers),
@@ -164,25 +197,30 @@ defmodule Delivest.Analytics.Reports do
       ).rows
       |> Map.new(fn [id, name, campaign] -> {id, "#{name} · #{campaign}"} end)
 
-    Enum.map(rows, &Map.put(&1, :label, Map.get(labels, &1.key, &1.key)))
+    Enum.map(rows, &Map.put(&1, :label, Map.get(labels, &1.key)))
   end
 
   defp label_links(rows, _), do: rows
 
-  defp state(0, _expected, _count, _asof, _feature, _to, _dirty), do: :not_collected
+  defp checked_at({:ok, %{last_success_at: checked}}), do: checked
+  defp checked_at(_), do: nil
 
-  defp state(covered, expected, _count, _asof, _feature, _to, _dirty) when covered < expected,
-    do: :partial
+  defp state(0, _expected, _count, _checked, _feature, _current, _dirty), do: :not_collected
+
+  defp state(covered, expected, _count, _checked, _feature, _current, _dirty)
+       when covered < expected,
+       do: :partial
 
   defp state(_, _, _, _, _, _, true), do: :stale
-  defp state(_, _, 0, _, _, _, false), do: :empty
 
-  defp state(_, _, _, asof, feature, to, false) do
-    age = if asof, do: DateTime.diff(DateTime.utc_now(), asof), else: 0
-    threshold = if feature in ["analytics_funnel", "analytics_links"], do: 1800, else: 172_800
+  defp state(_, _, count, checked, feature, current?, false) do
+    age = if checked, do: DateTime.diff(DateTime.utc_now(), checked), else: :unknown
+    threshold = if feature in ["analytics_funnel", "analytics_links"], do: 900, else: 86_400
 
-    if Date.compare(to, Date.utc_today()) != :lt and age > threshold,
-      do: :stale,
-      else: :ready
+    cond do
+      current? and (age == :unknown or age > threshold) -> :stale
+      count == 0 -> :empty
+      true -> :ready
+    end
   end
 end

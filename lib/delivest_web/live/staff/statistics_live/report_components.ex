@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
   use DelivestWeb, :html
 
   alias Delivest.Identity
+  alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   attr :tab, :string, required: true
@@ -41,6 +42,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         </div>
         <p id="statistics-report-state" class="text-sm" role="status">
           {report_state_label(@report.state)}
+          <%= if @report.last_checked_at do %>
+            · {gettext("Last successful check")}: {Calendar.strftime(
+              @report.last_checked_at,
+              "%d.%m.%Y %H:%M UTC"
+            )}
+          <% end %>
           <%= if @report.last_success_at do %>
             · {gettext("Oldest successful bucket calculation")}: {Calendar.strftime(
               @report.last_success_at,
@@ -68,6 +75,20 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
       </div>
 
       <div
+        :if={@tab in ~w(sources customers channels comparison franchise)}
+        id="statistics-report-summary"
+        class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
+      >
+        <div
+          :for={{label, value} <- summary_metrics(@report)}
+          class="rounded-2xl border border-base-300 bg-base-100 p-4"
+        >
+          <p class="text-xs text-base-content/60">{label}</p>
+          <p class="text-lg font-semibold tabular-nums">{value}</p>
+        </div>
+      </div>
+
+      <div
         :if={@tab == "franchise" and @report.branch_rows != []}
         class="rounded-2xl border border-base-300 bg-base-100 overflow-x-auto"
       >
@@ -75,17 +96,21 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
           <thead>
             <tr>
               <th>{gettext("Branch")}</th><th class="text-right">{gettext("Completed")}</th><th class="text-right">
+                {gettext("Cancelled")}
+              </th><th class="text-right">
                 {gettext("Revenue")}
-              </th>
+              </th><th class="text-right">{gettext("Average check")}</th>
             </tr>
           </thead>
           <tbody>
             <tr :for={branch <- @report.branch_rows}>
               <td>{branch_name(@staff_branches, branch.branch_id)}</td>
               <td class="text-right tabular-nums">{Map.get(branch.counts, "completed", 0)}</td>
+              <td class="text-right tabular-nums">{Map.get(branch.counts, "cancelled", 0)}</td>
               <td class="text-right tabular-nums">
                 {OrderHelpers.money(Map.get(branch.counts, "revenue", 0))}
               </td>
+              <td class="text-right tabular-nums">{average_check(branch.counts)}</td>
             </tr>
           </tbody>
         </table>
@@ -147,10 +172,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
       >
         <div
-          :for={stage <- funnel_stages()}
+          :for={{stage, label} <- funnel_stages()}
           class="rounded-2xl border border-base-300 bg-base-100 p-4"
         >
-          <p class="text-xs text-base-content/60">{stage}</p>
+          <p class="text-xs text-base-content/60">{label}</p>
           <p class="text-xl font-semibold tabular-nums">{funnel_value(@report, stage)}</p>
         </div>
         <div class="rounded-2xl border border-base-300 bg-base-100 p-4">
@@ -188,7 +213,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         <table id="statistics-report-table" class="table table-sm">
           <thead>
             <tr>
-              <th>{gettext("Metric")}</th><th>{gettext("Source / channel")}</th>
+              <th>{gettext("Source / channel")}</th>
               <th :if={@tab == "sources"} class="text-right">{gettext("Clicks")}</th>
               <th :if={@tab == "sources"} class="text-right">{gettext("First source clients")}</th>
               <th :if={@tab != "sources"} class="text-right">{gettext("Authorized orders")}</th>
@@ -201,8 +226,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
           </thead>
           <tbody>
             <tr :for={row <- @report.rows}>
-              <td>{row.dimension}</td>
-              <td class="font-medium">{Map.get(row, :label, row.key)}</td>
+              <td class="font-medium">{row_label(row, @tab)}</td>
               <td :if={@tab == "sources"} class="text-right tabular-nums">
                 {Map.get(row.counts, "clicks", 0)}
               </td>
@@ -275,24 +299,75 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
 
   defp branch_name(branches, id) do
     case Enum.find(branches, &(&1.id == id)) do
-      nil -> id
+      nil -> gettext("Unavailable branch")
       branch -> branch.name
     end
+  end
+
+  defp row_label(row, "sources"),
+    do: Map.get(row, :label) || gettext("Unavailable advertising link")
+
+  defp row_label(row, _), do: channel_label(row.key)
+
+  defp channel_label("app"), do: gettext("App")
+  defp channel_label("staff"), do: gettext("Admin")
+  defp channel_label("pos"), do: gettext("POS")
+  defp channel_label("unknown"), do: gettext("Unknown channel")
+
+  defp channel_label(key) do
+    case Ecto.UUID.cast(key) do
+      {:ok, _} -> gettext("Unknown channel")
+      _ -> Channels.name(key)
+    end
+  end
+
+  defp summary_metrics(report) do
+    [
+      {gettext("Created"), report_total(report, "created")},
+      {gettext("Completed"), report_total(report, "completed")},
+      {gettext("Cancelled"), report_total(report, "cancelled")},
+      {gettext("Net revenue"), report_money(report, "revenue")},
+      {gettext("Refunded"), report_money(report, "refunded")},
+      {gettext("Average check"), average_check(report.totals, report.state)}
+    ]
+  end
+
+  defp average_check(totals), do: average_check(totals, :ready)
+
+  defp average_check(_totals, :not_collected), do: "—"
+
+  defp average_check(totals, _state) do
+    completed = Map.get(totals, "completed", 0)
+    revenue = Map.get(totals, "revenue", 0)
+
+    if completed > 0,
+      do: OrderHelpers.money(div(revenue + div(completed, 2), completed)),
+      else: "—"
   end
 
   defp report_total(%{state: :not_collected}, _metric), do: "—"
   defp report_total(report, metric), do: Map.get(report.totals, metric, 0)
 
-  defp report_money(report) do
-    case report_total(report, "revenue") do
+  defp report_money(report), do: report_money(report, "revenue")
+
+  defp report_money(report, key) do
+    case report_total(report, key) do
       amount when is_integer(amount) -> OrderHelpers.money(amount)
       other -> other
     end
   end
 
-  defp funnel_stages,
-    do:
-      ~w(session_started visit menu_view product_view cart_add checkout_start fulfillment_selected)
+  defp funnel_stages do
+    [
+      {"session_started", gettext("Sessions started")},
+      {"visit", gettext("Visits")},
+      {"menu_view", gettext("Menu views")},
+      {"product_view", gettext("Product views")},
+      {"cart_add", gettext("Added to cart")},
+      {"checkout_start", gettext("Checkout started")},
+      {"fulfillment_selected", gettext("Fulfillment selected")}
+    ]
+  end
 
   defp funnel_outcomes do
     [

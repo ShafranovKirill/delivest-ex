@@ -3,14 +3,15 @@ defmodule Delivest.Repo.Migrations.AnalyticsReportBuckets do
 
   def change do
     execute """
-    UPDATE roles SET permissions=permissions || '["statistics.network"]'::jsonb,
-      updated_at=timezone('UTC', now())
-    WHERE name='Управляющий франшизой' AND NOT permissions ? 'statistics.network'
-    """, """
-    UPDATE roles SET permissions=permissions - 'statistics.network',
-      updated_at=timezone('UTC', now())
-    WHERE name='Управляющий франшизой'
-    """
+            UPDATE roles SET permissions=permissions || '["statistics.network"]'::jsonb,
+              updated_at=timezone('UTC', now())
+            WHERE name='Управляющий франшизой' AND NOT permissions ? 'statistics.network'
+            """,
+            """
+            UPDATE roles SET permissions=permissions - 'statistics.network',
+              updated_at=timezone('UTC', now())
+            WHERE name='Управляющий франшизой'
+            """
 
     create table(:analytics_order_identities, primary_key: false) do
       add :order_id, references(:orders, type: :uuid), primary_key: true
@@ -131,13 +132,13 @@ defmodule Delivest.Repo.Migrations.AnalyticsReportBuckets do
             "DROP TRIGGER analytics_refunds_touch ON order_refunds"
 
     execute """
-    CREATE FUNCTION analytics_touch_funnel() RETURNS trigger LANGUAGE plpgsql AS $$
-    DECLARE cohort_at timestamp without time zone;
-            BEGIN
-      SELECT started_at INTO cohort_at FROM funnel_sessions WHERE id=NEW.session_id;
-      PERFORM analytics_touch_day(NEW.branch_id, cohort_at, 'analytics_funnel');
-              RETURN NEW;
-            END $$;
+              CREATE FUNCTION analytics_touch_funnel() RETURNS trigger LANGUAGE plpgsql AS $$
+              DECLARE cohort_at timestamp without time zone;
+              BEGIN
+                SELECT started_at INTO cohort_at FROM funnel_sessions WHERE id=NEW.session_id;
+                PERFORM analytics_touch_day(NEW.branch_id, cohort_at, 'analytics_funnel');
+                RETURN NEW;
+              END $$;
             """,
             "DROP FUNCTION analytics_touch_funnel()"
 

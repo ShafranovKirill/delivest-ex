@@ -13,6 +13,35 @@ defmodule Delivest.Analytics.Reports.Query do
 
   def page_size, do: @page_size
 
+  def schedule_health([], _kind), do: {:ok, %{state: :queued, last_success_at: nil}}
+
+  def schedule_health(ids, kind) do
+    ids = Enum.map(ids, &Ecto.UUID.dump!/1)
+
+    [[checked, errors, missing, overdue]] =
+      Repo.query!(
+        """
+        SELECT min(s.last_success_at),
+          COALESCE(bool_or(s.last_error_at IS NOT NULL AND
+            (s.last_success_at IS NULL OR s.last_error_at>s.last_success_at)),false),
+          count(*) FILTER (WHERE s.id IS NULL OR s.last_success_at IS NULL)::bigint,
+          COALESCE(bool_or(s.next_at < timezone('UTC',now()) AND NOT s.running),false)
+        FROM unnest($1::uuid[]) b(id)
+        LEFT JOIN background_schedules s ON s.scope_key='branch:' || b.id::text AND s.kind=$2
+        """,
+        [ids, kind]
+      ).rows
+
+    state =
+      cond do
+        errors -> :error
+        missing > 0 or overdue -> :queued
+        true -> :ready
+      end
+
+    {:ok, %{state: state, last_success_at: utc(checked)}}
+  end
+
   def read(_feature, [], _from, _to, _tab, _filters, _page), do: empty()
 
   def read(feature, ids, from, to, tab, filters, page) do
@@ -28,7 +57,8 @@ defmodule Delivest.Analytics.Reports.Query do
       total_rows: count_groups(args),
       totals: totals(args),
       coverage: coverage(feature, ids, from, to),
-      branch_rows: branch_rows(feature, ids, from, to, tab, filters),
+      branch_rows: branch_rows(feature, ids, from, to, tab, filters, page),
+      branch_total: branch_total(feature, ids, from, to, tab, filters),
       verified_buyers: customer_stats.verified_buyers,
       repeat_buyers: customer_stats.repeat_buyers,
       retention: customer_stats.retention
@@ -42,6 +72,7 @@ defmodule Delivest.Analytics.Reports.Query do
       totals: %{},
       coverage: %{days: 0, asof: nil, dirty: false},
       branch_rows: [],
+      branch_total: 0,
       verified_buyers: nil,
       repeat_buyers: nil,
       retention: nil
@@ -103,12 +134,17 @@ defmodule Delivest.Analytics.Reports.Query do
   end
 
   defp totals(args) do
-    [[created, completed, revenue]] =
+    [[created, completed, cancelled, revenue, refunded, sessions, clicks, first_sources]] =
       Repo.query!(
         """
         SELECT COALESCE(sum((r.counts->>'created')::bigint),0)::bigint,
           COALESCE(sum((r.counts->>'completed')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint
+          COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'refunded')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'sessions')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'clicks')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'first_source_clients')::bigint),0)::bigint
         FROM analytics_report_states s
         JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
         WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
@@ -118,7 +154,16 @@ defmodule Delivest.Analytics.Reports.Query do
         args
       ).rows
 
-    %{"created" => created, "completed" => completed, "revenue" => revenue}
+    %{
+      "created" => created,
+      "completed" => completed,
+      "cancelled" => cancelled,
+      "revenue" => revenue,
+      "refunded" => refunded,
+      "sessions" => sessions,
+      "clicks" => clicks,
+      "first_source_clients" => first_sources
+    }
   end
 
   defp coverage(feature, ids, from, to) do
@@ -137,10 +182,10 @@ defmodule Delivest.Analytics.Reports.Query do
     %{days: days, asof: utc(asof), dirty: dirty}
   end
 
-  defp branch_rows(_feature, _ids, _from, _to, tab, _filters) when tab != "franchise",
+  defp branch_rows(_feature, _ids, _from, _to, tab, _filters, _page) when tab != "franchise",
     do: []
 
-  defp branch_rows(feature, ids, from, to, _tab, filters) do
+  defp branch_rows(feature, ids, from, to, _tab, filters, page) do
     channel = key_filter("franchise", filters)
 
     Repo.query!(
@@ -148,22 +193,47 @@ defmodule Delivest.Analytics.Reports.Query do
       SELECT s.branch_id::text,
         COALESCE(sum((r.counts->>'created')::bigint),0)::bigint,
         COALESCE(sum((r.counts->>'completed')::bigint),0)::bigint,
+        COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
         COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint
       FROM analytics_report_states s
       JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
       WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
         AND r.dimension='channel'
         AND ($5::text IS NULL OR r.key=$5)
-      GROUP BY s.branch_id ORDER BY s.branch_id
+      GROUP BY s.branch_id ORDER BY s.branch_id LIMIT #{@page_size} OFFSET $6
       """,
-      [feature, ids, from, to, channel]
+      [feature, ids, from, to, channel, (page - 1) * @page_size]
     ).rows
-    |> Enum.map(fn [id, created, completed, revenue] ->
+    |> Enum.map(fn [id, created, completed, cancelled, revenue] ->
       %{
         branch_id: id,
-        counts: %{"created" => created, "completed" => completed, "revenue" => revenue}
+        counts: %{
+          "created" => created,
+          "completed" => completed,
+          "cancelled" => cancelled,
+          "revenue" => revenue
+        }
       }
     end)
+  end
+
+  defp branch_total(_feature, _ids, _from, _to, tab, _filters) when tab != "franchise", do: 0
+
+  defp branch_total(feature, ids, from, to, _tab, filters) do
+    channel = key_filter("franchise", filters)
+
+    [[count]] =
+      Repo.query!(
+        """
+        SELECT count(DISTINCT s.branch_id)::bigint FROM analytics_report_states s
+        JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
+        WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
+          AND r.dimension='channel' AND ($5::text IS NULL OR r.key=$5)
+        """,
+        [feature, ids, from, to, channel]
+      ).rows
+
+    count
   end
 
   defp customer_stats(feature, _ids, _from, _to, tab, _filters)

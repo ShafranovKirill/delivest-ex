@@ -5,8 +5,10 @@ defmodule Delivest.Analytics.Reports.Prune do
   @batch 500
   def batch_size, do: @batch
 
+  # Report dates are branch-local calendar days; retention uses a UTC calendar-date
+  # cutoff shifted by 36 months, with Date.shift's end-of-month clamping.
   def prune(now \\ Date.utc_today()) do
-    oldest = now |> Date.beginning_of_month() |> Date.shift(month: -35)
+    oldest = Date.shift(now, month: -36)
 
     states =
       Repo.query!(

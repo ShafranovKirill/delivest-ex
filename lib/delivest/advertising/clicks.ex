@@ -83,7 +83,9 @@ defmodule Delivest.Advertising.Clicks do
                 clicked_at: now,
                 inserted_at: now
               }
-            ], on_conflict: :nothing)
+            ],
+            on_conflict: :nothing
+          )
         end
 
         {:captured, guest_id}

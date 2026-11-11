@@ -10533,3 +10533,268 @@ msgstr "Максимум маркетинговых Push"
 #, elixir-autogen, elixir-format
 msgid "Rolling window, hours"
 msgstr "Период ограничения, часы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:64
+#, elixir-autogen, elixir-format
+msgid "%{count} branches are excluded by feature settings"
+msgstr "%{count} филиалов исключены настройками функции"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:194
+#, elixir-autogen, elixir-format
+msgid "Authorized orders"
+msgstr "Заказы авторизованных клиентов"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:113
+#, elixir-autogen, elixir-format
+msgid "Calculation could not be queued"
+msgstr "Не удалось поставить расчёт в очередь"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:52
+#, elixir-autogen, elixir-format
+msgid "Calculation is queued or running"
+msgstr "Расчёт ожидает выполнения или выполняется"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:304
+#, elixir-autogen, elixir-format
+msgid "Cancelled orders"
+msgstr "Отменённые заказы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:302
+#, elixir-autogen, elixir-format
+msgid "Cash method orders"
+msgstr "Заказы с оплатой наличными"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:327
+#, elixir-autogen, elixir-format
+msgid "Channel"
+msgstr "Канал"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:192
+#, elixir-autogen, elixir-format
+msgid "Clicks"
+msgstr "Переходы"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:581
+#, elixir-autogen, elixir-format
+msgid "Comparison"
+msgstr "Сравнение"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:303
+#, elixir-autogen, elixir-format
+msgid "Completed orders"
+msgstr "Завершённые заказы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:252
+#, elixir-autogen, elixir-format
+msgid "Data may be stale"
+msgstr "Данные могут быть устаревшими"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:249
+#, elixir-autogen, elixir-format
+msgid "Data was not collected for this period"
+msgstr "За этот период данные не собирались"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:193
+#, elixir-autogen, elixir-format
+msgid "First source clients"
+msgstr "Клиенты с первым источником"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:582
+#, elixir-autogen, elixir-format
+msgid "Franchise"
+msgstr "Франшиза"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:577
+#, elixir-autogen, elixir-format
+msgid "Funnel"
+msgstr "Воронка"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:120
+#, elixir-autogen, elixir-format
+msgid "Identified buyers with completed orders"
+msgstr "Идентифицированные покупатели с завершёнными заказами"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:55
+#, elixir-autogen, elixir-format
+msgid "Last calculation failed; the previous published result remains available."
+msgstr "Последний расчёт завершился ошибкой; предыдущий опубликованный результат доступен."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:342
+#, elixir-autogen, elixir-format
+msgid "Link ID"
+msgstr "ID ссылки"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:30
+#, elixir-autogen, elixir-format
+msgid "Manage advertising links"
+msgstr "Управление рекламными ссылками"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:191
+#, elixir-autogen, elixir-format
+msgid "Metric"
+msgstr "Показатель"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:251
+#, elixir-autogen, elixir-format
+msgid "No activity in collected period"
+msgstr "За собранный период действий не было"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:45
+#, elixir-autogen, elixir-format
+msgid "Oldest successful bucket calculation"
+msgstr "Самый ранний успешный расчёт периода"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:301
+#, elixir-autogen, elixir-format
+msgid "Online paid sessions"
+msgstr "Сессии с подтверждённой онлайн-оплатой"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:58
+#, elixir-autogen, elixir-format
+msgid "Only %{covered} of %{expected} branch days have collected data"
+msgstr "Данные собраны только для %{covered} из %{expected} дней филиалов"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:263
+#, elixir-autogen, elixir-format
+msgid "Only saved advertising link receipts are confirmed attribution. UTM labels are unverified."
+msgstr "Атрибуция подтверждена только сохранёнными записями рекламных ссылок. UTM-метки не проверены."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:133
+#, elixir-autogen, elixir-format
+msgid "Only verified client IDs are counted across channels; guest phone numbers are not matched."
+msgstr "Между каналами учитываются только подтверждённые ID клиентов; номера телефонов гостей не сопоставляются."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:170
+#, elixir-autogen, elixir-format
+msgid "Order outcomes for this session cohort"
+msgstr "Итоги заказов для этой группы сессий"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:299
+#, elixir-autogen, elixir-format
+msgid "Orders created"
+msgstr "Созданные заказы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:250
+#, elixir-autogen, elixir-format
+msgid "Partial data"
+msgstr "Неполные данные"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:138
+#, elixir-autogen, elixir-format
+msgid "Percentage of authorized buyers is unavailable: anonymous buyers cannot be counted reliably."
+msgstr "Доля авторизованных покупателей недоступна: анонимных покупателей нельзя достоверно посчитать."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:237
+#, elixir-autogen, elixir-format
+msgid "Previous"
+msgstr "Назад"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:103
+#, elixir-autogen, elixir-format
+msgid "Previous period"
+msgstr "Предыдущий период"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:39
+#, elixir-autogen, elixir-format
+msgid "Recalculate available history"
+msgstr "Пересчитать доступную историю"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:125
+#, elixir-autogen, elixir-format
+msgid "Repeat identified buyers"
+msgstr "Повторные идентифицированные покупатели"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:128
+#, elixir-autogen, elixir-format
+msgid "Retention from previous equal period"
+msgstr "Вернувшиеся из предыдущего равного периода"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:269
+#, elixir-autogen, elixir-format
+msgid "Revenue includes completed orders net of succeeded refunds, grouped by order creation date. No causal effect is inferred from channel differences."
+msgstr "Выручка включает завершённые заказы за вычетом успешных возвратов по дате создания заказа. Различия каналов не доказывают причинный эффект."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:102
+#, elixir-autogen, elixir-format
+msgid "Selected period"
+msgstr "Выбранный период"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:257
+#, elixir-autogen, elixir-format
+msgid "Session steps are observational; orders and payment stages use server records. Cash is shown separately from confirmed online payments."
+msgstr "Шаги сессии отражают наблюдения; этапы заказа и оплаты берутся из серверных записей. Наличные показаны отдельно от подтверждённых онлайн-оплат."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:157
+#, elixir-autogen, elixir-format
+msgid "Sessions with an order"
+msgstr "Сессии с заказом"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:191
+#, elixir-autogen, elixir-format
+msgid "Source / channel"
+msgstr "Источник / канал"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:578
+#, elixir-autogen, elixir-format
+msgid "Sources"
+msgstr "Источники"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:305
+#, elixir-autogen, elixir-format
+msgid "Unlinked orders on creation date"
+msgstr "Заказы без связи по дате создания"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:178
+#, elixir-autogen, elixir-format
+msgid "Unlinked orders use creation date and are shown separately; they are not included in session conversion."
+msgstr "Заказы без связи показаны отдельно по дате создания и не входят в конверсию сессий."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:253
+#, elixir-autogen, elixir-format
+msgid "Updated"
+msgstr "Обновлено"
+
+msgid "Last successful check"
+msgstr "Последняя успешная проверка"
+
+msgid "Find advertising link"
+msgstr "Найти рекламную ссылку"
+
+msgid "All advertising links"
+msgstr "Все рекламные ссылки"
+
+msgid "Unavailable branch"
+msgstr "Филиал недоступен"
+
+msgid "Unavailable advertising link"
+msgstr "Рекламная ссылка недоступна"
+
+msgid "Unknown channel"
+msgstr "Неизвестный канал"
+
+msgid "Net revenue"
+msgstr "Выручка после возвратов"
+
+msgid "Sessions started"
+msgstr "Начатые сессии"
+
+msgid "Visits"
+msgstr "Посещения"
+
+msgid "Menu views"
+msgstr "Просмотры меню"
+
+msgid "Product views"
+msgstr "Просмотры товаров"
+
+msgid "Added to cart"
+msgstr "Добавления в корзину"
+
+msgid "Checkout started"
+msgstr "Начало оформления"
+
+msgid "Fulfillment selected"
+msgstr "Выбор способа получения"
+
+msgid "All channels"
+msgstr "Все каналы"

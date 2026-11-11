@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   alias Delivest.{Analytics, Features, Gateway, Identity}
   alias Delivest.Analytics.Reports
+  alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
   import DelivestWeb.Staff.StatsComponents
@@ -61,10 +62,23 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
            "to" => custom_to,
            "channel" => params["channel"],
            "branch_id" => params["branch_id"],
-           "link_id" => params["link_id"]
+           "link_id" => params["link_id"],
+           "link_search" => params["link_search"]
          }),
        sort: sort,
        visible_tabs: visible_tabs,
+       report_tabs: @report_tabs,
+       link_options:
+         if(tab == "sources",
+           do:
+             Reports.link_options(
+               socket.assigns.current_staff,
+               socket.assigns.current_branch.id,
+               params["link_search"],
+               params["link_id"]
+             ),
+           else: []
+         ),
        report_filters: report_filters(params)
      )
      |> then(fn socket -> if period_error, do: socket, else: load_tab(socket) end)}
@@ -79,7 +93,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "sort" => to_string(socket.assigns.sort),
         "channel" => params["channel"] || socket.assigns.report_filters["channel"],
         "branch_id" => params["branch_id"] || socket.assigns.report_filters["branch_id"],
-        "link_id" => params["link_id"] || socket.assigns.report_filters["link_id"]
+        "link_id" => params["link_id"] || socket.assigns.report_filters["link_id"],
+        "link_search" => params["link_search"] || socket.assigns.report_filters["link_search"]
       }
       |> compact_query()
       |> maybe_put_custom(params, socket.assigns.period)
@@ -185,25 +200,32 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
       _ ->
         assign(socket,
-          report: %{
-            state: :not_collected,
-            rows: [],
-            last_success_at: nil,
-            verified_buyers: 0,
-            repeat_buyers: nil,
-            retention: nil,
-            covered_days: 0,
-            expected_days: 0,
-            excluded_branches: 0,
-            branch_rows: [],
-            total_rows: 0,
-            page: 1,
-            pages: 1,
-            totals: %{},
-            job: nil
-          }
+          report: unavailable_report(),
+          report_previous: nil
         )
     end
+  end
+
+  @doc false
+  def unavailable_report do
+    %{
+      state: :not_collected,
+      rows: [],
+      last_success_at: nil,
+      last_checked_at: nil,
+      verified_buyers: nil,
+      repeat_buyers: nil,
+      retention: nil,
+      covered_days: 0,
+      expected_days: 0,
+      excluded_branches: 0,
+      branch_rows: [],
+      total_rows: 0,
+      page: 1,
+      pages: 1,
+      totals: %{},
+      job: nil
+    }
   end
 
   defp visible_tabs(socket) do
@@ -224,7 +246,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   end
 
   defp report_filters(params),
-    do: Map.take(params, ["channel", "link_id", "branch_ids", "branch_id", "page"])
+    do: Map.take(params, ["channel", "link_id", "link_search", "branch_ids", "branch_id", "page"])
+
+  defp channel_options do
+    [
+      {gettext("App"), "app"},
+      {gettext("Admin"), "staff"},
+      {gettext("POS"), "pos"},
+      {gettext("Unknown channel"), "unknown"}
+    ]
+    |> Kernel.++(Enum.map(Channels.list(), fn {key, name} -> {name, key} end))
+    |> Enum.uniq_by(&elem(&1, 1))
+  end
 
   defp tab_path(assigns, tab, overrides \\ %{}) do
     {from, to} = assigns.period
@@ -237,6 +270,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "channel" => assigns.report_filters["channel"],
         "branch_id" => assigns.report_filters["branch_id"],
         "link_id" => assigns.report_filters["link_id"],
+        "link_search" => assigns.report_filters["link_search"],
         "page" => assigns.report_filters["page"]
       }
       |> compact_query()
@@ -322,9 +356,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           <.input
             :if={@tab in ~w(channels comparison franchise)}
             field={@form[:channel]}
-            type="text"
-            placeholder={gettext("Channel")}
-            class="input input-bordered input-sm w-36"
+            type="select"
+            prompt={gettext("All channels")}
+            options={channel_options()}
+            class="select select-bordered select-sm w-36"
           />
           <.input
             :if={@tab == "franchise"}
@@ -336,9 +371,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           />
           <.input
             :if={@tab == "sources"}
-            field={@form[:link_id]}
+            field={@form[:link_search]}
             type="text"
-            placeholder={gettext("Link ID")}
+            placeholder={gettext("Find advertising link")}
+            class="input input-bordered input-sm w-44"
+          />
+          <.input
+            :if={@tab == "sources"}
+            field={@form[:link_id]}
+            type="select"
+            prompt={gettext("All advertising links")}
+            options={@link_options}
             class="input input-bordered input-sm w-56"
           />
         </.form>
