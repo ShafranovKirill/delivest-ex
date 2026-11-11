@@ -63,7 +63,16 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
       <.page_header
         title={gettext("Payment")}
         subtitle={gettext("How customers of this branch can pay for an order.")}
-      />
+      >
+        <:actions :if={@can_edit}>
+          <button
+            type="submit"
+            form="payments-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.form
         for={@form}
@@ -116,12 +125,6 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
         <p :if={@form[:cash].errors != []} class="text-sm text-error">
           {gettext("Enable at least one payment method")}
         </p>
-
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
-        </div>
       </.form>
     </div>
     """

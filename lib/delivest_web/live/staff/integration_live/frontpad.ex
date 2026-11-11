@@ -232,6 +232,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         title="Frontpad"
         subtitle={gettext("Products in Frontpad and their match with the app menu.")}
       >
+        <:actions :if={@can_edit_branch and @tab == :settings}>
+          <button
+            type="submit"
+            form="frontpad-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </:actions>
         <:actions :if={api_key?(@crm)}>
           <button
             :if={is_nil(@available_at)}
@@ -531,12 +541,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
           <code class="block break-all rounded bg-base-200 p-2 text-xs">
             {Frontpad.webhook_url(@crm.frontpad.webhook_token)}
           </code>
-        </div>
-
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </fieldset>
     </.form>

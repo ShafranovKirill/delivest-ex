@@ -249,7 +249,16 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
         title={gettext("Delivery zones")}
         subtitle={gettext("Delivery price for the site and Yandex Eda.")}
         back={~p"/staff/b/#{@current_branch}/delivery"}
-      />
+      >
+        <:actions :if={@can_edit}>
+          <button
+            type="submit"
+            form="delivery-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.form
         for={@settings_form}
@@ -326,12 +335,6 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
               "Zones need DaData: without it the site has no address map, addresses have no point and delivery orders are refused."
             )}
           </span>
-        </div>
-
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
 

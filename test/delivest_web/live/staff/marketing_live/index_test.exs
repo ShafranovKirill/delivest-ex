@@ -124,7 +124,13 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
 
     {:ok, index, _} = live(conn, ~p"/staff/marketing/policies")
     assert render(element(index, "#staff-page-header")) =~ "Маркетинговые политики"
-    assert has_element?(index, "a", "Новая политика")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             index,
+             "#staff-page-header-actions",
+             "a",
+             "Новая политика"
+           )
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing/new")
     assert has_element?(view, "#marketing-policy-wizard", "Шаг 1 из 5")
@@ -135,7 +141,13 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
   test "global reward calculation is explicit and requires network permission", ctx do
     enable_marketing(ctx)
     {:ok, ordinary, _} = live(ctx.conn, ~p"/staff/marketing/policies")
-    refute has_element?(ordinary, "#marketing-recalculate-now")
+
+    refute DelivestWeb.PortalTestHelper.has_element?(
+             ordinary,
+             "#staff-page-header-actions",
+             "#marketing-recalculate-now"
+           )
+
     render_hook(ordinary, "recalculate_marketing", %{})
     refute has_element?(ordinary, "#marketing-calculation-status")
 
@@ -153,11 +165,22 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
       init_test_session(ctx.conn, %{"staff_id" => network_staff.id, "locale" => "ru"})
 
     {:ok, network, _} = live(network_conn, ~p"/staff/marketing/policies")
-    assert has_element?(network, "#marketing-recalculate-now")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             network,
+             "#staff-page-header-actions",
+             "#marketing-recalculate-now"
+           )
+
     assert has_element?(network, "#marketing-calculation-panel", "выдаст положенные награды")
-    network |> element("#marketing-recalculate-now") |> render_click()
+    render_click(network, "recalculate_marketing")
     assert has_element?(network, "#marketing-calculation-status")
-    assert has_element?(network, "#marketing-recalculate-now")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             network,
+             "#staff-page-header-actions",
+             "#marketing-recalculate-now"
+           )
   end
 
   test "completed global calculation refreshes issued counts in the current policy list", ctx do
@@ -175,7 +198,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     conn = init_test_session(ctx.conn, %{"staff_id" => network_staff.id})
     {:ok, view, _} = live(conn, ~p"/staff/marketing/policies")
     assert has_element?(view, "#marketing-policies", "0 issues")
-    view |> element("#marketing-recalculate-now") |> render_click()
+    render_click(view, "recalculate_marketing")
 
     token = :sys.get_state(view.pid).socket.assigns.poll_tokens.calculation
     assert token

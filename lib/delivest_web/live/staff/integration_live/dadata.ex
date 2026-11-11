@@ -69,7 +69,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
             "Customers pick the address on the map with dadata.ru suggestions. When it is off, the address is typed into plain fields. The settings are shared by every branch."
           )
         }
-      />
+      >
+        <:actions>
+          <button
+            type="submit"
+            form="dadata-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
@@ -105,12 +114,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
           >
             {gettext("Delivery city · %{name}", name: branch.name)}
           </.link>
-        </div>
-
-        <div class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
     </div>

@@ -199,9 +199,19 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
     ~H"""
     <div class="space-y-6">
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={gettext("Banners")}
         subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
       >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:stocks}
+            part={:areas}
+          />
+        </:navigation>
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "stocks.create")}
@@ -219,6 +229,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         branches={@staff_branches}
         branch={@current_branch}
         active={:stocks}
+        part={:branches}
       />
 
       <div id="stocks-list" phx-hook="SortableStocks" class="space-y-3">

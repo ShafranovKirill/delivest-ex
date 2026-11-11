@@ -106,7 +106,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
 
     assert has_element?(lv, "#frontpad-settings fieldset[disabled]")
-    refute has_element?(lv, "#frontpad-refresh")
+
+    refute DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-refresh"
+           )
 
     lv |> element("button[phx-value-tab=check]") |> render_click()
     assert has_element?(lv, "#frontpad-not-configured")
@@ -123,7 +128,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     |> render_submit()
 
     assert has_element?(lv, "#frontpad-webhook")
-    assert has_element?(lv, "#frontpad-refresh")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-refresh"
+           )
 
     {:ok, %{info: %{crm: crm}}} = Delivest.Identity.get_branch(branch.id, preload: [:info])
     assert crm.enabled
@@ -159,12 +169,22 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     assert has_element?(lv, "#frontpad-empty")
     refute has_element?(lv, "#frontpad-settings")
 
-    lv |> element("#frontpad-refresh") |> render_click()
+    render_click(lv, "refresh")
 
     assert has_element?(lv, "#frontpad-missing", "Tea")
     refute has_element?(lv, "#frontpad-missing", "Soup")
-    assert has_element?(lv, "#frontpad-refresh[disabled]")
-    assert has_element?(lv, "#frontpad-countdown")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-refresh[disabled]"
+           )
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-countdown"
+           )
 
     lv |> element("button[phx-value-tab=products]") |> render_click()
     assert has_element?(lv, "#frontpad-products", "Pizza")

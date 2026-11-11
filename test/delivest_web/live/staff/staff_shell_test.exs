@@ -69,7 +69,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#staff-profile-menu #header-push-toggle")
   end
 
-  test "page title is portaled while body actions stay in the page", %{conn: conn} do
+  test "page title and actions use separate header rows", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     insert(:staff_branch, staff: staff, branch: branch)
@@ -78,9 +78,15 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     {:ok, lv, _} = live(conn, ~p"/staff/branches")
     assert has_element?(lv, "#staff-header-title")
     assert render(element(lv, "#staff-page-header")) =~ "Settings for branches"
-    assert has_element?(lv, "#branch-settings-list #create-branch")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#create-branch"
+           )
+
     refute has_element?(lv, "#branch-settings-list h1")
-    refute has_element?(lv, "#staff-page-header-actions")
+    assert has_element?(lv, "#staff-page-header-actions")
     refute has_element?(lv, "#staff-page-header nav")
   end
 

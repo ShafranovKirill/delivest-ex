@@ -143,7 +143,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Iiko do
         back={~p"/staff/b/#{@current_branch}/integrations"}
         title="iiko"
         subtitle={gettext("Orders go to the restaurant POS, statuses and the stop list come back.")}
-      />
+      >
+        <:actions :if={@can_edit and @tab == :settings}>
+          <button type="submit" form="iiko-settings" class="btn btn-primary">{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <div role="tablist" class="tabs tabs-boxed w-fit">
         <button
@@ -282,7 +286,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Iiko do
           </.inputs_for>
 
           <div class="flex flex-wrap gap-2">
-            <button class="btn btn-primary">{gettext("Save")}</button>
             <button
               :if={ready?(@crm)}
               id="iiko-webhooks"

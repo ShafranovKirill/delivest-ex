@@ -279,6 +279,14 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
         title_in_header={false}
       >
         <:actions>
+          <button
+            type="submit"
+            form="bulk-products"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            <.icon name="hero-check" class="size-5" /> {gettext("Save all")}
+          </button>
           <.link navigate={~p"/staff/b/#{@current_branch}/products"} class="btn btn-ghost">
             <.icon name="hero-arrow-left" class="size-5" /> {gettext("Back to products")}
           </.link>
@@ -376,9 +384,6 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
           <span class="text-sm text-base-content/70">
             {gettext("Products to add: %{count}", count: length(filled_rows(assigns)))}
           </span>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            <.icon name="hero-check" class="size-5" /> {gettext("Save all")}
-          </button>
         </div>
       </.form>
     </div>

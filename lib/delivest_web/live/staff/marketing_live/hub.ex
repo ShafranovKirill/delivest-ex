@@ -40,14 +40,28 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
     ~H"""
     <div id="marketing-hub" class="space-y-6">
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={gettext("Marketing")}
         subtitle={gettext("Choose a marketing area and branch.")}
-      />
+      >
+        <:navigation :if={
+          @current_branch || Navigation.global_area_links?(@current_staff, @staff_branches)
+        }>
+          <Navigation.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={@section}
+            part={:areas}
+          />
+        </:navigation>
+      </.page_header>
       <Navigation.navigation
         staff={@current_staff}
         branches={@staff_branches}
         branch={@current_branch}
         active={@section}
+        part={:branches}
       />
       <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <.link

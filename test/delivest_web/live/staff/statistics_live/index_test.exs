@@ -26,10 +26,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert html =~ "Statistics"
     assert html =~ "600 ₽"
 
-    html = lv |> element("a", "Products") |> render_click()
+    html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=products&period=today")
     assert html =~ "Хинкали"
 
-    html = lv |> element("a", "Categories") |> render_click()
+    html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=categories&period=today")
     assert html =~ "Горячее"
   end
 
@@ -113,7 +113,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, ~s{input[name="to"][value=""]})
     refute has_element?(lv, "h2", "Revenue by day")
 
-    lv |> element("a", "Products") |> render_click()
+    render_patch(lv, path <> "?tab=products&period=custom&from[x]=2026-01-01&to[]=2026-01-02")
     assert has_element?(lv, "#statistics-period-error")
   end
 

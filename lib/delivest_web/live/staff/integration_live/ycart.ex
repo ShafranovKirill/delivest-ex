@@ -76,7 +76,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Ycart do
         title={gettext("YCart Settings")}
         subtitle={@current_branch.name}
         back={~p"/staff/b/#{@current_branch}/integrations"}
-      />
+      >
+        <:actions :if={@can_edit}>
+          <button
+            type="submit"
+            form="ycart-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.form
         for={@form}
@@ -97,11 +106,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Ycart do
           label={gettext("Yandex Org ID")}
           disabled={not @can_edit}
         />
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>{gettext(
-            "Save"
-          )}</button>
-        </div>
       </.form>
     </div>
     """

@@ -82,10 +82,16 @@ defmodule DelivestWeb.Staff.RoleLive.RolesTest do
     {:ok, view, _html} =
       live(init_test_session(conn, %{"staff_id" => staff.id}), ~p"/staff/roles")
 
-    assert view |> element("#seed-roles") |> render_click() =~ "Base roles created"
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             view,
+             "#staff-page-header-actions",
+             "#seed-roles"
+           )
+
+    assert render_click(view, "seed_roles") =~ "Base roles created"
     assert render(view) =~ "Управляющий франшизой"
     assert Delivest.Repo.get!(Delivest.Identity.Role, cashier.id).permissions == ["orders.read"]
-    assert view |> element("#seed-roles") |> render_click() =~ "All base roles already exist"
+    assert render_click(view, "seed_roles") =~ "All base roles already exist"
   end
 
   test "a non-administrator cannot seed roles by sending the event", %{conn: conn} do
@@ -94,7 +100,12 @@ defmodule DelivestWeb.Staff.RoleLive.RolesTest do
     {:ok, view, _html} =
       live(init_test_session(conn, %{"staff_id" => staff.id}), ~p"/staff/roles")
 
-    refute has_element?(view, "#seed-roles")
+    refute DelivestWeb.PortalTestHelper.has_element?(
+             view,
+             "#staff-page-header-actions",
+             "#seed-roles"
+           )
+
     assert render_click(view, "seed_roles") =~ "Only administrators can create base roles"
     refute render(view) =~ "Управляющий франшизой"
   end

@@ -30,15 +30,37 @@ defmodule DelivestWeb.Staff.MarketingLive.Bonuses do
     ~H"""
     <div id="bonuses-page" class="space-y-6">
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={gettext("Bonuses")}
         subtitle={gettext("Common bonus rules and branch settings.")}
-      />
+      >
+        <:navigation>
+          <Navigation.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={nil}
+            active={:loyalty}
+            part={:areas}
+          />
+        </:navigation>
+        <:actions :if={Identity.can?(@current_staff, "franchise.update")}>
+          <button
+            type="submit"
+            form="common-bonuses-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save common settings")}
+          </button>
+        </:actions>
+      </.page_header>
 
       <Navigation.navigation
         staff={@current_staff}
         branches={@staff_branches}
         branch={nil}
         active={:loyalty}
+        part={:branches}
       />
 
       <.live_component

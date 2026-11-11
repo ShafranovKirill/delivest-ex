@@ -93,11 +93,6 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
               "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
             )}
           </p>
-          <div class="flex justify-end">
-            <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-              {gettext("Save")}
-            </button>
-          </div>
         </.form>
       </section>
     </div>

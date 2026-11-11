@@ -65,7 +65,16 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
           )
         }
         back={~p"/staff/b/#{@current_branch}/delivery"}
-      />
+      >
+        <:actions :if={@can_edit}>
+          <button
+            type="submit"
+            form="couriers-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.form
         for={@form}
@@ -88,12 +97,6 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
             options={searches()}
             disabled={not @can_edit}
           />
-        </div>
-
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
     </div>

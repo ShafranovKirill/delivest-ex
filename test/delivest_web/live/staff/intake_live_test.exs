@@ -16,9 +16,13 @@ defmodule DelivestWeb.Staff.IntakeLiveTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id})
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
 
-    lv
-    |> form("#intake-pause-form", %{"duration" => "30", "reason" => "поломка"})
-    |> render_submit()
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#intake-pause-form[phx-submit='intake_pause']"
+           )
+
+    render_submit(lv, "intake_pause", %{"duration" => "30", "reason" => "поломка"})
 
     assert render(lv) =~ "поломка"
     refute Intake.accepting?(branch.id)

@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
 
   alias Delivest.Integrations.{Health, Yookassa}
   alias Delivest.Payments
+  alias DelivestWeb.PortalTestHelper
 
   setup %{conn: conn} do
     branch = insert(:branch)
@@ -32,10 +33,28 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
   test "saves the methods of the branch", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
 
+    assert PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "button[form='payments-form']"
+           )
+
+    refute has_element?(lv, "#payments-form button[type='submit']")
+
     lv |> form("#payments-form", payments: %{cash: "false"}) |> render_submit()
 
     assert Payments.settings(branch).cash == false
     assert Payments.enabled_methods(branch) == [:card_offline]
+  end
+
+  test "read-only staff has no Save action", %{conn: conn, branch: branch} do
+    staff = insert(:staff, role: insert(:role, permissions: ["finance.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
+    refute has_element?(lv, "#staff-page-header-actions")
+    refute has_element?(lv, "#payments-form button[type='submit']")
   end
 
   test "at least one method stays on", %{conn: conn, branch: branch} do

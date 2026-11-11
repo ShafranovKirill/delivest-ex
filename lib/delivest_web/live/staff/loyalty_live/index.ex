@@ -148,15 +148,45 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
     ~H"""
     <div class="space-y-6">
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={gettext("Loyalty")}
         subtitle={gettext("Customers earn stars for completed orders.")}
-      />
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:loyalty}
+            part={:areas}
+          />
+        </:navigation>
+        <:actions :if={@can_edit}>
+          <button
+            type="submit"
+            form="loyalty-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+        <:actions :if={Identity.can?(@current_staff, "franchise.update")}>
+          <button
+            type="submit"
+            form="common-bonuses-form"
+            class="btn btn-outline"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save common settings")}
+          </button>
+        </:actions>
+      </.page_header>
 
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}
         branch={@current_branch}
         active={:loyalty}
+        part={:branches}
       />
 
       <.live_component
@@ -235,11 +265,6 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
             "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
           )}
         </p>
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
-        </div>
       </.form>
       <details
         id="loyalty-product-settings"

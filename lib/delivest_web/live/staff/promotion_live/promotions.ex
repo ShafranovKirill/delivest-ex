@@ -177,16 +177,39 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       class="space-y-6"
     >
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={@page_title}
         subtitle={gettext("Discounts & promo codes")}
         back={~p"/staff/b/#{@current_branch}/promotions"}
-      />
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
+        <:actions>
+          <button
+            id="promotion-save"
+            type="submit"
+            form="promotion-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </:actions>
+      </.page_header>
 
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}
         branch={@current_branch}
         active={:promotions}
+        part={:branches}
       />
 
       <.live_component
@@ -207,16 +230,28 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       class="space-y-6"
     >
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={@page_title}
         subtitle={gettext("Discounts & promo codes")}
         back={~p"/staff/b/#{@current_branch}/promotions"}
-      />
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
+      </.page_header>
 
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}
         branch={@current_branch}
         active={:promotions}
+        part={:branches}
       />
       <div class="grid gap-4 md:grid-cols-3">
         <.link
@@ -260,9 +295,19 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       class="space-y-6"
     >
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={gettext("Discounts & promo codes")}
         subtitle={gettext("Automatic promotions, sale prices, public and personal promo codes.")}
       >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "promotions.create")}
@@ -280,6 +325,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         branches={@staff_branches}
         branch={@current_branch}
         active={:promotions}
+        part={:branches}
       />
 
       <div

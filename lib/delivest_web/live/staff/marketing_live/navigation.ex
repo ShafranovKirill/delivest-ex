@@ -3,6 +3,19 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
 
   alias Delivest.{Features, Gateway, Identity, Segments}
 
+  def global_area_links?(staff, branches) do
+    branches = Delivest.Repo.preload(branches, :info)
+
+    (Identity.can?(staff, "marketing.read") and
+       Features.enabled?("marketing_policies", :franchise)) or
+      (Identity.can?(staff, "segments.read") and Segments.available?(staff)) or
+      Identity.can?(staff, "franchise.update") or
+      Enum.any?(branches, fn branch ->
+        Identity.authorize(staff, "promotions.read", branch.id) == :ok and
+          Gateway.own?(branch, :loyalty)
+      end)
+  end
+
   def available?(staff, branches) do
     Identity.can?(staff, "franchise.update") or
       (Identity.can?(staff, "marketing.read") and
@@ -20,6 +33,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
   attr :branches, :list, required: true
   attr :branch, :any, default: nil
   attr :active, :atom, required: true
+  attr :part, :atom, default: :all, values: [:all, :areas, :branches]
 
   def navigation(assigns) do
     branches = Delivest.Repo.preload(assigns.branches, :info)
@@ -27,8 +41,8 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
     assigns = assigns |> assign(:branches, branches) |> assign(:selected, selected)
 
     ~H"""
-    <nav id="marketing-navigation" class="space-y-3" aria-label={gettext("Marketing areas")}>
-      <div class="flex flex-wrap gap-2">
+    <div id={if @part != :branches, do: "marketing-navigation"} class="space-y-3">
+      <div :if={@part != :branches} class="flex flex-nowrap gap-2">
         <.link
           :if={
             Identity.can?(@staff, "marketing.read") and
@@ -36,21 +50,25 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
           }
           navigate={~p"/staff/marketing/policies"}
           class={["btn btn-sm", @active == :policies && "btn-primary"]}
+          aria-current={@active == :policies && "page"}
         >{gettext("Marketing policies")}</.link>
         <.link
           :if={Identity.can?(@staff, "segments.read") and Segments.available?(@staff)}
           navigate={~p"/staff/segments"}
-          class="btn btn-sm"
+          class={["btn btn-sm", @active == :segments && "btn-primary"]}
+          aria-current={@active == :segments && "page"}
         >{gettext("Segments")}</.link>
         <.link
           :if={@selected && Identity.authorize(@staff, "stocks.read", @selected.id) == :ok}
           navigate={~p"/staff/b/#{@selected}/stocks"}
           class={["btn btn-sm", @active == :stocks && "btn-primary"]}
+          aria-current={@active == :stocks && "page"}
         >{gettext("Banners")}</.link>
         <.link
           :if={@selected && Identity.authorize(@staff, "promotions.read", @selected.id) == :ok}
           navigate={~p"/staff/b/#{@selected}/promotions"}
           class={["btn btn-sm", @active == :promotions && "btn-primary"]}
+          aria-current={@active == :promotions && "page"}
         >{gettext("Discounts & promo codes")}</.link>
         <.link
           :if={
@@ -62,6 +80,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
           }
           navigate={~p"/staff/marketing/bonuses"}
           class={["btn btn-sm", @active == :loyalty && "btn-primary"]}
+          aria-current={@active == :loyalty && "page"}
         >{gettext("Bonuses")}</.link>
         <.link
           :if={
@@ -70,10 +89,11 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
           }
           navigate={~p"/staff/b/#{@selected}/advertising-links"}
           class={["btn btn-sm", @active == :links && "btn-primary"]}
+          aria-current={@active == :links && "page"}
         >{gettext("Advertising links")}</.link>
       </div>
       <div
-        :if={length(@branches) > 0}
+        :if={@part != :areas and length(@branches) > 0}
         id="marketing-branches"
         class="flex flex-wrap items-center gap-2 text-sm"
       >
@@ -85,10 +105,14 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
           class={["btn btn-xs", @selected && @selected.id == branch.id && "btn-primary"]}
         >{branch.name}</.link>
       </div>
-      <p :if={is_nil(@selected)} id="marketing-choose-branch" class="text-sm text-base-content/60">
+      <p
+        :if={@part != :areas and is_nil(@selected)}
+        id="marketing-choose-branch"
+        class="text-sm text-base-content/60"
+      >
         {gettext("Choose a branch for branch marketing settings.")}
       </p>
-    </nav>
+    </div>
     """
   end
 

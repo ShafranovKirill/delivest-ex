@@ -79,7 +79,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
         subtitle={
           gettext("Card and SBP payments through YooKassa. The shop is shared by every branch.")
         }
-      />
+      >
+        <:actions>
+          <button
+            type="submit"
+            form="yookassa-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
@@ -136,9 +145,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
             phx-click="check"
           >
             {gettext("Shop details")}
-          </button>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
           </button>
         </div>
       </.form>

@@ -23,6 +23,12 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     init_test_session(conn, session)
   end
 
+  defp portal_has_element?(view, selector) do
+    html = render(element(view, "#staff-page-header"))
+    [_, content] = Regex.run(~r/<template[^>]*>(.*)<\/template>/s, html)
+    content |> LazyHTML.from_fragment() |> LazyHTML.query(selector) |> Enum.any?()
+  end
+
   test "global statistics renders franchise report without an active branch", %{conn: conn} do
     branch = insert(:branch)
     {:ok, _} = Features.configure("analytics_franchise", :franchise, true, actor: "test")
@@ -35,7 +41,11 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
     assert has_element?(view, "#statistics-report")
     assert has_element?(view, "#statistics-scope a[href='/staff/statistics?period=today']")
-    assert has_element?(view, "#statistics-scope a[href*='/staff/b/#{branch.slug}/statistics']")
+
+    assert has_element?(
+             view,
+             "#statistics-scope a[href*='/staff/b/#{branch.slug}/statistics']"
+           )
   end
 
   test "limited statistics role sees explicit branches but no franchise report", %{conn: conn} do
@@ -44,9 +54,15 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/statistics")
     assert has_element?(view, "#statistics-choose-branch")
+    assert portal_has_element?(view, "h1")
+    refute portal_has_element?(view, "[role='tablist']")
     refute has_element?(view, "#statistics-report")
     refute has_element?(view, "#statistics-scope a[href^='/staff/statistics']")
-    assert has_element?(view, "#statistics-scope a[href*='/staff/b/#{branch.slug}/statistics']")
+
+    assert has_element?(
+             view,
+             "#statistics-scope a[href*='/staff/b/#{branch.slug}/statistics']"
+           )
   end
 
   test "statistics branch links preserve compatible filters but drop another branch link", %{
@@ -79,7 +95,8 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing")
     assert has_element?(view, "#marketing-choose-branch")
-    refute has_element?(view, "#marketing-navigation a[href*='/stocks']")
+    assert portal_has_element?(view, "h1")
+    refute portal_has_element?(view, "#marketing-navigation a[href*='/stocks']")
 
     assert has_element?(
              view,
@@ -88,13 +105,13 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, selected, _} = live(conn, ~p"/staff/marketing?branch=#{allowed.slug}")
 
-    assert has_element?(
+    assert portal_has_element?(
              selected,
              "#marketing-navigation a[href='/staff/b/#{allowed.slug}/stocks']"
            )
 
     {:ok, rejected, _} = live(conn, ~p"/staff/marketing?branch=#{denied.slug}")
-    refute has_element?(rejected, "#marketing-navigation a[href*='/stocks']")
+    refute portal_has_element?(rejected, "#marketing-navigation a[href*='/stocks']")
   end
 
   test "policy list has its own route and branch screen has common marketing nav", %{conn: conn} do
@@ -104,10 +121,10 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, policies, _} = live(conn, ~p"/staff/marketing/policies")
     assert has_element?(policies, "#marketing-policies")
-    assert has_element?(policies, "#marketing-navigation")
+    assert portal_has_element?(policies, "#marketing-navigation")
 
     {:ok, stocks, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
-    assert has_element?(stocks, "#marketing-navigation")
+    assert portal_has_element?(stocks, "#marketing-navigation")
     assert has_element?(stocks, "#nav-section-network #nav-group-marketing")
     assert has_element?(stocks, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/stocks']")
     refute has_element?(stocks, "#nav-section-common")
@@ -125,12 +142,16 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing?branch=#{branch.slug}")
 
-    assert has_element?(
+    assert portal_has_element?(
              view,
              "#marketing-navigation a[href='/staff/b/#{branch.slug}/promotions']"
            )
 
-    refute has_element?(view, "#marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']")
+    refute portal_has_element?(
+             view,
+             "#marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']"
+           )
+
     refute has_element?(view, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/loyalty']")
   end
 
@@ -197,7 +218,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
     assert has_element?(delivery, "#nav-section-network a[href='/staff/settings'].menu-active")
-    assert has_element?(delivery, "a[href='/staff/branches/#{branch.slug}/edit']")
+    assert portal_has_element?(delivery, "a[href='/staff/branches/#{branch.slug}/edit']")
 
     {:ok, integrations, _} = live(conn, ~p"/staff/integrations")
 
@@ -213,7 +234,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(logs, "#nav-group-diagnostics[data-open]")
     assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/logs'].menu-active")
-    assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/metrics']")
+    assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/diagnostics']")
     refute has_element?(logs, "#nav-section-network a[href='/staff/settings']")
   end
 end

@@ -32,12 +32,14 @@ defmodule DelivestWeb.Staff.SettingsComponents do
         id="settings-common"
         navigate={~p"/staff/franchise"}
         class={["btn btn-sm", @selected == :common && "btn-primary"]}
+        aria-current={@selected == :common && "page"}
       >{gettext("Common settings")}</.link>
       <.link
         :for={branch <- @editable_branches}
         id={"settings-branch-#{branch.id}"}
         navigate={~p"/staff/branches/#{branch.slug}/edit"}
         class={["btn btn-sm", @selected == branch.id && "btn-primary"]}
+        aria-current={@selected == branch.id && "page"}
       >{branch.name}</.link>
     </nav>
     """

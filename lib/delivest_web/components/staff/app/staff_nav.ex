@@ -214,7 +214,7 @@ defmodule DelivestWeb.StaffNav do
       group(:diagnostics, "hero-beaker", gettext("Diagnostics"), [
         item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
         |> allowed(staff, "logs.read"),
-        item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))
+        item(:metrics, ~p"/staff/diagnostics", "hero-chart-bar", gettext("Metrics"))
         |> allowed(staff, "logs.read")
       ]),
       item(:settings, ~p"/staff/settings", "hero-cog-6-tooth", gettext("Settings"))

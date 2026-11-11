@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchesTest do
   import Delivest.Factory
 
   alias Delivest.Repo
+  alias DelivestWeb.PortalTestHelper
 
   test "admin can reach identity and delivery settings", %{conn: conn} do
     branch = insert(:branch, name: "Main Branch")
@@ -13,7 +14,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchesTest do
 
     {:ok, lv, _} = live(conn, ~p"/staff/branches")
     assert has_element?(lv, "#branch-settings-list", "Settings for branches")
-    assert has_element?(lv, "#create-branch")
+    assert PortalTestHelper.has_element?(lv, "#staff-page-header-actions", "#create-branch")
     assert has_element?(lv, "#branch-edit-#{branch.id}")
     refute has_element?(lv, "#branch-delivery-#{branch.id}")
     refute has_element?(lv, "#branch-delete-#{branch.id}")
@@ -47,7 +48,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchesTest do
     assert has_element?(lv, "#branch-edit-#{own.id}[href='/staff/branches/#{own.slug}/edit']")
     refute has_element?(lv, "#branch-delivery-#{own.id}")
     refute has_element?(lv, "#branch-delete-#{own.id}")
-    refute has_element?(lv, "#create-branch")
+    refute PortalTestHelper.has_element?(lv, "#staff-page-header-actions", "#create-branch")
     refute has_element?(lv, "#branch-card-#{own.id}", "Branch is not active")
 
     {:ok, overview, _} = live(conn, ~p"/staff/branches/#{own.slug}/edit")

@@ -188,7 +188,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
             "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
           )
         }
-      />
+      >
+        <:actions :if={@can_edit_branch}>
+          <button
+            type="submit"
+            form="yandex-eda-branch"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
@@ -268,12 +277,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
             options={vat_options()}
             disabled={not @can_edit_branch}
           />
-        </div>
-
-        <div :if={@can_edit_branch} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
 

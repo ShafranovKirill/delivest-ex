@@ -146,10 +146,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
         class="space-y-6"
       >
         <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
-          <p :if={@section.description} class="text-sm text-base-content/60">
-            {@section.description}
-          </p>
-
           <div :if={@section.id == :general} class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-2">
               <.input field={@form[:name]} type="text" label={gettext("Branch Name")} required />
@@ -245,9 +241,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
 
         <div class="flex justify-end gap-3">
           <.link navigate={cancel_path(assigns)} class="btn btn-ghost">{gettext("Cancel")}</.link>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
 

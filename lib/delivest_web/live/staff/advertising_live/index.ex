@@ -97,13 +97,33 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={gettext("Advertising links")} subtitle={@current_branch.name} />
+      <.page_header
+        navigation_label={gettext("Marketing areas")}
+        title={gettext("Advertising links")}
+        subtitle={@current_branch.name}
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:links}
+            part={:areas}
+          />
+        </:navigation>
+        <:actions>
+          <button type="submit" form="advertising-link-form" class="btn btn-primary">{gettext(
+            "Create link"
+          )}</button>
+        </:actions>
+      </.page_header>
 
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}
         branch={@current_branch}
         active={:links}
+        part={:branches}
       />
 
       <.form
@@ -115,7 +135,6 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
       >
         <.input field={@form[:campaign]} type="text" label={gettext("Campaign slug")} required />
         <.input field={@form[:name]} type="text" label={gettext("Link name")} required />
-        <button type="submit" class="btn btn-primary">{gettext("Create link")}</button>
       </.form>
       <p :if={@error} id="advertising-link-error" role="alert" class="text-error">{@error}</p>
 

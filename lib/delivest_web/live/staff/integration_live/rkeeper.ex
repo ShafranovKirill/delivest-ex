@@ -121,7 +121,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
         subtitle={
           gettext("Orders go to the restaurant r_keeper POS through the White Server gateway.")
         }
-      />
+      >
+        <:actions :if={@can_edit and @tab == :settings}>
+          <button type="submit" form="rkeeper-settings" class="btn btn-primary">{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <div :if={!@token?} id="rkeeper-no-token" class="alert alert-warning">
         <.icon name="hero-exclamation-triangle" class="size-5" />
@@ -242,7 +246,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
           </.inputs_for>
 
           <div class="flex flex-wrap gap-2">
-            <button class="btn btn-primary">{gettext("Save")}</button>
             <button
               :if={ready?(@crm) and @crm.rkeeper.sync_stops}
               type="button"

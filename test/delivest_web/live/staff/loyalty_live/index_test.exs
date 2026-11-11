@@ -49,7 +49,13 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
 
     assert has_element?(lv, "#nav-section-network #nav-group-marketing[data-open]")
     assert has_element?(lv, "#nav-group-marketing a[href='/staff/marketing/bonuses']")
-    assert has_element?(lv, "#marketing-navigation a[href='/staff/marketing/bonuses']")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header",
+             "#marketing-navigation a[href='/staff/marketing/bonuses']"
+           )
+
     assert has_element?(lv, "#loyalty-summary-liability")
     refute has_element?(lv, "#common-bonuses-form")
   end

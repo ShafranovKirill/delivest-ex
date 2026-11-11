@@ -355,6 +355,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     ~H"""
     <div class="space-y-6">
       <.page_header
+        navigation_label={gettext("Statistics reports")}
         title={gettext("Statistics")}
         subtitle={
           if is_nil(@period_error),
@@ -362,7 +363,21 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               "#{if(@current_branch, do: @current_branch.name, else: gettext("All branches"))} · #{format_period(@period)}",
             else: if(@current_branch, do: @current_branch.name, else: gettext("All branches"))
         }
-      />
+      >
+        <:navigation :if={@visible_tabs != []}>
+          <div role="tablist" class="tabs">
+            <.link
+              :for={tab <- @visible_tabs}
+              patch={tab_path(assigns, tab)}
+              role="tab"
+              class={["tab", @tab == tab && "tab-active"]}
+              aria-current={@tab == tab && "page"}
+            >
+              {tab_label(tab)}
+            </.link>
+          </div>
+        </:navigation>
+      </.page_header>
       <div class="flex flex-wrap justify-start gap-4">
         <.form
           for={@form}
@@ -435,13 +450,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           }
           navigate={~p"/staff/statistics?#{scope_query(assigns, nil)}"}
           class={["btn btn-sm", is_nil(@current_branch) && "btn-primary"]}
+          aria-current={is_nil(@current_branch) && "page"}
         >
           {gettext("All branches")}
         </.link>
         <.link
           :for={branch <- @staff_branches}
           navigate={~p"/staff/b/#{branch}/statistics?#{scope_query(assigns, branch)}"}
-          class={["btn btn-sm", @current_branch && @current_branch.id == branch.id && "btn-primary"]}
+          class={[
+            "btn btn-sm",
+            @current_branch && @current_branch.id == branch.id && "btn-primary"
+          ]}
+          aria-current={@current_branch && @current_branch.id == branch.id && "page"}
         >
           {branch.name}
         </.link>
@@ -454,17 +474,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       <p :if={@period_error} id="statistics-period-error" role="alert" class="text-sm text-error">
         {@period_error}
       </p>
-
-      <div role="tablist" class="tabs tabs-box w-fit">
-        <.link
-          :for={tab <- @visible_tabs}
-          patch={tab_path(assigns, tab)}
-          role="tab"
-          class={["tab", @tab == tab && "tab-active"]}
-        >
-          {tab_label(tab)}
-        </.link>
-      </div>
 
       <.report_panel
         :if={@tab in @report_tabs and is_nil(@period_error)}

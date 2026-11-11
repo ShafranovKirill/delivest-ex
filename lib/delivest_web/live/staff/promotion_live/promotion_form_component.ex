@@ -604,14 +604,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
           <div class="flex gap-3">
             <.link patch={@patch} class="btn btn-ghost flex-1">{gettext("Cancel")}</.link>
-            <button
-              id="promotion-save"
-              type="submit"
-              class="btn btn-primary flex-1"
-              phx-disable-with={gettext("Saving...")}
-            >
-              {gettext("Save")}
-            </button>
           </div>
         </aside>
       </.form>

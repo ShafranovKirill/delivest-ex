@@ -1155,7 +1155,20 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={gettext("Marketing policies")} subtitle={gettext("Customers")}>
+      <.page_header
+        navigation_label={gettext("Marketing areas")}
+        title={gettext("Marketing policies")}
+        subtitle={gettext("Customers")}
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:policies}
+            part={:areas}
+          />
+        </:navigation>
         <:actions>
           <button
             :if={@can_network_calculate and @live_action == :index}
@@ -1180,6 +1193,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         branches={@staff_branches}
         branch={@current_branch}
         active={:policies}
+        part={:branches}
       />
 
       <div

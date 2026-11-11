@@ -291,17 +291,23 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   def render(%{section: nil} = assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={@page_title} subtitle={gettext("Branches")} back={back(@branch, nil)}>
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={gettext("Branches")}
+        back={back(@branch, nil)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
         <:actions :if={@can_edit_identity and !@branch.is_active}>
           <span class="badge badge-error badge-soft">{gettext("Branch is not active")}</span>
         </:actions>
       </.page_header>
-
-      <.settings_navigation
-        staff={@current_staff}
-        branches={@settings_branches}
-        selected={@branch.id}
-      />
 
       <.settings_cards>
         <.settings_card
@@ -328,12 +334,20 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   def render(%{section: %{id: :snapshot}} = assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
-      <.settings_navigation
-        staff={@current_staff}
-        branches={@settings_branches}
-        selected={@branch.id}
-      />
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={subtitle(@branch)}
+        back={back(@branch, @section)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
+      </.page_header>
       <section class="space-y-5 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
         <p class="text-sm text-base-content/70">
           {gettext(
@@ -382,15 +396,22 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
 
     ~H"""
     <div class="space-y-6">
-      <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
-      <.settings_navigation
-        staff={@current_staff}
-        branches={@settings_branches}
-        selected={@branch.id}
-      />
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={subtitle(@branch)}
+        back={back(@branch, @section)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
+      </.page_header>
 
       <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
-        <p class="text-sm text-base-content/60">{@section.description}</p>
         <p class="text-sm text-base-content/60">
           {gettext(
             "Open the link on the screen in the hall, no sign-in is needed. Pickup and hall orders only, the number stays in «Ready» until the order is handed over or cancelled."
@@ -427,12 +448,31 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
-      <.settings_navigation
-        staff={@current_staff}
-        branches={@settings_branches}
-        selected={@branch.id}
-      />
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={subtitle(@branch)}
+        back={back(@branch, @section)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
+        <:actions>
+          <button
+            id="branch-save"
+            type="submit"
+            form="branch-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={BranchFormComponent}

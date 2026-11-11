@@ -453,8 +453,16 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     <div id="orders-page" class="space-y-6">
       <.page_header
         title={gettext("Orders")}
+        navigation_label={gettext("Order statuses")}
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
       >
+        <:navigation>
+          <StatusTabs.status_tabs
+            counts={@counts}
+            selected={@selected.status}
+            path_fn={&tab_path(@current_branch, @query, &1)}
+          />
+        </:navigation>
         <:actions>
           <IntakeControls.menu
             can_manage={Identity.can?(@current_staff, "orders.update")}
@@ -496,11 +504,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       </div>
 
       <.card class="flex flex-col gap-4 p-3 sm:p-4">
-        <StatusTabs.status_tabs
-          counts={@counts}
-          selected={@selected.status}
-          path_fn={&tab_path(@current_branch, @query, &1)}
-        />
         <OrdersToolbar.orders_toolbar selected={@selected} />
       </.card>
 

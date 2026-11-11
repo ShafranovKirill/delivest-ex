@@ -99,33 +99,34 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={"#{gettext("Today")}, #{DayLabel.format(@today)}"} />
-      <div class="flex flex-wrap gap-2">
-        <.link
-          :if={@can_create_order}
-          navigate={~p"/staff/b/#{@current_branch}/orders/new"}
-          class="btn btn-primary btn-sm"
-        >
-          <.icon name="hero-plus" class="size-4" />
-          {gettext("New Order")}
-        </.link>
-        <.link
-          :if={@can_orders}
-          navigate={~p"/staff/b/#{@current_branch}/orders"}
-          class="btn btn-outline btn-sm"
-        >
-          <.icon name="hero-shopping-bag" class="size-4" />
-          {gettext("Orders")}
-        </.link>
-        <.link
-          :if={@can_stats}
-          navigate={~p"/staff/b/#{@current_branch}/statistics"}
-          class="btn btn-outline btn-sm"
-        >
-          <.icon name="hero-chart-bar" class="size-4" />
-          {gettext("Statistics")}
-        </.link>
-      </div>
+      <.page_header title={"#{gettext("Today")}, #{DayLabel.format(@today)}"}>
+        <:actions>
+          <.link
+            :if={@can_create_order}
+            navigate={~p"/staff/b/#{@current_branch}/orders/new"}
+            class="btn btn-primary btn-sm"
+          >
+            <.icon name="hero-plus" class="size-4" />
+            {gettext("New Order")}
+          </.link>
+          <.link
+            :if={@can_orders}
+            navigate={~p"/staff/b/#{@current_branch}/orders"}
+            class="btn btn-outline btn-sm"
+          >
+            <.icon name="hero-shopping-bag" class="size-4" />
+            {gettext("Orders")}
+          </.link>
+          <.link
+            :if={@can_stats}
+            navigate={~p"/staff/b/#{@current_branch}/statistics"}
+            class="btn btn-outline btn-sm"
+          >
+            <.icon name="hero-chart-bar" class="size-4" />
+            {gettext("Statistics")}
+          </.link>
+        </:actions>
+      </.page_header>
 
       <.link
         :if={@can_orders and @problem_count > 0}

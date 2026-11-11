@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.{Features, Identity, Segments}
+  alias DelivestWeb.Staff.MarketingLive.Navigation
 
   @poll_duration 1_800_000
 
@@ -725,7 +726,17 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
       <.page_header
         title="Сегменты"
         subtitle="Группируйте клиентов вручную или по их выполненным заказам."
+        navigation_label={gettext("Marketing areas")}
       >
+        <:navigation>
+          <Navigation.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={nil}
+            active={:segments}
+            part={:areas}
+          />
+        </:navigation>
         <:actions>
           <.link
             :if={@can_manage and @live_action not in [:new, :edit]}

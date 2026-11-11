@@ -55,6 +55,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/roles", :roles},
     {"/staff/franchise", :settings},
     {"/staff/integrations", :settings},
+    {"/staff/diagnostics", :metrics},
     {"/staff/metrics", :metrics},
     {"/staff/logs", :logs}
   ]

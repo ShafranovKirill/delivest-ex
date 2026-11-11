@@ -87,7 +87,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
             "A Yandex courier is called for the delivery orders of the branch. The search starts as set in the branch couriers."
           )
         }
-      />
+      >
+        <:actions :if={@can_edit}>
+          <button
+            type="submit"
+            form="yandex-delivery-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <div
         :if={match?(%CourierSettings{source: :staff}, @couriers)}
@@ -194,12 +203,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
             "A Yandex courier takes payment by card only. A cash order switches to card to the courier when the courier is called."
           )}
         </p>
-
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
-        </div>
       </.form>
 
       <.live_component

@@ -332,9 +332,9 @@ defmodule DelivestWeb.CoreComponents do
   end
 
   @doc """
-  Renders the page title in the staff header and its subtitle and actions in the page body.
-  With `layout: :two_rows`, navigation shares the title row and actions move to a second
-  staff header row. Set `portal: false` to keep all content in the page body.
+  Renders the title or page navigation in the first staff header row. Page actions use
+  a second row when present; introductory subtitles are omitted from the staff portal.
+  Set `portal: false` to keep the title, subtitle, and actions in the page body.
   Set `title_in_header: false` when the layout renders navigation directly; the title
   remains available to screen readers in the page body.
   """
@@ -343,7 +343,7 @@ defmodule DelivestWeb.CoreComponents do
   attr :back, :string, default: nil
   attr :portal, :boolean, default: true
   attr :title_in_header, :boolean, default: true
-  attr :layout, :atom, default: :standard, values: [:standard, :two_rows]
+  attr :layout, :atom, default: :two_rows, values: [:standard, :two_rows]
   attr :navigation_label, :string, default: nil
   slot :navigation
   slot :actions
@@ -365,10 +365,11 @@ defmodule DelivestWeb.CoreComponents do
           <.icon name="hero-arrow-left" class="size-4" />
         </.link>
         <h1
+          :if={@navigation == []}
           title={@title}
           class={[
             "min-w-0 truncate text-base font-semibold text-base-content sm:text-lg",
-            @layout == :two_rows && "staff-page-header-title shrink-0"
+            @layout == :two_rows && "staff-page-header-title"
           ]}
         >
           {@title}
@@ -378,6 +379,10 @@ defmodule DelivestWeb.CoreComponents do
         </.header_navigation>
       </div>
     </.portal>
+
+    <h1 :if={@portal and (@navigation != [] or not @title_in_header)} class="sr-only">
+      {@title}
+    </h1>
 
     <.portal
       :if={@portal and @layout == :two_rows and @actions != []}
@@ -389,10 +394,8 @@ defmodule DelivestWeb.CoreComponents do
       </div>
     </.portal>
 
-    <h1 :if={@portal and not @title_in_header} class="sr-only">{@title}</h1>
-
     <div
-      :if={not @portal or not is_nil(@subtitle) or (@layout == :standard and @actions != [])}
+      :if={not @portal or (@layout == :standard and @actions != [])}
       class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <div :if={!@portal} class="flex min-w-0 items-center gap-3">
@@ -415,7 +418,7 @@ defmodule DelivestWeb.CoreComponents do
           {render_slot(@navigation)}
         </nav>
       </div>
-      <p :if={@subtitle} class="min-w-0 text-sm text-base-content/60">{@subtitle}</p>
+      <p :if={@subtitle and not @portal} class="min-w-0 text-sm text-base-content/60">{@subtitle}</p>
       <div
         :if={@actions != [] and (@layout == :standard or not @portal)}
         class="staff-page-actions flex min-w-0 flex-wrap gap-2"

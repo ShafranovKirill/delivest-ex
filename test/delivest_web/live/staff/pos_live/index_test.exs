@@ -25,8 +25,22 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
     }
   end
 
+  defp header_action?(view, selector) do
+    html = render(element(view, "#staff-page-header-actions"))
+    [_, content] = Regex.run(~r/<template[^>]*>(.*)<\/template>/s, html)
+    content |> LazyHTML.from_fragment() |> LazyHTML.query(selector) |> Enum.any?()
+  end
+
   test "the cashier sells for cash with change and the order goes to the kitchen", ctx do
     {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/pos")
+
+    assert has_element?(lv, "#main-sidebar")
+    assert has_element?(lv, "#staff-page-header")
+    assert header_action?(lv, "#pos-tab-sale")
+    assert header_action?(lv, "#pos-tab-handout")
+    assert header_action?(lv, "a[href='/staff/b/#{ctx.branch.slug}/orders']")
+
+    refute has_element?(lv, "#pos header")
 
     lv |> element("#pos-product-#{ctx.product.id}") |> render_click()
     lv |> element("#pos-product-#{ctx.product.id}") |> render_click()
@@ -53,7 +67,7 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
     assert [_ready] = Pos.ready(ctx.branch.id)
     send(lv.pid, {Delivest.Oms.Orders, [:order, :updated], order})
 
-    lv |> element("#pos-tab-handout") |> render_click()
+    render_click(lv, "screen", %{"to" => "handout"})
     lv |> element("#pos-ready-#{order.id}") |> render_click()
     assert Repo.reload!(order).status == :completed
   end

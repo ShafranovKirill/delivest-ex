@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
   alias Delivest.Identity.Branch
   alias Delivest.Repo
+  alias DelivestWeb.PortalTestHelper
 
   setup %{conn: conn} do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
@@ -70,6 +71,14 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
     {:ok, lv, _html} = live(conn, ~p"/staff/branches/old-name/edit/general")
     refute has_element?(lv, "#branch-form input[name='branch_form[vk_url]']")
+
+    assert PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "button[form='branch-form']"
+           )
+
+    refute has_element?(lv, "#branch-form button[type='submit']")
 
     assert {:error, {:live_redirect, %{to: "/staff/branches/new-name/edit"}}} =
              lv

@@ -388,6 +388,7 @@ defmodule DelivestWeb.Router do
       end
 
       live "/statistics", StatisticsLive.Index, :index
+      live "/diagnostics", DiagnosticsLive.Index, :index
 
       scope "/integrations", IntegrationLive do
         live "/", Index, :index
@@ -406,22 +407,28 @@ defmodule DelivestWeb.Router do
 
     scope "/b/:branch_slug" do
       live_session :kitchen,
-        layout: {DelivestWeb.Layouts, :kitchen},
+        layout: {DelivestWeb.Layouts, :staff_app},
         on_mount: [
           {DelivestWeb.Hooks.StaffAuth, :default},
           {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
           {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.StaffBranches, :default},
+          {DelivestWeb.Hooks.CommandPalette, :default},
+          {DelivestWeb.Hooks.StaffPath, :default},
           {DelivestWeb.Hooks.Permission, "orders.cook"}
         ] do
         live "/kitchen", KitchenLive.Index, :index
       end
 
       live_session :pos,
-        layout: {DelivestWeb.Layouts, :kitchen},
+        layout: {DelivestWeb.Layouts, :staff_app},
         on_mount: [
           {DelivestWeb.Hooks.StaffAuth, :default},
           {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
           {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.StaffBranches, :default},
+          {DelivestWeb.Hooks.CommandPalette, :default},
+          {DelivestWeb.Hooks.StaffPath, :default},
           {DelivestWeb.Hooks.Permission, "pos.use"}
         ] do
         live "/pos", PosLive.Index, :index

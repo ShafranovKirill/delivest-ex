@@ -6295,6 +6295,11 @@ msgstr "Готово"
 msgid "Full screen"
 msgstr "Во весь экран"
 
+#: lib/delivest_web/live/staff/kitchen_live/index.ex:207
+#, elixir-autogen, elixir-format
+msgid "Exit full screen"
+msgstr "Выйти из полноэкранного режима"
+
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:183
 #, elixir-autogen, elixir-format
 msgid "No connection — new orders will not arrive"
