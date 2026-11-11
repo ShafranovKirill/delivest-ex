@@ -13,6 +13,16 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
     |> with_reason(metadata["reason"])
   end
 
+  def describe(%Event{action: "product.bulk_applied", metadata: metadata} = event) do
+    gettext(
+      "Product operations in «%{subject}»: created %{created}, updated %{updated}, skipped %{skipped}",
+      subject: subject(event),
+      created: metadata["created"],
+      updated: metadata["updated"],
+      skipped: metadata["skipped"]
+    )
+  end
+
   def describe(%Event{} = event) do
     text(event.action, %{
       subject: subject(event),
@@ -65,6 +75,7 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
       "created" -> gettext("Created")
       "updated" -> gettext("Edited")
       "deleted" -> gettext("Deleted")
+      "bulk_applied" -> gettext("Applied")
       "details_changed" -> gettext("Details changed")
       "sent_to_crm" -> gettext("Sent to CRM")
       "status_changed" -> gettext("Status changed")
@@ -100,6 +111,7 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
 
   defp text("product.created", b), do: gettext("Product «%{subject}» created", b)
   defp text("product.updated", b), do: gettext("Product «%{subject}» edited", b)
+
   defp text("product.deleted", b), do: gettext("Product «%{subject}» deleted", b)
 
   defp text("product_tag.created", b), do: gettext("Tag «%{subject}» created", b)

@@ -273,6 +273,7 @@ defmodule DelivestWeb.Router do
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
     get "/branches/all", StaffActiveBranchController, :all
     get "/b/:branch_slug/products/export", StaffMenuExportController, :show
+    get "/b/:branch_slug/products/workbook", StaffProductWorkbookController, :show
     get "/b/:branch_slug/site-snapshot", StaffSiteSnapshotController, :show
     get "/franchise/site-snapshot", StaffSiteSnapshotController, :show_franchise
     get "/franchise/instance-backup/:id", StaffSiteSnapshotController, :download_instance
@@ -428,6 +429,7 @@ defmodule DelivestWeb.Router do
         scope "/products", ProductLive do
           live "/", Products, :index
           live "/bulk", Bulk, :index
+          live "/operations", Operations, :index
           live "/stops", StopList, :index
           live "/modifiers", Modifiers, :index
           live "/suggested", Suggested, :index
