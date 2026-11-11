@@ -1,11 +1,14 @@
 defmodule DelivestWeb.StaffSidebar do
   use DelivestWeb, :html
 
+  import Delivest.Identity.Acl
+
   attr :current_page, :atom, default: nil
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
   attr :staff_branches, :list, default: []
   attr :current_path, :string, default: nil
+  attr :new_orders_count, :integer, default: 0
 
   def staff_sidebar(assigns) do
     assigns =
@@ -18,41 +21,51 @@ defmodule DelivestWeb.StaffSidebar do
       id="main-sidebar"
       class="staff-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-base-300 bg-base-100 transition-[width] duration-300"
     >
-      <div class="shrink-0 space-y-3 border-b border-base-300 p-2">
-        <div class="flex items-center justify-between gap-1">
+      <div class="shrink-0 space-y-3 p-2">
+        <div
+          id="sidebar-top-row"
+          class="staff-sidebar-top-row flex items-center justify-between gap-1"
+        >
           <.link
+            id="sidebar-home"
             navigate={DelivestWeb.StaffBranchPath.home(@current_branch)}
-            class="flex min-w-0 flex-1 items-center gap-2 rounded-field p-1 hover:bg-base-200"
+            class="staff-sidebar-top-link flex shrink-0 items-center rounded-field p-1 hover:bg-base-200"
             title="Delivest"
             aria-label="Delivest"
           >
             <img
               src={~p"/images/logo-dark.png"}
               alt=""
-              class="size-8 shrink-0 object-contain dark:hidden"
+              class="size-6 shrink-0 object-contain dark:hidden"
             />
             <img
               src={~p"/images/logo-white.png"}
               alt=""
-              class="hidden size-8 shrink-0 object-contain dark:block"
+              class="hidden size-6 shrink-0 object-contain dark:block"
             />
-            <span class="staff-sidebar-label truncate text-sm font-bold">Delivest</span>
           </.link>
-          <button
-            id="sidebar-toggle"
-            type="button"
-            data-sidebar-toggle
-            phx-click={JS.dispatch("sidebar:toggle")}
-            data-expand-label={gettext("Expand menu")}
-            data-collapse-label={gettext("Collapse menu")}
-            aria-controls="main-sidebar"
-            aria-expanded="false"
-            aria-label={gettext("Expand menu")}
-            title={gettext("Expand menu")}
-            class="staff-sidebar-toggle btn btn-ghost btn-square btn-sm shrink-0"
-          >
-            <.icon name="panel-left" class="size-5" />
-          </button>
+          <div class="staff-sidebar-top-actions flex items-center gap-1">
+            <DelivestWeb.NewOrdersBell.new_orders_bell
+              :if={@current_branch && can?(@current_staff, "orders.read")}
+              count={@new_orders_count}
+              branch={@current_branch}
+            />
+            <button
+              id="sidebar-toggle"
+              type="button"
+              data-sidebar-toggle
+              phx-click={JS.dispatch("sidebar:toggle")}
+              data-expand-label={gettext("Expand menu")}
+              data-collapse-label={gettext("Collapse menu")}
+              aria-controls="main-sidebar"
+              aria-expanded="false"
+              aria-label={gettext("Expand menu")}
+              title={gettext("Expand menu")}
+              class="staff-sidebar-toggle btn btn-ghost btn-square btn-sm shrink-0"
+            >
+              <.icon name="panel-left" class="size-5" />
+            </button>
+          </div>
         </div>
 
         <DelivestWeb.BranchSwitcher.branch_switcher
@@ -69,13 +82,17 @@ defmodule DelivestWeb.StaffSidebar do
           class="flex flex-col gap-1 pb-3"
         >
           <p
-            :if={section.label}
+            :if={section.label && section.id != :branch}
             class="staff-sidebar-label truncate px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wider text-base-content/50"
             title={section.label}
           >
             {section.label}
           </p>
-          <div class="hidden h-px bg-base-300 mx-2 mb-1 lg:sidebar-collapsed:block"></div>
+          <div
+            :if={section.id != :branch}
+            class="hidden h-px bg-base-300 mx-2 mb-1 lg:sidebar-collapsed:block"
+          >
+          </div>
           <%= for entry <- section.entries do %>
             <ul :if={entry.kind == :item} class="menu w-full p-0">
               <li><.nav_link item={entry} current_page={@current_page} /></li>

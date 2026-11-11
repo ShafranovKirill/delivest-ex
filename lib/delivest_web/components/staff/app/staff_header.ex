@@ -1,14 +1,11 @@
 defmodule DelivestWeb.StaffHeader do
   use DelivestWeb, :html
 
-  import Delivest.Identity.Acl
-
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
   attr :current_path, :string, default: nil
   attr :settings_branch, :any, default: nil
   attr :page_title, :string, default: nil
-  attr :new_orders_count, :integer, default: 0
   attr :kitchen_status, :any, default: nil
   slot :actions
 
@@ -48,11 +45,6 @@ defmodule DelivestWeb.StaffHeader do
         {render_slot(@actions)}
         <DelivestWeb.GatewayNote.gateway_badge branch={@current_branch} />
         <DelivestWeb.KitchenControl.kitchen_indicator status={@kitchen_status} />
-        <DelivestWeb.NewOrdersBell.new_orders_bell
-          :if={@current_branch && can?(@current_staff, "orders.read")}
-          count={@new_orders_count}
-          branch={@current_branch}
-        />
       </div>
     </header>
     """

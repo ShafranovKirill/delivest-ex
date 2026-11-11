@@ -11,12 +11,27 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+
+    assert has_element?(
+             lv,
+             ~s(#main-sidebar #sidebar-home[href="/staff/b/#{branch.slug}/dashboard"])
+           )
+
+    refute has_element?(lv, "#sidebar-home span")
+
+    assert has_element?(
+             lv,
+             "#sidebar-top-row .staff-sidebar-top-actions #header-new-orders[phx-hook]"
+           )
+
+    refute has_element?(lv, "#staff-header #header-new-orders")
     assert has_element?(lv, "#main-sidebar #sidebar-toggle[aria-controls='main-sidebar']")
     assert has_element?(lv, "#main-sidebar #header-branch")
     assert has_element?(lv, "details#header-branch > summary[aria-controls='header-branch-menu']")
     assert has_element?(lv, "#header-branch-menu[phx-hook]")
 
     refute has_element?(lv, "#sidebar-branch-settings")
+    refute has_element?(lv, "#nav-section-branch > p")
 
     assert has_element?(lv, "#main-sidebar #command-palette-trigger")
     assert has_element?(lv, "#staff-profile-trigger[aria-expanded='false']")
@@ -37,6 +52,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+    refute has_element?(lv, "#main-sidebar #header-new-orders")
     refute has_element?(lv, "#sidebar-branch-settings")
     refute has_element?(lv, "#staff-profile-menu #orders-sound-toggle")
     assert has_element?(lv, "#staff-profile-menu #header-push-toggle")
