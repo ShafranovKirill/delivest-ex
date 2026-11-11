@@ -4,14 +4,113 @@ defmodule Delivest.BackgroundTest do
 
   import Ecto.Query
   alias Delivest.{Background, Features, Repo}
-  alias Delivest.Background.{Dispatcher, Runner, Schedule}
+  alias Delivest.Background.{DailySchedule, Dispatcher, Registry, Runner, Schedule}
 
-  test "disabled installation has no work; due scheduling coalesces" do
+  test "only five bounded daily calculations use local 03:00" do
+    daily =
+      Registry.all()
+      |> Enum.filter(fn {_kind, task} -> Map.get(task, :schedule) == :daily_03 end)
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.sort()
+
+    assert daily ==
+             Enum.sort(
+               ~w(analytics.extended marketing.preview marketing.report marketing.evaluate segments.refresh)
+             )
+
+    for kind <- ~w(analytics.funnel analytics.links notifications.dispatch) do
+      {:ok, task} = Registry.fetch(kind)
+      refute Map.has_key?(task, :schedule)
+    end
+  end
+
+  test "legacy rolling schedule catches up once and manual rerun remains immediate" do
+    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    schedule = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
+    past = DateTime.add(DateTime.utc_now(), -86_400, :second)
+    Repo.update!(Ecto.Changeset.change(schedule, daily_date: nil, next_at: past))
+
+    assert {:ok, 1} = Background.dispatch_due()
+    running = Repo.reload!(schedule)
+
+    assert running.daily_date ==
+             DailySchedule.latest_due_date(DateTime.utc_now(), DailySchedule.zone("franchise"))
+
+    assert :ok = Background.finish(running.kind, running.scope_key, running.current_job_id, :ok)
+    completed = Repo.reload!(schedule)
+    assert DateTime.compare(completed.next_at, DateTime.utc_now()) == :gt
+    assert {:ok, 0} = Background.dispatch_due()
+
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
+    assert Repo.reload!(schedule).manual_requested
+    assert {:ok, 1} = Background.dispatch_due()
+    refute Repo.reload!(schedule).manual_requested
+  end
+
+  test "daily branch schedule recomputes UTC against fresh timezone" do
+    branch = Delivest.Factory.insert(:branch)
+
+    Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+      branch_id: branch.id,
+      timezone: "Europe/Moscow"
+    })
+
+    assert {:ok, _} = Features.configure("analytics_extended", :franchise, true, actor: "host")
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, branch.id}, true, actor: "host")
+
+    schedule =
+      Repo.get_by!(Schedule, kind: "analytics.extended", scope_key: "branch:#{branch.id}")
+
+    date = Date.add(Date.utc_today(), 10)
+
+    Repo.update!(
+      Ecto.Changeset.change(schedule,
+        daily_date: date,
+        next_at: DailySchedule.due_at(date, "Europe/Moscow")
+      )
+    )
+
+    Repo.update_all(
+      from(i in Delivest.Identity.Branch.BranchInfo,
+        where: i.branch_id == ^branch.id
+      ),
+      set: [timezone: "America/New_York"]
+    )
+
+    assert {:ok, 0} = Background.dispatch_due()
+
+    {expected_date, expected_at} =
+      DailySchedule.next_future(DateTime.utc_now(), "America/New_York")
+
+    assert Repo.reload!(schedule).daily_date == expected_date
+    assert Repo.reload!(schedule).next_at == expected_at
+  end
+
+  test "notification dispatch keeps its rolling sixty-second interval" do
+    assert {:ok, _} = Features.configure("notifications", :franchise, true, actor: "host")
+    schedule = Repo.get_by!(Schedule, kind: "notifications.dispatch", scope_key: "franchise")
+    assert is_nil(schedule.daily_date)
+    assert DateTime.compare(schedule.next_at, DateTime.utc_now()) != :gt
+    assert {:ok, 1} = Background.dispatch_due()
+
+    running = Repo.reload!(schedule)
+    assert :ok = Background.finish(running.kind, running.scope_key, running.current_job_id, :ok)
+    finished = Repo.reload!(schedule)
+    assert is_nil(finished.daily_date)
+    assert DateTime.diff(finished.next_at, finished.last_success_at, :second) == 60
+  end
+
+  test "daily enable waits for local 03:00 and manual due scheduling coalesces" do
     assert :ok = Background.reconcile()
     assert {:ok, 0} = Background.dispatch_due()
     refute_enqueued(worker: Runner)
 
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, 0} = Background.dispatch_due()
+    assert DateTime.compare(Repo.one!(Schedule).next_at, DateTime.utc_now()) == :gt
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     assert {:ok, 0} = Background.dispatch_due()
     assert_enqueued(worker: Runner)
@@ -22,11 +121,9 @@ defmodule Delivest.BackgroundTest do
     assert {:ok, first} = Background.kick()
     assert {:ok, second} = Background.kick()
     assert first.id == second.id
+    assert first.queue == "maintenance_schedule"
 
-    assert Repo.aggregate(
-             from(j in Oban.Job, where: j.worker == "Delivest.Background.Dispatcher"),
-             :count
-           ) == 1
+    assert Repo.get!(Oban.Job, first.id).state in ["available", "scheduled"]
   end
 
   test "manual idle nudges coalesce into one runner and status reads create no work" do
@@ -67,6 +164,7 @@ defmodule Delivest.BackgroundTest do
 
   test "new work during an executing owner requests one immediate rerun" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     first = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
 
@@ -92,6 +190,7 @@ defmodule Delivest.BackgroundTest do
 
   test "scheduled owner is expedited in place and a terminal owner is replaced" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     first = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
     future = DateTime.add(DateTime.utc_now(), 86_400, :second)
@@ -127,6 +226,7 @@ defmodule Delivest.BackgroundTest do
 
   test "terminal recovery honors a durable rerun request" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     first = Repo.get_by!(Schedule, kind: "segments.refresh", scope_key: "franchise")
 
@@ -157,6 +257,7 @@ defmodule Delivest.BackgroundTest do
 
   test "critical backlog defers without consuming due schedule" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     old = Application.get_env(:delivest, :background_pressure_limit)
     Application.put_env(:delivest, :background_pressure_limit, 0)
 
@@ -175,6 +276,7 @@ defmodule Delivest.BackgroundTest do
   test "disable cancels pending work and old generation cannot publish" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
     assert {:ok, token} = Features.snapshot("segments", :franchise)
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     pending = Repo.one!(Schedule)
     stale_job = Repo.get!(Oban.Job, pending.current_job_id)
@@ -189,6 +291,7 @@ defmodule Delivest.BackgroundTest do
 
   test "terminal job recovers and stale finish cannot mutate a newer schedule" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     first = Repo.one!(Schedule)
     assert is_integer(first.current_job_id)
@@ -218,6 +321,7 @@ defmodule Delivest.BackgroundTest do
     branch = Delivest.Factory.insert(:branch)
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
     assert {:ok, token} = Features.snapshot("segments", :franchise)
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     old = Repo.one!(Schedule)
 
@@ -255,6 +359,7 @@ defmodule Delivest.BackgroundTest do
 
   test "persisted runner context reaches handler and publishes success" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     assert {:ok, 1} = Background.dispatch_due()
     schedule = Repo.one!(Schedule)
     job = Repo.get!(Oban.Job, schedule.current_job_id)
@@ -272,6 +377,7 @@ defmodule Delivest.BackgroundTest do
 
   test "unknown stored scope fails closed and is removed without a job" do
     assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+    assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
     Repo.insert!(%Schedule{kind: "segments.refresh", scope_key: "unrecognized", next_at: now})
     assert {:ok, 1} = Background.dispatch_due()
@@ -286,6 +392,7 @@ defmodule Delivest.BackgroundTest do
   test "disable waits for a schedule lock and old job cannot finish a replacement" do
     unboxed(fn ->
       assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "race")
+      assert {:ok, :queued} = Background.run_now("segments.refresh", :franchise)
     end)
 
     assert {:ok, 1} = unboxed(fn -> Background.dispatch_due() end)

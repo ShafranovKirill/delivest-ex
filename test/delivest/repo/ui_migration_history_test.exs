@@ -100,6 +100,16 @@ defmodule Delivest.Repo.UiMigrationHistoryTest do
              end)
   end
 
+  test "a recorded new version requires its task table" do
+    assert_raise RuntimeError, ~r/ambiguous UI migration history at version 20261210000035/, fn ->
+      isolated_schema(fn ->
+        history([hd(@old), hd(@new)])
+        tables(~w(feature_gates background_schedules))
+        UiMigrationHistory.prepare!(Repo)
+      end)
+    end
+  end
+
   test "ambiguous history fails atomically" do
     assert_raise RuntimeError, ~r/ambiguous UI migration history/, fn ->
       isolated_schema(fn ->

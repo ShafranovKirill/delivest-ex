@@ -2,7 +2,7 @@ defmodule Delivest.Background do
   @moduledoc "Shared, bounded dispatcher for optional feature calculations."
   import Ecto.Query
   alias Delivest.{Features, Repo}
-  alias Delivest.Background.{Dispatcher, Registry, Runner, Schedule}
+  alias Delivest.Background.{DailySchedule, Dispatcher, Registry, Runner, Schedule}
   alias Delivest.Features.Gate
 
   @batch_size 10
@@ -19,10 +19,22 @@ defmodule Delivest.Background do
       result =
         Features.with_enabled(task.feature, scope, token, fn ->
           now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+          daily? = daily?(task)
+          date = if daily?, do: DailySchedule.latest_due_date(now, DailySchedule.zone(key))
 
           Repo.insert_all(
             Schedule,
-            [%{kind: kind, scope_key: key, next_at: now, inserted_at: now, updated_at: now}],
+            [
+              %{
+                kind: kind,
+                scope_key: key,
+                next_at: now,
+                daily_date: date,
+                manual_requested: daily?,
+                inserted_at: now,
+                updated_at: now
+              }
+            ],
             on_conflict: :nothing,
             conflict_target: [:kind, :scope_key]
           )
@@ -43,7 +55,9 @@ defmodule Delivest.Background do
                 running: false,
                 current_job_id: nil,
                 rerun_requested: false,
-                next_at: now
+                next_at: now,
+                manual_requested: daily?,
+                daily_date: date
               )
               |> Repo.update!()
 
@@ -63,7 +77,12 @@ defmodule Delivest.Background do
 
             true ->
               row
-              |> Ecto.Changeset.change(next_at: now, rerun_requested: false)
+              |> Ecto.Changeset.change(
+                next_at: now,
+                rerun_requested: false,
+                manual_requested: daily?,
+                daily_date: date
+              )
               |> Repo.update!()
 
               :queued
@@ -123,9 +142,17 @@ defmodule Delivest.Background do
          true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope) do
       now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+      {date, next_at} = initial_next(task, key, now)
 
       Repo.update_all(from(s in Schedule, where: s.kind == ^kind and s.scope_key == ^key),
-        set: [running: false, current_job_id: nil, rerun_requested: false, next_at: now]
+        set: [
+          running: false,
+          current_job_id: nil,
+          rerun_requested: false,
+          manual_requested: false,
+          daily_date: date,
+          next_at: next_at
+        ]
       )
 
       cancel_pending(kind, key)
@@ -149,10 +176,20 @@ defmodule Delivest.Background do
          {:ok, key} <- Features.scope_key(scope),
          true <- Features.enabled?(task.feature, scope) do
       now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+      {date, next_at} = initial_next(task, key, now)
 
       Repo.insert_all(
         Schedule,
-        [%{kind: kind, scope_key: key, next_at: now, inserted_at: now, updated_at: now}],
+        [
+          %{
+            kind: kind,
+            scope_key: key,
+            next_at: next_at,
+            daily_date: date,
+            inserted_at: now,
+            updated_at: now
+          }
+        ],
         on_conflict: :nothing,
         conflict_target: [:kind, :scope_key]
       )
@@ -329,6 +366,7 @@ defmodule Delivest.Background do
       Repo.transaction(fn ->
         now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
         recover_terminal_runs(now)
+        normalize_daily(now)
 
         rows =
           Repo.all(
@@ -355,8 +393,18 @@ defmodule Delivest.Background do
 
                   {:ok, job} = Oban.insert(Runner.new(args))
 
+                  date =
+                    if row.manual_requested and daily?(task),
+                      do: DailySchedule.latest_due_date(now, DailySchedule.zone(row.scope_key)),
+                      else: row.daily_date
+
                   row
-                  |> Ecto.Changeset.change(running: true, current_job_id: job.id)
+                  |> Ecto.Changeset.change(
+                    running: true,
+                    current_job_id: job.id,
+                    manual_requested: false,
+                    daily_date: date
+                  )
                   |> Repo.update!()
 
                   count + 1
@@ -460,12 +508,15 @@ defmodule Delivest.Background do
           )
 
         if row do
+          {date, next_at} = next_after_run(task, row, now)
+
           updates = [
             running: false,
             current_job_id: nil,
             rerun_requested: false,
-            next_at:
-              if(row.rerun_requested, do: now, else: DateTime.add(now, task.interval, :second))
+            manual_requested: row.rerun_requested and daily?(task),
+            daily_date: date,
+            next_at: if(row.rerun_requested, do: now, else: next_at)
           ]
 
           updates =
@@ -511,22 +562,26 @@ defmodule Delivest.Background do
           order_by: s.next_at,
           limit: @batch_size,
           lock: "FOR UPDATE OF b0 SKIP LOCKED",
-          select: {s.id, s.kind, s.current_job_id, s.rerun_requested}
+          select: {s.id, s.kind, s.scope_key, s.current_job_id, s.rerun_requested, s.daily_date}
       )
 
-    Enum.each(stale, fn {id, kind, observed_job_id, rerun?} ->
+    Enum.each(stale, fn {id, kind, key, observed_job_id, rerun?, date} ->
       query =
         from s in Schedule,
           where: s.id == ^id and s.running and s.current_job_id == ^observed_job_id
 
       case Registry.fetch(kind) do
         {:ok, task} ->
+          {next_date, next_at} = next_after_run(task, %{scope_key: key, daily_date: date}, now)
+
           Repo.update_all(query,
             set: [
               running: false,
               current_job_id: nil,
               rerun_requested: false,
-              next_at: if(rerun?, do: now, else: DateTime.add(now, task.interval, :second)),
+              manual_requested: rerun? and daily?(task),
+              daily_date: next_date,
+              next_at: if(rerun?, do: now, else: next_at),
               last_error_at: now,
               last_error: "background calculation terminated before completion"
             ]
@@ -534,6 +589,43 @@ defmodule Delivest.Background do
 
         :error ->
           Repo.delete_all(query)
+      end
+    end)
+  end
+
+  defp daily?(task), do: Map.get(task, :schedule) == :daily_03
+
+  defp initial_next(task, key, now) do
+    if daily?(task),
+      do: DailySchedule.next_future(now, DailySchedule.zone(key)),
+      else: {nil, now}
+  end
+
+  defp next_after_run(task, row, now) do
+    if daily?(task) do
+      zone = DailySchedule.zone(row.scope_key)
+
+      if row.daily_date,
+        do: DailySchedule.next_after(row.daily_date, now, zone),
+        else: DailySchedule.next_future(now, zone)
+    else
+      {nil, DateTime.add(now, task.interval, :second)}
+    end
+  end
+
+  defp normalize_daily(now) do
+    kinds = for {kind, task} <- Registry.all(), daily?(task), do: kind
+
+    Repo.all(
+      from s in Schedule,
+        where: s.kind in ^kinds and not s.running and not s.manual_requested,
+        lock: "FOR UPDATE SKIP LOCKED"
+    )
+    |> Enum.each(fn row ->
+      {date, next_at} = DailySchedule.normalize(row, now, DailySchedule.zone(row.scope_key))
+
+      if row.daily_date != date or DateTime.compare(row.next_at, next_at) != :eq do
+        row |> Ecto.Changeset.change(daily_date: date, next_at: next_at) |> Repo.update!()
       end
     end)
   end

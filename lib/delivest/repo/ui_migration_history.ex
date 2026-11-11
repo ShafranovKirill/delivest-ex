@@ -45,6 +45,9 @@ defmodule Delivest.Repo.UiMigrationHistory do
   end
 
   defp reassign({old, new, task_table, f04_tables}, versions) do
+    if MapSet.member?(versions, new) and not table_exists?(task_table),
+      do: raise("ambiguous UI migration history at version #{new}")
+
     if MapSet.member?(versions, old) do
       task_table? = table_exists?(task_table)
       f04_count = Enum.count(f04_tables, &table_exists?/1)
@@ -57,7 +60,7 @@ defmodule Delivest.Repo.UiMigrationHistory do
             old
           ])
 
-        {false, count, _} when count == length(f04_tables) ->
+        {false, count, false} when count == length(f04_tables) ->
           :ok
 
         {true, count, true} when count == length(f04_tables) ->

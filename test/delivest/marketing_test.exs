@@ -622,6 +622,13 @@ defmodule Delivest.MarketingTest do
 
   defp run_task(kind) do
     schedule = Repo.get_by!(Schedule, kind: kind)
+
+    if is_nil(schedule.current_job_id) do
+      assert {:ok, :queued} = Background.run_now(kind, :franchise)
+      assert {:ok, _} = Background.dispatch_due()
+    end
+
+    schedule = Repo.reload!(schedule)
     Runner.perform(Repo.get!(Oban.Job, schedule.current_job_id))
   end
 

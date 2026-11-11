@@ -309,8 +309,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     _ = render(lv)
     assert render(lv) =~ "Change Image"
 
-    assert [%{worker: "Delivest.Media.Workers.ThumbnailWorker"}] =
-             Oban.Testing.all_enqueued(Delivest.Repo, [])
+    matching_jobs =
+      Enum.filter(Oban.Testing.all_enqueued(Delivest.Repo, []), fn job ->
+        job.worker == "Delivest.Media.Workers.ThumbnailWorker" and
+          job.args["file_id"] == media.id
+      end)
+
+    assert length(matching_jobs) == 1
   end
 
   test "tags are picked from the configured tags and can be cleared", %{conn: conn} do

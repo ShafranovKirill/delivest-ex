@@ -29,6 +29,7 @@ defmodule Delivest.Background.Registry do
     },
     "analytics.extended" => %{
       manual?: true,
+      schedule: :daily_03,
       feature: "analytics_extended",
       handler: Delivest.Analytics.Reports.Refresh,
       interval: @analytics_daily_interval,
@@ -38,6 +39,7 @@ defmodule Delivest.Background.Registry do
     },
     "marketing.preview" => %{
       manual?: true,
+      schedule: :daily_03,
       feature: "marketing_policies",
       handler: Delivest.Marketing.Preview,
       interval: 86_400,
@@ -47,6 +49,7 @@ defmodule Delivest.Background.Registry do
     },
     "marketing.report" => %{
       manual?: true,
+      schedule: :daily_03,
       feature: "marketing_policies",
       handler: Delivest.Marketing.Report,
       interval: 86_400,
@@ -64,6 +67,7 @@ defmodule Delivest.Background.Registry do
     },
     "marketing.evaluate" => %{
       manual?: true,
+      schedule: :daily_03,
       feature: "marketing_policies",
       handler: Delivest.Marketing.Evaluate,
       interval: 86_400,
@@ -73,6 +77,7 @@ defmodule Delivest.Background.Registry do
     },
     "segments.refresh" => %{
       manual?: true,
+      schedule: :daily_03,
       feature: "segments",
       handler: Delivest.Segments.Refresh,
       interval: 86_400,

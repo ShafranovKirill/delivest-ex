@@ -10,6 +10,8 @@ defmodule Delivest.Background.Schedule do
     field :last_error, :string
     field :running, :boolean, default: false
     field :rerun_requested, :boolean, default: false
+    field :manual_requested, :boolean, default: false
+    field :daily_date, :date
     field :current_job_id, :integer
     timestamps(type: :utc_datetime_usec)
   end
