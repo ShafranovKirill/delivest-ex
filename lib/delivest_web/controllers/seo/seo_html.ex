@@ -9,6 +9,8 @@ defmodule DelivestWeb.Seo.SeoHTML do
       meta(name: "description", content: site.description),
       tag("link", rel: "canonical", href: site.url),
       meta(name: "theme-color", content: site.color),
+      meta(name: "delivest-brand-color-dark", content: site.dark_color),
+      meta(name: "delivest-default-theme", content: site.default_theme),
       tag("link", rel: "icon", href: site.favicon, sizes: "48x48"),
       tag("link", rel: "icon", type: "image/png", sizes: "32x32", href: site.icon_32),
       tag("link", rel: "apple-touch-icon", href: site.apple_touch_icon),
