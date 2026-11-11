@@ -361,26 +361,50 @@ defmodule Delivest.Identity.Branches do
   end
 
   @spec soft_delete_branch(Delivest.Identity.Staff.t(), Branch.t()) ::
-          {:ok, Branch.t()}
-          | {:error, atom(), Ecto.Changeset.t() | term(), map()}
-          | {:error, :forbidden}
+          {:error, :forbidden | :confirmation_required}
   def soft_delete_branch(staff, %Branch{} = branch) do
+    case Identity.authorize(staff, "branches.delete", branch.id) do
+      :ok -> {:error, :confirmation_required}
+      {:error, :forbidden} -> {:error, :forbidden}
+    end
+  end
+
+  @spec soft_delete_branch(Delivest.Identity.Staff.t(), Branch.t(), term()) ::
+          {:ok, Branch.t()}
+          | {:error, :forbidden | :confirmation_mismatch | :not_found}
+          | {:error, atom(), term(), map()}
+  def soft_delete_branch(staff, %Branch{} = branch, confirmation) do
     staff
-    |> do_soft_delete_branch(branch)
+    |> do_soft_delete_branch(branch, confirmation)
     |> Audit.track(staff, "branch.deleted")
   end
 
-  defp do_soft_delete_branch(staff, %Branch{} = branch) do
+  defp do_soft_delete_branch(staff, %Branch{} = branch, confirmation) do
     if Identity.authorize(staff, "branches.delete", branch.id) == :ok do
       Ecto.Multi.new()
+      |> Ecto.Multi.run(:verify_confirmation, fn repo, _changes ->
+        current =
+          repo.one(
+            from(b in Branch,
+              where: b.id == ^branch.id and is_nil(b.deleted_at),
+              lock: "FOR UPDATE"
+            )
+          )
+
+        cond do
+          is_nil(current) -> {:error, :not_found}
+          not is_binary(confirmation) or confirmation == "" -> {:error, :confirmation_mismatch}
+          confirmation != current.name -> {:error, :confirmation_mismatch}
+          true -> {:ok, current}
+        end
+      end)
       |> Ecto.Multi.delete_all(
         :delete_staff_branches,
         from(sb in "staff_branches", where: sb.branch_id == type(^branch.id, :binary_id))
       )
-      |> Ecto.Multi.update(
-        :soft_delete_branch,
-        Ecto.Changeset.change(branch, %{deleted_at: DateTime.utc_now(:second)})
-      )
+      |> Ecto.Multi.update(:soft_delete_branch, fn %{verify_confirmation: current} ->
+        Ecto.Changeset.change(current, %{deleted_at: DateTime.utc_now(:second)})
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{soft_delete_branch: deleted_branch}} ->
@@ -388,6 +412,9 @@ defmodule Delivest.Identity.Branches do
           Cachex.del(:branch_cache, "slug:#{deleted_branch.slug}")
 
           {:ok, deleted_branch}
+
+        {:error, :verify_confirmation, reason, _changes} ->
+          {:error, reason}
 
         {:error, failed_operation, reason, changes} ->
           {:error, failed_operation, reason, changes}

@@ -10949,3 +10949,33 @@ msgstr "Диагностика"
 
 msgid "Delivery zones and couriers for this branch."
 msgstr "Зоны доставки и курьеры этого филиала."
+
+msgid "Branch deletion"
+msgstr "Удаление филиала"
+
+msgid "Delete branch"
+msgstr "Удалить филиал"
+
+msgid "Deleting the branch removes it from staff access and hides it from the app."
+msgstr "Филиал исчезнет из приложения, а сотрудники потеряют к нему доступ."
+
+msgid "Enter the exact branch name to confirm deletion: %{name}"
+msgstr "Для подтверждения удаления введите точное название филиала: %{name}"
+
+msgid "Branch name"
+msgstr "Название филиала"
+
+msgid "The branch name does not match."
+msgstr "Название филиала не совпадает."
+
+msgid "Failed to delete branch."
+msgstr "Не удалось удалить филиал."
+
+msgid "Expand menu"
+msgstr "Развернуть меню"
+
+msgid "Current page"
+msgstr "Текущая страница"
+
+msgid "Profile: %{name}"
+msgstr "Профиль: %{name}"

@@ -81,6 +81,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
   test "a new branch is created from the page", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/branches/new")
+    refute has_element?(lv, "#branch-delete-section")
 
     assert {:error, {:live_redirect, %{to: "/staff/branches/fresh/edit"}}} =
              lv
@@ -88,6 +89,52 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
              |> render_submit()
 
     assert Repo.get_by(Branch, slug: "fresh")
+  end
+
+  test "branch deletion stays collapsed, requires exact name, and resets on cancel", %{
+    conn: conn
+  } do
+    branch = insert(:branch, name: "Delete me", slug: "delete-me")
+    {:ok, overview, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
+    refute has_element?(overview, "#branch-delete-section")
+
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/general")
+    assert has_element?(lv, "#branch-delete-open[aria-expanded='false']")
+    refute has_element?(lv, "#branch-delete-form")
+
+    lv |> element("#branch-delete-open") |> render_click()
+    assert has_element?(lv, "#branch-delete-open[aria-expanded='true']")
+    assert has_element?(lv, "#branch-delete-confirm[disabled]")
+
+    lv |> form("#branch-delete-form", confirmation: %{name: "wrong"}) |> render_change()
+    assert has_element?(lv, "#branch-delete-confirm[disabled]")
+    lv |> render_hook("confirm_delete", %{"confirmation" => %{"name" => "wrong"}})
+    assert is_nil(Repo.reload!(branch).deleted_at)
+
+    lv |> element("#branch-delete-form button[phx-click='cancel_delete']") |> render_click()
+    refute has_element?(lv, "#branch-delete-form")
+    lv |> element("#branch-delete-open") |> render_click()
+    assert has_element?(lv, "#branch-delete-confirm[disabled]")
+
+    lv |> form("#branch-delete-form", confirmation: %{name: "Delete me"}) |> render_change()
+    refute has_element?(lv, "#branch-delete-confirm[disabled]")
+
+    assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
+             lv |> form("#branch-delete-form") |> render_submit()
+
+    assert Repo.reload!(branch).deleted_at
+  end
+
+  test "without branches.delete the general page has no deletion section", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.read", "branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/general")
+    refute has_element?(lv, "#branch-delete-section")
+    lv |> render_hook("confirm_delete", %{"confirmation" => %{"name" => branch.name}})
+    assert is_nil(Repo.reload!(branch).deleted_at)
   end
 
   test "manual rating can be saved and cleared", %{conn: conn} do
