@@ -271,6 +271,7 @@ defmodule DelivestWeb.Router do
     delete "/auth/log_out", StaffSessionController, :delete
     get "/", StaffHomeController, :show
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
+    get "/branches/all", StaffActiveBranchController, :all
     get "/b/:branch_slug/products/export", StaffMenuExportController, :show
     get "/b/:branch_slug/site-snapshot", StaffSiteSnapshotController, :show
     get "/franchise/site-snapshot", StaffSiteSnapshotController, :show_franchise
@@ -292,6 +293,19 @@ defmodule DelivestWeb.Router do
         pipe_through :browser
         live "/login", AuthLive.Login, :new
       end
+    end
+
+    live_session :staff_dashboard_all,
+      layout: {DelivestWeb.Layouts, :staff_app},
+      on_mount: [
+        {DelivestWeb.Hooks.StaffAuth, :default},
+        {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
+        {DelivestWeb.Hooks.StaffBranches, :default},
+        {DelivestWeb.Hooks.CommandPalette, :default},
+        {DelivestWeb.Hooks.StaffPath, :default},
+        {DelivestWeb.Hooks.NewOrders, :default}
+      ] do
+      live "/dashboard", DashboardLive.Index, :all
     end
 
     live_session :staff_default,

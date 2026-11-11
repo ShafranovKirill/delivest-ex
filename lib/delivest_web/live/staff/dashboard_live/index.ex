@@ -16,9 +16,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
-    branch_id = socket.assigns.current_branch.id
+    branches = dashboard_branches(socket)
 
-    if connected?(socket), do: Orders.subscribe(branch_id)
+    if connected?(socket), do: Enum.each(branches, &Orders.subscribe(&1.id))
 
     {:ok,
      socket
@@ -28,6 +28,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
        can_orders: Identity.can?(staff, "orders.read"),
        can_create_order: Identity.can?(staff, "orders.create"),
        can_clients: Identity.can?(staff, "clients.read"),
+       current_branch: socket.assigns[:current_branch],
+       dashboard_branches: branches,
+       branch_by_id: Map.new(branches, &{&1.id, &1}),
        reload_scheduled: false
      )
      |> load()}
@@ -40,6 +43,32 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
     {:noreply, socket |> assign(reload_scheduled: false) |> load()}
   end
 
+  def handle_info(event, %{assigns: %{live_action: :all}} = socket)
+      when event in [:staff_updated, :role_updated] do
+    staff = socket.assigns.current_staff
+    branches = Identity.list_branch_for_staff(staff)
+    previous = MapSet.new(socket.assigns.dashboard_branches, & &1.id)
+    current = MapSet.new(branches, & &1.id)
+
+    if connected?(socket) do
+      Enum.each(MapSet.difference(previous, current), &Orders.unsubscribe/1)
+      Enum.each(MapSet.difference(current, previous), &Orders.subscribe/1)
+    end
+
+    {:noreply,
+     socket
+     |> assign(
+       staff_branches: branches,
+       dashboard_branches: branches,
+       branch_by_id: Map.new(branches, &{&1.id, &1}),
+       can_stats: Identity.can?(staff, "statistics.read"),
+       can_orders: Identity.can?(staff, "orders.read"),
+       can_create_order: Identity.can?(staff, "orders.create"),
+       can_clients: Identity.can?(staff, "clients.read")
+     )
+     |> load()}
+  end
+
   def handle_info(_message, socket), do: {:noreply, socket}
 
   defp schedule_reload(%{assigns: %{reload_scheduled: true}} = socket), do: socket
@@ -50,20 +79,34 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   end
 
   defp load(socket) do
-    branch_id = socket.assigns.current_branch.id
-    today = LocalTime.today(LocalTime.timezone(branch_id))
-    today_period = {today, today}
-    yesterday = Date.add(today, -1)
+    branches = socket.assigns.dashboard_branches
+
+    today =
+      LocalTime.today(
+        LocalTime.timezone(socket.assigns.current_branch && socket.assigns.current_branch.id)
+      )
 
     socket
     |> assign(today: today)
     |> then(fn socket ->
       if socket.assigns.can_stats do
+        rows =
+          Enum.map(branches, fn branch ->
+            day = LocalTime.today(LocalTime.timezone(branch.id))
+            period = {day, day}
+            yesterday = Date.add(day, -1)
+
+            {Analytics.summary(branch.id, period),
+             Analytics.summary(branch.id, {yesterday, yesterday}),
+             Analytics.hourly(branch.id, period),
+             Analytics.top_products(branch.id, period, limit: :all)}
+          end)
+
         assign(socket,
-          summary: Analytics.summary(branch_id, today_period),
-          yesterday: Analytics.summary(branch_id, {yesterday, yesterday}),
-          hourly: Analytics.hourly(branch_id, today_period),
-          top_products: Analytics.top_products(branch_id, today_period, limit: 5)
+          summary: merge_summaries(Enum.map(rows, &elem(&1, 0))),
+          yesterday: merge_summaries(Enum.map(rows, &elem(&1, 1))),
+          hourly: merge_hourly(Enum.flat_map(rows, &elem(&1, 2))),
+          top_products: merge_products(Enum.flat_map(rows, &elem(&1, 3)))
         )
       else
         socket
@@ -71,17 +114,33 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
     end)
     |> then(fn socket ->
       if socket.assigns.can_orders do
-        counts = Analytics.status_counts(branch_id, today_period)
+        rows =
+          Enum.map(branches, fn branch ->
+            day = LocalTime.today(LocalTime.timezone(branch.id))
+            period = {day, day}
+            filters = %{branch_id: branch.id, date_from: day, date_to: day}
+
+            {Analytics.status_counts(branch.id, period), Orders.list_latest_orders(filters, 8),
+             filters
+             |> Map.put(:problem, true)
+             |> Orders.count_by_status()
+             |> Map.drop([:completed, :cancelled])
+             |> Map.values()
+             |> Enum.sum()}
+          end)
+
+        counts =
+          Enum.reduce(rows, %{}, fn {status, _, _}, acc ->
+            Map.merge(acc, status, fn _, a, b -> a + b end)
+          end)
 
         latest =
-          Orders.list_latest_orders(%{branch_id: branch_id, date_from: today, date_to: today}, 8)
+          rows
+          |> Enum.flat_map(&elem(&1, 1))
+          |> Enum.sort_by(&{DateTime.to_unix(&1.inserted_at, :microsecond), &1.id}, :desc)
+          |> Enum.take(8)
 
-        problem_count =
-          %{branch_id: branch_id, problem: true, date_from: today, date_to: today}
-          |> Orders.count_by_status()
-          |> Map.drop([:completed, :cancelled])
-          |> Map.values()
-          |> Enum.sum()
+        problem_count = Enum.sum(Enum.map(rows, &elem(&1, 2)))
 
         assign(socket,
           problem_count: problem_count,
@@ -95,18 +154,80 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
     end)
   end
 
+  defp dashboard_branches(%{assigns: %{live_action: :all}} = socket),
+    do: socket.assigns.staff_branches
+
+  defp dashboard_branches(socket), do: [socket.assigns.current_branch]
+
+  defp merge_summaries(rows) do
+    totals =
+      Enum.reduce(
+        rows,
+        %{revenue: 0, orders_count: 0, items_sold: 0, cancelled_count: 0, lost_count: 0},
+        fn row, acc ->
+          Map.new(acc, fn {key, value} -> {key, value + Map.fetch!(row, key)} end)
+        end
+      )
+
+    Map.put(
+      totals,
+      :avg_check,
+      if(totals.orders_count > 0, do: round(totals.revenue / totals.orders_count), else: 0)
+    )
+  end
+
+  defp merge_hourly(rows) do
+    for hour <- 0..23 do
+      matching = Enum.filter(rows, &(&1.hour == hour))
+
+      %{
+        hour: hour,
+        revenue: Enum.sum(Enum.map(matching, & &1.revenue)),
+        orders: Enum.sum(Enum.map(matching, & &1.orders))
+      }
+    end
+  end
+
+  defp merge_products(rows) do
+    merged =
+      rows
+      |> Enum.group_by(& &1.product_id)
+      |> Enum.map(fn {id, products} ->
+        first = hd(products)
+
+        %{
+          product_id: id,
+          title: first.title,
+          category_name: first.category_name,
+          quantity: Enum.sum(Enum.map(products, & &1.quantity)),
+          revenue: Enum.sum(Enum.map(products, & &1.revenue)),
+          orders: Enum.sum(Enum.map(products, & &1.orders))
+        }
+      end)
+      |> Enum.sort_by(&{&1.revenue, &1.quantity}, :desc)
+
+    total = Enum.sum(Enum.map(merged, & &1.revenue))
+
+    Enum.map(
+      Enum.take(merged, 5),
+      &Map.put(&1, :share, if(total > 0, do: Float.round(&1.revenue * 100 / total, 1), else: 0.0))
+    )
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p class="text-sm text-base-content/60">{@current_branch.name}</p>
+          <p class="text-sm text-base-content/60">
+            {if @current_branch, do: @current_branch.name, else: gettext("All branches")}
+          </p>
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">
-            {gettext("Today")}, {DayLabel.format(@today)}
+            {gettext("Today")}{if @current_branch, do: ", #{DayLabel.format(@today)}"}
           </h1>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div :if={@current_branch} class="flex flex-wrap gap-2">
           <.link
             :if={@can_create_order}
             navigate={~p"/staff/b/#{@current_branch}/orders/new"}
@@ -135,7 +256,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
       </div>
 
       <.link
-        :if={@can_orders and @problem_count > 0}
+        :if={@can_orders and @problem_count > 0 and @current_branch}
         id="dashboard-problem-orders"
         navigate={~p"/staff/b/#{@current_branch}/orders?problem=true"}
         class="flex items-center gap-3 rounded-box border border-warning/40 bg-warning/10 p-4 hover:bg-warning/15 transition-colors"
@@ -150,6 +271,21 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         </span>
         <.icon name="hero-chevron-right" class="size-4 ml-auto text-base-content/40" />
       </.link>
+
+      <div
+        :if={@can_orders and @problem_count > 0 and is_nil(@current_branch)}
+        id="dashboard-problem-orders"
+        class="flex items-center gap-3 rounded-box border border-warning/40 bg-warning/10 p-4"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-6 text-warning" />
+        <span class="font-medium">
+          {ngettext(
+            "%{count} order needs attention",
+            "%{count} orders need attention",
+            @problem_count
+          )}
+        </span>
+      </div>
 
       <div :if={@can_stats or @can_orders} class="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <%= if @can_stats do %>
@@ -218,7 +354,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             >
               <div class="flex items-center gap-2 sm:gap-4">
                 <.link
-                  navigate={~p"/staff/b/#{@current_branch}/orders/#{order.id}"}
+                  navigate={
+                    ~p"/staff/b/#{Map.fetch!(@branch_by_id, order.branch_id)}/orders/#{order.id}"
+                  }
                   class="font-mono font-bold after:absolute after:inset-0"
                 >
                   #{Order.short_number(order)}
@@ -262,7 +400,11 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             <p :if={@top_products == []} class="text-sm text-base-content/50">
               {gettext("No sales yet today")}
             </p>
-            <div :for={row <- @top_products} class="space-y-1">
+            <div
+              :for={row <- @top_products}
+              id={"dashboard-product-#{row.product_id}"}
+              class="space-y-1"
+            >
               <div class="flex justify-between gap-3 text-sm">
                 <span class="font-medium truncate">{row.title}</span>
                 <span class="text-base-content/60 tabular-nums shrink-0">

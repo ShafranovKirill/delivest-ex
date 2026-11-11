@@ -154,7 +154,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       []
       |> maybe_add_filter(:category_id, "==", category_id)
       |> maybe_add_filter(:is_active, "==", is_active)
-      |> maybe_add_filter(:name, "ilike_and", search)
       |> map_to_flop_format()
 
     query_params =
@@ -412,11 +411,17 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     filters_for_query =
       meta.flop.filters
       |> List.wrap()
+      |> Enum.reject(fn filter ->
+        filter.field == :name and filter.op == :ilike_and and filter.value == assigns.search
+      end)
       |> Enum.map(fn
         %Flop.Filter{} = f -> Map.from_struct(f)
         f -> f
       end)
       |> with_indexed_map()
+
+    overrides =
+      if Map.has_key?(overrides, "order_by"), do: Map.put(overrides, "page", 1), else: overrides
 
     %{
       "search" => assigns.search,
