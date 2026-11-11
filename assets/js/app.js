@@ -12,6 +12,7 @@ import { PickupBoard } from "./hooks/pickup_board";
 import { CourierMap } from "./hooks/courier_map";
 import { CourierLocation } from "./hooks/courier_location";
 import { CouriersMap } from "./hooks/couriers_map";
+import { CopyLink } from "./hooks/copy_link";
 
 let Uploaders = {};
 
@@ -206,6 +207,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CourierMap,
     CourierLocation,
     CouriersMap,
+    CopyLink,
   },
 });
 

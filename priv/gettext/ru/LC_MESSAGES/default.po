@@ -10533,3 +10533,13 @@ msgstr "Максимум маркетинговых Push"
 #, elixir-autogen, elixir-format
 msgid "Rolling window, hours"
 msgstr "Период ограничения, часы"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Link copied"
+msgstr "Ссылка скопирована"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not copy link. Select the URL to copy it manually."
+msgstr "Не удалось скопировать ссылку. Выделите адрес и скопируйте его вручную."

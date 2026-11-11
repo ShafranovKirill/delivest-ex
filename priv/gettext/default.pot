@@ -10336,3 +10336,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Rolling window, hours"
 msgstr ""
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Link copied"
+msgstr ""
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not copy link. Select the URL to copy it manually."
+msgstr ""

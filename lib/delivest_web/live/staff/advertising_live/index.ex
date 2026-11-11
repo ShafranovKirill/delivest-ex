@@ -141,10 +141,20 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
               id={"advertising-copy-#{link.id}"}
               type="button"
               class="btn btn-outline"
-              phx-hook=".CopyLink"
+              phx-hook="CopyLink"
               data-url={url(~p"/r/#{link.token}")}
+              data-status-id={"advertising-copy-status-#{link.id}"}
+              data-copy-success={gettext("Link copied")}
+              data-copy-failure={gettext("Could not copy link. Select the URL to copy it manually.")}
             >{gettext("Copy")}</button>
           </div>
+          <p
+            id={"advertising-copy-status-#{link.id}"}
+            role="status"
+            aria-live="polite"
+            class="text-sm"
+          >
+          </p>
           <div :if={is_nil(link.archived_at)} class="flex gap-2">
             <button
               id={"advertising-toggle-#{link.id}"}
@@ -173,13 +183,6 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
         phx-click="load_more"
       >{gettext("Load more")}</button>
     </div>
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".CopyLink">
-      export default {
-        mounted() {
-          this.el.addEventListener('click', () => navigator.clipboard.writeText(this.el.dataset.url))
-        }
-      }
-    </script>
     """
   end
 end
