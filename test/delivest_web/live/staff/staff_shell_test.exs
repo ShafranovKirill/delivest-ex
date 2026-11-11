@@ -57,4 +57,22 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#branch-settings-list #create-branch")
     refute has_element?(lv, "#branch-settings-list h1")
   end
+
+  test "header context follows page scope rather than the active branch", %{conn: conn} do
+    center = insert(:branch, name: "Center")
+    north = insert(:branch, name: "North")
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: center)
+    insert(:staff_branch, staff: staff, branch: north)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => center.id})
+
+    {:ok, global, _} = live(conn, ~p"/staff/settings")
+    assert has_element?(global, "#staff-header-context[title='Network']", "Network")
+
+    {:ok, edit, _} = live(conn, ~p"/staff/branches/#{north.slug}/edit")
+    assert has_element?(edit, "#staff-header-context[title='North']", "North")
+
+    {:ok, scoped, _} = live(conn, ~p"/staff/b/#{center}/dashboard")
+    assert has_element?(scoped, "#staff-header-context[title='Center']", "Center")
+  end
 end
