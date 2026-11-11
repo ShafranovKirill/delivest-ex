@@ -10118,3 +10118,28 @@ msgstr "Archive"
 #, elixir-autogen, elixir-format
 msgid "Archive this link?"
 msgstr "Archive this link?"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Load more"
+msgstr "Load more"
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Marketing Push messages"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "The limit applies to each customer across all branches. A Push with an unknown delivery result counts toward the limit. Rewards and messages on the site are unaffected."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Maximum marketing push messages"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rolling window, hours"
+msgstr ""
