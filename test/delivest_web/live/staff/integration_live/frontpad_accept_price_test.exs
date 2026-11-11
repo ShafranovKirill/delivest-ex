@@ -65,6 +65,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadAcceptPriceTest do
     assert Delivest.Repo.get!(Delivest.Net.Product, product.id).price == 65_000
   end
 
+  test "Russian locale shows the accept price action", %{conn: conn} do
+    {conn, branch, product} = setup_branch(conn)
+    conn = put_session(conn, "locale", "ru")
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
+
+    assert has_element?(
+             view,
+             "#frontpad-accept-price-#{product.id}",
+             "Принять цену из CRM"
+           )
+  end
+
   test "changed CRM price is shown and requires another click", %{conn: conn} do
     {conn, branch, product} = setup_branch(conn)
     {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")

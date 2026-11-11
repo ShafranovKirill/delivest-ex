@@ -9669,3 +9669,31 @@ msgstr "Переместить зону вверх"
 #, elixir-autogen, elixir-format
 msgid "Zone order changed; refresh and try again"
 msgstr "Порядок зон изменился. Обновите страницу и попробуйте снова"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Accept price from CRM"
+msgstr "Принять цену из CRM"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Price is already up to date"
+msgstr "Цена уже актуальна"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Price accepted from Frontpad"
+msgstr "Цена принята из Frontpad"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Frontpad price changed. Review the new price and try again."
+msgstr "Цена в Frontpad изменилась. Проверьте новую цену и попробуйте снова."
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "This product is shared by branches. Its price cannot be changed for one branch."
+msgstr "Товар используется в нескольких филиалах. Его цену нельзя изменить только для одного филиала."
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Could not accept the price. Try again later."
+msgstr "Не удалось принять цену. Попробуйте позже."
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Shared product: price affects other branches"
+msgstr "Общий товар: изменение цены затронет другие филиалы"
