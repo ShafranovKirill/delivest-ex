@@ -10934,3 +10934,18 @@ msgstr "Карта филиала и ссылка на организацию в
 
 msgid "Branch bonuses: %{name}"
 msgstr "Бонусы филиала: %{name}"
+
+msgid "Settings for branches"
+msgstr "Настройки филиалов"
+
+msgid "Choose a branch to manage its settings and delivery."
+msgstr "Выберите филиал для настройки и управления доставкой."
+
+msgid "Choose the settings area."
+msgstr "Выберите раздел настроек."
+
+msgid "Diagnostics"
+msgstr "Диагностика"
+
+msgid "Delivery zones and couriers for this branch."
+msgstr "Зоны доставки и курьеры этого филиала."

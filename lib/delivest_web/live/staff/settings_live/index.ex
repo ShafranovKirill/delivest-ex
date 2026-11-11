@@ -9,18 +9,14 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
 
-    if Identity.can?(staff, "franchise.update") or
-         (Identity.can?(staff, "branches.read") and Identity.can?(staff, "branches.update")) do
+    if Enum.any?(
+         ~w(franchise.update branches.read delivery.read integrations.read),
+         &Identity.can?(staff, &1)
+       ) do
       {:ok, assign(socket, page_title: gettext("Settings"))}
     else
       {:ok, redirect(socket, to: ~p"/staff/branches/select")}
     end
-  end
-
-  defp editable_branches(staff, branches) do
-    if Identity.can?(staff, "branches.read") and Identity.can?(staff, "branches.update"),
-      do: branches,
-      else: []
   end
 
   @impl true
@@ -29,7 +25,7 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
     <div id="settings-hub" class="mx-auto max-w-5xl space-y-6 py-4 sm:p-6">
       <.page_header
         title={gettext("Settings")}
-        subtitle={gettext("Choose common settings or an available branch.")}
+        subtitle={gettext("Choose the settings area.")}
       />
       <.settings_cards>
         <.settings_card
@@ -43,20 +39,25 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
           }
         />
         <.settings_card
-          :for={branch <- editable_branches(@current_staff, @staff_branches)}
-          id={"settings-branch-card-#{branch.id}"}
-          navigate={~p"/staff/branches/#{branch.slug}/edit"}
+          :if={
+            Identity.can?(@current_staff, "branches.read") or
+              Identity.can?(@current_staff, "delivery.read")
+          }
+          id="settings-branches-card"
+          navigate={~p"/staff/branches"}
           icon="hero-map-pin"
-          title={branch.name}
-          description={gettext("Branch settings")}
+          title={gettext("Settings for branches")}
+          description={gettext("Choose a branch to manage its settings and delivery.")}
+        />
+        <.settings_card
+          :if={Identity.can?(@current_staff, "integrations.read")}
+          id="settings-integrations-card"
+          navigate={~p"/staff/integrations"}
+          icon="hero-puzzle-piece"
+          title={gettext("Integrations")}
+          description={gettext("External services connected to the app.")}
         />
       </.settings_cards>
-      <.link
-        :if={Identity.can?(@current_staff, "branches.read")}
-        id="settings-manage-branches"
-        navigate={~p"/staff/branches"}
-        class="link link-primary"
-      >{gettext("Manage branches")}</.link>
     </div>
     """
   end

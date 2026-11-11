@@ -44,9 +44,9 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/promotions", :promotions},
     {"/staff/loyalty", :loyalty},
     {"/staff/settings", :settings},
-    {"/staff/delivery", :delivery},
+    {"/staff/delivery", :settings},
     {"/staff/branches/select", :branches_select},
-    {"/staff/branches", :branches},
+    {"/staff/branches", :settings},
     {"/staff/clients", :clients},
     {"/staff/marketing/bonuses", :loyalty},
     {"/staff/marketing", :marketing_policies},
@@ -54,7 +54,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/employee", :employee},
     {"/staff/roles", :roles},
     {"/staff/franchise", :settings},
-    {"/staff/integrations", :integrations},
+    {"/staff/integrations", :settings},
     {"/staff/metrics", :metrics},
     {"/staff/logs", :logs}
   ]

@@ -173,4 +173,47 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     assert has_element?(view, "#marketing-branches a[href='/staff/b/#{branch.slug}/stocks']")
     refute has_element?(view, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/stocks']")
   end
+
+  test "settings sidebar replaces branch, delivery and integration entries", %{conn: conn} do
+    branch = insert(:branch)
+
+    conn =
+      login(
+        conn,
+        ["branches.read", "branches.update", "delivery.read", "integrations.read"],
+        [branch],
+        branch.id
+      )
+
+    {:ok, settings, _} = live(conn, ~p"/staff/settings")
+    assert has_element?(settings, "#nav-section-network a[href='/staff/settings'].menu-active")
+    refute has_element?(settings, "#nav-section-network a[href='/staff/branches']")
+    refute has_element?(settings, "#nav-section-network a[href='/staff/integrations']")
+
+    refute has_element?(
+             settings,
+             "#nav-section-branch a[href='/staff/b/#{branch.slug}/delivery']"
+           )
+
+    {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
+    assert has_element?(delivery, "#nav-section-network a[href='/staff/settings'].menu-active")
+    assert has_element?(delivery, "a[href='/staff/branches/#{branch.slug}/edit']")
+
+    {:ok, integrations, _} = live(conn, ~p"/staff/integrations")
+
+    assert has_element?(
+             integrations,
+             "#nav-section-network a[href='/staff/settings'].menu-active"
+           )
+  end
+
+  test "diagnostics group opens on logs and keeps both entries", %{conn: conn} do
+    conn = login(conn, ["logs.read"], [])
+    {:ok, logs, _} = live(conn, ~p"/staff/logs")
+
+    assert has_element?(logs, "#nav-group-diagnostics[data-open]")
+    assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/logs'].menu-active")
+    assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/metrics']")
+    refute has_element?(logs, "#nav-section-network a[href='/staff/settings']")
+  end
 end

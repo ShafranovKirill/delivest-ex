@@ -17,7 +17,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
     {:ok, lv, html} = live(conn, ~p"/staff/branches/split/edit")
     refute html =~ "branch-form"
-    refute html =~ "couriers"
+    assert has_element?(lv, "#branch-delivery-card[href='/staff/b/split/delivery']")
 
     for section <- ~w(general fulfillment location hours kitchen board links) do
       assert has_element?(
@@ -229,5 +229,14 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
       assert settings.pickup == false
       assert settings.dine_in == (attrs.dine_in == "true")
     end
+  end
+
+  test "branch overview hides delivery without scoped permission", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.read", "branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
+    refute has_element?(lv, "#branch-delivery-card")
   end
 end

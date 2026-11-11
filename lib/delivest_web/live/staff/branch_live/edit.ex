@@ -232,6 +232,14 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           title={section.title}
           description={section.description}
         />
+        <.settings_card
+          :if={Identity.authorize(@current_staff, "delivery.read", @branch.id) == :ok}
+          id="branch-delivery-card"
+          navigate={~p"/staff/b/#{@branch}/delivery"}
+          icon="hero-truck"
+          title={gettext("Delivery")}
+          description={gettext("Delivery zones and couriers for this branch.")}
+        />
       </.settings_cards>
     </div>
     """

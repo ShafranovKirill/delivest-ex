@@ -123,14 +123,7 @@ defmodule DelivestWeb.StaffNav do
           gettext("Stop list")
         )
         |> allowed(staff, "products.read")
-      ]),
-      item(
-        :delivery,
-        branch && ~p"/staff/b/#{branch}/delivery",
-        "hero-truck",
-        gettext("Delivery")
-      )
-      |> allowed(staff, "delivery.read")
+      ])
     ]
     |> compact_all()
   end
@@ -139,9 +132,7 @@ defmodule DelivestWeb.StaffNav do
     [
       item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
       |> allowed(staff, "statistics.read"),
-      group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch)),
-      item(:integrations, ~p"/staff/integrations", "hero-puzzle-piece", gettext("Integrations"))
-      |> allowed(staff, "integrations.read")
+      group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch))
     ]
     |> compact_all()
   end
@@ -222,16 +213,18 @@ defmodule DelivestWeb.StaffNav do
       ]),
       item(:settings, ~p"/staff/settings", "hero-cog-6-tooth", gettext("Settings"))
       |> then(fn item ->
-        if can?(staff, "franchise.update") or
-             (can?(staff, "branches.read") and can?(staff, "branches.update")),
-           do: item
+        if Enum.any?(
+             ~w(franchise.update branches.read delivery.read integrations.read),
+             &can?(staff, &1)
+           ),
+           do: covering(item, [:branches, :integrations, :delivery])
       end),
-      item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
-      |> allowed(staff, "branches.read"),
-      item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
-      |> allowed(staff, "logs.read"),
-      item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))
-      |> allowed(staff, "logs.read")
+      group(:diagnostics, "hero-wrench-screwdriver", gettext("Diagnostics"), [
+        item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
+        |> allowed(staff, "logs.read"),
+        item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))
+        |> allowed(staff, "logs.read")
+      ])
     ]
     |> compact_all()
   end
