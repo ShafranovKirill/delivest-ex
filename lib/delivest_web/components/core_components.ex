@@ -436,14 +436,6 @@ defmodule DelivestWeb.CoreComponents do
       phx-hook="HeaderScroll"
       class="staff-header-scroll min-w-0 flex-1"
     >
-      <button
-        type="button"
-        data-scroll-left
-        class="staff-header-scroll-arrow"
-        aria-label={gettext("Scroll sections left")}
-      >
-        <.icon name="hero-chevron-left" class="size-4" />
-      </button>
       <nav
         id="staff-page-header-navigation"
         phx-hook=".ActiveHeaderTab"
@@ -453,14 +445,6 @@ defmodule DelivestWeb.CoreComponents do
       >
         {render_slot(@inner_block)}
       </nav>
-      <button
-        type="button"
-        data-scroll-right
-        class="staff-header-scroll-arrow"
-        aria-label={gettext("Scroll sections right")}
-      >
-        <.icon name="hero-chevron-right" class="size-4" />
-      </button>
     </div>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
       export default {

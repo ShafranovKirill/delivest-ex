@@ -27,7 +27,7 @@ defmodule DelivestWeb.StaffHeader do
       data-header-actions={
         if @product_section, do: to_string(ProductTags.actions?(@product_section, @current_staff))
       }
-      class="staff-header fixed top-0 right-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-base-300 bg-base-100 px-4 sm:px-6"
+      class="staff-header fixed top-0 right-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-base-300 bg-base-100 pl-3 pr-0 sm:px-6"
     >
       <div
         id="staff-header-sidebar-controls"
@@ -103,30 +103,14 @@ defmodule DelivestWeb.StaffHeader do
         phx-hook="HeaderScroll"
         class="staff-header-actions staff-header-scroll"
       >
-        <button
-          type="button"
-          data-scroll-left
-          class="staff-header-scroll-arrow"
-          aria-label={gettext("Scroll actions left")}
-        >
-          <.icon name="hero-chevron-left" class="size-4" />
-        </button>
         <div
           id="staff-header-actions-scroll"
           class="staff-header-actions-scroll"
           data-scroll-viewport
         />
-        <button
-          type="button"
-          data-scroll-right
-          class="staff-header-scroll-arrow"
-          aria-label={gettext("Scroll actions right")}
-        >
-          <.icon name="hero-chevron-right" class="size-4" />
-        </button>
       </div>
 
-      <div class="flex shrink-0 items-center gap-2">
+      <div class="staff-header-utilities flex shrink-0 items-center gap-2">
         {render_slot(@actions)}
         <DelivestWeb.GatewayNote.gateway_badge branch={@current_branch} />
         <DelivestWeb.KitchenControl.kitchen_indicator status={@kitchen_status} />

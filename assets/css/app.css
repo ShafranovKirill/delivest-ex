@@ -161,7 +161,6 @@
 #staff-header:has(.staff-page-header-two-rows) #staff-header-context,
 #staff-header:has(.staff-page-header-two-rows) #staff-header-context + span { display: none; }
 .staff-header-scroll { display: flex; align-items: stretch; }
-.staff-header-scroll-arrow { display: none; }
 .staff-header-actions { display: none; }
 .staff-header-actions:has(.staff-page-header-actions > *) {
   display: block;
@@ -197,18 +196,8 @@
 @media (max-width: 639px) { .staff-page-header-title { max-width: 5.5rem; padding-inline-end: .5rem; margin-inline-end: .25rem; } }
 @media (max-width: 639px) {
   #staff-header-actions:has(.staff-page-header-actions > *) { display: flex; }
-  .staff-header-scroll-arrow {
-    display: flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    color: var(--color-base-content);
-    visibility: hidden;
-  }
-  .staff-header-scroll[data-scroll-has-left] > [data-scroll-left],
-  .staff-header-scroll[data-scroll-has-right] > [data-scroll-right] { visibility: visible; }
-  .staff-header-scroll-arrow:hover { background-color: var(--color-base-300); }
+  .staff-header-actions-scroll { padding-left: 1rem; padding-right: 0; }
+  .staff-header-utilities:not(:has(> :not(.hidden))) { display: none; }
   .staff-header-scroll[data-scroll-has-left] > [data-scroll-viewport] { mask-image: linear-gradient(to right, transparent, black 1rem, black 100%); }
   .staff-header-scroll[data-scroll-has-right] > [data-scroll-viewport] { mask-image: linear-gradient(to right, black 0%, black calc(100% - 1rem), transparent); }
   .staff-header-scroll[data-scroll-has-left][data-scroll-has-right] > [data-scroll-viewport] { mask-image: linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent); }
