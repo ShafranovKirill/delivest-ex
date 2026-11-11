@@ -34,6 +34,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaShared do
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
     end
   end
 
@@ -48,6 +51,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaShared do
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
     end
   end
 
