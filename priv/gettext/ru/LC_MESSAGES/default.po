@@ -9697,3 +9697,12 @@ msgstr "Не удалось принять цену. Попробуйте поз
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex
 msgid "Shared product: price affects other branches"
 msgstr "Общий товар: изменение цены затронет другие филиалы"
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex
+msgid "Applied"
+msgstr "Применено"
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex
+#, elixir-format
+msgid "Product operations in «%{subject}»: created %{created}, updated %{updated}, skipped %{skipped}"
+msgstr "Товарные операции в филиале «%{subject}»: создано %{created}, обновлено %{updated}, пропущено %{skipped}"
