@@ -26,6 +26,17 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     refute has_element?(lv, "#staff-header #header-new-orders")
     assert has_element?(lv, "#main-sidebar #sidebar-toggle[aria-controls='main-sidebar']")
+
+    assert has_element?(
+             lv,
+             ~s(#staff-header-sidebar-controls #header-home[href="/staff/b/#{branch.slug}/dashboard"])
+           )
+
+    assert has_element?(
+             lv,
+             "#staff-header-sidebar-controls #header-sidebar-toggle[data-sidebar-toggle][aria-controls='main-sidebar']"
+           )
+
     assert has_element?(lv, "#main-sidebar #header-branch")
     assert has_element?(lv, "details#header-branch > summary[aria-controls='header-branch-menu']")
     assert has_element?(lv, "#header-branch-menu[phx-hook]")

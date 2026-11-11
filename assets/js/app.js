@@ -220,18 +220,27 @@ if ("serviceWorker" in navigator && location.pathname.startsWith("/staff")) {
 const staffDesktop = () => window.matchMedia("(min-width: 1024px)").matches;
 
 function syncSidebarToggle() {
-  const button = document.querySelector("[data-sidebar-toggle]");
-  if (!button) return;
   const expanded = staffDesktop()
     ? !root.hasAttribute("data-sidebar-collapsed")
     : root.hasAttribute("data-sidebar-open");
-  const label = expanded ? button.dataset.collapseLabel : button.dataset.expandLabel;
-  button.setAttribute("aria-expanded", String(expanded));
-  button.setAttribute("aria-label", label);
-  button.title = label;
+  document.querySelectorAll("[data-sidebar-toggle]").forEach((button) => {
+    const label = expanded ? button.dataset.collapseLabel : button.dataset.expandLabel;
+    button.setAttribute("aria-expanded", String(expanded));
+    button.setAttribute("aria-label", label);
+    button.title = label;
+  });
+}
+
+function focusVisibleSidebarToggle(active) {
+  if (!active?.closest("#main-sidebar, #staff-header-sidebar-controls")) return;
+  if (active.getClientRects().length) return;
+  const button = [...document.querySelectorAll("[data-sidebar-toggle]")]
+    .find((toggle) => toggle.getClientRects().length);
+  button?.focus({ preventScroll: true });
 }
 
 window.addEventListener("sidebar:toggle", () => {
+  const focused = document.activeElement;
   if (staffDesktop()) {
     const collapsed = root.toggleAttribute("data-sidebar-collapsed");
     localStorage.setItem("sidebar_collapsed", collapsed);
@@ -239,17 +248,22 @@ window.addEventListener("sidebar:toggle", () => {
     root.toggleAttribute("data-sidebar-open");
   }
   syncSidebarToggle();
+  focusVisibleSidebarToggle(focused);
 });
 
 window.addEventListener("sidebar:toggle-collapse", () => {
+  const focused = document.activeElement;
   const collapsed = root.toggleAttribute("data-sidebar-collapsed");
   localStorage.setItem("sidebar_collapsed", collapsed);
   syncSidebarToggle();
+  focusVisibleSidebarToggle(focused);
 });
 
 window.addEventListener("sidebar:toggle-open", () => {
+  const focused = document.activeElement;
   root.toggleAttribute("data-sidebar-open");
   syncSidebarToggle();
+  focusVisibleSidebarToggle(focused);
 });
 
 function setProfileOpen(open) {
@@ -270,8 +284,10 @@ document.addEventListener("click", (event) => {
   }
   if (!staffDesktop() && root.hasAttribute("data-sidebar-open") &&
       event.target.closest("#main-sidebar a")) {
+    const focused = document.activeElement;
     root.removeAttribute("data-sidebar-open");
     syncSidebarToggle();
+    focusVisibleSidebarToggle(focused);
   }
 });
 
@@ -281,10 +297,15 @@ document.addEventListener("keydown", (event) => {
     if (button?.getAttribute("aria-expanded") === "true") {
       setProfileOpen(false);
       button.focus();
+      return;
     }
+    if (event.target.closest("#command-palette") ||
+        document.querySelector("#command-palette")?.getClientRects().length) return;
     if (root.hasAttribute("data-sidebar-open")) {
+      const focused = document.activeElement;
       root.removeAttribute("data-sidebar-open");
       syncSidebarToggle();
+      focusVisibleSidebarToggle(focused);
     }
   }
 });

@@ -29,6 +29,44 @@ defmodule DelivestWeb.StaffHeader do
       }
       class="staff-header fixed top-0 right-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-base-300 bg-base-100 px-4 sm:px-6"
     >
+      <div
+        id="staff-header-sidebar-controls"
+        class="staff-header-sidebar-controls shrink-0 items-center gap-1"
+      >
+        <.link
+          id="header-home"
+          navigate={DelivestWeb.StaffBranchPath.home(@current_branch)}
+          class="flex shrink-0 items-center rounded-field p-1 hover:bg-base-200"
+          title="Delivest"
+          aria-label="Delivest"
+        >
+          <img
+            src={~p"/images/logo-dark.png"}
+            alt=""
+            class="size-6 shrink-0 object-contain dark:hidden"
+          />
+          <img
+            src={~p"/images/logo-white.png"}
+            alt=""
+            class="hidden size-6 shrink-0 object-contain dark:block"
+          />
+        </.link>
+        <button
+          id="header-sidebar-toggle"
+          type="button"
+          data-sidebar-toggle
+          phx-click={JS.dispatch("sidebar:toggle")}
+          data-expand-label={gettext("Expand menu")}
+          data-collapse-label={gettext("Collapse menu")}
+          aria-controls="main-sidebar"
+          aria-expanded="false"
+          aria-label={gettext("Expand menu")}
+          title={gettext("Expand menu")}
+          class="btn btn-ghost btn-square btn-sm shrink-0"
+        >
+          <.icon name="panel-left" class="size-5" />
+        </button>
+      </div>
       <div :if={@product_section} class="flex min-w-0 flex-1 items-center text-sm">
         <.header_navigation label={gettext("Products")}>
           <ProductTags.tabs
