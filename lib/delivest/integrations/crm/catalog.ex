@@ -35,6 +35,13 @@ defmodule Delivest.Integrations.Crm.Catalog do
          do: refresh(branch_id, provider)
   end
 
+  @doc "Fetches the current provider catalog without changing the saved snapshot."
+  def fetch_current(branch_id, provider) do
+    with {:ok, module, settings} <- source(branch_id, provider) do
+      Journal.scope([branch_id: branch_id], fn -> module.fetch_catalog(settings) end)
+    end
+  end
+
   def issues(_branch_id, nil), do: []
 
   def issues(branch_id, %CatalogSnapshot{provider: provider, products: crm_products}) do

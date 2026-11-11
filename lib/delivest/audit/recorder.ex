@@ -18,16 +18,21 @@ defmodule Delivest.Audit.Recorder do
 
     event = Repo.insert!(struct(Event, event))
 
-    Logger.info(
-      "audit #{action} #{event.subject_type}:#{event.subject_label} by #{Actor.label(event)}"
-    )
-
-    Phoenix.PubSub.broadcast(Delivest.PubSub, @topic, {:audit_event, event})
+    if Keyword.get(opts, :publish, true), do: publish(event)
     {:ok, event}
   rescue
     error ->
       Logger.error("audit #{action} not recorded: #{Exception.message(error)}")
       {:error, error}
+  end
+
+  def publish(%Event{} = event) do
+    Logger.info(
+      "audit #{event.action} #{event.subject_type}:#{event.subject_label} by #{Actor.label(event)}"
+    )
+
+    Phoenix.PubSub.broadcast(Delivest.PubSub, @topic, {:audit_event, event})
+    :ok
   end
 
   defp put_branch(event, nil), do: event
