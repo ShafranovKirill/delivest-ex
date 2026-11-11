@@ -3,7 +3,7 @@ defmodule DelivestWeb.StaffNav do
 
   import Delivest.Identity.Acl
 
-  alias Delivest.Gateway
+  alias Delivest.{Features, Gateway, Identity, Segments}
 
   def pages(staff, branch) do
     staff
@@ -18,7 +18,11 @@ defmodule DelivestWeb.StaffNav do
   def entries(staff, branch) do
     [
       section(:branch, branch && branch.name, branch_entries(staff, branch)),
-      section(:network, gettext("Network"), network_entries(staff))
+      section(
+        :network,
+        gettext("Network"),
+        common_entries(staff, branch) ++ network_entries(staff)
+      )
     ]
     |> Enum.reject(&(&1.entries == []))
   end
@@ -31,13 +35,6 @@ defmodule DelivestWeb.StaffNav do
         "hero-squares-2x2",
         gettext("Dashboard")
       ),
-      item(
-        :statistics,
-        branch && ~p"/staff/b/#{branch}/statistics",
-        "hero-chart-bar",
-        gettext("Statistics")
-      )
-      |> allowed(staff, "statistics.read"),
       group(:orders, "hero-shopping-bag", gettext("Orders"), [
         item(
           :orders_new,
@@ -126,72 +123,120 @@ defmodule DelivestWeb.StaffNav do
           gettext("Stop list")
         )
         |> allowed(staff, "products.read")
-      ]),
-      group(:marketing, "hero-megaphone", gettext("Marketing"), [
-        item(:stocks, branch && ~p"/staff/b/#{branch}/stocks", "hero-photo", gettext("Banners"))
-        |> allowed(staff, "stocks.read"),
-        item(
-          :promotions,
-          branch && ~p"/staff/b/#{branch}/promotions",
-          "hero-receipt-percent",
-          gettext("Discounts & promo codes")
-        )
-        |> allowed(staff, "promotions.read"),
-        item(
-          :loyalty,
-          branch && ~p"/staff/b/#{branch}/loyalty",
-          "hero-star",
-          gettext("Loyalty")
-        )
-        |> allowed(staff, "promotions.read")
-        |> owned(branch, :loyalty)
-      ]),
-      item(
-        :delivery,
-        branch && ~p"/staff/b/#{branch}/delivery",
-        "hero-truck",
-        gettext("Delivery")
-      )
-      |> allowed(staff, "delivery.read"),
-      item(
-        :integrations,
-        branch && ~p"/staff/b/#{branch}/integrations",
-        "hero-puzzle-piece",
-        gettext("Integrations")
-      )
-      |> allowed(staff, "integrations.read")
+      ])
     ]
     |> compact_all()
   end
 
+  defp common_entries(staff, branch) do
+    [
+      item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
+      |> allowed(staff, "statistics.read"),
+      group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch))
+    ]
+    |> compact_all()
+  end
+
+  defp marketing_entries(staff, branch) do
+    available_branches =
+      if(branch, do: [branch], else: Identity.list_branch_for_staff(staff))
+      |> Delivest.Repo.preload(:info)
+
+    bonus_branches = Identity.list_branch_for_staff(staff) |> Delivest.Repo.preload(:info)
+
+    [
+      item(
+        :marketing_policies,
+        ~p"/staff/marketing/policies",
+        "hero-rectangle-stack",
+        gettext("Marketing policies")
+      )
+      |> then(fn item ->
+        if can?(staff, "marketing.read") and Features.enabled?("marketing_policies", :franchise),
+          do: item
+      end),
+      item(:stocks, marketing_path(branch, "stocks"), "hero-photo", gettext("Banners"))
+      |> allowed(staff, "stocks.read")
+      |> available_in(available_branches, fn _ -> true end),
+      item(
+        :promotions,
+        marketing_path(branch, "promotions"),
+        "hero-receipt-percent",
+        gettext("Discounts & promo codes")
+      )
+      |> allowed(staff, "promotions.read")
+      |> available_in(available_branches, fn _ -> true end),
+      item(:loyalty, ~p"/staff/marketing/bonuses", "hero-star", gettext("Bonuses"))
+      |> then(fn item ->
+        if can?(staff, "franchise.update") or
+             Enum.any?(bonus_branches, fn branch ->
+               Identity.authorize(staff, "promotions.read", branch.id) == :ok and
+                 Gateway.own?(branch, :loyalty)
+             end),
+           do: item
+      end),
+      item(
+        :advertising_links,
+        marketing_path(branch, "links"),
+        "hero-link",
+        gettext("Advertising links")
+      )
+      |> allowed(staff, "statistics.read")
+      |> available_in(available_branches, &Features.enabled?("analytics_links", {:branch, &1.id}))
+    ]
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp marketing_path(nil, section), do: ~p"/staff/marketing?#{%{section: section}}"
+  defp marketing_path(branch, "stocks"), do: ~p"/staff/b/#{branch}/stocks"
+  defp marketing_path(branch, "promotions"), do: ~p"/staff/b/#{branch}/promotions"
+  defp marketing_path(branch, "loyalty"), do: ~p"/staff/b/#{branch}/loyalty"
+  defp marketing_path(branch, "links"), do: ~p"/staff/b/#{branch}/advertising-links"
+
+  defp available_in(nil, _branches, _filter), do: nil
+  defp available_in(item, branches, filter), do: if(Enum.any?(branches, filter), do: item)
+
   defp network_entries(staff) do
     [
-      item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
-      |> allowed(staff, "branches.read"),
-      item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
-      |> allowed(staff, "clients.read"),
+      group(:customers, "hero-users", gettext("Clients"), [
+        item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
+        |> allowed(staff, "clients.read"),
+        item(:segments, ~p"/staff/segments", "hero-user-group", "Сегменты")
+        |> allowed(staff, "segments.read")
+        |> then(fn item -> if Segments.available?(staff), do: item end)
+      ]),
       group(:people, "hero-user-group", gettext("Team"), [
         item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
         |> allowed(staff, "staff.read"),
         item(:roles, ~p"/staff/roles", "hero-shield-check", gettext("Roles"))
         |> allowed(staff, "roles.read")
       ]),
-      item(
-        :franchise,
-        ~p"/staff/franchise",
-        "hero-building-storefront",
-        gettext("Franchise settings")
-      )
-      |> allowed(staff, "franchise.update"),
-      item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
-      |> allowed(staff, "logs.read"),
-      item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))
-      |> allowed(staff, "logs.read")
+      group(:diagnostics, "hero-beaker", gettext("Diagnostics"), [
+        item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
+        |> allowed(staff, "logs.read"),
+        item(:metrics, ~p"/staff/diagnostics", "hero-chart-bar", gettext("Metrics"))
+        |> allowed(staff, "logs.read")
+      ]),
+      item(:settings, ~p"/staff/settings", "hero-cog-6-tooth", gettext("Settings"))
+      |> then(fn item ->
+        if Enum.any?(
+             ~w(franchise.update branches.read delivery.read integrations.read),
+             &can?(staff, &1)
+           ),
+           do: covering(item, [:branches, :integrations, :delivery])
+      end)
     ]
     |> compact_all()
   end
 
   defp compact_all(entries), do: entries |> Enum.map(&compact/1) |> Enum.reject(&is_nil/1)
+
+  defp compact(%{kind: :group, id: :marketing, items: items} = group) do
+    case Enum.reject(items, &is_nil/1) do
+      [] -> nil
+      items -> %{group | items: items}
+    end
+  end
 
   defp compact(%{kind: :group, items: items} = group) do
     case Enum.reject(items, &is_nil/1) do

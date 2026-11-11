@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.StockLive.Stocks do
+  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Net}
@@ -196,11 +197,21 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+    <div class="space-y-6">
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={gettext("Banners")}
         subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
       >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:stocks}
+            part={:areas}
+          />
+        </:navigation>
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "stocks.create")}
@@ -212,6 +223,14 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
           </.link>
         </:actions>
       </.page_header>
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:stocks}
+        part={:branches}
+      />
 
       <div id="stocks-list" phx-hook="SortableStocks" class="space-y-3">
         <%= for stock <- @stocks do %>

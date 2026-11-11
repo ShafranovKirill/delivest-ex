@@ -30,7 +30,7 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
     assigns = assign(assigns, filters: filters())
 
     ~H"""
-    <div id="receipts-page" class="space-y-4 py-4 sm:p-6 max-w-6xl">
+    <div id="receipts-page" class="space-y-6">
       <.page_header
         title={gettext("Receipts")}
         subtitle={
@@ -57,7 +57,7 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
               <th>{gettext("Receipt")}</th>
               <th class="text-right">{gettext("Amount")}</th>
               <th>{gettext("Status")}</th>
-              <th>{gettext("Created")}</th>
+              <th>{gettext("Created at")}</th>
             </tr>
           </thead>
           <tbody>

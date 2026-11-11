@@ -1,161 +1,139 @@
 defmodule DelivestWeb.StaffHeader do
   use DelivestWeb, :html
-
-  import Delivest.Identity.Acl
+  alias DelivestWeb.Staff.ProductLive.ProductTags
 
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
-  attr :staff_branches, :list, default: []
   attr :current_path, :string, default: nil
-  attr :new_orders_count, :integer, default: 0
+  attr :settings_branch, :any, default: nil
+  attr :page_title, :string, default: nil
   attr :kitchen_status, :any, default: nil
+  slot :actions
 
   def staff_header(assigns) do
+    assigns =
+      assign(assigns,
+        product_section:
+          if(assigns.current_branch, do: ProductTags.section(assigns.current_path)),
+        context:
+          page_context(assigns.current_path, assigns.current_branch, assigns.settings_branch) ||
+            gettext("Network")
+      )
+
     ~H"""
-    <header class="fixed inset-x-0 top-0 z-50 flex h-16 items-center gap-2 border-b border-base-300 bg-base-100 px-3 sm:gap-3 sm:px-5">
-      <button
-        type="button"
-        phx-click={JS.dispatch("sidebar:toggle-open")}
-        class="btn btn-ghost btn-square btn-sm lg:hidden"
-        aria-label={gettext("Open menu")}
+    <header
+      id="staff-header"
+      data-header-layout={if @product_section, do: "product-tabs"}
+      data-header-actions={
+        if @product_section, do: to_string(ProductTags.actions?(@product_section, @current_staff))
+      }
+      class="staff-header fixed top-0 right-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-base-300 bg-base-100 pl-3 pr-0 sm:px-6"
+    >
+      <div
+        id="staff-header-sidebar-controls"
+        class="staff-header-sidebar-controls shrink-0 items-center gap-1"
       >
-        <.icon name="hero-bars-3" class="size-6" />
-      </button>
-
-      <.link
-        navigate={DelivestWeb.StaffBranchPath.home(@current_branch)}
-        class="hidden sm:flex items-center gap-2 shrink-0"
+        <.link
+          id="header-home"
+          navigate={DelivestWeb.StaffBranchPath.home(@current_branch)}
+          class="flex shrink-0 items-center rounded-field p-1 hover:bg-base-200"
+          title="Delivest"
+          aria-label="Delivest"
+        >
+          <img
+            src={~p"/images/logo-dark.png"}
+            alt=""
+            class="size-6 shrink-0 object-contain dark:hidden"
+          />
+          <img
+            src={~p"/images/logo-white.png"}
+            alt=""
+            class="hidden size-6 shrink-0 object-contain dark:block"
+          />
+        </.link>
+        <button
+          id="header-sidebar-toggle"
+          type="button"
+          data-sidebar-toggle
+          phx-click={JS.dispatch("sidebar:toggle")}
+          data-expand-label={gettext("Expand menu")}
+          data-collapse-label={gettext("Collapse menu")}
+          aria-controls="main-sidebar"
+          aria-expanded="false"
+          aria-label={gettext("Expand menu")}
+          title={gettext("Expand menu")}
+          class="btn btn-ghost btn-square btn-sm shrink-0"
+        >
+          <.icon name="panel-left" class="size-6" />
+        </button>
+      </div>
+      <div :if={@product_section} class="flex min-w-0 flex-1 items-center text-sm">
+        <.header_navigation label={gettext("Products")}>
+          <ProductTags.tabs
+            current={if(@product_section == :bulk, do: :products, else: @product_section)}
+            branch={@current_branch}
+          />
+        </.header_navigation>
+      </div>
+      <div
+        :if={is_nil(@product_section)}
+        class="flex min-w-0 flex-1 items-center gap-2 text-sm"
+        aria-label={gettext("Current page")}
       >
-        <img src={~p"/images/logo-dark.png"} alt="" class="size-8 object-contain dark:hidden" />
-        <img src={~p"/images/logo-white.png"} alt="" class="size-8 object-contain hidden dark:block" />
-        <span class="text-lg font-bold">Delivest</span>
-      </.link>
-
-      <div class="flex flex-1 justify-end sm:justify-center">
-        <DelivestWeb.CommandPalette.command_palette_trigger />
+        <span
+          id="staff-header-context"
+          class="hidden max-w-36 shrink-0 truncate text-base-content/55 md:block"
+          title={@context}
+        >
+          {@context}
+        </span>
+        <span aria-hidden="true" class="hidden text-base-content/40 md:block">/</span>
+        <div id="staff-header-title" class="min-w-0 flex-1">
+          <h1
+            class="staff-header-fallback block truncate text-base font-semibold sm:text-lg"
+            title={@page_title}
+          >
+            {@page_title || gettext("Dashboard")}
+          </h1>
+        </div>
       </div>
 
-      <DelivestWeb.GatewayNote.gateway_badge branch={@current_branch} />
+      <div
+        id="staff-header-actions"
+        phx-hook="HeaderScroll"
+        class="staff-header-actions staff-header-scroll"
+      >
+        <div
+          id="staff-header-actions-scroll"
+          class="staff-header-actions-scroll"
+          data-scroll-viewport
+        />
+      </div>
 
-      <DelivestWeb.KitchenControl.kitchen_indicator status={@kitchen_status} />
-
-      <DelivestWeb.NewOrdersBell.new_orders_bell
-        :if={@current_branch && can?(@current_staff, "orders.read")}
-        count={@new_orders_count}
-        branch={@current_branch}
-      />
-
-      <DelivestWeb.BranchSwitcher.branch_switcher
-        current_branch={@current_branch}
-        branches={@staff_branches}
-        section={DelivestWeb.StaffBranchPath.section(@current_path)}
-      />
-      <.staff_menu current_staff={@current_staff} />
+      <div class="staff-header-utilities flex shrink-0 items-center gap-2">
+        {render_slot(@actions)}
+        <DelivestWeb.GatewayNote.gateway_badge branch={@current_branch} />
+        <DelivestWeb.KitchenControl.kitchen_indicator status={@kitchen_status} />
+      </div>
     </header>
     """
   end
 
-  defp staff_menu(assigns) do
-    ~H"""
-    <% current_locale = Gettext.get_locale(DelivestWeb.Gettext) %>
-    <% staff_name =
-      if @current_staff.name && @current_staff.name != "",
-        do: @current_staff.name,
-        else: gettext("Staff") %>
-    <% initial = String.first(staff_name) |> String.upcase() %>
+  defp page_context(path, current_branch, settings_branch) when is_binary(path) do
+    cond do
+      String.starts_with?(path, "/staff/b/") ->
+        branch_name(current_branch)
 
-    <div class="dropdown dropdown-end">
-      <div
-        tabindex="0"
-        role="button"
-        class="flex items-center gap-3 cursor-pointer py-1 px-1 sm:px-2 rounded-field hover:bg-base-200 transition-colors"
-      >
-        <div class="avatar placeholder">
-          <div class="bg-primary text-primary-content rounded-field w-10 h-10 flex items-center justify-center font-bold text-sm">
-            <span>{initial}</span>
-          </div>
-        </div>
-        <div class="hidden sm:flex flex-col text-left">
-          <span class="text-sm font-semibold text-base-content leading-tight">{staff_name}</span>
-          <span class="text-xs text-base-content/60 leading-tight mt-0.5">{@current_staff.role.name}</span>
-        </div>
-      </div>
+      String.match?(path, ~r{^/staff/branches/[^/]+/edit(?:/|$)}) ->
+        branch_name(settings_branch)
 
-      <ul
-        tabindex="0"
-        class="dropdown-content z-1 menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300 mt-2"
-      >
-        <li class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
-          {gettext("Language")}
-        </li>
-        <li>
-          <%= if current_locale == "ru" do %>
-            <.link href={~p"/locale/en"} class="flex items-center justify-between"><span>🇬🇧 English</span></.link>
-          <% else %>
-            <.link href={~p"/locale/ru"} class="flex items-center justify-between"><span>🇷🇺 Русский</span></.link>
-          <% end %>
-        </li>
-
-        <div :if={can?(@current_staff, "orders.read")} class="divider my-1"></div>
-
-        <li
-          :if={can?(@current_staff, "orders.read")}
-          class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider"
-        >
-          {gettext("New orders")}
-        </li>
-        <li :if={can?(@current_staff, "orders.read")}>
-          <DelivestWeb.OrderSoundToggle.order_sound_toggle />
-        </li>
-
-        <div class="divider my-1"></div>
-
-        <li class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
-          {gettext("This device")}
-        </li>
-        <li>
-          <DelivestWeb.StaffPushToggle.staff_push_toggle id="header-push-toggle" />
-        </li>
-
-        <div class="divider my-1"></div>
-
-        <li class="menu-title px-4 py-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
-          {gettext("Theme")}
-        </li>
-        <li class="dark:hidden">
-          <button
-            id="header-theme-dark"
-            type="button"
-            phx-click={JS.dispatch("phx:set-theme")}
-            data-phx-theme="dark"
-          >
-            <.icon name="hero-moon" class="size-4" /> {gettext("Dark Mode")}
-          </button>
-        </li>
-        <li class="hidden dark:block">
-          <button
-            id="header-theme-light"
-            type="button"
-            phx-click={JS.dispatch("phx:set-theme")}
-            data-phx-theme="light"
-          >
-            <.icon name="hero-sun" class="size-4" /> {gettext("Light Mode")}
-          </button>
-        </li>
-
-        <div class="divider my-1"></div>
-
-        <li>
-          <.link
-            href={~p"/staff/auth/log_out"}
-            method="delete"
-            class="text-error hover:bg-error/10 font-medium"
-          >
-            {gettext("Log out")}
-          </.link>
-        </li>
-      </ul>
-    </div>
-    """
+      true ->
+        nil
+    end
   end
+
+  defp page_context(_path, _current_branch, _settings_branch), do: nil
+
+  defp branch_name(%{name: name}) when is_binary(name) and name != "", do: name
+  defp branch_name(_branch), do: nil
 end

@@ -1,0 +1,110 @@
+defmodule DelivestWeb.Staff.StaffShellTest do
+  use DelivestWeb.ConnCase, async: true
+
+  import Phoenix.LiveViewTest
+  import Delivest.Factory
+
+  test "sidebar owns branch, profile and search controls", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+
+    assert has_element?(
+             lv,
+             ~s(#main-sidebar #sidebar-home[href="/staff/b/#{branch.slug}/dashboard"])
+           )
+
+    refute has_element?(lv, "#sidebar-home span")
+
+    assert has_element?(
+             lv,
+             "#sidebar-top-row .staff-sidebar-top-actions #header-new-orders[phx-hook]"
+           )
+
+    refute has_element?(lv, "#staff-header #header-new-orders")
+    assert has_element?(lv, "#main-sidebar #sidebar-toggle[aria-controls='main-sidebar']")
+
+    assert has_element?(
+             lv,
+             ~s(#staff-header-sidebar-controls #header-home[href="/staff/b/#{branch.slug}/dashboard"])
+           )
+
+    assert has_element?(
+             lv,
+             "#staff-header-sidebar-controls #header-sidebar-toggle[data-sidebar-toggle][aria-controls='main-sidebar']"
+           )
+
+    assert has_element?(lv, "#main-sidebar #header-branch")
+    assert has_element?(lv, "details#header-branch > summary[aria-controls='header-branch-menu']")
+    assert has_element?(lv, "#header-branch-menu[phx-hook]")
+
+    refute has_element?(lv, "#sidebar-branch-settings")
+    refute has_element?(lv, "#nav-section-branch > p")
+
+    assert has_element?(lv, "#main-sidebar #command-palette-trigger")
+    assert has_element?(lv, "#staff-profile-trigger[aria-expanded='false']")
+    assert has_element?(lv, "#staff-profile-menu[hidden] #orders-sound-toggle")
+    assert has_element?(lv, "#staff-profile-menu #header-push-toggle")
+    assert has_element?(lv, "#staff-profile-menu a[href='/staff/auth/log_out']")
+    assert has_element?(lv, "#staff-profile-menu #app-version")
+    refute has_element?(lv, "#staff-header #command-palette-trigger")
+    refute has_element?(lv, "#staff-header #header-branch")
+  end
+
+  test "limited staff keeps profile controls without order sound or identity settings", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+    refute has_element?(lv, "#main-sidebar #header-new-orders")
+    refute has_element?(lv, "#sidebar-branch-settings")
+    refute has_element?(lv, "#staff-profile-menu #orders-sound-toggle")
+    assert has_element?(lv, "#staff-profile-menu #header-push-toggle")
+  end
+
+  test "page title and actions use separate header rows", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/branches")
+    assert has_element?(lv, "#staff-header-title")
+    assert render(element(lv, "#staff-page-header")) =~ "Settings for branches"
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#create-branch"
+           )
+
+    refute has_element?(lv, "#branch-settings-list h1")
+    assert has_element?(lv, "#staff-page-header-actions")
+    refute has_element?(lv, "#staff-page-header nav")
+  end
+
+  test "header context follows page scope rather than the active branch", %{conn: conn} do
+    center = insert(:branch, name: "Center")
+    north = insert(:branch, name: "North")
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: center)
+    insert(:staff_branch, staff: staff, branch: north)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => center.id})
+
+    {:ok, global, _} = live(conn, ~p"/staff/settings")
+    assert has_element?(global, "#staff-header-context[title='Network']", "Network")
+
+    {:ok, edit, _} = live(conn, ~p"/staff/branches/#{north.slug}/edit")
+    assert has_element?(edit, "#staff-header-context[title='North']", "North")
+
+    {:ok, scoped, _} = live(conn, ~p"/staff/b/#{center}/dashboard")
+    assert has_element?(scoped, "#staff-header-context[title='Center']", "Center")
+  end
+end

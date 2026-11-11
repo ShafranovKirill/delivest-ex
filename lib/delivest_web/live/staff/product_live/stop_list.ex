@@ -5,7 +5,6 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
   alias Delivest.Net.Stops
   alias DelivestWeb.Staff.ProductLive.BranchProducts
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
   import DelivestWeb.Staff.ProductLive.StopControl, only: [stop_control: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
@@ -85,13 +84,13 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Stop list")}
-        subtitle={gettext("Products in the stop list are not sold on the site and in the channels.")}
-      />
-
-      <.tabs current={:stops} branch={@current_branch} />
+        layout={:two_rows}
+        title_in_header={false}
+      >
+      </.page_header>
 
       <BranchProducts.filter_form
         id="stop-list-filter"

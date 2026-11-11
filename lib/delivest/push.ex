@@ -9,7 +9,6 @@ defmodule Delivest.Push do
   alias Delivest.Push.{
     ClientSubscription,
     NoteWorker,
-    Sender,
     StaffSubscription,
     StaffWorker,
     Subscription,
@@ -164,7 +163,11 @@ defmodule Delivest.Push do
     client_id
     |> client_subscriptions()
     |> Enum.each(fn subscription ->
-      case Sender.deliver(subscription, message.(subscription.locale || "ru")) do
+      case Delivest.Notifications.deliver_push(
+             subscription,
+             message.(subscription.locale || "ru"),
+             :account
+           ) do
         :ok ->
           :ok
 

@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Dadata
+  alias Delivest.Identity
   alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
@@ -10,7 +11,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(page_title: gettext("Delivery address on the map"))
+     |> assign(
+       page_title: gettext("Delivery address on the map"),
+       selectable_branches: Identity.list_branch_for_staff(socket.assigns.current_staff)
+     )
      |> assign_settings(Dadata.get_settings())
      |> assign_context()}
   end
@@ -50,34 +54,37 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
   end
 
   defp assign_context(socket) do
-    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+    assign(socket, context: Presentation.context(nil))
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/integrations"}
         title={gettext("Delivery address on the map")}
         subtitle={
           gettext(
             "Customers pick the address on the map with dadata.ru suggestions. When it is off, the address is typed into plain fields. The settings are shared by every branch."
           )
         }
-      />
+      >
+        <:actions>
+          <button
+            type="submit"
+            form="dadata-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
         id="dadata-health"
         provider={:dadata}
-        branch_id={@current_branch.id}
+        branch_id={nil}
         staff={@current_staff}
         context={@context}
       />
@@ -99,11 +106,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
         <p class="text-xs text-base-content/60">
           {gettext("Set the delivery city of each branch so suggestions stay inside it.")}
         </p>
-
-        <div class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
+        <div class="flex flex-wrap gap-2">
+          <.link
+            :for={branch <- @selectable_branches}
+            navigate={~p"/staff/branches/#{branch.slug}/edit/location"}
+            class="link link-primary text-sm"
+          >
+            {gettext("Delivery city · %{name}", name: branch.name)}
+          </.link>
         </div>
       </.form>
     </div>

@@ -10,6 +10,8 @@ defmodule DelivestWeb.Staff.ProductLive.OperationsTest do
     insert_branch_product(source.id, name: "Tea")
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => source.id})
     {:ok, view, _html} = live(conn, ~p"/staff/b/#{source}/products/operations")
+    assert has_element?(view, "#staff-page-header", "Товарные операции")
+    refute has_element?(view, "#staff-header[data-header-layout='product-tabs']")
     assert has_element?(view, "#workbook-export")
     assert has_element?(view, "#workbook-upload-form")
     assert has_element?(view, "#copy-preview-form")

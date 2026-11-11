@@ -1,27 +1,30 @@
 defmodule DelivestWeb.CommandPalette do
   use DelivestWeb, :html
 
+  attr :icon_only, :boolean, default: false
+
   def command_palette_trigger(assigns) do
     ~H"""
     <button
       id="command-palette-trigger"
       type="button"
       phx-click={JS.dispatch("command-palette:open")}
-      class={[
-        "btn btn-ghost btn-sm btn-square sm:w-64 sm:justify-start sm:gap-2 sm:px-3",
-        "sm:border-base-300 sm:bg-base-200/60 sm:font-normal sm:text-base-content/60"
-      ]}
+      class={
+        if @icon_only,
+          do: "btn btn-ghost btn-square btn-sm",
+          else:
+            "btn btn-ghost btn-sm btn-square sm:w-64 sm:justify-start sm:gap-2 sm:px-3 sm:border-base-300 sm:bg-base-200/60 sm:font-normal sm:text-base-content/60"
+      }
       aria-label={gettext("Search")}
+      title={gettext("Search")}
     >
-      <.icon name="hero-magnifying-glass" class="size-5 sm:size-4" />
-      <span class="hidden sm:inline">{gettext("Search")}</span>
+      <.icon name="hero-magnifying-glass" class="size-5" />
+      <span :if={!@icon_only} class="hidden sm:inline">{gettext("Search")}</span>
       <kbd
         id="command-palette-shortcut"
         phx-update="ignore"
-        class="kbd kbd-sm ml-auto hidden sm:inline-flex"
-      >
-        Ctrl K
-      </kbd>
+        class={if @icon_only, do: "hidden", else: "kbd kbd-sm ml-auto hidden sm:inline-flex"}
+      >Ctrl K</kbd>
     </button>
     """
   end

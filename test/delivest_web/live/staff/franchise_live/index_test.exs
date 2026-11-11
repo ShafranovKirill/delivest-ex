@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
-  alias Delivest.Franchise
+  alias Delivest.{Features, Franchise}
 
   setup %{conn: conn} do
     Cachex.clear(:franchise_cache)
@@ -56,6 +56,61 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
 
     assert %{name: "Pizza", primary_color: "#aa0000", default_theme: "dark", inn: "7700000000"} =
              Franchise.get_settings()
+  end
+
+  test "marketing Push limit is editable in loyalty settings and validates bounds", %{
+    conn: conn,
+    staff: staff
+  } do
+    {:ok, inactive, _html} = live(conn, ~p"/staff/franchise/loyalty")
+    refute has_element?(inactive, ~s(input[name="settings[loyalty_per_rubles]"]))
+    refute has_element?(inactive, ~s(input[name="settings[loyalty_stars]"]))
+    refute has_element?(inactive, ~s(input[name="settings[loyalty_expire_days]"]))
+    refute has_element?(inactive, "#marketing-push-frequency")
+
+    assert {:ok, _} = Features.configure("notifications", :franchise, true, actor: "test")
+    assert {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/loyalty")
+    assert has_element?(lv, "#marketing-push-frequency")
+    assert has_element?(lv, ~s(input[name="settings[marketing_push_limit_count]"]))
+
+    lv
+    |> form("#franchise-settings-form",
+      settings: %{marketing_push_limit_count: "2", marketing_push_window_hours: "48"}
+    )
+    |> render_submit()
+
+    assert %{marketing_push_limit_count: 2, marketing_push_window_hours: 48} =
+             Franchise.get_settings()
+
+    reader = insert(:staff, role: insert(:role, permissions: ["branches.read"]))
+
+    assert {:error, :forbidden} =
+             Franchise.update_settings(reader, %{marketing_push_limit_count: 3})
+
+    lv
+    |> form("#franchise-settings-form",
+      settings: %{marketing_push_limit_count: "0", marketing_push_window_hours: "721"}
+    )
+    |> render_submit()
+
+    assert %{marketing_push_limit_count: 2, marketing_push_window_hours: 48} =
+             Franchise.get_settings()
+
+    lv
+    |> form("#franchise-settings-form",
+      settings: %{marketing_push_limit_count: "", marketing_push_window_hours: ""}
+    )
+    |> render_submit()
+
+    assert %{marketing_push_limit_count: 2, marketing_push_window_hours: 48} =
+             Franchise.get_settings()
+
+    assert {:error, %Ecto.Changeset{valid?: false}} =
+             Franchise.update_settings(staff, %{
+               marketing_push_limit_count: nil,
+               marketing_push_window_hours: nil
+             })
   end
 
   test "admin enters a manual Yandex rating on the brand page", %{conn: conn} do

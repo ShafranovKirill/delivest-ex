@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
   alias Delivest.{Identity, Net}
   alias Delivest.Net.{ProductTag, ProductTags, TagIcons}
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1, tag_icon: 1]
+  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tag_icon: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
@@ -126,10 +126,11 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
-        title={gettext("Products")}
-        subtitle={gettext("Tags are shown on product cards on the website.")}
+        title={gettext("Tags")}
+        layout={:two_rows}
+        title_in_header={false}
       >
         <:actions>
           <.button
@@ -142,8 +143,6 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
           </.button>
         </:actions>
       </.page_header>
-
-      <.tabs current={:tags} branch={@current_branch} />
 
       <div id="product-tags" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div

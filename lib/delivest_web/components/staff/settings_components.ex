@@ -1,7 +1,49 @@
 defmodule DelivestWeb.Staff.SettingsComponents do
-  use Phoenix.Component
+  use DelivestWeb, :html
 
   import DelivestWeb.CoreComponents, only: [icon: 1]
+
+  alias Delivest.Identity
+
+  attr :staff, :any, required: true
+  attr :branches, :list, required: true
+  attr :selected, :any, default: nil
+
+  def settings_navigation(assigns) do
+    branches =
+      if Identity.can?(assigns.staff, "branches.read") and
+           Identity.can?(assigns.staff, "branches.update") do
+        assigns.branches
+      else
+        []
+      end
+
+    assigns = assign(assigns, :editable_branches, branches)
+
+    ~H"""
+    <nav
+      id="settings-navigation"
+      class="flex flex-wrap items-center gap-2"
+      aria-label={gettext("Settings")}
+    >
+      <.link navigate={~p"/staff/settings"} class="btn btn-sm btn-ghost">{gettext("Settings")}</.link>
+      <.link
+        :if={Identity.can?(@staff, "franchise.update")}
+        id="settings-common"
+        navigate={~p"/staff/franchise"}
+        class={["btn btn-sm", @selected == :common && "btn-primary"]}
+        aria-current={@selected == :common && "page"}
+      >{gettext("Common settings")}</.link>
+      <.link
+        :for={branch <- @editable_branches}
+        id={"settings-branch-#{branch.id}"}
+        navigate={~p"/staff/branches/#{branch.slug}/edit"}
+        class={["btn btn-sm", @selected == branch.id && "btn-primary"]}
+        aria-current={@selected == branch.id && "page"}
+      >{branch.name}</.link>
+    </nav>
+    """
+  end
 
   slot :inner_block, required: true
 

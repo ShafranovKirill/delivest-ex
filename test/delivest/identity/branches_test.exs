@@ -85,6 +85,58 @@ defmodule Delivest.Identity.BranchesTest do
     assert is_nil(Repo.preload(primary, :info).info)
   end
 
+  test "branch deletion requires the exact current name", %{admin: admin} do
+    branch = insert(:branch, name: "Current branch")
+
+    assert {:error, :confirmation_required} = Branches.soft_delete_branch(admin, branch)
+    assert {:error, :confirmation_mismatch} = Branches.soft_delete_branch(admin, branch, "")
+
+    assert {:error, :confirmation_mismatch} =
+             Branches.soft_delete_branch(admin, branch, "Current branch ")
+
+    assert {:ok, renamed} =
+             Branches.update_branch(admin, branch, %{"name" => "Renamed branch"}, %{})
+
+    assert {:error, :confirmation_mismatch} =
+             Branches.soft_delete_branch(admin, branch, "Current branch")
+
+    assert is_nil(Repo.reload!(branch).deleted_at)
+    assert {:ok, deleted} = Branches.soft_delete_branch(admin, renamed, "Renamed branch")
+    assert deleted.deleted_at
+  end
+
+  test "unauthorized branch deletion stays forbidden" do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    assert {:error, :forbidden} = Branches.soft_delete_branch(staff, branch)
+    assert {:error, :forbidden} = Branches.soft_delete_branch(staff, branch, branch.name)
+    assert is_nil(Repo.reload!(branch).deleted_at)
+  end
+
+  test "YCart settings require integrations.update even through the generic branch API" do
+    branch = insert(:branch)
+    branch_editor = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    integration_editor = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: branch_editor, branch: branch)
+    insert(:staff_branch, staff: integration_editor, branch: branch)
+
+    attrs = %{"ycart_settings" => %{"enabled" => true, "yandex_org_id" => "123"}}
+
+    assert {:ok, _} = Branches.update_branch(branch_editor, branch, %{}, attrs)
+
+    assert %{enabled: false, yandex_org_id: nil} =
+             Repo.preload(branch, :info, force: true).info.ycart_settings
+
+    assert {:ok, _} = Branches.update_integrations(integration_editor, branch, attrs)
+
+    assert %{enabled: true, yandex_org_id: "123"} =
+             Repo.preload(branch, :info, force: true).info.ycart_settings
+
+    assert {:error, :forbidden} = Branches.update_integrations(branch_editor, branch, attrs)
+  end
+
   test "bulk special day writes authorized branches and rejects missing permission" do
     primary = insert(:branch)
     second = insert(:branch)

@@ -91,7 +91,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
         ~p"/staff/b/#{ctx.branch}/products/tags"
       )
 
-    assert has_element?(lv, "#nav-section-branch", ctx.branch.name)
+    assert has_element?(lv, "#header-branch", ctx.branch.name)
 
     assert has_element?(
              lv,

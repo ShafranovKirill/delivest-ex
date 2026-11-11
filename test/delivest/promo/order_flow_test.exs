@@ -5,7 +5,7 @@ defmodule Delivest.Promo.OrderFlowTest do
 
   alias Delivest.Oms
   alias Delivest.Oms.{Carts, Orders}
-  alias Delivest.Promo.Redemption
+  alias Delivest.Promo.{Redemption, Redemptions, Result}
 
   setup do
     branch = insert(:branch)
@@ -187,6 +187,33 @@ defmodule Delivest.Promo.OrderFlowTest do
 
     assert {:ok, %{total_amount: 9000}} =
              Orders.update_order(first, %{"cart_id" => draft.id, "customer_phone" => client.phone})
+  end
+
+  test "forged two first-order redemptions are rejected before replacing an existing reward", %{
+    branch: branch,
+    pizza: pizza
+  } do
+    regular = insert_promotion(branch.id, rules: "then discount 5%")
+
+    assert {:ok, order} = Orders.create_order(order_attrs(cart_with(branch, pizza, 1)))
+    assert [%Redemption{promotion_id: id}] = Redemptions.list_for_order(order.id)
+    assert id == regular.id
+
+    first =
+      insert_promotion(branch.id, combinable: true, rules: "when first_order then discount 10%")
+
+    second =
+      insert_promotion(branch.id, combinable: true, rules: "when first_order then discount 20%")
+
+    forged = %Result{
+      applied: [
+        %{promotion_id: first.id, promo_code_id: nil},
+        %{promotion_id: second.id, promo_code_id: nil}
+      ]
+    }
+
+    assert {:error, :promo_unavailable} = Redemptions.replace(order, forged)
+    assert [%Redemption{promotion_id: ^id}] = Redemptions.list_for_order(order.id)
   end
 
   test "cancelled website orders do not block first order promotion", %{

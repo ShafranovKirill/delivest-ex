@@ -5,6 +5,38 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
   import Delivest.Factory
 
   alias Delivest.{Repo, Relations}
+  alias DelivestWeb.Staff.ProductLive.ProductTags
+
+  test "product section matches only the branch product namespace" do
+    assert ProductTags.section("/staff/b/north/products") == :products
+    assert ProductTags.section("/staff/b/north/products/123/edit") == :products
+    assert ProductTags.section("/staff/b/north/products/tags/new") == :tags
+    assert ProductTags.section("/staff/b/north/products/bulk") == :bulk
+    assert ProductTags.section("/staff/b/north/products/operations") == nil
+    assert ProductTags.section("/staff/b/north/products-foo") == nil
+    assert ProductTags.section("/staff/products") == :products
+  end
+
+  test "static product HTML has direct tabs before LiveView connects", %{conn: conn} do
+    branch = insert(:branch, name: "Center")
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    conn = get(conn, ~p"/staff/b/#{branch}/products/tags")
+    html = html_response(conn, 200)
+    document = LazyHTML.from_document(html)
+
+    refute Enum.empty?(
+             LazyHTML.query(
+               document,
+               "#staff-header[data-header-layout='product-tabs'] #product-section-tab-tags[aria-current='page']"
+             )
+           )
+
+    assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-context"))
+    assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-title"))
+    assert Enum.empty?(LazyHTML.query(document, "#staff-page-header"))
+  end
 
   test "branch editor sees a refusal when editing a shared product", %{conn: conn} do
     own = insert(:branch)
@@ -121,6 +153,120 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert length(product_row_ids(lv)) == 10
       assert product_first_name(lv) == "Match 9"
     end
+
+    test "renders tabs directly in the header and actions in a portal", %{
+      conn: conn
+    } do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+
+      actions_portal = render(element(lv, "#staff-page-header-actions"))
+
+      assert has_element?(
+               lv,
+               "#staff-header[data-header-layout='product-tabs'][data-header-actions='true']"
+             )
+
+      assert has_element?(
+               lv,
+               "#staff-header #staff-page-header-navigation[aria-label='Products']"
+             )
+
+      assert has_element?(lv, "#staff-header [role='tablist'] [role='tab']")
+      refute has_element?(lv, "#staff-page-header")
+      refute has_element?(lv, "#staff-header-context")
+      refute has_element?(lv, "#staff-header-title")
+      assert has_element?(lv, "main h1.sr-only")
+      assert actions_portal =~ ~s(data-phx-portal="#staff-header-actions-scroll")
+      refute actions_portal =~ ~s(id="copy-products-trigger")
+      assert actions_portal =~ ~s(id="product-operations-link")
+      assert actions_portal =~ ~s(id="bulk-add-products")
+      assert actions_portal =~ ~s(id="create-product")
+      assert has_element?(lv, "main #products-filter")
+      refute has_element?(lv, "main #products-filter [role='tablist']")
+    end
+
+    test "each product section selects its tab in the direct header", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      for {path, key, title, actions?} <- [
+            {"", "products", "Products", true},
+            {"/stops", "stops", "Stop list", false},
+            {"/modifiers", "modifiers", "Modifiers", true},
+            {"/tags", "tags", "Tags", true},
+            {"/suggested", "suggested", "Recommended", false},
+            {"/bulk", "products", "Bulk add products", true}
+          ] do
+        {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> path)
+
+        assert has_element?(
+                 lv,
+                 "#staff-header[data-header-layout='product-tabs'][data-header-actions='#{actions?}']"
+               )
+
+        assert has_element?(
+                 lv,
+                 "#staff-header #product-section-tab-#{key}[aria-current='page'][aria-selected='true']"
+               )
+
+        for other <- ~w(products stops modifiers tags suggested) do
+          assert has_element?(lv, "#staff-header #product-section-tab-#{other}[role='tab']")
+
+          if other != key,
+            do:
+              refute(
+                has_element?(
+                  lv,
+                  "#staff-header #product-section-tab-#{other}[aria-current='page']"
+                )
+              )
+        end
+
+        assert has_element?(lv, "main h1.sr-only", title)
+        refute has_element?(lv, "#staff-page-header")
+        refute has_element?(lv, "#staff-header-context")
+
+        if actions? do
+          assert render(element(lv, "#staff-page-header-actions")) =~
+                   ~s(data-phx-portal="#staff-header-actions-scroll")
+        else
+          refute has_element?(lv, "#staff-page-header-actions")
+        end
+      end
+    end
+
+    test "read-only sections have no header actions", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+      insert(:staff_branch, staff: staff, branch: branch)
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      for section <- ["modifiers", "tags"] do
+        {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> "/" <> section)
+        assert has_element?(lv, "#staff-header[data-header-actions='false'] [role='tablist']")
+        refute render(element(lv, "#staff-page-header-actions")) =~ ~s(class="btn)
+      end
+    end
+
+    test "read-only staff sees product operations but no create actions", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+      insert(:staff_branch, staff: staff, branch: branch)
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+
+      actions_portal = render(element(lv, "#staff-page-header-actions"))
+      assert actions_portal =~ ~s(id="product-operations-link")
+      refute actions_portal =~ ~s(id="copy-products-trigger")
+      refute actions_portal =~ ~s(id="bulk-add-products")
+      refute actions_portal =~ ~s(id="create-product")
+    end
   end
 
   defp product_row_ids(lv) do
@@ -163,8 +309,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     _ = render(lv)
     assert render(lv) =~ "Change Image"
 
-    assert [%{worker: "Delivest.Media.Workers.ThumbnailWorker"}] =
-             Oban.Testing.all_enqueued(Delivest.Repo, [])
+    matching_jobs =
+      Enum.filter(Oban.Testing.all_enqueued(Delivest.Repo, []), fn job ->
+        job.worker == "Delivest.Media.Workers.ThumbnailWorker" and
+          job.args["file_id"] == media.id
+      end)
+
+    assert length(matching_jobs) == 1
   end
 
   test "tags are picked from the configured tags and can be cleared", %{conn: conn} do

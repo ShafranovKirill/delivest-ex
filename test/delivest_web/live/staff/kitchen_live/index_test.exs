@@ -27,6 +27,12 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
     |> Repo.preload(:items)
   end
 
+  defp header_action?(view, selector) do
+    html = render(element(view, "#staff-page-header-actions"))
+    [_, content] = Regex.run(~r/<template[^>]*>(.*)<\/template>/s, html)
+    content |> LazyHTML.from_fragment() |> LazyHTML.query(selector) |> Enum.any?()
+  end
+
   test "shows cooking orders with items and comment", %{conn: conn, branch: branch} do
     order = cooking(branch)
 
@@ -37,6 +43,12 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
     assert html =~ "без лука"
     assert has_element?(lv, "#ready-#{order.id}")
     assert has_element?(lv, "#kitchen-offline[hidden]")
+    assert has_element?(lv, "#main-sidebar")
+    assert has_element?(lv, "#staff-page-header")
+    assert header_action?(lv, "#kitchen-clock")
+    assert header_action?(lv, "#kitchen-start[data-kitchen-start]")
+    assert has_element?(lv, "#kitchen-screen #kitchen-fullscreen-toolbar #kitchen-stop")
+    refute has_element?(lv, "#kitchen-screen #kitchen-start")
   end
 
   test "done shows undo and undo brings the button back", %{conn: conn, branch: branch} do

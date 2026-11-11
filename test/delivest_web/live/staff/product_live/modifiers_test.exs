@@ -27,7 +27,8 @@ defmodule DelivestWeb.Staff.ProductLive.ModifiersTest do
         ~p"/staff/b/#{branch}/products/modifiers"
       )
 
-    lv |> element("button[phx-click=new_group]") |> render_click()
+    assert render(element(lv, "#staff-page-header-actions")) =~ ~s(phx-click="new_group")
+    render_click(lv, "new_group")
 
     lv
     |> form("#group-form", group: %{name: "Добавки", required: "true", max: "3"})

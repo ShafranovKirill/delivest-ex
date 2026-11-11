@@ -54,14 +54,64 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     assert has_element?(lv, "#integration-frontpad", "Frontpad")
     assert has_element?(lv, "#integration-zvonok")
     refute has_element?(lv, "a#integration-zvonok")
-    assert has_element?(lv, "#main-sidebar a[href='/staff/b/#{branch.slug}/integrations']")
+    assert has_element?(lv, "#nav-section-network a[href='/staff/settings'].menu-active")
+    refute has_element?(lv, "#main-sidebar a[href='/staff/integrations']")
+    refute has_element?(lv, "#main-sidebar a[href='/staff/b/#{branch.slug}/integrations']")
+  end
+
+  test "global integrations require an explicit branch choice", %{conn: conn, branch: branch} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/integrations")
+
+    refute has_element?(lv, "a#integration-zvonok")
+    assert has_element?(lv, "#integration-branch-selector")
+    refute has_element?(lv, "#integration-frontpad")
+    refute has_element?(lv, "#integration-selected-branch")
+
+    lv |> form("#integration-branch-selector", branch: branch.slug) |> render_change()
+    assert_redirect(lv, ~p"/staff/integrations?branch=#{branch.slug}")
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/integrations?branch=#{branch.slug}")
+    assert has_element?(lv, "#integration-selected-branch", branch.name)
+
+    assert has_element?(
+             lv,
+             "a#integration-frontpad[href='/staff/b/#{branch.slug}/integrations/frontpad']"
+           )
+  end
+
+  test "global branch query ignores inaccessible branches", %{conn: conn} do
+    foreign = insert(:branch)
+    {:ok, lv, _html} = live(conn, ~p"/staff/integrations?branch=#{foreign.slug}")
+
+    refute has_element?(lv, "#integration-frontpad")
+    refute has_element?(lv, "#integration-selected-branch")
+  end
+
+  test "global branch selection shows gateway ownership from the selected branch", %{
+    conn: conn,
+    branch: branch
+  } do
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{enabled: true, provider: :iiko}
+    })
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/integrations?branch=#{branch.slug}")
+
+    assert has_element?(lv, "#gateway-area-kitchen", "iiko")
+    assert has_element?(lv, "#gateway-area-menu", "Delivest")
   end
 
   test "opens settings when frontpad is not set up", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
 
     assert has_element?(lv, "#frontpad-settings fieldset[disabled]")
-    refute has_element?(lv, "#frontpad-refresh")
+
+    refute DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-refresh"
+           )
 
     lv |> element("button[phx-value-tab=check]") |> render_click()
     assert has_element?(lv, "#frontpad-not-configured")
@@ -78,7 +128,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     |> render_submit()
 
     assert has_element?(lv, "#frontpad-webhook")
-    assert has_element?(lv, "#frontpad-refresh")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-refresh"
+           )
 
     {:ok, %{info: %{crm: crm}}} = Delivest.Identity.get_branch(branch.id, preload: [:info])
     assert crm.enabled
@@ -114,12 +169,22 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     assert has_element?(lv, "#frontpad-empty")
     refute has_element?(lv, "#frontpad-settings")
 
-    lv |> element("#frontpad-refresh") |> render_click()
+    render_click(lv, "refresh")
 
     assert has_element?(lv, "#frontpad-missing", "Tea")
     refute has_element?(lv, "#frontpad-missing", "Soup")
-    assert has_element?(lv, "#frontpad-refresh[disabled]")
-    assert has_element?(lv, "#frontpad-countdown")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-refresh[disabled]"
+           )
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "#frontpad-countdown"
+           )
 
     lv |> element("button[phx-value-tab=products]") |> render_click()
     assert has_element?(lv, "#frontpad-products", "Pizza")

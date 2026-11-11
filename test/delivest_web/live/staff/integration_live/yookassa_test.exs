@@ -63,4 +63,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.YookassaTest do
 
     assert has_element?(lv, "#yookassa-shop-error")
   end
+
+  test "global check refreshes network health without an active branch", %{conn: conn} do
+    Delivest.Repo.insert!(%Yookassa.Settings{shop_id: "506751", secret_key: "k"})
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      Req.Test.json(conn, %{"account_id" => "506751", "status" => "enabled"})
+    end)
+
+    conn = init_test_session(build_conn(), %{"staff_id" => get_session(conn, "staff_id")})
+    {:ok, lv, _} = live(conn, ~p"/staff/integrations/yookassa")
+    lv |> element("#yookassa-health-check") |> render_click()
+
+    assert has_element?(lv, "#yookassa-health-summary-connection", "Connection checked")
+  end
 end

@@ -45,9 +45,21 @@ defmodule DelivestWeb.Client.Order.OrderController do
   def create(conn, params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
 
+    analytics_guest_id =
+      case DelivestWeb.AnalyticsIdentity.guest_id(conn) do
+        {:ok, id} -> id
+        :error -> nil
+      end
+
     with {:ok, key} <- idempotency_key(conn),
          {:ok, order, confirmation_url} <-
-           Checkout.create(params, conn.assigns.current_client, session_id, key) do
+           Checkout.create(
+             params,
+             conn.assigns.current_client,
+             session_id,
+             key,
+             analytics_guest_id
+           ) do
       render(conn, :create, order: order, confirmation_url: confirmation_url)
     else
       {:error, reason} -> render_error(conn, reason)

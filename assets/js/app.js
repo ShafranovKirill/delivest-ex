@@ -12,6 +12,8 @@ import { PickupBoard } from "./hooks/pickup_board";
 import { CourierMap } from "./hooks/courier_map";
 import { CourierLocation } from "./hooks/courier_location";
 import { CouriersMap } from "./hooks/couriers_map";
+import { CopyLink } from "./hooks/copy_link";
+import { HeaderScroll } from "./hooks/header_scroll";
 
 let Uploaders = {};
 
@@ -206,6 +208,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CourierMap,
     CourierLocation,
     CouriersMap,
+    CopyLink,
+    HeaderScroll,
   },
 });
 
@@ -215,19 +219,116 @@ if ("serviceWorker" in navigator && location.pathname.startsWith("/staff")) {
   navigator.serviceWorker.register("/staff/sw.js", { scope: "/staff/" }).catch(() => {});
 }
 
+const staffDesktop = () => window.matchMedia("(min-width: 1024px)").matches;
+
+function syncSidebarToggle() {
+  const expanded = staffDesktop()
+    ? !root.hasAttribute("data-sidebar-collapsed")
+    : root.hasAttribute("data-sidebar-open");
+  document.querySelectorAll("[data-sidebar-toggle]").forEach((button) => {
+    const label = expanded ? button.dataset.collapseLabel : button.dataset.expandLabel;
+    button.setAttribute("aria-expanded", String(expanded));
+    button.setAttribute("aria-label", label);
+    button.title = label;
+  });
+}
+
+function focusVisibleSidebarToggle(active) {
+  if (!active?.closest("#main-sidebar, #staff-header-sidebar-controls")) return;
+  if (active.getClientRects().length) return;
+  const button = [...document.querySelectorAll("[data-sidebar-toggle]")]
+    .find((toggle) => toggle.getClientRects().length);
+  button?.focus({ preventScroll: true });
+}
+
+window.addEventListener("sidebar:toggle", () => {
+  const focused = document.activeElement;
+  if (staffDesktop()) {
+    const collapsed = root.toggleAttribute("data-sidebar-collapsed");
+    localStorage.setItem("sidebar_collapsed", collapsed);
+  } else {
+    root.toggleAttribute("data-sidebar-open");
+  }
+  syncSidebarToggle();
+  focusVisibleSidebarToggle(focused);
+});
+
 window.addEventListener("sidebar:toggle-collapse", () => {
+  const focused = document.activeElement;
   const collapsed = root.toggleAttribute("data-sidebar-collapsed");
   localStorage.setItem("sidebar_collapsed", collapsed);
+  syncSidebarToggle();
+  focusVisibleSidebarToggle(focused);
 });
 
-window.addEventListener("sidebar:toggle-open", () =>
-  root.toggleAttribute("data-sidebar-open"),
-);
+window.addEventListener("sidebar:toggle-open", () => {
+  const focused = document.activeElement;
+  root.toggleAttribute("data-sidebar-open");
+  syncSidebarToggle();
+  focusVisibleSidebarToggle(focused);
+});
 
-window.addEventListener("phx:page-loading-start", (event) => {
-  if (["redirect", "patch"].includes(event.detail?.kind))
+function setProfileOpen(open) {
+  const button = document.querySelector("[data-profile-trigger]");
+  const menu = document.querySelector("[data-profile-menu]");
+  if (!button || !menu) return;
+  button.setAttribute("aria-expanded", String(open));
+  menu.hidden = !open;
+  if (open) requestAnimationFrame(() => menu.querySelector("a, button")?.focus());
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest("[data-profile-trigger]")) {
+    const button = document.querySelector("[data-profile-trigger]");
+    setProfileOpen(button?.getAttribute("aria-expanded") !== "true");
+  } else if (!event.target.closest("#staff-profile")) {
+    setProfileOpen(false);
+  }
+  if (!staffDesktop() && root.hasAttribute("data-sidebar-open") &&
+      event.target.closest("#main-sidebar a")) {
+    const focused = document.activeElement;
     root.removeAttribute("data-sidebar-open");
+    syncSidebarToggle();
+    focusVisibleSidebarToggle(focused);
+  }
 });
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    const button = document.querySelector("[data-profile-trigger]");
+    if (button?.getAttribute("aria-expanded") === "true") {
+      setProfileOpen(false);
+      button.focus();
+      return;
+    }
+    if (event.target.closest("#command-palette") ||
+        document.querySelector("#command-palette")?.getClientRects().length) return;
+    if (root.hasAttribute("data-sidebar-open")) {
+      const focused = document.activeElement;
+      root.removeAttribute("data-sidebar-open");
+      syncSidebarToggle();
+      focusVisibleSidebarToggle(focused);
+    }
+  }
+});
+
+document.addEventListener("focusin", (event) => {
+  if (!event.target.closest("#staff-profile")) setProfileOpen(false);
+});
+
+window.addEventListener("resize", syncSidebarToggle);
+window.addEventListener("phx:page-loading-start", (event) => {
+  if (["redirect", "patch"].includes(event.detail?.kind)) {
+    root.removeAttribute("data-sidebar-open");
+    setProfileOpen(false);
+    syncSidebarToggle();
+  }
+});
+window.addEventListener("phx:page-loading-stop", syncSidebarToggle);
+if (document.readyState === "loading")
+  document.addEventListener("DOMContentLoaded", syncSidebarToggle);
+else
+  syncSidebarToggle();
 
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));

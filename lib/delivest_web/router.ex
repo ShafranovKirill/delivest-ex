@@ -49,6 +49,10 @@ defmodule DelivestWeb.Router do
     plug DelivestWeb.Plugs.RateLimit, bucket: :cart, limit: 300, period: :timer.minutes(1)
   end
 
+  pipeline :analytics_rate_limit do
+    plug DelivestWeb.Plugs.RateLimit, bucket: :analytics, limit: 60, period: :timer.minutes(1)
+  end
+
   pipeline :geo_rate_limit do
     plug DelivestWeb.Plugs.RateLimit, bucket: :geo, limit: 120, period: :timer.minutes(1)
   end
@@ -69,11 +73,22 @@ defmodule DelivestWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :advertising_redirect do
+    plug :accepts, ["html"]
+    plug :fetch_cookies
+    plug :put_secure_browser_headers
+  end
+
   scope "/", DelivestWeb do
     pipe_through :health
 
     get "/health", HealthController, :show
     get "/ready", HealthController, :ready
+  end
+
+  scope "/r", DelivestWeb.Advertising do
+    pipe_through :advertising_redirect
+    get "/:token", RedirectController, :show
   end
 
   scope "/client/auth", DelivestWeb.Client.Auth do
@@ -119,6 +134,17 @@ defmodule DelivestWeb.Router do
     post "/push", Push.PushController, :subscribe_client
     delete "/push", Push.PushController, :unsubscribe_client
     get "/orders", Order.OrderController, :index
+    get "/notifications", Notifications.NotificationController, :index
+    get "/notifications/consents", Notifications.NotificationController, :consents
+
+    scope "/analytics", Analytics do
+      pipe_through :analytics_rate_limit
+      post "/source/claim", SourceController, :claim
+    end
+
+    put "/notifications/consents", Notifications.NotificationController, :update_consents
+    post "/notifications/:id/dismiss", Notifications.NotificationController, :dismiss
+    post "/notifications/:id/click", Notifications.NotificationController, :click
 
     scope "/addresses", Address do
       get "/", AddressController, :index
@@ -130,6 +156,11 @@ defmodule DelivestWeb.Router do
 
   scope "/client", DelivestWeb.Client do
     pipe_through [:client_api, :client_identity]
+
+    scope "/analytics", Analytics do
+      pipe_through :analytics_rate_limit
+      post "/events", EventController, :create
+    end
 
     scope "/branches", Branch do
       get "/", BranchController, :index
@@ -320,6 +351,8 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.CommandPalette, :default},
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
+      live "/settings", SettingsLive.Index, :index
+      live "/marketing/bonuses", MarketingLive.Bonuses, :index
       live "/branches/select", BranchLive.BranchSelect, :index
 
       scope "/branches", BranchLive do
@@ -354,6 +387,32 @@ defmodule DelivestWeb.Router do
         live "/:id/edit", Clients, :edit
       end
 
+      scope "/segments", SegmentLive do
+        live "/", Index, :index
+        live "/new", Index, :new
+        live "/:id/edit", Index, :edit
+        live "/:id", Index, :show
+      end
+
+      scope "/marketing", MarketingLive do
+        live "/", Hub, :index
+        live "/policies", Index, :index
+        live "/new", Index, :new
+        live "/:id", Index, :show
+        live "/:id/edit", Index, :edit
+      end
+
+      live "/statistics", StatisticsLive.Index, :index
+      live "/diagnostics", DiagnosticsLive.Index, :index
+
+      scope "/integrations", IntegrationLive do
+        live "/", Index, :index
+        live "/zvonok", Zvonok, :index
+        live "/dadata", Dadata, :index
+        live "/yookassa", Yookassa, :index
+        live "/yandex-eda", YandexEdaShared, :index
+      end
+
       scope "/logs", LogLive do
         live "/", Index, :events
         live "/raw", Index, :raw
@@ -363,22 +422,28 @@ defmodule DelivestWeb.Router do
 
     scope "/b/:branch_slug" do
       live_session :kitchen,
-        layout: {DelivestWeb.Layouts, :kitchen},
+        layout: {DelivestWeb.Layouts, :staff_app},
         on_mount: [
           {DelivestWeb.Hooks.StaffAuth, :default},
           {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
           {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.StaffBranches, :default},
+          {DelivestWeb.Hooks.CommandPalette, :default},
+          {DelivestWeb.Hooks.StaffPath, :default},
           {DelivestWeb.Hooks.Permission, "orders.cook"}
         ] do
         live "/kitchen", KitchenLive.Index, :index
       end
 
       live_session :pos,
-        layout: {DelivestWeb.Layouts, :kitchen},
+        layout: {DelivestWeb.Layouts, :staff_app},
         on_mount: [
           {DelivestWeb.Hooks.StaffAuth, :default},
           {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
           {DelivestWeb.Hooks.StaffActiveBranch, :default},
+          {DelivestWeb.Hooks.StaffBranches, :default},
+          {DelivestWeb.Hooks.CommandPalette, :default},
+          {DelivestWeb.Hooks.StaffPath, :default},
           {DelivestWeb.Hooks.Permission, "pos.use"}
         ] do
         live "/pos", PosLive.Index, :index
@@ -397,6 +462,7 @@ defmodule DelivestWeb.Router do
         ] do
         live "/dashboard", DashboardLive.Index, :index
         live "/statistics", StatisticsLive.Index, :index
+        live "/advertising-links", AdvertisingLive.Index, :index
         live "/delivery", DeliveryLive.Index, :index
         live "/delivery/zones", DeliveryLive.Zones, :index
         live "/delivery/couriers", DeliveryLive.Couriers, :index
@@ -408,6 +474,7 @@ defmodule DelivestWeb.Router do
         scope "/integrations", IntegrationLive do
           live "/", Index, :index
           live "/frontpad", Frontpad, :index
+          live "/ycart", Ycart, :index
           live "/iiko", Iiko, :index
           live "/rkeeper", Rkeeper, :index
           live "/routes", Routes, :index
@@ -451,6 +518,8 @@ defmodule DelivestWeb.Router do
         scope "/promotions", PromotionLive do
           live "/", Promotions, :index
           live "/new", Promotions, :new
+          live "/new/full", Promotions, :full
+          live "/new/first-order", Promotions, :first_order
           live "/sale", Promotions, :sale
           live "/:id/edit", Promotions, :edit
           live "/:id/codes", Promotions, :codes

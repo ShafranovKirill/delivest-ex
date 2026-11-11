@@ -28,6 +28,9 @@ msgstr ""
 msgid "clients"
 msgstr ""
 
+msgid "segments"
+msgstr ""
+
 msgid "orders"
 msgstr ""
 
@@ -41,6 +44,12 @@ msgid "create"
 msgstr ""
 
 msgid "read"
+msgstr ""
+
+msgid "manage"
+msgstr ""
+
+msgid "network"
 msgstr ""
 
 msgid "update"

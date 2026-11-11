@@ -217,17 +217,13 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <p class="text-sm text-base-content/60">
-            {if @current_branch, do: @current_branch.name, else: gettext("All branches")}
-          </p>
-          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">
-            {gettext("Today")}{if @current_branch, do: ", #{DayLabel.format(@today)}"}
-          </h1>
-        </div>
-        <div :if={@current_branch} class="flex flex-wrap gap-2">
+    <div class="space-y-6">
+      <.page_header title={
+        if @current_branch,
+          do: "#{gettext("Today")}, #{DayLabel.format(@today)}",
+          else: gettext("Today")
+      }>
+        <:actions :if={@current_branch}>
           <.link
             :if={@can_create_order}
             navigate={~p"/staff/b/#{@current_branch}/orders/new"}
@@ -252,8 +248,12 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             <.icon name="hero-chart-bar" class="size-4" />
             {gettext("Statistics")}
           </.link>
-        </div>
-      </div>
+        </:actions>
+      </.page_header>
+
+      <p :if={is_nil(@current_branch)} class="text-sm text-base-content/60">
+        {gettext("All branches")}
+      </p>
 
       <.link
         :if={@can_orders and @problem_count > 0 and @current_branch}

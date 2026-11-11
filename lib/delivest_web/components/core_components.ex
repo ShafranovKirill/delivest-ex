@@ -332,39 +332,143 @@ defmodule DelivestWeb.CoreComponents do
   end
 
   @doc """
-  Renders a page title with an optional subtitle and actions that wrap under it on phones.
+  Renders the title or page navigation in the first staff header row. Page actions use
+  a second row when present; introductory subtitles are omitted from the staff portal.
+  Set `portal: false` to keep the title, subtitle, and actions in the page body.
+  Set `title_in_header: false` when the layout renders navigation directly; the title
+  remains available to screen readers in the page body.
   """
   attr :title, :string, required: true
   attr :subtitle, :string, default: nil
   attr :back, :string, default: nil
+  attr :portal, :boolean, default: true
+  attr :title_in_header, :boolean, default: true
+  attr :layout, :atom, default: :two_rows, values: [:standard, :two_rows]
+  attr :navigation_label, :string, default: nil
+  slot :navigation
   slot :actions
 
   def page_header(assigns) do
     ~H"""
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div class="flex min-w-0 items-center gap-3">
+    <.portal :if={@portal and @title_in_header} id="staff-page-header" target="#staff-header-title">
+      <div class={[
+        "flex w-full min-w-0 items-center gap-1.5",
+        @layout == :two_rows && "staff-page-header-two-rows"
+      ]}>
         <.link
           :if={@back}
           navigate={@back}
-          class="btn btn-ghost btn-sm btn-square shrink-0"
+          class="btn btn-ghost btn-xs btn-square shrink-0"
+          title={gettext("Back")}
+          aria-label={gettext("Back")}
+        >
+          <.icon name="hero-arrow-left" class="size-4" />
+        </.link>
+        <h1
+          :if={@navigation == []}
+          title={@title}
+          class={[
+            "min-w-0 truncate text-base font-semibold text-base-content sm:text-lg",
+            @layout == :two_rows && "staff-page-header-title"
+          ]}
+        >
+          {@title}
+        </h1>
+        <.header_navigation :if={@layout == :two_rows and @navigation != []} label={@navigation_label}>
+          {render_slot(@navigation)}
+        </.header_navigation>
+      </div>
+    </.portal>
+
+    <h1 :if={@portal and (@navigation != [] or not @title_in_header)} class="sr-only">
+      {@title}
+    </h1>
+
+    <.portal
+      :if={@portal and @layout == :two_rows and @actions != []}
+      id="staff-page-header-actions"
+      target="#staff-header-actions-scroll"
+    >
+      <div class="staff-page-header-actions flex w-max min-w-full items-center gap-2 whitespace-nowrap">
+        {render_slot(@actions)}
+      </div>
+    </.portal>
+
+    <div
+      :if={not @portal or (@layout == :standard and @actions != [])}
+      class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div :if={!@portal} class="flex min-w-0 items-center gap-3">
+        <.link
+          :if={@back}
+          navigate={@back}
+          class="btn btn-ghost btn-sm btn-square"
           title={gettext("Back")}
         >
           <.icon name="hero-arrow-left" class="size-5" />
         </.link>
-        <div class="min-w-0">
-          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content break-words">
-            {@title}
-          </h1>
-          <p :if={@subtitle} class="text-sm text-base-content/60">{@subtitle}</p>
-        </div>
+        <h1 title={@title} class="text-2xl font-display font-bold text-base-content sm:text-3xl">
+          {@title}
+        </h1>
+        <nav
+          :if={@layout == :two_rows and @navigation != []}
+          class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
+          aria-label={@navigation_label || gettext("Page sections")}
+        >
+          {render_slot(@navigation)}
+        </nav>
       </div>
+      <p :if={@subtitle and not @portal} class="min-w-0 text-sm text-base-content/60">{@subtitle}</p>
       <div
-        :if={@actions != []}
-        class="flex flex-wrap gap-2 shrink-0 *:max-sm:flex-1 *:max-sm:min-w-max"
+        :if={@actions != [] and (@layout == :standard or not @portal)}
+        class="staff-page-actions flex min-w-0 flex-wrap gap-2"
       >
         {render_slot(@actions)}
       </div>
     </div>
+    """
+  end
+
+  attr :label, :string, default: nil
+  slot :inner_block, required: true
+
+  def header_navigation(assigns) do
+    ~H"""
+    <div
+      id="staff-page-header-navigation-scroll"
+      phx-hook="HeaderScroll"
+      class="staff-header-scroll min-w-0 flex-1"
+    >
+      <nav
+        id="staff-page-header-navigation"
+        phx-hook=".ActiveHeaderTab"
+        data-scroll-viewport
+        class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
+        aria-label={@label || gettext("Page sections")}
+      >
+        {render_slot(@inner_block)}
+      </nav>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
+      export default {
+        mounted() {
+          this.resizeObserver = new ResizeObserver(() => this.revealActiveTab())
+          this.resizeObserver.observe(this.el)
+          this.revealActiveTab()
+        },
+        updated() { this.revealActiveTab() },
+        destroyed() { this.resizeObserver.disconnect() },
+        revealActiveTab() {
+          const active = this.el.querySelector('[aria-current="page"]')
+          if (!active) return
+          const left = active.getBoundingClientRect().left - this.el.getBoundingClientRect().left + this.el.scrollLeft
+          const right = left + active.offsetWidth
+          if (left < this.el.scrollLeft || right > this.el.scrollLeft + this.el.clientWidth) {
+            this.el.scrollLeft = Math.max(0, left - (this.el.clientWidth - active.offsetWidth) / 2)
+          }
+        }
+      }
+    </script>
     """
   end
 
@@ -744,6 +848,23 @@ defmodule DelivestWeb.CoreComponents do
   """
   attr :name, :string, required: true
   attr :class, :any, default: "size-4"
+
+  def icon(%{name: "panel-left"} = assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      aria-hidden="true"
+      class={@class}
+    >
+      <rect x="3" y="4.5" width="18" height="15" rx="2" />
+      <path d="M9 4.5v15" />
+    </svg>
+    """
+  end
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""

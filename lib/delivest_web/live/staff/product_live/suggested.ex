@@ -4,8 +4,6 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   alias Delivest.{Identity, Net}
   alias DelivestWeb.Staff.ProductLive.BranchProducts
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
-
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
   @impl true
@@ -61,13 +59,13 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Recommended")}
-        subtitle={gettext("Recommended products are offered in the cart on the site.")}
-      />
-
-      <.tabs current={:suggested} branch={@current_branch} />
+        layout={:two_rows}
+        title_in_header={false}
+      >
+      </.page_header>
 
       <BranchProducts.filter_form
         id="suggested-filter"

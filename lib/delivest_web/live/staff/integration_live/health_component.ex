@@ -39,6 +39,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.HealthComponent do
     )
   end
 
+  defp refresh_health(context, nil),
+    do: %{context | health: Presentation.context(nil).health}
+
   defp refresh_health(context, branch_id),
     do: %{context | health: Health.for_branch(branch_id)}
 

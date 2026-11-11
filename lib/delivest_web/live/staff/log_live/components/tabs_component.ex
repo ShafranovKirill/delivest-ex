@@ -12,12 +12,13 @@ defmodule DelivestWeb.Staff.LogLive.Components.TabsComponent do
       ])
 
     ~H"""
-    <div role="tablist" class="tabs tabs-boxed w-fit max-w-full overflow-x-auto">
+    <div role="tablist" class="tabs">
       <.link
         :for={{tab, path, icon, label} <- @tabs}
         patch={path}
         role="tab"
         class={["tab gap-2 whitespace-nowrap", @active == tab && "tab-active font-bold"]}
+        aria-current={@active == tab && "page"}
       >
         <.icon name={icon} class="size-4" />
         {label}

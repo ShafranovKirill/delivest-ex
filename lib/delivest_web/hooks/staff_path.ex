@@ -8,15 +8,23 @@ defmodule DelivestWeb.Hooks.StaffPath do
      |> attach_hook(:set_current_path, :handle_params, &set_current_path/3)}
   end
 
-  defp set_current_path(_params, url, socket) do
+  defp set_current_path(params, url, socket) do
     path = URI.parse(url).path
+    stripped = DelivestWeb.StaffBranchPath.strip(path)
+
+    page =
+      cond do
+        stripped == "/staff/marketing" -> marketing_section_page(params["section"])
+        String.match?(stripped, ~r{^/staff/branches/[^/]+/edit(?:/|$)}) -> :settings
+        true -> determine_page_by_path(stripped)
+      end
 
     socket =
       socket
       |> assign(:current_path, path)
       |> assign(
         :current_page,
-        path |> DelivestWeb.StaffBranchPath.strip() |> determine_page_by_path()
+        page
       )
 
     {:cont, socket}
@@ -35,14 +43,19 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/stocks", :stocks},
     {"/staff/promotions", :promotions},
     {"/staff/loyalty", :loyalty},
-    {"/staff/delivery", :delivery},
+    {"/staff/settings", :settings},
+    {"/staff/delivery", :settings},
     {"/staff/branches/select", :branches_select},
-    {"/staff/branches", :branches},
+    {"/staff/branches", :settings},
     {"/staff/clients", :clients},
+    {"/staff/marketing/bonuses", :loyalty},
+    {"/staff/marketing", :marketing_policies},
+    {"/staff/advertising-links", :advertising_links},
     {"/staff/employee", :employee},
     {"/staff/roles", :roles},
-    {"/staff/franchise", :franchise},
-    {"/staff/integrations", :integrations},
+    {"/staff/franchise", :settings},
+    {"/staff/integrations", :settings},
+    {"/staff/diagnostics", :metrics},
     {"/staff/metrics", :metrics},
     {"/staff/logs", :logs}
   ]
@@ -53,5 +66,9 @@ defmodule DelivestWeb.Hooks.StaffPath do
     end)
   end
 
-  defp determine_page_by_path(_path), do: :unknown
+  defp marketing_section_page("stocks"), do: :stocks
+  defp marketing_section_page("promotions"), do: :promotions
+  defp marketing_section_page("loyalty"), do: :loyalty
+  defp marketing_section_page("links"), do: :advertising_links
+  defp marketing_section_page(_), do: :marketing
 end

@@ -14,19 +14,26 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaTest do
     init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
   end
 
-  test "an admin generates access and sets up the branch", %{conn: conn} do
+  test "an admin generates shared access without a branch and sets up the branch", %{conn: conn} do
     branch = yandex_branch(enabled: false)
+    conn = sign_in(conn, branch, ["admin", "integrations.read", "integrations.update"])
 
     {:ok, lv, _html} =
-      live(
-        sign_in(conn, branch, ["admin", "integrations.read", "integrations.update"]),
-        ~p"/staff/b/#{branch}/integrations/yandex-eda"
-      )
+      live(conn, ~p"/staff/integrations/yandex-eda")
 
     refute has_element?(lv, "#yandex-eda-client-id")
     assert has_element?(lv, "#yandex-eda-health-summary-capabilities li", "Promotions")
     lv |> element("#yandex-eda-rotate") |> render_click()
     assert has_element?(lv, "#yandex-eda-client-id", YandexEda.get_settings().client_id)
+
+    lv
+    |> form("#yandex-eda-shared", yandex_eda_shared: %{partner_name: "Delivest"})
+    |> render_submit()
+
+    assert YandexEda.get_settings().partner_name == "Delivest"
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/yandex-eda")
+    assert has_element?(lv, "a[href='/staff/integrations/yandex-eda']")
 
     lv
     |> form("#yandex-eda-branch",

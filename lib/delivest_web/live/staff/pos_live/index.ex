@@ -227,11 +227,9 @@ defmodule DelivestWeb.Staff.PosLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="pos" class="flex h-screen flex-col select-none">
-      <header class="flex items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-2">
-        <span class="text-lg font-bold">{gettext("POS")}</span>
-        <span class="text-base-content/60">{@current_branch.name}</span>
-        <div class="ml-4 join">
+    <.page_header title={gettext("POS")}>
+      <:actions>
+        <div class="join">
           <button
             id="pos-tab-sale"
             phx-click="screen"
@@ -253,8 +251,10 @@ defmodule DelivestWeb.Staff.PosLive.Index do
         <.link navigate={~p"/staff/b/#{@current_branch}/orders"} class="btn btn-ghost ml-auto">
           <.icon name="hero-arrow-left-on-rectangle" class="size-5" /> {gettext("Exit")}
         </.link>
-      </header>
+      </:actions>
+    </.page_header>
 
+    <div id="pos" class="flex flex-col select-none">
       <div :if={@screen == :sale} class="flex min-h-0 flex-1">
         <aside class="w-44 shrink-0 space-y-1 overflow-y-auto border-r border-base-300 bg-base-100 p-2">
           <button

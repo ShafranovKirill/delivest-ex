@@ -173,7 +173,7 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Staff")}
         subtitle={gettext("Manage system staff accounts and branches access.")}

@@ -4,8 +4,6 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   alias Delivest.Identity
   alias Delivest.Net.{Modifier, ModifierGroup, Modifiers}
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
-
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
   @provider "frontpad"
@@ -261,12 +259,11 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Modifiers")}
-        subtitle={
-          gettext("Size, dough and extras. A group is made once and attached to many products.")
-        }
+        layout={:two_rows}
+        title_in_header={false}
       >
         <:actions>
           <button :if={@can_edit} type="button" phx-click="new_group" class="btn btn-primary btn-sm">
@@ -275,8 +272,6 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
           </button>
         </:actions>
       </.page_header>
-
-      <.tabs current={:modifiers} branch={@current_branch} />
 
       <form :if={@can_edit} id="photo-upload" phx-change="validate_photo" class="hidden">
         <.live_file_input upload={@uploads.photo} />
