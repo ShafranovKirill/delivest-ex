@@ -42,13 +42,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.IntakeControls do
 
   def menu(assigns) do
     ~H"""
-    <div class="dropdown dropdown-end">
-      <div tabindex="0" role="button" id="intake-menu" class="btn">
+    <div>
+      <button type="button" id="intake-menu" popovertarget="intake-popover" class="btn">
         <.icon name="hero-adjustments-horizontal" class="size-5" /> {gettext("Order intake")}
-      </div>
+      </button>
       <div
-        tabindex="0"
-        class="dropdown-content z-10 mt-2 w-80 space-y-4 rounded-box border border-base-300 bg-base-100 p-4 shadow"
+        id="intake-popover"
+        popover="auto"
+        phx-hook=".IntakePopover"
+        class="fixed inset-auto m-0 w-80 max-w-[calc(100vw-1rem)] space-y-4 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-4 shadow"
       >
         <form id="intake-pause-form" phx-submit="intake_pause" class="space-y-2">
           <label class="text-sm block">
@@ -99,6 +101,55 @@ defmodule DelivestWeb.Staff.OrderLive.Components.IntakeControls do
         </form>
       </div>
     </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".IntakePopover">
+      export default {
+        mounted() {
+          this.position = () => {
+            if (!this.el.matches(':popover-open')) return
+            const trigger = document.getElementById('intake-menu')
+            if (!trigger) return
+
+            const gap = 8
+            const triggerRect = trigger.getBoundingClientRect()
+            const width = this.el.getBoundingClientRect().width
+            const below = window.innerHeight - triggerRect.bottom - gap * 2
+            const above = triggerRect.top - gap * 2
+            const opensAbove = below < this.el.scrollHeight && above > below
+            const available = Math.max(0, opensAbove ? above : below)
+            this.el.style.maxHeight = `${available}px`
+
+            const height = this.el.getBoundingClientRect().height
+            const left = Math.max(gap, Math.min(triggerRect.right - width, window.innerWidth - width - gap))
+            const top = opensAbove
+              ? Math.max(gap, triggerRect.top - height - gap)
+              : Math.min(triggerRect.bottom + gap, window.innerHeight - height - gap)
+            this.el.style.left = `${left}px`
+            this.el.style.top = `${top}px`
+          }
+          this.onToggle = (event) => {
+            if (event.newState === 'open') this.position()
+          }
+          this.onKeyDown = (event) => {
+            if (event.key !== 'Escape' || !this.el.matches(':popover-open')) return
+            event.preventDefault()
+            event.stopPropagation()
+            this.el.hidePopover()
+            document.getElementById('intake-menu')?.focus()
+          }
+          this.el.addEventListener('toggle', this.onToggle)
+          document.addEventListener('keydown', this.onKeyDown, true)
+          window.addEventListener('resize', this.position)
+          document.addEventListener('scroll', this.position, true)
+        },
+        updated() { this.position() },
+        destroyed() {
+          this.el.removeEventListener('toggle', this.onToggle)
+          document.removeEventListener('keydown', this.onKeyDown, true)
+          window.removeEventListener('resize', this.position)
+          document.removeEventListener('scroll', this.position, true)
+        },
+      }
+    </script>
     """
   end
 

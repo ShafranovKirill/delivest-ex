@@ -172,10 +172,19 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
 
       {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
-      assert has_element?(lv, "#order-status-tab-created", "1")
-      assert has_element?(lv, "#order-status-tab-preparing", "1")
+      assert DelivestWeb.PortalTestHelper.has_element?(
+               lv,
+               "#staff-page-header",
+               "#order-status-tab-created"
+             )
 
-      lv |> element("#order-status-tab-preparing") |> render_click()
+      assert DelivestWeb.PortalTestHelper.has_element?(
+               lv,
+               "#staff-page-header",
+               "#order-status-tab-preparing"
+             )
+
+      render_patch(lv, ~p"/staff/b/#{branch}/orders?status=preparing")
 
       refute has_element?(lv, "#orders-#{order.id}")
       assert_patch(lv, ~p"/staff/b/#{branch}/orders?status=preparing")

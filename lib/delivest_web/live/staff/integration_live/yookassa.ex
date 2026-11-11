@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
   use DelivestWeb, :live_view
 
   alias Delivest.Integrations.Yookassa
+  alias Delivest.Identity
   alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
@@ -10,7 +11,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(page_title: gettext("Online payment"), shop: nil)
+     |> assign(
+       page_title: gettext("Online payment"),
+       shop: nil,
+       selectable_branches: Identity.list_branch_for_staff(socket.assigns.current_staff)
+     )
      |> assign_settings(Yookassa.get_settings())
      |> assign_context()}
   end
@@ -61,32 +66,35 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
   end
 
   defp assign_context(socket) do
-    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+    assign(socket, context: Presentation.context(nil))
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/integrations"}
         title={gettext("Online payment")}
         subtitle={
           gettext("Card and SBP payments through YooKassa. The shop is shared by every branch.")
         }
-      />
+      >
+        <:actions>
+          <button
+            type="submit"
+            form="yookassa-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
         id="yookassa-health"
         provider={:yookassa}
-        branch_id={@current_branch.id}
+        branch_id={nil}
         staff={@current_staff}
         context={@context}
       />
@@ -95,11 +103,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
         <.icon name="hero-information-circle" class="size-5" />
         <span>
           {gettext(
-            "The shop keys are shared by every branch. Online payment in this branch is turned on separately in Finance → Payment."
+            "The shop keys are shared by every branch. Enable online payment separately in each branch's Finance → Payment settings."
           )}
-          <.link navigate={~p"/staff/b/#{@current_branch}/finance/payments"} class="link link-primary">
-            {gettext("Finance → Payment")}
-          </.link>
+          <span :for={branch <- @selectable_branches} class="block">
+            <.link navigate={~p"/staff/b/#{branch}/finance/payments"} class="link link-primary">
+              {gettext("Finance → Payment · %{name}", name: branch.name)}
+            </.link>
+          </span>
         </span>
       </div>
 
@@ -135,9 +145,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
             phx-click="check"
           >
             {gettext("Shop details")}
-          </button>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
           </button>
         </div>
       </.form>

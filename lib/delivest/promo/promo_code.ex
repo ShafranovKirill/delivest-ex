@@ -17,6 +17,7 @@ defmodule Delivest.Promo.PromoCode do
     field :code, :string
     field :usage_limit, :integer
     field :issued_by_id, :binary_id
+    field :expires_at, :utc_datetime
 
     belongs_to :promotion, Promotion
     belongs_to :client, Client

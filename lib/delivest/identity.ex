@@ -40,6 +40,7 @@ defmodule Delivest.Identity do
   defdelegate remove_special_day(staff, branch, date), to: Branches
   defdelegate create_branch(staff, branch_attrs, info_attrs), to: Branches
   defdelegate soft_delete_branch(staff, branch), to: Branches
+  defdelegate soft_delete_branch(staff, branch, confirmation), to: Branches
 
   defdelegate list_clients(staff, params \\ %{}), to: Clients
   defdelegate get_client(staff, id), to: Clients

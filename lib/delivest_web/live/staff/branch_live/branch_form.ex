@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.{KitchenSettings, YcartSettings}
+  alias Delivest.Identity.Branch.KitchenSettings
   alias Delivest.Identity
   alias Delivest.Repo
 
@@ -27,7 +27,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :whatsapp_url, :string
     field :instagram_url, :string
 
-    embeds_one :ycart_settings, YcartSettings, on_replace: :update
     embeds_one :fulfillment, Delivest.Identity.Branch.FulfillmentSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update
   end
@@ -54,7 +53,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :code,
       :is_active
     ])
-    |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:fulfillment, with: &Delivest.Identity.Branch.FulfillmentSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
     |> validate_number(:manual_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
@@ -88,7 +86,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
-      ycart_settings: (info && info.ycart_settings) || %YcartSettings{},
       fulfillment: (info && info.fulfillment) || %Delivest.Identity.Branch.FulfillmentSettings{},
       kitchen: (info && info.kitchen) || %KitchenSettings{}
     }
@@ -96,7 +93,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
 
   def new,
     do: %__MODULE__{
-      ycart_settings: %YcartSettings{},
       fulfillment: %Delivest.Identity.Branch.FulfillmentSettings{},
       kitchen: %KitchenSettings{}
     }
@@ -217,7 +213,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :instagram_url
       ])
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
-      |> Map.put("ycart_settings", embed_params(data.ycart_settings))
       |> Map.put("fulfillment", embed_params(data.fulfillment))
       |> Map.put("kitchen", embed_params(data.kitchen))
 

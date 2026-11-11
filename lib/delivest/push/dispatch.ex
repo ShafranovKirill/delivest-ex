@@ -5,7 +5,7 @@ defmodule Delivest.Push.Dispatch do
 
   alias Delivest.Couriers
   alias Delivest.Oms.{Order, OrderFlow}
-  alias Delivest.Push.{OrderMessage, Sender, Subscription}
+  alias Delivest.Push.{OrderMessage, Subscription}
   alias Delivest.Repo
 
   @before_pickup [:accepted, :preparing, :ready]
@@ -55,7 +55,7 @@ defmodule Delivest.Push.Dispatch do
 
   defp deliver(messages, subscription) do
     Enum.reduce_while(messages, :ok, fn message, :ok ->
-      case Sender.deliver(subscription, message) do
+      case Delivest.Notifications.deliver_push(subscription, message, :transactional) do
         :ok -> {:cont, :ok}
         other -> {:halt, other}
       end

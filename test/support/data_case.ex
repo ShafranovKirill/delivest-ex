@@ -41,7 +41,12 @@ defmodule Delivest.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Delivest.Repo, shared: not tags[:async])
+    opts = [shared: not tags[:async]]
+
+    opts =
+      if tags[:repeatable_read], do: Keyword.put(opts, :isolation, "REPEATABLE READ"), else: opts
+
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Delivest.Repo, opts)
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
 

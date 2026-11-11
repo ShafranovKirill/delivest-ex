@@ -99,6 +99,9 @@ defmodule Delivest.Oms.Orders.StatusChange do
   end
 
   defp persist(repo, order, steps, by, opts) do
+    if Enum.any?(steps, fn {_from, to} -> to == :completed end),
+      do: Delivest.Marketing.lock_completion(order.client_id, order.branch_id)
+
     changeset =
       order
       |> Ecto.Changeset.change()

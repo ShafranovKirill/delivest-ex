@@ -10,7 +10,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
     HealthComponent,
     JournalComponent,
     Presentation,
-    YandexEdaAccess,
     YandexEdaMenu,
     YandexEdaBusy,
     YandexEdaPause,
@@ -37,7 +36,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
        reconciliation: nil,
        busy_mode: YandexEda.busy_mode(socket.assigns.current_branch.id)
      )
-     |> assign_shared(YandexEda.get_settings())
      |> assign_branch(YandexEda.get_branch_settings(socket.assigns.current_branch.id))
      |> assign_context()
      |> load_menu()
@@ -69,37 +67,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "yandex_eda"))}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, error_message(reason))}
-    end
-  end
-
-  def handle_event("save_shared", %{"yandex_eda_shared" => params}, socket) do
-    case YandexEda.update_settings(socket.assigns.current_staff, params) do
-      {:ok, settings} ->
-        {:noreply,
-         socket
-         |> assign_shared(settings)
-         |> assign_context()
-         |> put_flash(:info, gettext("Settings saved"))}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, shared_form: to_form(changeset, as: "yandex_eda_shared"))}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, error_message(reason))}
-    end
-  end
-
-  def handle_event("rotate", _params, socket) do
-    case YandexEda.rotate_credentials(socket.assigns.current_staff) do
-      {:ok, settings} ->
-        {:noreply,
-         socket
-         |> assign_shared(settings)
-         |> assign_context()
-         |> put_flash(:info, gettext("New access for Yandex Eda is generated"))}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, error_message(reason))}
@@ -152,13 +119,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   defp assign_context(socket) do
     assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
   end
-
-  defp assign_shared(socket, settings),
-    do:
-      assign(socket,
-        shared: settings,
-        shared_form: to_form(YandexEda.change_settings(settings), as: "yandex_eda_shared")
-      )
 
   defp assign_branch(socket, settings),
     do:
@@ -219,22 +179,25 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-5xl">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/b/#{@current_branch}/integrations"}
         title={gettext("Yandex Eda")}
         subtitle={
           gettext(
             "Orders from Yandex Eda and Delivery Club come to the app. Yandex reads the menu, the stop list and order statuses from us."
           )
         }
-      />
+      >
+        <:actions :if={@can_edit_branch}>
+          <button
+            type="submit"
+            form="yandex-eda-branch"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
@@ -245,11 +208,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         context={@context}
       />
 
-      <YandexEdaAccess.access
+      <.link
         :if={@can_edit_shared}
-        settings={@shared}
-        form={@shared_form}
-      />
+        navigate={~p"/staff/integrations/yandex-eda"}
+        class="btn btn-sm btn-outline"
+      >
+        {gettext("Shared Yandex Eda access settings")}
+      </.link>
 
       <.form
         for={@form}
@@ -312,12 +277,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
             options={vat_options()}
             disabled={not @can_edit_branch}
           />
-        </div>
-
-        <div :if={@can_edit_branch} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
 

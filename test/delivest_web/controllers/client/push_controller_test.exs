@@ -16,6 +16,7 @@ defmodule DelivestWeb.Client.PushControllerTest do
   setup %{conn: conn} do
     branch = insert(:branch, is_active: true)
     product = insert_branch_product(branch.id, price: 300)
+    customer_phone = build(:client).phone
     conn = put_req_header(conn, "x-forwarded-for", "push-#{System.unique_integer([:positive])}")
 
     conn = conn |> post(~p"/client/branches/#{branch.id}/select") |> recycle_forwarded()
@@ -31,7 +32,7 @@ defmodule DelivestWeb.Client.PushControllerTest do
         "branch_id" => branch.id,
         "fulfillment_type" => "pickup",
         "payment_method" => "cash",
-        "customer_phone" => "+79990001122"
+        "customer_phone" => customer_phone
       })
 
     order_id = json_response(conn, 200)["data"]["id"]

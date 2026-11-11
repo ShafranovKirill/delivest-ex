@@ -15,6 +15,7 @@ defmodule Delivest.Promo.Eligibility do
           :ok | {:error, reason()}
   def check(%Promotion{} = promotion, code, %Context{} = context, %Usage{} = usage) do
     with :ok <- window(promotion, context.now),
+         :ok <- code_window(code, context.now),
          :ok <- code_present(promotion, code),
          :ok <- owner(code, context.client_id),
          :ok <- code_limit(code, usage) do
@@ -36,6 +37,12 @@ defmodule Delivest.Promo.Eligibility do
       true -> :ok
     end
   end
+
+  defp code_window(%PromoCode{expires_at: expires_at}, now) when not is_nil(expires_at) do
+    if DateTime.compare(now, expires_at) == :lt, do: :ok, else: {:error, :expired}
+  end
+
+  defp code_window(_, _), do: :ok
 
   defp code_present(%Promotion{kind: :automatic}, _code), do: :ok
   defp code_present(_promotion, %PromoCode{}), do: :ok

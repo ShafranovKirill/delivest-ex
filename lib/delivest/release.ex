@@ -2,6 +2,7 @@ defmodule Delivest.Release do
   @app :delivest
 
   alias Delivest.Repo
+  alias Delivest.Repo.UiMigrationHistory
   alias Delivest.Identity.{RolePresets, Staff, Staffs}
   import Ecto.Query
 
@@ -9,13 +10,34 @@ defmodule Delivest.Release do
     load_app()
 
     for repo <- repos() do
-      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+      {:ok, _, _} =
+        Ecto.Migrator.with_repo(repo, fn started_repo ->
+          if started_repo == Repo, do: UiMigrationHistory.prepare!(Repo)
+          Ecto.Migrator.run(started_repo, :up, all: true)
+        end)
     end
   end
 
   def rollback(repo, version) do
     load_app()
-    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
+
+    {:ok, _, _} =
+      Ecto.Migrator.with_repo(repo, fn started_repo ->
+        if started_repo == Repo, do: UiMigrationHistory.prepare!(Repo)
+        Ecto.Migrator.run(started_repo, :down, to: version)
+      end)
+  end
+
+  @doc "Host-only release RPC for feature availability; no staff route exposes this."
+  def configure_feature(feature, scope, enabled, actor, opts \\ []) when is_list(opts) do
+    load_app()
+    Delivest.Features.configure(feature, scope, enabled, Keyword.put(opts, :actor, actor))
+  end
+
+  @doc "Preview dependent features and a generation fingerprint before a host disable."
+  def preview_feature_disable(feature, scope) do
+    load_app()
+    Delivest.Features.disable_preview(feature, scope)
   end
 
   def create_admin(login \\ nil, password \\ nil) do

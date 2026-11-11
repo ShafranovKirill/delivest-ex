@@ -20,7 +20,8 @@ config :delivest, Oban,
     crm: 2,
     events: 10,
     payments: 2,
-    fiscal: 2
+    fiscal: 2,
+    background: 1
   ],
   lifeline: [rescue_after: {2, :hours}],
   pruner: [max_age: {1, :day}],
@@ -38,7 +39,8 @@ config :delivest, Oban,
     {"*/5 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yandex_eda_busy"}},
     {"11 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "atol_kkt"}},
     {"23 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "dadata"}},
-    {"41 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yookassa_reconcile"}}
+    {"41 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yookassa_reconcile"}},
+    {"*/5 * * * *", Delivest.Background.Dispatcher}
   ],
   repo: Delivest.Repo
 

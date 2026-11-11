@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
   alias Delivest.Identity.Branch
   alias Delivest.Repo
+  alias DelivestWeb.PortalTestHelper
 
   setup %{conn: conn} do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
@@ -17,17 +18,52 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
     {:ok, lv, html} = live(conn, ~p"/staff/branches/split/edit")
     refute html =~ "branch-form"
-    refute html =~ "couriers"
+    assert has_element?(lv, "#branch-delivery-card[href='/staff/b/split/delivery']")
 
-    for section <- ~w(general fulfillment location hours kitchen board links ycart) do
+    for section <- ~w(general fulfillment location hours kitchen board links) do
       assert has_element?(
                lv,
                ~s(#branch-section-#{section}[href="/staff/branches/split/edit/#{section}"])
              )
     end
 
+    refute has_element?(lv, "#branch-section-ycart")
+
     assert {:error, {:live_redirect, %{to: "/staff/branches/split/edit"}}} =
              live(conn, ~p"/staff/branches/split/edit/unknown")
+  end
+
+  test "legacy YCart URL redirects only staff with integration read access", %{conn: conn} do
+    branch = insert(:branch, slug: "legacy-ycart")
+
+    assert {:error, {:live_redirect, %{to: "/staff/b/legacy-ycart/integrations/ycart"}}} =
+             live(conn, ~p"/staff/branches/#{branch.slug}/edit/ycart")
+
+    branch_editor =
+      insert(:staff,
+        role: insert(:role, permissions: ["branches.read", "branches.update"])
+      )
+
+    insert(:staff_branch, staff: branch_editor, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => branch_editor.id})
+
+    assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
+             live(conn, ~p"/staff/branches/#{branch.slug}/edit/ycart")
+  end
+
+  test "branch form ignores submitted YCart fields" do
+    alias DelivestWeb.Staff.BranchLive.BranchForm
+
+    changeset =
+      BranchForm.new()
+      |> BranchForm.changeset(%{
+        "name" => "Without YCart",
+        "slug" => "without-ycart",
+        "ycart_settings" => %{"enabled" => true, "yandex_org_id" => "123"}
+      })
+
+    {_branch_params, info_params} = BranchForm.to_params(changeset)
+    refute Map.has_key?(info_params, "ycart_settings")
   end
 
   test "a section saves and goes back to the sections", %{conn: conn} do
@@ -35,6 +71,14 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
     {:ok, lv, _html} = live(conn, ~p"/staff/branches/old-name/edit/general")
     refute has_element?(lv, "#branch-form input[name='branch_form[vk_url]']")
+
+    assert PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header-actions",
+             "button[form='branch-form']"
+           )
+
+    refute has_element?(lv, "#branch-form button[type='submit']")
 
     assert {:error, {:live_redirect, %{to: "/staff/branches/new-name/edit"}}} =
              lv
@@ -46,6 +90,7 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
   test "a new branch is created from the page", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/branches/new")
+    refute has_element?(lv, "#branch-delete-section")
 
     assert {:error, {:live_redirect, %{to: "/staff/branches/fresh/edit"}}} =
              lv
@@ -53,6 +98,52 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
              |> render_submit()
 
     assert Repo.get_by(Branch, slug: "fresh")
+  end
+
+  test "branch deletion stays collapsed, requires exact name, and resets on cancel", %{
+    conn: conn
+  } do
+    branch = insert(:branch, name: "Delete me", slug: "delete-me")
+    {:ok, overview, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
+    refute has_element?(overview, "#branch-delete-section")
+
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/general")
+    assert has_element?(lv, "#branch-delete-open[aria-expanded='false']")
+    refute has_element?(lv, "#branch-delete-form")
+
+    lv |> element("#branch-delete-open") |> render_click()
+    assert has_element?(lv, "#branch-delete-open[aria-expanded='true']")
+    assert has_element?(lv, "#branch-delete-confirm[disabled]")
+
+    lv |> form("#branch-delete-form", confirmation: %{name: "wrong"}) |> render_change()
+    assert has_element?(lv, "#branch-delete-confirm[disabled]")
+    lv |> render_hook("confirm_delete", %{"confirmation" => %{"name" => "wrong"}})
+    assert is_nil(Repo.reload!(branch).deleted_at)
+
+    lv |> element("#branch-delete-form button[phx-click='cancel_delete']") |> render_click()
+    refute has_element?(lv, "#branch-delete-form")
+    lv |> element("#branch-delete-open") |> render_click()
+    assert has_element?(lv, "#branch-delete-confirm[disabled]")
+
+    lv |> form("#branch-delete-form", confirmation: %{name: "Delete me"}) |> render_change()
+    refute has_element?(lv, "#branch-delete-confirm[disabled]")
+
+    assert {:error, {:live_redirect, %{to: "/staff/branches"}}} =
+             lv |> form("#branch-delete-form") |> render_submit()
+
+    assert Repo.reload!(branch).deleted_at
+  end
+
+  test "without branches.delete the general page has no deletion section", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.read", "branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/general")
+    refute has_element?(lv, "#branch-delete-section")
+    lv |> render_hook("confirm_delete", %{"confirmation" => %{"name" => branch.name}})
+    assert is_nil(Repo.reload!(branch).deleted_at)
   end
 
   test "manual rating can be saved and cleared", %{conn: conn} do
@@ -194,5 +285,14 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
       assert settings.pickup == false
       assert settings.dine_in == (attrs.dine_in == "true")
     end
+  end
+
+  test "branch overview hides delivery without scoped permission", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.read", "branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
+    refute has_element?(lv, "#branch-delivery-card")
   end
 end

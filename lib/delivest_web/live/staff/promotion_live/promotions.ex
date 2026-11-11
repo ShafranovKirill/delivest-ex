@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.PromotionLive.Promotions do
+  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Net, Promo}
@@ -33,10 +34,23 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
   defp apply_action(socket, :new, _params) do
     if can?(socket, "promotions.create"),
+      do: assign(socket, page_title: gettext("Choose a promotion scenario"), promotion: nil),
+      else: deny(socket)
+  end
+
+  defp apply_action(socket, action, _params) when action in [:full, :first_order] do
+    if can?(socket, "promotions.create"),
       do:
         assign(socket,
-          page_title: gettext("New promo code"),
-          promotion: %Promotion{branch_id: socket.assigns.branch_id, kind: :public_code}
+          page_title:
+            if(action == :first_order,
+              do: gettext("First order offer"),
+              else: gettext("Full promotion form")
+            ),
+          promotion: %Promotion{
+            branch_id: socket.assigns.branch_id,
+            kind: if(action == :full, do: :public_code, else: :automatic)
+          }
         ),
       else: deny(socket)
   end
@@ -158,20 +172,51 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   def render(assigns) do
     ~H"""
     <div
-      :if={@promotion && @live_action in [:new, :edit]}
+      :if={@promotion && @live_action in [:full, :first_order, :edit]}
       id="promotion-editor"
-      class="space-y-6 py-4 sm:p-6 max-w-7xl mx-auto"
+      class="space-y-6"
     >
       <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={@page_title}
         subtitle={gettext("Discounts & promo codes")}
         back={~p"/staff/b/#{@current_branch}/promotions"}
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
+        <:actions>
+          <button
+            id="promotion-save"
+            type="submit"
+            form="promotion-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </:actions>
+      </.page_header>
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:promotions}
+        part={:branches}
       />
 
       <.live_component
         module={PromotionFormComponent}
-        id={@promotion.id || :new}
-        action={@live_action}
+        id={@promotion.id || @live_action}
+        action={if(@live_action == :edit, do: :edit, else: :new)}
+        scenario={@live_action}
         promotion={@promotion}
         branch_id={@branch_id}
         current_staff={@current_staff}
@@ -180,13 +225,89 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
     </div>
 
     <div
-      :if={!(@promotion && @live_action in [:new, :edit])}
-      class="space-y-6 py-4 sm:p-6 max-w-5xl mx-auto"
+      :if={@live_action == :new}
+      id="promotion-scenarios"
+      class="space-y-6"
     >
       <.page_header
+        navigation_label={gettext("Marketing areas")}
+        title={@page_title}
+        subtitle={gettext("Discounts & promo codes")}
+        back={~p"/staff/b/#{@current_branch}/promotions"}
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
+      </.page_header>
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:promotions}
+        part={:branches}
+      />
+      <div class="grid gap-4 md:grid-cols-3">
+        <.link
+          id="scenario-product"
+          patch={~p"/staff/b/#{@current_branch}/promotions/sale"}
+          class="rounded-box border border-base-300 bg-base-100 p-6 hover:border-primary transition-colors space-y-3"
+        >
+          <.icon name="hero-tag" class="size-8 text-primary" />
+          <h2 class="font-bold text-lg">{gettext("Product discount")}</h2>
+          <p class="text-sm text-base-content/60">
+            {gettext("Choose products, a discount and how customers receive it.")}
+          </p>
+        </.link>
+        <.link
+          id="scenario-first-order"
+          patch={~p"/staff/b/#{@current_branch}/promotions/new/first-order"}
+          class="rounded-box border border-base-300 bg-base-100 p-6 hover:border-primary transition-colors space-y-3"
+        >
+          <.icon name="hero-sparkles" class="size-8 text-primary" />
+          <h2 class="font-bold text-lg">{gettext("First order offer")}</h2>
+          <p class="text-sm text-base-content/60">
+            {gettext("Choose a reward for each client's first website or app order in this branch.")}
+          </p>
+        </.link>
+        <.link
+          id="scenario-full"
+          patch={~p"/staff/b/#{@current_branch}/promotions/new/full"}
+          class="rounded-box border border-base-300 bg-base-100 p-6 hover:border-primary transition-colors space-y-3"
+        >
+          <.icon name="hero-adjustments-horizontal" class="size-8 text-primary" />
+          <h2 class="font-bold text-lg">{gettext("Full promotion form")}</h2>
+          <p class="text-sm text-base-content/60">
+            {gettext("Configure rules, limits and compatibility yourself.")}
+          </p>
+        </.link>
+      </div>
+    </div>
+
+    <div
+      :if={@live_action not in [:new, :full, :first_order, :edit]}
+      class="space-y-6"
+    >
+      <.page_header
+        navigation_label={gettext("Marketing areas")}
         title={gettext("Discounts & promo codes")}
         subtitle={gettext("Automatic promotions, sale prices, public and personal promo codes.")}
       >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "promotions.create")}
@@ -194,18 +315,18 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
             class="btn btn-outline"
             id="new-promotion"
           >
-            <.icon name="hero-plus" class="size-5" /> {gettext("Create promo code")}
-          </.link>
-          <.link
-            :if={Identity.can?(@current_staff, "promotions.create")}
-            patch={~p"/staff/b/#{@current_branch}/promotions/sale"}
-            class="btn btn-primary"
-            id="new-sale"
-          >
-            <.icon name="hero-tag" class="size-5" /> {gettext("Product discount")}
+            <.icon name="hero-plus" class="size-5" /> {gettext("Create promotion")}
           </.link>
         </:actions>
       </.page_header>
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:promotions}
+        part={:branches}
+      />
 
       <div
         :if={@promotions == []}

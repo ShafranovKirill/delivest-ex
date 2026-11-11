@@ -106,12 +106,10 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
+      <.page_header title={@client.name || gettext("No name")} back={~p"/staff/clients"} />
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
-          <.link navigate={~p"/staff/clients"} class="btn btn-ghost btn-sm btn-square shrink-0">
-            <.icon name="hero-arrow-left" class="size-5" />
-          </.link>
           <div class="avatar avatar-placeholder shrink-0">
             <div class="bg-primary/10 text-primary w-14 rounded-full">
               <span class="text-xl font-bold">
@@ -120,9 +118,6 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
             </div>
           </div>
           <div class="min-w-0">
-            <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content truncate">
-              {@client.name || gettext("No name")}
-            </h1>
             <div class="flex flex-wrap items-center gap-2 mt-1">
               <a
                 href={"tel:#{@client.phone}"}

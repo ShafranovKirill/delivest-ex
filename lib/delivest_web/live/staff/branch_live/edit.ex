@@ -8,14 +8,35 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   alias Delivest.SiteSnapshot
   alias DelivestWeb.Staff.BranchLive.{BranchFormComponent, Sections}
 
-  on_mount {DelivestWeb.Hooks.Permission, "branches.read"}
-
   @impl true
+  def mount(%{"slug" => slug, "section" => "ycart"}, _session, socket) do
+    staff = socket.assigns.current_staff
+
+    if Identity.can?(staff, "branches.read") and Identity.can?(staff, "integrations.read") and
+         Enum.any?(Identity.list_branch_for_staff(staff), &(&1.slug == slug)) do
+      {:ok, push_navigate(socket, to: ~p"/staff/b/#{slug}/integrations/ycart")}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, gettext("Permission denied"))
+       |> push_navigate(to: ~p"/staff/branches")}
+    end
+  end
+
   def mount(params, _session, socket) do
     with {:ok, branch} <- load(socket.assigns.live_action, params, socket.assigns.current_staff),
          {:ok, section} <- section(socket.assigns.live_action, params) do
       socket =
-        assign(socket, branch: branch, section: section, page_title: title(branch, section))
+        assign(socket,
+          branch: branch,
+          section: section,
+          page_title: title(branch, section),
+          settings_branches: Identity.list_branch_for_staff(socket.assigns.current_staff),
+          can_edit_identity: can_edit_identity?(socket.assigns.current_staff),
+          delete_open: false,
+          delete_name: "",
+          delete_form: to_form(%{"name" => ""}, as: :confirmation)
+        )
 
       if section && section.id == :snapshot do
         {:ok,
@@ -38,15 +59,18 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   end
 
   defp load(:new, _params, staff) do
-    if Identity.can?(staff, "branches.create"),
+    if Identity.can?(staff, "branches.read") and Identity.can?(staff, "branches.create"),
       do: {:ok, %Branch{}},
       else: {:error, gettext("You don't have permission to create branch."), ~p"/staff/branches"}
   end
 
-  defp load(_action, %{"slug" => slug}, staff) do
-    with true <- Identity.can?(staff, "branches.update"),
+  defp load(action, %{"slug" => slug}, staff) do
+    with true <- action == :edit or can_edit_identity?(staff),
          %Branch{} = branch <-
            Enum.find(Identity.list_branch_for_staff(staff), &(&1.slug == slug)),
+         true <-
+           can_edit_identity?(staff) or
+             Identity.authorize(staff, "delivery.read", branch.id) == :ok,
          {:ok, branch} <- Identity.get_branch(branch.id, preload: [:info]) do
       {:ok, branch}
     else
@@ -79,17 +103,92 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   defp subtitle(%Branch{id: nil}), do: gettext("Branches")
   defp subtitle(branch), do: branch.name
 
+  defp can_edit_identity?(staff),
+    do: Identity.can?(staff, "branches.read") and Identity.can?(staff, "branches.update")
+
+  defp can_delete?(%{branch: %Branch{id: id}, current_staff: staff, section: %{id: :general}})
+       when not is_nil(id),
+       do: can_edit_identity?(staff) and Identity.authorize(staff, "branches.delete", id) == :ok
+
+  defp can_delete?(_assigns), do: false
+
+  defp assign_delete(socket, open?, name) do
+    assign(socket,
+      delete_open: open?,
+      delete_name: name,
+      delete_form: to_form(%{"name" => name}, as: :confirmation)
+    )
+  end
+
   @impl true
   def handle_event("reset_board_token", _params, socket) do
-    case Identity.reset_board_token(socket.assigns.current_staff, socket.assigns.branch) do
-      {:ok, branch} ->
-        {:noreply,
-         socket |> assign(branch: branch) |> put_flash(:info, gettext("New link created"))}
+    if match?(%{id: :board}, socket.assigns.section) and socket.assigns.can_edit_identity do
+      case Identity.reset_board_token(socket.assigns.current_staff, socket.assigns.branch) do
+        {:ok, branch} ->
+          {:noreply,
+           socket |> assign(branch: branch) |> put_flash(:info, gettext("New link created"))}
 
-      {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+      end
+    else
+      {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
     end
   end
+
+  def handle_event("open_delete", _params, socket) do
+    if can_delete?(socket.assigns) do
+      {:noreply, assign_delete(socket, true, "")}
+    else
+      {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
+  def handle_event("validate_delete", %{"confirmation" => %{"name" => name}}, socket)
+      when is_binary(name) do
+    if can_delete?(socket.assigns) and socket.assigns.delete_open do
+      {:noreply, assign_delete(socket, true, name)}
+    else
+      {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
+  def handle_event("validate_delete", _params, socket),
+    do: {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+  def handle_event("cancel_delete", _params, socket),
+    do: {:noreply, assign_delete(socket, false, "")}
+
+  def handle_event("confirm_delete", %{"confirmation" => %{"name" => name}}, socket)
+      when is_binary(name) do
+    if can_delete?(socket.assigns) and socket.assigns.delete_open do
+      case Identity.soft_delete_branch(socket.assigns.current_staff, socket.assigns.branch, name) do
+        {:ok, _branch} ->
+          {:noreply,
+           socket
+           |> assign_delete(false, "")
+           |> put_flash(:info, gettext("Branch deleted successfully"))
+           |> push_navigate(to: ~p"/staff/branches")}
+
+        {:error, :confirmation_mismatch} ->
+          {:noreply,
+           socket
+           |> assign_delete(true, name)
+           |> put_flash(:error, gettext("The branch name does not match."))}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Failed to delete branch."))}
+
+        {:error, _operation, _reason, _changes} ->
+          {:noreply, put_flash(socket, :error, gettext("Failed to delete branch."))}
+      end
+    else
+      {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+    end
+  end
+
+  def handle_event("confirm_delete", _params, socket),
+    do: {:noreply, put_flash(socket, :error, gettext("The branch name does not match."))}
 
   @impl true
   def handle_event("snapshot_validate", _params, socket), do: {:noreply, socket}
@@ -191,21 +290,41 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   @impl true
   def render(%{section: nil} = assigns) do
     ~H"""
-    <div class="mx-auto max-w-6xl space-y-6 p-6">
-      <.page_header title={@page_title} subtitle={gettext("Branches")} back={back(@branch, nil)}>
-        <:actions :if={!@branch.is_active}>
+    <div class="space-y-6">
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={gettext("Branches")}
+        back={back(@branch, nil)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
+        <:actions :if={@can_edit_identity and !@branch.is_active}>
           <span class="badge badge-error badge-soft">{gettext("Branch is not active")}</span>
         </:actions>
       </.page_header>
 
       <.settings_cards>
         <.settings_card
-          :for={section <- Sections.all()}
+          :for={section <- if(@can_edit_identity, do: Sections.all(), else: [])}
           id={"branch-section-#{section.id}"}
           navigate={~p"/staff/branches/#{@branch.slug}/edit/#{section.id}"}
           icon={section.icon}
           title={section.title}
           description={section.description}
+        />
+        <.settings_card
+          :if={Identity.authorize(@current_staff, "delivery.read", @branch.id) == :ok}
+          id="branch-delivery-card"
+          navigate={~p"/staff/b/#{@branch}/delivery"}
+          icon="hero-truck"
+          title={gettext("Delivery")}
+          description={gettext("Delivery zones and couriers for this branch.")}
         />
       </.settings_cards>
     </div>
@@ -214,8 +333,21 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
 
   def render(%{section: %{id: :snapshot}} = assigns) do
     ~H"""
-    <div class="mx-auto max-w-3xl space-y-6 p-6">
-      <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
+    <div class="space-y-6">
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={subtitle(@branch)}
+        back={back(@branch, @section)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
+      </.page_header>
       <section class="space-y-5 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
         <p class="text-sm text-base-content/70">
           {gettext(
@@ -263,11 +395,23 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     assigns = assign(assigns, url: board_url(assigns.branch))
 
     ~H"""
-    <div class="mx-auto max-w-3xl space-y-6 p-6">
-      <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
+    <div class="space-y-6">
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={subtitle(@branch)}
+        back={back(@branch, @section)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
+      </.page_header>
 
       <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
-        <p class="text-sm text-base-content/60">{@section.description}</p>
         <p class="text-sm text-base-content/60">
           {gettext(
             "Open the link on the screen in the hall, no sign-in is needed. Pickup and hall orders only, the number stays in «Ready» until the order is handed over or cancelled."
@@ -303,8 +447,32 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-3xl space-y-6 p-6">
-      <.page_header title={@page_title} subtitle={subtitle(@branch)} back={back(@branch, @section)} />
+    <div class="space-y-6">
+      <.page_header
+        navigation_label={gettext("Settings")}
+        title={@page_title}
+        subtitle={subtitle(@branch)}
+        back={back(@branch, @section)}
+      >
+        <:navigation>
+          <.settings_navigation
+            staff={@current_staff}
+            branches={@settings_branches}
+            selected={@branch.id}
+          />
+        </:navigation>
+        <:actions>
+          <button
+            id="branch-save"
+            type="submit"
+            form="branch-form"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={BranchFormComponent}
@@ -314,6 +482,62 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
         section={@section}
         current_staff={@current_staff}
       />
+
+      <section
+        :if={can_delete?(assigns)}
+        id="branch-delete-section"
+        class="rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
+      >
+        <button
+          id="branch-delete-open"
+          type="button"
+          phx-click={if @delete_open, do: "cancel_delete", else: "open_delete"}
+          aria-expanded={to_string(@delete_open)}
+          aria-controls="branch-delete-form"
+          class="flex w-full items-center justify-between text-left text-sm font-medium text-base-content/70 hover:text-error"
+        >
+          {gettext("Branch deletion")}
+          <.icon
+            name={if @delete_open, do: "hero-chevron-up", else: "hero-chevron-down"}
+            class="size-4"
+          />
+        </button>
+        <.form
+          :if={@delete_open}
+          for={@delete_form}
+          id="branch-delete-form"
+          phx-change="validate_delete"
+          phx-submit="confirm_delete"
+          class="mt-4 space-y-4"
+        >
+          <p class="text-sm text-base-content/70">
+            {gettext("Deleting the branch removes it from staff access and hides it from the app.")}
+          </p>
+          <p class="text-sm">
+            {gettext("Enter the exact branch name to confirm deletion: %{name}", name: @branch.name)}
+          </p>
+          <.input
+            field={@delete_form[:name]}
+            type="text"
+            id="branch-delete-name"
+            label={gettext("Branch name")}
+            autocomplete="off"
+          />
+          <div class="flex flex-wrap gap-2">
+            <button type="button" phx-click="cancel_delete" class="btn btn-ghost">
+              {gettext("Cancel")}
+            </button>
+            <button
+              id="branch-delete-confirm"
+              type="submit"
+              disabled={@delete_name != @branch.name}
+              class="btn btn-error"
+            >
+              {gettext("Delete branch")}
+            </button>
+          </div>
+        </.form>
+      </section>
     </div>
     """
   end

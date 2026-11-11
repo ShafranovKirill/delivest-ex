@@ -1,9 +1,14 @@
 defmodule DelivestWeb.StaffSidebar do
   use DelivestWeb, :html
 
+  import Delivest.Identity.Acl
+
   attr :current_page, :atom, default: nil
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
+  attr :staff_branches, :list, default: []
+  attr :current_path, :string, default: nil
+  attr :new_orders_count, :integer, default: 0
 
   def staff_sidebar(assigns) do
     assigns =
@@ -14,26 +19,80 @@ defmodule DelivestWeb.StaffSidebar do
     ~H"""
     <aside
       id="main-sidebar"
-      class={[
-        "group/sidebar fixed left-0 top-16 bottom-0 z-40 flex w-72 flex-col",
-        "border-r border-base-300 bg-base-100 transition-[width,translate] duration-300",
-        "-translate-x-full sidebar-open:translate-x-0 lg:translate-x-0 lg:sidebar-collapsed:w-20"
-      ]}
+      class="staff-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-base-300 bg-base-100 transition-[width] duration-300"
     >
-      <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-3 [scrollbar-width:thin]">
+      <div class="shrink-0 space-y-3 p-2">
+        <div
+          id="sidebar-top-row"
+          class="staff-sidebar-top-row flex items-center justify-between gap-1"
+        >
+          <.link
+            id="sidebar-home"
+            navigate={DelivestWeb.StaffBranchPath.home(@current_branch)}
+            class="staff-sidebar-top-link flex shrink-0 items-center rounded-field p-1 hover:bg-base-200"
+            title="Delivest"
+            aria-label="Delivest"
+          >
+            <img
+              src={~p"/images/logo-dark.png"}
+              alt=""
+              class="size-6 shrink-0 object-contain dark:hidden"
+            />
+            <img
+              src={~p"/images/logo-white.png"}
+              alt=""
+              class="hidden size-6 shrink-0 object-contain dark:block"
+            />
+          </.link>
+          <div class="staff-sidebar-top-actions flex items-center gap-1">
+            <DelivestWeb.NewOrdersBell.new_orders_bell
+              :if={@current_branch && can?(@current_staff, "orders.read")}
+              count={@new_orders_count}
+              branch={@current_branch}
+            />
+            <button
+              id="sidebar-toggle"
+              type="button"
+              data-sidebar-toggle
+              phx-click={JS.dispatch("sidebar:toggle")}
+              data-expand-label={gettext("Expand menu")}
+              data-collapse-label={gettext("Collapse menu")}
+              aria-controls="main-sidebar"
+              aria-expanded="false"
+              aria-label={gettext("Expand menu")}
+              title={gettext("Expand menu")}
+              class="staff-sidebar-toggle btn btn-ghost btn-square btn-sm shrink-0"
+            >
+              <.icon name="panel-left" class="size-5" />
+            </button>
+          </div>
+        </div>
+
+        <DelivestWeb.BranchSwitcher.branch_switcher
+          current_branch={@current_branch}
+          branches={@staff_branches}
+          section={DelivestWeb.StaffBranchPath.section(@current_path)}
+        />
+      </div>
+
+      <nav class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-3 [scrollbar-width:thin]">
         <div
           :for={section <- @entries}
           id={"nav-section-#{section.id}"}
           class="flex flex-col gap-1 pb-3"
         >
           <p
-            :if={section.label}
-            class="truncate px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wider text-base-content/50 lg:sidebar-collapsed:hidden"
+            :if={section.label && section.id != :branch}
+            class="staff-sidebar-label truncate px-3 pt-1 pb-1 text-xs font-semibold uppercase tracking-wider text-base-content/50"
             title={section.label}
           >
             {section.label}
           </p>
-          <div class="hidden h-px bg-base-300 mx-2 mb-1 lg:sidebar-collapsed:block"></div>
+          <div
+            :if={section.id != :branch}
+            class="hidden h-px bg-base-300 mx-2 mb-1 lg:sidebar-collapsed:block"
+          >
+          </div>
           <%= for entry <- section.entries do %>
             <ul :if={entry.kind == :item} class="menu w-full p-0">
               <li><.nav_link item={entry} current_page={@current_page} /></li>
@@ -43,28 +102,17 @@ defmodule DelivestWeb.StaffSidebar do
         </div>
       </nav>
 
-      <button
-        type="button"
-        phx-click={JS.dispatch("sidebar:toggle-collapse")}
-        class="hidden lg:flex shrink-0 items-center gap-2 border-t border-base-300 px-6 py-3 text-sm text-base-content/60 hover:text-base-content hover:bg-base-200 transition-colors cursor-pointer lg:sidebar-collapsed:justify-center lg:sidebar-collapsed:px-0"
-        title={gettext("Collapse menu")}
-      >
-        <.icon
-          name="hero-chevron-double-left"
-          class="size-5 shrink-0 transition-transform duration-300 lg:sidebar-collapsed:rotate-180"
-        />
-        <span class="lg:sidebar-collapsed:hidden">{gettext("Collapse menu")}</span>
-        <span
-          id="app-version"
-          class="ml-auto font-mono text-xs text-base-content/40 lg:sidebar-collapsed:hidden"
-        >
-          v{Application.get_env(:delivest, :version, "dev")}
-        </span>
-      </button>
+      <div class="staff-sidebar-footer shrink-0 border-t border-base-300 p-1">
+        <div class="flex min-w-0 items-center gap-1">
+          <DelivestWeb.StaffProfileMenu.staff_profile_menu current_staff={@current_staff} />
+          <DelivestWeb.CommandPalette.command_palette_trigger icon_only />
+        </div>
+      </div>
     </aside>
 
     <div
-      class="fixed inset-0 top-16 z-30 hidden bg-black/30 sidebar-open:block lg:sidebar-open:hidden"
+      id="staff-sidebar-overlay"
+      class="staff-sidebar-overlay fixed inset-0 z-40 bg-black/30"
       phx-click={JS.dispatch("sidebar:toggle-open")}
       aria-hidden="true"
     >
@@ -93,22 +141,18 @@ defmodule DelivestWeb.StaffSidebar do
         data-toggle
         title={@group.label}
         class={[
-          "flex w-full items-center gap-2 rounded-field px-3 py-2 cursor-pointer hover:bg-base-200",
-          "lg:sidebar-collapsed:hidden",
-          @active && "text-primary"
+          "staff-sidebar-group-toggle flex w-full cursor-pointer items-center gap-2 rounded-field px-2.5 py-2 text-[13px] font-medium text-base-content/70 hover:bg-base-200/70 hover:text-base-content",
+          @active && "bg-base-200/70 text-base-content"
         ]}
       >
-        <.icon name={@group.icon} class="size-6 shrink-0" />
-        <span class="font-bold truncate">{@group.label}</span>
+        <.icon name={@group.icon} class="size-5 shrink-0" />
+        <span class="staff-sidebar-label truncate">{@group.label}</span>
         <.icon
           name="hero-chevron-right"
-          class="ml-auto size-4 shrink-0 transition-transform group-data-open/nav:rotate-90"
+          class="ml-auto size-3.5 shrink-0 transition-transform group-data-open/nav:rotate-90"
         />
       </button>
-      <ul class={[
-        "menu w-full p-0 gap-1 hidden border-l border-base-300 ml-6 pl-2 group-data-open/nav:flex",
-        "lg:sidebar-collapsed:flex lg:sidebar-collapsed:ml-0 lg:sidebar-collapsed:pl-0 lg:sidebar-collapsed:border-l-0"
-      ]}>
+      <ul class="staff-sidebar-group-list menu w-full gap-1 hidden border-l border-base-300 ml-6 p-0 pl-2 group-data-open/nav:flex">
         <li :for={item <- @group.items}>
           <.nav_link item={item} current_page={@current_page} />
         </li>
@@ -151,13 +195,12 @@ defmodule DelivestWeb.StaffSidebar do
       navigate={@item.path}
       title={@item.label}
       class={[
-        "flex items-center gap-2 px-3 py-2",
-        "lg:sidebar-collapsed:justify-center lg:sidebar-collapsed:px-2",
+        "staff-sidebar-nav-link flex items-center gap-2 rounded-field px-2.5 py-2 text-[13px] font-medium text-base-content/70 hover:bg-base-200/70 hover:text-base-content",
         @current_page in @item.pages && "menu-active"
       ]}
     >
-      <.icon name={@item.icon} class="size-6 shrink-0" />
-      <span class="font-bold truncate lg:sidebar-collapsed:hidden">{@item.label}</span>
+      <.icon name={@item.icon} class="size-5 shrink-0" />
+      <span class="staff-sidebar-label truncate">{@item.label}</span>
     </.link>
     """
   end

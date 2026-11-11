@@ -5,25 +5,67 @@ defmodule Delivest.Promo.FirstOrderConcurrencyTest do
   import Ecto.Query
 
   alias Delivest.Oms.{Cart, Carts, Order, Orders}
+  alias Delivest.Promo.PromoCode
   alias Delivest.Repo
   alias Ecto.Adapters.SQL.Sandbox
 
-  test "two website checkouts on separate connections grant first-order discount once" do
-    {branch, product, client, promotion, carts} =
+  test "different public and personal first-order codes race in one branch" do
+    run_race(:codes)
+  end
+
+  test "two automatic first-order checkouts race in one branch" do
+    run_race(:automatic)
+  end
+
+  defp run_race(mode) do
+    {branch, product, client, promotions, carts} =
       Sandbox.unboxed_run(Repo, fn ->
         branch = insert(:branch)
         product = insert_branch_product(branch.id, slug: "first-#{Ecto.UUID.generate()}")
         client = insert(:client)
-        promotion = insert_promotion(branch.id, rules: "when first_order then discount 10%")
+
+        {promotions, codes} =
+          case mode do
+            :codes ->
+              public =
+                insert_promotion(branch.id,
+                  kind: :public_code,
+                  combinable: true,
+                  rules: "when first_order then discount 10%"
+                )
+
+              personal =
+                insert_promotion(branch.id,
+                  kind: :personal_code,
+                  combinable: true,
+                  rules: "when first_order then discount 10%"
+                )
+
+              insert_code(public, code: "FIRSTPUBLIC")
+              insert_code(personal, code: "FIRSTPERSONAL", client_id: client.id)
+              {[public, personal], ["FIRSTPUBLIC", "FIRSTPERSONAL"]}
+
+            :automatic ->
+              promotion =
+                insert_promotion(branch.id, rules: "when first_order then discount 10%")
+
+              {[promotion], [nil, nil]}
+          end
 
         carts =
-          for _ <- 1..2 do
+          for code <- codes do
             {:ok, cart} = Carts.create_cart(%{branch_id: branch.id})
             {:ok, _, _} = Carts.add_item(cart.id, product.id)
+
+            if code do
+              {:ok, _} = Carts.update_context(cart.id, %{client_id: client.id})
+              {:ok, _} = Delivest.Oms.apply_promo_code(cart.id, code)
+            end
+
             cart
           end
 
-        {branch, product, client, promotion, carts}
+        {branch, product, client, promotions, carts}
       end)
 
     try do
@@ -53,6 +95,15 @@ defmodule Delivest.Promo.FirstOrderConcurrencyTest do
 
       assert Enum.sort(Enum.map(results, fn {:ok, order} -> order.total_amount end)) ==
                [9000, 10_000]
+
+      order_ids = Enum.map(results, fn {:ok, order} -> order.id end)
+
+      assert Sandbox.unboxed_run(Repo, fn ->
+               Repo.aggregate(
+                 from(r in Delivest.Promo.Redemption, where: r.order_id in ^order_ids),
+                 :count
+               )
+             end) == 1
     after
       Sandbox.unboxed_run(Repo, fn ->
         cart_ids = Enum.map(carts, & &1.id)
@@ -75,7 +126,9 @@ defmodule Delivest.Promo.FirstOrderConcurrencyTest do
         ])
 
         Repo.delete_all(from c in Cart, where: c.id in ^cart_ids)
-        Repo.delete!(promotion)
+        promotion_ids = Enum.map(promotions, & &1.id)
+        Repo.delete_all(from c in PromoCode, where: c.promotion_id in ^promotion_ids)
+        Enum.each(promotions, &Repo.delete!/1)
 
         Repo.delete_all(
           from r in Delivest.Relations.EntityRelation,

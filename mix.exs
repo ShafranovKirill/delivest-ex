@@ -103,6 +103,8 @@ defmodule Delivest.MixProject do
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "ecto.migrate": [&prepare_ui_migration_history/1, "ecto.migrate"],
+      "ecto.rollback": [&prepare_ui_migration_history/1, "ecto.rollback"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind delivest", "esbuild delivest"],
@@ -119,5 +121,11 @@ defmodule Delivest.MixProject do
         "test"
       ]
     ]
+  end
+
+  defp prepare_ui_migration_history(_args) do
+    Mix.Task.run("app.config")
+    Mix.Task.run("compile")
+    Delivest.Repo.UiMigrationHistory.prepare!()
   end
 end

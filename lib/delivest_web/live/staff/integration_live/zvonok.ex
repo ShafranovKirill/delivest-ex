@@ -50,34 +50,37 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
   end
 
   defp assign_context(socket) do
-    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+    assign(socket, context: Presentation.context(nil))
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/integrations"}
         title={gettext("Sign-in by phone number")}
         subtitle={
           gettext(
             "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
           )
         }
-      />
+      >
+        <:actions>
+          <button
+            type="submit"
+            form="zvonok-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
         id="zvonok-health"
         provider={:zvonok}
-        branch_id={@current_branch.id}
+        branch_id={nil}
         staff={@current_staff}
         context={@context}
       />
@@ -143,12 +146,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
               "Any secret string, it becomes part of the webhook URL. A random one is suggested, you can keep it."
             )}
           </p>
-        </div>
-
-        <div class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
 

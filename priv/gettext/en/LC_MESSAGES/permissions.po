@@ -30,6 +30,9 @@ msgstr "Discounts & promo codes"
 msgid "clients"
 msgstr "Clients"
 
+msgid "segments"
+msgstr "Segments"
+
 msgid "orders"
 msgstr "Orders"
 
@@ -44,6 +47,12 @@ msgstr "Create"
 
 msgid "read"
 msgstr "View"
+
+msgid "manage"
+msgstr "Manage"
+
+msgid "network"
+msgstr "Franchise-wide access"
 
 msgid "update"
 msgstr "Update"

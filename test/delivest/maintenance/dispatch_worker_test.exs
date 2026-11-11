@@ -159,7 +159,10 @@ defmodule Delivest.Maintenance.DispatchWorkerTest do
 
     assert Enum.sort(results) == Enum.sort([{:ok, :scheduled}, {:ok, :already}])
     assert Repo.aggregate(DailyRun, :count) == 1
-    assert Repo.aggregate(Oban.Job, :count) == 1
+    assert Repo.aggregate(
+             from(j in Oban.Job, where: j.worker == ^Oban.Worker.to_string(DailyJob)),
+             :count
+           ) == 1
   end
 
   test "only four heavy automatic cron entries were replaced" do

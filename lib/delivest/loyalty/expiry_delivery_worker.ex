@@ -4,7 +4,7 @@ defmodule Delivest.Loyalty.ExpiryDeliveryWorker do
   import Ecto.Query
 
   alias Delivest.Loyalty.{ExpiryDelivery, ExpiryNoticeWorker}
-  alias Delivest.Push.{ClientSubscription, Sender}
+  alias Delivest.Push.ClientSubscription
   alias Delivest.Repo
 
   @stale_seconds 120
@@ -70,7 +70,10 @@ defmodule Delivest.Loyalty.ExpiryDeliveryWorker do
 
           result =
             try do
-              Sender.deliver(subscription, payload, retry: false, receive_timeout: 10_000)
+              Delivest.Notifications.deliver_push(subscription, payload, :account,
+                retry: false,
+                receive_timeout: 10_000
+              )
             rescue
               _error -> {:error, :transport_unknown}
             catch

@@ -32,6 +32,18 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           description: "Минуты до готовности вместе с добавкой на загрузку"
         },
         manual_rating: %Schema{type: :number, format: :float, nullable: true},
+        notifications_enabled: %Schema{
+          type: :boolean,
+          description: "Customer notification capability for this branch"
+        },
+        analytics_funnel_enabled: %Schema{
+          type: :boolean,
+          description: "Funnel event capture is enabled for this branch"
+        },
+        analytics_links_enabled: %Schema{
+          type: :boolean,
+          description: "Trusted advertising link tracking is enabled for this branch"
+        },
         intake: %Schema{
           type: :object,
           description:

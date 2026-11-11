@@ -288,6 +288,24 @@ defmodule Delivest.Loyalty do
 
   def adjust(_staff, _branch, _client_id, _amount, _reason), do: {:error, :invalid_amount}
 
+  @doc "Internal positive grant, always called after a unique marketing issue is reserved."
+  def grant_system(branch_id, client_id, amount, expires_at, reason)
+      when is_integer(amount) and amount > 0 and is_binary(reason) do
+    if enabled?(branch_id) do
+      insert_entry(%{
+        client_id: client_id,
+        branch_id: branch_id,
+        kind: :adjust,
+        amount: amount,
+        remaining: amount,
+        expires_at: expires_at,
+        reason: reason
+      })
+    else
+      {:error, :points_unavailable}
+    end
+  end
+
   def expire_due(now \\ DateTime.utc_now(), limit \\ expire_batch_limit()) do
     if not (is_integer(limit) and limit > 0), do: raise(ArgumentError, "limit must be positive")
 

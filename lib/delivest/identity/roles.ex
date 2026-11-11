@@ -4,6 +4,8 @@ defmodule Delivest.Identity.Roles do
   alias Delivest.Identity.{Role, Staff, Acl}
   import Ecto.Query
   alias Delivest.Audit
+  alias Delivest.Features
+  alias Delivest.Features.Registry
 
   @spec list_all_roles(map()) :: [Role.t()] | {:error, :forbidden}
   def list_all_roles(user) do
@@ -49,6 +51,8 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_create_role(user, attrs) do
+    attrs = preserve_disabled_feature_permissions(attrs, [])
+
     if Acl.can?(user, "roles.create") and Delegation.grants?(user, permissions(attrs, [])) do
       system_create_role(attrs)
     else
@@ -71,6 +75,8 @@ defmodule Delivest.Identity.Roles do
   end
 
   defp do_update_role(user, %Role{} = role, attrs) do
+    attrs = preserve_disabled_feature_permissions(attrs, role.permissions)
+
     if Acl.can?(user, "roles.update") and Delegation.role?(user, role) and
          Delegation.grants?(user, permissions(attrs, role.permissions)) do
       role
@@ -117,6 +123,28 @@ defmodule Delivest.Identity.Roles do
     case Map.get(attrs, "permissions") || Map.get(attrs, :permissions) do
       nil -> default
       permissions -> permissions |> List.wrap() |> Enum.reject(&(&1 == ""))
+    end
+  end
+
+  defp preserve_disabled_feature_permissions(attrs, existing) do
+    disabled_features =
+      Registry.permission_features()
+      |> Enum.reject(&Features.enabled?(&1, :franchise))
+
+    if disabled_features == [] do
+      attrs
+    else
+      submitted = permissions(attrs, existing)
+      hidden? = &(Registry.permission_feature(&1) in disabled_features)
+      allowed = Enum.reject(submitted, hidden?)
+      retained = Enum.filter(existing, hidden?)
+      value = Enum.uniq(allowed ++ retained)
+
+      if Enum.all?(Map.keys(attrs), &is_atom/1) do
+        Map.put(attrs, :permissions, value)
+      else
+        attrs |> Map.delete(:permissions) |> Map.put("permissions", value)
+      end
     end
   end
 

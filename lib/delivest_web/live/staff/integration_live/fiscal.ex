@@ -97,22 +97,27 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/b/#{@current_branch}/integrations"}
         title={gettext("Receipts")}
         subtitle={
           gettext(
             "Receipts are issued when the order is handed over: for cash and card payments to the operator or our courier. Yandex Eda, Yandex Delivery and CRM orders are receipted on their side."
           )
         }
-      />
+      >
+        <:actions :if={@can_edit}>
+          <button
+            type="submit"
+            form="fiscal-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </:actions>
+      </.page_header>
 
       <.live_component
         module={HealthComponent}
@@ -218,17 +223,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
               disabled={not @can_edit}
             />
           </div>
-        </div>
-
-        <div class="flex flex-wrap items-center justify-end gap-3">
-          <button
-            :if={@can_edit}
-            type="submit"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >
-            {gettext("Save")}
-          </button>
         </div>
       </.form>
     </div>

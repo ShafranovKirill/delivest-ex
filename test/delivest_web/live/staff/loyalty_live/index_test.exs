@@ -47,8 +47,17 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
   test "the nav links to the page and the summary is shown", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/loyalty")
 
-    assert has_element?(lv, ~s(#main-sidebar a[href="/staff/b/#{branch.slug}/loyalty"]))
+    assert has_element?(lv, "#nav-section-network #nav-group-marketing[data-open]")
+    assert has_element?(lv, "#nav-group-marketing a[href='/staff/marketing/bonuses']")
+
+    assert DelivestWeb.PortalTestHelper.has_element?(
+             lv,
+             "#staff-page-header",
+             "#marketing-navigation a[href='/staff/marketing/bonuses']"
+           )
+
     assert has_element?(lv, "#loyalty-summary-liability")
+    refute has_element?(lv, "#common-bonuses-form")
   end
 
   test "the client card lets a manager correct the balance", %{conn: conn, branch: branch} do
@@ -111,5 +120,23 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     refute has_element?(lv, "#products-#{unconfigured.id}")
     lv |> form("#loyalty-product-filter", configured: "true", search: "Tea") |> render_change()
     refute has_element?(lv, "#products-#{configured.id}")
+  end
+
+  test "global bonus draft survives branch interactions", %{conn: conn, branch: branch} do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/loyalty")
+
+    lv
+    |> form("#common-bonuses-form", settings: %{loyalty_stars: "17"})
+    |> render_change()
+
+    lv |> form("#loyalty-product-filter", search: "soup") |> render_change()
+
+    assert has_element?(
+             lv,
+             ~s(#common-bonuses-form input[name="settings[loyalty_stars]"][value="17"])
+           )
   end
 end

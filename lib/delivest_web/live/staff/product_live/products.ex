@@ -5,7 +5,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias Delivest.Net.{Product, ProductCrmIds, Stops}
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
   import DelivestWeb.Staff.ProductLive.StopControl, only: [stop_control: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
@@ -425,10 +424,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Products")}
-        subtitle={gettext("Manage branch products, prices, and categories.")}
+        layout={:two_rows}
+        title_in_header={false}
       >
         <:actions>
           <.link
@@ -441,6 +441,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <.link
             :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+            id="bulk-add-products"
             navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
             class="btn btn-outline"
           >
@@ -450,6 +451,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <.button
             :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+            id="create-product"
             patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
             class="btn btn-primary"
           >
@@ -458,8 +460,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           </.button>
         </:actions>
       </.page_header>
-
-      <.tabs current={:products} branch={@current_branch} />
 
       <.form
         for={nil}

@@ -19,6 +19,22 @@ defmodule Delivest.Promo.Issuing do
 
   def issue(_staff, _promotion, _client, _uses), do: {:error, :not_personal}
 
+  @doc "Issue one scoped personal code as an internal reward within the caller's transaction."
+  def issue_system(%Promotion{kind: :personal_code} = promotion, %Client{} = client, expires_at)
+      when not is_nil(expires_at) do
+    Codes.insert_unique(fn code ->
+      %PromoCode{
+        promotion_id: promotion.id,
+        branch_id: promotion.branch_id,
+        client_id: client.id,
+        expires_at: expires_at
+      }
+      |> PromoCode.changeset(%{code: code, usage_limit: 1})
+    end)
+  end
+
+  def issue_system(_, _, _), do: {:error, :invalid_promotion}
+
   def issue_by_phone(staff, promotion, phone, uses) do
     with {:ok, client} <- Identity.get_or_create_client_by_phone(phone) do
       issue(staff, promotion, client, uses)

@@ -428,18 +428,22 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/b/#{@current_branch}/integrations"}
         title="Frontpad"
         subtitle={gettext("Products in Frontpad and their match with the app menu.")}
       >
+        <:actions :if={@can_edit_branch and @tab == :settings}>
+          <button
+            type="submit"
+            form="frontpad-settings"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
+            {gettext("Save")}
+          </button>
+        </:actions>
         <:actions :if={api_key?(@crm)}>
           <button
             :if={is_nil(@available_at)}
@@ -748,12 +752,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             {Frontpad.webhook_url(@crm.frontpad.webhook_token)}
           </code>
         </div>
-
-        <div :if={@can_edit} class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
-        </div>
       </fieldset>
     </.form>
     """
@@ -1054,7 +1052,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         <table id="frontpad-products" class="table">
           <thead>
             <tr>
-              <th>CRM ID</th>
+              <th>{gettext("CRM ID")}</th>
               <th>{gettext("Name")}</th>
               <th class="text-right">{gettext("Price")}</th>
             </tr>

@@ -112,13 +112,14 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     assigns = assign(assigns, levels: @levels, subject_types: EventText.subject_types())
 
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Logs")}
         subtitle={gettext("Who did what and when, application logs and errors.")}
-      />
-
-      <TabsComponent.render_tabs active={@live_action} />
+        navigation_label={gettext("Logs")}
+      >
+        <:navigation><TabsComponent.render_tabs active={@live_action} /></:navigation>
+      </.page_header>
 
       <form id="logs-filter" phx-change="filter" phx-submit="filter" class="flex flex-wrap gap-3">
         <%= if @live_action == :events do %>

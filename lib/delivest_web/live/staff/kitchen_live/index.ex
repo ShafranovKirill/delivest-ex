@@ -172,7 +172,18 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="kitchen-screen" phx-hook="KitchenScreen" class="group flex min-h-screen flex-col">
+    <.page_header title={gettext("Kitchen")}>
+      <:actions>
+        <span id="kitchen-clock" class="font-mono text-lg font-bold">
+          {clock(@now, @current_branch.id)}
+        </span>
+        <button id="kitchen-start" type="button" data-kitchen-start class="btn btn-primary btn-sm">
+          <.icon name="hero-arrows-pointing-out" class="size-4" /> {gettext("Full screen")}
+        </button>
+      </:actions>
+    </.page_header>
+
+    <div id="kitchen-screen" phx-hook="KitchenScreen" class="group flex flex-col">
       <div
         id="kitchen-offline"
         hidden
@@ -183,20 +194,17 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
         {gettext("No connection — new orders will not arrive")}
       </div>
 
-      <header class="flex items-center justify-between gap-4 border-b border-base-300 bg-base-100 px-4 py-3">
-        <div class="flex items-baseline gap-3">
-          <h1 class="text-2xl font-black">{gettext("Kitchen")}</h1>
-          <span class="text-base-content/60">{@current_branch.name}</span>
-        </div>
+      <header
+        id="kitchen-fullscreen-toolbar"
+        class="items-center justify-between gap-4 border-b border-base-300 bg-base-100 px-4 py-3"
+      >
+        <h1 class="text-2xl font-black">{gettext("Kitchen")} · {@current_branch.name}</h1>
         <div class="flex items-center gap-3">
-          <span class="font-mono text-2xl font-bold">{clock(@now, @current_branch.id)}</span>
-          <button
-            id="kitchen-start"
-            type="button"
-            data-kitchen-start
-            class="btn btn-primary group-data-fullscreen:hidden"
-          >
-            <.icon name="hero-arrows-pointing-out" class="size-5" /> {gettext("Full screen")}
+          <span id="kitchen-fullscreen-clock" class="font-mono text-2xl font-bold">
+            {clock(@now, @current_branch.id)}
+          </span>
+          <button id="kitchen-stop" type="button" data-kitchen-stop class="btn btn-ghost btn-sm">
+            <.icon name="hero-arrows-pointing-in" class="size-4" /> {gettext("Exit full screen")}
           </button>
         </div>
       </header>

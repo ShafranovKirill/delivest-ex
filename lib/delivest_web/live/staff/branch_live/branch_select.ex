@@ -24,6 +24,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
     {:ok,
      assign(socket,
        entries: entries,
+       page_title: gettext("Select a branch"),
        kitchen_only?: kitchen_only?,
        available?: Enum.any?(entries, & &1.kitchen?),
        to: to
@@ -32,11 +33,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-xl py-12 px-4 sm:px-6">
-      <.header>
-        {gettext("Select a branch")}
-        <:subtitle>{gettext("Choose a branch to continue working in the system")}</:subtitle>
-      </.header>
+    <div class="space-y-6">
+      <.page_header
+        title={gettext("Select a branch")}
+        subtitle={gettext("Choose a branch to continue working in the system")}
+      />
 
       <div :if={@kitchen_only?} id="branch-select-kitchen-note" class="alert alert-info mb-4">
         <.icon name="hero-information-circle" class="size-5" />

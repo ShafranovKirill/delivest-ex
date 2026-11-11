@@ -9,6 +9,7 @@
 msgid ""
 msgstr ""
 "Language: ru\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
 #: lib/delivest_web/components/core_components.ex:506
@@ -99,7 +100,7 @@ msgstr "Все права защищены."
 #: lib/delivest_web/components/staff/app/staff_header.ex:132
 #, elixir-autogen, elixir-format
 msgid "Dark Mode"
-msgstr "Темная тема"
+msgstr "Тёмная тема"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:32
 #: lib/delivest_web/live/staff/dashboard_live/index.ex:26
@@ -1324,10 +1325,14 @@ msgstr "Создать клиента"
 
 #: lib/delivest_web/live/staff/log_live/event_text.ex:65
 #: lib/delivest_web/live/staff/order_live/order_helpers.ex:25
-#: lib/delivest_web/live/staff/receipt_live/index.ex:60
 #, elixir-autogen, elixir-format
 msgid "Created"
 msgstr "Новый"
+
+#: lib/delivest_web/live/staff/receipt_live/index.ex:60
+#, elixir-autogen, elixir-format
+msgid "Created at"
+msgstr "Дата создания"
 
 #: lib/delivest_web/live/staff/order_live/components/orders_toolbar.ex:94
 #: lib/delivest_web/live/staff/statistics_live/index.ex:112
@@ -1714,7 +1719,7 @@ msgstr "Настройки YCart"
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:248
 #, elixir-autogen, elixir-format
 msgid "Yandex Org ID"
-msgstr "Yandex Org ID"
+msgstr "ID организации в Яндексе"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:967
 #, elixir-autogen, elixir-format
@@ -3662,6 +3667,7 @@ msgid "Bulk add products"
 msgstr "Добавление товаров таблицей"
 
 #: lib/delivest_web/live/staff/product_live/bulk_rows.ex:27
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:783
 #, elixir-autogen, elixir-format
 msgid "CRM ID"
 msgstr "ID в CRM"
@@ -3877,7 +3883,7 @@ msgstr "Изменён %{date}"
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:295
 #, elixir-autogen, elixir-format
 msgid "Email for requests"
-msgstr "Email для обращений"
+msgstr "Эл. почта для обращений"
 
 #: lib/delivest_web/components/staff/app/staff_nav.ex:183
 #: lib/delivest_web/live/staff/franchise_live/index.ex:30
@@ -3933,7 +3939,7 @@ msgstr "Название, фирменный цвет, реквизиты про
 #: lib/delivest/franchise/settings.ex:67
 #, elixir-autogen, elixir-format
 msgid "Not an email"
-msgstr "Некорректный email"
+msgstr "Некорректный адрес эл. почты"
 
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:292
 #, elixir-autogen, elixir-format
@@ -5222,6 +5228,23 @@ msgstr "Сгенерировать новый секрет"
 msgid "Generate access"
 msgstr "Сгенерировать доступ"
 
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:28
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:65
+#, elixir-autogen, elixir-format
+msgid "Client ID (client_id)"
+msgstr "ID приложения (client_id)"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:30
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:71
+#, elixir-autogen, elixir-format
+msgid "Client secret (client_secret)"
+msgstr "Секретный ключ приложения (client_secret)"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_access.ex:60
+#, elixir-autogen, elixir-format
+msgid "Partner name (Partner-Name)"
+msgstr "Имя партнёра (Partner-Name)"
+
 #: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:209
 #, elixir-autogen, elixir-format
 msgid "Manually by staff"
@@ -6272,6 +6295,11 @@ msgstr "Готово"
 msgid "Full screen"
 msgstr "Во весь экран"
 
+#: lib/delivest_web/live/staff/kitchen_live/index.ex:207
+#, elixir-autogen, elixir-format
+msgid "Exit full screen"
+msgstr "Выйти из полноэкранного режима"
+
 #: lib/delivest_web/live/staff/kitchen_live/index.ex:183
 #, elixir-autogen, elixir-format
 msgid "No connection — new orders will not arrive"
@@ -6613,7 +6641,7 @@ msgstr "Курьер, до 10 кг"
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:167
 #, elixir-autogen, elixir-format
 msgid "Email"
-msgstr "Email"
+msgstr "Эл. почта"
 
 #: lib/delivest_web/live/staff/integration_live/yandex_delivery.ex:76
 #, elixir-autogen, elixir-format
@@ -7447,7 +7475,7 @@ msgstr "Чек прихода"
 #: lib/delivest_web/live/staff/integration_live/fiscal.ex:196
 #, elixir-autogen, elixir-format
 msgid "Sender email"
-msgstr "Email отправителя"
+msgstr "Эл. почта отправителя"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:472
 #: lib/delivest_web/live/staff/receipt_live/index.ex:105
@@ -7509,7 +7537,7 @@ msgstr "Агрегатор"
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:383
 #, elixir-autogen, elixir-format
 msgid "Authorized"
-msgstr "Заблокировано"
+msgstr "Средства зарезервированы"
 
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:382
 #: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:683
@@ -8416,7 +8444,7 @@ msgstr "ID организации в Яндексе"
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:105
 #, elixir-autogen, elixir-format
 msgid "Dev: do not call, confirm sign-in instantly"
-msgstr "Dev: не звонить, подтверждать вход сразу"
+msgstr "Режим разработки: не звонить, подтверждать вход сразу"
 
 #: lib/delivest_web/live/staff/integration_live/zvonok.ex:108
 #, elixir-autogen, elixir-format
@@ -8759,12 +8787,12 @@ msgstr "Касса: %{issues}"
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:181
 #, elixir-autogen, elixir-format
 msgid "Client ID"
-msgstr "Client ID"
+msgstr "ID приложения"
 
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:182
 #, elixir-autogen, elixir-format
 msgid "Client secret"
-msgstr "Client secret"
+msgstr "Секретный ключ приложения"
 
 #: lib/delivest_web/live/staff/integration_live/state_components.ex:64
 #, elixir-autogen, elixir-format
@@ -8824,7 +8852,7 @@ msgstr "Заполните ключи магазина"
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:399
 #, elixir-autogen, elixir-format
 msgid "Fill in the token and the email"
-msgstr "Заполните токен и email"
+msgstr "Заполните токен и адрес эл. почты"
 
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:224
 #, elixir-autogen, elixir-format
@@ -9077,7 +9105,7 @@ msgstr "Подарков не может быть больше, чем това�
 #: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:196
 #, elixir-autogen, elixir-format
 msgid "N products from a list"
-msgstr "N товаров из списка"
+msgstr "Заданное количество товаров из списка"
 
 #: lib/delivest/promo/references.ex:41
 #, elixir-autogen, elixir-format
@@ -9669,6 +9697,1305 @@ msgstr "Переместить зону вверх"
 #, elixir-autogen, elixir-format
 msgid "Zone order changed; refresh and try again"
 msgstr "Порядок зон изменился. Обновите страницу и попробуйте снова"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Marketing policies"
+msgstr "Маркетинговые политики"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy saved"
+msgstr "Политика сохранена"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not save the policy. Check its fields and try again."
+msgstr "Не удалось сохранить политику. Проверьте поля и повторите попытку."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not prepare the audience preview."
+msgstr "Не удалось подготовить предварительный расчёт аудитории."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy status updated"
+msgstr "Статус политики обновлён"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Complete the audience preview before activation."
+msgstr "Перед запуском завершите предварительный расчёт аудитории."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not update the policy status."
+msgstr "Не удалось обновить статус политики."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not load the report."
+msgstr "Не удалось загрузить отчёт."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not compare policies."
+msgstr "Не удалось сравнить политики."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Draft"
+msgstr "Черновик"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Preparing audience"
+msgstr "Подготовка аудитории"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Selected branches"
+msgstr "Выбранные филиалы"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Entire network"
+msgstr "Вся сеть"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Not selected"
+msgstr "Не выбрано"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Future participants only"
+msgstr "Только будущие участники"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "All current audience"
+msgstr "Вся текущая аудитория"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Branch unavailable"
+msgstr "Филиал недоступен"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Customers"
+msgstr "Клиенты"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "New policy"
+msgstr "Новая политика"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} issues"
+msgstr "Выдач: %{count}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "More policies"
+msgstr "Ещё политики"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Step %{step} of 5"
+msgstr "Шаг %{step} из 5"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience"
+msgstr "Аудитория"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy name"
+msgstr "Название политики"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Scope"
+msgstr "Область действия"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience segment"
+msgstr "Сегмент аудитории"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Select a segment"
+msgstr "Выберите сегмент"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "More segments"
+msgstr "Ещё сегменты"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Policy branches"
+msgstr "Филиалы политики"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "A network-wide policy does not need selected branches."
+msgstr "Для политики всей сети выбирать филиалы не нужно."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Next"
+msgstr "Далее"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward"
+msgstr "Награда"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward branch"
+msgstr "Филиал награды"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Bonus points"
+msgstr "Бонусные баллы"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Active personal promotion"
+msgstr "Активная персональная акция"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No promotion"
+msgstr "Без акции"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Choose one reward. A promo code expires with the policy reward."
+msgstr "Выберите одну награду. Промокод истекает вместе с наградой политики."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Search promotions by name"
+msgstr "Поиск акций по названию"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Notification"
+msgstr "Уведомление"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Channels"
+msgstr "Каналы"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "On site"
+msgstr "На сайте"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "SMS (unavailable)"
+msgstr "SMS (недоступно)"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Message title"
+msgstr "Заголовок сообщения"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Message body"
+msgstr "Текст сообщения"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Limits and first run"
+msgstr "Лимиты и первый запуск"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Days since last completed order"
+msgstr "Дней с последнего завершённого заказа"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward duration, days"
+msgstr "Срок действия награды, дней"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Observation window, days"
+msgstr "Окно наблюдения, дней"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "First run"
+msgstr "Первый запуск"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Issue limit (optional)"
+msgstr "Лимит выдач (необязательно)"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude client IDs"
+msgstr "Исключить клиентов по ID"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude segment IDs"
+msgstr "Исключить сегменты по ID"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Review and enable"
+msgstr "Проверка и запуск"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience: %{segment} · %{scope}"
+msgstr "Аудитория: %{segment} · %{scope}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Reward branch: %{branch}"
+msgstr "Филиал награды: %{branch}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Initial audience: %{mode}"
+msgstr "Начальная аудитория: %{mode}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "A preview is required before the first activation. Save the draft, run the preview, then enable the policy on its page."
+msgstr "Перед первым запуском нужен предварительный расчёт. Сохраните черновик, выполните расчёт и запустите политику на её странице."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Save draft and continue"
+msgstr "Сохранить черновик"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "← All policies"
+msgstr "← Все политики"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Status: %{status} · revision %{revision}"
+msgstr "Статус: %{status} · версия %{revision}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "After %{days} days without an order · reward valid for %{ttl} days · initial audience: %{mode}"
+msgstr "После %{days} дней без заказа · награда действует %{ttl} дней · начальная аудитория: %{mode}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "A reward could not be issued. Check that it is available."
+msgstr "Не удалось выдать награду. Проверьте её доступность."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Audience preview"
+msgstr "Предварительный охват"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Activate"
+msgstr "Запустить"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The audience preview is being prepared. Refresh it later."
+msgstr "Расчёт аудитории выполняется в фоне. Обновите предварительный охват позже."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Eligible customers: %{count}"
+msgstr "Подходящих клиентов: %{count}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Bonus points: %{points}"
+msgstr "Бонусные баллы: %{points}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Not applicable"
+msgstr "не применимо"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "SMS cost: unknown (provider unavailable). Calculated: %{time}"
+msgstr "Стоимость SMS: неизвестна (провайдер не подключён). Расчёт: %{time}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Report"
+msgstr "Отчёт"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "From"
+msgstr "С"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "To"
+msgstr "По"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The report is being prepared. Refresh it later."
+msgstr "Расчёт отчёта выполняется в фоне. Обновите позже."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Snapshot as of %{time}"
+msgstr "Срез на %{time}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Issues: %{value}"
+msgstr "Выдачи: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclusions: %{value}"
+msgstr "Исключения: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Linked orders: %{value}"
+msgstr "Связанные заказы: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Returning customers: %{value}"
+msgstr "Вернувшиеся клиенты: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Net revenue after refunds: %{value}"
+msgstr "Выручка после возвратов: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Redeemed promo codes: %{value}"
+msgstr "Использованные промокоды: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Recorded discount: %{value}"
+msgstr "Учтённая скидка: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Points issued: %{value}"
+msgstr "Выданные баллы: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Points spent: unknown (spending is not linked to this reward)"
+msgstr "Использование баллов: неизвестно (списания не связаны с выдачей)"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Clicks: %{value}"
+msgstr "Переходы: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "On-site cards: %{value}"
+msgstr "Карточки на сайте: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Push accepted by transport: %{value}"
+msgstr "Push принят транспортом: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Push outcome unknown: %{value}"
+msgstr "Push неизвестный исход: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Push skipped: %{value}"
+msgstr "Push пропущено: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "SMS unavailable: %{value}"
+msgstr "SMS недоступны: %{value}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Date"
+msgstr "Дата"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Issues"
+msgstr "Выдачи"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Compare policies"
+msgstr "Сравнить политики"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Select up to 10 policies. The current policy is included."
+msgstr "Выберите до 10 политик. Текущая политика включена."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Compare"
+msgstr "Сравнить"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The comparison is being prepared. Refresh it later."
+msgstr "Сравнение готовится в фоне. Обновите позже."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Snapshot as of %{time}. Shared orders are counted once."
+msgstr "Срез на %{time}. Общие заказы учитываются один раз."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Linked orders: %{orders} · net revenue after refunds: %{revenue}"
+msgstr "Связанные заказы: %{orders} · выручка после возвратов: %{revenue}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Return branch"
+msgstr "Филиал возвращения"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Orders in the observation window are associated with the reward; this does not prove additional sales. Delivery without provider confirmation has an unknown outcome."
+msgstr "Заказы в окне после выдачи связаны с наградой, но не доказывают прирост продаж. Без подтверждения провайдера исход доставки неизвестен."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Customer unavailable"
+msgstr "Клиент недоступен"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Segment unavailable"
+msgstr "Группа недоступна"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclusions were cleared because the audience or branches changed. Review them again."
+msgstr "Исключения сброшены после изменения аудитории или филиалов. Проверьте их снова."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude customers"
+msgstr "Исключить клиентов"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Search customers by name or phone"
+msgstr "Поиск клиентов по имени или телефону"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Choose an audience segment before searching."
+msgstr "Перед поиском выберите сегмент аудитории."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No customers excluded"
+msgstr "Нет исключённых клиентов"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Remove %{name}"
+msgstr "Убрать %{name}"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Exclude groups"
+msgstr "Исключить группы"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Search groups by name"
+msgstr "Поиск групп по названию"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No groups excluded"
+msgstr "Нет исключённых групп"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Working list"
+msgstr "Рабочий список"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleted policies"
+msgstr "Удалённые"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "No deleted policies."
+msgstr "Удалённых политик пока нет."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "No working policies yet."
+msgstr "В рабочем списке пока нет политик."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Removed"
+msgstr "Удалена"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Changes will apply to future issues. Previously issued rewards remain; this policy stays paused until you activate it."
+msgstr "Изменения затронут будущие выдачи. Ранее выданные награды сохранятся; политика останется на паузе до запуска."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Scope, selected branches, and first-run audience are fixed after the policy has started."
+msgstr "После первого запуска нельзя изменить охват, выбранные филиалы и аудиторию первого запуска."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "This policy was removed from the working list. Its history, reports, and issued rewards remain available."
+msgstr "Политика убрана из рабочего списка. История, отчёты и выданные награды сохранены."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Pause this policy to change future issues."
+msgstr "Чтобы изменить будущие выдачи, поставьте политику на паузу."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy changed. Reload it before saving again."
+msgstr "Политика изменилась. Откройте её заново перед сохранением."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Scope and selected branches cannot change after the policy has started."
+msgstr "После первого запуска нельзя изменить охват и выбранные филиалы."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "The first-run audience cannot change after the policy has started."
+msgstr "После первого запуска нельзя изменить аудиторию первого запуска."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleted policies cannot be edited."
+msgstr "Удалённую политику нельзя изменить."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy deleted"
+msgstr "Политика удалена"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy changed. Review it before deleting again."
+msgstr "Политика изменилась. Проверьте её перед повторным удалением."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Could not delete the policy."
+msgstr "Не удалось удалить политику."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Delete policy?"
+msgstr "Удалить политику?"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "The policy will stop and disappear from the working list. History, reports, and issued rewards will remain."
+msgstr "Политика остановится и исчезнет из рабочего списка. История, отчёты и выданные награды сохранятся."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "This draft will be deleted permanently."
+msgstr "Черновик будет удалён полностью."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleting..."
+msgstr "Удаляем…"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Review changes"
+msgstr "Проверьте изменения"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Save changes"
+msgstr "Сохранить изменения"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Delete «%{name}»?"
+msgstr "Удалить «%{name}»?"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:36
+#, elixir-autogen, elixir-format
+msgid "Choose a promotion scenario"
+msgstr "Выберите сценарий акции"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:215
+#, elixir-autogen, elixir-format
+msgid "Choose products, a discount and how customers receive it."
+msgstr "Выберите товары, скидку и способ получения акции."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:237
+#, elixir-autogen, elixir-format
+msgid "Configure rules, limits and compatibility yourself."
+msgstr "Настройте правила, ограничения и совместимость вручную."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:258
+#, elixir-autogen, elixir-format
+msgid "Create promotion"
+msgstr "Создать акцию"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:151
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:46
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:224
+#, elixir-autogen, elixir-format
+msgid "First order offer"
+msgstr "Первый заказ"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:47
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:235
+#, elixir-autogen, elixir-format
+msgid "Full promotion form"
+msgstr "Полная форма акции"
+
+#: lib/delivest_web/live/staff/promotion_live/product_sale_form_component.ex:132
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:303
+#, elixir-autogen, elixir-format
+msgid "How should customers receive it?"
+msgstr "Как клиенты получат акцию?"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:328
+#, elixir-autogen, elixir-format
+msgid "Once per client in this branch, on the first website or app order. Does not combine with other promotions."
+msgstr "Один раз на клиента в этом филиале при первом заказе на сайте или в приложении. Не суммируется с другими акциями."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:226
+#, elixir-autogen, elixir-format
+msgid "Choose a reward for each client's first website or app order in this branch."
+msgstr "Выберите награду за первый заказ клиента на сайте или в приложении в этом филиале."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculate rewards now"
+msgstr "Рассчитать выдачи сейчас"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Checks active policies and issues due rewards to eligible customers."
+msgstr "Проверит активные политики и выдаст положенные награды подходящим клиентам."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation queued"
+msgstr "Расчёт поставлен в очередь"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation in progress"
+msgstr "Расчёт выполняется"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation completed"
+msgstr "Расчёт завершён"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculation failed"
+msgstr "Расчёт не удался"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not start reward calculation."
+msgstr "Не удалось запустить расчёт выдач."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculate audience now"
+msgstr "Рассчитать охват сейчас"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The audience preview is being calculated."
+msgstr "Охват рассчитывается. Результат появится здесь автоматически."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Calculate now"
+msgstr "Рассчитать сейчас"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The report is being calculated."
+msgstr "Отчёт рассчитывается. Результат появится здесь автоматически."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "The comparison is being calculated."
+msgstr "Сравнение рассчитывается. Результат появится здесь автоматически."
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Check calculation"
+msgstr "Проверить расчёт"
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Starting…"
+msgstr "Запускаем…"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Advertising links"
+msgstr "Рекламные ссылки"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Advertising links are unavailable"
+msgstr "Рекламные ссылки недоступны"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not update advertising link"
+msgstr "Не удалось обновить рекламную ссылку"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Campaign slug"
+msgstr "Код кампании"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Link name"
+msgstr "Название ссылки"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Archived"
+msgstr "В архиве"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Advertising URL"
+msgstr "Рекламная ссылка"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Disable"
+msgstr "Выключить"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Enable"
+msgstr "Включить"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Archive"
+msgstr "В архив"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Archive this link?"
+msgstr "Отправить ссылку в архив?"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Load more"
+msgstr "Загрузить ещё"
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Marketing Push messages"
+msgstr "Маркетинговые Push"
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "The limit applies to each customer across all branches. A Push with an unknown delivery result counts toward the limit. Rewards and messages on the site are unaffected."
+msgstr "Лимит действует для каждого клиента во всех филиалах. Push с неизвестным результатом доставки учитывается в лимите. Награды и сообщения на сайте не затрагиваются."
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Maximum marketing push messages"
+msgstr "Максимум маркетинговых Push"
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Rolling window, hours"
+msgstr "Период ограничения, часы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:64
+#, elixir-autogen, elixir-format
+msgid "%{count} branches are excluded by feature settings"
+msgstr "%{count} филиалов исключены настройками функции"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:194
+#, elixir-autogen, elixir-format
+msgid "Authorized orders"
+msgstr "Заказы авторизованных клиентов"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:113
+#, elixir-autogen, elixir-format
+msgid "Calculation could not be queued"
+msgstr "Не удалось поставить расчёт в очередь"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:52
+#, elixir-autogen, elixir-format
+msgid "Calculation is queued or running"
+msgstr "Расчёт ожидает выполнения или выполняется"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:304
+#, elixir-autogen, elixir-format
+msgid "Cancelled orders"
+msgstr "Отменённые заказы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:302
+#, elixir-autogen, elixir-format
+msgid "Cash method orders"
+msgstr "Заказы с оплатой наличными"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:327
+#, elixir-autogen, elixir-format
+msgid "Channel"
+msgstr "Канал"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:192
+#, elixir-autogen, elixir-format
+msgid "Clicks"
+msgstr "Переходы"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:581
+#, elixir-autogen, elixir-format
+msgid "Comparison"
+msgstr "Сравнение"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:303
+#, elixir-autogen, elixir-format
+msgid "Completed orders"
+msgstr "Завершённые заказы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:252
+#, elixir-autogen, elixir-format
+msgid "Data may be stale"
+msgstr "Данные могут быть устаревшими"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:249
+#, elixir-autogen, elixir-format
+msgid "Data was not collected for this period"
+msgstr "За этот период данные не собирались"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:193
+#, elixir-autogen, elixir-format
+msgid "First source clients"
+msgstr "Клиенты с первым источником"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:582
+#, elixir-autogen, elixir-format
+msgid "Franchise"
+msgstr "Франшиза"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:577
+#, elixir-autogen, elixir-format
+msgid "Funnel"
+msgstr "Воронка"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:120
+#, elixir-autogen, elixir-format
+msgid "Identified buyers with completed orders"
+msgstr "Идентифицированные покупатели с завершёнными заказами"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:55
+#, elixir-autogen, elixir-format
+msgid "Last calculation failed; the previous published result remains available."
+msgstr "Последний расчёт завершился ошибкой; предыдущий опубликованный результат доступен."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:342
+#, elixir-autogen, elixir-format
+msgid "Link ID"
+msgstr "ID ссылки"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:30
+#, elixir-autogen, elixir-format
+msgid "Manage advertising links"
+msgstr "Управление рекламными ссылками"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:191
+#, elixir-autogen, elixir-format
+msgid "Metric"
+msgstr "Показатель"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:251
+#, elixir-autogen, elixir-format
+msgid "No activity in collected period"
+msgstr "За собранный период действий не было"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:45
+#, elixir-autogen, elixir-format
+msgid "Oldest successful bucket calculation"
+msgstr "Самый ранний успешный расчёт периода"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:301
+#, elixir-autogen, elixir-format
+msgid "Online paid sessions"
+msgstr "Сессии с подтверждённой онлайн-оплатой"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:58
+#, elixir-autogen, elixir-format
+msgid "Only %{covered} of %{expected} branch days have collected data"
+msgstr "Данные собраны только для %{covered} из %{expected} дней филиалов"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:263
+#, elixir-autogen, elixir-format
+msgid "Only saved advertising link receipts are confirmed attribution. UTM labels are unverified."
+msgstr "Атрибуция подтверждена только сохранёнными записями рекламных ссылок. UTM-метки не проверены."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:133
+#, elixir-autogen, elixir-format
+msgid "Only verified client IDs are counted across channels; guest phone numbers are not matched."
+msgstr "Между каналами учитываются только подтверждённые ID клиентов; номера телефонов гостей не сопоставляются."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:170
+#, elixir-autogen, elixir-format
+msgid "Order outcomes for this session cohort"
+msgstr "Итоги заказов для этой группы сессий"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:299
+#, elixir-autogen, elixir-format
+msgid "Orders created"
+msgstr "Созданные заказы"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:250
+#, elixir-autogen, elixir-format
+msgid "Partial data"
+msgstr "Неполные данные"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:138
+#, elixir-autogen, elixir-format
+msgid "Percentage of authorized buyers is unavailable: anonymous buyers cannot be counted reliably."
+msgstr "Доля авторизованных покупателей недоступна: анонимных покупателей нельзя достоверно посчитать."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:237
+#, elixir-autogen, elixir-format
+msgid "Previous"
+msgstr "Назад"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:103
+#, elixir-autogen, elixir-format
+msgid "Previous period"
+msgstr "Предыдущий период"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:39
+#, elixir-autogen, elixir-format
+msgid "Recalculate available history"
+msgstr "Пересчитать доступную историю"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:125
+#, elixir-autogen, elixir-format
+msgid "Repeat identified buyers"
+msgstr "Повторные идентифицированные покупатели"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:128
+#, elixir-autogen, elixir-format
+msgid "Retention from previous equal period"
+msgstr "Вернувшиеся из предыдущего равного периода"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:269
+#, elixir-autogen, elixir-format
+msgid "Revenue includes completed orders net of succeeded refunds, grouped by order creation date. No causal effect is inferred from channel differences."
+msgstr "Выручка включает завершённые заказы за вычетом успешных возвратов по дате создания заказа. Различия каналов не доказывают причинный эффект."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:102
+#, elixir-autogen, elixir-format
+msgid "Selected period"
+msgstr "Выбранный период"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:257
+#, elixir-autogen, elixir-format
+msgid "Session steps are observational; orders and payment stages use server records. Cash is shown separately from confirmed online payments."
+msgstr "Шаги сессии отражают наблюдения; этапы заказа и оплаты берутся из серверных записей. Наличные показаны отдельно от подтверждённых онлайн-оплат."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:157
+#, elixir-autogen, elixir-format
+msgid "Sessions with an order"
+msgstr "Сессии с заказом"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:191
+#, elixir-autogen, elixir-format
+msgid "Source / channel"
+msgstr "Источник / канал"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:578
+#, elixir-autogen, elixir-format
+msgid "Sources"
+msgstr "Источники"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:305
+#, elixir-autogen, elixir-format
+msgid "Unlinked orders on creation date"
+msgstr "Заказы без связи по дате создания"
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:178
+#, elixir-autogen, elixir-format
+msgid "Unlinked orders use creation date and are shown separately; they are not included in session conversion."
+msgstr "Заказы без связи показаны отдельно по дате создания и не входят в конверсию сессий."
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:253
+#, elixir-autogen, elixir-format
+msgid "Updated"
+msgstr "Обновлено"
+
+msgid "Last successful check"
+msgstr "Последняя успешная проверка"
+
+msgid "Find advertising link"
+msgstr "Найти рекламную ссылку"
+
+msgid "All advertising links"
+msgstr "Все рекламные ссылки"
+
+msgid "Unavailable branch"
+msgstr "Филиал недоступен"
+
+msgid "Unavailable advertising link"
+msgstr "Рекламная ссылка недоступна"
+
+msgid "Unknown channel"
+msgstr "Неизвестный канал"
+
+msgid "Net revenue"
+msgstr "Выручка после возвратов"
+
+msgid "Sessions started"
+msgstr "Начатые сессии"
+
+msgid "Visits"
+msgstr "Посещения"
+
+msgid "Menu views"
+msgstr "Просмотры меню"
+
+msgid "Product views"
+msgstr "Просмотры товаров"
+
+msgid "Added to cart"
+msgstr "Добавления в корзину"
+
+msgid "Checkout started"
+msgstr "Начало оформления"
+
+msgid "Fulfillment selected"
+msgstr "Выбор способа получения"
+
+msgid "All channels"
+msgstr "Все каналы"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Link copied"
+msgstr "Ссылка скопирована"
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Could not copy link. Select the URL to copy it manually."
+msgstr "Не удалось скопировать ссылку. Выделите адрес и скопируйте его вручную."
+
+msgid "Only %{covered} of %{expected} branch days have complete collection"
+msgstr "Полный сбор был в %{covered} из %{expected} дней филиалов"
+
+msgid "Collection was interrupted during %{count} branch days; observed activity remains visible"
+msgstr "Сбор прерывался в %{count} днях филиалов; собранная активность остаётся видимой"
+
+msgid "Observed session sources"
+msgstr "Наблюдаемые источники сессий"
+
+msgid "Direct visit"
+msgstr "Прямой визит"
+
+msgid "Campaign label (unverified)"
+msgstr "Метка кампании (непроверенная)"
+
+msgid "Unknown source"
+msgstr "Неизвестный источник"
+
+msgid "Source data unavailable"
+msgstr "Данные об источнике недоступны"
+
+msgid "These first-event labels are unverified observations, not confirmed advertising attribution."
+msgstr "Метки первого события — непроверенные наблюдения, а не подтверждённая рекламная атрибуция."
+
+msgid "Common"
+msgstr "Общие"
+
+msgid "Choose a marketing area and branch."
+msgstr "Выберите направление маркетинга и филиал."
+
+msgid "Rewards and customer segments across the franchise."
+msgstr "Вознаграждения и сегменты клиентов по всей сети."
+
+msgid "Segments"
+msgstr "Сегменты"
+
+msgid "Marketing areas"
+msgstr "Направления маркетинга"
+
+msgid "Statistics scope"
+msgstr "Область статистики"
+
+msgid "Choose a branch to view statistics."
+msgstr "Выберите филиал для просмотра статистики."
+
+msgid "Choose a branch for branch marketing settings."
+msgstr "Выберите филиал для настройки его маркетинга."
+
+msgid "View source statistics"
+msgstr "Статистика источника"
+
+msgid "Open audience segment"
+msgstr "Открыть сегмент аудитории"
+
+msgid "Branch settings"
+msgstr "Настройки филиала"
+
+msgid "Choose a branch to view and change its integrations."
+msgstr "Выберите филиал, чтобы просмотреть и изменить его интеграции."
+
+msgid "Yandex Eda access"
+msgstr "Доступ Яндекс Еды"
+
+msgid "Access credentials shared by every branch."
+msgstr "Данные доступа общие для всех филиалов."
+
+msgid "Access settings shared by every branch."
+msgstr "Настройки доступа общие для всех филиалов."
+
+msgid "Choose a branch to manage its Yandex Eda settings."
+msgstr "Выберите филиал для управления его настройками Яндекс Еды."
+
+msgid "Shared Yandex Eda access settings"
+msgstr "Общие настройки доступа Яндекс Еды"
+
+msgid "The shop keys are shared by every branch. Enable online payment separately in each branch's Finance → Payment settings."
+msgstr "Ключи магазина общие для всех филиалов. Включайте онлайн-оплату отдельно в настройках «Финансы → Оплата» каждого филиала."
+
+msgid "Finance → Payment · %{name}"
+msgstr "Финансы → Оплата · %{name}"
+
+msgid "Delivery city · %{name}"
+msgstr "Город доставки · %{name}"
+
+msgid "Bonuses"
+msgstr "Бонусы"
+
+msgid "Common bonus settings"
+msgstr "Общие настройки бонусов"
+
+msgid "Common bonus rules and branch settings."
+msgstr "Общие правила бонусов и настройки филиалов."
+
+msgid "These rules apply to every branch."
+msgstr "Эти правила действуют во всех филиалах."
+
+msgid "Branch bonus settings"
+msgstr "Бонусы филиала"
+
+msgid "Choose an available branch to manage its bonus program and reward products."
+msgstr "Выберите доступный филиал, чтобы настроить бонусную программу и бонусы товаров."
+
+msgid "Choose common settings or an available branch."
+msgstr "Выберите общие настройки или доступный филиал."
+
+msgid "Common settings"
+msgstr "Общие настройки"
+
+msgid "Manage branches"
+msgstr "Управление филиалами"
+
+msgid "Message frequency limits across all branches."
+msgstr "Лимиты частоты сообщений для всех филиалов."
+
+msgid "Brand, seller details and legal documents."
+msgstr "Бренд, реквизиты продавца и юридические документы."
+
+msgid "YCart"
+msgstr "YCart"
+
+msgid "Branch map and organization link on Yandex Maps."
+msgstr "Карта филиала и ссылка на организацию в Яндекс Картах."
+
+msgid "Branch bonuses: %{name}"
+msgstr "Бонусы филиала: %{name}"
+
+msgid "Settings for branches"
+msgstr "Настройки филиалов"
+
+msgid "Choose a branch to manage its settings and delivery."
+msgstr "Выберите филиал для настройки и управления доставкой."
+
+msgid "Choose the settings area."
+msgstr "Выберите раздел настроек."
+
+msgid "Diagnostics"
+msgstr "Диагностика"
+
+msgid "Delivery zones and couriers for this branch."
+msgstr "Зоны доставки и курьеры этого филиала."
+
+msgid "Branch deletion"
+msgstr "Удаление филиала"
+
+msgid "Delete branch"
+msgstr "Удалить филиал"
+
+msgid "Deleting the branch removes it from staff access and hides it from the app."
+msgstr "Филиал исчезнет из приложения, а сотрудники потеряют к нему доступ."
+
+msgid "Enter the exact branch name to confirm deletion: %{name}"
+msgstr "Для подтверждения удаления введите точное название филиала: %{name}"
+
+msgid "Branch name"
+msgstr "Название филиала"
+
+msgid "The branch name does not match."
+msgstr "Название филиала не совпадает."
+
+msgid "Failed to delete branch."
+msgstr "Не удалось удалить филиал."
+
+msgid "Expand menu"
+msgstr "Развернуть меню"
+
+msgid "Current page"
+msgstr "Текущая страница"
+
+msgid "Profile: %{name}"
+msgstr "Профиль: %{name}"
+
+msgid "Scroll actions left"
+msgstr "Прокрутить действия влево"
+
+msgid "Scroll actions right"
+msgstr "Прокрутить действия вправо"
+
+msgid "Scroll sections left"
+msgstr "Прокрутить разделы влево"
+
+msgid "Scroll sections right"
+msgstr "Прокрутить разделы вправо"
 
 #: lib/delivest_web/live/staff/integration_live/frontpad.ex
 msgid "Accept price from CRM"

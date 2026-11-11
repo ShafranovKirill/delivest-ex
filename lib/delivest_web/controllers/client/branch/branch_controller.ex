@@ -3,6 +3,7 @@ defmodule DelivestWeb.Client.Branch.BranchController do
   use OpenApiSpex.ControllerSpecs
 
   alias Delivest.Identity
+  alias Delivest.Features
   alias DelivestWeb.Schemas.BranchSchemas.{BranchListResponse, BranchResponse}
   alias OpenApiSpex.Schema
   alias DelivestWeb.Helpers.{ApiError, CookieHelper}
@@ -25,7 +26,16 @@ defmodule DelivestWeb.Client.Branch.BranchController do
 
   def index(conn, _params) do
     branches = Identity.list_branches(preload: [:info])
-    render(conn, :index, branches: branches)
+    capabilities = Features.enabled_branches("notifications", Enum.map(branches, & &1.id))
+    analytics = Features.enabled_branches("analytics_funnel", Enum.map(branches, & &1.id))
+    links = Features.enabled_branches("analytics_links", Enum.map(branches, & &1.id))
+
+    render(conn, :index,
+      branches: branches,
+      notification_capabilities: capabilities,
+      analytics_capabilities: analytics,
+      links_capabilities: links
+    )
   rescue
     _ ->
       ApiError.send_error(
@@ -64,7 +74,12 @@ defmodule DelivestWeb.Client.Branch.BranchController do
           to_string(branch.id),
           @active_branch_cookie_opts
         )
-        |> render(:show, branch: branch)
+        |> render(:show,
+          branch: branch,
+          notification_capabilities: Features.enabled_branches("notifications", [branch.id]),
+          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id]),
+          links_capabilities: Features.enabled_branches("analytics_links", [branch.id])
+        )
 
       _inactive_or_missing ->
         ApiError.send_error(conn, :not_found, :branch_not_found, "Branch not found")
@@ -111,7 +126,12 @@ defmodule DelivestWeb.Client.Branch.BranchController do
       {:ok, %{is_active: true} = branch} ->
         conn
         |> CookieHelper.put_cookie("active_branch_id", branch.id, @active_branch_cookie_opts)
-        |> render(:show, branch: branch)
+        |> render(:show,
+          branch: branch,
+          notification_capabilities: Features.enabled_branches("notifications", [branch.id]),
+          analytics_capabilities: Features.enabled_branches("analytics_funnel", [branch.id]),
+          links_capabilities: Features.enabled_branches("analytics_links", [branch.id])
+        )
 
       _inactive_or_missing ->
         ApiError.send_error(conn, :not_found, :branch_not_found, "Branch not found")

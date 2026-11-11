@@ -15,7 +15,7 @@ defmodule Delivest.Integrations.Crm.StopSyncTest do
     crm = %BranchSettings{
       enabled: true,
       provider: :frontpad,
-      frontpad: %Frontpad.Settings{api_key: "key", sync_stops: sync_stops?}
+      frontpad: %Frontpad.Settings{api_key: "key-#{branch.id}", sync_stops: sync_stops?}
     }
 
     info = Repo.insert!(%BranchInfo{branch_id: branch.id, crm: crm})

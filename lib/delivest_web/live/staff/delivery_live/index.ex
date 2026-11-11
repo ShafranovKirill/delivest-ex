@@ -9,11 +9,13 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
   def mount(_params, _session, socket),
     do: {:ok, assign(socket, page_title: gettext("Delivery"))}
 
+  defp back(branch), do: ~p"/staff/branches/#{branch.slug}/edit"
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-6xl">
-      <.page_header title={gettext("Delivery")} />
+    <div class="space-y-6">
+      <.page_header title={gettext("Delivery")} back={back(@current_branch)} />
 
       <.settings_cards>
         <.settings_card
