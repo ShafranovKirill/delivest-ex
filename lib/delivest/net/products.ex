@@ -266,6 +266,69 @@ defmodule Delivest.Net.Products do
     |> Audit.track(staff, "product.updated")
   end
 
+  @doc "Atomically accepts a fresh CRM price for a product owned only by the selected branch."
+  def accept_crm_price(staff, branch_id, product_id, external_id, price) do
+    Repo.transaction(fn ->
+      product =
+        Product
+        |> where([p], p.id == ^product_id and is_nil(p.deleted_at))
+        |> lock("FOR UPDATE")
+        |> Repo.one()
+
+      with :ok <- Identity.authorize(staff, "products.update", branch_id),
+           :ok <- Identity.authorize(staff, "integrations.read", branch_id),
+           %Product{} <- product,
+           [^branch_id] <- SharedOwnership.branches("Product", product_id),
+           {:mapping, ^external_id} <-
+             {:mapping, ProductCrmIds.by_product([product_id], :frontpad, branch_id)[product_id]} do
+        if product.price == price do
+          {:unchanged, product}
+        else
+          with {:ok, updated} <- product |> Product.changeset(%{price: price}) |> Repo.update(),
+               :ok <- Delivest.Net.Catalogs.bump_versions([branch_id]),
+               {:ok, event} <-
+                 Audit.record(staff, "product.updated", updated,
+                   branch_id: branch_id,
+                   publish: false
+                 ) do
+            {:updated, updated, event}
+          else
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end
+      else
+        nil ->
+          Repo.rollback(:product_not_found)
+
+        owners when is_list(owners) ->
+          Repo.rollback(if(branch_id in owners, do: :shared_product, else: :forbidden))
+
+        {:mapping, _id} ->
+          Repo.rollback(:mapping_changed)
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, {:unchanged, _product}} ->
+        {:ok, :unchanged}
+
+      {:ok, {:updated, updated, event}} ->
+        Audit.publish(event)
+        notify_product_changed(branch_id, updated)
+        {:ok, updated}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def notify_product_changed(branch_id, product) do
+    invalidate_menu_cache(branch_id)
+    broadcast_change(branch_id, {:product_updated, product})
+  end
+
   defp do_update_product(staff, %Product{} = updateble_product, attrs) do
     branch_ids = SharedOwnership.branches("Product", updateble_product.id)
     crm_branch_id = Map.get(attrs, "branch_id") || Map.get(attrs, :branch_id)

@@ -3,8 +3,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   alias Delivest.Identity
   alias Delivest.Integrations.Crm
-  alias Delivest.Integrations.Crm.{BranchSettings, Catalog, StopSync}
+
+  alias Delivest.Integrations.Crm.{
+    AcceptPrice,
+    BranchSettings,
+    Catalog,
+    CatalogSnapshot,
+    StopSync
+  }
+
   alias Delivest.Integrations.{Channels, Frontpad}
+  alias Delivest.Net.SharedOwnership
   alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -17,6 +26,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
      |> assign(
        page_title: "Frontpad",
        can_edit_branch: Identity.can?(socket.assigns.current_staff, "integrations.update"),
+       can_accept_price: Identity.can?(socket.assigns.current_staff, "products.update"),
+       accepting_price: nil,
        query: "",
        refresh_timer: nil,
        stop_sync: StopSync.last(socket.assigns.current_branch.id)
@@ -46,6 +57,28 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, refresh_error(reason))}
+    end
+  end
+
+  def handle_event("accept_price", %{"product_id" => id, "crm_price" => price}, socket) do
+    issue =
+      Enum.find(socket.assigns.issues, &(&1.product_id == id and &1.type == :price_mismatch))
+
+    with nil <- socket.assigns.accepting_price,
+         true <- socket.assigns.can_accept_price,
+         %{crm_price: shown_price} <- issue,
+         {^shown_price, ""} <- Integer.parse(price) do
+      staff = socket.assigns.current_staff
+      branch_id = socket.assigns.current_branch.id
+
+      {:noreply,
+       socket
+       |> assign(accepting_price: id)
+       |> start_async({:accept_price, id}, fn ->
+         AcceptPrice.run(staff, branch_id, id, shown_price)
+       end)}
+    else
+      _ -> {:noreply, socket}
     end
   end
 
@@ -115,6 +148,55 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   def handle_info(_message, socket), do: {:noreply, socket}
 
+  @impl true
+  def handle_async({:accept_price, id}, result, socket) do
+    socket = assign(socket, accepting_price: nil)
+
+    socket =
+      case result do
+        {:ok, {:ok, :unchanged, catalog}} ->
+          socket
+          |> assign_fresh_catalog(catalog)
+          |> put_flash(:info, gettext("Price is already up to date"))
+
+        {:ok, {:ok, _product, catalog}} ->
+          socket
+          |> assign_fresh_catalog(catalog)
+          |> put_flash(:info, gettext("Price accepted from Frontpad"))
+
+        {:ok, {:error, {:price_changed, price}}} ->
+          issues =
+            Enum.map(socket.assigns.issues, fn
+              %{product_id: ^id} = issue -> %{issue | crm_price: price}
+              issue -> issue
+            end)
+
+          socket
+          |> assign(issues: issues)
+          |> put_flash(
+            :error,
+            gettext("Frontpad price changed. Review the new price and try again.")
+          )
+
+        {:ok, {:error, :shared_product}} ->
+          put_flash(
+            socket,
+            :error,
+            gettext(
+              "This product is shared by branches. Its price cannot be changed for one branch."
+            )
+          )
+
+        {:ok, {:error, :forbidden}} ->
+          put_flash(socket, :error, gettext("Permission denied"))
+
+        _ ->
+          put_flash(socket, :error, gettext("Could not accept the price. Try again later."))
+      end
+
+    {:noreply, socket}
+  end
+
   defp load_settings(socket),
     do: assign_settings(socket, Crm.get_branch_settings(socket.assigns.current_branch.id))
 
@@ -171,12 +253,41 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     snapshot = Catalog.get_snapshot(branch_id, :frontpad)
 
     socket
-    |> assign(snapshot: snapshot, issues: Catalog.issues(branch_id, snapshot))
+    |> assign(saved_snapshot: snapshot)
+    |> assign_catalog(snapshot)
     |> assign_available_at()
   end
 
+  defp assign_fresh_catalog(socket, catalog) do
+    snapshot = %CatalogSnapshot{
+      branch_id: socket.assigns.current_branch.id,
+      provider: "frontpad",
+      checked_at: DateTime.utc_now(:second),
+      products: Enum.map(catalog, &Map.new(&1, fn {key, value} -> {to_string(key), value} end))
+    }
+
+    assign_catalog(socket, snapshot)
+  end
+
+  defp assign_catalog(socket, snapshot) do
+    branch_id = socket.assigns.current_branch.id
+
+    issues = Catalog.issues(branch_id, snapshot)
+
+    shared_products =
+      issues
+      |> Enum.filter(
+        &(&1.type == :price_mismatch and
+            length(SharedOwnership.branches("Product", &1.product_id)) > 1)
+      )
+      |> MapSet.new(& &1.product_id)
+
+    socket
+    |> assign(snapshot: snapshot, issues: issues, shared_products: shared_products)
+  end
+
   defp assign_available_at(socket) do
-    available_at = Catalog.refresh_available_at(socket.assigns.snapshot)
+    available_at = Catalog.refresh_available_at(socket.assigns.saved_snapshot)
     wait_ms = if available_at, do: DateTime.diff(available_at, DateTime.utc_now(), :millisecond)
 
     if socket.assigns.refresh_timer, do: Process.cancel_timer(socket.assigns.refresh_timer)
@@ -351,7 +462,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             {gettext("Received from Frontpad")}: {OrderHelpers.local_datetime(@snapshot.checked_at)}
           </p>
 
-          <.check_results :if={@tab == :check} issues={@issues} branch={@current_branch} />
+          <.check_results
+            :if={@tab == :check}
+            issues={@issues}
+            branch={@current_branch}
+            can_accept_price={@can_accept_price}
+            accepting_price={@accepting_price}
+            shared_products={@shared_products}
+          />
           <.crm_products
             :if={@tab == :products}
             products={filter_products(@snapshot.products, @query)}
@@ -672,6 +790,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   attr :issues, :list, required: true
   attr :branch, :map, required: true
+  attr :can_accept_price, :boolean, required: true
+  attr :accepting_price, :string, default: nil
+  attr :shared_products, :any, required: true
 
   defp check_results(assigns) do
     assigns =
@@ -699,6 +820,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         hint={gettext("Orders with these products will not reach Frontpad.")}
         issues={@missing}
         branch={@branch}
+        can_accept_price={@can_accept_price}
+        accepting_price={@accepting_price}
+        shared_products={@shared_products}
       />
 
       <.issue_list
@@ -707,6 +831,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         title={gettext("Price differs")}
         issues={@mismatched}
         branch={@branch}
+        can_accept_price={@can_accept_price}
+        accepting_price={@accepting_price}
+        shared_products={@shared_products}
       />
 
       <.issue_list
@@ -716,6 +843,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         hint={gettext("These products are not linked to Frontpad.")}
         issues={@unlinked}
         branch={@branch}
+        can_accept_price={@can_accept_price}
+        accepting_price={@accepting_price}
+        shared_products={@shared_products}
       />
     </div>
     """
@@ -726,6 +856,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   attr :hint, :string, default: nil
   attr :issues, :list, required: true
   attr :branch, :map, required: true
+  attr :can_accept_price, :boolean, required: true
+  attr :accepting_price, :string, default: nil
+  attr :shared_products, :any, required: true
 
   defp issue_list(assigns) do
     ~H"""
@@ -748,10 +881,40 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             </.link>
             <span class="flex items-center gap-3 text-base-content/60">
               <span :if={issue.external_id not in [nil, ""]}>CRM ID {issue.external_id}</span>
-              <span :if={issue.type == :price_mismatch} class="tabular-nums">
+              <span
+                :if={issue.type == :price_mismatch}
+                id={"frontpad-price-#{issue.product_id}"}
+                class="tabular-nums"
+              >
                 {OrderHelpers.money(issue.app_price)} → {OrderHelpers.money(issue.crm_price)}
               </span>
             </span>
+            <div
+              :if={issue.type == :price_mismatch and @can_accept_price}
+              class="flex items-center gap-2"
+            >
+              <span
+                :if={MapSet.member?(@shared_products, issue.product_id)}
+                class="text-xs text-warning"
+              >
+                {gettext("Shared product: price affects other branches")}
+              </span>
+              <button
+                id={"frontpad-accept-price-#{issue.product_id}"}
+                type="button"
+                class="btn btn-sm btn-primary"
+                phx-click="accept_price"
+                phx-value-product_id={issue.product_id}
+                phx-value-crm_price={issue.crm_price}
+                disabled={
+                  @accepting_price != nil or MapSet.member?(@shared_products, issue.product_id)
+                }
+              >
+                {if @accepting_price == issue.product_id,
+                  do: gettext("Loading..."),
+                  else: gettext("Accept price from CRM")}
+              </button>
+            </div>
           </li>
         </ul>
       </div>

@@ -45,6 +45,8 @@ defmodule Delivest.Audit do
   def record(actor, action, subject, opts \\ []),
     do: Recorder.record(actor, action, subject, opts)
 
+  def publish(event), do: Recorder.publish(event)
+
   def track(result, actor, action, opts \\ [])
 
   def track({:ok, subject} = result, actor, action, opts) do
