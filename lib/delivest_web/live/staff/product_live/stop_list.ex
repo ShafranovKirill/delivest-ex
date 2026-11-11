@@ -85,7 +85,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Stop list")}
         subtitle={gettext("Products in the stop list are not sold on the site and in the channels.")}

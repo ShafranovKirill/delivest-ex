@@ -450,7 +450,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="orders-page" class="space-y-4 sm:space-y-5 py-4 sm:p-6">
+    <div id="orders-page" class="space-y-6">
       <.page_header
         title={gettext("Orders")}
         subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}

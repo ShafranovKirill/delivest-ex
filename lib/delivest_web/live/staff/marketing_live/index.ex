@@ -1154,19 +1154,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
-      <.navigation
-        staff={@current_staff}
-        branches={@staff_branches}
-        branch={@current_branch}
-        active={:policies}
-      />
-      <header class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p class="text-sm uppercase tracking-wide text-base-content/60">{gettext("Customers")}</p>
-          <h1 class="text-3xl font-semibold">{gettext("Marketing policies")}</h1>
-        </div>
-        <div class="flex flex-wrap gap-2">
+    <div class="space-y-6">
+      <.page_header title={gettext("Marketing policies")} subtitle={gettext("Customers")}>
+        <:actions>
           <button
             :if={@can_network_calculate and @live_action == :index}
             id="marketing-recalculate-now"
@@ -1182,8 +1172,15 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             navigate={~p"/staff/marketing/new"}
             class="btn btn-primary"
           >{gettext("New policy")}</.link>
-        </div>
-      </header>
+        </:actions>
+      </.page_header>
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:policies}
+      />
 
       <div
         :if={@can_network_calculate and @live_action == :index}

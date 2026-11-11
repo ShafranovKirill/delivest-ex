@@ -2,8 +2,7 @@
   <DelivestWeb.StaffHeader.staff_header
     current_staff={@current_staff}
     current_branch={assigns[:current_branch]}
-    staff_branches={assigns[:staff_branches] || []}
-    current_path={assigns[:current_path]}
+    page_title={assigns[:page_title]}
     new_orders_count={assigns[:new_orders_count] || 0}
     kitchen_status={assigns[:kitchen_status]}
   />
@@ -22,11 +21,13 @@
   <DelivestWeb.StaffSidebar.staff_sidebar
     current_staff={@current_staff}
     current_branch={assigns[:current_branch]}
+    staff_branches={assigns[:staff_branches] || []}
+    current_path={assigns[:current_path]}
     current_page={assigns[:current_page]}
   />
 
-  <div class="flex min-h-screen flex-col pt-16 transition-[padding] duration-300 lg:pl-72 lg:sidebar-collapsed:pl-20">
-    <main class="flex-1 px-2 sm:px-6 min-w-0">
+  <div class="staff-shell-content flex min-h-screen flex-col pt-16 transition-[margin] duration-300">
+    <main class="flex-1 min-w-0 p-4 sm:p-6">
       <div class="max-w-7xl mx-auto">
         <.flash_group flash={@flash} />
         <DelivestWeb.GatewayNote.gateway_note

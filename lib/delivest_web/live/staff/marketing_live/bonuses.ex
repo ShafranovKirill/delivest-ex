@@ -28,16 +28,17 @@ defmodule DelivestWeb.Staff.MarketingLive.Bonuses do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="bonuses-page" class="space-y-6 py-4 sm:p-6 max-w-5xl">
+    <div id="bonuses-page" class="space-y-6">
+      <.page_header
+        title={gettext("Bonuses")}
+        subtitle={gettext("Common bonus rules and branch settings.")}
+      />
+
       <Navigation.navigation
         staff={@current_staff}
         branches={@staff_branches}
         branch={nil}
         active={:loyalty}
-      />
-      <.page_header
-        title={gettext("Bonuses")}
-        subtitle={gettext("Common bonus rules and branch settings.")}
       />
 
       <.live_component

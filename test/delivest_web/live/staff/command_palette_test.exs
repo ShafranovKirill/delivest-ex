@@ -17,7 +17,8 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
   test "lists pages before anything is typed", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
-    assert has_element?(lv, "#command-palette-trigger")
+    assert has_element?(lv, "#main-sidebar #command-palette-trigger[aria-label]")
+    refute has_element?(lv, "#staff-header #command-palette-trigger")
     assert has_element?(lv, "#command-item-page-orders")
     assert has_element?(lv, "#command-item-page-clients")
   end

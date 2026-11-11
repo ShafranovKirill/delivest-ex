@@ -74,7 +74,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-8 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Integrations")}
         subtitle={gettext("External services connected to the app.")}

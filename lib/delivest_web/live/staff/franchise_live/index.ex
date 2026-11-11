@@ -209,7 +209,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   @impl true
   def render(%{section: nil} = assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-6xl mx-auto">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Franchise settings")}
         subtitle={gettext("Name, brand color, seller details and legal documents for all branches.")}
@@ -232,13 +232,14 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
   def render(%{section: %{id: :snapshot}} = assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
-      <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
+    <div class="space-y-6">
       <.page_header
         title={@section.title}
         subtitle={@section.description}
         back={~p"/staff/franchise"}
       />
+
+      <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
 
       <p
         :if={!Identity.can?(@current_staff, "admin")}
@@ -344,13 +345,14 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
-      <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
+    <div class="space-y-6">
       <.page_header
         title={@section.title}
         subtitle={@section.description}
         back={~p"/staff/franchise"}
       />
+
+      <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
 
       <.live_component
         :if={@section.id in [:brand, :auth, :seller, :loyalty]}

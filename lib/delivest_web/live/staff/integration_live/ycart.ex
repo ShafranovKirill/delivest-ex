@@ -71,15 +71,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.Ycart do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
-      <.page_header title={gettext("YCart Settings")} subtitle={@current_branch.name} />
+    <div class="space-y-6">
+      <.page_header
+        title={gettext("YCart Settings")}
+        subtitle={@current_branch.name}
+        back={~p"/staff/b/#{@current_branch}/integrations"}
+      />
 
       <.form
         for={@form}

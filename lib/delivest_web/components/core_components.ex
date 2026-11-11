@@ -332,36 +332,56 @@ defmodule DelivestWeb.CoreComponents do
   end
 
   @doc """
-  Renders a page title with an optional subtitle and actions that wrap under it on phones.
+  Renders the page title in the staff header and its subtitle and actions in the page body.
+  Set `portal: false` for a page outside the staff layout.
   """
   attr :title, :string, required: true
   attr :subtitle, :string, default: nil
   attr :back, :string, default: nil
+  attr :portal, :boolean, default: true
   slot :actions
 
   def page_header(assigns) do
     ~H"""
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div class="flex min-w-0 items-center gap-3">
+    <.portal :if={@portal} id="staff-page-header" target="#staff-header-title">
+      <div class="flex w-full min-w-0 items-center gap-1.5">
         <.link
           :if={@back}
           navigate={@back}
-          class="btn btn-ghost btn-sm btn-square shrink-0"
+          class="btn btn-ghost btn-xs btn-square shrink-0"
+          title={gettext("Back")}
+          aria-label={gettext("Back")}
+        >
+          <.icon name="hero-arrow-left" class="size-4" />
+        </.link>
+        <h1
+          title={@title}
+          class="min-w-0 truncate text-base font-semibold text-base-content sm:text-lg"
+        >
+          {@title}
+        </h1>
+      </div>
+    </.portal>
+
+    <div
+      :if={not @portal or not is_nil(@subtitle) or @actions != []}
+      class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div :if={!@portal} class="flex min-w-0 items-center gap-3">
+        <.link
+          :if={@back}
+          navigate={@back}
+          class="btn btn-ghost btn-sm btn-square"
           title={gettext("Back")}
         >
           <.icon name="hero-arrow-left" class="size-5" />
         </.link>
-        <div class="min-w-0">
-          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content break-words">
-            {@title}
-          </h1>
-          <p :if={@subtitle} class="text-sm text-base-content/60">{@subtitle}</p>
-        </div>
+        <h1 title={@title} class="text-2xl font-display font-bold text-base-content sm:text-3xl">
+          {@title}
+        </h1>
       </div>
-      <div
-        :if={@actions != []}
-        class="flex flex-wrap gap-2 shrink-0 *:max-sm:flex-1 *:max-sm:min-w-max"
-      >
+      <p :if={@subtitle} class="min-w-0 text-sm text-base-content/60">{@subtitle}</p>
+      <div :if={@actions != []} class="staff-page-actions flex min-w-0 flex-wrap gap-2">
         {render_slot(@actions)}
       </div>
     </div>

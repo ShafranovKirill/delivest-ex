@@ -244,7 +244,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-6xl">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Delivery zones")}
         subtitle={gettext("Delivery price for the site and Yandex Eda.")}

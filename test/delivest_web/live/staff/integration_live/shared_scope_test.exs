@@ -27,7 +27,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.SharedScopeTest do
           ~p"/staff/integrations/yandex-eda"
         ] do
       assert {:ok, lv, _html} = live(conn, path)
-      assert has_element?(lv, "a[href='/staff/integrations']")
+      assert render(element(lv, "#staff-page-header")) =~ ~s(href="/staff/integrations")
       assert render(lv) =~ "All branches"
     end
   end

@@ -189,7 +189,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-4xl mx-auto">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Categories Management")}
         subtitle={gettext("Drag and drop items to reorder menu categories")}

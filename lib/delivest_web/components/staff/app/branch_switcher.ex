@@ -15,15 +15,16 @@ defmodule DelivestWeb.BranchSwitcher do
       )
 
     ~H"""
-    <div id="header-branch" class="dropdown dropdown-end flex-1 min-w-0 sm:flex-none">
-      <div
-        tabindex="0"
-        role="button"
-        class="flex items-center gap-2 h-10 cursor-pointer border border-base-300 py-1.5 px-2.5 sm:px-3 rounded-field hover:bg-base-200 transition-colors min-w-0"
+    <details id="header-branch" class="group/branch relative w-full min-w-0">
+      <summary
+        aria-label={if @current_branch, do: @current_branch.name, else: gettext("No branch selected")}
+        aria-controls="header-branch-menu"
+        title={if @current_branch, do: @current_branch.name, else: gettext("No branch selected")}
+        class="staff-branch-trigger flex w-full min-w-0 cursor-pointer list-none items-center gap-2 rounded-field border border-base-300 px-2.5 py-2 hover:bg-base-200 [&::-webkit-details-marker]:hidden"
       >
         <.icon name="hero-building-storefront" class="size-4 text-base-content/70 shrink-0" />
         <span
-          class="text-sm font-medium text-base-content truncate sm:max-w-75 lg:max-w-none"
+          class="staff-sidebar-label truncate text-sm font-medium text-base-content"
           title={@current_branch && @current_branch.name}
         >
           <%= if @current_branch do %>
@@ -32,14 +33,16 @@ defmodule DelivestWeb.BranchSwitcher do
             <span class="font-semibold">{gettext("No branch selected")}</span>
           <% end %>
         </span>
-        <.icon name="hero-chevron-down" class="size-4 text-base-content/50 shrink-0" />
-      </div>
+        <.icon
+          name="hero-chevron-down"
+          class="staff-sidebar-label size-4 shrink-0 text-base-content/50 group-open/branch:rotate-180"
+        />
+      </summary>
 
       <div
-        tabindex="0"
         id="header-branch-menu"
         phx-hook=".BranchFilter"
-        class="dropdown-content z-1 mt-2 w-72 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+        class="staff-branch-menu absolute left-0 top-full z-[70] mt-2 w-72 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
       >
         <label :if={@searchable} class="input input-sm mb-2 w-full">
           <.icon name="hero-magnifying-glass" class="size-4 text-base-content/50" />
@@ -72,18 +75,36 @@ defmodule DelivestWeb.BranchSwitcher do
           </li>
         </ul>
       </div>
-    </div>
+    </details>
 
     <script :type={Phoenix.LiveView.ColocatedHook} name=".BranchFilter">
       export default {
         mounted() {
-          this.el.addEventListener("input", (event) => {
+          this.details = this.el.closest("details")
+          this.onInput = (event) => {
             if (!event.target.matches("[data-filter]")) return
             const query = event.target.value.trim().toLowerCase()
             this.el.querySelectorAll("li[data-name]").forEach((item) => {
               item.hidden = query !== "" && !item.dataset.name.includes(query)
             })
-          })
+          }
+          this.onKeyDown = (event) => {
+            if (event.key !== "Escape" || !this.details.open) return
+            this.details.open = false
+            this.details.querySelector("summary").focus()
+            event.preventDefault()
+          }
+          this.onOutsideClick = (event) => {
+            if (this.details.open && !this.details.contains(event.target)) this.details.open = false
+          }
+          this.el.addEventListener("input", this.onInput)
+          this.details.addEventListener("keydown", this.onKeyDown)
+          document.addEventListener("click", this.onOutsideClick)
+        },
+        destroyed() {
+          this.el.removeEventListener("input", this.onInput)
+          this.details.removeEventListener("keydown", this.onKeyDown)
+          document.removeEventListener("click", this.onOutsideClick)
         }
       }
     </script>

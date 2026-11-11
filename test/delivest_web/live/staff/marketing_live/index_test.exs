@@ -123,7 +123,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     conn = init_test_session(ctx.conn, %{"locale" => "ru"})
 
     {:ok, index, _} = live(conn, ~p"/staff/marketing/policies")
-    assert has_element?(index, "h1", "Маркетинговые политики")
+    assert render(element(index, "#staff-page-header")) =~ "Маркетинговые политики"
     assert has_element?(index, "a", "Новая политика")
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing/new")

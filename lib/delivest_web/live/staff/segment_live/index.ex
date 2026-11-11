@@ -721,22 +721,19 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
-      <header class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p class="text-sm uppercase tracking-wide text-base-content/60">Клиенты</p><h1 class="text-3xl font-semibold">
-            Сегменты
-          </h1>
-          <p class="mt-2 text-sm text-base-content/70">
-            Группируйте клиентов вручную или по их выполненным заказам.
-          </p>
-        </div>
-        <.link
-          :if={@can_manage and @live_action not in [:new, :edit]}
-          navigate={~p"/staff/segments/new"}
-          class="btn btn-primary"
-        >Создать сегмент</.link>
-      </header>
+    <div class="space-y-6">
+      <.page_header
+        title="Сегменты"
+        subtitle="Группируйте клиентов вручную или по их выполненным заказам."
+      >
+        <:actions>
+          <.link
+            :if={@can_manage and @live_action not in [:new, :edit]}
+            navigate={~p"/staff/segments/new"}
+            class="btn btn-primary"
+          >Создать сегмент</.link>
+        </:actions>
+      </.page_header>
 
       <section :if={@live_action == :index} id="segment-list" class="space-y-3">
         <div

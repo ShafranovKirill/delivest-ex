@@ -211,6 +211,12 @@ defmodule DelivestWeb.StaffNav do
         item(:roles, ~p"/staff/roles", "hero-shield-check", gettext("Roles"))
         |> allowed(staff, "roles.read")
       ]),
+      group(:diagnostics, "hero-beaker", gettext("Diagnostics"), [
+        item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
+        |> allowed(staff, "logs.read"),
+        item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))
+        |> allowed(staff, "logs.read")
+      ]),
       item(:settings, ~p"/staff/settings", "hero-cog-6-tooth", gettext("Settings"))
       |> then(fn item ->
         if Enum.any?(
@@ -218,13 +224,7 @@ defmodule DelivestWeb.StaffNav do
              &can?(staff, &1)
            ),
            do: covering(item, [:branches, :integrations, :delivery])
-      end),
-      group(:diagnostics, "hero-wrench-screwdriver", gettext("Diagnostics"), [
-        item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
-        |> allowed(staff, "logs.read"),
-        item(:metrics, ~p"/staff/metrics", "hero-chart-bar", gettext("Metrics"))
-        |> allowed(staff, "logs.read")
-      ])
+      end)
     ]
     |> compact_all()
   end

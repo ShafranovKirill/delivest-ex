@@ -56,7 +56,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Branch couriers")}
         subtitle={

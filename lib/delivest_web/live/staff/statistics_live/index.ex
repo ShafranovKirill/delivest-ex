@@ -353,20 +353,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
-      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-display font-bold text-base-content">
-            {gettext("Statistics")}
-          </h1>
-          <p class="text-sm text-base-content/60">
-            {if @current_branch, do: @current_branch.name, else: gettext("All branches")}
-            <%= if is_nil(@period_error) do %>
-              · {format_period(@period)}
-            <% end %>
-          </p>
-        </div>
-
+    <div class="space-y-6">
+      <.page_header
+        title={gettext("Statistics")}
+        subtitle={
+          if is_nil(@period_error),
+            do:
+              "#{if(@current_branch, do: @current_branch.name, else: gettext("All branches"))} · #{format_period(@period)}",
+            else: if(@current_branch, do: @current_branch.name, else: gettext("All branches"))
+        }
+      />
+      <div class="flex flex-wrap justify-start gap-4">
         <.form
           for={@form}
           id="statistics-filter"

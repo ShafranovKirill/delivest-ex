@@ -171,23 +171,22 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="px-4 pt-4 sm:px-6">
-      <.navigation
-        staff={@current_staff}
-        branches={@staff_branches}
-        branch={@current_branch}
-        active={:promotions}
-      />
-    </div>
     <div
       :if={@promotion && @live_action in [:full, :first_order, :edit]}
       id="promotion-editor"
-      class="space-y-6 py-4 sm:p-6 max-w-7xl mx-auto"
+      class="space-y-6"
     >
       <.page_header
         title={@page_title}
         subtitle={gettext("Discounts & promo codes")}
         back={~p"/staff/b/#{@current_branch}/promotions"}
+      />
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:promotions}
       />
 
       <.live_component
@@ -205,12 +204,19 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
     <div
       :if={@live_action == :new}
       id="promotion-scenarios"
-      class="space-y-6 py-4 sm:p-6 max-w-5xl mx-auto"
+      class="space-y-6"
     >
       <.page_header
         title={@page_title}
         subtitle={gettext("Discounts & promo codes")}
         back={~p"/staff/b/#{@current_branch}/promotions"}
+      />
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:promotions}
       />
       <div class="grid gap-4 md:grid-cols-3">
         <.link
@@ -251,7 +257,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
     <div
       :if={@live_action not in [:new, :full, :first_order, :edit]}
-      class="space-y-6 py-4 sm:p-6 max-w-5xl mx-auto"
+      class="space-y-6"
     >
       <.page_header
         title={gettext("Discounts & promo codes")}
@@ -268,6 +274,13 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
           </.link>
         </:actions>
       </.page_header>
+
+      <.navigation
+        staff={@current_staff}
+        branches={@staff_branches}
+        branch={@current_branch}
+        active={:promotions}
+      />
 
       <div
         :if={@promotions == []}

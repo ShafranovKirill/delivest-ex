@@ -38,7 +38,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="marketing-hub" class="space-y-6 py-4 sm:p-6">
+    <div id="marketing-hub" class="space-y-6">
       <.page_header
         title={gettext("Marketing")}
         subtitle={gettext("Choose a marketing area and branch.")}

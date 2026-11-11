@@ -59,7 +59,7 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Payment")}
         subtitle={gettext("How customers of this branch can pay for an order.")}

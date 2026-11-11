@@ -115,3 +115,93 @@
   font-size: clamp(1rem, 4vh, 2rem);
   line-height: 1.1;
 }
+
+/* The staff shell keeps a usable icon rail on small screens. */
+:root { --staff-sidebar-width: 5rem; }
+@media (min-width: 1024px) {
+  :root { --staff-sidebar-width: 18rem; }
+  :root[data-sidebar-collapsed] { --staff-sidebar-width: 5rem; }
+}
+.staff-sidebar { width: var(--staff-sidebar-width); }
+.staff-shell-content { margin-left: 5rem; }
+.staff-header { left: 5rem; }
+.staff-sidebar-overlay { display: none; }
+.staff-profile-menu[hidden] { display: none; }
+.staff-profile-menu {
+  position: absolute;
+  bottom: calc(100% + .5rem);
+  left: 0;
+  z-index: 70;
+  width: min(16rem, calc(100vw - 6rem));
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.staff-profile-trigger[aria-expanded="true"] .staff-profile-chevron { transform: rotate(180deg); }
+.staff-branch-menu { max-width: calc(100vw - 5rem); }
+@media (min-width: 1024px) {
+  .staff-shell-content { margin-left: var(--staff-sidebar-width); }
+  .staff-header { left: var(--staff-sidebar-width); }
+}
+@media (max-width: 1023px) {
+  :root[data-sidebar-open] .staff-sidebar { width: 18rem; }
+  :root[data-sidebar-open] .staff-sidebar-overlay { display: block; }
+}
+@media (max-width: 1023px) {
+  :root:not([data-sidebar-open]) .staff-sidebar-label,
+  :root:not([data-sidebar-open]) .staff-sidebar-group-toggle { display: none; }
+  :root:not([data-sidebar-open]) .staff-sidebar-group-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  :root:not([data-sidebar-open]) .staff-sidebar-nav-link,
+  :root:not([data-sidebar-open]) .staff-sidebar-top-link { justify-content: center; padding-inline: .5rem; }
+  :root:not([data-sidebar-open]) .staff-branch-trigger { justify-content: center; padding-inline: .5rem; }
+  :root:not([data-sidebar-open]) .staff-profile-trigger { padding: 0; }
+  :root:not([data-sidebar-open]) .staff-profile-menu { left: calc(100% + .5rem); bottom: 0; }
+  :root:not([data-sidebar-open]) .staff-sidebar-toggle { width: 1.75rem; min-width: 1.75rem; }
+  :root:not([data-sidebar-open]) .staff-sidebar img { width: 1.5rem; height: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  :root[data-sidebar-collapsed] .staff-sidebar-label,
+  :root[data-sidebar-collapsed] .staff-sidebar-group-toggle { display: none; }
+  :root[data-sidebar-collapsed] .staff-sidebar-group-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  :root[data-sidebar-collapsed] .staff-sidebar-nav-link,
+  :root[data-sidebar-collapsed] .staff-sidebar-top-link { justify-content: center; padding-inline: .5rem; }
+  :root[data-sidebar-collapsed] .staff-branch-trigger { justify-content: center; padding-inline: .5rem; }
+  :root[data-sidebar-collapsed] .staff-profile-trigger { padding: 0; }
+  :root[data-sidebar-collapsed] .staff-profile-menu { left: calc(100% + .5rem); bottom: 0; }
+  :root[data-sidebar-collapsed] .staff-sidebar-toggle { width: 1.75rem; min-width: 1.75rem; }
+  :root[data-sidebar-collapsed] .staff-sidebar img { width: 1.5rem; height: 1.5rem; }
+}
+
+#staff-header-title:has([data-phx-teleported-src]) .staff-header-fallback { display: none; }
+/* Portal source has no visible box, so it must not add a page gap. */
+.space-y-6 > template[data-phx-portal] + * { margin-block-start: 0; }
+
+.staff-sidebar .menu-active,
+.staff-sidebar a.menu-active:hover {
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+  font-weight: 600;
+}
+
+@media (max-width: 639px) {
+  .staff-page-actions > * {
+    min-width: 0;
+    min-height: 2.25rem;
+    height: auto;
+    white-space: normal;
+  }
+}
+
+.staff-sidebar-toggle[aria-expanded="true"] .staff-sidebar-toggle-icon { transform: rotate(180deg); }

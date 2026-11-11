@@ -272,7 +272,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
+    <div class="space-y-6">
       <.page_header
         title={gettext("Bulk add products")}
         subtitle={

@@ -60,15 +60,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
-      <.link
-        navigate={~p"/staff/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/integrations"}
         title={gettext("Delivery address on the map")}
         subtitle={
           gettext(

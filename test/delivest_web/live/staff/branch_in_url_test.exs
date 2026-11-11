@@ -31,10 +31,10 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
              live(ctx.conn, "/staff/b/no-such-branch/orders")
   end
 
-  test "the header switches between accessible branches in place", ctx do
+  test "the sidebar switches between accessible branches in place", ctx do
     {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.own}/products")
 
-    assert has_element?(lv, "#header-branch-#{ctx.own.id}.menu-active")
+    assert has_element?(lv, "#main-sidebar #header-branch-#{ctx.own.id}.menu-active")
 
     assert has_element?(
              lv,

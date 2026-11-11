@@ -114,15 +114,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
-      <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
-        class="btn btn-ghost btn-sm -ml-2"
-      >
-        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
-      </.link>
-
+    <div class="space-y-6">
       <.page_header
+        back={~p"/staff/b/#{@current_branch}/integrations"}
         title="r_keeper"
         subtitle={
           gettext("Orders go to the restaurant r_keeper POS through the White Server gateway.")
