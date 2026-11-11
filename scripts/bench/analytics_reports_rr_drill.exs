@@ -112,7 +112,7 @@ staff =
 
 Delivest.Factory.insert(:staff_branch, staff: staff, branch: branch)
 
-{:ok, %{totals: %{"revenue" => 1_234}, state: :ready}} =
+{:ok, %{totals: %{"revenue" => 1_234}, state: :partial, partial_days: 1}} =
   Reports.read(
     Repo.preload(staff, [:role, :branches]),
     {:branch, branch.id},

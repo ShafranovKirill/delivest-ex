@@ -8,6 +8,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
 
   alias Delivest.{Features, LocalTime, Repo}
   alias Delivest.Advertising.Links
+  alias Delivest.Analytics.Reports.Query
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
   alias DelivestWeb.Staff.StatisticsLive.{Index, ReportComponents}
 
@@ -99,6 +100,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     published(branch, "analytics_funnel", [
       {"funnel", "stage", "session_started", %{"sessions" => 3}},
       {"funnel", "stage", "visit", %{"sessions" => 2}},
+      {"funnel", "session_source", "direct", %{"sessions" => 2}},
+      {"funnel", "session_source", "unknown", %{"sessions" => 1}},
       {"funnel", "order", "all", %{"created" => 1, "converted_sessions" => 1}}
     ])
 
@@ -110,7 +113,16 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
 
     assert has_element?(view, "#statistics-funnel-path", "Sessions started")
     assert has_element?(view, "#statistics-funnel-path", "Visits")
+    assert has_element?(view, "#statistics-funnel-sources", "Direct visit")
+    assert has_element?(view, "#statistics-funnel-sources", "Unknown source")
+    assert has_element?(view, "#statistics-funnel-sources", "unverified observations")
     refute render(view) =~ "session_started"
+
+    day = LocalTime.today(LocalTime.timezone(branch.id))
+
+    assert Query.read("analytics_funnel", [branch.id], day, day, "funnel", %{}, 1).totals[
+             "sessions"
+           ] == 3
   end
 
   test "channel summary uses weighted average and shows cancellations and refunds", %{conn: conn} do

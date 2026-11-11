@@ -62,9 +62,15 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
           {gettext("Last calculation failed; the previous published result remains available.")}
         </p>
         <p :if={@report.covered_days < @report.expected_days} class="text-sm text-warning">
-          {gettext("Only %{covered} of %{expected} branch days have collected data",
+          {gettext("Only %{covered} of %{expected} branch days have complete collection",
             covered: @report.covered_days,
             expected: @report.expected_days
+          )}
+        </p>
+        <p :if={@report.partial_days > 0} class="text-sm text-warning">
+          {gettext(
+            "Collection was interrupted during %{count} branch days; observed activity remains visible",
+            count: @report.partial_days
           )}
         </p>
         <p :if={@report.excluded_branches > 0} class="text-sm text-warning">
@@ -162,6 +168,25 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         <p class="text-xs text-base-content/50">
           {gettext(
             "Percentage of authorized buyers is unavailable: anonymous buyers cannot be counted reliably."
+          )}
+        </p>
+      </div>
+
+      <div
+        :if={@tab == "funnel" and @report.rows != []}
+        id="statistics-funnel-sources"
+        class="rounded-2xl border border-base-300 bg-base-100 p-5"
+      >
+        <h3 class="font-semibold">{gettext("Observed session sources")}</h3>
+        <dl class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div :for={{key, label} <- funnel_sources()}>
+            <dt class="text-xs text-base-content/60">{label}</dt>
+            <dd class="font-semibold tabular-nums">{funnel_source_value(@report, key)}</dd>
+          </div>
+        </dl>
+        <p class="mt-3 text-xs text-base-content/50">
+          {gettext(
+            "These first-event labels are unverified observations, not confirmed advertising attribution."
           )}
         </p>
       </div>
@@ -367,6 +392,22 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
       {"checkout_start", gettext("Checkout started")},
       {"fulfillment_selected", gettext("Fulfillment selected")}
     ]
+  end
+
+  defp funnel_sources do
+    [
+      {"direct", gettext("Direct visit")},
+      {"campaign", gettext("Campaign label (unverified)")},
+      {"unknown", gettext("Unknown source")},
+      {"unavailable", gettext("Source data unavailable")}
+    ]
+  end
+
+  defp funnel_source_value(report, key) do
+    case Enum.find(report.rows, &(&1.dimension == "session_source" and &1.key == key)) do
+      nil -> 0
+      row -> Map.get(row.counts, "sessions", 0)
+    end
   end
 
   defp funnel_outcomes do

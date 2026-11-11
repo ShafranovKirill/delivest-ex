@@ -63,17 +63,22 @@ defmodule Delivest.Analytics.Reports.Refresh do
   end
 
   defp pending_day(feature, branch_id, today, processed) do
+    oldest =
+      if feature == "analytics_extended",
+        do: Date.shift(Date.utc_today(), month: -36),
+        else: Date.add(today, -89)
+
     Repo.query!(
       """
       SELECT s.day, s.revision FROM analytics_report_states s
       LEFT JOIN analytics_report_snapshots p ON p.id=s.snapshot_id
       WHERE s.feature=$1 AND s.branch_id=$2::text::uuid
-        AND (s.day > $4 OR s.snapshot_id IS NOT NULL)
+        AND (s.day >= $4 OR (s.snapshot_id IS NOT NULL AND $1 <> 'analytics_extended'))
         AND (s.snapshot_id IS NULL OR s.revision>p.revision)
         AND NOT (s.day=ANY($5::date[]))
       ORDER BY CASE WHEN s.day=$3 THEN 0 ELSE 1 END, s.day LIMIT 1
       """,
-      [feature, branch_id, today, Date.add(today, -90), processed]
+      [feature, branch_id, today, oldest, processed]
     ).rows
     |> case do
       [[day, revision]] -> {day, revision}
@@ -168,9 +173,11 @@ defmodule Delivest.Analytics.Reports.Refresh do
     today = LocalTime.today(LocalTime.timezone(branch_id))
 
     if Date.diff(today, day) >= 90 do
-      retained = published_rows(feature, branch_id, day, "stage")
+      retained =
+        published_rows(feature, branch_id, day, "stage") ++
+          published_rows(feature, branch_id, day, "session_source")
 
-      Enum.reject(rows, &(&1.dimension == "stage")) ++ retained
+      Enum.reject(rows, &(&1.dimension in ["stage", "session_source"])) ++ retained
     else
       rows
     end

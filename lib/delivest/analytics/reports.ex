@@ -98,6 +98,10 @@ defmodule Delivest.Analytics.Reports do
          :ok <- Identity.authorize(staff, "statistics.read", branch_id),
          {:ok, token} <- Features.snapshot(feature, {:branch, branch_id}),
          :ok <- valid_period(from, to),
+         true <- Date.compare(to, LocalTime.today(LocalTime.timezone(branch_id))) != :gt,
+         true <-
+           feature != "analytics_extended" or
+             Date.compare(from, Date.shift(Date.utc_today(), month: -36)) != :lt,
          true <-
            feature not in ["analytics_funnel", "analytics_links"] or
              Date.diff(LocalTime.today(LocalTime.timezone(branch_id)), from) < 90 do
@@ -152,16 +156,21 @@ defmodule Delivest.Analytics.Reports do
       tab: tab,
       feature: feature,
       state:
-        state(
-          coverage.days,
-          expected,
-          Enum.sum(Map.values(data.totals)),
-          checked_at(job),
-          feature,
-          current?,
-          coverage.dirty
+        if(coverage.days == 0,
+          do: :not_collected,
+          else:
+            state(
+              coverage.complete_days,
+              expected,
+              Enum.sum(Map.values(data.totals)),
+              checked_at(job),
+              feature,
+              current?,
+              coverage.dirty
+            )
         ),
-      covered_days: coverage.days,
+      covered_days: coverage.complete_days,
+      partial_days: coverage.partial_days,
       expected_days: expected,
       last_success_at: coverage.asof,
       last_checked_at: checked_at(job),
@@ -204,8 +213,6 @@ defmodule Delivest.Analytics.Reports do
 
   defp checked_at({:ok, %{last_success_at: checked}}), do: checked
   defp checked_at(_), do: nil
-
-  defp state(0, _expected, _count, _checked, _feature, _current, _dirty), do: :not_collected
 
   defp state(covered, expected, _count, _checked, _feature, _current, _dirty)
        when covered < expected,
