@@ -57,6 +57,93 @@ defmodule Delivest.Net.ProductsTest do
 
       assert {:error, :forbidden} = Net.list_staff_products_for_branch(staff, branch.id)
     end
+
+    test "pages every branch product once when sort values are equal" do
+      staff = staff_with_permissions(["products.read"])
+      branch = insert(:branch)
+      other_branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
+      timestamp = ~U[2025-01-01 00:00:00Z]
+
+      products =
+        for n <- 1..11 do
+          product = insert_product(%{name: "Product #{n}", price: 100})
+          product = Repo.update!(Ecto.Changeset.change(product, inserted_at: timestamp))
+          Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+          product
+        end
+
+      outside = insert_product(%{name: "Outside", price: 100})
+      Relations.create_relation(Repo, "Branch", other_branch.id, "Product", outside.id)
+
+      for order_by <- [nil, ["price"]] do
+        pages =
+          for page <- 1..2 do
+            params = %{"page" => page, "page_size" => 10}
+            params = if order_by, do: Map.put(params, "order_by", order_by), else: params
+
+            assert {:ok, {rows, meta}} =
+                     Net.list_staff_products_for_branch(staff, branch.id, params)
+
+            assert meta.total_count == 11
+            rows
+          end
+
+        ids = pages |> List.flatten() |> Enum.map(& &1.id)
+        assert ids == Enum.sort(Enum.map(products, & &1.id))
+        refute outside.id in ids
+        assert Enum.map(pages, &length/1) == [10, 1]
+      end
+    end
+
+    test "accepts atom params, fills missing directions, and rejects invalid sort" do
+      staff = staff_with_permissions(["products.read"])
+      branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
+      first = insert_product(%{name: "First", price: 100})
+      second = insert_product(%{name: "Second", price: 200})
+
+      for product <- [first, second] do
+        Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+      end
+
+      assert {:ok, {rows, _meta}} =
+               Net.list_staff_products_for_branch(staff, branch.id, %{
+                 order_by: [:price, :name],
+                 order_directions: [:desc],
+                 page: 1,
+                 page_size: 1
+               })
+
+      assert Enum.map(rows, & &1.id) == [second.id]
+
+      assert {:error, %Flop.Meta{}} =
+               Net.list_staff_products_for_branch(staff, branch.id, %{order_by: ["unknown"]})
+    end
+
+    test "reports empty, single, and full first pages" do
+      staff = staff_with_permissions(["products.read"])
+      branch = insert(:branch)
+      insert(:staff_branch, staff: staff, branch: branch)
+
+      for count <- [0, 1, 10] do
+        additional = count - if(count == 10, do: 1, else: 0)
+
+        for {_, n} <- List.duplicate(nil, additional) |> Enum.with_index() do
+          product = insert_product(%{name: "Product #{count}-#{n}"})
+          Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+        end
+
+        assert {:ok, {rows, meta}} =
+                 Net.list_staff_products_for_branch(staff, branch.id, %{
+                   "page" => 1,
+                   "page_size" => 10
+                 })
+
+        assert length(rows) == count
+        assert meta.total_count == count
+      end
+    end
   end
 
   describe "create_product/3" do

@@ -471,10 +471,11 @@ defmodule DelivestWeb.CoreComponents do
           <tr>
             <th :for={col <- @col}>
               <%= if col[:sort] && @meta && @path_fn do %>
-                <% current_sort? = Enum.map(@meta.flop.order_by || [], &to_string/1) == [col[:sort]] %>
+                <% current_sort? =
+                  @meta.flop.order_by |> List.wrap() |> List.first() |> to_string() == col[:sort] %>
                 <% direction =
                   if current_sort? and
-                       Enum.map(@meta.flop.order_directions || [], &to_string/1) == ["asc"],
+                       @meta.flop.order_directions |> List.wrap() |> List.first() == :asc,
                      do: "desc",
                      else: "asc" %>
                 <.link

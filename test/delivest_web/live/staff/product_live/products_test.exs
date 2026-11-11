@@ -67,6 +67,77 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert html =~ "All categories"
       assert html =~ "All statuses"
     end
+
+    test "page links preserve search and sorting without accumulating filters", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      for n <- 1..11, do: insert_branch_product(branch.id, name: "Match #{n}", price: 100)
+      insert_branch_product(branch.id, name: "Other")
+
+      {:ok, lv, _html} =
+        live(conn, ~p"/staff/b/#{branch}/products?search=Match&page=1&page_size=10")
+
+      first_page_ids = product_row_ids(lv)
+      assert length(first_page_ids) == 10
+
+      next_href =
+        lv
+        |> render()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query(".join a:last-child")
+        |> LazyHTML.attribute("href")
+        |> List.first()
+
+      assert next_href
+      query = next_href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+      assert query["search"] == "Match"
+      refute String.contains?(next_href, "filters[")
+
+      lv |> element(".join a:last-child") |> render_click()
+      assert_patch(lv, next_href)
+      assert length(product_row_ids(lv)) == 1
+      assert product_row_ids(lv) -- first_page_ids == product_row_ids(lv)
+
+      {:ok, reloaded, _html} = live(conn, next_href)
+      assert product_row_ids(reloaded) == product_row_ids(lv)
+
+      {:ok, back, _html} =
+        live(conn, ~p"/staff/b/#{branch}/products?search=Match&page=1&page_size=10")
+
+      assert product_row_ids(back) == first_page_ids
+
+      lv |> element("table thead th:nth-child(2) a") |> render_click()
+      first_sort_url = assert_patch(lv)
+      assert String.contains?(first_sort_url, "order_by[]=name")
+      assert String.contains?(first_sort_url, "order_directions[]=asc")
+      assert length(product_row_ids(lv)) == 10
+      assert product_first_name(lv) == "Match 1"
+
+      lv |> element("table thead th:nth-child(2) a") |> render_click()
+      second_sort_url = assert_patch(lv)
+      assert String.contains?(second_sort_url, "order_directions[]=desc")
+      assert length(product_row_ids(lv)) == 10
+      assert product_first_name(lv) == "Match 9"
+    end
+  end
+
+  defp product_row_ids(lv) do
+    lv
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("tbody#products tr[id]")
+    |> LazyHTML.attribute("id")
+  end
+
+  defp product_first_name(lv) do
+    lv
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("tbody#products tr:first-child td:nth-child(2)")
+    |> LazyHTML.text()
+    |> String.trim()
   end
 
   test "uploaded image goes to the product form", %{conn: conn} do
