@@ -6,7 +6,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
   alias DelivestWeb.Staff.ProductLive.CopyComponent
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
   import DelivestWeb.Staff.ProductLive.StopControl, only: [stop_control: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
@@ -439,9 +438,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       <.page_header
         title={gettext("Products")}
         layout={:two_rows}
-        navigation_label={gettext("Products")}
+        title_in_header={false}
       >
-        <:navigation><.tabs current={:products} branch={@current_branch} /></:navigation>
         <:actions>
           <.button
             :if={Identity.can?(@current_staff, "products.create")}

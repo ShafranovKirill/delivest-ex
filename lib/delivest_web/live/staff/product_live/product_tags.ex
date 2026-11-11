@@ -2,6 +2,36 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
   use DelivestWeb, :html
 
   alias Delivest.Net
+  alias Delivest.Identity
+  alias DelivestWeb.StaffBranchPath
+
+  def section(path) when is_binary(path) do
+    case StaffBranchPath.strip(path) do
+      "/staff/products" -> :products
+      "/staff/products/" <> rest -> section_suffix(rest)
+      _ -> nil
+    end
+  end
+
+  def section(_path), do: nil
+
+  def actions?(section, staff) when section in [:modifiers, :tags],
+    do: Identity.can?(staff, "catalog.global.manage")
+
+  def actions?(section, _staff) when section in [:products, :bulk], do: true
+  def actions?(_section, _staff), do: false
+
+  defp section_suffix(rest) do
+    case String.split(rest, "/", trim: true) do
+      ["stops" | _] -> :stops
+      ["modifiers" | _] -> :modifiers
+      ["tags" | _] -> :tags
+      ["suggested" | _] -> :suggested
+      ["bulk" | _] -> :bulk
+      [_ | _] -> :products
+      [] -> :products
+    end
+  end
 
   def without_blank(%{"tags" => tags} = params) when is_list(tags),
     do: %{params | "tags" => Enum.reject(tags, &(&1 == ""))}
@@ -36,7 +66,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
         role="tab"
         aria-current={if @current == key, do: "page"}
         aria-selected={if @current == key, do: "true", else: "false"}
-        class={["tab gap-2 whitespace-nowrap", @current == key && "tab-active font-bold"]}
+        class={["tab gap-2 whitespace-nowrap", @current == key && "tab-active"]}
       >
         <.icon name={icon} class="size-4" /> {label}
       </.link>

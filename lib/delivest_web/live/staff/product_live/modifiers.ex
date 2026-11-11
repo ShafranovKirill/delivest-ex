@@ -4,8 +4,6 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   alias Delivest.Identity
   alias Delivest.Net.{Modifier, ModifierGroup, Modifiers}
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
-
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
   @provider "frontpad"
@@ -265,9 +263,8 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
       <.page_header
         title={gettext("Modifiers")}
         layout={:two_rows}
-        navigation_label={gettext("Products")}
+        title_in_header={false}
       >
-        <:navigation><.tabs current={:modifiers} branch={@current_branch} /></:navigation>
         <:actions>
           <button :if={@can_edit} type="button" phx-click="new_group" class="btn btn-primary btn-sm">
             <.icon name="hero-plus" class="size-4" />

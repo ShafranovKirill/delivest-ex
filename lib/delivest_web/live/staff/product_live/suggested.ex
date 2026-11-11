@@ -4,8 +4,6 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   alias Delivest.{Identity, Net}
   alias DelivestWeb.Staff.ProductLive.BranchProducts
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
-
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
   @impl true
@@ -65,9 +63,8 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
       <.page_header
         title={gettext("Recommended")}
         layout={:two_rows}
-        navigation_label={gettext("Products")}
+        title_in_header={false}
       >
-        <:navigation><.tabs current={:suggested} branch={@current_branch} /></:navigation>
       </.page_header>
 
       <BranchProducts.filter_form

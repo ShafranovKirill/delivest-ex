@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
   alias Delivest.{Identity, Net}
   alias Delivest.Net.{ProductTag, ProductTags, TagIcons}
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1, tag_icon: 1]
+  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tag_icon: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
@@ -130,9 +130,8 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
       <.page_header
         title={gettext("Tags")}
         layout={:two_rows}
-        navigation_label={gettext("Products")}
+        title_in_header={false}
       >
-        <:navigation><.tabs current={:tags} branch={@current_branch} /></:navigation>
         <:actions>
           <.button
             :if={Identity.can?(@current_staff, "catalog.global.manage")}

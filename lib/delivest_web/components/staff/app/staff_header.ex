@@ -1,5 +1,6 @@
 defmodule DelivestWeb.StaffHeader do
   use DelivestWeb, :html
+  alias DelivestWeb.Staff.ProductLive.ProductTags
 
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
@@ -12,6 +13,8 @@ defmodule DelivestWeb.StaffHeader do
   def staff_header(assigns) do
     assigns =
       assign(assigns,
+        product_section:
+          if(assigns.current_branch, do: ProductTags.section(assigns.current_path)),
         context:
           page_context(assigns.current_path, assigns.current_branch, assigns.settings_branch) ||
             gettext("Network")
@@ -20,9 +23,25 @@ defmodule DelivestWeb.StaffHeader do
     ~H"""
     <header
       id="staff-header"
+      data-header-layout={if @product_section, do: "product-tabs"}
+      data-header-actions={
+        if @product_section, do: to_string(ProductTags.actions?(@product_section, @current_staff))
+      }
       class="staff-header fixed top-0 right-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-base-300 bg-base-100 px-4 sm:px-6"
     >
-      <div class="flex min-w-0 flex-1 items-center gap-2 text-sm" aria-label={gettext("Current page")}>
+      <div :if={@product_section} class="flex min-w-0 flex-1 items-center text-sm">
+        <.header_navigation label={gettext("Products")}>
+          <ProductTags.tabs
+            current={if(@product_section == :bulk, do: :products, else: @product_section)}
+            branch={@current_branch}
+          />
+        </.header_navigation>
+      </div>
+      <div
+        :if={is_nil(@product_section)}
+        class="flex min-w-0 flex-1 items-center gap-2 text-sm"
+        aria-label={gettext("Current page")}
+      >
         <span
           id="staff-header-context"
           class="hidden max-w-36 shrink-0 truncate text-base-content/55 md:block"

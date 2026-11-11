@@ -5,6 +5,37 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
   import Delivest.Factory
 
   alias Delivest.{Repo, Relations}
+  alias DelivestWeb.Staff.ProductLive.ProductTags
+
+  test "product section matches only the branch product namespace" do
+    assert ProductTags.section("/staff/b/north/products") == :products
+    assert ProductTags.section("/staff/b/north/products/123/edit") == :products
+    assert ProductTags.section("/staff/b/north/products/tags/new") == :tags
+    assert ProductTags.section("/staff/b/north/products/bulk") == :bulk
+    assert ProductTags.section("/staff/b/north/products-foo") == nil
+    assert ProductTags.section("/staff/products") == :products
+  end
+
+  test "static product HTML has direct tabs before LiveView connects", %{conn: conn} do
+    branch = insert(:branch, name: "Center")
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    conn = get(conn, ~p"/staff/b/#{branch}/products/tags")
+    html = html_response(conn, 200)
+    document = LazyHTML.from_document(html)
+
+    refute Enum.empty?(
+             LazyHTML.query(
+               document,
+               "#staff-header[data-header-layout='product-tabs'] #product-section-tab-tags[aria-current='page']"
+             )
+           )
+
+    assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-context"))
+    assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-title"))
+    assert Enum.empty?(LazyHTML.query(document, "#staff-page-header"))
+  end
 
   test "branch editor sees a refusal when editing a shared product", %{conn: conn} do
     own = insert(:branch)
@@ -68,7 +99,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert html =~ "All statuses"
     end
 
-    test "puts tabs and actions in separate header portals while filters stay in the body", %{
+    test "renders tabs directly in the header and actions in a portal", %{
       conn: conn
     } do
       branch = insert(:branch)
@@ -77,13 +108,23 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
 
-      title_portal = render(element(lv, "#staff-page-header"))
       actions_portal = render(element(lv, "#staff-page-header-actions"))
 
-      assert title_portal =~ ~s(data-phx-portal="#staff-header-title")
-      assert title_portal =~ ~s(aria-label="Products")
-      assert title_portal =~ ~s(role="tablist")
-      assert title_portal =~ ~s(role="tab")
+      assert has_element?(
+               lv,
+               "#staff-header[data-header-layout='product-tabs'][data-header-actions='true']"
+             )
+
+      assert has_element?(
+               lv,
+               "#staff-header #staff-page-header-navigation[aria-label='Products']"
+             )
+
+      assert has_element?(lv, "#staff-header [role='tablist'] [role='tab']")
+      refute has_element?(lv, "#staff-page-header")
+      refute has_element?(lv, "#staff-header-context")
+      refute has_element?(lv, "#staff-header-title")
+      assert has_element?(lv, "main h1.sr-only")
       assert actions_portal =~ ~s(data-phx-portal="#staff-header-actions")
       assert actions_portal =~ ~s(id="copy-products-trigger")
       assert actions_portal =~ ~s(id="export-products")
@@ -93,7 +134,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       refute has_element?(lv, "main #products-filter [role='tablist']")
     end
 
-    test "each product section selects its tab in the header portal", %{conn: conn} do
+    test "each product section selects its tab in the direct header", %{conn: conn} do
       branch = insert(:branch)
       staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
       conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
@@ -107,16 +148,33 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
             {"/bulk", "products", "Bulk add products", true}
           ] do
         {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> path)
-        header = render(element(lv, "#staff-page-header"))
 
-        assert header =~ ~s(data-phx-portal="#staff-header-title")
-        assert header =~ ~s(aria-label="Products")
-        assert header =~ ~s(title="#{title}")
-        assert header =~ ~s(id="product-section-tab-#{key}")
-        assert header =~ ~r/id="product-section-tab-#{key}"[^>]*aria-current="page"/
-        assert header =~ ~r/id="product-section-tab-#{key}"[^>]*aria-selected="true"/
-        assert length(Regex.scan(~r/aria-current="page"/, header)) == 1
-        assert length(Regex.scan(~r/role="tab"/, header)) == 5
+        assert has_element?(
+                 lv,
+                 "#staff-header[data-header-layout='product-tabs'][data-header-actions='#{actions?}']"
+               )
+
+        assert has_element?(
+                 lv,
+                 "#staff-header #product-section-tab-#{key}[aria-current='page'][aria-selected='true']"
+               )
+
+        for other <- ~w(products stops modifiers tags suggested) do
+          assert has_element?(lv, "#staff-header #product-section-tab-#{other}[role='tab']")
+
+          if other != key,
+            do:
+              refute(
+                has_element?(
+                  lv,
+                  "#staff-header #product-section-tab-#{other}[aria-current='page']"
+                )
+              )
+        end
+
+        assert has_element?(lv, "main h1.sr-only", title)
+        refute has_element?(lv, "#staff-page-header")
+        refute has_element?(lv, "#staff-header-context")
 
         if actions? do
           assert render(element(lv, "#staff-page-header-actions")) =~
@@ -135,7 +193,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       for section <- ["modifiers", "tags"] do
         {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> "/" <> section)
-        assert render(element(lv, "#staff-page-header")) =~ ~s(role="tablist")
+        assert has_element?(lv, "#staff-header[data-header-actions='false'] [role='tablist']")
         refute render(element(lv, "#staff-page-header-actions")) =~ ~s(class="btn)
       end
     end

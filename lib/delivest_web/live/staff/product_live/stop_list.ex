@@ -5,7 +5,6 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
   alias Delivest.Net.Stops
   alias DelivestWeb.Staff.ProductLive.BranchProducts
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
   import DelivestWeb.Staff.ProductLive.StopControl, only: [stop_control: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
@@ -89,9 +88,8 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
       <.page_header
         title={gettext("Stop list")}
         layout={:two_rows}
-        navigation_label={gettext("Products")}
+        title_in_header={false}
       >
-        <:navigation><.tabs current={:stops} branch={@current_branch} /></:navigation>
       </.page_header>
 
       <BranchProducts.filter_form

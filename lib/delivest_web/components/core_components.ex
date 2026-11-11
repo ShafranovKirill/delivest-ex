@@ -335,11 +335,14 @@ defmodule DelivestWeb.CoreComponents do
   Renders the page title in the staff header and its subtitle and actions in the page body.
   With `layout: :two_rows`, navigation shares the title row and actions move to a second
   staff header row. Set `portal: false` to keep all content in the page body.
+  Set `title_in_header: false` when the layout renders navigation directly; the title
+  remains available to screen readers in the page body.
   """
   attr :title, :string, required: true
   attr :subtitle, :string, default: nil
   attr :back, :string, default: nil
   attr :portal, :boolean, default: true
+  attr :title_in_header, :boolean, default: true
   attr :layout, :atom, default: :standard, values: [:standard, :two_rows]
   attr :navigation_label, :string, default: nil
   slot :navigation
@@ -347,7 +350,7 @@ defmodule DelivestWeb.CoreComponents do
 
   def page_header(assigns) do
     ~H"""
-    <.portal :if={@portal} id="staff-page-header" target="#staff-header-title">
+    <.portal :if={@portal and @title_in_header} id="staff-page-header" target="#staff-header-title">
       <div class={[
         "flex w-full min-w-0 items-center gap-1.5",
         @layout == :two_rows && "staff-page-header-two-rows"
@@ -370,35 +373,9 @@ defmodule DelivestWeb.CoreComponents do
         >
           {@title}
         </h1>
-        <nav
-          :if={@layout == :two_rows and @navigation != []}
-          id="staff-page-header-navigation"
-          phx-hook=".ActiveHeaderTab"
-          class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
-          aria-label={@navigation_label || gettext("Page sections")}
-        >
+        <.header_navigation :if={@layout == :two_rows and @navigation != []} label={@navigation_label}>
           {render_slot(@navigation)}
-        </nav>
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
-          export default {
-            mounted() {
-              this.resizeObserver = new ResizeObserver(() => this.revealActiveTab())
-              this.resizeObserver.observe(this.el)
-              this.revealActiveTab()
-            },
-            updated() { this.revealActiveTab() },
-            destroyed() { this.resizeObserver.disconnect() },
-            revealActiveTab() {
-              const active = this.el.querySelector('[aria-current="page"]')
-              if (!active) return
-              const left = active.getBoundingClientRect().left - this.el.getBoundingClientRect().left + this.el.scrollLeft
-              const right = left + active.offsetWidth
-              if (left < this.el.scrollLeft || right > this.el.scrollLeft + this.el.clientWidth) {
-                this.el.scrollLeft = Math.max(0, left - (this.el.clientWidth - active.offsetWidth) / 2)
-              }
-            }
-          }
-        </script>
+        </.header_navigation>
       </div>
     </.portal>
 
@@ -411,6 +388,8 @@ defmodule DelivestWeb.CoreComponents do
         {render_slot(@actions)}
       </div>
     </.portal>
+
+    <h1 :if={@portal and not @title_in_header} class="sr-only">{@title}</h1>
 
     <div
       :if={not @portal or not is_nil(@subtitle) or (@layout == :standard and @actions != [])}
@@ -444,6 +423,42 @@ defmodule DelivestWeb.CoreComponents do
         {render_slot(@actions)}
       </div>
     </div>
+    """
+  end
+
+  attr :label, :string, default: nil
+  slot :inner_block, required: true
+
+  def header_navigation(assigns) do
+    ~H"""
+    <nav
+      id="staff-page-header-navigation"
+      phx-hook=".ActiveHeaderTab"
+      class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
+      aria-label={@label || gettext("Page sections")}
+    >
+      {render_slot(@inner_block)}
+    </nav>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
+      export default {
+        mounted() {
+          this.resizeObserver = new ResizeObserver(() => this.revealActiveTab())
+          this.resizeObserver.observe(this.el)
+          this.revealActiveTab()
+        },
+        updated() { this.revealActiveTab() },
+        destroyed() { this.resizeObserver.disconnect() },
+        revealActiveTab() {
+          const active = this.el.querySelector('[aria-current="page"]')
+          if (!active) return
+          const left = active.getBoundingClientRect().left - this.el.getBoundingClientRect().left + this.el.scrollLeft
+          const right = left + active.offsetWidth
+          if (left < this.el.scrollLeft || right > this.el.scrollLeft + this.el.clientWidth) {
+            this.el.scrollLeft = Math.max(0, left - (this.el.clientWidth - active.offsetWidth) / 2)
+          }
+        }
+      }
+    </script>
     """
   end
 
