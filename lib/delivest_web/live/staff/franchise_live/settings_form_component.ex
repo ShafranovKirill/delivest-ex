@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
+  # TODO: Перенести общие настройки бонусов из настроек франшизы в «Сеть → Маркетинг → Бонусы»; сохранить общее хранение и право franchise.update.
   use DelivestWeb, :live_component
 
   alias Delivest.Franchise

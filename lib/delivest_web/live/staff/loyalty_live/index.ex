@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.LoyaltyLive.Index do
+  # TODO: Объединить в «Маркетинг → Бонусы» общие настройки программы и настройки выбранного филиала; сохранить promotions.read/update и филиальные настройки товаров.
   import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 

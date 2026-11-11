@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
+  # TODO: Перенести настройки YCart (enabled/yandex_org_id) из формы филиала в «Интеграции»; до переноса проверить branches.update против integrations.update, не расширяя доступ.
   use DelivestWeb, :live_component
 
   import DelivestWeb.Staff.BranchLive.LocationFields

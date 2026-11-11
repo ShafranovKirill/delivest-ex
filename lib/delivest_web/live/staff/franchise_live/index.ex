@@ -1,4 +1,5 @@
 defmodule DelivestWeb.Staff.FranchiseLive.Index do
+  # TODO: Объединить настройки франшизы и BranchLive.Edit в единый раздел «Настройки» с явным выбором общей области или доступного филиала; сохранить разграничение прав.
   use DelivestWeb, :live_view
 
   import DelivestWeb.Staff.SettingsComponents
