@@ -10,6 +10,7 @@ defmodule Delivest.Analytics.ReportsTest do
   alias Delivest.{Analytics.Reports, Background, Features, Funnel, LocalTime, Payments, Repo}
   alias Delivest.Analytics.Reports.{Prune, Query}
   alias Delivest.Advertising.{Click, Links}
+  alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Carts, Orders}
 
   setup do
@@ -384,6 +385,55 @@ defmodule Delivest.Analytics.ReportsTest do
 
     assert {:ok, %{totals: %{"revenue" => 1_000}}} =
              Reports.read(ctx.admin, :franchise, period, "franchise")
+  end
+
+  test "franchise read keeps SQL query count bounded with 50 cold branches", ctx do
+    enable("analytics_franchise", ctx.branch)
+
+    for _ <- 1..49 do
+      branch = insert(:branch)
+
+      assert {:ok, _} =
+               Features.configure("analytics_franchise", {:branch, branch.id}, true,
+                 actor: "host"
+               )
+    end
+
+    Cachex.clear(:branch_cache)
+    {:ok, counter} = Agent.start_link(fn -> 0 end)
+    handler = "reports-network-queries-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:delivest, :repo, :query],
+        fn _, _, _, _ -> Agent.update(counter, &(&1 + 1)) end,
+        nil
+      )
+
+    on_exit(fn ->
+      :telemetry.detach(handler)
+      if Process.alive?(counter), do: Agent.stop(counter)
+    end)
+
+    day = today(ctx.branch)
+
+    assert {:ok, %{state: :not_collected, expected_days: 50}} =
+             Reports.read(ctx.admin, :franchise, {day, day}, "franchise")
+
+    assert Agent.get(counter, & &1) < 30
+  end
+
+  test "network current-day check respects both branch local dates", ctx do
+    west = insert(:branch)
+    Repo.insert!(%BranchInfo{branch_id: ctx.branch.id, timezone: "Europe/Moscow"})
+    Repo.insert!(%BranchInfo{branch_id: west.id, timezone: "Europe/Kaliningrad"})
+    {:ok, now, _} = DateTime.from_iso8601("2026-11-10T21:30:00Z")
+
+    refute Query.current_period?([ctx.branch.id], ~D[2026-11-10], now)
+    assert Query.current_period?([west.id], ~D[2026-11-10], now)
+    assert Query.current_period?([ctx.branch.id, west.id], ~D[2026-11-10], now)
+    refute Query.current_period?([], ~D[2026-11-10], now)
   end
 
   test "manual rebuild is host admin only and never runs on read", ctx do

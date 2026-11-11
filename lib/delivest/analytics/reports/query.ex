@@ -13,6 +13,29 @@ defmodule Delivest.Analytics.Reports.Query do
 
   def page_size, do: @page_size
 
+  def current_period?(ids, to, now \\ DateTime.utc_now())
+
+  def current_period?([], _to, _now), do: false
+
+  def current_period?(ids, to, now) do
+    ids = Enum.map(ids, &Ecto.UUID.dump!/1)
+
+    [[current?]] =
+      Repo.query!(
+        """
+        SELECT EXISTS (
+          SELECT 1 FROM unnest($1::uuid[]) b(id)
+          LEFT JOIN branch_info bi ON bi.branch_id=b.id
+          WHERE $2::date >= ($3::timestamptz AT TIME ZONE
+            COALESCE(bi.timezone,(SELECT timezone FROM franchise_settings LIMIT 1),'Europe/Moscow'))::date
+        )
+        """,
+        [ids, to, now]
+      ).rows
+
+    current?
+  end
+
   def schedule_health([], _kind), do: {:ok, %{state: :queued, last_success_at: nil}}
 
   def schedule_health(ids, kind) do
