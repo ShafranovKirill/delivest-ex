@@ -18,7 +18,11 @@ defmodule DelivestWeb.StaffNav do
   def entries(staff, branch) do
     [
       section(:branch, branch && branch.name, branch_entries(staff, branch)),
-      section(:network, gettext("Network"), common_entries(staff) ++ network_entries(staff))
+      section(
+        :network,
+        gettext("Network"),
+        common_entries(staff, branch) ++ network_entries(staff)
+      )
     ]
     |> Enum.reject(&(&1.entries == []))
   end
@@ -131,28 +135,67 @@ defmodule DelivestWeb.StaffNav do
     |> compact_all()
   end
 
-  defp common_entries(staff) do
+  defp common_entries(staff, branch) do
     [
       item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
       |> allowed(staff, "statistics.read"),
-      item(:marketing, ~p"/staff/marketing", "hero-megaphone", gettext("Marketing"))
-      |> covering([:stocks, :promotions, :loyalty, :advertising_links])
-      |> then(fn item -> if marketing_access?(staff), do: item end),
+      group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch)),
       item(:integrations, ~p"/staff/integrations", "hero-puzzle-piece", gettext("Integrations"))
       |> allowed(staff, "integrations.read")
     ]
     |> compact_all()
   end
 
-  defp marketing_access?(staff) do
-    (can?(staff, "marketing.read") and Features.enabled?("marketing_policies", :franchise)) or
-      can?(staff, "stocks.read") or can?(staff, "promotions.read") or
-      (can?(staff, "statistics.read") and
-         Enum.any?(
-           Identity.list_branch_for_staff(staff),
-           &Features.enabled?("analytics_links", {:branch, &1.id})
-         ))
+  defp marketing_entries(staff, branch) do
+    available_branches =
+      if(branch, do: [branch], else: Identity.list_branch_for_staff(staff))
+      |> Delivest.Repo.preload(:info)
+
+    [
+      item(
+        :marketing_policies,
+        ~p"/staff/marketing/policies",
+        "hero-rectangle-stack",
+        gettext("Marketing policies")
+      )
+      |> then(fn item ->
+        if can?(staff, "marketing.read") and Features.enabled?("marketing_policies", :franchise),
+          do: item
+      end),
+      item(:stocks, marketing_path(branch, "stocks"), "hero-photo", gettext("Banners"))
+      |> allowed(staff, "stocks.read")
+      |> available_in(available_branches, fn _ -> true end),
+      item(
+        :promotions,
+        marketing_path(branch, "promotions"),
+        "hero-receipt-percent",
+        gettext("Discounts & promo codes")
+      )
+      |> allowed(staff, "promotions.read")
+      |> available_in(available_branches, fn _ -> true end),
+      item(:loyalty, marketing_path(branch, "loyalty"), "hero-star", gettext("Loyalty"))
+      |> allowed(staff, "promotions.read")
+      |> available_in(available_branches, &Gateway.own?(&1, :loyalty)),
+      item(
+        :advertising_links,
+        marketing_path(branch, "links"),
+        "hero-link",
+        gettext("Advertising links")
+      )
+      |> allowed(staff, "statistics.read")
+      |> available_in(available_branches, &Features.enabled?("analytics_links", {:branch, &1.id}))
+    ]
+    |> Enum.reject(&is_nil/1)
   end
+
+  defp marketing_path(nil, section), do: ~p"/staff/marketing?#{%{section: section}}"
+  defp marketing_path(branch, "stocks"), do: ~p"/staff/b/#{branch}/stocks"
+  defp marketing_path(branch, "promotions"), do: ~p"/staff/b/#{branch}/promotions"
+  defp marketing_path(branch, "loyalty"), do: ~p"/staff/b/#{branch}/loyalty"
+  defp marketing_path(branch, "links"), do: ~p"/staff/b/#{branch}/advertising-links"
+
+  defp available_in(nil, _branches, _filter), do: nil
+  defp available_in(item, branches, filter), do: if(Enum.any?(branches, filter), do: item)
 
   defp network_entries(staff) do
     [
@@ -187,6 +230,13 @@ defmodule DelivestWeb.StaffNav do
   end
 
   defp compact_all(entries), do: entries |> Enum.map(&compact/1) |> Enum.reject(&is_nil/1)
+
+  defp compact(%{kind: :group, id: :marketing, items: items} = group) do
+    case Enum.reject(items, &is_nil/1) do
+      [] -> nil
+      items -> %{group | items: items}
+    end
+  end
 
   defp compact(%{kind: :group, items: items} = group) do
     case Enum.reject(items, &is_nil/1) do

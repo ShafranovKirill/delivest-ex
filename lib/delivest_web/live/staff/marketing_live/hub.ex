@@ -22,7 +22,17 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
   @impl true
   def handle_params(params, _url, socket) do
     branch = Enum.find(socket.assigns.staff_branches, &(&1.slug == params["branch"]))
-    {:noreply, assign(socket, current_branch: branch)}
+
+    section =
+      case params["section"] do
+        "stocks" -> :stocks
+        "promotions" -> :promotions
+        "loyalty" -> :loyalty
+        "links" -> :links
+        _ -> :hub
+      end
+
+    {:noreply, assign(socket, current_branch: branch, section: section)}
   end
 
   @impl true
@@ -37,7 +47,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
         staff={@current_staff}
         branches={@staff_branches}
         branch={@current_branch}
-        active={:hub}
+        active={@section}
       />
       <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <.link

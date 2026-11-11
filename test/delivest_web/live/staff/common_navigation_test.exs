@@ -108,9 +108,9 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, stocks, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
     assert has_element?(stocks, "#marketing-navigation")
-    assert has_element?(stocks, "#nav-section-network a[href='/staff/marketing']")
+    assert has_element?(stocks, "#nav-section-network #nav-group-marketing")
+    assert has_element?(stocks, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/stocks']")
     refute has_element?(stocks, "#nav-section-common")
-    refute has_element?(stocks, "#main-sidebar a[href='/staff/b/#{branch.slug}/stocks']")
   end
 
   test "marketing branch selection hides CRM-owned loyalty", %{conn: conn} do
@@ -131,5 +131,46 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
            )
 
     refute has_element?(view, "#marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']")
+    refute has_element?(view, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/loyalty']")
+  end
+
+  test "marketing sidebar group exposes all authorized areas in the current branch", %{conn: conn} do
+    branch = insert(:branch)
+    {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("analytics_links", {:branch, branch.id}, true, actor: "test")
+
+    conn =
+      login(
+        conn,
+        ~w(marketing.read stocks.read promotions.read statistics.read),
+        [branch],
+        branch.id
+      )
+
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
+    assert has_element?(view, "#nav-section-network #nav-group-marketing[data-open]")
+
+    for path <- [
+          "/staff/marketing/policies",
+          "/staff/b/#{branch.slug}/stocks",
+          "/staff/b/#{branch.slug}/promotions",
+          "/staff/b/#{branch.slug}/loyalty",
+          "/staff/b/#{branch.slug}/advertising-links"
+        ] do
+      assert has_element?(view, "#nav-group-marketing a[href='#{path}']")
+    end
+  end
+
+  test "marketing child without active branch keeps its section through branch selection", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    conn = login(conn, ["stocks.read"], [branch])
+
+    {:ok, view, _} = live(conn, ~p"/staff/marketing?section=stocks")
+    assert has_element?(view, "#nav-group-marketing a[href='/staff/marketing?section=stocks']")
+    assert has_element?(view, "#marketing-branches a[href='/staff/b/#{branch.slug}/stocks']")
+    refute has_element?(view, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/stocks']")
   end
 end

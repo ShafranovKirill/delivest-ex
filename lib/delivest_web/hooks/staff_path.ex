@@ -8,15 +8,21 @@ defmodule DelivestWeb.Hooks.StaffPath do
      |> attach_hook(:set_current_path, :handle_params, &set_current_path/3)}
   end
 
-  defp set_current_path(_params, url, socket) do
+  defp set_current_path(params, url, socket) do
     path = URI.parse(url).path
+    stripped = DelivestWeb.StaffBranchPath.strip(path)
+
+    page =
+      if stripped == "/staff/marketing",
+        do: marketing_section_page(params["section"]),
+        else: determine_page_by_path(stripped)
 
     socket =
       socket
       |> assign(:current_path, path)
       |> assign(
         :current_page,
-        path |> DelivestWeb.StaffBranchPath.strip() |> determine_page_by_path()
+        page
       )
 
     {:cont, socket}
@@ -39,7 +45,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/branches/select", :branches_select},
     {"/staff/branches", :branches},
     {"/staff/clients", :clients},
-    {"/staff/marketing", :marketing},
+    {"/staff/marketing", :marketing_policies},
     {"/staff/advertising-links", :advertising_links},
     {"/staff/employee", :employee},
     {"/staff/roles", :roles},
@@ -56,4 +62,10 @@ defmodule DelivestWeb.Hooks.StaffPath do
   end
 
   defp determine_page_by_path(_path), do: :unknown
+
+  defp marketing_section_page("stocks"), do: :stocks
+  defp marketing_section_page("promotions"), do: :promotions
+  defp marketing_section_page("loyalty"), do: :loyalty
+  defp marketing_section_page("links"), do: :advertising_links
+  defp marketing_section_page(_), do: :marketing
 end
