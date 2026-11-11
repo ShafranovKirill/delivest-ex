@@ -1,4 +1,4 @@
-alias Delivest.{Relations, Repo}
+alias Delivest.{Features, Relations, Repo}
 alias Delivest.Identity.{Branch, RolePresets, Role, Staff, Staffs}
 alias Delivest.Identity.Branch.BranchInfo
 alias Delivest.Net.{Category, Product}
@@ -36,6 +36,11 @@ branch =
     %Branch{}
     |> Branch.changeset(%{name: "E2E", slug: "e2e", code: "E2E", is_active: true})
     |> Repo.insert!()
+
+for feature <- ["analytics_funnel", "analytics_links"],
+    scope <- [:franchise, {:branch, branch.id}] do
+  {:ok, _} = Features.configure(feature, scope, true, actor: "e2e-seed")
+end
 
 Repo.get_by(BranchInfo, branch_id: branch.id) ||
   %BranchInfo{

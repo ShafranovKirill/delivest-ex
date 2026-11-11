@@ -4,6 +4,7 @@ defmodule Delivest.FeaturesTest do
 
   alias Delivest.{Features, Repo}
   alias Delivest.Background.Schedule
+  alias Delivest.Features.Gate
 
   test "default off, unknown feature and branch fail closed" do
     branch = insert(:branch)
@@ -77,6 +78,8 @@ defmodule Delivest.FeaturesTest do
   end
 
   test "publication and host revocation serialize on independent database connections" do
+    supervisor = race_supervisor("segments")
+
     unboxed(fn ->
       assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "race")
     end)
@@ -90,7 +93,7 @@ defmodule Delivest.FeaturesTest do
     parent = self()
 
     publisher =
-      Task.async(fn ->
+      Task.Supervisor.async_nolink(supervisor, fn ->
         unboxed(fn ->
           Features.with_enabled("segments", :franchise, token, fn ->
             send(parent, {:publication_locked, self()})
@@ -107,7 +110,7 @@ defmodule Delivest.FeaturesTest do
     assert_receive {:publication_locked, publishing_pid}
 
     revoker =
-      Task.async(fn ->
+      Task.Supervisor.async_nolink(supervisor, fn ->
         unboxed(fn ->
           result = Features.configure("segments", :franchise, false, actor: "race")
           send(parent, :revocation_done)
@@ -155,6 +158,8 @@ defmodule Delivest.FeaturesTest do
   end
 
   test "independent publishers share gate locks while disable waits" do
+    supervisor = race_supervisor("analytics_links")
+
     unboxed(fn ->
       {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "race")
     end)
@@ -169,7 +174,7 @@ defmodule Delivest.FeaturesTest do
 
     publishers =
       for _ <- 1..2 do
-        Task.async(fn ->
+        Task.Supervisor.async_nolink(supervisor, fn ->
           unboxed(fn ->
             Repo.transaction(fn ->
               Features.publish_if_enabled([{"analytics_links", :franchise, token}], fn ->
@@ -191,7 +196,7 @@ defmodule Delivest.FeaturesTest do
     refute first == second
 
     revoker =
-      Task.async(fn ->
+      Task.Supervisor.async_nolink(supervisor, fn ->
         unboxed(fn ->
           result = Features.configure("analytics_links", :franchise, false, actor: "race")
           send(parent, :revocation_done)
@@ -261,4 +266,34 @@ defmodule Delivest.FeaturesTest do
   end
 
   defp unboxed(fun), do: Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fun)
+
+  defp race_supervisor(feature) do
+    supervisor = start_supervised!(Task.Supervisor)
+
+    on_exit(fn ->
+      try do
+        Supervisor.stop(supervisor)
+      catch
+        :exit, _ -> :ok
+      end
+
+      unboxed(fn ->
+        Repo.delete_all(
+          from g in Gate, where: g.feature == ^feature and g.scope_key == "franchise"
+        )
+
+        Repo.delete_all(
+          from a in "feature_audits", where: a.feature == ^feature and a.actor == "race"
+        )
+
+        if feature == "segments" do
+          Repo.delete_all(
+            from s in Schedule, where: s.kind == "segments.refresh" and s.scope_key == "franchise"
+          )
+        end
+      end)
+    end)
+
+    supervisor
+  end
 end
