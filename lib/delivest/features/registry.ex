@@ -5,10 +5,15 @@ defmodule Delivest.Features.Registry do
     "notifications",
     "marketing_policies",
     "analytics_funnel",
+    "analytics_extended",
+    "analytics_franchise",
     "analytics_links"
   ]
 
-  @dependencies %{"marketing_policies" => ["segments", "notifications"]}
+  @dependencies %{
+    "marketing_policies" => ["segments", "notifications"],
+    "analytics_franchise" => ["analytics_extended"]
+  }
   @permission_prefixes %{"segments." => "segments", "marketing." => "marketing_policies"}
 
   def known?(feature), do: feature in @features

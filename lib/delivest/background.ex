@@ -13,7 +13,7 @@ defmodule Delivest.Background do
 
   def run_now(kind, scope, opts) when is_list(opts) do
     with {:ok, %{manual?: true} = task} <- Registry.fetch(kind),
-         true <- task.scope == scope,
+         true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope),
          {:ok, token} <- Features.snapshot(task.feature, scope) do
       result =
@@ -97,11 +97,14 @@ defmodule Delivest.Background do
 
     Enum.each(Registry.tasks_for_feature(feature), fn {kind, task} ->
       cond do
-        scope == task.scope and enabled ->
+        matching_scope?(task.scope, scope) and enabled ->
           schedule(kind, scope)
 
-        scope == task.scope ->
+        matching_scope?(task.scope, scope) ->
           unschedule(kind, scope)
+
+        scope == :franchise and task.scope == :branch and not enabled ->
+          unschedule_branches(kind)
 
         match?({:branch, _}, scope) and task.scope == :franchise and
             Features.enabled?(feature, :franchise) ->
@@ -117,7 +120,7 @@ defmodule Delivest.Background do
 
   def invalidate(kind, scope) do
     with {:ok, task} <- Registry.fetch(kind),
-         true <- task.scope == scope,
+         true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope) do
       now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
@@ -142,7 +145,7 @@ defmodule Delivest.Background do
 
   def schedule(kind, scope) do
     with {:ok, task} <- Registry.fetch(kind),
-         true <- task.scope == scope,
+         true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope),
          true <- Features.enabled?(task.feature, scope) do
       now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
@@ -162,7 +165,7 @@ defmodule Delivest.Background do
 
   def unschedule(kind, scope) do
     with {:ok, task} <- Registry.fetch(kind),
-         true <- task.scope == scope,
+         true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope) do
       Repo.delete_all(from s in Schedule, where: s.kind == ^kind and s.scope_key == ^key)
       cancel_pending(kind, key)
@@ -261,7 +264,7 @@ defmodule Delivest.Background do
   @doc "Read calculation state without creating a schedule or job."
   def calculation_status(kind, scope) do
     with {:ok, %{manual?: true} = task} <- Registry.fetch(kind),
-         true <- task.scope == scope,
+         true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope),
          {:ok, _} <- Features.snapshot(task.feature, scope) do
       row = Repo.one(from s in Schedule, where: s.kind == ^kind and s.scope_key == ^key)
@@ -309,6 +312,9 @@ defmodule Delivest.Background do
       _ -> :queued
     end
   end
+
+  defp matching_scope?(:branch, {:branch, id}) when is_binary(id), do: true
+  defp matching_scope?(configured, scope), do: configured == scope
 
   defp owner_job(nil), do: nil
   defp owner_job(job_id), do: Repo.get(Oban.Job, job_id)
@@ -397,9 +403,46 @@ defmodule Delivest.Background do
             end
           end)
       end
+
+      if task.scope == :branch do
+        reconcile_branches(kind, task.feature)
+      end
     end)
 
     :ok
+  end
+
+  defp unschedule_branches(kind) do
+    Repo.delete_all(from s in Schedule, where: s.kind == ^kind and like(s.scope_key, "branch:%"))
+
+    Repo.query!(
+      """
+      UPDATE oban_jobs SET state='cancelled',cancelled_at=now()
+      WHERE worker LIKE '%Background.Runner' AND args->>'kind'=$1 AND args->>'scope_key' LIKE 'branch:%'
+        AND state IN ('available','scheduled','retryable')
+      """,
+      [kind]
+    )
+
+    :ok
+  end
+
+  defp reconcile_branches(kind, feature) do
+    ids =
+      Repo.query!(
+        """
+        SELECT b.id::text FROM branches b
+        JOIN feature_gates g ON g.scope_key='branch:' || b.id::text
+          AND g.feature=$1 AND g.enabled
+        JOIN feature_gates parent ON parent.feature=g.feature AND parent.scope_key='franchise' AND parent.enabled
+        LEFT JOIN background_schedules s ON s.scope_key=g.scope_key AND s.kind=$2
+        WHERE b.deleted_at IS NULL AND s.id IS NULL
+        ORDER BY b.id LIMIT 10
+        """,
+        [feature, kind]
+      ).rows
+
+    Enum.each(ids, fn [id] -> schedule(kind, {:branch, id}) end)
   end
 
   def finish(kind, scope_key, job_id, result) do

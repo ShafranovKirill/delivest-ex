@@ -2,6 +2,7 @@ defmodule Delivest.Analytics.OrderReceipts do
   @moduledoc "Optional analytics writes inside the core order transaction."
 
   alias Delivest.Features
+  alias Delivest.Analytics.OrderIdentity
   alias Delivest.Advertising.OrderCapture
   alias Delivest.Funnel.OrderCapture, as: FunnelOrderCapture
 
@@ -11,7 +12,7 @@ defmodule Delivest.Analytics.OrderReceipts do
     branch = {:branch, order.branch_id}
 
     requests =
-      for feature <- ["analytics_links", "analytics_funnel"],
+      for feature <- ["analytics_links", "analytics_funnel", "analytics_extended"],
           {:ok, generation} <- [Features.snapshot(feature, branch)],
           do: {feature, branch, generation}
 
@@ -51,6 +52,9 @@ defmodule Delivest.Analytics.OrderReceipts do
 
            if requested?(requests, "analytics_funnel"),
              do: FunnelOrderCapture.capture(order, owner(opts), as_of_at)
+
+           if requested?(requests, "analytics_extended"),
+             do: OrderIdentity.capture(order, opts, as_of_at)
 
            :ok
          end) do

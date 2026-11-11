@@ -2,6 +2,7 @@ defmodule Delivest.Logs.PruneWorker do
   use Oban.Worker, queue: :maintenance, max_attempts: 3
 
   alias Delivest.{Audit, Funnel, Logs}
+  alias Delivest.Analytics.Reports.Prune, as: AnalyticsPrune
   alias Delivest.Advertising.Clicks
   alias Delivest.Identity.PhoneConfirmations
   alias Delivest.Integrations.{Inbox, Journal}
@@ -16,12 +17,15 @@ defmodule Delivest.Logs.PruneWorker do
     inbox = Inbox.prune(Logs.retention_days())
     confirmations = PhoneConfirmations.prune(@confirmation_days)
     funnel = Funnel.prune()
+    analytics = AnalyticsPrune.prune()
     advertising_clicks = Clicks.prune()
     advertising_claims = Clicks.prune_claims()
 
     # Each job stays bounded. If a backlog remains, continue through the core
     # maintenance queue without depending on the capture feature gate.
     if funnel.events == Funnel.prune_batch() or funnel.sessions == Funnel.prune_batch() or
+         analytics.states == AnalyticsPrune.batch_size() or
+         analytics.snapshots == AnalyticsPrune.batch_size() or
          advertising_clicks == Clicks.prune_batch() or
          advertising_claims == Clicks.prune_batch() do
       {:ok, _} =
@@ -44,6 +48,7 @@ defmodule Delivest.Logs.PruneWorker do
        inbox: inbox,
        confirmations: confirmations,
        funnel: funnel,
+       analytics: analytics,
        advertising_clicks: advertising_clicks,
        advertising_claims: advertising_claims
      }}

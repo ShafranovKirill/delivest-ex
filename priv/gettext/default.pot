@@ -10337,6 +10337,271 @@ msgstr ""
 msgid "Rolling window, hours"
 msgstr ""
 
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:64
+#, elixir-autogen, elixir-format
+msgid "%{count} branches are excluded by feature settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:194
+#, elixir-autogen, elixir-format
+msgid "Authorized orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:113
+#, elixir-autogen, elixir-format
+msgid "Calculation could not be queued"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:52
+#, elixir-autogen, elixir-format
+msgid "Calculation is queued or running"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:304
+#, elixir-autogen, elixir-format
+msgid "Cancelled orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:302
+#, elixir-autogen, elixir-format
+msgid "Cash method orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:327
+#, elixir-autogen, elixir-format
+msgid "Channel"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:192
+#, elixir-autogen, elixir-format
+msgid "Clicks"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:581
+#, elixir-autogen, elixir-format
+msgid "Comparison"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:303
+#, elixir-autogen, elixir-format
+msgid "Completed orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:252
+#, elixir-autogen, elixir-format
+msgid "Data may be stale"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:249
+#, elixir-autogen, elixir-format
+msgid "Data was not collected for this period"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:193
+#, elixir-autogen, elixir-format
+msgid "First source clients"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:582
+#, elixir-autogen, elixir-format
+msgid "Franchise"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:577
+#, elixir-autogen, elixir-format
+msgid "Funnel"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:120
+#, elixir-autogen, elixir-format
+msgid "Identified buyers with completed orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:55
+#, elixir-autogen, elixir-format
+msgid "Last calculation failed; the previous published result remains available."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:342
+#, elixir-autogen, elixir-format
+msgid "Link ID"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:30
+#, elixir-autogen, elixir-format
+msgid "Manage advertising links"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:191
+#, elixir-autogen, elixir-format
+msgid "Metric"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:251
+#, elixir-autogen, elixir-format
+msgid "No activity in collected period"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:45
+#, elixir-autogen, elixir-format
+msgid "Oldest successful bucket calculation"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:301
+#, elixir-autogen, elixir-format
+msgid "Online paid sessions"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:58
+#, elixir-autogen, elixir-format
+msgid "Only %{covered} of %{expected} branch days have collected data"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:263
+#, elixir-autogen, elixir-format
+msgid "Only saved advertising link receipts are confirmed attribution. UTM labels are unverified."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:133
+#, elixir-autogen, elixir-format
+msgid "Only verified client IDs are counted across channels; guest phone numbers are not matched."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:170
+#, elixir-autogen, elixir-format
+msgid "Order outcomes for this session cohort"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:299
+#, elixir-autogen, elixir-format
+msgid "Orders created"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:250
+#, elixir-autogen, elixir-format
+msgid "Partial data"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:138
+#, elixir-autogen, elixir-format
+msgid "Percentage of authorized buyers is unavailable: anonymous buyers cannot be counted reliably."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:237
+#, elixir-autogen, elixir-format
+msgid "Previous"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:103
+#, elixir-autogen, elixir-format
+msgid "Previous period"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:39
+#, elixir-autogen, elixir-format
+msgid "Recalculate available history"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:125
+#, elixir-autogen, elixir-format
+msgid "Repeat identified buyers"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:128
+#, elixir-autogen, elixir-format
+msgid "Retention from previous equal period"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:269
+#, elixir-autogen, elixir-format
+msgid "Revenue includes completed orders net of succeeded refunds, grouped by order creation date. No causal effect is inferred from channel differences."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:102
+#, elixir-autogen, elixir-format
+msgid "Selected period"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:257
+#, elixir-autogen, elixir-format
+msgid "Session steps are observational; orders and payment stages use server records. Cash is shown separately from confirmed online payments."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:157
+#, elixir-autogen, elixir-format
+msgid "Sessions with an order"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:191
+#, elixir-autogen, elixir-format
+msgid "Source / channel"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:578
+#, elixir-autogen, elixir-format
+msgid "Sources"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:305
+#, elixir-autogen, elixir-format
+msgid "Unlinked orders on creation date"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:178
+#, elixir-autogen, elixir-format
+msgid "Unlinked orders use creation date and are shown separately; they are not included in session conversion."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:253
+#, elixir-autogen, elixir-format
+msgid "Updated"
+msgstr ""
+
+msgid "Last successful check"
+msgstr ""
+
+msgid "Find advertising link"
+msgstr ""
+
+msgid "All advertising links"
+msgstr ""
+
+msgid "Unavailable branch"
+msgstr ""
+
+msgid "Unavailable advertising link"
+msgstr ""
+
+msgid "Unknown channel"
+msgstr ""
+
+msgid "Net revenue"
+msgstr ""
+
+msgid "Sessions started"
+msgstr ""
+
+msgid "Visits"
+msgstr ""
+
+msgid "Menu views"
+msgstr ""
+
+msgid "Product views"
+msgstr ""
+
+msgid "Added to cart"
+msgstr ""
+
+msgid "Checkout started"
+msgstr ""
+
+msgid "Fulfillment selected"
+msgstr ""
+
+msgid "All channels"
+msgstr ""
+
 #: lib/delivest_web/live/staff/advertising_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Link copied"
