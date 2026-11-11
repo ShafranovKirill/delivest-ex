@@ -328,7 +328,12 @@ defmodule Delivest.Identity.StaffsTest do
       ]
 
       Enum.each(valid_passwords, fn pwd ->
-        attrs = %{login: "user_#{:rand.uniform(1000)}", password: pwd, role_id: role.id}
+        attrs = %{
+          login: "valid_password_#{System.unique_integer([:positive])}",
+          password: pwd,
+          role_id: role.id
+        }
+
         assert {:ok, %Staff{}} = Staffs.create_staff(admin, attrs)
       end)
     end
