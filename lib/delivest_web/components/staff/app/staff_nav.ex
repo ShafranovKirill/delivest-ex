@@ -27,7 +27,7 @@ defmodule DelivestWeb.StaffNav do
     [
       item(
         :dashboard,
-        branch && ~p"/staff/b/#{branch}/dashboard",
+        if(branch, do: ~p"/staff/b/#{branch}/dashboard", else: ~p"/staff/dashboard"),
         "hero-squares-2x2",
         gettext("Dashboard")
       ),
