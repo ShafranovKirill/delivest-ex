@@ -169,7 +169,7 @@ defmodule DelivestWeb.StaffNav do
       item(:branches, ~p"/staff/branches", "hero-map-pin", gettext("Branches"))
       |> allowed(staff, "branches.read"),
       group(:customers, "hero-users", gettext("Clients"), [
-        item(:clients, ~p"/staff/clients", "hero-users", "Все клиенты")
+        item(:clients, ~p"/staff/clients", "hero-users", gettext("Clients"))
         |> allowed(staff, "clients.read"),
         item(:segments, ~p"/staff/segments", "hero-user-group", "Сегменты")
         |> allowed(staff, "segments.read")

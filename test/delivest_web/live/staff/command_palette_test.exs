@@ -43,9 +43,19 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
   end
 
   test "works on network pages without a branch in the address", %{conn: conn} do
+    conn = put_session(conn, "locale", "en")
     {:ok, lv, _html} = live(conn, ~p"/staff/clients")
 
     lv |> form("#command-palette-form", %{query: "cli"}) |> render_change()
+
+    assert has_element?(lv, "#command-item-page-clients")
+  end
+
+  test "finds the clients page in Russian", %{conn: conn} do
+    conn = put_session(conn, "locale", "ru")
+    {:ok, lv, _html} = live(conn, ~p"/staff/clients")
+
+    lv |> form("#command-palette-form", %{query: "кли"}) |> render_change()
 
     assert has_element?(lv, "#command-item-page-clients")
   end
