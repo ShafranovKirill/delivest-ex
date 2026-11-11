@@ -1,5 +1,5 @@
 defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
-  use DelivestWeb.ConnCase, async: true
+  use DelivestWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
@@ -265,16 +265,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       insert_branch_product(branch.id, name: "Skipped")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products")
+      {:ok, lv, _html} =
+        live(conn, ~p"/staff/b/#{branch}/products/operations?#{[ids: [chosen.id]]}")
 
-      lv |> element("#product-selection") |> render_change(%{"ids" => [chosen.id]})
-      render_click(lv, "open_copy")
+      lv |> form("#copy-preview-form", %{"target_branch_id" => target.id}) |> render_submit()
+      assert has_element?(lv, "#operations-preview")
+      lv |> form("#operations-apply-form") |> render_submit()
 
-      lv
-      |> form("#copy-products-form", %{"target_branch_id" => target.id, "scope" => "selected"})
-      |> render_submit()
-
-      assert render(lv) =~ "Products copied: 1"
+      assert has_element?(lv, "#operations-result")
       assert [copy_id] = Delivest.Relations.list_target_ids("Branch", target.id, "Product")
 
       assert %{measure_unit: :ml, calories: 40.0, excise: :sugary_drink} =
@@ -285,12 +283,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       insert_branch_product(branch.id, name: "One")
       insert_branch_product(branch.id, name: "Two")
 
-      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products")
-      render_click(lv, "open_copy")
-
-      lv
-      |> form("#copy-products-form", %{"target_branch_id" => target.id, "scope" => "all"})
-      |> render_submit()
+      {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/products/operations")
+      lv |> form("#copy-preview-form", %{"target_branch_id" => target.id}) |> render_submit()
+      lv |> form("#operations-apply-form") |> render_submit()
 
       assert length(Delivest.Relations.list_target_ids("Branch", target.id, "Product")) == 2
     end

@@ -1,5 +1,5 @@
 defmodule Delivest.Net.ProductCopierTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   import Delivest.Factory
 
@@ -20,7 +20,20 @@ defmodule Delivest.Net.ProductCopierTest do
 
   test "copies all products with photo and category but without crm id", ctx do
     {:ok, category} = Net.create_category(ctx.staff, ctx.from.id, %{"name" => "Soups"})
-    media_id = Ecto.UUID.generate()
+
+    media_id =
+      %Delivest.Media.File{}
+      |> Delivest.Media.File.changeset(%{
+        bucket: "products",
+        key: "test/borsch",
+        original_name: "borsch.png",
+        mime_type: "image/png",
+        size: 10,
+        context: :product,
+        owner_id: ctx.staff.id
+      })
+      |> Repo.insert!()
+      |> Map.fetch!(:id)
 
     insert_branch_product(ctx.from.id,
       name: "Borsch",

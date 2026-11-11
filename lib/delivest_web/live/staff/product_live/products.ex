@@ -4,7 +4,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias Delivest.{Gateway, Identity, Money, Repo, Net}
   alias Delivest.Net.{Product, ProductCrmIds, Stops}
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
-  alias DelivestWeb.Staff.ProductLive.CopyComponent
 
   import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
   import DelivestWeb.Staff.ProductLive.StopControl, only: [stop_control: 1]
@@ -30,7 +29,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        selected_category_id: nil,
        selected_status: nil,
        selected_ids: [],
-       copy_open: false,
        bulk_delete_open: false,
        crm_menu: Gateway.crm?(socket.assigns.current_branch, :menu),
        stops: Stops.by_product(branch_id),
@@ -138,11 +136,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   def handle_event("clear_selection", _params, socket),
     do: {:noreply, assign(socket, selected_ids: [])}
-
-  def handle_event("open_copy", _params, socket), do: {:noreply, assign(socket, copy_open: true)}
-
-  def handle_event("close_copy", _params, socket),
-    do: {:noreply, assign(socket, copy_open: false)}
 
   def handle_event("filter", params, socket) do
     search = params["search"]
@@ -297,14 +290,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
-  def handle_info({CopyComponent, {:copied, count}}, socket) do
-    {:noreply,
-     socket
-     |> assign(copy_open: false)
-     |> put_flash(:info, gettext("Products copied: %{count}", count: count))}
-  end
-
-  @impl true
   def handle_info(
         {DelivestWeb.StudioLive.MediaUploadComponent, {:saved, results}},
         socket
@@ -446,22 +431,12 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         subtitle={gettext("Manage branch products, prices, and categories.")}
       >
         <:actions>
-          <.button
-            :if={Identity.can?(@current_staff, "products.create")}
-            phx-click="open_copy"
-            class="btn btn-outline"
-          >
-            <.icon name="hero-document-duplicate" class="size-5 mr-1" />
-            {gettext("Copy to branch")}
-          </.button>
-
           <.link
-            id="export-products"
-            href={~p"/staff/b/#{@current_branch}/products/export"}
+            id="product-operations-link"
+            navigate={~p"/staff/b/#{@current_branch}/products/operations"}
             class="btn btn-outline"
           >
-            <.icon name="hero-arrow-down-tray" class="size-5 mr-1" />
-            {gettext("Export")}
+            <.icon name="hero-arrow-up-tray" class="size-5 mr-1" /> Товарные операции
           </.link>
 
           <.link
@@ -652,14 +627,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         form="product-selection"
         on_clear={JS.push("clear_selection")}
       >
-        <.button
+        <.link
           :if={Identity.can?(@current_staff, "products.create")}
-          phx-click="open_copy"
+          navigate={~p"/staff/b/#{@current_branch}/products/operations?#{[ids: @selected_ids]}"}
           class="btn btn-ghost btn-sm"
-        >
-          <.icon name="hero-document-duplicate" class="size-4" />
-          {gettext("Copy")}
-        </.button>
+        >Копировать выбранные</.link>
         <.button
           :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
           phx-click="bulk_delete_click"
@@ -669,15 +641,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           {gettext("Delete")}
         </.button>
       </.selection_bar>
-
-      <.live_component
-        module={CopyComponent}
-        id="copy-products"
-        show={@copy_open}
-        branch_id={@branch_id}
-        selected_ids={@selected_ids}
-        current_staff={@current_staff}
-      />
 
       <.slide_over
         id="product-slideover"
