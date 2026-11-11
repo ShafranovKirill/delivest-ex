@@ -231,6 +231,7 @@ defmodule Delivest.Marketing.ReportTest do
       completed_order(branch, client, DateTime.add(DateTime.utc_now(:second), -3_600, :second))
 
     issued_at = DateTime.add(DateTime.utc_now(:second), -1_800, :second)
+    linked = completed_order(branch, client, DateTime.add(issued_at, 100, :second))
 
     assert {:ok, source_generation} =
              Features.snapshot("marketing_policies", {:branch, branch.id})
@@ -254,7 +255,6 @@ defmodule Delivest.Marketing.ReportTest do
       assert {:ok, %{status: :pending}} = Report.request(policy)
     end
 
-    linked = completed_order(branch, client, DateTime.add(issued_at, 100, :second))
     activate_context(context)
 
     for _ <- 1..6,
