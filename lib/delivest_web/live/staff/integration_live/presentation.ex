@@ -29,6 +29,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
 
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Integrations.Health.Status
+  alias Delivest.Repo
+  import Ecto.Query, only: [where: 3]
 
   @crm_providers [:frontpad, :iiko, :rkeeper]
 
@@ -39,7 +41,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   page, so a saved integration is displayed from saved data only. The `version`
   lets a LiveComponent notice a fresh context even when the form changed only.
   """
-  def context(branch_id) do
+  def context(branch_id) when not is_nil(branch_id) do
     branch =
       case Identity.get_branch(branch_id, preload: [:info]) do
         {:ok, %Branch{} = branch} -> branch
@@ -52,6 +54,22 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
       branch: branch,
       crm: Map.get(info, :crm) || %BranchSettings{},
       health: Health.for_branch(branch_id),
+      shared: shared_settings(),
+      version: System.unique_integer([:positive, :monotonic])
+    }
+  end
+
+  def context(nil) do
+    health =
+      Status
+      |> where([s], is_nil(s.branch_id))
+      |> Repo.all()
+      |> Map.new(&{&1.provider, &1})
+
+    %{
+      branch: nil,
+      crm: %BranchSettings{},
+      health: health,
       shared: shared_settings(),
       version: System.unique_integer([:positive, :monotonic])
     }
@@ -72,7 +90,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   end
 
   defp build_state(provider, branch, crm, health, shared) do
-    info = branch.info || %{}
+    info = if branch, do: branch.info || %{}, else: %{}
     credentials = credentials(provider, branch, info, shared)
     status = Map.get(health, to_string(provider))
 
@@ -81,11 +99,20 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
       scope: scope(provider, branch),
       credentials: credentials,
       connection: connection(status),
-      usage: usage(provider, branch, info, crm, credentials),
+      usage:
+        if(branch,
+          do: usage(provider, branch, info, crm, credentials),
+          else: shared_usage(provider, credentials)
+        ),
       capabilities: capabilities(provider),
       warnings: warnings(status)
     }
   end
+
+  defp shared_usage(provider, credentials) when provider in [:zvonok, :dadata],
+    do: usage(provider, nil, %{}, %BranchSettings{}, credentials)
+
+  defp shared_usage(_provider, _credentials), do: []
 
   defp shared_settings do
     %{
@@ -582,7 +609,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
 
   ## Scope
 
+  def scope(:yandex_eda, nil), do: {:network, nil}
   def scope(:yandex_eda, branch), do: {:network, branch.name}
+
+  def scope(_provider, nil), do: {:network, nil}
 
   def scope(provider, branch),
     do: if(shared?(provider), do: {:network, nil}, else: {:branch, branch.name})

@@ -12,18 +12,51 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    context = Presentation.context(socket.assigns.current_branch.id)
-
-    providers = @providers ++ Enum.map(Crm.providers(), &elem(&1, 0))
-    states = Map.new(providers, &{&1, Presentation.state(&1, context)})
-
     {:ok,
      assign(socket,
        page_title: gettext("Integrations"),
-       states: states,
-       routes_state: routes_state(context),
        can_edit_shared: Identity.can?(socket.assigns.current_staff, "admin")
      )}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    branches = Identity.list_branch_for_staff(socket.assigns.current_staff)
+
+    branch =
+      case params do
+        %{"branch_slug" => slug} -> Enum.find(branches, &(&1.slug == slug))
+        %{"branch" => slug} -> Enum.find(branches, &(&1.slug == slug))
+        _ -> nil
+      end
+
+    context = Presentation.context(branch && branch.id)
+
+    providers =
+      if(branch,
+        do: @providers ++ Enum.map(Crm.providers(), &elem(&1, 0)),
+        else: [:zvonok, :dadata, :yookassa, :yandex_eda]
+      )
+
+    {:noreply,
+     assign(socket,
+       selected_branch: branch,
+       selectable_branches: branches,
+       states: Map.new(providers, &{&1, Presentation.state(&1, context)}),
+       routes_state: if(branch, do: routes_state(context), else: nil)
+     )}
+  end
+
+  @impl true
+  def handle_event("select_branch", %{"branch" => slug}, socket) do
+    path =
+      if Enum.any?(socket.assigns.selectable_branches, &(&1.slug == slug)) do
+        ~p"/staff/integrations?branch=#{slug}"
+      else
+        ~p"/staff/integrations"
+      end
+
+    {:noreply, push_navigate(socket, to: path)}
   end
 
   defp routes_state(context) do
@@ -61,70 +94,99 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={gettext("Sign-in by phone number")}
             description={gettext("Customers confirm the phone number with a call via zvonok.com.")}
             state={@states[:zvonok]}
-            branch={@current_branch}
-            path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/zvonok"}
+            branch={@selected_branch}
+            path={@can_edit_shared && ~p"/staff/integrations/zvonok"}
           />
           <.integration_card
             id="integration-dadata"
             title={gettext("Delivery address on the map")}
             description={gettext("Address suggestions and the map via dadata.ru.")}
             state={@states[:dadata]}
-            branch={@current_branch}
-            path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/dadata"}
+            branch={@selected_branch}
+            path={@can_edit_shared && ~p"/staff/integrations/dadata"}
           />
           <.integration_card
             id="integration-yookassa"
             title={gettext("Online payment")}
             description={gettext("Card and SBP payments through YooKassa.")}
             state={@states[:yookassa]}
-            branch={@current_branch}
-            path={@can_edit_shared && ~p"/staff/b/#{@current_branch}/integrations/yookassa"}
+            branch={@selected_branch}
+            path={@can_edit_shared && ~p"/staff/integrations/yookassa"}
+          />
+          <.integration_card
+            id="integration-yandex-eda-shared"
+            title={gettext("Yandex Eda access")}
+            description={gettext("Access credentials shared by every branch.")}
+            state={@states[:yandex_eda]}
+            branch={@selected_branch}
+            path={@can_edit_shared && ~p"/staff/integrations/yandex-eda"}
           />
         </div>
       </section>
 
-      <DelivestWeb.GatewayNote.gateway_summary branch={@current_branch} />
+      <DelivestWeb.GatewayNote.gateway_summary :if={@selected_branch} branch={@selected_branch} />
 
       <section class="space-y-3">
         <div>
-          <h2 class="font-bold">{gettext("Branch")} «{@current_branch.name}»</h2>
+          <h2 class="font-bold">{gettext("Branch settings")}</h2>
           <p class="text-sm text-base-content/60">
-            {gettext("Each branch has its own settings. Switch the branch to set up another one.")}
+            {gettext("Choose a branch to view and change its integrations.")}
           </p>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <form id="integration-branch-selector" phx-change="select_branch">
+          <select
+            name="branch"
+            class="select select-bordered w-full max-w-sm"
+            aria-label={gettext("Branch")}
+          >
+            <option value="" selected={is_nil(@selected_branch)}>{gettext("Select a branch")}</option>
+            <option
+              :for={branch <- @selectable_branches}
+              value={branch.slug}
+              selected={@selected_branch && @selected_branch.id == branch.id}
+            >
+              {branch.name}
+            </option>
+          </select>
+        </form>
+
+        <p :if={@selected_branch} id="integration-selected-branch" class="text-sm font-medium">
+          {gettext("Branch: %{name}", name: @selected_branch.name)}
+        </p>
+
+        <div :if={@selected_branch} class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <.integration_card
             id="integration-routes"
             title={gettext("Order routes")}
             description={gettext("Which orders go further to the CRM.")}
             state={@routes_state}
-            branch={@current_branch}
-            path={~p"/staff/b/#{@current_branch}/integrations/routes"}
+            branch={@selected_branch}
+            path={~p"/staff/b/#{@selected_branch}/integrations/routes"}
           />
           <.integration_card
             id="integration-yandex-eda"
             title={gettext("Yandex Eda")}
             description={gettext("Orders from Yandex Eda and Delivery Club.")}
             state={@states[:yandex_eda]}
-            branch={@current_branch}
-            path={~p"/staff/b/#{@current_branch}/integrations/yandex-eda"}
+            branch={@selected_branch}
+            path={~p"/staff/b/#{@selected_branch}/integrations/yandex-eda"}
           />
           <.integration_card
             id="integration-fiscal"
             title={gettext("Receipts")}
             description={gettext("Fiscal receipts through ATOL Online.")}
             state={@states[:atol]}
-            branch={@current_branch}
-            path={~p"/staff/b/#{@current_branch}/integrations/fiscal"}
+            branch={@selected_branch}
+            path={~p"/staff/b/#{@selected_branch}/integrations/fiscal"}
           />
           <.integration_card
             id="integration-yandex-delivery"
             title={gettext("Yandex Delivery")}
             description={gettext("A Yandex courier for the delivery orders.")}
             state={@states[:yandex_delivery]}
-            branch={@current_branch}
-            path={~p"/staff/b/#{@current_branch}/integrations/yandex-delivery"}
+            branch={@selected_branch}
+            path={~p"/staff/b/#{@selected_branch}/integrations/yandex-delivery"}
           />
           <.integration_card
             :for={{provider, name} <- Crm.providers()}
@@ -132,8 +194,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             title={name}
             description={gettext("Orders to the CRM and products matching with the app menu.")}
             state={@states[provider]}
-            branch={@current_branch}
-            path={provider_path(@current_branch, provider)}
+            branch={@selected_branch}
+            path={provider_path(@selected_branch, provider)}
           />
         </div>
       </section>

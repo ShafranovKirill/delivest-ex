@@ -50,7 +50,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
   end
 
   defp assign_context(socket) do
-    assign(socket, context: Presentation.context(socket.assigns.current_branch.id))
+    assign(socket, context: Presentation.context(nil))
   end
 
   @impl true
@@ -58,7 +58,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6 max-w-3xl">
       <.link
-        navigate={~p"/staff/b/#{@current_branch}/integrations"}
+        navigate={~p"/staff/integrations"}
         class="btn btn-ghost btn-sm -ml-2"
       >
         <.icon name="hero-arrow-left" class="size-4" /> {gettext("Integrations")}
@@ -77,7 +77,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
         module={HealthComponent}
         id="zvonok-health"
         provider={:zvonok}
-        branch_id={@current_branch.id}
+        branch_id={nil}
         staff={@current_staff}
         context={@context}
       />
