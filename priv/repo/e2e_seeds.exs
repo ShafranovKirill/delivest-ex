@@ -37,7 +37,12 @@ branch =
     |> Branch.changeset(%{name: "E2E", slug: "e2e", code: "E2E", is_active: true})
     |> Repo.insert!()
 
-for feature <- ["analytics_funnel", "analytics_links"],
+for feature <- [
+      "analytics_funnel",
+      "analytics_links",
+      "analytics_extended",
+      "analytics_franchise"
+    ],
     scope <- [:franchise, {:branch, branch.id}] do
   {:ok, _} = Features.configure(feature, scope, true, actor: "e2e-seed")
 end
