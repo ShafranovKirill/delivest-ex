@@ -51,7 +51,7 @@ defmodule DelivestWeb.StaffSidebar do
             title={gettext("Expand menu")}
             class="staff-sidebar-toggle btn btn-ghost btn-square btn-sm shrink-0"
           >
-            <.icon name="hero-chevron-double-right" class="staff-sidebar-toggle-icon size-5" />
+            <.icon name="panel-left" class="size-5" />
           </button>
         </div>
 

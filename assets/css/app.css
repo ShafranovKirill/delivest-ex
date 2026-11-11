@@ -203,5 +203,3 @@
     white-space: normal;
   }
 }
-
-.staff-sidebar-toggle[aria-expanded="true"] .staff-sidebar-toggle-icon { transform: rotate(180deg); }
