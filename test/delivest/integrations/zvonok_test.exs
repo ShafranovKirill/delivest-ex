@@ -1,5 +1,5 @@
 defmodule Delivest.Integrations.ZvonokTest do
-  use ExUnit.Case, async: false
+  use Delivest.DataCase, async: false
 
   alias Delivest.Integrations.Zvonok
   alias Delivest.Integrations.Zvonok.Settings
