@@ -46,7 +46,8 @@ defmodule DelivestWeb.Client.Menu.MenuController do
           rewards: Map.new(Net.list_branch_products(branch_id), &{&1.id, &1.stars_reward}),
           stopped: Net.Stops.stopped_ids(branch_id),
           modifiers: menu_modifiers(menu),
-          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id)
+          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id),
+          popular: MapSet.new(Enum.map(Delivest.Popular.list_products(branch_id), & &1.id))
         )
 
       {:error, _reason} ->

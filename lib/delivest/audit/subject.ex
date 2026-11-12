@@ -27,6 +27,12 @@ defmodule Delivest.Audit.Subject do
 
   def describe(%Client{} = client), do: build("client", client.id, client.name || client.phone)
 
+  def describe(%Delivest.Popular.Settings{} = settings),
+    do: build("branch", settings.branch_id, "Popular: #{settings.mode}", settings.branch_id)
+
+  def describe(%Delivest.Popular.Entry{} = entry),
+    do: build("product", entry.product_id, "Popular", entry.branch_id)
+
   def describe(%Promotion{} = promotion),
     do: build("promotion", promotion.id, promotion.name, promotion.branch_id)
 

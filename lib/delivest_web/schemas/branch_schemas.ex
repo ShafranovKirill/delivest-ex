@@ -84,6 +84,20 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           items: %Schema{type: :string, enum: ["cash", "card_offline", "online"]},
           description: "Способы оплаты, включённые на филиале"
         },
+        delivery: %Schema{
+          type: :object,
+          properties: %{
+            map_address: %Schema{
+              type: :boolean,
+              description: "Включён ли выбор адреса по карте на сайте"
+            },
+            operator_address: %Schema{
+              type: :boolean,
+              description: "Разрешена ли галочка «назову адрес оператору» в форме заказа"
+            }
+          },
+          additionalProperties: true
+        },
         special_hours: %Schema{
           type: :object,
           additionalProperties: true,

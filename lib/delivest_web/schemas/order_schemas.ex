@@ -107,6 +107,12 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "Без лука",
           nullable: true
         },
+        address_by_operator: %Schema{
+          type: :boolean,
+          example: false,
+          description:
+            "Клиент назовёт адрес доставки оператору по телефону. Заказ принимается без адреса и без расчёта доставки"
+        },
         spend_points: %Schema{
           type: :integer,
           nullable: true,

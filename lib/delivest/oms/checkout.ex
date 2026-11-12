@@ -7,7 +7,8 @@ defmodule Delivest.Oms.Checkout do
   alias Delivest.Oms.Order
 
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
-                    payment_method cook_by comment persons cash_given address expected_total spend_points cart_revision)
+                    payment_method cook_by comment persons cash_given address expected_total spend_points cart_revision
+                    address_by_operator)
 
   def create(params, client, session_id, key, analytics_guest_id \\ nil) do
     request_attrs = Map.take(params, @public_fields)
