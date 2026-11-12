@@ -244,14 +244,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductPicker do
         </div>
         <div class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-base-300 pt-3">
           <span class="text-sm">{gettext("Selected")}: {length(@draft_ids)}</span>
-          <div class="flex flex-wrap gap-2">
-            <button
-              :if={@mode == :single and @draft_ids != []}
-              type="button"
-              class="btn btn-ghost"
-              phx-click="clear"
-              phx-target={@myself}
-            >{gettext("Clear selection")}</button>
+          <button
+            :if={@mode == :single and @draft_ids != []}
+            type="button"
+            class="btn btn-ghost"
+            phx-click="clear"
+            phx-target={@myself}
+          >{gettext("Clear selection")}</button>
+          <div class="ml-auto flex gap-2">
             <button type="button" class="btn btn-outline" phx-click="cancel" phx-target={@myself}>{gettext(
               "Cancel"
             )}</button>
