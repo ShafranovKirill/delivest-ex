@@ -1,10 +1,20 @@
 defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Net, Media}
+  alias Delivest.{Net, Media, Repo}
   alias Delivest.Net.Stock
+  alias Phoenix.LiveView.JS
 
   import Ecto.Changeset
+
+  def update(%{picker_result: %{ids: ids}}, socket) do
+    allowed = MapSet.new(Enum.map(socket.assigns.picker_products, & &1.id))
+    id = Enum.find(ids, &MapSet.member?(allowed, &1))
+    changeset = Ecto.Changeset.put_change(socket.assigns.form.source, :product_id, id)
+    {:ok, socket |> assign(form: to_form(changeset), picker_open: false)}
+  end
+
+  def update(%{picker_cancelled: true}, socket), do: {:ok, assign(socket, picker_open: false)}
 
   @impl true
   def update(assigns, socket) do
@@ -33,14 +43,14 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
 
         current_media = if stock && stock.media_id, do: Media.get_file(stock.media_id), else: nil
 
-        product_options = [
-          {gettext("No product"), ""} | Net.list_product_options_for_branch(assigns.branch_id)
-        ]
+        picker_products =
+          assigns.branch_id |> Net.list_branch_products() |> Repo.preload(:category)
 
         socket =
           socket
           |> assign(:form, to_form(changeset))
-          |> assign(:product_options, product_options)
+          |> assign(:picker_products, picker_products)
+          |> assign(:picker_open, false)
           |> assign(:current_media, current_media)
           |> assign(:show_upload_modal, false)
 
@@ -73,6 +83,14 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
 
   def handle_event("close_modal", _, socket) do
     {:noreply, assign(socket, :show_upload_modal, false)}
+  end
+
+  def handle_event("open_product_picker", _, socket),
+    do: {:noreply, assign(socket, picker_open: true)}
+
+  def handle_event("clear_product", _, socket) do
+    changeset = Ecto.Changeset.put_change(socket.assigns.form.source, :product_id, nil)
+    {:noreply, assign(socket, form: to_form(changeset))}
   end
 
   @impl true
@@ -226,12 +244,29 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
           />
 
           <div>
-            <.input
-              field={@form[:product_id]}
-              type="select"
-              label={gettext("Linked product")}
-              options={@product_options}
-            />
+            <input type="hidden" name="stock[product_id]" value={@form[:product_id].value || ""} />
+            <p class="font-semibold">{gettext("Linked product")}</p>
+            <p>
+              {Enum.find_value(@picker_products, fn p ->
+                if p.id == @form[:product_id].value, do: p.name
+              end) || gettext("No product")}
+            </p>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="btn btn-outline"
+                id="stock-open-product-picker"
+                phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @myself)}
+                phx-target={@myself}
+              >{gettext("+ Add product")}</button>
+              <button
+                :if={@form[:product_id].value}
+                type="button"
+                class="btn btn-ghost"
+                phx-click="clear_product"
+                phx-target={@myself}
+              >{gettext("Remove")}</button>
+            </div>
             <p class="text-xs text-base-content/60 mt-1">
               {gettext("On the website the banner opens this product card.")}
             </p>
@@ -251,6 +286,17 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
           </button>
         </div>
       </.form>
+      <.live_component
+        :if={@picker_open}
+        module={DelivestWeb.Staff.ProductLive.ProductPicker}
+        id="stock-product-picker"
+        products={@picker_products}
+        selected_ids={List.wrap(@form[:product_id].value) |> Enum.reject(&is_nil/1)}
+        title={gettext("Linked product")}
+        mode={:single}
+        on_save={fn ids -> send_update(__MODULE__, id: @id, picker_result: %{ids: ids}) end}
+        on_cancel={fn -> send_update(__MODULE__, id: @id, picker_cancelled: true) end}
+      />
     </div>
     """
   end

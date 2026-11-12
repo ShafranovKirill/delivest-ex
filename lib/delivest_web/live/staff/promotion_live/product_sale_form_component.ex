@@ -1,9 +1,22 @@
 defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Money, Net, Promo}
+  alias Delivest.{Money, Net, Promo, Repo}
   alias Delivest.Promo.Promotion
   alias DelivestWeb.Staff.PromotionLive.{ProductSale, PromotionHelpers}
+  alias Phoenix.LiveView.JS
+
+  def update(%{picker_result: %{ids: ids}}, socket) do
+    allowed = Map.new(socket.assigns.picker_products, &{&1.id, &1.slug})
+    slugs = ids |> Enum.map(&Map.get(allowed, &1)) |> Enum.reject(&is_nil/1)
+
+    {:ok,
+     socket
+     |> assign(sale: %{socket.assigns.sale | products: slugs}, picker_open: false)
+     |> refresh(socket.assigns.form.source.action)}
+  end
+
+  def update(%{picker_cancelled: true}, socket), do: {:ok, assign(socket, picker_open: false)}
 
   @impl true
   def update(assigns, socket) do
@@ -12,7 +25,7 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
     if socket.assigns[:form] do
       {:ok, socket}
     else
-      products = Net.list_branch_products(assigns.branch_id)
+      products = assigns.branch_id |> Net.list_branch_products() |> Repo.preload(:category)
 
       {:ok,
        socket
@@ -20,6 +33,8 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
          options: Enum.map(products, &{&1.name, &1.slug}),
          names: Map.new(products, &{&1.slug, &1.name}),
          prices: Map.new(products, &{&1.slug, &1.price}),
+         picker_products: products,
+         picker_open: false,
          sale: %ProductSale{},
          params: %{},
          default_code: "SALE#{Ecto.UUID.generate() |> String.slice(0, 8) |> String.upcase()}",
@@ -62,6 +77,9 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
      |> assign(sale: ProductSale.remove_product(socket.assigns.sale, slug))
      |> refresh(socket.assigns.form.source.action)}
   end
+
+  def handle_event("open_product_picker", _, socket),
+    do: {:noreply, assign(socket, picker_open: true)}
 
   defp take_params(socket, params) do
     assign(socket,
@@ -174,17 +192,15 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
               </span>
             </div>
             <input type="hidden" name="sale[products][]" value="" />
-            <select
-              name="sale[add]"
-              class="select w-full"
-              id={"sale-add-#{length(@sale.products)}"}
+            <button
+              type="button"
+              class="btn btn-outline"
+              id="sale-open-product-picker"
+              phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @myself)}
+              phx-target={@myself}
             >
-              <option value="">{gettext("+ Add product")}</option>
-              {Phoenix.HTML.Form.options_for_select(
-                Enum.reject(@options, fn {_name, slug} -> slug in @sale.products end),
-                nil
-              )}
-            </select>
+              {gettext("+ Add product")}
+            </button>
           </section>
 
           <section class="space-y-2">
@@ -253,6 +269,17 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
           </button>
         </div>
       </.form>
+      <.live_component
+        :if={@picker_open}
+        module={DelivestWeb.Staff.ProductLive.ProductPicker}
+        id="sale-product-picker"
+        products={@picker_products}
+        selected_ids={for product <- @picker_products, product.slug in @sale.products, do: product.id}
+        title={gettext("Which products?")}
+        mode={:multiple}
+        on_save={fn ids -> send_update(__MODULE__, id: @id, picker_result: %{ids: ids}) end}
+        on_cancel={fn -> send_update(__MODULE__, id: @id, picker_cancelled: true) end}
+      />
     </div>
     """
   end

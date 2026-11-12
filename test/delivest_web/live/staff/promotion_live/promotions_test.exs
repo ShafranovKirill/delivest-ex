@@ -11,10 +11,10 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   setup %{conn: conn} do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     branch = insert(:branch)
-    insert_branch_product(branch.id, slug: "cola", name: "Cola", price: 90)
+    product = insert_branch_product(branch.id, slug: "cola", name: "Cola", price: 90)
 
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
-    %{conn: conn, branch: branch}
+    %{conn: conn, branch: branch, product: product}
   end
 
   test "creation starts with a scenario chooser and full form has no quick start", %{
@@ -81,12 +81,24 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
            )
   end
 
-  test "creates a public promo code with the rules constructor", %{conn: conn, branch: branch} do
+  test "creates a public promo code with the rules constructor", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/new/full")
 
     lv |> element("#add-condition button[phx-value-type=subtotal]") |> render_click()
     lv |> element("#effect-0 button[phx-click=remove_effect]") |> render_click()
     lv |> element("#add-effect button[phx-value-type=gift]") |> render_click()
+    lv |> element("#builder-e0-picker") |> render_click()
+    lv |> form("#promotion-product-picker-search", search: "Cola") |> render_change()
+
+    lv
+    |> element("#promotion-product-picker-product-#{product.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#promotion-product-picker button[phx-click=save]") |> render_click()
 
     html =
       lv
@@ -94,7 +106,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
         promotion: %{kind: "public_code"},
         builder: %{
           conditions: %{"0" => %{op: ">=", value: "1000"}},
-          effects: %{"0" => %{product: "cola", count: "1"}}
+          effects: %{"0" => %{count: "1"}}
         }
       )
       |> render_change()
@@ -107,7 +119,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
       promotion: %{name: "Summer", kind: "public_code", code: "summer26"},
       builder: %{
         conditions: %{"0" => %{op: ">=", value: "1000"}},
-        effects: %{"0" => %{product: "cola", count: "1"}}
+        effects: %{"0" => %{count: "1"}}
       }
     )
     |> render_submit()
@@ -119,7 +131,11 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     assert has_element?(lv, "#promotion-#{promotion.id}")
   end
 
-  test "first-order scenario saves a gift with fixed safe defaults", %{conn: conn, branch: branch} do
+  test "first-order scenario saves a gift with fixed safe defaults", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/new/first-order")
 
     assert has_element?(lv, "#first-order-kind input[value=automatic][checked]")
@@ -134,9 +150,17 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
 
     lv |> element("#effect-0 button[phx-click=remove_effect]") |> render_click()
     lv |> element("#add-effect button[phx-value-type=gift]") |> render_click()
+    lv |> element("#builder-e0-picker") |> render_click()
+    lv |> form("#promotion-product-picker-search", search: "Cola") |> render_change()
 
     lv
-    |> form("#promotion-form", builder: %{effects: %{"0" => %{product: "cola", count: "1"}}})
+    |> element("#promotion-product-picker-product-#{product.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#promotion-product-picker button[phx-click=save]") |> render_click()
+
+    lv
+    |> form("#promotion-form", builder: %{effects: %{"0" => %{count: "1"}}})
     |> render_change()
 
     assert has_element?(lv, "#rules-preview")
@@ -207,12 +231,22 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     end
   end
 
-  test "puts a product on sale from the quick form", %{conn: conn, branch: branch} do
+  test "puts a product on sale from the quick form", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/sale")
 
+    lv |> element("#sale-open-product-picker") |> render_click()
+    lv |> form("#sale-product-picker-search", search: "Cola") |> render_change()
+
     lv
-    |> form("#sale-form", sale: %{add: "cola", mode: "percent", value: "20"})
-    |> render_change()
+    |> element("#sale-product-picker-product-#{product.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#sale-product-picker button[phx-click=save]") |> render_click()
+    lv |> form("#sale-form", sale: %{mode: "percent", value: "20"}) |> render_change()
 
     assert has_element?(lv, "#sale-products", "Cola")
     assert has_element?(lv, "#sale-preview", "72 ₽")
@@ -226,6 +260,63 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
 
     assert promotion.rules == "then discount 20% on \"cola\""
     assert promotion.name =~ "Cola"
+  end
+
+  test "product picker keeps rule counts and selected targets through later validation", %{
+    conn: conn,
+    branch: branch,
+    product: first
+  } do
+    second = insert_branch_product(branch.id, slug: "tea", name: "Tea", price: 70)
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/promotions/new/full")
+    lv |> element("#add-condition button[phx-value-type=has_any]") |> render_click()
+
+    lv
+    |> form("#promotion-form",
+      builder: %{
+        conditions: %{"0" => %{count: "2"}},
+        effects: %{"0" => %{value: "10", target: "products"}}
+      }
+    )
+    |> render_change()
+
+    lv |> element("#condition-0-picker") |> render_click()
+    lv |> form("#promotion-product-picker-search", search: "Cola") |> render_change()
+
+    lv
+    |> element("#promotion-product-picker-product-#{first.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv
+    |> element("#promotion-product-picker button.btn-outline[phx-click=cancel]")
+    |> render_click()
+
+    refute has_element?(lv, ~s(#condition-0 input[value="cola"]))
+
+    lv |> element("#condition-0-picker") |> render_click()
+    lv |> form("#promotion-product-picker-search", search: "") |> render_change()
+    lv |> element("#promotion-product-picker input[phx-click=category_all]") |> render_click()
+    lv |> element("#promotion-product-picker button[phx-click=save]") |> render_click()
+
+    assert has_element?(
+             lv,
+             ~s(#condition-0 input[name="builder[conditions][0][count]"][value="2"])
+           )
+
+    assert has_element?(lv, ~s(#condition-0 input[value="cola"]))
+    assert has_element?(lv, ~s(#condition-0 input[value="tea"]))
+
+    lv |> form("#promotion-form", promotion: %{name: "Combo"}) |> render_change()
+    assert has_element?(lv, ~s(#condition-0 input[value="cola"]))
+    assert has_element?(lv, ~s(#condition-0 input[value="tea"]))
+
+    assert has_element?(
+             lv,
+             ~s(#condition-0 input[name="builder[conditions][0][count]"][value="2"])
+           )
+
+    assert has_element?(lv, ~s(#effect-0 input[name="builder[effects][0][value]"][value="10"]))
+    assert first.id != second.id
   end
 
   test "product discount offers code kinds and ignores forged advanced fields", %{
@@ -263,12 +354,18 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     end
   end
 
-  test "rejects a sale price that is not lower", %{conn: conn, branch: branch} do
+  test "rejects a sale price that is not lower", %{conn: conn, branch: branch, product: product} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/sale")
 
+    lv |> element("#sale-open-product-picker") |> render_click()
+    lv |> form("#sale-product-picker-search", search: "Cola") |> render_change()
+
     lv
-    |> form("#sale-form", sale: %{add: "cola", mode: "price", value: "150"})
-    |> render_submit()
+    |> element("#sale-product-picker-product-#{product.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#sale-product-picker button[phx-click=save]") |> render_click()
+    lv |> form("#sale-form", sale: %{mode: "price", value: "150"}) |> render_submit()
 
     assert has_element?(lv, "#sale-error")
     refute Repo.get_by(Promotion, kind: :automatic)
