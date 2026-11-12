@@ -78,30 +78,27 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6">
+    <div class="flex min-h-[calc(100dvh-var(--staff-header-height)-2rem)] flex-col justify-center sm:min-h-[calc(100dvh-var(--staff-header-height)-3rem)]">
       <.page_header
         title={gettext("Customer address selection")}
         back={~p"/staff/b/#{@current_branch}/delivery"}
-      >
-        <:actions :if={@can_edit}>
-          <button type="submit" form="address-settings" class="btn btn-primary">
-            {gettext("Save")}
-          </button>
-        </:actions>
-      </.page_header>
+      />
 
       <.form
         for={@form}
         id="address-settings"
         phx-change="change"
         phx-submit="save"
-        class="space-y-6 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
+        class="mx-auto w-full max-w-xl space-y-5 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm sm:space-y-6 sm:p-8"
       >
-        <fieldset class="space-y-3">
-          <legend class="font-semibold">{gettext("How customers choose a delivery address")}</legend>
-          <label class="flex items-center gap-3">
+        <fieldset class="grid gap-2 sm:grid-cols-2 sm:gap-3">
+          <legend class="mb-4 w-full text-center text-lg font-semibold sm:text-xl">
+            {gettext("How customers choose a delivery address")}
+          </legend>
+          <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-box border border-base-300 px-4 py-3 text-sm font-medium has-checked:border-primary has-checked:bg-primary/5">
             <input
               type="radio"
+              class="radio radio-primary radio-sm shrink-0"
               name="address[map_address]"
               value="true"
               checked={@map_mode}
@@ -109,9 +106,10 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
             />
             {gettext("On the map")}
           </label>
-          <label class="flex items-center gap-3">
+          <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-box border border-base-300 px-4 py-3 text-sm font-medium has-checked:border-primary has-checked:bg-primary/5">
             <input
               type="radio"
+              class="radio radio-primary radio-sm shrink-0"
               name="address[map_address]"
               value="false"
               checked={not @map_mode}
@@ -121,7 +119,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
           </label>
         </fieldset>
 
-        <div :if={@map_mode} class="space-y-2">
+        <div :if={@map_mode} class="space-y-2 rounded-box bg-base-200/60 p-4 text-sm">
           <p>{gettext("Customers confirm their address on the map before checkout.")}</p>
           <p :if={not @dadata_active} class="text-warning">
             {gettext("Configure DaData before enabling map selection.")}
@@ -134,7 +132,10 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
           </.link>
         </div>
 
-        <div :if={not @map_mode} class="space-y-4">
+        <div
+          :if={not @map_mode}
+          class="space-y-3 rounded-box bg-base-200/60 p-4 [&_.checkbox]:shrink-0 [&_.label-text]:whitespace-normal"
+        >
           <.input
             field={@form[:show_city]}
             type="checkbox"
@@ -155,6 +156,12 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
               {gettext("Edit delivery prices")}
             </.link>
           </p>
+        </div>
+
+        <div :if={@can_edit} class="flex justify-end border-t border-base-300 pt-4">
+          <button type="submit" class="btn btn-primary min-h-12 w-full sm:w-auto sm:min-w-32">
+            {gettext("Save")}
+          </button>
         </div>
       </.form>
     </div>
