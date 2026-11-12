@@ -3,7 +3,7 @@ defmodule DelivestWeb.Client.CatalogLinksTest do
 
   import Delivest.Factory
 
-  alias Delivest.Net
+  alias Delivest.{Net, Popular}
 
   setup do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
@@ -44,6 +44,93 @@ defmodule DelivestWeb.Client.CatalogLinksTest do
   test "menu exposes product slugs", %{conn: conn, branch: branch} do
     body = conn |> get(~p"/client/branches/#{branch.id}/menu") |> json_response(200)
     assert [%{"products" => [%{"slug" => "hinkali"}]}] = body["data"]
+  end
+
+  test "popular display options are independent and preserve product data", ctx do
+    assert %{"data" => [category]} =
+             ctx.conn |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+
+    assert [%{"popular" => false}] = category["products"]
+
+    {:ok, _} = Popular.update_settings(ctx.staff, ctx.branch.id, %{"mode" => "manual"})
+    {:ok, _} = Popular.add_product(ctx.staff, ctx.branch.id, ctx.product.id)
+
+    assert %{"data" => [category]} =
+             build_conn() |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+
+    assert [%{"popular" => true}] = category["products"]
+
+    {:ok, _} =
+      Popular.update_settings(ctx.staff, ctx.branch.id, %{
+        "show_in_menu" => true,
+        "show_in_cart" => false
+      })
+
+    assert %{"data" => [popular, category]} =
+             build_conn() |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+
+    assert popular["id"] == "00000000-0000-4000-8000-000000000001"
+    assert popular["name"] == "Popular"
+    assert popular["products"] == category["products"]
+    assert [%{"popular" => false}] = popular["products"]
+
+    {:ok, _} = Popular.update_settings(ctx.staff, ctx.branch.id, %{"show_in_cart" => true})
+
+    assert %{"data" => [popular, _category]} =
+             build_conn() |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+
+    assert [%{"popular" => true}] = popular["products"]
+
+    {:ok, _} =
+      Popular.update_settings(ctx.staff, ctx.branch.id, %{
+        "show_in_menu" => false,
+        "show_in_cart" => false
+      })
+
+    assert %{"data" => [category]} =
+             build_conn() |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+
+    assert [%{"popular" => false}] = category["products"]
+
+    {:ok, _} = Popular.update_settings(ctx.staff, ctx.branch.id, %{"mode" => "off"})
+
+    assert %{"data" => [category]} =
+             build_conn() |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+
+    assert [%{"popular" => false}] = category["products"]
+  end
+
+  test "empty popular selection creates no category", ctx do
+    {:ok, _} =
+      Popular.update_settings(ctx.staff, ctx.branch.id, %{
+        "mode" => "manual",
+        "show_in_menu" => true
+      })
+
+    assert %{"data" => [_category]} =
+             ctx.conn |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+  end
+
+  test "popular category uses the request locale and promotion prices", ctx do
+    {:ok, _} = Net.update_product(ctx.staff, ctx.product, %{"price" => 30_000})
+    insert_promotion(ctx.branch.id, rules: ~s(then price "hinkali" 199))
+
+    {:ok, _} =
+      Popular.update_settings(ctx.staff, ctx.branch.id, %{
+        "mode" => "manual",
+        "show_in_menu" => true
+      })
+
+    {:ok, _} = Popular.add_product(ctx.staff, ctx.branch.id, ctx.product.id)
+
+    conn = put_req_header(build_conn(), "accept-language", "ru-RU,ru;q=0.9")
+
+    assert %{"data" => [popular, category]} =
+             conn |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
+
+    assert popular["name"] == "Популярное"
+    assert [%{"price" => 19_900, "old_price" => 30_000}] = popular["products"]
+    assert popular["products"] == category["products"]
   end
 
   test "menu exposes the measure unit", %{

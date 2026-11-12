@@ -193,6 +193,21 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
           </p>
         </div>
 
+        <div class="flex flex-wrap gap-6">
+          <.input
+            field={@settings_form[:show_in_menu]}
+            type="checkbox"
+            label={gettext("Show in menu")}
+            disabled={not @can_edit}
+          />
+          <.input
+            field={@settings_form[:show_in_cart]}
+            type="checkbox"
+            label={gettext("Show in cart")}
+            disabled={not @can_edit}
+          />
+        </div>
+
         <p :if={@mode == :manual} class="text-sm text-base-content/60">
           {gettext("Pick the products by hand below and set their order.")}
         </p>

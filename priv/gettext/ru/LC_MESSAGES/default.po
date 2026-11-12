@@ -11101,3 +11101,12 @@ msgstr "На карте"
 #, elixir-autogen, elixir-format
 msgid "Show city in the order form"
 msgstr "Показывать город в форме заказа"
+
+msgid "Show in menu"
+msgstr "Выводить в меню"
+
+msgid "Show in cart"
+msgstr "Выводить в корзине"
+
+msgid "Popular"
+msgstr "Популярное"

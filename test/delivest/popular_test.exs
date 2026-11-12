@@ -5,6 +5,17 @@ defmodule Delivest.PopularTest do
 
   alias Delivest.{Popular, Repo}
 
+  test "display settings reject null flags and keep compatibility defaults" do
+    settings = %Delivest.Popular.Settings{}
+    assert settings.show_in_menu == false
+    assert settings.show_in_cart == true
+
+    changeset = Popular.change_settings(settings, %{show_in_menu: nil, show_in_cart: nil})
+    refute changeset.valid?
+    assert Keyword.has_key?(changeset.errors, :show_in_menu)
+    assert Keyword.has_key?(changeset.errors, :show_in_cart)
+  end
+
   test "manual mode returns the picked products in order" do
     branch = insert(:branch)
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))

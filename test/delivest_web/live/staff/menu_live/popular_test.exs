@@ -42,5 +42,26 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
       live(sign_in(conn, branch, ["products.read"]), ~p"/staff/b/#{branch}/menu/popular")
 
     refute has_element?(lv, "button[form=popular-settings]")
+    assert has_element?(lv, "#popular_show_in_menu[disabled]")
+    assert has_element?(lv, "#popular_show_in_cart[disabled]")
+  end
+
+  test "display options save independently", %{conn: conn} do
+    branch = insert(:branch)
+
+    {:ok, lv, _} =
+      live(
+        sign_in(conn, branch, ["products.read", "products.update"]),
+        ~p"/staff/b/#{branch}/menu/popular"
+      )
+
+    assert has_element?(lv, "#popular_show_in_menu")
+    assert has_element?(lv, "#popular_show_in_cart[checked]")
+
+    lv
+    |> form("#popular-settings", popular: %{show_in_menu: "true", show_in_cart: "false"})
+    |> render_submit()
+
+    assert %{show_in_menu: true, show_in_cart: false} = Popular.get_settings(branch.id)
   end
 end
