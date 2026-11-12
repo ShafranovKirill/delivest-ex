@@ -26,7 +26,12 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
     |> form("#popular-settings", popular: %{mode: "manual"})
     |> render_submit()
 
-    lv |> element("#popular-catalog-#{product.id} input[type=checkbox]") |> render_click()
+    lv |> element("#popular-add-products") |> render_click()
+    lv |> element("#popular-picker button[phx-click=collapse]") |> render_click()
+    lv |> element("#popular-picker-product-#{product.id} input") |> render_click()
+    assert Popular.list_products(branch.id) == []
+    lv |> element("#popular-picker button[phx-click=save]") |> render_click()
+    render(lv)
 
     assert Enum.map(Popular.list_products(branch.id), & &1.id) == [product.id]
 
@@ -42,6 +47,7 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
       live(sign_in(conn, branch, ["products.read"]), ~p"/staff/b/#{branch}/menu/popular")
 
     refute has_element?(lv, "button[form=popular-settings]")
+    refute has_element?(lv, "#popular-add-products")
     assert has_element?(lv, "#popular_show_in_menu[disabled]")
     assert has_element?(lv, "#popular_show_in_cart[disabled]")
   end
@@ -83,5 +89,29 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
       live(sign_in(build_conn(), branch, ["products.read"]), ~p"/staff/b/#{branch}/menu/popular")
 
     refute has_element?(readonly, "#popular-recalculate")
+  end
+
+  test "picker keeps draft through search and discards it on cancel", %{conn: conn} do
+    branch = insert(:branch)
+    product = insert_branch_product(branch.id, name: "Борщ")
+
+    {:ok, lv, _} =
+      live(
+        sign_in(conn, branch, ["products.read", "products.update"]),
+        ~p"/staff/b/#{branch}/menu/popular"
+      )
+
+    lv |> form("#popular-settings", popular: %{mode: "manual"}) |> render_submit()
+    lv |> element("#popular-add-products") |> render_click()
+    refute has_element?(lv, "#popular-picker-product-#{product.id}")
+    lv |> element("#popular-picker button[phx-click=collapse]") |> render_click()
+    lv |> element("#popular-picker-product-#{product.id} input") |> render_click()
+    lv |> form("#popular-picker-search", %{search: "нет"}) |> render_change()
+    assert has_element?(lv, "#popular-picker-categories", "No products")
+    lv |> form("#popular-picker-search", %{search: "Борщ"}) |> render_change()
+    assert has_element?(lv, "#popular-picker-product-#{product.id} input[checked]")
+    lv |> element("#popular-picker button.btn-outline[phx-click=cancel]") |> render_click()
+    render(lv)
+    assert Popular.list_products(branch.id) == []
   end
 end

@@ -27,16 +27,38 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
         ~p"/staff/b/#{ctx.branch}/products/stops"
       )
 
-    assert html =~ "Борщ"
-    assert html =~ "Пельмени"
-
-    lv
-    |> element("#product-stop-#{ctx.soup.id} button[phx-value-period=until_resumed]")
-    |> render_click()
+    refute html =~ "Пельмени"
+    lv |> element("#stop-add-products") |> render_click()
+    lv |> element("#stop-picker button[phx-click=collapse]") |> render_click()
+    lv |> element("#stop-picker-product-#{ctx.soup.id} input") |> render_click()
+    refute Stops.stopped?(ctx.branch.id, ctx.soup.id)
+    lv |> element("#stop-picker button[phx-click=save]") |> render_click()
+    render(lv)
 
     assert Stops.stopped?(ctx.branch.id, ctx.soup.id)
 
-    html = lv |> form("#stop-list-filter", %{"only" => "true"}) |> render_change()
+    lv |> element("#stop-add-products") |> render_click()
+    lv |> element("#stop-picker button[phx-click=collapse]") |> render_click()
+    lv |> element("#stop-picker-product-#{ctx.soup.id} input") |> render_click()
+    lv |> element("#stop-picker button.btn-outline[phx-click=cancel]") |> render_click()
+    render(lv)
+    assert Stops.stopped?(ctx.branch.id, ctx.soup.id)
+
+    lv |> element("#stop-add-products") |> render_click()
+    lv |> element("#stop-picker button[phx-click=collapse]") |> render_click()
+    lv |> element("#stop-picker-product-#{ctx.soup.id} input") |> render_click()
+    lv |> element("#stop-picker button[phx-click=save]") |> render_click()
+    render(lv)
+    refute Stops.stopped?(ctx.branch.id, ctx.soup.id)
+
+    lv |> element("#stop-add-products") |> render_click()
+    lv |> element("#stop-picker button[phx-click=collapse]") |> render_click()
+    lv |> element("#stop-picker-product-#{ctx.soup.id} input") |> render_click()
+    lv |> element("#stop-picker button[phx-click=save]") |> render_click()
+    render(lv)
+    assert Stops.stopped?(ctx.branch.id, ctx.soup.id)
+
+    html = render(lv)
     assert html =~ "Борщ"
     refute html =~ "Пельмени"
 
@@ -52,6 +74,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
       )
 
     refute has_element?(lv, "#product-stop-#{ctx.soup.id} button")
+    refute has_element?(lv, "#stop-add-products")
   end
 
   test "products are recommended and searched", ctx do
@@ -63,12 +86,15 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
         ~p"/staff/b/#{ctx.branch}/products/suggested"
       )
 
-    lv |> element("#suggested-list-#{ctx.soup.id} input") |> render_click()
+    lv |> element("#suggested-add-products") |> render_click()
+    lv |> element("#suggested-picker button[phx-click=collapse]") |> render_click()
+    lv |> element("#suggested-picker-product-#{ctx.soup.id} input") |> render_click()
+    assert {:ok, %{suggested: false}} = Net.get_branch_product(ctx.branch.id, ctx.soup.id)
+    lv |> element("#suggested-picker button[phx-click=save]") |> render_click()
+    render(lv)
     assert {:ok, %{suggested: true}} = Net.get_branch_product(ctx.branch.id, ctx.soup.id)
-
-    html = lv |> form("#suggested-filter", %{"search" => "пельм"}) |> render_change()
-    refute html =~ "Борщ"
-    assert html =~ "Пельмени"
+    assert has_element?(lv, "#suggested-list-#{ctx.soup.id}")
+    refute has_element?(lv, "#suggested-list-#{ctx.soup.id} input")
   end
 
   test "the sidebar groups the menu pages", ctx do

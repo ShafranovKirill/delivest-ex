@@ -11116,3 +11116,15 @@ msgstr "Пересчитать"
 
 msgid "Popular products recalculated"
 msgstr "Популярные товары пересчитаны"
+
+msgid "Add products"
+msgstr "Добавить товары"
+
+msgid "Only selected"
+msgstr "Только выбранные"
+
+msgid "Select all in %{category}"
+msgstr "Выбрать все в категории «%{category}»"
+
+msgid "Selected"
+msgstr "Выбрано"

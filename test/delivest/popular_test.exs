@@ -35,6 +35,18 @@ defmodule Delivest.PopularTest do
     assert Enum.map(Popular.list_products(branch.id), & &1.id) == [first.id]
   end
 
+  test "bulk replacement is atomic and rejects foreign branch products" do
+    branch = insert(:branch)
+    other = insert(:branch)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    first = insert_branch_product(branch.id)
+    foreign = insert_branch_product(other.id)
+
+    assert {:ok, _} = Popular.replace_products(admin, branch.id, [first.id])
+    assert {:error, :invalid_products} = Popular.replace_products(admin, branch.id, [foreign.id])
+    assert Popular.list_product_ids(branch.id) == [first.id]
+  end
+
   test "off mode hides the popular list but keeps the picked products" do
     branch = insert(:branch)
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))

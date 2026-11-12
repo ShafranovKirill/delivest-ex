@@ -145,6 +145,38 @@ defmodule Delivest.Popular do
     |> invalidate_after_success(branch_id)
   end
 
+  def replace_products(staff, branch_id, ids) when is_list(ids) do
+    with :ok <- Identity.authorize(staff, "products.update", branch_id),
+         true <-
+           length(ids) == length(Enum.uniq(ids)) and
+             MapSet.subset?(
+               MapSet.new(ids),
+               MapSet.new(Enum.map(Delivest.Net.list_branch_products(branch_id), & &1.id))
+             ) do
+      result =
+        Repo.transaction(fn ->
+          lock_branch(branch_id)
+          Repo.delete_all(from e in Entry, where: e.branch_id == ^branch_id)
+
+          Enum.with_index(ids)
+          |> Enum.each(fn {id, position} ->
+            %Entry{}
+            |> Entry.changeset(%{branch_id: branch_id, product_id: id, position: position})
+            |> Repo.insert!()
+          end)
+
+          get_settings(branch_id)
+        end)
+
+      result
+      |> Audit.track(staff, "popular.products_replaced")
+      |> invalidate_after_success(branch_id)
+    else
+      false -> {:error, :invalid_products}
+      error -> error
+    end
+  end
+
   def remove_product(staff, branch_id, product_id) do
     with :ok <- Identity.authorize(staff, "products.update", branch_id) do
       {_count, _} =

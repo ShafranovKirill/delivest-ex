@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.ProductLive.StopList do
   use DelivestWeb, :live_view
 
+  alias Phoenix.LiveView.JS
+
   alias Delivest.{Identity, Net}
   alias Delivest.Net.Stops
   alias DelivestWeb.Staff.ProductLive.BranchProducts
@@ -21,6 +23,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
        branch_id: branch_id,
        search: "",
        only: false,
+       picker_open: false,
        can_edit: Identity.can?(socket.assigns.current_staff, "stops.update")
      )
      |> load()}
@@ -31,6 +34,8 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
     {:noreply,
      socket |> assign(search: params["search"] || "", only: params["only"] == "true") |> filter()}
   end
+
+  def handle_event("open_picker", _, socket), do: {:noreply, assign(socket, picker_open: true)}
 
   def handle_event("stop", %{"id" => id, "period" => period}, socket)
       when period in ~w(today until_resumed) do
@@ -51,6 +56,47 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
   end
 
   @impl true
+  def handle_info({:product_picker_cancelled, "stop-picker"}, socket),
+    do: {:noreply, assign(socket, picker_open: false)}
+
+  def handle_info({:product_picker_confirmed, "stop-picker", ids}, socket) do
+    branch_id = socket.assigns.branch_id
+    staff = socket.assigns.current_staff
+    products = BranchProducts.load(branch_id)
+    by_id = Map.new(products, &{&1.id, &1})
+    current = MapSet.new(Map.keys(Stops.by_product(branch_id)))
+    added = Enum.reject(ids, &MapSet.member?(current, &1))
+    removed = Enum.reject(MapSet.to_list(current), &(&1 in ids))
+
+    result =
+      with :ok <- Identity.authorize(staff, "stops.update", branch_id),
+           true <- Enum.all?(ids, &Map.has_key?(by_id, &1)) do
+        Delivest.Repo.transaction(fn ->
+          Enum.each(added, fn id ->
+            case Stops.stop(staff, branch_id, Map.fetch!(by_id, id), :until_resumed) do
+              {:ok, _} -> :ok
+              error -> Delivest.Repo.rollback(error)
+            end
+          end)
+
+          Enum.each(removed, fn id ->
+            case Stops.resume(staff, branch_id, Map.fetch!(by_id, id)) do
+              {:ok, _} -> :ok
+              error -> Delivest.Repo.rollback(error)
+            end
+          end)
+        end)
+      else
+        false -> {:error, :invalid_products}
+        error -> error
+      end
+
+    case result do
+      {:ok, _} -> {:noreply, socket |> assign(picker_open: false) |> load()}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to update the stop list"))}
+    end
+  end
+
   def handle_info(:stops_changed, socket), do: {:noreply, load(socket)}
   def handle_info(:catalog_changed, socket), do: {:noreply, load(socket)}
   def handle_info({event, _product}, socket) when is_atom(event), do: {:noreply, load(socket)}
@@ -92,14 +138,19 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
       >
       </.page_header>
 
-      <BranchProducts.filter_form
-        id="stop-list-filter"
-        search={@search}
-        only={@only}
-        only_label={gettext("Only stopped")}
-      />
+      <button
+        :if={@can_edit}
+        id="stop-add-products"
+        type="button"
+        class="btn btn-primary"
+        phx-click={JS.push_focus() |> JS.push("open_picker")}
+      >{gettext("Add products")}</button>
 
-      <BranchProducts.product_list id="stop-list" products={@shown} empty={gettext("No products")}>
+      <BranchProducts.product_list
+        id="stop-list"
+        products={Enum.filter(@products, &Map.has_key?(@stops, &1.id))}
+        empty={gettext("No products")}
+      >
         <:action :let={product}>
           <.stop_control
             product={product}
@@ -108,6 +159,16 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
           />
         </:action>
       </BranchProducts.product_list>
+      <.live_component
+        :if={@picker_open}
+        module={DelivestWeb.Staff.ProductLive.ProductPicker}
+        id="stop-picker"
+        products={@products}
+        selected_ids={Map.keys(@stops)}
+        title={gettext("Add products")}
+        on_save={fn ids -> send(self(), {:product_picker_confirmed, "stop-picker", ids}) end}
+        on_cancel={fn -> send(self(), {:product_picker_cancelled, "stop-picker"}) end}
+      />
     </div>
     """
   end

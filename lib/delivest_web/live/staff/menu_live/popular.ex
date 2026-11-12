@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.MenuLive.Popular do
   use DelivestWeb, :live_view
 
+  alias Phoenix.LiveView.JS
+
   alias Delivest.{Identity, Net, Popular}
   alias DelivestWeb.Staff.ProductLive.BranchProducts
 
@@ -22,6 +24,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
        branch_id: branch_id,
        can_edit: Identity.can?(socket.assigns.current_staff, "products.update"),
        search: "",
+       picker_open: false,
        mode: settings.mode,
        auto_limit: settings.auto_limit,
        settings_form: to_form(Popular.change_settings(settings, %{}), as: "popular")
@@ -42,6 +45,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
          socket
          |> assign(
            mode: settings.mode,
+           picker_open: settings.mode == :manual and socket.assigns.picker_open,
            auto_limit: settings.auto_limit,
            settings_form: to_form(Popular.change_settings(settings, %{}), as: "popular")
          )
@@ -78,6 +82,8 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
   def handle_event("filter", params, socket) do
     {:noreply, assign(socket, search: params["search"] || "") |> filter()}
   end
+
+  def handle_event("open_picker", _, socket), do: {:noreply, assign(socket, picker_open: true)}
 
   def handle_event("toggle", %{"id" => id}, socket) do
     branch_id = socket.assigns.branch_id
@@ -123,6 +129,24 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
   end
 
   @impl true
+  def handle_info({:product_picker_cancelled, "popular-picker"}, socket),
+    do: {:noreply, assign(socket, picker_open: false)}
+
+  def handle_info({:product_picker_confirmed, "popular-picker", ids}, socket) do
+    result =
+      if Popular.get_settings(socket.assigns.branch_id).mode == :manual do
+        Popular.replace_products(socket.assigns.current_staff, socket.assigns.branch_id, ids)
+      else
+        {:error, :invalid_mode}
+      end
+
+    case result do
+      {:ok, _} -> {:noreply, socket |> assign(picker_open: false) |> load()}
+      {:error, :forbidden} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    end
+  end
+
   def handle_info({event, _product}, socket) when is_atom(event), do: {:noreply, load(socket)}
   def handle_info(:catalog_changed, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
@@ -237,9 +261,17 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
         </p>
       </.form>
 
-      <section :if={@mode != :off} class="grid gap-4 lg:grid-cols-2">
+      <section :if={@mode != :off} class="space-y-3">
         <div class="space-y-3">
-          <h2 class="font-bold">{gettext("Shown in the app")}</h2>
+          <div class="flex items-center justify-between">
+            <h2 class="font-bold">{gettext("Shown in the app")}</h2><button
+              :if={@can_edit and @mode == :manual}
+              id="popular-add-products"
+              type="button"
+              class="btn btn-primary"
+              phx-click={JS.push_focus() |> JS.push("open_picker")}
+            >{gettext("Add products")}</button>
+          </div>
 
           <div
             :if={@mode == :auto}
@@ -304,39 +336,17 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
             </ul>
           </div>
         </div>
-
-        <div :if={@mode == :manual} class="space-y-3">
-          <h2 class="font-bold">{gettext("Add a product")}</h2>
-
-          <BranchProducts.filter_form
-            id="popular-filter"
-            search={@search}
-            only={false}
-            only_label={gettext("Only recommended")}
-          />
-
-          <BranchProducts.product_list
-            id="popular-catalog"
-            products={@shown}
-            empty={gettext("No products")}
-          >
-            <:action :let={product}>
-              <label class="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="toggle toggle-primary toggle-sm"
-                  checked={product.id in @picked_ids}
-                  disabled={not @can_edit}
-                  phx-click="toggle"
-                  phx-value-id={product.id}
-                  aria-label={gettext("Show %{name} as popular", name: product.name)}
-                />
-                <span class="text-xs text-base-content/60">{gettext("Popular")}</span>
-              </label>
-            </:action>
-          </BranchProducts.product_list>
-        </div>
       </section>
+      <.live_component
+        :if={@picker_open}
+        module={DelivestWeb.Staff.ProductLive.ProductPicker}
+        id="popular-picker"
+        products={@products}
+        selected_ids={@picked_ids}
+        title={gettext("Add products")}
+        on_save={fn ids -> send(self(), {:product_picker_confirmed, "popular-picker", ids}) end}
+        on_cancel={fn -> send(self(), {:product_picker_cancelled, "popular-picker"}) end}
+      />
     </div>
     """
   end
