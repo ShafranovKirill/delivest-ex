@@ -7,6 +7,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
 
   def section(path) when is_binary(path) do
     case StaffBranchPath.strip(path) do
+      "/staff/menu/popular" -> :popular
       "/staff/products" -> :products
       "/staff/products/" <> rest -> section_suffix(rest)
       _ -> nil
@@ -17,6 +18,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
 
   def actions?(section, staff) when section in [:modifiers, :tags],
     do: Identity.can?(staff, "catalog.global.manage")
+
+  def actions?(:popular, staff), do: Identity.can?(staff, "products.update")
 
   def actions?(section, _staff) when section in [:products, :bulk], do: true
   def actions?(_section, _staff), do: false

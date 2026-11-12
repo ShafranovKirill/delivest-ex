@@ -6,8 +6,6 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
   alias Delivest.{Identity, Net, Popular}
   alias DelivestWeb.Staff.ProductLive.BranchProducts
 
-  import DelivestWeb.Staff.ProductLive.ProductTags, only: [tabs: 1]
-
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
   @impl true
@@ -180,6 +178,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
       <.page_header
         title={gettext("Popular products")}
         subtitle={gettext("The products the app shows in the popular block of the menu.")}
+        title_in_header={false}
       >
         <:actions :if={@can_edit}>
           <button
@@ -190,8 +189,6 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
           >{gettext("Save")}</button>
         </:actions>
       </.page_header>
-
-      <.tabs current={:popular} branch={@current_branch} />
 
       <button
         :if={@can_edit and @mode == :auto}

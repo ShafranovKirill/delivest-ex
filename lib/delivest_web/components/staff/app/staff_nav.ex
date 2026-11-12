@@ -114,21 +114,7 @@ defmodule DelivestWeb.StaffNav do
           "hero-cube",
           gettext("Products")
         )
-        |> covering([:tags, :suggested])
-        |> allowed(staff, "products.read"),
-        item(
-          :popular,
-          branch && ~p"/staff/b/#{branch}/menu/popular",
-          "hero-fire",
-          gettext("Popular products")
-        )
-        |> allowed(staff, "products.read"),
-        item(
-          :stops,
-          branch && ~p"/staff/b/#{branch}/products/stops",
-          "hero-no-symbol",
-          gettext("Stop list")
-        )
+        |> covering([:tags, :suggested, :popular, :stops])
         |> allowed(staff, "products.read")
       ])
     ]

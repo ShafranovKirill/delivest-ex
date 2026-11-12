@@ -15,6 +15,10 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     assert ProductTags.section("/staff/b/north/products/operations") == nil
     assert ProductTags.section("/staff/b/north/products-foo") == nil
     assert ProductTags.section("/staff/products") == :products
+    assert ProductTags.section("/staff/menu/popular") == :popular
+    assert ProductTags.section("/staff/b/north/menu/popular") == :popular
+    assert ProductTags.section("/staff/b/north/menu/popular/other") == nil
+    assert ProductTags.section("/staff/b/north/menu/popular-other") == nil
   end
 
   test "static product HTML has direct tabs before LiveView connects", %{conn: conn} do

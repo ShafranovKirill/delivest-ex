@@ -100,7 +100,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
   test "the sidebar groups the menu pages", ctx do
     {:ok, _lv, html} =
       live(
-        sign_in(ctx.conn, ctx.branch, ["products.read", "orders.read"]),
+        sign_in(ctx.conn, ctx.branch, ["categories.read", "products.read", "orders.read"]),
         ~p"/staff/b/#{ctx.branch}/products/stops"
       )
 
@@ -119,7 +119,7 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
 
     assert has_element?(lv, "#header-branch", ctx.branch.name)
 
-    assert has_element?(
+    refute has_element?(
              lv,
              ~s(#nav-section-branch a[href="/staff/b/#{ctx.branch.slug}/products/stops"])
            )

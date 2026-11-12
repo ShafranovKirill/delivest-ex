@@ -6,6 +6,50 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
 
   alias Delivest.Popular
 
+  test "static page has the shared product navigation before LiveView connects", %{conn: conn} do
+    branch = insert(:branch)
+    conn = sign_in(conn, branch, ["products.read", "products.update"])
+
+    document =
+      conn
+      |> get(~p"/staff/b/#{branch}/menu/popular")
+      |> html_response(200)
+      |> LazyHTML.from_document()
+
+    assert Enum.count(LazyHTML.query(document, "#staff-header [role='tablist']")) == 1
+
+    assert Enum.count(
+             LazyHTML.query(
+               document,
+               "#staff-header #product-section-tab-popular[aria-current='page']"
+             )
+           ) == 1
+
+    assert Enum.empty?(LazyHTML.query(document, "main [role='tablist']"))
+  end
+
+  test "popular page uses one shared navigation and authorized header Save action", %{conn: conn} do
+    branch = insert(:branch)
+
+    {:ok, lv, _} =
+      live(
+        sign_in(conn, branch, ["products.read", "products.update"]),
+        ~p"/staff/b/#{branch}/menu/popular"
+      )
+
+    assert has_element?(
+             lv,
+             "#staff-header[data-header-layout='product-tabs'][data-header-actions='true']"
+           )
+
+    assert has_element?(lv, "#staff-header #product-section-tab-popular[aria-current='page']")
+    assert has_element?(lv, "main h1.sr-only", "Popular products")
+    refute has_element?(lv, "#staff-page-header")
+    refute has_element?(lv, "#staff-header-context")
+    assert Enum.count(LazyHTML.query(LazyHTML.from_fragment(render(lv)), "[role='tablist']")) == 1
+    assert render(element(lv, "#staff-page-header-actions")) =~ ~s(form="popular-settings")
+  end
+
   defp sign_in(conn, branch, permissions) do
     staff = insert(:staff, role: insert(:role, permissions: permissions))
     insert(:staff_branch, staff: staff, branch: branch)
@@ -47,6 +91,14 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
       live(sign_in(conn, branch, ["products.read"]), ~p"/staff/b/#{branch}/menu/popular")
 
     refute has_element?(lv, "button[form=popular-settings]")
+
+    assert has_element?(
+             lv,
+             "#staff-header[data-header-layout='product-tabs'][data-header-actions='false']"
+           )
+
+    assert has_element?(lv, "#staff-header #product-section-tab-popular[aria-current='page']")
+    refute has_element?(lv, "#staff-page-header-actions")
     refute has_element?(lv, "#popular-add-products")
     assert has_element?(lv, "#popular_show_in_menu[disabled]")
     assert has_element?(lv, "#popular_show_in_cart[disabled]")
