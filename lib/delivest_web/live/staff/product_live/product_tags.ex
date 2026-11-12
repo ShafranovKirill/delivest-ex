@@ -53,7 +53,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
            "hero-adjustments-horizontal", gettext("Modifiers")},
           {:tags, ~p"/staff/b/#{assigns.branch}/products/tags", "hero-tag", gettext("Tags")},
           {:suggested, ~p"/staff/b/#{assigns.branch}/products/suggested", "hero-sparkles",
-           gettext("Recommended")}
+           gettext("Recommended")},
+          {:popular, ~p"/staff/b/#{assigns.branch}/menu/popular", "hero-fire",
+           gettext("Popular products")}
         ]
       )
 

@@ -10,7 +10,8 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
       products: Map.get(assigns, :stopped, MapSet.new()),
       modifiers: Map.get(assigns, :stopped_modifiers, MapSet.new()),
       groups: Map.get(assigns, :modifiers, %{}),
-      rewards: Map.get(assigns, :rewards, %{})
+      rewards: Map.get(assigns, :rewards, %{}),
+      popular: Map.get(assigns, :popular, MapSet.new())
     }
   end
 
@@ -40,6 +41,7 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
       is_active: Map.get(product, :is_active),
       tags: Map.get(product, :tags, []),
       suggested: Map.get(product, :suggested, false),
+      popular: MapSet.member?(stopped.popular, product.id),
       photo_url: Map.get(product, :photo_url),
       stopped: MapSet.member?(stopped.products, product.id),
       modifier_groups:

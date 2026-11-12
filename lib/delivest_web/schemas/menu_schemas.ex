@@ -79,6 +79,11 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           type: :boolean,
           description: "Предлагать в корзине в блоке «Добавить к заказу»"
         },
+        popular: %Schema{
+          type: :boolean,
+          description:
+            "Хит продаж филиала: попадает в блок «Популярное» по настройке режима популярных товаров"
+        },
         stopped: %Schema{
           type: :boolean,
           description: "Товар в стоп-листе: показывать, но не давать заказать"

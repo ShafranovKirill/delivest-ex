@@ -507,6 +507,10 @@ defmodule DelivestWeb.Router do
           live "/new", Products, :new
         end
 
+        scope "/menu", MenuLive do
+          live "/popular", Popular, :index
+        end
+
         scope "/stocks", StockLive do
           live "/", Stocks, :index
           live "/:id/edit", Stocks, :edit

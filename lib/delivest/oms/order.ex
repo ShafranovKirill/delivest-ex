@@ -83,6 +83,7 @@ defmodule Delivest.Oms.Order do
     field :cancel_acknowledged_at, :utc_datetime
     field :deleted_at, :utc_datetime
     field :awaiting_payment, :boolean, default: false
+    field :address_by_operator, :boolean, default: false
 
     embeds_one :address, Address, on_replace: :update
     has_many :items, OrderItem, on_delete: :delete_all, on_replace: :delete
@@ -120,6 +121,7 @@ defmodule Delivest.Oms.Order do
       :delivery_amount,
       :cook_by,
       :comment,
+      :address_by_operator,
       :deleted_at
     ])
     |> cast_embed(:address, required: false)
@@ -240,11 +242,15 @@ defmodule Delivest.Oms.Order do
   defp validate_address_if_delivery(changeset) do
     fulfillment_type = get_field(changeset, :fulfillment_type)
 
-    if to_string(fulfillment_type) == "delivery" do
-      changeset
-      |> validate_required([:address])
-    else
-      changeset
+    cond do
+      to_string(fulfillment_type) != "delivery" ->
+        changeset
+
+      get_field(changeset, :address_by_operator) == true ->
+        changeset
+
+      true ->
+        validate_required(changeset, [:address])
     end
   end
 

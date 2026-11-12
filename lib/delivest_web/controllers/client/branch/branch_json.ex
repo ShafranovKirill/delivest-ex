@@ -52,6 +52,15 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
 
   defp payment_methods(_info), do: [:cash, :card_offline]
 
+  defp delivery_settings(branch_id) do
+    settings = Delivest.Delivery.get_settings(branch_id)
+
+    %{
+      map_address: settings.map_address != false,
+      operator_address: settings.operator_address == true
+    }
+  end
+
   defp loyalty(%{loyalty: %Delivest.Identity.Branch.LoyaltySettings{}}, branch) do
     loyalty = Delivest.Loyalty.settings(branch)
     enabled = loyalty.enabled and Delivest.Gateway.own?(branch, :loyalty)
@@ -94,6 +103,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       manual_rating: info.manual_rating,
       intake: intake(info),
       fulfillment_methods: Delivest.Identity.Branch.FulfillmentSettings.enabled(info.fulfillment),
+      delivery: delivery_settings(branch.id),
       payment_methods: payment_methods(info),
       loyalty: loyalty(info, branch),
       notifications_enabled: MapSet.member?(capabilities, branch.id),

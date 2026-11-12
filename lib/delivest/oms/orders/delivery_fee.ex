@@ -11,10 +11,20 @@ defmodule Delivest.Oms.Orders.DeliveryFee do
     cond do
       Keyword.has_key?(opts, :delivery_amount) -> {:ok, opts[:delivery_amount] || 0}
       fulfillment(attrs, order) != "delivery" -> {:ok, 0}
+      by_operator?(attrs, order) -> {:ok, 0}
       source not in @quoted_sources -> {:ok, 0}
       true -> quote(branch_id, address(attrs, order), pricing.total, source)
     end
   end
+
+  defp by_operator?(attrs, order) do
+    case attrs do
+      %{"address_by_operator" => value} when not is_nil(value) -> truthy?(value)
+      _ -> match?(%Order{address_by_operator: true}, order)
+    end
+  end
+
+  defp truthy?(value), do: value in [true, "true", "1", 1]
 
   defp quote(branch_id, address, total, source) do
     case {Delivery.quote(branch_id, point(address), total), source} do
