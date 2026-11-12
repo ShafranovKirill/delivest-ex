@@ -64,4 +64,24 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
 
     assert %{show_in_menu: true, show_in_cart: false} = Popular.get_settings(branch.id)
   end
+
+  test "auto mode offers an authorized refresh", %{conn: conn} do
+    branch = insert(:branch)
+
+    {:ok, editable, _} =
+      live(
+        sign_in(conn, branch, ["products.read", "products.update"]),
+        ~p"/staff/b/#{branch}/menu/popular"
+      )
+
+    editable |> form("#popular-settings", popular: %{mode: "auto"}) |> render_submit()
+    assert has_element?(editable, "#popular-recalculate")
+    editable |> element("#popular-recalculate") |> render_click()
+    assert Popular.get_settings(branch.id).calculated_at
+
+    {:ok, readonly, _} =
+      live(sign_in(build_conn(), branch, ["products.read"]), ~p"/staff/b/#{branch}/menu/popular")
+
+    refute has_element?(readonly, "#popular-recalculate")
+  end
 end

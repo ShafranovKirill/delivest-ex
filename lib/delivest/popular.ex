@@ -10,6 +10,7 @@ defmodule Delivest.Popular do
   import Ecto.Query
 
   alias Delivest.{Analytics, Audit, Identity, Repo}
+  alias Delivest.Net.Catalogs
   alias Delivest.Popular.{Entry, Settings}
 
   @auto_period_days 30
@@ -22,12 +23,79 @@ defmodule Delivest.Popular do
 
   def update_settings(staff, branch_id, attrs) do
     with :ok <- Identity.authorize(staff, "products.update", branch_id) do
-      branch_id
-      |> get_settings()
-      |> Settings.changeset(attrs)
-      |> Repo.insert_or_update()
+      result =
+        Repo.transaction(fn ->
+          lock_branch(branch_id)
+          old = get_settings(branch_id)
+
+          case old |> Settings.changeset(attrs) |> Repo.insert_or_update() do
+            {:ok, settings} ->
+              if refresh_on_update?(old, settings),
+                do: refresh_snapshot!(settings),
+                else: settings
+
+            {:error, changeset} ->
+              Repo.rollback(changeset)
+          end
+        end)
+
+      if match?({:ok, _}, result), do: Catalogs.clear_menu_cache(branch_id)
+      result
     end
     |> Audit.track(staff, "popular.settings_updated")
+  end
+
+  def recalculate(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "products.update", branch_id) do
+      recalculate_branch(branch_id)
+    end
+    |> Audit.track(staff, "popular.recalculated")
+  end
+
+  def recalculate_branch(branch_id, force? \\ true) do
+    result =
+      Repo.transaction(fn ->
+        lock_branch(branch_id)
+        settings = get_settings(branch_id)
+
+        if settings.mode == :auto and
+             (force? or Delivest.Popular.RefreshWorker.due?(settings, DateTime.utc_now())) do
+          refresh_snapshot!(settings)
+        else
+          settings
+        end
+      end)
+
+    if match?({:ok, _}, result), do: Catalogs.clear_menu_cache(branch_id)
+    result
+  end
+
+  defp lock_branch(branch_id) do
+    Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", [branch_id])
+  end
+
+  defp refresh_on_update?(old, settings) do
+    settings.mode == :auto and (settings.show_in_menu or settings.show_in_cart) and
+      (old.mode != :auto or old.auto_limit != settings.auto_limit or
+         (not old.show_in_menu and settings.show_in_menu) or
+         (not old.show_in_cart and settings.show_in_cart))
+  end
+
+  defp refresh_snapshot!(settings) do
+    today = Delivest.LocalTime.today(Delivest.LocalTime.timezone(settings.branch_id))
+    from_date = Date.add(today, -(@auto_period_days - 1))
+
+    ids =
+      settings.branch_id
+      |> Analytics.top_products({from_date, today},
+        limit: settings.auto_limit,
+        sort_by: :quantity
+      )
+      |> Enum.map(& &1.product_id)
+
+    settings
+    |> Ecto.Changeset.change(auto_product_ids: ids, calculated_at: DateTime.utc_now(:second))
+    |> Repo.update!()
   end
 
   def list_entries(branch_id) do
@@ -44,14 +112,16 @@ defmodule Delivest.Popular do
   def list_products(branch_id) do
     case get_settings(branch_id).mode do
       :off -> []
-      :auto -> auto_products(branch_id)
+      :auto -> products_by_ids(branch_id, get_settings(branch_id).auto_product_ids)
       :manual -> manual_products(branch_id)
     end
   end
 
   defp manual_products(branch_id) do
-    ids = list_product_ids(branch_id)
+    products_by_ids(branch_id, list_product_ids(branch_id))
+  end
 
+  defp products_by_ids(branch_id, ids) do
     products =
       branch_id
       |> Delivest.Net.list_branch_products()
@@ -59,23 +129,6 @@ defmodule Delivest.Popular do
 
     ids
     |> Enum.map(&Map.get(products, &1))
-    |> Enum.reject(&is_nil/1)
-  end
-
-  defp auto_products(branch_id) do
-    limit = get_settings(branch_id).auto_limit
-
-    today = Delivest.LocalTime.today(Delivest.LocalTime.timezone(branch_id))
-    from_date = Date.add(today, -(@auto_period_days - 1))
-
-    by_id =
-      branch_id
-      |> Delivest.Net.list_branch_products()
-      |> Map.new(&{&1.id, &1})
-
-    branch_id
-    |> Analytics.top_products({from_date, today}, limit: limit, sort_by: :quantity)
-    |> Enum.map(&Map.get(by_id, &1.product_id))
     |> Enum.reject(&is_nil/1)
   end
 
@@ -89,6 +142,7 @@ defmodule Delivest.Popular do
       |> Repo.insert(on_conflict: :nothing, conflict_target: [:branch_id, :product_id])
     end
     |> Audit.track(staff, "popular.product_added")
+    |> invalidate_after_success(branch_id)
   end
 
   def remove_product(staff, branch_id, product_id) do
@@ -100,6 +154,7 @@ defmodule Delivest.Popular do
       {:ok, :removed}
     end
     |> Audit.track(staff, "popular.product_removed")
+    |> invalidate_after_success(branch_id)
   end
 
   def reorder(staff, branch_id, ids) do
@@ -119,7 +174,15 @@ defmodule Delivest.Popular do
       false -> {:error, :invalid_order}
       error -> error
     end
+    |> invalidate_after_success(branch_id)
   end
+
+  defp invalidate_after_success({:ok, _} = result, branch_id) do
+    Catalogs.clear_menu_cache(branch_id)
+    result
+  end
+
+  defp invalidate_after_success(result, _branch_id), do: result
 
   defp fetch_branch_product(branch_id, product_id) do
     branch_id

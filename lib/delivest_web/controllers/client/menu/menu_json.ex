@@ -41,7 +41,7 @@ defmodule DelivestWeb.Client.Menu.MenuJSON do
       is_active: Map.get(product, :is_active),
       tags: Map.get(product, :tags, []),
       suggested: Map.get(product, :suggested, false),
-      popular: MapSet.member?(stopped.popular, product.id),
+      popular: Map.get(product, :popular, false),
       photo_url: Map.get(product, :photo_url),
       stopped: MapSet.member?(stopped.products, product.id),
       modifier_groups:

@@ -40,7 +40,8 @@ config :delivest, Oban,
     {"11 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "atol_kkt"}},
     {"23 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "dadata"}},
     {"41 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yookassa_reconcile"}},
-    {"*/5 * * * *", Delivest.Background.Dispatcher}
+    {"*/5 * * * *", Delivest.Background.Dispatcher},
+    {"*/5 * * * *", Delivest.Popular.RefreshWorker}
   ],
   repo: Delivest.Repo
 

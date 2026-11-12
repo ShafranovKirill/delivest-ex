@@ -46,14 +46,56 @@ defmodule DelivestWeb.Client.CatalogLinksTest do
     assert [%{"products" => [%{"slug" => "hinkali"}]}] = body["data"]
   end
 
+  test "warm menu GET does not read popular settings or analytics", ctx do
+    {:ok, _} = Popular.update_settings(ctx.staff, ctx.branch.id, %{"mode" => "auto"})
+    path = ~p"/client/branches/#{ctx.branch.id}/menu"
+    handler = "popular-menu-query-#{System.unique_integer([:positive])}"
+    test_pid = self()
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:delivest, :repo, :query],
+        fn _, _, metadata, _ ->
+          if self() == test_pid, do: send(test_pid, {:menu_sql, metadata.query})
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    assert ctx.conn |> get(path) |> json_response(200)
+    cold_queries = collect_menu_sql([])
+    refute Enum.any?(cold_queries, &String.contains?(&1, "order_items"))
+
+    assert build_conn() |> get(path) |> json_response(200)
+
+    queries = collect_menu_sql([])
+    refute Enum.any?(queries, &String.contains?(&1, "popular_settings"))
+    refute Enum.any?(queries, &String.contains?(&1, "popular_products"))
+    refute Enum.any?(queries, &String.contains?(&1, "order_items"))
+  end
+
+  defp collect_menu_sql(acc) do
+    receive do
+      {:menu_sql, query} -> collect_menu_sql([query | acc])
+    after
+      0 -> acc
+    end
+  end
+
   test "popular display options are independent and preserve product data", ctx do
     assert %{"data" => [category]} =
              ctx.conn |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)
 
     assert [%{"popular" => false}] = category["products"]
 
+    previous_version = Delivest.Repo.get!(Delivest.Identity.Branch, ctx.branch.id).catalog_version
+
     {:ok, _} = Popular.update_settings(ctx.staff, ctx.branch.id, %{"mode" => "manual"})
     {:ok, _} = Popular.add_product(ctx.staff, ctx.branch.id, ctx.product.id)
+
+    assert Delivest.Repo.get!(Delivest.Identity.Branch, ctx.branch.id).catalog_version >
+             previous_version
 
     assert %{"data" => [category]} =
              build_conn() |> get(~p"/client/branches/#{ctx.branch.id}/menu") |> json_response(200)

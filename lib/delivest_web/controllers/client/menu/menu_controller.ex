@@ -2,7 +2,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   use DelivestWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Delivest.{Net, Popular, Promo}
+  alias Delivest.{Net, Promo}
   alias DelivestWeb.Helpers.ApiError
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias DelivestWeb.Schemas.MenuSchemas.MenuResponse
@@ -44,17 +44,13 @@ defmodule DelivestWeb.Client.Menu.MenuController do
     case Net.get_menu_for_branch(branch_id) do
       {:ok, menu} ->
         menu = Promo.overlay_menu(menu, branch_id)
-        settings = Popular.get_settings(branch_id)
-        popular_products = Popular.list_products(branch_id)
-        popular_ids = MapSet.new(Enum.map(popular_products, & &1.id))
 
         render(conn, :index,
-          menu: with_popular_category(menu, settings.show_in_menu, popular_products, conn),
+          menu: localize_popular_category(menu, conn),
           rewards: Map.new(Net.list_branch_products(branch_id), &{&1.id, &1.stars_reward}),
           stopped: Net.Stops.stopped_ids(branch_id),
           modifiers: menu_modifiers(menu),
-          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id),
-          popular: if(settings.show_in_cart, do: popular_ids, else: MapSet.new())
+          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id)
         )
 
       {:error, _reason} ->
@@ -62,33 +58,11 @@ defmodule DelivestWeb.Client.Menu.MenuController do
     end
   end
 
-  defp with_popular_category(menu, false, _products, _conn), do: menu
-  defp with_popular_category(menu, _show, [], _conn), do: menu
-
-  defp with_popular_category(menu, true, products, conn) do
-    by_id =
-      menu
-      |> Enum.flat_map(&(&1.products || []))
-      |> Map.new(&{&1.id, &1})
-
-    selected =
-      products
-      |> Enum.map(&Map.get(by_id, &1.id))
-      |> Enum.reject(&is_nil/1)
-
-    if selected == [] do
-      menu
-    else
-      category = %{
-        id: @popular_category_id,
-        name: popular_name(conn),
-        order: -1.0,
-        is_active: true,
-        products: selected
-      }
-
-      [category | menu]
-    end
+  defp localize_popular_category(menu, conn) do
+    Enum.map(menu, fn
+      %{id: @popular_category_id} = category -> %{category | name: popular_name(conn)}
+      category -> category
+    end)
   end
 
   defp popular_name(conn) do

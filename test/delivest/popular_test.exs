@@ -82,7 +82,56 @@ defmodule Delivest.PopularTest do
       quantity: 5
     })
 
+    assert Popular.list_products(branch.id) == []
+    {:ok, _} = Popular.recalculate(admin, branch.id)
     assert Enum.map(Popular.list_products(branch.id), & &1.id) == [product.id]
+    assert Popular.get_settings(branch.id).auto_product_ids == [product.id]
+    assert Popular.get_settings(branch.id).calculated_at
+  end
+
+  test "daily refresh is due only for enabled auto settings after local 03:00" do
+    branch = insert(:branch)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    {:ok, settings} = Popular.update_settings(admin, branch.id, %{"mode" => "auto"})
+    settings = %{settings | calculated_at: DateTime.add(DateTime.utc_now(), -86_400)}
+
+    zone = Delivest.LocalTime.timezone(branch.id)
+    today = Delivest.LocalTime.today(zone)
+    before = Delivest.LocalTime.naive_to_utc(NaiveDateTime.new!(today, ~T[02:59:00]), zone)
+    after_time = Delivest.LocalTime.naive_to_utc(NaiveDateTime.new!(today, ~T[03:01:00]), zone)
+
+    refute Delivest.Popular.RefreshWorker.due?(settings, before)
+    assert Delivest.Popular.RefreshWorker.due?(settings, after_time)
+    refute Delivest.Popular.RefreshWorker.due?(%{settings | mode: :manual}, after_time)
+    refute Delivest.Popular.RefreshWorker.due?(%{settings | show_in_cart: false}, after_time)
+  end
+
+  test "daily worker refreshes enabled auto snapshots once and skips disabled branches" do
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    active = insert(:branch)
+    disabled = insert(:branch)
+
+    {:ok, active_settings} = Popular.update_settings(admin, active.id, %{"mode" => "auto"})
+
+    {:ok, disabled_settings} =
+      Popular.update_settings(admin, disabled.id, %{
+        "mode" => "auto",
+        "show_in_cart" => false,
+        "show_in_menu" => false
+      })
+
+    Repo.update!(Ecto.Changeset.change(active_settings, calculated_at: nil))
+    Repo.update!(Ecto.Changeset.change(disabled_settings, calculated_at: nil))
+
+    assert :ok = Delivest.Popular.RefreshWorker.perform(%Oban.Job{})
+    refreshed = Popular.get_settings(active.id)
+    assert refreshed.calculated_at
+    assert Popular.get_settings(disabled.id).calculated_at == nil
+
+    version = Repo.get!(Delivest.Identity.Branch, active.id).catalog_version
+    assert :ok = Delivest.Popular.RefreshWorker.perform(%Oban.Job{})
+    assert Popular.get_settings(active.id).calculated_at == refreshed.calculated_at
+    assert Repo.get!(Delivest.Identity.Branch, active.id).catalog_version == version
   end
 
   test "editing is forbidden without products.update" do

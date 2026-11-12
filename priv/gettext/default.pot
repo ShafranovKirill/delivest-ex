@@ -10735,3 +10735,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Popular"
 msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex
+#, elixir-autogen, elixir-format
+msgid "Recalculate"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex
+#, elixir-autogen, elixir-format
+msgid "Popular products recalculated"
+msgstr ""

@@ -11110,3 +11110,9 @@ msgstr "Выводить в корзине"
 
 msgid "Popular"
 msgstr "Популярное"
+
+msgid "Recalculate"
+msgstr "Пересчитать"
+
+msgid "Popular products recalculated"
+msgstr "Популярные товары пересчитаны"

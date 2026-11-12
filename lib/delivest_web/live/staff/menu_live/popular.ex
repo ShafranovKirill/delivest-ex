@@ -62,6 +62,19 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
     end
   end
 
+  def handle_event("recalculate", _params, socket) do
+    case Popular.recalculate(socket.assigns.current_staff, socket.assigns.branch_id) do
+      {:ok, _} ->
+        {:noreply, socket |> load() |> put_flash(:info, gettext("Popular products recalculated"))}
+
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    end
+  end
+
   def handle_event("filter", params, socket) do
     {:noreply, assign(socket, search: params["search"] || "") |> filter()}
   end
@@ -155,6 +168,14 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
       </.page_header>
 
       <.tabs current={:popular} branch={@current_branch} />
+
+      <button
+        :if={@can_edit and @mode == :auto}
+        id="popular-recalculate"
+        type="button"
+        phx-click="recalculate"
+        class="btn btn-outline"
+      >{gettext("Recalculate")}</button>
 
       <.form
         for={@settings_form}

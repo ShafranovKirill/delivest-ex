@@ -25,6 +25,8 @@ defmodule Delivest.Popular.Settings do
     field :auto_limit, :integer, default: 6
     field :show_in_menu, :boolean, default: false
     field :show_in_cart, :boolean, default: true
+    field :auto_product_ids, {:array, :binary_id}, default: []
+    field :calculated_at, :utc_datetime
     belongs_to :branch, Delivest.Identity.Branch
 
     timestamps(type: :utc_datetime)
