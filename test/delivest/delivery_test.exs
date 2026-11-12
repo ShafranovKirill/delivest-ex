@@ -73,6 +73,25 @@ defmodule Delivest.DeliveryTest do
       assert {:error, :no_coordinates} = Delivery.quote(branch.id, nil, 800)
     end
 
+    test "manual address uses flat thresholds while preserving zones", %{
+      branch: branch,
+      staff: staff
+    } do
+      {:ok, _} =
+        Delivery.update_settings(staff, branch.id, %{
+          "map_address" => false,
+          "show_zones" => true,
+          "thresholds" => thresholds([{0, 250}])
+        })
+
+      assert {:ok, %{price: 250, zone: nil}} = Delivery.quote(branch.id, nil, 800)
+      assert [] = Delivery.list_public_zones(branch.id)
+      assert %{mode: :zones} = Delivery.get_settings(branch.id)
+
+      {:ok, _} = Delivery.update_settings(staff, branch.id, %{"map_address" => true})
+      assert {:error, :no_coordinates} = Delivery.quote(branch.id, nil, 800)
+    end
+
     test "disabled and deleted zones do not deliver", %{branch: branch, staff: staff, zone: zone} do
       {:ok, _} = Delivery.update_zone(staff, branch.id, zone.id, %{"enabled" => false})
       assert {:error, :outside_zones} = Delivery.quote(branch.id, @inside, 800)

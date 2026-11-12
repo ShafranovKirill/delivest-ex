@@ -1,9 +1,10 @@
 defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Net, Promo}
+  alias Delivest.{Net, Promo, Repo}
   alias Delivest.Promo.Dsl
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
+  alias Phoenix.LiveView.JS
 
   alias DelivestWeb.Staff.PromotionLive.{
     PromotionHelpers,
@@ -11,6 +12,33 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     RulesHelp,
     RulesText
   }
+
+  def update(%{picker_result: %{ids: ids}}, socket) do
+    %{kind: kind, index: index} = socket.assigns.picker_target
+    allowed = Map.new(socket.assigns.picker_products, &{&1.id, &1.slug})
+    slugs = ids |> Enum.map(&Map.get(allowed, &1)) |> Enum.reject(&is_nil/1)
+
+    rows =
+      if kind == :condition,
+        do: socket.assigns.builder.conditions,
+        else: socket.assigns.builder.effects
+
+    rows =
+      List.update_at(rows, index, fn row ->
+        if Map.has_key?(row, "product"),
+          do: Map.put(row, "product", List.first(slugs) || ""),
+          else: Map.put(row, "products", slugs)
+      end)
+
+    builder =
+      if kind == :condition,
+        do: %{socket.assigns.builder | conditions: rows},
+        else: %{socket.assigns.builder | effects: rows}
+
+    {:ok, socket |> assign(builder: builder, picker_target: nil) |> refresh(form_action(socket))}
+  end
+
+  def update(%{picker_cancelled: true}, socket), do: {:ok, assign(socket, picker_target: nil)}
 
   @impl true
   def update(assigns, socket) do
@@ -29,6 +57,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
        |> assign(
          loaded_id: assigns.promotion.id,
          products: product_options(assigns.branch_id),
+         picker_products:
+           assigns.branch_id |> Net.list_branch_products() |> Repo.preload(:category),
+         picker_target: nil,
          mode: mode,
          builder: builder,
          params: %{},
@@ -91,6 +122,30 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         socket,
         &RulesBuilder.remove_product(&1, String.to_integer(index), slug, params["kind"])
       )
+
+  def handle_event("open_product_picker", %{"kind" => kind, "index" => index}, socket)
+      when kind in ~w(condition effect) do
+    index = String.to_integer(index)
+
+    rows =
+      if kind == "condition",
+        do: socket.assigns.builder.conditions,
+        else: socket.assigns.builder.effects
+
+    case Enum.at(rows, index) do
+      %{} = row ->
+        target = %{
+          kind: String.to_existing_atom(kind),
+          index: index,
+          slugs: List.wrap(row["products"] || row["product"])
+        }
+
+        {:noreply, assign(socket, picker_target: target)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
 
   def handle_event("text_mode", _params, socket) do
     params =
@@ -214,6 +269,11 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   defp product_options(branch_id),
     do: branch_id |> Net.list_branch_products() |> Enum.map(&{&1.name, &1.slug})
 
+  defp picker_single?(builder, %{kind: kind, index: index}) do
+    rows = if kind == :condition, do: builder.conditions, else: builder.effects
+    rows |> Enum.at(index, %{}) |> Map.has_key?("product")
+  end
+
   defp rules_placeholder, do: "when subtotal >= 1500\nthen discount 10%"
 
   defp rules_errors(form) do
@@ -269,12 +329,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   defp weekday_label("fri"), do: gettext("Fri")
   defp weekday_label("sat"), do: gettext("Sat")
   defp weekday_label("sun"), do: gettext("Sun")
-
-  defp product_select_options(products, current) do
-    if current in ["", nil] or Enum.any?(products, fn {_name, slug} -> slug == current end),
-      do: products,
-      else: products ++ [{gettext("%{slug} (not found)", slug: current), current}]
-  end
 
   defp product_name(products, slug) do
     Enum.find_value(products, slug, fn {name, product_slug} -> product_slug == slug && name end)
@@ -607,6 +661,19 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
           </div>
         </aside>
       </.form>
+      <.live_component
+        :if={@picker_target}
+        module={DelivestWeb.Staff.ProductLive.ProductPicker}
+        id="promotion-product-picker"
+        products={@picker_products}
+        selected_ids={
+          for product <- @picker_products, product.slug in @picker_target.slugs, do: product.id
+        }
+        title={gettext("Which products?")}
+        mode={if picker_single?(@builder, @picker_target), do: :single, else: :multiple}
+        on_save={fn ids -> send_update(__MODULE__, id: @id, picker_result: %{ids: ids}) end}
+        on_cancel={fn -> send_update(__MODULE__, id: @id, picker_cancelled: true) end}
+      />
     </div>
     """
   end
@@ -791,6 +858,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       id={"builder-c#{@index}"}
       row={@row}
       products={@products}
+      target={@target}
+      kind="condition"
+      index={@index}
     />
     """
   end
@@ -922,17 +992,15 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         </span>
       </div>
       <input type="hidden" name={"builder[effects][#{@index}][products][]"} value="" />
-      <select
-        name={"builder[effects][#{@index}][add]"}
-        class="select select-sm w-full"
-        id={"builder-e#{@index}-add-#{length(@row["products"])}"}
-      >
-        <option value="">{gettext("+ Add product")}</option>
-        {Phoenix.HTML.Form.options_for_select(
-          Enum.reject(@products, fn {_name, slug} -> slug in @row["products"] end),
-          nil
-        )}
-      </select>
+      <button
+        id={"builder-e#{@index}-picker"}
+        type="button"
+        class="btn btn-outline btn-sm"
+        phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @target)}
+        phx-value-kind="effect"
+        phx-value-index={@index}
+        phx-target={@target}
+      >{gettext("+ Add product")}</button>
     </div>
     """
   end
@@ -950,6 +1018,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       id={"builder-e#{@index}"}
       row={@row}
       products={@products}
+      target={@target}
+      kind="effect"
+      index={@index}
     />
     """
   end
@@ -957,17 +1028,16 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   defp effect_fields(%{row: %{"type" => "price"}} = assigns) do
     ~H"""
     <div class="flex gap-2">
-      <select
-        name={"builder[effects][#{@index}][product]"}
-        class="select select-sm flex-1 min-w-0"
-        id={"builder-e#{@index}-product"}
-      >
-        <option value="">{gettext("Choose a product")}</option>
-        {Phoenix.HTML.Form.options_for_select(
-          product_select_options(@products, @row["product"]),
-          @row["product"]
-        )}
-      </select>
+      <input type="hidden" name={"builder[effects][#{@index}][product]"} value={@row["product"]} />
+      <button
+        id={"builder-e#{@index}-picker"}
+        type="button"
+        class="btn btn-outline btn-sm flex-1"
+        phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @target)}
+        phx-value-kind="effect"
+        phx-value-index={@index}
+        phx-target={@target}
+      >{product_name(@products, @row["product"]) || gettext("Choose a product")}</button>
       <label class="input input-sm w-28 shrink-0">
         <input
           type="text"
@@ -1011,17 +1081,15 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         </span>
       </div>
       <input type="hidden" name={@prefix <> "[products][]"} value="" />
-      <select
-        id={"#{@kind}-#{@index}-add-#{length(@row["products"])}"}
-        name={@prefix <> "[add]"}
-        class="select select-sm w-full"
-      >
-        <option value="">{gettext("+ Add product")}</option>
-        {Phoenix.HTML.Form.options_for_select(
-          Enum.reject(@products, fn {_, slug} -> slug in @row["products"] end),
-          nil
-        )}
-      </select>
+      <button
+        id={"#{@kind}-#{@index}-picker"}
+        type="button"
+        class="btn btn-outline btn-sm"
+        phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @target)}
+        phx-value-kind={@kind}
+        phx-value-index={@index}
+        phx-target={@target}
+      >{gettext("+ Add product")}</button>
       <.input
         type="number"
         id={"#{@kind}-#{@index}-count"}
@@ -1039,21 +1107,23 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   attr :id, :string, required: true
   attr :row, :map, required: true
   attr :products, :list, required: true
+  attr :target, :any, required: true
+  attr :kind, :string, required: true
+  attr :index, :integer, required: true
 
   defp product_and_count(assigns) do
     ~H"""
     <div class="flex gap-2">
-      <select
-        name={"#{@prefix}[product]"}
-        class="select select-sm flex-1 min-w-0"
-        id={"#{@id}-product"}
-      >
-        <option value="">{gettext("Choose a product")}</option>
-        {Phoenix.HTML.Form.options_for_select(
-          product_select_options(@products, @row["product"]),
-          @row["product"]
-        )}
-      </select>
+      <input type="hidden" name={"#{@prefix}[product]"} value={@row["product"]} />
+      <button
+        id={"#{@id}-picker"}
+        type="button"
+        class="btn btn-outline btn-sm flex-1"
+        phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @target)}
+        phx-value-kind={@kind}
+        phx-value-index={@index}
+        phx-target={@target}
+      >{product_name(@products, @row["product"]) || gettext("Choose a product")}</button>
       <label class="input input-sm w-24 shrink-0">
         <span class="text-base-content/50">×</span>
         <input

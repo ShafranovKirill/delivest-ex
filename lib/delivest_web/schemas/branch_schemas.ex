@@ -91,6 +91,14 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
               type: :boolean,
               description: "Включён ли выбор адреса по карте на сайте"
             },
+            address_mode_set: %Schema{
+              type: :boolean,
+              description: "Способ выбора адреса явно настроен для филиала"
+            },
+            show_city: %Schema{
+              type: :boolean,
+              description: "Показывать поле города при ручном вводе адреса"
+            },
             operator_address: %Schema{
               type: :boolean,
               description: "Разрешена ли галочка «назову адрес оператору» в форме заказа"

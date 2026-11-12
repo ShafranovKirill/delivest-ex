@@ -8,6 +8,8 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   alias DelivestWeb.Schemas.MenuSchemas.MenuResponse
   alias OpenApiSpex.Schema
 
+  @popular_category_id "00000000-0000-4000-8000-000000000001"
+
   operation(:index,
     summary: "Получить меню филиала",
     description:
@@ -41,17 +43,51 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   def index(conn, %{"branch_id" => branch_id}) do
     case Net.get_menu_for_branch(branch_id) do
       {:ok, menu} ->
+        menu = Promo.overlay_menu(menu, branch_id)
+
         render(conn, :index,
-          menu: Promo.overlay_menu(menu, branch_id),
+          menu: localize_popular_category(menu, conn),
           rewards: Map.new(Net.list_branch_products(branch_id), &{&1.id, &1.stars_reward}),
           stopped: Net.Stops.stopped_ids(branch_id),
           modifiers: menu_modifiers(menu),
-          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id),
-          popular: MapSet.new(Enum.map(Delivest.Popular.list_products(branch_id), & &1.id))
+          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id)
         )
 
       {:error, _reason} ->
         ApiError.send_error(conn, :bad_request, :bad_request, "Failed to fetch menu")
     end
+  end
+
+  defp localize_popular_category(menu, conn) do
+    Enum.map(menu, fn
+      %{id: @popular_category_id} = category -> %{category | name: popular_name(conn)}
+      category -> category
+    end)
+  end
+
+  defp popular_name(conn) do
+    locale =
+      conn
+      |> get_req_header("accept-language")
+      |> List.first()
+      |> case do
+        nil ->
+          DelivestWeb.Plugs.Locale.default_locale()
+
+        header ->
+          case header
+               |> String.split(",", parts: 2)
+               |> hd()
+               |> String.trim()
+               |> String.downcase() do
+            "ru" <> _ -> "ru"
+            "en" <> _ -> "en"
+            _ -> DelivestWeb.Plugs.Locale.default_locale()
+          end
+      end
+
+    Gettext.with_locale(DelivestWeb.Gettext, locale, fn ->
+      Gettext.gettext(DelivestWeb.Gettext, "Popular")
+    end)
   end
 end

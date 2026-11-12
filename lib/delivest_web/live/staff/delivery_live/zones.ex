@@ -30,8 +30,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
     do: {:noreply, assign_settings_form(socket, params)}
 
   def handle_event("save_settings", %{"delivery" => params}, socket) do
-    attrs =
-      Map.take(params, ["mode", "show_zones", "outside_zones", "map_address", "operator_address"])
+    attrs = Map.take(params, ["mode", "show_zones", "outside_zones"])
 
     attrs =
       if Map.has_key?(params, "price"),
@@ -168,13 +167,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
       |> Map.merge(%{
         "mode" => to_string(settings.mode),
         "show_zones" => settings.show_zones,
-        "outside_zones" => settings.outside_zones,
-        "map_address" => settings.map_address != false,
-        "operator_address" => settings.operator_address == true
+        "outside_zones" => settings.outside_zones
       })
 
     socket
-    |> assign(settings: settings)
+    |> assign(settings: settings, manual_address: settings.map_address == false)
     |> assign_settings_form(params)
   end
 
@@ -287,7 +284,12 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
           </label>
         </div>
 
-        <div :if={@mode == :flat} class="space-y-2">
+        <p :if={@manual_address and @mode == :zones} class="text-sm text-base-content/70">
+          {gettext(
+            "Manual addresses use the branch's flat delivery price. Your zones stay saved for map mode."
+          )}
+        </p>
+        <div :if={@mode == :flat or @manual_address} class="space-y-2">
           <p class="text-sm text-base-content/60">
             {gettext(
               "One price for any address. Leave the price empty for free delivery, set «free from» for free delivery from a sum."
@@ -296,7 +298,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
           <.conditions form={@settings_form} disabled={not @can_edit} />
         </div>
 
-        <div :if={@mode == :zones} class="space-y-3">
+        <div :if={@mode == :zones and not @manual_address} class="space-y-3">
           <p class="text-sm text-base-content/60">
             {gettext(
               "The price depends on the zone of the address. Draw the zones on the map below or add a zone by radius around the branch."
@@ -327,33 +329,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
           </p>
         </div>
 
-        <div class="space-y-2 border-t border-base-300 pt-4">
-          <.input
-            field={@settings_form[:map_address]}
-            type="checkbox"
-            label={gettext("Pick the address on the map")}
-            disabled={not @can_edit}
-          />
-          <p class="pl-7 text-sm text-base-content/60">
-            {gettext(
-              "When off, the site does not ask for the address after the first product. The customer enters the address in the order form."
-            )}
-          </p>
-          <.input
-            field={@settings_form[:operator_address]}
-            type="checkbox"
-            label={gettext("Allow «I will tell the address to the operator»")}
-            disabled={not @can_edit}
-          />
-          <p class="pl-7 text-sm text-base-content/60">
-            {gettext(
-              "Adds a checkbox to the order form. The customer may skip the address and tell it to the operator by phone."
-            )}
-          </p>
-        </div>
-
         <div
-          :if={@mode == :zones and not @address_map}
+          :if={@mode == :zones and not @manual_address and not @address_map}
           role="alert"
           class="alert alert-warning text-sm"
         >

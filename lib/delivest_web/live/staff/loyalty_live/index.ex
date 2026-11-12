@@ -2,8 +2,9 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
   import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
-  alias Delivest.{Identity, Loyalty}
+  alias Delivest.{Identity, Loyalty, Repo}
   alias Delivest.Identity.Branch.LoyaltySettings
+  alias Phoenix.LiveView.JS
 
   on_mount {DelivestWeb.Hooks.GatewayArea, :loyalty}
   on_mount {DelivestWeb.Hooks.Permission, "promotions.read"}
@@ -11,6 +12,8 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     branch = socket.assigns.current_branch
+    products = branch.id |> Delivest.Net.list_branch_products() |> Repo.preload(:category)
+    visible_ids = for product <- products, configured?(product), do: product.id
 
     {:ok,
      socket
@@ -21,10 +24,14 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
        product_search: "",
        product_settings_open: false,
        pending_products: %{},
+       deselected_ids: [],
+       picker_products: products,
+       picker_open: false,
+       visible_ids: visible_ids,
        configured_only: false,
-       configured_count: Enum.count(Delivest.Net.list_branch_products(branch.id), &configured?/1)
+       configured_count: length(visible_ids)
      )
-     |> stream(:products, Delivest.Net.list_branch_products(branch.id))
+     |> stream(:products, Enum.filter(products, &(&1.id in visible_ids)))
      |> assign_form(LoyaltySettings.changeset(Loyalty.settings(branch), %{}))}
   end
 
@@ -46,17 +53,14 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         configured_only: params["configured"] == "true"
       )
 
-    products = Delivest.Net.list_branch_products(socket.assigns.current_branch.id)
-    query = String.downcase(String.trim(socket.assigns.product_search))
-
-    products =
-      Enum.filter(products, fn product ->
-        (not socket.assigns.configured_only or configured?(product)) and
-          String.contains?(String.downcase(product.name), query)
-      end)
-
-    {:noreply, stream(socket, :products, products, reset: true)}
+    {:noreply,
+     stream(socket, :products, filtered_products(socket.assigns.picker_products, socket),
+       reset: true
+     )}
   end
+
+  def handle_event("open_product_picker", _, socket),
+    do: {:noreply, assign(socket, picker_open: true)}
 
   def handle_event("toggle_products", %{"open" => open}, socket) do
     {:noreply, assign(socket, product_settings_open: open)}
@@ -74,11 +78,21 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
   end
 
   def handle_event("save_products", _params, socket) do
+    pending =
+      socket.assigns.pending_products
+      |> Map.take(socket.assigns.visible_ids)
+      |> Map.merge(
+        Map.new(
+          socket.assigns.deselected_ids,
+          &{&1, %{"stars_price" => "", "stars_reward" => ""}}
+        )
+      )
+
     result =
       Loyalty.set_products(
         socket.assigns.current_staff,
         socket.assigns.current_branch.id,
-        socket.assigns.pending_products
+        pending
       )
 
     case result do
@@ -88,6 +102,9 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         socket =
           assign(socket,
             pending_products: %{},
+            deselected_ids: [],
+            visible_ids: for(product <- products, configured?(product), do: product.id),
+            picker_products: Repo.preload(products, :category),
             configured_count: Enum.count(products, &configured?/1)
           )
 
@@ -125,11 +142,35 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
     end
   end
 
+  @impl true
+  def handle_info({:loyalty_picker_confirmed, ids}, socket) do
+    allowed = MapSet.new(Enum.map(socket.assigns.picker_products, & &1.id))
+    ids = ids |> Enum.filter(&MapSet.member?(allowed, &1)) |> Enum.uniq()
+    by_id = Map.new(socket.assigns.picker_products, &{&1.id, &1})
+    deselected = for {id, product} <- by_id, configured?(product) and id not in ids, do: id
+    socket = assign(socket, visible_ids: ids, deselected_ids: deselected, picker_open: false)
+
+    {:noreply,
+     stream(socket, :products, filtered_products(socket.assigns.picker_products, socket),
+       reset: true
+     )}
+  end
+
+  def handle_info(:loyalty_picker_cancelled, socket) do
+    socket = assign(socket, picker_open: false)
+
+    {:noreply,
+     stream(socket, :products, filtered_products(socket.assigns.picker_products, socket),
+       reset: true
+     )}
+  end
+
   defp filtered_products(products, socket) do
     query = String.downcase(String.trim(socket.assigns.product_search))
 
     Enum.filter(products, fn product ->
-      (not socket.assigns.configured_only or configured?(product)) and
+      product.id in socket.assigns.visible_ids and
+        (not socket.assigns.configured_only or configured?(product)) and
         String.contains?(String.downcase(product.name), query)
     end)
   end
@@ -286,6 +327,14 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
           />
         </summary>
         <div class="border-t border-base-300">
+          <div :if={@can_edit} class="p-4">
+            <button
+              id="loyalty-open-product-picker"
+              type="button"
+              class="btn btn-outline"
+              phx-click={JS.push_focus() |> JS.push("open_product_picker")}
+            >{gettext("Add products")}</button>
+          </div>
           <form
             id="loyalty-product-filter"
             phx-change="filter_products"
@@ -393,7 +442,9 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
             id="save-product-bonuses"
             type="button"
             phx-click="save_products"
-            disabled={map_size(@pending_products) == 0}
+            disabled={
+              map_size(Map.take(@pending_products, @visible_ids)) == 0 and @deselected_ids == []
+            }
             class="btn btn-primary"
             phx-disable-with={gettext("Saving...")}
           >
@@ -401,6 +452,17 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
           </button>
         </div>
       </details>
+      <.live_component
+        :if={@picker_open}
+        module={DelivestWeb.Staff.ProductLive.ProductPicker}
+        id="loyalty-product-picker"
+        products={@picker_products}
+        selected_ids={@visible_ids}
+        title={gettext("Products for stars")}
+        mode={:multiple}
+        on_save={fn ids -> send(self(), {:loyalty_picker_confirmed, ids}) end}
+        on_cancel={fn -> send(self(), :loyalty_picker_cancelled) end}
+      />
       <script :type={Phoenix.LiveView.ColocatedHook} name=".ProductSettings">
         export default {
           mounted() {

@@ -23,6 +23,10 @@ defmodule Delivest.Popular.Settings do
   schema "popular_settings" do
     field :mode, Ecto.Enum, values: @modes, default: :off
     field :auto_limit, :integer, default: 6
+    field :show_in_menu, :boolean, default: false
+    field :show_in_cart, :boolean, default: true
+    field :auto_product_ids, {:array, :binary_id}, default: []
+    field :calculated_at, :utc_datetime
     belongs_to :branch, Delivest.Identity.Branch
 
     timestamps(type: :utc_datetime)
@@ -33,8 +37,8 @@ defmodule Delivest.Popular.Settings do
 
   def changeset(settings, attrs) do
     settings
-    |> cast(attrs, [:mode, :auto_limit])
-    |> validate_required([:mode])
+    |> cast(attrs, [:mode, :auto_limit, :show_in_menu, :show_in_cart])
+    |> validate_required([:mode, :show_in_menu, :show_in_cart])
     |> validate_inclusion(:mode, @modes)
     |> validate_number(:auto_limit,
       greater_than_or_equal_to: @auto_limit_range.first,

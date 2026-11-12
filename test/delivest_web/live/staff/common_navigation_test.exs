@@ -237,4 +237,25 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/diagnostics']")
     refute has_element?(logs, "#nav-section-network a[href='/staff/settings']")
   end
+
+  test "product subpages keep Products active without duplicate sidebar links", %{conn: conn} do
+    branch = insert(:branch)
+    conn = login(conn, ["categories.read", "products.read"], [branch], branch.id)
+
+    for path <- [~p"/staff/b/#{branch}/products/stops", ~p"/staff/b/#{branch}/menu/popular"] do
+      {:ok, view, _} = live(conn, path)
+
+      assert has_element?(view, "#nav-group-menu[data-open]")
+
+      assert has_element?(
+               view,
+               "#nav-group-menu a[href='/staff/b/#{branch.slug}/products'].menu-active"
+             )
+
+      refute has_element?(view, "#main-sidebar a[href='/staff/b/#{branch.slug}/products/stops']")
+      refute has_element?(view, "#main-sidebar a[href='/staff/b/#{branch.slug}/menu/popular']")
+      assert has_element?(view, "#staff-header #product-section-tab-popular")
+      assert has_element?(view, "#staff-header #product-section-tab-stops")
+    end
+  end
 end

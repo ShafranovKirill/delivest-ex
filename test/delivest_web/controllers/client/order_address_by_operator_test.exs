@@ -28,7 +28,12 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
     product = insert_branch_product(branch.id, price: 300)
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
 
-    {:ok, _} = Delivery.update_settings(admin, branch.id, %{"mode" => "flat"})
+    {:ok, _} =
+      Delivery.update_settings(admin, branch.id, %{
+        "mode" => "flat",
+        "map_address" => false,
+        "operator_address" => true
+      })
 
     conn =
       put_req_header(conn, "x-forwarded-for", "operator-#{System.unique_integer([:positive])}")
@@ -79,7 +84,70 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
 
     assert branch_payload["branch_info"]["delivery"] == %{
              "map_address" => false,
+             "address_mode_set" => false,
+             "show_city" => false,
              "operator_address" => true
            }
+  end
+
+  test "public checkout rejects operator address when the branch has not enabled it", %{
+    conn: conn
+  } do
+    branch = insert(:branch, is_active: true)
+    product = insert_branch_product(branch.id, price: 300)
+
+    conn =
+      put_req_header(
+        conn,
+        "x-forwarded-for",
+        "operator-disabled-#{System.unique_integer([:positive])}"
+      )
+
+    {conn, cart_id} = cart(conn, branch, product)
+
+    payload = %{
+      "cart_id" => cart_id,
+      "branch_id" => branch.id,
+      "fulfillment_type" => "delivery",
+      "payment_method" => "cash",
+      "customer_phone" => "+79990001122",
+      "address_by_operator" => true
+    }
+
+    assert %{"error" => "address_by_operator_unavailable"} =
+             conn |> post(~p"/client/orders", payload) |> json_response(422)
+  end
+
+  test "explicit map mode requires DaData and coordinates", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    product = insert_branch_product(branch.id, price: 300)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+    {:ok, _} =
+      Delivery.update_settings(admin, branch.id, %{
+        "map_address" => true,
+        "address_mode_set" => true
+      })
+
+    conn =
+      put_req_header(
+        conn,
+        "x-forwarded-for",
+        "map-required-#{System.unique_integer([:positive])}"
+      )
+
+    {conn, cart_id} = cart(conn, branch, product)
+
+    payload = %{
+      "cart_id" => cart_id,
+      "branch_id" => branch.id,
+      "fulfillment_type" => "delivery",
+      "payment_method" => "cash",
+      "customer_phone" => "+79990001122",
+      "address" => %{"street" => "Ленина", "house" => "1"}
+    }
+
+    assert %{"error" => "delivery_no_coordinates"} =
+             conn |> post(~p"/client/orders", payload) |> json_response(422)
   end
 end

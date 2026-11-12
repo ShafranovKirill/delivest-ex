@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.ProductLive.Suggested do
   use DelivestWeb, :live_view
 
+  alias Phoenix.LiveView.JS
+
   alias Delivest.{Identity, Net}
   alias DelivestWeb.Staff.ProductLive.BranchProducts
 
@@ -18,6 +20,7 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
        branch_id: branch_id,
        search: "",
        only: false,
+       picker_open: false,
        can_edit: Identity.can?(socket.assigns.current_staff, "products.update")
      )
      |> load()}
@@ -28,6 +31,8 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
     {:noreply,
      socket |> assign(search: params["search"] || "", only: params["only"] == "true") |> filter()}
   end
+
+  def handle_event("open_picker", _, socket), do: {:noreply, assign(socket, picker_open: true)}
 
   def handle_event("toggle", %{"id" => id}, socket) do
     with {:ok, product} <- Net.get_branch_product(socket.assigns.branch_id, id),
@@ -42,7 +47,53 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
     end
   end
 
+  def handle_event("remove", %{"id" => id}, socket) do
+    with {:ok, product} <- Net.get_branch_product(socket.assigns.branch_id, id),
+         {:ok, _} <-
+           Net.update_product(socket.assigns.current_staff, product, %{"suggested" => false}) do
+      {:noreply, load(socket)}
+    else
+      {:error, :forbidden} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    end
+  end
+
   @impl true
+  def handle_info({:product_picker_cancelled, "suggested-picker"}, socket),
+    do: {:noreply, assign(socket, picker_open: false)}
+
+  def handle_info({:product_picker_confirmed, "suggested-picker", ids}, socket) do
+    branch_id = socket.assigns.branch_id
+    staff = socket.assigns.current_staff
+    products = BranchProducts.load(branch_id)
+    valid = MapSet.new(Enum.map(products, & &1.id))
+
+    result =
+      with :ok <- Identity.authorize(staff, "products.update", branch_id),
+           true <- MapSet.subset?(MapSet.new(ids), valid) do
+        Delivest.Repo.transaction(fn ->
+          Enum.each(products, fn product ->
+            desired = product.id in ids
+
+            if product.suggested != desired do
+              case Net.update_product(staff, product, %{"suggested" => desired}) do
+                {:ok, _} -> :ok
+                error -> Delivest.Repo.rollback(error)
+              end
+            end
+          end)
+        end)
+      else
+        false -> {:error, :invalid_products}
+        error -> error
+      end
+
+    case result do
+      {:ok, _} -> {:noreply, socket |> assign(picker_open: false) |> load()}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    end
+  end
+
   def handle_info({event, _product}, socket) when is_atom(event), do: {:noreply, load(socket)}
   def handle_info(:catalog_changed, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
@@ -67,30 +118,40 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
       >
       </.page_header>
 
-      <BranchProducts.filter_form
-        id="suggested-filter"
-        search={@search}
-        only={@only}
-        only_label={gettext("Only recommended")}
-      />
+      <button
+        :if={@can_edit}
+        id="suggested-add-products"
+        type="button"
+        class="btn btn-primary"
+        phx-click={JS.push_focus() |> JS.push("open_picker")}
+      >{gettext("Add products")}</button>
 
       <BranchProducts.product_list
         id="suggested-list"
-        products={@shown}
+        products={Enum.filter(@products, & &1.suggested)}
         empty={gettext("No products")}
       >
         <:action :let={product}>
-          <input
-            type="checkbox"
-            class="toggle toggle-primary toggle-sm"
-            checked={product.suggested}
-            disabled={not @can_edit}
-            phx-click="toggle"
+          <button
+            :if={@can_edit}
+            type="button"
+            class="btn btn-ghost btn-xs"
+            phx-click="remove"
             phx-value-id={product.id}
-            aria-label={gettext("Recommend %{name}", name: product.name)}
-          />
+            aria-label={gettext("Remove")}
+          >{gettext("Remove")}</button>
         </:action>
       </BranchProducts.product_list>
+      <.live_component
+        :if={@picker_open}
+        module={DelivestWeb.Staff.ProductLive.ProductPicker}
+        id="suggested-picker"
+        products={@products}
+        selected_ids={for p <- @products, p.suggested, do: p.id}
+        title={gettext("Add products")}
+        on_save={fn ids -> send(self(), {:product_picker_confirmed, "suggested-picker", ids}) end}
+        on_cancel={fn -> send(self(), {:product_picker_cancelled, "suggested-picker"}) end}
+      />
     </div>
     """
   end

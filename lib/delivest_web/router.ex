@@ -464,6 +464,7 @@ defmodule DelivestWeb.Router do
         live "/statistics", StatisticsLive.Index, :index
         live "/advertising-links", AdvertisingLive.Index, :index
         live "/delivery", DeliveryLive.Index, :index
+        live "/delivery/address", DeliveryLive.Address, :index
         live "/delivery/zones", DeliveryLive.Zones, :index
         live "/delivery/couriers", DeliveryLive.Couriers, :index
         live "/deliveries", CourierLive.Index, :index

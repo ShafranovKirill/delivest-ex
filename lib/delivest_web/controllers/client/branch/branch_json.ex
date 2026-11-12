@@ -57,7 +57,9 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
 
     %{
       map_address: settings.map_address != false,
-      operator_address: settings.operator_address == true
+      address_mode_set: settings.address_mode_set == true,
+      show_city: settings.map_address == false and settings.show_city == true,
+      operator_address: settings.map_address == false and settings.operator_address == true
     }
   end
 

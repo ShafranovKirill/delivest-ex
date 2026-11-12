@@ -152,8 +152,8 @@ defmodule DelivestWeb.StaffSidebar do
           class="ml-auto size-3.5 shrink-0 transition-transform group-data-open/nav:rotate-90"
         />
       </button>
-      <ul class="staff-sidebar-group-list menu w-full gap-1 hidden border-l border-base-300 ml-6 p-0 pl-2 group-data-open/nav:flex">
-        <li :for={item <- @group.items}>
+      <ul class="staff-sidebar-group-list ml-4 hidden min-w-0 self-stretch flex-col gap-1 border-l border-base-300 p-0 pl-2 group-data-open/nav:flex">
+        <li :for={item <- @group.items} class="min-w-0 list-none">
           <.nav_link item={item} current_page={@current_page} />
         </li>
       </ul>
@@ -195,12 +195,12 @@ defmodule DelivestWeb.StaffSidebar do
       navigate={@item.path}
       title={@item.label}
       class={[
-        "staff-sidebar-nav-link flex items-center gap-2 rounded-field px-2.5 py-2 text-[13px] font-medium text-base-content/70 hover:bg-base-200/70 hover:text-base-content",
+        "staff-sidebar-nav-link flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-field px-2.5 py-2 text-[13px] font-medium text-base-content/70 hover:bg-base-200/70 hover:text-base-content",
         @current_page in @item.pages && "menu-active"
       ]}
     >
       <.icon name={@item.icon} class="size-5 shrink-0" />
-      <span class="staff-sidebar-label truncate">{@item.label}</span>
+      <span class="staff-sidebar-label min-w-0 flex-1 truncate">{@item.label}</span>
     </.link>
     """
   end

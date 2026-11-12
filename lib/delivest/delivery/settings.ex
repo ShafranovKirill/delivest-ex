@@ -16,6 +16,8 @@ defmodule Delivest.Delivery.Settings do
     field :show_zones, :boolean, default: false
     field :outside_zones, :boolean, default: false
     field :map_address, :boolean, default: true
+    field :address_mode_set, :boolean, default: false
+    field :show_city, :boolean, default: false
     field :operator_address, :boolean, default: false
     embeds_many :thresholds, Threshold, on_replace: :delete
     belongs_to :branch, Delivest.Identity.Branch
@@ -27,7 +29,15 @@ defmodule Delivest.Delivery.Settings do
 
   def changeset(settings, attrs) do
     settings
-    |> cast(attrs, [:mode, :show_zones, :outside_zones, :map_address, :operator_address])
+    |> cast(attrs, [
+      :mode,
+      :show_zones,
+      :outside_zones,
+      :map_address,
+      :address_mode_set,
+      :show_city,
+      :operator_address
+    ])
     |> cast_embed(:thresholds, sort_param: :thresholds_sort, drop_param: :thresholds_drop)
     |> validate_required([:mode])
     |> Threshold.validate_list(:thresholds)

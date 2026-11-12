@@ -89,6 +89,15 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     |> form("#loyalty-form", loyalty: %{enabled: "true", shop_enabled: "true"})
     |> render_submit()
 
+    refute has_element?(lv, "#products-#{product.id} input[name=stars_price]")
+    lv |> element("#loyalty-open-product-picker") |> render_click()
+    lv |> form("#loyalty-product-picker-search", search: product.name) |> render_change()
+
+    lv
+    |> element("#loyalty-product-picker-product-#{product.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#loyalty-product-picker button[phx-click=save]") |> render_click()
     assert has_element?(lv, "#products-#{product.id} input[name=stars_price]")
 
     lv
@@ -120,6 +129,60 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     refute has_element?(lv, "#products-#{unconfigured.id}")
     lv |> form("#loyalty-product-filter", configured: "true", search: "Tea") |> render_change()
     refute has_element?(lv, "#products-#{configured.id}")
+  end
+
+  test "picker cancel and reopen preserve unsaved product bonuses", %{conn: conn, branch: branch} do
+    first = insert_branch_product(branch.id, name: "Soup", stars_price: 20)
+    second = insert_branch_product(branch.id, name: "Tea")
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/loyalty")
+
+    lv
+    |> form("#loyalty-form", loyalty: %{enabled: "true", shop_enabled: "true"})
+    |> render_submit()
+
+    lv |> form("#bonus-form-#{first.id}", stars_price: "25", stars_reward: "3") |> render_change()
+    lv |> element("#loyalty-open-product-picker") |> render_click()
+
+    lv
+    |> element("#loyalty-product-picker button.btn-outline[phx-click=cancel]")
+    |> render_click()
+
+    assert has_element?(lv, "#products-#{first.id} input[name=stars_price][value='25']")
+
+    lv |> element("#loyalty-open-product-picker") |> render_click()
+    lv |> form("#loyalty-product-picker-search", search: "Tea") |> render_change()
+
+    lv
+    |> element("#loyalty-product-picker-product-#{second.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#loyalty-product-picker button[phx-click=save]") |> render_click()
+    assert has_element?(lv, "#products-#{first.id} input[name=stars_price][value='25']")
+    assert has_element?(lv, "#products-#{second.id}")
+
+    lv |> form("#bonus-form-#{second.id}", stars_price: "30") |> render_change()
+    lv |> element("#save-product-bonuses") |> render_click()
+    assert Repo.reload!(first).stars_price == 25
+    assert Repo.reload!(second).stars_price == 30
+
+    lv |> element("#loyalty-open-product-picker") |> render_click()
+    lv |> form("#loyalty-product-picker-search", search: "Soup") |> render_change()
+
+    lv
+    |> element("#loyalty-product-picker-product-#{first.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#loyalty-product-picker button[phx-click=save]") |> render_click()
+    assert Repo.reload!(first).stars_price == 25
+    lv |> element("#loyalty-open-product-picker") |> render_click()
+    lv |> form("#loyalty-product-picker-search", search: "Soup") |> render_change()
+
+    lv
+    |> element("#loyalty-product-picker-product-#{first.id} input[phx-click=toggle]")
+    |> render_click()
+
+    lv |> element("#loyalty-product-picker button[phx-click=save]") |> render_click()
+    assert has_element?(lv, "#products-#{first.id} input[name=stars_price][value='25']")
   end
 
   test "global bonus draft survives branch interactions", %{conn: conn, branch: branch} do

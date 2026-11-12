@@ -10652,3 +10652,116 @@ msgstr ""
 
 msgid "Scroll sections right"
 msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:145
+#, elixir-autogen, elixir-format
+msgid "Allow customers to tell the address to an operator"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:26
+#, elixir-autogen, elixir-format
+msgid "Choose how customers enter their delivery address."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:37
+#: lib/delivest_web/live/staff/delivery_live/address.ex:125
+#, elixir-autogen, elixir-format
+msgid "Configure DaData before enabling map selection."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:16
+#: lib/delivest_web/live/staff/delivery_live/address.ex:81
+#: lib/delivest_web/live/staff/delivery_live/index.ex:25
+#, elixir-autogen, elixir-format
+msgid "Customer address selection"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:123
+#, elixir-autogen, elixir-format
+msgid "Customers confirm their address on the map before checkout."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:131
+#, elixir-autogen, elixir-format
+msgid "DaData integration settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:153
+#, elixir-autogen, elixir-format
+msgid "Edit delivery prices"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:99
+#, elixir-autogen, elixir-format
+msgid "How customers choose a delivery address"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:149
+#, elixir-autogen, elixir-format
+msgid "Manual addresses use the branch's flat delivery price. Your delivery zones stay saved for map mode."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/zones.ex:288
+#, elixir-autogen, elixir-format
+msgid "Manual addresses use the branch's flat delivery price. Your zones stay saved for map mode."
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:118
+#, elixir-autogen, elixir-format
+msgid "Manually in the order form"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:108
+#, elixir-autogen, elixir-format
+msgid "On the map"
+msgstr ""
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:139
+#, elixir-autogen, elixir-format
+msgid "Show city in the order form"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex
+#, elixir-autogen, elixir-format
+msgid "Show in menu"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex
+#, elixir-autogen, elixir-format
+msgid "Show in cart"
+msgstr ""
+
+#: lib/delivest_web/controllers/client/menu/menu_controller.ex
+#, elixir-autogen, elixir-format
+msgid "Popular"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex
+#, elixir-autogen, elixir-format
+msgid "Recalculate"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex
+#, elixir-autogen, elixir-format
+msgid "Popular products recalculated"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/product_picker.ex
+#, elixir-autogen, elixir-format
+msgid "Add products"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/product_picker.ex
+#, elixir-autogen, elixir-format
+msgid "Only selected"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/product_picker.ex
+#, elixir-autogen, elixir-format
+msgid "Select all in %{category}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/product_picker.ex
+#, elixir-autogen, elixir-format
+msgid "Selected"
+msgstr ""

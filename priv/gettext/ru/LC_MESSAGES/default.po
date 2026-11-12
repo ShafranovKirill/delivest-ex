@@ -11033,3 +11033,98 @@ msgstr "Применено"
 #, elixir-format
 msgid "Product operations in «%{subject}»: created %{created}, updated %{updated}, skipped %{skipped}"
 msgstr "Товарные операции в филиале «%{subject}»: создано %{created}, обновлено %{updated}, пропущено %{skipped}"
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:145
+#, elixir-autogen, elixir-format
+msgid "Allow customers to tell the address to an operator"
+msgstr "Разрешить покупателю назвать адрес оператору"
+
+#: lib/delivest_web/live/staff/delivery_live/index.ex:26
+#, elixir-autogen, elixir-format
+msgid "Choose how customers enter their delivery address."
+msgstr "Выберите, как покупатели указывают адрес доставки."
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:37
+#: lib/delivest_web/live/staff/delivery_live/address.ex:125
+#, elixir-autogen, elixir-format
+msgid "Configure DaData before enabling map selection."
+msgstr "Перед включением выбора на карте настройте DaData."
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:16
+#: lib/delivest_web/live/staff/delivery_live/address.ex:81
+#: lib/delivest_web/live/staff/delivery_live/index.ex:25
+#, elixir-autogen, elixir-format
+msgid "Customer address selection"
+msgstr "Выбор адреса клиентом"
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:123
+#, elixir-autogen, elixir-format
+msgid "Customers confirm their address on the map before checkout."
+msgstr "Покупатель подтверждает адрес на карте до оформления заказа."
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:131
+#, elixir-autogen, elixir-format
+msgid "DaData integration settings"
+msgstr "Настройки интеграции DaData"
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:153
+#, elixir-autogen, elixir-format
+msgid "Edit delivery prices"
+msgstr "Настроить стоимость доставки"
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:99
+#, elixir-autogen, elixir-format
+msgid "How customers choose a delivery address"
+msgstr "Как покупатели выбирают адрес доставки"
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:149
+#, elixir-autogen, elixir-format
+msgid "Manual addresses use the branch's flat delivery price. Your delivery zones stay saved for map mode."
+msgstr "При ручном вводе действует единая стоимость доставки филиала. Настройки зон сохраняются для режима с картой."
+
+#: lib/delivest_web/live/staff/delivery_live/zones.ex:288
+#, elixir-autogen, elixir-format
+msgid "Manual addresses use the branch's flat delivery price. Your zones stay saved for map mode."
+msgstr "При ручном вводе действует единая стоимость доставки филиала. Настройки зон сохраняются для режима с картой."
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:118
+#, elixir-autogen, elixir-format
+msgid "Manually in the order form"
+msgstr "Вручную при оформлении заказа"
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:108
+#, elixir-autogen, elixir-format
+msgid "On the map"
+msgstr "На карте"
+
+#: lib/delivest_web/live/staff/delivery_live/address.ex:139
+#, elixir-autogen, elixir-format
+msgid "Show city in the order form"
+msgstr "Показывать город в форме заказа"
+
+msgid "Show in menu"
+msgstr "Выводить в меню"
+
+msgid "Show in cart"
+msgstr "Выводить в корзине"
+
+msgid "Popular"
+msgstr "Популярное"
+
+msgid "Recalculate"
+msgstr "Пересчитать"
+
+msgid "Popular products recalculated"
+msgstr "Популярные товары пересчитаны"
+
+msgid "Add products"
+msgstr "Добавить товары"
+
+msgid "Only selected"
+msgstr "Только выбранные"
+
+msgid "Select all in %{category}"
+msgstr "Выбрать все в категории «%{category}»"
+
+msgid "Selected"
+msgstr "Выбрано"

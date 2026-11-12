@@ -323,6 +323,15 @@ defmodule DelivestWeb.Client.Order.OrderController do
         "Pick the address on the map"
       )
 
+  defp render_error(conn, :address_by_operator_unavailable),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :address_by_operator_unavailable,
+        "The branch does not allow giving the address to the operator"
+      )
+
   defp render_error(conn, :client_auth_required),
     do:
       ApiError.send_error(
