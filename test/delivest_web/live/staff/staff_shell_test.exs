@@ -99,10 +99,16 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => center.id})
 
     {:ok, global, _} = live(conn, ~p"/staff/settings")
-    assert has_element?(global, "#staff-header-context[title='Network']", "Network")
+    assert has_element?(global, "#staff-header-context[title='All branches']", "All branches")
 
     {:ok, edit, _} = live(conn, ~p"/staff/branches/#{north.slug}/edit")
-    assert has_element?(edit, "#staff-header-context[title='North']", "North")
+    assert has_element?(edit, "#staff-header-context[title='Branch: North']", "Branch: North")
+
+    {:ok, delivery, _} = live(conn, ~p"/staff/b/#{center}/delivery/address")
+    assert has_element?(delivery, "#staff-header-context", "Branch: Center")
+
+    {:ok, dadata, _} = live(conn, ~p"/staff/b/#{center}/integrations/dadata")
+    assert has_element?(dadata, "#staff-header-context", "All branches")
 
     {:ok, scoped, _} = live(conn, ~p"/staff/b/#{center}/dashboard")
     assert has_element?(scoped, "#staff-header-context[title='Center']", "Center")

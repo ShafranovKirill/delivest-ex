@@ -11,12 +11,16 @@ defmodule DelivestWeb.StaffHeader do
   slot :actions
 
   def staff_header(assigns) do
+    settings_scope =
+      settings_scope(assigns.current_path, assigns.current_branch, assigns.settings_branch)
+
     assigns =
       assign(assigns,
+        settings_scope: settings_scope,
         product_section:
           if(assigns.current_branch, do: ProductTags.section(assigns.current_path)),
         context:
-          page_context(assigns.current_path, assigns.current_branch, assigns.settings_branch) ||
+          settings_scope || page_context(assigns.current_path, assigns.current_branch) ||
             gettext("Network")
       )
 
@@ -77,18 +81,30 @@ defmodule DelivestWeb.StaffHeader do
       </div>
       <div
         :if={is_nil(@product_section)}
-        class="flex min-w-0 flex-1 items-center gap-2 text-sm"
+        class={[
+          "flex min-w-0 flex-1 items-center gap-2 text-sm",
+          @settings_scope && "max-md:flex-col max-md:items-start max-md:justify-center max-md:gap-0"
+        ]}
         aria-label={gettext("Current page")}
       >
         <span
           id="staff-header-context"
-          class="hidden max-w-36 shrink-0 truncate text-base-content/55 md:block"
+          class={[
+            "shrink-0 truncate text-base-content/70 md:max-w-48",
+            if(@settings_scope, do: "max-w-full text-xs md:text-sm", else: "hidden md:block")
+          ]}
           title={@context}
         >
           {@context}
         </span>
         <span aria-hidden="true" class="hidden text-base-content/40 md:block">/</span>
-        <div id="staff-header-title" class="min-w-0 flex-1">
+        <div
+          id="staff-header-title"
+          class={[
+            "min-w-0 flex-1",
+            @settings_scope && "max-md:h-auto! max-md:w-full max-md:flex-none"
+          ]}
+        >
           <h1
             class="staff-header-fallback block truncate text-base font-semibold sm:text-lg"
             title={@page_title}
@@ -119,20 +135,36 @@ defmodule DelivestWeb.StaffHeader do
     """
   end
 
-  defp page_context(path, current_branch, settings_branch) when is_binary(path) do
+  defp settings_scope(path, current_branch, settings_branch) when is_binary(path) do
     cond do
-      String.starts_with?(path, "/staff/b/") ->
-        branch_name(current_branch)
+      path == "/staff/settings" or String.match?(path, ~r{^/staff/franchise(?:/|$)}) or
+        String.match?(path, ~r{^/staff(?:/b/[^/]+)?/integrations/(?:dadata|zvonok|yookassa)$}) or
+          path == "/staff/integrations/yandex-eda" ->
+        gettext("All branches")
 
       String.match?(path, ~r{^/staff/branches/[^/]+/edit(?:/|$)}) ->
-        branch_name(settings_branch)
+        branch_scope(settings_branch)
+
+      String.match?(
+        path,
+        ~r{^/staff/b/[^/]+/(?:delivery(?:/|$)|finance/payments$|integrations/[^/]+$)}
+      ) ->
+        branch_scope(current_branch)
 
       true ->
         nil
     end
   end
 
-  defp page_context(_path, _current_branch, _settings_branch), do: nil
+  defp settings_scope(_path, _current_branch, _settings_branch), do: nil
+
+  defp branch_scope(%{name: name}) when is_binary(name) and name != "",
+    do: gettext("Branch: %{name}", name: name)
+
+  defp branch_scope(_branch), do: nil
+
+  defp page_context("/staff/b/" <> _path, current_branch), do: branch_name(current_branch)
+  defp page_context(_path, _current_branch), do: nil
 
   defp branch_name(%{name: name}) when is_binary(name) and name != "", do: name
   defp branch_name(_branch), do: nil
