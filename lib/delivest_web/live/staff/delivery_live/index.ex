@@ -19,6 +19,13 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
 
       <.settings_cards>
         <.settings_card
+          id="delivery-address-card"
+          navigate={~p"/staff/b/#{@current_branch}/delivery/address"}
+          icon="hero-map-pin"
+          title={gettext("Customer address selection")}
+          description={gettext("Choose how customers enter their delivery address.")}
+        />
+        <.settings_card
           id="delivery-zones-card"
           navigate={~p"/staff/b/#{@current_branch}/delivery/zones"}
           icon="hero-map"

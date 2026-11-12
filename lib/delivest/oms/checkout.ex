@@ -3,7 +3,7 @@ defmodule Delivest.Oms.Checkout do
 
   require Logger
 
-  alias Delivest.{Identity, Oms}
+  alias Delivest.{Delivery, Identity, Oms}
   alias Delivest.Oms.Order
 
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
@@ -41,7 +41,8 @@ defmodule Delivest.Oms.Checkout do
     preflight = fn ->
       with {:ok, branch} <- fetch_public_branch(attrs["branch_id"]),
            :ok <- ensure_accepting(branch),
-           :ok <- ensure_client_auth(client) do
+           :ok <- ensure_client_auth(client),
+           :ok <- ensure_delivery_address_settings(attrs) do
         ensure_payment_method(branch, attrs["payment_method"])
       end
     end
@@ -68,6 +69,36 @@ defmodule Delivest.Oms.Checkout do
       other -> other
     end
   end
+
+  defp ensure_delivery_address_settings(%{"fulfillment_type" => "delivery"} = attrs) do
+    settings = Delivery.get_settings(attrs["branch_id"])
+    operator? = attrs["address_by_operator"] in [true, "true", "1", 1]
+    address = attrs["address"] || %{}
+
+    cond do
+      operator? and (settings.map_address != false or settings.operator_address != true) ->
+        {:error, :address_by_operator_unavailable}
+
+      settings.address_mode_set and settings.map_address != false and
+          (not Delivest.Integrations.Dadata.active?() or not coordinates?(address)) ->
+        {:error, :no_coordinates}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp ensure_delivery_address_settings(_attrs), do: :ok
+
+  defp coordinates?(address) when is_map(address) do
+    latitude = Map.get(address, "latitude") || Map.get(address, :latitude)
+    longitude = Map.get(address, "longitude") || Map.get(address, :longitude)
+
+    is_number(latitude) and latitude >= -90 and latitude <= 90 and
+      is_number(longitude) and longitude >= -180 and longitude <= 180
+  end
+
+  defp coordinates?(_address), do: false
 
   defp ensure_keyed_session(nil, nil), do: {:error, :cart_not_found}
   defp ensure_keyed_session(_client, _session_id), do: :ok

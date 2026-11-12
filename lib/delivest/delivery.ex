@@ -53,7 +53,7 @@ defmodule Delivest.Delivery do
 
   def list_public_zones(branch_id) do
     case get_settings(branch_id) do
-      %Settings{mode: :zones, show_zones: true} ->
+      %Settings{mode: :zones, show_zones: true, map_address: true} ->
         Enum.filter(list_zones(branch_id), & &1.enabled)
 
       _settings ->
@@ -158,11 +158,12 @@ defmodule Delivest.Delivery do
   end
 
   def quote(branch_id, point, subtotal) do
-    Quote.run(get_settings(branch_id), list_zones(branch_id), point, subtotal)
+    settings = get_settings(branch_id)
+    Quote.run(effective_settings(settings), list_zones(branch_id), point, subtotal)
   end
 
   def check(branch_id, point, subtotal) do
-    settings = get_settings(branch_id)
+    settings = branch_id |> get_settings() |> effective_settings()
     zones = list_zones(branch_id)
 
     case Quote.run(settings, zones, point, subtotal) do
@@ -189,6 +190,11 @@ defmodule Delivest.Delivery do
         }
     end
   end
+
+  defp effective_settings(%Settings{map_address: false, mode: :zones} = settings),
+    do: %{settings | mode: :flat}
+
+  defp effective_settings(settings), do: settings
 
   defp quote_fields(quote) do
     quote

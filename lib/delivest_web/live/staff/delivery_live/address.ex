@@ -1,0 +1,163 @@
+defmodule DelivestWeb.Staff.DeliveryLive.Address do
+  use DelivestWeb, :live_view
+
+  alias Delivest.{Delivery, Identity}
+  alias Delivest.Integrations.Dadata
+
+  on_mount {DelivestWeb.Hooks.Permission, "delivery.read"}
+
+  @impl true
+  def mount(_params, _session, socket) do
+    settings = Delivery.get_settings(socket.assigns.current_branch.id)
+
+    {:ok,
+     socket
+     |> assign(
+       page_title: gettext("Customer address selection"),
+       can_edit: Identity.can?(socket.assigns.current_staff, "delivery.update"),
+       dadata_active: Dadata.active?()
+     )
+     |> assign_settings(settings)}
+  end
+
+  @impl true
+  def handle_event("change", %{"address" => params}, socket) do
+    params = Map.merge(socket.assigns.form.params, params)
+
+    {:noreply,
+     assign(socket,
+       form: to_form(params, as: "address"),
+       map_mode: params["map_address"] == "true"
+     )}
+  end
+
+  def handle_event("save", %{"address" => params}, socket) do
+    map_mode = params["map_address"] == "true"
+
+    if map_mode and not Dadata.active?() do
+      {:noreply,
+       put_flash(socket, :error, gettext("Configure DaData before enabling map selection."))}
+    else
+      attrs =
+        params
+        |> Map.take(["map_address", "show_city", "operator_address"])
+        |> Map.put("address_mode_set", true)
+
+      case Delivery.update_settings(
+             socket.assigns.current_staff,
+             socket.assigns.current_branch.id,
+             attrs
+           ) do
+        {:ok, settings} ->
+          {:noreply,
+           socket |> assign_settings(settings) |> put_flash(:info, gettext("Settings saved"))}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, form: to_form(changeset, as: "address"))}
+
+        {:error, :forbidden} ->
+          {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+      end
+    end
+  end
+
+  defp assign_settings(socket, settings) do
+    params = %{
+      "map_address" => to_string(settings.map_address != false),
+      "show_city" => settings.show_city == true,
+      "operator_address" => settings.operator_address == true
+    }
+
+    assign(socket,
+      form: to_form(params, as: "address"),
+      map_mode: settings.map_address != false,
+      zone_mode: settings.mode == :zones
+    )
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="space-y-6">
+      <.page_header
+        title={gettext("Customer address selection")}
+        back={~p"/staff/b/#{@current_branch}/delivery"}
+      >
+        <:actions :if={@can_edit}>
+          <button type="submit" form="address-settings" class="btn btn-primary">
+            {gettext("Save")}
+          </button>
+        </:actions>
+      </.page_header>
+
+      <.form
+        for={@form}
+        id="address-settings"
+        phx-change="change"
+        phx-submit="save"
+        class="space-y-6 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
+      >
+        <fieldset class="space-y-3">
+          <legend class="font-semibold">{gettext("How customers choose a delivery address")}</legend>
+          <label class="flex items-center gap-3">
+            <input
+              type="radio"
+              name="address[map_address]"
+              value="true"
+              checked={@map_mode}
+              disabled={not @can_edit}
+            />
+            {gettext("On the map")}
+          </label>
+          <label class="flex items-center gap-3">
+            <input
+              type="radio"
+              name="address[map_address]"
+              value="false"
+              checked={not @map_mode}
+              disabled={not @can_edit}
+            />
+            {gettext("Manually in the order form")}
+          </label>
+        </fieldset>
+
+        <div :if={@map_mode} class="space-y-2">
+          <p>{gettext("Customers confirm their address on the map before checkout.")}</p>
+          <p :if={not @dadata_active} class="text-warning">
+            {gettext("Configure DaData before enabling map selection.")}
+          </p>
+          <.link
+            navigate={~p"/staff/b/#{@current_branch}/integrations/dadata"}
+            class="link link-primary"
+          >
+            {gettext("DaData integration settings")}
+          </.link>
+        </div>
+
+        <div :if={not @map_mode} class="space-y-4">
+          <.input
+            field={@form[:show_city]}
+            type="checkbox"
+            label={gettext("Show city in the order form")}
+            disabled={not @can_edit}
+          />
+          <.input
+            field={@form[:operator_address]}
+            type="checkbox"
+            label={gettext("Allow customers to tell the address to an operator")}
+            disabled={not @can_edit}
+          />
+          <p :if={@zone_mode} class="text-sm text-base-content/70">
+            {gettext(
+              "Manual addresses use the branch's flat delivery price. Your delivery zones stay saved for map mode."
+            )}
+            <.link navigate={~p"/staff/b/#{@current_branch}/delivery/zones"} class="link link-primary">
+              {gettext("Edit delivery prices")}
+            </.link>
+          </p>
+        </div>
+      </.form>
+    </div>
+    """
+  end
+end
