@@ -11,14 +11,22 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
   end
 
   def active(%{orders: orders}) do
-    %{data: Enum.map(orders, &active_order_data/1)}
+    %{data: active_orders_data(orders)}
   end
 
   def index(%{orders: orders}) do
-    %{data: Enum.map(orders, &active_order_data/1)}
+    %{data: active_orders_data(orders)}
   end
 
-  def active_order_data(order) do
+  defp active_orders_data(orders) do
+    settings = Delivest.Oms.Orders.client_cancellation_settings(orders)
+    Enum.map(orders, &active_order_data(&1, Map.get(settings, &1.branch_id, true)))
+  end
+
+  def active_order_data(order),
+    do: active_order_data(order, Delivest.Oms.Orders.client_cancellable?(order))
+
+  defp active_order_data(order, enabled?) do
     %{
       id: order.id,
       number: order.number,
@@ -39,7 +47,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       address: serialize_address(order.address),
       inserted_at: order.inserted_at,
       courier: Couriers.contact(order),
-      can_cancel: Delivest.Oms.Orders.client_cancellable?(order),
+      can_cancel: Delivest.Oms.Orders.client_cancellable?(order, enabled?),
       items: Enum.map(order.items, &item_data/1)
     }
   end

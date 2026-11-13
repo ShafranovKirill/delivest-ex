@@ -11128,3 +11128,13 @@ msgstr "Выбрать все в категории «%{category}»"
 
 msgid "Selected"
 msgstr "Выбрано"
+
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Allow customers to cancel orders"
+msgstr "Разрешить покупателям отменять заказы"
+
+#: lib/delivest_web/live/staff/branch_live/branch_form_component.ex
+#, elixir-autogen, elixir-format
+msgid "Customers can cancel only new orders that staff have not accepted yet. Other order restrictions still apply."
+msgstr "Покупатели могут отменять только новые заказы, которые сотрудники ещё не приняли. Остальные ограничения на отмену продолжают действовать."

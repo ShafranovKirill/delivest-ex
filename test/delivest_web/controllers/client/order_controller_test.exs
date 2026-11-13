@@ -297,6 +297,46 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              conn |> post(~p"/client/orders/#{id}/cancel") |> json_response(422)
   end
 
+  test "branch cancellation setting controls the active order and cancellation endpoint", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    %{"data" => %{"id" => id}} =
+      conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+
+    conn = recycle_with_headers(conn)
+    info = Repo.get_by!(BranchInfo, branch_id: branch.id)
+    assert info.fulfillment.client_cancellation
+
+    other = insert(:branch)
+    Repo.insert!(%BranchInfo{branch_id: other.id})
+
+    {:ok, _} =
+      info
+      |> BranchInfo.changeset(%{fulfillment: %{client_cancellation: false}})
+      |> Repo.update()
+
+    assert [%{"can_cancel" => false}] =
+             conn |> get(~p"/client/orders/active") |> json_response(200) |> Map.fetch!("data")
+
+    assert %{"error" => "order_not_cancellable"} =
+             conn |> post(~p"/client/orders/#{id}/cancel") |> json_response(422)
+
+    assert Repo.get_by!(BranchInfo, branch_id: other.id).fulfillment.client_cancellation
+
+    {:ok, _} =
+      Repo.get_by!(BranchInfo, branch_id: branch.id)
+      |> BranchInfo.changeset(%{fulfillment: %{client_cancellation: true}})
+      |> Repo.update()
+
+    assert [%{"can_cancel" => true}] =
+             conn |> get(~p"/client/orders/active") |> json_response(200) |> Map.fetch!("data")
+  end
+
   test "someone else's order is not found when cancelled", %{
     conn: conn,
     branch: branch,

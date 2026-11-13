@@ -37,6 +37,39 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonesTest do
     assert Enum.map(thresholds, &{&1.order_from, &1.price}) == [{0, 20_000}, {150_000, 0}]
   end
 
+  test "manual delivery tariff remains editable and reloads in zones mode", %{conn: conn} do
+    branch = insert(:branch)
+    signed = sign_in(conn, branch, ["delivery.read", "delivery.update"])
+
+    {:ok, lv, _} = live(signed, ~p"/staff/b/#{branch}/delivery/zones")
+
+    lv
+    |> form("#delivery-settings", delivery: %{mode: "zones"})
+    |> render_submit()
+
+    staff = insert(:staff, role: insert(:role, permissions: ["delivery.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    {:ok, _} = Delivery.update_settings(staff, branch.id, %{"map_address" => false})
+
+    {:ok, reloaded, _} = live(signed, ~p"/staff/b/#{branch}/delivery/zones")
+    assert has_element?(reloaded, "#delivery-settings input[name='delivery[price]']")
+
+    reloaded
+    |> form("#delivery-settings", delivery: %{price: "200", free_from: "1500"})
+    |> render_submit()
+
+    assert %{mode: :zones, map_address: false, thresholds: thresholds} =
+             Delivery.get_settings(branch.id)
+
+    assert Enum.map(thresholds, &{&1.order_from, &1.price}) == [{0, 20_000}, {150_000, 0}]
+    {:ok, refreshed, _} = live(signed, ~p"/staff/b/#{branch}/delivery/zones")
+
+    assert has_element?(
+             refreshed,
+             "#delivery-settings input[name='delivery[price]'][value='200']"
+           )
+  end
+
   test "zones are drawn, edited and deleted", %{conn: conn} do
     branch = insert(:branch)
 

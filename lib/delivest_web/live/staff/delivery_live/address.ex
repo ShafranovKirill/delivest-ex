@@ -148,10 +148,12 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
             label={gettext("Allow customers to tell the address to an operator")}
             disabled={not @can_edit}
           />
-          <p :if={@zone_mode} class="text-sm text-base-content/70">
-            {gettext(
-              "Manual addresses use the branch's flat delivery price. Your delivery zones stay saved for map mode."
-            )}
+          <p class="text-sm text-base-content/70">
+            <span :if={@zone_mode}>
+              {gettext(
+                "Manual addresses use the branch's flat delivery price. Your delivery zones stay saved for map mode."
+              )}
+            </span>
             <.link navigate={~p"/staff/b/#{@current_branch}/delivery/zones"} class="link link-primary">
               {gettext("Edit delivery prices")}
             </.link>
