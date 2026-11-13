@@ -1385,7 +1385,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1017",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1104",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1415,7 +1415,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:447",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:503",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1446,7 +1446,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:615",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:702",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1472,7 +1472,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1046",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1133",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1503,7 +1503,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:884",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:971",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1531,7 +1531,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:547",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:634",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1559,7 +1559,40 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:596",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:683",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "conditional :if in source",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Settings / Integrations",
+      "error_state": [
+        "explicit :error branch/reference"
+      ],
+      "event": "toggle_sending",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/integration_live/frontpad.ex:toggle_sending:1839b62ad4543cea:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/integration_live/frontpad.ex:toggle_sending:dom:frontpad-toggle-sending:1",
+      "label": "Disable sending",
+      "operation": [
+        "BranchSettings.active_provider",
+        "Crm.configured?",
+        "Crm.get_branch_settings",
+        "Crm.update_branch_settings"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update",
+          "products.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:585",
       "target_section": "Settings / Integrations"
     },
     {
@@ -4507,7 +4540,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:704",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:722",
       "target_section": "Orders"
     },
     {
@@ -4534,7 +4567,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:715",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:733",
       "target_section": "Orders"
     },
     {
@@ -4563,7 +4596,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:785",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:803",
       "target_section": "Orders"
     },
     {
@@ -4590,7 +4623,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:450",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:468",
       "target_section": "Orders"
     },
     {
@@ -4621,7 +4654,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:600",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:618",
       "target_section": "Orders"
     },
     {
@@ -4705,6 +4738,42 @@
         "event:lib/delivest_web/hooks/new_orders.ex:crm_alert:f672a5b682879fe3:1",
         "event:lib/delivest_web/hooks/new_orders.ex:crm_alert:a3fad8169cd78fa3:1"
       ],
+      "id": "control:lib/delivest_web/live/staff/order_live/components/order_card_component.ex:crm_alert:signature:aa9d116b6ca00395:1",
+      "label": "Send this order after checking the route",
+      "operation": [
+        "Map.delete",
+        "Map.put"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "inline": [
+          "orders.update"
+        ],
+        "module_references": [
+          "clients.read",
+          "finance.receipts_refund",
+          "finance.receipts_retry",
+          "orders.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:227",
+      "target_section": "Orders"
+    },
+    {
+      "availability": "conditional :if in source",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Orders",
+      "error_state": [
+        "no explicit :error in clause",
+        "explicit :error branch/reference"
+      ],
+      "event": "crm_alert",
+      "handler_clauses": [
+        "event:lib/delivest_web/hooks/new_orders.ex:crm_alert:f672a5b682879fe3:1",
+        "event:lib/delivest_web/hooks/new_orders.ex:crm_alert:a3fad8169cd78fa3:1"
+      ],
       "id": "control:lib/delivest_web/live/staff/order_live/components/order_card_component.ex:crm_alert:signature:cf72f42830eede7d:1",
       "label": "Send again",
       "operation": [
@@ -4752,7 +4821,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:279",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:297",
       "target_section": "Orders"
     },
     {
@@ -4783,7 +4852,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:808",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:826",
       "target_section": "Orders"
     },
     {
@@ -4812,7 +4881,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:798",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:816",
       "target_section": "Orders"
     },
     {
@@ -4841,7 +4910,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:463",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:481",
       "target_section": "Orders"
     },
     {
@@ -4870,7 +4939,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:438",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:456",
       "target_section": "Orders"
     },
     {
@@ -4897,7 +4966,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:725",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:743",
       "target_section": "Orders"
     },
     {
@@ -4926,7 +4995,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:841",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:859",
       "target_section": "Orders"
     },
     {
@@ -10020,6 +10089,34 @@
         ]
       },
       "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:123",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Settings / Integrations",
+      "error_state": "explicit :error branch/reference",
+      "event": "toggle_sending",
+      "id": "event:lib/delivest_web/live/staff/integration_live/frontpad.ex:toggle_sending:1839b62ad4543cea:1",
+      "label": "{if(@crm.enabled and @active_provider == :frontpad,\n              do: gettext(\"Disable sending\"),\n              else: ge",
+      "operation": [
+        "BranchSettings.active_provider",
+        "Crm.configured?",
+        "Crm.get_branch_settings",
+        "Crm.update_branch_settings"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update",
+          "products.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:164",
       "target_section": "Settings / Integrations"
     },
     {
@@ -17346,7 +17443,7 @@
       "in_flight_obligation": "Unconfirmed sent order remains retryable/visible until confirmation or failure",
       "on_disable": "No disable callback in worker",
       "producer_scheduler": [
-        "lib/delivest/integrations/crm.ex:273"
+        "lib/delivest/integrations/crm.ex:508"
       ],
       "source": "lib/delivest/integrations/crm/confirm_worker.ex",
       "worker_process": "Delivest.Integrations.Crm.ConfirmWorker"
@@ -17360,21 +17457,21 @@
       "in_flight_obligation": "Recorded daily refresh run must finish/retry/mark failure; do not erase previous stop state silently",
       "on_disable": "No feature gate; changed provider/disabled stop sync must make refresh ineligible",
       "producer_scheduler": [
-        "lib/delivest/integrations/crm/frontpad_stop_refresh.ex:111"
+        "lib/delivest/integrations/crm/frontpad_stop_refresh.ex:114"
       ],
       "source": "lib/delivest/integrations/crm/frontpad_stop_refresh/refresh_job.ex",
       "worker_process": "Delivest.Integrations.Crm.FrontpadStopRefresh.RefreshJob"
     },
     {
       "disposition": "retain; review job-specific gate",
-      "enable_gate": "Current provider/settings and order state rechecked by Crm/SyncState",
+      "enable_gate": "CRM availability generation and atomic pending-to-sending claim are checked before delivery",
       "external_call": "Sends order to selected CRM provider",
       "frequency": "event-driven",
       "id": "worker:Delivest.Integrations.Crm.SyncWorker",
-      "in_flight_obligation": "External order may have been accepted before local acknowledgment; sync state and idempotent provider key must reconcile",
-      "on_disable": "Provider switch or unavailable configuration cancels/snoozes as returned",
+      "in_flight_obligation": "Started request is not automatically replayed; unresolved external outcome becomes visible unknown",
+      "on_disable": "Settings changes cancel stale queued jobs and expose an explicit unsent retry",
       "producer_scheduler": [
-        "lib/delivest/integrations/crm.ex:326"
+        "lib/delivest/integrations/crm.ex:595"
       ],
       "source": "lib/delivest/integrations/crm/sync_worker.ex",
       "worker_process": "Delivest.Integrations.Crm.SyncWorker"
@@ -17403,8 +17500,8 @@
       "on_disable": "No global cancel; target lists may become empty and existing target jobs still recheck in poll",
       "producer_scheduler": [
         "config/config.exs Oban cron",
-        "lib/delivest/integrations/poller.ex:33",
-        "lib/delivest/integrations/poller.ex:37"
+        "lib/delivest/integrations/poller.ex:36",
+        "lib/delivest/integrations/poller.ex:41"
       ],
       "source": "lib/delivest/integrations/poller/worker.ex",
       "worker_process": "Delivest.Integrations.Poller.Worker"
@@ -17453,14 +17550,14 @@
     },
     {
       "disposition": "retain; review job-specific gate",
-      "enable_gate": "PushApi.configured? for shared settings before call",
+      "enable_gate": "Branch enable and generation plus shared PushApi configuration are checked before call",
       "external_call": "PushApi.reload_menu external request",
       "frequency": "event-driven",
       "id": "worker:Delivest.Integrations.YandexEda.MenuReloadWorker",
-      "in_flight_obligation": "Accepted menu reload may complete remotely after local request; journal/status must remain visible",
-      "on_disable": "No disable callback; unconfigured path skips call",
+      "in_flight_obligation": "An already started request may complete remotely; no automatic replay after enable",
+      "on_disable": "Branch settings changes cancel stale queued reload jobs",
       "producer_scheduler": [
-        "lib/delivest/integrations/yandex_eda.ex:275"
+        "lib/delivest/integrations/yandex_eda.ex:293"
       ],
       "source": "lib/delivest/integrations/yandex_eda/menu_reload_worker.ex",
       "worker_process": "Delivest.Integrations.YandexEda.MenuReloadWorker"
@@ -20469,27 +20566,6 @@
       "current_forms": [
         "lib/delivest_web/live/staff/integration_live/frontpad.ex"
       ],
-      "default": "false",
-      "disposition": "retain canonical editor in Settings / Integrations / Frontpad",
-      "expression": null,
-      "field": "enabled",
-      "id": "form:lib/delivest_web/live/staff/integration_live/frontpad.ex:@form:enabled",
-      "name_template": null,
-      "owner": "lib/delivest/integrations/crm/branch_settings.ex",
-      "required": "no literal validate_required call for field",
-      "resolved_field": "enabled",
-      "schema_field": "schema:lib/delivest/integrations/crm/branch_settings.ex:enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:624",
-      "target_section": "Settings / Integrations / Frontpad",
-      "type": "literal staff form control",
-      "validation": []
-    },
-    {
-      "binding": "@form",
-      "canonical_form": "lib/delivest_web/live/staff/integration_live/frontpad.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/integration_live/frontpad.ex"
-      ],
       "default": "not declared in control/owner schema",
       "disposition": "retain canonical editor in Settings / Integrations / Frontpad",
       "expression": null,
@@ -20500,7 +20576,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "frontpad",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:636",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:722",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20521,7 +20597,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:codes[mark]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:745",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:832",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20542,7 +20618,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:codes[method]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:724",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:811",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20563,7 +20639,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:codes[status]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:698",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:785",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20584,7 +20660,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "affiliate",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:affiliate",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:644",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:731",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -20605,7 +20681,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "api_key",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:api_key",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:639",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:725",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -20626,7 +20702,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "delivery_article",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:delivery_article",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:662",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:749",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": [
@@ -20649,7 +20725,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "payments",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:720",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:807",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20670,7 +20746,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "price_override",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:price_override",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:649",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:736",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -20691,7 +20767,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "statuses",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:694",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:781",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20712,7 +20788,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "sync_stops",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:sync_stops",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:676",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:763",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -20733,7 +20809,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "tags",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:741",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:828",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20754,7 +20830,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "q",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1047",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1134",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23494,7 +23570,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "code",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:607",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:625",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23536,7 +23612,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "courier_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:824",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:842",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23578,7 +23654,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "order-id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:606",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:624",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23620,7 +23696,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "payment_method",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:253",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:271",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28535,6 +28611,14 @@
       "type": ":boolean"
     },
     {
+      "default": "0",
+      "field": "generation",
+      "id": "schema:lib/delivest/integrations/crm/branch_settings.ex:generation",
+      "owner": "lib/delivest/integrations/crm/branch_settings.ex",
+      "source": "lib/delivest/integrations/crm/branch_settings.ex:15",
+      "type": ":integer"
+    },
+    {
       "default": ":own",
       "field": "menu_source",
       "id": "schema:lib/delivest/integrations/crm/branch_settings.ex:menu_source",
@@ -29229,6 +29313,14 @@
       "owner": "lib/delivest/integrations/yandex_eda/branch_settings.ex",
       "source": "lib/delivest/integrations/yandex_eda/branch_settings.ex:12",
       "type": ":boolean"
+    },
+    {
+      "default": "0",
+      "field": "generation",
+      "id": "schema:lib/delivest/integrations/yandex_eda/branch_settings.ex:generation",
+      "owner": "lib/delivest/integrations/yandex_eda/branch_settings.ex",
+      "source": "lib/delivest/integrations/yandex_eda/branch_settings.ex:18",
+      "type": ":integer"
     },
     {
       "default": "0",
