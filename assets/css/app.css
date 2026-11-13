@@ -226,3 +226,33 @@
     white-space: normal;
   }
 }
+
+/* Staff foundation contract; scoped so migrated screens opt in explicitly. */
+.foundation-workspace {
+  --foundation-step: 4px;
+  --foundation-control-height: 40px;
+  --foundation-touch-height: 44px;
+  --foundation-form-max-width: 960px;
+  color: var(--color-base-content);
+}
+.foundation-shell { --staff-sidebar-width: 240px; --staff-header-height: 56px; }
+.foundation-shell .staff-header > div:not(#staff-header-actions) { height: var(--staff-header-height); }
+.foundation-column-hidden { display: none; }
+.foundation-workspace :is(.btn, .input, .select) { min-height: var(--foundation-control-height); }
+.foundation-workspace :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.foundation-workspace .btn-ghost { color: var(--color-base-content); }
+.foundation-workspace[data-density="compact"] .table :is(th, td) { padding-block: 0.375rem; }
+.foundation-workspace[data-density="normal"] .table :is(th, td) { padding-block: 0.75rem; }
+.foundation-form { max-width: var(--foundation-form-max-width); }
+@media (pointer: coarse) {
+  .foundation-workspace :is(.btn, .input, .select, input[type="checkbox"]) { min-height: var(--foundation-touch-height); }
+}
+@media (max-width: 639px) {
+  .foundation-workspace .table,
+  .foundation-workspace .table tbody { display: block; width: 100%; }
+  .foundation-workspace .table thead { display: none; }
+  .foundation-workspace .table tr { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; align-items: center; }
+  .foundation-workspace .table tr > td:last-child { grid-column: 1 / -1; }
+  .foundation-workspace .table tr > td { min-width: 0; }
+  .foundation-workspace .table tr > td:nth-child(2) { overflow-wrap: anywhere; }
+}

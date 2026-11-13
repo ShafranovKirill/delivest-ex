@@ -7,6 +7,7 @@ defmodule DelivestWeb.StaffHeader do
   attr :current_path, :string, default: nil
   attr :settings_branch, :any, default: nil
   attr :page_title, :string, default: nil
+  attr :workspace, :boolean, default: false
   attr :page_header, :any, default: nil
   attr :kitchen_status, :any, default: nil
   slot :actions
@@ -93,14 +94,18 @@ defmodule DelivestWeb.StaffHeader do
           id="staff-header-context"
           class={[
             "shrink-0 truncate text-base-content/70 md:max-w-48",
-            if(@settings_scope, do: "max-w-full text-xs md:text-sm", else: "hidden md:block")
+            if(@workspace,
+              do: "max-w-full text-sm",
+              else: if(@settings_scope, do: "max-w-full text-xs md:text-sm", else: "hidden md:block")
+            )
           ]}
           title={@context}
         >
           {@context}
         </span>
-        <span aria-hidden="true" class="hidden text-base-content/40 md:block">/</span>
+        <span :if={not @workspace} aria-hidden="true" class="hidden text-base-content/40 md:block">/</span>
         <div
+          :if={not @workspace}
           id="staff-header-title"
           class={[
             "min-w-0 flex-1",

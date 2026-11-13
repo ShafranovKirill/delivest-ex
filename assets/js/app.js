@@ -14,6 +14,9 @@ import { CourierLocation } from "./hooks/courier_location";
 import { CouriersMap } from "./hooks/couriers_map";
 import { CopyLink } from "./hooks/copy_link";
 import { HeaderScroll } from "./hooks/header_scroll";
+import { FoundationDialog } from "./hooks/foundation_dialog";
+import { FoundationColumns } from "./hooks/foundation_columns";
+import { FoundationDirty } from "./hooks/foundation_dirty";
 
 let Uploaders = {};
 
@@ -210,6 +213,9 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CouriersMap,
     CopyLink,
     HeaderScroll,
+    FoundationDialog,
+    FoundationColumns,
+    FoundationDirty,
   },
 });
 
