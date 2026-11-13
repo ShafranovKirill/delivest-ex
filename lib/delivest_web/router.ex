@@ -352,6 +352,11 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/settings", SettingsLive.Index, :index
+
+      if Mix.env() in [:dev, :test] do
+        live "/foundation-gallery", FoundationGalleryLive, :index
+      end
+
       live "/marketing/bonuses", MarketingLive.Bonuses, :index
       live "/branches/select", BranchLive.BranchSelect, :index
 

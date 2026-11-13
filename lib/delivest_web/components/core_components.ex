@@ -504,6 +504,12 @@ defmodule DelivestWeb.CoreComponents do
   attr :path_fn, :any, default: nil, doc: "Function that takes a map of params and returns a URL"
   attr :id, :string, required: true
   attr :rows, :list, required: true
+  attr :variant, :atom, default: :legacy
+  attr :selected, :any, default: MapSet.new()
+  attr :select_event, :any, default: "select"
+  attr :target, :any, default: nil
+  attr :row_label, :any, default: nil
+  attr :sort_path, :any, default: nil
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
 
@@ -515,9 +521,93 @@ defmodule DelivestWeb.CoreComponents do
     attr :label, :string
     attr :sort, :string, doc: "Field name for Flop sorting"
     attr :secondary, :boolean, doc: "Hidden on phones"
+    attr :key, :string, doc: "Foundation column preference key"
+    attr :numeric, :boolean, doc: "Foundation right alignment"
+    attr :field, :atom, doc: "Plain value in the foundation mobile detail row"
   end
 
   slot :action, doc: "the slot for showing user actions in the last table column"
+
+  def table(%{variant: :foundation} = assigns) do
+    ~H"""
+    <div class="overflow-x-auto rounded-box border border-base-300">
+      <table class="table w-full" aria-label={gettext("Results")}>
+        <thead>
+          <tr>
+            <th scope="col"><span class="sr-only">{gettext("Select")}</span></th>
+            <th
+              :for={col <- @col}
+              scope="col"
+              data-column={col[:key]}
+              class={[col[:numeric] && "text-right", col[:secondary] && "max-sm:hidden"]}
+            >
+              <.link :if={col[:sort] && @sort_path} patch={@sort_path.(col[:sort])}>{col[:label]}</.link>
+              <span :if={is_nil(col[:sort]) or is_nil(@sort_path)}>{col[:label]}</span>
+            </th>
+            <th :if={@action != []} scope="col" class="text-right">
+              <span class="sr-only">{gettext("Actions")}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody id={@id}>
+          <tr :for={row <- @rows} id={if(@row_id, do: @row_id.(row), else: "#{@id}-row-#{row.id}")}>
+            <td>
+              <input
+                type="checkbox"
+                phx-click={@select_event}
+                phx-target={@target}
+                phx-value-id={row.id}
+                checked={MapSet.member?(@selected, row.id)}
+                aria-label={
+                  gettext("Select %{name}",
+                    name:
+                      if(@row_label,
+                        do: @row_label.(row),
+                        else: Map.get(row, :name, to_string(row.id))
+                      )
+                  )
+                }
+              />
+            </td>
+            <td
+              :for={col <- @col}
+              data-column={col[:key]}
+              class={[col[:numeric] && "text-right", col[:secondary] && "max-sm:hidden"]}
+            >
+              {render_slot(col, @row_item.(row))}
+            </td>
+            <td :if={@action != []} class="text-right">
+              <div class="flex justify-end gap-2">
+                <%= for action <- @action do %>
+                  {render_slot(action, @row_item.(row))}
+                <% end %>
+              </div>
+            </td>
+            <td class="sm:hidden">
+              <details>
+                <summary>
+                  {gettext("More details for %{name}",
+                    name:
+                      if(@row_label,
+                        do: @row_label.(row),
+                        else: Map.get(row, :name, to_string(row.id))
+                      )
+                  )}
+                </summary><dl>
+                  <%= for col <- Enum.filter(@col, & &1[:secondary]) do %>
+                    <dt class="font-medium">{col[:label]}</dt><dd>
+                      {Map.get(@row_item.(row), col[:field])}
+                    </dd>
+                  <% end %>
+                </dl>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
 
   def table(assigns) do
     assigns =
