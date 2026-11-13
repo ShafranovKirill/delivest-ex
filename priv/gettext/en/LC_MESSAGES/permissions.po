@@ -92,3 +92,11 @@ msgstr "POS"
 
 msgid "use"
 msgstr "Use the POS"
+
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:169
+msgid "receipts_retry"
+msgstr "Retry receipts"
+
+#: lib/delivest_web/live/staff/role_live/role_form_component.ex:169
+msgid "receipts_refund"
+msgstr "Refund receipts"

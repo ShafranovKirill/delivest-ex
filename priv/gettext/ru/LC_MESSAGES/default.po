@@ -11138,3 +11138,87 @@ msgstr "Разрешить покупателям отменять заказы"
 #, elixir-autogen, elixir-format
 msgid "Customers can cancel only new orders that staff have not accepted yet. Other order restrictions still apply."
 msgstr "Покупатели могут отменять только новые заказы, которые сотрудники ещё не приняли. Остальные ограничения на отмену продолжают действовать."
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:21
+#: lib/delivest_web/live/staff/menu_live/popular.ex:179
+#: lib/delivest_web/live/staff/product_live/product_tags.ex:61
+#, elixir-autogen, elixir-format
+msgid "Popular products"
+msgstr "Популярные товары"
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:180
+#, elixir-autogen, elixir-format
+msgid "The products the app shows in the popular block of the menu."
+msgstr "Товары, которые приложение показывает в блоке популярных товаров."
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:230
+#, elixir-autogen, elixir-format
+msgid "How many products to pick automatically"
+msgstr "Сколько товаров выбирать автоматически"
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:234
+#, elixir-autogen, elixir-format
+msgid "The app picks the best-selling products of the last 30 days automatically."
+msgstr "Приложение автоматически выбирает самые продаваемые товары за последние 30 дней."
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:254
+#, elixir-autogen, elixir-format
+msgid "Pick the products by hand below and set their order."
+msgstr "Выберите товары ниже вручную и задайте их порядок."
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:257
+#, elixir-autogen, elixir-format
+msgid "The popular block is hidden in the app."
+msgstr "Блок популярных товаров скрыт в приложении."
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:264
+#, elixir-autogen, elixir-format
+msgid "Shown in the app"
+msgstr "Показаны в приложении"
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:280
+#, elixir-autogen, elixir-format
+msgid "No products yet. Make sure there are sales in the last 30 days."
+msgstr "Товаров пока нет. Убедитесь, что за последние 30 дней были продажи."
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:299
+#, elixir-autogen, elixir-format
+msgid "No products picked yet."
+msgstr "Товары пока не выбраны."
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:314
+#, elixir-autogen, elixir-format
+msgid "Move up"
+msgstr "Переместить выше"
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:322
+#, elixir-autogen, elixir-format
+msgid "Move down"
+msgstr "Переместить ниже"
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:354
+#, elixir-autogen, elixir-format
+msgid "Automatically pick popular products"
+msgstr "Автоматически выбирать популярные товары"
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:355
+#, elixir-autogen, elixir-format
+msgid "Pick products manually"
+msgstr "Выбирать товары вручную"
+
+#: lib/delivest_web/components/core_components.ex:416
+#: lib/delivest_web/components/core_components.ex:447
+#, elixir-autogen, elixir-format
+msgid "Page sections"
+msgstr "Разделы страницы"
+
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:53
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:220
+#, elixir-autogen, elixir-format
+msgid "Save common settings"
+msgstr "Сохранить общие настройки"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:358
+#, elixir-autogen, elixir-format
+msgid "Statistics reports"
+msgstr "Статистические отчёты"

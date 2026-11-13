@@ -10775,3 +10775,551 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Customers can cancel only new orders that staff have not accepted yet. Other order restrictions still apply."
 msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:21
+#: lib/delivest_web/live/staff/menu_live/popular.ex:179
+#: lib/delivest_web/live/staff/product_live/product_tags.ex:61
+#, elixir-autogen, elixir-format
+msgid "Popular products"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:180
+#, elixir-autogen, elixir-format
+msgid "The products the app shows in the popular block of the menu."
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:230
+#, elixir-autogen, elixir-format
+msgid "How many products to pick automatically"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:234
+#, elixir-autogen, elixir-format
+msgid "The app picks the best-selling products of the last 30 days automatically."
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:254
+#, elixir-autogen, elixir-format
+msgid "Pick the products by hand below and set their order."
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:257
+#, elixir-autogen, elixir-format
+msgid "The popular block is hidden in the app."
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:264
+#, elixir-autogen, elixir-format
+msgid "Shown in the app"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:280
+#, elixir-autogen, elixir-format
+msgid "No products yet. Make sure there are sales in the last 30 days."
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:299
+#, elixir-autogen, elixir-format
+msgid "No products picked yet."
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:314
+#, elixir-autogen, elixir-format
+msgid "Move up"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:322
+#, elixir-autogen, elixir-format
+msgid "Move down"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:354
+#, elixir-autogen, elixir-format
+msgid "Automatically pick popular products"
+msgstr ""
+
+#: lib/delivest_web/live/staff/menu_live/popular.ex:355
+#, elixir-autogen, elixir-format
+msgid "Pick products manually"
+msgstr ""
+
+#: lib/delivest_web/components/core_components.ex:416
+#: lib/delivest_web/components/core_components.ex:447
+#, elixir-autogen, elixir-format
+msgid "Page sections"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:53
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:220
+#, elixir-autogen, elixir-format
+msgid "Save common settings"
+msgstr ""
+
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex
+msgid "Applied"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex:162
+#: lib/delivest_web/live/staff/marketing_live/navigation.ex:84
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:22
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:34
+msgid "Bonuses"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/sections.ex:24
+msgid "Brand, seller details and legal documents."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:557
+msgid "Cancel orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:564
+msgid "Catalog for product matching"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex
+msgid "Choose a valid period of up to 366 days"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:577
+msgid "Combos"
+msgstr ""
+
+#: lib/delivest_web/hooks/new_orders.ex:165
+msgid "Confirm you checked the CRM before sending again."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Could not accept the price. Try again later."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Could not delete the policy."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleted policies cannot be edited."
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex:207
+msgid "Diagnostics"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:73
+msgid "Enter a rating from 1 to 5 and a non-negative review count."
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:180
+#: lib/delivest_web/live/staff/branch_live/edit.ex:183
+msgid "Failed to delete branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Frontpad price changed. Review the new price and try again."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:563
+msgid "Import full menu"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/sections.ex:75
+msgid "Message frequency limits across all branches."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:143
+msgid "Not supported"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:575
+msgid "Order item edits"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:566
+msgid "Order status updates"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy changed. Reload it before saving again."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy changed. Review it before deleting again."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Policy deleted"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:145
+msgid "Polling"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Price accepted from Frontpad"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Price is already up to date"
+msgstr ""
+
+#: lib/delivest_web/live/staff/log_live/event_text.ex
+#, elixir-format
+msgid "Product operations in «%{subject}»: created %{created}, updated %{updated}, skipped %{skipped}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:576
+msgid "Promotions"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:565
+msgid "Read stop list"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Removed"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Scope and selected branches cannot change after the policy has started."
+msgstr ""
+
+#: lib/delivest_web/live/staff/settings_live/index.ex:49
+#: lib/delivest_web/live/staff/branch_live/branches.ex:16
+#: lib/delivest_web/live/staff/branch_live/branches.ex:31
+msgid "Settings for branches"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:142
+msgid "Supported"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:177
+#: lib/delivest_web/live/staff/branch_live/edit.ex:191
+msgid "The branch name does not match."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "The first-run audience cannot change after the policy has started."
+msgstr ""
+
+#: lib/delivest_web/hooks/new_orders.ex:168
+msgid "This order no longer needs CRM reconciliation."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "This product is shared by branches. Its price cannot be changed for one branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:560
+msgid "Update address"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:559
+msgid "Update comments"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:561
+msgid "Update delivery time"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:558
+msgid "Update items"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:562
+msgid "Update payments"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:144
+msgid "Webhook"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:63
+msgid "Yandex rating saved"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:358
+#, elixir-autogen, elixir-format
+msgid "Statistics reports"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Accept price from CRM"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:119
+msgid "Access credentials shared by every branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_shared.ex:76
+msgid "Access settings shared by every branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:109
+msgid "Adapter capabilities"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:363
+msgid "Automatic Yandex rating import is unavailable. Enter the rating and review count manually. The values are published for 7 days."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:73
+msgid "Branch bonus settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:240
+msgid "Branch bonuses: %{name}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:499
+msgid "Branch deletion"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:162
+msgid "Branch map and organization link on Yandex Maps."
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:523
+msgid "Branch name"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_shared.ex:91
+#: lib/delivest_web/live/staff/integration_live/index.ex:131
+msgid "Branch settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:111
+msgid "Capabilities are independent of connection and branch settings."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:117
+msgid "Capability"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Changes will apply to future issues. Previously issued rewards remain; this policy stays paused until you activate it."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/navigation.ex:113
+msgid "Choose a branch for branch marketing settings."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda_shared.ex:93
+msgid "Choose a branch to manage its Yandex Eda settings."
+msgstr ""
+
+#: lib/delivest_web/live/staff/settings_live/index.ex:50
+msgid "Choose a branch to manage its settings and delivery."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:133
+msgid "Choose a branch to view and change its integrations."
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:471
+msgid "Choose a branch to view statistics."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/hub.ex:45
+msgid "Choose a marketing area and branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:75
+msgid "Choose an available branch to manage its bonus program and reward products."
+msgstr ""
+
+#: lib/delivest_web/live/staff/settings_live/index.ex:28
+msgid "Choose the settings area."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:35
+msgid "Common bonus rules and branch settings."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/bonus_settings_component.ex:66
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:280
+msgid "Common bonus settings"
+msgstr ""
+
+#: lib/delivest_web/components/staff/settings_components.ex:36
+#: lib/delivest_web/live/staff/settings_live/index.ex:36
+msgid "Common settings"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_header.ex:88
+msgid "Current page"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:536
+msgid "Delete branch"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Delete «%{name}»?"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleted policies"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:514
+msgid "Deleting the branch removes it from staff access and hides it from the app."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Deleting..."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/dadata.ex:115
+msgid "Delivery city · %{name}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:327
+msgid "Delivery zones and couriers for this branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/branch_live/edit.ex:517
+msgid "Enter the exact branch name to confirm deletion: %{name}"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:58
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:62
+#: lib/delivest_web/components/staff/app/staff_sidebar.ex:63
+#: lib/delivest_web/components/staff/app/staff_header.ex:63
+#: lib/delivest_web/components/staff/app/staff_header.ex:67
+#: lib/delivest_web/components/staff/app/staff_header.ex:68
+msgid "Expand menu"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yookassa.ex:110
+msgid "Finance → Payment · %{name}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:204
+msgid "I checked the CRM and confirmed this order does not exist there."
+msgstr ""
+
+#: lib/delivest_web/live/staff/stock_live/stocks.ex:202
+#: lib/delivest_web/live/staff/segment_live/index.ex:729
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:180
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:233
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex:298
+#: lib/delivest_web/live/staff/marketing_live/index.ex:1159
+#: lib/delivest_web/live/staff/marketing_live/hub.ex:43
+#: lib/delivest_web/live/staff/marketing_live/bonuses.ex:33
+#: lib/delivest_web/live/staff/loyalty_live/index.ex:192
+#: lib/delivest_web/live/staff/advertising_live/index.ex:101
+msgid "Marketing areas"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "No deleted policies."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "No working policies yet."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex:1332
+#: lib/delivest_web/live/staff/marketing_live/index.ex:1661
+msgid "Open audience segment"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Pause this policy to change future issues."
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_profile_menu.ex:29
+msgid "Profile: %{name}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:379
+msgid "Rating (1–5)"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Review changes"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:386
+msgid "Review count"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/hub.ex:78
+msgid "Rewards and customer segments across the franchise."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Save changes"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:388
+msgid "Save rating"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Scope, selected branches, and first-run audience are fixed after the policy has started."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/navigation.ex:60
+#: lib/delivest_web/live/staff/marketing_live/hub.ex:90
+msgid "Segments"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yandex_eda.ex:216
+msgid "Shared Yandex Eda access settings"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex
+msgid "Shared product: price affects other branches"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:444
+msgid "Statistics scope"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "The policy will stop and disappear from the working list. History, reports, and issued rewards will remain."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/yookassa.ex:106
+msgid "The shop keys are shared by every branch. Enable online payment separately in each branch's Finance → Payment settings."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/bonus_settings_component.ex:91
+msgid "These rules apply to every branch."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "This draft will be deleted permanently."
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "This policy was removed from the working list. Its history, reports, and issued rewards remain available."
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:130
+msgid "Use the Frontpad catalog to match products."
+msgstr ""
+
+#: lib/delivest_web/live/staff/advertising_live/index.ex:190
+msgid "View source statistics"
+msgstr ""
+
+#: lib/delivest_web/live/staff/marketing_live/index.ex
+msgid "Working list"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:161
+msgid "YCart"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:118
+msgid "Yandex Eda access"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:360
+msgid "Yandex rating"
+msgstr ""
