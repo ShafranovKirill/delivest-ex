@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
 
   import DelivestWeb.Staff.SettingsComponents, only: [settings_navigation: 1]
 
-  alias Delivest.{Features, Identity}
+  alias Delivest.{Availability, Identity}
   alias Delivest.Features.Registry
   alias DelivestWeb.StaffNav
   alias DelivestWeb.Staff.IntegrationLive.Presentation
@@ -66,8 +66,8 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
 
   defp feature_row(key, staff, scope) do
     dependencies = Registry.dependencies(key)
-    enabled? = Features.enabled?(key, scope)
-    blocked_by = Enum.filter(dependencies, &(not Features.enabled?(&1, scope)))
+    enabled? = Availability.feature(key, scope).effective?
+    blocked_by = Enum.filter(dependencies, &(not Availability.feature(&1, scope).effective?))
 
     state =
       cond do
@@ -93,11 +93,10 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
     entry = StaffNav.integration_entry(provider, staff, branch)
 
     state =
-      cond do
-        facts.connection.state in [:auth, :failed] or facts.warnings != [] -> :attention
-        Enum.any?(facts.usage, &(&1.state in [:not_ready, :paused])) -> :attention
-        Enum.any?(facts.usage, &(&1.kind == :operation and &1.state == :on)) -> :enabled
-        true -> :disabled
+      case facts.main do
+        :enabled -> :enabled
+        :disabled -> :disabled
+        _ -> :attention
       end
 
     %{

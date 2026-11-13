@@ -259,6 +259,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     """
   end
 
+  defp overall_status(%{main: main}), do: main
   defp overall_status(%{configuration: :enabled}), do: :enabled
   defp overall_status(%{configuration: :disabled}), do: :disabled
 
@@ -291,7 +292,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
       @status in [:ok, :enabled] && "bg-success/10 text-success",
       @status == :disabled && "bg-base-300/50 text-base-content/60",
-      @status == :attention && "bg-warning/10 text-warning",
+      @status in [:attention, :partial, :finishing] && "bg-warning/10 text-warning",
+      @status == :error && "bg-error/10 text-error",
       @status == :auth && "bg-error/10 text-error",
       @status == :failed && "bg-error/10 text-error",
       @status == :unchecked && "bg-base-300/50 text-base-content/60",
@@ -301,7 +303,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
         "size-1.5 rounded-full",
         @status in [:ok, :enabled] && "bg-success",
         @status == :disabled && "bg-base-content/30",
-        @status == :attention && "bg-warning",
+        @status in [:attention, :partial, :finishing] && "bg-warning",
+        @status == :error && "bg-error",
         @status == :auth && "bg-error",
         @status == :failed && "bg-error",
         @status == :unchecked && "bg-base-content/30",
@@ -313,6 +316,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   end
 
   defp status_text(:enabled), do: gettext("Enabled")
+  defp status_text(:partial), do: gettext("Partially enabled")
+  defp status_text(:error), do: gettext("Error")
+  defp status_text(:finishing), do: gettext("Completing orders")
   defp status_text(:disabled), do: gettext("Disabled")
   defp status_text(:ok), do: gettext("OK")
   defp status_text(:attention), do: gettext("Needs attention")

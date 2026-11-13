@@ -12120,3 +12120,127 @@ msgstr "ID организации в Яндексе"
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to delete branches."
 msgstr "У вас нет прав для удаления филиалов."
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:616
+#, elixir-autogen, elixir-format
+msgid "Automatic catalog refresh"
+msgstr "Автоматическое обновление каталога"
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:618
+#, elixir-autogen, elixir-format
+msgid "Automatic refresh is off"
+msgstr "Автосинхронизация выключена"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:176
+#, elixir-autogen, elixir-format
+msgid "Choose order sources first"
+msgstr "Сначала выберите источники заказов"
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:321
+#, elixir-autogen, elixir-format
+msgid "Completing orders"
+msgstr "Завершение заказов"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:200
+#, elixir-autogen, elixir-format
+msgid "Could not change sending state"
+msgstr "Не удалось изменить отправку заказов"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:603
+#, elixir-autogen, elixir-format
+msgid "Disable sending"
+msgstr "Выключить отправку"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:604
+#, elixir-autogen, elixir-format
+msgid "Enable sending"
+msgstr "Включить отправку"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:205
+#, elixir-autogen, elixir-format
+msgid "Enabled · connection not recently checked"
+msgstr "Включена · связь давно не проверялась"
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:320
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:207
+#, elixir-autogen, elixir-format
+msgid "Error"
+msgstr "Ошибка"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:40
+#, elixir-autogen, elixir-format
+msgid "Last operation"
+msgstr "Последняя операция"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:206
+#, elixir-autogen, elixir-format
+msgid "Needs setup"
+msgstr "Нужна настройка"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:590
+#, elixir-autogen, elixir-format
+msgid "Needs setup: choose order sources"
+msgstr "Нужна настройка: выберите источники заказов"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:48
+#, elixir-autogen, elixir-format
+msgid "Orders not sent: %{count}"
+msgstr "Неотправленные заказы: %{count}"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:55
+#, elixir-autogen, elixir-format
+msgid "Orders requiring completion: %{count}"
+msgstr "Заказы, требующие завершения: %{count}"
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:319
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:204
+#, elixir-autogen, elixir-format
+msgid "Partially enabled"
+msgstr "Частично включена"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:173
+#, elixir-autogen, elixir-format
+msgid "Save the Frontpad API key first"
+msgstr "Сначала сохраните API-ключ Frontpad"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:728
+#, elixir-autogen, elixir-format
+msgid "Saved key ••••••••"
+msgstr "Ключ сохранён ••••••••"
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:241
+#, elixir-autogen, elixir-format
+msgid "Send this order after checking the route"
+msgstr "Отправить заказ после проверки маршрута"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:196
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:591
+#, elixir-autogen, elixir-format
+msgid "Sending disabled"
+msgstr "Отправка выключена"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:196
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:589
+#, elixir-autogen, elixir-format
+msgid "Sending enabled"
+msgstr "Отправка включена"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:209
+#, elixir-autogen, elixir-format
+msgid "Sending off · completing accepted orders"
+msgstr "Отправка выключена · завершаются принятые заказы"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:586
+#, elixir-autogen, elixir-format
+msgid "Sending orders to Frontpad"
+msgstr "Отправка заказов во Frontpad"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:51
+#, elixir-autogen, elixir-format
+msgid "Orders with uncertain CRM outcome: %{count}"
+msgstr "Заказы с неопределённым ответом CRM: %{count}"
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:54
+#, elixir-autogen, elixir-format
+msgid "Accepted orders still open: %{count}"
+msgstr "Принятые, но ещё не завершённые заказы: %{count}"

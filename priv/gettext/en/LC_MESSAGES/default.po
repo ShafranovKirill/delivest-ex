@@ -11880,3 +11880,127 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "schedule"
 msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:616
+#, elixir-autogen, elixir-format
+msgid "Automatic catalog refresh"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/presentation.ex:618
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Automatic refresh is off"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:176
+#, elixir-autogen, elixir-format
+msgid "Choose order sources first"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:321
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Completing orders"
+msgstr "Completed orders"
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:200
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Could not change sending state"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:603
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Disable sending"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:604
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Enable sending"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:205
+#, elixir-autogen, elixir-format
+msgid "Enabled · connection not recently checked"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:320
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:207
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Error"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:40
+#, elixir-autogen, elixir-format
+msgid "Last operation"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:206
+#, elixir-autogen, elixir-format
+msgid "Needs setup"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:590
+#, elixir-autogen, elixir-format
+msgid "Needs setup: choose order sources"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:48
+#, elixir-autogen, elixir-format
+msgid "Orders not sent: %{count}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:55
+#, elixir-autogen, elixir-format
+msgid "Orders requiring completion: %{count}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:319
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:204
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Partially enabled"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:173
+#, elixir-autogen, elixir-format
+msgid "Save the Frontpad API key first"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:728
+#, elixir-autogen, elixir-format
+msgid "Saved key ••••••••"
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/components/order_card_component.ex:241
+#, elixir-autogen, elixir-format
+msgid "Send this order after checking the route"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:196
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:591
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Sending disabled"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:196
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:589
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Sending enabled"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:209
+#, elixir-autogen, elixir-format
+msgid "Sending off · completing accepted orders"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/frontpad.ex:586
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Sending orders to Frontpad"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:51
+#, elixir-autogen, elixir-format
+msgid "Orders with uncertain CRM outcome: %{count}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/integration_live/state_components.ex:54
+#, elixir-autogen, elixir-format
+msgid "Accepted orders still open: %{count}"
+msgstr ""

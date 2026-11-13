@@ -224,6 +224,24 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </button>
       </div>
 
+      <form
+        :if={
+          @order.crm != nil and
+            (@order.crm.status == "failed" or
+               (@order.crm.status == "pending" and Crm.alert?(@order))) and
+            Identity.can?(@current_staff, "orders.update")
+        }
+        id={"order-crm-retry-unsent-#{@order.id}"}
+        phx-submit="crm_alert"
+        class="mx-3 sm:mx-4 mb-3 rounded-box bg-warning/10 px-3 py-2"
+      >
+        <input type="hidden" name="order_id" value={@order.id} />
+        <input type="hidden" name="action" value="retry_unsent" />
+        <button type="submit" class="btn btn-warning btn-xs">
+          {gettext("Send this order after checking the route")}
+        </button>
+      </form>
+
       <footer class="px-3 sm:px-4 py-2.5 border-t border-base-200 flex flex-wrap items-center gap-2">
         <span
           :if={@order.source != "app"}

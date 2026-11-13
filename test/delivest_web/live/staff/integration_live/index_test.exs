@@ -122,9 +122,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
 
     lv
     |> form("#frontpad-settings",
-      crm: %{enabled: "true", frontpad: %{api_key: "secret", affiliate: "7"}}
+      crm: %{frontpad: %{api_key: "secret", affiliate: "7"}}
     )
     |> render_submit()
+
+    lv |> element("#frontpad-toggle-sending") |> render_click()
 
     assert has_element?(lv, "#frontpad-webhook")
 
@@ -141,9 +143,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     {:ok, lv, _html} =
       live(sign_in_editor(conn, branch), ~p"/staff/b/#{branch}/integrations/frontpad")
 
-    lv
-    |> form("#frontpad-settings", crm: %{enabled: "true", frontpad: %{api_key: ""}})
-    |> render_submit()
+    lv |> element("#frontpad-toggle-sending") |> render_click()
 
     refute has_element?(lv, "#frontpad-webhook")
     assert {:ok, %{info: nil}} = Delivest.Identity.get_branch(branch.id, preload: [:info])

@@ -20,7 +20,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
     Channels,
     Crm,
     Dadata,
+    Availability,
     Health,
+    Journal,
     YandexDelivery,
     YandexEda,
     Yookassa,
@@ -59,6 +61,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
       branch: branch,
       crm: Map.get(info, :crm) || %BranchSettings{},
       health: Health.for_branch(branch_id),
+      work: Crm.work_summary(branch_id),
+      activity: Journal.latest_for_branch(branch_id),
       shared: shared_settings(),
       version: System.unique_integer([:positive, :monotonic])
     }
@@ -75,6 +79,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
       branch: nil,
       crm: %BranchSettings{},
       health: health,
+      work: %{},
+      activity: %{},
       shared: shared_settings(),
       version: System.unique_integer([:positive, :monotonic])
     }
@@ -82,8 +88,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
 
   def shared?(provider), do: Health.network?(provider)
 
-  def state(provider, %{branch: branch, crm: crm, health: health, shared: shared}) do
-    build_state(provider, branch, crm, health, shared)
+  def state(provider, %{branch: branch, crm: crm, health: health, shared: shared} = context) do
+    build_state(
+      provider,
+      branch,
+      crm,
+      health,
+      shared,
+      Map.get(context, :work, %{}),
+      Map.get(context, :activity, %{})
+    )
   end
 
   def state(provider, %{info: _info} = branch) do
@@ -91,24 +105,41 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   end
 
   def state(provider, branch, crm) do
-    build_state(provider, branch, crm, Health.for_branch(branch.id), shared_settings())
+    build_state(
+      provider,
+      branch,
+      crm,
+      Health.for_branch(branch.id),
+      shared_settings(),
+      Crm.work_summary(branch.id),
+      Journal.latest_for_branch(branch.id)
+    )
   end
 
-  defp build_state(provider, branch, crm, health, shared) do
+  defp build_state(provider, branch, crm, health, shared, work, activity) do
     info = if branch, do: branch.info || %{}, else: %{}
     credentials = credentials(provider, branch, info, shared)
     status = Map.get(health, to_string(provider))
+
+    usage =
+      if(branch,
+        do: usage(provider, branch, info, crm, credentials),
+        else: shared_usage(provider, credentials)
+      )
+
+    connection = connection(status)
+    obligations = Map.get(work, to_string(provider), %{unsent: 0, uncertain: 0, accepted: 0})
 
     %{
       provider: provider,
       scope: scope(provider, branch),
       credentials: credentials,
-      connection: connection(status),
-      usage:
-        if(branch,
-          do: usage(provider, branch, info, crm, credentials),
-          else: shared_usage(provider, credentials)
-        ),
+      connection: connection,
+      usage: usage,
+      obligations: obligations,
+      activity: Map.get(activity, to_string(provider)),
+      main:
+        main_state(provider, crm, usage, connection, credentials, warnings(status), obligations),
       capabilities: capabilities(provider),
       warnings: warnings(status)
     }
@@ -294,6 +325,58 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   def connection_text(:failed), do: gettext("No connection")
   def connection_text(:unchecked), do: gettext("Connection not checked")
 
+  defp main_state(provider, crm, _usage, connection, _credentials, warnings, obligations)
+       when provider in @crm_providers do
+    state = Availability.crm(crm, provider)
+
+    cond do
+      not state.desired? and obligations.uncertain + obligations.accepted > 0 ->
+        :finishing
+
+      not state.desired? ->
+        :disabled
+
+      not state.configured? ->
+        :needs_setup
+
+      connection.state in [:auth, :failed] ->
+        :error
+
+      warnings != [] ->
+        :attention
+
+      not state.capabilities.orders and
+          (state.capabilities.catalog or state.capabilities.stops) ->
+        :partial
+
+      not state.capabilities.orders ->
+        :needs_setup
+
+      not fresh_connection?(connection) ->
+        :unchecked
+
+      true ->
+        :enabled
+    end
+  end
+
+  defp main_state(_provider, _crm, usage, connection, credentials, warnings, _obligations) do
+    case Enum.find(usage, &(&1.kind == :operation)) do
+      %{state: :off} -> :disabled
+      %{state: :not_ready} -> :needs_setup
+      %{state: :on} when credentials.state in [:missing, :partial] -> :needs_setup
+      %{state: :on} when connection.state in [:auth, :failed] -> :error
+      %{state: :on} when warnings != [] -> :attention
+      %{state: :on} -> if(fresh_connection?(connection), do: :enabled, else: :unchecked)
+      _ -> :disabled
+    end
+  end
+
+  defp fresh_connection?(%{state: :ok, checked_at: %DateTime{} = at}),
+    do: DateTime.diff(DateTime.utc_now(), at, :second) in 0..86_400
+
+  defp fresh_connection?(_connection), do: false
+
   ## Warnings
 
   def warnings(%Status{warning: warning}) when is_binary(warning) and warning != "" do
@@ -470,7 +553,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
 
   defp crm_usage(provider, crm, credentials) do
     active = BranchSettings.active_provider(crm)
-    sending? = crm.enabled == true and crm.provider == provider
+    state = Availability.crm(crm, provider)
+    sending? = state.desired?
     sources = crm.sources || []
     other = active && active != provider && Crm.provider_name(active)
     settings = Map.get(crm, provider)
@@ -479,9 +563,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
       item(
         gettext("Sending new orders"),
         cond do
-          sending? and credentials.state != :complete -> :not_ready
-          sending? and sources == [] -> :not_ready
-          sending? -> :on
+          sending? and not state.capabilities.orders -> :not_ready
+          state.capabilities.orders -> :on
           true -> :off
         end,
         cond do
@@ -530,10 +613,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
         end
       ),
       item(
+        gettext("Automatic catalog refresh"),
+        if(state.capabilities.catalog, do: :on, else: :off),
+        if(state.capabilities.catalog, do: nil, else: gettext("Automatic refresh is off"))
+      ),
+      item(
         gettext("Stop list sync"),
         cond do
           is_nil(settings) or not Map.get(settings, :sync_stops) -> :off
-          sending? -> :on
+          state.capabilities.stops -> :on
           true -> :not_ready
         end,
         cond do

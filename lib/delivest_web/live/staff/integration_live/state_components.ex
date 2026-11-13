@@ -14,19 +14,45 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
   slot :action
 
   def summary(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :obligations,
+        Map.get(assigns.state, :obligations, %{unsent: 0, uncertain: 0, accepted: 0})
+      )
+
     ~H"""
     <div id={@id} class="space-y-2 rounded-box border border-base-300 bg-base-100 p-4 text-sm">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <.scope_badge scope={@state.scope} />
         {render_slot(@action)}
       </div>
+      <p id={"#{@id}-main"} class={["text-base font-semibold", main_class(@state.main)]}>
+        {main_text(@state.main)}
+      </p>
       <.credentials_row id={"#{@id}-credentials"} credentials={@state.credentials} />
       <.connection_row
         id={"#{@id}-connection"}
         connection={@state.connection}
         branch={@branch}
       />
+      <p :if={@state.activity} id={"#{@id}-activity"} class="text-xs text-base-content/60">
+        {gettext("Last operation")}: {@state.activity.method} · {if(
+          Delivest.Integrations.Journal.Request.failed?(@state.activity),
+          do: gettext("Failed"),
+          else: gettext("Completed")
+        )} · {format_time(@state.activity.inserted_at, @branch)}
+      </p>
       <.usage_rows id={"#{@id}-usage"} usage={@state.usage} />
+      <p :if={@obligations.unsent > 0} id={"#{@id}-unsent"} class="text-xs text-warning">
+        {gettext("Orders not sent: %{count}", count: @obligations.unsent)}
+      </p>
+      <p :if={@obligations.uncertain > 0} id={"#{@id}-uncertain"} class="text-xs text-warning">
+        {gettext("Orders with uncertain CRM outcome: %{count}", count: @obligations.uncertain)}
+      </p>
+      <p :if={@obligations.accepted > 0} id={"#{@id}-accepted"} class="text-xs text-warning">
+        {gettext("Accepted orders still open: %{count}", count: @obligations.accepted)}
+      </p>
       <.capability_rows
         :if={@state.capabilities != []}
         id={"#{@id}-capabilities"}
@@ -170,6 +196,24 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
   defp usage_class(:not_ready), do: "badge-warning"
   defp usage_class(:paused), do: "badge-warning"
   defp usage_class(_state), do: "badge-ghost text-base-content/60"
+
+  defp main_text(:enabled), do: gettext("Enabled")
+  defp main_text(:partial), do: gettext("Partially enabled")
+  defp main_text(:unchecked), do: gettext("Enabled · connection not recently checked")
+  defp main_text(:needs_setup), do: gettext("Needs setup")
+  defp main_text(:error), do: gettext("Error")
+  defp main_text(:attention), do: gettext("Needs attention")
+  defp main_text(:finishing), do: gettext("Sending off · completing accepted orders")
+  defp main_text(_), do: gettext("Disabled")
+
+  defp main_class(:enabled), do: "text-success"
+  defp main_class(:partial), do: "text-info"
+  defp main_class(:unchecked), do: "text-warning"
+  defp main_class(:needs_setup), do: "text-warning"
+  defp main_class(:error), do: "text-error"
+  defp main_class(:attention), do: "text-warning"
+  defp main_class(:finishing), do: "text-warning"
+  defp main_class(_), do: "text-base-content/70"
 
   defp credential_class(:complete), do: "badge-success"
   defp credential_class(:partial), do: "badge-warning"

@@ -13,7 +13,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     StopSync
   }
 
-  alias Delivest.Integrations.{Channels, Frontpad}
+  alias Delivest.Integrations.{Availability, Channels, Frontpad}
   alias Delivest.Net.SharedOwnership
   alias DelivestWeb.Staff.IntegrationLive.{HealthComponent, JournalComponent, Presentation}
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
@@ -24,8 +24,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   def mount(_params, _session, socket) do
     branch_id = socket.assigns.current_branch.id
 
-    if connected?(socket),
-      do: Phoenix.PubSub.subscribe(Delivest.PubSub, FrontpadStopRefresh.topic(branch_id))
+    if connected?(socket), do: Phoenix.PubSub.subscribe(Delivest.PubSub, Crm.topic(branch_id))
 
     {:ok,
      socket
@@ -37,6 +36,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
        query: "",
        refresh_timer: nil,
        stop_refresh_timer: nil,
+       stop_subscribed: false,
        stop_refresh: FrontpadStopRefresh.state(branch_id),
        stop_sync: stop_result(branch_id)
      )
@@ -161,6 +161,47 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     end
   end
 
+  def handle_event("toggle_sending", _params, socket) do
+    crm = Crm.get_branch_settings(socket.assigns.current_branch.id)
+    enabled? = BranchSettings.active_provider(crm) == :frontpad
+
+    cond do
+      not socket.assigns.can_edit_branch ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      not enabled? and not Crm.configured?(crm, :frontpad) ->
+        {:noreply, put_flash(socket, :error, gettext("Save the Frontpad API key first"))}
+
+      not enabled? and (crm.sources || []) == [] ->
+        {:noreply, put_flash(socket, :error, gettext("Choose order sources first"))}
+
+      true ->
+        attrs =
+          if enabled?,
+            do: %{"enabled" => false},
+            else: %{"enabled" => true, "provider" => "frontpad"}
+
+        case Crm.update_branch_settings(
+               socket.assigns.current_staff,
+               socket.assigns.current_branch.id,
+               attrs
+             ) do
+          {:ok, updated} ->
+            {:noreply,
+             socket
+             |> assign_settings(updated)
+             |> assign_context()
+             |> put_flash(
+               :info,
+               if(enabled?, do: gettext("Sending disabled"), else: gettext("Sending enabled"))
+             )}
+
+          _ ->
+            {:noreply, put_flash(socket, :error, gettext("Could not change sending state"))}
+        end
+    end
+  end
+
   @impl true
   def handle_info(:refresh_available, socket),
     do: {:noreply, socket |> assign(refresh_timer: nil) |> assign_available_at()}
@@ -172,6 +213,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
      socket
      |> assign(stop_refresh_timer: nil)
      |> apply_stop_refresh(state)
+     |> track_stop_refresh()}
+  end
+
+  def handle_info({:crm_settings_changed, branch_id}, socket)
+      when branch_id == socket.assigns.current_branch.id do
+    {:noreply,
+     socket
+     |> load_settings()
+     |> assign_context()
+     |> assign(stop_refresh: FrontpadStopRefresh.state(branch_id))
      |> track_stop_refresh()}
   end
 
@@ -214,6 +265,28 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     pending? =
       !!(socket.assigns.stop_refresh &&
            socket.assigns.stop_refresh.status in ~w(queued running retrying))
+
+    socket =
+      cond do
+        connected?(socket) and pending? and not socket.assigns.stop_subscribed ->
+          Phoenix.PubSub.subscribe(
+            Delivest.PubSub,
+            FrontpadStopRefresh.topic(socket.assigns.current_branch.id)
+          )
+
+          assign(socket, stop_subscribed: true)
+
+        socket.assigns.stop_subscribed and not pending? ->
+          Phoenix.PubSub.unsubscribe(
+            Delivest.PubSub,
+            FrontpadStopRefresh.topic(socket.assigns.current_branch.id)
+          )
+
+          assign(socket, stop_subscribed: false)
+
+        true ->
+          socket
+      end
 
     timer = socket.assigns.stop_refresh_timer
 
@@ -298,6 +371,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
     assign(socket,
       crm: crm,
+      availability: Availability.crm(crm, :frontpad),
       active_provider: active_provider,
       form: to_form(Crm.change_branch_settings(crm), as: "crm")
     )
@@ -320,25 +394,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         tags: settings.tags || %Frontpad.TagCodes{}
     }
 
-  defp settings_params(params, assigns) do
-    provider = "frontpad"
-    submitted? = params["enabled"] in [true, "true"]
-    displayed? = assigns.crm.enabled == true
-
-    cond do
-      submitted? and not displayed? ->
-        params |> Map.put("enabled", "true") |> Map.put("provider", provider)
-
-      submitted? ->
-        Map.put(params, "provider", provider)
-
-      displayed? ->
-        Map.delete(params, "provider")
-
-      true ->
-        params |> Map.delete("provider") |> Map.delete("enabled")
-    end
-  end
+  defp settings_params(params, _assigns), do: Map.drop(params, ["provider", "enabled"])
 
   defp load_catalog(socket) do
     branch_id = socket.assigns.current_branch.id
@@ -510,6 +566,37 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         </.tab_button>
       </div>
 
+      <section
+        :if={@tab == :settings}
+        id="frontpad-sending"
+        class="rounded-box border border-base-300 bg-base-100 p-5"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="font-semibold">{gettext("Sending orders to Frontpad")}</h2>
+            <p class="text-sm text-base-content/60">
+              {cond do
+                @availability.capabilities.orders -> gettext("Sending enabled")
+                @availability.desired? -> gettext("Needs setup: choose order sources")
+                true -> gettext("Sending disabled")
+              end}
+            </p>
+          </div>
+          <button
+            :if={@can_edit_branch}
+            id="frontpad-toggle-sending"
+            type="button"
+            class="btn btn-primary"
+            phx-click="toggle_sending"
+          >
+            {if(@crm.enabled and @active_provider == :frontpad,
+              do: gettext("Disable sending"),
+              else: gettext("Enable sending")
+            )}
+          </button>
+        </div>
+      </section>
+
       <.live_component
         :if={@tab == :settings}
         module={HealthComponent}
@@ -621,7 +708,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
       class="rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
     >
       <fieldset disabled={!@can_edit} class="space-y-4">
-        <.input field={@form[:enabled]} type="checkbox" label={gettext("Send orders to Frontpad")} />
         <p
           :if={@active_provider && @active_provider != :frontpad}
           id="frontpad-provider-switch"
@@ -638,7 +724,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
             <.input
               field={frontpad[:api_key]}
               type="password"
-              value={frontpad[:api_key].value}
+              value=""
+              placeholder={if(api_key?(@crm), do: gettext("Saved key ••••••••"), else: "")}
               label={gettext("Frontpad API Key")}
             />
             <.input field={frontpad[:affiliate]} type="text" label={gettext("Frontpad Branch ID")} />

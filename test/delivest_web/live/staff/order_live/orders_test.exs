@@ -218,6 +218,15 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       branch: branch,
       order: order
     } do
+      Delivest.Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+        branch_id: branch.id,
+        crm: %Delivest.Integrations.Crm.BranchSettings{
+          enabled: true,
+          provider: :frontpad,
+          frontpad: %Delivest.Integrations.Frontpad.Settings{api_key: "key"}
+        }
+      })
+
       {:ok, _order} =
         Delivest.Oms.Orders.update_order_crm(order, %{
           provider: "frontpad",
@@ -237,6 +246,23 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       |> render_submit()
 
       assert Delivest.Repo.reload!(order).crm.status == "pending"
+    end
+
+    test "a failed unsent CRM order offers retry even without an alert", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      {:ok, _} =
+        Delivest.Oms.Orders.update_order_crm(order, %{
+          provider: "frontpad",
+          status: "failed",
+          last_error: "request rejected",
+          alert: nil
+        })
+
+      {:ok, lv, _} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
+      assert has_element?(lv, "#order-crm-retry-unsent-#{order.id}")
     end
 
     test "an order of our own carries no gateway note", %{

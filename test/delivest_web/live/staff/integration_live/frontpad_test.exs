@@ -88,12 +88,37 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
 
     lv
     |> form("#frontpad-settings",
-      crm: %{enabled: "true", frontpad: %{api_key: "secret"}}
+      crm: %{frontpad: %{api_key: "secret"}}
     )
     |> render_submit()
 
+    lv |> element("#frontpad-toggle-sending") |> render_click()
+
     assert has_element?(lv, "#frontpad-health-summary-credentials", "Filled in")
     assert has_element?(lv, "#frontpad-health-summary-usage", "On")
+  end
+
+  test "another open tab updates its saved configuration and sending state", %{conn: conn} do
+    branch = insert(:branch)
+    conn = sign_in(conn, branch, ["integrations.read", "integrations.update"])
+    path = ~p"/staff/b/#{branch}/integrations/frontpad"
+    {:ok, first, _} = live(conn, path)
+    {:ok, second, _} = live(conn, path)
+
+    assert has_element?(second, "#frontpad-health-summary-credentials", "Not filled in")
+
+    first
+    |> form("#frontpad-settings", crm: %{frontpad: %{api_key: "secret"}})
+    |> render_submit()
+
+    assert has_element?(second, "#frontpad-health-summary-credentials", "Filled in")
+    assert has_element?(second, "#frontpad-health-summary-usage", "Off")
+
+    first |> element("#frontpad-toggle-sending") |> render_click()
+    assert has_element?(second, "#frontpad-health-summary-usage", "On")
+
+    first |> element("#frontpad-toggle-sending") |> render_click()
+    assert has_element?(second, "#frontpad-health-summary-usage", "Off")
   end
 
   test "an invalid save keeps the saved status and its connection check", %{conn: conn} do
@@ -154,7 +179,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     assert lv |> element("#frontpad-health-check") |> render_click() =~ "Access error"
 
     {:ok, _lv, html} = live(conn, ~p"/staff/b/#{branch}/integrations")
-    assert html =~ "Access error"
+    assert html =~ "Error"
 
     Req.Test.stub(
       Delivest.HTTP.Client,
