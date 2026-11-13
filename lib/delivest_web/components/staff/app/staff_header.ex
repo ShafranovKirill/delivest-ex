@@ -129,7 +129,7 @@ defmodule DelivestWeb.StaffHeader do
 
   def page_header(%{socket: %{view: view}} = assigns) do
     if function_exported?(view, :staff_page_header, 1) do
-      apply(view, :staff_page_header, [assigns])
+      view.staff_page_header(assigns)
     end
   end
 
