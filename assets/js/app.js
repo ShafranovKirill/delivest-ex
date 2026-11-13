@@ -14,6 +14,11 @@ import { CourierLocation } from "./hooks/courier_location";
 import { CouriersMap } from "./hooks/couriers_map";
 import { CopyLink } from "./hooks/copy_link";
 import { HeaderScroll } from "./hooks/header_scroll";
+import { FoundationDialog } from "./hooks/foundation_dialog";
+import { FoundationColumns } from "./hooks/foundation_columns";
+import { FoundationDirty } from "./hooks/foundation_dirty";
+import { StaffDirtyGuard } from "./hooks/staff_dirty_guard";
+import { ActiveSectionNav } from "./hooks/active_section_nav";
 
 let Uploaders = {};
 
@@ -210,6 +215,11 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CouriersMap,
     CopyLink,
     HeaderScroll,
+    ActiveSectionNav,
+    FoundationDialog,
+    FoundationColumns,
+    FoundationDirty,
+    StaffDirtyGuard,
   },
 });
 
@@ -241,6 +251,18 @@ function focusVisibleSidebarToggle(active) {
   button?.focus({ preventScroll: true });
 }
 
+const sidebarFocusKey = "staff:sidebar-return-focus";
+let pendingSidebarFocus = sessionStorage.getItem(sidebarFocusKey) === "1";
+function restoreSidebarFocus() {
+  if (!pendingSidebarFocus) return;
+  requestAnimationFrame(() => {
+    const button = document.getElementById("header-sidebar-toggle");
+    if (button?.getClientRects().length) button.focus({ preventScroll: true });
+    pendingSidebarFocus = false;
+    sessionStorage.removeItem(sidebarFocusKey);
+  });
+}
+
 window.addEventListener("sidebar:toggle", () => {
   const focused = document.activeElement;
   if (staffDesktop()) {
@@ -266,6 +288,8 @@ window.addEventListener("sidebar:toggle-open", () => {
   root.toggleAttribute("data-sidebar-open");
   syncSidebarToggle();
   focusVisibleSidebarToggle(focused);
+  if (!root.hasAttribute("data-sidebar-open"))
+    document.getElementById("header-sidebar-toggle")?.focus({ preventScroll: true });
 });
 
 function setProfileOpen(open) {
@@ -286,10 +310,13 @@ document.addEventListener("click", (event) => {
   }
   if (!staffDesktop() && root.hasAttribute("data-sidebar-open") &&
       event.target.closest("#main-sidebar a")) {
+    pendingSidebarFocus = true;
+    sessionStorage.setItem(sidebarFocusKey, "1");
     const focused = document.activeElement;
     root.removeAttribute("data-sidebar-open");
     syncSidebarToggle();
     focusVisibleSidebarToggle(focused);
+    document.getElementById("header-sidebar-toggle")?.focus({ preventScroll: true });
   }
 });
 
@@ -308,6 +335,7 @@ document.addEventListener("keydown", (event) => {
       root.removeAttribute("data-sidebar-open");
       syncSidebarToggle();
       focusVisibleSidebarToggle(focused);
+      document.getElementById("header-sidebar-toggle")?.focus({ preventScroll: true });
     }
   }
 });
@@ -324,11 +352,19 @@ window.addEventListener("phx:page-loading-start", (event) => {
     syncSidebarToggle();
   }
 });
-window.addEventListener("phx:page-loading-stop", syncSidebarToggle);
-if (document.readyState === "loading")
-  document.addEventListener("DOMContentLoaded", syncSidebarToggle);
-else
+window.addEventListener("phx:page-loading-stop", () => {
   syncSidebarToggle();
+  restoreSidebarFocus();
+});
+if (document.readyState === "loading")
+  document.addEventListener("DOMContentLoaded", () => {
+    syncSidebarToggle();
+    restoreSidebarFocus();
+  });
+else {
+  syncSidebarToggle();
+  restoreSidebarFocus();
+}
 
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));

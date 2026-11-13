@@ -117,6 +117,7 @@ defmodule Delivest.MixProject do
         "compile --warnings-as-errors",
         "deps.unlock --unused",
         "format",
+        "admin.inventory --check",
         "credo --strict",
         "test"
       ]

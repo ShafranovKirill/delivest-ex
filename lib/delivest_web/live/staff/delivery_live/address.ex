@@ -50,7 +50,10 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
            ) do
         {:ok, settings} ->
           {:noreply,
-           socket |> assign_settings(settings) |> put_flash(:info, gettext("Settings saved"))}
+           socket
+           |> assign_settings(settings)
+           |> put_flash(:info, gettext("Settings saved"))
+           |> push_event("staff:form-saved", %{})}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign(socket, form: to_form(changeset, as: "address"))}
@@ -92,6 +95,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
         for={@form}
         id="address-settings"
         phx-change="change"
+        data-staff-dirty
         phx-submit="save"
         class="mx-auto w-full max-w-xl space-y-5 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm sm:space-y-6 sm:p-8"
       >

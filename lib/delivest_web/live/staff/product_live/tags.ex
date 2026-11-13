@@ -193,6 +193,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
           for={@form}
           id="product-tag-form"
           phx-change="validate"
+          data-staff-dirty
           phx-submit="save"
           class="space-y-6"
         >

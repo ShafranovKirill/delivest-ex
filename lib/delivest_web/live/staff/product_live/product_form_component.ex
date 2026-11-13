@@ -292,6 +292,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
         id="product-form"
         phx-target={@myself}
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="flex flex-col h-full"
       >

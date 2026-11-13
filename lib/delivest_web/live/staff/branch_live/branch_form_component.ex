@@ -142,6 +142,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
         id="branch-form"
         phx-target={@myself}
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-6"
       >

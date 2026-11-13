@@ -135,10 +135,8 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
   end
 
   test "a courier account lands on the deliveries page", ctx do
-    select = ctx.conn |> get(~p"/staff") |> redirected_to()
-    assert select == ~p"/staff/branches/select/#{ctx.branch.id}"
-
-    assert ctx.conn |> get(select) |> redirected_to() == ~p"/staff/b/#{ctx.branch}/deliveries"
+    assert ctx.conn |> get(~p"/staff") |> redirected_to() ==
+             ~p"/staff/b/#{ctx.branch}/deliveries"
   end
 
   test "staff without the delivery permission is turned away", ctx do

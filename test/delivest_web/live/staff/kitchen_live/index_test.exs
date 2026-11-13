@@ -157,9 +157,6 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
       |> put_req_cookie("_delivest_kitchen", conn.resp_cookies["_delivest_kitchen"].value)
       |> get(~p"/staff")
 
-    assert redirected_to(conn) =~ "/staff/branches/select/#{branch.id}"
-
-    conn = conn |> recycle() |> get(~p"/staff/branches/select/#{branch.id}")
     assert redirected_to(conn) == ~p"/staff/b/#{branch}/kitchen"
   end
 end

@@ -193,6 +193,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
         id="stock-form"
         phx-target={@myself}
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="flex flex-col h-full"
       >

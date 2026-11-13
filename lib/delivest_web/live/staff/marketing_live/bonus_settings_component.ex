@@ -35,7 +35,8 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
           {:noreply,
            socket
            |> assign_form(Franchise.change_settings(settings))
-           |> put_flash(:info, gettext("Settings saved"))}
+           |> put_flash(:info, gettext("Settings saved"))
+           |> push_event("staff:form-saved", %{})}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
@@ -69,6 +70,7 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
           id="common-bonuses-form"
           phx-target={@myself}
           phx-change="validate"
+          data-staff-dirty
           phx-submit="save"
           class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
         >

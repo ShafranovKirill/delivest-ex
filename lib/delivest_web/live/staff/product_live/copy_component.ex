@@ -51,6 +51,7 @@ defmodule DelivestWeb.Staff.ProductLive.CopyComponent do
           for={nil}
           id="copy-products-form"
           phx-target={@myself}
+          data-staff-dirty
           phx-submit="copy"
           class="space-y-4"
         >

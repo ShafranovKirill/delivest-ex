@@ -47,11 +47,11 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
   test "the nav links to the page and the summary is shown", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/loyalty")
 
-    assert has_element?(lv, "#nav-section-network #nav-group-marketing[data-open]")
+    assert has_element?(lv, "#nav-section-main a", "Marketing")
 
     assert has_element?(
              lv,
-             "#nav-group-marketing a[href='/staff/marketing/bonuses?branch=#{branch.slug}']"
+             "main #staff-section-navigation #section-nav-loyalty_settings[aria-current='page']"
            )
 
     assert has_element?(

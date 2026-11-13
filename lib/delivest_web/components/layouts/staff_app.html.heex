@@ -1,11 +1,56 @@
-<div class="min-h-screen bg-base-200 text-base-content">
+<% page_header = DelivestWeb.StaffHeader.page_header(assigns) %>
+<% branches = assigns[:staff_branches] || [] %>
+<% accessible_branch = fn candidate ->
+  if candidate && Map.get(candidate, :id) && Map.get(candidate, :slug) do
+    if Enum.any?(branches, &(&1.id == candidate.id)), do: candidate
+  end
+end %>
+<% settings_branch =
+  Enum.find_value(
+    [assigns[:settings_scope_branch], assigns[:selected_branch], assigns[:branch]],
+    accessible_branch
+  ) %>
+<% actual_scope_branch =
+  DelivestWeb.StaffHeader.scope_branch(
+    assigns[:current_path],
+    assigns[:current_branch],
+    settings_branch
+  ) %>
+<% navigation_branch =
+  actual_scope_branch ||
+    Enum.find_value(
+      [assigns[:navigation_branch], settings_branch, assigns[:current_branch]],
+      accessible_branch
+    ) || List.first(branches) %>
+<div class={[
+  "min-h-screen bg-base-200 text-base-content",
+  assigns[:foundation_workspace] && "foundation-shell"
+]}>
+  <div id="staff-dirty-guard" phx-hook="StaffDirtyGuard" phx-update="ignore">
+    <dialog id="staff-unsaved-dialog" class="modal" aria-labelledby="staff-unsaved-title">
+      <div class="modal-box max-w-md">
+        <h2 id="staff-unsaved-title" class="text-lg font-semibold">
+          {gettext("Unsaved changes")}
+        </h2>
+        <p class="mt-2 text-sm text-base-content/70">
+          {gettext("Leave this page and discard your changes?")}
+        </p>
+        <div class="modal-action">
+          <button id="staff-unsaved-stay" type="button" class="btn btn-ghost">{gettext("Stay")}</button>
+          <button id="staff-unsaved-leave" type="button" class="btn btn-error">{gettext("Leave")}</button>
+        </div>
+      </div>
+    </dialog>
+  </div>
   <DelivestWeb.StaffHeader.staff_header
     current_staff={@current_staff}
     current_branch={assigns[:current_branch]}
+    staff_branches={assigns[:staff_branches] || []}
     current_path={assigns[:current_path]}
-    settings_branch={assigns[:branch]}
+    current_uri={assigns[:current_uri]}
+    settings_branch={settings_branch}
     page_title={assigns[:page_title]}
-    page_header={DelivestWeb.StaffHeader.page_header(assigns)}
+    workspace={assigns[:foundation_workspace] || false}
     kitchen_status={assigns[:kitchen_status]}
   />
 
@@ -23,7 +68,8 @@
   <DelivestWeb.StaffSidebar.staff_sidebar
     current_staff={@current_staff}
     current_branch={assigns[:current_branch]}
-    navigation_branch={assigns[:navigation_branch]}
+    scope_branch={actual_scope_branch}
+    navigation_branch={navigation_branch}
     staff_branches={assigns[:staff_branches] || []}
     current_path={assigns[:current_path]}
     current_page={assigns[:current_page]}
@@ -34,6 +80,22 @@
     <main class="flex-1 min-w-0 p-4 sm:p-6">
       <div class="max-w-7xl mx-auto">
         <.flash_group flash={@flash} />
+        <%= if page_header do %>
+          {page_header}
+        <% else %>
+          <%= if !assigns[:foundation_workspace] do %>
+            <h1 class="mb-5 text-2xl font-semibold">
+              {assigns[:page_title] || gettext("Dashboard")}
+            </h1>
+          <% end %>
+        <% end %>
+        <DelivestWeb.StaffNav.local_navigation
+          staff={@current_staff}
+          branch={assigns[:current_branch]}
+          navigation_branch={navigation_branch}
+          current_page={assigns[:current_page]}
+          current_path={assigns[:current_path]}
+        />
         <DelivestWeb.GatewayNote.gateway_note
           :if={assigns[:gateway_block]}
           name={@gateway_block.name}

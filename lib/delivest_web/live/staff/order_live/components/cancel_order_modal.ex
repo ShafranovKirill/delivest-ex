@@ -22,6 +22,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CancelOrderModal do
         for={%{}}
         as={:cancel}
         id="cancel-order-form"
+        data-staff-dirty
         phx-submit="confirm_cancel"
         class="space-y-3 pt-3"
       >

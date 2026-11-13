@@ -30,7 +30,8 @@ defmodule DelivestWeb.Staff.BranchLive.SpecialHoursComponent do
       )
 
     with {:ok, branch} <- result do
-      {:noreply, socket |> assign(branch: branch, error: nil)}
+      {:noreply,
+       socket |> assign(branch: branch, error: nil) |> push_event("staff:form-saved", %{})}
     else
       {:error, :forbidden} -> {:noreply, assign(socket, error: gettext("Permission denied"))}
       _ -> {:noreply, assign(socket, error: gettext("Check the date and the time"))}
@@ -86,6 +87,7 @@ defmodule DelivestWeb.Staff.BranchLive.SpecialHoursComponent do
 
       <form
         id="special-hours-form"
+        data-staff-dirty
         phx-submit="add"
         phx-target={@myself}
         class="grid grid-cols-2 items-end gap-2 sm:grid-cols-5"

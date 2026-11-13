@@ -57,7 +57,10 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
     case Links.create(socket.assigns.current_staff, branch_id, attrs) do
       {:ok, link} ->
         {:noreply,
-         socket |> assign(form: form(), error: nil) |> stream_insert(:links, link, at: 0)}
+         socket
+         |> assign(form: form(), error: nil)
+         |> stream_insert(:links, link, at: 0)
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(%{changeset | action: :insert}))}
@@ -134,6 +137,7 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
         for={@form}
         id="advertising-link-form"
         phx-change="validate"
+        data-staff-dirty
         phx-submit="create"
         class="rounded-2xl border border-base-300 p-5 grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end"
       >

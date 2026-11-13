@@ -356,13 +356,11 @@ defmodule DelivestWeb.CoreComponents do
           <.icon name="hero-arrow-left" class="size-4" />
         </.link>
         <h1
-          :if={@title_in_header and @navigation == []}
           title={@title}
-          class="staff-page-header-title min-w-0 truncate text-base font-semibold text-base-content sm:text-lg"
+          class="staff-page-header-title min-w-0 text-2xl font-semibold text-base-content"
         >
           {@title}
         </h1>
-        <h1 :if={not @title_in_header or @navigation != []} class="sr-only">{@title}</h1>
         <.header_navigation :if={@navigation != []} label={@navigation_label}>
           {render_slot(@navigation)}
         </.header_navigation>
@@ -398,7 +396,7 @@ defmodule DelivestWeb.CoreComponents do
     >
       <nav
         id="staff-page-header-navigation"
-        phx-hook=".ActiveHeaderTab"
+        phx-hook="ActiveSectionNav"
         data-scroll-viewport
         class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
         aria-label={@label || gettext("Page sections")}
@@ -406,26 +404,6 @@ defmodule DelivestWeb.CoreComponents do
         {render_slot(@inner_block)}
       </nav>
     </div>
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
-      export default {
-        mounted() {
-          this.resizeObserver = new ResizeObserver(() => this.revealActiveTab())
-          this.resizeObserver.observe(this.el)
-          this.revealActiveTab()
-        },
-        updated() { this.revealActiveTab() },
-        destroyed() { this.resizeObserver.disconnect() },
-        revealActiveTab() {
-          const active = this.el.querySelector('[aria-current="page"]')
-          if (!active) return
-          const left = active.getBoundingClientRect().left - this.el.getBoundingClientRect().left + this.el.scrollLeft
-          const right = left + active.offsetWidth
-          if (left < this.el.scrollLeft || right > this.el.scrollLeft + this.el.clientWidth) {
-            this.el.scrollLeft = Math.max(0, left - (this.el.clientWidth - active.offsetWidth) / 2)
-          }
-        }
-      }
-    </script>
     """
   end
 
@@ -504,6 +482,12 @@ defmodule DelivestWeb.CoreComponents do
   attr :path_fn, :any, default: nil, doc: "Function that takes a map of params and returns a URL"
   attr :id, :string, required: true
   attr :rows, :list, required: true
+  attr :variant, :atom, default: :legacy
+  attr :selected, :any, default: MapSet.new()
+  attr :select_event, :any, default: "select"
+  attr :target, :any, default: nil
+  attr :row_label, :any, default: nil
+  attr :sort_path, :any, default: nil
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
 
@@ -515,9 +499,93 @@ defmodule DelivestWeb.CoreComponents do
     attr :label, :string
     attr :sort, :string, doc: "Field name for Flop sorting"
     attr :secondary, :boolean, doc: "Hidden on phones"
+    attr :key, :string, doc: "Foundation column preference key"
+    attr :numeric, :boolean, doc: "Foundation right alignment"
+    attr :field, :atom, doc: "Plain value in the foundation mobile detail row"
   end
 
   slot :action, doc: "the slot for showing user actions in the last table column"
+
+  def table(%{variant: :foundation} = assigns) do
+    ~H"""
+    <div class="overflow-x-auto rounded-box border border-base-300">
+      <table class="table w-full" aria-label={gettext("Results")}>
+        <thead>
+          <tr>
+            <th scope="col"><span class="sr-only">{gettext("Select")}</span></th>
+            <th
+              :for={col <- @col}
+              scope="col"
+              data-column={col[:key]}
+              class={[col[:numeric] && "text-right", col[:secondary] && "max-sm:hidden"]}
+            >
+              <.link :if={col[:sort] && @sort_path} patch={@sort_path.(col[:sort])}>{col[:label]}</.link>
+              <span :if={is_nil(col[:sort]) or is_nil(@sort_path)}>{col[:label]}</span>
+            </th>
+            <th :if={@action != []} scope="col" class="text-right">
+              <span class="sr-only">{gettext("Actions")}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody id={@id}>
+          <tr :for={row <- @rows} id={if(@row_id, do: @row_id.(row), else: "#{@id}-row-#{row.id}")}>
+            <td>
+              <input
+                type="checkbox"
+                phx-click={@select_event}
+                phx-target={@target}
+                phx-value-id={row.id}
+                checked={MapSet.member?(@selected, row.id)}
+                aria-label={
+                  gettext("Select %{name}",
+                    name:
+                      if(@row_label,
+                        do: @row_label.(row),
+                        else: Map.get(row, :name, to_string(row.id))
+                      )
+                  )
+                }
+              />
+            </td>
+            <td
+              :for={col <- @col}
+              data-column={col[:key]}
+              class={[col[:numeric] && "text-right", col[:secondary] && "max-sm:hidden"]}
+            >
+              {render_slot(col, @row_item.(row))}
+            </td>
+            <td :if={@action != []} class="text-right">
+              <div class="flex justify-end gap-2">
+                <%= for action <- @action do %>
+                  {render_slot(action, @row_item.(row))}
+                <% end %>
+              </div>
+            </td>
+            <td class="sm:hidden">
+              <details>
+                <summary>
+                  {gettext("More details for %{name}",
+                    name:
+                      if(@row_label,
+                        do: @row_label.(row),
+                        else: Map.get(row, :name, to_string(row.id))
+                      )
+                  )}
+                </summary><dl>
+                  <%= for col <- Enum.filter(@col, & &1[:secondary]) do %>
+                    <dt class="font-medium">{col[:label]}</dt><dd>
+                      {Map.get(@row_item.(row), col[:field])}
+                    </dd>
+                  <% end %>
+                </dl>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
 
   def table(assigns) do
     assigns =

@@ -43,7 +43,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Ycart do
          socket
          |> assign(settings: settings, current_branch: updated)
          |> assign_form(YcartSettings.changeset(settings, %{}))
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, :info, %Ecto.Changeset{} = changeset} ->
         form_changeset =
@@ -95,6 +96,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Ycart do
         for={@form}
         id="ycart-settings"
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
