@@ -15,6 +15,7 @@ defmodule Delivest.Integrations.YandexEda.BranchSettings do
     field :markup_percent, :integer, default: 0
     field :round_to, :integer, default: 1
     field :vat, :integer, default: 0
+    field :generation, :integer, default: 0
   end
 
   def accept_modes, do: @accept_modes
@@ -27,5 +28,17 @@ defmodule Delivest.Integrations.YandexEda.BranchSettings do
     |> validate_number(:markup_percent, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_inclusion(:round_to, [1, 5, 10])
     |> validate_inclusion(:vat, @vat_rates)
+    |> bump_generation(settings)
+  end
+
+  defp bump_generation(changeset, settings) do
+    if Enum.any?(
+         [:enabled, :accept_mode, :accept_minutes, :markup_percent, :round_to, :vat],
+         fn field ->
+           get_field(changeset, field) != Map.get(settings, field)
+         end
+       ),
+       do: put_change(changeset, :generation, (settings.generation || 0) + 1),
+       else: changeset
   end
 end

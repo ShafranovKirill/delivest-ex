@@ -8,7 +8,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefresh do
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Integrations.Crm.FrontpadStopRefresh.{RefreshJob, State}
-  alias Delivest.Integrations.Frontpad
+  alias Delivest.Integrations.{Availability, Frontpad}
   alias Delivest.Repo
 
   @active_states ~w(available scheduled executing retryable)
@@ -108,7 +108,11 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefresh do
           {:ok, :throttled}
 
         true ->
-          case %{branch_id: branch_id} |> RefreshJob.new() |> Oban.insert() do
+          generation = Availability.crm(branch_id, :frontpad).generation
+
+          case %{branch_id: branch_id, generation: generation}
+               |> RefreshJob.new()
+               |> Oban.insert() do
             {:ok, %Oban.Job{} = job} ->
               put_state(branch_id, %{status: "queued", job_id: job.id, last_error: nil})
               {:ok, :queued}

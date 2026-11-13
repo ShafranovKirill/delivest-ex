@@ -9,6 +9,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefresh.RefreshJob do
       keys: [:branch_id]
     ]
 
+  alias Delivest.Integrations.Availability
   alias Delivest.Integrations.Crm.{FrontpadStopRefresh, StopSync}
 
   @impl Oban.Worker
@@ -18,8 +19,10 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefresh.RefreshJob do
   def timeout(_job), do: :timer.minutes(2)
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"branch_id" => branch_id}} = job) do
-    if FrontpadStopRefresh.eligible?(branch_id) do
+  def perform(%Oban.Job{args: %{"branch_id" => branch_id} = args} = job) do
+    if FrontpadStopRefresh.eligible?(branch_id) and
+         is_integer(args["generation"]) and
+         Availability.crm_allowed?(branch_id, :frontpad, :stops, args["generation"]) do
       FrontpadStopRefresh.put_state(branch_id, %{
         job_id: job.id,
         status: "running",
@@ -29,7 +32,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefresh.RefreshJob do
 
       FrontpadStopRefresh.broadcast(branch_id)
 
-      case StopSync.sync(branch_id) do
+      case StopSync.sync_generation(branch_id, args["generation"]) do
         {:ok, %{stopped: count, unlinked: unlinked}} ->
           FrontpadStopRefresh.put_state(branch_id, %{
             status: "success",
@@ -43,6 +46,9 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefresh.RefreshJob do
           :ok
 
         {:ok, :disabled} ->
+          disabled(branch_id)
+
+        {:error, :settings_changed} ->
           disabled(branch_id)
 
         {:error, _reason} ->

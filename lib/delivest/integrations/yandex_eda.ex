@@ -66,15 +66,29 @@ defmodule Delivest.Integrations.YandexEda do
 
   def update_branch_settings(staff, branch_id, attrs) do
     with {:ok, branch} <- Identity.get_branch(branch_id, preload: [:info]),
-         {:ok, branch} <-
+         {:ok, updated} <-
            Identity.update_integrations(staff, branch, %{"channels" => %{"yandex_eda" => attrs}}) do
-      menu_changed(branch.id)
-      {:ok, Places.settings(branch)}
+      previous = Places.settings(branch) || %BranchSettings{}
+      current = Places.settings(updated) || %BranchSettings{}
+      if previous.generation != current.generation, do: cancel_menu_reload(branch_id)
+      menu_changed(updated.id)
+      {:ok, current}
     else
       {:error, :info, changeset} -> {:error, nested_changeset(changeset)}
       {:error, _step, changeset} -> {:error, changeset}
       error -> error
     end
+  end
+
+  defp cancel_menu_reload(branch_id) do
+    import Ecto.Query
+
+    from(j in Oban.Job,
+      where: j.worker == ^Oban.Worker.to_string(MenuReloadWorker),
+      where: j.state in ["available", "scheduled", "retryable"],
+      where: fragment("?->>'branch_id' = ?", j.args, ^branch_id)
+    )
+    |> Oban.cancel_all_jobs()
   end
 
   defp nested_changeset(changeset) do
@@ -271,7 +285,11 @@ defmodule Delivest.Integrations.YandexEda do
   defp reload_menu(branch_id, operation, opts \\ []) do
     if get_branch_settings(branch_id).enabled,
       do:
-        %{"branch_id" => branch_id, "operation" => operation}
+        %{
+          "branch_id" => branch_id,
+          "operation" => operation,
+          "generation" => get_branch_settings(branch_id).generation
+        }
         |> MenuReloadWorker.new(opts)
         |> Oban.insert()
 

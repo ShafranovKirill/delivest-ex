@@ -1,7 +1,9 @@
 defmodule Delivest.Integrations.Crm.Catalog do
+  import Ecto.Query, only: [from: 2]
+
   alias Delivest.Identity
-  alias Delivest.Identity.Branch
-  alias Delivest.Integrations.Crm
+  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.{Availability, Crm}
   alias Delivest.Integrations.Crm.{BranchSettings, CatalogCheck, CatalogSnapshot}
   alias Delivest.Integrations.Journal
   alias Delivest.{Net, Repo}
@@ -27,6 +29,23 @@ defmodule Delivest.Integrations.Crm.Catalog do
          {:ok, catalog} <-
            Journal.scope([branch_id: branch_id], fn -> module.fetch_catalog(settings) end) do
       {:ok, save(snapshot, branch_id, provider, catalog)}
+    end
+  end
+
+  def refresh(branch_id, provider, generation) when is_integer(generation) do
+    snapshot = Repo.get_by(CatalogSnapshot, branch_id: branch_id)
+
+    with true <- Availability.crm_allowed?(branch_id, provider, :catalog, generation),
+         :ok <- ensure_refresh_available(snapshot, to_string(provider)),
+         {:ok, module, settings} <- source(branch_id, provider),
+         true <- Availability.crm_allowed?(branch_id, provider, :catalog, generation),
+         {:ok, catalog} <-
+           Journal.scope([branch_id: branch_id], fn -> module.fetch_catalog(settings) end),
+         true <- Availability.crm_allowed?(branch_id, provider, :catalog, generation) do
+      publish(snapshot, branch_id, provider, catalog, generation)
+    else
+      false -> {:error, :disabled}
+      other -> other
     end
   end
 
@@ -72,14 +91,23 @@ defmodule Delivest.Integrations.Crm.Catalog do
 
   defp source(branch_id, provider) do
     with {:ok, name, module} <- Crm.provider_module(provider),
-         {:ok, %Branch{info: %{crm: %BranchSettings{} = crm}}} <-
-           Identity.get_branch(branch_id, preload: [:info]),
+         %BranchSettings{} = crm <- Crm.get_branch_settings(branch_id),
          %{} = settings <- Map.get(crm, name) do
       {:ok, module, settings}
     else
       {:error, :unknown_provider} -> {:error, :unknown_provider}
       _ -> {:error, :missing_settings}
     end
+  end
+
+  defp publish(snapshot, branch_id, provider, catalog, generation) do
+    Repo.transaction(fn ->
+      Repo.one(from(i in BranchInfo, where: i.branch_id == ^branch_id, lock: "FOR SHARE"))
+
+      if Availability.crm_allowed?(branch_id, provider, :catalog, generation),
+        do: save(snapshot, branch_id, provider, catalog),
+        else: Repo.rollback(:disabled)
+    end)
   end
 
   defp save(snapshot, branch_id, provider, catalog) do

@@ -20,6 +20,13 @@ defmodule Delivest.Integrations.Frontpad.Settings do
   end
 
   def changeset(settings, attrs, required? \\ false) do
+    attrs =
+      if Map.get(attrs, "api_key", Map.get(attrs, :api_key)) in [nil, ""] do
+        attrs |> Map.delete("api_key") |> Map.delete(:api_key)
+      else
+        attrs
+      end
+
     settings
     |> cast(attrs, [:api_key, :affiliate, :price_override, :sync_stops, :delivery_article])
     |> cast_embed(:statuses)

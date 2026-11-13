@@ -16,8 +16,8 @@ defmodule Delivest.Integrations.Crm do
   }
 
   alias Delivest.Integrations.Journal
+  alias Delivest.Integrations.Availability
   alias Delivest.Integrations.Health
-  alias Delivest.Integrations.Frontpad
   alias Delivest.Oms.{Order, Orders}
 
   @permanent_errors [:branch_not_found, :unknown_provider, :missing_settings]
@@ -27,6 +27,8 @@ defmodule Delivest.Integrations.Crm do
     iiko: [:api_key, :organization_id, :terminal_group_id],
     rkeeper: [:object_id]
   }
+
+  def topic(branch_id), do: "crm_settings:#{branch_id}"
 
   def providers, do: Enum.map(Registry.modules(), &{&1.key(), &1.name()})
 
@@ -108,46 +110,274 @@ defmodule Delivest.Integrations.Crm do
   defp resolve(_order, "exists", _number), do: {:error, :number_required}
 
   defp resolve(order, "resend", _number) do
-    with {:ok, order} <-
-           Orders.update_order_crm(order, %{status: "pending", alert: nil, last_error: nil}),
-         {:ok, _job} <- enqueue_sync(order),
-         do: {:ok, order}
+    retry_order(order, ["unknown"], "order.crm_resend")
+  end
+
+  defp resolve(%Order{crm: %{status: status}} = order, "retry_unsent", _number)
+       when status in ["pending", "failed"] do
+    retry_order(order, ["pending", "failed"], "order.crm_retry_unsent")
   end
 
   defp resolve(_order, _action, _number), do: {:error, :unknown_action}
 
+  defp retry_order(order, allowed_statuses, audit_event) do
+    case Repo.transaction(fn ->
+           Repo.one!(
+             from(i in Delivest.Identity.Branch.BranchInfo,
+               where: i.branch_id == ^order.branch_id,
+               lock: "FOR SHARE"
+             )
+           )
+
+           current = Repo.one!(from(o in Order, where: o.id == ^order.id, lock: "FOR UPDATE"))
+
+           if current.crm.status not in allowed_statuses or
+                not Availability.crm_allowed?(current.branch_id, current.crm.provider, :orders) or
+                current.source not in (get_branch_settings(current.branch_id).sources || []),
+              do: Repo.rollback(:disabled)
+
+           if active_sync_job?(current.id), do: Repo.rollback(:already_queued)
+
+           case Orders.update_order_crm(current, %{status: "pending", alert: nil, last_error: nil}) do
+             {:ok, updated} ->
+               case enqueue_sync(updated) do
+                 {:ok, %Oban.Job{}} ->
+                   Delivest.Audit.record(:system, audit_event, updated)
+                   updated
+
+                 _ ->
+                   Repo.rollback(:disabled)
+               end
+
+             error ->
+               Repo.rollback(error)
+           end
+         end) do
+      {:ok, updated} -> {:ok, updated}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp active_sync_job?(order_id) do
+    Repo.exists?(
+      from(j in Oban.Job,
+        where: j.worker == ^Oban.Worker.to_string(SyncWorker),
+        where: j.state in ["available", "scheduled", "retryable", "executing"],
+        where: fragment("?->>'order_id' = ?", j.args, ^order_id)
+      )
+    )
+  end
+
   def get_branch_settings(branch_id) do
-    case Identity.get_branch(branch_id, preload: [:info]) do
-      {:ok, %Branch{info: %{crm: %BranchSettings{} = settings}}} -> settings
+    case Repo.get_by(Delivest.Identity.Branch.BranchInfo, branch_id: branch_id) do
+      %{crm: %BranchSettings{} = settings} -> settings
       _ -> %BranchSettings{}
     end
+  end
+
+  def work_summary(branch_id) do
+    from(o in Order,
+      where: o.branch_id == ^branch_id and is_nil(o.deleted_at),
+      where: fragment("?->>'provider' IS NOT NULL", o.crm),
+      select: {fragment("?->>'provider'", o.crm), fragment("?->>'status'", o.crm), o.status}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {provider, crm_status, order_status}, acc ->
+      kind =
+        cond do
+          crm_status in ["pending", "failed"] and order_status not in [:completed, :cancelled] ->
+            :unsent
+
+          crm_status in ["sending", "confirming", "unknown"] ->
+            :uncertain
+
+          crm_status == "sent" and order_status not in [:completed, :cancelled] ->
+            :accepted
+
+          true ->
+            nil
+        end
+
+      if kind do
+        update_in(
+          acc,
+          [Access.key(provider, %{unsent: 0, uncertain: 0, accepted: 0}), kind],
+          &(&1 + 1)
+        )
+      else
+        acc
+      end
+    end)
   end
 
   def change_branch_settings(%BranchSettings{} = settings, attrs \\ %{}),
     do: BranchSettings.changeset(settings, attrs)
 
   def update_branch_settings(staff, branch_id, attrs) do
-    with {:ok, branch} <- Identity.get_branch(branch_id, preload: [:info]),
-         {:ok, %Branch{info: %{crm: settings}}} <-
-           Identity.update_integrations(staff, branch, %{"crm" => attrs}) do
-      invalidate_changed_credentials(branch, settings, branch_id)
-      clear_disabled_frontpad_stops(branch.info && branch.info.crm, settings, branch_id)
-      {:ok, settings}
-    else
-      {:error, :info, changeset} -> {:error, Ecto.Changeset.get_change(changeset, :crm)}
-      {:error, _step, changeset} -> {:error, changeset}
-      error -> error
+    result =
+      Repo.transaction(fn ->
+        branch =
+          Repo.one(
+            from(b in Branch,
+              where: b.id == ^branch_id and is_nil(b.deleted_at),
+              lock: "FOR UPDATE"
+            )
+          )
+          |> then(&if(&1, do: Repo.preload(&1, :info), else: nil))
+
+        if is_nil(branch), do: Repo.rollback({:error, :not_found})
+
+        case Identity.update_integrations(staff, branch, %{"crm" => attrs}) do
+          {:ok, %Branch{info: %{crm: settings}}} ->
+            current = Repo.get_by!(Delivest.Identity.Branch.BranchInfo, branch_id: branch_id)
+
+            if current.crm.generation != settings.generation,
+              do: Repo.rollback({:error, :settings_changed})
+
+            invalidate_changed_credentials(branch, settings, branch_id)
+            clear_disabled_stops(branch.info && branch.info.crm, settings, branch_id)
+            cancel_stale_jobs(branch.info && branch.info.crm, settings, branch_id)
+            settings
+
+          error ->
+            Repo.rollback(error)
+        end
+      end)
+
+    case result do
+      {:ok, settings} ->
+        Phoenix.PubSub.broadcast(
+          Delivest.PubSub,
+          topic(branch_id),
+          {:crm_settings_changed, branch_id}
+        )
+
+        {:ok, settings}
+
+      {:error, {:error, :info, changeset}} ->
+        {:error, Ecto.Changeset.get_change(changeset, :crm)}
+
+      {:error, {:error, _step, changeset}} ->
+        {:error, changeset}
+
+      {:error, error} ->
+        error
     end
   end
 
-  defp clear_disabled_frontpad_stops(%BranchSettings{provider: :frontpad}, settings, branch_id) do
-    if BranchSettings.active_provider(settings) != :frontpad or
-         not Frontpad.stops_enabled?(settings.frontpad) do
-      StopSync.clear_frontpad(branch_id)
+  defp clear_disabled_stops(%BranchSettings{} = previous, settings, branch_id) do
+    provider = BranchSettings.active_provider(previous)
+
+    if provider && not Availability.crm(settings, provider).capabilities.stops do
+      if provider == :frontpad do
+        StopSync.clear_frontpad(branch_id)
+      else
+        Delivest.Net.Stops.replace_external(branch_id, provider, [])
+      end
     end
   end
 
-  defp clear_disabled_frontpad_stops(_previous, _settings, _branch_id), do: :ok
+  defp clear_disabled_stops(_previous, _settings, _branch_id), do: :ok
+
+  defp cancel_stale_jobs(
+         %BranchSettings{generation: previous},
+         %BranchSettings{generation: current},
+         branch_id
+       )
+       when previous != current do
+    stale_order_ids =
+      Repo.all(
+        from(j in Oban.Job,
+          where: j.worker == ^Oban.Worker.to_string(SyncWorker),
+          where: j.state in ["available", "scheduled", "retryable"],
+          where: fragment("?->>'branch_id' = ?", j.args, ^branch_id),
+          where:
+            fragment(
+              "(?->>'generation') IS NULL OR (?->>'generation')::integer <> ?",
+              j.args,
+              j.args,
+              ^current
+            ),
+          select: fragment("?->>'order_id'", j.args)
+        )
+      )
+      |> Enum.uniq()
+
+    for {worker, field, poller} <- [
+          {SyncWorker, "branch_id", nil},
+          {Delivest.Integrations.Poller.Worker, "target", "crm_catalog"},
+          {Delivest.Integrations.Poller.Worker, "target", "crm_stops"},
+          {Delivest.Integrations.Crm.FrontpadStopRefresh.RefreshJob, "branch_id", nil}
+        ] do
+      query =
+        from(j in Oban.Job,
+          where:
+            j.worker == ^Oban.Worker.to_string(worker) and
+              j.state in ["available", "scheduled", "retryable"],
+          where: fragment("?->>? = ?", j.args, ^field, ^branch_id),
+          where:
+            fragment(
+              "(?->>'generation') IS NULL OR (?->>'generation')::integer <> ?",
+              j.args,
+              j.args,
+              ^current
+            )
+        )
+
+      query =
+        if poller,
+          do: from(j in query, where: fragment("?->>'poller' = ?", j.args, ^poller)),
+          else: query
+
+      query
+      |> Oban.cancel_all_jobs()
+    end
+
+    %{rows: rows} =
+      Repo.query!(
+        """
+        UPDATE orders
+        SET crm = jsonb_set(jsonb_set(crm, '{alert}', to_jsonb($2::text), true),
+                              '{last_error}', to_jsonb($2::text), true)
+        WHERE branch_id = $1 AND crm->>'status' = 'pending'
+          AND id::text = ANY($3::text[])
+          AND NOT EXISTS (
+            SELECT 1 FROM oban_jobs j
+            WHERE j.worker = 'Delivest.Integrations.Crm.SyncWorker'
+              AND j.args->>'order_id' = orders.id::text
+              AND j.state IN ('available', 'scheduled', 'retryable', 'executing')
+          )
+        RETURNING id
+        """,
+        [
+          Ecto.UUID.dump!(branch_id),
+          "CRM settings changed. This order was not sent; send it explicitly after checking the route.",
+          stale_order_ids
+        ]
+      )
+
+    Enum.each(rows, fn [id] ->
+      if order = Repo.get(Order, Ecto.UUID.load!(id)),
+        do: Delivest.Audit.record(:system, "order.crm_queued_cancelled", order)
+    end)
+
+    unless Availability.crm_allowed?(branch_id, :frontpad, :stops) do
+      case Repo.get(Delivest.Integrations.Crm.FrontpadStopRefresh.State, branch_id) do
+        %{status: status} when status in ["queued", "running", "retrying"] ->
+          Delivest.Integrations.Crm.FrontpadStopRefresh.put_state(branch_id, %{
+            status: "disabled",
+            last_error: nil
+          })
+
+          Delivest.Integrations.Crm.FrontpadStopRefresh.broadcast(branch_id)
+
+        _ ->
+          :ok
+      end
+    end
+  end
+
+  defp cancel_stale_jobs(_previous, _current, _branch_id), do: :ok
 
   defp invalidate_changed_credentials(%Branch{info: %{crm: previous}}, settings, branch_id)
        when is_map(previous) do
@@ -250,7 +480,12 @@ defmodule Delivest.Integrations.Crm do
     end
   end
 
-  def deliver(%Order{} = order), do: call(order, & &1.deliver_order(order, &2))
+  def deliver(%Order{} = order, generation \\ nil) do
+    if order.source in (get_branch_settings(order.branch_id).sources || []) and
+         Availability.crm_allowed?(order.branch_id, order.crm.provider, :orders, generation),
+       do: call(order, & &1.deliver_order(order, &2), generation),
+       else: {:error, :disabled}
+  end
 
   def cancel(%Order{} = order, reason),
     do: call(order, & &1.cancel_order(order, reason, &2))
@@ -277,20 +512,36 @@ defmodule Delivest.Integrations.Crm do
   def enqueue_command(%Order{} = order, action, args \\ %{}, event_id \\ nil),
     do: Commands.enqueue(order, action, args, event_id)
 
-  defp call(%Order{crm: %{provider: provider}} = order, fun) do
+  defp call(order, fun, generation \\ :completion)
+
+  defp call(%Order{crm: %{provider: provider}} = order, fun, generation) do
     with {:ok, name, module} <- provider_module(provider),
          {:ok, settings} <- branch_settings(order.branch_id, name) do
-      if Health.down?(name, order.branch_id) do
-        {:error, :provider_down}
+      if generation != :completion and
+           not Availability.crm_allowed?(order.branch_id, provider, :orders, generation) do
+        {:error, :disabled}
       else
-        Journal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
-          Throttle.run(module.rate_limit(settings), fn -> fun.(module, settings) end)
-        end)
+        call_ready(order, name, module, settings, fun, generation)
       end
     end
   end
 
-  defp call(_order, _fun), do: {:error, :unknown_provider}
+  defp call(_order, _fun, _generation), do: {:error, :unknown_provider}
+
+  defp call_ready(order, name, module, settings, fun, generation) do
+    if Health.down?(name, order.branch_id) do
+      {:error, :provider_down}
+    else
+      Journal.scope([branch_id: order.branch_id, order_id: order.id], fn ->
+        Throttle.run(module.rate_limit(settings), fn ->
+          if generation == :completion or
+               Availability.crm_allowed?(order.branch_id, order.crm.provider, :orders, generation),
+             do: fun.(module, settings),
+             else: {:error, :disabled}
+        end)
+      end)
+    end
+  end
 
   defp optional(module, function, args, default) do
     if exported?(module, function, length(args)),
@@ -312,7 +563,8 @@ defmodule Delivest.Integrations.Crm do
 
   def classify_error(_order, :provider_down), do: {:snooze, 60}
 
-  def classify_error(_order, reason) when reason in @permanent_errors, do: :permanent
+  def classify_error(_order, reason) when reason in [:disabled | @permanent_errors],
+    do: :permanent
 
   def classify_error(%Order{crm: %{provider: provider}}, reason) do
     case provider_module(provider) do
@@ -322,9 +574,35 @@ defmodule Delivest.Integrations.Crm do
   end
 
   def enqueue_sync(%Order{} = order) do
-    %{"order_id" => order.id, "branch_id" => order.branch_id}
-    |> SyncWorker.new()
-    |> Oban.insert()
+    case Repo.transaction(fn ->
+           Repo.one(
+             from(i in Delivest.Identity.Branch.BranchInfo,
+               where: i.branch_id == ^order.branch_id,
+               lock: "FOR SHARE"
+             )
+           )
+
+           state = Availability.crm(order.branch_id, order.crm.provider)
+
+           if state.capabilities.orders and
+                order.source in (get_branch_settings(order.branch_id).sources || []) do
+             args = %{
+               "order_id" => order.id,
+               "branch_id" => order.branch_id,
+               "generation" => state.generation
+             }
+
+             case args |> SyncWorker.new() |> Oban.insert() do
+               {:ok, job} -> job
+               {:error, reason} -> Repo.rollback(reason)
+             end
+           else
+             :disabled
+           end
+         end) do
+      {:ok, result} -> {:ok, result}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def provider_module(provider) do
@@ -332,8 +610,8 @@ defmodule Delivest.Integrations.Crm do
   end
 
   defp branch_settings(branch_id, name) do
-    case Identity.get_branch(branch_id, preload: [:info]) do
-      {:ok, %Branch{info: %{crm: %BranchSettings{} = crm}}} -> settings(crm, name)
+    case Repo.get_by(Delivest.Identity.Branch.BranchInfo, branch_id: branch_id) do
+      %{crm: %BranchSettings{} = crm} -> settings(crm, name)
       _ -> {:error, :branch_not_found}
     end
   end

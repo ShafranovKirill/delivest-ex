@@ -56,13 +56,26 @@ defmodule Delivest.Integrations.IikoTest do
   end
 
   test "stop list webhooks enqueue one poll per branch", %{branch: branch} do
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    assert {:ok, _} =
+             Crm.update_branch_settings(staff, branch.id, %{"iiko" => %{"sync_stops" => true}})
+
     event = %{"eventType" => "StopListUpdate"}
 
     assert {:ok, %{result: "success"}} = Iiko.Webhook.handle("hook", event)
     assert {:ok, %{result: "success"}} = Iiko.Webhook.handle("hook", event)
 
     assert [job] = all_enqueued(worker: Delivest.Integrations.Poller.Worker)
-    assert job.args == %{"poller" => "crm_stops", "target" => branch.id}
+    assert job.args == %{"poller" => "crm_stops", "target" => branch.id, "generation" => 1}
+  end
+
+  test "stop list webhook with sync disabled does not enqueue a poll", %{branch: branch} do
+    assert {:ok, %{result: "success"}} =
+             Iiko.Webhook.handle("hook", %{"eventType" => "StopListUpdate"})
+
+    refute_enqueued(worker: Delivest.Integrations.Poller.Worker, args: %{"target" => branch.id})
   end
 
   defp stub(fun) do
@@ -125,7 +138,13 @@ defmodule Delivest.Integrations.IikoTest do
       end
     end)
 
-    :ok = perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+    :ok =
+      perform_job(SyncWorker, %{
+        "order_id" => order.id,
+        "branch_id" => order.branch_id,
+        "generation" => Crm.get_branch_settings(order.branch_id).generation
+      })
+
     assert_received {:iiko, "/api/1/deliveries/create", %{"order" => %{"id" => id}}}
     assert id == order.id
     assert %Order{crm: %{status: "confirming", ref: "corr-1"}} = Orders.get_order(order.id)
@@ -176,7 +195,13 @@ defmodule Delivest.Integrations.IikoTest do
       end
     end)
 
-    :ok = perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+    :ok =
+      perform_job(SyncWorker, %{
+        "order_id" => order.id,
+        "branch_id" => order.branch_id,
+        "generation" => Crm.get_branch_settings(order.branch_id).generation
+      })
+
     order = Orders.get_order(order.id)
     Iiko.Webhook.refresh(order, @settings)
 

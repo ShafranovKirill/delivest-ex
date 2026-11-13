@@ -5,6 +5,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopOrderTriggerTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker}
   alias Delivest.Integrations.Crm.FrontpadStopRefresh.RefreshJob
   alias Delivest.Integrations.Frontpad
@@ -38,6 +39,13 @@ defmodule Delivest.Integrations.Crm.FrontpadStopOrderTriggerTest do
     order
   end
 
+  defp sync_args(order),
+    do: %{
+      "order_id" => order.id,
+      "branch_id" => order.branch_id,
+      "generation" => Crm.get_branch_settings(order.branch_id).generation
+    }
+
   test "only exact new_order invalid_product_keys failure queues a stop refresh" do
     order = order()
     test_pid = self()
@@ -48,7 +56,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopOrderTriggerTest do
     end)
 
     assert {:cancel, {:frontpad, "invalid_product_keys"}} =
-             perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+             perform_job(SyncWorker, sync_args(order))
 
     assert_received {:frontpad_call, "new_order"}
     refute_received {:frontpad_call, "get_stops"}
@@ -69,7 +77,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopOrderTriggerTest do
     test "#{name} does not queue a stop refresh" do
       order = order()
       Req.Test.stub(Delivest.HTTP.Client, &Req.Test.json(&1, unquote(Macro.escape(response))))
-      _ = perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+      _ = perform_job(SyncWorker, sync_args(order))
       refute_enqueued(worker: RefreshJob)
     end
   end
@@ -79,7 +87,7 @@ defmodule Delivest.Integrations.Crm.FrontpadStopOrderTriggerTest do
     Req.Test.stub(Delivest.HTTP.Client, &Req.Test.transport_error(&1, :econnrefused))
 
     assert {:error, _reason} =
-             perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+             perform_job(SyncWorker, sync_args(order))
 
     refute_enqueued(worker: RefreshJob)
   end

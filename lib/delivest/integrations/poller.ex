@@ -29,14 +29,28 @@ defmodule Delivest.Integrations.Poller do
     end
   end
 
-  def enqueue(module, target, opts \\ []),
-    do: %{poller: to_string(module.key()), target: target} |> Worker.new(opts) |> Oban.insert()
+  def enqueue(module, target, opts \\ []) do
+    if module.key() in [:crm_catalog, :crm_stops, :dadata, :yandex_eda_busy, :yandex_rating] and
+         target not in module.targets(),
+       do: {:ok, :disabled},
+       else: args(module, target) |> Worker.new(opts) |> Oban.insert()
+  end
 
   def enqueue_all(module) do
     module.targets()
-    |> Enum.map(&Worker.new(%{poller: to_string(module.key()), target: &1}))
+    |> Enum.map(&Worker.new(args(module, &1)))
     |> Oban.insert_all()
 
     :ok
+  end
+
+  defp args(module, target) do
+    base = %{poller: to_string(module.key()), target: target}
+
+    if module.key() in [:crm_catalog, :crm_stops] do
+      Map.put(base, :generation, Delivest.Integrations.Crm.get_branch_settings(target).generation)
+    else
+      base
+    end
   end
 end

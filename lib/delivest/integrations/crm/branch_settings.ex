@@ -12,6 +12,7 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
     field :provider, Ecto.Enum, values: @providers
     field :sources, {:array, :string}, default: ~w(app staff)
     field :menu_source, Ecto.Enum, values: [:own, :crm], default: :own
+    field :generation, :integer, default: 0
 
     for module <- Registry.modules() do
       embeds_one module.key(), module.settings_schema(), on_replace: :update
@@ -29,6 +30,7 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
     Registry.modules()
     |> Enum.reduce(changeset, &cast_provider(&2, &1, active?(changeset, &1.key())))
     |> validate_active_provider()
+    |> bump_generation(settings)
   end
 
   def active_provider(%__MODULE__{enabled: true, provider: provider}), do: provider
@@ -54,4 +56,14 @@ defmodule Delivest.Integrations.Crm.BranchSettings do
 
   defp active?(changeset, provider),
     do: get_field(changeset, :enabled) == true and get_field(changeset, :provider) == provider
+
+  defp bump_generation(changeset, settings) do
+    if Enum.any?([:enabled, :provider, :sources, :frontpad, :iiko, :rkeeper], fn field ->
+         get_field(changeset, field) != Map.get(settings, field)
+       end) do
+      put_change(changeset, :generation, (settings.generation || 0) + 1)
+    else
+      changeset
+    end
+  end
 end

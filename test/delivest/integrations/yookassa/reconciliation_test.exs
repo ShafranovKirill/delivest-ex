@@ -8,6 +8,7 @@ defmodule Delivest.Integrations.Yookassa.ReconciliationTest do
   alias Delivest.Integrations.Poller.Worker
   alias Delivest.Integrations.Yookassa.Api
   alias Delivest.Integrations.Yookassa.Reconciliation
+  alias Delivest.Integrations.Yookassa.Settings
   alias Delivest.Payments.Payment
 
   defp local_payment(branch_id, external_id) do
@@ -107,11 +108,26 @@ defmodule Delivest.Integrations.Yookassa.ReconciliationTest do
   end
 
   test "the worker cancels a deterministic incomplete scan" do
+    branch = insert(:branch)
+    _payment = local_payment(branch.id, "pending-external")
+    Repo.insert!(%Settings{shop_id: "506751", secret_key: "secret"})
+
     Req.Test.stub(Delivest.HTTP.Client, fn conn ->
       Req.Test.json(conn, %{"items" => [], "next_cursor" => "repeat"})
     end)
 
     assert {:cancel, "yookassa reconciliation incomplete: repeated_cursor"} =
+             Worker.perform(%Oban.Job{
+               args: %{"poller" => "yookassa_reconcile", "target" => "all"}
+             })
+  end
+
+  test "unconfigured reconciliation target performs no provider request" do
+    Req.Test.stub(Delivest.HTTP.Client, fn _ ->
+      flunk("unconfigured reconciliation called provider")
+    end)
+
+    assert {:cancel, :disabled} =
              Worker.perform(%Oban.Job{
                args: %{"poller" => "yookassa_reconcile", "target" => "all"}
              })

@@ -1,7 +1,7 @@
 defmodule Delivest.Integrations.Crm.CatalogPoller do
   @behaviour Delivest.Integrations.Poller
 
-  alias Delivest.Integrations.{Crm, Health}
+  alias Delivest.Integrations.{Availability, Health}
   alias Delivest.Integrations.Crm.{Catalog, Lookup}
 
   @provider :frontpad
@@ -14,12 +14,26 @@ defmodule Delivest.Integrations.Crm.CatalogPoller do
 
   @impl true
   def targets do
-    Enum.filter(Lookup.crm_branch_ids(), &(Crm.default_provider(&1) == @provider))
+    Enum.filter(Lookup.crm_branch_ids(), &Availability.crm_allowed?(&1, @provider, :catalog))
   end
 
   @impl true
   def poll(branch_id) do
-    case Catalog.refresh(branch_id, @provider) do
+    if Availability.crm_allowed?(branch_id, @provider, :catalog) do
+      poll(branch_id, Availability.crm(branch_id, @provider).generation)
+    else
+      :done
+    end
+  end
+
+  def poll(branch_id, generation) when is_integer(generation) do
+    if Availability.crm_allowed?(branch_id, @provider, :catalog, generation),
+      do: refresh(branch_id, generation),
+      else: :done
+  end
+
+  defp refresh(branch_id, generation) do
+    case Catalog.refresh(branch_id, @provider, generation) do
       {:ok, snapshot} -> report(branch_id, Catalog.issues(branch_id, snapshot))
       {:error, {:too_early, _at}} -> :done
       {:error, _reason} = error -> error

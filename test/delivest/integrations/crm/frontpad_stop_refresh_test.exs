@@ -179,15 +179,27 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefreshTest do
 
     Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("provider must not be called") end)
     assert {:ok, :disabled} = FrontpadStopRefresh.request_internal(branch.id, :daily)
-    assert branch.id in StopPoller.targets()
-    assert other.id in StopPoller.targets()
+    refute branch.id in StopPoller.targets()
+    refute other.id in StopPoller.targets()
     assert :done = StopPoller.poll(branch.id)
-    assert {:ok, :disabled} = StopPoller.poll(other.id)
+    assert :done = StopPoller.poll(other.id)
 
     assert Repo.aggregate(
              from(j in Oban.Job, where: j.worker == ^Oban.Worker.to_string(RefreshJob)),
              :count
            ) == 0
+  end
+
+  test "enabled Frontpad remains a stop poll target" do
+    branch = branch()
+
+    Req.Test.stub(
+      Delivest.HTTP.Client,
+      &Req.Test.json(&1, %{"result" => "success", "error" => "no_stops"})
+    )
+
+    assert branch.id in StopPoller.targets()
+    assert {:ok, %{provider: :frontpad}} = StopPoller.poll(branch.id)
   end
 
   test "inactive configured branch can queue a refresh without HTTP" do
@@ -233,6 +245,39 @@ defmodule Delivest.Integrations.Crm.FrontpadStopRefreshTest do
 
     assert Stops.stopped_ids(branch.id) == MapSet.new()
     assert {:ok, :disabled} = FrontpadStopRefresh.request_internal(branch.id, :manual)
+  end
+
+  test "disabling iiko clears only its stops and leaves a neighbour branch alone" do
+    branch = insert(:branch, is_active: true)
+    neighbour = branch()
+    product = insert_branch_product(branch.id, external_id: "11")
+    other = insert_branch_product(neighbour.id, external_id: "12")
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :iiko,
+        iiko: %Iiko.Settings{
+          api_key: "key",
+          organization_id: "org",
+          terminal_group_id: "tg",
+          sync_stops: true
+        }
+      }
+    })
+
+    {:ok, _} = Stops.replace_external(branch.id, :iiko, [product.id])
+    {:ok, _} = Stops.replace_external(neighbour.id, :frontpad, [other.id])
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    Req.Test.stub(Delivest.HTTP.Client, fn _ -> flunk("disabled stop sync called provider") end)
+
+    assert branch.id in StopPoller.targets()
+    assert {:ok, _} = Crm.update_branch_settings(staff, branch.id, %{"enabled" => false})
+    refute branch.id in StopPoller.targets()
+    assert Stops.stopped_ids(branch.id) == MapSet.new()
+    assert Stops.stopped_ids(neighbour.id) == MapSet.new([other.id])
   end
 
   test "manual request requires integration update permission and branch access" do

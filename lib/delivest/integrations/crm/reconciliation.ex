@@ -27,6 +27,13 @@ defmodule Delivest.Integrations.Crm.Reconciliation do
     do: {:error, :unknown_action}
 
   defp reconcile(staff, branch_id, order_id, action, number) do
+    Repo.one(
+      from(i in Delivest.Identity.Branch.BranchInfo,
+        where: i.branch_id == ^branch_id,
+        lock: "FOR SHARE"
+      )
+    )
+
     order =
       Repo.one(
         from(o in Order,

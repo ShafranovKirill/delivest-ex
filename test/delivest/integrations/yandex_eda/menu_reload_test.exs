@@ -77,6 +77,8 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
   end
 
   test "the worker posts the reload with a push token" do
+    branch = yandex_branch()
+    args = %{"branch_id" => branch.id, "generation" => 0}
     test_pid = self()
     client_id = "push-#{System.unique_integer([:positive])}"
 
@@ -99,7 +101,7 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
     end)
 
     assert {:ok, _} =
-             perform_job(MenuReloadWorker, %{"branch_id" => "b1", "operation" => "menu_stop_list"})
+             perform_job(MenuReloadWorker, Map.put(args, "operation", "menu_stop_list"))
 
     assert_received {"/oauth2/token", _headers, form}
     assert URI.decode_query(form) == %{"client_id" => client_id, "client_secret" => "push-secret"}
@@ -107,13 +109,42 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
     assert_received {"/menu/import/initiation", headers, json}
     assert {"authorization", "Bearer push"} in headers
     assert {"partner-name", "delivest"} in headers
-    assert Jason.decode!(json) == %{"restaurantId" => "b1", "operationType" => "menu_stop_list"}
 
-    assert {:ok, _} = perform_job(MenuReloadWorker, %{"branch_id" => "b1", "operation" => "menu"})
+    assert Jason.decode!(json) == %{
+             "restaurantId" => branch.id,
+             "operationType" => "menu_stop_list"
+           }
+
+    assert {:ok, _} = perform_job(MenuReloadWorker, Map.put(args, "operation", "menu"))
     refute_received {"/oauth2/token", _headers, _form}
   end
 
   test "without push access the worker does nothing" do
-    assert :ok = perform_job(MenuReloadWorker, %{"branch_id" => "b1", "operation" => "menu"})
+    branch = yandex_branch()
+
+    assert {:cancel, :disabled} =
+             perform_job(MenuReloadWorker, %{
+               "branch_id" => branch.id,
+               "operation" => "menu",
+               "generation" => 0
+             })
+  end
+
+  test "queued reload remains stale after disable and re-enable" do
+    branch = yandex_branch()
+    admin = insert(:staff, role: build(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: admin, branch: branch)
+    old = %{"branch_id" => branch.id, "operation" => "menu", "generation" => 0}
+    Req.Test.stub(Delivest.HTTP.Client, fn _ -> flunk("stale reload called Yandex Eda") end)
+
+    assert {:ok, %{enabled: false}} =
+             YandexEda.update_branch_settings(admin, branch.id, %{"enabled" => false})
+
+    assert {:cancel, :disabled} = perform_job(MenuReloadWorker, old)
+
+    assert {:ok, %{enabled: true}} =
+             YandexEda.update_branch_settings(admin, branch.id, %{"enabled" => true})
+
+    assert {:cancel, :disabled} = perform_job(MenuReloadWorker, old)
   end
 end

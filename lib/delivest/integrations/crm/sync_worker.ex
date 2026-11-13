@@ -6,7 +6,7 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
 
   require Logger
 
-  alias Delivest.Integrations.{Crm, Health}
+  alias Delivest.Integrations.{Availability, Crm, Health}
   alias Delivest.Integrations.Crm.{FrontpadStopRefresh, SyncState}
   alias Delivest.Oms.Orders
 
@@ -22,12 +22,66 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
       nil ->
         {:cancel, :order_not_found}
 
+      %{crm: %{status: "sending"}} = order ->
+        if attempt > 1 do
+          SyncState.unknown(order, "Worker stopped after starting CRM delivery", attempt)
+          {:cancel, :unknown_outcome}
+        else
+          {:cancel, :already_sending}
+        end
+
+      %{crm: %{status: status}} when status != "pending" ->
+        {:cancel, :order_not_pending}
+
       order ->
-        result = order |> Crm.deliver() |> handle(order, attempt, job.max_attempts)
+        result =
+          if fresh?(order, job.args) do
+            case SyncState.claim_sending(order, attempt, job.args["generation"]) do
+              {:ok, sending} ->
+                case Crm.deliver(sending, job.args["generation"]) do
+                  {:error, :disabled} ->
+                    SyncState.failed(
+                      sending,
+                      "Function disabled or settings changed",
+                      attempt,
+                      "This order was not sent; check the route and send it explicitly."
+                    )
+
+                    {:cancel, :disabled}
+
+                  delivery ->
+                    handle(delivery, sending, attempt, job.max_attempts)
+                end
+
+              {:error, {:status, "sending"}} ->
+                {:cancel, :already_sending}
+
+              {:error, :disabled} ->
+                {:cancel, :disabled}
+
+              {:error, {:status, _status}} ->
+                {:cancel, :order_not_pending}
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+          else
+            case SyncState.fail_if_pending(order, attempt) do
+              :failed -> {:cancel, :disabled}
+              :already_started -> {:cancel, :already_started}
+              error -> error
+            end
+          end
+
         report(order, result, attempt)
         result
     end
   end
+
+  defp fresh?(order, %{"generation" => generation}) when is_integer(generation),
+    do: Availability.crm_allowed?(order.branch_id, order.crm.provider, :orders, generation)
+
+  defp fresh?(_order, _args), do: false
 
   defp handle({:ok, delivery}, order, attempt, _max_attempts) do
     Logger.info("crm order #{order.number} delivered as #{delivery.external_id}")

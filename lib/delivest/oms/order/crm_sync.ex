@@ -2,7 +2,7 @@ defmodule Delivest.Oms.Order.CrmSync do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @statuses ~w(pending confirming sent failed unknown)
+  @statuses ~w(pending sending confirming sent failed unknown)
   @remote_statuses ~w(created accepted preparing ready delivering completed cancelled)
 
   @primary_key false

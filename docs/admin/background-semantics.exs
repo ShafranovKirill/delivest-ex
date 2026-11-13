@@ -40,9 +40,9 @@
      "Recorded daily refresh run must finish/retry/mark failure; do not erase previous stop state silently"},
   "worker:Delivest.Integrations.Crm.SyncWorker" =>
     {"Sends order to selected CRM provider",
-     "Current provider/settings and order state rechecked by Crm/SyncState",
-     "Provider switch or unavailable configuration cancels/snoozes as returned",
-     "External order may have been accepted before local acknowledgment; sync state and idempotent provider key must reconcile"},
+     "CRM availability generation and atomic pending-to-sending claim are checked before delivery",
+     "Settings changes cancel stale queued jobs and expose an explicit unsent retry",
+     "Started request is not automatically replayed; unresolved external outcome becomes visible unknown"},
   "worker:Delivest.Integrations.Inbox.Worker" =>
     {"Calls provider inbox handler for received webhook/message",
      "Message and handler lookup; no global feature gate in worker",
@@ -68,9 +68,9 @@
      "Accepted order deadline obligation persists; notify only if still unaccepted"},
   "worker:Delivest.Integrations.YandexEda.MenuReloadWorker" =>
     {"PushApi.reload_menu external request",
-     "PushApi.configured? for shared settings before call",
-     "No disable callback; unconfigured path skips call",
-     "Accepted menu reload may complete remotely after local request; journal/status must remain visible"},
+     "Branch enable and generation plus shared PushApi configuration are checked before call",
+     "Branch settings changes cancel stale queued reload jobs",
+     "An already started request may complete remotely; no automatic replay after enable"},
   "worker:Delivest.Logs.PruneWorker" =>
     {"No provider call; prunes logs, audit, journal and related retention data",
      "Unconditional maintenance task", "No feature disable callback",

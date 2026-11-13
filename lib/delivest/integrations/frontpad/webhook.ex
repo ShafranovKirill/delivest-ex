@@ -3,7 +3,7 @@ defmodule Delivest.Integrations.Frontpad.Webhook do
 
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{Lookup, SyncState}
-  alias Delivest.Integrations.{Inbox, Journal}
+  alias Delivest.Integrations.{Availability, Inbox, Journal}
 
   @fields ~w(order_id status datetime)
 
@@ -38,6 +38,11 @@ defmodule Delivest.Integrations.Frontpad.Webhook do
       code = to_string(code)
       status = Crm.status_for(:frontpad, info.crm.frontpad, code)
       SyncState.remote_status(order, status, code, parse_datetime(datetime, order.branch_id))
+    else
+      {:error, :not_found} = error ->
+        if Availability.crm_allowed?(info.branch_id, :frontpad, :orders),
+          do: error,
+          else: {:cancel, :disabled_without_order}
     end
   end
 

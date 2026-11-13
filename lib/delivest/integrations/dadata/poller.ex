@@ -10,7 +10,7 @@ defmodule Delivest.Integrations.Dadata.Poller do
   def interval, do: 3600
 
   @impl true
-  def targets, do: ["all"]
+  def targets, do: if(Dadata.active?(), do: ["all"], else: [])
 
   @impl true
   def poll(_target) do

@@ -1,7 +1,7 @@
 defmodule Delivest.Background do
   @moduledoc "Shared, bounded dispatcher for optional feature calculations."
   import Ecto.Query
-  alias Delivest.{Features, Repo}
+  alias Delivest.{Availability, Features, Repo}
   alias Delivest.Background.{DailySchedule, Dispatcher, Registry, Runner, Schedule}
   alias Delivest.Features.Gate
 
@@ -15,7 +15,7 @@ defmodule Delivest.Background do
     with {:ok, %{manual?: true} = task} <- Registry.fetch(kind),
          true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope),
-         {:ok, token} <- Features.snapshot(task.feature, scope) do
+         {:ok, token} <- Availability.feature_snapshot(task.feature, scope) do
       result =
         Features.with_enabled(task.feature, scope, token, fn ->
           now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
@@ -126,7 +126,7 @@ defmodule Delivest.Background do
           unschedule_branches(kind)
 
         match?({:branch, _}, scope) and task.scope == :franchise and
-            Features.enabled?(feature, :franchise) ->
+            Availability.feature_enabled?(feature, :franchise) ->
           invalidate(kind, :franchise)
 
         true ->
@@ -174,7 +174,7 @@ defmodule Delivest.Background do
     with {:ok, task} <- Registry.fetch(kind),
          true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope),
-         true <- Features.enabled?(task.feature, scope) do
+         true <- Availability.feature_enabled?(task.feature, scope) do
       now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
       {date, next_at} = initial_next(task, key, now)
 
@@ -213,7 +213,7 @@ defmodule Delivest.Background do
   end
 
   def still_enabled?(%{feature: feature, scope: scope, generation: token} = context),
-    do: Features.still_enabled?(feature, scope, token) and owner?(context)
+    do: Availability.feature_still_enabled?(feature, scope, token) and owner?(context)
 
   def checkpoint(context) do
     cond do
@@ -303,7 +303,7 @@ defmodule Delivest.Background do
     with {:ok, %{manual?: true} = task} <- Registry.fetch(kind),
          true <- matching_scope?(task.scope, scope),
          {:ok, key} <- Features.scope_key(scope),
-         {:ok, _} <- Features.snapshot(task.feature, scope) do
+         {:ok, _} <- Availability.feature_snapshot(task.feature, scope) do
       row = Repo.one(from s in Schedule, where: s.kind == ^kind and s.scope_key == ^key)
       now = DateTime.utc_now()
 
@@ -382,7 +382,7 @@ defmodule Delivest.Background do
 
           case Registry.fetch(row.kind) do
             {:ok, task} ->
-              case Features.snapshot(task.feature, scope) do
+              case Availability.feature_snapshot(task.feature, scope) do
                 {:ok, token} ->
                   args = %{
                     kind: row.kind,

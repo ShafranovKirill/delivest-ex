@@ -6,6 +6,7 @@ defmodule Delivest.Integrations.Crm.SilencePoller do
   import Ecto.Query
 
   alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Integrations.Crm.Lookup
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias Delivest.Repo
@@ -22,7 +23,23 @@ defmodule Delivest.Integrations.Crm.SilencePoller do
 
   @impl true
   def targets do
-    Enum.filter(Lookup.crm_branch_ids(), &(Crm.default_provider(&1) == String.to_atom(@provider)))
+    active =
+      Enum.filter(Lookup.crm_branch_ids(), fn branch_id ->
+        BranchSettings.active_provider(Crm.get_branch_settings(branch_id)) == :frontpad
+      end)
+
+    obligations =
+      Repo.all(
+        from(o in Order,
+          where: o.status in ^@open_statuses and is_nil(o.deleted_at),
+          where: fragment("?->>'provider' = ?", o.crm, ^@provider),
+          where: fragment("?->>'status' = 'sent'", o.crm),
+          distinct: true,
+          select: o.branch_id
+        )
+      )
+
+    Enum.uniq(active ++ obligations)
   end
 
   @impl true

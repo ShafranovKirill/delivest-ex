@@ -51,7 +51,12 @@ defmodule Delivest.Integrations.Crm.CommandsTest do
   end
 
   defp sync(order),
-    do: perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+    do:
+      perform_job(SyncWorker, %{
+        "order_id" => order.id,
+        "branch_id" => order.branch_id,
+        "generation" => Crm.get_branch_settings(order.branch_id).generation
+      })
 
   defp sent(order) do
     :ok = sync(order)
@@ -97,6 +102,22 @@ defmodule Delivest.Integrations.Crm.CommandsTest do
     :ok = perform_job(ConfirmWorker, %{"order_id" => order.id})
     assert %{status: "pending"} = Orders.get_order(order.id).crm
     assert_enqueued(worker: SyncWorker, args: %{"order_id" => order.id})
+  end
+
+  test "an unconfirmed creation remains visible when sending is disabled before retry", %{
+    order: order
+  } do
+    Process.put({TestCrm, :deliver}, {:pending, "ref-1"})
+    :ok = sync(order)
+    branch = Repo.get!(Delivest.Identity.Branch, order.branch_id)
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    assert {:ok, _} = Crm.update_branch_settings(staff, branch.id, %{"enabled" => false})
+    assert :ok = perform_job(ConfirmWorker, %{"order_id" => order.id})
+    assert %{status: "unknown", alert: alert} = Orders.get_order(order.id).crm
+    assert is_binary(alert)
+    refute_enqueued(worker: SyncWorker, args: %{"order_id" => order.id})
   end
 
   test "a rejected creation fails the sync", %{order: order} do

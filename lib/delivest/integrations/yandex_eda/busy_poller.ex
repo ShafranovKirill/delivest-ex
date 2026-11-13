@@ -11,7 +11,11 @@ defmodule Delivest.Integrations.YandexEda.BusyPoller do
   def interval, do: 300
 
   @impl true
-  def targets, do: ["all"]
+  def targets do
+    if YandexEda.enabled_branch_ids() != [] and PushApi.configured?(YandexEda.get_settings()),
+      do: ["all"],
+      else: []
+  end
 
   @impl true
   def poll(_target) do

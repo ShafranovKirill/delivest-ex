@@ -53,8 +53,15 @@ defmodule Delivest.Integrations.CrmTest do
   defp stub_frontpad(response),
     do: Req.Test.stub(Delivest.HTTP.Client, &Req.Test.json(&1, response))
 
-  defp sync(order),
-    do: perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+  defp sync(order) do
+    generation = Crm.get_branch_settings(order.branch_id).generation
+
+    perform_job(SyncWorker, %{
+      "order_id" => order.id,
+      "branch_id" => order.branch_id,
+      "generation" => generation
+    })
+  end
 
   test "branch without crm keeps orders in the app" do
     assert {:ok, %Order{status: :created, crm: nil}} = place_order(branch(frontpad(false)))
@@ -91,6 +98,29 @@ defmodule Delivest.Integrations.CrmTest do
 
     assert [%Event{action: "order.sent_to_crm"}] =
              Repo.all(from(e in Event, where: e.action == "order.sent_to_crm"))
+  end
+
+  test "a second worker cannot submit an order while the first request is in flight" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    test_pid = self()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      send(test_pid, {:crm_request_started, self()})
+
+      receive do
+        :finish_crm_request -> Req.Test.json(conn, %{"result" => "success", "order_id" => "555"})
+      after
+        5_000 -> flunk("CRM request was not released")
+      end
+    end)
+
+    task = Task.async(fn -> sync(order) end)
+    assert_receive {:crm_request_started, request_pid}
+    assert Repo.reload!(order).crm.status == "sending"
+    assert {:cancel, :already_sending} = sync(order)
+    send(request_pid, :finish_crm_request)
+    assert :ok = Task.await(task)
+    assert Repo.reload!(order).crm.status == "sent"
   end
 
   test "dropped items raise an alert, tags only stay in the warnings" do
@@ -210,8 +240,8 @@ defmodule Delivest.Integrations.CrmTest do
     assert %{status: :auth} = Delivest.Integrations.Health.get(:frontpad, order.branch_id)
 
     stub_frontpad(%{"result" => "success", "order_id" => "901"})
-    assert :ok = sync(order)
-    assert %{status: :ok} = Delivest.Integrations.Health.get(:frontpad, order.branch_id)
+    assert {:cancel, :order_not_pending} = sync(order)
+    assert %{status: :auth} = Delivest.Integrations.Health.get(:frontpad, order.branch_id)
   end
 
   test "permanent crm errors stop retries" do

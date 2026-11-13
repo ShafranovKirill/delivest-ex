@@ -79,6 +79,15 @@ defmodule Delivest.Integrations.Journal do
     |> Repo.all()
   end
 
+  def latest_for_branch(branch_id) do
+    Request
+    |> where([r], r.branch_id == ^branch_id)
+    |> distinct([r], r.provider)
+    |> order_by([r], asc: r.provider, desc: r.inserted_at)
+    |> Repo.all()
+    |> Map.new(&{&1.provider, &1})
+  end
+
   def for_order(order_id) do
     Request
     |> where([r], r.order_id == ^order_id)

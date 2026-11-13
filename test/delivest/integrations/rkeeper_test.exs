@@ -70,7 +70,12 @@ defmodule Delivest.Integrations.RkeeperTest do
   end
 
   defp sync(order),
-    do: perform_job(SyncWorker, %{"order_id" => order.id, "branch_id" => order.branch_id})
+    do:
+      perform_job(SyncWorker, %{
+        "order_id" => order.id,
+        "branch_id" => order.branch_id,
+        "generation" => Crm.get_branch_settings(order.branch_id).generation
+      })
 
   test "the order reaches the pos and statuses come by polling", %{order: order} do
     stub(%{
