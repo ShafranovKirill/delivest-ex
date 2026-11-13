@@ -795,6 +795,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
             for={@form}
             id="segment-settings-form"
             phx-change="change_settings"
+            data-staff-dirty
             phx-submit="submit_settings"
             class="space-y-5"
           >

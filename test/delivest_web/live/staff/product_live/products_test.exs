@@ -21,7 +21,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     assert ProductTags.section("/staff/b/north/menu/popular-other") == nil
   end
 
-  test "static product HTML has direct tabs before LiveView connects", %{conn: conn} do
+  test "static product HTML has selected local navigation before LiveView connects", %{conn: conn} do
     branch = insert(:branch, name: "Center")
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
@@ -33,13 +33,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     refute Enum.empty?(
              LazyHTML.query(
                document,
-               "#staff-header[data-header-layout='product-tabs'] #product-section-tab-tags[aria-current='page']"
+               "main #staff-section-navigation #product-section-tab-tags[aria-current='page']"
              )
            )
 
     assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-context"))
-    assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-title"))
-    assert Enum.any?(LazyHTML.query(document, "#staff-header #staff-page-header-actions"))
+    assert Enum.any?(LazyHTML.query(document, "main #staff-page-header h1"))
+    assert Enum.any?(LazyHTML.query(document, "main #staff-page-header-actions"))
   end
 
   test "branch editor sees a refusal when editing a shared product", %{conn: conn} do
@@ -158,7 +158,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert product_first_name(lv) == "Match 9"
     end
 
-    test "renders tabs and actions directly in the header", %{
+    test "renders one local menu and page actions in main", %{
       conn: conn
     } do
       branch = insert(:branch)
@@ -171,19 +171,19 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       assert has_element?(
                lv,
-               "#staff-header[data-header-layout='product-tabs'][data-header-actions='true']"
+               "main #staff-section-navigation #product-section-tab-products[aria-current='page']"
              )
 
-      assert has_element?(
-               lv,
-               "#staff-header #staff-page-header-navigation[aria-label='Products']"
-             )
+      assert Enum.count(
+               LazyHTML.query(
+                 LazyHTML.from_fragment(render(lv)),
+                 "main #staff-section-navigation a"
+               )
+             ) == 7
 
-      assert has_element?(lv, "#staff-header [role='tablist'] [role='tab']")
       refute has_element?(lv, "#staff-header-context")
-      refute has_element?(lv, "#staff-header-title")
-      assert has_element?(lv, "#staff-header h1.sr-only")
-      assert has_element?(lv, "#staff-header #staff-page-header-actions")
+      assert has_element?(lv, "main #staff-page-header h1", "Products")
+      assert has_element?(lv, "main #staff-page-header-actions")
       refute actions =~ ~s(id="copy-products-trigger")
       assert actions =~ ~s(id="product-operations-link")
       assert actions =~ ~s(id="bulk-add-products")
@@ -192,7 +192,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       refute has_element?(lv, "main #products-filter [role='tablist']")
     end
 
-    test "each product section selects its tab in the direct header", %{conn: conn} do
+    test "each product section selects one local entry", %{conn: conn} do
       branch = insert(:branch)
       staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
       conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
@@ -209,32 +209,27 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
         assert has_element?(
                  lv,
-                 "#staff-header[data-header-layout='product-tabs'][data-header-actions='#{actions?}']"
-               )
-
-        assert has_element?(
-                 lv,
-                 "#staff-header #product-section-tab-#{key}[aria-current='page'][aria-selected='true']"
+                 "main #staff-section-navigation #product-section-tab-#{key}[aria-current='page']"
                )
 
         for other <- ~w(products stops modifiers tags suggested) do
-          assert has_element?(lv, "#staff-header #product-section-tab-#{other}[role='tab']")
+          assert has_element?(lv, "main #staff-section-navigation #product-section-tab-#{other}")
 
           if other != key,
             do:
               refute(
                 has_element?(
                   lv,
-                  "#staff-header #product-section-tab-#{other}[aria-current='page']"
+                  "main #staff-section-navigation #product-section-tab-#{other}[aria-current='page']"
                 )
               )
         end
 
-        assert has_element?(lv, "#staff-header h1.sr-only", title)
+        assert has_element?(lv, "main #staff-page-header h1", title)
         refute has_element?(lv, "#staff-header-context")
 
         if actions? do
-          assert has_element?(lv, "#staff-header #staff-page-header-actions > *")
+          assert has_element?(lv, "main #staff-page-header-actions > *")
         else
           refute has_element?(lv, "#staff-page-header-actions")
         end
@@ -249,7 +244,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       for section <- ["modifiers", "tags"] do
         {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> "/" <> section)
-        assert has_element?(lv, "#staff-header[data-header-actions='false'] [role='tablist']")
+        assert has_element?(lv, "main #staff-section-navigation [aria-current='page']")
         refute has_element?(lv, "#staff-page-header-actions > *")
       end
     end

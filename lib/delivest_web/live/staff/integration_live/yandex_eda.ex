@@ -63,7 +63,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
          |> assign_context()
          |> load_menu()
          |> load_pauses()
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "yandex_eda"))}
@@ -224,6 +225,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEda do
         for={@form}
         id="yandex-eda-branch"
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >

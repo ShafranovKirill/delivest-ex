@@ -31,6 +31,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
       <form
         :if={@can_edit}
         id="delivery-radius-zone"
+        data-staff-dirty
         phx-submit="add_radius_zone"
         class="flex items-end gap-2"
       >
@@ -125,6 +126,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
         :if={@form}
         for={@form}
         id="delivery-zone-form"
+        data-staff-dirty
         phx-submit="save_zone"
         class="space-y-3 rounded-box border border-base-300 bg-base-100 p-4"
       >

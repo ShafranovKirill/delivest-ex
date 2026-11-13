@@ -300,6 +300,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           staff={@current_staff}
           branches={@settings_branches}
           selected={@branch.id}
+          current_path={@current_path}
         />
       </:navigation>
       <:actions :if={@can_edit_identity and !@branch.is_active}>
@@ -322,6 +323,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           staff={@current_staff}
           branches={@settings_branches}
           selected={@branch.id}
+          current_path={@current_path}
         />
       </:navigation>
     </.page_header>
@@ -341,6 +343,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           staff={@current_staff}
           branches={@settings_branches}
           selected={@branch.id}
+          current_path={@current_path}
         />
       </:navigation>
     </.page_header>
@@ -360,6 +363,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           staff={@current_staff}
           branches={@settings_branches}
           selected={@branch.id}
+          current_path={@current_path}
         />
       </:navigation>
       <:actions>
@@ -524,6 +528,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           for={@delete_form}
           id="branch-delete-form"
           phx-change="validate_delete"
+          data-staff-dirty
           phx-submit="confirm_delete"
           class="mt-4 space-y-4"
         >

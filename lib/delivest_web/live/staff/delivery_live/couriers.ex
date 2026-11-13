@@ -30,6 +30,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
         {:noreply,
          socket
          |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})
          |> push_navigate(to: ~p"/staff/b/#{socket.assigns.current_branch}/delivery")}
 
       {:error, :info, %Ecto.Changeset{}} ->
@@ -83,6 +84,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
       <.form
         for={@form}
         id="couriers-form"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >

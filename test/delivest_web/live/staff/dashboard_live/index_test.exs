@@ -245,13 +245,16 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       assert has_element?(lv, "#dashboard-problem-orders", "1")
     end
 
-    test "profile controls and branch switcher live in the sidebar", %{conn: conn, branch: branch} do
+    test "profile controls stay in the sidebar and scope lives in the header", %{
+      conn: conn,
+      branch: branch
+    } do
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
       assert has_element?(lv, "#staff-profile-trigger[aria-expanded='false']")
       assert has_element?(lv, "#staff-profile-menu a[href='/staff/auth/log_out']")
-      assert has_element?(lv, "#main-sidebar #header-branch")
-      refute has_element?(lv, "#staff-header #header-branch")
+      assert has_element?(lv, "#staff-header #header-branch")
+      refute has_element?(lv, "#main-sidebar #header-branch")
       refute has_element?(lv, "#staff-header #sidebar-toggle")
     end
 
@@ -263,10 +266,10 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
 
       assert has_element?(lv, "#staff-profile-menu #header-theme-dark")
       assert has_element?(lv, "#staff-profile-menu #header-theme-light")
-      assert has_element?(lv, "#staff-header-title")
+      assert has_element?(lv, "main #staff-page-header h1")
       assert render(element(lv, "#staff-page-header")) =~ "Today"
-      assert has_element?(lv, "#main-sidebar #command-palette-trigger")
-      refute has_element?(lv, "#staff-header #command-palette-trigger")
+      assert has_element?(lv, "#staff-header #command-palette-trigger")
+      refute has_element?(lv, "#main-sidebar #command-palette-trigger")
     end
   end
 end

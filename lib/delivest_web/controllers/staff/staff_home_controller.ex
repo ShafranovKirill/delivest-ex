@@ -30,7 +30,7 @@ defmodule DelivestWeb.Staff.StaffHomeController do
     end
   end
 
-  defp branch_home(staff, branch) do
+  def branch_home(staff, branch) do
     cond do
       Kitchen.account?(staff) and Kitchen.available?(staff, branch) ->
         ~p"/staff/b/#{branch}/kitchen"
@@ -41,21 +41,32 @@ defmodule DelivestWeb.Staff.StaffHomeController do
       Couriers.account?(staff) ->
         ~p"/staff/b/#{branch}/deliveries"
 
-      true ->
+      Identity.can?(staff, "branches.update") ->
         ~p"/staff/b/#{branch}/dashboard"
+
+      Identity.can?(staff, "orders.read") ->
+        ~p"/staff/b/#{branch}/orders"
+
+      Identity.can?(staff, "products.read") ->
+        ~p"/staff/b/#{branch}/products"
+
+      true ->
+        "/staff/branches/select"
     end
   end
 
   defp only_branch(staff) do
-    cond do
-      Kitchen.account?(staff) or Couriers.account?(staff) ->
-        case staff.branches do
-          [branch] -> ~p"/staff/branches/select/#{branch.id}"
-          _ -> ~p"/staff/branches/select"
+    case staff.branches do
+      [branch] ->
+        case StaffActiveBranch.accessible(staff, branch.id) do
+          {:ok, accessible_branch} -> branch_home(staff, accessible_branch)
+          :error -> "/staff/branches/select"
         end
 
-      true ->
-        ~p"/staff/dashboard"
+      _ ->
+        if Kitchen.account?(staff) or Couriers.account?(staff),
+          do: ~p"/staff/branches/select",
+          else: ~p"/staff/dashboard"
     end
   end
 end

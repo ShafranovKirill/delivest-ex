@@ -147,7 +147,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
          socket
          |> assign_settings(crm)
          |> assign_context()
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(Map.put(changeset, :action, :update), as: "crm"))}
@@ -615,6 +616,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
       for={@form}
       id="frontpad-settings"
       phx-change="validate"
+      data-staff-dirty
       phx-submit="save"
       class="rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
     >

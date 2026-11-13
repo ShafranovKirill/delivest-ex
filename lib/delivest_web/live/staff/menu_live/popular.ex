@@ -48,7 +48,8 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
            settings_form: to_form(Popular.change_settings(settings, %{}), as: "popular")
          )
          |> load()
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
@@ -206,6 +207,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
         for={@settings_form}
         id="popular-settings"
         phx-change="settings"
+        data-staff-dirty
         phx-submit="save_settings"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >

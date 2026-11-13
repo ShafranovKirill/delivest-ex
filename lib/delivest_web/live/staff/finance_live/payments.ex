@@ -43,7 +43,8 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
          socket
          |> assign(current_branch: branch)
          |> assign_form(PaymentSettings.changeset(Payments.settings(branch), %{}))
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, :info, %Ecto.Changeset{}} ->
         {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
@@ -82,6 +83,7 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
         for={@form}
         id="payments-form"
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >

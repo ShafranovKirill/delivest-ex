@@ -347,6 +347,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         id="promotion-form"
         phx-target={@myself}
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] items-start"
       >

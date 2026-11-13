@@ -151,12 +151,22 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     end
 
     {:ok, clients, _} = live(conn, ~p"/staff/clients")
-    assert has_element?(clients, "#staff-header a[href='/staff/clients'][aria-current='page']")
-    assert has_element?(clients, "#staff-header a[href='/staff/segments']")
+
+    assert has_element?(
+             clients,
+             "#staff-section-navigation a[href='/staff/clients'][aria-current='page']"
+           )
+
+    assert has_element?(clients, "#staff-section-navigation a[href='/staff/segments']")
 
     {:ok, segments, _} = live(conn, ~p"/staff/segments")
-    assert has_element?(segments, "#staff-header a[href='/staff/segments'][aria-current='page']")
-    assert has_element?(segments, "#staff-header a[href='/staff/clients']")
+
+    assert has_element?(
+             segments,
+             "#staff-section-navigation a[href='/staff/segments'][aria-current='page']"
+           )
+
+    assert has_element?(segments, "#staff-section-navigation a[href='/staff/clients']")
     refute has_element?(segments, "#marketing-navigation")
   end
 
@@ -171,8 +181,13 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, stocks, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
     assert has_element?(stocks, "#staff-page-header #marketing-navigation")
-    assert has_element?(stocks, "#nav-section-network #nav-group-marketing")
-    assert has_element?(stocks, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/stocks']")
+
+    assert has_element?(
+             stocks,
+             "#nav-section-main a[href='/staff/marketing/policies?branch=#{branch.slug}']"
+           )
+
+    assert has_element?(stocks, "#marketing-navigation a[href='/staff/b/#{branch.slug}/stocks']")
     refute has_element?(stocks, "#nav-section-common")
   end
 
@@ -198,7 +213,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
              "#staff-page-header #marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']"
            )
 
-    refute has_element?(view, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/loyalty']")
+    refute has_element?(view, "#marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']")
   end
 
   test "marketing sidebar group exposes all authorized areas in the current branch", %{conn: conn} do
@@ -216,7 +231,11 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
       )
 
     {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
-    assert has_element?(view, "#nav-section-network #nav-group-marketing[data-open]")
+
+    assert has_element?(
+             view,
+             "#nav-section-main a[href='/staff/marketing/policies?branch=#{branch.slug}']"
+           )
 
     for path <- [
           "/staff/marketing/policies?branch=#{branch.slug}",
@@ -225,7 +244,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
           "/staff/marketing/bonuses?branch=#{branch.slug}",
           "/staff/b/#{branch.slug}/advertising-links"
         ] do
-      assert has_element?(view, "#nav-group-marketing a[href='#{path}']")
+      assert has_element?(view, "#marketing-navigation a[href='#{path}']")
     end
   end
 
@@ -236,9 +255,9 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     conn = login(conn, ["stocks.read"], [branch])
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing?section=stocks")
-    assert has_element?(view, "#nav-group-marketing a[href='/staff/marketing?section=stocks']")
+    assert has_element?(view, "#nav-section-main a[href='/staff/marketing?section=stocks']")
     assert has_element?(view, "#marketing-branches a[href='/staff/b/#{branch.slug}/stocks']")
-    refute has_element?(view, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/stocks']")
+    refute has_element?(view, "#nav-section-main a[href='/staff/b/#{branch.slug}/stocks']")
   end
 
   test "settings sidebar replaces branch, delivery and integration entries", %{conn: conn} do
@@ -253,17 +272,17 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
       )
 
     {:ok, settings, _} = live(conn, ~p"/staff/settings")
-    assert has_element?(settings, "#nav-section-network a[href='/staff/settings'].menu-active")
-    refute has_element?(settings, "#nav-section-network a[href='/staff/branches']")
-    refute has_element?(settings, "#nav-section-network a[href='/staff/integrations']")
+    assert has_element?(settings, "#nav-section-settings a[href='/staff/settings'].menu-active")
+    refute has_element?(settings, "#nav-section-main a[href='/staff/branches']")
+    refute has_element?(settings, "#nav-section-main a[href='/staff/integrations']")
 
     refute has_element?(
              settings,
-             "#nav-section-branch a[href='/staff/b/#{branch.slug}/delivery']"
+             "#nav-section-main a[href='/staff/b/#{branch.slug}/delivery']"
            )
 
     {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
-    assert has_element?(delivery, "#nav-section-network a[href='/staff/settings'].menu-active")
+    assert has_element?(delivery, "#nav-section-settings a[href='/staff/settings'].menu-active")
 
     assert has_element?(
              delivery,
@@ -274,7 +293,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(
              integrations,
-             "#nav-section-network a[href='/staff/settings'].menu-active"
+             "#nav-section-settings a[href='/staff/settings'].menu-active"
            )
   end
 
@@ -282,10 +301,10 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     conn = login(conn, ["logs.read"], [])
     {:ok, logs, _} = live(conn, ~p"/staff/logs")
 
-    assert has_element?(logs, "#nav-group-diagnostics[data-open]")
-    assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/logs'].menu-active")
-    assert has_element?(logs, "#nav-group-diagnostics a[href='/staff/diagnostics']")
-    refute has_element?(logs, "#nav-section-network a[href='/staff/settings']")
+    assert has_element?(logs, "#staff-section-navigation")
+    assert has_element?(logs, "#staff-section-navigation a[aria-current='page']")
+    assert has_element?(logs, "#staff-section-navigation a[href='/staff/diagnostics']")
+    refute has_element?(logs, "#nav-section-settings a[href='/staff/settings']")
   end
 
   test "product subpages keep Products active without duplicate sidebar links", %{conn: conn} do
@@ -295,17 +314,17 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     for path <- [~p"/staff/b/#{branch}/products/stops", ~p"/staff/b/#{branch}/menu/popular"] do
       {:ok, view, _} = live(conn, path)
 
-      assert has_element?(view, "#nav-group-menu[data-open]")
+      assert has_element?(view, "#nav-section-main")
 
       assert has_element?(
                view,
-               "#nav-group-menu a[href='/staff/b/#{branch.slug}/products'].menu-active"
+               "#nav-section-main a[href='/staff/b/#{branch.slug}/products'].menu-active"
              )
 
       refute has_element?(view, "#main-sidebar a[href='/staff/b/#{branch.slug}/products/stops']")
       refute has_element?(view, "#main-sidebar a[href='/staff/b/#{branch.slug}/menu/popular']")
-      assert has_element?(view, "#staff-header #product-section-tab-popular")
-      assert has_element?(view, "#staff-header #product-section-tab-stops")
+      assert has_element?(view, "#staff-section-navigation #product-section-tab-popular")
+      assert has_element?(view, "#staff-section-navigation #product-section-tab-stops")
     end
   end
 end

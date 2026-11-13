@@ -19,7 +19,8 @@ defmodule DelivestWeb.Staff.ClientLive.ClientCodesComponent do
 
     with {:ok, promotion} <- Promo.get_promotion(staff, branch_id, id),
          {:ok, code} <- Promo.issue_code(staff, promotion, client, uses(params["uses"])) do
-      {:noreply, socket |> assign(issued: code) |> load_codes()}
+      {:noreply,
+       socket |> assign(issued: code) |> load_codes() |> push_event("staff:form-saved", %{})}
     else
       _ -> {:noreply, put_flash(socket, :error, gettext("Failed to issue a code"))}
     end
@@ -60,6 +61,7 @@ defmodule DelivestWeb.Staff.ClientLive.ClientCodesComponent do
       <form
         :if={@promotions != []}
         id="client-issue-code"
+        data-staff-dirty
         phx-submit="issue"
         phx-target={@myself}
         class="space-y-2"

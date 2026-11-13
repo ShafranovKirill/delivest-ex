@@ -54,24 +54,26 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     assert has_element?(lv, "#integration-frontpad", "Frontpad")
     assert has_element?(lv, "#integration-zvonok")
     refute has_element?(lv, "a#integration-zvonok")
-    assert has_element?(lv, "#nav-section-network a[href='/staff/settings'].menu-active")
+    assert has_element?(lv, "#nav-section-settings a[href='/staff/settings'].menu-active")
     refute has_element?(lv, "#main-sidebar a[href='/staff/integrations']")
     refute has_element?(lv, "#main-sidebar a[href='/staff/b/#{branch.slug}/integrations']")
   end
 
-  test "global integrations require an explicit branch choice", %{conn: conn, branch: branch} do
+  test "global integrations use the header scope and preserve legacy branch links", %{
+    conn: conn,
+    branch: branch
+  } do
     {:ok, lv, _html} = live(conn, ~p"/staff/integrations")
 
     refute has_element?(lv, "a#integration-zvonok")
-    assert has_element?(lv, "#integration-branch-selector")
+    assert has_element?(lv, "#header-branch-#{branch.id}")
+    refute has_element?(lv, "#integration-branch-selector")
     refute has_element?(lv, "#integration-frontpad")
     refute has_element?(lv, "#integration-selected-branch")
 
-    lv |> form("#integration-branch-selector", branch: branch.slug) |> render_change()
-    assert_redirect(lv, ~p"/staff/integrations?branch=#{branch.slug}")
-
     {:ok, lv, _html} = live(conn, ~p"/staff/integrations?branch=#{branch.slug}")
     assert has_element?(lv, "#integration-selected-branch", branch.name)
+    assert has_element?(lv, "#header-branch summary[aria-label='#{branch.name}']")
 
     assert has_element?(
              lv,
@@ -79,12 +81,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
            )
   end
 
-  test "global branch query ignores inaccessible branches", %{conn: conn} do
+  test "global branch query exits explicitly when access is revoked", %{conn: conn} do
     foreign = insert(:branch)
-    {:ok, lv, _html} = live(conn, ~p"/staff/integrations?branch=#{foreign.slug}")
 
-    refute has_element?(lv, "#integration-frontpad")
-    refute has_element?(lv, "#integration-selected-branch")
+    assert {:error, {:live_redirect, %{to: "/staff/integrations", flash: flash}}} =
+             live(conn, ~p"/staff/integrations?branch=#{foreign.slug}")
+
+    assert flash["error"] == "Permission denied"
   end
 
   test "global branch selection shows gateway ownership from the selected branch", %{

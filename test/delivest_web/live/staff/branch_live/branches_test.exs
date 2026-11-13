@@ -12,7 +12,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchesTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
     {:ok, lv, _} = live(conn, ~p"/staff/branches")
-    assert has_element?(lv, "#staff-header-title h1", "Settings for branches")
+    assert has_element?(lv, "main #staff-page-header h1", "Settings for branches")
     assert has_element?(lv, "#staff-page-header-actions #create-branch")
     assert has_element?(lv, "#branch-edit-#{branch.id}")
     refute has_element?(lv, "#branch-delivery-#{branch.id}")

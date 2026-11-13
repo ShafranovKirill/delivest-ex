@@ -20,6 +20,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
       for={@form}
       id="order-details-form"
       phx-change="validate_order"
+      data-staff-dirty
       phx-submit="save_order"
       class="space-y-5"
     >

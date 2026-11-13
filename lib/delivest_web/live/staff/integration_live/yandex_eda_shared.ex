@@ -27,7 +27,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaShared do
          socket
          |> assign_shared(settings)
          |> assign_context()
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, shared_form: to_form(changeset, as: "yandex_eda_shared"))}

@@ -111,7 +111,8 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         {:noreply,
          socket
          |> stream(:products, filtered_products(products, socket), reset: true)
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
@@ -129,7 +130,8 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
          socket
          |> assign(current_branch: branch)
          |> assign_form(LoyaltySettings.changeset(Loyalty.settings(branch), %{}))
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, :info, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -269,6 +271,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         for={@form}
         id="loyalty-form"
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
@@ -428,6 +431,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
                     <form
                       id={"bonus-form-#{product.id}"}
                       phx-change="product"
+                      data-staff-dirty
                       phx-submit="save_products"
                     >
                       <input type="hidden" name="product_id" value={product.id} />

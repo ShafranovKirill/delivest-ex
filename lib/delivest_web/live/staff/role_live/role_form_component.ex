@@ -109,6 +109,7 @@ defmodule DelivestWeb.Staff.RoleLive.RoleFormComponent do
         id="role-form"
         phx-target={@myself}
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="flex flex-col h-full"
       >

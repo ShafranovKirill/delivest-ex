@@ -36,7 +36,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
          socket
          |> assign_settings(settings)
          |> assign_context()
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "dadata"))}
@@ -97,6 +98,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
         for={@form}
         id="dadata-settings"
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >

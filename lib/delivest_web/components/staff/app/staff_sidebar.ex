@@ -6,21 +6,44 @@ defmodule DelivestWeb.StaffSidebar do
   attr :current_page, :atom, default: nil
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
+  attr :scope_branch, :map, default: nil
   attr :navigation_branch, :map, default: nil
   attr :staff_branches, :list, default: []
   attr :current_path, :string, default: nil
   attr :new_orders_count, :integer, default: 0
 
   def staff_sidebar(assigns) do
-    assigns =
-      assign(assigns,
-        entries:
-          DelivestWeb.StaffNav.entries(
-            assigns.current_staff,
-            assigns.current_branch,
-            assigns.navigation_branch || assigns.current_branch
-          )
+    navigation_branch = assigns.navigation_branch || assigns.current_branch
+    navigation_branch = navigation_branch && Delivest.Repo.preload(navigation_branch, :info)
+
+    entries =
+      DelivestWeb.StaffNav.entries(
+        assigns.current_staff,
+        navigation_branch,
+        assigns.current_branch
       )
+
+    entries =
+      if assigns.scope_branch do
+        entries
+      else
+        Enum.map(entries, fn
+          %{id: :main, entries: items} = section ->
+            %{
+              section
+              | entries:
+                  Enum.map(items, fn
+                    %{id: :dashboard} = item -> %{item | path: ~p"/staff/dashboard"}
+                    item -> item
+                  end)
+            }
+
+          section ->
+            section
+        end)
+      end
+
+    assigns = assign(assigns, entries: entries)
 
     ~H"""
     <aside
@@ -34,7 +57,7 @@ defmodule DelivestWeb.StaffSidebar do
         >
           <.link
             id="sidebar-home"
-            navigate={DelivestWeb.StaffBranchPath.home(@current_branch)}
+            href={~p"/staff"}
             class="staff-sidebar-top-link flex shrink-0 items-center rounded-field p-1 hover:bg-base-200"
             title="Delivest"
             aria-label="Delivest"
@@ -73,17 +96,11 @@ defmodule DelivestWeb.StaffSidebar do
             </button>
           </div>
         </div>
-
-        <DelivestWeb.BranchSwitcher.branch_switcher
-          current_branch={@current_branch}
-          branches={@staff_branches}
-          section={DelivestWeb.StaffBranchPath.section(@current_path)}
-        />
       </div>
 
       <nav class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-3 [scrollbar-width:thin]">
         <div
-          :for={section <- @entries}
+          :for={section <- Enum.filter(@entries, &(&1.id == :main))}
           id={"nav-section-#{section.id}"}
           class="flex flex-col gap-1 pb-3"
         >
@@ -103,15 +120,27 @@ defmodule DelivestWeb.StaffSidebar do
             <ul :if={entry.kind == :item} class="menu w-full p-0">
               <li><.nav_link item={entry} current_page={@current_page} /></li>
             </ul>
-            <.nav_group :if={entry.kind == :group} group={entry} current_page={@current_page} />
+            <ul :if={entry.kind == :group} class="menu w-full p-0">
+              <li><.nav_link item={primary_item(entry)} current_page={@current_page} /></li>
+            </ul>
           <% end %>
         </div>
       </nav>
 
       <div class="staff-sidebar-footer shrink-0 border-t border-base-300 p-1">
+        <nav
+          :if={Enum.any?(@entries, &(&1.id == :settings))}
+          id="nav-section-settings"
+          aria-label={gettext("Settings")}
+        >
+          <.nav_link
+            :for={entry <- Enum.flat_map(Enum.filter(@entries, &(&1.id == :settings)), & &1.entries)}
+            item={entry}
+            current_page={@current_page}
+          />
+        </nav>
         <div class="flex min-w-0 items-center gap-1">
           <DelivestWeb.StaffProfileMenu.staff_profile_menu current_staff={@current_staff} />
-          <DelivestWeb.CommandPalette.command_palette_trigger icon_only />
         </div>
       </div>
     </aside>
@@ -126,70 +155,9 @@ defmodule DelivestWeb.StaffSidebar do
     """
   end
 
-  attr :group, :map, required: true
-  attr :current_page, :atom, default: nil
-
-  defp nav_group(assigns) do
-    assigns =
-      assign(assigns, active: Enum.any?(assigns.group.items, &(assigns.current_page in &1.pages)))
-
-    ~H"""
-    <div
-      id={"nav-group-#{@group.id}"}
-      phx-hook=".SidebarGroup"
-      data-open={@active}
-      data-active={@active}
-      class="group/nav flex flex-col gap-1"
-    >
-      <div class="hidden h-px bg-base-300 mx-2 my-1 lg:sidebar-collapsed:block"></div>
-      <button
-        type="button"
-        data-toggle
-        title={@group.label}
-        class={[
-          "staff-sidebar-group-toggle flex w-full cursor-pointer items-center gap-2 rounded-field px-2.5 py-2 text-[13px] font-medium text-base-content/70 hover:bg-base-200/70 hover:text-base-content",
-          @active && "bg-base-200/70 text-base-content"
-        ]}
-      >
-        <.icon name={@group.icon} class="size-5 shrink-0" />
-        <span class="staff-sidebar-label truncate">{@group.label}</span>
-        <.icon
-          name="hero-chevron-right"
-          class="ml-auto size-3.5 shrink-0 transition-transform group-data-open/nav:rotate-90"
-        />
-      </button>
-      <ul class="staff-sidebar-group-list ml-4 hidden min-w-0 self-stretch flex-col gap-1 border-l border-base-300 p-0 pl-2 group-data-open/nav:flex">
-        <li :for={item <- @group.items} class="min-w-0 list-none">
-          <.nav_link item={item} current_page={@current_page} />
-        </li>
-      </ul>
-    </div>
-
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".SidebarGroup">
-      const key = "sidebar_groups"
-      const read = () => {
-        try { return JSON.parse(localStorage.getItem(key) || "{}") } catch { return {} }
-      }
-
-      export default {
-        mounted() {
-          this.apply()
-          this.el.querySelector("[data-toggle]").addEventListener("click", () => {
-            const open = this.el.toggleAttribute("data-open")
-            localStorage.setItem(key, JSON.stringify({ ...read(), [this.el.id]: open }))
-          })
-        },
-        updated() {
-          this.apply()
-        },
-        apply() {
-          const saved = read()[this.el.id]
-          if (!this.el.hasAttribute("data-active") && saved !== undefined)
-            this.el.toggleAttribute("data-open", saved)
-        }
-      }
-    </script>
-    """
+  defp primary_item(group) do
+    first = hd(group.items)
+    %{first | label: group.label, icon: group.icon, pages: Enum.flat_map(group.items, & &1.pages)}
   end
 
   attr :item, :map, required: true

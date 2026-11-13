@@ -503,7 +503,13 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
         }
         on_cancel={JS.push("close_form")}
       >
-        <form :if={@group_form} id="group-form" phx-submit="save_group" class="mt-4 space-y-4">
+        <form
+          :if={@group_form}
+          id="group-form"
+          data-staff-dirty
+          phx-submit="save_group"
+          class="mt-4 space-y-4"
+        >
           <.input
             name="group[name]"
             value={@group_form.name}
@@ -558,6 +564,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
         <form
           :if={@modifier_form}
           id="modifier-form"
+          data-staff-dirty
           phx-submit="save_modifier"
           class="mt-4 space-y-4"
         >
@@ -598,6 +605,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
           :if={@article_form}
           for={@article_form}
           id="article-form"
+          data-staff-dirty
           phx-submit="save_article"
           class="mt-4 space-y-4"
         >

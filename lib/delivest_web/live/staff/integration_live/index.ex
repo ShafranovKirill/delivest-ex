@@ -8,8 +8,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
   on_mount {DelivestWeb.Hooks.Permission, "integrations.read"}
 
-  @providers [:zvonok, :dadata, :yookassa, :yandex_eda, :atol, :yandex_delivery]
-
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -30,33 +28,27 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
         _ -> nil
       end
 
+    if params["branch"] && is_nil(branch) do
+      {:noreply,
+       socket
+       |> put_flash(:error, gettext("Permission denied"))
+       |> push_patch(to: ~p"/staff/integrations")}
+    else
+      assign_summary(socket, branches, branch)
+    end
+  end
+
+  defp assign_summary(socket, _branches, branch) do
     context = Presentation.context(branch && branch.id)
 
-    providers =
-      if(branch,
-        do: @providers ++ Enum.map(Crm.providers(), &elem(&1, 0)),
-        else: [:zvonok, :dadata, :yookassa, :yandex_eda]
-      )
+    providers = Presentation.providers(branch)
 
     {:noreply,
      assign(socket,
        selected_branch: context.branch,
-       selectable_branches: branches,
        states: Map.new(providers, &{&1, Presentation.state(&1, context)}),
        routes_state: if(branch, do: routes_state(context), else: nil)
      )}
-  end
-
-  @impl true
-  def handle_event("select_branch", %{"branch" => slug}, socket) do
-    path =
-      if Enum.any?(socket.assigns.selectable_branches, &(&1.slug == slug)) do
-        ~p"/staff/integrations?branch=#{slug}"
-      else
-        ~p"/staff/integrations"
-      end
-
-    {:noreply, push_navigate(socket, to: path)}
   end
 
   defp routes_state(context) do
@@ -137,23 +129,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             {gettext("Choose a branch to view and change its integrations.")}
           </p>
         </div>
-
-        <form id="integration-branch-selector" phx-change="select_branch">
-          <select
-            name="branch"
-            class="select select-bordered w-full max-w-sm"
-            aria-label={gettext("Branch")}
-          >
-            <option value="" selected={is_nil(@selected_branch)}>{gettext("Select a branch")}</option>
-            <option
-              :for={branch <- @selectable_branches}
-              value={branch.slug}
-              selected={@selected_branch && @selected_branch.id == branch.id}
-            >
-              {branch.name}
-            </option>
-          </select>
-        </form>
 
         <p :if={@selected_branch} id="integration-selected-branch" class="text-sm font-medium">
           {gettext("Branch: %{name}", name: @selected_branch.name)}
