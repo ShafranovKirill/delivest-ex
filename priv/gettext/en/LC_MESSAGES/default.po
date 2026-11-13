@@ -10,7 +10,6 @@ msgid ""
 msgstr ""
 "Language: en\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Type: text/plain; charset=UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: lib/delivest_web/components/core_components.ex:506
@@ -9181,9 +9180,9 @@ msgstr ""
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:182
 #: lib/delivest_web/live/staff/franchise_live/index.ex:239
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "You do not have permission to import this archive."
-msgstr ""
+msgstr "You do not have permission to import this archive."
 
 #: lib/delivest_web/live/staff/branch_live/edit.ex:184
 #: lib/delivest_web/live/staff/franchise_live/index.ex:241
@@ -9290,19 +9289,19 @@ msgid "Categories, products, modifiers and photos for every branch."
 msgstr ""
 
 #: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:57
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Choose at least one section to export."
-msgstr ""
+msgstr "Choose at least one section to export."
 
 #: lib/delivest_web/live/staff/franchise_live/index.ex:199
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Choose at least one section."
-msgstr ""
+msgstr "Choose at least one section."
 
 #: lib/delivest_web/live/staff/branch_live/branch_form_component.ex:186
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Clear"
-msgstr ""
+msgstr "Clear"
 
 #: lib/delivest_web/live/staff/franchise_live/index.ex:224
 #, elixir-autogen, elixir-format
@@ -9325,14 +9324,14 @@ msgid "Export and import every branch, shared settings, catalog and integrations
 msgstr ""
 
 #: lib/delivest_web/live/staff/order_live/order_form.ex:156
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Failed to change the cart"
-msgstr ""
+msgstr "Failed to change the cart"
 
 #: lib/delivest_web/live/staff/franchise_live/sections.ex:114
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Franchise snapshot"
-msgstr ""
+msgstr "Franchise snapshot"
 
 #: lib/delivest_web/live/staff/franchise_live/index.ex:333
 #, elixir-autogen, elixir-format
@@ -9437,9 +9436,9 @@ msgid "Whether customers must sign in before placing an order."
 msgstr ""
 
 #: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:51
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "You do not have permission to export the franchise."
-msgstr ""
+msgstr "You do not have permission to export the franchise."
 
 #: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:62
 #: lib/delivest_web/controllers/staff/staff_site_snapshot_controller.ex:80
