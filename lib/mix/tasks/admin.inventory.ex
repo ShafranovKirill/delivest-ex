@@ -136,7 +136,10 @@ defmodule Mix.Tasks.Admin.Inventory do
 
     actions = staff_actions(staff_sources)
     features = feature_inventory()
-    background = background_inventory(domain_sources) |> annotate_background()
+    background_sources = Enum.map(domain_sources, &{&1, File.read!(&1)})
+
+    background =
+      background_inventory(background_sources) |> annotate_background(background_sources)
 
     if Enum.any?(screens, &(&1["page_type"] not in ~w(work_queue list entity settings))) or
          Enum.any?(fields, &(&1["owner"] in [nil, ""] or &1["canonical_form"] in [nil, ""])) or
@@ -1276,7 +1279,7 @@ defmodule Mix.Tasks.Admin.Inventory do
     Enum.sort_by(features ++ integrations ++ supplemental, & &1["id"])
   end
 
-  defp background_inventory(paths) do
+  defp background_inventory(sources) do
     registry = "lib/delivest/background/registry.ex"
     {:ok, ast} = Code.string_to_quoted(File.read!(registry))
 
@@ -1293,8 +1296,7 @@ defmodule Mix.Tasks.Admin.Inventory do
       Enum.map(entries, fn {kind, {:%{}, _, props}} ->
         feature = Keyword.fetch!(props, :feature)
         handler = Macro.to_string(Keyword.fetch!(props, :handler))
-        handler_source = module_source(handler)
-        handler_text = if handler_source, do: File.read!(handler_source), else: ""
+        {handler_source, handler_text} = module_source(handler, sources) || {nil, ""}
 
         %{
           "id" => "optional:#{kind}",
@@ -1327,8 +1329,7 @@ defmodule Mix.Tasks.Admin.Inventory do
       )
       |> Enum.map(fn [raw, schedule, worker | rest] ->
         suffix = List.first(rest) || ""
-        worker_source = module_source(worker)
-        worker_text = if worker_source, do: File.read!(worker_source), else: ""
+        {_worker_source, worker_text} = module_source(worker, sources) || {nil, ""}
 
         %{
           "id" => "cron:#{worker}:#{suffix}:#{schedule}",
@@ -1346,20 +1347,18 @@ defmodule Mix.Tasks.Admin.Inventory do
       end)
 
     workers =
-      Enum.flat_map(paths, fn path ->
-        source = File.read!(path)
-
+      Enum.flat_map(sources, fn {path, source} ->
         if String.contains?(source, "use Oban.Worker") do
           case Regex.run(~r/defmodule\s+(Delivest\.[\w.]+)/, source) do
             [_, module] ->
-              maintenance = maintenance_task(module)
+              maintenance = maintenance_task(module, sources)
 
               cron_schedules =
                 Enum.filter(cron, &(&1["worker_process"] == module))
                 |> Enum.map(& &1["frequency"])
 
               producers =
-                producer_refs(module, path) ++
+                producer_refs(module, path, sources) ++
                   if(maintenance,
                     do: [
                       "lib/delivest/maintenance/registry.ex:#{maintenance.line} via DispatchWorker"
@@ -1402,14 +1401,15 @@ defmodule Mix.Tasks.Admin.Inventory do
     Enum.sort_by(optional ++ cron ++ workers, & &1["id"])
   end
 
-  defp module_source(module) do
-    Path.wildcard("lib/delivest/**/*.ex")
-    |> Enum.find(fn path -> String.contains?(File.read!(path), "defmodule #{module} do") end)
+  defp module_source(module, sources) do
+    Enum.find(sources, fn {_path, source} ->
+      String.contains?(source, "defmodule #{module} do")
+    end)
   end
 
-  defp maintenance_task(module) do
+  defp maintenance_task(module, sources) do
     path = "lib/delivest/maintenance/registry.ex"
-    source = File.read!(path)
+    source = sources |> List.keyfind(path, 0) |> elem(1)
 
     case Regex.run(
            ~r/%\{\s*key:\s*"[^"]+",\s*worker:\s*#{Regex.escape(module)},\s*scope:\s*:\w+,\s*hour:\s*(\d+)/s,
@@ -1424,16 +1424,14 @@ defmodule Mix.Tasks.Admin.Inventory do
     end
   end
 
-  defp producer_refs(module, own_path) do
+  defp producer_refs(module, own_path, sources) do
     parts = String.split(module, ".")
     short = List.last(parts)
     prefix = parts |> Enum.drop(-1) |> Enum.join(".")
 
-    Path.wildcard("lib/delivest/**/*.ex")
-    |> Enum.reject(&(&1 == own_path))
-    |> Enum.flat_map(fn path ->
-      source = File.read!(path)
-
+    sources
+    |> Enum.reject(fn {path, _source} -> path == own_path end)
+    |> Enum.flat_map(fn {path, source} ->
       alias_present =
         String.contains?(source, "alias #{module}") or
           Regex.match?(
@@ -1486,16 +1484,13 @@ defmodule Mix.Tasks.Admin.Inventory do
     end
   end
 
-  defp annotate_background(entries) do
+  defp annotate_background(entries, sources) do
     semantics = Code.eval_file("docs/admin/background-semantics.exs") |> elem(0)
 
     pollers =
       Enum.map(@poller_keys, fn {key, module} ->
-        source = module_source(module)
-
-        if is_nil(source), do: Mix.raise("missing poller source for #{module}")
-
-        text = File.read!(source)
+        {source, text} =
+          module_source(module, sources) || Mix.raise("missing poller source for #{module}")
 
         interval =
           case Regex.run(~r/def interval, do: ([^\n]+)/, text) do
