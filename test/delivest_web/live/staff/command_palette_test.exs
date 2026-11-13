@@ -17,10 +17,35 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
   test "lists pages before anything is typed", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
 
-    assert has_element?(lv, "#main-sidebar #command-palette-trigger[aria-label]")
-    refute has_element?(lv, "#staff-header #command-palette-trigger")
+    assert has_element?(lv, "#staff-header #command-palette-trigger[aria-label]")
+    refute has_element?(lv, "#main-sidebar #command-palette-trigger")
     assert has_element?(lv, "#command-item-page-orders")
     assert has_element?(lv, "#command-item-page-clients")
+  end
+
+  test "aliases open the canonical settings forms", %{conn: conn, branch: branch} do
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+
+    lv |> form("#command-palette-form", %{query: "фронтпад"}) |> render_change()
+
+    assert has_element?(
+             lv,
+             "#command-item-page-frontpad[href='/staff/b/#{branch.slug}/integrations/frontpad']"
+           )
+
+    lv |> form("#command-palette-form", %{query: "зоны"}) |> render_change()
+
+    assert has_element?(
+             lv,
+             "#command-item-page-delivery_zones[href='/staff/b/#{branch.slug}/delivery/zones']"
+           )
+
+    lv |> form("#command-palette-form", %{query: "график"}) |> render_change()
+
+    assert has_element?(
+             lv,
+             "#command-item-page-hours[href='/staff/branches/#{branch.slug}/edit/hours']"
+           )
   end
 
   test "finds pages, clients and products by the typed text", %{conn: conn, branch: branch} do

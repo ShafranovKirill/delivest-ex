@@ -34,6 +34,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
 
   @crm_providers [:frontpad, :iiko, :rkeeper]
 
+  def providers(nil), do: [:zvonok, :dadata, :yookassa, :yandex_eda]
+
+  def providers(_branch),
+    do: [:zvonok, :dadata, :yookassa, :yandex_eda, :atol, :yandex_delivery] ++ @crm_providers
+
   @doc """
   Loads everything the status block needs in one place.
 
@@ -507,7 +512,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
         if(sources == [],
           do: gettext("No order sources selected"),
           else: Enum.map_join(sources, ", ", &source_label/1)
-        )
+        ),
+        :configuration
       ),
       item(
         gettext("Menu source"),
@@ -549,7 +555,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Presentation do
   defp source_label("pos"), do: gettext("POS")
   defp source_label(source), do: Channels.name(source)
 
-  defp item(label, state, detail), do: %{label: label, state: state, detail: detail}
+  defp item(label, state, detail, kind \\ :operation),
+    do: %{label: label, state: state, detail: detail, kind: kind}
 
   def capabilities(provider) when provider in @crm_providers do
     for {label, capability} <- [

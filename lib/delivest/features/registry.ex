@@ -17,6 +17,7 @@ defmodule Delivest.Features.Registry do
   @permission_prefixes %{"segments." => "segments", "marketing." => "marketing_policies"}
 
   def known?(feature), do: feature in @features
+  def features, do: @features
   def dependencies(feature), do: Map.get(@dependencies, feature, [])
 
   def permission_features, do: @permission_prefixes |> Map.values() |> Enum.uniq()

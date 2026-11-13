@@ -23,6 +23,11 @@ defmodule DelivestWeb.Hooks.StaffPath do
       socket
       |> assign(:current_path, path)
       |> assign(
+        :current_uri,
+        URI.parse(url)
+        |> then(fn uri -> uri.path <> if(uri.query, do: "?" <> uri.query, else: "") end)
+      )
+      |> assign(
         :current_page,
         page
       )
@@ -35,6 +40,10 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/statistics", :statistics},
     {"/staff/orders/new", :orders_new},
     {"/staff/orders", :orders},
+    {"/staff/deliveries", :deliveries},
+    {"/staff/couriers", :couriers},
+    {"/staff/finance/payments", :payments},
+    {"/staff/finance/receipts", :receipts},
     {"/staff/categories", :categories},
     {"/staff/menu/popular", :popular},
     {"/staff/products/stops", :stops},

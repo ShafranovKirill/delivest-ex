@@ -42,44 +42,6 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
 
   def without_blank(params), do: params
 
-  attr :current, :atom, required: true
-  attr :branch, :any, required: true
-
-  def tabs(assigns) do
-    assigns =
-      assign(assigns,
-        tabs: [
-          {:products, ~p"/staff/b/#{assigns.branch}/products", "hero-cube", gettext("Products")},
-          {:stops, ~p"/staff/b/#{assigns.branch}/products/stops", "hero-no-symbol",
-           gettext("Stop list")},
-          {:modifiers, ~p"/staff/b/#{assigns.branch}/products/modifiers",
-           "hero-adjustments-horizontal", gettext("Modifiers")},
-          {:tags, ~p"/staff/b/#{assigns.branch}/products/tags", "hero-tag", gettext("Tags")},
-          {:suggested, ~p"/staff/b/#{assigns.branch}/products/suggested", "hero-sparkles",
-           gettext("Recommended")},
-          {:popular, ~p"/staff/b/#{assigns.branch}/menu/popular", "hero-fire",
-           gettext("Popular products")}
-        ]
-      )
-
-    ~H"""
-    <div role="tablist" class="tabs w-fit max-w-full overflow-x-auto">
-      <.link
-        :for={{key, path, icon, label} <- @tabs}
-        id={"product-section-tab-#{key}"}
-        data-section={key}
-        navigate={path}
-        role="tab"
-        aria-current={if @current == key, do: "page"}
-        aria-selected={if @current == key, do: "true", else: "false"}
-        class={["tab gap-2 whitespace-nowrap", @current == key && "tab-active"]}
-      >
-        <.icon name={icon} class="size-4" /> {label}
-      </.link>
-    </div>
-    """
-  end
-
   attr :tag, :any, required: true
   attr :class, :string, default: "size-5"
 

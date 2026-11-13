@@ -52,7 +52,11 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
 
     case result do
       {:ok, _entry} ->
-        {:noreply, socket |> assign_loyalty() |> put_flash(:info, gettext("Balance updated"))}
+        {:noreply,
+         socket
+         |> assign_loyalty()
+         |> put_flash(:info, gettext("Balance updated"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, :reason_required} ->
         {:noreply, put_flash(socket, :error, gettext("Enter the reason for the correction"))}
@@ -212,6 +216,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
             <form
               :if={Identity.can?(@current_staff, "clients.update")}
               id="loyalty-adjust-form"
+              data-staff-dirty
               phx-submit="adjust_loyalty"
               class="flex flex-wrap items-end gap-2"
             >

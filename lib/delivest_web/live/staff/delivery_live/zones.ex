@@ -42,7 +42,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
         {:noreply,
          socket
          |> assign_settings(settings)
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, error_message(reason))}
@@ -52,7 +53,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
   def handle_event("add_radius_zone", %{"radius" => radius}, socket) do
     case Delivery.create_radius_zone(socket.assigns.current_staff, branch_id(socket), radius) do
       {:ok, zone} ->
-        {:noreply, socket |> reload_zones(zone.id) |> push_zones()}
+        {:noreply,
+         socket |> reload_zones(zone.id) |> push_zones() |> push_event("staff:form-saved", %{})}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, error_message(reason))}
@@ -134,7 +136,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
          socket
          |> reload_zones(zone.id)
          |> push_zones()
-         |> put_flash(:info, gettext("Zone saved"))}
+         |> put_flash(:info, gettext("Zone saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, zone_form: to_form(changeset, as: "zone"))}
@@ -268,6 +271,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
         for={@settings_form}
         id="delivery-settings"
         phx-change="mode"
+        data-staff-dirty
         phx-submit="save_settings"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >

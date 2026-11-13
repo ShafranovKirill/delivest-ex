@@ -356,13 +356,11 @@ defmodule DelivestWeb.CoreComponents do
           <.icon name="hero-arrow-left" class="size-4" />
         </.link>
         <h1
-          :if={@title_in_header and @navigation == []}
           title={@title}
-          class="staff-page-header-title min-w-0 truncate text-base font-semibold text-base-content sm:text-lg"
+          class="staff-page-header-title min-w-0 text-2xl font-semibold text-base-content"
         >
           {@title}
         </h1>
-        <h1 :if={not @title_in_header or @navigation != []} class="sr-only">{@title}</h1>
         <.header_navigation :if={@navigation != []} label={@navigation_label}>
           {render_slot(@navigation)}
         </.header_navigation>
@@ -398,7 +396,7 @@ defmodule DelivestWeb.CoreComponents do
     >
       <nav
         id="staff-page-header-navigation"
-        phx-hook=".ActiveHeaderTab"
+        phx-hook="ActiveSectionNav"
         data-scroll-viewport
         class="staff-page-header-navigation min-w-0 flex-1 overflow-x-auto"
         aria-label={@label || gettext("Page sections")}
@@ -406,26 +404,6 @@ defmodule DelivestWeb.CoreComponents do
         {render_slot(@inner_block)}
       </nav>
     </div>
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".ActiveHeaderTab">
-      export default {
-        mounted() {
-          this.resizeObserver = new ResizeObserver(() => this.revealActiveTab())
-          this.resizeObserver.observe(this.el)
-          this.revealActiveTab()
-        },
-        updated() { this.revealActiveTab() },
-        destroyed() { this.resizeObserver.disconnect() },
-        revealActiveTab() {
-          const active = this.el.querySelector('[aria-current="page"]')
-          if (!active) return
-          const left = active.getBoundingClientRect().left - this.el.getBoundingClientRect().left + this.el.scrollLeft
-          const right = left + active.offsetWidth
-          if (left < this.el.scrollLeft || right > this.el.scrollLeft + this.el.clientWidth) {
-            this.el.scrollLeft = Math.max(0, left - (this.el.clientWidth - active.offsetWidth) / 2)
-          }
-        }
-      }
-    </script>
     """
   end
 

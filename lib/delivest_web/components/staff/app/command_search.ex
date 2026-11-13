@@ -29,7 +29,7 @@ defmodule DelivestWeb.CommandSearch do
   defp pages(staff, branch, query) do
     staff
     |> DelivestWeb.StaffNav.pages(branch)
-    |> Enum.filter(&matches?(&1.label, query))
+    |> Enum.filter(fn page -> Enum.any?([page.label | page.aliases], &matches?(&1, query)) end)
     |> Enum.map(&item("page-#{&1.page}", &1.label, nil, &1.icon, &1.path))
   end
 

@@ -22,6 +22,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.RevertStatusModal do
         for={%{}}
         as={:revert}
         id="revert-status-form"
+        data-staff-dirty
         phx-submit="confirm_revert"
         class="space-y-3 pt-3"
       >

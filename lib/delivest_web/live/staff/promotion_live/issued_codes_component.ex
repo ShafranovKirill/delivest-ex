@@ -23,7 +23,11 @@ defmodule DelivestWeb.Staff.PromotionLive.IssuedCodesComponent do
 
     with {:ok, phone} <- phone(params["phone"]),
          {:ok, code} <- Promo.issue_code_by_phone(staff, promotion, phone, uses(params["uses"])) do
-      {:noreply, socket |> assign(form: issue_form(%{}), issued: code) |> load_codes()}
+      {:noreply,
+       socket
+       |> assign(form: issue_form(%{}), issued: code)
+       |> load_codes()
+       |> push_event("staff:form-saved", %{})}
     else
       {:error, :invalid_phone} ->
         {:noreply,
@@ -85,6 +89,7 @@ defmodule DelivestWeb.Staff.PromotionLive.IssuedCodesComponent do
         for={@form}
         id="issue-code-form"
         phx-target={@myself}
+        data-staff-dirty
         phx-submit="issue"
         class="rounded-box border border-base-300 p-3 space-y-2"
       >

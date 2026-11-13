@@ -24,8 +24,15 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/receipts")
 
       refute has_element?(lv, "#gateway-note")
-      assert has_element?(lv, ~s(#main-sidebar a[href="/staff/b/#{branch.slug}/couriers"]))
+      assert has_element?(lv, ~s(#main-sidebar a[href="/staff/b/#{branch.slug}/deliveries"]))
       assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/receipts"]))
+
+      {:ok, deliveries, _html} = live(conn, ~p"/staff/b/#{branch}/deliveries")
+
+      assert has_element?(
+               deliveries,
+               ~s(#staff-section-navigation a[href="/staff/b/#{branch.slug}/couriers"])
+             )
     end
   end
 
@@ -43,10 +50,10 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/orders"]))
     end
 
-    test "the header names the gateway", %{conn: conn, branch: branch} do
+    test "the working header has no permanent gateway badge", %{conn: conn, branch: branch} do
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
 
-      assert has_element?(lv, "#gateway-badge", "iiko")
+      refute has_element?(lv, "#gateway-badge")
     end
 
     test "the integrations page lists who runs what", %{conn: conn, branch: branch} do

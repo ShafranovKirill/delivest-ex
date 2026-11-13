@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.DocumentFormComponent do
 
   defp reply({:ok, _document}, socket) do
     send(self(), {__MODULE__, :saved})
-    {:noreply, socket}
+    {:noreply, push_event(socket, "staff:form-saved", %{})}
   end
 
   defp reply({:error, %Ecto.Changeset{} = changeset}, socket) do
@@ -51,6 +51,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.DocumentFormComponent do
         id="document-form"
         phx-target={@myself}
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="flex flex-col h-full gap-3"
       >

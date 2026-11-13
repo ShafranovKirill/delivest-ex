@@ -106,7 +106,10 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
            choices
          ) do
       {:ok, summary} ->
-        {:noreply, assign(socket, preview: nil, summary: summary, error: nil, applying: false)}
+        {:noreply,
+         socket
+         |> assign(preview: nil, summary: summary, error: nil, applying: false)
+         |> push_event("staff:form-saved", %{})}
 
       {:error, reason} ->
         {:noreply,
@@ -247,7 +250,7 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
             0
           )}, ошибок {Map.get(@preview.counts, :error, 0)}
         </h2>
-        <.form for={nil} id="operations-apply-form" phx-submit="apply">
+        <.form for={nil} id="operations-apply-form" data-staff-dirty phx-submit="apply">
           <div class="overflow-x-auto">
             <table class="table table-sm">
               <thead>

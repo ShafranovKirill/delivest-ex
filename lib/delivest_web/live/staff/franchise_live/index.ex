@@ -213,7 +213,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       subtitle={gettext("Name, brand color, seller details and legal documents for all branches.")}
     >
       <:navigation>
-        <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
+        <.settings_navigation
+          staff={@current_staff}
+          branches={@staff_branches}
+          selected={:common}
+          current_path={@current_path}
+        />
       </:navigation>
     </.page_header>
     """
@@ -227,7 +232,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       back={~p"/staff/franchise"}
     >
       <:navigation>
-        <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
+        <.settings_navigation
+          staff={@current_staff}
+          branches={@staff_branches}
+          selected={:common}
+          current_path={@current_path}
+        />
       </:navigation>
     </.page_header>
     """
@@ -241,7 +251,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       back={~p"/staff/franchise"}
     >
       <:navigation>
-        <.settings_navigation staff={@current_staff} branches={@staff_branches} selected={:common} />
+        <.settings_navigation
+          staff={@current_staff}
+          branches={@staff_branches}
+          selected={:common}
+          current_path={@current_path}
+        />
       </:navigation>
     </.page_header>
     """

@@ -43,7 +43,10 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         send(self(), {__MODULE__, {:saved, settings}})
 
         {:noreply,
-         socket |> assign(settings: settings) |> assign_form(Franchise.change_settings(settings))}
+         socket
+         |> assign(settings: settings)
+         |> assign_form(Franchise.change_settings(settings))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
@@ -60,7 +63,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         {:noreply,
          socket
          |> assign_rating_form(rating)
-         |> put_flash(:info, gettext("Yandex rating saved"))}
+         |> put_flash(:info, gettext("Yandex rating saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, gettext("Administrator access is required."))}
@@ -122,6 +126,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         id="franchise-settings-form"
         phx-target={@myself}
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-6"
       >
@@ -367,6 +372,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           for={@rating_form}
           id="franchise-yandex-rating-form"
           phx-target={@myself}
+          data-staff-dirty
           phx-submit="save_yandex_rating"
           class="grid gap-3 sm:grid-cols-2"
         >

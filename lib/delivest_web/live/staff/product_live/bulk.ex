@@ -300,6 +300,7 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
         for={%{}}
         id="bulk-products"
         phx-change="change"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4"
       >

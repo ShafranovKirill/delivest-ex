@@ -65,7 +65,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     assert has_element?(lv, "#staff-page-header-actions #new-promotion", "Создать акцию")
 
     render_patch(lv, ~p"/staff/b/#{branch}/promotions/new")
-    assert has_element?(lv, "#staff-header h1", "Выберите сценарий акции")
+    assert has_element?(lv, "main #staff-page-header h1", "Выберите сценарий акции")
     assert has_element?(lv, "#scenario-first-order", "Первый заказ")
 
     assert has_element?(

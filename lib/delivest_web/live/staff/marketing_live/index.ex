@@ -1336,6 +1336,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           for={@form}
           id="marketing-policy-audience"
           phx-change="change"
+          data-staff-dirty
           phx-submit="next"
           class="grid gap-4 md:grid-cols-2"
         >
@@ -1412,6 +1413,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             for={@form}
             id="marketing-policy-reward"
             phx-change="choose_reward_branch"
+            data-staff-dirty
             phx-submit="next"
             class="grid gap-4 md:grid-cols-2"
           >
@@ -1462,6 +1464,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           for={@form}
           id="marketing-policy-message"
           phx-change="change"
+          data-staff-dirty
           phx-submit="next"
           class="grid gap-4 md:grid-cols-2"
         >
@@ -1503,6 +1506,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           for={@form}
           id="marketing-policy-limits"
           phx-change="change"
+          data-staff-dirty
           phx-submit="next"
           class="grid gap-4 md:grid-cols-2"
         >

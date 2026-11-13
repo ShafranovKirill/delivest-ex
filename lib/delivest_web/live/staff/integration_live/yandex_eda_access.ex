@@ -49,7 +49,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaAccess do
           else: gettext("Generate access")}
       </button>
 
-      <.form for={@form} id="yandex-eda-shared" phx-submit="save_shared" class="space-y-4">
+      <.form
+        for={@form}
+        id="yandex-eda-shared"
+        data-staff-dirty
+        phx-submit="save_shared"
+        class="space-y-4"
+      >
         <p class="text-sm text-base-content/60">
           {gettext("Yandex gives these to ask it to reload the menu right after changes.")}
         </p>

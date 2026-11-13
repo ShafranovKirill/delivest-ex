@@ -3,44 +3,49 @@ defmodule DelivestWeb.Staff.SettingsComponents do
 
   import DelivestWeb.CoreComponents, only: [icon: 1]
 
-  alias Delivest.Identity
-
   attr :staff, :any, required: true
   attr :branches, :list, required: true
   attr :selected, :any, default: nil
+  attr :current_path, :string, default: nil
+  attr :variant, :atom, default: :horizontal, values: [:horizontal, :sidebar]
 
   def settings_navigation(assigns) do
-    branches =
-      if Identity.can?(assigns.staff, "branches.read") and
-           Identity.can?(assigns.staff, "branches.update") do
-        assigns.branches
-      else
-        []
-      end
+    branch = Enum.find(assigns.branches, &(&1.id == assigns.selected))
 
-    assigns = assign(assigns, :editable_branches, branches)
+    path =
+      assigns.current_path ||
+        if(branch, do: "/staff/branches/#{branch.slug}/edit", else: "/staff/franchise")
+
+    assigns =
+      assign(assigns,
+        entries:
+          DelivestWeb.StaffNav.settings_entries(assigns.staff, branch)
+          |> Enum.reject(&(&1.id == :settings)),
+        active_id: DelivestWeb.StaffNav.active_setting(path)
+      )
 
     ~H"""
     <nav
       id="settings-navigation"
-      class="flex flex-wrap items-center gap-2"
+      class={[
+        "flex gap-2 rounded-box border border-base-300 bg-base-100 p-2",
+        @variant == :sidebar &&
+          "min-w-0 max-w-full self-start overflow-x-auto lg:w-full lg:flex-col lg:items-stretch lg:overflow-visible",
+        @variant == :horizontal && "flex-wrap items-center"
+      ]}
       aria-label={gettext("Settings")}
     >
-      <.link navigate={~p"/staff/settings"} class="btn btn-sm btn-ghost">{gettext("Settings")}</.link>
       <.link
-        :if={Identity.can?(@staff, "franchise.update")}
-        id="settings-common"
-        navigate={~p"/staff/franchise"}
-        class={["btn btn-sm", @selected == :common && "btn-primary"]}
-        aria-current={@selected == :common && "page"}
-      >{gettext("Common settings")}</.link>
-      <.link
-        :for={branch <- @editable_branches}
-        id={"settings-branch-#{branch.id}"}
-        navigate={~p"/staff/branches/#{branch.slug}/edit"}
-        class={["btn btn-sm", @selected == branch.id && "btn-primary"]}
-        aria-current={@selected == branch.id && "page"}
-      >{branch.name}</.link>
+        :for={entry <- @entries}
+        id={"settings-nav-#{entry.id}"}
+        navigate={entry.path}
+        class={[
+          "btn btn-sm btn-ghost shrink-0",
+          @variant == :sidebar && "lg:justify-start",
+          entry.id == @active_id && "btn-active"
+        ]}
+        aria-current={entry.id == @active_id && "page"}
+      >{entry.label}</.link>
     </nav>
     """
   end

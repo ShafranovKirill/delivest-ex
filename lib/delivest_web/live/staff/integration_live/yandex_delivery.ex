@@ -45,7 +45,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
          socket
          |> assign_settings(settings)
          |> assign_context()
-         |> put_flash(:info, gettext("Settings saved"))}
+         |> put_flash(:info, gettext("Settings saved"))
+         |> push_event("staff:form-saved", %{})}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -138,6 +139,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
         for={@form}
         id="yandex-delivery-settings"
         phx-change="validate"
+        data-staff-dirty
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
