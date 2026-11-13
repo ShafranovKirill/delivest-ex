@@ -75,29 +75,33 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexDelivery do
   defp taxi_class_options,
     do: [{gettext("Courier, up to 10 kg"), :courier}, {gettext("Express, up to 20 kg"), :express}]
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/b/#{@current_branch}/integrations"}
+      title={gettext("Yandex Delivery")}
+      subtitle={
+        gettext(
+          "A Yandex courier is called for the delivery orders of the branch. The search starts as set in the branch couriers."
+        )
+      }
+    >
+      <:actions :if={@can_edit}>
+        <button
+          type="submit"
+          form="yandex-delivery-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/b/#{@current_branch}/integrations"}
-        title={gettext("Yandex Delivery")}
-        subtitle={
-          gettext(
-            "A Yandex courier is called for the delivery orders of the branch. The search starts as set in the branch couriers."
-          )
-        }
-      >
-        <:actions :if={@can_edit}>
-          <button
-            type="submit"
-            form="yandex-delivery-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <div
         :if={match?(%CourierSettings{source: :staff}, @couriers)}
         id="yandex-delivery-source"

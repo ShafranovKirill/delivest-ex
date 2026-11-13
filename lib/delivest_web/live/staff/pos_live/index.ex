@@ -224,8 +224,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
 
   defp key(item), do: Map.get(item, :key, item.product_id)
 
-  @impl true
-  def render(assigns) do
+  def staff_page_header(assigns) do
     ~H"""
     <.page_header title={gettext("POS")}>
       <:actions>
@@ -253,7 +252,12 @@ defmodule DelivestWeb.Staff.PosLive.Index do
         </.link>
       </:actions>
     </.page_header>
+    """
+  end
 
+  @impl true
+  def render(assigns) do
+    ~H"""
     <div id="pos" class="flex flex-col select-none">
       <div :if={@screen == :sale} class="flex min-h-0 flex-1">
         <aside class="w-44 shrink-0 space-y-1 overflow-y-auto border-r border-base-300 bg-base-100 p-2">

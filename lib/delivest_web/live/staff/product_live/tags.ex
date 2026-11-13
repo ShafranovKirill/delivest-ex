@@ -123,27 +123,30 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
 
   defp can_edit?(socket), do: Identity.can?(socket.assigns.current_staff, "catalog.global.manage")
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Tags")}
+      title_in_header={false}
+    >
+      <:actions>
+        <.button
+          :if={Identity.can?(@current_staff, "catalog.global.manage")}
+          patch={~p"/staff/b/#{@current_branch}/products/tags/new"}
+          class="btn btn-primary"
+        >
+          <.icon name="hero-plus" class="size-5" />
+          {gettext("Add tag")}
+        </.button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Tags")}
-        layout={:two_rows}
-        title_in_header={false}
-      >
-        <:actions>
-          <.button
-            :if={Identity.can?(@current_staff, "catalog.global.manage")}
-            patch={~p"/staff/b/#{@current_branch}/products/tags/new"}
-            class="btn btn-primary"
-          >
-            <.icon name="hero-plus" class="size-5" />
-            {gettext("Add tag")}
-          </.button>
-        </:actions>
-      </.page_header>
-
       <div id="product-tags" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div
           :for={tag <- @tags}

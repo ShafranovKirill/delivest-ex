@@ -1,9 +1,9 @@
 defmodule DelivestWeb.Staff.ClientLive.Clients do
   use DelivestWeb, :live_view
 
-  alias Delivest.Identity
+  alias Delivest.{Identity, Segments}
   alias Delivest.Identity.Client
-  alias DelivestWeb.Staff.ClientLive.ClientFormComponent
+  alias DelivestWeb.Staff.ClientLive.{ClientFormComponent, Navigation}
 
   on_mount {DelivestWeb.Hooks.Permission, "clients.read"}
 
@@ -227,26 +227,33 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
     |> Map.new()
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Clients")}
+      subtitle={gettext("Manage system clients, status, and information.")}
+    >
+      <:navigation :if={Segments.available?(@current_staff)}>
+        <Navigation.tabs active={:clients} />
+      </:navigation>
+      <:actions>
+        <.button
+          :if={Identity.can?(@current_staff, "clients.create")}
+          patch={~p"/staff/clients/new?#{build_query_params(assigns, %{})}"}
+          class="btn btn-primary"
+        >
+          <.icon name="hero-user-plus" class="size-5" />
+          {gettext("Create Client")}
+        </.button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Clients")}
-        subtitle={gettext("Manage system clients, status, and information.")}
-      >
-        <:actions>
-          <.button
-            :if={Identity.can?(@current_staff, "clients.create")}
-            patch={~p"/staff/clients/new?#{build_query_params(assigns, %{})}"}
-            class="btn btn-primary"
-          >
-            <.icon name="hero-user-plus" class="size-5" />
-            {gettext("Create Client")}
-          </.button>
-        </:actions>
-      </.page_header>
-
       <.form
         for={nil}
         id="clients-filter-form"

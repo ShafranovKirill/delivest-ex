@@ -19,14 +19,19 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
     end
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Settings")}
+      subtitle={gettext("Choose the settings area.")}
+    />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div id="settings-hub" class="space-y-6">
-      <.page_header
-        title={gettext("Settings")}
-        subtitle={gettext("Choose the settings area.")}
-      />
       <.settings_cards>
         <.settings_card
           :if={Identity.can?(@current_staff, "franchise.update")}

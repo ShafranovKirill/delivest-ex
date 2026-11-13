@@ -269,30 +269,33 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
   defp column_class("external_id"), do: "min-w-28"
   defp column_class(_column), do: "min-w-24"
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Bulk add products")}
+      title_in_header={false}
+    >
+      <:actions>
+        <button
+          type="submit"
+          form="bulk-products"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >
+          <.icon name="hero-check" class="size-5" /> {gettext("Save all")}
+        </button>
+        <.link navigate={~p"/staff/b/#{@current_branch}/products"} class="btn btn-ghost">
+          <.icon name="hero-arrow-left" class="size-5" /> {gettext("Back to products")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Bulk add products")}
-        layout={:two_rows}
-        title_in_header={false}
-      >
-        <:actions>
-          <button
-            type="submit"
-            form="bulk-products"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >
-            <.icon name="hero-check" class="size-5" /> {gettext("Save all")}
-          </button>
-          <.link navigate={~p"/staff/b/#{@current_branch}/products"} class="btn btn-ghost">
-            <.icon name="hero-arrow-left" class="size-5" /> {gettext("Back to products")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <.form
         for={%{}}
         id="bulk-products"

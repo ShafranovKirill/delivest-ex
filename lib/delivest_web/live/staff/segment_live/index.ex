@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.{Features, Identity, Segments}
-  alias DelivestWeb.Staff.MarketingLive.Navigation
+  alias DelivestWeb.Staff.ClientLive.Navigation
 
   @poll_duration 1_800_000
 
@@ -719,33 +719,30 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
     "#{metric_label(metric)} #{comparison} #{display}"
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title="Сегменты"
+      subtitle="Группируйте клиентов вручную или по их выполненным заказам."
+    >
+      <:navigation :if={Identity.can?(@current_staff, "clients.read")}>
+        <Navigation.tabs active={:segments} />
+      </:navigation>
+      <:actions>
+        <.link
+          :if={@can_manage and @live_action not in [:new, :edit]}
+          navigate={~p"/staff/segments/new"}
+          class="btn btn-primary"
+        >Создать сегмент</.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title="Сегменты"
-        subtitle="Группируйте клиентов вручную или по их выполненным заказам."
-        navigation_label={gettext("Marketing areas")}
-      >
-        <:navigation>
-          <Navigation.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={nil}
-            active={:segments}
-            part={:areas}
-          />
-        </:navigation>
-        <:actions>
-          <.link
-            :if={@can_manage and @live_action not in [:new, :edit]}
-            navigate={~p"/staff/segments/new"}
-            class="btn btn-primary"
-          >Создать сегмент</.link>
-        </:actions>
-      </.page_header>
-
       <section :if={@live_action == :index} id="segment-list" class="space-y-3">
         <div
           id="segment-type-help"

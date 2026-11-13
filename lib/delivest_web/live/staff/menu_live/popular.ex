@@ -171,25 +171,29 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
     assign(socket, shown: BranchProducts.filter(products, search, fn _ -> true end))
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Popular products")}
+      subtitle={gettext("The products the app shows in the popular block of the menu.")}
+      title_in_header={false}
+    >
+      <:actions :if={@can_edit}>
+        <button
+          type="submit"
+          form="popular-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6">
-      <.page_header
-        title={gettext("Popular products")}
-        subtitle={gettext("The products the app shows in the popular block of the menu.")}
-        title_in_header={false}
-      >
-        <:actions :if={@can_edit}>
-          <button
-            type="submit"
-            form="popular-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <button
         :if={@can_edit and @mode == :auto}
         id="popular-recalculate"

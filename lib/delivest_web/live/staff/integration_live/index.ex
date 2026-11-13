@@ -71,15 +71,19 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   defp provider_path(branch, :rkeeper), do: ~p"/staff/b/#{branch}/integrations/rkeeper"
   defp provider_path(branch, _provider), do: ~p"/staff/b/#{branch}/integrations"
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Integrations")}
+      subtitle={gettext("External services connected to the app.")}
+    />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Integrations")}
-        subtitle={gettext("External services connected to the app.")}
-      />
-
       <section class="space-y-3">
         <div>
           <h2 class="font-bold">{gettext("All branches")}</h2>

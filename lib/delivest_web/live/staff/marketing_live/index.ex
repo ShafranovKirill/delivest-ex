@@ -55,6 +55,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
        |> assign(
          page_title: gettext("Marketing policies"),
          current_branch: socket.assigns[:current_branch],
+         navigation_branch: nil,
          can_manage: Identity.can?(staff, "marketing.manage"),
          can_delete: Identity.can?(staff, "marketing.delete"),
          can_report: Identity.can?(staff, "marketing.reports"),
@@ -106,7 +107,17 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     staff = socket.assigns.current_staff
-    socket = assign(socket, poll_tokens: %{}, poll_deadlines: %{}, poll_counts: %{})
+
+    navigation_branch =
+      Enum.find(socket.assigns.staff_branches, &(&1.slug == params["branch"]))
+
+    socket =
+      assign(socket,
+        navigation_branch: navigation_branch,
+        poll_tokens: %{},
+        poll_deadlines: %{},
+        poll_counts: %{}
+      )
 
     case socket.assigns.live_action do
       :index ->
@@ -165,7 +176,10 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
              form: to_form(@defaults, as: :policy)
            )}
         else
-          {:noreply, push_navigate(socket, to: ~p"/staff/marketing/policies")}
+          {:noreply,
+           push_navigate(socket,
+             to: branch_path(~p"/staff/marketing/policies", socket.assigns.navigation_branch)
+           )}
         end
 
       action when action in [:show, :edit] ->
@@ -174,7 +188,14 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             if action == :edit and
                  (not socket.assigns.can_manage or policy.status not in [:draft, :paused] or
                     not is_nil(Map.get(policy, :deleted_at))) do
-              {:noreply, push_navigate(socket, to: ~p"/staff/marketing/#{policy.id}")}
+              {:noreply,
+               push_navigate(socket,
+                 to:
+                   branch_path(
+                     ~p"/staff/marketing/#{policy.id}",
+                     socket.assigns.navigation_branch
+                   )
+               )}
             else
               exclusions =
                 if action == :edit do
@@ -248,7 +269,10 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
             end
 
           _ ->
-            {:noreply, push_navigate(socket, to: ~p"/staff/marketing/policies")}
+            {:noreply,
+             push_navigate(socket,
+               to: branch_path(~p"/staff/marketing/policies", socket.assigns.navigation_branch)
+             )}
         end
     end
   end
@@ -478,7 +502,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         {:noreply,
          socket
          |> put_flash(:info, gettext("Policy saved"))
-         |> push_navigate(to: ~p"/staff/marketing/#{policy.id}")}
+         |> push_navigate(
+           to: branch_path(~p"/staff/marketing/#{policy.id}", socket.assigns.navigation_branch)
+         )}
 
       {:error, reason} ->
         {:noreply,
@@ -540,7 +566,9 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
            socket
            |> assign(pending_delete: nil)
            |> put_flash(:info, gettext("Policy deleted"))
-           |> push_navigate(to: ~p"/staff/marketing/policies")}
+           |> push_navigate(
+             to: branch_path(~p"/staff/marketing/policies", socket.assigns.navigation_branch)
+           )}
 
         {:error, :stale} ->
           socket = assign(socket, pending_delete: nil)
@@ -1151,47 +1179,61 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
     })
   end
 
+  defp branch_path(path, nil), do: path
+
+  defp branch_path(path, branch) do
+    uri = URI.parse(path)
+    query = uri.query |> then(&((&1 && URI.decode_query(&1)) || %{}))
+
+    %{uri | query: URI.encode_query(Map.put(query, "branch", branch.slug))}
+    |> URI.to_string()
+  end
+
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      navigation_label={gettext("Marketing areas")}
+      title={gettext("Marketing policies")}
+      subtitle={gettext("Customers")}
+    >
+      <:navigation>
+        <.navigation
+          staff={@current_staff}
+          branches={@staff_branches}
+          branch={@navigation_branch}
+          active={:policies}
+          part={:areas}
+        />
+      </:navigation>
+      <:actions>
+        <button
+          :if={@can_network_calculate and @live_action == :index}
+          id="marketing-recalculate-now"
+          type="button"
+          phx-click="recalculate_marketing"
+          phx-disable-with={gettext("Starting…")}
+          class="btn btn-outline"
+        >{if @calculation && @calculation.state in [:queued, :running],
+          do: gettext("Check calculation"),
+          else: gettext("Calculate rewards now")}</button>
+        <.link
+          :if={@can_manage and @live_action == :index}
+          navigate={branch_path(~p"/staff/marketing/new", @navigation_branch)}
+          class="btn btn-primary"
+        >{gettext("New policy")}</.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        navigation_label={gettext("Marketing areas")}
-        title={gettext("Marketing policies")}
-        subtitle={gettext("Customers")}
-      >
-        <:navigation>
-          <.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={:policies}
-            part={:areas}
-          />
-        </:navigation>
-        <:actions>
-          <button
-            :if={@can_network_calculate and @live_action == :index}
-            id="marketing-recalculate-now"
-            type="button"
-            phx-click="recalculate_marketing"
-            phx-disable-with={gettext("Starting…")}
-            class="btn btn-outline"
-          >{if @calculation && @calculation.state in [:queued, :running],
-            do: gettext("Check calculation"),
-            else: gettext("Calculate rewards now")}</button>
-          <.link
-            :if={@can_manage and @live_action == :index}
-            navigate={~p"/staff/marketing/new"}
-            class="btn btn-primary"
-          >{gettext("New policy")}</.link>
-        </:actions>
-      </.page_header>
-
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}
-        branch={@current_branch}
+        branch={@navigation_branch}
         active={:policies}
         part={:branches}
       />
@@ -1209,11 +1251,11 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
 
       <div :if={@live_action == :index} id="marketing-list-filter" class="flex flex-wrap gap-2">
         <.link
-          patch={~p"/staff/marketing/policies"}
+          patch={branch_path(~p"/staff/marketing/policies", @navigation_branch)}
           class={["btn btn-sm", if(@deleted_filter, do: "btn-outline", else: "btn-primary")]}
         >{gettext("Working list")}</.link>
         <.link
-          patch={~p"/staff/marketing/policies?deleted=1"}
+          patch={branch_path(~p"/staff/marketing/policies?deleted=1", @navigation_branch)}
           class={["btn btn-sm", if(@deleted_filter, do: "btn-primary", else: "btn-outline")]}
         >{gettext("Deleted policies")}</.link>
       </div>
@@ -1239,7 +1281,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
           class="rounded-2xl border border-base-300 bg-base-100 text-base-content p-5 shadow-sm transition hover:shadow-md"
         >
           <.link
-            navigate={~p"/staff/marketing/#{policy.id}"}
+            navigate={branch_path(~p"/staff/marketing/#{policy.id}", @navigation_branch)}
             class="text-lg font-semibold text-primary"
           >{policy.name}</.link>
           <p class="mt-2 text-sm text-base-content/60">
@@ -1660,9 +1702,10 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
         >
           {gettext("Open audience segment")}
         </.link>
-        <.link navigate={~p"/staff/marketing/policies"} class="text-sm text-primary">{gettext(
-          "← All policies"
-        )}</.link>
+        <.link
+          navigate={branch_path(~p"/staff/marketing/policies", @navigation_branch)}
+          class="text-sm text-primary"
+        >{gettext("← All policies")}</.link>
         <div class="rounded-2xl border border-base-300 bg-base-100 text-base-content p-6 shadow-sm">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -1680,7 +1723,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
                   @can_manage and @policy.status in [:draft, :paused] and
                     is_nil(Map.get(@policy, :deleted_at))
                 }
-                navigate={~p"/staff/marketing/#{@policy.id}/edit"}
+                navigate={branch_path(~p"/staff/marketing/#{@policy.id}/edit", @navigation_branch)}
                 class="btn btn-outline"
               >{gettext("Edit")}</.link>
               <button

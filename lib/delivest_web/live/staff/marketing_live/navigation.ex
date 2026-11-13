@@ -1,26 +1,14 @@
 defmodule DelivestWeb.Staff.MarketingLive.Navigation do
   use DelivestWeb, :html
 
-  alias Delivest.{Features, Gateway, Identity, Segments}
+  alias Delivest.{Features, Gateway, Identity}
 
-  def global_area_links?(staff, branches) do
-    branches = Delivest.Repo.preload(branches, :info)
-
-    (Identity.can?(staff, "marketing.read") and
-       Features.enabled?("marketing_policies", :franchise)) or
-      (Identity.can?(staff, "segments.read") and Segments.available?(staff)) or
-      Identity.can?(staff, "franchise.update") or
-      Enum.any?(branches, fn branch ->
-        Identity.authorize(staff, "promotions.read", branch.id) == :ok and
-          Gateway.own?(branch, :loyalty)
-      end)
-  end
+  def global_area_links?(staff, branches), do: available?(staff, branches)
 
   def available?(staff, branches) do
     Identity.can?(staff, "franchise.update") or
       (Identity.can?(staff, "marketing.read") and
          Features.enabled?("marketing_policies", :franchise)) or
-      (Identity.can?(staff, "segments.read") and Segments.available?(staff)) or
       Enum.any?(branches, fn branch ->
         Identity.authorize(staff, "stocks.read", branch.id) == :ok or
           Identity.authorize(staff, "promotions.read", branch.id) == :ok or
@@ -38,7 +26,17 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
   def navigation(assigns) do
     branches = Delivest.Repo.preload(assigns.branches, :info)
     selected = Enum.find(branches, &(&1.id == (assigns.branch && assigns.branch.id)))
-    assigns = assigns |> assign(:branches, branches) |> assign(:selected, selected)
+
+    area_paths =
+      Map.new([:stocks, :promotions, :links], fn area ->
+        {area, area_path(assigns.staff, branches, selected, area)}
+      end)
+
+    assigns =
+      assigns
+      |> assign(:branches, branches)
+      |> assign(:selected, selected)
+      |> assign(:area_paths, area_paths)
 
     ~H"""
     <div id={if @part != :branches, do: "marketing-navigation"} class="space-y-3">
@@ -48,25 +46,19 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
             Identity.can?(@staff, "marketing.read") and
               Features.enabled?("marketing_policies", :franchise)
           }
-          navigate={~p"/staff/marketing/policies"}
+          navigate={global_path(:policies, @selected)}
           class={["btn btn-sm", @active == :policies && "btn-primary"]}
           aria-current={@active == :policies && "page"}
         >{gettext("Marketing policies")}</.link>
         <.link
-          :if={Identity.can?(@staff, "segments.read") and Segments.available?(@staff)}
-          navigate={~p"/staff/segments"}
-          class={["btn btn-sm", @active == :segments && "btn-primary"]}
-          aria-current={@active == :segments && "page"}
-        >{gettext("Segments")}</.link>
-        <.link
-          :if={@selected && Identity.authorize(@staff, "stocks.read", @selected.id) == :ok}
-          navigate={~p"/staff/b/#{@selected}/stocks"}
+          :if={@area_paths.stocks}
+          navigate={@area_paths.stocks}
           class={["btn btn-sm", @active == :stocks && "btn-primary"]}
           aria-current={@active == :stocks && "page"}
         >{gettext("Banners")}</.link>
         <.link
-          :if={@selected && Identity.authorize(@staff, "promotions.read", @selected.id) == :ok}
-          navigate={~p"/staff/b/#{@selected}/promotions"}
+          :if={@area_paths.promotions}
+          navigate={@area_paths.promotions}
           class={["btn btn-sm", @active == :promotions && "btn-primary"]}
           aria-current={@active == :promotions && "page"}
         >{gettext("Discounts & promo codes")}</.link>
@@ -78,16 +70,13 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
                   Gateway.own?(branch, :loyalty)
               end)
           }
-          navigate={~p"/staff/marketing/bonuses"}
+          navigate={global_path(:bonuses, @selected)}
           class={["btn btn-sm", @active == :loyalty && "btn-primary"]}
           aria-current={@active == :loyalty && "page"}
         >{gettext("Bonuses")}</.link>
         <.link
-          :if={
-            @selected && Identity.authorize(@staff, "statistics.read", @selected.id) == :ok &&
-              Features.enabled?("analytics_links", {:branch, @selected.id})
-          }
-          navigate={~p"/staff/b/#{@selected}/advertising-links"}
+          :if={@area_paths.links}
+          navigate={@area_paths.links}
           class={["btn btn-sm", @active == :links && "btn-primary"]}
           aria-current={@active == :links && "page"}
         >{gettext("Advertising links")}</.link>
@@ -115,6 +104,24 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
     </div>
     """
   end
+
+  defp area_path(staff, branches, selected, area) do
+    if selected && branch_target(staff, selected, area) do
+      branch_target(staff, selected, area)
+    else
+      if Enum.any?(branches, &branch_target(staff, &1, area)),
+        do: ~p"/staff/marketing?#{%{section: area}}"
+    end
+  end
+
+  defp global_path(:policies, nil), do: ~p"/staff/marketing/policies"
+  defp global_path(:bonuses, nil), do: ~p"/staff/marketing/bonuses"
+
+  defp global_path(:policies, branch),
+    do: ~p"/staff/marketing/policies?#{%{branch: branch.slug}}"
+
+  defp global_path(:bonuses, branch),
+    do: ~p"/staff/marketing/bonuses?#{%{branch: branch.slug}}"
 
   defp branch_target(staff, branch, :stocks) do
     if Identity.authorize(staff, "stocks.read", branch.id) == :ok,

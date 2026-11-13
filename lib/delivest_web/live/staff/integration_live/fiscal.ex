@@ -94,31 +94,35 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
       {gettext("The courier terminal issues it"), :terminal}
     ]
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/b/#{@current_branch}/integrations"}
+      title={gettext("Receipts")}
+      subtitle={
+        gettext(
+          "Receipts are issued when the order is handed over: for cash and card payments to the operator or our courier. Yandex Eda, Yandex Delivery and CRM orders are receipted on their side."
+        )
+      }
+    >
+      <:actions :if={@can_edit}>
+        <button
+          type="submit"
+          form="fiscal-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >
+          {gettext("Save")}
+        </button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/b/#{@current_branch}/integrations"}
-        title={gettext("Receipts")}
-        subtitle={
-          gettext(
-            "Receipts are issued when the order is handed over: for cash and card payments to the operator or our courier. Yandex Eda, Yandex Delivery and CRM orders are receipted on their side."
-          )
-        }
-      >
-        <:actions :if={@can_edit}>
-          <button
-            type="submit"
-            form="fiscal-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >
-            {gettext("Save")}
-          </button>
-        </:actions>
-      </.page_header>
-
       <.live_component
         module={HealthComponent}
         id="fiscal-health"

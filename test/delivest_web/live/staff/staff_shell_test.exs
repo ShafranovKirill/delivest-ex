@@ -79,11 +79,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#staff-header-title")
     assert render(element(lv, "#staff-page-header")) =~ "Settings for branches"
 
-    assert DelivestWeb.PortalTestHelper.has_element?(
-             lv,
-             "#staff-page-header-actions",
-             "#create-branch"
-           )
+    assert has_element?(lv, "#staff-page-header-actions #create-branch")
 
     refute has_element?(lv, "#branch-settings-list h1")
     assert has_element?(lv, "#staff-page-header-actions")

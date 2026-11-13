@@ -186,25 +186,29 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
      |> assign(categories: categories)}
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Categories Management")}
+      subtitle={gettext("Drag and drop items to reorder menu categories")}
+    >
+      <:actions>
+        <.link
+          :if={Identity.can?(@current_staff, "categories.create")}
+          patch={~p"/staff/b/#{@current_branch}/categories/new"}
+          class="btn btn-primary"
+        >
+          {gettext("Create Category")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Categories Management")}
-        subtitle={gettext("Drag and drop items to reorder menu categories")}
-      >
-        <:actions>
-          <.link
-            :if={Identity.can?(@current_staff, "categories.create")}
-            patch={~p"/staff/b/#{@current_branch}/categories/new"}
-            class="btn btn-primary"
-          >
-            {gettext("Create Category")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <div id="categories-list" phx-hook="SortableCategories" class="space-y-2">
         <%= for category <- @categories do %>
           <div

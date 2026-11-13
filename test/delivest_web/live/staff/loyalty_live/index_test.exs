@@ -48,12 +48,15 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/loyalty")
 
     assert has_element?(lv, "#nav-section-network #nav-group-marketing[data-open]")
-    assert has_element?(lv, "#nav-group-marketing a[href='/staff/marketing/bonuses']")
 
-    assert DelivestWeb.PortalTestHelper.has_element?(
+    assert has_element?(
              lv,
-             "#staff-page-header",
-             "#marketing-navigation a[href='/staff/marketing/bonuses']"
+             "#nav-group-marketing a[href='/staff/marketing/bonuses?branch=#{branch.slug}']"
+           )
+
+    assert has_element?(
+             lv,
+             "#staff-page-header #marketing-navigation a[href='/staff/marketing/bonuses?branch=#{branch.slug}']"
            )
 
     assert has_element?(lv, "#loyalty-summary-liability")

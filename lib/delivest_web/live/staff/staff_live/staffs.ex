@@ -170,26 +170,30 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
 
   defp manages?(actor, staff), do: actor.id != staff.id and Identity.manages_staff?(actor, staff)
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Staff")}
+      subtitle={gettext("Manage system staff accounts and branches access.")}
+    >
+      <:actions>
+        <.button
+          :if={Identity.can?(@current_staff, "staff.create")}
+          patch={~p"/staff/employee/new?#{build_query_params(assigns, %{})}"}
+          class="btn btn-primary"
+        >
+          <.icon name="hero-plus" class="size-5" />
+          {gettext("Create Staff")}
+        </.button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Staff")}
-        subtitle={gettext("Manage system staff accounts and branches access.")}
-      >
-        <:actions>
-          <.button
-            :if={Identity.can?(@current_staff, "staff.create")}
-            patch={~p"/staff/employee/new?#{build_query_params(assigns, %{})}"}
-            class="btn btn-primary"
-          >
-            <.icon name="hero-plus" class="size-5" />
-            {gettext("Create Staff")}
-          </.button>
-        </:actions>
-      </.page_header>
-
       <div class="flex gap-4">
         <.form for={nil} phx-change="search" phx-submit="search" class="w-full max-w-sm">
           <div class="relative">

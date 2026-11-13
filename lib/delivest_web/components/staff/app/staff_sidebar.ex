@@ -6,6 +6,7 @@ defmodule DelivestWeb.StaffSidebar do
   attr :current_page, :atom, default: nil
   attr :current_staff, :map, default: nil
   attr :current_branch, :map, default: nil
+  attr :navigation_branch, :map, default: nil
   attr :staff_branches, :list, default: []
   attr :current_path, :string, default: nil
   attr :new_orders_count, :integer, default: 0
@@ -13,7 +14,12 @@ defmodule DelivestWeb.StaffSidebar do
   def staff_sidebar(assigns) do
     assigns =
       assign(assigns,
-        entries: DelivestWeb.StaffNav.entries(assigns.current_staff, assigns.current_branch)
+        entries:
+          DelivestWeb.StaffNav.entries(
+            assigns.current_staff,
+            assigns.current_branch,
+            assigns.navigation_branch || assigns.current_branch
+          )
       )
 
     ~H"""

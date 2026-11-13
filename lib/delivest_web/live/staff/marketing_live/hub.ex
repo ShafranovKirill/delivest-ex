@@ -35,27 +35,32 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
     {:noreply, assign(socket, current_branch: branch, section: section)}
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      navigation_label={gettext("Marketing areas")}
+      title={gettext("Marketing")}
+      subtitle={gettext("Choose a marketing area and branch.")}
+    >
+      <:navigation :if={
+        @current_branch || Navigation.global_area_links?(@current_staff, @staff_branches)
+      }>
+        <Navigation.navigation
+          staff={@current_staff}
+          branches={@staff_branches}
+          branch={@current_branch}
+          active={@section}
+          part={:areas}
+        />
+      </:navigation>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div id="marketing-hub" class="space-y-6">
-      <.page_header
-        navigation_label={gettext("Marketing areas")}
-        title={gettext("Marketing")}
-        subtitle={gettext("Choose a marketing area and branch.")}
-      >
-        <:navigation :if={
-          @current_branch || Navigation.global_area_links?(@current_staff, @staff_branches)
-        }>
-          <Navigation.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={@section}
-            part={:areas}
-          />
-        </:navigation>
-      </.page_header>
       <Navigation.navigation
         staff={@current_staff}
         branches={@staff_branches}
@@ -70,24 +75,17 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
               Features.enabled?("marketing_policies", :franchise)
           }
           id="marketing-policies-link"
-          navigate={~p"/staff/marketing/policies"}
+          navigate={
+            if @current_branch,
+              do: ~p"/staff/marketing/policies?#{%{branch: @current_branch.slug}}",
+              else: ~p"/staff/marketing/policies"
+          }
           class="card border border-base-300 bg-base-100 p-5 hover:border-primary"
         >
           <h2 class="font-semibold">{gettext("Marketing policies")}</h2>
           <p class="text-sm text-base-content/60">
             {gettext("Rewards and customer segments across the franchise.")}
           </p>
-        </.link>
-        <.link
-          :if={
-            Identity.can?(@current_staff, "segments.read") and
-              Delivest.Segments.available?(@current_staff)
-          }
-          id="marketing-segments-link"
-          navigate={~p"/staff/segments"}
-          class="card border border-base-300 bg-base-100 p-5 hover:border-primary"
-        >
-          <h2 class="font-semibold">{gettext("Segments")}</h2>
         </.link>
       </section>
     </div>

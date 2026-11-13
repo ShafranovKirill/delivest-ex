@@ -6,7 +6,6 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
 
   alias Delivest.Integrations.{Health, Yookassa}
   alias Delivest.Payments
-  alias DelivestWeb.PortalTestHelper
 
   setup %{conn: conn} do
     branch = insert(:branch)
@@ -33,11 +32,7 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
   test "saves the methods of the branch", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
 
-    assert PortalTestHelper.has_element?(
-             lv,
-             "#staff-page-header-actions",
-             "button[form='payments-form']"
-           )
+    assert has_element?(lv, "#staff-page-header-actions button[form='payments-form']")
 
     refute has_element?(lv, "#payments-form button[type='submit']")
 

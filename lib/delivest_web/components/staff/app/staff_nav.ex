@@ -15,13 +15,15 @@ defmodule DelivestWeb.StaffNav do
     end)
   end
 
-  def entries(staff, branch) do
+  def entries(staff, branch), do: entries(staff, branch, branch)
+
+  def entries(staff, branch, marketing_branch) do
     [
       section(:branch, branch && branch.name, branch_entries(staff, branch)),
       section(
         :network,
         gettext("Network"),
-        common_entries(staff, branch) ++ network_entries(staff)
+        common_entries(staff, marketing_branch) ++ network_entries(staff)
       )
     ]
     |> Enum.reject(&(&1.entries == []))
@@ -140,7 +142,7 @@ defmodule DelivestWeb.StaffNav do
     [
       item(
         :marketing_policies,
-        ~p"/staff/marketing/policies",
+        global_marketing_path(:policies, branch),
         "hero-rectangle-stack",
         gettext("Marketing policies")
       )
@@ -159,7 +161,7 @@ defmodule DelivestWeb.StaffNav do
       )
       |> allowed(staff, "promotions.read")
       |> available_in(available_branches, fn _ -> true end),
-      item(:loyalty, ~p"/staff/marketing/bonuses", "hero-star", gettext("Bonuses"))
+      item(:loyalty, global_marketing_path(:bonuses, branch), "hero-star", gettext("Bonuses"))
       |> then(fn item ->
         if can?(staff, "franchise.update") or
              Enum.any?(bonus_branches, fn branch ->
@@ -179,6 +181,15 @@ defmodule DelivestWeb.StaffNav do
     ]
     |> Enum.reject(&is_nil/1)
   end
+
+  defp global_marketing_path(:policies, nil), do: ~p"/staff/marketing/policies"
+  defp global_marketing_path(:bonuses, nil), do: ~p"/staff/marketing/bonuses"
+
+  defp global_marketing_path(:policies, branch),
+    do: ~p"/staff/marketing/policies?#{%{branch: branch.slug}}"
+
+  defp global_marketing_path(:bonuses, branch),
+    do: ~p"/staff/marketing/bonuses?#{%{branch: branch.slug}}"
 
   defp marketing_path(nil, section), do: ~p"/staff/marketing?#{%{section: section}}"
   defp marketing_path(branch, "stocks"), do: ~p"/staff/b/#{branch}/stocks"

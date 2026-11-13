@@ -19,46 +19,63 @@ defmodule DelivestWeb.Staff.MarketingLive.Bonuses do
     if Identity.can?(staff, "franchise.update") or branches != [] do
       {:ok,
        socket
-       |> assign(page_title: gettext("Bonuses"), current_branch: nil, bonus_branches: branches)}
+       |> assign(
+         page_title: gettext("Bonuses"),
+         current_branch: nil,
+         navigation_branch: nil,
+         bonus_branches: branches
+       )}
     else
       {:ok, redirect(socket, to: ~p"/staff/branches/select")}
     end
   end
 
   @impl true
+  def handle_params(params, _url, socket) do
+    navigation_branch =
+      Enum.find(socket.assigns.staff_branches, &(&1.slug == params["branch"]))
+
+    {:noreply, assign(socket, navigation_branch: navigation_branch)}
+  end
+
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      navigation_label={gettext("Marketing areas")}
+      title={gettext("Bonuses")}
+      subtitle={gettext("Common bonus rules and branch settings.")}
+    >
+      <:navigation>
+        <Navigation.navigation
+          staff={@current_staff}
+          branches={@staff_branches}
+          branch={@navigation_branch}
+          active={:loyalty}
+          part={:areas}
+        />
+      </:navigation>
+      <:actions :if={Identity.can?(@current_staff, "franchise.update")}>
+        <button
+          type="submit"
+          form="common-bonuses-form"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >
+          {gettext("Save common settings")}
+        </button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div id="bonuses-page" class="space-y-6">
-      <.page_header
-        navigation_label={gettext("Marketing areas")}
-        title={gettext("Bonuses")}
-        subtitle={gettext("Common bonus rules and branch settings.")}
-      >
-        <:navigation>
-          <Navigation.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={nil}
-            active={:loyalty}
-            part={:areas}
-          />
-        </:navigation>
-        <:actions :if={Identity.can?(@current_staff, "franchise.update")}>
-          <button
-            type="submit"
-            form="common-bonuses-form"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >
-            {gettext("Save common settings")}
-          </button>
-        </:actions>
-      </.page_header>
-
       <Navigation.navigation
         staff={@current_staff}
         branches={@staff_branches}
-        branch={nil}
+        branch={@navigation_branch}
         active={:loyalty}
         part={:branches}
       />

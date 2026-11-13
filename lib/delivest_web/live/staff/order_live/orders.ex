@@ -447,34 +447,38 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   defp receipt_alerts(branch_id), do: length(Delivest.Fiscal.pending_alerts(branch_id))
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Orders")}
+      navigation_label={gettext("Order statuses")}
+      subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
+    >
+      <:navigation>
+        <StatusTabs.status_tabs
+          counts={@counts}
+          selected={@selected.status}
+          path_fn={&tab_path(@current_branch, @query, &1)}
+        />
+      </:navigation>
+      <:actions>
+        <IntakeControls.menu
+          can_manage={Identity.can?(@current_staff, "orders.update")}
+          branches={Identity.list_branch_for_staff(@current_staff)}
+        />
+        <.link navigate={~p"/staff/b/#{@current_branch}/orders/new"} class="btn btn-primary">
+          <.icon name="hero-plus" class="size-5" />
+          {gettext("New Order")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div id="orders-page" class="space-y-6">
-      <.page_header
-        title={gettext("Orders")}
-        navigation_label={gettext("Order statuses")}
-        subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
-      >
-        <:navigation>
-          <StatusTabs.status_tabs
-            counts={@counts}
-            selected={@selected.status}
-            path_fn={&tab_path(@current_branch, @query, &1)}
-          />
-        </:navigation>
-        <:actions>
-          <IntakeControls.menu
-            can_manage={Identity.can?(@current_staff, "orders.update")}
-            branches={Identity.list_branch_for_staff(@current_staff)}
-          />
-          <.link navigate={~p"/staff/b/#{@current_branch}/orders/new"} class="btn btn-primary">
-            <.icon name="hero-plus" class="size-5" />
-            {gettext("New Order")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <IntakeControls.plate
         intake={@intake}
         branch_id={@current_branch.id}

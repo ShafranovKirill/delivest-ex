@@ -166,14 +166,19 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
   defp row_status(:match), do: "совпадение по ключу"
   defp row_status(:error), do: "ошибка"
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title="Товарные операции"
+      subtitle="Экспорт, импорт и копирование товаров филиала"
+    />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6">
-      <.page_header
-        title="Товарные операции"
-        subtitle="Экспорт, импорт и копирование товаров филиала"
-      />
       <div class="grid gap-4 lg:grid-cols-3">
         <section id="workbook-export" class="rounded-xl border border-base-300 p-5 space-y-3">
           <h2 class="font-semibold">Экспорт Excel</h2>

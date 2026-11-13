@@ -66,16 +66,20 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaShared do
 
   defp assign_context(socket), do: assign(socket, context: Presentation.context(nil))
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/integrations"}
+      title={gettext("Yandex Eda")}
+      subtitle={gettext("Access settings shared by every branch.")}
+    />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/integrations"}
-        title={gettext("Yandex Eda")}
-        subtitle={gettext("Access settings shared by every branch.")}
-      />
-
       <.live_component
         module={HealthComponent}
         id="yandex-eda-health"

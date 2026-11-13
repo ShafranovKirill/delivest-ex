@@ -145,34 +145,38 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
     {:noreply, assign(socket, role_to_delete: nil)}
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Roles Management")}
+      subtitle={gettext("List of available company roles")}
+    >
+      <:actions>
+        <button
+          :if={Identity.can?(@current_staff, "admin")}
+          id="seed-roles"
+          type="button"
+          phx-click="seed_roles"
+          class="btn btn-outline"
+        >
+          {gettext("Create Base Roles")}
+        </button>
+        <.link
+          :if={Identity.can?(@current_staff, "roles.create")}
+          patch={~p"/staff/roles/new"}
+          class="btn btn-primary"
+        >
+          {gettext("Create Role")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Roles Management")}
-        subtitle={gettext("List of available company roles")}
-      >
-        <:actions>
-          <button
-            :if={Identity.can?(@current_staff, "admin")}
-            id="seed-roles"
-            type="button"
-            phx-click="seed_roles"
-            class="btn btn-outline"
-          >
-            {gettext("Create Base Roles")}
-          </button>
-          <.link
-            :if={Identity.can?(@current_staff, "roles.create")}
-            patch={~p"/staff/roles/new"}
-            class="btn btn-primary"
-          >
-            {gettext("Create Role")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <%= for role <- @roles do %>
           <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">

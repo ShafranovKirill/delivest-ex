@@ -256,23 +256,26 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
     if group.is_size, do: "#{rule} #{gettext("Shown as a size switch.")}", else: rule
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Modifiers")}
+      title_in_header={false}
+    >
+      <:actions>
+        <button :if={@can_edit} type="button" phx-click="new_group" class="btn btn-primary btn-sm">
+          <.icon name="hero-plus" class="size-4" />
+          {gettext("Add group")}
+        </button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Modifiers")}
-        layout={:two_rows}
-        title_in_header={false}
-      >
-        <:actions>
-          <button :if={@can_edit} type="button" phx-click="new_group" class="btn btn-primary btn-sm">
-            <.icon name="hero-plus" class="size-4" />
-            {gettext("Add group")}
-          </button>
-        </:actions>
-      </.page_header>
-
       <form :if={@can_edit} id="photo-upload" phx-change="validate_photo" class="hidden">
         <.live_file_input upload={@uploads.photo} />
       </form>

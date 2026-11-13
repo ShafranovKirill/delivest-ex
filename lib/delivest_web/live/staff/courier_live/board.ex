@@ -83,12 +83,16 @@ defmodule DelivestWeb.Staff.CourierLive.Board do
     |> push_event("courier_positions", %{positions: positions})
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header title={gettext("Couriers")} subtitle={@current_branch.name} />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div id="couriers-board" class="space-y-6">
-      <.page_header title={gettext("Couriers")} subtitle={@current_branch.name} />
-
       <LocationComponents.couriers_map
         id="couriers-map"
         from={@pickup}

@@ -56,24 +56,28 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
   defp assign_form(socket, changeset),
     do: assign(socket, form: to_form(changeset, as: "payments"))
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Payment")}
+      subtitle={gettext("How customers of this branch can pay for an order.")}
+    >
+      <:actions :if={@can_edit}>
+        <button
+          type="submit"
+          form="payments-form"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Payment")}
-        subtitle={gettext("How customers of this branch can pay for an order.")}
-      >
-        <:actions :if={@can_edit}>
-          <button
-            type="submit"
-            form="payments-form"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <.form
         for={@form}
         id="payments-form"

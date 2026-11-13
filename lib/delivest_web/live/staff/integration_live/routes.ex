@@ -68,16 +68,20 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   defp source_icon("staff"), do: "hero-computer-desktop"
   defp source_icon(_source), do: "hero-shopping-bag"
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/b/#{@current_branch}/integrations"}
+      title={gettext("Order routes")}
+      subtitle={gettext("Where orders come from and which of them go further to the CRM.")}
+    />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/b/#{@current_branch}/integrations"}
-        title={gettext("Order routes")}
-        subtitle={gettext("Where orders come from and which of them go further to the CRM.")}
-      />
-
       <div :if={is_nil(@provider)} id="routes-no-crm" class="alert">
         <.icon name="hero-information-circle" class="size-5" />
         <span>{gettext("No CRM is connected to this branch. All orders stay in the app.")}</span>

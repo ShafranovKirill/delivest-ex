@@ -53,29 +53,33 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
     ]
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Branch couriers")}
+      subtitle={
+        gettext(
+          "Who delivers the orders and when the courier search starts. With Frontpad the delivery stays in Frontpad."
+        )
+      }
+      back={~p"/staff/b/#{@current_branch}/delivery"}
+    >
+      <:actions :if={@can_edit}>
+        <button
+          type="submit"
+          form="couriers-form"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Branch couriers")}
-        subtitle={
-          gettext(
-            "Who delivers the orders and when the courier search starts. With Frontpad the delivery stays in Frontpad."
-          )
-        }
-        back={~p"/staff/b/#{@current_branch}/delivery"}
-      >
-        <:actions :if={@can_edit}>
-          <button
-            type="submit"
-            form="couriers-form"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <.form
         for={@form}
         id="couriers-form"

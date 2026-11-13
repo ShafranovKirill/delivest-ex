@@ -7,6 +7,7 @@ defmodule DelivestWeb.StaffHeader do
   attr :current_path, :string, default: nil
   attr :settings_branch, :any, default: nil
   attr :page_title, :string, default: nil
+  attr :page_header, :any, default: nil
   attr :kitchen_status, :any, default: nil
   slot :actions
 
@@ -78,6 +79,7 @@ defmodule DelivestWeb.StaffHeader do
             branch={@current_branch}
           />
         </.header_navigation>
+        {@page_header}
       </div>
       <div
         :if={is_nil(@product_section)}
@@ -106,24 +108,14 @@ defmodule DelivestWeb.StaffHeader do
           ]}
         >
           <h1
-            class="staff-header-fallback block truncate text-base font-semibold sm:text-lg"
+            :if={is_nil(@page_header)}
+            class="staff-header-fallback flex h-full min-w-0 items-center truncate text-base font-semibold sm:text-lg"
             title={@page_title}
           >
             {@page_title || gettext("Dashboard")}
           </h1>
+          {@page_header}
         </div>
-      </div>
-
-      <div
-        id="staff-header-actions"
-        phx-hook="HeaderScroll"
-        class="staff-header-actions staff-header-scroll"
-      >
-        <div
-          id="staff-header-actions-scroll"
-          class="staff-header-actions-scroll"
-          data-scroll-viewport
-        />
       </div>
 
       <div class="staff-header-utilities flex shrink-0 items-center gap-2">
@@ -133,6 +125,12 @@ defmodule DelivestWeb.StaffHeader do
       </div>
     </header>
     """
+  end
+
+  def page_header(%{socket: %{view: view}} = assigns) do
+    if function_exported?(view, :staff_page_header, 1) do
+      apply(view, :staff_page_header, [assigns])
+    end
   end
 
   defp settings_scope(path, current_branch, settings_branch) when is_binary(path) do

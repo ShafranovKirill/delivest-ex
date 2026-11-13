@@ -23,12 +23,6 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     init_test_session(conn, session)
   end
 
-  defp portal_has_element?(view, selector) do
-    html = render(element(view, "#staff-page-header"))
-    [_, content] = Regex.run(~r/<template[^>]*>(.*)<\/template>/s, html)
-    content |> LazyHTML.from_fragment() |> LazyHTML.query(selector) |> Enum.any?()
-  end
-
   test "global statistics renders franchise report without an active branch", %{conn: conn} do
     branch = insert(:branch)
     {:ok, _} = Features.configure("analytics_franchise", :franchise, true, actor: "test")
@@ -54,8 +48,8 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/statistics")
     assert has_element?(view, "#statistics-choose-branch")
-    assert portal_has_element?(view, "h1")
-    refute portal_has_element?(view, "[role='tablist']")
+    assert has_element?(view, "#staff-page-header h1")
+    refute has_element?(view, "#staff-page-header [role='tablist']")
     refute has_element?(view, "#statistics-report")
     refute has_element?(view, "#statistics-scope a[href^='/staff/statistics']")
 
@@ -95,8 +89,9 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing")
     assert has_element?(view, "#marketing-choose-branch")
-    assert portal_has_element?(view, "h1")
-    refute portal_has_element?(view, "#marketing-navigation a[href*='/stocks']")
+    assert has_element?(view, "#staff-page-header h1")
+    refute has_element?(view, "#staff-page-header #marketing-navigation a[href*='/stocks']")
+    assert has_element?(view, "#marketing-navigation a[href='/staff/marketing?section=stocks']")
 
     assert has_element?(
              view,
@@ -105,13 +100,64 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, selected, _} = live(conn, ~p"/staff/marketing?branch=#{allowed.slug}")
 
-    assert portal_has_element?(
+    assert has_element?(
              selected,
-             "#marketing-navigation a[href='/staff/b/#{allowed.slug}/stocks']"
+             "#staff-page-header #marketing-navigation a[href='/staff/b/#{allowed.slug}/stocks']"
            )
 
     {:ok, rejected, _} = live(conn, ~p"/staff/marketing?branch=#{denied.slug}")
-    refute portal_has_element?(rejected, "#marketing-navigation a[href*='/stocks']")
+    refute has_element?(rejected, "#staff-page-header #marketing-navigation a[href*='/stocks']")
+
+    assert has_element?(
+             rejected,
+             "#marketing-navigation a[href='/staff/marketing?section=stocks']"
+           )
+  end
+
+  test "network marketing keeps permitted branch areas and segments live under clients", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("analytics_links", {:branch, branch.id}, true, actor: "test")
+    {:ok, _} = Features.configure("segments", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("segments", {:branch, branch.id}, true, actor: "test")
+
+    conn =
+      login(
+        conn,
+        ~w(marketing.read stocks.read statistics.read franchise.update clients.read segments.read segments.network),
+        [branch]
+      )
+
+    for path <- [~p"/staff/marketing/policies", ~p"/staff/marketing/bonuses"] do
+      {:ok, view, _} = live(conn, path)
+      assert has_element?(view, "#marketing-navigation a[href='/staff/marketing?section=stocks']")
+      assert has_element?(view, "#marketing-navigation a[href='/staff/marketing?section=links']")
+      refute has_element?(view, "#marketing-navigation a[href='/staff/segments']")
+
+      {:ok, scoped, _} = live(conn, path <> "?branch=#{branch.slug}")
+
+      assert has_element?(
+               scoped,
+               "#marketing-navigation a[href='/staff/b/#{branch.slug}/stocks']"
+             )
+
+      assert has_element?(
+               scoped,
+               "#marketing-navigation a[href='/staff/b/#{branch.slug}/advertising-links']"
+             )
+    end
+
+    {:ok, clients, _} = live(conn, ~p"/staff/clients")
+    assert has_element?(clients, "#staff-header a[href='/staff/clients'][aria-current='page']")
+    assert has_element?(clients, "#staff-header a[href='/staff/segments']")
+
+    {:ok, segments, _} = live(conn, ~p"/staff/segments")
+    assert has_element?(segments, "#staff-header a[href='/staff/segments'][aria-current='page']")
+    assert has_element?(segments, "#staff-header a[href='/staff/clients']")
+    refute has_element?(segments, "#marketing-navigation")
   end
 
   test "policy list has its own route and branch screen has common marketing nav", %{conn: conn} do
@@ -121,10 +167,10 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, policies, _} = live(conn, ~p"/staff/marketing/policies")
     assert has_element?(policies, "#marketing-policies")
-    assert portal_has_element?(policies, "#marketing-navigation")
+    assert has_element?(policies, "#staff-page-header #marketing-navigation")
 
     {:ok, stocks, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
-    assert portal_has_element?(stocks, "#marketing-navigation")
+    assert has_element?(stocks, "#staff-page-header #marketing-navigation")
     assert has_element?(stocks, "#nav-section-network #nav-group-marketing")
     assert has_element?(stocks, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/stocks']")
     refute has_element?(stocks, "#nav-section-common")
@@ -142,14 +188,14 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing?branch=#{branch.slug}")
 
-    assert portal_has_element?(
+    assert has_element?(
              view,
-             "#marketing-navigation a[href='/staff/b/#{branch.slug}/promotions']"
+             "#staff-page-header #marketing-navigation a[href='/staff/b/#{branch.slug}/promotions']"
            )
 
-    refute portal_has_element?(
+    refute has_element?(
              view,
-             "#marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']"
+             "#staff-page-header #marketing-navigation a[href='/staff/b/#{branch.slug}/loyalty']"
            )
 
     refute has_element?(view, "#nav-group-marketing a[href='/staff/b/#{branch.slug}/loyalty']")
@@ -173,10 +219,10 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     assert has_element?(view, "#nav-section-network #nav-group-marketing[data-open]")
 
     for path <- [
-          "/staff/marketing/policies",
+          "/staff/marketing/policies?branch=#{branch.slug}",
           "/staff/b/#{branch.slug}/stocks",
           "/staff/b/#{branch.slug}/promotions",
-          "/staff/marketing/bonuses",
+          "/staff/marketing/bonuses?branch=#{branch.slug}",
           "/staff/b/#{branch.slug}/advertising-links"
         ] do
       assert has_element?(view, "#nav-group-marketing a[href='#{path}']")
@@ -218,7 +264,11 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
     assert has_element?(delivery, "#nav-section-network a[href='/staff/settings'].menu-active")
-    assert portal_has_element?(delivery, "a[href='/staff/branches/#{branch.slug}/edit']")
+
+    assert has_element?(
+             delivery,
+             "#staff-page-header a[href='/staff/branches/#{branch.slug}/edit']"
+           )
 
     {:ok, integrations, _} = live(conn, ~p"/staff/integrations")
 

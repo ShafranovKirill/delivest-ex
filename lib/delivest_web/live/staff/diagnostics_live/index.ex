@@ -8,10 +8,15 @@ defmodule DelivestWeb.Staff.DiagnosticsLive.Index do
     {:ok, assign(socket, page_title: gettext("Metrics"))}
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header title={gettext("Metrics")} />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
-    <.page_header title={gettext("Metrics")} />
     <iframe
       id="staff-metrics-frame"
       title={gettext("Metrics")}

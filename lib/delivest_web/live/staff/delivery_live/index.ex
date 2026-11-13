@@ -11,12 +11,16 @@ defmodule DelivestWeb.Staff.DeliveryLive.Index do
 
   defp back(branch), do: ~p"/staff/branches/#{branch.slug}/edit"
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header title={gettext("Delivery")} back={back(@current_branch)} />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={gettext("Delivery")} back={back(@current_branch)} />
-
       <.settings_cards>
         <.settings_card
           id="delivery-address-card"

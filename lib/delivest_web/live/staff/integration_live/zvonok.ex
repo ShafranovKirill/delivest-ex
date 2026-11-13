@@ -53,29 +53,33 @@ defmodule DelivestWeb.Staff.IntegrationLive.Zvonok do
     assign(socket, context: Presentation.context(nil))
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/integrations"}
+      title={gettext("Sign-in by phone number")}
+      subtitle={
+        gettext(
+          "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
+        )
+      }
+    >
+      <:actions>
+        <button
+          type="submit"
+          form="zvonok-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/integrations"}
-        title={gettext("Sign-in by phone number")}
-        subtitle={
-          gettext(
-            "Customers sign in with a call via zvonok.com. The settings are shared by every branch."
-          )
-        }
-      >
-        <:actions>
-          <button
-            type="submit"
-            form="zvonok-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <.live_component
         module={HealthComponent}
         id="zvonok-health"

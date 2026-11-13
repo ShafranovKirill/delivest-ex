@@ -28,9 +28,7 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
   end
 
   defp header_action?(view, selector) do
-    html = render(element(view, "#staff-page-header-actions"))
-    [_, content] = Regex.run(~r/<template[^>]*>(.*)<\/template>/s, html)
-    content |> LazyHTML.from_fragment() |> LazyHTML.query(selector) |> Enum.any?()
+    has_element?(view, "#staff-page-header-actions #{selector}")
   end
 
   test "shows cooking orders with items and comment", %{conn: conn, branch: branch} do

@@ -5,6 +5,7 @@
     current_path={assigns[:current_path]}
     settings_branch={assigns[:branch]}
     page_title={assigns[:page_title]}
+    page_header={DelivestWeb.StaffHeader.page_header(assigns)}
     kitchen_status={assigns[:kitchen_status]}
   />
 
@@ -22,6 +23,7 @@
   <DelivestWeb.StaffSidebar.staff_sidebar
     current_staff={@current_staff}
     current_branch={assigns[:current_branch]}
+    navigation_branch={assigns[:navigation_branch]}
     staff_branches={assigns[:staff_branches] || []}
     current_path={assigns[:current_path]}
     current_page={assigns[:current_page]}

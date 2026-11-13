@@ -168,14 +168,9 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
   defp can?(socket, permission), do: Identity.can?(socket.assigns.current_staff, permission)
 
-  @impl true
-  def render(assigns) do
+  def staff_page_header(assigns) do
     ~H"""
-    <div
-      :if={@promotion && @live_action in [:full, :first_order, :edit]}
-      id="promotion-editor"
-      class="space-y-6"
-    >
+    <div :if={@promotion && @live_action in [:full, :first_order, :edit]}>
       <.page_header
         navigation_label={gettext("Marketing areas")}
         title={@page_title}
@@ -203,7 +198,63 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
           </button>
         </:actions>
       </.page_header>
+    </div>
+    <div :if={@live_action == :new}>
+      <.page_header
+        navigation_label={gettext("Marketing areas")}
+        title={@page_title}
+        subtitle={gettext("Discounts & promo codes")}
+        back={~p"/staff/b/#{@current_branch}/promotions"}
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
+      </.page_header>
+    </div>
+    <div :if={@live_action not in [:new, :full, :first_order, :edit]}>
+      <.page_header
+        navigation_label={gettext("Marketing areas")}
+        title={gettext("Discounts & promo codes")}
+        subtitle={gettext("Automatic promotions, sale prices, public and personal promo codes.")}
+      >
+        <:navigation>
+          <.navigation
+            staff={@current_staff}
+            branches={@staff_branches}
+            branch={@current_branch}
+            active={:promotions}
+            part={:areas}
+          />
+        </:navigation>
+        <:actions>
+          <.link
+            :if={Identity.can?(@current_staff, "promotions.create")}
+            patch={~p"/staff/b/#{@current_branch}/promotions/new"}
+            class="btn btn-outline"
+            id="new-promotion"
+          >
+            <.icon name="hero-plus" class="size-5" /> {gettext("Create promotion")}
+          </.link>
+        </:actions>
+      </.page_header>
+    </div>
+    """
+  end
 
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div
+      :if={@promotion && @live_action in [:full, :first_order, :edit]}
+      id="promotion-editor"
+      class="space-y-6"
+    >
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}
@@ -229,23 +280,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       id="promotion-scenarios"
       class="space-y-6"
     >
-      <.page_header
-        navigation_label={gettext("Marketing areas")}
-        title={@page_title}
-        subtitle={gettext("Discounts & promo codes")}
-        back={~p"/staff/b/#{@current_branch}/promotions"}
-      >
-        <:navigation>
-          <.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={:promotions}
-            part={:areas}
-          />
-        </:navigation>
-      </.page_header>
-
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}
@@ -294,32 +328,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       :if={@live_action not in [:new, :full, :first_order, :edit]}
       class="space-y-6"
     >
-      <.page_header
-        navigation_label={gettext("Marketing areas")}
-        title={gettext("Discounts & promo codes")}
-        subtitle={gettext("Automatic promotions, sale prices, public and personal promo codes.")}
-      >
-        <:navigation>
-          <.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={:promotions}
-            part={:areas}
-          />
-        </:navigation>
-        <:actions>
-          <.link
-            :if={Identity.can?(@current_staff, "promotions.create")}
-            patch={~p"/staff/b/#{@current_branch}/promotions/new"}
-            class="btn btn-outline"
-            id="new-promotion"
-          >
-            <.icon name="hero-plus" class="size-5" /> {gettext("Create promotion")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}

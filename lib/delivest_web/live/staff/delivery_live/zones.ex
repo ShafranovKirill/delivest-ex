@@ -241,25 +241,29 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
     |> Enum.map_join("; ", fn {field, messages} -> "#{field}: #{inspect(messages)}" end)
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Delivery zones")}
+      subtitle={gettext("Delivery price for the site and Yandex Eda.")}
+      back={~p"/staff/b/#{@current_branch}/delivery"}
+    >
+      <:actions :if={@can_edit}>
+        <button
+          type="submit"
+          form="delivery-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Delivery zones")}
-        subtitle={gettext("Delivery price for the site and Yandex Eda.")}
-        back={~p"/staff/b/#{@current_branch}/delivery"}
-      >
-        <:actions :if={@can_edit}>
-          <button
-            type="submit"
-            form="delivery-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <.form
         for={@settings_form}
         id="delivery-settings"

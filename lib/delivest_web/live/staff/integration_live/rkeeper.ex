@@ -111,22 +111,24 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
 
   defp ready?(crm), do: Rkeeper.configured?(crm.rkeeper)
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/b/#{@current_branch}/integrations"}
+      title="r_keeper"
+      subtitle={gettext("Orders go to the restaurant r_keeper POS through the White Server gateway.")}
+    >
+      <:actions :if={@can_edit and @tab == :settings}>
+        <button type="submit" form="rkeeper-settings" class="btn btn-primary">{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/b/#{@current_branch}/integrations"}
-        title="r_keeper"
-        subtitle={
-          gettext("Orders go to the restaurant r_keeper POS through the White Server gateway.")
-        }
-      >
-        <:actions :if={@can_edit and @tab == :settings}>
-          <button type="submit" form="rkeeper-settings" class="btn btn-primary">{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <div :if={!@token?} id="rkeeper-no-token" class="alert alert-warning">
         <.icon name="hero-exclamation-triangle" class="size-5" />
         <span>{gettext("The aggregator token RKEEPER_TOKEN is not set on the server.")}</span>

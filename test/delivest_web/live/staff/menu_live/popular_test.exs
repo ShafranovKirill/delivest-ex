@@ -43,8 +43,7 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
            )
 
     assert has_element?(lv, "#staff-header #product-section-tab-popular[aria-current='page']")
-    assert has_element?(lv, "main h1.sr-only", "Popular products")
-    refute has_element?(lv, "#staff-page-header")
+    assert has_element?(lv, "#staff-header h1.sr-only", "Popular products")
     refute has_element?(lv, "#staff-header-context")
     assert Enum.count(LazyHTML.query(LazyHTML.from_fragment(render(lv)), "[role='tablist']")) == 1
     assert render(element(lv, "#staff-page-header-actions")) =~ ~s(form="popular-settings")

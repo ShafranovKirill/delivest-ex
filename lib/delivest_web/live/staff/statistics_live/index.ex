@@ -350,34 +350,39 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   defp breakdown_label(:fulfillment_type, key), do: OrderHelpers.fulfillment_label(key)
   defp breakdown_label(:payment_method, key), do: OrderHelpers.payment_label(key)
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      navigation_label={gettext("Statistics reports")}
+      title={gettext("Statistics")}
+      subtitle={
+        if is_nil(@period_error),
+          do:
+            "#{if(@current_branch, do: @current_branch.name, else: gettext("All branches"))} · #{format_period(@period)}",
+          else: if(@current_branch, do: @current_branch.name, else: gettext("All branches"))
+      }
+    >
+      <:navigation :if={@visible_tabs != []}>
+        <div role="tablist" class="tabs">
+          <.link
+            :for={tab <- @visible_tabs}
+            patch={tab_path(assigns, tab)}
+            role="tab"
+            class={["tab", @tab == tab && "tab-active"]}
+            aria-current={@tab == tab && "page"}
+          >
+            {tab_label(tab)}
+          </.link>
+        </div>
+      </:navigation>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        navigation_label={gettext("Statistics reports")}
-        title={gettext("Statistics")}
-        subtitle={
-          if is_nil(@period_error),
-            do:
-              "#{if(@current_branch, do: @current_branch.name, else: gettext("All branches"))} · #{format_period(@period)}",
-            else: if(@current_branch, do: @current_branch.name, else: gettext("All branches"))
-        }
-      >
-        <:navigation :if={@visible_tabs != []}>
-          <div role="tablist" class="tabs">
-            <.link
-              :for={tab <- @visible_tabs}
-              patch={tab_path(assigns, tab)}
-              role="tab"
-              class={["tab", @tab == tab && "tab-active"]}
-              aria-current={@tab == tab && "page"}
-            >
-              {tab_label(tab)}
-            </.link>
-          </div>
-        </:navigation>
-      </.page_header>
       <div class="flex flex-wrap justify-start gap-4">
         <.form
           for={@form}

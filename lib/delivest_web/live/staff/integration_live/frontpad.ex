@@ -425,51 +425,55 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     do:
       "#{div(seconds, 60)}:#{seconds |> rem(60) |> Integer.to_string() |> String.pad_leading(2, "0")}"
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/b/#{@current_branch}/integrations"}
+      title="Frontpad"
+      subtitle={gettext("Products in Frontpad and their match with the app menu.")}
+    >
+      <:actions :if={@can_edit_branch and @tab == :settings}>
+        <button
+          type="submit"
+          form="frontpad-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >
+          {gettext("Save")}
+        </button>
+      </:actions>
+      <:actions :if={api_key?(@crm)}>
+        <button
+          :if={is_nil(@available_at)}
+          id="frontpad-refresh"
+          type="button"
+          class="btn btn-primary"
+          phx-click="refresh"
+          phx-disable-with={gettext("Loading...")}
+        >
+          <.icon name="hero-arrow-path" class="size-4" /> {gettext("Get products")}
+        </button>
+        <button :if={@available_at} id="frontpad-refresh" type="button" class="btn" disabled>
+          <.icon name="hero-clock" class="size-4" />
+          {gettext("Available in")}
+          <span
+            id="frontpad-countdown"
+            phx-hook=".Countdown"
+            data-until={DateTime.to_iso8601(@available_at)}
+            class="tabular-nums"
+          >
+            {countdown(seconds_left(@available_at))}
+          </span>
+        </button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/b/#{@current_branch}/integrations"}
-        title="Frontpad"
-        subtitle={gettext("Products in Frontpad and their match with the app menu.")}
-      >
-        <:actions :if={@can_edit_branch and @tab == :settings}>
-          <button
-            type="submit"
-            form="frontpad-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >
-            {gettext("Save")}
-          </button>
-        </:actions>
-        <:actions :if={api_key?(@crm)}>
-          <button
-            :if={is_nil(@available_at)}
-            id="frontpad-refresh"
-            type="button"
-            class="btn btn-primary"
-            phx-click="refresh"
-            phx-disable-with={gettext("Loading...")}
-          >
-            <.icon name="hero-arrow-path" class="size-4" /> {gettext("Get products")}
-          </button>
-          <button :if={@available_at} id="frontpad-refresh" type="button" class="btn" disabled>
-            <.icon name="hero-clock" class="size-4" />
-            {gettext("Available in")}
-            <span
-              id="frontpad-countdown"
-              phx-hook=".Countdown"
-              data-until={DateTime.to_iso8601(@available_at)}
-              class="tabular-nums"
-            >
-              {countdown(seconds_left(@available_at))}
-            </span>
-          </button>
-        </:actions>
-      </.page_header>
-
       <script :type={Phoenix.LiveView.ColocatedHook} name=".Countdown">
         export default {
           mounted() {

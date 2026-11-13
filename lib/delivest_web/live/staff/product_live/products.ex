@@ -421,46 +421,49 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     |> Map.new()
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Products")}
+      title_in_header={false}
+    >
+      <:actions>
+        <.link
+          id="product-operations-link"
+          navigate={~p"/staff/b/#{@current_branch}/products/operations"}
+          class="btn btn-outline"
+        >
+          <.icon name="hero-arrow-up-tray" class="size-5 mr-1" /> Товарные операции
+        </.link>
+
+        <.link
+          :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+          id="bulk-add-products"
+          navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
+          class="btn btn-outline"
+        >
+          <.icon name="hero-table-cells" class="size-5 mr-1" />
+          {gettext("Bulk add")}
+        </.link>
+
+        <.button
+          :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+          id="create-product"
+          patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
+          class="btn btn-primary"
+        >
+          <.icon name="hero-plus" class="size-5" />
+          {gettext("Create Product")}
+        </.button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Products")}
-        layout={:two_rows}
-        title_in_header={false}
-      >
-        <:actions>
-          <.link
-            id="product-operations-link"
-            navigate={~p"/staff/b/#{@current_branch}/products/operations"}
-            class="btn btn-outline"
-          >
-            <.icon name="hero-arrow-up-tray" class="size-5 mr-1" /> Товарные операции
-          </.link>
-
-          <.link
-            :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
-            id="bulk-add-products"
-            navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
-            class="btn btn-outline"
-          >
-            <.icon name="hero-table-cells" class="size-5 mr-1" />
-            {gettext("Bulk add")}
-          </.link>
-
-          <.button
-            :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
-            id="create-product"
-            patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
-            class="btn btn-primary"
-          >
-            <.icon name="hero-plus" class="size-5" />
-            {gettext("Create Product")}
-          </.button>
-        </:actions>
-      </.page_header>
-
       <.form
         for={nil}
         id="products-filter"

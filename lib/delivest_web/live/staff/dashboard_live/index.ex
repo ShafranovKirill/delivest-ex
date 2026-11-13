@@ -214,43 +214,47 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
     )
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header title={
+      if @current_branch,
+        do: "#{gettext("Today")}, #{DayLabel.format(@today)}",
+        else: gettext("Today")
+    }>
+      <:actions :if={@current_branch}>
+        <.link
+          :if={@can_create_order}
+          navigate={~p"/staff/b/#{@current_branch}/orders/new"}
+          class="btn btn-primary btn-sm"
+        >
+          <.icon name="hero-plus" class="size-4" />
+          {gettext("New Order")}
+        </.link>
+        <.link
+          :if={@can_orders}
+          navigate={~p"/staff/b/#{@current_branch}/orders"}
+          class="btn btn-outline btn-sm"
+        >
+          <.icon name="hero-shopping-bag" class="size-4" />
+          {gettext("Orders")}
+        </.link>
+        <.link
+          :if={@can_stats}
+          navigate={~p"/staff/b/#{@current_branch}/statistics"}
+          class="btn btn-outline btn-sm"
+        >
+          <.icon name="hero-chart-bar" class="size-4" />
+          {gettext("Statistics")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={
-        if @current_branch,
-          do: "#{gettext("Today")}, #{DayLabel.format(@today)}",
-          else: gettext("Today")
-      }>
-        <:actions :if={@current_branch}>
-          <.link
-            :if={@can_create_order}
-            navigate={~p"/staff/b/#{@current_branch}/orders/new"}
-            class="btn btn-primary btn-sm"
-          >
-            <.icon name="hero-plus" class="size-4" />
-            {gettext("New Order")}
-          </.link>
-          <.link
-            :if={@can_orders}
-            navigate={~p"/staff/b/#{@current_branch}/orders"}
-            class="btn btn-outline btn-sm"
-          >
-            <.icon name="hero-shopping-bag" class="size-4" />
-            {gettext("Orders")}
-          </.link>
-          <.link
-            :if={@can_stats}
-            navigate={~p"/staff/b/#{@current_branch}/statistics"}
-            class="btn btn-outline btn-sm"
-          >
-            <.icon name="hero-chart-bar" class="size-4" />
-            {gettext("Statistics")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <p :if={is_nil(@current_branch)} class="text-sm text-base-content/60">
         {gettext("All branches")}
       </p>

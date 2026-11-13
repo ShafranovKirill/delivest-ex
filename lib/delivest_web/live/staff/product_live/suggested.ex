@@ -107,17 +107,20 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
     assign(socket, shown: BranchProducts.filter(products, search, keep?))
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Recommended")}
+      title_in_header={false}
+    >
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Recommended")}
-        layout={:two_rows}
-        title_in_header={false}
-      >
-      </.page_header>
-
       <button
         :if={@can_edit}
         id="suggested-add-products"

@@ -57,29 +57,33 @@ defmodule DelivestWeb.Staff.IntegrationLive.Dadata do
     assign(socket, context: Presentation.context(nil))
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/integrations"}
+      title={gettext("Delivery address on the map")}
+      subtitle={
+        gettext(
+          "Customers pick the address on the map with dadata.ru suggestions. When it is off, the address is typed into plain fields. The settings are shared by every branch."
+        )
+      }
+    >
+      <:actions>
+        <button
+          type="submit"
+          form="dadata-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/integrations"}
-        title={gettext("Delivery address on the map")}
-        subtitle={
-          gettext(
-            "Customers pick the address on the map with dadata.ru suggestions. When it is off, the address is typed into plain fields. The settings are shared by every branch."
-          )
-        }
-      >
-        <:actions>
-          <button
-            type="submit"
-            form="dadata-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <.live_component
         module={HealthComponent}
         id="dadata-health"

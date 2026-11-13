@@ -125,12 +125,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     {:ok, index, _} = live(conn, ~p"/staff/marketing/policies")
     assert render(element(index, "#staff-page-header")) =~ "Маркетинговые политики"
 
-    assert DelivestWeb.PortalTestHelper.has_element?(
-             index,
-             "#staff-page-header-actions",
-             "a",
-             "Новая политика"
-           )
+    assert has_element?(index, "#staff-page-header-actions a", "Новая политика")
 
     {:ok, view, _} = live(conn, ~p"/staff/marketing/new")
     assert has_element?(view, "#marketing-policy-wizard", "Шаг 1 из 5")
@@ -142,11 +137,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
     enable_marketing(ctx)
     {:ok, ordinary, _} = live(ctx.conn, ~p"/staff/marketing/policies")
 
-    refute DelivestWeb.PortalTestHelper.has_element?(
-             ordinary,
-             "#staff-page-header-actions",
-             "#marketing-recalculate-now"
-           )
+    refute has_element?(ordinary, "#staff-page-header-actions #marketing-recalculate-now")
 
     render_hook(ordinary, "recalculate_marketing", %{})
     refute has_element?(ordinary, "#marketing-calculation-status")
@@ -166,21 +157,13 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
 
     {:ok, network, _} = live(network_conn, ~p"/staff/marketing/policies")
 
-    assert DelivestWeb.PortalTestHelper.has_element?(
-             network,
-             "#staff-page-header-actions",
-             "#marketing-recalculate-now"
-           )
+    assert has_element?(network, "#staff-page-header-actions #marketing-recalculate-now")
 
     assert has_element?(network, "#marketing-calculation-panel", "выдаст положенные награды")
     render_click(network, "recalculate_marketing")
     assert has_element?(network, "#marketing-calculation-status")
 
-    assert DelivestWeb.PortalTestHelper.has_element?(
-             network,
-             "#staff-page-header-actions",
-             "#marketing-recalculate-now"
-           )
+    assert has_element?(network, "#staff-page-header-actions #marketing-recalculate-now")
   end
 
   test "completed global calculation refreshes issued counts in the current policy list", ctx do

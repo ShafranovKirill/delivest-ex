@@ -103,11 +103,20 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
     |> Enum.map_join(", ", &"#{&1.title} × #{&1.quantity}")
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header title={@client.name || gettext("No name")} back={~p"/staff/clients"}>
+      <:navigation :if={Delivest.Segments.available?(@current_staff)}>
+        <DelivestWeb.Staff.ClientLive.Navigation.tabs active={:clients} />
+      </:navigation>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header title={@client.name || gettext("No name")} back={~p"/staff/clients"} />
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
           <div class="avatar avatar-placeholder shrink-0">

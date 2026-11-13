@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
 
   alias DelivestWeb.{KitchenAccess, StaffBranchPath}
 
+  @impl true
   def mount(params, _session, socket) do
     staff = socket.assigns[:current_staff]
     to = if StaffBranchPath.valid_section?(params["to"]), do: params["to"]
@@ -31,14 +32,19 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
      )}
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Select a branch")}
+      subtitle={gettext("Choose a branch to continue working in the system")}
+    />
+    """
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Select a branch")}
-        subtitle={gettext("Choose a branch to continue working in the system")}
-      />
-
       <div :if={@kitchen_only?} id="branch-select-kitchen-note" class="alert alert-info mb-4">
         <.icon name="hero-information-circle" class="size-5" />
         <span>

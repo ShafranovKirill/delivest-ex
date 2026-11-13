@@ -169,8 +169,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
 
   defp greet(socket, _tickets), do: assign(socket, loaded: connected?(socket))
 
-  @impl true
-  def render(assigns) do
+  def staff_page_header(assigns) do
     ~H"""
     <.page_header title={gettext("Kitchen")}>
       <:actions>
@@ -182,7 +181,12 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
         </button>
       </:actions>
     </.page_header>
+    """
+  end
 
+  @impl true
+  def render(assigns) do
+    ~H"""
     <div id="kitchen-screen" phx-hook="KitchenScreen" class="group flex flex-col">
       <div
         id="kitchen-offline"

@@ -135,20 +135,24 @@ defmodule DelivestWeb.Staff.IntegrationLive.Iiko do
   defp error_text(:forbidden), do: gettext("Permission denied")
   defp error_text(_reason), do: gettext("iiko did not respond, try again later")
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/b/#{@current_branch}/integrations"}
+      title="iiko"
+      subtitle={gettext("Orders go to the restaurant POS, statuses and the stop list come back.")}
+    >
+      <:actions :if={@can_edit and @tab == :settings}>
+        <button type="submit" form="iiko-settings" class="btn btn-primary">{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/b/#{@current_branch}/integrations"}
-        title="iiko"
-        subtitle={gettext("Orders go to the restaurant POS, statuses and the stop list come back.")}
-      >
-        <:actions :if={@can_edit and @tab == :settings}>
-          <button type="submit" form="iiko-settings" class="btn btn-primary">{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <div role="tablist" class="tabs tabs-boxed w-fit">
         <button
           type="button"

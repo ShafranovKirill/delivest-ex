@@ -75,15 +75,19 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
     )
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Customer address selection")}
+      back={~p"/staff/b/#{@current_branch}/delivery"}
+    />
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="flex min-h-[calc(100dvh-var(--staff-header-height)-2rem)] flex-col justify-center sm:min-h-[calc(100dvh-var(--staff-header-height)-3rem)]">
-      <.page_header
-        title={gettext("Customer address selection")}
-        back={~p"/staff/b/#{@current_branch}/delivery"}
-      />
-
       <.form
         for={@form}
         id="address-settings"

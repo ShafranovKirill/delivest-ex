@@ -68,25 +68,29 @@ defmodule DelivestWeb.Staff.IntegrationLive.Ycart do
   defp assign_form(socket, changeset),
     do: assign(socket, form: to_form(changeset, as: "ycart"))
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("YCart Settings")}
+      subtitle={@current_branch.name}
+      back={~p"/staff/b/#{@current_branch}/integrations"}
+    >
+      <:actions :if={@can_edit}>
+        <button
+          type="submit"
+          form="ycart-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("YCart Settings")}
-        subtitle={@current_branch.name}
-        back={~p"/staff/b/#{@current_branch}/integrations"}
-      >
-        <:actions :if={@can_edit}>
-          <button
-            type="submit"
-            form="ycart-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <.form
         for={@form}
         id="ycart-settings"

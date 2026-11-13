@@ -23,30 +23,34 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
     end
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Settings for branches")}
+      subtitle={gettext("List of available company branches")}
+      back={~p"/staff/settings"}
+    >
+      <:actions>
+        <.link
+          :if={
+            Identity.can?(@current_staff, "branches.read") and
+              Identity.can?(@current_staff, "branches.create")
+          }
+          id="create-branch"
+          navigate={~p"/staff/branches/new"}
+          class="btn btn-primary"
+        >
+          {gettext("Create Branch")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div id="branch-settings-list" class="space-y-6">
-      <.page_header
-        title={gettext("Settings for branches")}
-        subtitle={gettext("List of available company branches")}
-        back={~p"/staff/settings"}
-      >
-        <:actions>
-          <.link
-            :if={
-              Identity.can?(@current_staff, "branches.read") and
-                Identity.can?(@current_staff, "branches.create")
-            }
-            id="create-branch"
-            navigate={~p"/staff/branches/new"}
-            class="btn btn-primary"
-          >
-            {gettext("Create Branch")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           :for={branch <- @branches}

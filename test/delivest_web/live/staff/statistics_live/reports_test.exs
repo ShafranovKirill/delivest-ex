@@ -225,11 +225,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
 
     tab = "a[role='tab'][href*='tab=sources']:not([href*='page='])"
 
-    [_, header] =
-      view
-      |> element("#staff-page-header")
-      |> render()
-      |> then(&Regex.run(~r/<template[^>]*>(.*)<\/template>/s, &1))
+    header = render(element(view, "#staff-page-header"))
 
     href =
       header
@@ -265,11 +261,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
       ~p"/staff/b/#{branch}/statistics?tab=channels&period=today&page=2&channel=app&branch_id=#{branch.id}&link_id=#{link.id}&link_search=summer&branch_ids[]=#{branch.id}"
     )
 
-    [_, header] =
-      view
-      |> element("#staff-page-header")
-      |> render()
-      |> then(&Regex.run(~r/<template[^>]*>(.*)<\/template>/s, &1))
+    header = render(element(view, "#staff-page-header"))
 
     assert header
            |> LazyHTML.from_fragment()

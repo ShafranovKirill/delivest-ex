@@ -18,7 +18,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
       {:ok, lv, html} = live(conn, ~p"/staff/branches/select")
 
       assert html =~ "Select a branch"
-      assert has_element?(lv, "#staff-header-title h1.staff-header-fallback", "Select a branch")
+      assert has_element?(lv, "#staff-header-title h1", "Select a branch")
       assert render(element(lv, "#staff-page-header")) =~ "Select a branch"
       assert html =~ "North Branch"
       assert html =~ "Click to activate this branch"

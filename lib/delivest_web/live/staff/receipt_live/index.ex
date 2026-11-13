@@ -25,19 +25,21 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
      )}
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Receipts")}
+      subtitle={gettext("Fiscal receipts of the branch. Find the ones not issued during the shift.")}
+    />
+    """
+  end
+
   @impl true
   def render(assigns) do
     assigns = assign(assigns, filters: filters())
 
     ~H"""
     <div id="receipts-page" class="space-y-6">
-      <.page_header
-        title={gettext("Receipts")}
-        subtitle={
-          gettext("Fiscal receipts of the branch. Find the ones not issued during the shift.")
-        }
-      />
-
       <div class="tabs tabs-box w-fit">
         <.link
           :for={{value, label} <- @filters}

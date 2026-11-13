@@ -6,7 +6,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
 
   alias Delivest.Promo.{PromoCode, Promotion}
   alias Delivest.Repo
-  alias DelivestWeb.PortalTestHelper
 
   setup %{conn: conn} do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
@@ -23,7 +22,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   } do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions")
 
-    assert PortalTestHelper.has_element?(lv, "#staff-page-header-actions", "#new-promotion")
+    assert has_element?(lv, "#staff-page-header-actions #new-promotion")
     render_patch(lv, ~p"/staff/b/#{branch}/promotions/new")
     assert_patch(lv, ~p"/staff/b/#{branch}/promotions/new")
     assert has_element?(lv, "#promotion-scenarios #scenario-product")
@@ -63,15 +62,10 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
     conn = init_test_session(conn, %{"locale" => "ru"})
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions")
 
-    assert PortalTestHelper.has_element?(
-             lv,
-             "#staff-page-header-actions",
-             "#new-promotion",
-             "Создать акцию"
-           )
+    assert has_element?(lv, "#staff-page-header-actions #new-promotion", "Создать акцию")
 
     render_patch(lv, ~p"/staff/b/#{branch}/promotions/new")
-    assert has_element?(lv, "#promotion-scenarios", "Выберите сценарий акции")
+    assert has_element?(lv, "#staff-header h1", "Выберите сценарий акции")
     assert has_element?(lv, "#scenario-first-order", "Первый заказ")
 
     assert has_element?(

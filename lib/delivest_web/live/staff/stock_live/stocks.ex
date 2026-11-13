@@ -194,36 +194,40 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
      |> assign(:show_upload_modal, false)}
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      navigation_label={gettext("Marketing areas")}
+      title={gettext("Banners")}
+      subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
+    >
+      <:navigation>
+        <.navigation
+          staff={@current_staff}
+          branches={@staff_branches}
+          branch={@current_branch}
+          active={:stocks}
+          part={:areas}
+        />
+      </:navigation>
+      <:actions>
+        <.link
+          :if={Identity.can?(@current_staff, "stocks.create")}
+          patch={~p"/staff/b/#{@current_branch}/stocks/new"}
+          class="btn btn-primary"
+        >
+          <.icon name="hero-plus" class="size-5" />
+          {gettext("Create Banner")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        navigation_label={gettext("Marketing areas")}
-        title={gettext("Banners")}
-        subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
-      >
-        <:navigation>
-          <.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={:stocks}
-            part={:areas}
-          />
-        </:navigation>
-        <:actions>
-          <.link
-            :if={Identity.can?(@current_staff, "stocks.create")}
-            patch={~p"/staff/b/#{@current_branch}/stocks/new"}
-            class="btn btn-primary"
-          >
-            <.icon name="hero-plus" class="size-5" />
-            {gettext("Create Banner")}
-          </.link>
-        </:actions>
-      </.page_header>
-
       <.navigation
         staff={@current_staff}
         branches={@staff_branches}

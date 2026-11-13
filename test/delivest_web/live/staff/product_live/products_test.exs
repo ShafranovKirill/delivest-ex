@@ -39,7 +39,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
     assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-context"))
     assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-title"))
-    assert Enum.empty?(LazyHTML.query(document, "#staff-page-header"))
+    assert Enum.any?(LazyHTML.query(document, "#staff-header #staff-page-header-actions"))
   end
 
   test "branch editor sees a refusal when editing a shared product", %{conn: conn} do
@@ -158,7 +158,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert product_first_name(lv) == "Match 9"
     end
 
-    test "renders tabs directly in the header and actions in a portal", %{
+    test "renders tabs and actions directly in the header", %{
       conn: conn
     } do
       branch = insert(:branch)
@@ -167,7 +167,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
 
-      actions_portal = render(element(lv, "#staff-page-header-actions"))
+      actions = render(element(lv, "#staff-page-header-actions"))
 
       assert has_element?(
                lv,
@@ -180,15 +180,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
              )
 
       assert has_element?(lv, "#staff-header [role='tablist'] [role='tab']")
-      refute has_element?(lv, "#staff-page-header")
       refute has_element?(lv, "#staff-header-context")
       refute has_element?(lv, "#staff-header-title")
-      assert has_element?(lv, "main h1.sr-only")
-      assert actions_portal =~ ~s(data-phx-portal="#staff-header-actions-scroll")
-      refute actions_portal =~ ~s(id="copy-products-trigger")
-      assert actions_portal =~ ~s(id="product-operations-link")
-      assert actions_portal =~ ~s(id="bulk-add-products")
-      assert actions_portal =~ ~s(id="create-product")
+      assert has_element?(lv, "#staff-header h1.sr-only")
+      assert has_element?(lv, "#staff-header #staff-page-header-actions")
+      refute actions =~ ~s(id="copy-products-trigger")
+      assert actions =~ ~s(id="product-operations-link")
+      assert actions =~ ~s(id="bulk-add-products")
+      assert actions =~ ~s(id="create-product")
       assert has_element?(lv, "main #products-filter")
       refute has_element?(lv, "main #products-filter [role='tablist']")
     end
@@ -231,13 +230,11 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
               )
         end
 
-        assert has_element?(lv, "main h1.sr-only", title)
-        refute has_element?(lv, "#staff-page-header")
+        assert has_element?(lv, "#staff-header h1.sr-only", title)
         refute has_element?(lv, "#staff-header-context")
 
         if actions? do
-          assert render(element(lv, "#staff-page-header-actions")) =~
-                   ~s(data-phx-portal="#staff-header-actions-scroll")
+          assert has_element?(lv, "#staff-header #staff-page-header-actions > *")
         else
           refute has_element?(lv, "#staff-page-header-actions")
         end
@@ -253,7 +250,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       for section <- ["modifiers", "tags"] do
         {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> "/" <> section)
         assert has_element?(lv, "#staff-header[data-header-actions='false'] [role='tablist']")
-        refute render(element(lv, "#staff-page-header-actions")) =~ ~s(class="btn)
+        refute has_element?(lv, "#staff-page-header-actions > *")
       end
     end
 
@@ -265,11 +262,11 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
 
-      actions_portal = render(element(lv, "#staff-page-header-actions"))
-      assert actions_portal =~ ~s(id="product-operations-link")
-      refute actions_portal =~ ~s(id="copy-products-trigger")
-      refute actions_portal =~ ~s(id="bulk-add-products")
-      refute actions_portal =~ ~s(id="create-product")
+      actions = render(element(lv, "#staff-page-header-actions"))
+      assert actions =~ ~s(id="product-operations-link")
+      refute actions =~ ~s(id="copy-products-trigger")
+      refute actions =~ ~s(id="bulk-add-products")
+      refute actions =~ ~s(id="create-product")
     end
   end
 

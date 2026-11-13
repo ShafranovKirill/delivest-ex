@@ -26,9 +26,7 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
   end
 
   defp header_action?(view, selector) do
-    html = render(element(view, "#staff-page-header-actions"))
-    [_, content] = Regex.run(~r/<template[^>]*>(.*)<\/template>/s, html)
-    content |> LazyHTML.from_fragment() |> LazyHTML.query(selector) |> Enum.any?()
+    has_element?(view, "#staff-page-header-actions #{selector}")
   end
 
   test "the cashier sells for cash with change and the order goes to the kitchen", ctx do

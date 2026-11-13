@@ -127,17 +127,20 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
     assign(socket, shown: BranchProducts.filter(products, search, keep?))
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Stop list")}
+      title_in_header={false}
+    >
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Stop list")}
-        layout={:two_rows}
-        title_in_header={false}
-      >
-      </.page_header>
-
       <button
         :if={@can_edit}
         id="stop-add-products"

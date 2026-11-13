@@ -69,27 +69,31 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
     assign(socket, context: Presentation.context(nil))
   end
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      back={~p"/staff/integrations"}
+      title={gettext("Online payment")}
+      subtitle={
+        gettext("Card and SBP payments through YooKassa. The shop is shared by every branch.")
+      }
+    >
+      <:actions>
+        <button
+          type="submit"
+          form="yookassa-settings"
+          class="btn btn-primary"
+          phx-disable-with={gettext("Saving...")}
+        >{gettext("Save")}</button>
+      </:actions>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        back={~p"/staff/integrations"}
-        title={gettext("Online payment")}
-        subtitle={
-          gettext("Card and SBP payments through YooKassa. The shop is shared by every branch.")
-        }
-      >
-        <:actions>
-          <button
-            type="submit"
-            form="yookassa-settings"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >{gettext("Save")}</button>
-        </:actions>
-      </.page_header>
-
       <.live_component
         module={HealthComponent}
         id="yookassa-health"

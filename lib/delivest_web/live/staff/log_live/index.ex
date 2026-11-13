@@ -107,20 +107,24 @@ defmodule DelivestWeb.Staff.LogLive.Index do
 
   defp live?(_socket, _event), do: false
 
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header
+      title={gettext("Logs")}
+      subtitle={gettext("Who did what and when, application logs and errors.")}
+      navigation_label={gettext("Logs")}
+    >
+      <:navigation><TabsComponent.render_tabs active={@live_action} /></:navigation>
+    </.page_header>
+    """
+  end
+
   @impl true
   def render(assigns) do
     assigns = assign(assigns, levels: @levels, subject_types: EventText.subject_types())
 
     ~H"""
     <div class="space-y-6">
-      <.page_header
-        title={gettext("Logs")}
-        subtitle={gettext("Who did what and when, application logs and errors.")}
-        navigation_label={gettext("Logs")}
-      >
-        <:navigation><TabsComponent.render_tabs active={@live_action} /></:navigation>
-      </.page_header>
-
       <form id="logs-filter" phx-change="filter" phx-submit="filter" class="flex flex-wrap gap-3">
         <%= if @live_action == :events do %>
           <select name="type" class="select select-bordered w-full sm:w-48">
