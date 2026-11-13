@@ -47,6 +47,31 @@ defmodule Delivest.DeliveryTest do
     end
   end
 
+  test "manual address uses the flat tariff in zones mode without coordinates", %{
+    branch: branch,
+    staff: staff
+  } do
+    {:ok, _} =
+      Delivery.update_settings(staff, branch.id, %{
+        "mode" => "zones",
+        "map_address" => false,
+        "thresholds" => thresholds([{0, 200}, {1500, 0}])
+      })
+
+    for {subtotal, price, free_from} <- [{1499, 200, 1500}, {1500, 0, nil}, {1800, 0, nil}] do
+      assert {:ok, %{price: ^price, free_from: ^free_from, zone: nil}} =
+               Delivery.quote(branch.id, nil, subtotal)
+    end
+
+    {:ok, _} =
+      Delivery.update_settings(staff, branch.id, %{
+        "thresholds" => thresholds([{0, 200}])
+      })
+
+    assert {:ok, %{price: 200, free_from: nil, zone: nil}} =
+             Delivery.quote(branch.id, nil, 1800)
+  end
+
   describe "zones" do
     setup %{branch: branch, staff: staff} do
       {:ok, _} = Delivery.update_settings(staff, branch.id, %{"mode" => "zones"})

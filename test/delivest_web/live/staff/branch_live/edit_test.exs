@@ -287,6 +287,34 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     end
   end
 
+  test "staff can disable and restore customer cancellation for one branch", %{conn: conn} do
+    branch = insert(:branch, slug: "cancel-setting")
+    other = insert(:branch, slug: "other-cancel-setting")
+    Repo.insert!(%Delivest.Identity.Branch.BranchInfo{branch_id: other.id})
+
+    for {value, expected} <- [{"false", false}, {"true", true}] do
+      {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/fulfillment")
+      assert has_element?(lv, "input[name='branch_form[fulfillment][client_cancellation]']")
+
+      assert {:error, {:live_redirect, _}} =
+               lv
+               |> form("#branch-form", branch_form: %{fulfillment: %{client_cancellation: value}})
+               |> render_submit()
+
+      {:ok, reloaded, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/fulfillment")
+
+      assert has_element?(
+               reloaded,
+               "input[name='branch_form[fulfillment][client_cancellation]'][type='checkbox']"
+             )
+
+      assert Repo.get_by!(Delivest.Identity.Branch.BranchInfo, branch_id: branch.id).fulfillment.client_cancellation ==
+               expected
+
+      assert Repo.get_by!(Delivest.Identity.Branch.BranchInfo, branch_id: other.id).fulfillment.client_cancellation
+    end
+  end
+
   test "branch overview hides delivery without scoped permission", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["branches.read", "branches.update"]))

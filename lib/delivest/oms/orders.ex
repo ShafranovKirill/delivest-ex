@@ -15,6 +15,7 @@ defmodule Delivest.Oms.Orders do
 
   alias Delivest.Oms.Orders.{Create, DraftCart, Filter, Notifier, StatusChange, Update}
   alias Delivest.Repo
+  alias Delivest.Identity.Branch.BranchInfo
 
   defdelegate subscribe(branch_id), to: Notifier
   defdelegate unsubscribe(branch_id), to: Notifier
@@ -164,10 +165,38 @@ defmodule Delivest.Oms.Orders do
   end
 
   def client_cancellable?(%Order{} = order) do
+    client_cancellable?(order, true) and client_cancellation_enabled?(order.branch_id)
+  end
+
+  def client_cancellable?(%Order{} = order, enabled?) do
     order.status == :created and is_nil(order.crm) and is_nil(order.channel) and
       (order.payment_method in [:cash, :card_offline] or order.awaiting_payment) and
-      is_nil(order.deleted_at)
+      is_nil(order.deleted_at) and enabled?
   end
+
+  def client_cancellation_settings([]), do: %{}
+
+  def client_cancellation_settings(orders) do
+    ids = orders |> Enum.map(& &1.branch_id) |> Enum.uniq()
+
+    BranchInfo
+    |> where([info], info.branch_id in ^ids)
+    |> Repo.all()
+    |> Map.new(fn info -> {info.branch_id, cancellation_enabled?(info.fulfillment)} end)
+  end
+
+  defp client_cancellation_enabled?(branch_id) do
+    BranchInfo
+    |> where([info], info.branch_id == ^branch_id)
+    |> Repo.one()
+    |> case do
+      nil -> true
+      info -> cancellation_enabled?(info.fulfillment)
+    end
+  end
+
+  defp cancellation_enabled?(%{client_cancellation: false}), do: false
+  defp cancellation_enabled?(_), do: true
 
   def payment_link(session_id, client_id, order_id) do
     with {:ok, id} <- Ecto.UUID.cast(order_id),

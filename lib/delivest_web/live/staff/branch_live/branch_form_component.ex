@@ -197,6 +197,18 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
               <.input field={method[:delivery]} type="checkbox" label={gettext("Delivery")} />
               <.input field={method[:pickup]} type="checkbox" label={gettext("Pickup")} />
               <.input field={method[:dine_in]} type="checkbox" label={gettext("Dine in")} />
+              <div class="border-t border-base-300 pt-4">
+                <.input
+                  field={method[:client_cancellation]}
+                  type="checkbox"
+                  label={gettext("Allow customers to cancel orders")}
+                />
+                <p class="mt-1 text-sm text-base-content/60">
+                  {gettext(
+                    "Customers can cancel only new orders that staff have not accepted yet. Other order restrictions still apply."
+                  )}
+                </p>
+              </div>
               <p class="text-sm text-base-content/60">
                 {gettext(
                   "When all methods are off, customers cannot place orders. Existing orders are kept."
