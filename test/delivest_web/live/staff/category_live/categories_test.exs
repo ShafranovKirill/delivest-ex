@@ -69,4 +69,21 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoriesTest do
 
     assert Repo.reload!(foreign).order == 1.0
   end
+
+  test "category editor keeps draft when write permission is revoked", %{conn: conn} do
+    branch = insert(:branch)
+    role = insert(:role, permissions: ["categories.read", "categories.update"])
+    staff = insert(:staff, role: role)
+    insert(:staff_branch, staff: staff, branch: branch)
+    category = insert(:category, name: "Original")
+    {:ok, _} = Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/categories/#{category.id}/edit")
+    Repo.update!(Ecto.Changeset.change(role, permissions: ["categories.read"]))
+    lv |> form("#category-form", category: %{name: "Denied draft"}) |> render_submit()
+
+    assert has_element?(lv, ~s(#category-form input[name="category[name]"][value="Denied draft"]))
+    assert Repo.reload!(category).name == "Original"
+  end
 end

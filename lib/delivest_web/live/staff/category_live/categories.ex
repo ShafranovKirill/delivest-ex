@@ -96,7 +96,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
         %{"id" => id, "above_order" => above_order, "below_order" => below_order},
         socket
       ) do
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
     branch_id = socket.assigns.branch_id
 
     with {:ok, category} <- Net.get_branch_category(socket.assigns.branch_id, id),
@@ -115,7 +115,8 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
         %{"id" => id, "above_order" => above_order, "below_order" => below_order},
         %{assigns: %{ordering_category: %Category{} = category}} = socket
       ) do
-    %{current_staff: staff, branch_id: branch_id} = socket.assigns
+    %{branch_id: branch_id} = socket.assigns
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
 
     with %Net.Product{} = product <-
            Enum.find(socket.assigns.ordering_products, &(&1.id == id)),
@@ -150,7 +151,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
         _,
         %{assigns: %{category_to_delete: category, branch_id: branch_id} = assigns} = socket
       ) do
-    case Net.delete_category(assigns.current_staff, category) do
+    case Net.delete_category(Identity.fresh_staff(assigns.current_staff), category) do
       {:ok, _} ->
         categories = Net.list_category_for_branch(branch_id)
 
@@ -210,6 +211,7 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
     ~H"""
     <div class="space-y-6">
       <div id="categories-list" phx-hook="SortableCategories" class="space-y-2">
+        <.empty_state :if={@categories == []} title={gettext("No categories")} />
         <%= for category <- @categories do %>
           <div
             class="flex items-center justify-between p-4 bg-base-100 rounded-box border border-base-300 cursor-default"
@@ -220,7 +222,12 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
               <span class="drag-handle cursor-grab hover:text-primary text-base-content/50 p-1">
                 <.icon name="hero-bars-3" class="w-5 h-5" />
               </span>
-              <span class="font-medium text-lg">{category.name}</span>
+              <.link
+                navigate={
+                  ~p"/staff/b/#{@current_branch}/products?#{%{filters: %{"0" => %{field: "category_id", op: "==", value: category.id}}}}"
+                }
+                class="font-medium text-lg hover:underline"
+              >{category.name}</.link>
             </div>
 
             <div class="flex items-center gap-1">

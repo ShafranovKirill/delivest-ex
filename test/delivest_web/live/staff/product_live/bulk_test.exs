@@ -4,7 +4,8 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
-  alias Delivest.Net
+  alias Delivest.{Net, Relations, Repo}
+  alias Delivest.Net.Product
   alias DelivestWeb.Staff.ProductLive.BulkRows
 
   setup %{conn: conn} do
@@ -38,11 +39,16 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
     assert {:error, {:live_redirect, %{to: ^products}}} =
              lv |> form("#bulk-products") |> render_submit()
 
-    products = branch.id |> Net.list_branch_products() |> Map.new(&{&1.name, &1})
+    products =
+      Relations.list_target_ids("Branch", branch.id, "Product")
+      |> Enum.map(&Repo.get!(Product, &1))
+      |> Map.new(&{&1.name, &1})
+
     assert map_size(products) == 6
     assert products["Пепперони"].price == 159_000
     assert products["Пепперони"].weight == 450
     assert products["Пепперони"].category_id == products["Маргарита"].category_id
+    assert Enum.all?(products, fn {_name, product} -> product.is_active == false end)
   end
 
   test "photo from the last column is attached to the product", %{conn: conn, branch: branch} do
@@ -59,7 +65,9 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
     |> form("#bulk-products", rows: %{"2" => %{name: "Суп", price: "300"}})
     |> render_submit()
 
-    assert [%{name: "Суп", media_id: media_id}] = Net.list_branch_products(branch.id)
+    assert %{name: "Суп", media_id: media_id, is_active: false} =
+             Repo.get_by!(Product, name: "Суп")
+
     assert %{original_name: "soup.jpg", context: :product} = Delivest.Media.get_file(media_id)
   end
 
@@ -82,7 +90,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkTest do
     assert [%{"price" => "400", "name" => "Плов"}] =
              BulkRows.paste("Цена\tНазвание\n400\tПлов", "name")
 
-    assert {%{"price" => 150_000, "weight" => 300}, %{}} =
+    assert {%{"price" => 150_000, "weight" => 300, "is_active" => false}, %{}} =
              BulkRows.validate(%{"name" => "Плов", "price" => "1 500 руб.", "weight" => "300гр"})
 
     assert {_attrs, %{"price" => _, "quantity" => _}} =

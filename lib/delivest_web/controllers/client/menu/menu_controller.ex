@@ -9,6 +9,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   alias OpenApiSpex.Schema
 
   @popular_category_id "00000000-0000-4000-8000-000000000001"
+  @popular_label gettext_noop("Popular")
 
   operation(:index,
     summary: "Получить меню филиала",
@@ -87,7 +88,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
       end
 
     Gettext.with_locale(DelivestWeb.Gettext, locale, fn ->
-      Gettext.gettext(DelivestWeb.Gettext, "Popular")
+      Gettext.gettext(DelivestWeb.Gettext, @popular_label)
     end)
   end
 end

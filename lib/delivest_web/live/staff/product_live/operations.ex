@@ -101,7 +101,7 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
       end)
 
     case ProductOperations.apply_changes(
-           socket.assigns.current_staff,
+           Identity.fresh_staff(socket.assigns.current_staff),
            socket.assigns.preview,
            choices
          ) do

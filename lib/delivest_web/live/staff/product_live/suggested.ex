@@ -37,7 +37,7 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   def handle_event("toggle", %{"id" => id}, socket) do
     with {:ok, product} <- Net.get_branch_product(socket.assigns.branch_id, id),
          {:ok, _product} <-
-           Net.update_product(socket.assigns.current_staff, product, %{
+           Net.update_product(Identity.fresh_staff(socket.assigns.current_staff), product, %{
              "suggested" => not product.suggested
            }) do
       {:noreply, load(socket)}
@@ -50,7 +50,9 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   def handle_event("remove", %{"id" => id}, socket) do
     with {:ok, product} <- Net.get_branch_product(socket.assigns.branch_id, id),
          {:ok, _} <-
-           Net.update_product(socket.assigns.current_staff, product, %{"suggested" => false}) do
+           Net.update_product(Identity.fresh_staff(socket.assigns.current_staff), product, %{
+             "suggested" => false
+           }) do
       {:noreply, load(socket)}
     else
       {:error, :forbidden} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
@@ -64,7 +66,7 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
 
   def handle_info({:product_picker_confirmed, "suggested-picker", ids}, socket) do
     branch_id = socket.assigns.branch_id
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
     products = BranchProducts.load(branch_id)
     valid = MapSet.new(Enum.map(products, & &1.id))
 

@@ -75,7 +75,7 @@ defmodule DelivestWeb.Staff.ProductLive.BulkRows do
         )
       end)
 
-    {Map.put(attrs, "is_active", true), errors}
+    {Map.put(attrs, "is_active", false), errors}
   end
 
   defp parse(column, "") when column in ~w(name price), do: {:error, gettext("Required")}

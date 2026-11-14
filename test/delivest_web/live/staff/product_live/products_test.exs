@@ -84,6 +84,224 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     assert Repo.get!(Delivest.Net.Product, product.id).name == "Old"
   end
 
+  test "minimal creation requires a price, accepts zero, and starts unpublished", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/new")
+    assert has_element?(lv, "#product-main-section")
+    assert has_element?(lv, "#product-advanced-fields")
+    lv |> element("#product-advanced-fields summary") |> render_click()
+    assert has_element?(lv, "#product-advanced-fields[open]")
+
+    assert has_element?(
+             lv,
+             "#product-form input[name='product[is_active]'][type='checkbox']:not(:checked)"
+           )
+
+    lv |> form("#product-form", product: %{name: "Free sample", price: ""}) |> render_submit()
+    assert has_element?(lv, "#product-form [name='product[price]']")
+    assert Delivest.Net.list_branch_products(branch.id) == []
+
+    lv |> form("#product-form", product: %{name: "Free sample", price: "0"}) |> render_submit()
+    assert %{price: 0, is_active: false} = Repo.get_by!(Delivest.Net.Product, name: "Free sample")
+
+    {:ok, published, _} = live(conn, ~p"/staff/b/#{branch}/products/new")
+
+    published
+    |> form("#product-form", product: %{name: "Published", price: "1", is_active: true})
+    |> render_submit()
+
+    assert %{is_active: true} = Repo.get_by!(Delivest.Net.Product, name: "Published")
+  end
+
+  test "editing basic fields preserves category, rare fields, external ID and modifiers", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    category = insert(:category)
+    Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+
+    product =
+      insert_branch_product(branch.id,
+        name: "Old",
+        category_id: category.id,
+        price: 100,
+        calories: 32.5,
+        excise: :sugary_drink,
+        slug: "old"
+      )
+
+    group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Size", min: 0, max: 1})
+    {:ok, _} = Delivest.Net.Modifiers.attach(staff, product.id, [group.id])
+
+    Repo.insert!(%Delivest.Net.ProductExternalId{
+      entity_id: product.id,
+      branch_id: branch.id,
+      provider: "frontpad",
+      external_id: "REMOTE-1"
+    })
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/#{product.id}/edit")
+    assert has_element?(lv, "#product-edit-page #product-dish-section")
+    assert has_element?(lv, "#product-external-section")
+    lv |> form("#product-form", product: %{name: "New", price: "100"}) |> render_submit()
+
+    saved = Repo.get!(Delivest.Net.Product, product.id)
+    assert saved.name == "New"
+    assert saved.category_id == category.id
+    assert saved.calories == 32.5
+    assert saved.excise == :sugary_drink
+    assert Delivest.Net.Modifiers.group_ids(product.id) == [group.id]
+
+    assert Repo.get_by!(Delivest.Net.ProductExternalId, entity_id: product.id).external_id ==
+             "REMOTE-1"
+  end
+
+  test "stale editor keeps a draft and cannot overwrite a newer product", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    product = insert_branch_product(branch.id, name: "Original", price: 100)
+    path = ~p"/staff/b/#{branch}/products/#{product.id}/edit"
+
+    {:ok, first, _} = live(conn, path)
+    {:ok, second, _} = live(conn, path)
+
+    first |> form("#product-form", product: %{name: "Saved first"}) |> render_submit()
+    assert Repo.reload!(product).name == "Saved first"
+
+    second |> form("#product-form", product: %{name: "Stale draft"}) |> render_submit()
+    assert Repo.reload!(product).name == "Saved first"
+    assert has_element?(second, "#product-save-error")
+    assert has_element?(second, "#product-reload-latest")
+    assert has_element?(second, "#product-form input[name='product[name]'][value='Stale draft']")
+
+    second |> element("#product-reload-latest") |> render_click()
+    assert has_element?(second, "#product-form input[name='product[name]'][value='Saved first']")
+    refute has_element?(second, "#product-save-error")
+  end
+
+  test "external mapping changed after opening blocks a basic edit", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    product = insert_branch_product(branch.id, name: "Original")
+
+    mapping =
+      Repo.insert!(%Delivest.Net.ProductExternalId{
+        entity_id: product.id,
+        branch_id: branch.id,
+        provider: "frontpad",
+        external_id: "FIRST"
+      })
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/#{product.id}/edit")
+    Repo.update!(Ecto.Changeset.change(mapping, external_id: "SECOND"))
+    lv |> form("#product-form", product: %{name: "Draft"}) |> render_submit()
+
+    assert has_element?(lv, "#product-reload-latest")
+    assert Repo.reload!(product).name == "Original"
+    assert Repo.reload!(mapping).external_id == "SECOND"
+  end
+
+  test "read-only staff opens a full product card and returns to filtered list", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    product = insert_branch_product(branch.id, name: "Read only", calories: 44.0)
+    list = ~p"/staff/b/#{branch}/products?search=Read"
+
+    {:ok, lv, _} = live(conn, list)
+    assert has_element?(lv, "#products a", "Read only")
+    lv |> element("#products a", "Read only") |> render_click()
+    {show_url, _flash} = assert_redirect(lv)
+    assert URI.parse(show_url).path == ~p"/staff/b/#{branch}/products/#{product.id}"
+    {:ok, show, _} = live(conn, show_url)
+
+    assert has_element?(
+             show,
+             "#product-edit-page #product-form.product-readonly-form fieldset[disabled]"
+           )
+
+    assert has_element?(show, "#product-dish-section")
+    refute has_element?(show, "#product-edit-link")
+    refute has_element?(show, "#product-form button[type=submit]")
+    refute has_element?(show, "#product-form button[phx-click='open_upload_modal']")
+    show |> element("#product-back-to-list") |> render_click()
+    {return_url, _flash} = assert_redirect(show)
+    assert URI.parse(return_url).fragment == "product-row-#{product.id}"
+
+    assert return_url
+           |> URI.parse()
+           |> Map.fetch!(:query)
+           |> URI.decode_query()
+           |> Map.fetch!("search") == "Read"
+
+    {:ok, back, _} = live(conn, return_url)
+    assert has_element?(back, "#products a", "Read only")
+  end
+
+  test "CRM owned product rejects forged changes to name price and weight", %{conn: conn} do
+    alias Delivest.Identity.Branch.BranchInfo
+    alias Delivest.Integrations.Crm.BranchSettings
+    alias Delivest.Integrations.Iiko
+
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :iiko,
+        menu_source: :crm,
+        iiko: %Iiko.Settings{api_key: "test"}
+      }
+    })
+
+    product = insert_branch_product(branch.id, name: "CRM name", price: 100, weight: 100)
+
+    Repo.insert!(%Delivest.Net.ProductExternalId{
+      entity_id: product.id,
+      branch_id: branch.id,
+      provider: "iiko",
+      external_id: "CRM-1"
+    })
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/#{product.id}/edit")
+    assert has_element?(lv, "#product-crm-owner")
+
+    lv
+    |> element("#product-form")
+    |> render_submit(%{"product" => %{"name" => "Forged", "price" => "100", "weight" => "100"}})
+
+    assert has_element?(lv, "#product-save-error")
+    assert Repo.reload!(product).name == "CRM name"
+  end
+
+  test "product editor keeps draft after write permission is revoked", %{conn: conn} do
+    branch = insert(:branch)
+    role = insert(:role, permissions: ["products.read", "products.update"])
+    staff = insert(:staff, role: role)
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    product = insert_branch_product(branch.id, name: "Original")
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/#{product.id}/edit")
+    Repo.update!(Ecto.Changeset.change(role, permissions: ["products.read"]))
+    lv |> form("#product-form", product: %{name: "Denied draft"}) |> render_submit()
+
+    assert has_element?(lv, "#product-save-error")
+    assert has_element?(lv, "#product-form input[name='product[name]'][value='Denied draft']")
+    assert Repo.reload!(product).name == "Original"
+  end
+
   describe "products management page" do
     test "renders the products page and filter controls with a selected branch", %{conn: conn} do
       branch = insert(:branch, name: "North Branch")
@@ -185,6 +403,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert has_element?(lv, "main #staff-page-header h1", "Products")
       assert has_element?(lv, "main #staff-page-header-actions")
       refute actions =~ ~s(id="copy-products-trigger")
+      assert has_element?(lv, "#product-more-actions > summary", "More")
+      assert has_element?(lv, "#product-more-actions #product-operations-link")
+      assert has_element?(lv, "#product-more-actions #bulk-add-products")
       assert actions =~ ~s(id="product-operations-link")
       assert actions =~ ~s(id="bulk-add-products")
       assert actions =~ ~s(id="create-product")
@@ -258,10 +479,52 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
 
       actions = render(element(lv, "#staff-page-header-actions"))
+      assert has_element?(lv, "#product-more-actions #product-operations-link")
       assert actions =~ ~s(id="product-operations-link")
       refute actions =~ ~s(id="copy-products-trigger")
       refute actions =~ ~s(id="bulk-add-products")
       refute actions =~ ~s(id="create-product")
+    end
+
+    test "row menu keeps edit query and confirms deletion of the chosen product", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+      product = insert_branch_product(branch.id, name: "Menu target")
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products?search=Menu")
+      menu = "#product-row-more-#{product.id}"
+      assert has_element?(lv, "#{menu} > summary[aria-label='More actions for Menu target']")
+      assert has_element?(lv, "#{menu} a", "Edit")
+      assert has_element?(lv, "#{menu} button[phx-click='delete_click']", "Delete")
+
+      lv |> element("#{menu} a", "Edit") |> render_click()
+      {edit_url, _flash} = assert_redirect(lv)
+      assert URI.parse(edit_url).path == ~p"/staff/b/#{branch}/products/#{product.id}/edit"
+
+      assert edit_url
+             |> URI.parse()
+             |> Map.fetch!(:query)
+             |> URI.decode_query()
+             |> Map.get("search") == "Menu"
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products?search=Menu")
+      lv |> element("#{menu} button[phx-click='delete_click']") |> render_click()
+      assert has_element?(lv, "#delete-product-modal.modal-open", "Menu target")
+      lv |> element("#delete-product-modal .modal-action button.btn-error") |> render_click()
+      assert Repo.reload!(product).deleted_at != nil
+    end
+
+    test "read-only product rows do not expose edit or delete actions", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+      insert(:staff_branch, staff: staff, branch: branch)
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+      product = insert_branch_product(branch.id, name: "Read only")
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+      refute has_element?(lv, "#product-row-more-#{product.id}")
+      assert has_element?(lv, "#products a", "Read only")
     end
   end
 

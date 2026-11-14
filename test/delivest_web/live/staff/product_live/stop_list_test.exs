@@ -77,6 +77,26 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
     refute has_element?(lv, "#stop-add-products")
   end
 
+  test "stop-list search and category persist in the URL", ctx do
+    category = insert(:category)
+    soup = Delivest.Repo.update!(Ecto.Changeset.change(ctx.soup, category_id: category.id))
+    other = insert_branch_product(ctx.branch.id, name: "Суп", category_id: category.id)
+    {:ok, _} = Stops.replace_external(ctx.branch.id, :frontpad, [soup.id, other.id])
+
+    {:ok, lv, _} =
+      live(
+        sign_in(ctx.conn, ctx.branch, ["products.read"]),
+        ~p"/staff/b/#{ctx.branch}/products/stops?search=Борщ&category_id=#{category.id}"
+      )
+
+    assert has_element?(lv, "#stop-list-#{soup.id}")
+    refute has_element?(lv, "#stop-list-#{other.id}")
+    assert has_element?(lv, "#stop-list-filter input[name=search][value='Борщ']")
+    lv |> element("#stop-list-filter-bar a", "Reset") |> render_click()
+    assert_patch(lv, ~p"/staff/b/#{ctx.branch}/products/stops")
+    assert has_element?(lv, "#stop-list-#{other.id}")
+  end
+
   test "products are recommended and searched", ctx do
     insert_branch_product(ctx.branch.id, name: "Пельмени")
 

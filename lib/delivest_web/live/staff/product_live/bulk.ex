@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.ProductLive.Bulk do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Media, Net}
+  alias Delivest.{Identity, Media, Net}
   alias Delivest.Integrations.Crm
   alias DelivestWeb.Staff.ProductLive.BulkRows
 
@@ -105,8 +105,16 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
   end
 
   defp create(socket, rows) do
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
 
+    if Identity.authorize(staff, "products.create", socket.assigns.branch_id) != :ok do
+      put_flash(socket, :error, gettext("Permission denied"))
+    else
+      create_authorized(socket, rows, staff)
+    end
+  end
+
+  defp create_authorized(socket, rows, staff) do
     provider = Crm.default_provider(socket.assigns.branch_id)
 
     products =
@@ -296,6 +304,9 @@ defmodule DelivestWeb.Staff.ProductLive.Bulk do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <p class="text-sm text-base-content/70">
+        {gettext("New products are unpublished. You can publish them after reviewing their cards.")}
+      </p>
       <.form
         for={%{}}
         id="bulk-products"

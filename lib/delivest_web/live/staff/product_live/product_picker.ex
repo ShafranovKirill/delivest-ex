@@ -255,9 +255,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductPicker do
             <button type="button" class="btn btn-outline" phx-click="cancel" phx-target={@myself}>{gettext(
               "Cancel"
             )}</button>
-            <button type="button" class="btn btn-primary" phx-click="save" phx-target={@myself}>{gettext(
-              "Save"
-            )}</button>
+            <button type="button" class="btn btn-primary" phx-click="save" phx-target={@myself}>
+              {gettext("Add selected")}
+            </button>
           </div>
         </div>
       </.focus_wrap>

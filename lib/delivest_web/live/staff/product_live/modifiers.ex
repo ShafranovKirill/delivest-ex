@@ -80,7 +80,11 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   def handle_event("save_group", %{"group" => params}, socket) do
     group = socket.assigns.group_form
 
-    case Modifiers.save_group(socket.assigns.current_staff, group, group_attrs(params)) do
+    case Modifiers.save_group(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           group,
+           group_attrs(params)
+         ) do
       {:ok, _group} ->
         {:noreply,
          socket |> assign(group_form: nil) |> put_flash(:info, gettext("Saved")) |> load()}
@@ -94,13 +98,17 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   end
 
   def handle_event("delete_group", %{"id" => id}, socket) do
-    Modifiers.delete_group(socket.assigns.current_staff, Modifiers.get_group(id))
+    Modifiers.delete_group(
+      Identity.fresh_staff(socket.assigns.current_staff),
+      Modifiers.get_group(id)
+    )
+
     {:noreply, load(socket)}
   end
 
   def handle_event("save_modifier", %{"modifier" => params}, socket) do
     modifier = socket.assigns.modifier_form
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
     attrs = Map.put(params, "max_quantity", "1")
 
     result =
@@ -122,7 +130,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   end
 
   def handle_event("save_article", %{"article" => params}, socket) do
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
     branch_id = socket.assigns.branch_id
 
     result =
@@ -161,20 +169,27 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
   def handle_event("validate_photo", _params, socket), do: {:noreply, socket}
 
   def handle_event("remove_photo", %{"id" => id}, socket) do
-    case Modifiers.remove_photo(socket.assigns.current_staff, Modifiers.get_modifier(id)) do
+    case Modifiers.remove_photo(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           Modifiers.get_modifier(id)
+         ) do
       {:ok, _modifier} -> {:noreply, load(socket)}
       {:error, _reason} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
     end
   end
 
   def handle_event("delete_modifier", %{"id" => id}, socket) do
-    Modifiers.delete_modifier(socket.assigns.current_staff, Modifiers.get_modifier(id))
+    Modifiers.delete_modifier(
+      Identity.fresh_staff(socket.assigns.current_staff),
+      Modifiers.get_modifier(id)
+    )
+
     {:noreply, load(socket)}
   end
 
   def handle_event("stop", %{"id" => id}, socket) do
     Modifiers.stop(
-      socket.assigns.current_staff,
+      Identity.fresh_staff(socket.assigns.current_staff),
       socket.assigns.branch_id,
       Modifiers.get_modifier(id),
       :until_resumed
@@ -185,7 +200,7 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
 
   def handle_event("resume", %{"id" => id}, socket) do
     Modifiers.resume(
-      socket.assigns.current_staff,
+      Identity.fresh_staff(socket.assigns.current_staff),
       socket.assigns.branch_id,
       Modifiers.get_modifier(id)
     )
@@ -212,7 +227,12 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
 
       modifier = Modifiers.get_modifier(socket.assigns.photo_for)
 
-      case modifier && Modifiers.put_photo(socket.assigns.current_staff, modifier, binary) do
+      case modifier &&
+             Modifiers.put_photo(
+               Identity.fresh_staff(socket.assigns.current_staff),
+               modifier,
+               binary
+             ) do
         {:ok, _modifier} ->
           {:noreply, socket |> put_flash(:info, gettext("Saved")) |> load()}
 

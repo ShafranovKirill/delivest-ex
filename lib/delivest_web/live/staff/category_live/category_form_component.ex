@@ -1,8 +1,11 @@
 defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.Net
+  alias Delivest.{Identity, Net}
   alias Delivest.Net.Category
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [form_section: 1, error_summary: 1, changeset_errors: 1]
 
   use Gettext, backend: DelivestWeb.Gettext
 
@@ -34,7 +37,7 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
   end
 
   defp save_category(socket, :edit, category_params) do
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
     category = socket.assigns.category
 
     case Net.update_category(staff, category, category_params) do
@@ -44,15 +47,25 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
         {:noreply,
          socket
          |> put_flash(:info, gettext("Category updated successfully"))
+         |> push_event("staff:form-saved", %{id: "category-form"})
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("You don't have permission to perform this action."))
+         |> assign(
+           form:
+             to_form(Category.changeset(category, category_params) |> Map.put(:action, :update))
+         )}
     end
   end
 
   defp save_category(socket, :new, category_params) do
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
     branch_id = socket.assigns.branch_id
 
     case Net.create_category(staff, branch_id, category_params) do
@@ -62,10 +75,23 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
         {:noreply,
          socket
          |> put_flash(:info, gettext("Category created successfully"))
+         |> push_event("staff:form-saved", %{id: "category-form"})
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("You don't have permission to perform this action."))
+         |> assign(
+           form:
+             to_form(
+               Category.changeset(%Category{}, category_params)
+               |> Map.put(:action, :insert)
+             )
+         )}
     end
   end
 
@@ -85,14 +111,21 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
         class="flex flex-col h-full"
       >
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
-          <.input
-            field={@form[:name]}
-            type="text"
-            label={gettext("Category Name")}
-            required
-            autofocus
+          <.error_summary
+            id="category-error-summary"
+            errors={changeset_errors(@form.source)}
+            form_name={@form.name}
           />
-          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
+          <.form_section id="category-main-section" title={gettext("Category")}>
+            <.input
+              field={@form[:name]}
+              type="text"
+              label={gettext("Category Name")}
+              required
+              autofocus
+            />
+            <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
+          </.form_section>
         </div>
 
         <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">

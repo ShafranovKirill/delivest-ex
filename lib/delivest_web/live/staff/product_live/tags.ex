@@ -71,7 +71,7 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
       end)
       |> List.first()
 
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
 
     result =
       case socket.assigns.tag do
@@ -104,7 +104,10 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
 
   def handle_event("confirm_delete", _params, socket) do
     socket =
-      case Net.delete_product_tag(socket.assigns.current_staff, socket.assigns.tag_to_delete) do
+      case Net.delete_product_tag(
+             Identity.fresh_staff(socket.assigns.current_staff),
+             socket.assigns.tag_to_delete
+           ) do
         {:ok, _tag} -> put_flash(socket, :info, gettext("Tag deleted"))
         _error -> put_flash(socket, :error, gettext("Could not delete the tag"))
       end

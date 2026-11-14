@@ -511,6 +511,7 @@ defmodule DelivestWeb.Router do
           live "/tags/:id/edit", Tags, :edit
           live "/:id/edit", Products, :edit
           live "/new", Products, :new
+          live "/:id", Products, :show
         end
 
         scope "/menu", MenuLive do

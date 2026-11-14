@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   alias DelivestWeb.Staff.ProductLive.ProductFormComponent
 
   import DelivestWeb.Staff.ProductLive.StopControl, only: [stop_control: 1]
+  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
 
@@ -29,6 +30,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        selected_status: nil,
        selected_ids: [],
        bulk_delete_open: false,
+       form_version: 0,
        crm_menu: Gateway.crm?(socket.assigns.current_branch, :menu),
        stops: Stops.by_product(branch_id),
        stopped_filter: false,
@@ -57,6 +59,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             params: params,
             stopped_filter: stopped_filter,
             meta: meta,
+            page_product_ids: MapSet.new(Enum.map(products, & &1.id)),
             selected_ids: [],
             search: Map.get(params, "search", ""),
             selected_category_id: Flop.Filter.get_value(meta.flop.filters, :category_id),
@@ -73,6 +76,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   defp prepare_flop_params(params) do
+    params = Map.put_new(params, "page_size", 25)
+
     case Map.get(params, "search") do
       val when val in [nil, ""] ->
         params
@@ -128,9 +133,33 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     end
   end
 
+  defp apply_action(socket, :show, %{"id" => id}) do
+    case Net.get_branch_product(socket.assigns.branch_id, id, preload: [:category, :external_ids]) do
+      {:ok, product} ->
+        assign(socket,
+          page_title: product.name,
+          product: ProductCrmIds.load(product, socket.assigns.branch_id)
+        )
+
+      _ ->
+        push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/products")
+    end
+  end
+
   @impl true
   def handle_event("select_products", params, socket) do
-    {:noreply, assign(socket, selected_ids: Map.get(params, "ids", []))}
+    ids =
+      if Identity.can?(socket.assigns.current_staff, "products.delete") and
+           not socket.assigns.crm_menu do
+        params
+        |> Map.get("ids", [])
+        |> Enum.uniq()
+        |> Enum.filter(&MapSet.member?(socket.assigns.page_product_ids, &1))
+      else
+        []
+      end
+
+    {:noreply, assign(socket, selected_ids: ids)}
   end
 
   def handle_event("clear_selection", _params, socket),
@@ -166,7 +195,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       when period in ~w(today until_resumed) do
     with_branch_product(socket, id, fn product ->
       Stops.stop(
-        socket.assigns.current_staff,
+        Identity.fresh_staff(socket.assigns.current_staff),
         socket.assigns.branch_id,
         product,
         String.to_existing_atom(period)
@@ -176,7 +205,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   def handle_event("resume", %{"id" => id}, socket) do
     with_branch_product(socket, id, fn product ->
-      Stops.resume(socket.assigns.current_staff, socket.assigns.branch_id, product)
+      Stops.resume(
+        Identity.fresh_staff(socket.assigns.current_staff),
+        socket.assigns.branch_id,
+        product
+      )
     end)
   end
 
@@ -205,14 +238,20 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     {:noreply, assign(socket, product_to_delete: nil)}
   end
 
+  def handle_event("confirm_delete", _, %{assigns: %{product_to_delete: nil}} = socket),
+    do: {:noreply, socket}
+
   def handle_event("confirm_delete", _, %{assigns: %{product_to_delete: product}} = socket) do
-    case Net.soft_delete_product(socket.assigns.current_staff, product) do
+    case Net.soft_delete_product(Identity.fresh_staff(socket.assigns.current_staff), product) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, gettext("Product deleted successfully"))
-         |> stream_delete(:products, product)
-         |> assign(product_to_delete: nil)}
+         |> assign(product_to_delete: nil)
+         |> push_patch(
+           to:
+             ~p"/staff/b/#{socket.assigns.current_branch}/products?#{build_query_params(socket.assigns, %{})}"
+         )}
 
       {:error, _} ->
         {:noreply, socket |> put_flash(:error, gettext("Failed to delete product"))}
@@ -226,7 +265,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   def handle_event("bulk_delete_click", _, socket) do
     {:noreply,
      assign(socket,
-       bulk_delete_open: socket.assigns.selected_ids != [] and not socket.assigns.crm_menu
+       bulk_delete_open:
+         socket.assigns.selected_ids != [] and not socket.assigns.crm_menu and
+           Identity.can?(socket.assigns.current_staff, "products.delete")
      )}
   end
 
@@ -239,19 +280,26 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   def handle_event("confirm_bulk_delete", _, socket) do
-    %{current_staff: staff, branch_id: branch_id, selected_ids: ids} = socket.assigns
+    %{branch_id: branch_id, selected_ids: ids} = socket.assigns
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
+    ids = Enum.filter(ids, &MapSet.member?(socket.assigns.page_product_ids, &1))
 
     case Net.soft_delete_products(staff, branch_id, ids) do
       {:ok, deleted} ->
-        socket =
-          Enum.reduce(deleted, socket, fn product, acc ->
-            stream_delete(acc, :products, product)
-          end)
-
         {:noreply,
          socket
          |> assign(selected_ids: [], bulk_delete_open: false)
-         |> put_flash(:info, gettext("Products deleted: %{count}", count: length(deleted)))}
+         |> put_flash(
+           :info,
+           gettext("Products deleted: %{count}; failed: %{failed}",
+             count: length(deleted),
+             failed: length(ids) - length(deleted)
+           )
+         )
+         |> push_patch(
+           to:
+             ~p"/staff/b/#{socket.assigns.current_branch}/products?#{build_query_params(socket.assigns, %{})}"
+         )}
 
       {:error, :forbidden} ->
         {:noreply,
@@ -268,7 +316,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
   @impl true
   def handle_info({ProductFormComponent, {:saved, product}}, socket) do
-    product_with_assoc = Repo.preload(product, [:category])
     action = socket.assigns.live_action
 
     msg =
@@ -278,14 +325,13 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         _ -> gettext("Product saved successfully")
       end
 
-    {:noreply,
-     socket
-     |> put_flash(:info, msg)
-     |> stream_insert(:products, product_with_assoc)
-     |> push_patch(
-       to:
-         ~p"/staff/b/#{socket.assigns.current_branch}/products?#{build_query_params(socket.assigns, %{})}"
-     )}
+    socket = put_flash(socket, :info, msg)
+
+    if action == :new do
+      {:noreply, push_patch(socket, to: product_list_path(socket.assigns))}
+    else
+      {:noreply, push_navigate(socket, to: product_list_path(socket.assigns, product.id))}
+    end
   end
 
   @impl true
@@ -313,12 +359,17 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def handle_info(:stops_changed, socket) do
     socket = assign(socket, stops: Stops.by_product(socket.assigns.branch_id))
-    handle_params(socket.assigns.params, nil, socket)
+
+    if socket.assigns.live_action == :edit,
+      do: {:noreply, socket},
+      else: handle_params(socket.assigns.params, nil, socket)
   end
 
   @impl true
   def handle_info(:catalog_changed, socket) do
-    handle_params(socket.assigns.params, nil, socket)
+    if socket.assigns.live_action == :edit,
+      do: {:noreply, socket},
+      else: handle_params(socket.assigns.params, nil, socket)
   end
 
   @impl true
@@ -341,6 +392,16 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   @impl true
   def handle_info({ProductFormComponent, {:open_upload_modal}}, socket) do
     {:noreply, assign(socket, show_upload_modal: true)}
+  end
+
+  @impl true
+  def handle_info({ProductFormComponent, :reload_requested}, socket) do
+    socket =
+      socket
+      |> apply_action(:edit, %{"id" => socket.assigns.product.id})
+      |> assign(:form_version, socket.assigns.form_version + 1)
+
+    {:noreply, socket}
   end
 
   defp maybe_add_filter(filters, _field, _op, val) when val in [nil, ""], do: filters
@@ -421,33 +482,44 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     |> Map.new()
   end
 
+  defp product_list_path(assigns, product_id \\ nil) do
+    path = ~p"/staff/b/#{assigns.current_branch}/products?#{build_query_params(assigns, %{})}"
+    if product_id, do: path <> "#product-row-#{product_id}", else: path
+  end
+
   def staff_page_header(assigns) do
     ~H"""
     <.page_header
-      title={gettext("Products")}
+      title={if @live_action in [:edit, :show], do: @page_title, else: gettext("Products")}
       title_in_header={false}
     >
       <:actions>
         <.link
-          id="product-operations-link"
-          navigate={~p"/staff/b/#{@current_branch}/products/operations"}
-          class="btn btn-outline"
-        >
-          <.icon name="hero-arrow-up-tray" class="size-5 mr-1" /> Товарные операции
-        </.link>
-
+          :if={@live_action in [:edit, :show]}
+          id="product-back-to-list"
+          navigate={product_list_path(assigns, @product.id)}
+          class="btn btn-ghost"
+        >{gettext("Back to products")}</.link>
+        <button
+          :if={@live_action == :edit}
+          type="submit"
+          form="product-form"
+          class="btn btn-primary"
+          data-staff-save="edit"
+        >{gettext("Save")}</button>
         <.link
-          :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
-          id="bulk-add-products"
-          navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
-          class="btn btn-outline"
-        >
-          <.icon name="hero-table-cells" class="size-5 mr-1" />
-          {gettext("Bulk add")}
-        </.link>
-
+          :if={@live_action == :show and Identity.can?(@current_staff, "products.update")}
+          id="product-edit-link"
+          navigate={
+            ~p"/staff/b/#{@current_branch}/products/#{@product.id}/edit?#{build_query_params(assigns, %{})}"
+          }
+          class="btn btn-primary"
+        >{gettext("Edit")}</.link>
         <.button
-          :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+          :if={
+            @live_action not in [:edit, :show] and Identity.can?(@current_staff, "products.create") and
+              not @crm_menu
+          }
           id="create-product"
           patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
           class="btn btn-primary"
@@ -455,6 +527,25 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <.icon name="hero-plus" class="size-5" />
           {gettext("Create Product")}
         </.button>
+        <details :if={@live_action not in [:edit, :show]} id="product-more-actions">
+          <summary class="btn btn-ghost list-none cursor-pointer">
+            <.icon name="hero-ellipsis-horizontal" class="size-5" />
+            {gettext("More")}
+          </summary>
+          <div class="flex flex-col items-start gap-1 py-2">
+            <.link
+              id="product-operations-link"
+              navigate={~p"/staff/b/#{@current_branch}/products/operations"}
+              class="btn btn-ghost btn-sm justify-start"
+            >{gettext("Product operations")}</.link>
+            <.link
+              :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+              id="bulk-add-products"
+              navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
+              class="btn btn-ghost btn-sm justify-start"
+            >{gettext("Bulk add")}</.link>
+          </div>
+        </details>
       </:actions>
     </.page_header>
     """
@@ -464,207 +555,253 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.form
-        for={nil}
-        id="products-filter"
-        phx-change="filter"
-        class="flex gap-4 items-center justify-between flex-wrap w-full"
-      >
-        <div class="relative w-full sm:max-w-sm">
-          <.icon
-            name="hero-magnifying-glass"
-            class="absolute left-3 top-3.5 size-5 text-base-content/50 z-10"
-          />
-          <.input
-            type="text"
-            name="search"
-            value={@search}
-            placeholder={gettext("Search products...")}
-            class="input input-bordered w-full pl-10"
-            phx-debounce="500"
-          />
-        </div>
-
-        <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-          <select name="category_id" class="select select-bordered w-full sm:w-52 shrink-0">
-            <option value="">{gettext("All categories")}</option>
-            <%= for cat <- @categories do %>
-              <option value={cat.id} selected={@selected_category_id == cat.id}>{cat.name}</option>
-            <% end %>
-          </select>
-
-          <select name="is_active" class="select select-bordered w-full sm:w-48 shrink-0">
-            <option value="">{gettext("All statuses")}</option>
-            <option value="true" selected={@selected_status == true}>{gettext("Active")}</option>
-            <option value="false" selected={@selected_status == false}>{gettext("Inactive")}</option>
-            <option value="stopped" selected={@stopped_filter}>{gettext("In stop list")}</option>
-          </select>
-        </div>
-      </.form>
-
-      <% path_fn = fn overrides ->
-        ~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, overrides)}"
-      end %>
-
-      <form id="product-selection" phx-change="select_products"></form>
-
-      <.table id="products" rows={@streams.products} meta={@meta} path_fn={path_fn}>
-        <:col :let={{_id, prod}} label="">
-          <input
-            type="checkbox"
-            name="ids[]"
-            value={prod.id}
-            form="product-selection"
-            class="checkbox checkbox-sm"
-            aria-label={gettext("Select %{name}", name: prod.name)}
-          />
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Name")} sort="name">
-          <span class="font-bold">{prod.name}</span>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Category")}>
-          <span class="badge badge-ghost">{(prod.category && prod.category.name) || "—"}</span>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Price")} sort="price">
-          <div class="font-mono">{Money.format(prod.price)}</div>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Quantity")} secondary>
-          <span class="font-mono">
-            <%= if prod.quantity do %>
-              {prod.quantity} {gettext("pcs")}
-            <% else %>
-              —
-            <% end %>
-          </span>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Weight")} secondary>
-          <span class="font-mono">
-            <%= if prod.weight do %>
-              {prod.weight} {if prod.measure_unit == :ml, do: gettext("ml"), else: gettext("g")}
-            <% else %>
-              —
-            <% end %>
-          </span>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Status")}>
-          <%= if prod.is_active do %>
-            <span class="badge badge-success badge-sm whitespace-nowrap">{gettext("Active")}</span>
-          <% else %>
-            <span class="badge badge-error badge-sm text-error-content whitespace-nowrap">{gettext(
-              "Inactive"
-            )}</span>
-          <% end %>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Stop list")}>
-          <.stop_control
-            product={prod}
-            stops={Map.get(@stops, prod.id, [])}
-            can_edit={Identity.can?(@current_staff, "stops.update")}
-          />
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Description")} secondary>
-          <%= if prod.description && prod.description != "" do %>
-            <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
-          <% else %>
-            <span class="text-xs opacity-40">—</span>
-          <% end %>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Media")} secondary>
-          <%= if prod.media_id do %>
-            <span class="text-xs badge badge-outline whitespace-nowrap">{gettext("Has photo")}</span>
-          <% else %>
-            <span class="text-xs opacity-40">—</span>
-          <% end %>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("External ID")} secondary>
-          <%= if prod.external_ids != [] do %>
-            <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
-          <% else %>
-            <span class="text-xs opacity-40">—</span>
-          <% end %>
-        </:col>
-
-        <:col :let={{_id, prod}} label={gettext("Created At")} sort="inserted_at" secondary>
-          <span class="text-sm opacity-60">{Calendar.strftime(prod.inserted_at, "%d.%m.%Y")}</span>
-        </:col>
-
-        <:action :let={{_id, prod}}>
-          <div class="flex justify-end gap-2">
-            <.button
-              :if={Identity.can?(@current_staff, "products.update")}
-              patch={
-                ~p"/staff/b/#{@current_branch}/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"
-              }
-              class="btn btn-ghost btn-xs btn-square"
-            >
-              <.icon name="hero-pencil-square" class="size-4" />
-            </.button>
-            <.button
-              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
-              phx-click="delete_click"
-              phx-value-id={prod.id}
-              class="btn btn-ghost btn-xs btn-square text-error hover:bg-error/10"
-            >
-              <.icon name="hero-trash" class="size-4" />
-            </.button>
-          </div>
-        </:action>
-      </.table>
-
-      <div class="flex justify-end">
-        <.pagination meta={@meta} path_fn={path_fn} />
-      </div>
-
-      <.selection_bar
-        count={length(@selected_ids)}
-        form="product-selection"
-        on_clear={JS.push("clear_selection")}
-      >
-        <.link
-          :if={Identity.can?(@current_staff, "products.create")}
-          navigate={~p"/staff/b/#{@current_branch}/products/operations?#{[ids: @selected_ids]}"}
-          class="btn btn-ghost btn-sm"
-        >Копировать выбранные</.link>
-        <.button
-          :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
-          phx-click="bulk_delete_click"
-          class="btn btn-ghost btn-sm text-error hover:bg-error/10"
+      <%= if @live_action in [:edit, :show] do %>
+        <div
+          id="product-edit-page"
+          class="mx-auto max-w-4xl rounded-box border border-base-300 bg-base-100"
         >
-          <.icon name="hero-trash" class="size-4" />
-          {gettext("Delete")}
-        </.button>
-      </.selection_bar>
+          <.live_component
+            :if={@product}
+            module={ProductFormComponent}
+            id={@product.id}
+            action={@live_action}
+            readonly={@live_action == :show}
+            product={@product}
+            branch_id={@branch_id}
+            current_branch={@current_branch}
+            current_staff={@current_staff}
+            form_version={@form_version}
+            patch={product_list_path(assigns, @product.id)}
+          />
+        </div>
+      <% else %>
+        <.filter_bar
+          id="products-filter-bar"
+          form_id="products-filter"
+          query={@search}
+          query_name="search"
+          query_placeholder={gettext("Search products...")}
+          reset_path={~p"/staff/b/#{@current_branch}/products"}
+          active={@selected_category_id != nil or @selected_status != nil or @stopped_filter}
+        >
+          <:filter>
+            <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+              <select name="category_id" class="select select-bordered w-full sm:w-52 shrink-0">
+                <option value="">{gettext("All categories")}</option>
+                <%= for cat <- @categories do %>
+                  <option value={cat.id} selected={@selected_category_id == cat.id}>
+                    {cat.name}
+                  </option>
+                <% end %>
+              </select>
 
-      <.slide_over
-        id="product-slideover"
-        show={@live_action in [:new, :edit]}
-        title={@page_title}
-        on_close={
-          JS.patch(~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, %{})}")
-        }
-      >
-        <.live_component
-          :if={@product}
-          module={ProductFormComponent}
-          id={@product.id || :new}
-          action={@live_action}
-          product={@product}
-          branch_id={@branch_id}
-          current_branch={@current_branch}
-          current_staff={@current_staff}
-          patch={~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, %{})}"}
-        />
-      </.slide_over>
+              <select name="is_active" class="select select-bordered w-full sm:w-48 shrink-0">
+                <option value="">{gettext("All statuses")}</option>
+                <option value="true" selected={@selected_status == true}>{gettext("Active")}</option>
+                <option value="false" selected={@selected_status == false}>
+                  {gettext("Inactive")}
+                </option>
+                <option value="stopped" selected={@stopped_filter}>{gettext("In stop list")}</option>
+              </select>
+            </div>
+          </:filter>
+        </.filter_bar>
+
+        <% path_fn = fn overrides ->
+          ~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, overrides)}"
+        end %>
+
+        <form id="product-selection" phx-change="select_products"></form>
+
+        <.table
+          id="products"
+          rows={@streams.products}
+          meta={@meta}
+          path_fn={path_fn}
+          staff_id={to_string(@current_staff.id)}
+          list_id="products"
+        >
+          <:col
+            :let={{_id, prod}}
+            :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+            label=""
+          >
+            <input
+              type="checkbox"
+              name="ids[]"
+              value={prod.id}
+              form="product-selection"
+              class="checkbox checkbox-sm"
+              aria-label={gettext("Select %{name}", name: prod.name)}
+            />
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Name")} sort="name">
+            <.link
+              id={"product-row-#{prod.id}"}
+              navigate={
+                ~p"/staff/b/#{@current_branch}/products/#{prod.id}?#{build_query_params(assigns, %{})}"
+              }
+              class="font-bold hover:underline scroll-mt-24"
+            >{prod.name}</.link>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Category")}>
+            <span class="badge badge-ghost">{(prod.category && prod.category.name) || "—"}</span>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Price")} sort="price">
+            <div class="font-mono">{Money.format(prod.price)}</div>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Quantity")} secondary>
+            <span class="font-mono">
+              <%= if prod.quantity do %>
+                {prod.quantity} {gettext("pcs")}
+              <% else %>
+                —
+              <% end %>
+            </span>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Weight")} secondary>
+            <span class="font-mono">
+              <%= if prod.weight do %>
+                {prod.weight} {if prod.measure_unit == :ml, do: gettext("ml"), else: gettext("g")}
+              <% else %>
+                —
+              <% end %>
+            </span>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Status")}>
+            <%= if prod.is_active do %>
+              <span class="badge badge-success badge-sm whitespace-nowrap">{gettext("Active")}</span>
+            <% else %>
+              <span class="badge badge-error badge-sm text-error-content whitespace-nowrap">{gettext(
+                "Inactive"
+              )}</span>
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Stop list")}>
+            <.stop_control
+              product={prod}
+              stops={Map.get(@stops, prod.id, [])}
+              can_edit={Identity.can?(@current_staff, "stops.update")}
+            />
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Description")} secondary>
+            <%= if prod.description && prod.description != "" do %>
+              <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
+            <% else %>
+              <span class="text-xs opacity-40">—</span>
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Media")} secondary>
+            <%= if prod.media_id do %>
+              <span class="text-xs badge badge-outline whitespace-nowrap">{gettext("Has photo")}</span>
+            <% else %>
+              <span class="text-xs opacity-40">—</span>
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("External ID")} secondary>
+            <%= if prod.external_ids != [] do %>
+              <span class="text-xs badge badge-outline">{gettext("Specified")}</span>
+            <% else %>
+              <span class="text-xs opacity-40">—</span>
+            <% end %>
+          </:col>
+
+          <:col :let={{_id, prod}} label={gettext("Created At")} sort="inserted_at" secondary>
+            <span class="text-sm opacity-60">{Calendar.strftime(prod.inserted_at, "%d.%m.%Y")}</span>
+          </:col>
+
+          <:action :let={{_id, prod}}>
+            <details
+              :if={
+                Identity.can?(@current_staff, "products.update") or
+                  (Identity.can?(@current_staff, "products.delete") and not @crm_menu)
+              }
+              id={"product-row-more-#{prod.id}"}
+              class="inline-block text-left"
+            >
+              <summary
+                class="btn btn-ghost btn-xs list-none cursor-pointer"
+                aria-label={gettext("More actions for %{name}", name: prod.name)}
+              >
+                {gettext("More")}
+              </summary>
+              <div class="flex flex-col items-start gap-1 py-1">
+                <.link
+                  :if={Identity.can?(@current_staff, "products.update")}
+                  navigate={
+                    ~p"/staff/b/#{@current_branch}/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"
+                  }
+                  class="btn btn-ghost btn-xs justify-start"
+                >{gettext("Edit")}</.link>
+                <button
+                  :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+                  type="button"
+                  phx-click="delete_click"
+                  phx-value-id={prod.id}
+                  class="btn btn-ghost btn-xs justify-start text-error hover:bg-error/10"
+                >{gettext("Delete")}</button>
+              </div>
+            </details>
+          </:action>
+        </.table>
+
+        <div class="flex justify-end">
+          <.pagination meta={@meta} path_fn={path_fn} page_sizes={[25, 50, 100]} />
+        </div>
+
+        <.selection_bar
+          count={length(@selected_ids)}
+          form="product-selection"
+          on_clear={JS.push("clear_selection")}
+        >
+          <.link
+            :if={Identity.can?(@current_staff, "products.create")}
+            navigate={~p"/staff/b/#{@current_branch}/products/operations?#{[ids: @selected_ids]}"}
+            class="btn btn-ghost btn-sm"
+          >Копировать выбранные</.link>
+          <.button
+            :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+            phx-click="bulk_delete_click"
+            class="btn btn-ghost btn-sm text-error hover:bg-error/10"
+          >
+            <.icon name="hero-trash" class="size-4" />
+            {gettext("Delete")}
+          </.button>
+        </.selection_bar>
+
+        <.slide_over
+          id="product-slideover"
+          show={@live_action == :new}
+          title={@page_title}
+          on_close={
+            JS.patch(~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, %{})}")
+          }
+        >
+          <.live_component
+            :if={@live_action == :new and @product}
+            module={ProductFormComponent}
+            id={@product.id || :new}
+            action={@live_action}
+            readonly={false}
+            product={@product}
+            branch_id={@branch_id}
+            current_branch={@current_branch}
+            current_staff={@current_staff}
+            form_version={@form_version}
+            patch={~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, %{})}"}
+          />
+        </.slide_over>
+      <% end %>
 
       <%= if assigns[:show_upload_modal] do %>
         <.live_component
@@ -684,7 +821,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
         title={gettext("Delete Product")}
         description={
           gettext(
-            "Are you sure you want to delete this product? This action cannot be easily undone."
+            "Delete %{name}? Its category, tags, modifiers and other linked settings will no longer appear with this product. This action cannot be easily undone.",
+            name: @product_to_delete && @product_to_delete.name
           )
         }
         confirm_label={gettext("Delete")}
