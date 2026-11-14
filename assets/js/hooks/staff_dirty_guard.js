@@ -55,6 +55,12 @@ export const StaffDirtyGuard = {
       if (form) this.baselines.set(form, values(form));
       this.refreshSaveButtons();
     };
+    this.onFailed = (event) => {
+      const form = this.forms().find((candidate) => candidate.id === event.detail?.id);
+      if (form && this.saving === form) this.saving = null;
+      if (form && this.lastSubmittedForm === form) this.lastSubmittedForm = null;
+      this.refreshSaveButtons();
+    };
     this.onPageLoaded = () => { this.currentUrl = urlHere(); this.saving = null; this.capture(); this.refreshSaveButtons(); };
     this.onPatch = () => { this.capture(); this.refreshSaveButtons(); };
     this.onClick = (event) => {
@@ -100,6 +106,7 @@ export const StaffDirtyGuard = {
     window.addEventListener('beforeunload', this.onUnload);
     window.addEventListener('phx:page-loading-stop', this.onPageLoaded);
     window.addEventListener('phx:staff:form-saved', this.onSaved);
+    window.addEventListener('phx:staff:form-failed', this.onFailed);
     this.el.querySelector('#staff-unsaved-stay').addEventListener('click', this.onStay);
     this.el.querySelector('#staff-unsaved-leave').addEventListener('click', this.onLeave);
   },
@@ -115,6 +122,7 @@ export const StaffDirtyGuard = {
     window.removeEventListener('beforeunload', this.onUnload);
     window.removeEventListener('phx:page-loading-stop', this.onPageLoaded);
     window.removeEventListener('phx:staff:form-saved', this.onSaved);
+    window.removeEventListener('phx:staff:form-failed', this.onFailed);
     this.el.querySelector('#staff-unsaved-stay').removeEventListener('click', this.onStay);
     this.el.querySelector('#staff-unsaved-leave').removeEventListener('click', this.onLeave);
   },

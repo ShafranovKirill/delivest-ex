@@ -76,6 +76,23 @@ test('Phoenix patches refresh save button after programmatic field changes', () 
   assert.equal(handlers.has('document:phx:update'), false);
 });
 
+test('failed save rearms only the submitted dirty form without replacing its baseline', () => {
+  const {hook, handlers, form, button} = setup();
+  form.fields = [['name', 'Changed']];
+  handlers.get('document:input')({target: {closest: () => form}});
+  handlers.get('document:submit')({target: form});
+  assert.equal(button.disabled, true);
+
+  handlers.get('window:phx:staff:form-failed')({detail: {id: 'another-form'}});
+  assert.equal(button.disabled, true);
+  handlers.get('window:phx:staff:form-failed')({detail: {id: form.id}});
+  assert.equal(button.disabled, false);
+  assert.equal(hook.dirty(), true);
+
+  hook.destroyed();
+  assert.equal(handlers.has('window:phx:staff:form-failed'), false);
+});
+
 test('field error anchor and hash history do not trigger unsaved dialog', () => {
   const {hook, handlers, form, dialog, location} = setup();
   form.fields = [['name', 'Changed']];

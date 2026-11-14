@@ -130,7 +130,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   end
 
   defp save(%Ecto.Changeset{valid?: false} = changeset, socket),
-    do: {:noreply, assign(socket, form: to_form(Map.put(changeset, :action, :insert)))}
+    do:
+      {:noreply,
+       socket
+       |> assign(form: to_form(Map.put(changeset, :action, :insert)))
+       |> save_failed()}
 
   defp save(changeset, socket) do
     {branch_params, info_params} = BranchForm.to_params(changeset)
@@ -146,10 +150,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
         {:noreply,
          socket
          |> put_flash(:error, gettext("Please check the highlighted fields"))
-         |> assign(form: to_form(copy_errors(changeset, error)))}
+         |> assign(form: to_form(copy_errors(changeset, error)))
+         |> save_failed()}
 
       {:error, :kitchen_replan, _reason} ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+        {:noreply, socket |> put_flash(:error, gettext("Failed to save")) |> save_failed()}
 
       {:error, :conflict} ->
         {:noreply,
@@ -158,10 +163,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
          |> put_flash(
            :error,
            gettext("Settings changed elsewhere. Review the latest data before retrying.")
-         )}
+         )
+         |> save_failed()}
 
       {:error, :forbidden} ->
-        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+        {:noreply, socket |> put_flash(:error, gettext("Permission denied")) |> save_failed()}
     end
   end
 
@@ -179,12 +185,26 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
          )
 
   defp copy_errors(changeset, error) do
-    error.errors
-    |> Enum.reduce(changeset, fn {field, {message, opts}}, acc ->
-      Ecto.Changeset.add_error(acc, field, message, opts)
-    end)
-    |> Map.put(:action, :insert)
+    changeset =
+      Enum.reduce(error.errors, changeset, fn {field, {message, opts}}, acc ->
+        Ecto.Changeset.add_error(acc, field, message, opts)
+      end)
+
+    changeset =
+      Enum.reduce([:fulfillment, :kitchen], changeset, fn field, acc ->
+        case Ecto.Changeset.get_change(error, field) do
+          %Ecto.Changeset{valid?: false} = nested ->
+            %{acc | changes: Map.put(acc.changes, field, nested), valid?: false}
+
+          _ ->
+            acc
+        end
+      end)
+
+    Map.put(changeset, :action, :insert)
   end
+
+  defp save_failed(socket), do: push_event(socket, "staff:form-failed", %{id: "branch-form"})
 
   defp sections_path(branch), do: ~p"/staff/branches/#{branch.slug}/edit"
 

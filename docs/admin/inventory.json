@@ -154,7 +154,7 @@
           "branches.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:248",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:268",
       "target_section": "Settings / Branches"
     },
     {
@@ -187,7 +187,7 @@
           "branches.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:202",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:222",
       "target_section": "Settings / Branches"
     },
     {
@@ -214,7 +214,7 @@
           "branches.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:206",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:226",
       "target_section": "Settings / Branches"
     },
     {
@@ -18900,7 +18900,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "code",
       "schema_field": "schema:lib/delivest/identity/branch.ex:code",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:226",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:246",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -18925,7 +18925,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "delivery_time",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:delivery_time",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:235",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:255",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -18946,7 +18946,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "fulfillment",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:267",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:287",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -18967,7 +18967,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "instagram_url",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:instagram_url",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:322",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:342",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -18988,7 +18988,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "is_active",
       "schema_field": "schema:lib/delivest/identity/branch.ex:is_active",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:264",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:284",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -19009,7 +19009,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "kitchen",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:307",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:327",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -19030,7 +19030,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "manual_rating",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:manual_rating",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:241",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:261",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19053,7 +19053,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "name",
       "schema_field": "schema:lib/delivest/identity/branch.ex:name",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:223",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:243",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19078,7 +19078,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "phone_number",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:phone_number",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:233",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:253",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19101,7 +19101,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "slug",
       "schema_field": "schema:lib/delivest/identity/branch.ex:slug",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:224",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:244",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19126,7 +19126,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "timezone",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:timezone",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:258",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:278",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -19147,7 +19147,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "vk_url",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:vk_url",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:320",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:340",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -19168,7 +19168,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "whatsapp_url",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:whatsapp_url",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:321",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:341",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -19189,7 +19189,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "enabled",
       "schema_field": "schema:lib/delivest/identity/branch/kitchen_settings.ex:enabled",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:308",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:328",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -19210,7 +19210,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "lead_minutes",
       "schema_field": "schema:lib/delivest/identity/branch/kitchen_settings.ex:lead_minutes",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:311",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:331",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19234,7 +19234,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "client_cancellation",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:client_cancellation",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:274",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:294",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19257,7 +19257,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "delivery",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:delivery",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:269",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:289",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19280,7 +19280,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "dine_in",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:dine_in",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:271",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:291",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -19303,7 +19303,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "pickup",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:pickup",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:270",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:290",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [

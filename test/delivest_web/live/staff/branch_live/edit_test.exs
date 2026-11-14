@@ -309,6 +309,67 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
            } = Repo.preload(branch, :info, force: true).info
   end
 
+  test "location saves normalize legacy missing customer cancellation and preserve explicit false",
+       %{
+         conn: conn
+       } do
+    for {slug, cancellation} <- [{"legacy-cancellation", nil}, {"disabled-cancellation", false}] do
+      branch = insert(:branch, slug: slug)
+      Repo.insert!(%Delivest.Identity.Branch.BranchInfo{branch_id: branch.id})
+
+      if is_nil(cancellation) do
+        set_legacy_fulfillment_field(branch, "client_cancellation")
+      else
+        Ecto.Adapters.SQL.query!(
+          Repo,
+          "UPDATE branch_info SET fulfillment = jsonb_set(fulfillment, '{client_cancellation}', 'false'::jsonb, true) WHERE branch_id::text = $1",
+          [branch.id]
+        )
+      end
+
+      {:ok, lv, _} = live(conn, ~p"/staff/branches/#{slug}/edit/location")
+
+      assert {:error, {:live_redirect, _}} =
+               lv
+               |> form("#branch-form", branch_form: %{latitude: "57.2", longitude: "65.6"})
+               |> render_submit()
+
+      info = Repo.get_by!(Delivest.Identity.Branch.BranchInfo, branch_id: branch.id)
+      assert info.latitude == 57.2
+      assert info.longitude == 65.6
+
+      assert info.fulfillment.client_cancellation ==
+               if(is_nil(cancellation), do: true, else: false)
+    end
+  end
+
+  test "nested domain save error is visible and releases the pending save", %{conn: conn} do
+    branch = insert(:branch, slug: "legacy-delivery")
+    Repo.insert!(%Delivest.Identity.Branch.BranchInfo{branch_id: branch.id})
+    set_legacy_fulfillment_field(branch, "delivery")
+
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/location")
+
+    lv
+    |> form("#branch-form", branch_form: %{latitude: "57.2", longitude: "65.6"})
+    |> render_submit()
+
+    assert_push_event(lv, "staff:form-failed", %{id: "branch-form"})
+    assert has_element?(lv, "#branch-form-errors a[href='#branch_form_fulfillment_delivery']")
+
+    assert is_nil(
+             Repo.get_by!(Delivest.Identity.Branch.BranchInfo, branch_id: branch.id).latitude
+           )
+  end
+
+  defp set_legacy_fulfillment_field(branch, field) do
+    Ecto.Adapters.SQL.query!(
+      Repo,
+      "UPDATE branch_info SET fulfillment = jsonb_set(fulfillment, ARRAY[$2]::text[], 'null'::jsonb, true) WHERE branch_id::text = $1",
+      [branch.id, field]
+    )
+  end
+
   test "without the map the point is typed in", %{conn: conn} do
     insert(:branch, slug: "typed")
 
