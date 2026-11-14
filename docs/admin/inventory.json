@@ -244,7 +244,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:597",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:565",
       "target_section": "Settings / Branches"
     },
     {
@@ -281,7 +281,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:574",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:542",
       "target_section": "Settings / Branches"
     },
     {
@@ -322,7 +322,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:488",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:456",
       "target_section": "Settings / Branches"
     },
     {
@@ -357,7 +357,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:529",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:497",
       "target_section": "Settings / Branches"
     },
     {
@@ -1260,7 +1260,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:336",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:312",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1294,7 +1294,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:353",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:329",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -19261,7 +19261,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:590",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:558",
       "target_section": "Settings / Branches",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20422,7 +20422,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "confirm",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:376",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:352",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20443,7 +20443,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "target",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:388",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:364",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

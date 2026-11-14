@@ -28,7 +28,7 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
 
     assert has_element?(
              lv,
-             "#settings-navigation #settings-nav-integrations[href='/staff/integrations']"
+             "#settings-navigation #settings-nav-integrations[href='/staff/b/#{branch.slug}/integrations']"
            )
 
     assert has_element?(lv, "#settings-nav-features[aria-current='page']")

@@ -1,8 +1,6 @@
 defmodule DelivestWeb.Staff.SettingsLive.Index do
   use DelivestWeb, :live_view
 
-  import DelivestWeb.Staff.SettingsComponents, only: [settings_navigation: 1]
-
   alias Delivest.{Availability, Identity}
   alias Delivest.Features.Registry
   alias DelivestWeb.StaffNav
@@ -121,15 +119,7 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="settings-center" class="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-      <.settings_navigation
-        variant={:sidebar}
-        staff={@current_staff}
-        branches={@staff_branches}
-        selected={@settings_scope_branch && @settings_scope_branch.id}
-        current_path={@current_path}
-      />
-
+    <div id="settings-content">
       <section id="settings-features" class="space-y-4">
         <div>
           <h2 class="text-xl font-semibold">{gettext("Features and connections")}</h2>

@@ -84,4 +84,63 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     {:ok, scoped, _} = live(conn, ~p"/staff/b/#{center}/dashboard")
     assert has_element?(scoped, "#staff-header #header-branch summary[aria-label='Center']")
   end
+
+  test "settings pages share one sidebar and keep their page content", %{conn: conn} do
+    branch = insert(:branch, slug: "settings-nav-branch")
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    pages = [
+      {"/staff/settings?branch=#{branch.slug}", "features", "#settings-feature-filter"},
+      {"/staff/franchise/brand", "brand", "#franchise-settings-form"},
+      {"/staff/branches/#{branch.slug}/edit", "branch_settings", "#branch-section-hours"},
+      {"/staff/branches/#{branch.slug}/edit/hours", "hours", "#branch-form"},
+      {"/staff/b/#{branch.slug}/integrations", "integrations", "#integration-frontpad"},
+      {"/staff/b/#{branch.slug}/delivery", "delivery_settings", "#delivery-couriers-card"}
+    ]
+
+    navigation =
+      Enum.map(pages, fn {path, active_id, content} ->
+        {:ok, view, _} = live(conn, path)
+        assert has_element?(view, "#settings-center > #settings-navigation")
+        assert has_element?(view, "#settings-center > .min-w-0 #{content}")
+        assert has_element?(view, "#settings-nav-#{active_id}[aria-current='page']")
+        refute has_element?(view, "#staff-section-navigation")
+
+        document = LazyHTML.from_fragment(render(view))
+        assert Enum.count(LazyHTML.query(document, "#settings-navigation")) == 1
+
+        ids = document |> LazyHTML.query("#settings-navigation a") |> LazyHTML.attribute("id")
+        hrefs = document |> LazyHTML.query("#settings-navigation a") |> LazyHTML.attribute("href")
+        {ids, hrefs}
+      end)
+
+    assert Enum.uniq(navigation) == [hd(navigation)]
+    assert Enum.member?(elem(hd(navigation), 1), "/staff/branches/#{branch.slug}/edit/hours")
+  end
+
+  test "settings navigation never uses an inaccessible branch", %{conn: conn} do
+    allowed = insert(:branch, slug: "allowed-settings")
+    denied = insert(:branch, slug: "denied-settings")
+
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["franchise.update", "branches.read"]))
+
+    insert(:staff_branch, staff: staff, branch: allowed)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => denied.id})
+
+    for path <- ["/staff/settings", "/staff/franchise/brand"] do
+      {:ok, view, _} = live(conn, path)
+      assert has_element?(view, "#settings-center > #settings-navigation")
+
+      assert has_element?(
+               view,
+               "#settings-nav-branch_settings[href='/staff/branches/#{allowed.slug}/edit']"
+             )
+
+      refute has_element?(view, "#settings-navigation a[href*='#{denied.slug}']")
+      refute has_element?(view, "#settings-nav-integrations")
+    end
+  end
 end

@@ -43,7 +43,7 @@ defmodule DelivestWeb.StaffHeader do
           <.icon name="panel-left" class="size-5" />
         </button>
       </div>
-      <div class="w-56 max-w-[55vw] shrink-0">
+      <div class="flex w-56 max-w-[55vw] shrink-0 items-center">
         <DelivestWeb.BranchSwitcher.branch_switcher
           current_branch={@scope_branch}
           branches={@staff_branches}

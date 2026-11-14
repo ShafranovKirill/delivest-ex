@@ -230,11 +230,8 @@ defmodule DelivestWeb.StaffNav do
 
     items =
       cond do
-        not is_nil(active_setting(assigns.current_path)) and
-          assigns.current_path != "/staff/settings" and
-          not String.starts_with?(assigns.current_path || "", "/staff/franchise") and
-            not String.starts_with?(assigns.current_path || "", "/staff/branches/") ->
-          settings_entries(assigns.staff, navigation_branch) |> Enum.reject(&(&1.id == :settings))
+        not is_nil(active_setting(assigns.current_path)) ->
+          []
 
         assigns.current_page == :categories or
             not is_nil(DelivestWeb.Staff.ProductLive.ProductTags.section(assigns.current_path)) ->

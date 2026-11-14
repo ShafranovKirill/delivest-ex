@@ -319,9 +319,10 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     conn = login(conn, ["logs.read"], [])
     {:ok, logs, _} = live(conn, ~p"/staff/logs")
 
-    assert has_element?(logs, "#staff-section-navigation")
-    assert has_element?(logs, "#staff-section-navigation a[aria-current='page']")
-    assert has_element?(logs, "#staff-section-navigation a[href='/staff/diagnostics']")
+    assert has_element?(logs, "#settings-center > #settings-navigation")
+    assert has_element?(logs, "#settings-navigation a[aria-current='page']")
+    assert has_element?(logs, "#settings-navigation a[href='/staff/diagnostics']")
+    refute has_element?(logs, "#staff-section-navigation")
     refute has_element?(logs, "#nav-section-settings a[href='/staff/settings']")
   end
 

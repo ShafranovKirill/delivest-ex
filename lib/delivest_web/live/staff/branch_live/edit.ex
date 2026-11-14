@@ -320,14 +320,6 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
       subtitle={gettext("Branches")}
       back={back(@branch, nil)}
     >
-      <:navigation>
-        <.settings_navigation
-          staff={@current_staff}
-          branches={@settings_branches}
-          selected={@branch.id}
-          current_path={@current_path}
-        />
-      </:navigation>
       <:actions :if={@can_edit_identity and !@branch.is_active}>
         <span class="badge badge-error badge-soft">{gettext("Branch is not active")}</span>
       </:actions>
@@ -343,14 +335,6 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
       subtitle={subtitle(@branch)}
       back={back(@branch, @section)}
     >
-      <:navigation>
-        <.settings_navigation
-          staff={@current_staff}
-          branches={@settings_branches}
-          selected={@branch.id}
-          current_path={@current_path}
-        />
-      </:navigation>
     </.page_header>
     """
   end
@@ -363,14 +347,6 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
       subtitle={subtitle(@branch)}
       back={back(@branch, @section)}
     >
-      <:navigation>
-        <.settings_navigation
-          staff={@current_staff}
-          branches={@settings_branches}
-          selected={@branch.id}
-          current_path={@current_path}
-        />
-      </:navigation>
     </.page_header>
     """
   end
@@ -383,14 +359,6 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
       subtitle={subtitle(@branch)}
       back={back(@branch, @section)}
     >
-      <:navigation>
-        <.settings_navigation
-          staff={@current_staff}
-          branches={@settings_branches}
-          selected={@branch.id}
-          current_path={@current_path}
-        />
-      </:navigation>
       <:actions>
         <button
           id="branch-save"

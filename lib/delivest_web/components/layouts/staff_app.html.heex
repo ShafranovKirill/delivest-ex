@@ -83,29 +83,49 @@ end %>
     <main class="flex-1 min-w-0 p-4 sm:p-6">
       <div class="max-w-7xl mx-auto">
         <.flash_group flash={@flash} />
-        <%= if page_header do %>
-          {page_header}
-        <% else %>
-          <%= if !assigns[:foundation_workspace] do %>
-            <h1 class="mb-5 text-2xl font-semibold">
-              {assigns[:page_title] || gettext("Dashboard")}
-            </h1>
-          <% end %>
-        <% end %>
-        <DelivestWeb.StaffNav.local_navigation
-          staff={@current_staff}
-          branch={assigns[:current_branch]}
-          navigation_branch={navigation_branch}
-          current_page={assigns[:current_page]}
-          current_path={assigns[:current_path]}
-        />
-        <DelivestWeb.GatewayNote.gateway_note
-          :if={assigns[:gateway_block]}
-          name={@gateway_block.name}
-          area={@gateway_block.area}
-          branch={assigns[:current_branch]}
-        />
-        <div :if={!assigns[:gateway_block]}>{@inner_content}</div>
+        <div
+          id={
+            if DelivestWeb.StaffNav.active_setting(assigns[:current_path]), do: "settings-center"
+          }
+          class={[
+            DelivestWeb.StaffNav.active_setting(assigns[:current_path]) &&
+              "grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]"
+          ]}
+        >
+          <DelivestWeb.Staff.SettingsComponents.settings_navigation
+            :if={DelivestWeb.StaffNav.active_setting(assigns[:current_path])}
+            variant={:sidebar}
+            staff={@current_staff}
+            branches={branches}
+            selected={navigation_branch && navigation_branch.id}
+            current_path={assigns[:current_path]}
+          />
+          <div class="min-w-0">
+            <%= if page_header do %>
+              {page_header}
+            <% else %>
+              <%= if !assigns[:foundation_workspace] do %>
+                <h1 class="mb-5 text-2xl font-semibold">
+                  {assigns[:page_title] || gettext("Dashboard")}
+                </h1>
+              <% end %>
+            <% end %>
+            <DelivestWeb.StaffNav.local_navigation
+              staff={@current_staff}
+              branch={assigns[:current_branch]}
+              navigation_branch={navigation_branch}
+              current_page={assigns[:current_page]}
+              current_path={assigns[:current_path]}
+            />
+            <DelivestWeb.GatewayNote.gateway_note
+              :if={assigns[:gateway_block]}
+              name={@gateway_block.name}
+              area={@gateway_block.area}
+              branch={assigns[:current_branch]}
+            />
+            <div :if={!assigns[:gateway_block]}>{@inner_content}</div>
+          </div>
+        </div>
       </div>
     </main>
   </div>

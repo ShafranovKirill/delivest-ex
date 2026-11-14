@@ -203,7 +203,6 @@
   color: var(--color-base-content);
 }
 .foundation-shell { --staff-sidebar-width: 240px; --staff-header-height: 56px; }
-.foundation-shell .staff-header > div:not(#staff-header-actions) { height: var(--staff-header-height); }
 .foundation-column-hidden { display: none !important; }
 .foundation-column-secondary:not(.foundation-column-visible) { display: none; }
 #product-form.product-readonly-form fieldset[disabled] :is(.input, .select, .textarea) {
