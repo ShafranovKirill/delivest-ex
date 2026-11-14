@@ -1,5 +1,7 @@
 defmodule DelivestWeb.Client.Order.OrderJSON do
   alias Delivest.Couriers
+  alias Delivest.Media
+  alias Delivest.Net
   alias Delivest.Oms.Order
 
   def create(%{order: order, confirmation_url: url}) do
@@ -58,6 +60,14 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
   defp payment_data(_order, _url), do: nil
 
   defp order_data(order) do
+    items = order.items || []
+    product_ids = items |> Enum.map(& &1.product_id) |> Enum.uniq()
+
+    products =
+      Net.Products.list_branch_cart_products_by_ids(order.branch_id, product_ids,
+        preload: [:media]
+      )
+
     %{
       id: order.id,
       number: order.number,
@@ -83,13 +93,20 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       customer_name: order.customer_name,
       persons: order.persons,
       address: serialize_address(order.address),
-      items: Enum.map(order.items || [], &item_data/1)
+      items: Enum.map(items, &item_data(&1, products))
     }
   end
 
-  defp item_data(item) do
+  defp item_data(item, products \\ %{}) do
+    image_url =
+      case Map.get(products, item.product_id) do
+        nil -> nil
+        product -> Media.thumb_url_from_file(product.media)
+      end
+
     %{
       product_id: item.product_id,
+      image_url: image_url,
       title: item.title,
       price: item.price,
       base_price: item.base_price || item.price,

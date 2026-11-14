@@ -146,6 +146,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "c4a3b8e0-1234-5678-9abc-def012345678"
         },
         title: %Schema{type: :string, example: "Пицца Маргарита"},
+        image_url: %Schema{type: :string, nullable: true},
         price: %Schema{
           type: :integer,
           example: 53_100,
