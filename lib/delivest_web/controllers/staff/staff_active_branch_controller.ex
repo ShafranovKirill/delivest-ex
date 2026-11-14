@@ -86,6 +86,13 @@ defmodule DelivestWeb.Staff.StaffActiveBranchController do
 
   defp network_destination(_), do: {:ok, "/staff/dashboard"}
 
+  defp branch_destination(%{"selection" => "true", "from" => source}, branch, _staff) do
+    case StaffBranchPath.selection_destination(source, branch.slug) do
+      {:ok, path} -> {:ok, path}
+      :error -> :error
+    end
+  end
+
   defp branch_destination(%{"from" => source} = params, branch, _staff) do
     case StaffBranchPath.transition(source, {:branch, branch.slug}) do
       {:ok, %{path: path}} ->

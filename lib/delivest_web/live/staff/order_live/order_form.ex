@@ -73,7 +73,16 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       timing: if(order.cook_by, do: "scheduled", else: "asap"),
       known_client: KnownClient.find(order.customer_phone),
       picker: nil,
-      form: to_form(Order.changeset(order, cook_by_input(order, branch_id)))
+      form:
+        to_form(
+          Order.changeset(
+            order,
+            Map.merge(cook_by_input(order, branch_id), %{
+              "branch_id" => branch_id,
+              "cart_id" => cart.id
+            })
+          )
+        )
     )
   end
 
@@ -221,7 +230,12 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
     changeset =
       socket.assigns.order
-      |> Order.changeset(Map.put(params, "cart_id", socket.assigns.cart.id))
+      |> Order.changeset(
+        Map.merge(params, %{
+          "branch_id" => socket.assigns.branch_id,
+          "cart_id" => socket.assigns.cart.id
+        })
+      )
       |> Map.put(:action, :validate)
       |> validate_address()
 

@@ -260,4 +260,95 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
 
     assert redirected_to(conn) == "/staff/branches/select"
   end
+
+  test "network navigation requires an explicit branch despite a saved branch", ctx do
+    conn =
+      init_test_session(ctx.conn, %{
+        "staff_id" => ctx.staff.id,
+        "active_branch_id" => ctx.own.id
+      })
+
+    {:ok, network, _} = live(conn, ~p"/staff/dashboard")
+    assert has_element?(network, "#nav-section-main a[href='/staff/dashboard']")
+
+    chooser =
+      StaffBranchPath.selection_path("/staff/b/#{ctx.own.slug}/products", "/staff/dashboard")
+
+    assert has_element?(network, "#nav-section-main a[href='#{chooser}']")
+    refute has_element?(network, "#nav-section-main a[href='/staff/b/#{ctx.own.slug}/products']")
+
+    {:ok, scoped, _} = live(conn, ~p"/staff/b/#{ctx.own}/products")
+    assert has_element?(scoped, "#nav-section-main a[href='/staff/b/#{ctx.own.slug}/products']")
+  end
+
+  test "chooser targets and return paths are allowlisted", ctx do
+    target = "/staff/branches/#{ctx.own.slug}/edit/hours"
+
+    assert {:ok, %{source: ^target, return_to: "/staff/franchise/brand"}} =
+             StaffBranchPath.selection_intent(target, "/staff/franchise/brand")
+
+    assert {:ok, %{path: selected_path}} =
+             StaffBranchPath.transition(target, {:branch, ctx.second.slug})
+
+    assert selected_path == "/staff/branches/#{ctx.second.slug}/edit/hours"
+
+    assert {:ok, %{source: safe_source, return_to: "/staff/dashboard"}} =
+             StaffBranchPath.selection_intent(
+               "/staff/b/#{ctx.own.slug}/products?search=pizza&unexpected=1",
+               "https://evil.example/"
+             )
+
+    assert safe_source == "/staff/b/#{ctx.own.slug}/products?search=pizza"
+
+    for invalid <- [
+          "https://evil.example/",
+          "//evil.example/x",
+          "/staff/franchise/brand",
+          "/staff/b/#{ctx.own.slug}/invented"
+        ] do
+      assert StaffBranchPath.selection_path(invalid, "/staff/dashboard") == nil
+    end
+
+    assert StaffBranchPath.contextual_navigation_path(
+             "/staff/b/#{ctx.own.slug}/integrations/dadata",
+             nil,
+             "/staff/dashboard"
+           ) == "/staff/b/#{ctx.own.slug}/integrations/dadata"
+
+    assert StaffBranchPath.contextual_navigation_path(target, ctx.own, "/staff/dashboard") ==
+             target
+  end
+
+  test "selection intent preserves new order while ordinary scope switching keeps its list",
+       ctx do
+    source = "/staff/b/#{ctx.own.slug}/orders/new"
+
+    assert {:ok, %{source: ^source}} =
+             StaffBranchPath.selection_intent(source, "/staff/dashboard")
+
+    assert {:ok, destination} = StaffBranchPath.selection_destination(source, ctx.second.slug)
+    assert destination == "/staff/b/#{ctx.second.slug}/orders/new"
+
+    selected =
+      get(
+        ctx.conn,
+        "/staff/branches/select/#{ctx.second.id}?" <>
+          URI.encode_query(%{"from" => source, "selection" => "true"})
+      )
+
+    assert redirected_to(selected) == "/staff/b/#{ctx.second.slug}/orders/new"
+
+    ordinary =
+      get(
+        ctx.conn,
+        "/staff/branches/select/#{ctx.second.id}?" <> URI.encode_query(%{"from" => source})
+      )
+
+    assert redirected_to(ordinary) == "/staff/b/#{ctx.second.slug}/orders"
+
+    assert StaffBranchPath.selection_destination(
+             "https://evil.example/orders/new",
+             ctx.second.slug
+           ) == :error
+  end
 end

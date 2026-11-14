@@ -20,6 +20,22 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     %{conn: conn, branch: branch, staff: staff, product: insert_branch_product(branch.id)}
   end
 
+  test "new order shows only user field errors during validation", %{conn: conn, branch: branch} do
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/orders/new")
+    refute has_element?(view, "#order-details-errors")
+
+    render_change(view, "validate_order", %{
+      "order" => %{"branch_id" => "invalid", "cart_id" => "invalid"}
+    })
+
+    refute has_element?(view, "#order-details-errors")
+
+    render_change(view, "validate_order", %{"order" => %{"persons" => "-1"}})
+    assert has_element?(view, "#order-details-errors a[href='#order_persons']")
+    refute has_element?(view, "#order-details-errors a[href='#order_branch_id']")
+    refute has_element?(view, "#order-details-errors a[href='#order_cart_id']")
+  end
+
   test "cart survives a remount", %{conn: conn, branch: branch, product: product} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
     render_click(lv, "add_item", %{"product-id" => product.id})

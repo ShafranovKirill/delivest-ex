@@ -93,7 +93,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(
              view,
-             "#staff-section-navigation a[href='/staff/b/#{allowed.slug}/stocks']"
+             "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{allowed.slug}%2Fstocks']"
            )
 
     refute has_element?(view, "#marketing-navigation")
@@ -107,7 +107,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(
              selected,
-             "#staff-section-navigation a[href='/staff/b/#{allowed.slug}/stocks']"
+             "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{allowed.slug}%2Fstocks']"
            )
 
     {:ok, rejected, _} = live(conn, ~p"/staff/marketing?branch=#{denied.slug}")
@@ -115,7 +115,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(
              rejected,
-             "#staff-section-navigation a[href='/staff/b/#{allowed.slug}/stocks']"
+             "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{allowed.slug}%2Fstocks']"
            )
   end
 
@@ -141,12 +141,12 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
       assert has_element?(
                view,
-               "#staff-section-navigation a[href='/staff/b/#{branch.slug}/stocks']"
+               "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Fstocks']"
              )
 
       assert has_element?(
                view,
-               "#staff-section-navigation a[href='/staff/b/#{branch.slug}/advertising-links']"
+               "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Fadvertising-links']"
              )
 
       refute has_element?(view, "#marketing-navigation")
@@ -155,12 +155,12 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
       assert has_element?(
                scoped,
-               "#staff-section-navigation a[href='/staff/b/#{branch.slug}/stocks']"
+               "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Fstocks']"
              )
 
       assert has_element?(
                scoped,
-               "#staff-section-navigation a[href='/staff/b/#{branch.slug}/advertising-links']"
+               "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Fadvertising-links']"
              )
     end
 
@@ -223,7 +223,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(
              view,
-             "#staff-section-navigation a[href='/staff/b/#{branch.slug}/promotions']"
+             "#staff-section-navigation a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Fpromotions']"
            )
 
     refute has_element?(

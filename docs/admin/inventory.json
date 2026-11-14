@@ -224,6 +224,54 @@
       "error_state": [
         "no explicit :error in clause"
       ],
+      "event": "close_branch_selector",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/branch_live/branch_select.ex:close_branch_selector:f15d79b03231f730:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/branch_live/branch_select.ex:close_branch_selector:signature:7d6e77bdb433da17:1",
+      "label": "unlabelled/icon control at source anchor",
+      "operation": [],
+      "result": [
+        "push_navigate"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/branch_live/branch_select.ex:83",
+      "target_section": "Settings / Branches"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Settings / Branches",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "close_branch_selector",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/branch_live/branch_select.ex:close_branch_selector:f15d79b03231f730:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/branch_live/branch_select.ex:close_branch_selector:signature:d6a7c7e6461c2489:1",
+      "label": "×",
+      "operation": [],
+      "result": [
+        "push_navigate"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/branch_live/branch_select.ex:90",
+      "target_section": "Settings / Branches"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Settings / Branches",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
       "event": "cancel_delete",
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/branch_live/edit.ex:cancel_delete:bcd007621e42670a:1"
@@ -4522,7 +4570,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:51",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:52",
       "target_section": "Orders"
     },
     {
@@ -5285,7 +5333,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:426",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:440",
       "target_section": "Orders"
     },
     {
@@ -5315,7 +5363,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:402",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:416",
       "target_section": "Orders"
     },
     {
@@ -8355,6 +8403,25 @@
         ]
       },
       "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:50",
+      "target_section": "Settings / Branches"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Settings / Branches",
+      "error_state": "no explicit :error in clause",
+      "event": "close_branch_selector",
+      "id": "event:lib/delivest_web/live/staff/branch_live/branch_select.ex:close_branch_selector:f15d79b03231f730:1",
+      "label": "×",
+      "operation": [],
+      "result": [
+        "push_navigate"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/branch_live/branch_select.ex:65",
       "target_section": "Settings / Branches"
     },
     {
@@ -13033,7 +13100,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:110",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:119",
       "target_section": "Orders"
     },
     {
@@ -13058,7 +13125,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:174",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:183",
       "target_section": "Orders"
     },
     {
@@ -13078,7 +13145,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:139",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:148",
       "target_section": "Orders"
     },
     {
@@ -13100,7 +13167,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:145",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:154",
       "target_section": "Orders"
     },
     {
@@ -13124,7 +13191,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:81",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:90",
       "target_section": "Orders"
     },
     {
@@ -13150,7 +13217,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:149",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:158",
       "target_section": "Orders"
     },
     {
@@ -13175,7 +13242,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:126",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:135",
       "target_section": "Orders"
     },
     {
@@ -13197,7 +13264,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:141",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:150",
       "target_section": "Orders"
     },
     {
@@ -13219,7 +13286,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:187",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:196",
       "target_section": "Orders"
     },
     {
@@ -13242,7 +13309,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:208",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:217",
       "target_section": "Orders"
     },
     {
@@ -13262,7 +13329,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:106",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:115",
       "target_section": "Orders"
     },
     {
@@ -13282,7 +13349,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:102",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:111",
       "target_section": "Orders"
     },
     {
@@ -13302,7 +13369,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:92",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:101",
       "target_section": "Orders"
     },
     {
@@ -13322,7 +13389,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:95",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:104",
       "target_section": "Orders"
     },
     {
@@ -13342,7 +13409,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:98",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:107",
       "target_section": "Orders"
     },
     {
@@ -13366,7 +13433,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:197",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:206",
       "target_section": "Orders"
     },
     {
@@ -13386,7 +13453,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:194",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:203",
       "target_section": "Orders"
     },
     {
@@ -23846,7 +23913,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "address",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:63",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:64",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23867,7 +23934,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "comment",
       "schema_field": "schema:lib/delivest/oms/order.ex:comment",
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:167",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:168",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": [
@@ -23890,7 +23957,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "cook_by",
       "schema_field": "schema:lib/delivest/oms/order.ex:cook_by",
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:146",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:147",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": []
@@ -23911,7 +23978,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "fulfillment_type",
       "schema_field": "schema:lib/delivest/oms/order.ex:fulfillment_type",
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:40",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:41",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": [
@@ -23935,7 +24002,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "payment_method",
       "schema_field": "schema:lib/delivest/oms/order.ex:payment_method",
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:157",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:158",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": [
@@ -23959,7 +24026,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "apartment",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:123",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:124",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23980,7 +24047,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "block",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:91",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:92",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24001,7 +24068,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "building",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:99",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:100",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24022,7 +24089,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "city",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:67",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:68",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24043,7 +24110,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "entrance",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:107",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:108",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24064,7 +24131,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "floor",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:115",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:116",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24085,7 +24152,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "house",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:83",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:84",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24106,7 +24173,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "street",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:75",
+      "source": "lib/delivest_web/live/staff/order_live/components/details_component.ex:76",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24568,7 +24635,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:@name",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/segmented.ex:20",
+      "source": "lib/delivest_web/live/staff/order_live/components/segmented.ex:25",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24589,7 +24656,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"modifiers[#{group.id}][]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:410",
+      "source": "lib/delivest_web/live/staff/order_live/order_form.ex:424",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

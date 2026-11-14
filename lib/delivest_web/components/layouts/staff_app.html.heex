@@ -1,27 +1,8 @@
 <% page_header = DelivestWeb.StaffHeader.page_header(assigns) %>
 <% branches = assigns[:staff_branches] || [] %>
-<% accessible_branch = fn candidate ->
-  if candidate && Map.get(candidate, :id) && Map.get(candidate, :slug) do
-    if Enum.any?(branches, &(&1.id == candidate.id)), do: candidate
-  end
-end %>
-<% settings_branch =
-  Enum.find_value(
-    [assigns[:settings_scope_branch], assigns[:selected_branch], assigns[:branch]],
-    accessible_branch
-  ) %>
-<% actual_scope_branch =
-  DelivestWeb.StaffHeader.scope_branch(
-    assigns[:current_path],
-    assigns[:current_branch],
-    settings_branch
-  ) %>
-<% navigation_branch =
-  actual_scope_branch ||
-    Enum.find_value(
-      [assigns[:navigation_branch], settings_branch, assigns[:current_branch]],
-      accessible_branch
-    ) || List.first(branches) %>
+<% settings_branch = DelivestWeb.StaffHeader.settings_branch(assigns) %>
+<% actual_scope_branch = DelivestWeb.StaffHeader.scope_branch_from_assigns(assigns) %>
+<% navigation_branch = DelivestWeb.StaffHeader.navigation_branch_from_assigns(assigns) %>
 <div
   class={[
     "min-h-screen bg-base-200 text-base-content",
@@ -60,6 +41,8 @@ end %>
   <DelivestWeb.CommandPalette.command_palette
     query={assigns[:command_query] || ""}
     groups={assigns[:command_groups] || []}
+    scope_branch={actual_scope_branch}
+    return_source={assigns[:current_uri] || assigns[:current_path]}
   />
 
   <DelivestWeb.OverdueOrdersAlert.overdue_orders_alert orders={assigns[:overdue_orders] || []} />
@@ -75,6 +58,7 @@ end %>
     navigation_branch={navigation_branch}
     staff_branches={assigns[:staff_branches] || []}
     current_path={assigns[:current_path]}
+    current_uri={assigns[:current_uri]}
     current_page={assigns[:current_page]}
     new_orders_count={assigns[:new_orders_count] || 0}
   />
@@ -99,6 +83,8 @@ end %>
             branches={branches}
             selected={navigation_branch && navigation_branch.id}
             current_path={assigns[:current_path]}
+            scope_branch={actual_scope_branch}
+            return_source={assigns[:current_uri] || assigns[:current_path]}
           />
           <div class="min-w-0">
             <%= if page_header do %>
@@ -116,6 +102,8 @@ end %>
               navigation_branch={navigation_branch}
               current_page={assigns[:current_page]}
               current_path={assigns[:current_path]}
+              scope_branch={actual_scope_branch}
+              return_source={assigns[:current_uri] || assigns[:current_path]}
             />
             <DelivestWeb.GatewayNote.gateway_note
               :if={assigns[:gateway_block]}

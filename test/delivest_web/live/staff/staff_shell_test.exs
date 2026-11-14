@@ -113,11 +113,26 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
         ids = document |> LazyHTML.query("#settings-navigation a") |> LazyHTML.attribute("id")
         hrefs = document |> LazyHTML.query("#settings-navigation a") |> LazyHTML.attribute("href")
-        {ids, hrefs}
+        {path, ids, hrefs}
       end)
 
-    assert Enum.uniq(navigation) == [hd(navigation)]
-    assert Enum.member?(elem(hd(navigation), 1), "/staff/branches/#{branch.slug}/edit/hours")
+    assert navigation |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() == 1
+    direct_hrefs = navigation |> hd() |> elem(2)
+    assert Enum.member?(direct_hrefs, "/staff/branches/#{branch.slug}/edit/hours")
+
+    for {path, _ids, hrefs} <- navigation do
+      if path == "/staff/franchise/brand" do
+        assert Enum.member?(
+                 hrefs,
+                 DelivestWeb.StaffBranchPath.selection_path(
+                   "/staff/branches/#{branch.slug}/edit/hours",
+                   path
+                 )
+               )
+      else
+        assert hrefs == direct_hrefs
+      end
+    end
   end
 
   test "settings navigation never uses an inaccessible branch", %{conn: conn} do
@@ -136,11 +151,23 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
       assert has_element?(
                view,
-               "#settings-nav-branch_settings[href='/staff/branches/#{allowed.slug}/edit']"
+               "#settings-nav-branch_settings[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fbranches%2F#{allowed.slug}%2Fedit']"
              )
 
       refute has_element?(view, "#settings-navigation a[href*='#{denied.slug}']")
       refute has_element?(view, "#settings-nav-integrations")
     end
+  end
+
+  test "network overview does not show a saved branch order bell", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, network, _} = live(conn, ~p"/staff/dashboard")
+    refute has_element?(network, "#main-sidebar #header-new-orders")
+    {:ok, scoped, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+    assert has_element?(scoped, "#main-sidebar #header-new-orders")
   end
 end

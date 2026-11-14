@@ -37,6 +37,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
       <.section title={gettext("Fulfillment")}>
         <.segmented
           id="order-fulfillment"
+          stacked={true}
           name={@form[:fulfillment_type].name}
           value={@fulfillment}
           options={[

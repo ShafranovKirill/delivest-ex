@@ -129,4 +129,20 @@ defmodule DelivestWeb.Staff.FoundationComponentsTest do
            |> LazyHTML.to_tree()
            |> Enum.any?()
   end
+
+  test "error summaries stay hidden until a changeset is validated or submitted" do
+    changeset =
+      {%{}, %{name: :string}}
+      |> Ecto.Changeset.cast(%{}, [:name])
+      |> Ecto.Changeset.validate_required([:name])
+
+    assert changeset.errors != []
+    assert FoundationComponents.changeset_errors(changeset) == %{}
+
+    for action <- [:validate, :insert] do
+      errors = changeset |> Map.put(:action, action) |> FoundationComponents.changeset_errors()
+      assert is_binary(errors["name"])
+      assert errors["name"] != ""
+    end
+  end
 end

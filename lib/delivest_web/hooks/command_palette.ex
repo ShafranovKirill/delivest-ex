@@ -2,7 +2,7 @@ defmodule DelivestWeb.Hooks.CommandPalette do
   import Phoenix.Component
   import Phoenix.LiveView
 
-  alias DelivestWeb.CommandSearch
+  alias DelivestWeb.{CommandSearch, StaffHeader}
 
   def on_mount(:default, _params, _session, socket) do
     {:cont,
@@ -19,9 +19,13 @@ defmodule DelivestWeb.Hooks.CommandPalette do
   defp search(socket, query) do
     %{current_staff: staff} = socket.assigns
 
+    actual_branch = StaffHeader.scope_branch_from_assigns(socket.assigns)
+    navigation_branch = StaffHeader.navigation_branch_from_assigns(socket.assigns)
+
     assign(socket,
       command_query: query,
-      command_groups: CommandSearch.run(staff, socket.assigns[:current_branch], query)
+      command_groups:
+        CommandSearch.run(staff, actual_branch, query, navigation_branch: navigation_branch)
     )
   end
 end

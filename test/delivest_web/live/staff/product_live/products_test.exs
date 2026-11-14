@@ -84,6 +84,23 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     assert Repo.get!(Delivest.Net.Product, product.id).name == "Old"
   end
 
+  test "a new product shows errors only after validation and submission", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/products/new")
+    refute has_element?(view, "#product-error-summary")
+
+    view |> form("#product-form", product: %{name: "", price: ""}) |> render_change()
+    assert has_element?(view, "#product-error-summary a[href='#product_name']")
+    assert has_element?(view, "#product-error-summary a[href='#product_price']")
+
+    view |> form("#product-form", product: %{name: "", price: ""}) |> render_submit()
+    assert has_element?(view, "#product-error-summary a[href='#product_name']")
+    assert has_element?(view, "#product-error-summary a[href='#product_price']")
+  end
+
   test "minimal creation requires a price, accepts zero, and starts unpublished", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))

@@ -22,6 +22,10 @@ defmodule DelivestWeb.StaffBranchPath do
     "integrations" => "integrations"
   }
   @settings_filters ~w(all enabled disabled attention)
+  @creation_routes ~w(
+    orders/new products/new products/tags/new categories/new promotions/new promotions/new/full
+    promotions/new/first-order promotions/sale stocks/new
+  )
   @filters %{
     "products" => ~w(search is_active page_size order_by order_directions[]),
     "orders" =>
@@ -64,6 +68,105 @@ defmodule DelivestWeb.StaffBranchPath do
   end
 
   def transition(_, _), do: :error
+
+  @doc "A branch-scoped navigation target opens an explicit branch chooser from network scope."
+  def contextual_navigation_path(path, nil, return_source),
+    do: selection_path(path, return_source) || path
+
+  def contextual_navigation_path(path, _scope_branch, _return_source), do: path
+
+  def selection_path(target_path, return_source) do
+    case selection_intent(target_path, return_source) do
+      {:ok, %{source: source, return_to: return_to}} ->
+        "/staff/branches/select?" <>
+          URI.encode_query(%{"modal" => "true", "from" => source, "return_to" => return_to})
+
+      :error ->
+        nil
+    end
+  end
+
+  def selection_destination(source, target_slug) when is_binary(target_slug) do
+    with {:ok, canonical} <- selection_source(source),
+         true <- valid_slug?(target_slug) do
+      case creation_route(canonical) do
+        nil ->
+          case transition(canonical, {:branch, target_slug}) do
+            {:ok, %{path: path}} -> {:ok, path}
+            _ -> :error
+          end
+
+        route ->
+          {:ok, "/staff/b/#{target_slug}/#{route}"}
+      end
+    else
+      _ -> :error
+    end
+  end
+
+  def selection_destination(_, _), do: :error
+
+  def selection_intent(target_path, return_source) do
+    with {:ok, source} <- selection_source(target_path) do
+      {:ok, %{source: source, return_to: safe_network_return(return_source)}}
+    end
+  end
+
+  defp selection_source(source) when is_binary(source) do
+    case classify(source) do
+      {:ok, {:branch, slug, route}, _query} ->
+        cond do
+          shared_integration?(route) -> :error
+          creation_route(source) -> {:ok, URI.parse(source).path}
+          true -> canonical_branch_source(source, slug)
+        end
+
+      {:ok, {:branch_settings, slug, _section}, _query} ->
+        canonical_branch_source(source, slug)
+
+      _ ->
+        :error
+    end
+  end
+
+  defp selection_source(_), do: :error
+
+  defp creation_route(source) do
+    case URI.parse(source).path do
+      path when is_binary(path) ->
+        case Regex.run(~r{^/staff/b/[a-z0-9-]+/(.+)$}, path) do
+          [_, route] when route in @creation_routes -> route
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp canonical_branch_source(source, slug) do
+    case transition(source, {:branch, slug}) do
+      {:ok, %{path: path}} -> {:ok, path}
+      _ -> :error
+    end
+  end
+
+  defp safe_network_return(source) when is_binary(source) do
+    case classify(source) do
+      {:ok, {:network, _route}, _query} -> network_return(source)
+      {:ok, {:settings_summary, _slug, _filter}, _query} -> network_return(source)
+      _ -> "/staff/dashboard"
+    end
+  end
+
+  defp safe_network_return(_), do: "/staff/dashboard"
+
+  defp network_return(source) do
+    case transition(source, :network) do
+      {:ok, %{path: path}} -> path
+      _ -> "/staff/dashboard"
+    end
+  end
 
   @doc "Canonical branch section for legacy links; unknown and object routes are rejected."
   def section(path) when is_binary(path) do

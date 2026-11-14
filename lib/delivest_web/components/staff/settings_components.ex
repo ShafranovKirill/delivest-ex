@@ -7,6 +7,8 @@ defmodule DelivestWeb.Staff.SettingsComponents do
   attr :branches, :list, required: true
   attr :selected, :any, default: nil
   attr :current_path, :string, default: nil
+  attr :scope_branch, :any, default: nil
+  attr :return_source, :string, default: nil
   attr :variant, :atom, default: :horizontal, values: [:horizontal, :sidebar]
 
   def settings_navigation(assigns) do
@@ -27,6 +29,7 @@ defmodule DelivestWeb.Staff.SettingsComponents do
     ~H"""
     <nav
       id="settings-navigation"
+      phx-hook="ActiveSectionNav"
       class={[
         "flex gap-2 rounded-box border border-base-300 bg-base-100 p-2",
         @variant == :sidebar &&
@@ -38,7 +41,13 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       <.link
         :for={entry <- @entries}
         id={"settings-nav-#{entry.id}"}
-        navigate={entry.path}
+        navigate={
+          DelivestWeb.StaffBranchPath.contextual_navigation_path(
+            entry.path,
+            @scope_branch,
+            @return_source
+          )
+        }
         class={[
           "btn btn-sm btn-ghost shrink-0",
           @variant == :sidebar && "lg:justify-start",

@@ -28,15 +28,24 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
 
     assert has_element?(
              lv,
-             "#settings-navigation #settings-nav-integrations[href='/staff/b/#{branch.slug}/integrations']"
+             "#settings-navigation #settings-nav-integrations[href^='/staff/branches/select?']"
            )
 
     assert has_element?(lv, "#settings-nav-features[aria-current='page']")
     assert has_element?(lv, "#settings-feature-filter #settings-filter-disabled")
     assert has_element?(lv, "#feature-segments")
     assert has_element?(lv, "#feature-integration-zvonok")
-    assert has_element?(lv, "#nav-section-main a[href='/staff/b/#{branch.slug}/orders']")
-    assert has_element?(lv, "#nav-section-main a[href='/staff/b/#{branch.slug}/products']")
+
+    assert has_element?(
+             lv,
+             "#nav-section-main a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Forders']"
+           )
+
+    assert has_element?(
+             lv,
+             "#nav-section-main a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Fproducts']"
+           )
+
     refute has_element?(lv, "[id^='settings-branch-card-']")
   end
 
@@ -101,7 +110,11 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
     {:ok, network, _} = live(conn, ~p"/staff/franchise/brand")
     assert has_element?(network, "#header-branch summary[aria-label='Network']")
     assert has_element?(network, "#nav-section-main a[href='/staff/dashboard']")
-    assert has_element?(network, "#nav-section-main a[href='/staff/b/#{saved.slug}/orders']")
+
+    assert has_element?(
+             network,
+             "#nav-section-main a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{saved.slug}%2Forders']"
+           )
   end
 
   test "inaccessible branch query exits to the network summary", %{conn: conn} do

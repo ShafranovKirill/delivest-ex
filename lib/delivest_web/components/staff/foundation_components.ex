@@ -294,6 +294,8 @@ defmodule DelivestWeb.Staff.FoundationComponents do
   end
 
   @doc "Translated field errors for the shared summary; nested embeds keep their input path."
+  def changeset_errors(%Ecto.Changeset{action: nil}), do: %{}
+
   def changeset_errors(%Ecto.Changeset{} = changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(&DelivestWeb.CoreComponents.translate_error/1)

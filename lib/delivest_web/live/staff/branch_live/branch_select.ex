@@ -12,6 +12,17 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
     to = if StaffBranchPath.valid_section?(params["to"]), do: params["to"]
     kitchen_only? = Kitchen.account?(staff)
 
+    intent =
+      if params["modal"] == "true",
+        do: StaffBranchPath.selection_intent(params["from"], params["return_to"]),
+        else: :error
+
+    {modal?, from, return_to} =
+      case intent do
+        {:ok, %{source: source, return_to: return_to}} -> {true, source, return_to}
+        :error -> {false, nil, "/staff/dashboard"}
+      end
+
     entries =
       staff
       |> Identity.list_branch_for_staff(preload: :info)
@@ -28,8 +39,17 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
        page_title: gettext("Select a branch"),
        kitchen_only?: kitchen_only?,
        available?: Enum.any?(entries, & &1.kitchen?),
-       to: to
+       to: if(modal?, do: nil, else: to),
+       modal?: modal?,
+       from: from,
+       return_to: return_to
      )}
+  end
+
+  def staff_page_header(%{modal?: true} = assigns) do
+    ~H"""
+    <div class="sr-only" aria-hidden="true"></div>
+    """
   end
 
   def staff_page_header(assigns) do
@@ -42,7 +62,67 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   end
 
   @impl true
+  def handle_event("close_branch_selector", _params, socket) do
+    {:noreply, push_navigate(socket, to: socket.assigns.return_to)}
+  end
+
+  @impl true
   def render(assigns) do
+    ~H"""
+    <div
+      :if={@modal?}
+      id="branch-select-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="branch-select-dialog-title"
+      phx-hook="FoundationDialog"
+      data-dirty="false"
+      data-close-event="close_branch_selector"
+      class="fixed inset-0 z-[60] grid place-items-center p-4"
+    >
+      <div class="absolute inset-0 bg-black/50" phx-click="close_branch_selector" aria-hidden="true">
+      </div>
+      <div class="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col rounded-box bg-base-100 shadow-xl">
+        <div class="flex items-center justify-between border-b border-base-300 p-4">
+          <h2 id="branch-select-dialog-title" class="text-lg font-semibold">
+            {gettext("Select a branch")}
+          </h2>
+          <button
+            type="button"
+            phx-click="close_branch_selector"
+            aria-label={gettext("Close")}
+            class="btn btn-ghost btn-square"
+          >×</button>
+        </div>
+        <div class="min-h-0 overflow-y-auto p-4">
+          <.branch_choices
+            entries={@entries}
+            kitchen_only?={@kitchen_only?}
+            available?={@available?}
+            to={@to}
+            from={@from}
+          />
+        </div>
+      </div>
+    </div>
+    <.branch_choices
+      :if={!@modal?}
+      entries={@entries}
+      kitchen_only?={@kitchen_only?}
+      available?={@available?}
+      to={@to}
+      from={@from}
+    />
+    """
+  end
+
+  attr :entries, :list, required: true
+  attr :kitchen_only?, :boolean, required: true
+  attr :available?, :boolean, required: true
+  attr :to, :string, default: nil
+  attr :from, :string, default: nil
+
+  defp branch_choices(assigns) do
     ~H"""
     <div class="space-y-6">
       <div :if={@kitchen_only?} id="branch-select-kitchen-note" class="alert alert-info mb-4">
@@ -58,7 +138,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
         <%= for %{branch: branch, kitchen?: kitchen?} <- @entries do %>
           <%= if kitchen? do %>
             <.link
-              href={select_path(branch, @to)}
+              href={select_path(branch, @to, @from)}
               method="get"
               class="block p-6 rounded-box border border-base-300 bg-base-100 shadow-sm hover:border-base-content/30 hover:shadow-md transition-all group"
             >
@@ -114,6 +194,9 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
     """
   end
 
-  defp select_path(branch, nil), do: ~p"/staff/branches/select/#{branch.id}"
-  defp select_path(branch, to), do: ~p"/staff/branches/select/#{branch.id}?#{%{to: to}}"
+  defp select_path(branch, _to, from) when is_binary(from),
+    do: ~p"/staff/branches/select/#{branch.id}?#{%{from: from, selection: true}}"
+
+  defp select_path(branch, nil, nil), do: ~p"/staff/branches/select/#{branch.id}"
+  defp select_path(branch, to, nil), do: ~p"/staff/branches/select/#{branch.id}?#{%{to: to}}"
 end

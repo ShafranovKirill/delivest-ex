@@ -210,6 +210,8 @@ defmodule DelivestWeb.StaffNav do
   attr :staff, :map, required: true
   attr :branch, :any, default: nil
   attr :navigation_branch, :any, default: nil
+  attr :scope_branch, :any, default: nil
+  attr :return_source, :string, default: nil
   attr :current_page, :any, default: nil
   attr :current_path, :string, default: nil
 
@@ -279,7 +281,13 @@ defmodule DelivestWeb.StaffNav do
             else: "section-nav-#{item.id}"
           )
         }
-        navigate={item.path}
+        navigate={
+          DelivestWeb.StaffBranchPath.contextual_navigation_path(
+            item.path,
+            @scope_branch,
+            @return_source
+          )
+        }
         aria-current={active_local?(item, @current_page, @current_path) && "page"}
         class={[
           "whitespace-nowrap rounded-field px-3 py-2 text-sm hover:bg-base-200",

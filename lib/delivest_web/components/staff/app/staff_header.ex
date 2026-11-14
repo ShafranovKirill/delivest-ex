@@ -67,6 +67,39 @@ defmodule DelivestWeb.StaffHeader do
     if function_exported?(view, :staff_page_header, 1), do: view.staff_page_header(assigns)
   end
 
+  def settings_branch(assigns) do
+    branches = assigns[:staff_branches] || []
+
+    Enum.find_value(
+      [assigns[:settings_scope_branch], assigns[:selected_branch], assigns[:branch]],
+      fn candidate ->
+        if candidate && Map.get(candidate, :id) && Map.get(candidate, :slug) &&
+             Enum.any?(branches, &(&1.id == candidate.id)),
+           do: candidate
+      end
+    )
+  end
+
+  def navigation_branch_from_assigns(assigns) do
+    branches = assigns[:staff_branches] || []
+
+    accessible = fn candidate ->
+      if candidate && Map.get(candidate, :id) && Map.get(candidate, :slug) &&
+           Enum.any?(branches, &(&1.id == candidate.id)),
+         do: candidate
+    end
+
+    scope_branch_from_assigns(assigns) ||
+      Enum.find_value(
+        [assigns[:navigation_branch], settings_branch(assigns), assigns[:current_branch]],
+        accessible
+      ) || List.first(branches)
+  end
+
+  def scope_branch_from_assigns(assigns) do
+    scope_branch(assigns[:current_path], assigns[:current_branch], settings_branch(assigns))
+  end
+
   def scope_branch(path, current_branch, settings_branch) do
     cond do
       shared_integration?(path) -> nil

@@ -10,6 +10,7 @@ defmodule DelivestWeb.StaffSidebar do
   attr :navigation_branch, :map, default: nil
   attr :staff_branches, :list, default: []
   attr :current_path, :string, default: nil
+  attr :current_uri, :string, default: nil
   attr :new_orders_count, :integer, default: 0
 
   def staff_sidebar(assigns) do
@@ -43,6 +44,20 @@ defmodule DelivestWeb.StaffSidebar do
         end)
       end
 
+    return_source = assigns.current_uri || assigns.current_path
+
+    entries =
+      Enum.map(entries, fn section ->
+        %{
+          section
+          | entries:
+              Enum.map(
+                section.entries,
+                &contextual_entry(&1, assigns.scope_branch, return_source)
+              )
+        }
+      end)
+
     assigns = assign(assigns, entries: entries)
 
     ~H"""
@@ -75,9 +90,9 @@ defmodule DelivestWeb.StaffSidebar do
           </.link>
           <div class="staff-sidebar-top-actions flex items-center gap-1">
             <DelivestWeb.NewOrdersBell.new_orders_bell
-              :if={@current_branch && can?(@current_staff, "orders.read")}
+              :if={@scope_branch && can?(@current_staff, "orders.read")}
               count={@new_orders_count}
-              branch={@current_branch}
+              branch={@scope_branch}
             />
             <button
               id="sidebar-toggle"
@@ -153,6 +168,22 @@ defmodule DelivestWeb.StaffSidebar do
     >
     </div>
     """
+  end
+
+  defp contextual_entry(%{kind: :group, items: items} = group, scope_branch, return_source) do
+    %{group | items: Enum.map(items, &contextual_entry(&1, scope_branch, return_source))}
+  end
+
+  defp contextual_entry(%{path: path} = item, scope_branch, return_source) do
+    %{
+      item
+      | path:
+          DelivestWeb.StaffBranchPath.contextual_navigation_path(
+            path,
+            scope_branch,
+            return_source
+          )
+    }
   end
 
   defp primary_item(group) do

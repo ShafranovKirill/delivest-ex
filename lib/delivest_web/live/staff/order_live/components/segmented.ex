@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.Segmented do
   attr :name, :string, required: true
   attr :value, :any, required: true
   attr :options, :list, required: true
+  attr :stacked, :boolean, default: false
 
   def segmented(assigns) do
     ~H"""
@@ -15,7 +16,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.Segmented do
     >
       <label
         :for={{value, label, icon} <- @options}
-        class="flex items-center justify-center gap-1.5 rounded-field px-2 py-2 text-sm font-medium cursor-pointer text-base-content/70 transition-colors hover:text-base-content has-checked:bg-base-100 has-checked:text-primary has-checked:shadow-sm"
+        class={[
+          "flex min-w-0 items-center justify-center rounded-field px-2 py-2 text-sm font-medium cursor-pointer text-base-content/70 transition-colors hover:text-base-content has-checked:bg-base-100 has-checked:text-primary has-checked:shadow-sm",
+          @stacked && "flex-col gap-1",
+          !@stacked && "gap-1.5"
+        ]}
       >
         <input
           type="radio"
@@ -25,7 +30,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.Segmented do
           class="sr-only"
         />
         <.icon name={icon} class="size-4 shrink-0" />
-        <span class="truncate">{label}</span>
+        <span class="min-w-0 whitespace-normal text-center leading-tight">{label}</span>
       </label>
     </div>
     """

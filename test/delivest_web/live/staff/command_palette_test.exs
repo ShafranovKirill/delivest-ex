@@ -85,4 +85,30 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
 
     assert has_element?(lv, "#command-item-page-clients")
   end
+
+  test "network palette asks for a branch and does not search entities in a saved branch", %{
+    conn: conn,
+    branch: branch
+  } do
+    product = insert_branch_product(branch.id, name: "Margherita")
+    {:ok, network, _} = live(conn, ~p"/staff/clients")
+
+    chooser =
+      DelivestWeb.StaffBranchPath.selection_path(
+        "/staff/b/#{branch.slug}/products",
+        "/staff/clients"
+      )
+
+    assert has_element?(network, "#command-item-page-products[href='#{chooser}']")
+
+    assert has_element?(network, "#command-item-page-orders_new[href^='/staff/branches/select?']")
+    assert has_element?(network, "#command-item-page-orders_new[href*='orders%2Fnew']")
+
+    network |> form("#command-palette-form", %{query: "Margherita"}) |> render_change()
+    refute has_element?(network, "#command-item-product-#{product.id}")
+
+    {:ok, scoped, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+    scoped |> form("#command-palette-form", %{query: "Margherita"}) |> render_change()
+    assert has_element?(scoped, "#command-item-product-#{product.id}")
+  end
 end

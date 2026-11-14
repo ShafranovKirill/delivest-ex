@@ -31,6 +31,8 @@ defmodule DelivestWeb.CommandPalette do
 
   attr :query, :string, required: true
   attr :groups, :list, required: true
+  attr :scope_branch, :any, default: nil
+  attr :return_source, :string, default: nil
 
   def command_palette(assigns) do
     ~H"""
@@ -75,7 +77,17 @@ defmodule DelivestWeb.CommandPalette do
             <.link
               :for={item <- group.items}
               id={"command-item-#{item.id}"}
-              navigate={item.path}
+              navigate={
+                if(group.id == :pages,
+                  do:
+                    DelivestWeb.StaffBranchPath.contextual_navigation_path(
+                      item.path,
+                      @scope_branch,
+                      @return_source
+                    ),
+                  else: item.path
+                )
+              }
               data-command-item
               class="flex items-center gap-3 rounded-field px-3 py-2 data-active:bg-base-200 hover:bg-base-200"
             >

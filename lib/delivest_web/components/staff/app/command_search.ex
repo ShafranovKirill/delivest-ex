@@ -12,11 +12,15 @@ defmodule DelivestWeb.CommandSearch do
   @limit 5
   @min_length 2
 
-  def run(staff, branch, query) do
+  def run(staff, branch, query, opts \\ []) do
     query = String.trim(query)
 
     [
-      group(:pages, gettext("Pages"), pages(staff, branch, query)),
+      group(
+        :pages,
+        gettext("Pages"),
+        pages(staff, Keyword.get(opts, :navigation_branch, branch), query)
+      ),
       group(:orders, gettext("Orders"), orders(staff, branch, query)),
       group(:clients, gettext("Clients"), clients(staff, query)),
       group(:products, gettext("Products"), products(staff, branch, query))
