@@ -56,6 +56,7 @@ export const StaffDirtyGuard = {
       this.refreshSaveButtons();
     };
     this.onPageLoaded = () => { this.currentUrl = urlHere(); this.saving = null; this.capture(); this.refreshSaveButtons(); };
+    this.onPatch = () => { this.capture(); this.refreshSaveButtons(); };
     this.onClick = (event) => {
       if (this.bypass || !this.dirty() || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target.closest?.('a[href]');
@@ -94,6 +95,7 @@ export const StaffDirtyGuard = {
     document.addEventListener('change', this.onInput, true);
     document.addEventListener('submit', this.onSubmit, true);
     document.addEventListener('click', this.onClick, true);
+    document.addEventListener('phx:update', this.onPatch);
     window.addEventListener('popstate', this.onPopState, true);
     window.addEventListener('beforeunload', this.onUnload);
     window.addEventListener('phx:page-loading-stop', this.onPageLoaded);
@@ -108,6 +110,7 @@ export const StaffDirtyGuard = {
     document.removeEventListener('change', this.onInput, true);
     document.removeEventListener('submit', this.onSubmit, true);
     document.removeEventListener('click', this.onClick, true);
+    document.removeEventListener('phx:update', this.onPatch);
     window.removeEventListener('popstate', this.onPopState, true);
     window.removeEventListener('beforeunload', this.onUnload);
     window.removeEventListener('phx:page-loading-stop', this.onPageLoaded);

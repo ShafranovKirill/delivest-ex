@@ -13,7 +13,7 @@ function setup() {
   globalThis.MutationObserver = class MutationObserver { observe() {} disconnect() {} };
   const location = {href: 'http://localhost/staff/b/main/loyalty', origin: 'http://localhost', pathname: '/staff/b/main/loyalty', search: '', hash: '', assign(to) {this.assigned = to;}};
   globalThis.window = {location, addEventListener: add('window'), removeEventListener: remove('window')};
-  globalThis.document = {body: {}, querySelectorAll: (selector) => selector === 'button[data-staff-save]' ? [button] : [form], getElementById: () => form, addEventListener: add('document'), removeEventListener: remove('document')};
+  globalThis.document = {body: {}, querySelectorAll: (selector) => selector === 'button[data-staff-save]' ? [button] : [form], getElementById: () => form, addEventListener: add('document'), removeEventListener: remove('document'), dispatchEvent: (event) => handlers.get(`document:${event.type}`)?.(event)};
   globalThis.history = {pushState: (_state, _title, to) => {location.pathname = to;}};
   const dialog = {open: false, showModal() {this.open = true;}, close() {this.open = false;}};
   const stay = {addEventListener: add('stay'), removeEventListener: remove('stay')};
@@ -57,6 +57,23 @@ test('opt-in save button follows dirty, pending, failed and saved states', () =>
   handlers.get('window:phx:staff:form-saved')({detail: {id: form.id}});
   assert.equal(button.disabled, true);
   hook.destroyed();
+});
+
+test('Phoenix patches refresh save button after programmatic field changes', () => {
+  const {hook, handlers, form, button} = setup();
+  assert.equal(button.disabled, true);
+
+  form.fields = [['name', 'Moved by map']];
+  assert.equal(button.disabled, true);
+  document.dispatchEvent({type: 'phx:update'});
+  assert.equal(button.disabled, false);
+
+  form.fields = [['name', 'Original']];
+  document.dispatchEvent({type: 'phx:update'});
+  assert.equal(button.disabled, true);
+
+  hook.destroyed();
+  assert.equal(handlers.has('document:phx:update'), false);
 });
 
 test('field error anchor and hash history do not trigger unsaved dialog', () => {
