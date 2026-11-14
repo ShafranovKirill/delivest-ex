@@ -146,6 +146,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           example: "c4a3b8e0-1234-5678-9abc-def012345678"
         },
         title: %Schema{type: :string, example: "Пицца Маргарита"},
+        image_url: %Schema{type: :string, nullable: true},
         price: %Schema{
           type: :integer,
           example: 53_100,
@@ -256,6 +257,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               format: :uuid,
               example: "8f3b2c10-91ab-4cd2-81e2-123456789abc"
             },
+            inserted_at: %Schema{type: :string, format: :date_time},
             client_id: %Schema{
               type: :string,
               format: :uuid,
@@ -290,6 +292,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             :promotions,
             :branch_id,
             :cart_id,
+            :inserted_at,
             :items
           ]
         }

@@ -1,7 +1,7 @@
 alias Delivest.{Features, Relations, Repo}
 alias Delivest.Identity.{Branch, RolePresets, Role, Staff, Staffs}
 alias Delivest.Identity.Branch.BranchInfo
-alias Delivest.Net.{Category, Product}
+alias Delivest.Net.{Category, Modifier, ModifierGroup, Product, ProductModifierGroup}
 alias Delivest.Oms.{Carts, Order, Orders}
 alias Delivest.Integrations.Zvonok
 
@@ -145,6 +145,27 @@ end
 
 category = Repo.get_by!(Category, name: "Пицца")
 product = Repo.get_by!(Product, slug: "e2e-1")
+modifier_product = Repo.get_by!(Product, slug: "e2e-2")
+
+# Keep the price-button path covered when a product has a required default modifier.
+group =
+  Repo.get_by(ModifierGroup, name: "E2E Тесто") ||
+    Repo.insert!(%ModifierGroup{name: "E2E Тесто", min: 1, max: 1})
+
+Repo.get_by(Modifier, group_id: group.id, name: "Классическое") ||
+  Repo.insert!(%Modifier{
+    group_id: group.id,
+    name: "Классическое",
+    price: 0,
+    is_default: true
+  })
+
+if previous_group = Repo.get_by(ProductModifierGroup, product_id: product.id, group_id: group.id) do
+  Repo.delete!(previous_group)
+end
+
+Repo.get_by(ProductModifierGroup, product_id: modifier_product.id, group_id: group.id) ||
+  Repo.insert!(%ProductModifierGroup{product_id: modifier_product.id, group_id: group.id})
 
 unless Relations.related?("Branch", board_branch.id, "Product", product.id) do
   {:ok, _} =
