@@ -256,6 +256,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               format: :uuid,
               example: "8f3b2c10-91ab-4cd2-81e2-123456789abc"
             },
+            inserted_at: %Schema{type: :string, format: :date_time},
             client_id: %Schema{
               type: :string,
               format: :uuid,
@@ -290,6 +291,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             :promotions,
             :branch_id,
             :cart_id,
+            :inserted_at,
             :items
           ]
         }

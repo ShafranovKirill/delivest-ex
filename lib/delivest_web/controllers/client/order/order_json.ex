@@ -74,6 +74,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       promotions: Enum.map(order.promotions || [], &promotion_data/1),
       branch_id: order.branch_id,
       cart_id: order.cart_id,
+      inserted_at: order.inserted_at,
       client_id: order.client_id,
       cook_by: order.cook_by,
       comment: order.comment,
