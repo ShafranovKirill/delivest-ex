@@ -3,13 +3,13 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
 
   defp weekdays do
     [
-      {:monday, gettext("Mon")},
-      {:tuesday, gettext("Tue")},
-      {:wednesday, gettext("Wed")},
-      {:thursday, gettext("Thu")},
-      {:friday, gettext("Fri")},
-      {:saturday, gettext("Sat")},
-      {:sunday, gettext("Sun")}
+      {:monday, gettext("Monday")},
+      {:tuesday, gettext("Tuesday")},
+      {:wednesday, gettext("Wednesday")},
+      {:thursday, gettext("Thursday")},
+      {:friday, gettext("Friday")},
+      {:saturday, gettext("Saturday")},
+      {:sunday, gettext("Sunday")}
     ]
   end
 
@@ -25,6 +25,9 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
   def render(assigns) do
     ~H"""
     <div class="space-y-3">
+      <p class="text-sm text-base-content/70">
+        {gettext("Set the usual opening hours for each day of the week.")}
+      </p>
       <%= for {day_key, day_label} <- @days do %>
         <% day_key_str = Atom.to_string(day_key) %>
         <% schedule = Map.get(@working_hours, day_key) || Map.get(@working_hours, day_key_str) || %{} %>
@@ -32,10 +35,13 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
         <% enabled = Map.get(schedule, :enabled) || Map.get(schedule, "enabled") || false %>
         <% open_at = Map.get(schedule, :open) || Map.get(schedule, "open") || "" %>
         <% close_at = Map.get(schedule, :close) || Map.get(schedule, "close") || "" %>
-        <div class="grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-center rounded-box bg-base-200/40 px-2 py-2">
+        <div class="grid grid-cols-2 gap-2 items-center rounded-box bg-base-200/40 px-2 py-2 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_auto]">
           <div class="text-xs font-semibold uppercase text-base-content/70">{day_label}</div>
 
-          <label class="flex flex-col gap-1 text-[11px] uppercase text-base-content/60">
+          <label class={[
+            "row-start-2 flex flex-col gap-1 text-[11px] uppercase text-base-content/60 sm:row-auto",
+            !enabled && "opacity-40"
+          ]}>
             <span>{gettext("Open")}</span>
             <input
               type="time"
@@ -45,7 +51,10 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
             />
           </label>
 
-          <label class="flex flex-col gap-1 text-[11px] uppercase text-base-content/60">
+          <label class={[
+            "row-start-2 flex flex-col gap-1 text-[11px] uppercase text-base-content/60 sm:row-auto",
+            !enabled && "opacity-40"
+          ]}>
             <span>{gettext("Close")}</span>
             <input
               type="time"
@@ -55,7 +64,12 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
             />
           </label>
 
-          <label class="flex items-center justify-center gap-2 text-[11px] uppercase text-base-content/60 h-full">
+          <label class="col-start-2 row-start-1 flex items-center justify-end gap-2 text-[11px] uppercase text-base-content/60 h-full sm:col-auto sm:row-auto sm:justify-center">
+            <input
+              type="hidden"
+              name={"branch_form[working_hours][#{day_key}][enabled]"}
+              value="false"
+            />
             <input
               type="checkbox"
               name={"branch_form[working_hours][#{day_key}][enabled]"}
@@ -63,7 +77,7 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
               checked={enabled}
               class="checkbox checkbox-xs"
             />
-            <span>{gettext("On")}</span>
+            <span>{if enabled, do: gettext("Working day"), else: gettext("Day off")}</span>
           </label>
         </div>
       <% end %>

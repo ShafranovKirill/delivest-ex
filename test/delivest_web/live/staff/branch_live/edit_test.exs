@@ -83,6 +83,61 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     assert Repo.reload!(branch).name == "New name"
   end
 
+  test "working day can be turned off and back on without losing its hours", %{conn: conn} do
+    branch = insert(:branch, slug: "weekly-hours")
+    path = ~p"/staff/branches/#{branch.slug}/edit/hours"
+
+    {:ok, view, _} = live(conn, path)
+
+    assert {:error, {:live_redirect, _}} =
+             view
+             |> form("#branch-form",
+               branch_form: %{
+                 working_hours: %{
+                   monday: %{enabled: "true", open: "09:00", close: "18:00"}
+                 }
+               }
+             )
+             |> render_submit()
+
+    {:ok, view, _} = live(conn, path)
+
+    assert has_element?(
+             view,
+             "input[name='branch_form[working_hours][monday][enabled]'][type='checkbox'][checked]"
+           )
+
+    assert {:error, {:live_redirect, _}} =
+             view
+             |> form("#branch-form",
+               branch_form: %{working_hours: %{monday: %{enabled: "false"}}}
+             )
+             |> render_submit()
+
+    assert %{"enabled" => false, "open" => "09:00", "close" => "18:00"} =
+             Repo.preload(branch, :info, force: true).info.working_hours["monday"]
+
+    {:ok, view, _} = live(conn, path)
+
+    refute has_element?(
+             view,
+             "input[name='branch_form[working_hours][monday][enabled]'][type='checkbox'][checked]"
+           )
+
+    assert has_element?(
+             view,
+             "input[name='branch_form[working_hours][monday][open]'][value='09:00']"
+           )
+
+    assert {:error, {:live_redirect, _}} =
+             view
+             |> form("#branch-form", branch_form: %{working_hours: %{monday: %{enabled: "true"}}})
+             |> render_submit()
+
+    assert %{"enabled" => true, "open" => "09:00", "close" => "18:00"} =
+             Repo.preload(branch, :info, force: true).info.working_hours["monday"]
+  end
+
   test "revoked branch update permission blocks an open form", %{conn: conn} do
     branch = insert(:branch, name: "Original", slug: "revoked-form")
     role = insert(:role, permissions: ["branches.read", "branches.update"])
