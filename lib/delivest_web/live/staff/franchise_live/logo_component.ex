@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.LogoComponent do
 
   import DelivestWeb.Staff.FranchiseLive.ImageUploads, only: [image_input: 1]
 
-  alias Delivest.Franchise
+  alias Delivest.{Franchise, Identity}
   alias Delivest.Franchise.Images
   alias DelivestWeb.Staff.FranchiseLive.ImageUploads
 
@@ -26,7 +26,14 @@ defmodule DelivestWeb.Staff.FranchiseLive.LogoComponent do
 
   defp handle_progress(name, entry, socket) when entry.done? do
     binary = ImageUploads.read(socket, entry)
-    result = Franchise.update_logo(socket.assigns.current_staff, @variants[name], binary)
+
+    result =
+      Franchise.update_logo(
+        Identity.fresh_staff(socket.assigns.current_staff),
+        @variants[name],
+        binary
+      )
+
     {:noreply, handle_result(socket, result)}
   end
 
@@ -37,7 +44,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.LogoComponent do
     do: {:noreply, ImageUploads.drop_invalid(socket, Map.keys(@variants), &notify({:error, &1}))}
 
   def handle_event("remove", %{"image" => image}, socket) do
-    result = Franchise.remove_logo(socket.assigns.current_staff, removed_variant(image))
+    result =
+      Franchise.remove_logo(
+        Identity.fresh_staff(socket.assigns.current_staff),
+        removed_variant(image)
+      )
+
     {:noreply, handle_result(socket, result)}
   end
 

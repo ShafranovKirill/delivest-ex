@@ -6,6 +6,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
   alias Phoenix.LiveView.JS
 
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [error_summary: 1, changeset_errors: 1]
+
   alias DelivestWeb.Staff.PromotionLive.{
     PromotionHelpers,
     RulesBuilder,
@@ -83,7 +86,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       case save(socket.assigns, full_params(socket.assigns)) do
         {:ok, promotion} ->
           send(self(), {__MODULE__, {:saved, promotion}})
-          {:noreply, socket}
+          {:noreply, push_event(socket, "staff:form-saved", %{id: "promotion-form"})}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, socket |> assign(show_errors: true) |> assign_form(changeset)}
@@ -95,6 +98,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
              :error,
              gettext("You don't have permission to perform this action.")
            )}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Failed to save promotion"))}
       end
     else
       {:noreply, socket |> assign(show_errors: true) |> refresh(:insert)}
@@ -232,10 +238,20 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     do: if(String.trim(params["code"] || "") == "", do: default_code, else: params["code"])
 
   defp save(%{action: :new} = assigns, params),
-    do: Promo.create_promotion(assigns.current_staff, assigns.branch_id, params)
+    do:
+      Promo.create_promotion(
+        Delivest.Identity.fresh_staff(assigns.current_staff),
+        assigns.branch_id,
+        params
+      )
 
   defp save(assigns, params),
-    do: Promo.update_promotion(assigns.current_staff, assigns.promotion, params)
+    do:
+      Promo.update_promotion(
+        Delivest.Identity.fresh_staff(assigns.current_staff),
+        assigns.promotion,
+        params
+      )
 
   defp initial_builder(nil), do: {:builder, RulesBuilder.new()}
 
@@ -351,6 +367,13 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         phx-submit="save"
         class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] items-start"
       >
+        <div :if={changeset_errors(@form.source) != %{}} class="lg:col-span-2">
+          <.error_summary
+            id="promotion-error-summary"
+            errors={changeset_errors(@form.source)}
+            form_name={@form.name}
+          />
+        </div>
         <div class="space-y-4 min-w-0">
           <.step
             :if={@scenario == :first_order}

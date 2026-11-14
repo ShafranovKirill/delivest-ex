@@ -1,11 +1,14 @@
 defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Net, Media, Repo}
+  alias Delivest.{Identity, Net, Media, Repo}
   alias Delivest.Net.Stock
   alias Phoenix.LiveView.JS
 
   import Ecto.Changeset
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [form_section: 1, error_summary: 1, changeset_errors: 1]
 
   def update(%{picker_result: %{ids: ids}}, socket) do
     allowed = MapSet.new(Enum.map(socket.assigns.picker_products, & &1.id))
@@ -18,6 +21,8 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
 
   @impl true
   def update(assigns, socket) do
+    previous_stock_id = socket.assigns[:stock] && socket.assigns[:stock].id
+    previous_action = socket.assigns[:action]
     socket = assign(socket, assigns)
 
     if uploaded_media = assigns[:uploaded_media] do
@@ -31,11 +36,10 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
        |> assign(:current_media, uploaded_media)
        |> assign(:show_upload_modal, false)}
     else
-      current_stock_id = socket.assigns[:stock] && socket.assigns[:stock].id
       new_stock_id = assigns.stock && assigns.stock.id
 
-      if is_nil(socket.assigns[:form]) || current_stock_id != new_stock_id ||
-           socket.assigns[:action] != assigns.action do
+      if is_nil(socket.assigns[:form]) || previous_stock_id != new_stock_id ||
+           previous_action != assigns.action do
         stock = assigns.stock
 
         form_data = if stock && stock.id, do: stock, else: %Stock{}
@@ -116,16 +120,22 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
     params = to_params(changeset)
 
     case Net.update_stock(
-           socket.assigns.current_staff,
+           Identity.fresh_staff(socket.assigns.current_staff),
            socket.assigns.stock,
            params
          ) do
       {:ok, stock} ->
         notify_parent({:saved, stock})
-        {:noreply, socket}
+        {:noreply, push_event(socket, "staff:form-saved", %{id: "stock-form"})}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("You don't have permission to perform this action."))
+         |> assign(form: to_form(changeset))}
     end
   end
 
@@ -134,13 +144,13 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
     branch_id = socket.assigns.branch_id
 
     case Net.create_stock(
-           socket.assigns.current_staff,
+           Identity.fresh_staff(socket.assigns.current_staff),
            branch_id,
            params
          ) do
       {:ok, stock} ->
         notify_parent({:saved, stock})
-        {:noreply, socket}
+        {:noreply, push_event(socket, "staff:form-saved", %{id: "stock-form"})}
 
       {:error, changeset_or_reason} ->
         {changeset, error_message} =
@@ -155,12 +165,12 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
 
               {cs, gettext("You don't have permission to perform this action.")}
 
-            other_error ->
+            _other_error ->
               cs =
                 Stock.changeset(socket.assigns.stock || %Stock{}, params)
                 |> Map.put(:action, :insert)
 
-              {cs, "#{gettext("Failed to save banner:")} #{inspect(other_error)}"}
+              {cs, gettext("Failed to save banner")}
           end
 
         {:noreply,
@@ -198,82 +208,88 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
         class="flex flex-col h-full"
       >
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
-          <div class="divider text-xs font-bold uppercase text-base-content/50">
-            {gettext("Banner")}
-          </div>
+          <.error_summary
+            id="stock-error-summary"
+            errors={changeset_errors(@form.source)}
+            form_name={@form.name}
+          />
+          <.form_section id="stock-main-section" title={gettext("Banner")}>
+            <input type="hidden" name={@form[:media_id].name} value={@form[:media_id].value} />
 
-          <input type="hidden" name={@form[:media_id].name} value={@form[:media_id].value} />
+            <div class="form-control w-full">
+              <label class="label">
+                <span class="label-text font-bold">{gettext("Banner Image")}</span>
+              </label>
 
-          <div class="form-control w-full">
-            <label class="label">
-              <span class="label-text font-bold">{gettext("Banner Image")}</span>
-            </label>
+              <div class="flex items-center gap-4">
+                <div class="avatar">
+                  <div class="w-24 h-24 rounded-box bg-base-200 border border-base-300 flex items-center justify-center overflow-hidden">
+                    <%= if url = Media.get_url(@current_media && @current_media.id) do %>
+                      <img src={url} alt={gettext("Banner Image")} class="w-full h-full object-cover" />
+                    <% else %>
+                      <span class="text-xs text-base-content/40">{gettext("No image")}</span>
+                    <% end %>
+                  </div>
+                </div>
 
-            <div class="flex items-center gap-4">
-              <div class="avatar">
-                <div class="w-24 h-24 rounded-box bg-base-200 border border-base-300 flex items-center justify-center overflow-hidden">
-                  <%= if url = Media.get_url(@current_media && @current_media.id) do %>
-                    <img src={url} class="w-full h-full object-cover" />
-                  <% else %>
-                    <span class="text-xs text-base-content/40">{gettext("No image")}</span>
-                  <% end %>
+                <div class="flex-1">
+                  <button
+                    type="button"
+                    phx-click="open_upload_modal"
+                    phx-target={@myself}
+                    class="btn btn-outline btn-sm"
+                  >
+                    <.icon name="hero-photo" class="size-4 mr-1" />
+                    {if @current_media, do: gettext("Change Image"), else: gettext("Upload Image")}
+                  </button>
+                  <p class="text-xs text-base-content/60 mt-1">
+                    {gettext("PNG, JPG, WEBP up to 5MB")}
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div class="flex-1">
+            <.input
+              field={@form[:text]}
+              type="textarea"
+              label={gettext("Description")}
+              placeholder={gettext("Text on the banner...")}
+            />
+
+            <div>
+              <input type="hidden" name="stock[product_id]" value={@form[:product_id].value || ""} />
+              <p class="font-semibold">{gettext("Linked product")}</p>
+              <p>
+                {Enum.find_value(@picker_products, fn p ->
+                  if p.id == @form[:product_id].value, do: p.name
+                end) || gettext("No product")}
+              </p>
+              <div class="flex gap-2">
                 <button
                   type="button"
-                  phx-click="open_upload_modal"
+                  class="btn btn-outline"
+                  id="stock-open-product-picker"
+                  phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @myself)}
                   phx-target={@myself}
-                  class="btn btn-outline btn-sm"
-                >
-                  <.icon name="hero-photo" class="size-4 mr-1" />
-                  {if @current_media, do: gettext("Change Image"), else: gettext("Upload Image")}
-                </button>
-                <p class="text-xs text-base-content/60 mt-1">
-                  {gettext("PNG, JPG, WEBP up to 5MB")}
-                </p>
+                >{gettext("+ Add product")}</button>
+                <button
+                  :if={@form[:product_id].value}
+                  type="button"
+                  class="btn btn-ghost"
+                  phx-click="clear_product"
+                  phx-target={@myself}
+                >{gettext("Remove")}</button>
               </div>
+              <p class="text-xs text-base-content/60 mt-1">
+                {gettext("On the website the banner opens this product card.")}
+              </p>
             </div>
-          </div>
 
-          <.input
-            field={@form[:text]}
-            type="textarea"
-            label={gettext("Description")}
-            placeholder={gettext("Text on the banner...")}
-          />
-
-          <div>
-            <input type="hidden" name="stock[product_id]" value={@form[:product_id].value || ""} />
-            <p class="font-semibold">{gettext("Linked product")}</p>
-            <p>
-              {Enum.find_value(@picker_products, fn p ->
-                if p.id == @form[:product_id].value, do: p.name
-              end) || gettext("No product")}
+            <.input field={@form[:is_active]} type="checkbox" label={gettext("Show on website")} />
+            <p class="text-xs text-base-content/60">
+              {gettext("Published banners appear on the website in their current order.")}
             </p>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                class="btn btn-outline"
-                id="stock-open-product-picker"
-                phx-click={JS.push_focus() |> JS.push("open_product_picker", target: @myself)}
-                phx-target={@myself}
-              >{gettext("+ Add product")}</button>
-              <button
-                :if={@form[:product_id].value}
-                type="button"
-                class="btn btn-ghost"
-                phx-click="clear_product"
-                phx-target={@myself}
-              >{gettext("Remove")}</button>
-            </div>
-            <p class="text-xs text-base-content/60 mt-1">
-              {gettext("On the website the banner opens this product card.")}
-            </p>
-          </div>
-
-          <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
+          </.form_section>
         </div>
 
         <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">

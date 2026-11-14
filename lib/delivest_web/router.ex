@@ -475,6 +475,7 @@ defmodule DelivestWeb.Router do
         live "/deliveries", CourierLive.Index, :index
         live "/couriers", CourierLive.Board, :index
         live "/finance/payments", FinanceLive.Payments, :index
+        live "/finance/transactions", FinanceLive.Transactions, :index
         live "/finance/receipts", ReceiptLive.Index, :index
 
         scope "/integrations", IntegrationLive do

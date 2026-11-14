@@ -63,6 +63,11 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     {:noreply, push_patch(socket, to: Query.path(:events, filters))}
   end
 
+  def handle_event("reset_entries", _params, socket) do
+    filters = Map.take(socket.assigns.filters, ["page_size"])
+    {:noreply, push_patch(socket, to: Query.path(socket.assigns.live_action, filters))}
+  end
+
   @impl true
   def handle_info({:audit_event, event}, socket) do
     if live?(socket, event),
@@ -203,6 +208,14 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             {level}
           </option>
         </select>
+        <button
+          :if={@live_action != :events and Map.drop(@filters, ["page", "page_size"]) != %{}}
+          type="button"
+          class="btn btn-ghost"
+          phx-click="reset_entries"
+        >
+          <.icon name="hero-x-mark" class="size-4" /> {gettext("Reset")}
+        </button>
       </form>
 
       <EventsComponent.render_events
@@ -210,13 +223,19 @@ defmodule DelivestWeb.Staff.LogLive.Index do
         events={@streams.rows}
         branches={@options.branches}
         actor_path={actor_path(@filters)}
+        staff_id={to_string(@current_staff.id)}
       />
       <EntriesComponent.render_entries
         :if={@live_action in [:raw, :errors]}
         entries={@streams.rows}
+        staff_id={to_string(@current_staff.id)}
       />
 
-      <.pagination meta={@meta} path_fn={&Query.path(@live_action, Map.merge(@filters, &1))} />
+      <.pagination
+        meta={@meta}
+        path_fn={&Query.path(@live_action, Map.merge(@filters, &1))}
+        page_sizes={[25, 50, 100]}
+      />
     </div>
     """
   end

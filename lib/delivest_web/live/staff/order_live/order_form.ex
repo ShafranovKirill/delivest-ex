@@ -3,10 +3,18 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
 
   use Gettext, backend: DelivestWeb.Gettext
 
-  alias Delivest.Net.Catalogs
+  alias Delivest.{Identity, Net.Catalogs}
   alias Delivest.Oms
   alias Delivest.Oms.Order
-  alias DelivestWeb.Staff.OrderLive.{CartContext, KnownClient, OrderDraft, SaveErrors}
+
+  alias DelivestWeb.Staff.OrderLive.{
+    CartContext,
+    KnownClient,
+    OrderDraft,
+    OrdersQuery,
+    SaveErrors
+  }
+
   alias DelivestWeb.Staff.PromotionLive.ReasonText
 
   alias DelivestWeb.Staff.OrderLive.Components.{
@@ -40,6 +48,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     {:ok, init(socket, OrderDraft.new(staff, branch.id))}
   end
 
+  @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply, assign(socket, list_query: OrdersQuery.clean(params))}
+  end
+
   defp init(socket, %{order: order, cart: cart, title: title}) do
     branch_id = socket.assigns.current_branch.id
     {:ok, categories} = Catalogs.get_menu_for_branch(branch_id)
@@ -56,6 +69,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       active_tab: :cart,
       mobile_cart_expanded: false,
       params: %{},
+      list_query: %{},
       timing: if(order.cook_by, do: "scheduled", else: "asap"),
       known_client: KnownClient.find(order.customer_phone),
       picker: nil,
@@ -274,14 +288,23 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
   end
 
   defp save(params, %{assigns: %{order: %Order{id: nil}} = assigns}) do
-    params
-    |> Map.put("branch_id", assigns.branch_id)
-    |> Map.put("staff_id", assigns.current_staff.id)
-    |> Oms.create_order(actor: assigns.current_staff, source: "staff")
+    actor = Identity.fresh_staff(assigns.current_staff)
+
+    with :ok <- Identity.authorize(actor, "orders.create", assigns.branch_id) do
+      params
+      |> Map.put("branch_id", assigns.branch_id)
+      |> Map.put("staff_id", actor.id)
+      |> Oms.create_order(actor: actor, source: "staff")
+    end
   end
 
-  defp save(params, %{assigns: %{order: order} = assigns}),
-    do: Oms.update_order(order, params, actor: assigns.current_staff)
+  defp save(params, %{assigns: %{order: order} = assigns}) do
+    actor = Identity.fresh_staff(assigns.current_staff)
+
+    with :ok <- Identity.authorize(actor, "orders.update", assigns.branch_id) do
+      Oms.update_order(order, params, actor: actor)
+    end
+  end
 
   defp handle_saved({:ok, _order}, socket) do
     message =
@@ -292,7 +315,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     {:noreply,
      socket
      |> put_flash(:info, message)
-     |> push_navigate(to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
+     |> push_event("staff:form-saved", %{})
+     |> push_navigate(to: orders_path(socket))}
   end
 
   defp handle_saved({:error, _step, %Ecto.Changeset{data: %Order{}} = changeset}, socket) do
@@ -309,6 +333,24 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
      |> assign(
        cart: Oms.get_cart_by_id(socket.assigns.cart.id, force: true) || socket.assigns.cart
      )}
+  end
+
+  defp orders_path(socket),
+    do: ~p"/staff/b/#{socket.assigns.current_branch}/orders?#{socket.assigns.list_query}"
+
+  def staff_page_header(assigns) do
+    ~H"""
+    <.page_header title={@page_title} subtitle={@current_branch.name}>
+      <:actions>
+        <.link
+          navigate={~p"/staff/b/#{@current_branch}/orders?#{@list_query}"}
+          class="btn btn-outline"
+        >
+          {gettext("Back to orders")}
+        </.link>
+      </:actions>
+    </.page_header>
+    """
   end
 
   @impl true

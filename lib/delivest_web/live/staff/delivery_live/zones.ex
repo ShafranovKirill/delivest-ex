@@ -17,7 +17,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
      socket
      |> assign(
        page_title: gettext("Delivery zones"),
-       can_edit: Identity.can?(socket.assigns.current_staff, "delivery.update"),
+       can_edit:
+         Identity.can?(Identity.fresh_staff(socket.assigns.current_staff), "delivery.update"),
        branch_point: branch_point(branch_id),
        address_map: Delivest.Integrations.Dadata.active?()
      )
@@ -37,7 +38,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
         do: Map.put(attrs, "thresholds", Conditions.to_thresholds(params)),
         else: attrs
 
-    case Delivery.update_settings(socket.assigns.current_staff, branch_id(socket), attrs) do
+    case Delivery.update_settings(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           branch_id(socket),
+           attrs
+         ) do
       {:ok, settings} ->
         {:noreply,
          socket
@@ -46,12 +51,19 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
          |> push_event("staff:form-saved", %{})}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, error_message(reason))}
+        {:noreply,
+         socket
+         |> assign_settings_form(params)
+         |> put_flash(:error, error_message(reason))}
     end
   end
 
   def handle_event("add_radius_zone", %{"radius" => radius}, socket) do
-    case Delivery.create_radius_zone(socket.assigns.current_staff, branch_id(socket), radius) do
+    case Delivery.create_radius_zone(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           branch_id(socket),
+           radius
+         ) do
       {:ok, zone} ->
         {:noreply,
          socket |> reload_zones(zone.id) |> push_zones() |> push_event("staff:form-saved", %{})}
@@ -65,7 +77,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
     do: {:noreply, push_event(socket, "zones:draw", %{})}
 
   def handle_event("zone_drawn", %{"polygon" => polygon}, socket) do
-    case Delivery.create_zone(socket.assigns.current_staff, branch_id(socket), polygon) do
+    case Delivery.create_zone(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           branch_id(socket),
+           polygon
+         ) do
       {:ok, zone} ->
         {:noreply, socket |> reload_zones(zone.id) |> push_zones()}
 
@@ -76,7 +92,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
 
   def handle_event("zone_shape", %{"id" => id, "polygon" => polygon}, socket) do
     case Delivery.update_zone_polygon(
-           socket.assigns.current_staff,
+           Identity.fresh_staff(socket.assigns.current_staff),
            branch_id(socket),
            id,
            polygon
@@ -96,7 +112,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
     do: {:noreply, socket |> select(id) |> push_zones()}
 
   def handle_event("reorder_zones", %{"ids" => ids}, socket) do
-    case Delivery.reorder_zones(socket.assigns.current_staff, branch_id(socket), ids) do
+    case Delivery.reorder_zones(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           branch_id(socket),
+           ids
+         ) do
       {:ok, zones} ->
         {:noreply, socket |> assign_zones(zones, socket.assigns.selected_id) |> push_zones()}
 
@@ -128,7 +148,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
       |> Map.take(["name", "color", "enabled", "delivery_minutes", "radius_km"])
       |> Map.put("thresholds", Conditions.to_thresholds(params))
 
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
 
     case Delivery.update_zone(staff, branch_id(socket), socket.assigns.selected_id, attrs) do
       {:ok, zone} ->
@@ -148,7 +168,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
   end
 
   def handle_event("delete_zone", %{"id" => id}, socket) do
-    case Delivery.delete_zone(socket.assigns.current_staff, branch_id(socket), id) do
+    case Delivery.delete_zone(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           branch_id(socket),
+           id
+         ) do
       {:ok, _zone} -> {:noreply, socket |> reload_zones(nil) |> push_zones()}
       {:error, reason} -> {:noreply, put_flash(socket, :error, error_message(reason))}
     end
@@ -180,7 +204,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
 
   defp assign_settings_form(socket, params) do
     assign(socket,
-      mode: String.to_existing_atom(params["mode"] || "flat"),
+      mode: if(params["mode"] == "zones", do: :zones, else: :flat),
       outside_zones: params["outside_zones"] in [true, "true"],
       settings_form: to_form(params, as: "delivery")
     )
@@ -255,6 +279,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
         <button
           type="submit"
           form="delivery-settings"
+          data-staff-save="edit"
           class="btn btn-primary"
           phx-disable-with={gettext("Saving...")}
         >{gettext("Save")}</button>

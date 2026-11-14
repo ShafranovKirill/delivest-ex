@@ -121,6 +121,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
 
   def handle_event("confirm", _params, socket) do
     %{current_staff: staff, cart: cart, method: method, cash_given: cash_given} = socket.assigns
+    staff = Identity.fresh_staff(staff)
 
     params = %{
       "fulfillment_type" => cart.fulfillment_type || "dine_in",
@@ -147,6 +148,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
 
   def handle_event("hand_out", %{"id" => id}, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
 
     socket =
       case Pos.hand_out(staff, branch.id, id) do
@@ -226,7 +228,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header title={gettext("POS")}>
+    <.page_header title={gettext("POS")} subtitle={@current_branch.name}>
       <:actions>
         <div class="join">
           <button

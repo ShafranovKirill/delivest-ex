@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.{Money, Net, Promo, Repo}
+  alias Delivest.{Identity, Money, Net, Promo, Repo}
   alias Delivest.Promo.Promotion
   alias DelivestWeb.Staff.PromotionLive.{ProductSale, PromotionHelpers}
   alias Phoenix.LiveView.JS
@@ -55,12 +55,12 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
     with nil <- ProductSale.error(socket.assigns.sale, socket.assigns.prices),
          {:ok, promotion} <-
            Promo.create_promotion(
-             socket.assigns.current_staff,
+             Identity.fresh_staff(socket.assigns.current_staff),
              socket.assigns.branch_id,
              promotion_params(socket.assigns)
            ) do
       send(self(), {__MODULE__, {:saved, promotion}})
-      {:noreply, socket}
+      {:noreply, push_event(socket, "staff:form-saved", %{id: "sale-form"})}
     else
       {:error, :forbidden} ->
         {:noreply,
@@ -263,6 +263,7 @@ defmodule DelivestWeb.Staff.PromotionLive.ProductSaleFormComponent do
           <button
             id="sale-save"
             type="submit"
+            data-staff-save="create"
             class="btn btn-primary"
             phx-disable-with={gettext("Saving...")}
           >

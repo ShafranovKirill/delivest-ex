@@ -1,5 +1,4 @@
 defmodule DelivestWeb.Staff.StockLive.Stocks do
-  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Net}
@@ -76,7 +75,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         %{"id" => id, "above_order" => above_order, "below_order" => below_order},
         socket
       ) do
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
     branch_id = socket.assigns.branch_id
 
     with {:ok, stock} <- Net.get_branch_stock(branch_id, id),
@@ -109,7 +108,7 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
         _,
         %{assigns: %{stock_to_delete: stock, branch_id: branch_id}} = socket
       ) do
-    case Net.delete_stock(socket.assigns.current_staff, stock) do
+    case Net.delete_stock(Identity.fresh_staff(socket.assigns.current_staff), stock) do
       {:ok, _} ->
         stocks = Net.list_staff_stocks_for_branch(socket.assigns.current_staff, branch_id)
 
@@ -201,15 +200,6 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
       title={gettext("Banners")}
       subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
     >
-      <:navigation>
-        <.navigation
-          staff={@current_staff}
-          branches={@staff_branches}
-          branch={@current_branch}
-          active={:stocks}
-          part={:areas}
-        />
-      </:navigation>
       <:actions>
         <.link
           :if={Identity.can?(@current_staff, "stocks.create")}
@@ -228,14 +218,6 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.navigation
-        staff={@current_staff}
-        branches={@staff_branches}
-        branch={@current_branch}
-        active={:stocks}
-        part={:branches}
-      />
-
       <div id="stocks-list" phx-hook="SortableStocks" class="space-y-3">
         <%= for stock <- @stocks do %>
           <div
@@ -282,6 +264,13 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
                     <.icon name="hero-link" class="size-3" />
                     {stock.product.name}
                   </span>
+                  <span
+                    :if={
+                      stock.is_active and
+                        match?(%Delivest.Net.Product{is_active: false}, stock.product)
+                    }
+                    class="badge badge-warning badge-xs"
+                  >{gettext("Linked product is unpublished")}</span>
                   <span class="text-xs opacity-50">{Calendar.strftime(stock.inserted_at, "%d.%m.%Y")}</span>
                 </div>
               </div>

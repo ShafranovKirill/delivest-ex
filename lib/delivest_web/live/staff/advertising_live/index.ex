@@ -99,19 +99,9 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
   def staff_page_header(assigns) do
     ~H"""
     <.page_header
-      navigation_label={gettext("Marketing areas")}
       title={gettext("Advertising links")}
       subtitle={@current_branch.name}
     >
-      <:navigation>
-        <.navigation
-          staff={@current_staff}
-          branches={@staff_branches}
-          branch={@current_branch}
-          active={:links}
-          part={:areas}
-        />
-      </:navigation>
       <:actions>
         <button type="submit" form="advertising-link-form" class="btn btn-primary">{gettext(
           "Create link"

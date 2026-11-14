@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
 
   import DelivestWeb.Staff.OrderLive.Components.Segmented, only: [segmented: 1]
   import DelivestWeb.Staff.OrderLive.Components.ClientPanel, only: [client_panel: 1]
+  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
 
   attr :form, :any, required: true
   attr :known_client, :any, required: true
@@ -24,6 +25,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.DetailsComponent do
       phx-submit="save_order"
       class="space-y-5"
     >
+      <.error_summary
+        id="order-details-errors"
+        errors={changeset_errors(@form.source)}
+        form_name="order"
+      />
       <.section title={gettext("Client")}>
         <.client_panel form={@form} known_client={@known_client} />
       </.section>

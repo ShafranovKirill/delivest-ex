@@ -3,6 +3,9 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
 
   alias Delivest.{Franchise, Identity}
 
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [error_summary: 1, changeset_errors: 1, form_section: 1]
+
   @fields ~w(loyalty_per_rubles loyalty_stars loyalty_expire_days)
 
   @impl true
@@ -30,7 +33,10 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
 
   def handle_event("save", %{"settings" => params}, socket) do
     if allowed?(socket) do
-      case Franchise.update_settings(socket.assigns.current_staff, Map.take(params, @fields)) do
+      case Franchise.update_settings(
+             Identity.fresh_staff(socket.assigns.current_staff),
+             Map.take(params, @fields)
+           ) do
         {:ok, settings} ->
           {:noreply,
            socket
@@ -43,6 +49,9 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
 
         {:error, :forbidden} ->
           {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not save settings"))}
       end
     else
       {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
@@ -50,7 +59,7 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
   end
 
   defp allowed?(socket),
-    do: Identity.can?(socket.assigns.current_staff, "franchise.update")
+    do: Identity.can?(Identity.fresh_staff(socket.assigns.current_staff), "franchise.update")
 
   defp assign_form(socket, changeset),
     do: assign(socket, form: to_form(changeset, as: "settings"))
@@ -74,27 +83,34 @@ defmodule DelivestWeb.Staff.MarketingLive.BonusSettingsComponent do
           phx-submit="save"
           class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
         >
-          <div class="grid gap-4 sm:grid-cols-2">
+          <.error_summary
+            id="common-bonuses-error-summary"
+            errors={changeset_errors(@form.source)}
+            form_name={@form.name}
+          />
+          <.form_section id="common-bonuses-main" title={gettext("Common bonus settings")}>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <.input
+                field={@form[:loyalty_per_rubles]}
+                type="number"
+                min="1"
+                label={gettext("For every, ₽")}
+              />
+              <.input field={@form[:loyalty_stars]} type="number" min="1" label={gettext("Stars")} />
+            </div>
             <.input
-              field={@form[:loyalty_per_rubles]}
+              field={@form[:loyalty_expire_days]}
               type="number"
               min="1"
-              label={gettext("For every, ₽")}
+              label={gettext("Stars expire after, days")}
             />
-            <.input field={@form[:loyalty_stars]} type="number" min="1" label={gettext("Stars")} />
-          </div>
-          <.input
-            field={@form[:loyalty_expire_days]}
-            type="number"
-            min="1"
-            label={gettext("Stars expire after, days")}
-          />
-          <p class="text-sm text-base-content/60">
-            {gettext("These rules apply to every branch.")}
-            {gettext(
-              "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
-            )}
-          </p>
+            <p class="text-sm text-base-content/60">
+              {gettext("These rules apply to every branch.")}
+              {gettext(
+                "Stars are counted from the order total after discounts, without delivery, and rounded down. They are credited when the order is completed."
+              )}
+            </p>
+          </.form_section>
         </.form>
       </section>
     </div>

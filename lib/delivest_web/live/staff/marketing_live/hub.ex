@@ -42,17 +42,6 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
       title={gettext("Marketing")}
       subtitle={gettext("Choose a marketing area and branch.")}
     >
-      <:navigation :if={
-        @current_branch || Navigation.global_area_links?(@current_staff, @staff_branches)
-      }>
-        <Navigation.navigation
-          staff={@current_staff}
-          branches={@staff_branches}
-          branch={@current_branch}
-          active={@section}
-          part={:areas}
-        />
-      </:navigation>
     </.page_header>
     """
   end

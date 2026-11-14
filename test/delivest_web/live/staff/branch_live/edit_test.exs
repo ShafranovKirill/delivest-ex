@@ -83,6 +83,23 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
     assert Repo.reload!(branch).name == "New name"
   end
 
+  test "revoked branch update permission blocks an open form", %{conn: conn} do
+    branch = insert(:branch, name: "Original", slug: "revoked-form")
+    role = insert(:role, permissions: ["branches.read", "branches.update"])
+    staff = insert(:staff, role: role)
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/general")
+    role |> Ecto.Changeset.change(permissions: ["branches.read"]) |> Repo.update!()
+
+    lv
+    |> form("#branch-form", branch_form: %{name: "Forbidden change"})
+    |> render_submit()
+
+    assert Repo.reload!(branch).name == "Original"
+  end
+
   test "a new branch is created from the page", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/branches/new")
     refute has_element?(lv, "#branch-delete-section")
@@ -168,6 +185,29 @@ defmodule DelivestWeb.Staff.BranchLive.EditTest do
 
     html = lv |> form("#branch-form", branch_form: %{slug: "taken"}) |> render_submit()
     assert html =~ "has already been taken"
+  end
+
+  test "stale branch form keeps the draft and requires an explicit reload", %{conn: conn} do
+    branch = insert(:branch, name: "Original", slug: "stale-branch")
+    {:ok, lv, _html} = live(conn, ~p"/staff/branches/stale-branch/edit/general")
+
+    branch |> Branch.changeset(%{"name" => "External change"}) |> Repo.update!()
+
+    lv
+    |> form("#branch-form", branch_form: %{name: "My draft"})
+    |> render_submit()
+
+    assert has_element?(lv, "#branch-form-conflict[role='alert']")
+    assert has_element?(lv, "#branch-form input[name='branch_form[name]'][value='My draft']")
+    assert Repo.reload!(branch).name == "External change"
+
+    lv |> element("#branch-form-conflict button[phx-click='reload']") |> render_click()
+    refute has_element?(lv, "#branch-form-conflict")
+
+    assert has_element?(
+             lv,
+             "#branch-form input[name='branch_form[name]'][value='External change']"
+           )
   end
 
   test "the branch point is found by address and moved on the map", %{conn: conn} do

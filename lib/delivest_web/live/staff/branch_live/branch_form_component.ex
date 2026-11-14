@@ -2,8 +2,10 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   use DelivestWeb, :live_component
 
   import DelivestWeb.Staff.BranchLive.LocationFields
+  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
 
   alias Delivest.Identity
+  alias Delivest.Identity.Branch
   alias Delivest.Integrations.Dadata
 
   alias DelivestWeb.Staff.BranchLive.{
@@ -15,15 +17,29 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
 
   @impl true
   def update(assigns, socket) do
-    socket = assign(socket, assigns)
-    changeset = BranchForm.changeset(BranchForm.for_branch(socket.assigns.branch), %{})
+    same_context? =
+      socket.assigns[:form] && socket.assigns[:branch] &&
+        socket.assigns.branch.id == assigns.branch.id &&
+        socket.assigns[:action] == assigns.action &&
+        Map.get(socket.assigns[:section] || %{}, :id) == Map.get(assigns.section, :id)
 
-    {:ok,
-     assign(socket,
-       form: to_form(changeset),
-       address_map: Dadata.active?(),
-       location_suggestions: []
-     )}
+    if same_context? do
+      {:ok, assign(socket, Map.delete(assigns, :branch))}
+    else
+      socket = assign(socket, assigns)
+      branch = Delivest.Repo.preload(socket.assigns.branch, :info)
+      changeset = BranchForm.changeset(BranchForm.for_branch(branch), %{})
+
+      {:ok,
+       assign(socket,
+         branch: branch,
+         baseline: {branch, branch.info},
+         conflict: false,
+         form: to_form(changeset),
+         address_map: Dadata.active?(),
+         location_suggestions: []
+       )}
+    end
   end
 
   @impl true
@@ -73,6 +89,32 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
     |> save(socket)
   end
 
+  def handle_event("reload", _params, socket) do
+    branch_id = socket.assigns.branch.id
+
+    with :ok <-
+           Identity.authorize(
+             Identity.fresh_staff(socket.assigns.current_staff),
+             "branches.read",
+             branch_id
+           ),
+         %Branch{} = branch <- Delivest.Repo.get(Branch, branch_id) do
+      branch = Delivest.Repo.preload(branch, :info)
+
+      {:noreply,
+       socket
+       |> assign(
+         branch: branch,
+         baseline: {branch, branch.info},
+         conflict: false,
+         form: to_form(BranchForm.changeset(BranchForm.for_branch(branch), %{}))
+       )
+       |> push_event("staff:form-saved", %{id: "branch-form"})}
+    else
+      _ -> {:noreply, put_flash(socket, :error, gettext("Could not reload current settings"))}
+    end
+  end
+
   defp put_location(socket, changes) do
     assign(socket, form: to_form(Ecto.Changeset.change(socket.assigns.form.source, changes)))
   end
@@ -109,16 +151,32 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
       {:error, :kitchen_replan, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
 
+      {:error, :conflict} ->
+        {:noreply,
+         socket
+         |> assign(conflict: true, form: to_form(Map.put(changeset, :action, :insert)))
+         |> put_flash(
+           :error,
+           gettext("Settings changed elsewhere. Review the latest data before retrying.")
+         )}
+
       {:error, :forbidden} ->
         {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
     end
   end
 
   defp persist(%{action: :new, current_staff: staff}, branch_params, info_params),
-    do: Identity.create_branch(staff, branch_params, info_params)
+    do: Identity.create_branch(Identity.fresh_staff(staff), branch_params, info_params)
 
-  defp persist(%{current_staff: staff, branch: branch}, branch_params, info_params),
-    do: Identity.update_branch(staff, branch, branch_params, info_params)
+  defp persist(
+         %{current_staff: staff, branch: branch, baseline: baseline},
+         branch_params,
+         info_params
+       ),
+       do:
+         Identity.update_branch(Identity.fresh_staff(staff), branch, branch_params, info_params,
+           expected: baseline
+         )
 
   defp copy_errors(changeset, error) do
     error.errors
@@ -137,6 +195,14 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
   def render(assigns) do
     ~H"""
     <div>
+      <div :if={@conflict} id="branch-form-conflict" role="alert" class="alert alert-warning mb-4">
+        <span>{gettext(
+          "Settings changed elsewhere. Your draft is still here; reload current settings to start again."
+        )}</span>
+        <button type="button" phx-click="reload" phx-target={@myself} class="btn btn-sm btn-ghost">{gettext(
+          "Reload settings"
+        )}</button>
+      </div>
       <.form
         for={@form}
         id="branch-form"
@@ -146,6 +212,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
         phx-submit="save"
         class="space-y-6"
       >
+        <.error_summary
+          id="branch-form-errors"
+          errors={changeset_errors(@form.source)}
+          form_name="branch_form"
+        />
         <section class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
           <div :if={@section.id == :general} class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-2">

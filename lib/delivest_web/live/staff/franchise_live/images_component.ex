@@ -3,7 +3,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.ImagesComponent do
 
   import DelivestWeb.Staff.FranchiseLive.ImageUploads, only: [image_input: 1]
 
-  alias Delivest.Franchise
+  alias Delivest.{Franchise, Identity}
   alias Delivest.Franchise.Images
   alias DelivestWeb.Staff.FranchiseLive.ImageUploads
 
@@ -25,7 +25,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.ImagesComponent do
 
   defp handle_progress(name, entry, socket) when entry.done? do
     binary = ImageUploads.read(socket, entry)
-    staff = socket.assigns.current_staff
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
 
     result =
       case name do
@@ -45,10 +45,14 @@ defmodule DelivestWeb.Staff.FranchiseLive.ImagesComponent do
   def handle_event("remove", %{"image" => "icon"}, socket),
     do:
       {:noreply,
-       handle_result(socket, :icon, Franchise.remove_icon(socket.assigns.current_staff))}
+       handle_result(
+         socket,
+         :icon,
+         Franchise.remove_icon(Identity.fresh_staff(socket.assigns.current_staff))
+       )}
 
   def handle_event("remove", %{"image" => "share_image"}, socket) do
-    result = Franchise.remove_share_image(socket.assigns.current_staff)
+    result = Franchise.remove_share_image(Identity.fresh_staff(socket.assigns.current_staff))
     {:noreply, handle_result(socket, :share_image, result)}
   end
 

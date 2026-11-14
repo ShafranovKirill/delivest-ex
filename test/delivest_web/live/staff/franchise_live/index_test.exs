@@ -232,6 +232,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     assert has_element?(lv, "#backup-export")
     assert has_element?(lv, "#backup-import-form input[type=file]")
     assert has_element?(lv, "#backup-confirm")
+    assert has_element?(lv, "#backup-target")
     assert has_element?(lv, "#backup-agent-unavailable")
     refute has_element?(lv, ~s(input[name="sections[]"]))
   end
@@ -264,7 +265,18 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     lv |> form("#backup-import-form") |> render_submit()
     assert Delivest.InstanceBackup.active() == nil
 
-    lv |> form("#backup-import-form", %{"confirm" => "replace"}) |> render_submit()
+    lv
+    |> form("#backup-import-form", %{"confirm" => "replace", "target" => "Wrong"})
+    |> render_submit()
+
+    assert Delivest.InstanceBackup.active() == nil
+
+    target = Franchise.get_settings().name
+
+    lv
+    |> form("#backup-import-form", %{"confirm" => "replace", "target" => target})
+    |> render_submit()
+
     assert %{"action" => "import"} = Delivest.InstanceBackup.active().request
     id = Delivest.InstanceBackup.active().id
 

@@ -140,7 +140,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("find_courier", %{"order-id" => id}, socket) do
     with {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, _delivery} <- Couriers.find(socket.assigns.current_staff, order) do
+         {:ok, _delivery} <-
+           Couriers.find(Identity.fresh_staff(socket.assigns.current_staff), order) do
       load(socket)
     else
       error -> failed(socket, error)
@@ -149,7 +150,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("estimate_delivery", %{"order-id" => id}, socket) do
     with {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, estimate} <- Couriers.estimate(socket.assigns.current_staff, order) do
+         {:ok, estimate} <-
+           Couriers.estimate(Identity.fresh_staff(socket.assigns.current_staff), order) do
       {:noreply, put_flash(socket, estimate_kind(estimate), estimate_message(estimate, socket))}
     else
       error -> failed(socket, error)
@@ -158,7 +160,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("confirm_paid_cancel", %{"order-id" => id}, socket) do
     with {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, _delivery} <- Couriers.confirm_cancel(socket.assigns.current_staff, order) do
+         {:ok, _delivery} <-
+           Couriers.confirm_cancel(Identity.fresh_staff(socket.assigns.current_staff), order) do
       load(socket)
     else
       error -> failed(socket, error)
@@ -167,7 +170,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("assign_courier", %{"order-id" => id, "courier_id" => courier_id}, socket) do
     with {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, _delivery} <- Couriers.assign(socket.assigns.current_staff, order, courier_id) do
+         {:ok, _delivery} <-
+           Couriers.assign(Identity.fresh_staff(socket.assigns.current_staff), order, courier_id) do
       load(socket)
     else
       error -> failed(socket, error)
@@ -176,7 +180,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("unassign_courier", %{"order-id" => id}, socket) do
     with {:ok, order} <- fetch_branch_order(socket, id),
-         {:ok, _delivery} <- Couriers.unassign(socket.assigns.current_staff, order) do
+         {:ok, _delivery} <-
+           Couriers.unassign(Identity.fresh_staff(socket.assigns.current_staff), order) do
       load(socket)
     else
       error -> failed(socket, error)
@@ -214,7 +219,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("confirm_revert", %{"revert" => %{"reason" => reason}}, socket) do
     with %Order{} = order <- socket.assigns.order_to_revert,
          {:ok, _order} <-
-           Orders.revert_order_status(order, socket.assigns.current_staff, reason) do
+           Orders.revert_order_status(
+             order,
+             Identity.fresh_staff(socket.assigns.current_staff),
+             reason
+           ) do
       socket |> assign(order_to_revert: nil) |> load()
     else
       error -> socket |> assign(order_to_revert: nil) |> failed(error)
@@ -231,7 +240,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
            Orders.update_payment_method(
              order,
              Map.take(params, ["payment_method"]),
-             socket.assigns.current_staff
+             Identity.fresh_staff(socket.assigns.current_staff)
            ) do
       load(socket)
     else
@@ -241,6 +250,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("intake_pause", %{"duration" => duration} = params, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
 
     result =
       Delivest.Intake.pause_many(
@@ -260,6 +270,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         socket
       ) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
 
     result =
       Delivest.Intake.start_load_many(
@@ -275,6 +286,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("intake_resume", _params, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
     intake_result(socket, Delivest.Intake.resume(staff, branch))
   end
 
@@ -288,7 +300,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: receipt_action(socket, id, "finance.receipts_refund", &Delivest.Fiscal.refund/2)
 
   def handle_event("courier_code", %{"order-id" => id, "code" => code}, socket) do
-    socket.assigns.current_staff
+    Identity.fresh_staff(socket.assigns.current_staff)
     |> YandexEda.validate_courier_code(socket.assigns.current_branch.id, id, code)
     |> case do
       {:ok, %{valid: true}} ->
@@ -319,7 +331,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_event("confirm_delete", _, %{assigns: %{order_to_delete: %Order{} = order}} = socket) do
     with :ok <- authorize(socket, "orders.delete"),
-         {:ok, _} <- Orders.soft_delete_order(order, socket.assigns.current_staff) do
+         {:ok, _} <-
+           Orders.soft_delete_order(order, Identity.fresh_staff(socket.assigns.current_staff)) do
       socket
       |> put_flash(:info, gettext("Order deleted successfully"))
       |> assign(order_to_delete: nil)
@@ -376,7 +389,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     with :ok <- authorize(socket, permission),
          {:ok, uuid} <- Ecto.UUID.cast(id),
          %{branch_id: ^branch_id} = receipt <- Delivest.Fiscal.get(uuid),
-         {:ok, _receipt} <- action.(receipt, socket.assigns.current_staff) do
+         {:ok, _receipt} <- action.(receipt, Identity.fresh_staff(socket.assigns.current_staff)) do
       load(socket)
     else
       {:error, :forbidden} = error -> failed(socket, error)
@@ -414,13 +427,13 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   defp failed(socket, error),
     do: socket |> put_flash(:error, StatusErrors.message(error)) |> load()
 
-  defp staff(socket), do: {:staff, socket.assigns.current_staff}
+  defp staff(socket), do: {:staff, Identity.fresh_staff(socket.assigns.current_staff)}
 
   defp patch(query, socket),
     do: {:noreply, push_patch(socket, to: orders_path(socket.assigns.current_branch, query))}
 
   defp authorize(socket, permission) do
-    if Identity.can?(socket.assigns.current_staff, permission),
+    if Identity.can?(Identity.fresh_staff(socket.assigns.current_staff), permission),
       do: :ok,
       else: {:error, :forbidden}
   end
@@ -466,7 +479,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           can_manage={Identity.can?(@current_staff, "orders.update")}
           branches={Identity.list_branch_for_staff(@current_staff)}
         />
-        <.link navigate={~p"/staff/b/#{@current_branch}/orders/new"} class="btn btn-primary">
+        <.link navigate={~p"/staff/b/#{@current_branch}/orders/new?#{@query}"} class="btn btn-primary">
           <.icon name="hero-plus" class="size-5" />
           {gettext("New Order")}
         </.link>
@@ -508,7 +521,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       </div>
 
       <.card class="flex flex-col gap-4 p-3 sm:p-4">
-        <OrdersToolbar.orders_toolbar selected={@selected} />
+        <OrdersToolbar.orders_toolbar
+          selected={@selected}
+          reset_path={orders_path(@current_branch, %{})}
+        />
       </.card>
 
       <div id="orders" phx-update="stream" class="space-y-3">
@@ -521,13 +537,18 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           order={order}
           current_staff={@current_staff}
           current_branch={@current_branch}
+          return_query={@query}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
           estimable={@estimable}
         />
       </div>
 
-      <.pagination meta={@meta} path_fn={&orders_path(@current_branch, Map.merge(@query, &1))} />
+      <.pagination
+        meta={@meta}
+        path_fn={&orders_path(@current_branch, Map.merge(@query, &1))}
+        page_sizes={[25, 50, 100]}
+      />
 
       <.slide_over
         id="order-slideover"
@@ -542,6 +563,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           order={@shown_order}
           current_staff={@current_staff}
           current_branch={@current_branch}
+          return_query={@query}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
           estimable={@estimable}

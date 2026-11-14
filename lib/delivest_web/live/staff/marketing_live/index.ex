@@ -1196,15 +1196,6 @@ defmodule DelivestWeb.Staff.MarketingLive.Index do
       title={gettext("Marketing policies")}
       subtitle={gettext("Customers")}
     >
-      <:navigation>
-        <.navigation
-          staff={@current_staff}
-          branches={@staff_branches}
-          branch={@navigation_branch}
-          active={:policies}
-          part={:areas}
-        />
-      </:navigation>
       <:actions>
         <button
           :if={@can_network_calculate and @live_action == :index}

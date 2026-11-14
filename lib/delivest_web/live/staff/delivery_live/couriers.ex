@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
   use DelivestWeb, :live_view
+  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
 
   alias Delivest.{Couriers, Identity}
   alias Delivest.Identity.Branch.CourierSettings
@@ -14,7 +15,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
      socket
      |> assign(
        page_title: gettext("Branch couriers"),
-       can_edit: Identity.can?(socket.assigns.current_staff, "delivery.update")
+       can_edit:
+         Identity.can?(Identity.fresh_staff(socket.assigns.current_staff), "delivery.update")
      )
      |> assign_form(CourierSettings.changeset(settings, %{}))}
   end
@@ -22,7 +24,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
   @impl true
   def handle_event("save", %{"couriers" => params}, socket) do
     case Identity.update_couriers(
-           socket.assigns.current_staff,
+           Identity.fresh_staff(socket.assigns.current_staff),
            socket.assigns.current_branch,
            params
          ) do
@@ -34,10 +36,28 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
          |> push_navigate(to: ~p"/staff/b/#{socket.assigns.current_branch}/delivery")}
 
       {:error, :info, %Ecto.Changeset{}} ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+        {:noreply,
+         socket
+         |> assign_form(
+           CourierSettings.changeset(
+             Couriers.settings(socket.assigns.current_branch.id) || %CourierSettings{},
+             params
+           )
+           |> Map.put(:action, :validate)
+         )
+         |> put_flash(:error, gettext("Failed to save"))}
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+        {:noreply,
+         socket
+         |> assign_form(
+           CourierSettings.changeset(
+             Couriers.settings(socket.assigns.current_branch.id) || %CourierSettings{},
+             params
+           )
+           |> Map.put(:action, :validate)
+         )
+         |> put_flash(:error, gettext("Permission denied"))}
     end
   end
 
@@ -69,6 +89,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
         <button
           type="submit"
           form="couriers-form"
+          data-staff-save="edit"
           class="btn btn-primary"
           phx-disable-with={gettext("Saving...")}
         >{gettext("Save")}</button>
@@ -88,6 +109,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Couriers do
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
+        <.error_summary
+          id="couriers-form-errors"
+          errors={changeset_errors(@form.source)}
+          form_name="couriers"
+        />
         <div class="grid gap-4 sm:grid-cols-2">
           <.input
             field={@form[:source]}

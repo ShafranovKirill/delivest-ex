@@ -54,10 +54,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
              "main #staff-section-navigation #section-nav-loyalty_settings[aria-current='page']"
            )
 
-    assert has_element?(
-             lv,
-             "#staff-page-header #marketing-navigation a[href='/staff/marketing/bonuses?branch=#{branch.slug}']"
-           )
+    refute has_element?(lv, "#staff-page-header #marketing-navigation")
 
     assert has_element?(lv, "#loyalty-summary-liability")
     refute has_element?(lv, "#common-bonuses-form")

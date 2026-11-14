@@ -59,14 +59,14 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
     {:noreply,
      socket
      |> put_flash(:info, gettext("Role saved successfully"))
-     |> push_patch(to: ~p"/staff/roles")
      |> update(:roles, fn roles ->
        if Enum.any?(roles, &(&1.id == role.id)) do
          Enum.map(roles, fn b -> if b.id == role.id, do: role, else: b end)
        else
          [role | roles]
        end
-     end)}
+     end)
+     |> push_navigate(to: role_list_path(role.id))}
   end
 
   @impl true
@@ -145,15 +145,33 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
     {:noreply, assign(socket, role_to_delete: nil)}
   end
 
+  defp role_list_path(role_id) do
+    path = ~p"/staff/roles"
+    if role_id, do: path <> "#role-card-#{role_id}", else: path
+  end
+
   def staff_page_header(assigns) do
     ~H"""
     <.page_header
-      title={gettext("Roles Management")}
-      subtitle={gettext("List of available company roles")}
+      title={if @live_action in [:new, :edit], do: @page_title, else: gettext("Roles Management")}
+      subtitle={if @live_action == :index, do: gettext("List of available company roles")}
     >
       <:actions>
+        <.link
+          :if={@live_action in [:new, :edit]}
+          id="role-back-to-list"
+          navigate={role_list_path(@role.id)}
+          class="btn btn-ghost"
+        >{gettext("Back to roles")}</.link>
         <button
-          :if={Identity.can?(@current_staff, "admin")}
+          :if={@live_action in [:new, :edit]}
+          type="submit"
+          form="role-form"
+          class="btn btn-primary"
+          data-staff-save={if @live_action == :new, do: "create", else: "edit"}
+        >{gettext("Save")}</button>
+        <button
+          :if={@live_action == :index and Identity.can?(@current_staff, "admin")}
           id="seed-roles"
           type="button"
           phx-click="seed_roles"
@@ -162,8 +180,8 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
           {gettext("Create Base Roles")}
         </button>
         <.link
-          :if={Identity.can?(@current_staff, "roles.create")}
-          patch={~p"/staff/roles/new"}
+          :if={@live_action == :index and Identity.can?(@current_staff, "roles.create")}
+          navigate={~p"/staff/roles/new"}
           class="btn btn-primary"
         >
           {gettext("Create Role")}
@@ -177,78 +195,95 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <%= for role <- @roles do %>
-          <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
-            <div class="card-body flex flex-row items-center justify-between gap-4">
-              <.link
-                patch={~p"/staff/roles/#{role.id}/edit"}
-                class="cursor-pointer flex-1"
-              >
-                <h2 class="card-title">{role.name}</h2>
-              </.link>
-
-              <div class="flex flex-col items-center gap-1 shrink-0">
+      <%= if @live_action in [:new, :edit] do %>
+        <div
+          id="role-edit-page"
+          class="mx-auto max-w-4xl rounded-box border border-base-300 bg-base-100"
+        >
+          <.live_component
+            :if={@role}
+            module={DelivestWeb.Staff.RoleLive.RoleFormComponent}
+            id={@role.id || :new}
+            action={@live_action}
+            role={@role}
+            current_staff={@current_staff}
+            patch={role_list_path(@role.id)}
+          />
+        </div>
+      <% else %>
+        <.empty_state :if={@roles == []} title={gettext("No roles")} />
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <%= for role <- @roles do %>
+            <div
+              id={"role-card-#{role.id}"}
+              class="card scroll-mt-24 bg-base-100 shadow-xl hover:shadow-2xl transition-all"
+            >
+              <div class="card-body flex flex-row items-center justify-between gap-4">
                 <.link
                   :if={
                     Identity.can?(@current_staff, "roles.update") and
                       Identity.manages_role?(@current_staff, role)
                   }
-                  patch={~p"/staff/roles/#{role.id}/edit"}
-                  class="btn btn-sm btn-ghost btn-square text-info"
-                  title={gettext("Edit")}
+                  navigate={~p"/staff/roles/#{role.id}/edit"}
+                  class="cursor-pointer flex-1"
                 >
-                  <.icon name="hero-pencil-square" class="w-5 h-5" />
+                  <h2 class="card-title">{role.name}</h2>
                 </.link>
-
-                <button
+                <h2
                   :if={
-                    Identity.can?(@current_staff, "roles.delete") and
-                      Identity.manages_role?(@current_staff, role)
+                    not (Identity.can?(@current_staff, "roles.update") and
+                           Identity.manages_role?(@current_staff, role))
                   }
-                  type="button"
-                  phx-click="delete_click"
-                  phx-value-id={role.id}
-                  class="btn btn-sm btn-ghost btn-square text-error"
-                  title={gettext("Delete")}
+                  class="card-title flex-1"
                 >
-                  <.icon name="hero-trash" class="w-5 h-5" />
-                </button>
+                  {role.name}
+                </h2>
+
+                <div class="flex flex-col items-center gap-1 shrink-0">
+                  <.link
+                    :if={
+                      Identity.can?(@current_staff, "roles.update") and
+                        Identity.manages_role?(@current_staff, role)
+                    }
+                    navigate={~p"/staff/roles/#{role.id}/edit"}
+                    class="btn btn-sm btn-ghost btn-square text-info"
+                    title={gettext("Edit")}
+                  >
+                    <.icon name="hero-pencil-square" class="w-5 h-5" />
+                  </.link>
+
+                  <button
+                    :if={
+                      Identity.can?(@current_staff, "roles.delete") and
+                        Identity.manages_role?(@current_staff, role)
+                    }
+                    type="button"
+                    phx-click="delete_click"
+                    phx-value-id={role.id}
+                    class="btn btn-sm btn-ghost btn-square text-error"
+                    title={gettext("Delete")}
+                  >
+                    <.icon name="hero-trash" class="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        <% end %>
-      </div>
+          <% end %>
+        </div>
 
-      <.slide_over
-        id="role-slideover"
-        show={@live_action in [:new, :edit]}
-        title={@page_title}
-        on_close={JS.patch(~p"/staff/roles")}
-      >
-        <.live_component
-          :if={@role}
-          module={DelivestWeb.Staff.RoleLive.RoleFormComponent}
-          id={@role.id || :new}
-          action={@live_action}
-          role={@role}
-          current_staff={@current_staff}
-          patch={~p"/staff/roles"}
+        <.modal
+          id="delete-modal"
+          show={@role_to_delete != nil}
+          title={gettext("Delete Role")}
+          description={
+            gettext("Are you sure you want to delete this role? This action cannot be undone.")
+          }
+          confirm_label={gettext("Delete")}
+          danger={true}
+          on_cancel={JS.push("cancel_delete")}
+          on_confirm={JS.push("confirm_delete")}
         />
-      </.slide_over>
-
-      <.modal
-        id="delete-modal"
-        show={@role_to_delete != nil}
-        title={gettext("Delete Role")}
-        description={
-          gettext("Are you sure you want to delete this role? This action cannot be undone.")
-        }
-        confirm_label={gettext("Delete")}
-        danger={true}
-        on_cancel={JS.push("cancel_delete")}
-        on_confirm={JS.push("confirm_delete")}
-      />
+      <% end %>
     </div>
     """
   end

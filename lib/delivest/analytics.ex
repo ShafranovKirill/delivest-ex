@@ -235,23 +235,31 @@ defmodule Delivest.Analytics do
     |> Map.new()
   end
 
-  @spec client_summary(binary(), [binary()] | :all) :: map()
-  def client_summary(client_id, branch_ids) do
+  @spec client_summary(binary(), [binary()] | :all, keyword()) :: map()
+  def client_summary(client_id, branch_ids, opts \\ []) do
     base =
       Order
       |> where([o], o.client_id == ^client_id and is_nil(o.deleted_at))
       |> OrderScopes.sold()
       |> scope_branches(branch_ids)
 
-    totals =
-      base
-      |> select([o], %{
-        orders_count: count(o.id),
-        spent: coalesce(sum(o.total_amount), 0),
-        first_order_at: min(o.inserted_at),
-        last_order_at: max(o.inserted_at)
-      })
-      |> Repo.one()
+    totals_query =
+      if Keyword.get(opts, :finance?, true) do
+        select(base, [o], %{
+          orders_count: count(o.id),
+          spent: coalesce(sum(o.total_amount), 0),
+          first_order_at: min(o.inserted_at),
+          last_order_at: max(o.inserted_at)
+        })
+      else
+        select(base, [o], %{
+          orders_count: count(o.id),
+          first_order_at: min(o.inserted_at),
+          last_order_at: max(o.inserted_at)
+        })
+      end
+
+    totals = Repo.one(totals_query)
 
     favourites =
       base
@@ -263,13 +271,16 @@ defmodule Delivest.Analytics do
       |> Repo.all()
       |> Enum.map(&%{&1 | quantity: to_int(&1.quantity)})
 
-    spent = to_int(totals.spent)
+    spent = if Map.has_key?(totals, :spent), do: to_int(totals.spent)
 
     totals
     |> Map.put(:spent, spent)
     |> Map.put(
       :avg_check,
-      if(totals.orders_count > 0, do: round(spent / totals.orders_count), else: 0)
+      if(is_integer(spent) and totals.orders_count > 0,
+        do: round(spent / totals.orders_count),
+        else: spent
+      )
     )
     |> Map.put(:favourites, favourites)
   end

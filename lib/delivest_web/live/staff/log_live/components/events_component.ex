@@ -7,10 +7,11 @@ defmodule DelivestWeb.Staff.LogLive.Components.EventsComponent do
   attr :events, :any, required: true
   attr :branches, :map, default: %{}
   attr :actor_path, :any, required: true
+  attr :staff_id, :string, required: true
 
   def render_events(assigns) do
     ~H"""
-    <.table id="audit-events" rows={@events}>
+    <.table id="audit-events" rows={@events} staff_id={@staff_id} list_id="staff-audit-events">
       <:col :let={{_id, event}} label={gettext("Time")}>
         <span class="font-mono text-xs whitespace-nowrap">
           {OrderHelpers.local_datetime(event.inserted_at)}

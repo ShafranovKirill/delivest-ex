@@ -4,7 +4,7 @@ defmodule DelivestWeb.StaffBranchPath do
 
   @branch_lists ~w(
     dashboard statistics orders deliveries couriers delivery delivery/address delivery/zones
-    delivery/couriers finance/payments finance/receipts integrations integrations/frontpad
+    delivery/couriers finance/payments finance/transactions finance/receipts integrations integrations/frontpad
     integrations/ycart integrations/iiko integrations/rkeeper integrations/routes
     integrations/zvonok integrations/dadata integrations/yookassa integrations/yandex-eda
     integrations/yandex-delivery integrations/fiscal categories products products/bulk
@@ -24,14 +24,16 @@ defmodule DelivestWeb.StaffBranchPath do
   @settings_filters ~w(all enabled disabled attention)
   @filters %{
     "products" => ~w(search is_active page_size order_by order_directions[]),
-    "orders" => ~w(status search),
+    "orders" =>
+      ~w(status search period problem sort date_from date_to receiving payment source page_size),
     "statistics" => ~w(tab period channel),
     "deliveries" => ~w(status search),
     "couriers" => ~w(status search),
     "promotions" => ~w(search status),
     "stocks" => ~w(search status),
     "categories" => ~w(search),
-    "finance/receipts" => ~w(status search period)
+    "finance/receipts" => ~w(status search from to page_size),
+    "finance/transactions" => ~w(status search from to page_size)
   }
 
   def home(nil), do: "/staff"
@@ -120,7 +122,7 @@ defmodule DelivestWeb.StaffBranchPath do
       Regex.match?(~r{^orders/[^/]+(?:/edit)?$}, route) ->
         {:ok, {:branch, slug, "orders"}, %{}}
 
-      Regex.match?(~r{^products/[^/]+/edit$}, route) ->
+      Regex.match?(~r{^products/[^/]+(?:/edit)?$}, route) ->
         {:ok, {:branch, slug, "products"}, %{}}
 
       Regex.match?(~r{^products/tags/[^/]+/edit$}, route) ->

@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.FranchiseLive.DocumentFormComponent do
   use DelivestWeb, :live_component
 
-  alias Delivest.Franchise
+  alias Delivest.{Franchise, Identity}
 
   @impl true
   def update(assigns, socket) do
@@ -18,13 +18,13 @@ defmodule DelivestWeb.Staff.FranchiseLive.DocumentFormComponent do
   end
 
   def handle_event("save", %{"document" => %{"body" => body}}, socket) do
-    socket.assigns.current_staff
+    Identity.fresh_staff(socket.assigns.current_staff)
     |> Franchise.update_document(socket.assigns.document.kind, body)
     |> reply(assign(socket, body: body))
   end
 
   def handle_event("reset", _params, socket) do
-    socket.assigns.current_staff
+    Identity.fresh_staff(socket.assigns.current_staff)
     |> Franchise.reset_document(socket.assigns.document.kind)
     |> reply(socket)
   end

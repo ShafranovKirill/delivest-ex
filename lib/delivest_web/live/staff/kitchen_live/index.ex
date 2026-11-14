@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
   alias Delivest.Oms.Order
 
   alias Delivest.LocalTime
+  alias Delivest.Identity
   alias Delivest.Oms.{Kitchen, Orders}
   alias DelivestWeb.KitchenPresence
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
@@ -46,6 +47,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
   @impl true
   def handle_event("ready", %{"id" => id}, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
 
     case Kitchen.mark_ready(staff, branch.id, id) do
       {:ok, _order} ->
@@ -64,6 +66,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
 
   def handle_event("undo", %{"id" => id}, socket) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
 
     case Kitchen.undo_ready(staff, branch.id, id) do
       :ok ->
@@ -171,7 +174,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header title={gettext("Kitchen")}>
+    <.page_header title={gettext("Kitchen")} subtitle={@current_branch.name}>
       <:actions>
         <span id="kitchen-clock" class="font-mono text-lg font-bold">
           {clock(@now, @current_branch.id)}
@@ -179,6 +182,11 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
         <button id="kitchen-start" type="button" data-kitchen-start class="btn btn-primary btn-sm">
           <.icon name="hero-arrows-pointing-out" class="size-4" /> {gettext("Full screen")}
         </button>
+        <.link
+          id="kitchen-exit"
+          navigate={DelivestWeb.KitchenAccess.fallback_path(@current_staff, @current_branch)}
+          class="btn btn-ghost btn-sm"
+        >{gettext("Exit")}</.link>
       </:actions>
     </.page_header>
     """

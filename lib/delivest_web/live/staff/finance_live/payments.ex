@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Staff.FinanceLive.Payments do
   use DelivestWeb, :live_view
+  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
 
   alias Delivest.{Identity, Payments}
   alias Delivest.Identity.Branch.PaymentSettings
@@ -15,7 +16,8 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
      socket
      |> assign(
        page_title: gettext("Payment"),
-       can_edit: Identity.can?(socket.assigns.current_staff, "finance.update"),
+       can_edit:
+         Identity.can?(Identity.fresh_staff(socket.assigns.current_staff), "finance.update"),
        online_ready: Yookassa.ready?()
      )
      |> assign_form(PaymentSettings.changeset(Payments.settings(branch), %{}))}
@@ -34,7 +36,7 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
 
   def handle_event("save", %{"payments" => params}, socket) do
     case Identity.update_payments(
-           socket.assigns.current_staff,
+           Identity.fresh_staff(socket.assigns.current_staff),
            socket.assigns.current_branch,
            params
          ) do
@@ -47,10 +49,22 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
          |> push_event("staff:form-saved", %{})}
 
       {:error, :info, %Ecto.Changeset{}} ->
-        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+        {:noreply,
+         socket
+         |> assign_form(
+           PaymentSettings.changeset(Payments.settings(socket.assigns.current_branch), params)
+           |> Map.put(:action, :validate)
+         )
+         |> put_flash(:error, gettext("Failed to save"))}
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+        {:noreply,
+         socket
+         |> assign_form(
+           PaymentSettings.changeset(Payments.settings(socket.assigns.current_branch), params)
+           |> Map.put(:action, :validate)
+         )
+         |> put_flash(:error, gettext("Permission denied"))}
     end
   end
 
@@ -67,6 +81,7 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
         <button
           type="submit"
           form="payments-form"
+          data-staff-save="edit"
           class="btn btn-primary"
           phx-disable-with={gettext("Saving...")}
         >{gettext("Save")}</button>
@@ -87,6 +102,11 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
+        <.error_summary
+          id="payments-form-errors"
+          errors={changeset_errors(@form.source)}
+          form_name="payments"
+        />
         <.input
           field={@form[:cash]}
           type="checkbox"

@@ -493,6 +493,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       />
 
       <%= if @tab == "sales" and is_nil(@period_error) do %>
+        <.empty_state :if={@summary.orders_count == 0} title={gettext("No sales in this period")} />
         <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <.stat_card
             icon="hero-banknotes"
@@ -611,67 +612,60 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             </div>
           </div>
 
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th class="w-10">#</th>
-                <th>{gettext("Product")}</th>
-                <th>{gettext("Category")}</th>
-                <th class="text-right">{gettext("Qty")}</th>
-                <th class="text-right">{gettext("Orders")}</th>
-                <th class="text-right">{gettext("Revenue")}</th>
-                <th class="w-48">{gettext("Share of revenue")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr :for={{row, index} <- Enum.with_index(@products, 1)} class="hover">
-                <td class="text-base-content/50 tabular-nums">{index}</td>
-                <td class="font-medium">{row.title}</td>
-                <td class="text-base-content/60">{row.category_name || "—"}</td>
-                <td class="text-right tabular-nums">{row.quantity}</td>
-                <td class="text-right tabular-nums">{row.orders}</td>
-                <td class="text-right font-mono">{OrderHelpers.money(row.revenue)}</td>
-                <td><.share_bar value={row.share} /></td>
-              </tr>
-              <tr :if={@products == []}>
-                <td colspan="7" class="text-center text-base-content/50 py-8">
-                  {gettext("No sales in this period")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <.table
+            id="statistics-products"
+            rows={Enum.with_index(@products, 1)}
+            row_id={fn {_row, index} -> "statistics-product-#{index}" end}
+            empty_title={gettext("No sales in this period")}
+          >
+            <:col :let={{_row, index}} key="position" label="#">{index}</:col>
+            <:col :let={{row, _index}} key="product" label={gettext("Product")}>{row.title}</:col>
+            <:col :let={{row, _index}} key="category" label={gettext("Category")} secondary>
+              {row.category_name || "—"}
+            </:col>
+            <:col :let={{row, _index}} key="quantity" label={gettext("Qty")} numeric>
+              {row.quantity}
+            </:col>
+            <:col :let={{row, _index}} key="orders" label={gettext("Orders")} numeric secondary>
+              {row.orders}
+            </:col>
+            <:col :let={{row, _index}} key="revenue" label={gettext("Revenue")} numeric>
+              {OrderHelpers.money(row.revenue)}
+            </:col>
+            <:col :let={{row, _index}} key="share" label={gettext("Share of revenue")} secondary>
+              <.share_bar value={row.share} />
+            </:col>
+          </.table>
         </.card>
       <% end %>
 
       <%= if @tab == "categories" and is_nil(@period_error) do %>
         <.card class="overflow-x-auto">
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th>{gettext("Category")}</th>
-                <th class="text-right">{gettext("Products")}</th>
-                <th class="text-right">{gettext("Qty")}</th>
-                <th class="text-right">{gettext("Orders")}</th>
-                <th class="text-right">{gettext("Revenue")}</th>
-                <th class="w-48">{gettext("Share of revenue")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr :for={row <- @categories} class="hover">
-                <td class="font-medium">{row.category_name || gettext("Without category")}</td>
-                <td class="text-right tabular-nums">{row.products}</td>
-                <td class="text-right tabular-nums">{row.quantity}</td>
-                <td class="text-right tabular-nums">{row.orders}</td>
-                <td class="text-right font-mono">{OrderHelpers.money(row.revenue)}</td>
-                <td><.share_bar value={row.share} /></td>
-              </tr>
-              <tr :if={@categories == []}>
-                <td colspan="6" class="text-center text-base-content/50 py-8">
-                  {gettext("No sales in this period")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <.table
+            id="statistics-categories"
+            rows={Enum.with_index(@categories, 1)}
+            row_id={fn {_row, index} -> "statistics-category-#{index}" end}
+            empty_title={gettext("No sales in this period")}
+          >
+            <:col :let={{row, _index}} key="category" label={gettext("Category")}>
+              {row.category_name || gettext("Without category")}
+            </:col>
+            <:col :let={{row, _index}} key="products" label={gettext("Products")} numeric secondary>
+              {row.products}
+            </:col>
+            <:col :let={{row, _index}} key="quantity" label={gettext("Qty")} numeric>
+              {row.quantity}
+            </:col>
+            <:col :let={{row, _index}} key="orders" label={gettext("Orders")} numeric secondary>
+              {row.orders}
+            </:col>
+            <:col :let={{row, _index}} key="revenue" label={gettext("Revenue")} numeric>
+              {OrderHelpers.money(row.revenue)}
+            </:col>
+            <:col :let={{row, _index}} key="share" label={gettext("Share of revenue")} secondary>
+              <.share_bar value={row.share} />
+            </:col>
+          </.table>
         </.card>
       <% end %>
     </div>

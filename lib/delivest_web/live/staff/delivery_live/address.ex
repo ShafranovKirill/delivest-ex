@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Staff.DeliveryLive.Address do
   use DelivestWeb, :live_view
+  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
 
   alias Delivest.{Delivery, Identity}
   alias Delivest.Integrations.Dadata
@@ -14,7 +15,8 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
      socket
      |> assign(
        page_title: gettext("Customer address selection"),
-       can_edit: Identity.can?(socket.assigns.current_staff, "delivery.update"),
+       can_edit:
+         Identity.can?(Identity.fresh_staff(socket.assigns.current_staff), "delivery.update"),
        dadata_active: Dadata.active?()
      )
      |> assign_settings(settings)}
@@ -44,7 +46,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
         |> Map.put("address_mode_set", true)
 
       case Delivery.update_settings(
-             socket.assigns.current_staff,
+             Identity.fresh_staff(socket.assigns.current_staff),
              socket.assigns.current_branch.id,
              attrs
            ) do
@@ -99,6 +101,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
         phx-submit="save"
         class="mx-auto w-full max-w-xl space-y-5 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm sm:space-y-6 sm:p-8"
       >
+        <.error_summary
+          id="address-settings-errors"
+          errors={changeset_errors(@form.source)}
+          form_name="address"
+        />
         <fieldset class="grid gap-2 sm:grid-cols-2 sm:gap-3">
           <legend class="mb-4 w-full text-center text-lg font-semibold sm:text-xl">
             {gettext("How customers choose a delivery address")}
@@ -169,7 +176,11 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
         </div>
 
         <div :if={@can_edit} class="flex justify-end border-t border-base-300 pt-4">
-          <button type="submit" class="btn btn-primary min-h-12 w-full sm:w-auto sm:min-w-32">
+          <button
+            type="submit"
+            data-staff-save="edit"
+            class="btn btn-primary min-h-12 w-full sm:w-auto sm:min-w-32"
+          >
             {gettext("Save")}
           </button>
         </div>

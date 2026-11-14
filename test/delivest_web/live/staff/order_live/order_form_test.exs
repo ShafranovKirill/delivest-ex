@@ -68,6 +68,43 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     assert [%Order{client_id: nil}] = Repo.all(Order) |> Enum.filter(&(&1.branch_id == branch.id))
   end
 
+  test "order editor keeps queue filters for back and successful save", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    query = %{period: "all", status: "created", receiving: "pickup", page: "2"}
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders/new?#{query}")
+
+    assert has_element?(
+             lv,
+             "#staff-page-header a[href*='/orders?'][href*='period=all'][href*='page=2']"
+           )
+
+    render_click(lv, "add_item", %{"product-id" => product.id})
+
+    lv |> form("#order-details-form", order: %{customer_phone: "+7"}) |> render_submit()
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders?#{query}")
+  end
+
+  test "revoked order creation right blocks an open editor", %{
+    conn: conn,
+    branch: branch,
+    product: product,
+    staff: staff
+  } do
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders/new")
+    render_click(lv, "add_item", %{"product-id" => product.id})
+
+    staff.role_id
+    |> then(&Repo.get!(Delivest.Identity.Role, &1))
+    |> Ecto.Changeset.change(permissions: ["orders.read"])
+    |> Repo.update!()
+
+    lv |> form("#order-details-form", order: %{customer_phone: "+7"}) |> render_submit()
+    refute Enum.any?(Repo.all(Order), &(&1.branch_id == branch.id))
+  end
+
   test "unsaved edits do not touch the order", %{conn: conn, branch: branch, product: product} do
     order = order_fixture(branch.id, product: product)
 

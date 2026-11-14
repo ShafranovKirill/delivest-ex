@@ -48,7 +48,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
            auto_upload: true,
            progress: &handle_snapshot_progress/3
          )
-         |> assign(snapshot_busy: false)}
+         |> assign(snapshot_busy: false, snapshot_ready: false)}
       else
         {:ok, socket}
       end
@@ -123,7 +123,10 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   @impl true
   def handle_event("reset_board_token", _params, socket) do
     if match?(%{id: :board}, socket.assigns.section) and socket.assigns.can_edit_identity do
-      case Identity.reset_board_token(socket.assigns.current_staff, socket.assigns.branch) do
+      case Identity.reset_board_token(
+             Identity.fresh_staff(socket.assigns.current_staff),
+             socket.assigns.branch
+           ) do
         {:ok, branch} ->
           {:noreply,
            socket |> assign(branch: branch) |> put_flash(:info, gettext("New link created"))}
@@ -162,7 +165,11 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   def handle_event("confirm_delete", %{"confirmation" => %{"name" => name}}, socket)
       when is_binary(name) do
     if can_delete?(socket.assigns) and socket.assigns.delete_open do
-      case Identity.soft_delete_branch(socket.assigns.current_staff, socket.assigns.branch, name) do
+      case Identity.soft_delete_branch(
+             Identity.fresh_staff(socket.assigns.current_staff),
+             socket.assigns.branch,
+             name
+           ) do
         {:ok, _branch} ->
           {:noreply,
            socket
@@ -193,14 +200,22 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   @impl true
   def handle_event("snapshot_validate", _params, socket), do: {:noreply, socket}
 
-  defp handle_snapshot_progress(:snapshot, entry, %{assigns: %{snapshot_busy: false}} = socket) do
-    if entry.done? do
+  def handle_event(
+        "confirm_snapshot_import",
+        _params,
+        %{assigns: %{snapshot_ready: true, snapshot_busy: false}} = socket
+      ) do
+    if Identity.authorize(
+         Identity.fresh_staff(socket.assigns.current_staff),
+         "branches.update",
+         socket.assigns.branch.id
+       ) == :ok do
       case consume_uploaded_entries(socket, :snapshot, fn %{path: path}, _entry ->
              {:ok, File.read!(path)}
            end) do
         [archive] ->
           owner = self()
-          staff = socket.assigns.current_staff
+          staff = Identity.fresh_staff(socket.assigns.current_staff)
           branch_id = socket.assigns.branch.id
 
           {:ok, pid} =
@@ -217,17 +232,27 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
               send(owner, {:snapshot_result, result})
             end)
 
-          {:noreply, socket |> assign(snapshot_busy: true, snapshot_ref: Process.monitor(pid))}
+          {:noreply,
+           socket
+           |> assign(
+             snapshot_busy: true,
+             snapshot_ready: false,
+             snapshot_ref: Process.monitor(pid)
+           )}
 
         _ ->
           {:noreply, put_flash(socket, :error, gettext("Choose a ZIP archive."))}
       end
     else
-      {:noreply, socket}
+      {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
     end
   end
 
-  defp handle_snapshot_progress(:snapshot, _entry, socket), do: {:noreply, socket}
+  def handle_event("confirm_snapshot_import", _params, socket), do: {:noreply, socket}
+
+  defp handle_snapshot_progress(:snapshot, entry, socket) do
+    {:noreply, assign(socket, snapshot_ready: entry.done?)}
+  end
 
   @impl true
   def handle_info({:snapshot_result, result}, socket) do
@@ -371,6 +396,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           id="branch-save"
           type="submit"
           form="branch-form"
+          data-staff-save={if @branch.id, do: "edit", else: "create"}
           class="btn btn-primary"
           phx-disable-with={gettext("Saving...")}
         >
@@ -401,6 +427,14 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           icon="hero-truck"
           title={gettext("Delivery")}
           description={gettext("Delivery zones and couriers for this branch.")}
+        />
+        <.settings_card
+          :if={Identity.authorize(@current_staff, "finance.read", @branch.id) == :ok}
+          id="branch-payment-card"
+          navigate={~p"/staff/b/#{@branch}/finance/payments"}
+          icon="hero-credit-card"
+          title={gettext("Payment methods")}
+          description={gettext("Configure available payment methods for this branch.")}
         />
       </.settings_cards>
     </div>
@@ -448,6 +482,20 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
             {snapshot_upload_error(error)}
           </p>
         </.form>
+        <p id="snapshot-target" class="text-sm text-base-content/70">
+          {gettext("Import target: %{branch}", branch: @branch.name)}
+        </p>
+        <button
+          :if={@snapshot_ready}
+          id="snapshot-import-confirm"
+          type="button"
+          phx-click="confirm_snapshot_import"
+          data-confirm={gettext("Replace storefront data in %{branch}?", branch: @branch.name)}
+          disabled={@snapshot_busy}
+          class="btn btn-error"
+        >
+          {gettext("Import into %{branch}", branch: @branch.name)}
+        </button>
       </section>
     </div>
     """

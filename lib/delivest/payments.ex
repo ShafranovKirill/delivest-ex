@@ -38,6 +38,85 @@ defmodule Delivest.Payments do
     )
   end
 
+  @doc "Paged branch payment register; date bounds are interpreted in branch local time."
+  def list_branch_page(branch_id, params) do
+    page = positive_int(params["page"], 1)
+    page_size = positive_int(params["page_size"], 25)
+    page_size = if page_size in [25, 50, 100], do: page_size, else: 25
+
+    status =
+      if params["status"] in ~w(pending authorized paid failed cancelled),
+        do: String.to_existing_atom(params["status"])
+
+    search = params["search"] |> payment_search() |> String.trim() |> String.slice(0, 100)
+    zone = Delivest.LocalTime.timezone(branch_id)
+
+    query =
+      from(p in Payment,
+        join: o in Order,
+        on: o.id == p.order_id,
+        where: p.branch_id == ^branch_id
+      )
+
+    query = if status, do: where(query, [p], p.status == ^status), else: query
+
+    query =
+      if search == "",
+        do: query,
+        else:
+          where(
+            query,
+            [p, o],
+            ilike(o.number, ^"%#{search}%") or ilike(p.external_id, ^"%#{search}%")
+          )
+
+    query = payment_date_filter(query, :from, params["from"], zone)
+    query = payment_date_filter(query, :to, params["to"], zone)
+    total = Repo.aggregate(query, :count, :id)
+    pages = max(1, ceil(total / page_size))
+    page = min(page, pages)
+
+    rows =
+      query
+      |> order_by([p], desc: p.inserted_at, desc: p.id)
+      |> limit(^page_size)
+      |> offset(^(page_size * (page - 1)))
+      |> select([p, o], {p, o.number})
+      |> Repo.all()
+
+    {rows, %{page: page, page_size: page_size, pages: pages, total: total}}
+  end
+
+  defp payment_date_filter(query, _edge, value, _zone) when not is_binary(value), do: query
+
+  defp payment_date_filter(query, edge, value, zone) do
+    case Date.from_iso8601(value) do
+      {:ok, date} when edge == :from ->
+        from_utc = Delivest.LocalTime.start_of_day_utc(date, zone)
+        where(query, [p], p.inserted_at >= ^from_utc)
+
+      {:ok, date} ->
+        to_utc = Delivest.LocalTime.end_of_day_utc(date, zone)
+        where(query, [p], p.inserted_at <= ^to_utc)
+
+      _ ->
+        query
+    end
+  end
+
+  defp payment_search(value) when is_binary(value), do: value
+  defp payment_search(_), do: ""
+
+  defp positive_int(value, fallback) when is_binary(value) do
+    case Integer.parse(value) do
+      {number, ""} when number > 0 -> number
+      _ -> fallback
+    end
+  end
+
+  defp positive_int(value, _fallback) when is_integer(value) and value > 0, do: value
+  defp positive_int(_, fallback), do: fallback
+
   @spec balance(Order.t()) :: balance()
   def balance(%Order{} = order), do: balance(order.total_amount, list(order.id))
 

@@ -63,6 +63,35 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
     end
 
+    test "receiving, payment and source filters are URL backed", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      {:ok, lv, _html} =
+        live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders?period=all")
+
+      assert has_element?(lv, "#orders-#{order.id}")
+
+      lv
+      |> form("#orders-filter-form", %{"period" => "all", "receiving" => "delivery"})
+      |> render_change()
+
+      assert_patch(lv)
+      refute has_element?(lv, "#orders-#{order.id}")
+
+      {:ok, filtered, _html} =
+        live(
+          login(conn, ["admin"], branch),
+          ~p"/staff/b/#{branch}/orders?period=all&receiving=pickup&payment=cash&source=app"
+        )
+
+      assert has_element?(filtered, "#orders-#{order.id}")
+      assert has_element?(filtered, "#orders-receiving option[value='pickup'][selected]")
+      assert has_element?(filtered, "#orders-payment option[value='cash'][selected]")
+      assert has_element?(filtered, "#orders-source option[value='app'][selected]")
+    end
+
     test "staff cannot jump over a step", %{conn: conn, branch: branch, order: order} do
       {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
@@ -71,6 +100,23 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       html = render_click(lv, "advance", %{"order-id" => order.id, "to" => "ready"})
 
       assert html =~ "The order status has already changed"
+      assert Delivest.Repo.reload!(order).status == :created
+    end
+
+    test "revoked order permission blocks action in an open queue", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      role = insert(:role, permissions: ["orders.read", "orders.update"])
+      staff = insert(:staff, role: role)
+      insert(:staff_branch, staff: staff, branch: branch)
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders")
+      role |> Ecto.Changeset.change(permissions: ["orders.read"]) |> Delivest.Repo.update!()
+
+      render_click(lv, "advance", %{"order-id" => order.id, "to" => "accepted"})
       assert Delivest.Repo.reload!(order).status == :created
     end
 

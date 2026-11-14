@@ -17,6 +17,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
       {:ok, client} ->
         scope = branch_scope(staff)
         can_see_orders = Identity.can?(staff, "orders.read")
+        can_see_finance = Identity.can?(staff, "finance.read")
 
         {:ok,
          socket
@@ -24,7 +25,12 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
            page_title: client.name || client.phone,
            client: client,
            can_see_orders: can_see_orders,
-           summary: Analytics.client_summary(client.id, scope),
+           can_see_finance: can_see_finance,
+           list_params: %{},
+           summary:
+             if(can_see_orders,
+               do: Analytics.client_summary(client.id, scope, finance?: can_see_finance)
+             ),
            orders: if(can_see_orders, do: Orders.list_client_orders(client.id, scope), else: []),
            branches: branches(staff),
            active_branch_id: socket.assigns[:active_branch_id],
@@ -41,8 +47,15 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
   end
 
   @impl true
+  def handle_params(params, _url, socket) do
+    list_params = Map.take(params, ~w(search page page_size order_by order_directions filters))
+    {:noreply, assign(socket, list_params: list_params)}
+  end
+
+  @impl true
   def handle_event("adjust_loyalty", %{"amount" => amount, "reason" => reason}, socket) do
     %{current_staff: staff, current_branch: branch, client: client} = socket.assigns
+    staff = Identity.fresh_staff(staff)
 
     result =
       case Integer.parse(String.trim(amount)) do
@@ -84,7 +97,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
 
     assign(socket,
       loyalty_enabled: enabled,
-      loyalty_balance: Loyalty.balance(client.id),
+      loyalty_balance: if(enabled, do: Loyalty.balance(client.id)),
       loyalty_history: if(enabled, do: Loyalty.history(client.id, 10), else: [])
     )
   end
@@ -109,11 +122,10 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header title={@client.name || gettext("No name")} back={~p"/staff/clients"}>
-      <:navigation :if={Delivest.Segments.available?(@current_staff)}>
-        <DelivestWeb.Staff.ClientLive.Navigation.tabs active={:clients} />
-      </:navigation>
-    </.page_header>
+    <.page_header
+      title={@client.name || gettext("No name")}
+      back={~p"/staff/clients?#{@list_params}"}
+    />
     """
   end
 
@@ -153,7 +165,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
 
         <.link
           :if={Identity.can?(@current_staff, "clients.update")}
-          navigate={~p"/staff/clients/#{@client.id}/edit"}
+          navigate={~p"/staff/clients/#{@client.id}/edit?#{@list_params}"}
           class="btn btn-outline btn-sm"
         >
           <.icon name="hero-pencil-square" class="size-4" />
@@ -161,16 +173,18 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
         </.link>
       </div>
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div :if={@can_see_orders} id="client-summary" class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <.stat_card icon="hero-shopping-bag" label={gettext("Orders")}>
           {@summary.orders_count}
         </.stat_card>
-        <.stat_card icon="hero-banknotes" label={gettext("Total spent")}>
-          {OrderHelpers.money(@summary.spent)}
-        </.stat_card>
-        <.stat_card icon="hero-receipt-percent" label={gettext("Average check")}>
-          {OrderHelpers.money(@summary.avg_check)}
-        </.stat_card>
+        <div :if={@can_see_finance} id="client-finance-stats" class="contents">
+          <.stat_card icon="hero-banknotes" label={gettext("Total spent")}>
+            {OrderHelpers.money(@summary.spent)}
+          </.stat_card>
+          <.stat_card icon="hero-receipt-percent" label={gettext("Average check")}>
+            {OrderHelpers.money(@summary.avg_check)}
+          </.stat_card>
+        </div>
         <.stat_card icon="hero-clock" label={gettext("Last order")}>
           {OrderHelpers.local_datetime(@summary.last_order_at)}
         </.stat_card>
@@ -235,7 +249,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
               <button type="submit" class="btn btn-sm btn-outline">{gettext("Apply")}</button>
             </form>
           </.card>
-          <.card class="p-4 space-y-3">
+          <.card :if={@can_see_orders} class="p-4 space-y-3">
             <h2 class="font-bold">{gettext("Favourite products")}</h2>
             <ul :if={@summary.favourites != []} class="space-y-2">
               <li
@@ -302,7 +316,7 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                     order.fulfillment_type
                   )}
                 </span>
-                <span class="ml-auto font-mono font-bold">
+                <span :if={@can_see_finance} class="ml-auto font-mono font-bold">
                   {OrderHelpers.money(order.total_amount)}
                 </span>
                 <.icon
@@ -319,12 +333,12 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                 <ul class="rounded-box bg-base-200/50 p-3 space-y-1.5 text-sm">
                   <li :for={item <- order.items} class="flex justify-between gap-3">
                     <span class="truncate">{item.title} × {item.quantity}</span>
-                    <span class="font-mono shrink-0">
+                    <span :if={@can_see_finance} class="font-mono shrink-0">
                       {OrderHelpers.money(item.price * item.quantity)}
                     </span>
                   </li>
                 </ul>
-                <p :if={order.promotions != []} class="text-sm text-success">
+                <p :if={@can_see_finance and order.promotions != []} class="text-sm text-success">
                   <.icon name="hero-receipt-percent" class="size-4" />
                   {Enum.map_join(order.promotions, ", ", &(&1.code || &1.name))} · −{OrderHelpers.money(
                     order.discount_amount

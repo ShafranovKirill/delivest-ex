@@ -18,6 +18,9 @@ defmodule Delivest.Oms.Orders.Filter do
       {_key, val}, q when val in [nil, ""] -> q
       {"branch_id", val}, q -> where(q, [o], o.branch_id == ^val)
       {"status", val}, q -> filter_status(q, val)
+      {"receiving", val}, q -> filter_receiving(q, val)
+      {"payment", val}, q -> filter_payment(q, val)
+      {"source", val}, q -> filter_source(q, val)
       {"date_from", val}, q -> filter_date_from(q, val, zone(params))
       {"date_to", val}, q -> filter_date_to(q, val, zone(params))
       {"search", val}, q -> Search.apply(q, val)
@@ -49,6 +52,22 @@ defmodule Delivest.Oms.Orders.Filter do
     do: where(q, [o], o.status == ^String.to_existing_atom(status))
 
   defp filter_status(q, _status), do: where(q, false)
+
+  defp filter_receiving(q, val) when val in ~w(dine_in delivery pickup),
+    do: where(q, [o], o.fulfillment_type == ^String.to_existing_atom(val))
+
+  defp filter_receiving(q, _val), do: q
+
+  defp filter_payment(q, val) when val in ~w(cash card_offline online),
+    do: where(q, [o], o.payment_method == ^String.to_existing_atom(val))
+
+  defp filter_payment(q, _val), do: q
+
+  defp filter_source(q, val) when is_binary(val) do
+    if Delivest.Oms.OrderSource.valid?(val), do: where(q, [o], o.source == ^val), else: q
+  end
+
+  defp filter_source(q, _val), do: q
 
   defp zone(params), do: Delivest.LocalTime.timezone(blank_to_nil(params["branch_id"]))
 

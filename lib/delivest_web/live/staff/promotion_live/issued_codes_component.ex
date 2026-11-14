@@ -19,7 +19,8 @@ defmodule DelivestWeb.Staff.PromotionLive.IssuedCodesComponent do
 
   @impl true
   def handle_event("issue", %{"issue" => params}, socket) do
-    %{current_staff: staff, promotion: promotion} = socket.assigns
+    %{promotion: promotion} = socket.assigns
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
 
     with {:ok, phone} <- phone(params["phone"]),
          {:ok, code} <- Promo.issue_code_by_phone(staff, promotion, phone, uses(params["uses"])) do
@@ -41,7 +42,8 @@ defmodule DelivestWeb.Staff.PromotionLive.IssuedCodesComponent do
 
   def handle_event("revoke", %{"id" => id}, socket) do
     with {:ok, code} <- Promo.get_issued_code(socket.assigns.promotion.branch_id, id),
-         {:ok, _code} <- Promo.revoke_code(socket.assigns.current_staff, code) do
+         {:ok, _code} <-
+           Promo.revoke_code(Identity.fresh_staff(socket.assigns.current_staff), code) do
       {:noreply, load_codes(socket)}
     else
       _ -> {:noreply, socket}

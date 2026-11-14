@@ -1,10 +1,12 @@
 defmodule DelivestWeb.Staff.LoyaltyLive.Index do
-  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Loyalty, Repo}
   alias Delivest.Identity.Branch.LoyaltySettings
   alias Phoenix.LiveView.JS
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [error_summary: 1, changeset_errors: 1]
 
   on_mount {DelivestWeb.Hooks.GatewayArea, :loyalty}
   on_mount {DelivestWeb.Hooks.Permission, "promotions.read"}
@@ -90,7 +92,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
 
     result =
       Loyalty.set_products(
-        socket.assigns.current_staff,
+        Identity.fresh_staff(socket.assigns.current_staff),
         socket.assigns.current_branch.id,
         pending
       )
@@ -121,7 +123,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
 
   def handle_event("save", %{"loyalty" => params}, socket) do
     case Identity.update_loyalty(
-           socket.assigns.current_staff,
+           Identity.fresh_staff(socket.assigns.current_staff),
            socket.assigns.current_branch,
            params
          ) do
@@ -193,15 +195,6 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
       title={gettext("Loyalty")}
       subtitle={gettext("Customers earn stars for completed orders.")}
     >
-      <:navigation>
-        <.navigation
-          staff={@current_staff}
-          branches={@staff_branches}
-          branch={@current_branch}
-          active={:loyalty}
-          part={:areas}
-        />
-      </:navigation>
       <:actions :if={@can_edit}>
         <button
           type="submit"
@@ -228,14 +221,6 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.navigation
-        staff={@current_staff}
-        branches={@staff_branches}
-        branch={@current_branch}
-        active={:loyalty}
-        part={:branches}
-      />
-
       <.live_component
         module={DelivestWeb.Staff.MarketingLive.BonusSettingsComponent}
         id="global-bonuses"
@@ -275,6 +260,11 @@ defmodule DelivestWeb.Staff.LoyaltyLive.Index do
         phx-submit="save"
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
+        <.error_summary
+          id="loyalty-error-summary"
+          errors={changeset_errors(@form.source)}
+          form_name={@form.name}
+        />
         <.input
           field={@form[:enabled]}
           type="checkbox"

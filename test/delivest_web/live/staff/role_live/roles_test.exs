@@ -5,6 +5,24 @@ defmodule DelivestWeb.Staff.RoleLive.RolesTest do
   import Delivest.Factory
   alias Delivest.Features
 
+  test "role card opens a full page and returns to its list position", %{conn: conn} do
+    actor = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    role = insert(:role, name: "Operations", permissions: ["roles.read"])
+    conn = init_test_session(conn, %{"staff_id" => actor.id})
+
+    {:ok, list, _} = live(conn, ~p"/staff/roles")
+    assert has_element?(list, "#role-card-#{role.id}")
+    list |> element("#role-card-#{role.id} a.cursor-pointer") |> render_click()
+    {edit_url, _flash} = assert_redirect(list)
+    assert URI.parse(edit_url).path == ~p"/staff/roles/#{role.id}/edit"
+
+    {:ok, edit, _} = live(conn, edit_url)
+    assert has_element?(edit, "#role-edit-page #role-form")
+    edit |> element("#role-back-to-list") |> render_click()
+    {return_url, _flash} = assert_redirect(edit)
+    assert URI.parse(return_url).fragment == "role-card-#{role.id}"
+  end
+
   test "disabled feature permissions stay hidden and forged additions are ignored", %{conn: conn} do
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
     role = insert(:role, permissions: ["roles.read", "segments.read", "marketing.read"])
@@ -88,6 +106,36 @@ defmodule DelivestWeb.Staff.RoleLive.RolesTest do
     assert render(view) =~ "Управляющий франшизой"
     assert Delivest.Repo.get!(Delivest.Identity.Role, cashier.id).permissions == ["orders.read"]
     assert render_click(view, "seed_roles") =~ "All base roles already exist"
+  end
+
+  test "revoked role editor keeps the draft and cannot save", %{conn: conn} do
+    actor_role = insert(:role, permissions: ["roles.read", "roles.update"])
+    actor = insert(:staff, role: actor_role)
+    target = insert(:role, name: "Before", permissions: ["roles.read"])
+    conn = init_test_session(conn, %{"staff_id" => actor.id})
+
+    {:ok, view, _} = live(conn, ~p"/staff/roles/#{target.id}/edit")
+    assert has_element?(view, "#role-edit-page #role-form")
+    Delivest.Repo.update!(Ecto.Changeset.change(actor_role, permissions: ["roles.read"]))
+    view |> form("#role-form", role: %{name: "Draft after revoke"}) |> render_submit()
+
+    assert has_element?(view, "#role-form input[name='role[name]'][value='Draft after revoke']")
+    assert Delivest.Repo.reload!(target).name == "Before"
+    assert has_element?(view, "#role-save-error")
+  end
+
+  test "deleted employee cannot save an already open role editor", %{conn: conn} do
+    actor = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    target = insert(:role, name: "Before", permissions: ["roles.read"])
+    conn = init_test_session(conn, %{"staff_id" => actor.id})
+
+    {:ok, view, _} = live(conn, ~p"/staff/roles/#{target.id}/edit")
+    Delivest.Repo.update!(Ecto.Changeset.change(actor, deleted_at: DateTime.utc_now(:second)))
+    view |> form("#role-form", role: %{name: "Deleted actor draft"}) |> render_submit()
+
+    assert has_element?(view, "#role-form input[name='role[name]'][value='Deleted actor draft']")
+    assert has_element?(view, "#role-save-error")
+    assert Delivest.Repo.reload!(target).name == "Before"
   end
 
   test "a non-administrator cannot seed roles by sending the event", %{conn: conn} do

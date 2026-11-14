@@ -134,8 +134,9 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
     {:noreply, backup_result(socket, result)}
   end
 
-  def handle_event("backup_import", %{"confirm" => "replace"}, socket) do
-    if InstanceBackup.authorized?(socket.assigns.current_staff) do
+  def handle_event("backup_import", %{"confirm" => "replace", "target" => target}, socket) do
+    if InstanceBackup.authorized?(socket.assigns.current_staff) and
+         String.trim(target) == Franchise.get_settings().name do
       results =
         consume_uploaded_entries(socket, :instance_archive, fn %{path: path}, _entry ->
           {:ok, InstanceBackup.submit(socket.assigns.current_staff, "import", path)}
@@ -149,7 +150,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
       {:noreply, backup_result(socket, result)}
     else
-      {:noreply, backup_result(socket, {:error, :forbidden})}
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         gettext("Type the current instance name and confirm full replacement.")
+       )}
     end
   end
 
@@ -159,7 +165,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
     if Identity.can?(socket.assigns.current_staff, "admin"),
       do:
         {:noreply,
-         put_flash(socket, :error, gettext("Confirm full replacement before restoring."))},
+         put_flash(
+           socket,
+           :error,
+           gettext("Type the current instance name and confirm full replacement.")
+         )},
       else: {:noreply, socket}
   end
 
@@ -307,9 +317,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
           </p>
           <div :if={@backup_job} class="mt-3 text-sm">
             <span id="backup-phase">{backup_phase(@backup_job.status["phase"])}</span>
-            <span :if={@backup_job.status["phase"] in ~w(failed interrupted)} id="backup-message">{@backup_job.status[
-              "message"
-            ]}</span>
+            <span :if={@backup_job.status["phase"] in ~w(failed interrupted)} id="backup-message">
+              {gettext(
+                "Backup did not complete. Check the backup agent and retry after resolving the error."
+              )}
+            </span>
             <.link
               :if={
                 @backup_job.request["action"] == "export" and
@@ -370,6 +382,16 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
               />
               {gettext("I understand this replaces the full instance")}
             </label>
+            <label for="backup-target" class="block text-sm font-medium">
+              {gettext("Type %{name} to confirm the target instance", name: @settings.name)}
+            </label>
+            <input
+              id="backup-target"
+              name="target"
+              type="text"
+              autocomplete="off"
+              class="input input-bordered w-full"
+            />
             <button
               id="backup-import"
               type="submit"

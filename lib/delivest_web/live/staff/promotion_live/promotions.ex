@@ -1,5 +1,4 @@
 defmodule DelivestWeb.Staff.PromotionLive.Promotions do
-  import DelivestWeb.Staff.MarketingLive.Navigation
   use DelivestWeb, :live_view
 
   alias Delivest.{Identity, Net, Promo}
@@ -76,7 +75,11 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
   @impl true
   def handle_event("toggle", %{"id" => id}, socket) do
-    with_promotion(socket, id, &Promo.toggle_promotion(socket.assigns.current_staff, &1))
+    with_promotion(
+      socket,
+      id,
+      &Promo.toggle_promotion(Identity.fresh_staff(socket.assigns.current_staff), &1)
+    )
   end
 
   def handle_event("delete_click", %{"id" => id}, socket) do
@@ -90,7 +93,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
     do: {:noreply, assign(socket, to_delete: nil)}
 
   def handle_event("confirm_delete", _params, %{assigns: %{to_delete: promotion}} = socket) do
-    case Promo.delete_promotion(socket.assigns.current_staff, promotion) do
+    case Promo.delete_promotion(Identity.fresh_staff(socket.assigns.current_staff), promotion) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -177,20 +180,12 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         subtitle={gettext("Discounts & promo codes")}
         back={~p"/staff/b/#{@current_branch}/promotions"}
       >
-        <:navigation>
-          <.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={:promotions}
-            part={:areas}
-          />
-        </:navigation>
         <:actions>
           <button
             id="promotion-save"
             type="submit"
             form="promotion-form"
+            data-staff-save={if @live_action == :edit, do: "edit", else: "create"}
             class="btn btn-primary"
             phx-disable-with={gettext("Saving...")}
           >
@@ -206,15 +201,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         subtitle={gettext("Discounts & promo codes")}
         back={~p"/staff/b/#{@current_branch}/promotions"}
       >
-        <:navigation>
-          <.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={:promotions}
-            part={:areas}
-          />
-        </:navigation>
       </.page_header>
     </div>
     <div :if={@live_action not in [:new, :full, :first_order, :edit]}>
@@ -223,15 +209,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         title={gettext("Discounts & promo codes")}
         subtitle={gettext("Automatic promotions, sale prices, public and personal promo codes.")}
       >
-        <:navigation>
-          <.navigation
-            staff={@current_staff}
-            branches={@staff_branches}
-            branch={@current_branch}
-            active={:promotions}
-            part={:areas}
-          />
-        </:navigation>
         <:actions>
           <.link
             :if={Identity.can?(@current_staff, "promotions.create")}
@@ -255,14 +232,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       id="promotion-editor"
       class="space-y-6"
     >
-      <.navigation
-        staff={@current_staff}
-        branches={@staff_branches}
-        branch={@current_branch}
-        active={:promotions}
-        part={:branches}
-      />
-
       <.live_component
         module={PromotionFormComponent}
         id={@promotion.id || @live_action}
@@ -280,13 +249,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       id="promotion-scenarios"
       class="space-y-6"
     >
-      <.navigation
-        staff={@current_staff}
-        branches={@staff_branches}
-        branch={@current_branch}
-        active={:promotions}
-        part={:branches}
-      />
       <div class="grid gap-4 md:grid-cols-3">
         <.link
           id="scenario-product"
@@ -328,14 +290,6 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       :if={@live_action not in [:new, :full, :first_order, :edit]}
       class="space-y-6"
     >
-      <.navigation
-        staff={@current_staff}
-        branches={@staff_branches}
-        branch={@current_branch}
-        active={:promotions}
-        part={:branches}
-      />
-
       <div
         :if={@promotions == []}
         class="rounded-box border border-dashed border-base-300 p-10 text-center text-base-content/60"

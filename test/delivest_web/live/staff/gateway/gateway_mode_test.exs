@@ -63,8 +63,16 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       assert has_element?(lv, "#gateway-area-menu", "Delivest")
     end
 
-    test "a direct visit shows the note instead of the page", %{conn: conn, branch: branch} do
-      for page <- ~w(finance/receipts couriers deliveries) do
+    test "a direct visit keeps past receipts visible and blocks CRM-owned queues", %{
+      conn: conn,
+      branch: branch
+    } do
+      {:ok, receipts, _} = live(conn, ~p"/staff/b/#{branch}/finance/receipts")
+      assert has_element?(receipts, "#receipts-page")
+      assert has_element?(receipts, "#receipts-external-owner")
+      refute has_element?(receipts, "#gateway-note")
+
+      for page <- ~w(couriers deliveries) do
         {:ok, lv, _html} = live(conn, "/staff/b/#{branch.slug}/#{page}")
 
         assert has_element?(lv, "#gateway-note", "iiko")

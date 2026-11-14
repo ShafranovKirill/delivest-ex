@@ -87,9 +87,79 @@ defmodule Delivest.Fiscal do
     |> Repo.all()
   end
 
+  @doc "Paged branch receipt list for the staff register; dates use branch-local days."
+  def list_branch_page(branch_id, params) do
+    page = positive_int(params["page"], 1)
+    page_size = positive_int(params["page_size"], 25)
+    page_size = if page_size in [25, 50, 100], do: page_size, else: 25
+
+    status =
+      if params["status"] in ~w(problem pending wait done fail),
+        do: String.to_existing_atom(params["status"])
+
+    search = params["search"] |> scalar() |> String.trim() |> String.slice(0, 100)
+    zone = Delivest.LocalTime.timezone(branch_id)
+
+    query =
+      from(r in Receipt,
+        join: o in Order,
+        on: o.id == r.order_id,
+        where: r.branch_id == ^branch_id
+      )
+      |> by_status(status, branch_id)
+      |> receipt_date_filter(:from, params["from"], zone)
+      |> receipt_date_filter(:to, params["to"], zone)
+
+    query =
+      if search == "", do: query, else: where(query, [_r, o], ilike(o.number, ^"%#{search}%"))
+
+    total = Repo.aggregate(query, :count, :id)
+    pages = max(1, ceil(total / page_size))
+    page = min(page, pages)
+
+    receipts =
+      query
+      |> order_by([r], desc: r.inserted_at, desc: r.id)
+      |> limit(^page_size)
+      |> offset(^(page_size * (page - 1)))
+      |> select([r, o], {r, o.number})
+      |> Repo.all()
+
+    {receipts, %{page: page, page_size: page_size, pages: pages, total: total}}
+  end
+
+  defp receipt_date_filter(query, _edge, value, _zone) when not is_binary(value), do: query
+
+  defp receipt_date_filter(query, edge, value, zone) do
+    case Date.from_iso8601(value) do
+      {:ok, date} when edge == :from ->
+        from_utc = Delivest.LocalTime.start_of_day_utc(date, zone)
+        where(query, [r], r.inserted_at >= ^from_utc)
+
+      {:ok, date} ->
+        to_utc = Delivest.LocalTime.end_of_day_utc(date, zone)
+        where(query, [r], r.inserted_at <= ^to_utc)
+
+      _ ->
+        query
+    end
+  end
+
+  defp positive_int(value, fallback) when is_binary(value) do
+    case Integer.parse(value) do
+      {number, ""} when number > 0 -> number
+      _ -> fallback
+    end
+  end
+
+  defp positive_int(value, _fallback) when is_integer(value) and value > 0, do: value
+  defp positive_int(_, fallback), do: fallback
+  defp scalar(value) when is_binary(value), do: value
+  defp scalar(_), do: ""
+
   defp by_status(query, :problem, branch_id) do
-    ids = branch_id |> pending_alerts() |> Enum.map(& &1.id)
-    where(query, [r], r.id in ^ids)
+    ids = from(r in pending_alerts_query(branch_id, DateTime.utc_now()), select: r.id)
+    where(query, [r], r.id in subquery(ids))
   end
 
   defp by_status(query, status, _branch_id) when is_atom(status) and not is_nil(status),
@@ -291,27 +361,28 @@ defmodule Delivest.Fiscal do
   end
 
   def pending_alerts(branch_id, now \\ DateTime.utc_now()) do
+    branch_id |> pending_alerts_query(now) |> order_by([r], desc: r.inserted_at) |> Repo.all()
+  end
+
+  defp pending_alerts_query(branch_id, now) do
     stale = DateTime.add(now, -600, :second)
 
-    Repo.all(
-      from(r in Receipt,
-        as: :receipt,
-        where: r.branch_id == ^branch_id,
-        where: r.status == :fail or (r.status in [:pending, :wait] and r.inserted_at < ^stale),
-        where:
-          not exists(
-            from(n in Receipt,
-              where:
-                n.order_id == parent_as(:receipt).order_id and
-                  (n.kind == parent_as(:receipt).kind or
-                     (n.kind == :sell_correction and parent_as(:receipt).kind == :sell)),
-              where:
-                n.status in [:pending, :wait, :done] and
-                  n.inserted_at > parent_as(:receipt).inserted_at
-            )
-          ),
-        order_by: [desc: r.inserted_at]
-      )
+    from(r in Receipt,
+      as: :receipt,
+      where: r.branch_id == ^branch_id,
+      where: r.status == :fail or (r.status in [:pending, :wait] and r.inserted_at < ^stale),
+      where:
+        not exists(
+          from(n in Receipt,
+            where:
+              n.order_id == parent_as(:receipt).order_id and
+                (n.kind == parent_as(:receipt).kind or
+                   (n.kind == :sell_correction and parent_as(:receipt).kind == :sell)),
+            where:
+              n.status in [:pending, :wait, :done] and
+                n.inserted_at > parent_as(:receipt).inserted_at
+          )
+        )
     )
   end
 

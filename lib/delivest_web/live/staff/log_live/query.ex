@@ -2,12 +2,37 @@ defmodule DelivestWeb.Staff.LogLive.Query do
   use DelivestWeb, :verified_routes
 
   @keys ~w(type actor action branch sort level q page page_size)
-  @page_size 50
+  @page_size 25
+  @page_sizes ~w(25 50 100)
 
   def filters(params) do
     params
     |> Map.take(@keys)
-    |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+    |> Enum.filter(fn
+      {_key, value} when not is_binary(value) or value == "" ->
+        false
+
+      {"sort", value} ->
+        value in sorts()
+
+      {"level", value} ->
+        value in ~w(error warning info)
+
+      {"page_size", value} ->
+        value in @page_sizes
+
+      {"page", value} ->
+        byte_size(value) <= 9 and match?({number, ""} when number > 0, Integer.parse(value))
+
+      {"actor", value} ->
+        match?({:ok, _}, Ecto.UUID.cast(value))
+
+      {"branch", value} ->
+        match?({:ok, _}, Ecto.UUID.cast(value))
+
+      {_key, value} ->
+        String.length(value) <= 200
+    end)
     |> Map.new()
   end
 

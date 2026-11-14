@@ -98,28 +98,27 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         :if={@tab == "franchise" and @report.branch_rows != []}
         class="rounded-2xl border border-base-300 bg-base-100 overflow-x-auto"
       >
-        <table id="statistics-branch-comparison" class="table table-sm">
-          <thead>
-            <tr>
-              <th>{gettext("Branch")}</th><th class="text-right">{gettext("Completed")}</th><th class="text-right">
-                {gettext("Cancelled")}
-              </th><th class="text-right">
-                {gettext("Revenue")}
-              </th><th class="text-right">{gettext("Average check")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr :for={branch <- @report.branch_rows}>
-              <td>{branch_name(@staff_branches, branch.branch_id)}</td>
-              <td class="text-right tabular-nums">{Map.get(branch.counts, "completed", 0)}</td>
-              <td class="text-right tabular-nums">{Map.get(branch.counts, "cancelled", 0)}</td>
-              <td class="text-right tabular-nums">
-                {OrderHelpers.money(Map.get(branch.counts, "revenue", 0))}
-              </td>
-              <td class="text-right tabular-nums">{average_check(branch.counts)}</td>
-            </tr>
-          </tbody>
-        </table>
+        <.table
+          id="statistics-branch-comparison"
+          rows={@report.branch_rows}
+          row_id={fn branch -> "statistics-branch-#{branch.branch_id}" end}
+        >
+          <:col :let={branch} key="branch" label={gettext("Branch")}>
+            {branch_name(@staff_branches, branch.branch_id)}
+          </:col>
+          <:col :let={branch} key="completed" label={gettext("Completed")} numeric>
+            {Map.get(branch.counts, "completed", 0)}
+          </:col>
+          <:col :let={branch} key="cancelled" label={gettext("Cancelled")} numeric secondary>
+            {Map.get(branch.counts, "cancelled", 0)}
+          </:col>
+          <:col :let={branch} key="revenue" label={gettext("Revenue")} numeric>
+            {OrderHelpers.money(Map.get(branch.counts, "revenue", 0))}
+          </:col>
+          <:col :let={branch} key="average" label={gettext("Average check")} numeric secondary>
+            {average_check(branch.counts)}
+          </:col>
+        </.table>
       </div>
 
       <div

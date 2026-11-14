@@ -1,9 +1,10 @@
 defmodule DelivestWeb.Staff.ClientLive.Clients do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Identity, Segments}
+  alias Delivest.Identity
   alias Delivest.Identity.Client
-  alias DelivestWeb.Staff.ClientLive.{ClientFormComponent, Navigation}
+  alias DelivestWeb.Staff.ClientLive.ClientFormComponent
+  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "clients.read"}
 
@@ -43,6 +44,8 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   end
 
   defp prepare_flop_params(params) do
+    params = Map.put_new(params, "page_size", 25)
+
     case Map.get(params, "search") do
       val when val in [nil, ""] ->
         params
@@ -135,7 +138,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   end
 
   def handle_event("confirm_delete", _, %{assigns: %{client_to_delete: client}} = socket) do
-    case Identity.soft_delete_client(socket.assigns.current_staff, client) do
+    case Identity.soft_delete_client(Identity.fresh_staff(socket.assigns.current_staff), client) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -233,9 +236,6 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
       title={gettext("Clients")}
       subtitle={gettext("Manage system clients, status, and information.")}
     >
-      <:navigation :if={Segments.available?(@current_staff)}>
-        <Navigation.tabs active={:clients} />
-      </:navigation>
       <:actions>
         <.button
           :if={Identity.can?(@current_staff, "clients.create")}
@@ -254,28 +254,18 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.form
-        for={nil}
-        id="clients-filter-form"
-        phx-change="filter"
-        class="flex gap-4 items-center justify-between flex-wrap w-full"
+      <.filter_bar
+        id="clients-filter"
+        form_id="clients-filter-form"
+        query={@search}
+        query_name="search"
+        query_input_id="clients-search"
+        query_placeholder={gettext("Search by name or phone...")}
+        reset_path={~p"/staff/clients"}
+        event="filter"
+        active={not is_nil(@selected_status)}
       >
-        <div class="relative w-full sm:max-w-sm">
-          <.icon
-            name="hero-magnifying-glass"
-            class="absolute left-3 top-3.5 size-5 text-base-content/50 z-10"
-          />
-          <.input
-            type="text"
-            name="search"
-            value={@search}
-            placeholder={gettext("Search by name or phone...")}
-            class="input input-bordered w-full pl-10"
-            phx-debounce="500"
-          />
-        </div>
-
-        <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+        <:filter>
           <select name="status" class="select select-bordered w-full sm:w-48 shrink-0">
             <option value="">{gettext("All statuses")}</option>
             <option value="guest" selected={to_string(@selected_status) == "guest"}>
@@ -288,15 +278,25 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
               {gettext("Blocked")}
             </option>
           </select>
-        </div>
-      </.form>
+        </:filter>
+      </.filter_bar>
 
       <% path_fn = fn overrides -> ~p"/staff/clients?#{build_query_params(assigns, overrides)}" end %>
 
-      <.table id="clients" rows={@streams.clients} meta={@meta} path_fn={path_fn}>
+      <.table
+        id="clients"
+        rows={@streams.clients}
+        meta={@meta}
+        path_fn={path_fn}
+        empty_title={
+          if @search == "" and is_nil(@selected_status),
+            do: gettext("No records yet"),
+            else: gettext("Nothing found")
+        }
+      >
         <:col :let={{_id, client}} label={gettext("Name")} sort="name">
           <.link
-            navigate={~p"/staff/clients/#{client.id}"}
+            navigate={~p"/staff/clients/#{client.id}?#{build_query_params(assigns, %{})}"}
             class="font-bold hover:text-primary hover:underline"
           >
             {client.name || "—"}
@@ -304,7 +304,10 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
         </:col>
 
         <:col :let={{_id, client}} label={gettext("Phone")} sort="phone">
-          <.link navigate={~p"/staff/clients/#{client.id}"} class="font-mono hover:text-primary">
+          <.link
+            navigate={~p"/staff/clients/#{client.id}?#{build_query_params(assigns, %{})}"}
+            class="font-mono hover:text-primary"
+          >
             {client.phone}
           </.link>
         </:col>
@@ -324,7 +327,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
           <% end %>
         </:col>
 
-        <:col :let={{_id, client}} label={gettext("Created At")} sort="inserted_at">
+        <:col :let={{_id, client}} label={gettext("Created At")} sort="inserted_at" secondary>
           <span class="text-sm opacity-60">
             {Calendar.strftime(client.inserted_at, "%d.%m.%Y %H:%M")}
           </span>
@@ -333,7 +336,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
         <:action :let={{_id, client}}>
           <div class="flex justify-end gap-2">
             <.link
-              navigate={~p"/staff/clients/#{client.id}"}
+              navigate={~p"/staff/clients/#{client.id}?#{build_query_params(assigns, %{})}"}
               class="btn btn-ghost btn-xs btn-square"
               title={gettext("Client card and orders")}
             >
@@ -359,7 +362,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
       </.table>
 
       <div class="flex justify-end">
-        <.pagination meta={@meta} path_fn={path_fn} />
+        <.pagination meta={@meta} path_fn={path_fn} page_sizes={[25, 50, 100]} />
       </div>
 
       <.slide_over

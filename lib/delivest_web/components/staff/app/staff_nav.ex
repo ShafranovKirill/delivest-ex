@@ -216,13 +216,15 @@ defmodule DelivestWeb.StaffNav do
   def local_navigation(assigns) do
     navigation_branch = assigns.navigation_branch || assigns.branch
     navigation_branch = navigation_branch && Delivest.Repo.preload(navigation_branch, :info)
+    current_page = assigns.current_page
 
     group =
       assigns.staff
       |> entries(navigation_branch, navigation_branch)
       |> Enum.flat_map(& &1.entries)
       |> Enum.find(fn
-        %{kind: :group, items: items} -> Enum.any?(items, &(assigns.current_page in &1.pages))
+        %{kind: :group, id: :marketing} when current_page == :marketing -> true
+        %{kind: :group, items: items} -> Enum.any?(items, &(current_page in &1.pages))
         _ -> false
       end)
 
@@ -238,6 +240,9 @@ defmodule DelivestWeb.StaffNav do
             not is_nil(DelivestWeb.Staff.ProductLive.ProductTags.section(assigns.current_path)) ->
           menu_items(assigns.staff, navigation_branch)
 
+        assigns.current_page == :marketing ->
+          marketing_entries(assigns.staff, navigation_branch)
+
         not is_nil(group) and
             assigns.current_page in [
               :deliveries,
@@ -245,7 +250,13 @@ defmodule DelivestWeb.StaffNav do
               :payments,
               :receipts,
               :clients,
-              :segments
+              :segments,
+              :marketing_policies,
+              :stocks,
+              :promotions,
+              :loyalty,
+              :advertising_links,
+              :marketing
             ] ->
           group.items
 
@@ -328,7 +339,8 @@ defmodule DelivestWeb.StaffNav do
           :delivery,
           gettext("Delivery"),
           "hero-map",
-          Enum.map([:deliveries, :couriers], find)
+          Enum.map([:deliveries, :couriers], find) ++
+            [Enum.find(settings_entries(staff, branch), &(&1.id == :delivery_zones))]
         ),
         top.(:menu, gettext("Menu"), "hero-book-open", Enum.map([:products, :categories], find)),
         top.(:customers, gettext("Clients"), "hero-users", Enum.map([:clients, :segments], find)),
@@ -336,7 +348,10 @@ defmodule DelivestWeb.StaffNav do
           :marketing,
           gettext("Marketing"),
           "hero-megaphone",
-          Enum.map([:marketing_policies, :stocks, :promotions, :advertising_links], find)
+          Enum.map(
+            [:marketing_policies, :stocks, :promotions, :loyalty, :advertising_links],
+            find
+          )
         ),
         top.(
           :finance,
@@ -625,9 +640,9 @@ defmodule DelivestWeb.StaffNav do
       group(:finance, "hero-banknotes", gettext("Finance"), [
         item(
           :payments,
-          branch && ~p"/staff/b/#{branch}/finance/payments",
+          branch && ~p"/staff/b/#{branch}/finance/transactions",
           "hero-credit-card",
-          gettext("Payment")
+          gettext("Payments")
         )
         |> allowed(staff, "finance.read"),
         item(
@@ -636,8 +651,7 @@ defmodule DelivestWeb.StaffNav do
           "hero-document-text",
           gettext("Receipts")
         )
-        |> allowed(staff, "orders.update")
-        |> owned(branch, :receipts)
+        |> allowed(staff, "orders.read")
       ]),
       group(:menu, "hero-book-open", gettext("Menu"), [
         item(

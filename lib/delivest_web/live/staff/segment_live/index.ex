@@ -2,7 +2,6 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.{Features, Identity, Segments}
-  alias DelivestWeb.Staff.ClientLive.Navigation
 
   @poll_duration 1_800_000
 
@@ -300,7 +299,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
         %{assigns: %{live_action: :show, can_manage: true, group: %{kind: :dynamic} = group}} =
           socket
       ) do
-    case Segments.recalculate_now(socket.assigns.current_staff, group.id) do
+    case Segments.recalculate_now(Identity.fresh_staff(socket.assigns.current_staff), group.id) do
       {:ok, status} ->
         {:noreply,
          socket
@@ -404,7 +403,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           updates = Map.take(attrs, ~w(name rules))
 
           Segments.update(
-            socket.assigns.current_staff,
+            Identity.fresh_staff(socket.assigns.current_staff),
             socket.assigns.group.id,
             updates
             |> Map.put("expected_revision", socket.assigns.group.revision)
@@ -415,7 +414,7 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
           )
         else
           Segments.create(
-            socket.assigns.current_staff,
+            Identity.fresh_staff(socket.assigns.current_staff),
             attrs,
             socket.assigns.selected_branches
           )
@@ -475,10 +474,20 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
     result =
       case action do
         :add ->
-          Segments.add_member(socket.assigns.current_staff, socket.assigns.group.id, id, opts)
+          Segments.add_member(
+            Identity.fresh_staff(socket.assigns.current_staff),
+            socket.assigns.group.id,
+            id,
+            opts
+          )
 
         :remove ->
-          Segments.remove_member(socket.assigns.current_staff, socket.assigns.group.id, id, opts)
+          Segments.remove_member(
+            Identity.fresh_staff(socket.assigns.current_staff),
+            socket.assigns.group.id,
+            id,
+            opts
+          )
       end
 
     case result do
@@ -725,9 +734,6 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
       title="Сегменты"
       subtitle="Группируйте клиентов вручную или по их выполненным заказам."
     >
-      <:navigation :if={Identity.can?(@current_staff, "clients.read")}>
-        <Navigation.tabs active={:segments} />
-      </:navigation>
       <:actions>
         <.link
           :if={@can_manage and @live_action not in [:new, :edit]}

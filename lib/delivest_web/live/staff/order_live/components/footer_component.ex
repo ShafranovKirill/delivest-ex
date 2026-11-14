@@ -33,6 +33,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.FooterComponent do
         <button
           type="submit"
           form="order-details-form"
+          phx-disable-with={gettext("Saving…")}
           disabled={@cart.items == []}
           class="btn btn-primary flex-1 justify-between h-12"
         >

@@ -12,6 +12,16 @@ defmodule DelivestWeb.Staff.BranchLive.SiteSnapshotTest do
     {:ok, view, _html} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/snapshot")
     assert has_element?(view, "#snapshot-export")
     assert has_element?(view, "#snapshot-import-form input[type=file]")
+    assert has_element?(view, "#snapshot-target", "Import target: #{branch.name}")
+    refute has_element?(view, "#snapshot-import-confirm")
+
+    upload =
+      file_input(view, "#snapshot-import-form", :snapshot, [
+        %{name: "snapshot.zip", content: "invalid archive", type: "application/zip"}
+      ])
+
+    assert render_upload(upload, "snapshot.zip") =~ "snapshot.zip"
+    assert has_element?(view, "#snapshot-import-confirm[data-confirm]")
 
     download = get(conn, ~p"/staff/b/#{branch.slug}/site-snapshot")
     assert response(download, 200) |> String.starts_with?("PK")

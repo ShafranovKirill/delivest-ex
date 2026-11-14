@@ -7,6 +7,9 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
   alias Delivest.Identity
   alias DelivestWeb.Staff.FranchiseLive.FranchiseHelpers
 
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [error_summary: 1, changeset_errors: 1]
+
   @impl true
   def update(assigns, socket) do
     socket =
@@ -38,7 +41,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
   end
 
   def handle_event("save", %{"settings" => params}, socket) do
-    case Franchise.update_settings(socket.assigns.current_staff, params) do
+    case Franchise.update_settings(Identity.fresh_staff(socket.assigns.current_staff), params) do
       {:ok, settings} ->
         send(self(), {__MODULE__, {:saved, settings}})
 
@@ -58,7 +61,10 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
   end
 
   def handle_event("save_yandex_rating", %{"rating" => params}, socket) do
-    case Franchise.update_yandex_rating(socket.assigns.current_staff, params) do
+    case Franchise.update_yandex_rating(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           params
+         ) do
       {:ok, rating} ->
         {:noreply,
          socket
@@ -130,6 +136,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         phx-submit="save"
         class="space-y-6"
       >
+        <.error_summary
+          id="franchise-settings-error-summary"
+          errors={changeset_errors(@form.source)}
+          form_name={@form.name}
+        />
         <section
           :if={@section == :brand}
           class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
@@ -352,7 +363,12 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
         </section>
 
         <div class="flex justify-end">
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
+          <button
+            type="submit"
+            data-staff-save="edit"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >
             {gettext("Save")}
           </button>
         </div>

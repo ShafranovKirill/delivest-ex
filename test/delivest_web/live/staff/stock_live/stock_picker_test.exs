@@ -58,5 +58,41 @@ defmodule DelivestWeb.Staff.StockLive.StockPickerTest do
     assert Repo.reload!(stock).product_id == product.id
     assert Repo.reload!(stock).text == "Final banner"
     assert Repo.reload!(stock).media_id == media.id
+
+    Repo.update!(Ecto.Changeset.change(product, is_active: false))
+    {:ok, list, _} = live(conn, ~p"/staff/b/#{branch}/stocks")
+    assert has_element?(list, "#stocks-list .badge-warning", "Linked product is unpublished")
+  end
+
+  test "banner editor keeps draft when write permission is revoked", %{conn: conn} do
+    branch = insert(:branch)
+    role = insert(:role, permissions: ["stocks.read", "stocks.update", "stocks.create"])
+    staff = insert(:staff, role: role)
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    media =
+      %File{}
+      |> File.changeset(%{
+        bucket: "test",
+        key: "stock-revoked-#{Ecto.UUID.generate()}.png",
+        original_name: "banner.png",
+        mime_type: "image/png",
+        size: 100,
+        context: :stock,
+        owner_id: staff.id
+      })
+      |> Repo.insert!()
+
+    {:ok, stock} =
+      Net.create_stock(staff, branch.id, %{"media_id" => media.id, "text" => "Original"})
+
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/stocks/#{stock.id}/edit")
+    Repo.update!(Ecto.Changeset.change(role, permissions: ["stocks.read"]))
+    lv |> form("#stock-form", stock: %{text: "Denied draft"}) |> render_submit()
+
+    assert has_element?(lv, ~s(#stock-form textarea[name="stock[text]"]), "Denied draft")
+    assert Repo.reload!(stock).text == "Original"
   end
 end

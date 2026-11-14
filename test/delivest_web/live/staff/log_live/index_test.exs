@@ -132,6 +132,42 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
     refute html =~ "GET /staff/logs"
   end
 
+  test "malformed URL filters are ignored and raw search can reset", %{conn: conn} do
+    {conn, _staff} = login(conn, ["logs.read"])
+    log("error", "Resettable entry")
+
+    {:ok, lv, _} =
+      live(conn, "/staff/logs/raw?q[secret]=value&page[bad]=1&page_size=500&sort=unknown")
+
+    assert has_element?(lv, "#app-logs", "Resettable entry")
+
+    lv |> form("#logs-filter", %{"q" => "no match"}) |> render_change()
+    assert_patch(lv, ~p"/staff/logs/raw?q=no+match")
+    refute has_element?(lv, "#app-logs", "Resettable entry")
+
+    lv |> element(~s(button[phx-click="reset_entries"])) |> render_click()
+    assert_patch(lv, ~p"/staff/logs/raw")
+    assert has_element?(lv, "#app-logs", "Resettable entry")
+  end
+
+  test "raw logs hide known credential values in message and metadata", %{conn: conn} do
+    {conn, _staff} = login(conn, ["logs.read"])
+
+    log("error", "Request failed api_key=super-secret Authorization: Bearer abc123", %{
+      "access_token" => "another-secret",
+      "request" => %{"password" => "nested-secret", "path" => "/staff/logs"}
+    })
+
+    {:ok, _lv, html} = live(conn, ~p"/staff/logs/raw")
+
+    assert html =~ "[REDACTED]"
+    assert html =~ "/staff/logs"
+    refute html =~ "super-secret"
+    refute html =~ "abc123"
+    refute html =~ "another-secret"
+    refute html =~ "nested-secret"
+  end
+
   test "staff without permission is redirected", %{conn: conn} do
     {conn, _staff} = login(conn, ["orders.read"])
 
