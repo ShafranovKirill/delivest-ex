@@ -78,6 +78,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
 
     first = conn |> keyed(key) |> post(~p"/client/orders", params) |> json_response(200)
     id = first["data"]["id"]
+    assert {:ok, _, _} = DateTime.from_iso8601(first["data"]["inserted_at"])
 
     staff = insert(:staff, role: insert(:role, permissions: ["orders.update"]))
     insert(:staff_branch, staff: staff, branch: branch)
@@ -364,8 +365,17 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     order = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
     id = order["data"]["id"]
 
-    assert %{"data" => %{"id" => ^id, "total_amount" => 300, "items" => [_]}} =
+    assert %{
+             "data" => %{
+               "id" => ^id,
+               "total_amount" => 300,
+               "items" => [_],
+               "inserted_at" => inserted_at
+             }
+           } =
              conn |> recycle_with_headers() |> get(~p"/client/orders/#{id}") |> json_response(200)
+
+    assert {:ok, _, _} = DateTime.from_iso8601(inserted_at)
 
     stranger =
       build_conn()
