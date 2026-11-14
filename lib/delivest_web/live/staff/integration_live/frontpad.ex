@@ -1,14 +1,13 @@
 defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   use DelivestWeb, :live_view
 
-  alias Delivest.Identity
+  alias Delivest.{Identity, Net}
   alias Delivest.Integrations.Crm
 
   alias Delivest.Integrations.Crm.{
     AcceptPrice,
     BranchSettings,
     Catalog,
-    CatalogSnapshot,
     FrontpadStopRefresh,
     StopSync
   }
@@ -33,6 +32,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
        can_edit_branch: Identity.can?(socket.assigns.current_staff, "integrations.update"),
        can_accept_price: Identity.can?(socket.assigns.current_staff, "products.update"),
        accepting_price: nil,
+       accepting_price_value: nil,
        query: "",
        refresh_timer: nil,
        stop_refresh_timer: nil,
@@ -69,20 +69,19 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     end
   end
 
-  def handle_event("accept_price", %{"product_id" => id, "crm_price" => price}, socket) do
+  def handle_event("accept_price", %{"product_id" => id}, socket) do
     issue =
       Enum.find(socket.assigns.issues, &(&1.product_id == id and &1.type == :price_mismatch))
 
     with nil <- socket.assigns.accepting_price,
          true <- socket.assigns.can_accept_price,
-         %{crm_price: shown_price} <- issue,
-         {^shown_price, ""} <- Integer.parse(price) do
+         %{crm_price: shown_price} <- issue do
       staff = socket.assigns.current_staff
       branch_id = socket.assigns.current_branch.id
 
       {:noreply,
        socket
-       |> assign(accepting_price: id)
+       |> assign(accepting_price: id, accepting_price_value: shown_price)
        |> start_async({:accept_price, id}, fn ->
          AcceptPrice.run(staff, branch_id, id, shown_price)
        end)}
@@ -315,18 +314,19 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   @impl true
   def handle_async({:accept_price, id}, result, socket) do
-    socket = assign(socket, accepting_price: nil)
+    expected_price = socket.assigns.accepting_price_value
+    socket = assign(socket, accepting_price: nil, accepting_price_value: nil)
 
     socket =
       case result do
-        {:ok, {:ok, :unchanged, catalog}} ->
+        {:ok, {:ok, :unchanged}} ->
           socket
-          |> assign_fresh_catalog(catalog)
+          |> load_catalog()
           |> put_flash(:info, gettext("Price is already up to date"))
 
-        {:ok, {:ok, _product, catalog}} ->
+        {:ok, {:ok, _product}} ->
           socket
-          |> assign_fresh_catalog(catalog)
+          |> load_catalog()
           |> put_flash(:info, gettext("Price accepted from Frontpad"))
 
         {:ok, {:error, {:price_changed, price}}} ->
@@ -355,12 +355,35 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         {:ok, {:error, :forbidden}} ->
           put_flash(socket, :error, gettext("Permission denied"))
 
+        {:exit, _reason} ->
+          if accepted_after_exit?(socket, id, expected_price) do
+            socket
+            |> load_catalog()
+            |> put_flash(:info, gettext("Price accepted from Frontpad"))
+          else
+            put_flash(socket, :error, gettext("Could not accept the price. Try again later."))
+          end
+
         _ ->
           put_flash(socket, :error, gettext("Could not accept the price. Try again later."))
       end
 
     {:noreply, socket}
   end
+
+  defp accepted_after_exit?(socket, id, price) when is_integer(price) do
+    branch_id = socket.assigns.current_branch.id
+
+    with :ok <- Identity.authorize(socket.assigns.current_staff, "products.update", branch_id),
+         :ok <- Identity.authorize(socket.assigns.current_staff, "integrations.read", branch_id),
+         {:ok, product} <- Net.get_branch_product(branch_id, id) do
+      product.price == price
+    else
+      _ -> false
+    end
+  end
+
+  defp accepted_after_exit?(_, _, _), do: false
 
   defp load_settings(socket),
     do: assign_settings(socket, Crm.get_branch_settings(socket.assigns.current_branch.id))
@@ -404,17 +427,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     |> assign(saved_snapshot: snapshot)
     |> assign_catalog(snapshot)
     |> assign_available_at()
-  end
-
-  defp assign_fresh_catalog(socket, catalog) do
-    snapshot = %CatalogSnapshot{
-      branch_id: socket.assigns.current_branch.id,
-      provider: "frontpad",
-      checked_at: DateTime.utc_now(:second),
-      products: Enum.map(catalog, &Map.new(&1, fn {key, value} -> {to_string(key), value} end))
-    }
-
-    assign_catalog(socket, snapshot)
   end
 
   defp assign_catalog(socket, snapshot) do
@@ -1107,7 +1119,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
                 class="btn btn-sm btn-primary"
                 phx-click="accept_price"
                 phx-value-product_id={issue.product_id}
-                phx-value-crm_price={issue.crm_price}
                 disabled={
                   @accepting_price != nil or MapSet.member?(@shared_products, issue.product_id)
                 }
