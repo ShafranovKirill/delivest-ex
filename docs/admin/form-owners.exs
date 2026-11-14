@@ -43,6 +43,8 @@
   "finance_live/payments.ex" =>
     {"lib/delivest/identity/branch/payment_settings.ex", "Settings / Orders and payment",
      "finance_live/payments.ex"},
+  "finance_live/transactions.ex" =>
+    {"payment register filters", "Finance / Transactions", "finance_live/transactions.ex"},
   "franchise_live/settings_form_component.ex" =>
     {"lib/delivest/franchise/settings.ex", "Settings / Network and brand",
      "franchise_live/settings_form_component.ex"},
@@ -147,8 +149,6 @@
     {"branch product list search/filter", "Menu / Products", "product_live/branch_products.ex"},
   "product_live/bulk.ex" =>
     {"bulk product row field operation", "Menu / Products / Bulk edit", "product_live/bulk.ex"},
-  "product_live/copy_component.ex" =>
-    {"product copy target branch/scope", "Menu / Products", "product_live/copy_component.ex"},
   "product_live/modifiers.ex" =>
     {"modifier external article edit parameter", "Menu / Modifiers", "product_live/modifiers.ex"},
   "product_live/operations.ex" =>
@@ -164,6 +164,8 @@
   "product_live/products.ex" =>
     {"product list search/category/status and selected IDs", "Menu / Products",
      "product_live/products.ex"},
+  "product_live/stop_list.ex" =>
+    {"stock stop list search filters", "Menu / Stock stops", "product_live/stop_list.ex"},
   "product_live/tags.ex" =>
     {"lib/delivest/net/product_tag.ex", "Menu / Tags", "product_live/tags.ex"},
   "promotion_live/issued_codes_component.ex" =>
@@ -175,6 +177,8 @@
   "promotion_live/promotion_form_component.ex" =>
     {"lib/delivest/promo/promotion.ex", "Marketing / Promotions",
      "promotion_live/promotion_form_component.ex"},
+  "receipt_live/index.ex" =>
+    {"fiscal receipt register filters", "Finance / Receipts", "receipt_live/index.ex"},
   "role_live/role_form_component.ex" =>
     {"lib/delivest/identity/role.ex", "Settings / Team and access / Roles",
      "role_live/role_form_component.ex"},
@@ -188,5 +192,5 @@
   "statistics_live/index.ex" =>
     {"Delivest.Analytics report filters", "Analytics", "statistics_live/index.ex"},
   "stock_live/stock_form_component.ex" =>
-    {"lib/delivest/net/stock.ex", "Menu / Stocks", "stock_live/stock_form_component.ex"}
+    {"lib/delivest/net/stock.ex", "Marketing / Banners", "stock_live/stock_form_component.ex"}
 }

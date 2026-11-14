@@ -1,9 +1,13 @@
 defmodule Mix.Tasks.Admin.InventoryTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
-  test "snapshot covers each source-backed staff element with a stable ID" do
-    inventory = Mix.Tasks.Admin.Inventory.snapshot()
+  setup_all do
+    {:ok, inventory: Mix.Tasks.Admin.Inventory.snapshot()}
+  end
 
+  test "snapshot covers each source-backed staff element with a stable ID", %{
+    inventory: inventory
+  } do
     for register <-
           ~w(screens fields actions features_integrations background schema_census service_routes) do
       entries = Map.fetch!(inventory, register)
@@ -25,9 +29,9 @@ defmodule Mix.Tasks.Admin.InventoryTest do
            )
   end
 
-  test "known nested, guarded and scheduled sources retain their ownership evidence" do
-    inventory = Mix.Tasks.Admin.Inventory.snapshot()
-
+  test "known nested, guarded and scheduled sources retain their ownership evidence", %{
+    inventory: inventory
+  } do
     assert Enum.any?(inventory["fields"], fn field ->
              field["id"] ==
                "form:lib/delivest_web/live/staff/integration_live/frontpad.ex:frontpad:api_key" and
@@ -69,8 +73,9 @@ defmodule Mix.Tasks.Admin.InventoryTest do
            end)
   end
 
-  test "branch persisted owners, transient queries and page classification are assigned" do
-    inventory = Mix.Tasks.Admin.Inventory.snapshot()
+  test "branch persisted owners, transient queries and page classification are assigned", %{
+    inventory: inventory
+  } do
     fields = inventory["fields"]
     branch_form = "lib/delivest_web/live/staff/branch_live/branch_form_component.ex"
 
@@ -117,6 +122,38 @@ defmodule Mix.Tasks.Admin.InventoryTest do
              screen["route"] == "LIVE /staff/branches/new" and
                screen["page_type"] == "settings"
            end)
+  end
+
+  test "shared filter bars retain their source-backed search controls", %{inventory: inventory} do
+    for source <-
+          ~w(client_live/clients.ex staff_live/staffs.ex product_live/products.ex product_live/stop_list.ex order_live/components/orders_toolbar.ex receipt_live/index.ex finance_live/transactions.ex) do
+      assert Enum.any?(inventory["fields"], fn field ->
+               String.contains?(field["source"], source) and field["field"] == "search" and
+                 String.starts_with?(field["binding"], "filter_bar:") and
+                 String.starts_with?(field["owner"], "transient search/query operation")
+             end),
+             "missing shared search input for #{source}"
+    end
+  end
+
+  test "banner stock routes, fields and actions target Marketing", %{inventory: inventory} do
+    stock_routes =
+      Enum.filter(inventory["screens"], &String.contains?(&1["route"], "/stocks"))
+
+    assert length(stock_routes) == 3
+    assert Enum.all?(stock_routes, &(&1["target_section"] == "Marketing"))
+
+    stock_fields =
+      Enum.filter(inventory["fields"], &String.contains?(&1["source"], "/stock_live/"))
+
+    assert stock_fields != []
+    assert Enum.all?(stock_fields, &(&1["target_section"] == "Marketing / Banners"))
+
+    stock_actions =
+      Enum.filter(inventory["actions"], &String.contains?(&1["source"], "/stock_live/"))
+
+    assert stock_actions != []
+    assert Enum.all?(stock_actions, &(&1["target_section"] == "Marketing"))
   end
 
   test "action identities survive comments and source line shifts" do

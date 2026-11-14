@@ -302,12 +302,15 @@ defmodule Mix.Tasks.Admin.Inventory do
 
   defp section(route) do
     cond do
+      String.contains?(route, "/stock_live/") or String.contains?(route, "/stocks") ->
+        "Marketing"
+
       String.contains?(route, "/order_live/") or String.contains?(route, "/pos_live/") or
           String.contains?(route, "/kitchen_live/") ->
         "Orders"
 
       String.contains?(route, "/product_live/") or String.contains?(route, "/category_live/") or
-        String.contains?(route, "/stock_live/") or String.contains?(route, "/menu_live/") ->
+          String.contains?(route, "/menu_live/") ->
         "Menu"
 
       String.contains?(route, "/integration_live/") ->
@@ -366,7 +369,8 @@ defmodule Mix.Tasks.Admin.Inventory do
       String.contains?(route, "/finance") ->
         "Finance"
 
-      String.contains?(route, "/delivery") or String.contains?(route, "/couriers") ->
+      String.contains?(route, "/delivery") or String.contains?(route, "/deliveries") or
+          String.contains?(route, "/couriers") ->
         "Delivery"
 
       String.contains?(route, "/orders") or String.contains?(route, "/kitchen") or
@@ -374,7 +378,7 @@ defmodule Mix.Tasks.Admin.Inventory do
         "Orders"
 
       String.contains?(route, "/products") or String.contains?(route, "/categories") or
-        String.contains?(route, "/stocks") or String.contains?(route, "/menu") ->
+          String.contains?(route, "/menu") ->
         "Menu"
 
       String.contains?(route, "/clients") or String.contains?(route, "/segments") ->
@@ -403,7 +407,9 @@ defmodule Mix.Tasks.Admin.Inventory do
       verb != :live or route in ["/staff/auth/login", "/staff/foundation-gallery"] ->
         "service"
 
-      String.ends_with?(route, "/delivery") or route == "/staff/branches/new" ->
+      String.ends_with?(route, "/delivery") or route == "/staff/branches/new" or
+        String.ends_with?(route, "/finance/payments") or
+          String.ends_with?(route, "/delivery/couriers") ->
         "settings"
 
       String.contains?(route, "/integrations") or String.contains?(route, "/settings") or
@@ -556,6 +562,32 @@ defmodule Mix.Tasks.Admin.Inventory do
         end
       end)
 
+    # The shared FilterBar renders its input in a component. Record each
+    # production caller's concrete query name at the call site so migrations
+    # cannot silently remove a search control from the source census.
+    filter_bar_search =
+      Regex.scan(~r/<\.filter_bar\b[^>]*>/s, source, return: :index)
+      |> Enum.flat_map(fn [{offset, size}] ->
+        tag = binary_part(source, offset, size)
+
+        with [_, id] <- Regex.run(~r/\bid="([^"]+)"/, tag),
+             [_, query_name] <- Regex.run(~r/\bquery_name="([^"]+)"/, tag) do
+          [
+            %{
+              "field" => query_name,
+              "binding" => "filter_bar:#{id}",
+              "form" => path,
+              "source" => "#{path}:#{line_at(source, offset)}",
+              "expression" => nil,
+              "html_required" => false,
+              "html_default" => nil
+            }
+          ]
+        else
+          _ -> []
+        end
+      end)
+
     dynamic_fields =
       Regex.scan(~r/\bfield=\{([^}]+)\}/, source, return: :index)
       |> Enum.flat_map(fn [{offset, _}, {expr_at, expr_size}] ->
@@ -574,7 +606,7 @@ defmodule Mix.Tasks.Admin.Inventory do
           ]
       end)
 
-    (direct ++ nested ++ names ++ dynamic_fields)
+    (direct ++ nested ++ names ++ filter_bar_search ++ dynamic_fields)
     |> Enum.uniq_by(&{&1["field"], &1["form"], &1["binding"]})
   end
 
@@ -698,6 +730,9 @@ defmodule Mix.Tasks.Admin.Inventory do
     field = control["field"]
 
     cond do
+      String.starts_with?(binding, "filter_bar:") ->
+        "transient search/query operation in #{key}"
+
       field in ~w(q query location_query) ->
         "transient search/query operation in #{key}"
 
@@ -1566,6 +1601,15 @@ defmodule Mix.Tasks.Admin.Inventory do
     controls = Enum.filter(inventory["actions"], &String.starts_with?(&1["id"], "control:"))
     no_receiver = Enum.filter(controls, &(&1["handler_clauses"] == []))
 
+    receiver_note =
+      case no_receiver do
+        [] ->
+          ""
+
+        missing ->
+          " #{Enum.map_join(missing, "; ", &"`#{&1["source"]}` #{&1["event"]}")} has no receiver in `lib/delivest_web` or `assets/js` according to repository search."
+      end
+
     """
     # Staff administration source inventory
 
@@ -1582,7 +1626,7 @@ defmodule Mix.Tasks.Admin.Inventory do
 
     The separate schema census has #{length(inventory["schema_census"])} declarations. It guards source drift; only staff controls receive editor assignments. The #{length(inventory["service_routes"])} service, authentication and internal routes are outside the four page types. The foundation gallery is an internal dev/test fixture and is excluded from controls and actions.
 
-    #{length(controls) - length(no_receiver)}/#{length(controls)} literal event controls have a source handler candidate. #{Enum.map_join(no_receiver, "; ", &"`#{&1["source"]}` #{&1["event"]}")} has no receiver in `lib/delivest_web` or `assets/js` according to repository search; its disposition is deletion during migration. The hook receiver for `acknowledge_cancel` and `crm_alert` is `DelivestWeb.Hooks.NewOrders`.
+    #{length(controls) - length(no_receiver)}/#{length(controls)} literal event controls have a source handler candidate.#{receiver_note} The hook receiver for `acknowledge_cancel` and `crm_alert` is `DelivestWeb.Hooks.NewOrders`.
 
     ## Evidence and limits
 

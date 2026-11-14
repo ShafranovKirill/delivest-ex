@@ -1,6 +1,6 @@
-# Staff foundation contracts (stage 1)
+# Staff foundation contracts
 
-This is the opt-in contract for later screen migrations. The existing production screens and their execution gates remain in place. The source inventory is `inventory.*` in this directory.
+The foundation gallery established these contracts in stage 1. Stage 4 applies the shared shell, page header, table, filters, navigation, and form feedback on production staff screens where the domain UI uses them. The source inventory is `inventory.*` in this directory; [stage-four acceptance](stage-four-acceptance.md) records each route's disposition. Domain queries, writes, permissions, and execution gates remain owned by their existing modules.
 
 ## Page types
 
@@ -11,22 +11,22 @@ This is the opt-in contract for later screen migrations. The existing production
 | Entity | Name/status, key data, related data, history if present, return to prior list URL. | `?view=entity&id=p2&return=…`. |
 | Settings | Scope, grouped fields, one save, permissions, dirty/pending/error/conflict feedback. | `?view=settings`; branch fixture form and integration states. |
 
-Normal page title, actions and section navigation render inside content. `staff_app` remains the only shell. `foundation_workspace` opts the gallery into a 56 px header and 240 px desktop sidebar, and suppresses the legacy header h1. The gallery content owns its single h1. Production screen header portals remain until each screen migrates.
+Normal page title, actions and section navigation render inside content. `staff_app` is the shell for production and gallery pages. `foundation_workspace` remains a gallery hint; production uses `foundation-shell` tokens. The gallery and migrated screens own their content heading. The shared `StaffNav` renders section navigation in the shell.
 
 ## Component catalog
 
 | Responsibility | Component or adapter | Contract |
 | --- | --- | --- |
-| StaffShell | Existing `Layouts.staff_app`, `StaffHeader`, `StaffSidebar` | Authenticated shell; `foundation_workspace` opt-in for content title. |
+| StaffShell | Existing `Layouts.staff_app`, `StaffHeader`, `StaffSidebar` | Authenticated shell and common tokens. |
 | ScopeSwitcher | `FoundationComponents.scope_switcher/1`, existing `StaffNav` branch navigation | Caller supplies authorized options; search emits `scope_search` with 300 ms debounce. Gallery has network and demo branch scopes. Real routing must check staff access. |
-| PageHeader | `workspace_header/1`; legacy `CoreComponents.page_header/1` remains | One content h1, description, scope, primary/secondary slots. |
-| SectionNav | `section_nav/1`; legacy `header_navigation/1` remains | Caller supplies valid local paths; active item marked `aria-current`; narrow screens scroll. |
-| FilterBar | `filter_bar/1`, `ListState` | 350 ms debounce; LiveView pushes URL patch; server re-fetches; reset URL removes conditions. |
-| DataTable | `data_table/1` wraps opt-in `CoreComponents.table/1` foundation variant | Caller supplies page rows, columns, optional cell/action slots and paths. Server owns sort/page; checkbox and row actions are separate from the name link. Mobile `More details` reveals secondary fields. Existing table callers keep the legacy variant. |
+| PageHeader | `CoreComponents.page_header/1`, `workspace_header/1` | One content h1, subtitle, scope and actions. |
+| SectionNav | `StaffNav.local_navigation/1`, `section_nav/1` | Canonical production section tree, active `aria-current`, scroll on narrow screens. |
+| FilterBar | `filter_bar/1`, `ListState` | Search and filters share one form, 350 ms debounce; LiveView pushes URL patch and server re-fetches. Reset is shown for active conditions. |
+| DataTable | `CoreComponents.table/1`, `data_table/1` adapter | One table implementation for Flop streams and foundation lists. Caller supplies rows, metadata, columns and paths. Server owns sort/page; numeric values align, secondary columns have employee/list preference and mobile detail disclosure. |
 | BulkActionBar | `bulk_action_bar/1`, `ListState.select/3` | Selection intersects page IDs, clears on URL/scope change; count says “on this page”. Caller validates permissions and IDs again before operation. |
 | EntityPicker | Existing `ProductLive.ProductPicker` | Gallery uses it with in-memory fixtures. Parent checks permissions/ownership on persistence; picker callback is draft only. |
 | FormSection | `form_section/1` | Semantic group and explanatory text; no independent save. |
-| FormActions | `form_actions/1`, `FormState` | Dirty/pending/success/error/conflict/read-only; duplicate submit rejected in helper. Conflict blocks save until caller explicitly loads latest revision for retry or confirms reload. Read-only flag survives error and cancel transitions. |
+| FormActions | `form_actions/1`, `error_summary/1`, `FormState`, `StaffDirtyGuard` | Existing forms own writes. Opt-in edit buttons disable when pristine; validation errors link to fields; server errors retain entered draft. Branch settings compare editable baseline inside a transaction and require explicit reload on conflict. |
 | StatusBadge | `status_badge/1` | Text plus semantic tone; domain statuses stay with domain owner. |
 | FeatureCard / FeatureControl | `feature_card/1` with `:action` slot | Caller supplies desired/effective values, blocking reason and server-owned action; gallery toggles a fixture request only. No feature gate changes. |
 | IntegrationCard | `integration_card/1` | Configured, desired, effective, connection state/summary, capability states, dependencies, issues and obligations separately visible; optional action slot. Connection `unknown/checking/ok/error/stale` is presentation data supplied by the caller and does not change desired/effective. Gallery check/result actions only transition a fixture, without a provider call. |
@@ -40,7 +40,9 @@ Normal page title, actions and section navigation render inside content. `staff_
 
 Event-bearing controls accept an optional `target` (`@myself` or a component selector) for LiveComponent callers: filter and scope forms, row selection in `DataTable`/`Core.table`, cancel in `FormActions`, and dialog/panel buttons. `FormActions` submit remains owned by the caller's form; actions passed through slots supply their own `phx-target` or `JS.push(target: @myself)`. Dialog Escape sends to the owning component when `target` is set.
 
-Foundation variables use a 4 px spacing step, 40 px controls, at least 44 px touch targets, 240 px sidebar, 56 px header and 960 px max form width. Normal/compact table density changes padding, not font size. Light and dark themes reuse daisyUI semantic colors. These tokens apply only within `foundation-workspace`/`foundation-shell` until screen migration.
+Foundation variables use a 4 px spacing step, 40 px controls, at least 44 px touch targets, 240 px sidebar, 56 px header and 960 px max form width. Normal/compact table density changes padding, not font size. Light and dark themes reuse daisyUI semantic colors. `foundation-shell` applies these tokens to production staff pages.
+
+The production shell applies 40 px minimum controls on desktop and 44 px buttons, inputs and selects at mobile widths. Square buttons are at least 44 px wide on mobile. Read-only product cards keep native disabled semantics while their scoped text remains readable. Flop pagination offers the page sizes selected by the caller and includes a valid current legacy size (for example 10 or 20) when an old URL requests it.
 
 ## URL and state ownership
 
