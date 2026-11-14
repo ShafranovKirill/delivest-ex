@@ -40,7 +40,14 @@ Application.put_env(
   :delivest,
   Oban,
   Keyword.merge(oban,
-    queues: [default: 2, notifications: 2, events: 2, maintenance: 1, background: 1],
+    queues: [
+      default: 2,
+      notifications: 2,
+      events: 2,
+      maintenance: 1,
+      maintenance_schedule: 1,
+      background: 1
+    ],
     plugins: [
       {Oban.Plugins.Cron, crontab: [{"*/5 * * * *", Delivest.Background.Dispatcher}]}
     ]

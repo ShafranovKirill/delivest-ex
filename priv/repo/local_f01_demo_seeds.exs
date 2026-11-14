@@ -360,9 +360,17 @@ defmodule LocalF01DemoSeeds do
   defp seed_features!(branches) do
     {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "local-f01-demo")
 
+    {:ok, _} =
+      Features.configure("analytics_franchise", :franchise, true, actor: "local-f01-demo")
+
     for branch <- branches do
       {:ok, _} =
         Features.configure("marketing_policies", {:branch, branch.id}, true,
+          actor: "local-f01-demo"
+        )
+
+      {:ok, _} =
+        Features.configure("analytics_franchise", {:branch, branch.id}, true,
           actor: "local-f01-demo"
         )
     end
