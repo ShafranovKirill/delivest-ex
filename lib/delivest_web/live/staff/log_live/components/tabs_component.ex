@@ -5,25 +5,37 @@ defmodule DelivestWeb.Staff.LogLive.Components.TabsComponent do
   attr :id_prefix, :string, default: ""
 
   def render_tabs(assigns) do
-    assigns =
-      assign(assigns, :tabs, [
-        {:events, ~p"/staff/logs", "hero-clock", gettext("Events")},
-        {:raw, ~p"/staff/logs/raw", "hero-command-line", gettext("Raw logs")},
-        {:errors, ~p"/staff/logs/errors", "hero-exclamation-triangle", gettext("Errors")}
-      ])
+    assigns = assign(assigns, :tabs, DelivestWeb.StaffNav.data_system_entries())
 
     ~H"""
-    <div role="tablist" class="tabs">
+    <ul
+      :if={@id_prefix == "sidebar-"}
+      id="sidebar-staff-page-header-navigation"
+      phx-hook="ActiveSectionNav"
+    >
+      <li :for={tab <- @tabs}>
+        <.link
+          id={"#{@id_prefix}logs-tab-#{tab.id}"}
+          navigate={tab.path}
+          class={@active == tab.id && "menu-active"}
+          aria-current={@active == tab.id && "page"}
+        >
+          <.icon name={tab.icon} class="size-4" />
+          {tab.label}
+        </.link>
+      </li>
+    </ul>
+    <div :if={@id_prefix == ""} role="tablist" class="tabs">
       <.link
-        :for={{tab, path, icon, label} <- @tabs}
-        id={"#{@id_prefix}logs-tab-#{tab}"}
-        patch={path}
+        :for={tab <- @tabs}
+        id={"#{@id_prefix}logs-tab-#{tab.id}"}
+        navigate={tab.path}
         role="tab"
-        class={["tab gap-2 whitespace-nowrap", @active == tab && "tab-active font-bold"]}
-        aria-current={@active == tab && "page"}
+        class={["tab gap-2 whitespace-nowrap", @active == tab.id && "tab-active font-bold"]}
+        aria-current={@active == tab.id && "page"}
       >
-        <.icon name={icon} class="size-4" />
-        {label}
+        <.icon name={tab.icon} class="size-4" />
+        {tab.label}
       </.link>
     </div>
     """

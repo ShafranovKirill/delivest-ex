@@ -480,27 +480,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     """
   end
 
-  def staff_page_navigation(assigns) do
-    ~H"""
-    <nav
-      id={"#{@navigation_id_prefix}staff-page-header-navigation"}
-      phx-hook="ActiveSectionNav"
-      aria-label={gettext("Order statuses")}
-      class={[
-        "overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6",
-        @navigation_id_prefix != "" && "sidebar-subnav"
-      ]}
-    >
-      <StatusTabs.status_tabs
-        counts={@counts}
-        selected={@selected.status}
-        path_fn={&tab_path(@current_branch, @query, &1)}
-        id_prefix={@navigation_id_prefix}
-      />
-    </nav>
-    """
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -533,7 +512,12 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </.link>
       </div>
 
-      <.card class="flex flex-col gap-4 p-3 sm:p-4">
+      <.card id="orders-filters" class="flex flex-col gap-4 p-3 sm:p-4">
+        <StatusTabs.status_tabs
+          counts={@counts}
+          selected={@selected.status}
+          path_fn={&tab_path(@current_branch, @query, &1)}
+        />
         <OrdersToolbar.orders_toolbar
           selected={@selected}
           reset_path={orders_path(@current_branch, %{})}

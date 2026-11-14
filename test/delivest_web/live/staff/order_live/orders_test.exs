@@ -218,9 +218,15 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
 
       {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
 
-      assert has_element?(lv, "#staff-context-navigation #order-status-tab-created")
+      assert has_element?(
+               lv,
+               "main #orders-page > #orders-filters #order-status-tabs #order-status-tab-created"
+             )
 
-      assert has_element?(lv, "#staff-context-navigation #order-status-tab-preparing")
+      assert has_element?(
+               lv,
+               "main #orders-page > #orders-filters #order-status-tabs #order-status-tab-preparing"
+             )
 
       render_patch(lv, ~p"/staff/b/#{branch}/orders?status=preparing")
 

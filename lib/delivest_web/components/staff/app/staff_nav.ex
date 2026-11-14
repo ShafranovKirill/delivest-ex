@@ -15,9 +15,6 @@ defmodule DelivestWeb.StaffNav do
       path == "/staff/settings" ->
         :features
 
-      String.contains?(path, "/integrations/frontpad") ->
-        :frontpad
-
       String.contains?(path, "/integrations/routes") ->
         :order_settings
 
@@ -142,9 +139,62 @@ defmodule DelivestWeb.StaffNav do
         item -> [item]
       end)
 
-    (settings_entries(staff, branch) ++ menu_items(staff, branch) ++ legacy)
+    frontpad =
+      if branch && can?(staff, "integrations.read") do
+        [
+          setting(
+            :frontpad,
+            gettext("Frontpad"),
+            "/staff/b/#{branch.slug}/integrations/frontpad",
+            "hero-puzzle-piece",
+            :branch,
+            ["integrations.read"],
+            ["фронтпад", "отправка заказов"]
+          )
+        ]
+      else
+        []
+      end
+
+    (settings_entries(staff, branch) ++ frontpad ++ menu_items(staff, branch) ++ legacy)
     |> Enum.uniq_by(& &1.id)
   end
+
+  def data_system_entries do
+    [
+      %{
+        id: :metrics,
+        path: ~p"/staff/diagnostics",
+        icon: "hero-chart-bar",
+        label: gettext("Metrics")
+      },
+      %{id: :events, path: ~p"/staff/logs", icon: "hero-clock", label: gettext("Event log")},
+      %{
+        id: :raw,
+        path: ~p"/staff/logs/raw",
+        icon: "hero-command-line",
+        label: gettext("Raw logs")
+      },
+      %{
+        id: :errors,
+        path: ~p"/staff/logs/errors",
+        icon: "hero-exclamation-triangle",
+        label: gettext("Errors")
+      }
+    ]
+  end
+
+  def active_data_system(path) when is_binary(path) do
+    cond do
+      String.starts_with?(path, "/staff/logs/errors") -> :errors
+      String.starts_with?(path, "/staff/logs/raw") -> :raw
+      String.starts_with?(path, "/staff/logs") -> :events
+      String.starts_with?(path, "/staff/diagnostics") -> :metrics
+      true -> nil
+    end
+  end
+
+  def active_data_system(_), do: nil
 
   def menu_items(staff, branch) do
     if branch do
@@ -249,6 +299,10 @@ defmodule DelivestWeb.StaffNav do
 
           not is_nil(group) and
               assigns.current_page in [
+                :orders,
+                :orders_new,
+                :pos,
+                :kitchen,
                 :deliveries,
                 :couriers,
                 :payments,
@@ -274,41 +328,72 @@ defmodule DelivestWeb.StaffNav do
     assigns = assign(assigns, items: items)
 
     ~H"""
-    <nav
-      :if={@items != []}
+    <ul
+      :if={@items != [] and @id_prefix == "sidebar-"}
       id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
       phx-hook="ActiveSectionNav"
       aria-label={gettext("Page sections")}
-      class={[
-        "flex gap-1 overflow-x-auto whitespace-nowrap border-b border-base-300 px-4 py-2 sm:px-6",
-        @id_prefix != "" && "sidebar-subnav"
-      ]}
     >
-      <.link
+      <li :for={item <- @items}>
+        <.local_link
+          item={item}
+          id_prefix={@id_prefix}
+          scope_branch={@scope_branch}
+          return_source={@return_source}
+          current_page={@current_page}
+          current_path={@current_path}
+        />
+      </li>
+    </ul>
+    <nav
+      :if={@items != [] and @id_prefix == ""}
+      id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
+      phx-hook="ActiveSectionNav"
+      aria-label={gettext("Page sections")}
+      class="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-base-300 px-4 py-2 sm:px-6"
+    >
+      <.local_link
         :for={item <- @items}
-        id={
-          @id_prefix <>
-            if(item.parent == :menu,
-              do: "product-section-tab-#{item.id}",
-              else: "section-nav-#{item.id}"
-            )
-        }
-        navigate={
-          DelivestWeb.StaffBranchPath.contextual_navigation_path(
-            item.path,
-            @scope_branch,
-            @return_source
-          )
-        }
-        aria-current={active_local?(item, @current_page, @current_path) && "page"}
-        class={[
-          "whitespace-nowrap rounded-field px-3 py-2 text-sm hover:bg-base-200",
-          active_local?(item, @current_page, @current_path) && "bg-base-200 font-semibold"
-        ]}
-      >
-        {item.label}
-      </.link>
+        item={item}
+        id_prefix={@id_prefix}
+        scope_branch={@scope_branch}
+        return_source={@return_source}
+        current_page={@current_page}
+        current_path={@current_path}
+      />
     </nav>
+    """
+  end
+
+  attr :item, :map, required: true
+  attr :id_prefix, :string, required: true
+  attr :scope_branch, :any, default: nil
+  attr :return_source, :string, default: nil
+  attr :current_page, :any, default: nil
+  attr :current_path, :string, default: nil
+
+  defp local_link(assigns) do
+    ~H"""
+    <.link
+      id={@id_prefix <> if(@item.parent == :menu, do: "product-section-tab-#{@item.id}", else: "section-nav-#{@item.id}")}
+      navigate={
+        DelivestWeb.StaffBranchPath.contextual_navigation_path(
+          @item.path,
+          @scope_branch,
+          @return_source
+        )
+      }
+      aria-current={active_local?(@item, @current_page, @current_path) && "page"}
+      class={
+        if(@id_prefix == "sidebar-",
+          do: active_local?(@item, @current_page, @current_path) && "menu-active",
+          else: [
+            "whitespace-nowrap rounded-field px-3 py-2 text-sm hover:bg-base-200",
+            active_local?(@item, @current_page, @current_path) && "bg-base-200 font-semibold"
+          ]
+        )
+      }
+    >{@item.label}</.link>
     """
   end
 
@@ -414,7 +499,8 @@ defmodule DelivestWeb.StaffNav do
         "franchise.update",
         "branches.read",
         "delivery.read",
-        "integrations.read"
+        "integrations.read",
+        "logs.read"
       ]),
       setting(
         :features,
@@ -497,15 +583,6 @@ defmodule DelivestWeb.StaffNav do
         "hero-puzzle-piece",
         :mixed,
         ["integrations.read"]
-      ),
-      setting(
-        :frontpad,
-        gettext("Frontpad"),
-        branch && "/staff/b/#{branch.slug}/integrations/frontpad",
-        "hero-puzzle-piece",
-        :branch,
-        ["integrations.read"],
-        ["фронтпад", "отправка заказов"]
       ),
       setting(
         :team,
@@ -798,7 +875,7 @@ defmodule DelivestWeb.StaffNav do
       item(:settings, ~p"/staff/settings", "hero-cog-6-tooth", gettext("Settings"))
       |> then(fn item ->
         if Enum.any?(
-             ~w(franchise.update branches.read delivery.read integrations.read),
+             ~w(franchise.update branches.read delivery.read integrations.read logs.read),
              &can?(staff, &1)
            ),
            do: covering(item, [:branches, :integrations, :delivery])

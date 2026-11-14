@@ -124,17 +124,18 @@ defmodule DelivestWeb.Staff.LogLive.Index do
 
   def staff_page_navigation(assigns) do
     ~H"""
-    <nav
-      id={"#{@navigation_id_prefix}staff-page-header-navigation"}
-      phx-hook="ActiveSectionNav"
-      aria-label={gettext("Logs")}
-      class={[
-        "flex gap-1 overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6",
-        @navigation_id_prefix != "" && "sidebar-subnav"
-      ]}
-    >
+    <%= if @navigation_id_prefix == "sidebar-" do %>
       <TabsComponent.render_tabs active={@live_action} id_prefix={@navigation_id_prefix} />
-    </nav>
+    <% else %>
+      <nav
+        id={"#{@navigation_id_prefix}staff-page-header-navigation"}
+        phx-hook="ActiveSectionNav"
+        aria-label={gettext("Logs")}
+        class="flex gap-1 overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6"
+      >
+        <TabsComponent.render_tabs active={@live_action} id_prefix={@navigation_id_prefix} />
+      </nav>
+    <% end %>
     """
   end
 

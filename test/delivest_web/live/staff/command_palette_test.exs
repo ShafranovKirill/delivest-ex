@@ -33,6 +33,9 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
              "#command-item-page-frontpad[href='/staff/b/#{branch.slug}/integrations/frontpad']"
            )
 
+    refute has_element?(lv, "#settings-navigation #settings-nav-frontpad")
+    refute has_element?(lv, "#sidebar-settings-navigation #sidebar-settings-nav-frontpad")
+
     lv |> form("#command-palette-form", %{query: "зоны"}) |> render_change()
 
     assert has_element?(

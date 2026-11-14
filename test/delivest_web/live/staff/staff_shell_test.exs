@@ -70,20 +70,43 @@ defmodule DelivestWeb.Staff.StaffShellTest do
              "#sidebar-group-menu[open] #sidebar-product-section-tab-tags[aria-current='page']"
            )
 
-    assert has_element?(products, "#sidebar-group-menu-toggle")
+    assert has_element?(
+             products,
+             "#nav-section-main ul.menu > li > #sidebar-group-menu > summary#sidebar-group-menu-toggle"
+           )
+
+    assert has_element?(
+             products,
+             "#sidebar-group-menu > ul > li > #sidebar-product-section-tab-tags"
+           )
+
+    refute has_element?(products, "#sidebar-group-menu > .staff-sidebar-nav-link")
 
     assert has_element?(
              products,
              "#staff-context-navigation #product-section-tab-tags[aria-current='page']"
            )
 
-    assert has_element?(products, "#nav-section-main a[href='/staff/b/#{branch.slug}/products']")
+    assert has_element?(
+             products,
+             "#sidebar-group-menu #sidebar-product-section-tab-products[href='/staff/b/#{branch.slug}/products']"
+           )
 
     {:ok, settings, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/hours")
 
     assert has_element?(
              settings,
              "#sidebar-group-settings[open] #sidebar-settings-nav-hours[aria-current='page']"
+           )
+
+    assert has_element?(
+             settings,
+             "#nav-section-settings > li > #sidebar-group-settings > summary#sidebar-group-settings-toggle"
+           )
+
+    assert has_element?(
+             settings,
+             "#sidebar-group-settings > ul > li > #sidebar-settings-nav-hours"
            )
 
     assert has_element?(
@@ -97,13 +120,21 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(
              orders,
-             "#sidebar-group-orders[open] #sidebar-order-status-tab-all[aria-current='page']"
+             "#sidebar-group-orders[open] #sidebar-section-nav-orders[aria-current='page']"
            )
 
     assert has_element?(
              orders,
-             "#staff-context-navigation #order-status-tab-all[aria-current='page']"
+             "#staff-context-navigation #section-nav-orders[aria-current='page']"
            )
+
+    assert has_element?(
+             orders,
+             "main #orders-page > #orders-filters #order-status-tabs #order-status-tab-all[aria-current='page']"
+           )
+
+    refute has_element?(orders, "#main-sidebar #sidebar-order-status-tabs")
+    refute has_element?(orders, "#staff-context-navigation #order-status-tabs")
 
     {:ok, logs, _} = live(conn, ~p"/staff/logs")
 

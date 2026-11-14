@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     global? = URI.parse(url).path == "/staff/statistics"
 
     if not global? and params["tab"] == "franchise" do
-      query = Map.take(params, ["period", "from", "to", "channel", "branch_id"])
+      query = Map.take(params, ["period", "from", "to", "channel"])
       {:noreply, redirect(socket, to: ~p"/staff/statistics?#{query}")}
     else
       branch = if global?, do: nil, else: socket.assigns.current_branch
@@ -365,17 +365,39 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     """
   end
 
+  def staff_page_navigation(%{visible_tabs: []}), do: nil
+
   def staff_page_navigation(assigns) do
+    assigns =
+      assign(assigns, :branch_franchise_path, branch_franchise_path(assigns))
+
     ~H"""
+    <ul
+      :if={@navigation_id_prefix == "sidebar-" and @visible_tabs != []}
+      id="sidebar-staff-page-header-navigation"
+      phx-hook="ActiveSectionNav"
+      aria-label={gettext("Statistics reports")}
+    >
+      <li :for={tab <- @visible_tabs}>
+        <.link
+          id={"#{@navigation_id_prefix}statistics-tab-#{tab}"}
+          patch={tab_path(assigns, tab)}
+          class={@tab == tab && "menu-active"}
+          aria-current={@tab == tab && "page"}
+        >{tab_label(tab)}</.link>
+      </li>
+      <li :if={@branch_franchise_path}>
+        <.link id="sidebar-statistics-tab-franchise" navigate={@branch_franchise_path}>{gettext(
+          "Franchise"
+        )}</.link>
+      </li>
+    </ul>
     <nav
-      :if={@visible_tabs != []}
+      :if={@navigation_id_prefix == "" and @visible_tabs != []}
       id={"#{@navigation_id_prefix}staff-page-header-navigation"}
       phx-hook="ActiveSectionNav"
       aria-label={gettext("Statistics reports")}
-      class={[
-        "overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6",
-        @navigation_id_prefix != "" && "sidebar-subnav"
-      ]}
+      class="overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6"
     >
       <div role="tablist" class="tabs">
         <.link
@@ -388,9 +410,34 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         >
           {tab_label(tab)}
         </.link>
+        <.link
+          :if={@branch_franchise_path}
+          id="statistics-tab-franchise"
+          navigate={@branch_franchise_path}
+          role="tab"
+          class="tab"
+        >{gettext("Franchise")}</.link>
       </div>
     </nav>
     """
+  end
+
+  defp branch_franchise_path(%{current_branch: nil}), do: nil
+
+  defp branch_franchise_path(assigns) do
+    if Identity.can?(assigns.current_staff, "statistics.network") and
+         Features.enabled?("analytics_franchise", :franchise) do
+      query = %{"tab" => "franchise", "period" => assigns.preset}
+
+      query =
+        if assigns.preset == "custom" do
+          Map.merge(query, %{"from" => assigns.custom_from, "to" => assigns.custom_to})
+        else
+          query
+        end
+
+      ~p"/staff/statistics?#{query}"
+    end
   end
 
   @impl true

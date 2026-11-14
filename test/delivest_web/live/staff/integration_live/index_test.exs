@@ -113,6 +113,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
   test "opens settings when frontpad is not set up", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations/frontpad")
 
+    assert has_element?(lv, "#sidebar-settings-nav-integrations[aria-current='page']")
+    refute has_element?(lv, "#sidebar-settings-nav-frontpad")
+    refute has_element?(lv, "#settings-nav-frontpad")
+
     assert has_element?(lv, "#frontpad-settings fieldset[disabled]")
 
     refute has_element?(lv, "#staff-page-header-actions #frontpad-refresh")

@@ -30,4 +30,41 @@ defmodule DelivestWeb.Staff.DiagnosticsLive.IndexTest do
 
     assert {:error, {:redirect, _}} = live(conn, ~p"/staff/diagnostics")
   end
+
+  test "metrics and log pages expose every data and system route", %{conn: conn} do
+    staff = insert(:staff, role: build(:role, permissions: ["logs.read"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    for {path, active} <- [
+          {~p"/staff/diagnostics", "metrics"},
+          {~p"/staff/logs", "events"},
+          {~p"/staff/logs/errors", "errors"}
+        ] do
+      {:ok, view, _} = live(conn, path)
+
+      assert has_element?(view, "#sidebar-group-settings[open] #sidebar-group-data-system[open]")
+      assert has_element?(view, "#sidebar-logs-tab-#{active}[aria-current='page']")
+
+      assert has_element?(
+               view,
+               "#staff-context-navigation #logs-tab-#{active}[aria-current='page']"
+             )
+
+      for {id, href} <- [
+            {"metrics", "/staff/diagnostics"},
+            {"events", "/staff/logs"},
+            {"raw", "/staff/logs/raw"},
+            {"errors", "/staff/logs/errors"}
+          ] do
+        assert has_element?(
+                 view,
+                 "#sidebar-group-data-system #sidebar-logs-tab-#{id}[href='#{href}']"
+               )
+
+        assert has_element?(view, "#staff-context-navigation #logs-tab-#{id}[href='#{href}']")
+      end
+
+      refute has_element?(view, "#sidebar-group-settings > #sidebar-staff-page-header-navigation")
+    end
+  end
 end

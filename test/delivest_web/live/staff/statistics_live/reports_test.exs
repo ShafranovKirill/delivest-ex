@@ -81,6 +81,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     {:ok, analyst, _} = live(analyst_conn, ~p"/staff/statistics")
     refute has_element?(analyst, "#statistics-report")
 
+    {:ok, analyst_branch, _} = live(analyst_conn, ~p"/staff/b/#{branch}/statistics")
+    refute has_element?(analyst_branch, "#statistics-tab-franchise")
+    refute has_element?(analyst_branch, "#sidebar-statistics-tab-franchise")
+
     manager_conn = login(conn, ["statistics.read", "statistics.network"], branch)
 
     {:ok, manager, _} =
@@ -88,6 +92,39 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
 
     assert has_element?(manager, "#statistics-report")
     assert has_element?(manager, "#statistics-report-state")
+
+    {:ok, manager_branch, _} =
+      live(
+        manager_conn,
+        ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-11-01&to=2026-11-07&branch_id=#{branch.id}&branch_ids[]=#{branch.id}"
+      )
+
+    for id <- ["#statistics-tab-franchise", "#sidebar-statistics-tab-franchise"] do
+      [href] =
+        manager_branch
+        |> render()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query(id)
+        |> LazyHTML.attribute("href")
+
+      assert String.starts_with?(href, "/staff/statistics?")
+      query = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+      assert query["tab"] == "franchise"
+      assert query["period"] == "custom"
+      assert query["from"] == "2026-11-01"
+      assert query["to"] == "2026-11-07"
+      refute Map.has_key?(query, "branch_id")
+      refute Map.has_key?(query, "branch_ids")
+    end
+  end
+
+  test "branch franchise link stays hidden while the global feature is off", %{conn: conn} do
+    branch = insert(:branch)
+    conn = login(conn, ["statistics.read", "statistics.network"], branch)
+
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics")
+    refute has_element?(view, "#statistics-tab-franchise")
+    refute has_element?(view, "#sidebar-statistics-tab-franchise")
   end
 
   test "funnel stages render readable labels rather than storage keys", %{conn: conn} do

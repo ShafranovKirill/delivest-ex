@@ -136,9 +136,9 @@ defmodule DelivestWeb.StaffSidebar do
             <ul :if={entry.kind == :item} class="menu w-full p-0">
               <li>
                 <%= if @page_navigation && @current_page in entry.pages do %>
-                  <.sidebar_accordion id={"sidebar-group-#{entry.id}"} item={entry} open>
+                  <.sidebar_details id={"sidebar-group-#{entry.id}"} item={entry} open>
                     {@page_navigation}
-                  </.sidebar_accordion>
+                  </.sidebar_details>
                 <% else %>
                   <.nav_link item={entry} current_page={@current_page} />
                 <% end %>
@@ -146,7 +146,7 @@ defmodule DelivestWeb.StaffSidebar do
             </ul>
             <ul :if={entry.kind == :group} class="menu w-full p-0">
               <li>
-                <.sidebar_accordion
+                <.sidebar_details
                   id={"sidebar-group-#{entry.id}"}
                   item={primary_item(entry)}
                   open={group_active?(entry, @current_page, @current_path)}
@@ -168,37 +168,38 @@ defmodule DelivestWeb.StaffSidebar do
                   <%= if @page_navigation && group_active?(entry, @current_page, @current_path) do %>
                     {@page_navigation}
                   <% end %>
-                </.sidebar_accordion>
+                </.sidebar_details>
               </li>
             </ul>
           <% end %>
         </div>
-        <div
+        <ul
           :for={section <- Enum.filter(@entries, &(&1.id == :settings))}
           id="nav-section-settings"
-          class="flex flex-col gap-1 pb-3"
+          class="menu w-full p-0 pb-3"
         >
-          <.sidebar_accordion
-            :for={entry <- section.entries}
-            id="sidebar-group-settings"
-            item={entry}
-            open={not is_nil(DelivestWeb.StaffNav.active_setting(@current_path))}
-          >
-            <DelivestWeb.Staff.SettingsComponents.settings_navigation
-              variant={:sidebar}
-              id_prefix="sidebar-"
-              staff={@current_staff}
-              branches={@staff_branches}
-              selected={@navigation_branch && @navigation_branch.id}
-              current_path={@current_path}
-              scope_branch={@scope_branch}
-              return_source={@current_uri || @current_path}
-            />
-            <%= if @page_navigation && DelivestWeb.StaffNav.active_setting(@current_path) do %>
-              {@page_navigation}
-            <% end %>
-          </.sidebar_accordion>
-        </div>
+          <li :for={entry <- section.entries}>
+            <.sidebar_details
+              id="sidebar-group-settings"
+              item={entry}
+              open={not is_nil(DelivestWeb.StaffNav.active_setting(@current_path))}
+            >
+              <DelivestWeb.Staff.SettingsComponents.settings_navigation
+                variant={:sidebar}
+                id_prefix="sidebar-"
+                staff={@current_staff}
+                branches={@staff_branches}
+                selected={@navigation_branch && @navigation_branch.id}
+                current_path={@current_path}
+                scope_branch={@scope_branch}
+                return_source={@current_uri || @current_path}
+              />
+              <%= if @page_navigation && DelivestWeb.StaffNav.active_setting(@current_path) && DelivestWeb.StaffNav.active_setting(@current_path) != :data_system do %>
+                {@page_navigation}
+              <% end %>
+            </.sidebar_details>
+          </li>
+        </ul>
       </nav>
 
       <div class="staff-sidebar-footer shrink-0 border-t border-base-300 p-1">
@@ -260,29 +261,19 @@ defmodule DelivestWeb.StaffSidebar do
   attr :open, :boolean, default: false
   slot :inner_block, required: true
 
-  defp sidebar_accordion(assigns) do
+  defp sidebar_details(assigns) do
     ~H"""
-    <div class="sidebar-accordion relative min-w-0">
-      <.nav_link item={@item} current_page={nil} />
-      <details
-        id={@id}
-        open={@open}
-        phx-mounted={JS.ignore_attributes("open")}
-        class="sidebar-accordion-details"
+    <details id={@id} open={@open} phx-mounted={JS.ignore_attributes("open")}>
+      <summary
+        id={"#{@id}-toggle"}
+        title={@item.label}
+        aria-label={@item.label}
       >
-        <summary
-          id={"#{@id}-toggle"}
-          class="sidebar-accordion-toggle flex cursor-pointer items-center justify-center rounded-field hover:bg-base-200"
-          aria-label={gettext("Toggle %{section} sections", section: @item.label)}
-          title={gettext("Toggle %{section} sections", section: @item.label)}
-        >
-          <.icon name="hero-chevron-down" class="size-4" />
-        </summary>
-        <div class="sidebar-accordion-content min-w-0 border-l border-base-300 ml-4 pl-1">
-          {render_slot(@inner_block)}
-        </div>
-      </details>
-    </div>
+        <.icon name={@item.icon} class="size-5 shrink-0" />
+        <span>{@item.label}</span>
+      </summary>
+      {render_slot(@inner_block)}
+    </details>
     """
   end
 

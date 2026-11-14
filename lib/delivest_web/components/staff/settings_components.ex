@@ -28,7 +28,57 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       )
 
     ~H"""
+    <ul
+      :if={@id_prefix == "sidebar-"}
+      id={"#{@id_prefix}settings-navigation"}
+      phx-hook="ActiveSectionNav"
+      aria-label={gettext("Settings")}
+    >
+      <li :for={entry <- @entries}>
+        <details
+          :if={entry.id == :data_system}
+          id="sidebar-group-data-system"
+          open={@active_id == :data_system}
+          phx-mounted={JS.ignore_attributes("open")}
+        >
+          <summary
+            id="sidebar-group-data-system-toggle"
+            class={@active_id == :data_system && "menu-active"}
+          >
+            {entry.label}
+          </summary>
+          <ul>
+            <li :for={child <- DelivestWeb.StaffNav.data_system_entries()}>
+              <.link
+                id={"#{@id_prefix}logs-tab-#{child.id}"}
+                navigate={child.path}
+                class={
+                  DelivestWeb.StaffNav.active_data_system(@current_path) == child.id && "menu-active"
+                }
+                aria-current={
+                  DelivestWeb.StaffNav.active_data_system(@current_path) == child.id && "page"
+                }
+              >{child.label}</.link>
+            </li>
+          </ul>
+        </details>
+        <.link
+          :if={entry.id != :data_system}
+          id={"#{@id_prefix}settings-nav-#{entry.id}"}
+          navigate={
+            DelivestWeb.StaffBranchPath.contextual_navigation_path(
+              entry.path,
+              @scope_branch,
+              @return_source
+            )
+          }
+          class={entry.id == @active_id && "menu-active"}
+          aria-current={entry.id == @active_id && "page"}
+        >{entry.label}</.link>
+      </li>
+    </ul>
     <nav
+      :if={@id_prefix == ""}
       id={"#{@id_prefix}settings-navigation"}
       phx-hook="ActiveSectionNav"
       class={[
