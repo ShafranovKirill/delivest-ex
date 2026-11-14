@@ -6,6 +6,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Integrations.Frontpad
+  alias Delivest.Media
   alias Delivest.Oms.Order
   alias Delivest.Repo
   alias DelivestWeb.ClientToken
@@ -78,6 +79,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
 
     first = conn |> keyed(key) |> post(~p"/client/orders", params) |> json_response(200)
     id = first["data"]["id"]
+    assert {:ok, _, _} = DateTime.from_iso8601(first["data"]["inserted_at"])
 
     staff = insert(:staff, role: insert(:role, permissions: ["orders.update"]))
     insert(:staff_branch, staff: staff, branch: branch)
@@ -359,13 +361,37 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   end
 
   test "a guest can reopen only their own order", %{conn: conn, branch: branch, product: product} do
+    media =
+      Repo.insert!(%Media.File{
+        bucket: "delivest",
+        key: "product/#{Ecto.UUID.generate()}.jpg",
+        original_name: "pizza.jpg",
+        mime_type: "image/jpeg",
+        size: 100,
+        context: :product,
+        owner_id: product.id,
+        is_private: false
+      })
+
+    Repo.update!(Ecto.Changeset.change(product, media_id: media.id))
+    image_url = Media.thumb_url_from_file(media)
     conn = start_session(conn, branch)
     {conn, cart_id} = cart_with_product(conn, branch, product)
     order = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
     id = order["data"]["id"]
+    assert [%{"image_url" => ^image_url}] = order["data"]["items"]
 
-    assert %{"data" => %{"id" => ^id, "total_amount" => 300, "items" => [_]}} =
+    assert %{
+             "data" => %{
+               "id" => ^id,
+               "total_amount" => 300,
+               "items" => [%{"image_url" => ^image_url}],
+               "inserted_at" => inserted_at
+             }
+           } =
              conn |> recycle_with_headers() |> get(~p"/client/orders/#{id}") |> json_response(200)
+
+    assert {:ok, _, _} = DateTime.from_iso8601(inserted_at)
 
     stranger =
       build_conn()
