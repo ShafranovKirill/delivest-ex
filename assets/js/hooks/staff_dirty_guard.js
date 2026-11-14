@@ -55,7 +55,14 @@ export const StaffDirtyGuard = {
       if (form) this.baselines.set(form, values(form));
       this.refreshSaveButtons();
     };
+    this.onFailed = (event) => {
+      const form = this.forms().find((candidate) => candidate.id === event.detail?.id);
+      if (form && this.saving === form) this.saving = null;
+      if (form && this.lastSubmittedForm === form) this.lastSubmittedForm = null;
+      this.refreshSaveButtons();
+    };
     this.onPageLoaded = () => { this.currentUrl = urlHere(); this.saving = null; this.capture(); this.refreshSaveButtons(); };
+    this.onPatch = () => { this.capture(); this.refreshSaveButtons(); };
     this.onClick = (event) => {
       if (this.bypass || !this.dirty() || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target.closest?.('a[href]');
@@ -94,10 +101,12 @@ export const StaffDirtyGuard = {
     document.addEventListener('change', this.onInput, true);
     document.addEventListener('submit', this.onSubmit, true);
     document.addEventListener('click', this.onClick, true);
+    document.addEventListener('phx:update', this.onPatch);
     window.addEventListener('popstate', this.onPopState, true);
     window.addEventListener('beforeunload', this.onUnload);
     window.addEventListener('phx:page-loading-stop', this.onPageLoaded);
     window.addEventListener('phx:staff:form-saved', this.onSaved);
+    window.addEventListener('phx:staff:form-failed', this.onFailed);
     this.el.querySelector('#staff-unsaved-stay').addEventListener('click', this.onStay);
     this.el.querySelector('#staff-unsaved-leave').addEventListener('click', this.onLeave);
   },
@@ -108,10 +117,12 @@ export const StaffDirtyGuard = {
     document.removeEventListener('change', this.onInput, true);
     document.removeEventListener('submit', this.onSubmit, true);
     document.removeEventListener('click', this.onClick, true);
+    document.removeEventListener('phx:update', this.onPatch);
     window.removeEventListener('popstate', this.onPopState, true);
     window.removeEventListener('beforeunload', this.onUnload);
     window.removeEventListener('phx:page-loading-stop', this.onPageLoaded);
     window.removeEventListener('phx:staff:form-saved', this.onSaved);
+    window.removeEventListener('phx:staff:form-failed', this.onFailed);
     this.el.querySelector('#staff-unsaved-stay').removeEventListener('click', this.onStay);
     this.el.querySelector('#staff-unsaved-leave').removeEventListener('click', this.onLeave);
   },

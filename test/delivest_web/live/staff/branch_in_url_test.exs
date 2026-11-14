@@ -271,11 +271,19 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
     {:ok, network, _} = live(conn, ~p"/staff/dashboard")
     assert has_element?(network, "#nav-section-main a[href='/staff/dashboard']")
 
-    chooser =
-      StaffBranchPath.selection_path("/staff/b/#{ctx.own.slug}/products", "/staff/dashboard")
+    assert Enum.any?([ctx.own, ctx.second], fn branch ->
+             chooser =
+               StaffBranchPath.selection_path(
+                 "/staff/b/#{branch.slug}/products",
+                 "/staff/dashboard"
+               )
 
-    assert has_element?(network, "#nav-section-main a[href='#{chooser}']")
-    refute has_element?(network, "#nav-section-main a[href='/staff/b/#{ctx.own.slug}/products']")
+             has_element?(network, "#nav-section-main a[href='#{chooser}']")
+           end)
+
+    for branch <- [ctx.own, ctx.second] do
+      refute has_element?(network, "#nav-section-main a[href='/staff/b/#{branch.slug}/products']")
+    end
 
     {:ok, scoped, _} = live(conn, ~p"/staff/b/#{ctx.own}/products")
     assert has_element?(scoped, "#nav-section-main a[href='/staff/b/#{ctx.own.slug}/products']")

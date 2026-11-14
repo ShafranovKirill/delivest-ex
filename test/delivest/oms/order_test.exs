@@ -1,5 +1,5 @@
 defmodule Delivest.Oms.OrderTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   import Delivest.Factory
   import Delivest.OrderFixtures

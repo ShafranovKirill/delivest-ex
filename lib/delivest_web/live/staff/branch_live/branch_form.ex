@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchForm do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Identity.Branch.KitchenSettings
+  alias Delivest.Identity.Branch.{FulfillmentSettings, KitchenSettings}
   alias Delivest.Identity
   alias Delivest.Repo
 
@@ -86,16 +86,23 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       vk_url: info && info.vk_url,
       whatsapp_url: info && info.whatsapp_url,
       instagram_url: info && info.instagram_url,
-      fulfillment: (info && info.fulfillment) || %Delivest.Identity.Branch.FulfillmentSettings{},
+      fulfillment: normalize_fulfillment(info && info.fulfillment),
       kitchen: (info && info.kitchen) || %KitchenSettings{}
     }
   end
 
   def new,
     do: %__MODULE__{
-      fulfillment: %Delivest.Identity.Branch.FulfillmentSettings{},
+      fulfillment: %FulfillmentSettings{},
       kitchen: %KitchenSettings{}
     }
+
+  defp normalize_fulfillment(nil), do: %FulfillmentSettings{}
+
+  defp normalize_fulfillment(%FulfillmentSettings{client_cancellation: nil} = settings),
+    do: %{settings | client_cancellation: true}
+
+  defp normalize_fulfillment(settings), do: settings
 
   def for_branch(%{id: id} = branch) when not is_nil(id), do: from_branch(branch)
   def for_branch(_branch), do: new()
