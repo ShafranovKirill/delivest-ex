@@ -11,6 +11,7 @@ defmodule DelivestWeb.Staff.ProductLive.OperationsTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => source.id})
     {:ok, view, _html} = live(conn, ~p"/staff/b/#{source}/products/operations")
     assert has_element?(view, "#staff-page-header", "Товарные операции")
+    assert has_element?(view, "#sidebar-group-menu[open] #sidebar-product-section-tab-products")
     refute has_element?(view, "#staff-header[data-header-layout='product-tabs']")
     assert has_element?(view, "#workbook-export")
     assert has_element?(view, "#workbook-upload-form")
@@ -20,6 +21,35 @@ defmodule DelivestWeb.Staff.ProductLive.OperationsTest do
     view |> form("#operations-apply-form") |> render_submit()
     assert has_element?(view, "#operations-result")
     assert length(Delivest.Relations.list_target_ids("Branch", target.id, "Product")) == 1
+  end
+
+  test "back link returns to the same filtered products page", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, view, _} =
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/products/operations?search=Soup&page=2&page_size=10&stopped=true&ids[]=fake"
+      )
+
+    [target] =
+      view
+      |> render()
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query("#product-operations-back")
+      |> LazyHTML.attribute("href")
+
+    assert URI.parse(target).path == ~p"/staff/b/#{branch}/products"
+
+    assert URI.decode_query(URI.parse(target).query) == %{
+             "search" => "Soup",
+             "page" => "2",
+             "page_size" => "10",
+             "stopped" => "true"
+           }
   end
 
   test "staff uploads workbook and chooses update on a matched row", %{conn: conn} do

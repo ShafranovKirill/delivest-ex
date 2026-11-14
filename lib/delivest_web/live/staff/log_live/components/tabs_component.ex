@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.LogLive.Components.TabsComponent do
   use DelivestWeb, :html
 
   attr :active, :atom, required: true
+  attr :id_prefix, :string, default: ""
 
   def render_tabs(assigns) do
     assigns =
@@ -15,6 +16,7 @@ defmodule DelivestWeb.Staff.LogLive.Components.TabsComponent do
     <div role="tablist" class="tabs">
       <.link
         :for={{tab, path, icon, label} <- @tabs}
+        id={"#{@id_prefix}logs-tab-#{tab}"}
         patch={path}
         role="tab"
         class={["tab gap-2 whitespace-nowrap", @active == tab && "tab-active font-bold"]}

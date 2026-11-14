@@ -146,11 +146,15 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
            )
 
     assert has_element?(lv, ~s(#nav-section-main a[href="/staff/clients"]))
-    refute has_element?(lv, ~s(#main-sidebar a[href="/staff/b/#{ctx.branch.slug}/products/tags"]))
 
     assert has_element?(
              lv,
-             ~s(#main-sidebar a.menu-active[href="/staff/b/#{ctx.branch.slug}/products"])
+             ~s(#sidebar-group-menu[open] #sidebar-product-section-tab-tags[href="/staff/b/#{ctx.branch.slug}/products/tags"][aria-current="page"])
+           )
+
+    assert has_element?(
+             lv,
+             ~s(#nav-section-main a[href="/staff/b/#{ctx.branch.slug}/products"])
            )
   end
 end

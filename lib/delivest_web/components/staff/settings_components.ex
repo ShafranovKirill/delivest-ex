@@ -10,6 +10,7 @@ defmodule DelivestWeb.Staff.SettingsComponents do
   attr :scope_branch, :any, default: nil
   attr :return_source, :string, default: nil
   attr :variant, :atom, default: :horizontal, values: [:horizontal, :sidebar]
+  attr :id_prefix, :string, default: ""
 
   def settings_navigation(assigns) do
     branch = Enum.find(assigns.branches, &(&1.id == assigns.selected))
@@ -28,19 +29,19 @@ defmodule DelivestWeb.Staff.SettingsComponents do
 
     ~H"""
     <nav
-      id="settings-navigation"
+      id={"#{@id_prefix}settings-navigation"}
       phx-hook="ActiveSectionNav"
       class={[
         "flex gap-2 rounded-box border border-base-300 bg-base-100 p-2",
         @variant == :sidebar &&
-          "min-w-0 max-w-full self-start overflow-x-auto lg:w-full lg:flex-col lg:items-stretch lg:overflow-visible",
+          "min-w-0 max-w-full self-start overflow-x-auto w-full",
         @variant == :horizontal && "flex-wrap items-center"
       ]}
       aria-label={gettext("Settings")}
     >
       <.link
         :for={entry <- @entries}
-        id={"settings-nav-#{entry.id}"}
+        id={"#{@id_prefix}settings-nav-#{entry.id}"}
         navigate={
           DelivestWeb.StaffBranchPath.contextual_navigation_path(
             entry.path,
@@ -50,7 +51,7 @@ defmodule DelivestWeb.Staff.SettingsComponents do
         }
         class={[
           "btn btn-sm btn-ghost shrink-0",
-          @variant == :sidebar && "lg:justify-start",
+          @variant == :sidebar && "2xl:justify-start",
           entry.id == @active_id && "btn-active"
         ]}
         aria-current={entry.id == @active_id && "page"}

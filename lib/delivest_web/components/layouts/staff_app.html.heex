@@ -61,31 +61,43 @@
     current_uri={assigns[:current_uri]}
     current_page={assigns[:current_page]}
     new_orders_count={assigns[:new_orders_count] || 0}
+    page_navigation={
+      DelivestWeb.StaffHeader.page_navigation(Map.put(assigns, :navigation_id_prefix, "sidebar-"))
+    }
   />
 
   <div class="staff-shell-content flex min-h-screen flex-col transition-[margin] duration-300">
+    <div id="staff-context-navigation">
+      <DelivestWeb.Staff.SettingsComponents.settings_navigation
+        :if={DelivestWeb.StaffNav.active_setting(assigns[:current_path])}
+        variant={:sidebar}
+        staff={@current_staff}
+        branches={branches}
+        selected={navigation_branch && navigation_branch.id}
+        current_path={assigns[:current_path]}
+        scope_branch={actual_scope_branch}
+        return_source={assigns[:current_uri] || assigns[:current_path]}
+      />
+      <DelivestWeb.StaffNav.local_navigation
+        staff={@current_staff}
+        branch={assigns[:current_branch]}
+        navigation_branch={navigation_branch}
+        current_page={assigns[:current_page]}
+        current_path={assigns[:current_path]}
+        scope_branch={actual_scope_branch}
+        return_source={assigns[:current_uri] || assigns[:current_path]}
+      />
+      {DelivestWeb.StaffHeader.page_navigation(assigns)}
+    </div>
     <main class="flex-1 min-w-0 p-4 sm:p-6">
-      <div class="max-w-7xl mx-auto">
+      <div class="w-full">
         <.flash_group flash={@flash} />
         <div
           id={
             if DelivestWeb.StaffNav.active_setting(assigns[:current_path]), do: "settings-center"
           }
-          class={[
-            DelivestWeb.StaffNav.active_setting(assigns[:current_path]) &&
-              "grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]"
-          ]}
+          class="min-w-0"
         >
-          <DelivestWeb.Staff.SettingsComponents.settings_navigation
-            :if={DelivestWeb.StaffNav.active_setting(assigns[:current_path])}
-            variant={:sidebar}
-            staff={@current_staff}
-            branches={branches}
-            selected={navigation_branch && navigation_branch.id}
-            current_path={assigns[:current_path]}
-            scope_branch={actual_scope_branch}
-            return_source={assigns[:current_uri] || assigns[:current_path]}
-          />
           <div class="min-w-0">
             <%= if page_header do %>
               {page_header}
@@ -96,15 +108,6 @@
                 </h1>
               <% end %>
             <% end %>
-            <DelivestWeb.StaffNav.local_navigation
-              staff={@current_staff}
-              branch={assigns[:current_branch]}
-              navigation_branch={navigation_branch}
-              current_page={assigns[:current_page]}
-              current_path={assigns[:current_path]}
-              scope_branch={actual_scope_branch}
-              return_source={assigns[:current_uri] || assigns[:current_path]}
-            />
             <DelivestWeb.GatewayNote.gateway_note
               :if={assigns[:gateway_block]}
               name={@gateway_block.name}

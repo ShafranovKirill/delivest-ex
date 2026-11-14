@@ -353,7 +353,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   def staff_page_header(assigns) do
     ~H"""
     <.page_header
-      navigation_label={gettext("Statistics reports")}
       title={gettext("Statistics")}
       subtitle={
         if is_nil(@period_error),
@@ -362,20 +361,35 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           else: if(@current_branch, do: @current_branch.name, else: gettext("All branches"))
       }
     >
-      <:navigation :if={@visible_tabs != []}>
-        <div role="tablist" class="tabs">
-          <.link
-            :for={tab <- @visible_tabs}
-            patch={tab_path(assigns, tab)}
-            role="tab"
-            class={["tab", @tab == tab && "tab-active"]}
-            aria-current={@tab == tab && "page"}
-          >
-            {tab_label(tab)}
-          </.link>
-        </div>
-      </:navigation>
     </.page_header>
+    """
+  end
+
+  def staff_page_navigation(assigns) do
+    ~H"""
+    <nav
+      :if={@visible_tabs != []}
+      id={"#{@navigation_id_prefix}staff-page-header-navigation"}
+      phx-hook="ActiveSectionNav"
+      aria-label={gettext("Statistics reports")}
+      class={[
+        "overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6",
+        @navigation_id_prefix != "" && "sidebar-subnav"
+      ]}
+    >
+      <div role="tablist" class="tabs">
+        <.link
+          :for={tab <- @visible_tabs}
+          id={"#{@navigation_id_prefix}statistics-tab-#{tab}"}
+          patch={tab_path(assigns, tab)}
+          role="tab"
+          class={["tab", @tab == tab && "tab-active"]}
+          aria-current={@tab == tab && "page"}
+        >
+          {tab_label(tab)}
+        </.link>
+      </div>
+    </nav>
     """
   end
 

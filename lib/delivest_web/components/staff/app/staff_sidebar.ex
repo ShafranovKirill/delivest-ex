@@ -12,6 +12,7 @@ defmodule DelivestWeb.StaffSidebar do
   attr :current_path, :string, default: nil
   attr :current_uri, :string, default: nil
   attr :new_orders_count, :integer, default: 0
+  attr :page_navigation, :any, default: nil
 
   def staff_sidebar(assigns) do
     navigation_branch = assigns.navigation_branch || assigns.current_branch
@@ -133,27 +134,74 @@ defmodule DelivestWeb.StaffSidebar do
           </div>
           <%= for entry <- section.entries do %>
             <ul :if={entry.kind == :item} class="menu w-full p-0">
-              <li><.nav_link item={entry} current_page={@current_page} /></li>
+              <li>
+                <%= if @page_navigation && @current_page in entry.pages do %>
+                  <.sidebar_accordion id={"sidebar-group-#{entry.id}"} item={entry} open>
+                    {@page_navigation}
+                  </.sidebar_accordion>
+                <% else %>
+                  <.nav_link item={entry} current_page={@current_page} />
+                <% end %>
+              </li>
             </ul>
             <ul :if={entry.kind == :group} class="menu w-full p-0">
-              <li><.nav_link item={primary_item(entry)} current_page={@current_page} /></li>
+              <li>
+                <.sidebar_accordion
+                  id={"sidebar-group-#{entry.id}"}
+                  item={primary_item(entry)}
+                  open={group_active?(entry, @current_page, @current_path)}
+                >
+                  <DelivestWeb.StaffNav.local_navigation
+                    id_prefix="sidebar-"
+                    group_id={
+                      if(group_active?(entry, @current_page, @current_path), do: nil, else: entry.id)
+                    }
+                    items_override={group_items(entry, @current_staff, @navigation_branch)}
+                    staff={@current_staff}
+                    branch={@current_branch}
+                    navigation_branch={@navigation_branch}
+                    current_page={@current_page}
+                    current_path={@current_path}
+                    scope_branch={@scope_branch}
+                    return_source={@current_uri || @current_path}
+                  />
+                  <%= if @page_navigation && group_active?(entry, @current_page, @current_path) do %>
+                    {@page_navigation}
+                  <% end %>
+                </.sidebar_accordion>
+              </li>
             </ul>
           <% end %>
+        </div>
+        <div
+          :for={section <- Enum.filter(@entries, &(&1.id == :settings))}
+          id="nav-section-settings"
+          class="flex flex-col gap-1 pb-3"
+        >
+          <.sidebar_accordion
+            :for={entry <- section.entries}
+            id="sidebar-group-settings"
+            item={entry}
+            open={not is_nil(DelivestWeb.StaffNav.active_setting(@current_path))}
+          >
+            <DelivestWeb.Staff.SettingsComponents.settings_navigation
+              variant={:sidebar}
+              id_prefix="sidebar-"
+              staff={@current_staff}
+              branches={@staff_branches}
+              selected={@navigation_branch && @navigation_branch.id}
+              current_path={@current_path}
+              scope_branch={@scope_branch}
+              return_source={@current_uri || @current_path}
+            />
+            <%= if @page_navigation && DelivestWeb.StaffNav.active_setting(@current_path) do %>
+              {@page_navigation}
+            <% end %>
+          </.sidebar_accordion>
         </div>
       </nav>
 
       <div class="staff-sidebar-footer shrink-0 border-t border-base-300 p-1">
-        <nav
-          :if={Enum.any?(@entries, &(&1.id == :settings))}
-          id="nav-section-settings"
-          aria-label={gettext("Settings")}
-        >
-          <.nav_link
-            :for={entry <- Enum.flat_map(Enum.filter(@entries, &(&1.id == :settings)), & &1.entries)}
-            item={entry}
-            current_page={@current_page}
-          />
-        </nav>
         <div class="flex min-w-0 items-center gap-1">
           <DelivestWeb.StaffProfileMenu.staff_profile_menu current_staff={@current_staff} />
         </div>
@@ -189,6 +237,53 @@ defmodule DelivestWeb.StaffSidebar do
   defp primary_item(group) do
     first = hd(group.items)
     %{first | label: group.label, icon: group.icon, pages: Enum.flat_map(group.items, & &1.pages)}
+  end
+
+  defp group_items(%{id: :menu}, staff, branch),
+    do: DelivestWeb.StaffNav.menu_items(staff, branch)
+
+  defp group_items(group, _staff, _branch), do: group.items
+
+  defp group_active?(%{id: :menu}, page, path),
+    do:
+      page == :categories or
+        not is_nil(DelivestWeb.Staff.ProductLive.ProductTags.section(path)) or
+        (is_binary(path) and String.contains?(path, "/products/operations"))
+
+  defp group_active?(%{id: :marketing}, :marketing, _path), do: true
+
+  defp group_active?(group, page, _path),
+    do: Enum.any?(group.items, &(page in &1.pages))
+
+  attr :id, :string, required: true
+  attr :item, :map, required: true
+  attr :open, :boolean, default: false
+  slot :inner_block, required: true
+
+  defp sidebar_accordion(assigns) do
+    ~H"""
+    <div class="sidebar-accordion relative min-w-0">
+      <.nav_link item={@item} current_page={nil} />
+      <details
+        id={@id}
+        open={@open}
+        phx-mounted={JS.ignore_attributes("open")}
+        class="sidebar-accordion-details"
+      >
+        <summary
+          id={"#{@id}-toggle"}
+          class="sidebar-accordion-toggle flex cursor-pointer items-center justify-center rounded-field hover:bg-base-200"
+          aria-label={gettext("Toggle %{section} sections", section: @item.label)}
+          title={gettext("Toggle %{section} sections", section: @item.label)}
+        >
+          <.icon name="hero-chevron-down" class="size-4" />
+        </summary>
+        <div class="sidebar-accordion-content min-w-0 border-l border-base-300 ml-4 pl-1">
+          {render_slot(@inner_block)}
+        </div>
+      </details>
+    </div>
+    """
   end
 
   attr :item, :map, required: true

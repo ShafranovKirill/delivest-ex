@@ -121,6 +121,36 @@
 :root { --staff-sidebar-width: 15rem; --staff-header-height: 3.5rem; }
 .staff-sidebar { width: var(--staff-sidebar-width); }
 .staff-shell-content { margin-left: 0; padding-top: var(--staff-header-height); }
+#staff-context-navigation:has(nav) {
+  position: sticky;
+  top: var(--staff-header-height);
+  z-index: 20;
+  width: 100%;
+  background: var(--color-base-100);
+}
+.staff-sidebar .menu li > .sidebar-accordion { display: block; width: 100%; min-width: 0; }
+.sidebar-accordion > .staff-sidebar-nav-link { width: 100%; padding-right: 2.5rem; }
+.sidebar-accordion-details { display: block; width: 100%; }
+.sidebar-accordion-content { display: block; }
+.sidebar-accordion:has(> details[open]) > .staff-sidebar-nav-link { background: var(--color-base-200); color: var(--color-base-content); }
+.sidebar-accordion-toggle { position: absolute; top: .15rem; right: .15rem; width: 2rem; height: 2rem; list-style: none; }
+.sidebar-accordion-toggle::-webkit-details-marker { display: none; }
+.sidebar-accordion-details[open] .sidebar-accordion-toggle svg { transform: rotate(180deg); }
+.sidebar-accordion-content { padding-top: .125rem; padding-bottom: .375rem; }
+.sidebar-subnav { flex-direction: column; align-items: stretch; gap: .125rem; padding: 0; overflow: visible; white-space: normal; border: 0; }
+.sidebar-subnav :is(a, .tab, .btn) { display: flex; width: 100%; min-width: 0; justify-content: flex-start; white-space: normal; text-align: left; }
+.sidebar-subnav a[aria-current="page"] { background: var(--color-base-200); color: var(--color-base-content); font-weight: 700; }
+#sidebar-settings-navigation { flex-direction: column; align-items: stretch; overflow: visible; border: 0; padding: 0; }
+#sidebar-settings-navigation a { width: 100%; justify-content: flex-start; white-space: normal; text-align: left; }
+#sidebar-staff-page-header-navigation :is(#sidebar-order-status-tabs, [role="tablist"]) { display: flex; flex-direction: column; align-items: stretch; width: 100%; overflow: visible; }
+.table-leading-actions th:first-child,
+.table-leading-actions tbody tr td:first-child { position: sticky; left: 0; z-index: 2; width: 3.5rem; min-width: 3.5rem; background: var(--color-base-100); }
+.table-leading-actions th[data-column="actions"],
+.table-leading-actions tbody tr td[data-column="actions"] { position: sticky; left: 3.5rem; z-index: 2; width: 1%; white-space: nowrap; background: var(--color-base-100); }
+.table-leading-actions:not(:has(tbody tr td:first-child input[type="checkbox"])) th:first-child,
+.table-leading-actions:not(:has(tbody tr td:first-child input[type="checkbox"])) tbody tr td:first-child { display: none; }
+.table-leading-actions:not(:has(tbody tr td:first-child input[type="checkbox"])) th[data-column="actions"],
+.table-leading-actions:not(:has(tbody tr td:first-child input[type="checkbox"])) tbody tr td[data-column="actions"] { left: 0; }
 .staff-header { left: 0; height: var(--staff-header-height); }
 .staff-header-sidebar-controls { display: none; }
 .staff-sidebar-overlay { display: none; }
@@ -140,6 +170,8 @@
 @media (min-width: 1024px) {
   .staff-shell-content { margin-left: var(--staff-sidebar-width); }
   .staff-header { left: var(--staff-sidebar-width); }
+  #staff-context-navigation { display: none; }
+  :root[data-sidebar-collapsed] #staff-context-navigation { display: block; }
   :root[data-sidebar-collapsed] .staff-sidebar { display: none; }
   :root[data-sidebar-collapsed] .staff-shell-content { margin-left: 0; }
   :root[data-sidebar-collapsed] .staff-header { left: 0; }
@@ -173,6 +205,26 @@
 #zvonok-settings .fieldset:has(#zvonok_dev_skip_calls) .label,
 #zvonok-settings .fieldset:has(#zvonok_dev_skip_calls) .label-text { min-width: 0; max-width: 100%; white-space: normal; }
 @media (max-width: 639px) {
+  .table-leading-actions tbody tr td:first-child {
+    display: inline-flex;
+    position: static;
+    width: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    vertical-align: top;
+  }
+  .table-leading-actions tbody tr td[data-column="actions"] {
+    display: inline-flex;
+    position: static;
+    left: auto;
+    width: auto;
+    min-height: 2.75rem;
+    padding-left: 0;
+    vertical-align: top;
+  }
+  .table-leading-actions:not(:has(tbody tr td:first-child input[type="checkbox"])) tbody tr td:first-child { display: none; }
   .staff-header-scroll[data-scroll-has-left] > [data-scroll-viewport] { mask-image: linear-gradient(to right, transparent, black 1rem, black 100%); }
   .staff-header-scroll[data-scroll-has-right] > [data-scroll-viewport] { mask-image: linear-gradient(to right, black 0%, black calc(100% - 1rem), transparent); }
   .staff-header-scroll[data-scroll-has-left][data-scroll-has-right] > [data-scroll-viewport] { mask-image: linear-gradient(to right, transparent, black 1rem, black calc(100% - 1rem), transparent); }

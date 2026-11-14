@@ -464,16 +464,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     ~H"""
     <.page_header
       title={gettext("Orders")}
-      navigation_label={gettext("Order statuses")}
       subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
     >
-      <:navigation>
-        <StatusTabs.status_tabs
-          counts={@counts}
-          selected={@selected.status}
-          path_fn={&tab_path(@current_branch, @query, &1)}
-        />
-      </:navigation>
       <:actions>
         <IntakeControls.menu
           can_manage={Identity.can?(@current_staff, "orders.update")}
@@ -485,6 +477,27 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </.link>
       </:actions>
     </.page_header>
+    """
+  end
+
+  def staff_page_navigation(assigns) do
+    ~H"""
+    <nav
+      id={"#{@navigation_id_prefix}staff-page-header-navigation"}
+      phx-hook="ActiveSectionNav"
+      aria-label={gettext("Order statuses")}
+      class={[
+        "overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6",
+        @navigation_id_prefix != "" && "sidebar-subnav"
+      ]}
+    >
+      <StatusTabs.status_tabs
+        counts={@counts}
+        selected={@selected.status}
+        path_fn={&tab_path(@current_branch, @query, &1)}
+        id_prefix={@navigation_id_prefix}
+      />
+    </nav>
     """
   end
 

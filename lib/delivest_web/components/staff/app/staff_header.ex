@@ -67,6 +67,11 @@ defmodule DelivestWeb.StaffHeader do
     if function_exported?(view, :staff_page_header, 1), do: view.staff_page_header(assigns)
   end
 
+  def page_navigation(%{socket: %{view: view}} = assigns) do
+    if function_exported?(view, :staff_page_navigation, 1),
+      do: view.staff_page_navigation(Map.put_new(assigns, :navigation_id_prefix, ""))
+  end
+
   def settings_branch(assigns) do
     branches = assigns[:staff_branches] || []
 

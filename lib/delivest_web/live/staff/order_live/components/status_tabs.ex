@@ -8,14 +8,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
   attr :counts, :map, required: true
   attr :selected, :string, required: true
   attr :path_fn, :any, required: true
+  attr :id_prefix, :string, default: ""
 
   def status_tabs(assigns) do
     assigns =
       assign(assigns, statuses: @statuses, total: assigns.counts |> Map.values() |> Enum.sum())
 
     ~H"""
-    <nav id="order-status-tabs" class="flex gap-1.5 overflow-x-auto">
+    <nav id={"#{@id_prefix}order-status-tabs"} class="flex gap-1.5 overflow-x-auto">
       <.tab
+        id={"#{@id_prefix}order-status-tab-all"}
         label={gettext("All")}
         count={@total}
         active={@selected == ""}
@@ -23,7 +25,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
       />
       <.tab
         :for={status <- @statuses}
-        id={"order-status-tab-#{status}"}
+        id={"#{@id_prefix}order-status-tab-#{status}"}
         label={OrderHelpers.status_label(status)}
         count={Map.get(@counts, status, 0)}
         active={@selected == Atom.to_string(status)}

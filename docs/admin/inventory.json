@@ -1519,14 +1519,13 @@
       ],
       "event": "accept_price",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/integration_live/frontpad.ex:accept_price:465a60dc7730a3fb:1"
+        "event:lib/delivest_web/live/staff/integration_live/frontpad.ex:accept_price:a10fa7aac9f632b7:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/integration_live/frontpad.ex:accept_price:signature:2fcd3c881db504ae:1",
+      "id": "control:lib/delivest_web/live/staff/integration_live/frontpad.ex:accept_price:signature:b90ec3cd44311c7f:1",
       "label": "Loading...",
       "operation": [
         "AcceptPrice.run",
-        "Enum.find",
-        "Integer.parse"
+        "Enum.find"
       ],
       "result": [],
       "rights": {
@@ -1537,7 +1536,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1104",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1116",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1567,7 +1566,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:503",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:515",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1598,7 +1597,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:702",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:714",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1624,7 +1623,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1133",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1144",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1655,7 +1654,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:971",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:983",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1683,7 +1682,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:634",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:646",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1711,7 +1710,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:683",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:695",
       "target_section": "Settings / Integrations"
     },
     {
@@ -1744,7 +1743,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:585",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:597",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2625,7 +2624,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:133",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:147",
       "target_section": "Settings / Data and system"
     },
     {
@@ -2654,7 +2653,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:211",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:225",
       "target_section": "Settings / Data and system"
     },
     {
@@ -2683,7 +2682,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:185",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:199",
       "target_section": "Settings / Data and system"
     },
     {
@@ -6495,7 +6494,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:253",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:263",
       "target_section": "Menu"
     },
     {
@@ -6521,7 +6520,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:220",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:230",
       "target_section": "Menu"
     },
     {
@@ -6548,7 +6547,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:198",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:208",
       "target_section": "Menu"
     },
     {
@@ -6813,7 +6812,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:772",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:766",
       "target_section": "Menu"
     },
     {
@@ -6827,8 +6826,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/product_live/products.ex:delete_click:87d4e168dcedd79c:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/product_live/products.ex:delete_click:signature:d3b6c36a47b502d0:1",
-      "label": "Delete",
+      "id": "control:lib/delivest_web/live/staff/product_live/products.ex:delete_click:signature:96191de66bf534b9:1",
+      "label": "unlabelled/icon control at source anchor",
       "operation": [
         "Identity.can?",
         "Net.get_branch_product"
@@ -6849,7 +6848,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:746",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:654",
       "target_section": "Menu"
     },
     {
@@ -6969,7 +6968,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/suggested.ex:140",
+      "source": "lib/delivest_web/live/staff/product_live/suggested.ex:141",
       "target_section": "Menu"
     },
     {
@@ -10317,12 +10316,11 @@
       "disposition": "retain operation; move control with Settings / Integrations",
       "error_state": "no explicit :error in clause",
       "event": "accept_price",
-      "id": "event:lib/delivest_web/live/staff/integration_live/frontpad.ex:accept_price:465a60dc7730a3fb:1",
+      "id": "event:lib/delivest_web/live/staff/integration_live/frontpad.ex:accept_price:a10fa7aac9f632b7:1",
       "label": "{if @accepting_price == issue.product_id,\n                  do: gettext(\"Loading...\"),\n                  else: gettext(\"",
       "operation": [
         "AcceptPrice.run",
-        "Enum.find",
-        "Integer.parse"
+        "Enum.find"
       ],
       "result": [],
       "rights": {
@@ -10384,7 +10382,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:139",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:138",
       "target_section": "Settings / Integrations"
     },
     {
@@ -10405,7 +10403,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:127",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:126",
       "target_section": "Settings / Integrations"
     },
     {
@@ -10431,7 +10429,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:94",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:93",
       "target_section": "Settings / Integrations"
     },
     {
@@ -10454,7 +10452,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:123",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:122",
       "target_section": "Settings / Integrations"
     },
     {
@@ -10482,7 +10480,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:164",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:163",
       "target_section": "Settings / Integrations"
     },
     {
@@ -10506,7 +10504,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:130",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:129",
       "target_section": "Settings / Integrations"
     },
     {
@@ -14966,7 +14964,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:88",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:90",
       "target_section": "Menu"
     },
     {
@@ -14985,7 +14983,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:83",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:85",
       "target_section": "Menu"
     },
     {
@@ -15006,7 +15004,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:70",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:72",
       "target_section": "Menu"
     },
     {
@@ -15028,7 +15026,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:50",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:52",
       "target_section": "Menu"
     },
     {
@@ -15047,7 +15045,7 @@
           "products.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:48",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:50",
       "target_section": "Menu"
     },
     {
@@ -15560,7 +15558,7 @@
       "error_state": "explicit :error branch/reference",
       "event": "delete_click",
       "id": "event:lib/delivest_web/live/staff/product_live/products.ex:delete_click:87d4e168dcedd79c:1",
-      "label": "{gettext(\"Delete\")}",
+      "label": "event: delete_click",
       "operation": [
         "Identity.can?",
         "Net.get_branch_product"
@@ -19607,7 +19605,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"branch_form[working_hours][#{day_key}][close]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/working_hours_component.ex:50",
+      "source": "lib/delivest_web/live/staff/branch_live/working_hours_component.ex:59",
       "target_section": "Settings / Branch operations / Schedule",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -19618,7 +19616,7 @@
       "current_forms": [
         "lib/delivest_web/live/staff/branch_live/working_hours_component.ex"
       ],
-      "default": "true",
+      "default": "false",
       "disposition": "merge into lib/delivest_web/live/staff/branch_live/branch_form_component.ex in Settings / Branch operations / Schedule",
       "expression": "\"branch_form[working_hours][#{day_key}][enabled]\"",
       "field": "name-expression:\"branch_form[working_hours][#{day_key}][enabled]\"",
@@ -19628,7 +19626,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"branch_form[working_hours][#{day_key}][enabled]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/working_hours_component.ex:59",
+      "source": "lib/delivest_web/live/staff/branch_live/working_hours_component.ex:68",
       "target_section": "Settings / Branch operations / Schedule",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -19649,7 +19647,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"branch_form[working_hours][#{day_key}][open]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/working_hours_component.ex:40",
+      "source": "lib/delivest_web/live/staff/branch_live/working_hours_component.ex:46",
       "target_section": "Settings / Branch operations / Schedule",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21305,7 +21303,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "frontpad",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:722",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:734",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21326,7 +21324,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:codes[mark]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:832",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:844",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21347,7 +21345,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:codes[method]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:811",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:823",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21368,7 +21366,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:codes[status]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:785",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:797",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21389,7 +21387,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "affiliate",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:affiliate",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:731",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:743",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -21410,7 +21408,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "api_key",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:api_key",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:725",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:737",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -21431,7 +21429,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "delivery_article",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:delivery_article",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:749",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:761",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": [
@@ -21454,7 +21452,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "payments",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:807",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:819",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21475,7 +21473,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "price_override",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:price_override",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:736",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:748",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -21496,7 +21494,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "statuses",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:781",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:793",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21517,7 +21515,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "sync_stops",
       "schema_field": "schema:lib/delivest/integrations/frontpad/settings.ex:sync_stops",
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:763",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:775",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": []
@@ -21538,7 +21536,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "tags",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:828",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:840",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21559,7 +21557,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "q",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1134",
+      "source": "lib/delivest_web/live/staff/integration_live/frontpad.ex:1145",
       "target_section": "Settings / Integrations / Frontpad",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22863,7 +22861,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "action",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:146",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:160",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22884,7 +22882,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "actor",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:159",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:173",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22905,7 +22903,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "branch",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:170",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:184",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22926,7 +22924,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "level",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:205",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:219",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22947,7 +22945,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "q",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:195",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:209",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22968,7 +22966,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "sort",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:181",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:195",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22989,7 +22987,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "type",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:135",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:149",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -25034,7 +25032,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"choices[#{row.line}]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:269",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:279",
       "target_section": "Menu / Product operations",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -25055,7 +25053,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "target_branch_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/operations.ex:221",
+      "source": "lib/delivest_web/live/staff/product_live/operations.ex:231",
       "target_section": "Menu / Product operations",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -25655,7 +25653,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:578",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:580",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -25676,7 +25674,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "category_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:589",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:591",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -25697,7 +25695,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "ids[]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:629",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:631",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -25718,7 +25716,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "is_active",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:598",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:600",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27222,7 +27220,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "branch_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:422",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:436",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27243,7 +27241,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "channel",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:414",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:428",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27264,7 +27262,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:437",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:451",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27285,7 +27283,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:430",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:444",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27306,7 +27304,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:399",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:413",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27327,7 +27325,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "period",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:393",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:407",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27348,7 +27346,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:405",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:419",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

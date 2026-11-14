@@ -46,6 +46,73 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     refute has_element?(lv, "#nav-section-settings")
     refute has_element?(lv, "#staff-profile-menu #orders-sound-toggle")
     assert has_element?(lv, "#staff-profile-menu #header-push-toggle")
+
+    assert has_element?(
+             lv,
+             "#sidebar-group-menu[open] #sidebar-product-section-tab-products[aria-current='page']"
+           )
+
+    refute has_element?(lv, "#sidebar-group-menu #sidebar-product-section-tab-categories")
+  end
+
+  test "active product and settings sections expand in the main sidebar with unique links", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, products, _} = live(conn, ~p"/staff/b/#{branch}/products/tags")
+
+    assert has_element?(
+             products,
+             "#sidebar-group-menu[open] #sidebar-product-section-tab-tags[aria-current='page']"
+           )
+
+    assert has_element?(products, "#sidebar-group-menu-toggle")
+
+    assert has_element?(
+             products,
+             "#staff-context-navigation #product-section-tab-tags[aria-current='page']"
+           )
+
+    assert has_element?(products, "#nav-section-main a[href='/staff/b/#{branch.slug}/products']")
+
+    {:ok, settings, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/hours")
+
+    assert has_element?(
+             settings,
+             "#sidebar-group-settings[open] #sidebar-settings-nav-hours[aria-current='page']"
+           )
+
+    assert has_element?(
+             settings,
+             "#staff-context-navigation #settings-nav-hours[aria-current='page']"
+           )
+
+    refute has_element?(settings, "#sidebar-staff-section-navigation")
+
+    {:ok, orders, _} = live(conn, ~p"/staff/b/#{branch}/orders")
+
+    assert has_element?(
+             orders,
+             "#sidebar-group-orders[open] #sidebar-order-status-tab-all[aria-current='page']"
+           )
+
+    assert has_element?(
+             orders,
+             "#staff-context-navigation #order-status-tab-all[aria-current='page']"
+           )
+
+    {:ok, logs, _} = live(conn, ~p"/staff/logs")
+
+    assert has_element?(
+             logs,
+             "#sidebar-group-settings[open] #sidebar-logs-tab-events[aria-current='page']"
+           )
+
+    assert has_element?(logs, "#staff-context-navigation #logs-tab-events[aria-current='page']")
   end
 
   test "page title and actions remain in page content", %{conn: conn} do
@@ -103,7 +170,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     navigation =
       Enum.map(pages, fn {path, active_id, content} ->
         {:ok, view, _} = live(conn, path)
-        assert has_element?(view, "#settings-center > #settings-navigation")
+        assert has_element?(view, "#staff-context-navigation > #settings-navigation")
         assert has_element?(view, "#settings-center > .min-w-0 #{content}")
         assert has_element?(view, "#settings-nav-#{active_id}[aria-current='page']")
         refute has_element?(view, "#staff-section-navigation")
@@ -147,7 +214,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     for path <- ["/staff/settings", "/staff/franchise/brand"] do
       {:ok, view, _} = live(conn, path)
-      assert has_element?(view, "#settings-center > #settings-navigation")
+      assert has_element?(view, "#staff-context-navigation > #settings-navigation")
 
       assert has_element?(
                view,

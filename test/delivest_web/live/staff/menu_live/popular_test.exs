@@ -16,12 +16,14 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
       |> html_response(200)
       |> LazyHTML.from_document()
 
-    assert Enum.count(LazyHTML.query(document, "main #staff-section-navigation")) == 1
+    assert Enum.count(
+             LazyHTML.query(document, "#staff-context-navigation #staff-section-navigation")
+           ) == 1
 
     assert Enum.count(
              LazyHTML.query(
                document,
-               "main #staff-section-navigation #product-section-tab-popular[aria-current='page']"
+               "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
              )
            ) == 1
 
@@ -39,7 +41,7 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
 
     assert has_element?(
              lv,
-             "main #staff-section-navigation #product-section-tab-popular[aria-current='page']"
+             "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
            )
 
     assert has_element?(lv, "main #staff-page-header h1", "Popular products")
@@ -96,7 +98,7 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
 
     assert has_element?(
              lv,
-             "main #staff-section-navigation #product-section-tab-popular[aria-current='page']"
+             "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
            )
 
     refute has_element?(lv, "#staff-page-header-actions")

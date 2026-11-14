@@ -12315,3 +12315,42 @@ msgstr "Популярное"
 #, elixir-autogen, elixir-format
 msgid "Product operations"
 msgstr "Операции с товарами"
+
+msgid "Monday"
+msgstr "Понедельник"
+
+msgid "Tuesday"
+msgstr "Вторник"
+
+msgid "Wednesday"
+msgstr "Среда"
+
+msgid "Thursday"
+msgstr "Четверг"
+
+msgid "Friday"
+msgstr "Пятница"
+
+msgid "Saturday"
+msgstr "Суббота"
+
+msgid "Sunday"
+msgstr "Воскресенье"
+
+msgid "Working day"
+msgstr "Рабочий день"
+
+msgid "Day off"
+msgstr "Выходной"
+
+msgid "Set the usual opening hours for each day of the week."
+msgstr "Укажите обычное время работы для каждого дня недели."
+
+msgid "Edit %{name}"
+msgstr "Редактировать %{name}"
+
+msgid "Delete %{name}"
+msgstr "Удалить %{name}"
+
+msgid "Toggle %{section} sections"
+msgstr "Развернуть или свернуть раздел «%{section}»"

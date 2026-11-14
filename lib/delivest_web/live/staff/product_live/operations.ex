@@ -30,6 +30,8 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
        page_title: "Товарные операции",
        targets: targets,
        selected_ids: selected_ids,
+       return_params:
+         Map.take(params, ~w(search page page_size order_by order_directions filters stopped)),
        preview: nil,
        operation: nil,
        error: nil,
@@ -174,7 +176,15 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
     <.page_header
       title="Товарные операции"
       subtitle="Экспорт, импорт и копирование товаров филиала"
-    />
+    >
+      <:actions>
+        <.link
+          id="product-operations-back"
+          navigate={~p"/staff/b/#{@current_branch}/products?#{@return_params}"}
+          class="btn btn-ghost"
+        >{gettext("Back to products")}</.link>
+      </:actions>
+    </.page_header>
     """
   end
 

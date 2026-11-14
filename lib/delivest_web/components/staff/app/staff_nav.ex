@@ -214,53 +214,61 @@ defmodule DelivestWeb.StaffNav do
   attr :return_source, :string, default: nil
   attr :current_page, :any, default: nil
   attr :current_path, :string, default: nil
+  attr :id_prefix, :string, default: ""
+  attr :items_override, :any, default: nil
+  attr :group_id, :any, default: nil
 
   def local_navigation(assigns) do
     navigation_branch = assigns.navigation_branch || assigns.branch
     navigation_branch = navigation_branch && Delivest.Repo.preload(navigation_branch, :info)
-    current_page = assigns.current_page
-
-    group =
-      assigns.staff
-      |> entries(navigation_branch, navigation_branch)
-      |> Enum.flat_map(& &1.entries)
-      |> Enum.find(fn
-        %{kind: :group, id: :marketing} when current_page == :marketing -> true
-        %{kind: :group, items: items} -> Enum.any?(items, &(current_page in &1.pages))
-        _ -> false
-      end)
 
     items =
-      cond do
-        not is_nil(active_setting(assigns.current_path)) ->
-          []
+      if is_nil(assigns.items_override) do
+        current_page = assigns.current_page
 
-        assigns.current_page == :categories or
-            not is_nil(DelivestWeb.Staff.ProductLive.ProductTags.section(assigns.current_path)) ->
-          menu_items(assigns.staff, navigation_branch)
+        group =
+          assigns.staff
+          |> entries(navigation_branch, navigation_branch)
+          |> Enum.flat_map(& &1.entries)
+          |> Enum.find(fn
+            %{kind: :group, id: :marketing} when current_page == :marketing -> true
+            %{kind: :group, items: items} -> Enum.any?(items, &(current_page in &1.pages))
+            _ -> false
+          end)
 
-        assigns.current_page == :marketing ->
-          marketing_entries(assigns.staff, navigation_branch)
+        cond do
+          not is_nil(active_setting(assigns.current_path)) ->
+            []
 
-        not is_nil(group) and
-            assigns.current_page in [
-              :deliveries,
-              :couriers,
-              :payments,
-              :receipts,
-              :clients,
-              :segments,
-              :marketing_policies,
-              :stocks,
-              :promotions,
-              :loyalty,
-              :advertising_links,
-              :marketing
-            ] ->
-          group.items
+          assigns.current_page == :categories or
+              not is_nil(DelivestWeb.Staff.ProductLive.ProductTags.section(assigns.current_path)) ->
+            menu_items(assigns.staff, navigation_branch)
 
-        true ->
-          []
+          assigns.current_page == :marketing ->
+            marketing_entries(assigns.staff, navigation_branch)
+
+          not is_nil(group) and
+              assigns.current_page in [
+                :deliveries,
+                :couriers,
+                :payments,
+                :receipts,
+                :clients,
+                :segments,
+                :marketing_policies,
+                :stocks,
+                :promotions,
+                :loyalty,
+                :advertising_links,
+                :marketing
+              ] ->
+            group.items
+
+          true ->
+            []
+        end
+      else
+        assigns.items_override
       end
 
     assigns = assign(assigns, items: items)
@@ -268,18 +276,22 @@ defmodule DelivestWeb.StaffNav do
     ~H"""
     <nav
       :if={@items != []}
-      id="staff-section-navigation"
+      id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
       phx-hook="ActiveSectionNav"
       aria-label={gettext("Page sections")}
-      class="mb-5 flex gap-1 overflow-x-auto border-b border-base-300 pb-2"
+      class={[
+        "flex gap-1 overflow-x-auto whitespace-nowrap border-b border-base-300 px-4 py-2 sm:px-6",
+        @id_prefix != "" && "sidebar-subnav"
+      ]}
     >
       <.link
         :for={item <- @items}
         id={
-          if(item.parent == :menu,
-            do: "product-section-tab-#{item.id}",
-            else: "section-nav-#{item.id}"
-          )
+          @id_prefix <>
+            if(item.parent == :menu,
+              do: "product-section-tab-#{item.id}",
+              else: "section-nav-#{item.id}"
+            )
         }
         navigate={
           DelivestWeb.StaffBranchPath.contextual_navigation_path(
@@ -325,9 +337,14 @@ defmodule DelivestWeb.StaffNav do
 
     top = fn id, label, icon, children ->
       case Enum.reject(children, &is_nil/1) do
-        [] -> nil
-        [only] when id != :settings -> %{only | label: label, icon: icon, pages: only.pages}
-        available -> %{kind: :group, id: id, label: label, icon: icon, items: available}
+        [] ->
+          nil
+
+        [only] when id not in [:settings, :menu] ->
+          %{only | label: label, icon: icon, pages: only.pages}
+
+        available ->
+          %{kind: :group, id: id, label: label, icon: icon, items: available}
       end
     end
 
@@ -344,8 +361,7 @@ defmodule DelivestWeb.StaffNav do
           :delivery,
           gettext("Delivery"),
           "hero-map",
-          Enum.map([:deliveries, :couriers], find) ++
-            [Enum.find(settings_entries(staff, branch), &(&1.id == :delivery_zones))]
+          Enum.map([:deliveries, :couriers], find)
         ),
         top.(:menu, gettext("Menu"), "hero-book-open", Enum.map([:products, :categories], find)),
         top.(:customers, gettext("Clients"), "hero-users", Enum.map([:clients, :segments], find)),

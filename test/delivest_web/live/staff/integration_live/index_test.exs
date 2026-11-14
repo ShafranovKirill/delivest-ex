@@ -54,9 +54,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     assert has_element?(lv, "#integration-frontpad", "Frontpad")
     assert has_element?(lv, "#integration-zvonok")
     refute has_element?(lv, "a#integration-zvonok")
-    assert has_element?(lv, "#nav-section-settings a[href='/staff/settings'].menu-active")
-    refute has_element?(lv, "#main-sidebar a[href='/staff/integrations']")
-    refute has_element?(lv, "#main-sidebar a[href='/staff/b/#{branch.slug}/integrations']")
+
+    assert has_element?(
+             lv,
+             "#sidebar-group-settings[open] #sidebar-settings-nav-integrations[aria-current='page']"
+           )
+
+    refute has_element?(lv, "#nav-section-main a[href='/staff/integrations']")
+    refute has_element?(lv, "#nav-section-main a[href='/staff/b/#{branch.slug}/integrations']")
   end
 
   test "global integrations use the header scope and preserve legacy branch links", %{

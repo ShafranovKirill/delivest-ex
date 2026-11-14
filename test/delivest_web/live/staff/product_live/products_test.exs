@@ -33,7 +33,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     refute Enum.empty?(
              LazyHTML.query(
                document,
-               "main #staff-section-navigation #product-section-tab-tags[aria-current='page']"
+               "#staff-context-navigation #staff-section-navigation #product-section-tab-tags[aria-current='page']"
              )
            )
 
@@ -379,14 +379,14 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       assert product_row_ids(back) == first_page_ids
 
-      lv |> element("table thead th:nth-child(2) a") |> render_click()
+      lv |> element(~s(table thead th[data-column="name"] a)) |> render_click()
       first_sort_url = assert_patch(lv)
       assert String.contains?(first_sort_url, "order_by[]=name")
       assert String.contains?(first_sort_url, "order_directions[]=asc")
       assert length(product_row_ids(lv)) == 10
       assert product_first_name(lv) == "Match 1"
 
-      lv |> element("table thead th:nth-child(2) a") |> render_click()
+      lv |> element(~s(table thead th[data-column="name"] a)) |> render_click()
       second_sort_url = assert_patch(lv)
       assert String.contains?(second_sort_url, "order_directions[]=desc")
       assert length(product_row_ids(lv)) == 10
@@ -406,13 +406,13 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       assert has_element?(
                lv,
-               "main #staff-section-navigation #product-section-tab-products[aria-current='page']"
+               "#staff-context-navigation #staff-section-navigation #product-section-tab-products[aria-current='page']"
              )
 
       assert Enum.count(
                LazyHTML.query(
                  LazyHTML.from_fragment(render(lv)),
-                 "main #staff-section-navigation a"
+                 "#staff-context-navigation #staff-section-navigation a"
                )
              ) == 7
 
@@ -440,25 +440,28 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
             {"/stops", "stops", "Stop list", false},
             {"/modifiers", "modifiers", "Modifiers", true},
             {"/tags", "tags", "Tags", true},
-            {"/suggested", "suggested", "Recommended", false},
+            {"/suggested", "suggested", "Recommended", true},
             {"/bulk", "products", "Bulk add products", true}
           ] do
         {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> path)
 
         assert has_element?(
                  lv,
-                 "main #staff-section-navigation #product-section-tab-#{key}[aria-current='page']"
+                 "#staff-context-navigation #staff-section-navigation #product-section-tab-#{key}[aria-current='page']"
                )
 
         for other <- ~w(products stops modifiers tags suggested) do
-          assert has_element?(lv, "main #staff-section-navigation #product-section-tab-#{other}")
+          assert has_element?(
+                   lv,
+                   "#staff-context-navigation #staff-section-navigation #product-section-tab-#{other}"
+                 )
 
           if other != key,
             do:
               refute(
                 has_element?(
                   lv,
-                  "main #staff-section-navigation #product-section-tab-#{other}[aria-current='page']"
+                  "#staff-context-navigation #staff-section-navigation #product-section-tab-#{other}[aria-current='page']"
                 )
               )
         end
@@ -482,7 +485,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       for section <- ["modifiers", "tags"] do
         {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> "/" <> section)
-        assert has_element?(lv, "main #staff-section-navigation [aria-current='page']")
+
+        assert has_element?(
+                 lv,
+                 "#staff-context-navigation #staff-section-navigation [aria-current='page']"
+               )
+
         refute has_element?(lv, "#staff-page-header-actions > *")
       end
     end
@@ -510,12 +518,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       product = insert_branch_product(branch.id, name: "Menu target")
 
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products?search=Menu")
-      menu = "#product-row-more-#{product.id}"
-      assert has_element?(lv, "#{menu} > summary[aria-label='More actions for Menu target']")
-      assert has_element?(lv, "#{menu} a", "Edit")
-      assert has_element?(lv, "#{menu} button[phx-click='delete_click']", "Delete")
+      edit = "#product-edit-#{product.id}"
+      delete = "#product-delete-#{product.id}"
+      assert has_element?(lv, "#{edit}[aria-label='Edit Menu target']")
+      assert has_element?(lv, "#{delete}[aria-label='Delete Menu target']")
 
-      lv |> element("#{menu} a", "Edit") |> render_click()
+      lv |> element(edit) |> render_click()
       {edit_url, _flash} = assert_redirect(lv)
       assert URI.parse(edit_url).path == ~p"/staff/b/#{branch}/products/#{product.id}/edit"
 
@@ -526,7 +534,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
              |> Map.get("search") == "Menu"
 
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products?search=Menu")
-      lv |> element("#{menu} button[phx-click='delete_click']") |> render_click()
+      lv |> element(delete) |> render_click()
       assert has_element?(lv, "#delete-product-modal.modal-open", "Menu target")
       lv |> element("#delete-product-modal .modal-action button.btn-error") |> render_click()
       assert Repo.reload!(product).deleted_at != nil
@@ -557,7 +565,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     lv
     |> render()
     |> LazyHTML.from_fragment()
-    |> LazyHTML.query("tbody#products tr:first-child td:nth-child(2)")
+    |> LazyHTML.query(~s(tbody#products tr:first-child td[data-column="name"]))
     |> LazyHTML.text()
     |> String.trim()
   end

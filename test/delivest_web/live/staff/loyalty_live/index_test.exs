@@ -51,7 +51,7 @@ defmodule DelivestWeb.Staff.LoyaltyLive.IndexTest do
 
     assert has_element?(
              lv,
-             "main #settings-navigation #settings-nav-loyalty_settings[aria-current='page']"
+             "#staff-context-navigation #settings-navigation #settings-nav-loyalty_settings[aria-current='page']"
            )
 
     refute has_element?(lv, "#staff-page-header #marketing-navigation")

@@ -535,7 +535,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <div class="flex flex-col items-start gap-1 py-2">
             <.link
               id="product-operations-link"
-              navigate={~p"/staff/b/#{@current_branch}/products/operations"}
+              navigate={
+                ~p"/staff/b/#{@current_branch}/products/operations?#{build_query_params(assigns, %{})}"
+              }
               class="btn btn-ghost btn-sm justify-start"
             >{gettext("Product operations")}</.link>
             <.link
@@ -620,13 +622,14 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           path_fn={path_fn}
           staff_id={to_string(@current_staff.id)}
           list_id="products"
+          sticky_leading
         >
           <:col
             :let={{_id, prod}}
-            :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
             label=""
           >
             <input
+              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
               type="checkbox"
               name="ids[]"
               value={prod.id}
@@ -634,6 +637,31 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
               class="checkbox checkbox-sm"
               aria-label={gettext("Select %{name}", name: prod.name)}
             />
+          </:col>
+
+          <:col :let={{_id, prod}} label="" key="actions">
+            <div class="flex items-center gap-1 whitespace-nowrap">
+              <.link
+                :if={Identity.can?(@current_staff, "products.update")}
+                id={"product-edit-#{prod.id}"}
+                navigate={
+                  ~p"/staff/b/#{@current_branch}/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"
+                }
+                class="btn btn-ghost btn-square btn-xs"
+                aria-label={gettext("Edit %{name}", name: prod.name)}
+                title={gettext("Edit")}
+              ><.icon name="hero-pencil-square" class="size-4" /></.link>
+              <button
+                :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+                id={"product-delete-#{prod.id}"}
+                type="button"
+                phx-click="delete_click"
+                phx-value-id={prod.id}
+                class="btn btn-ghost btn-square btn-xs text-error hover:bg-error/10"
+                aria-label={gettext("Delete %{name}", name: prod.name)}
+                title={gettext("Delete")}
+              ><.icon name="hero-trash" class="size-4" /></button>
+            </div>
           </:col>
 
           <:col :let={{_id, prod}} label={gettext("Name")} sort="name">
@@ -719,40 +747,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           <:col :let={{_id, prod}} label={gettext("Created At")} sort="inserted_at" secondary>
             <span class="text-sm opacity-60">{Calendar.strftime(prod.inserted_at, "%d.%m.%Y")}</span>
           </:col>
-
-          <:action :let={{_id, prod}}>
-            <details
-              :if={
-                Identity.can?(@current_staff, "products.update") or
-                  (Identity.can?(@current_staff, "products.delete") and not @crm_menu)
-              }
-              id={"product-row-more-#{prod.id}"}
-              class="inline-block text-left"
-            >
-              <summary
-                class="btn btn-ghost btn-xs list-none cursor-pointer"
-                aria-label={gettext("More actions for %{name}", name: prod.name)}
-              >
-                {gettext("More")}
-              </summary>
-              <div class="flex flex-col items-start gap-1 py-1">
-                <.link
-                  :if={Identity.can?(@current_staff, "products.update")}
-                  navigate={
-                    ~p"/staff/b/#{@current_branch}/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"
-                  }
-                  class="btn btn-ghost btn-xs justify-start"
-                >{gettext("Edit")}</.link>
-                <button
-                  :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
-                  type="button"
-                  phx-click="delete_click"
-                  phx-value-id={prod.id}
-                  class="btn btn-ghost btn-xs justify-start text-error hover:bg-error/10"
-                >{gettext("Delete")}</button>
-              </div>
-            </details>
-          </:action>
         </.table>
 
         <div class="flex justify-end">

@@ -494,6 +494,7 @@ defmodule DelivestWeb.CoreComponents do
   attr :staff_id, :string, default: nil, doc: "Employee ID for column preferences"
   attr :list_id, :string, default: nil, doc: "Stable list key for column preferences"
   attr :empty_title, :string, default: nil
+  attr :sticky_leading, :boolean, default: false
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -549,7 +550,10 @@ defmodule DelivestWeb.CoreComponents do
       <div class="overflow-x-auto overflow-y-visible sm:border sm:border-base-300 rounded-box">
         <table
           id={"#{@id}-table"}
-          class="table table-zebra table-sm max-sm:block"
+          class={[
+            "table table-zebra table-sm max-sm:block",
+            @sticky_leading && "table-leading-actions"
+          ]}
           aria-label={gettext("Results")}
         >
           <thead class="max-sm:hidden">

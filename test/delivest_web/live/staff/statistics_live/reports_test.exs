@@ -225,10 +225,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
 
     tab = "a[role='tab'][href*='tab=sources']:not([href*='page='])"
 
-    header = render(element(view, "#staff-page-header"))
+    navigation = render(element(view, "#staff-context-navigation"))
 
     href =
-      header
+      navigation
       |> LazyHTML.from_fragment()
       |> LazyHTML.query(tab)
       |> LazyHTML.attribute("href")
@@ -261,9 +261,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
       ~p"/staff/b/#{branch}/statistics?tab=channels&period=today&page=2&channel=app&branch_id=#{branch.id}&link_id=#{link.id}&link_search=summer&branch_ids[]=#{branch.id}"
     )
 
-    header = render(element(view, "#staff-page-header"))
+    navigation = render(element(view, "#staff-context-navigation"))
 
-    assert header
+    assert navigation
            |> LazyHTML.from_fragment()
            |> LazyHTML.query(
              "a[role='tab'][href*='tab=sources'][href*='channel=app'][href*='link_id=#{link.id}']:not([href*='page='])"

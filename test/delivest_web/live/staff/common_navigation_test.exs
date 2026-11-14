@@ -290,7 +290,12 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
       )
 
     {:ok, settings, _} = live(conn, ~p"/staff/settings")
-    assert has_element?(settings, "#nav-section-settings a[href='/staff/settings'].menu-active")
+
+    assert has_element?(
+             settings,
+             "#sidebar-group-settings[open] #sidebar-settings-nav-features[aria-current='page']"
+           )
+
     refute has_element?(settings, "#nav-section-main a[href='/staff/branches']")
     refute has_element?(settings, "#nav-section-main a[href='/staff/integrations']")
 
@@ -300,7 +305,11 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
            )
 
     {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
-    assert has_element?(delivery, "#nav-section-settings a[href='/staff/settings'].menu-active")
+
+    assert has_element?(
+             delivery,
+             "#sidebar-group-settings[open] #sidebar-settings-nav-delivery_settings[aria-current='page']"
+           )
 
     assert has_element?(
              delivery,
@@ -311,7 +320,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(
              integrations,
-             "#nav-section-settings a[href='/staff/settings'].menu-active"
+             "#sidebar-group-settings[open] #sidebar-settings-nav-integrations[aria-current='page']"
            )
   end
 
@@ -319,7 +328,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     conn = login(conn, ["logs.read"], [])
     {:ok, logs, _} = live(conn, ~p"/staff/logs")
 
-    assert has_element?(logs, "#settings-center > #settings-navigation")
+    assert has_element?(logs, "#staff-context-navigation > #settings-navigation")
     assert has_element?(logs, "#settings-navigation a[aria-current='page']")
     assert has_element?(logs, "#settings-navigation a[href='/staff/diagnostics']")
     refute has_element?(logs, "#staff-section-navigation")
@@ -335,15 +344,40 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
       assert has_element?(view, "#nav-section-main")
 
+      assert has_element?(view, "#nav-section-main a[href='/staff/b/#{branch.slug}/products']")
+      active = if String.ends_with?(path, "/stops"), do: "stops", else: "popular"
+
       assert has_element?(
                view,
-               "#nav-section-main a[href='/staff/b/#{branch.slug}/products'].menu-active"
+               "#sidebar-group-menu[open] #sidebar-product-section-tab-#{active}[aria-current='page']"
              )
 
-      refute has_element?(view, "#main-sidebar a[href='/staff/b/#{branch.slug}/products/stops']")
-      refute has_element?(view, "#main-sidebar a[href='/staff/b/#{branch.slug}/menu/popular']")
+      assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-stops")
+      assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-popular")
+
+      refute has_element?(
+               view,
+               "#nav-section-main > ul > li > a[href='/staff/b/#{branch.slug}/products/stops']"
+             )
+
+      refute has_element?(
+               view,
+               "#nav-section-main > ul > li > a[href='/staff/b/#{branch.slug}/menu/popular']"
+             )
+
       assert has_element?(view, "#staff-section-navigation #product-section-tab-popular")
       assert has_element?(view, "#staff-section-navigation #product-section-tab-stops")
+
+      assert Enum.count(
+               LazyHTML.query(
+                 LazyHTML.from_fragment(render(view)),
+                 "#sidebar-product-section-tab-stops"
+               )
+             ) == 1
+
+      assert Enum.count(
+               LazyHTML.query(LazyHTML.from_fragment(render(view)), "#product-section-tab-stops")
+             ) == 1
     end
   end
 end

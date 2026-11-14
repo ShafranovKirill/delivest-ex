@@ -115,6 +115,15 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
       title={gettext("Recommended")}
       title_in_header={false}
     >
+      <:actions>
+        <button
+          :if={@can_edit}
+          id="suggested-add-products"
+          type="button"
+          class="btn btn-primary"
+          phx-click={JS.push_focus() |> JS.push("open_picker")}
+        >{gettext("Add products")}</button>
+      </:actions>
     </.page_header>
     """
   end
@@ -123,14 +132,6 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <button
-        :if={@can_edit}
-        id="suggested-add-products"
-        type="button"
-        class="btn btn-primary"
-        phx-click={JS.push_focus() |> JS.push("open_picker")}
-      >{gettext("Add products")}</button>
-
       <BranchProducts.product_list
         id="suggested-list"
         products={Enum.filter(@products, & &1.suggested)}

@@ -117,10 +117,24 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     <.page_header
       title={gettext("Logs")}
       subtitle={gettext("Who did what and when, application logs and errors.")}
-      navigation_label={gettext("Logs")}
     >
-      <:navigation><TabsComponent.render_tabs active={@live_action} /></:navigation>
     </.page_header>
+    """
+  end
+
+  def staff_page_navigation(assigns) do
+    ~H"""
+    <nav
+      id={"#{@navigation_id_prefix}staff-page-header-navigation"}
+      phx-hook="ActiveSectionNav"
+      aria-label={gettext("Logs")}
+      class={[
+        "flex gap-1 overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6",
+        @navigation_id_prefix != "" && "sidebar-subnav"
+      ]}
+    >
+      <TabsComponent.render_tabs active={@live_action} id_prefix={@navigation_id_prefix} />
+    </nav>
     """
   end
 
