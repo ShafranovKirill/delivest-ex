@@ -85,13 +85,14 @@ defmodule Delivest.Identity.Branches do
     end
   end
 
-  def update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs) do
+  def update_branch(staff, %Branch{} = branch, branch_attrs, info_attrs, opts \\ []) do
     staff
     |> do_update_branch(
       "branches.update",
       branch,
       branch_attrs,
-      Map.drop(info_attrs, @own_settings)
+      Map.drop(info_attrs, @own_settings),
+      opts
     )
     |> Audit.track(staff, "branch.updated")
   end
@@ -251,11 +252,21 @@ defmodule Delivest.Identity.Branches do
     |> Audit.track(staff, "branch.updated")
   end
 
-  defp do_update_branch(staff, permission, %Branch{} = branch, branch_attrs, info_attrs) do
+  defp do_update_branch(
+         staff,
+         permission,
+         %Branch{} = branch,
+         branch_attrs,
+         info_attrs,
+         opts \\ []
+       ) do
     with :ok <- Identity.authorize(staff, permission, branch.id) do
       branch = Repo.preload(branch, :info)
 
       Ecto.Multi.new()
+      |> Ecto.Multi.run(:check_baseline, fn repo, _changes ->
+        check_branch_baseline(repo, branch.id, opts[:expected])
+      end)
       |> Ecto.Multi.update(:branch, Branch.changeset(branch, branch_attrs))
       |> Ecto.Multi.run(:info, fn repo, _changes ->
         upsert_branch_info(repo, branch, info_attrs)
@@ -286,11 +297,51 @@ defmodule Delivest.Identity.Branches do
 
           {:error, :kitchen_replan, :enqueue_failed}
 
+        {:error, :check_baseline, :conflict, _changes} ->
+          {:error, :conflict}
+
         {:error, failed_operation, changeset, _changes} ->
           {:error, failed_operation, changeset}
       end
     end
   end
+
+  defp check_branch_baseline(_repo, _branch_id, nil), do: {:ok, :unchecked}
+
+  defp check_branch_baseline(repo, branch_id, {%Branch{} = baseline, baseline_info}) do
+    current_branch = repo.one(from b in Branch, where: b.id == ^branch_id, lock: "FOR UPDATE")
+
+    current_info =
+      repo.one(from i in BranchInfo, where: i.branch_id == ^branch_id, lock: "FOR UPDATE")
+
+    branch_fields = [:name, :slug, :code, :is_active]
+
+    info_fields = [
+      :address,
+      :city,
+      :latitude,
+      :longitude,
+      :phone_number,
+      :delivery_time,
+      :manual_rating,
+      :timezone,
+      :working_hours,
+      :vk_url,
+      :whatsapp_url,
+      :instagram_url,
+      :fulfillment,
+      :kitchen
+    ]
+
+    if current_branch &&
+         Map.take(current_branch, branch_fields) == Map.take(baseline, branch_fields) &&
+         baseline_values(current_info, info_fields) == baseline_values(baseline_info, info_fields),
+       do: {:ok, :current},
+       else: {:error, :conflict}
+  end
+
+  defp baseline_values(nil, _fields), do: nil
+  defp baseline_values(value, fields), do: Map.take(value, fields)
 
   # Kitchen sends are planned in advance, so a branch that turned the kitchen on
   # or off, changed the lead time or switched to a CRM must replan them.

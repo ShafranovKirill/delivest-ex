@@ -22,10 +22,13 @@ end %>
       [assigns[:navigation_branch], settings_branch, assigns[:current_branch]],
       accessible_branch
     ) || List.first(branches) %>
-<div class={[
-  "min-h-screen bg-base-200 text-base-content",
-  assigns[:foundation_workspace] && "foundation-shell"
-]}>
+<div
+  class={[
+    "min-h-screen bg-base-200 text-base-content",
+    "foundation-shell"
+  ]}
+  data-staff-id={@current_staff && @current_staff.id}
+>
   <div id="staff-dirty-guard" phx-hook="StaffDirtyGuard" phx-update="ignore">
     <dialog id="staff-unsaved-dialog" class="modal" aria-labelledby="staff-unsaved-title">
       <div class="modal-box max-w-md">

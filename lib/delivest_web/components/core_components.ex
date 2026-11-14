@@ -380,6 +380,7 @@ defmodule DelivestWeb.CoreComponents do
           </div>
         </div>
       </div>
+      <p :if={@subtitle} class="mt-1 text-sm text-base-content/70">{@subtitle}</p>
     </div>
     """
   end
@@ -490,6 +491,9 @@ defmodule DelivestWeb.CoreComponents do
   attr :sort_path, :any, default: nil
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :staff_id, :string, default: nil, doc: "Employee ID for column preferences"
+  attr :list_id, :string, default: nil, doc: "Stable list key for column preferences"
+  attr :empty_title, :string, default: nil
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -506,87 +510,6 @@ defmodule DelivestWeb.CoreComponents do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
-  def table(%{variant: :foundation} = assigns) do
-    ~H"""
-    <div class="overflow-x-auto rounded-box border border-base-300">
-      <table class="table w-full" aria-label={gettext("Results")}>
-        <thead>
-          <tr>
-            <th scope="col"><span class="sr-only">{gettext("Select")}</span></th>
-            <th
-              :for={col <- @col}
-              scope="col"
-              data-column={col[:key]}
-              class={[col[:numeric] && "text-right", col[:secondary] && "max-sm:hidden"]}
-            >
-              <.link :if={col[:sort] && @sort_path} patch={@sort_path.(col[:sort])}>{col[:label]}</.link>
-              <span :if={is_nil(col[:sort]) or is_nil(@sort_path)}>{col[:label]}</span>
-            </th>
-            <th :if={@action != []} scope="col" class="text-right">
-              <span class="sr-only">{gettext("Actions")}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody id={@id}>
-          <tr :for={row <- @rows} id={if(@row_id, do: @row_id.(row), else: "#{@id}-row-#{row.id}")}>
-            <td>
-              <input
-                type="checkbox"
-                phx-click={@select_event}
-                phx-target={@target}
-                phx-value-id={row.id}
-                checked={MapSet.member?(@selected, row.id)}
-                aria-label={
-                  gettext("Select %{name}",
-                    name:
-                      if(@row_label,
-                        do: @row_label.(row),
-                        else: Map.get(row, :name, to_string(row.id))
-                      )
-                  )
-                }
-              />
-            </td>
-            <td
-              :for={col <- @col}
-              data-column={col[:key]}
-              class={[col[:numeric] && "text-right", col[:secondary] && "max-sm:hidden"]}
-            >
-              {render_slot(col, @row_item.(row))}
-            </td>
-            <td :if={@action != []} class="text-right">
-              <div class="flex justify-end gap-2">
-                <%= for action <- @action do %>
-                  {render_slot(action, @row_item.(row))}
-                <% end %>
-              </div>
-            </td>
-            <td class="sm:hidden">
-              <details>
-                <summary>
-                  {gettext("More details for %{name}",
-                    name:
-                      if(@row_label,
-                        do: @row_label.(row),
-                        else: Map.get(row, :name, to_string(row.id))
-                      )
-                  )}
-                </summary><dl>
-                  <%= for col <- Enum.filter(@col, & &1[:secondary]) do %>
-                    <dt class="font-medium">{col[:label]}</dt><dd>
-                      {Map.get(@row_item.(row), col[:field])}
-                    </dd>
-                  <% end %>
-                </dl>
-              </details>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    """
-  end
-
   def table(assigns) do
     assigns =
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
@@ -594,85 +517,167 @@ defmodule DelivestWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-x-auto overflow-y-visible sm:border sm:border-base-300 rounded-box">
-      <table class="table table-zebra table-sm max-sm:block">
-        <thead class="max-sm:hidden">
-          <tr>
-            <th :for={col <- @col}>
-              <%= if col[:sort] && @meta && @path_fn do %>
-                <% current_sort? =
-                  @meta.flop.order_by |> List.wrap() |> List.first() |> to_string() == col[:sort] %>
-                <% direction =
-                  if current_sort? and
-                       @meta.flop.order_directions |> List.wrap() |> List.first() == :asc,
-                     do: "desc",
-                     else: "asc" %>
-                <.link
-                  patch={@path_fn.(%{"order_by" => [col[:sort]], "order_directions" => [direction]})}
-                  class="flex items-center gap-1 hover:text-primary transition-colors group select-none"
-                >
-                  {col[:label]}
-                  <.icon
-                    :if={current_sort? && direction == "desc"}
-                    name="hero-chevron-up"
-                    class="size-4"
-                  />
-                  <.icon
-                    :if={current_sort? && direction == "asc"}
-                    name="hero-chevron-down"
-                    class="size-4"
-                  />
-                  <.icon
-                    :if={!current_sort?}
-                    name="hero-chevron-up-down"
-                    class="size-4 opacity-0 group-hover:opacity-50 transition-opacity"
-                  />
-                </.link>
-              <% else %>
-                {col[:label]}
-              <% end %>
-            </th>
-            <th :if={@action != []}>
-              <span class="sr-only">{gettext("Actions")}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          id={@id}
-          phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
-          class="max-sm:block max-sm:space-y-2"
+    <div class="space-y-2">
+      <details
+        :if={@variant != :foundation and Enum.any?(@col, & &1[:secondary])}
+        class="staff-column-chooser text-sm"
+      >
+        <summary class="btn btn-ghost btn-sm">{gettext("Visible columns")}</summary>
+        <fieldset
+          id={"#{@id}-columns"}
+          phx-hook="FoundationColumns"
+          phx-update="ignore"
+          data-staff-id={@staff_id}
+          data-list-id={@list_id || @id}
+          data-table-id={"#{@id}-table"}
+          class="flex flex-wrap gap-3 p-2"
         >
-          <tr
-            :for={row <- @rows}
-            id={@row_id && @row_id.(row)}
-            class="max-sm:block max-sm:rounded-box max-sm:border max-sm:border-base-300 max-sm:bg-base-100! max-sm:px-1 max-sm:py-2"
+          <label
+            :for={{col, index} <- Enum.with_index(@col)}
+            :if={col[:label] not in [nil, ""]}
+            class="flex items-center gap-1"
           >
-            <td
-              :for={col <- @col}
-              phx-click={@row_click && @row_click.(row)}
-              data-label={col[:label]}
-              class={[
-                "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:py-1.5 max-sm:text-right",
-                "max-sm:before:content-[attr(data-label)] max-sm:before:text-xs max-sm:before:text-base-content/50 max-sm:before:text-left",
-                col[:secondary] && "max-sm:hidden!",
-                @row_click && "hover:cursor-pointer"
-              ]}
-            >
-              {render_slot(col, @row_item.(row))}
-            </td>
-            <td :if={@action != []} class="w-0 font-semibold max-sm:block max-sm:w-auto max-sm:pt-2">
-              <div class="flex gap-4 max-sm:justify-end">
-                <%= for action <- @action do %>
-                  {render_slot(action, @row_item.(row))}
+            <input
+              type="checkbox"
+              data-column={column_key(col, index)}
+              checked={!col[:secondary]}
+              disabled={!col[:secondary]}
+            />{col[:label]}
+          </label>
+        </fieldset>
+      </details>
+      <div class="overflow-x-auto overflow-y-visible sm:border sm:border-base-300 rounded-box">
+        <table
+          id={"#{@id}-table"}
+          class="table table-zebra table-sm max-sm:block"
+          aria-label={gettext("Results")}
+        >
+          <thead class="max-sm:hidden">
+            <tr>
+              <th :if={@variant == :foundation} scope="col">
+                <span class="sr-only">{gettext("Select")}</span>
+              </th>
+              <th
+                :for={{col, index} <- Enum.with_index(@col)}
+                scope="col"
+                data-column={column_key(col, index)}
+                class={[
+                  col[:numeric] && "text-right",
+                  col[:secondary] && "foundation-column-secondary"
+                ]}
+              >
+                <%= if col[:sort] && @sort_path do %>
+                  <.link patch={@sort_path.(col[:sort])} class="hover:text-primary">{col[:label]}</.link>
+                <% else %>
+                  <%= if col[:sort] && @meta && @path_fn do %>
+                    <% current_sort? =
+                      @meta.flop.order_by |> List.wrap() |> List.first() |> to_string() == col[:sort] %>
+                    <% direction =
+                      if current_sort? and
+                           @meta.flop.order_directions |> List.wrap() |> List.first() == :asc,
+                         do: "desc",
+                         else: "asc" %>
+                    <.link
+                      patch={
+                        @path_fn.(%{"order_by" => [col[:sort]], "order_directions" => [direction]})
+                      }
+                      class="flex items-center gap-1 hover:text-primary transition-colors group select-none"
+                    >
+                      {col[:label]}
+                      <.icon
+                        :if={current_sort? && direction == "desc"}
+                        name="hero-chevron-up"
+                        class="size-4"
+                      />
+                      <.icon
+                        :if={current_sort? && direction == "asc"}
+                        name="hero-chevron-down"
+                        class="size-4"
+                      />
+                      <.icon
+                        :if={!current_sort?}
+                        name="hero-chevron-up-down"
+                        class="size-4 opacity-0 group-hover:opacity-50 transition-opacity"
+                      />
+                    </.link>
+                  <% else %>
+                    {col[:label]}
+                  <% end %>
                 <% end %>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </th>
+              <th :if={@action != []}>
+                <span class="sr-only">{gettext("Actions")}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            id={@id}
+            phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
+            class="max-sm:block max-sm:space-y-2"
+          >
+            <tr
+              :for={row <- @rows}
+              id={@row_id && @row_id.(row)}
+              class="max-sm:block max-sm:rounded-box max-sm:border max-sm:border-base-300 max-sm:bg-base-100! max-sm:px-1 max-sm:py-2"
+            >
+              <td :if={@variant == :foundation} class="max-sm:block">
+                <input
+                  type="checkbox"
+                  phx-click={@select_event}
+                  phx-target={@target}
+                  phx-value-id={row.id}
+                  checked={MapSet.member?(@selected, row.id)}
+                  aria-label={
+                    gettext("Select %{name}",
+                      name:
+                        if(@row_label,
+                          do: @row_label.(row),
+                          else: Map.get(row, :name, to_string(row.id))
+                        )
+                    )
+                  }
+                />
+              </td>
+              <td
+                :for={{col, index} <- Enum.with_index(@col)}
+                phx-click={@row_click && @row_click.(row)}
+                data-label={col[:label]}
+                data-column={column_key(col, index)}
+                class={[
+                  "max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:py-1.5 max-sm:text-right",
+                  "max-sm:before:content-[attr(data-label)] max-sm:before:text-xs max-sm:before:text-base-content/50 max-sm:before:text-left",
+                  col[:secondary] && "foundation-column-secondary",
+                  col[:numeric] && "text-right",
+                  @row_click && "hover:cursor-pointer"
+                ]}
+              >
+                {render_slot(col, @row_item.(row))}
+              </td>
+              <td :if={Enum.any?(@col, & &1[:secondary])} class="sm:hidden max-sm:block max-sm:py-1">
+                <details class="staff-row-details">
+                  <summary class="text-xs font-medium">{gettext("More details")}</summary>
+                </details>
+              </td>
+              <td :if={@action != []} class="w-0 font-semibold max-sm:block max-sm:w-auto max-sm:pt-2">
+                <div class="flex gap-4 max-sm:justify-end">
+                  <%= for action <- @action do %>
+                    {render_slot(action, @row_item.(row))}
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <.empty_state
+        :if={@empty_title && ((@meta && @meta.total_count == 0) || @rows == [])}
+        title={@empty_title}
+      />
     </div>
     """
   end
+
+  defp column_key(col, index), do: col[:key] || col[:sort] || "column-#{index}"
 
   @doc """
   Renders a data list.
@@ -802,19 +807,30 @@ defmodule DelivestWeb.CoreComponents do
   Renders pagination and page size selector using Flop.Meta.
   """
   attr :meta, Flop.Meta, required: true
+  attr :id, :string, default: "page-size-form"
+  attr :page_sizes, :list, default: [10, 20, 50, 100]
 
   attr :path_fn, :any,
     required: true,
     doc: "Function that takes a map of params and returns a URL"
 
   def pagination(assigns) do
+    page_sizes =
+      if is_integer(assigns.meta.page_size) and assigns.meta.page_size > 0 do
+        [assigns.meta.page_size | assigns.page_sizes] |> Enum.uniq() |> Enum.sort()
+      else
+        assigns.page_sizes
+      end
+
+    assigns = assign(assigns, :page_sizes, page_sizes)
+
     ~H"""
     <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-4 mt-4">
       <div class="flex items-center gap-2">
         <span class="text-sm text-base-content/60">{gettext("Show")}</span>
-        <form id="page-size-form" phx-change="update_page_size">
+        <form id={@id} phx-change="update_page_size">
           <select name="page_size" class="select select-sm">
-            <%= for size <- [10, 20, 50, 100] do %>
+            <%= for size <- @page_sizes do %>
               <option value={size} selected={@meta.page_size == size}>{size}</option>
             <% end %>
           </select>

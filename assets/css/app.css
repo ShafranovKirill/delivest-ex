@@ -195,7 +195,7 @@
 }
 
 /* Staff foundation contract; scoped so migrated screens opt in explicitly. */
-.foundation-workspace {
+.foundation-workspace, .foundation-shell {
   --foundation-step: 4px;
   --foundation-control-height: 40px;
   --foundation-touch-height: 44px;
@@ -204,7 +204,23 @@
 }
 .foundation-shell { --staff-sidebar-width: 240px; --staff-header-height: 56px; }
 .foundation-shell .staff-header > div:not(#staff-header-actions) { height: var(--staff-header-height); }
-.foundation-column-hidden { display: none; }
+.foundation-column-hidden { display: none !important; }
+.foundation-column-secondary:not(.foundation-column-visible) { display: none; }
+#product-form.product-readonly-form fieldset[disabled] :is(.input, .select, .textarea) {
+  opacity: 1;
+  color: var(--color-base-content);
+  -webkit-text-fill-color: var(--color-base-content);
+  background-color: var(--color-base-200);
+}
+#product-form.product-readonly-form fieldset[disabled] :is(label, legend) {
+  opacity: 1;
+  color: var(--color-base-content);
+}
+.staff-row-details summary { cursor: pointer; }
+@media (max-width: 639px) {
+  tr:has(.staff-row-details[open]) > td.foundation-column-secondary { display: flex !important; }
+}
+.foundation-shell :is(.btn, .input, .select),
 .foundation-workspace :is(.btn, .input, .select) { min-height: var(--foundation-control-height); }
 .foundation-workspace :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .foundation-workspace .btn-ghost { color: var(--color-base-content); }
@@ -212,7 +228,12 @@
 .foundation-workspace[data-density="normal"] .table :is(th, td) { padding-block: 0.75rem; }
 .foundation-form { max-width: var(--foundation-form-max-width); }
 @media (pointer: coarse) {
+  .foundation-shell :is(.btn, .input, .select, input[type="checkbox"]),
   .foundation-workspace :is(.btn, .input, .select, input[type="checkbox"]) { min-height: var(--foundation-touch-height); }
+}
+@media (max-width: 639px) {
+  .foundation-shell :is(.btn, .input, .select) { min-height: var(--foundation-touch-height); }
+  .foundation-shell .btn-square { min-width: var(--foundation-touch-height); }
 }
 @media (max-width: 639px) {
   .foundation-workspace .table,

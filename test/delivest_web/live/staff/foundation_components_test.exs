@@ -3,6 +3,20 @@ defmodule DelivestWeb.Staff.FoundationComponentsTest do
   import Phoenix.LiveViewTest
   alias DelivestWeb.Staff.FoundationComponents
 
+  test "pagination displays a valid legacy page size alongside the new choices" do
+    html =
+      render_component(&DelivestWeb.CoreComponents.pagination/1,
+        meta: %Flop.Meta{page_size: 10, current_page: 1, total_pages: 1, total_count: 10},
+        page_sizes: [25, 50, 100],
+        path_fn: fn _ -> "/staff/products" end
+      )
+
+    assert html =~ ~s(<option value="10" selected>10</option>)
+    assert html =~ ~s(<option value="25">25</option>)
+    assert html =~ ~s(<option value="50">50</option>)
+    assert html =~ ~s(<option value="100">100</option>)
+  end
+
   test "event controls accept a LiveComponent target" do
     filter =
       render_component(&FoundationComponents.filter_bar/1,

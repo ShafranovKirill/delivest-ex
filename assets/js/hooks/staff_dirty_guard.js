@@ -4,6 +4,7 @@ const staffUrl = (href) => {
   return url.origin === window.location.origin && url.pathname.startsWith('/staff')
     ? url.pathname + url.search + url.hash : null;
 };
+const sameDocument = (left, right) => left.split('#')[0] === right.split('#')[0];
 const values = (form) => JSON.stringify([...new FormData(form)].map(([key, value]) =>
   [key, value instanceof File ? [value.name, value.size] : value]));
 
@@ -13,9 +14,16 @@ export const StaffDirtyGuard = {
     this.baselines = new WeakMap();
     this.pending = null;
     this.saving = null;
+    this.lastSubmittedForm = null;
     this.bypass = false;
     this.currentUrl = urlHere();
     this.forms = () => [...document.querySelectorAll('form[data-staff-dirty]')];
+    this.refreshSaveButtons = () => document.querySelectorAll('button[data-staff-save]').forEach((button) => {
+      if (button.dataset.staffSave === 'create') return;
+      const form = button.form || (button.getAttribute('form') && document.getElementById(button.getAttribute('form')));
+      if (!form || !this.baselines.has(form)) return;
+      button.disabled = form === this.saving || values(form) === this.baselines.get(form);
+    });
     this.capture = () => this.forms().forEach((form) => {
       if (!this.baselines.has(form)) this.baselines.set(form, values(form));
     });
@@ -24,28 +32,36 @@ export const StaffDirtyGuard = {
       return values(form) !== this.baselines.get(form);
     });
     this.capture();
-    this.observer = new MutationObserver(() => this.capture());
+    this.refreshSaveButtons();
+    this.observer = new MutationObserver(() => { this.capture(); this.refreshSaveButtons(); });
     this.observer.observe(document.body, {childList: true, subtree: true});
     this.onInput = (event) => {
       const form = event.target.closest?.('form[data-staff-dirty]');
       if (form && !this.baselines.has(form)) this.baselines.set(form, values(form));
+      this.refreshSaveButtons();
     };
     this.onSubmit = (event) => {
-      if (this.forms().includes(event.target)) this.saving = event.target;
+      if (this.forms().includes(event.target)) {
+        this.saving = event.target;
+        this.lastSubmittedForm = event.target;
+        this.refreshSaveButtons();
+      }
     };
     this.onSaved = (event) => {
       const id = event.detail?.id;
-      const form = id ? this.forms().find((candidate) => candidate.id === id) : this.saving;
+      const form = id ? this.forms().find((candidate) => candidate.id === id) : (this.saving || this.lastSubmittedForm);
       this.saving = null;
+      this.lastSubmittedForm = null;
       if (form) this.baselines.set(form, values(form));
+      this.refreshSaveButtons();
     };
-    this.onPageLoaded = () => { this.currentUrl = urlHere(); this.capture(); };
+    this.onPageLoaded = () => { this.currentUrl = urlHere(); this.saving = null; this.capture(); this.refreshSaveButtons(); };
     this.onClick = (event) => {
       if (this.bypass || !this.dirty() || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target.closest?.('a[href]');
       if (!link || link.hasAttribute('download') || link.target === '_blank') return;
       const to = staffUrl(link.href);
-      if (!to || to === this.currentUrl) return;
+      if (!to || sameDocument(to, this.currentUrl)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       this.pending = to;
@@ -55,6 +71,7 @@ export const StaffDirtyGuard = {
       if (this.bypass || !this.dirty()) return;
       const to = urlHere();
       if (to === this.currentUrl) return;
+      if (sameDocument(to, this.currentUrl)) { this.currentUrl = to; return; }
       event.stopImmediatePropagation();
       history.pushState(null, '', this.currentUrl);
       this.pending = to;
@@ -84,7 +101,7 @@ export const StaffDirtyGuard = {
     this.el.querySelector('#staff-unsaved-stay').addEventListener('click', this.onStay);
     this.el.querySelector('#staff-unsaved-leave').addEventListener('click', this.onLeave);
   },
-  updated() { this.currentUrl = urlHere(); this.capture(); },
+  updated() { this.currentUrl = urlHere(); this.capture(); this.refreshSaveButtons(); },
   destroyed() {
     this.observer.disconnect();
     document.removeEventListener('input', this.onInput, true);

@@ -50,35 +50,46 @@ defmodule DelivestWeb.Staff.FoundationComponents do
   end
 
   attr :id, :string, required: true
+  attr :form_id, :string, default: nil
   attr :query, :string, default: ""
+  attr :query_name, :string, default: "q"
+  attr :query_input_id, :string, default: nil
+  attr :query_placeholder, :string, default: nil
   attr :reset_path, :string, required: true
   attr :event, :any, default: "filter"
   attr :target, :any, default: nil
+  attr :active, :boolean, default: false
   slot :filter
 
   def filter_bar(assigns) do
     ~H"""
     <div id={@id} class="flex flex-wrap items-end gap-3">
       <form
-        id={"#{@id}-form"}
+        id={@form_id || "#{@id}-form"}
         phx-change={@event}
         phx-submit={@event}
         phx-target={@target}
         role="search"
-        class="min-w-56 flex-1"
+        class="flex min-w-56 flex-1 flex-wrap items-end gap-3"
       >
-        <label for={"#{@id}-query"} class="block text-sm font-medium">{gettext("Search")}</label>
-        <input
-          id={"#{@id}-query"}
-          type="search"
-          name="q"
-          value={@query}
-          phx-debounce="350"
-          class="input input-bordered w-full"
-        />
+        <div class="min-w-56 flex-1">
+          <label for={@query_input_id || "#{@id}-query"} class="block text-sm font-medium">{gettext(
+            "Search"
+          )}</label>
+          <input
+            id={@query_input_id || "#{@id}-query"}
+            type="search"
+            name={@query_name}
+            value={@query}
+            placeholder={@query_placeholder}
+            phx-debounce="350"
+            class="input input-bordered w-full"
+          />
+        </div>
+        {render_slot(@filter)}
+        <button type="submit" class="btn btn-outline">{gettext("Apply")}</button>
       </form>
-      {render_slot(@filter)}
-      <.link patch={@reset_path} class="btn btn-ghost">{gettext("Reset")}</.link>
+      <.link :if={@active or @query != ""} patch={@reset_path} class="btn btn-ghost">{gettext("Reset")}</.link>
     </div>
     """
   end
@@ -267,17 +278,49 @@ defmodule DelivestWeb.Staff.FoundationComponents do
 
   attr :id, :string, required: true
   attr :errors, :map, required: true
+  attr :form_name, :string, default: nil
 
   def error_summary(assigns) do
     ~H"""
     <div :if={map_size(@errors) > 0} id={@id} role="alert" class="alert alert-error">
       <p>{gettext("Check these fields:")}</p>
       <ul>
-        <li :for={{field, message} <- @errors}><a href={"##{field}"}>{message}</a></li>
+        <li :for={{field, message} <- @errors}>
+          <a href={"##{if @form_name, do: "#{@form_name}_#{field}", else: field}"}>{message}</a>
+        </li>
       </ul>
     </div>
     """
   end
+
+  @doc "Translated field errors for the shared summary; nested embeds keep their input path."
+  def changeset_errors(%Ecto.Changeset{} = changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(&DelivestWeb.CoreComponents.translate_error/1)
+    |> flatten_errors([], %{})
+  end
+
+  def changeset_errors(_), do: %{}
+
+  defp flatten_errors(errors, path, acc) when is_map(errors) do
+    Enum.reduce(errors, acc, fn {field, value}, acc ->
+      flatten_errors(value, path ++ [to_string(field)], acc)
+    end)
+  end
+
+  defp flatten_errors(errors, path, acc) when is_list(errors) do
+    if Enum.all?(errors, &is_binary/1) do
+      Map.put(acc, Enum.join(path, "_"), Enum.join(errors, ", "))
+    else
+      errors
+      |> Enum.with_index()
+      |> Enum.reduce(acc, fn {value, index}, acc ->
+        flatten_errors(value, path ++ [to_string(index)], acc)
+      end)
+    end
+  end
+
+  defp flatten_errors(_errors, _path, acc), do: acc
 
   attr :id, :string, required: true
   attr :label, :string, required: true
@@ -482,7 +525,7 @@ defmodule DelivestWeb.Staff.FoundationComponents do
         <input
           type="checkbox"
           data-column={column.key}
-          checked
+          checked={!column.secondary}
           disabled={Map.get(column, :required, false)}
         />{column.label}
       </label>

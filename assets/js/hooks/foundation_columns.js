@@ -1,6 +1,6 @@
 export const FoundationColumns = {
   mounted() {
-    this.key = `staff-columns:${this.el.dataset.staffId}:${this.el.dataset.listId}`;
+    this.key = `staff-columns:${this.el.dataset.staffId || document.querySelector('[data-staff-id]')?.dataset.staffId || 'anonymous'}:${this.el.dataset.listId}`;
     this.readInputs();
     let stored;
     try { stored = JSON.parse(localStorage.getItem(this.key) || 'null'); } catch (_) { stored = null; }
@@ -28,6 +28,7 @@ export const FoundationColumns = {
     for (const input of this.checkboxes) {
       for (const cell of table.querySelectorAll(`[data-column="${CSS.escape(input.dataset.column)}"]`)) {
         cell.classList.toggle('foundation-column-hidden', !input.checked);
+        cell.classList.toggle('foundation-column-visible', input.checked);
       }
     }
   },

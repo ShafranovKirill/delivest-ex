@@ -1,4 +1,7 @@
 defmodule Delivest.Identity do
+  import Ecto.Query, only: [from: 2]
+
+  alias Delivest.Repo
   alias Delivest.Identity.Branch.BranchInfo
 
   alias Delivest.Identity.{
@@ -18,6 +21,19 @@ defmodule Delivest.Identity do
   defdelegate update_staff(staff, updatable_staff, attrs), to: Staffs
   defdelegate change_password(staff, updatable_staff, attrs), to: Staffs
   defdelegate get_staff(id, opts \\ []), to: Staffs
+
+  @doc "Reloads the current staff permissions and branch grants for a write action."
+  def fresh_staff(%Staff{id: id}) when not is_nil(id) do
+    from(staff in Staff, where: staff.id == ^id and is_nil(staff.deleted_at))
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      staff -> Repo.preload(staff, [:role, :branches])
+    end
+  end
+
+  def fresh_staff(_), do: nil
+
   defdelegate get_staff_by_login(login), to: Staffs
   defdelegate soft_delete_staff(staff, removable_staff), to: Staffs
   defdelegate authenticate(login, password), to: Staffs
@@ -29,6 +45,7 @@ defmodule Delivest.Identity do
   defdelegate get_branch(id, opts \\ []), to: Branches
   defdelegate get_branch_by_slug(slug, opts \\ []), to: Branches
   defdelegate update_branch(staff, branch, branch_attrs, info_attrs), to: Branches
+  defdelegate update_branch(staff, branch, branch_attrs, info_attrs, opts), to: Branches
   defdelegate update_integrations(staff, branch, info_attrs), to: Branches
   defdelegate update_couriers(staff, branch, attrs), to: Branches
   defdelegate update_payments(staff, branch, attrs), to: Branches

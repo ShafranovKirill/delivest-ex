@@ -602,7 +602,7 @@ defmodule DelivestWeb.Staff.FoundationGalleryLive do
           id="gallery-columns"
           staff_id={to_string(@current_staff.id)}
           list_id="products"
-          table_id="gallery-products"
+          table_id="gallery-products-table"
           columns={@columns}
         />
         <.filter_bar

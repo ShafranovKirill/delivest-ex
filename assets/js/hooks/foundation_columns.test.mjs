@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { FoundationColumns } from './foundation_columns.js';
 
 function setup(store, staff, list) {
-  const cells = new Map(['name', 'status'].map((key) => [key, {hidden: false, classList: {toggle(_class, hide) { cells.get(key).hidden = hide; }}}]));
+  const cells = new Map(['name', 'status'].map((key) => [key, {hidden: false, visible: true, classList: {toggle(name, value) { cells.get(key)[name === 'foundation-column-hidden' ? 'hidden' : 'visible'] = value; }}}]));
   const inputs = ['name', 'status'].map((key) => ({dataset: {column: key}, checked: true, disabled: key === 'name'}));
   const listeners = new Map();
   const el = {dataset: {staffId: staff, listId: list, tableId: 'table'}, querySelectorAll: () => inputs, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: (name) => listeners.delete(name)};
