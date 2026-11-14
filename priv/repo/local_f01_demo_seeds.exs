@@ -44,7 +44,10 @@ defmodule LocalF01DemoSeeds do
         end
     end
 
-    finish_demo!()
+    unless System.get_env("LOCAL_DEMO_PREPARE") == "1" or
+             System.get_env("DEV_DATABASE") == "delivest_f01_demo_local" do
+      finish_demo!()
+    end
 
     IO.puts(
       "Demo ready: #{Repo.aggregate(Branch, :count)} branches, " <>
