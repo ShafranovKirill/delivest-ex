@@ -8,9 +8,17 @@ defmodule Delivest.Oms.OrderService do
 
     with {:ok, branch} <- fetch_branch(attrs) do
       case Crm.provider_for(branch, opts[:source]) do
-        nil -> Orders.create_order(attrs, opts)
+        nil -> Orders.create_order(attrs, auto_accept_staff_order(opts))
         provider -> Crm.create_order(attrs, provider, opts)
       end
+    end
+  end
+
+  defp auto_accept_staff_order(opts) do
+    if opts[:auto_accept] == true and opts[:source] == "staff" do
+      Keyword.put(opts, :advance, {:accepted, :system})
+    else
+      opts
     end
   end
 

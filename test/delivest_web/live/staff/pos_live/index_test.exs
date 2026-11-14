@@ -33,6 +33,13 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
     {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/pos")
 
     assert has_element?(lv, "#main-sidebar")
+
+    assert has_element?(
+             lv,
+             "#sidebar-group-orders[open] #sidebar-section-nav-pos[aria-current='page']"
+           )
+
+    assert has_element?(lv, "#staff-context-navigation #section-nav-pos[aria-current='page']")
     assert has_element?(lv, "#staff-page-header")
     assert header_action?(lv, "#pos-tab-sale")
     assert header_action?(lv, "#pos-tab-handout")

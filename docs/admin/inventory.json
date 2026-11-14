@@ -2624,7 +2624,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:147",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:148",
       "target_section": "Settings / Data and system"
     },
     {
@@ -2653,7 +2653,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:225",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:226",
       "target_section": "Settings / Data and system"
     },
     {
@@ -2682,7 +2682,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:199",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:200",
       "target_section": "Settings / Data and system"
     },
     {
@@ -22861,7 +22861,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "action",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:160",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:161",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22882,7 +22882,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "actor",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:173",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:174",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22903,7 +22903,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "branch",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:184",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:185",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22924,7 +22924,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "level",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:219",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:220",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22945,7 +22945,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "q",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:209",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:210",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22966,7 +22966,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "sort",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:195",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:196",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22987,7 +22987,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "type",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:149",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:150",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27220,7 +27220,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "branch_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:436",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:483",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27241,7 +27241,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "channel",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:428",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:475",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27262,7 +27262,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:451",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:498",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27283,7 +27283,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:444",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:491",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27304,7 +27304,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:413",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:460",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27325,7 +27325,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "period",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:407",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:454",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27346,7 +27346,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:419",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:466",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

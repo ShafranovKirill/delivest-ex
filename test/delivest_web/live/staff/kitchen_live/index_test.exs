@@ -42,6 +42,13 @@ defmodule DelivestWeb.Staff.KitchenLive.IndexTest do
     assert has_element?(lv, "#ready-#{order.id}")
     assert has_element?(lv, "#kitchen-offline[hidden]")
     assert has_element?(lv, "#main-sidebar")
+
+    assert has_element?(
+             lv,
+             "#sidebar-group-orders[open] #sidebar-section-nav-kitchen[aria-current='page']"
+           )
+
+    assert has_element?(lv, "#staff-context-navigation #section-nav-kitchen[aria-current='page']")
     assert has_element?(lv, "#staff-page-header")
     assert header_action?(lv, "#kitchen-clock")
     assert header_action?(lv, "#kitchen-start[data-kitchen-start]")

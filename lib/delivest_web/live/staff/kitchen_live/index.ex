@@ -229,7 +229,7 @@ defmodule DelivestWeb.Staff.KitchenLive.Index do
         </p>
       </div>
 
-      <div :if={@kitchen} class="flex flex-1 gap-4 p-4">
+      <div :if={@kitchen} class="flex flex-1 gap-4 p-2">
         <section class="flex-1">
           <p
             :if={@tickets == []}

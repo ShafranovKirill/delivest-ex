@@ -1,7 +1,11 @@
-.staff-shell-content:has(#kitchen-screen) main,
 .staff-shell-content:has(#pos) main {
   min-width: 0;
   padding: 0;
+}
+
+.staff-shell-content:has(#kitchen-screen) main {
+  min-width: 0;
+  padding: .75rem;
 }
 
 .staff-shell-content:has(#kitchen-screen) main > div,
@@ -9,7 +13,11 @@
   max-width: none;
 }
 
-#kitchen-screen,
+#kitchen-screen {
+  min-height: calc(100dvh - var(--staff-header-height) - 1.5rem);
+  min-width: 0;
+}
+
 #pos {
   min-height: calc(100dvh - var(--staff-header-height));
   min-width: 0;
@@ -26,6 +34,7 @@
 #kitchen-screen:fullscreen {
   height: 100dvh;
   overflow-y: auto;
+  padding: .75rem;
   background: var(--color-base-200);
 }
 

@@ -6,7 +6,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
   import Delivest.Factory
   import Delivest.OrderFixtures
 
-  alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Events.Event
+  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.Crm.{BranchSettings, OrderSubscriber, SyncWorker}
+  alias Delivest.Integrations.TestCrm
+  alias Delivest.Oms.{Carts, Order, OrderTransition}
   alias Delivest.Push.NoteWorker
   alias Delivest.Repo
 
@@ -72,7 +76,12 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     assert Repo.reload!(item).quantity == 2
   end
 
-  test "order without phone is created", %{conn: conn, branch: branch, product: product} do
+  test "order without phone is accepted on creation", %{
+    conn: conn,
+    branch: branch,
+    product: product,
+    staff: staff
+  } do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders/new")
     render_click(lv, "add_item", %{"product-id" => product.id})
 
@@ -81,7 +90,89 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     |> render_submit()
 
     assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
-    assert [%Order{client_id: nil}] = Repo.all(Order) |> Enum.filter(&(&1.branch_id == branch.id))
+
+    assert [%Order{client_id: nil, status: :accepted} = order] =
+             Repo.all(Order) |> Enum.filter(&(&1.branch_id == branch.id))
+
+    assert %OrderTransition{from: :created, to: :accepted, source: :system, staff_id: nil} =
+             Repo.get_by!(OrderTransition, order_id: order.id)
+
+    assert %Event{actor: %{"kind" => "staff", "id" => staff_id}} =
+             Repo.get_by!(Event, aggregate_id: order.id, type: "order.created")
+
+    assert staff_id == staff.id
+
+    assert %Event{actor: %{"kind" => "system"}} =
+             Repo.get_by!(Event, aggregate_id: order.id, type: "order.status_changed")
+  end
+
+  test "create-only staff can create an accepted order", %{
+    conn: conn,
+    branch: branch,
+    product: product,
+    staff: staff
+  } do
+    staff.role_id
+    |> then(&Repo.get!(Delivest.Identity.Role, &1))
+    |> Ecto.Changeset.change(permissions: ["orders.create"])
+    |> Repo.update!()
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders/new")
+    render_click(lv, "add_item", %{"product-id" => product.id})
+
+    lv |> form("#order-details-form", order: %{customer_phone: "+7"}) |> render_submit()
+
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
+
+    assert [%Order{status: :accepted}] =
+             Repo.all(Order) |> Enum.filter(&(&1.branch_id == branch.id))
+  end
+
+  test "crm order awaits successful send before acceptance", %{
+    conn: conn,
+    branch: branch,
+    product: product,
+    staff: staff
+  } do
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :test_crm,
+        test_crm: %TestCrm.Settings{token: "t"}
+      }
+    })
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders/new")
+    render_click(lv, "add_item", %{"product-id" => product.id})
+    lv |> form("#order-details-form", order: %{customer_phone: "+7"}) |> render_submit()
+
+    assert_redirect(lv, ~p"/staff/b/#{branch}/orders")
+
+    assert [%Order{status: :created, crm: %{status: "pending"}} = order] =
+             Repo.all(Order) |> Enum.filter(&(&1.branch_id == branch.id))
+
+    refute Repo.get_by(OrderTransition, order_id: order.id)
+
+    assert %Event{actor: %{"kind" => "staff", "id" => staff_id}} =
+             event =
+             Repo.get_by!(Event, aggregate_id: order.id, type: "order.created")
+
+    assert staff_id == staff.id
+    assert {:ok, _job} = OrderSubscriber.handle(event)
+    assert_enqueued(worker: SyncWorker, args: %{"order_id" => order.id})
+
+    assert :ok =
+             perform_job(SyncWorker, %{
+               "order_id" => order.id,
+               "branch_id" => branch.id,
+               "generation" => Delivest.Integrations.Crm.get_branch_settings(branch.id).generation
+             })
+
+    assert %Order{status: :accepted, crm: %{status: "sent"}} = Repo.reload!(order)
+
+    assert %OrderTransition{from: :created, to: :accepted, source: :crm} =
+             Repo.get_by!(OrderTransition, order_id: order.id)
   end
 
   test "order editor keeps queue filters for back and successful save", %{

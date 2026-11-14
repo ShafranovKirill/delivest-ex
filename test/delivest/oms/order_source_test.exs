@@ -7,7 +7,7 @@ defmodule Delivest.Oms.OrderSourceTest do
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Integrations.Frontpad
   alias Delivest.Oms
-  alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Oms.{Carts, Order, OrderTransition}
 
   defp branch(crm \\ nil) do
     branch = insert(:branch, is_active: true)
@@ -38,6 +38,19 @@ defmodule Delivest.Oms.OrderSourceTest do
 
     assert {:ok, %Order{source: "app"}} = order(branch, %{"source" => "staff"})
     assert {:ok, %Order{source: "staff"}} = order(branch, %{}, source: "staff")
+  end
+
+  test "automatic acceptance only applies to opted-in staff orders without crm" do
+    branch = branch()
+
+    assert {:ok, %Order{status: :created}} = order(branch, %{}, source: "staff")
+    assert {:ok, %Order{status: :created}} = order(branch, %{}, auto_accept: true)
+
+    assert {:ok, %Order{status: :accepted} = accepted} =
+             order(branch, %{}, source: "staff", auto_accept: true)
+
+    assert %OrderTransition{source: :system, from: :created, to: :accepted} =
+             Repo.get_by!(OrderTransition, order_id: accepted.id)
   end
 
   test "an unknown source is rejected" do

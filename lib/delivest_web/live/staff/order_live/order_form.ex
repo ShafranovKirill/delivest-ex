@@ -308,7 +308,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       params
       |> Map.put("branch_id", assigns.branch_id)
       |> Map.put("staff_id", actor.id)
-      |> Oms.create_order(actor: actor, source: "staff")
+      |> Oms.create_order(actor: actor, source: "staff", auto_accept: true)
     end
   end
 
