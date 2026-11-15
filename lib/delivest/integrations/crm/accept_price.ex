@@ -32,15 +32,11 @@ defmodule Delivest.Integrations.Crm.AcceptPrice do
   defp valid_id(_id), do: :error
 
   defp frontpad_provider(branch_id) do
-    case Delivest.Integrations.Crm.get_branch_settings(branch_id) do
-      %BranchSettings{} = settings ->
-        if BranchSettings.active_provider(settings) == :frontpad,
-          do: :ok,
-          else: {:error, :provider_changed}
+    settings = Delivest.Integrations.Crm.get_branch_settings(branch_id)
 
-      _ ->
-        {:error, :provider_changed}
-    end
+    if BranchSettings.active_provider(settings) == :frontpad,
+      do: :ok,
+      else: {:error, :provider_changed}
   end
 
   defp single_owner(product_id, branch_id) do
