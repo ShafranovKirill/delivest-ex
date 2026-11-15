@@ -195,19 +195,79 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
   operation(:index,
     summary: "Мои заказы",
-    description: "Все заказы авторизованного клиента, новые сначала.",
+    description:
+      "Заказы авторизованного клиента, новые сначала. Без limit возвращает прежний список (до 50). " <>
+        "С limit возвращает страницу и next_cursor для следующей страницы.",
     tags: ["Orders"],
     security: [%{"bearer" => []}],
+    parameters: [
+      limit: [
+        in: :query,
+        type: :integer,
+        required: false,
+        description: "Размер страницы от 1 до 50"
+      ],
+      cursor: [
+        in: :query,
+        type: :string,
+        required: false,
+        description: "Курсор предыдущей страницы; требует limit"
+      ]
+    ],
     responses: [
       ok: {"Заказы клиента", "application/json", ClientOrdersResponse},
+      bad_request: {"Неверный limit или cursor", "application/json", ErrorResponse},
       unauthorized: {"Нужна авторизация", "application/json", ErrorResponse}
     ]
   )
 
-  def index(conn, _params) do
-    orders = Oms.list_client_orders(conn.assigns.current_client.id, :all)
-    render(conn, :index, orders: orders)
+  def index(conn, params) do
+    case parse_order_page(params) do
+      :legacy ->
+        orders = Oms.list_client_orders(conn.assigns.current_client.id, :all)
+        render(conn, :index, orders: orders)
+
+      {:ok, limit, cursor} ->
+        page = Orders.list_client_orders_page(conn.assigns.current_client.id, limit, cursor)
+        render(conn, :index, page: page)
+
+      :error ->
+        ApiError.send_error(conn, :bad_request, :invalid_pagination, "Invalid limit or cursor")
+    end
   end
+
+  defp parse_order_page(%{"limit" => limit} = params) when is_binary(limit) do
+    with {number, ""} <- Integer.parse(limit),
+         true <- number in 1..50,
+         {:ok, cursor} <- parse_order_cursor(Map.get(params, "cursor")) do
+      {:ok, number, cursor}
+    else
+      _ -> :error
+    end
+  end
+
+  defp parse_order_page(params) do
+    if Map.has_key?(params, "limit") or Map.has_key?(params, "cursor"),
+      do: :error,
+      else: :legacy
+  end
+
+  defp parse_order_cursor(nil), do: {:ok, nil}
+
+  defp parse_order_cursor(value) when is_binary(value) and byte_size(value) in 1..256 do
+    with {:ok, decoded} <- Base.url_decode64(value, padding: false),
+         true <- byte_size(decoded) <= 128,
+         [at, id] <- String.split(decoded, "|", parts: 2),
+         {:ok, date, 0} <- DateTime.from_iso8601(at),
+         {:ok, uuid} <- Ecto.UUID.cast(id),
+         true <- id == uuid do
+      {:ok, {date, id}}
+    else
+      _ -> :error
+    end
+  end
+
+  defp parse_order_cursor(_), do: :error
 
   defp client_id(nil), do: nil
   defp client_id(client), do: client.id

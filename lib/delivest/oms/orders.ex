@@ -136,6 +136,35 @@ defmodule Delivest.Oms.Orders do
     |> Repo.all()
   end
 
+  def list_client_orders_page(client_id, limit, cursor) do
+    query =
+      Order
+      |> where([o], o.client_id == ^client_id and is_nil(o.deleted_at))
+      |> order_by([o], desc: o.inserted_at, desc: o.id)
+      |> limit(^(limit + 1))
+
+    query =
+      case cursor do
+        nil ->
+          query
+
+        {at, id} ->
+          where(query, [o], o.inserted_at < ^at or (o.inserted_at == ^at and o.id < ^id))
+      end
+
+    orders = query |> preload(items: :modifiers) |> Repo.all()
+    page = Enum.take(orders, limit)
+
+    next_cursor =
+      if length(orders) > limit, do: encode_client_order_cursor(List.last(page)), else: nil
+
+    %{orders: page, next_cursor: next_cursor}
+  end
+
+  defp encode_client_order_cursor(order) do
+    Base.url_encode64(DateTime.to_iso8601(order.inserted_at) <> "|" <> order.id, padding: false)
+  end
+
   def list_active_orders(session_id, client_id \\ nil)
   def list_active_orders(nil, nil), do: []
 
