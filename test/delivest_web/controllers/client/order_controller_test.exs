@@ -8,6 +8,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   alias Delivest.Integrations.Frontpad
   alias Delivest.Media
   alias Delivest.Oms.Order
+  alias Delivest.OrderFixtures
   alias Delivest.Repo
   alias DelivestWeb.ClientToken
 
@@ -562,6 +563,75 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   end
 
   describe "authenticated client" do
+    test "orders paginate newest first across equal timestamps and stay client scoped", %{
+      conn: conn,
+      branch: branch,
+      product: product
+    } do
+      client = insert(:client)
+      other_client = insert(:client)
+      at = ~U[2026-01-01 12:00:00Z]
+
+      orders =
+        for n <- 1..8 do
+          order = OrderFixtures.order_fixture(branch.id, product: product)
+
+          order
+          |> Ecto.Changeset.change(
+            client_id: client.id,
+            inserted_at: DateTime.add(at, div(n, 3), :second)
+          )
+          |> Repo.update!()
+        end
+
+      other = OrderFixtures.order_fixture(branch.id, product: product)
+
+      other
+      |> Ecto.Changeset.change(
+        client_id: other_client.id,
+        inserted_at: DateTime.add(at, 10, :second)
+      )
+      |> Repo.update!()
+
+      expected =
+        orders
+        |> Enum.sort_by(fn order -> {order.inserted_at, order.id} end, :desc)
+        |> Enum.map(& &1.id)
+
+      actor = authorize(conn, client)
+      first = actor |> get(~p"/client/orders?limit=6") |> json_response(200)
+      assert length(first["data"]) == 6
+      assert is_binary(first["next_cursor"])
+
+      second =
+        actor
+        |> get(~p"/client/orders?limit=6&cursor=#{first["next_cursor"]}")
+        |> json_response(200)
+
+      assert length(second["data"]) == 2
+      assert second["next_cursor"] == nil
+      assert Enum.map(first["data"] ++ second["data"], & &1["id"]) == expected
+
+      legacy = actor |> get(~p"/client/orders") |> json_response(200)
+      assert Map.keys(legacy) == ["data"]
+      assert Enum.map(legacy["data"], & &1["id"]) == expected
+    end
+
+    test "orders reject invalid page parameters", %{conn: conn} do
+      actor = authorize(conn, insert(:client))
+
+      for path <- [
+            "/client/orders?limit=0",
+            "/client/orders?limit=51",
+            "/client/orders?limit=abc",
+            "/client/orders?cursor=abc",
+            "/client/orders?limit=6&cursor=abc"
+          ] do
+        assert %{"error" => "invalid_pagination"} =
+                 actor |> get(path) |> json_response(400)
+      end
+    end
+
     defp authorize(conn, client),
       do:
         put_req_header(

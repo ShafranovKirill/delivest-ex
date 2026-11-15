@@ -20,6 +20,10 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
     %{data: active_orders_data(orders)}
   end
 
+  def index(%{page: %{orders: orders, next_cursor: next_cursor}}) do
+    %{data: active_orders_data(orders), next_cursor: next_cursor}
+  end
+
   defp active_orders_data(orders) do
     settings = Delivest.Oms.Orders.client_cancellation_settings(orders)
     Enum.map(orders, &active_order_data(&1, Map.get(settings, &1.branch_id, true)))

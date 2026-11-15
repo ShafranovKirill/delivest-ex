@@ -442,7 +442,10 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
     OpenApiSpex.schema(%{
       title: "ClientOrdersResponse",
       type: :object,
-      properties: %{data: %Schema{type: :array, items: ActiveOrder}},
+      properties: %{
+        data: %Schema{type: :array, items: ActiveOrder},
+        next_cursor: %Schema{type: :string, nullable: true}
+      },
       required: [:data]
     })
   end
