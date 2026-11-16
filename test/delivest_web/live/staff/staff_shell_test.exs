@@ -18,6 +18,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#main-sidebar #sidebar-toggle[aria-controls='main-sidebar']")
     assert has_element?(lv, "#nav-section-main")
     assert has_element?(lv, "#sidebar-group-settings-toggle")
+    assert has_element?(lv, "#nav-section-main > #nav-section-settings")
 
     assert has_element?(
              lv,
@@ -53,6 +54,33 @@ defmodule DelivestWeb.Staff.StaffShellTest do
            )
 
     refute has_element?(lv, "#sidebar-group-menu #sidebar-product-section-tab-categories")
+  end
+
+  test "analytics group is expandable away from reports and exposes six destinations", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["statistics.read", "statistics.network"]))
+
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+    assert has_element?(view, "#sidebar-group-analytics:not([open])")
+    assert has_element?(view, "#sidebar-group-analytics-toggle")
+
+    for id <- [
+          "statistics",
+          "analytics_channels",
+          "analytics_sources",
+          "analytics_funnel",
+          "analytics_customers",
+          "analytics_comparison"
+        ] do
+      assert has_element?(view, "#sidebar-section-nav-#{id}")
+    end
   end
 
   test "active product and settings sections expand in the main sidebar with unique links", %{

@@ -12387,3 +12387,26 @@ msgstr "Отменить выбор"
 #, elixir-autogen, elixir-format
 msgid "Appearance"
 msgstr "Внешний вид"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Sales channels"
+msgstr "Каналы продаж"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Buyers"
+msgstr "Покупатели"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Branch comparison"
+msgstr "Сравнение филиалов"
+
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Section under development"
+msgstr "Раздел в разработке"

@@ -12,7 +12,8 @@ defmodule DelivestWeb.StaffBranchPath do
     menu/popular stocks loyalty promotions advertising-links pos kitchen
   )
   @network_routes ~w(
-    dashboard statistics integrations integrations/zvonok integrations/dadata integrations/yookassa
+    dashboard statistics analytics/channels analytics/sources analytics/funnel analytics/customers
+    analytics/comparison integrations integrations/zvonok integrations/dadata integrations/yookassa
     integrations/yandex-eda settings franchise branches employee roles clients segments marketing marketing/bonuses
     marketing/policies diagnostics logs logs/raw logs/errors
   )

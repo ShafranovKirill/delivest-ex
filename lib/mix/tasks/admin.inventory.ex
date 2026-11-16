@@ -335,7 +335,7 @@ defmodule Mix.Tasks.Admin.Inventory do
       String.contains?(route, "/delivery_live/") or String.contains?(route, "/courier_live/") ->
         "Delivery"
 
-      String.contains?(route, "/statistics_live/") ->
+      String.contains?(route, "/statistics_live/") or String.contains?(route, "/analytics_live/") ->
         "Analytics"
 
       String.contains?(route, "/franchise_live/") ->
@@ -388,7 +388,7 @@ defmodule Mix.Tasks.Admin.Inventory do
           String.contains?(route, "/advertising") ->
         "Marketing"
 
-      String.contains?(route, "/statistics") ->
+      String.contains?(route, "/statistics") or String.contains?(route, "/analytics") ->
         "Analytics"
 
       String.contains?(route, "/settings") ->
@@ -435,13 +435,26 @@ defmodule Mix.Tasks.Admin.Inventory do
 
   defp page_variant(route) do
     cond do
-      String.ends_with?(route, "/delivery") -> "hub"
-      route == "/staff/branches/new" -> "branch creation"
-      String.contains?(route, "/kitchen") -> "fullscreen kitchen"
-      String.contains?(route, "/pos") -> "fullscreen POS"
-      String.contains?(route, "/dashboard") -> "overview"
-      String.contains?(route, "/statistics") -> "analytics"
-      true -> nil
+      String.ends_with?(route, "/delivery") ->
+        "hub"
+
+      route == "/staff/branches/new" ->
+        "branch creation"
+
+      String.contains?(route, "/kitchen") ->
+        "fullscreen kitchen"
+
+      String.contains?(route, "/pos") ->
+        "fullscreen POS"
+
+      String.contains?(route, "/dashboard") ->
+        "overview"
+
+      String.contains?(route, "/statistics") or String.contains?(route, "/analytics") ->
+        "analytics"
+
+      true ->
+        nil
     end
   end
 

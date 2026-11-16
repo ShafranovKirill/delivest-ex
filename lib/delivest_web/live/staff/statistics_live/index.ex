@@ -365,6 +365,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     """
   end
 
+  def staff_page_navigation(%{current_branch: nil}), do: nil
   def staff_page_navigation(%{visible_tabs: []}), do: nil
 
   def staff_page_navigation(assigns) do

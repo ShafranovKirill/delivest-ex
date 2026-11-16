@@ -409,6 +409,7 @@ defmodule DelivestWeb.Router do
       end
 
       live "/statistics", StatisticsLive.Index, :index
+      live "/analytics/:section", AnalyticsLive.Placeholder, :index
       live "/diagnostics", DiagnosticsLive.Index, :index
 
       scope "/integrations", IntegrationLive do

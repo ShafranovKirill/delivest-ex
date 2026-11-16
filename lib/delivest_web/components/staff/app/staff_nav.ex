@@ -313,7 +313,13 @@ defmodule DelivestWeb.StaffNav do
                 :advertising_links,
                 :marketing,
                 :employee,
-                :roles
+                :roles,
+                :statistics,
+                :analytics_channels,
+                :analytics_sources,
+                :analytics_funnel,
+                :analytics_customers,
+                :analytics_comparison
               ] ->
             group.items
 
@@ -424,7 +430,7 @@ defmodule DelivestWeb.StaffNav do
         [] ->
           nil
 
-        [only] when id not in [:settings, :menu, :employees] ->
+        [only] when id not in [:settings, :menu, :employees, :analytics] ->
           %{only | label: label, icon: icon, pages: only.pages}
 
         available ->
@@ -470,7 +476,22 @@ defmodule DelivestWeb.StaffNav do
           "hero-user-group",
           Enum.map([:employee, :roles], find)
         ),
-        primary_label(find.(:statistics), gettext("Analytics"))
+        top.(
+          :analytics,
+          gettext("Analytics"),
+          "hero-chart-bar",
+          Enum.map(
+            [
+              :statistics,
+              :analytics_channels,
+              :analytics_sources,
+              :analytics_funnel,
+              :analytics_customers,
+              :analytics_comparison
+            ],
+            find
+          )
+        )
       ]
       |> Enum.reject(&is_nil/1)
 
@@ -745,9 +766,26 @@ defmodule DelivestWeb.StaffNav do
     [
       item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
       |> allowed(staff, "statistics.read"),
+      analytics_placeholder(:analytics_channels, "channels", gettext("Sales channels"), staff),
+      analytics_placeholder(:analytics_sources, "sources", gettext("Sources"), staff),
+      analytics_placeholder(:analytics_funnel, "funnel", gettext("Funnel"), staff),
+      analytics_placeholder(:analytics_customers, "customers", gettext("Buyers"), staff),
+      analytics_placeholder(
+        :analytics_comparison,
+        "comparison",
+        gettext("Branch comparison"),
+        staff
+      ),
       group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch))
     ]
     |> compact_all()
+  end
+
+  defp analytics_placeholder(id, section, label, staff) do
+    if can?(staff, "statistics.read") and can?(staff, "statistics.network") do
+      item(id, "/staff/analytics/#{section}", "hero-chart-bar", label)
+      |> Map.put(:read_permissions, ["statistics.read", "statistics.network"])
+    end
   end
 
   defp marketing_entries(staff, branch) do

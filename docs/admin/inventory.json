@@ -27247,7 +27247,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "branch_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:483",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:484",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27268,7 +27268,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "channel",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:475",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:476",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27289,7 +27289,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:498",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:499",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27310,7 +27310,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:491",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:492",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27331,7 +27331,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:460",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:461",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27352,7 +27352,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "period",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:454",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:455",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -27373,7 +27373,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:466",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:467",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -33325,6 +33325,36 @@
   ],
   "screens": [
     {
+      "branch_switch": "network/all-branches scope stays explicit; no implicit branch filtering",
+      "data_scope": "network or all accessible branches; handler decides",
+      "disposition": "move to Analytics",
+      "feature_dependency": "no registry key established at route declaration",
+      "handler": "AnalyticsLive.Placeholder::index",
+      "id": "route:live:/staff/analytics/:section:AnalyticsLive.Placeholder::index",
+      "page_type": "list",
+      "rights": {
+        "handler_permissions": [
+          "statistics.network",
+          "statistics.read"
+        ],
+        "handler_source": "lib/delivest_web/live/staff/analytics_live/placeholder.ex",
+        "interpretation": "literal handler permission references; branch authorization may further restrict",
+        "session_hooks": [
+          "{DelivestWeb.Hooks.StaffAuth, :default}",
+          "{DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}",
+          "{DelivestWeb.Hooks.StaffActiveBranch, :optional}",
+          "{DelivestWeb.Hooks.NewOrders, :default}",
+          "{DelivestWeb.Hooks.StaffBranches, :default}",
+          "{DelivestWeb.Hooks.CommandPalette, :default}",
+          "{DelivestWeb.Hooks.StaffPath, :default}"
+        ]
+      },
+      "route": "LIVE /staff/analytics/:section",
+      "source": "lib/delivest_web/router.ex:412",
+      "target_section": "Analytics",
+      "variant": "analytics"
+    },
+    {
       "branch_switch": "open same list/queue for new branch; reset selection and page",
       "data_scope": "branch from URL; server authorization required",
       "disposition": "move to Marketing",
@@ -33349,7 +33379,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/advertising-links",
-      "source": "lib/delivest_web/router.ex:471",
+      "source": "lib/delivest_web/router.ex:472",
       "target_section": "Marketing",
       "variant": null
     },
@@ -33382,7 +33412,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/:id/edit",
-      "source": "lib/delivest_web/router.ex:499",
+      "source": "lib/delivest_web/router.ex:500",
       "target_section": "Menu",
       "variant": null
     },
@@ -33415,7 +33445,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/:id/products",
-      "source": "lib/delivest_web/router.ex:500",
+      "source": "lib/delivest_web/router.ex:501",
       "target_section": "Menu",
       "variant": null
     },
@@ -33448,7 +33478,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/new",
-      "source": "lib/delivest_web/router.ex:501",
+      "source": "lib/delivest_web/router.ex:502",
       "target_section": "Menu",
       "variant": null
     },
@@ -33481,7 +33511,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories",
-      "source": "lib/delivest_web/router.ex:498",
+      "source": "lib/delivest_web/router.ex:499",
       "target_section": "Menu",
       "variant": null
     },
@@ -33510,7 +33540,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/couriers",
-      "source": "lib/delivest_web/router.ex:477",
+      "source": "lib/delivest_web/router.ex:478",
       "target_section": "Delivery",
       "variant": null
     },
@@ -33542,7 +33572,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/dashboard",
-      "source": "lib/delivest_web/router.ex:469",
+      "source": "lib/delivest_web/router.ex:470",
       "target_section": "Overview",
       "variant": "overview"
     },
@@ -33571,7 +33601,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/deliveries",
-      "source": "lib/delivest_web/router.ex:476",
+      "source": "lib/delivest_web/router.ex:477",
       "target_section": "Delivery",
       "variant": null
     },
@@ -33601,7 +33631,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/address",
-      "source": "lib/delivest_web/router.ex:473",
+      "source": "lib/delivest_web/router.ex:474",
       "target_section": "Settings / Delivery",
       "variant": null
     },
@@ -33631,7 +33661,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/couriers",
-      "source": "lib/delivest_web/router.ex:475",
+      "source": "lib/delivest_web/router.ex:476",
       "target_section": "Delivery",
       "variant": null
     },
@@ -33661,7 +33691,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/zones",
-      "source": "lib/delivest_web/router.ex:474",
+      "source": "lib/delivest_web/router.ex:475",
       "target_section": "Settings / Delivery",
       "variant": null
     },
@@ -33690,7 +33720,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery",
-      "source": "lib/delivest_web/router.ex:472",
+      "source": "lib/delivest_web/router.ex:473",
       "target_section": "Delivery",
       "variant": "hub"
     },
@@ -33721,7 +33751,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/payments",
-      "source": "lib/delivest_web/router.ex:478",
+      "source": "lib/delivest_web/router.ex:479",
       "target_section": "Finance",
       "variant": null
     },
@@ -33750,7 +33780,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/receipts",
-      "source": "lib/delivest_web/router.ex:480",
+      "source": "lib/delivest_web/router.ex:481",
       "target_section": "Finance",
       "variant": null
     },
@@ -33780,7 +33810,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/transactions",
-      "source": "lib/delivest_web/router.ex:479",
+      "source": "lib/delivest_web/router.ex:480",
       "target_section": "Finance",
       "variant": null
     },
@@ -33809,7 +33839,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/dadata",
-      "source": "lib/delivest_web/router.ex:490",
+      "source": "lib/delivest_web/router.ex:491",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -33839,7 +33869,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/fiscal",
-      "source": "lib/delivest_web/router.ex:494",
+      "source": "lib/delivest_web/router.ex:495",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -33870,7 +33900,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/frontpad",
-      "source": "lib/delivest_web/router.ex:484",
+      "source": "lib/delivest_web/router.ex:485",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -33900,7 +33930,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/iiko",
-      "source": "lib/delivest_web/router.ex:486",
+      "source": "lib/delivest_web/router.ex:487",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -33930,7 +33960,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/rkeeper",
-      "source": "lib/delivest_web/router.ex:487",
+      "source": "lib/delivest_web/router.ex:488",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -33960,7 +33990,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/routes",
-      "source": "lib/delivest_web/router.ex:488",
+      "source": "lib/delivest_web/router.ex:489",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -33990,7 +34020,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yandex-delivery",
-      "source": "lib/delivest_web/router.ex:493",
+      "source": "lib/delivest_web/router.ex:494",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -34024,7 +34054,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yandex-eda",
-      "source": "lib/delivest_web/router.ex:492",
+      "source": "lib/delivest_web/router.ex:493",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -34054,7 +34084,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/ycart",
-      "source": "lib/delivest_web/router.ex:485",
+      "source": "lib/delivest_web/router.ex:486",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -34083,7 +34113,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yookassa",
-      "source": "lib/delivest_web/router.ex:491",
+      "source": "lib/delivest_web/router.ex:492",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -34112,7 +34142,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/zvonok",
-      "source": "lib/delivest_web/router.ex:489",
+      "source": "lib/delivest_web/router.ex:490",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -34142,7 +34172,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations",
-      "source": "lib/delivest_web/router.ex:483",
+      "source": "lib/delivest_web/router.ex:484",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -34169,7 +34199,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/kitchen",
-      "source": "lib/delivest_web/router.ex:441",
+      "source": "lib/delivest_web/router.ex:442",
       "target_section": "Orders",
       "variant": "fullscreen kitchen"
     },
@@ -34200,7 +34230,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/loyalty",
-      "source": "lib/delivest_web/router.ex:529",
+      "source": "lib/delivest_web/router.ex:530",
       "target_section": "Settings / Loyalty",
       "variant": null
     },
@@ -34230,7 +34260,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/menu/popular",
-      "source": "lib/delivest_web/router.ex:520",
+      "source": "lib/delivest_web/router.ex:521",
       "target_section": "Menu",
       "variant": null
     },
@@ -34260,7 +34290,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/:id/edit",
-      "source": "lib/delivest_web/router.ex:544",
+      "source": "lib/delivest_web/router.ex:545",
       "target_section": "Orders",
       "variant": null
     },
@@ -34290,7 +34320,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/:id",
-      "source": "lib/delivest_web/router.ex:545",
+      "source": "lib/delivest_web/router.ex:546",
       "target_section": "Orders",
       "variant": null
     },
@@ -34320,7 +34350,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/new",
-      "source": "lib/delivest_web/router.ex:543",
+      "source": "lib/delivest_web/router.ex:544",
       "target_section": "Orders",
       "variant": null
     },
@@ -34350,7 +34380,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders",
-      "source": "lib/delivest_web/router.ex:542",
+      "source": "lib/delivest_web/router.ex:543",
       "target_section": "Orders",
       "variant": null
     },
@@ -34377,7 +34407,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/pos",
-      "source": "lib/delivest_web/router.ex:455",
+      "source": "lib/delivest_web/router.ex:456",
       "target_section": "Orders",
       "variant": "fullscreen POS"
     },
@@ -34410,7 +34440,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/:id/edit",
-      "source": "lib/delivest_web/router.ex:514",
+      "source": "lib/delivest_web/router.ex:515",
       "target_section": "Menu",
       "variant": null
     },
@@ -34443,7 +34473,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/:id",
-      "source": "lib/delivest_web/router.ex:516",
+      "source": "lib/delivest_web/router.ex:517",
       "target_section": "Menu",
       "variant": null
     },
@@ -34472,7 +34502,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/bulk",
-      "source": "lib/delivest_web/router.ex:506",
+      "source": "lib/delivest_web/router.ex:507",
       "target_section": "Menu",
       "variant": null
     },
@@ -34504,7 +34534,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/modifiers",
-      "source": "lib/delivest_web/router.ex:509",
+      "source": "lib/delivest_web/router.ex:510",
       "target_section": "Menu",
       "variant": null
     },
@@ -34537,7 +34567,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/new",
-      "source": "lib/delivest_web/router.ex:515",
+      "source": "lib/delivest_web/router.ex:516",
       "target_section": "Menu",
       "variant": null
     },
@@ -34566,7 +34596,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/operations",
-      "source": "lib/delivest_web/router.ex:507",
+      "source": "lib/delivest_web/router.ex:508",
       "target_section": "Menu",
       "variant": null
     },
@@ -34596,7 +34626,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/stops",
-      "source": "lib/delivest_web/router.ex:508",
+      "source": "lib/delivest_web/router.ex:509",
       "target_section": "Menu",
       "variant": null
     },
@@ -34626,7 +34656,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/suggested",
-      "source": "lib/delivest_web/router.ex:510",
+      "source": "lib/delivest_web/router.ex:511",
       "target_section": "Menu",
       "variant": null
     },
@@ -34656,7 +34686,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags/:id/edit",
-      "source": "lib/delivest_web/router.ex:513",
+      "source": "lib/delivest_web/router.ex:514",
       "target_section": "Menu",
       "variant": null
     },
@@ -34686,7 +34716,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags/new",
-      "source": "lib/delivest_web/router.ex:512",
+      "source": "lib/delivest_web/router.ex:513",
       "target_section": "Menu",
       "variant": null
     },
@@ -34716,7 +34746,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags",
-      "source": "lib/delivest_web/router.ex:511",
+      "source": "lib/delivest_web/router.ex:512",
       "target_section": "Menu",
       "variant": null
     },
@@ -34749,7 +34779,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products",
-      "source": "lib/delivest_web/router.ex:505",
+      "source": "lib/delivest_web/router.ex:506",
       "target_section": "Menu",
       "variant": null
     },
@@ -34781,7 +34811,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/:id/codes",
-      "source": "lib/delivest_web/router.ex:538",
+      "source": "lib/delivest_web/router.ex:539",
       "target_section": "Marketing",
       "variant": null
     },
@@ -34813,7 +34843,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/:id/edit",
-      "source": "lib/delivest_web/router.ex:537",
+      "source": "lib/delivest_web/router.ex:538",
       "target_section": "Marketing",
       "variant": null
     },
@@ -34845,7 +34875,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new/first-order",
-      "source": "lib/delivest_web/router.ex:535",
+      "source": "lib/delivest_web/router.ex:536",
       "target_section": "Marketing",
       "variant": null
     },
@@ -34877,7 +34907,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new/full",
-      "source": "lib/delivest_web/router.ex:534",
+      "source": "lib/delivest_web/router.ex:535",
       "target_section": "Marketing",
       "variant": null
     },
@@ -34909,7 +34939,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new",
-      "source": "lib/delivest_web/router.ex:533",
+      "source": "lib/delivest_web/router.ex:534",
       "target_section": "Marketing",
       "variant": null
     },
@@ -34941,7 +34971,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/sale",
-      "source": "lib/delivest_web/router.ex:536",
+      "source": "lib/delivest_web/router.ex:537",
       "target_section": "Marketing",
       "variant": null
     },
@@ -34973,7 +35003,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions",
-      "source": "lib/delivest_web/router.ex:532",
+      "source": "lib/delivest_web/router.ex:533",
       "target_section": "Marketing",
       "variant": null
     },
@@ -35003,7 +35033,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/statistics",
-      "source": "lib/delivest_web/router.ex:470",
+      "source": "lib/delivest_web/router.ex:471",
       "target_section": "Analytics",
       "variant": "analytics"
     },
@@ -35036,7 +35066,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks/:id/edit",
-      "source": "lib/delivest_web/router.ex:525",
+      "source": "lib/delivest_web/router.ex:526",
       "target_section": "Marketing",
       "variant": null
     },
@@ -35069,7 +35099,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks/new",
-      "source": "lib/delivest_web/router.ex:526",
+      "source": "lib/delivest_web/router.ex:527",
       "target_section": "Marketing",
       "variant": null
     },
@@ -35102,7 +35132,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks",
-      "source": "lib/delivest_web/router.ex:524",
+      "source": "lib/delivest_web/router.ex:525",
       "target_section": "Marketing",
       "variant": null
     },
@@ -35457,7 +35487,7 @@
         ]
       },
       "route": "LIVE /staff/diagnostics",
-      "source": "lib/delivest_web/router.ex:412",
+      "source": "lib/delivest_web/router.ex:413",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -35672,7 +35702,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/dadata",
-      "source": "lib/delivest_web/router.ex:417",
+      "source": "lib/delivest_web/router.ex:418",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -35701,7 +35731,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/yandex-eda",
-      "source": "lib/delivest_web/router.ex:419",
+      "source": "lib/delivest_web/router.ex:420",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -35730,7 +35760,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/yookassa",
-      "source": "lib/delivest_web/router.ex:418",
+      "source": "lib/delivest_web/router.ex:419",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -35759,7 +35789,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/zvonok",
-      "source": "lib/delivest_web/router.ex:416",
+      "source": "lib/delivest_web/router.ex:417",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -35789,7 +35819,7 @@
         ]
       },
       "route": "LIVE /staff/integrations",
-      "source": "lib/delivest_web/router.ex:415",
+      "source": "lib/delivest_web/router.ex:416",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -35818,7 +35848,7 @@
         ]
       },
       "route": "LIVE /staff/logs/errors",
-      "source": "lib/delivest_web/router.ex:425",
+      "source": "lib/delivest_web/router.ex:426",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -35847,7 +35877,7 @@
         ]
       },
       "route": "LIVE /staff/logs/raw",
-      "source": "lib/delivest_web/router.ex:424",
+      "source": "lib/delivest_web/router.ex:425",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -35876,7 +35906,7 @@
         ]
       },
       "route": "LIVE /staff/logs",
-      "source": "lib/delivest_web/router.ex:423",
+      "source": "lib/delivest_web/router.ex:424",
       "target_section": "Settings / Data and system",
       "variant": null
     },

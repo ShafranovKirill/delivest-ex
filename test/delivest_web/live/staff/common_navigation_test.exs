@@ -295,12 +295,19 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     refute has_element?(settings, "#sidebar-settings-nav-features")
     assert has_element?(settings, "#sidebar-settings-nav-data_transfer")
 
-    refute has_element?(settings, "#nav-section-main a[href='/staff/branches']")
-    refute has_element?(settings, "#nav-section-main a[href='/staff/integrations']")
+    refute has_element?(
+             settings,
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/branches']"
+           )
 
     refute has_element?(
              settings,
-             "#nav-section-main a[href='/staff/b/#{branch.slug}/delivery']"
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/integrations']"
+           )
+
+    refute has_element?(
+             settings,
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/b/#{branch.slug}/delivery']"
            )
 
     {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
