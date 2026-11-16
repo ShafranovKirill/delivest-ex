@@ -230,7 +230,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
       {"/staff/branches/#{branch.slug}/edit", "branches", "#branch-section-hours"},
       {"/staff/branches/#{branch.slug}/edit/hours", "branches", "#branch-form"},
       {"/staff/b/#{branch.slug}/integrations", "integrations", "#integration-frontpad"},
-      {"/staff/b/#{branch.slug}/delivery", "delivery_settings", "#delivery-couriers-card"}
+      {"/staff/b/#{branch.slug}/delivery", "branches", "#delivery-couriers-card"}
     ]
 
     navigation =

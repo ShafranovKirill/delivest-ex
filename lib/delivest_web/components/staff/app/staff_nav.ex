@@ -16,7 +16,7 @@ defmodule DelivestWeb.StaffNav do
         :features
 
       path == "/staff/settings/data-transfer" ->
-        :data_transfer
+        :data_system
 
       String.contains?(path, "/integrations/routes") ->
         :integrations
@@ -25,16 +25,16 @@ defmodule DelivestWeb.StaffNav do
         :integrations
 
       String.contains?(path, "/delivery/zones") ->
-        :delivery_settings
+        :branches
 
       String.contains?(path, "/delivery") ->
-        :delivery_settings
+        :branches
 
       String.contains?(path, "/branches/") and String.ends_with?(path, "/hours") ->
         :branches
 
       String.contains?(path, "/branches/") and String.ends_with?(path, "/snapshot") ->
-        :data_transfer
+        :data_system
 
       String.contains?(path, "/branches/") and String.contains?(path, "/edit") ->
         :branches
@@ -43,7 +43,7 @@ defmodule DelivestWeb.StaffNav do
         :branches
 
       path == "/staff/franchise/snapshot" ->
-        :data_transfer
+        :data_system
 
       String.starts_with?(path, "/staff/franchise") ->
         :franchise
@@ -183,11 +183,29 @@ defmodule DelivestWeb.StaffNav do
 
   def active_data_system(path) when is_binary(path) do
     cond do
-      String.starts_with?(path, "/staff/logs/errors") -> :errors
-      String.starts_with?(path, "/staff/logs/raw") -> :raw
-      String.starts_with?(path, "/staff/logs") -> :events
-      String.starts_with?(path, "/staff/diagnostics") -> :metrics
-      true -> nil
+      path == "/staff/settings/data-transfer" ->
+        :data_transfer
+
+      path == "/staff/franchise/snapshot" ->
+        :data_transfer
+
+      String.contains?(path, "/branches/") and String.ends_with?(path, "/snapshot") ->
+        :data_transfer
+
+      String.starts_with?(path, "/staff/logs/errors") ->
+        :errors
+
+      String.starts_with?(path, "/staff/logs/raw") ->
+        :raw
+
+      String.starts_with?(path, "/staff/logs") ->
+        :events
+
+      String.starts_with?(path, "/staff/diagnostics") ->
+        :metrics
+
+      true ->
+        nil
     end
   end
 
@@ -583,12 +601,21 @@ defmodule DelivestWeb.StaffNav do
       setting(
         :data_system,
         gettext("Data and system"),
-        "/staff/diagnostics",
+        if(can?(staff, "logs.read"),
+          do: "/staff/diagnostics",
+          else: setting_path(:data_transfer, branch)
+        ),
         "hero-beaker",
         :network,
-        ["logs.read"],
+        if(can?(staff, "logs.read"), do: ["logs.read"], else: ["branches.update", "admin"]),
         ["диагностика"]
-      ),
+      )
+      |> Map.put(:route, fn selected_branch ->
+        if(can?(staff, "logs.read"),
+          do: setting_path(:data_system, selected_branch),
+          else: setting_path(:data_transfer, selected_branch)
+        )
+      end),
       setting(
         :site_snapshot,
         gettext("Branch snapshot"),
@@ -612,6 +639,9 @@ defmodule DelivestWeb.StaffNav do
     |> Enum.filter(fn
       %{id: :data_transfer} ->
         transfer_access?
+
+      %{id: :data_system} ->
+        can?(staff, "logs.read") or transfer_access?
 
       entry ->
         Enum.any?(entry.read_permissions, &can?(staff, &1))

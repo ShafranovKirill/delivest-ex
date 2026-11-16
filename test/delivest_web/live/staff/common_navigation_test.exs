@@ -293,7 +293,13 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(settings, "#sidebar-group-settings[open]")
     refute has_element?(settings, "#sidebar-settings-nav-features")
-    assert has_element?(settings, "#sidebar-settings-nav-data_transfer")
+
+    assert has_element?(
+             settings,
+             "#sidebar-group-data-system #sidebar-settings-nav-data_transfer"
+           )
+
+    refute has_element?(settings, "#sidebar-group-data-system #sidebar-logs-tab-metrics")
 
     refute has_element?(
              settings,
@@ -314,8 +320,12 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(
              delivery,
-             "#sidebar-group-settings[open] #sidebar-settings-nav-delivery_settings[aria-current='page']"
+             "#sidebar-group-settings[open] #sidebar-settings-nav-branches[aria-current='page']"
            )
+
+    refute has_element?(delivery, "#sidebar-settings-nav-delivery_settings")
+    assert has_element?(delivery, "#settings-nav-branches[aria-current='page']")
+    refute has_element?(delivery, "#settings-nav-delivery_settings")
 
     assert has_element?(
              delivery,
@@ -370,6 +380,15 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert has_element?(admin, "#sidebar-settings-nav-data_transfer[aria-current='page']")
     assert has_element?(admin, "#settings-nav-data_transfer[aria-current='page']")
+    assert has_element?(admin, "#sidebar-group-data-system[open] #sidebar-logs-tab-metrics")
+    assert has_element?(admin, "#group-data-system[open] #settings-logs-tab-metrics")
+
+    assert has_element?(
+             admin,
+             "#settings-navigation.flex-wrap > #group-data-system.w-full > div.flex-wrap"
+           )
+
+    refute has_element?(admin, "#group-data-system-toggle[aria-current]")
 
     assert has_element?(
              admin,
@@ -417,9 +436,34 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     assert has_element?(branch_view, "#data-transfer-branch")
     refute has_element?(branch_view, "#data-transfer-franchise")
 
+    assert has_element?(
+             branch_view,
+             "#sidebar-group-data-system[open] #sidebar-settings-nav-data_transfer[aria-current='page']"
+           )
+
+    assert has_element?(
+             branch_view,
+             "#group-data-system[open] #settings-nav-data_transfer[aria-current='page']"
+           )
+
+    refute has_element?(branch_view, "#sidebar-logs-tab-metrics")
+    refute has_element?(branch_view, "#settings-logs-tab-metrics")
+
+    {:ok, branch_editor, _} = live(branch_conn, "/staff/branches/#{branch.slug}/edit")
+
+    assert has_element?(
+             branch_editor,
+             "#sidebar-group-data-system #sidebar-settings-nav-data_transfer"
+           )
+
+    assert has_element?(branch_editor, "#group-data-system #settings-nav-data_transfer")
+    refute has_element?(branch_editor, "#sidebar-logs-tab-metrics")
+
     reader_conn = login(conn, ["branches.read"], [branch], branch.id)
     {:ok, reader, _} = live(reader_conn, "/staff/settings?branch=#{branch.slug}")
     refute has_element?(reader, "#sidebar-settings-nav-data_transfer")
+    refute has_element?(reader, "#sidebar-group-data-system")
+    refute has_element?(reader, "#group-data-system")
 
     assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
              live(reader_conn, "/staff/settings/data-transfer")
@@ -430,6 +474,8 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     orphan_conn = login(conn, ["branches.read", "branches.update"], [])
     {:ok, orphan_settings, _} = live(orphan_conn, "/staff/settings")
     refute has_element?(orphan_settings, "#settings-nav-data_transfer")
+    refute has_element?(orphan_settings, "#sidebar-group-data-system")
+    refute has_element?(orphan_settings, "#group-data-system")
 
     assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
              live(orphan_conn, "/staff/settings/data-transfer")
@@ -477,6 +523,19 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     assert has_element?(logs, "#staff-context-navigation > #settings-navigation")
     assert has_element?(logs, "#settings-navigation a[aria-current='page']")
     assert has_element?(logs, "#settings-navigation a[href='/staff/diagnostics']")
+
+    assert has_element?(
+             logs,
+             "#sidebar-group-data-system[open] #sidebar-logs-tab-events[aria-current='page']"
+           )
+
+    assert has_element?(
+             logs,
+             "#group-data-system[open] #settings-logs-tab-events[aria-current='page']"
+           )
+
+    refute has_element?(logs, "#settings-nav-data_transfer")
+    refute has_element?(logs, "#sidebar-settings-nav-data_transfer")
     refute has_element?(logs, "#staff-section-navigation")
     refute has_element?(logs, "#nav-section-settings a[href='/staff/settings']")
   end

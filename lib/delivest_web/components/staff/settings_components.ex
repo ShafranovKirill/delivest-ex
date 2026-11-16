@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.SettingsComponents do
   use DelivestWeb, :html
 
   import DelivestWeb.CoreComponents, only: [icon: 1]
+  import Delivest.Identity.Acl, only: [can?: 2]
 
   attr :staff, :any, required: true
   attr :branches, :list, required: true
@@ -19,13 +20,32 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       assigns.current_path ||
         if(branch, do: "/staff/branches/#{branch.slug}/edit", else: "/staff/franchise")
 
+    entries = DelivestWeb.StaffNav.settings_entries(assigns.staff, branch)
+    transfer = Enum.find(entries, &(&1.id == :data_transfer))
+
+    children =
+      if(transfer, do: [transfer], else: []) ++
+        if(can?(assigns.staff, "logs.read"),
+          do: DelivestWeb.StaffNav.data_system_entries(),
+          else: []
+        )
+
     assigns =
       assign(assigns,
         entries:
-          DelivestWeb.StaffNav.settings_entries(assigns.staff, branch)
+          entries
           |> Enum.reject(
-            &(&1.id in [:settings, :branch_settings, :site_snapshot, :instance_backup])
+            &(&1.id in [
+                :settings,
+                :branch_settings,
+                :data_transfer,
+                :delivery_settings,
+                :site_snapshot,
+                :instance_backup
+              ])
           ),
+        data_system_children: children,
+        active_child_id: DelivestWeb.StaffNav.active_data_system(path),
         active_id: DelivestWeb.StaffNav.active_setting(path)
       )
 
@@ -50,16 +70,22 @@ defmodule DelivestWeb.Staff.SettingsComponents do
             {entry.label}
           </summary>
           <ul>
-            <li :for={child <- DelivestWeb.StaffNav.data_system_entries()}>
+            <li :for={child <- @data_system_children}>
               <.link
-                id={"#{@id_prefix}logs-tab-#{child.id}"}
-                navigate={child.path}
-                class={
-                  DelivestWeb.StaffNav.active_data_system(@current_path) == child.id && "menu-active"
+                id={
+                  if child.id == :data_transfer,
+                    do: "sidebar-settings-nav-data_transfer",
+                    else: "sidebar-logs-tab-#{child.id}"
                 }
-                aria-current={
-                  DelivestWeb.StaffNav.active_data_system(@current_path) == child.id && "page"
+                navigate={
+                  DelivestWeb.StaffBranchPath.contextual_navigation_path(
+                    child.path,
+                    @scope_branch,
+                    @return_source
+                  )
                 }
+                class={@active_child_id == child.id && "menu-active"}
+                aria-current={@active_child_id == child.id && "page"}
               >{child.label}</.link>
             </li>
           </ul>
@@ -83,31 +109,61 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       :if={@id_prefix == ""}
       id={"#{@id_prefix}settings-navigation"}
       phx-hook="ActiveSectionNav"
-      class={[
-        "flex gap-2 rounded-box border border-base-300 bg-base-100 p-2",
-        @variant == :sidebar &&
-          "min-w-0 max-w-full self-start overflow-x-auto w-full",
-        @variant == :horizontal && "flex-wrap items-center"
-      ]}
+      class="flex w-full flex-wrap items-center gap-2 rounded-box border border-base-300 bg-base-100 p-2"
       aria-label={gettext("Settings")}
     >
-      <.link
-        :for={entry <- @entries}
-        id={"#{@id_prefix}settings-nav-#{entry.id}"}
-        navigate={
-          DelivestWeb.StaffBranchPath.contextual_navigation_path(
-            entry.path,
-            @scope_branch,
-            @return_source
-          )
-        }
-        class={[
-          "btn btn-sm btn-ghost shrink-0",
-          @variant == :sidebar && "2xl:justify-start",
-          entry.id == @active_id && "btn-active"
-        ]}
-        aria-current={entry.id == @active_id && "page"}
-      >{entry.label}</.link>
+      <%= for entry <- @entries do %>
+        <details
+          :if={entry.id == :data_system}
+          id="group-data-system"
+          class="w-full"
+          open={@active_id == :data_system}
+          phx-mounted={JS.ignore_attributes("open")}
+        >
+          <summary
+            id="group-data-system-toggle"
+            class={["btn btn-sm btn-ghost shrink-0", @active_id == :data_system && "btn-active"]}
+          >
+            {entry.label}
+          </summary>
+          <div class="flex flex-wrap gap-1 rounded-box border border-base-300 bg-base-100 p-2">
+            <.link
+              :for={child <- @data_system_children}
+              id={
+                if child.id == :data_transfer,
+                  do: "settings-nav-data_transfer",
+                  else: "settings-logs-tab-#{child.id}"
+              }
+              navigate={
+                DelivestWeb.StaffBranchPath.contextual_navigation_path(
+                  child.path,
+                  @scope_branch,
+                  @return_source
+                )
+              }
+              class={["btn btn-sm btn-ghost shrink-0", @active_child_id == child.id && "btn-active"]}
+              aria-current={@active_child_id == child.id && "page"}
+            >{child.label}</.link>
+          </div>
+        </details>
+        <.link
+          :if={entry.id != :data_system}
+          id={"#{@id_prefix}settings-nav-#{entry.id}"}
+          navigate={
+            DelivestWeb.StaffBranchPath.contextual_navigation_path(
+              entry.path,
+              @scope_branch,
+              @return_source
+            )
+          }
+          class={[
+            "btn btn-sm btn-ghost shrink-0",
+            @variant == :sidebar && "2xl:justify-start",
+            entry.id == @active_id && "btn-active"
+          ]}
+          aria-current={entry.id == @active_id && "page"}
+        >{entry.label}</.link>
+      <% end %>
     </nav>
     """
   end
