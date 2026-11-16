@@ -31,8 +31,13 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
              "#settings-navigation #settings-nav-integrations[href^='/staff/branches/select?']"
            )
 
-    assert has_element?(lv, "#settings-nav-features[aria-current='page']")
-    assert has_element?(lv, "#settings-navigation #settings-nav-data_transfer[href='/staff/settings/data-transfer']")
+    refute has_element?(lv, "#settings-nav-features")
+
+    assert has_element?(
+             lv,
+             "#settings-navigation #settings-nav-data_transfer[href='/staff/settings/data-transfer']"
+           )
+
     refute has_element?(lv, "#settings-navigation #settings-nav-instance_backup")
     refute has_element?(lv, "#settings-navigation #settings-nav-site_snapshot")
 

@@ -17,7 +17,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#main-sidebar #sidebar-home[href='/staff']")
     assert has_element?(lv, "#main-sidebar #sidebar-toggle[aria-controls='main-sidebar']")
     assert has_element?(lv, "#nav-section-main")
-    assert has_element?(lv, "#nav-section-settings a[href='/staff/settings']")
+    assert has_element?(lv, "#sidebar-group-settings-toggle")
 
     assert has_element?(
              lv,
@@ -190,7 +190,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     pages = [
-      {"/staff/settings?branch=#{branch.slug}", "features", "#settings-feature-filter"},
+      {"/staff/settings?branch=#{branch.slug}", nil, "#settings-feature-filter"},
       {"/staff/franchise/brand", "franchise", "#franchise-settings-form"},
       {"/staff/branches/#{branch.slug}/edit", "branch_settings", "#branch-section-hours"},
       {"/staff/branches/#{branch.slug}/edit/hours", "branch_settings", "#branch-form"},
@@ -203,7 +203,11 @@ defmodule DelivestWeb.Staff.StaffShellTest do
         {:ok, view, _} = live(conn, path)
         assert has_element?(view, "#staff-context-navigation > #settings-navigation")
         assert has_element?(view, "#settings-center > .min-w-0 #{content}")
-        assert has_element?(view, "#settings-nav-#{active_id}[aria-current='page']")
+
+        if active_id,
+          do: assert(has_element?(view, "#settings-nav-#{active_id}[aria-current='page']")),
+          else: refute(has_element?(view, "#settings-nav-features"))
+
         refute has_element?(view, "#staff-section-navigation")
 
         document = LazyHTML.from_fragment(render(view))

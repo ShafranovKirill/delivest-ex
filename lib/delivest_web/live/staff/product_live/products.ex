@@ -29,6 +29,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        selected_category_id: nil,
        selected_status: nil,
        selected_ids: [],
+       selection_mode: false,
        bulk_delete_open: false,
        form_version: 0,
        crm_menu: Gateway.crm?(socket.assigns.current_branch, :menu),
@@ -147,9 +148,26 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   @impl true
+  def handle_event("toggle_selection", _, socket) do
+    if Identity.can?(socket.assigns.current_staff, "products.delete") and
+         not socket.assigns.crm_menu do
+      socket =
+        assign(socket,
+          selection_mode: not socket.assigns.selection_mode,
+          selected_ids: [],
+          bulk_delete_open: false
+        )
+
+      handle_params(socket.assigns.params, nil, socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_event("select_products", params, socket) do
     ids =
-      if Identity.can?(socket.assigns.current_staff, "products.delete") and
+      if socket.assigns.selection_mode and
+           Identity.can?(socket.assigns.current_staff, "products.delete") and
            not socket.assigns.crm_menu do
         params
         |> Map.get("ids", [])
@@ -162,8 +180,10 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     {:noreply, assign(socket, selected_ids: ids)}
   end
 
-  def handle_event("clear_selection", _params, socket),
-    do: {:noreply, assign(socket, selected_ids: [])}
+  def handle_event("clear_selection", _params, socket) do
+    socket = assign(socket, selected_ids: [], selection_mode: false, bulk_delete_open: false)
+    handle_params(socket.assigns.params, nil, socket)
+  end
 
   def handle_event("filter", params, socket) do
     search = params["search"]
@@ -266,7 +286,8 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     {:noreply,
      assign(socket,
        bulk_delete_open:
-         socket.assigns.selected_ids != [] and not socket.assigns.crm_menu and
+         socket.assigns.selection_mode and socket.assigns.selected_ids != [] and
+           not socket.assigns.crm_menu and
            Identity.can?(socket.assigns.current_staff, "products.delete")
      )}
   end
@@ -288,7 +309,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       {:ok, deleted} ->
         {:noreply,
          socket
-         |> assign(selected_ids: [], bulk_delete_open: false)
+         |> assign(selected_ids: [], selection_mode: false, bulk_delete_open: false)
          |> put_flash(
            :info,
            gettext("Products deleted: %{count}; failed: %{failed}",
@@ -546,6 +567,17 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
               navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
               class="btn btn-ghost btn-sm justify-start"
             >{gettext("Bulk add")}</.link>
+            <button
+              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+              id="product-toggle-selection"
+              type="button"
+              phx-click={
+                JS.push("toggle_selection")
+                |> JS.remove_attribute("open", to: "#product-more-actions")
+              }
+              aria-pressed={if(@selection_mode, do: "true", else: "false")}
+              class="btn btn-ghost btn-sm justify-start"
+            >{if @selection_mode, do: gettext("Cancel selection"), else: gettext("Select multiple")}</button>
           </div>
         </details>
       </:actions>
@@ -629,7 +661,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             label=""
           >
             <input
-              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+              :if={
+                @selection_mode and Identity.can?(@current_staff, "products.delete") and not @crm_menu
+              }
               type="checkbox"
               name="ids[]"
               value={prod.id}

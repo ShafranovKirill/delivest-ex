@@ -513,14 +513,6 @@ defmodule DelivestWeb.StaffNav do
         "logs.read"
       ]),
       setting(
-        :features,
-        gettext("Features and connections"),
-        "/staff/settings",
-        "hero-squares-plus",
-        :network,
-        ["franchise.update", "branches.read", "delivery.read", "integrations.read"]
-      ),
-      setting(
         :data_transfer,
         gettext("Data transfer"),
         setting_path(:data_transfer, branch),
@@ -631,7 +623,6 @@ defmodule DelivestWeb.StaffNav do
   end
 
   defp setting_path(:settings, _), do: "/staff/settings"
-  defp setting_path(:features, _), do: "/staff/settings"
   defp setting_path(:data_transfer, nil), do: "/staff/settings/data-transfer"
 
   defp setting_path(:data_transfer, branch),

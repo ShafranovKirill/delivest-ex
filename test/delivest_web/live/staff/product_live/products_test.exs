@@ -422,12 +422,49 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       refute actions =~ ~s(id="copy-products-trigger")
       assert has_element?(lv, "#product-more-actions > summary", "More")
       assert has_element?(lv, "#product-more-actions #product-operations-link")
+      assert has_element?(lv, "#product-toggle-selection")
+      refute has_element?(lv, "#products input[form='product-selection']")
       assert has_element?(lv, "#product-more-actions #bulk-add-products")
       assert actions =~ ~s(id="product-operations-link")
       assert actions =~ ~s(id="bulk-add-products")
       assert actions =~ ~s(id="create-product")
       assert has_element?(lv, "main #products-filter")
       refute has_element?(lv, "main #products-filter [role='tablist']")
+    end
+
+    test "multiple selection is opt-in and cancellation clears it", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+      product = insert_branch_product(branch.id, name: "Selectable product")
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+
+      assert has_element?(lv, "#product-toggle-selection[aria-pressed='false']")
+
+      refute has_element?(lv, "#products input[form='product-selection']")
+
+      render_hook(lv, "select_products", %{"ids" => [product.id]})
+      refute has_element?(lv, "#product-selection-bar")
+
+      lv |> element("#product-toggle-selection") |> render_click()
+
+      assert has_element?(lv, "#product-toggle-selection[aria-pressed='true']")
+
+      assert has_element?(lv, "#products input[form='product-selection'][value='#{product.id}']")
+
+      render_hook(lv, "select_products", %{"ids" => [product.id, "not-on-this-page"]})
+      assert has_element?(lv, "#product-selection-bar", "Selected: 1")
+      render_hook(lv, "bulk_delete_click", %{})
+      assert has_element?(lv, "#bulk-delete-products-modal.modal-open")
+
+      lv |> element("#product-toggle-selection") |> render_click()
+      refute has_element?(lv, "#product-selection-bar")
+      refute has_element?(lv, "#bulk-delete-products-modal.modal-open")
+      refute has_element?(lv, "#products input[form='product-selection']")
+
+      lv |> element("#product-toggle-selection") |> render_click()
+      assert has_element?(lv, "#products input[form='product-selection']:not(:checked)")
     end
 
     test "each product section selects one local entry", %{conn: conn} do
@@ -505,6 +542,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       actions = render(element(lv, "#staff-page-header-actions"))
       assert has_element?(lv, "#product-more-actions #product-operations-link")
+      refute has_element?(lv, "#product-toggle-selection")
+      refute has_element?(lv, "#products input[form='product-selection']")
       assert actions =~ ~s(id="product-operations-link")
       refute actions =~ ~s(id="copy-products-trigger")
       refute actions =~ ~s(id="bulk-add-products")

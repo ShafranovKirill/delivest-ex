@@ -12373,3 +12373,17 @@ msgstr "Слепок франшизы"
 #, elixir-autogen, elixir-format
 msgid "Data transfer"
 msgstr "Перенос данных"
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Select multiple"
+msgstr "Выбрать несколько"
+
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Cancel selection"
+msgstr "Отменить выбор"
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Appearance"
+msgstr "Внешний вид"

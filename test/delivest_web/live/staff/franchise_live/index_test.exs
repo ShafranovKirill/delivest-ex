@@ -22,6 +22,15 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
              )
     end
 
+    assert has_element?(lv, "#franchise-appearance h2", "Appearance")
+
+    for section <- ~w(brand logo images) do
+      assert has_element?(lv, "#franchise-appearance #franchise-section-#{section}")
+    end
+
+    refute has_element?(lv, "#franchise-appearance #franchise-section-seller")
+    refute has_element?(lv, "#franchise-section-snapshot")
+
     refute has_element?(lv, "#franchise-settings-form")
 
     assert {:error, {:live_redirect, %{to: "/staff/franchise"}}} =

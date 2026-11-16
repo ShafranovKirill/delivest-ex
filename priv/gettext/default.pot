@@ -12326,3 +12326,17 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Data transfer"
 msgstr ""
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Select multiple"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Cancel selection"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Appearance"
+msgstr ""
