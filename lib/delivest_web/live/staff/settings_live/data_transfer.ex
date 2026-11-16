@@ -10,7 +10,8 @@ defmodule DelivestWeb.Staff.SettingsLive.DataTransfer do
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
 
-    if Identity.can?(staff, "admin") or editable_branches(staff, socket.assigns.staff_branches) != [] do
+    if Identity.can?(staff, "admin") or
+         editable_branches(staff, socket.assigns.staff_branches) != [] do
       {:ok, assign(socket, page_title: gettext("Data transfer"))}
     else
       {:ok,
@@ -38,7 +39,9 @@ defmodule DelivestWeb.Staff.SettingsLive.DataTransfer do
         case Enum.find(editable, &(&1.id == (selected && selected.id))) do
           nil ->
             case List.first(editable) do
-              nil -> nil
+              nil ->
+                nil
+
               first ->
                 StaffBranchPath.selection_path(
                   "/staff/branches/#{first.slug}/edit/snapshot",

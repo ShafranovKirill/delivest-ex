@@ -64,6 +64,27 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
            )
   end
 
+  test "data transfer search follows actual scope instead of the preferred branch", %{
+    conn: conn,
+    branch: branch
+  } do
+    {:ok, network, _} = live(conn, "/staff/franchise")
+    network |> form("#command-palette-form", %{query: "Data transfer"}) |> render_change()
+
+    assert has_element?(
+             network,
+             "#command-item-page-data_transfer[href='/staff/settings/data-transfer']"
+           )
+
+    {:ok, scoped, _} = live(conn, "/staff/settings?branch=#{branch.slug}")
+    scoped |> form("#command-palette-form", %{query: "Data transfer"}) |> render_change()
+
+    assert has_element?(
+             scoped,
+             "#command-item-page-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}']"
+           )
+  end
+
   test "finds pages, clients and products by the typed text", %{conn: conn, branch: branch} do
     client = insert(:client, name: "Margarita Ivanova")
     product = insert_branch_product(branch.id, name: "Margherita")

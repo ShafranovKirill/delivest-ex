@@ -353,11 +353,28 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
   test "data transfer landing offers only snapshots allowed for the current scope", %{conn: conn} do
     branch = insert(:branch)
     admin_conn = login(conn, ["admin"], [branch], branch.id)
+    {:ok, scoped_settings, _} = live(admin_conn, "/staff/settings?branch=#{branch.slug}")
+
+    assert has_element?(
+             scoped_settings,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}']"
+           )
+
     {:ok, admin, _} = live(admin_conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
 
     assert has_element?(admin, "#sidebar-settings-nav-data_transfer[aria-current='page']")
     assert has_element?(admin, "#settings-nav-data_transfer[aria-current='page']")
-    assert has_element?(admin, "#data-transfer-branch[href='/staff/branches/#{branch.slug}/edit/snapshot']")
+
+    assert has_element?(
+             admin,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}']"
+           )
+
+    assert has_element?(
+             admin,
+             "#data-transfer-branch[href='/staff/branches/#{branch.slug}/edit/snapshot']"
+           )
+
     assert has_element?(admin, "#data-transfer-franchise[href='/staff/franchise/snapshot']")
     refute has_element?(admin, "#settings-nav-site_snapshot")
     refute has_element?(admin, "#settings-nav-instance_backup")
@@ -365,16 +382,29 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     {:ok, branch_snapshot, _} =
       live(admin_conn, "/staff/branches/#{branch.slug}/edit/snapshot")
 
-    assert has_element?(branch_snapshot, "#settings-nav-data_transfer[aria-current='page']")
+    assert has_element?(
+             branch_snapshot,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}'][aria-current='page']"
+           )
 
     {:ok, franchise_snapshot, _} = live(admin_conn, "/staff/franchise/snapshot")
-    assert has_element?(franchise_snapshot, "#settings-nav-data_transfer[aria-current='page']")
+
+    assert has_element?(
+             franchise_snapshot,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer'][aria-current='page']"
+           )
 
     {:ok, network, _} = live(admin_conn, "/staff/settings/data-transfer")
-    assert has_element?(network, "#data-transfer-branch[href^='/staff/branches/select?']")
+
+    assert has_element?(
+             network,
+             "#data-transfer-branch[href^='/staff/branches/select?'][href*='return_to=%2Fstaff%2Fsettings%2Fdata-transfer']"
+           )
+
     assert has_element?(network, "#data-transfer-franchise")
 
     branch_conn = login(conn, ["branches.read", "branches.update"], [branch], branch.id)
+
     {:ok, branch_view, _} =
       live(branch_conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
 
@@ -387,6 +417,16 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
              live(reader_conn, "/staff/settings/data-transfer")
+
+    assert {:error, {:live_redirect, %{to: "/staff/settings/data-transfer"}}} =
+             live(admin_conn, "/staff/settings/data-transfer?branch=missing")
+
+    orphan_conn = login(conn, ["branches.read", "branches.update"], [])
+    {:ok, orphan_settings, _} = live(orphan_conn, "/staff/settings")
+    refute has_element?(orphan_settings, "#settings-nav-data_transfer")
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(orphan_conn, "/staff/settings/data-transfer")
   end
 
   test "branch switching preserves the data transfer landing", %{conn: conn} do
@@ -396,17 +436,32 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     {:ok, transfer, _} = live(conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
     assert has_element?(transfer, "#header-branch")
 
-    assert {:ok, %{path: "/staff/settings/data-transfer?branch=#{second.slug}"}} =
+    assert {:ok, %{path: selected_path}} =
              DelivestWeb.StaffBranchPath.transition(
                "/staff/settings/data-transfer?branch=#{branch.slug}",
                {:branch, second.slug}
              )
+
+    assert selected_path == "/staff/settings/data-transfer?branch=#{second.slug}"
 
     assert {:ok, %{path: "/staff/settings/data-transfer"}} =
              DelivestWeb.StaffBranchPath.transition(
                "/staff/settings/data-transfer?branch=#{branch.slug}",
                :network
              )
+
+    source = "/staff/branches/#{branch.slug}/edit/snapshot"
+
+    assert {:ok, %{return_to: "/staff/settings/data-transfer"}} =
+             DelivestWeb.StaffBranchPath.selection_intent(
+               source,
+               "/staff/settings/data-transfer"
+             )
+
+    assert {:ok, destination} =
+             DelivestWeb.StaffBranchPath.selection_destination(source, second.slug)
+
+    assert destination == "/staff/branches/#{second.slug}/edit/snapshot"
   end
 
   test "diagnostics group opens on logs and keeps both entries", %{conn: conn} do

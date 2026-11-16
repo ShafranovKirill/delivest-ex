@@ -499,6 +499,11 @@ defmodule DelivestWeb.StaffNav do
   end
 
   def settings_entries(staff, branch) do
+    transfer_access? =
+      can?(staff, "admin") or
+        (can?(staff, "branches.read") and can?(staff, "branches.update") and
+           has_available_branch?(staff))
+
     [
       setting(:settings, gettext("Settings"), "/staff/settings", "hero-cog-6-tooth", :network, [
         "franchise.update",
@@ -518,7 +523,7 @@ defmodule DelivestWeb.StaffNav do
       setting(
         :data_transfer,
         gettext("Data transfer"),
-        "/staff/settings/data-transfer",
+        setting_path(:data_transfer, branch),
         "hero-arrow-up-tray",
         :network,
         ["branches.update", "admin"]
@@ -593,8 +598,7 @@ defmodule DelivestWeb.StaffNav do
     |> Enum.reject(&is_nil/1)
     |> Enum.filter(fn
       %{id: :data_transfer} ->
-        can?(staff, "admin") or
-          (can?(staff, "branches.read") and can?(staff, "branches.update"))
+        transfer_access?
 
       entry ->
         Enum.any?(entry.read_permissions, &can?(staff, &1))
@@ -628,7 +632,11 @@ defmodule DelivestWeb.StaffNav do
 
   defp setting_path(:settings, _), do: "/staff/settings"
   defp setting_path(:features, _), do: "/staff/settings"
-  defp setting_path(:data_transfer, _), do: "/staff/settings/data-transfer"
+  defp setting_path(:data_transfer, nil), do: "/staff/settings/data-transfer"
+
+  defp setting_path(:data_transfer, branch),
+    do: "/staff/settings/data-transfer?branch=#{branch.slug}"
+
   defp setting_path(:franchise, _), do: "/staff/franchise"
   defp setting_path(:branches, _), do: "/staff/branches"
   defp setting_path(:data_system, _), do: "/staff/diagnostics"
@@ -640,6 +648,14 @@ defmodule DelivestWeb.StaffNav do
   defp setting_path(:delivery_settings, branch), do: "/staff/b/#{branch.slug}/delivery"
   defp setting_path(:frontpad, branch), do: "/staff/b/#{branch.slug}/integrations/frontpad"
   defp setting_path(:site_snapshot, branch), do: "/staff/branches/#{branch.slug}/edit/snapshot"
+
+  defp has_available_branch?(staff) do
+    if Ecto.assoc_loaded?(staff.branches) do
+      Enum.any?(staff.branches || [], &is_nil(&1.deleted_at))
+    else
+      staff |> Delivest.Repo.preload(:branches) |> Identity.list_branch_for_staff() |> Enum.any?()
+    end
+  end
 
   defp branch_entries(staff, branch) do
     [

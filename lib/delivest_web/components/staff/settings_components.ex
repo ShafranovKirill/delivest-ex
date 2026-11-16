@@ -65,7 +65,13 @@ defmodule DelivestWeb.Staff.SettingsComponents do
         <.link
           :if={entry.id != :data_system}
           id={"#{@id_prefix}settings-nav-#{entry.id}"}
-          navigate={settings_path(entry, @scope_branch, @return_source)}
+          navigate={
+            DelivestWeb.StaffBranchPath.contextual_navigation_path(
+              entry.path,
+              @scope_branch,
+              @return_source
+            )
+          }
           class={entry.id == @active_id && "menu-active"}
           aria-current={entry.id == @active_id && "page"}
         >{entry.label}</.link>
@@ -86,7 +92,13 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       <.link
         :for={entry <- @entries}
         id={"#{@id_prefix}settings-nav-#{entry.id}"}
-        navigate={settings_path(entry, @scope_branch, @return_source)}
+        navigate={
+          DelivestWeb.StaffBranchPath.contextual_navigation_path(
+            entry.path,
+            @scope_branch,
+            @return_source
+          )
+        }
         class={[
           "btn btn-sm btn-ghost shrink-0",
           @variant == :sidebar && "2xl:justify-start",
@@ -97,17 +109,6 @@ defmodule DelivestWeb.Staff.SettingsComponents do
     </nav>
     """
   end
-
-  defp settings_path(%{id: :data_transfer, path: path}, %{slug: slug}, _return_source),
-    do: path <> "?branch=" <> slug
-
-  defp settings_path(entry, scope_branch, return_source),
-    do:
-      DelivestWeb.StaffBranchPath.contextual_navigation_path(
-        entry.path,
-        scope_branch,
-        return_source
-      )
 
   slot :inner_block, required: true
 

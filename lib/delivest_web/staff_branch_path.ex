@@ -70,10 +70,16 @@ defmodule DelivestWeb.StaffBranchPath do
   def transition(_, _), do: :error
 
   @doc "A branch-scoped navigation target opens an explicit branch chooser from network scope."
-  def contextual_navigation_path(path, nil, return_source),
-    do: selection_path(path, return_source) || path
-
-  def contextual_navigation_path(path, _scope_branch, _return_source), do: path
+  def contextual_navigation_path(path, scope_branch, return_source) do
+    if is_binary(path) and URI.parse(path).path == "/staff/settings/data-transfer" do
+      case scope_branch do
+        %{slug: slug} -> data_transfer_path(slug)
+        _ -> data_transfer_path(nil)
+      end
+    else
+      if is_nil(scope_branch), do: selection_path(path, return_source) || path, else: path
+    end
+  end
 
   def selection_path(target_path, return_source) do
     case selection_intent(target_path, return_source) do
