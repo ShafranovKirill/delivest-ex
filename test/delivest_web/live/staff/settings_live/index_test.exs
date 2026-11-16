@@ -35,7 +35,7 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
 
     assert has_element?(
              lv,
-             "#settings-navigation #group-data-system #settings-nav-data_transfer[href='/staff/settings/data-transfer']"
+             "#settings-navigation #settings-nav-data_system[href='/staff/settings/data-system']"
            )
 
     refute has_element?(lv, "#settings-navigation > #settings-nav-data_transfer")

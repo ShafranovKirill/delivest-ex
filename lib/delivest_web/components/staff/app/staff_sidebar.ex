@@ -193,7 +193,7 @@ defmodule DelivestWeb.StaffSidebar do
                   scope_branch={@scope_branch}
                   return_source={@current_uri || @current_path}
                 />
-                <%= if @page_navigation && DelivestWeb.StaffNav.active_setting(@current_path) && DelivestWeb.StaffNav.active_setting(@current_path) != :data_system do %>
+                <%= if @page_navigation && DelivestWeb.StaffNav.active_setting(@current_path) do %>
                   {@page_navigation}
                 <% end %>
               </.sidebar_details>

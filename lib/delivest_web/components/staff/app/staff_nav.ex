@@ -15,7 +15,7 @@ defmodule DelivestWeb.StaffNav do
       path == "/staff/settings" ->
         :features
 
-      path == "/staff/settings/data-transfer" ->
+      path in ["/staff/settings/data-transfer", "/staff/settings/data-system"] ->
         :data_system
 
       String.contains?(path, "/integrations/routes") ->
@@ -180,36 +180,6 @@ defmodule DelivestWeb.StaffNav do
       }
     ]
   end
-
-  def active_data_system(path) when is_binary(path) do
-    cond do
-      path == "/staff/settings/data-transfer" ->
-        :data_transfer
-
-      path == "/staff/franchise/snapshot" ->
-        :data_transfer
-
-      String.contains?(path, "/branches/") and String.ends_with?(path, "/snapshot") ->
-        :data_transfer
-
-      String.starts_with?(path, "/staff/logs/errors") ->
-        :errors
-
-      String.starts_with?(path, "/staff/logs/raw") ->
-        :raw
-
-      String.starts_with?(path, "/staff/logs") ->
-        :events
-
-      String.starts_with?(path, "/staff/diagnostics") ->
-        :metrics
-
-      true ->
-        nil
-    end
-  end
-
-  def active_data_system(_), do: nil
 
   def menu_items(staff, branch) do
     if branch do
@@ -601,21 +571,12 @@ defmodule DelivestWeb.StaffNav do
       setting(
         :data_system,
         gettext("Data and system"),
-        if(can?(staff, "logs.read"),
-          do: "/staff/diagnostics",
-          else: setting_path(:data_transfer, branch)
-        ),
+        setting_path(:data_system, branch),
         "hero-beaker",
         :network,
         if(can?(staff, "logs.read"), do: ["logs.read"], else: ["branches.update", "admin"]),
         ["диагностика"]
-      )
-      |> Map.put(:route, fn selected_branch ->
-        if(can?(staff, "logs.read"),
-          do: setting_path(:data_system, selected_branch),
-          else: setting_path(:data_transfer, selected_branch)
-        )
-      end),
+      ),
       setting(
         :site_snapshot,
         gettext("Branch snapshot"),
@@ -681,7 +642,8 @@ defmodule DelivestWeb.StaffNav do
 
   defp setting_path(:franchise, _), do: "/staff/franchise"
   defp setting_path(:branches, _), do: "/staff/branches"
-  defp setting_path(:data_system, _), do: "/staff/diagnostics"
+  defp setting_path(:data_system, nil), do: "/staff/settings/data-system"
+  defp setting_path(:data_system, branch), do: "/staff/settings/data-system?branch=#{branch.slug}"
   defp setting_path(:instance_backup, _), do: "/staff/franchise/snapshot"
   defp setting_path(:integrations, nil), do: "/staff/integrations"
   defp setting_path(:integrations, branch), do: "/staff/b/#{branch.slug}/integrations"

@@ -2,42 +2,42 @@ defmodule DelivestWeb.Staff.LogLive.Components.TabsComponent do
   use DelivestWeb, :html
 
   attr :active, :atom, required: true
-  attr :id_prefix, :string, default: ""
+  attr :staff, :any, required: true
+  attr :scope_branch, :any, default: nil
 
   def render_tabs(assigns) do
-    assigns = assign(assigns, :tabs, DelivestWeb.StaffNav.data_system_entries())
+    transfer =
+      assigns.staff
+      |> DelivestWeb.StaffNav.settings_entries(assigns.scope_branch)
+      |> Enum.find(&(&1.id == :data_transfer))
+
+    tabs =
+      if(transfer, do: [transfer], else: []) ++
+        if(Delivest.Identity.can?(assigns.staff, "logs.read"),
+          do: DelivestWeb.StaffNav.data_system_entries(),
+          else: []
+        )
+
+    assigns = assign(assigns, :tabs, tabs)
 
     ~H"""
-    <ul
-      :if={@id_prefix == "sidebar-"}
-      id="sidebar-staff-page-header-navigation"
+    <nav
+      id="data-system-navigation"
       phx-hook="ActiveSectionNav"
+      aria-label={gettext("Data and system")}
+      class="flex min-w-0 w-full flex-wrap gap-2"
     >
-      <li :for={tab <- @tabs}>
-        <.link
-          id={"#{@id_prefix}logs-tab-#{tab.id}"}
-          navigate={tab.path}
-          class={@active == tab.id && "menu-active"}
-          aria-current={@active == tab.id && "page"}
-        >
-          <.icon name={tab.icon} class="size-4" />
-          {tab.label}
-        </.link>
-      </li>
-    </ul>
-    <div :if={@id_prefix == ""} role="tablist" class="tabs">
       <.link
         :for={tab <- @tabs}
-        id={"#{@id_prefix}logs-tab-#{tab.id}"}
+        id={"data-system-action-#{tab.id}"}
         navigate={tab.path}
-        role="tab"
-        class={["tab gap-2 whitespace-nowrap", @active == tab.id && "tab-active font-bold"]}
+        class={["btn btn-sm btn-ghost shrink-0 gap-2", @active == tab.id && "btn-active"]}
         aria-current={@active == tab.id && "page"}
       >
         <.icon name={tab.icon} class="size-4" />
         {tab.label}
       </.link>
-    </div>
+    </nav>
     """
   end
 end

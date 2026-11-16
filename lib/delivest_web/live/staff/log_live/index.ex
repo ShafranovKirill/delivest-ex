@@ -122,29 +122,13 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     """
   end
 
-  def staff_page_navigation(assigns) do
-    ~H"""
-    <%= if @navigation_id_prefix == "sidebar-" do %>
-      <TabsComponent.render_tabs active={@live_action} id_prefix={@navigation_id_prefix} />
-    <% else %>
-      <nav
-        id={"#{@navigation_id_prefix}staff-page-header-navigation"}
-        phx-hook="ActiveSectionNav"
-        aria-label={gettext("Logs")}
-        class="flex gap-1 overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6"
-      >
-        <TabsComponent.render_tabs active={@live_action} id_prefix={@navigation_id_prefix} />
-      </nav>
-    <% end %>
-    """
-  end
-
   @impl true
   def render(assigns) do
     assigns = assign(assigns, levels: @levels, subject_types: EventText.subject_types())
 
     ~H"""
     <div class="space-y-6">
+      <TabsComponent.render_tabs active={@live_action} staff={@current_staff} />
       <form id="logs-filter" phx-change="filter" phx-submit="filter" class="flex flex-wrap gap-3">
         <%= if @live_action == :events do %>
           <select name="type" class="select select-bordered w-full sm:w-48">

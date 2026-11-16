@@ -175,10 +175,13 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(
              logs,
-             "#sidebar-group-settings[open] #sidebar-logs-tab-events[aria-current='page']"
+             "#sidebar-group-settings[open] #sidebar-settings-nav-data_system[aria-current='page']"
            )
 
-    assert has_element?(logs, "#staff-context-navigation #logs-tab-events[aria-current='page']")
+    assert has_element?(
+             logs,
+             "main #data-system-navigation #data-system-action-events[aria-current='page']"
+           )
   end
 
   test "page title and actions remain in page content", %{conn: conn} do

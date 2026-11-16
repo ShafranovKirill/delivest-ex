@@ -353,6 +353,7 @@ defmodule DelivestWeb.Router do
       ] do
       live "/settings", SettingsLive.Index, :index
       live "/settings/data-transfer", SettingsLive.DataTransfer, :index
+      live "/settings/data-system", SettingsLive.DataSystem, :index
 
       if Mix.env() in [:dev, :test] do
         live "/foundation-gallery", FoundationGalleryLive, :index

@@ -38,16 +38,19 @@ defmodule DelivestWeb.Staff.DiagnosticsLive.IndexTest do
     for {path, active} <- [
           {~p"/staff/diagnostics", "metrics"},
           {~p"/staff/logs", "events"},
+          {~p"/staff/logs/raw", "raw"},
           {~p"/staff/logs/errors", "errors"}
         ] do
       {:ok, view, _} = live(conn, path)
 
-      assert has_element?(view, "#sidebar-group-settings[open] #sidebar-group-data-system[open]")
-      assert has_element?(view, "#sidebar-logs-tab-#{active}[aria-current='page']")
+      assert has_element?(
+               view,
+               "#sidebar-group-settings[open] #sidebar-settings-nav-data_system[aria-current='page']"
+             )
 
       assert has_element?(
                view,
-               "#staff-context-navigation #logs-tab-#{active}[aria-current='page']"
+               "main #data-system-navigation #data-system-action-#{active}[aria-current='page']"
              )
 
       for {id, href} <- [
@@ -58,13 +61,12 @@ defmodule DelivestWeb.Staff.DiagnosticsLive.IndexTest do
           ] do
         assert has_element?(
                  view,
-                 "#sidebar-group-data-system #sidebar-logs-tab-#{id}[href='#{href}']"
+                 "main #data-system-navigation #data-system-action-#{id}[href='#{href}']"
                )
-
-        assert has_element?(view, "#staff-context-navigation #logs-tab-#{id}[href='#{href}']")
       end
 
-      refute has_element?(view, "#sidebar-group-settings > #sidebar-staff-page-header-navigation")
+      refute has_element?(view, "#sidebar-group-data-system")
+      refute has_element?(view, "#staff-context-navigation #data-system-navigation")
     end
   end
 end

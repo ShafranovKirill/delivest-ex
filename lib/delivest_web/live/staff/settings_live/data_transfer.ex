@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.SettingsLive.DataTransfer do
 
   alias Delivest.Identity
   alias DelivestWeb.StaffBranchPath
+  alias DelivestWeb.Staff.LogLive.Components.TabsComponent
 
   @impl true
   def mount(_params, _session, socket) do
@@ -80,6 +81,11 @@ defmodule DelivestWeb.Staff.SettingsLive.DataTransfer do
   def render(assigns) do
     ~H"""
     <div id="data-transfer-content" class="space-y-6">
+      <TabsComponent.render_tabs
+        active={:data_transfer}
+        staff={@current_staff}
+        scope_branch={@settings_scope_branch}
+      />
       <.settings_cards>
         <.settings_card
           :if={@branch_target}
