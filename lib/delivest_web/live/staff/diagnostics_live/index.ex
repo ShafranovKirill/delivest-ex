@@ -16,23 +16,10 @@ defmodule DelivestWeb.Staff.DiagnosticsLive.Index do
     """
   end
 
-  def staff_page_navigation(assigns) do
-    ~H"""
-    <nav
-      :if={@navigation_id_prefix == ""}
-      id="staff-page-header-navigation"
-      phx-hook="ActiveSectionNav"
-      aria-label={gettext("Data and system")}
-      class="flex gap-1 overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6"
-    >
-      <TabsComponent.render_tabs active={:metrics} />
-    </nav>
-    """
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
+    <TabsComponent.render_tabs active={:metrics} staff={@current_staff} />
     <iframe
       id="staff-metrics-frame"
       title={gettext("Metrics")}

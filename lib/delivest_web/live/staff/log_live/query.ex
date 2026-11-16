@@ -65,6 +65,18 @@ defmodule DelivestWeb.Staff.LogLive.Query do
 
   def path(scope, filters), do: base(scope) <> query(filters)
 
+  def path(:data_system, filters, branch_slug) do
+    params =
+      filters
+      |> Map.new(fn
+        {"branch", value} -> {"event_branch", value}
+        pair -> pair
+      end)
+
+    params = if branch_slug, do: Map.put(params, "branch", branch_slug), else: params
+    base(:data_system) <> query(params)
+  end
+
   defp conditions(:events, filters) do
     []
     |> condition("subject_type", :==, filters["type"])
@@ -85,6 +97,7 @@ defmodule DelivestWeb.Staff.LogLive.Query do
     do: acc ++ [%{"field" => field, "op" => op, "value" => value}]
 
   defp base(:events), do: ~p"/staff/logs"
+  defp base(:data_system), do: ~p"/staff/settings/data-system"
   defp base(:raw), do: ~p"/staff/logs/raw"
   defp base(:errors), do: ~p"/staff/logs/errors"
 

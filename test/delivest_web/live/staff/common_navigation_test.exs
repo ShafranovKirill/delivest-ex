@@ -291,25 +291,41 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, settings, _} = live(conn, ~p"/staff/settings")
 
+    assert has_element?(settings, "#sidebar-group-settings[open]")
+    refute has_element?(settings, "#sidebar-settings-nav-features")
+
     assert has_element?(
              settings,
-             "#sidebar-group-settings[open] #sidebar-settings-nav-features[aria-current='page']"
+             "#sidebar-settings-nav-data_system"
            )
 
-    refute has_element?(settings, "#nav-section-main a[href='/staff/branches']")
-    refute has_element?(settings, "#nav-section-main a[href='/staff/integrations']")
+    refute has_element?(settings, "#sidebar-group-data-system")
 
     refute has_element?(
              settings,
-             "#nav-section-main a[href='/staff/b/#{branch.slug}/delivery']"
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/branches']"
+           )
+
+    refute has_element?(
+             settings,
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/integrations']"
+           )
+
+    refute has_element?(
+             settings,
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/b/#{branch.slug}/delivery']"
            )
 
     {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
 
     assert has_element?(
              delivery,
-             "#sidebar-group-settings[open] #sidebar-settings-nav-delivery_settings[aria-current='page']"
+             "#sidebar-group-settings[open] #sidebar-settings-nav-branches[aria-current='page']"
            )
+
+    refute has_element?(delivery, "#sidebar-settings-nav-delivery_settings")
+    assert has_element?(delivery, "#settings-nav-branches[aria-current='page']")
+    refute has_element?(delivery, "#settings-nav-delivery_settings")
 
     assert has_element?(
              delivery,
@@ -324,15 +340,215 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
            )
   end
 
-  test "diagnostics group opens on logs and keeps both entries", %{conn: conn} do
+  test "employees follow finance and respect staff and roles permissions", %{conn: conn} do
+    branch = insert(:branch)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+    main =
+      DelivestWeb.StaffNav.entries(admin, branch)
+      |> Enum.find(&(&1.id == :main))
+      |> Map.fetch!(:entries)
+      |> Enum.map(& &1.id)
+
+    assert Enum.find_index(main, &(&1 == :employees)) ==
+             Enum.find_index(main, &(&1 == :finance)) + 1
+
+    {:ok, staff_view, _} = live(login(conn, ["staff.read"], []), ~p"/staff/employee")
+    assert has_element?(staff_view, "#sidebar-group-employees[open]")
+    assert has_element?(staff_view, "#sidebar-group-employees #sidebar-section-nav-employee")
+    refute has_element?(staff_view, "#sidebar-group-employees #sidebar-section-nav-roles")
+    refute has_element?(staff_view, "#sidebar-group-settings")
+
+    {:ok, roles_view, _} = live(login(conn, ["roles.read"], []), ~p"/staff/roles")
+    assert has_element?(roles_view, "#sidebar-group-employees[open]")
+    assert has_element?(roles_view, "#sidebar-group-employees #sidebar-section-nav-roles")
+    refute has_element?(roles_view, "#sidebar-group-employees #sidebar-section-nav-employee")
+    refute has_element?(roles_view, "#sidebar-group-settings")
+  end
+
+  test "data and system landing offers five permitted actions and keeps transfer scope", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    admin_conn = login(conn, ["admin"], [branch], branch.id)
+    {:ok, scoped_settings, _} = live(admin_conn, "/staff/settings?branch=#{branch.slug}")
+
+    assert has_element?(
+             scoped_settings,
+             "#settings-nav-data_system[href='/staff/settings/data-system?branch=#{branch.slug}']"
+           )
+
+    refute has_element?(scoped_settings, "#group-data-system")
+    refute has_element?(scoped_settings, "#sidebar-group-data-system")
+
+    {:ok, admin, _} = live(admin_conn, "/staff/settings/data-system?branch=#{branch.slug}")
+    assert has_element?(admin, "#sidebar-settings-nav-data_system[aria-current='page']")
+    assert has_element?(admin, "#settings-nav-data_system[aria-current='page']")
+    assert has_element?(admin, "#data-system-content #audit-events")
+    assert has_element?(admin, "#data-system-action-events[aria-current='page']")
+
+    assert ["data-system-action-events" | _] =
+             admin
+             |> render()
+             |> LazyHTML.from_fragment()
+             |> LazyHTML.query("#data-system-navigation > a")
+             |> LazyHTML.attribute("id")
+
+    for {id, path} <- [
+          {"data_transfer", "/staff/settings/data-transfer?branch=#{branch.slug}"},
+          {"metrics", "/staff/diagnostics"},
+          {"events", "/staff/settings/data-system?branch=#{branch.slug}"},
+          {"raw", "/staff/logs/raw"},
+          {"errors", "/staff/logs/errors"}
+        ] do
+      assert has_element?(
+               admin,
+               "main #data-system-navigation #data-system-action-#{id}[href='#{path}']"
+             )
+    end
+
+    refute has_element?(admin, "#staff-context-navigation #data-system-navigation")
+    refute has_element?(admin, "#main-sidebar #data-system-navigation")
+
+    {:ok, transfer, _} = live(admin_conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
+
+    assert has_element?(
+             transfer,
+             "#data-transfer-branch[href='/staff/branches/#{branch.slug}/edit/snapshot']"
+           )
+
+    assert has_element?(transfer, "#data-transfer-franchise[href='/staff/franchise/snapshot']")
+    assert has_element?(transfer, "main #data-system-action-data_transfer[aria-current='page']")
+
+    {:ok, branch_snapshot, _} = live(admin_conn, "/staff/branches/#{branch.slug}/edit/snapshot")
+
+    assert has_element?(
+             branch_snapshot,
+             "#settings-nav-data_system[href='/staff/settings/data-system?branch=#{branch.slug}'][aria-current='page']"
+           )
+
+    {:ok, franchise_snapshot, _} = live(admin_conn, "/staff/franchise/snapshot")
+
+    assert has_element?(
+             franchise_snapshot,
+             "#settings-nav-data_system[href='/staff/settings/data-system'][aria-current='page']"
+           )
+
+    {:ok, network_transfer, _} = live(admin_conn, "/staff/settings/data-transfer")
+
+    assert has_element?(
+             network_transfer,
+             "#data-transfer-branch[href^='/staff/branches/select?'][href*='return_to=%2Fstaff%2Fsettings%2Fdata-transfer']"
+           )
+
+    assert has_element?(network_transfer, "#data-transfer-franchise")
+
+    branch_conn = login(conn, ["branches.read", "branches.update"], [branch], branch.id)
+    transfer_path = "/staff/settings/data-transfer?branch=#{branch.slug}"
+
+    assert {:error, {:redirect, %{to: ^transfer_path}}} =
+             live(branch_conn, "/staff/settings/data-system?branch=#{branch.slug}")
+
+    {:ok, branch_transfer, _} =
+      live(branch_conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
+
+    assert has_element?(branch_transfer, "#data-transfer-branch")
+    refute has_element?(branch_transfer, "#data-transfer-franchise")
+
+    reader_conn = login(conn, ["branches.read"], [branch], branch.id)
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(reader_conn, "/staff/settings/data-transfer")
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(reader_conn, "/staff/settings/data-system")
+
+    assert {:error, {:live_redirect, %{to: "/staff/settings/data-system"}}} =
+             live(admin_conn, "/staff/settings/data-system?branch=missing")
+
+    assert {:error, {:live_redirect, %{to: "/staff/settings/data-transfer"}}} =
+             live(admin_conn, "/staff/settings/data-transfer?branch=missing")
+
+    orphan_conn = login(conn, ["branches.read", "branches.update"], [])
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(orphan_conn, "/staff/settings/data-transfer")
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(orphan_conn, "/staff/settings/data-system")
+  end
+
+  test "branch switching preserves the data transfer landing", %{conn: conn} do
+    branch = insert(:branch)
+    second = insert(:branch)
+    conn = login(conn, ["admin"], [branch, second], branch.id)
+    {:ok, transfer, _} = live(conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
+    assert has_element?(transfer, "#header-branch")
+
+    assert {:ok, %{path: selected_path}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/settings/data-transfer?branch=#{branch.slug}",
+               {:branch, second.slug}
+             )
+
+    assert selected_path == "/staff/settings/data-transfer?branch=#{second.slug}"
+
+    assert {:ok, %{path: "/staff/settings/data-transfer"}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/settings/data-transfer?branch=#{branch.slug}",
+               :network
+             )
+
+    source = "/staff/branches/#{branch.slug}/edit/snapshot"
+
+    assert {:ok, %{return_to: "/staff/settings/data-transfer"}} =
+             DelivestWeb.StaffBranchPath.selection_intent(
+               source,
+               "/staff/settings/data-transfer"
+             )
+
+    assert {:ok, destination} =
+             DelivestWeb.StaffBranchPath.selection_destination(source, second.slug)
+
+    assert destination == "/staff/branches/#{second.slug}/edit/snapshot"
+  end
+
+  test "branch switching preserves the data and system landing", %{conn: conn} do
+    branch = insert(:branch)
+    second = insert(:branch)
+    conn = login(conn, ["admin"], [branch, second], branch.id)
+    {:ok, page, _} = live(conn, "/staff/settings/data-system?branch=#{branch.slug}")
+    assert has_element?(page, "#header-branch")
+
+    expected_path = "/staff/settings/data-system?branch=#{second.slug}"
+
+    assert {:ok, %{path: ^expected_path}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/settings/data-system?branch=#{branch.slug}",
+               {:branch, second.slug}
+             )
+
+    assert {:ok, %{path: "/staff/settings/data-system"}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/settings/data-system?branch=#{branch.slug}",
+               :network
+             )
+  end
+
+  test "data and system stays active on logs with actions in content", %{conn: conn} do
     conn = login(conn, ["logs.read"], [])
     {:ok, logs, _} = live(conn, ~p"/staff/logs")
 
-    assert has_element?(logs, "#staff-context-navigation > #settings-navigation")
-    assert has_element?(logs, "#settings-navigation a[aria-current='page']")
-    assert has_element?(logs, "#settings-navigation a[href='/staff/diagnostics']")
-    refute has_element?(logs, "#staff-section-navigation")
-    refute has_element?(logs, "#nav-section-settings a[href='/staff/settings']")
+    assert has_element?(
+             logs,
+             "#settings-nav-data_system[href='/staff/settings/data-system'][aria-current='page']"
+           )
+
+    assert has_element?(logs, "#sidebar-settings-nav-data_system[aria-current='page']")
+    assert has_element?(logs, "main #data-system-action-events[aria-current='page']")
+    refute has_element?(logs, "#data-system-action-data_transfer")
+    refute has_element?(logs, "#sidebar-group-data-system")
+    refute has_element?(logs, "#group-data-system")
   end
 
   test "product subpages keep Products active without duplicate sidebar links", %{conn: conn} do

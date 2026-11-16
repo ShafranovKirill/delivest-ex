@@ -12,7 +12,8 @@ defmodule DelivestWeb.StaffBranchPath do
     menu/popular stocks loyalty promotions advertising-links pos kitchen
   )
   @network_routes ~w(
-    dashboard statistics integrations integrations/zvonok integrations/dadata integrations/yookassa
+    dashboard statistics analytics/channels analytics/sources analytics/funnel analytics/customers
+    analytics/comparison integrations integrations/zvonok integrations/dadata integrations/yookassa
     integrations/yandex-eda settings franchise branches employee roles clients segments marketing marketing/bonuses
     marketing/policies diagnostics logs logs/raw logs/errors
   )
@@ -22,6 +23,7 @@ defmodule DelivestWeb.StaffBranchPath do
     "integrations" => "integrations"
   }
   @settings_filters ~w(all enabled disabled attention)
+  @data_settings_paths ~w(/staff/settings/data-transfer /staff/settings/data-system)
   @creation_routes ~w(
     orders/new products/new products/tags/new categories/new promotions/new promotions/new/full
     promotions/new/first-order promotions/sale stocks/new
@@ -70,10 +72,18 @@ defmodule DelivestWeb.StaffBranchPath do
   def transition(_, _), do: :error
 
   @doc "A branch-scoped navigation target opens an explicit branch chooser from network scope."
-  def contextual_navigation_path(path, nil, return_source),
-    do: selection_path(path, return_source) || path
+  def contextual_navigation_path(path, scope_branch, return_source) do
+    parsed_path = if is_binary(path), do: URI.parse(path).path
 
-  def contextual_navigation_path(path, _scope_branch, _return_source), do: path
+    if parsed_path in @data_settings_paths do
+      case scope_branch do
+        %{slug: slug} -> scoped_settings_path(parsed_path, slug)
+        _ -> scoped_settings_path(parsed_path, nil)
+      end
+    else
+      if is_nil(scope_branch), do: selection_path(path, return_source) || path, else: path
+    end
+  end
 
   def selection_path(target_path, return_source) do
     case selection_intent(target_path, return_source) do
@@ -155,6 +165,8 @@ defmodule DelivestWeb.StaffBranchPath do
     case classify(source) do
       {:ok, {:network, _route}, _query} -> network_return(source)
       {:ok, {:settings_summary, _slug, _filter}, _query} -> network_return(source)
+      {:ok, {:data_transfer, _slug}, _query} -> network_return(source)
+      {:ok, {:data_system, _slug}, _query} -> network_return(source)
       _ -> "/staff/dashboard"
     end
   end
@@ -203,6 +215,12 @@ defmodule DelivestWeb.StaffBranchPath do
         if section in [nil, "" | branch_setting_sections()],
           do: {:ok, {:branch_settings, slug, section}, query},
           else: :error
+
+      path in @data_settings_paths ->
+        branch = query["branch"]
+        branch = if is_binary(branch) and valid_slug?(branch), do: branch, else: nil
+        kind = if path == "/staff/settings/data-transfer", do: :data_transfer, else: :data_system
+        {:ok, {kind, branch}, %{}}
 
       path == "/staff/settings" ->
         branch = query["branch"]
@@ -325,6 +343,17 @@ defmodule DelivestWeb.StaffBranchPath do
   defp destination({:settings_summary, _source_slug, filter}, :network),
     do: {:ok, settings_path(nil, filter), :direct}
 
+  defp destination({kind, _source_slug}, {:branch, target_slug})
+       when kind in [:data_transfer, :data_system] and is_binary(target_slug) do
+    if valid_slug?(target_slug),
+      do: {:ok, scoped_settings_path(data_settings_path(kind), target_slug), :direct},
+      else: :error
+  end
+
+  defp destination({kind, _source_slug}, :network)
+       when kind in [:data_transfer, :data_system],
+       do: {:ok, data_settings_path(kind), :direct}
+
   defp destination({:network, route}, :network), do: {:ok, "/staff/#{route}", :direct}
   defp destination(_, _), do: :error
 
@@ -354,6 +383,11 @@ defmodule DelivestWeb.StaffBranchPath do
       do: "/staff/settings",
       else: "/staff/settings?" <> URI.encode_query(params)
   end
+
+  defp data_settings_path(:data_transfer), do: "/staff/settings/data-transfer"
+  defp data_settings_path(:data_system), do: "/staff/settings/data-system"
+  defp scoped_settings_path(path, nil), do: path
+  defp scoped_settings_path(path, slug), do: "#{path}?branch=#{slug}"
 
   defp valid_slug?(slug), do: Regex.match?(~r/^[a-z0-9-]+$/, slug)
 

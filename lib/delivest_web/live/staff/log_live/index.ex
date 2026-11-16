@@ -10,35 +10,81 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     TabsComponent
   }
 
-  on_mount {DelivestWeb.Hooks.Permission, "logs.read"}
-
   @levels ~w(error warning info)
 
   @impl true
-  def mount(_params, _session, socket) do
-    if connected?(socket), do: Audit.subscribe()
+  def mount(params, _session, socket) do
+    staff = socket.assigns.current_staff
+    logs? = Identity.can?(staff, "logs.read")
+    data_system? = socket.assigns.live_action == :data_system
 
-    {:ok,
-     socket
-     |> assign(page_title: gettext("Logs"), filters: %{}, options: nil)
-     |> stream(:rows, [])}
+    cond do
+      data_system? and not logs? and
+          Enum.any?(DelivestWeb.StaffNav.settings_entries(staff, nil), &(&1.id == :data_transfer)) ->
+        path =
+          if is_binary(params["branch"]),
+            do: "/staff/settings/data-transfer?branch=#{URI.encode_www_form(params["branch"])}",
+            else: ~p"/staff/settings/data-transfer"
+
+        {:ok, redirect(socket, to: path)}
+
+      logs? ->
+        if connected?(socket), do: Audit.subscribe()
+
+        {:ok,
+         socket
+         |> assign(
+           page_title: if(data_system?, do: gettext("Data and system"), else: gettext("Logs")),
+           required_permission: "logs.read",
+           filters: %{},
+           options: nil,
+           settings_scope_branch: nil
+         )
+         |> stream(:rows, [])}
+
+      true ->
+        destination =
+          if data_system?,
+            do: ~p"/staff/dashboard",
+            else: DelivestWeb.StaffBranchPath.home(socket.assigns[:current_branch])
+
+        {:ok,
+         socket
+         |> put_flash(
+           :error,
+           dgettext("errors", "You don't have permission to access this page.")
+         )
+         |> redirect(to: destination)}
+    end
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    scope = socket.assigns.live_action
-    filters = Query.filters(params)
+    action = socket.assigns.live_action
+    scope = if action == :data_system, do: :events, else: action
+    branch = Enum.find(socket.assigns.staff_branches, &(&1.slug == params["branch"]))
 
-    case fetch(scope, filters) do
-      {:ok, {rows, meta}} ->
-        {:noreply,
-         socket
-         |> assign(filters: filters, meta: meta)
-         |> load_options(scope)
-         |> stream(:rows, rows, reset: true)}
+    if (action == :data_system and params["branch"]) && is_nil(branch) do
+      {:noreply, push_navigate(socket, to: ~p"/staff/settings/data-system")}
+    else
+      filter_params =
+        if action == :data_system,
+          do: params |> Map.delete("branch") |> Map.put("branch", params["event_branch"]),
+          else: params
 
-      {:error, _meta} ->
-        {:noreply, push_patch(socket, to: Query.path(scope, %{}))}
+      filters = Query.filters(filter_params)
+
+      case fetch(scope, filters) do
+        {:ok, {rows, meta}} ->
+          {:noreply,
+           socket
+           |> assign(filters: filters, meta: meta, settings_scope_branch: branch)
+           |> load_options(scope)
+           |> stream(:rows, rows, reset: true)}
+
+        {:error, _meta} ->
+          {:noreply, push_patch(socket, to: query_path(socket, %{}))}
+      end
     end
   end
 
@@ -50,22 +96,22 @@ defmodule DelivestWeb.Staff.LogLive.Index do
       |> Map.delete("page")
       |> Query.filters()
 
-    {:noreply, push_patch(socket, to: Query.path(socket.assigns.live_action, filters))}
+    {:noreply, push_patch(socket, to: query_path(socket, filters))}
   end
 
   def handle_event("update_page_size", %{"page_size" => size}, socket) do
     filters = socket.assigns.filters |> Map.put("page_size", size) |> Map.delete("page")
-    {:noreply, push_patch(socket, to: Query.path(socket.assigns.live_action, filters))}
+    {:noreply, push_patch(socket, to: query_path(socket, filters))}
   end
 
   def handle_event("reset_events", _params, socket) do
     filters = Map.take(socket.assigns.filters, ["page_size"])
-    {:noreply, push_patch(socket, to: Query.path(:events, filters))}
+    {:noreply, push_patch(socket, to: query_path(socket, filters))}
   end
 
   def handle_event("reset_entries", _params, socket) do
     filters = Map.take(socket.assigns.filters, ["page_size"])
-    {:noreply, push_patch(socket, to: Query.path(socket.assigns.live_action, filters))}
+    {:noreply, push_patch(socket, to: query_path(socket, filters))}
   end
 
   @impl true
@@ -99,13 +145,27 @@ defmodule DelivestWeb.Staff.LogLive.Index do
     ]
   end
 
-  defp actor_path(filters),
-    do: &Query.path(:events, filters |> Map.delete("page") |> Map.put("actor", &1))
+  defp actor_path(action, filters, branch_slug),
+    do: &query_path(action, filters |> Map.delete("page") |> Map.put("actor", &1), branch_slug)
+
+  defp query_path(socket, filters) do
+    query_path(
+      socket.assigns.live_action,
+      filters,
+      socket.assigns.settings_scope_branch && socket.assigns.settings_scope_branch.slug
+    )
+  end
+
+  defp query_path(:data_system, filters, branch_slug),
+    do: Query.path(:data_system, filters, branch_slug)
+
+  defp query_path(action, filters, _branch_slug), do: Query.path(action, filters)
 
   defp fetch(:events, filters), do: Audit.list_events(Query.flop(:events, filters))
   defp fetch(scope, filters), do: Logs.list_entries(scope, Query.flop(scope, filters))
 
-  defp live?(%{assigns: %{live_action: :events, meta: meta, filters: filters}}, event) do
+  defp live?(%{assigns: %{live_action: action, meta: meta, filters: filters}}, event)
+       when action in [:events, :data_system] do
     meta.current_page == 1 and Query.default_view?(filters) and
       filters["type"] in [nil, event.subject_type]
   end
@@ -115,38 +175,41 @@ defmodule DelivestWeb.Staff.LogLive.Index do
   def staff_page_header(assigns) do
     ~H"""
     <.page_header
-      title={gettext("Logs")}
+      title={if(@live_action == :data_system, do: gettext("Data and system"), else: gettext("Logs"))}
       subtitle={gettext("Who did what and when, application logs and errors.")}
     >
     </.page_header>
     """
   end
 
-  def staff_page_navigation(assigns) do
-    ~H"""
-    <%= if @navigation_id_prefix == "sidebar-" do %>
-      <TabsComponent.render_tabs active={@live_action} id_prefix={@navigation_id_prefix} />
-    <% else %>
-      <nav
-        id={"#{@navigation_id_prefix}staff-page-header-navigation"}
-        phx-hook="ActiveSectionNav"
-        aria-label={gettext("Logs")}
-        class="flex gap-1 overflow-x-auto whitespace-nowrap px-4 py-2 sm:px-6"
-      >
-        <TabsComponent.render_tabs active={@live_action} id_prefix={@navigation_id_prefix} />
-      </nav>
-    <% end %>
-    """
-  end
-
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, levels: @levels, subject_types: EventText.subject_types())
+    assigns =
+      assign(assigns,
+        levels: @levels,
+        subject_types: EventText.subject_types(),
+        events?: assigns.live_action in [:events, :data_system],
+        events_path:
+          if(assigns.live_action == :data_system,
+            do:
+              query_path(
+                :data_system,
+                %{},
+                assigns.settings_scope_branch && assigns.settings_scope_branch.slug
+              )
+          )
+      )
 
     ~H"""
-    <div class="space-y-6">
+    <div id={if(@live_action == :data_system, do: "data-system-content")} class="space-y-6">
+      <TabsComponent.render_tabs
+        active={if(@events?, do: :events, else: @live_action)}
+        staff={@current_staff}
+        scope_branch={@settings_scope_branch}
+        events_path={@events_path}
+      />
       <form id="logs-filter" phx-change="filter" phx-submit="filter" class="flex flex-wrap gap-3">
-        <%= if @live_action == :events do %>
+        <%= if @events? do %>
           <select name="type" class="select select-bordered w-full sm:w-48">
             <option value="">{gettext("All sections")}</option>
             <option
@@ -208,7 +271,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
         <% end %>
 
         <input
-          :if={@live_action != :events}
+          :if={!@events?}
           type="text"
           name="q"
           value={@filters["q"]}
@@ -224,7 +287,10 @@ defmodule DelivestWeb.Staff.LogLive.Index do
           </option>
         </select>
         <button
-          :if={@live_action != :events and Map.drop(@filters, ["page", "page_size"]) != %{}}
+          :if={
+            !@events? and
+              Map.drop(@filters, ["page", "page_size"]) != %{}
+          }
           type="button"
           class="btn btn-ghost"
           phx-click="reset_entries"
@@ -234,10 +300,12 @@ defmodule DelivestWeb.Staff.LogLive.Index do
       </form>
 
       <EventsComponent.render_events
-        :if={@live_action == :events}
+        :if={@events?}
         events={@streams.rows}
         branches={@options.branches}
-        actor_path={actor_path(@filters)}
+        actor_path={
+          actor_path(@live_action, @filters, @settings_scope_branch && @settings_scope_branch.slug)
+        }
         staff_id={to_string(@current_staff.id)}
       />
       <EntriesComponent.render_entries
@@ -248,7 +316,13 @@ defmodule DelivestWeb.Staff.LogLive.Index do
 
       <.pagination
         meta={@meta}
-        path_fn={&Query.path(@live_action, Map.merge(@filters, &1))}
+        path_fn={
+          &query_path(
+            @live_action,
+            Map.merge(@filters, &1),
+            @settings_scope_branch && @settings_scope_branch.slug
+          )
+        }
         page_sizes={[25, 50, 100]}
       />
     </div>

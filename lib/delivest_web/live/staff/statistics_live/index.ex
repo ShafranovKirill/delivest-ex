@@ -365,6 +365,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     """
   end
 
+  def staff_page_navigation(%{current_branch: nil}), do: nil
   def staff_page_navigation(%{visible_tabs: []}), do: nil
 
   def staff_page_navigation(assigns) do
@@ -388,7 +389,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       </li>
       <li :if={@branch_franchise_path}>
         <.link id="sidebar-statistics-tab-franchise" navigate={@branch_franchise_path}>{gettext(
-          "Franchise"
+          "Statistics"
         )}</.link>
       </li>
     </ul>
@@ -416,7 +417,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           navigate={@branch_franchise_path}
           role="tab"
           class="tab"
-        >{gettext("Franchise")}</.link>
+        >{gettext("Statistics")}</.link>
       </div>
     </nav>
     """
@@ -754,5 +755,5 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   defp tab_label("customers"), do: gettext("Customers")
   defp tab_label("channels"), do: gettext("Channels")
   defp tab_label("comparison"), do: gettext("Comparison")
-  defp tab_label("franchise"), do: gettext("Franchise")
+  defp tab_label("franchise"), do: gettext("Statistics")
 end

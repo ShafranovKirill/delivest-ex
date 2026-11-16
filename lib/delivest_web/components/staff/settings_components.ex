@@ -19,11 +19,22 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       assigns.current_path ||
         if(branch, do: "/staff/branches/#{branch.slug}/edit", else: "/staff/franchise")
 
+    entries = DelivestWeb.StaffNav.settings_entries(assigns.staff, branch)
+
     assigns =
       assign(assigns,
         entries:
-          DelivestWeb.StaffNav.settings_entries(assigns.staff, branch)
-          |> Enum.reject(&(&1.id == :settings)),
+          entries
+          |> Enum.reject(
+            &(&1.id in [
+                :settings,
+                :branch_settings,
+                :data_transfer,
+                :delivery_settings,
+                :site_snapshot,
+                :instance_backup
+              ])
+          ),
         active_id: DelivestWeb.StaffNav.active_setting(path)
       )
 
@@ -35,35 +46,7 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       aria-label={gettext("Settings")}
     >
       <li :for={entry <- @entries}>
-        <details
-          :if={entry.id == :data_system}
-          id="sidebar-group-data-system"
-          open={@active_id == :data_system}
-          phx-mounted={JS.ignore_attributes("open")}
-        >
-          <summary
-            id="sidebar-group-data-system-toggle"
-            class={@active_id == :data_system && "menu-active"}
-          >
-            {entry.label}
-          </summary>
-          <ul>
-            <li :for={child <- DelivestWeb.StaffNav.data_system_entries()}>
-              <.link
-                id={"#{@id_prefix}logs-tab-#{child.id}"}
-                navigate={child.path}
-                class={
-                  DelivestWeb.StaffNav.active_data_system(@current_path) == child.id && "menu-active"
-                }
-                aria-current={
-                  DelivestWeb.StaffNav.active_data_system(@current_path) == child.id && "page"
-                }
-              >{child.label}</.link>
-            </li>
-          </ul>
-        </details>
         <.link
-          :if={entry.id != :data_system}
           id={"#{@id_prefix}settings-nav-#{entry.id}"}
           navigate={
             DelivestWeb.StaffBranchPath.contextual_navigation_path(
@@ -81,12 +64,7 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       :if={@id_prefix == ""}
       id={"#{@id_prefix}settings-navigation"}
       phx-hook="ActiveSectionNav"
-      class={[
-        "flex gap-2 rounded-box border border-base-300 bg-base-100 p-2",
-        @variant == :sidebar &&
-          "min-w-0 max-w-full self-start overflow-x-auto w-full",
-        @variant == :horizontal && "flex-wrap items-center"
-      ]}
+      class="flex min-w-0 w-full items-center gap-2 overflow-x-auto whitespace-nowrap rounded-box border border-base-300 bg-base-100 p-2"
       aria-label={gettext("Settings")}
     >
       <.link

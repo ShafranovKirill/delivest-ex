@@ -107,11 +107,25 @@ defmodule DelivestWeb.StaffHeader do
 
   def scope_branch(path, current_branch, settings_branch) do
     cond do
-      shared_integration?(path) -> nil
-      String.starts_with?(path || "", "/staff/b/") -> current_branch
-      String.starts_with?(path || "", "/staff/branches/") -> settings_branch
-      path in ["/staff/settings", "/staff/integrations"] -> settings_branch
-      true -> nil
+      shared_integration?(path) ->
+        nil
+
+      String.starts_with?(path || "", "/staff/b/") ->
+        current_branch
+
+      String.starts_with?(path || "", "/staff/branches/") ->
+        settings_branch
+
+      path in [
+        "/staff/settings",
+        "/staff/settings/data-transfer",
+        "/staff/settings/data-system",
+        "/staff/integrations"
+      ] ->
+        settings_branch
+
+      true ->
+        nil
     end
   end
 

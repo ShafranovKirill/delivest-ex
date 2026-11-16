@@ -118,13 +118,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
   defp load_documents(socket), do: assign(socket, documents: Franchise.list_documents())
 
-  defp visible_sections(staff) do
-    sections = Sections.all()
-
-    if Identity.can?(staff, "admin"),
-      do: sections,
-      else: Enum.reject(sections, &(&1.id == :snapshot))
-  end
+  defp visible_sections(_staff), do: Enum.reject(Sections.all(), &(&1.id == :snapshot))
 
   @impl true
   def handle_event("backup_validate", _params, socket), do: {:noreply, backup_authorize(socket)}
@@ -252,9 +246,28 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   def render(%{section: nil} = assigns) do
     ~H"""
     <div class="space-y-6">
+      <section id="franchise-appearance" class="space-y-4">
+        <h2 class="text-xl font-semibold">{gettext("Appearance")}</h2>
+        <.settings_cards>
+          <.settings_card
+            :for={
+              section <-
+                Enum.filter(visible_sections(@current_staff), &(&1.id in [:brand, :logo, :images]))
+            }
+            id={"franchise-section-#{section.id}"}
+            navigate={~p"/staff/franchise/#{section.id}"}
+            icon={section.icon}
+            title={section.title}
+            description={section.description}
+          />
+        </.settings_cards>
+      </section>
       <.settings_cards>
         <.settings_card
-          :for={section <- visible_sections(@current_staff)}
+          :for={
+            section <-
+              Enum.reject(visible_sections(@current_staff), &(&1.id in [:brand, :logo, :images]))
+          }
           id={"franchise-section-#{section.id}"}
           navigate={~p"/staff/franchise/#{section.id}"}
           icon={section.icon}
