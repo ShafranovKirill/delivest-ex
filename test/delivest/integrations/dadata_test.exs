@@ -93,7 +93,7 @@ defmodule Delivest.Integrations.DadataTest do
     refute_received :called
   end
 
-  test "a quota error returns no suggestions and pauses the API for a while" do
+  test "a quota error remains an error and pauses the API for a while" do
     configure()
     on_exit(fn -> Cachex.del(:geo_cache, :unavailable) end)
     test_pid = self()
@@ -104,14 +104,40 @@ defmodule Delivest.Integrations.DadataTest do
     end)
 
     first = "квота #{System.unique_integer([:positive])}"
-    assert {:ok, []} = Dadata.suggest(first, nil)
+    assert {:error, _} = Dadata.suggest(first, nil)
     assert_received :called
 
-    assert {:ok, []} = Dadata.suggest("другая #{System.unique_integer([:positive])}", nil)
+    assert {:error, :dadata_unavailable} =
+             Dadata.suggest("другая #{System.unique_integer([:positive])}", nil)
+
     refute_received :called
 
     Cachex.del(:geo_cache, :unavailable)
-    assert {:ok, []} = Dadata.suggest(first, nil)
+    assert {:error, _} = Dadata.suggest(first, nil)
     assert_received :called
+  end
+
+  test "preferred city precedes results elsewhere without hiding them" do
+    configure()
+    query = "мира #{System.unique_integer([:positive])}"
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      city = Jason.decode!(body)["locations"]
+
+      suggestion =
+        if city,
+          do: suggestion("ул Мира", "1"),
+          else: %{
+            suggestion("ул Мира", "2")
+            | "data" => %{"city" => "Курган", "street_with_type" => "ул Мира", "house" => "2"}
+          }
+
+      Req.Test.json(conn, %{"suggestions" => [suggestion]})
+    end)
+
+    assert {:ok, [first, second]} = Dadata.suggest_preferred(query, "Тюмень")
+    assert first.city == "Тюмень"
+    assert second.city == "Курган"
   end
 end

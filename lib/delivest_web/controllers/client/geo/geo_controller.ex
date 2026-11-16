@@ -12,11 +12,13 @@ defmodule DelivestWeb.Client.Geo.GeoController do
 
   operation(:suggest,
     summary: "Подсказки адресов",
-    description: "Адреса DaData по введённой строке, в пределах города, если он передан.",
+    description:
+      "Адреса DaData по введённой строке; city ограничивает город, city_boost повышает его приоритет.",
     tags: ["Geo"],
     parameters: [
       query: [in: :query, type: :string, required: true, description: "Введённый адрес"],
-      city: [in: :query, type: :string, description: "Город филиала"]
+      city: [in: :query, type: :string, description: "Строгое ограничение города"],
+      city_boost: [in: :query, type: :string, description: "Предпочитаемый город"]
     ],
     responses: [
       ok: {"Адреса", "application/json", GeoAddressListResponse},
@@ -27,9 +29,19 @@ defmodule DelivestWeb.Client.Geo.GeoController do
   def suggest(conn, %{"query" => query} = params) do
     query = String.trim(query)
 
-    if String.length(query) < @min_query_length,
-      do: render(conn, :index, addresses: []),
-      else: query |> Dadata.suggest(blank_to_nil(params["city"])) |> respond(conn)
+    if String.length(query) < @min_query_length do
+      render(conn, :index, addresses: [])
+    else
+      preferred =
+        if blank_to_nil(params["city"]), do: nil, else: blank_to_nil(params["city_boost"])
+
+      result =
+        if preferred,
+          do: Dadata.suggest_preferred(query, preferred),
+          else: Dadata.suggest(query, blank_to_nil(params["city"]))
+
+      respond(result, conn)
+    end
   end
 
   def suggest(conn, _params), do: render(conn, :index, addresses: [])

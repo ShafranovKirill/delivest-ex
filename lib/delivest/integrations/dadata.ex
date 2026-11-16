@@ -14,6 +14,28 @@ defmodule Delivest.Integrations.Dadata do
     cached({:suggest, city && normalize(city), query}, &Api.suggest(&1, query, city))
   end
 
+  def suggest_preferred(query, city) do
+    case {suggest(query, city), suggest(query, nil)} do
+      {{:ok, preferred}, {:ok, all}} ->
+        {:ok,
+         Enum.uniq_by(preferred ++ all, fn address ->
+           if address.fias_id,
+             do: {:fias_id, address.fias_id},
+             else: {:address, address.value, address.latitude, address.longitude}
+         end)
+         |> Enum.take(7)}
+
+      {{:ok, addresses}, {:error, _}} ->
+        {:ok, addresses}
+
+      {{:error, _}, {:ok, addresses}} ->
+        {:ok, addresses}
+
+      {error, _} ->
+        error
+    end
+  end
+
   def geolocate(latitude, longitude) do
     latitude = Float.round(latitude, 4)
     longitude = Float.round(longitude, 4)
@@ -62,7 +84,7 @@ defmodule Delivest.Integrations.Dadata do
       {:ok, addresses} -> {:ok, addresses}
       {:commit, addresses} -> {:ok, addresses}
       {:ignore, result} -> result
-      {:error, _reason} -> {:ok, []}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -72,7 +94,7 @@ defmodule Delivest.Integrations.Dadata do
          {:ok, addresses} <- request.(settings) do
       {:commit, addresses, expire: @cache_ttl}
     else
-      :unavailable -> {:ignore, {:ok, []}}
+      :unavailable -> {:ignore, {:error, :dadata_unavailable}}
       {:error, reason} = error -> {:ignore, failed(error, reason)}
     end
   end
@@ -81,7 +103,7 @@ defmodule Delivest.Integrations.Dadata do
     if unavailable?(reason) do
       Logger.warning("Dadata is unavailable, suggestions are paused: #{inspect(reason)}")
       Cachex.put(@cache, :unavailable, true, expire: @pause)
-      {:ok, []}
+      error
     else
       error
     end
