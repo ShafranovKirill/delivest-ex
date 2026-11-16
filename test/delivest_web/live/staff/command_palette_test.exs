@@ -40,14 +40,27 @@ defmodule DelivestWeb.Staff.CommandPaletteTest do
 
     assert has_element?(
              lv,
-             "#command-item-page-delivery_zones[href='/staff/b/#{branch.slug}/delivery/zones']"
+             "#command-item-page-delivery_settings[href='/staff/b/#{branch.slug}/delivery']"
            )
 
     lv |> form("#command-palette-form", %{query: "график"}) |> render_change()
 
     assert has_element?(
              lv,
-             "#command-item-page-hours[href='/staff/branches/#{branch.slug}/edit/hours']"
+             "#command-item-page-branch_settings[href='/staff/branches/#{branch.slug}/edit']"
+           )
+
+    lv |> form("#command-palette-form", %{query: "бренд"}) |> render_change()
+    assert has_element?(lv, "#command-item-page-franchise[href='/staff/franchise']")
+
+    lv |> form("#command-palette-form", %{query: "права"}) |> render_change()
+    assert has_element?(lv, "#command-item-page-roles[href='/staff/roles']")
+
+    lv |> form("#command-palette-form", %{query: "бонусы"}) |> render_change()
+
+    assert has_element?(
+             lv,
+             "#command-item-page-loyalty[href='/staff/marketing/bonuses?branch=#{branch.slug}']"
            )
   end
 

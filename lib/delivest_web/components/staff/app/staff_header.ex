@@ -110,7 +110,8 @@ defmodule DelivestWeb.StaffHeader do
       shared_integration?(path) -> nil
       String.starts_with?(path || "", "/staff/b/") -> current_branch
       String.starts_with?(path || "", "/staff/branches/") -> settings_branch
-      path in ["/staff/settings", "/staff/integrations"] -> settings_branch
+      path in ["/staff/settings", "/staff/settings/data-transfer", "/staff/integrations"] ->
+        settings_branch
       true -> nil
     end
   end

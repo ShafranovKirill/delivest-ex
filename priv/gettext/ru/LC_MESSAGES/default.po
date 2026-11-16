@@ -12354,3 +12354,22 @@ msgstr "Удалить %{name}"
 
 msgid "Toggle %{section} sections"
 msgstr "Развернуть или свернуть раздел «%{section}»"
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Employees"
+msgstr "Сотрудники"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Branch snapshot"
+msgstr "Слепок филиала"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Franchise snapshot"
+msgstr "Слепок франшизы"
+
+#: lib/delivest_web/components/staff/settings_components.ex
+#, elixir-autogen, elixir-format
+msgid "Data transfer"
+msgstr "Перенос данных"

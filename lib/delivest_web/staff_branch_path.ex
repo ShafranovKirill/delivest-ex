@@ -155,6 +155,7 @@ defmodule DelivestWeb.StaffBranchPath do
     case classify(source) do
       {:ok, {:network, _route}, _query} -> network_return(source)
       {:ok, {:settings_summary, _slug, _filter}, _query} -> network_return(source)
+      {:ok, {:data_transfer, _slug}, _query} -> network_return(source)
       _ -> "/staff/dashboard"
     end
   end
@@ -203,6 +204,11 @@ defmodule DelivestWeb.StaffBranchPath do
         if section in [nil, "" | branch_setting_sections()],
           do: {:ok, {:branch_settings, slug, section}, query},
           else: :error
+
+      path == "/staff/settings/data-transfer" ->
+        branch = query["branch"]
+        branch = if is_binary(branch) and valid_slug?(branch), do: branch, else: nil
+        {:ok, {:data_transfer, branch}, %{}}
 
       path == "/staff/settings" ->
         branch = query["branch"]
@@ -325,6 +331,16 @@ defmodule DelivestWeb.StaffBranchPath do
   defp destination({:settings_summary, _source_slug, filter}, :network),
     do: {:ok, settings_path(nil, filter), :direct}
 
+  defp destination({:data_transfer, _source_slug}, {:branch, target_slug})
+       when is_binary(target_slug) do
+    if valid_slug?(target_slug),
+      do: {:ok, data_transfer_path(target_slug), :direct},
+      else: :error
+  end
+
+  defp destination({:data_transfer, _source_slug}, :network),
+    do: {:ok, data_transfer_path(nil), :direct}
+
   defp destination({:network, route}, :network), do: {:ok, "/staff/#{route}", :direct}
   defp destination(_, _), do: :error
 
@@ -354,6 +370,9 @@ defmodule DelivestWeb.StaffBranchPath do
       do: "/staff/settings",
       else: "/staff/settings?" <> URI.encode_query(params)
   end
+
+  defp data_transfer_path(nil), do: "/staff/settings/data-transfer"
+  defp data_transfer_path(slug), do: "/staff/settings/data-transfer?branch=#{slug}"
 
   defp valid_slug?(slug), do: Regex.match?(~r/^[a-z0-9-]+$/, slug)
 

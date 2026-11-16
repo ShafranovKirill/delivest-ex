@@ -96,7 +96,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(
              settings,
-             "#sidebar-group-settings[open] #sidebar-settings-nav-hours[aria-current='page']"
+             "#sidebar-group-settings[open] #sidebar-settings-nav-branch_settings[aria-current='page']"
            )
 
     assert has_element?(
@@ -106,12 +106,12 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(
              settings,
-             "#sidebar-group-settings > ul > li > #sidebar-settings-nav-hours"
+             "#sidebar-group-settings > ul > li > #sidebar-settings-nav-branch_settings"
            )
 
     assert has_element?(
              settings,
-             "#staff-context-navigation #settings-nav-hours[aria-current='page']"
+             "#staff-context-navigation #settings-nav-branch_settings[aria-current='page']"
            )
 
     refute has_element?(settings, "#sidebar-staff-section-navigation")
@@ -191,9 +191,9 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     pages = [
       {"/staff/settings?branch=#{branch.slug}", "features", "#settings-feature-filter"},
-      {"/staff/franchise/brand", "brand", "#franchise-settings-form"},
+      {"/staff/franchise/brand", "franchise", "#franchise-settings-form"},
       {"/staff/branches/#{branch.slug}/edit", "branch_settings", "#branch-section-hours"},
-      {"/staff/branches/#{branch.slug}/edit/hours", "hours", "#branch-form"},
+      {"/staff/branches/#{branch.slug}/edit/hours", "branch_settings", "#branch-form"},
       {"/staff/b/#{branch.slug}/integrations", "integrations", "#integration-frontpad"},
       {"/staff/b/#{branch.slug}/delivery", "delivery_settings", "#delivery-couriers-card"}
     ]
@@ -216,14 +216,14 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert navigation |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() == 1
     direct_hrefs = navigation |> hd() |> elem(2)
-    assert Enum.member?(direct_hrefs, "/staff/branches/#{branch.slug}/edit/hours")
+    assert Enum.member?(direct_hrefs, "/staff/branches/#{branch.slug}/edit")
 
     for {path, _ids, hrefs} <- navigation do
       if path == "/staff/franchise/brand" do
         assert Enum.member?(
                  hrefs,
                  DelivestWeb.StaffBranchPath.selection_path(
-                   "/staff/branches/#{branch.slug}/edit/hours",
+                   "/staff/branches/#{branch.slug}/edit",
                    path
                  )
                )

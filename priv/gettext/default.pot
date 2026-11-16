@@ -12307,3 +12307,22 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Product operations"
 msgstr ""
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Employees"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Branch snapshot"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Franchise snapshot"
+msgstr ""
+
+#: lib/delivest_web/components/staff/settings_components.ex
+#, elixir-autogen, elixir-format
+msgid "Data transfer"
+msgstr ""

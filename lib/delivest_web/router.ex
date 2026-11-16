@@ -352,6 +352,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/settings", SettingsLive.Index, :index
+      live "/settings/data-transfer", SettingsLive.DataTransfer, :index
 
       if Mix.env() in [:dev, :test] do
         live "/foundation-gallery", FoundationGalleryLive, :index

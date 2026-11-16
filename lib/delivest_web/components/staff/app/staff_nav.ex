@@ -15,23 +15,26 @@ defmodule DelivestWeb.StaffNav do
       path == "/staff/settings" ->
         :features
 
+      path == "/staff/settings/data-transfer" ->
+        :data_transfer
+
       String.contains?(path, "/integrations/routes") ->
-        :order_settings
+        :integrations
 
       String.contains?(path, "/integrations") ->
         :integrations
 
       String.contains?(path, "/delivery/zones") ->
-        :delivery_zones
+        :delivery_settings
 
       String.contains?(path, "/delivery") ->
         :delivery_settings
 
       String.contains?(path, "/branches/") and String.ends_with?(path, "/hours") ->
-        :hours
+        :branch_settings
 
       String.contains?(path, "/branches/") and String.ends_with?(path, "/snapshot") ->
-        :site_snapshot
+        :data_transfer
 
       String.contains?(path, "/branches/") and String.contains?(path, "/edit") ->
         :branch_settings
@@ -40,22 +43,16 @@ defmodule DelivestWeb.StaffNav do
         :branches
 
       path == "/staff/franchise/snapshot" ->
-        :instance_backup
+        :data_transfer
 
       String.starts_with?(path, "/staff/franchise") ->
-        :brand
-
-      String.starts_with?(path, "/staff/roles") ->
-        :roles_settings
-
-      String.starts_with?(path, "/staff/employee") ->
-        :team
+        :franchise
 
       String.starts_with?(path, "/staff/diagnostics") or String.starts_with?(path, "/staff/logs") ->
         :data_system
 
       String.contains?(path, "/loyalty") ->
-        :loyalty_settings
+        nil
 
       true ->
         nil
@@ -314,7 +311,9 @@ defmodule DelivestWeb.StaffNav do
                 :promotions,
                 :loyalty,
                 :advertising_links,
-                :marketing
+                :marketing,
+                :employee,
+                :roles
               ] ->
             group.items
 
@@ -425,7 +424,7 @@ defmodule DelivestWeb.StaffNav do
         [] ->
           nil
 
-        [only] when id not in [:settings, :menu] ->
+        [only] when id not in [:settings, :menu, :employees] ->
           %{only | label: label, icon: icon, pages: only.pages}
 
         available ->
@@ -464,6 +463,12 @@ defmodule DelivestWeb.StaffNav do
           gettext("Finance"),
           "hero-banknotes",
           Enum.map([:payments, :receipts], find)
+        ),
+        top.(
+          :employees,
+          gettext("Employees"),
+          "hero-user-group",
+          Enum.map([:employee, :roles], find)
         ),
         primary_label(find.(:statistics), gettext("Analytics"))
       ]
@@ -511,13 +516,21 @@ defmodule DelivestWeb.StaffNav do
         ["franchise.update", "branches.read", "delivery.read", "integrations.read"]
       ),
       setting(
-        :brand,
-        gettext("Network and brand"),
-        "/staff/franchise/brand",
+        :data_transfer,
+        gettext("Data transfer"),
+        "/staff/settings/data-transfer",
+        "hero-arrow-up-tray",
+        :network,
+        ["branches.update", "admin"]
+      ),
+      setting(
+        :franchise,
+        gettext("Franchise"),
+        "/staff/franchise",
         "hero-building-storefront",
         :network,
         ["franchise.update"],
-        [gettext("brand"), gettext("logo")]
+        [gettext("brand"), gettext("logo"), "бренд"]
       ),
       setting(:branches, gettext("Branches"), "/staff/branches", "hero-map-pin", :network, [
         "branches.read",
@@ -529,14 +542,6 @@ defmodule DelivestWeb.StaffNav do
         branch && "/staff/branches/#{branch.slug}/edit",
         "hero-building-storefront",
         :branch,
-        ["branches.read", "delivery.read"]
-      ),
-      setting(
-        :hours,
-        gettext("Working Hours"),
-        branch && "/staff/branches/#{branch.slug}/edit/hours",
-        "hero-clock",
-        :branch,
         ["branches.read", "delivery.read"],
         [gettext("schedule"), "график", "часы работы"]
       ),
@@ -547,34 +552,7 @@ defmodule DelivestWeb.StaffNav do
         "hero-map",
         :branch,
         ["delivery.read"],
-        []
-      ),
-      setting(
-        :delivery_zones,
-        gettext("Delivery zones"),
-        branch && "/staff/b/#{branch.slug}/delivery/zones",
-        "hero-map-pin",
-        :branch,
-        ["delivery.read"],
         ["зоны", "зоны доставки"]
-      ),
-      setting(
-        :order_settings,
-        gettext("Orders and payment"),
-        branch && "/staff/b/#{branch.slug}/integrations/routes",
-        "hero-credit-card",
-        :branch,
-        ["integrations.read"],
-        []
-      ),
-      setting(
-        :loyalty_settings,
-        gettext("Loyalty"),
-        branch && "/staff/b/#{branch.slug}/loyalty",
-        "hero-star",
-        :branch,
-        ["promotions.read"],
-        ["бонусы", gettext("bonuses")]
       ),
       setting(
         :integrations,
@@ -583,24 +561,6 @@ defmodule DelivestWeb.StaffNav do
         "hero-puzzle-piece",
         :mixed,
         ["integrations.read"]
-      ),
-      setting(
-        :team,
-        gettext("Team and access"),
-        "/staff/employee",
-        "hero-user-group",
-        :network,
-        ["staff.read"],
-        ["сотрудники"]
-      ),
-      setting(
-        :roles_settings,
-        gettext("Roles and permissions"),
-        "/staff/roles",
-        "hero-shield-check",
-        :network,
-        ["roles.read"],
-        ["права"]
       ),
       setting(
         :data_system,
@@ -613,7 +573,7 @@ defmodule DelivestWeb.StaffNav do
       ),
       setting(
         :site_snapshot,
-        gettext("Site snapshot"),
+        gettext("Branch snapshot"),
         branch && "/staff/branches/#{branch.slug}/edit/snapshot",
         "hero-archive-box-arrow-down",
         :branch,
@@ -622,7 +582,7 @@ defmodule DelivestWeb.StaffNav do
       ),
       setting(
         :instance_backup,
-        gettext("Instance backup"),
+        gettext("Franchise snapshot"),
         "/staff/franchise/snapshot",
         "hero-archive-box-arrow-down",
         :network,
@@ -631,7 +591,14 @@ defmodule DelivestWeb.StaffNav do
       )
     ]
     |> Enum.reject(&is_nil/1)
-    |> Enum.filter(fn entry -> Enum.any?(entry.read_permissions, &can?(staff, &1)) end)
+    |> Enum.filter(fn
+      %{id: :data_transfer} ->
+        can?(staff, "admin") or
+          (can?(staff, "branches.read") and can?(staff, "branches.update"))
+
+      entry ->
+        Enum.any?(entry.read_permissions, &can?(staff, &1))
+    end)
   end
 
   defp setting(id, label, path, icon, scope, permissions, aliases \\ [])
@@ -661,21 +628,16 @@ defmodule DelivestWeb.StaffNav do
 
   defp setting_path(:settings, _), do: "/staff/settings"
   defp setting_path(:features, _), do: "/staff/settings"
-  defp setting_path(:brand, _), do: "/staff/franchise/brand"
+  defp setting_path(:data_transfer, _), do: "/staff/settings/data-transfer"
+  defp setting_path(:franchise, _), do: "/staff/franchise"
   defp setting_path(:branches, _), do: "/staff/branches"
-  defp setting_path(:team, _), do: "/staff/employee"
-  defp setting_path(:roles_settings, _), do: "/staff/roles"
   defp setting_path(:data_system, _), do: "/staff/diagnostics"
   defp setting_path(:instance_backup, _), do: "/staff/franchise/snapshot"
   defp setting_path(:integrations, nil), do: "/staff/integrations"
   defp setting_path(:integrations, branch), do: "/staff/b/#{branch.slug}/integrations"
   defp setting_path(_id, nil), do: nil
   defp setting_path(:branch_settings, branch), do: "/staff/branches/#{branch.slug}/edit"
-  defp setting_path(:hours, branch), do: "/staff/branches/#{branch.slug}/edit/hours"
   defp setting_path(:delivery_settings, branch), do: "/staff/b/#{branch.slug}/delivery"
-  defp setting_path(:delivery_zones, branch), do: "/staff/b/#{branch.slug}/delivery/zones"
-  defp setting_path(:order_settings, branch), do: "/staff/b/#{branch.slug}/integrations/routes"
-  defp setting_path(:loyalty_settings, branch), do: "/staff/b/#{branch.slug}/loyalty"
   defp setting_path(:frontpad, branch), do: "/staff/b/#{branch.slug}/integrations/frontpad"
   defp setting_path(:site_snapshot, branch), do: "/staff/branches/#{branch.slug}/edit/snapshot"
 
@@ -817,7 +779,7 @@ defmodule DelivestWeb.StaffNav do
                Identity.authorize(staff, "promotions.read", branch.id) == :ok and
                  Gateway.own?(branch, :loyalty)
              end),
-           do: item
+           do: %{item | aliases: ["бонусы"]}
       end),
       item(
         :advertising_links,
@@ -861,10 +823,11 @@ defmodule DelivestWeb.StaffNav do
         |> then(fn item -> if Segments.available?(staff), do: item end)
       ]),
       group(:people, "hero-user-group", gettext("Team"), [
-        item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Staff"))
+        item(:employee, ~p"/staff/employee", "hero-user-group", gettext("Employees"))
         |> allowed(staff, "staff.read"),
-        item(:roles, ~p"/staff/roles", "hero-shield-check", gettext("Roles"))
+        item(:roles, ~p"/staff/roles", "hero-shield-check", gettext("Roles and permissions"))
         |> allowed(staff, "roles.read")
+        |> then(fn item -> item && %{item | aliases: ["права"]} end)
       ]),
       group(:diagnostics, "hero-beaker", gettext("Diagnostics"), [
         item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
