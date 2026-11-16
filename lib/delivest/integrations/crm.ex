@@ -6,6 +6,7 @@ defmodule Delivest.Integrations.Crm do
 
   alias Delivest.Integrations.Crm.{
     BranchSettings,
+    Command,
     Commands,
     ConfirmWorker,
     Registry,
@@ -511,6 +512,135 @@ defmodule Delivest.Integrations.Crm do
 
   def enqueue_command(%Order{} = order, action, args \\ %{}, event_id \\ nil),
     do: Commands.enqueue(order, action, args, event_id)
+
+  def list_unknown_commands(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id) do
+      stale = DateTime.add(DateTime.utc_now(), -600, :second)
+
+      Repo.query!(
+        """
+        UPDATE crm_commands c SET status = 'unknown',
+          last_error = 'Worker stopped during CRM request', updated_at = now()
+        FROM orders o
+        WHERE o.id = c.order_id AND o.branch_id = $1
+          AND c.status = 'running' AND c.claimed_at < $2
+          AND NOT EXISTS (
+            SELECT 1 FROM oban_jobs j WHERE j.id = c.job_id AND j.state = 'executing'
+          )
+        """,
+        [Ecto.UUID.dump!(branch_id), stale]
+      )
+
+      Repo.query!(
+        """
+        UPDATE crm_commands c SET status = 'unknown',
+          last_error = 'Command job stopped or was pruned', updated_at = now()
+        FROM orders o
+        WHERE o.id = c.order_id AND o.branch_id = $1 AND c.status = 'pending'
+          AND c.inserted_at < $2
+          AND NOT EXISTS (
+            SELECT 1 FROM oban_jobs j WHERE j.id = c.job_id
+              AND j.state IN ('available', 'scheduled', 'retryable', 'executing')
+          )
+        """,
+        [Ecto.UUID.dump!(branch_id), stale]
+      )
+
+      {:ok,
+       Repo.all(
+         from(c in Command,
+           join: o in Order,
+           on: o.id == c.order_id,
+           where: o.branch_id == ^branch_id and c.status in ["unknown", "failed"],
+           order_by: [asc: c.id],
+           limit: 100,
+           select: %{
+             job_id: c.id,
+             order_id: c.order_id,
+             phase: c.status,
+             last_error: c.last_error
+           }
+         )
+       )}
+    end
+  end
+
+  def list_unknown_syncs(staff, branch_id) do
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id) do
+      stale = DateTime.add(DateTime.utc_now(), -600, :second)
+
+      Repo.all(
+        from(o in Order,
+          where: o.branch_id == ^branch_id,
+          where: fragment("?->>'status' = 'sending'", o.crm),
+          where:
+            fragment(
+              "(?->>'sending_started_at') IS NULL OR (?->>'sending_started_at')::timestamptz < ?",
+              o.crm,
+              o.crm,
+              ^stale
+            ),
+          select: o.id,
+          limit: 100
+        )
+      )
+      |> Enum.each(fn order_id ->
+        Repo.transaction(fn ->
+          order = Repo.one(from(o in Order, where: o.id == ^order_id, lock: "FOR UPDATE"))
+
+          if order && order.crm.status == "sending" &&
+               (is_nil(order.crm.sending_started_at) ||
+                  DateTime.compare(order.crm.sending_started_at, stale) == :lt) do
+            case SyncState.unknown(
+                   order,
+                   "CRM request may have completed before worker stopped",
+                   order.crm.attempts
+                 ) do
+              {:ok, _} -> :ok
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          end
+        end)
+      end)
+
+      {:ok,
+       Repo.all(
+         from(o in Order,
+           where: o.branch_id == ^branch_id,
+           where: fragment("?->>'status' IN ('unknown', 'failed')", o.crm),
+           where: fragment("COALESCE(?->>'alert', '') <> ''", o.crm),
+           order_by: [asc: o.updated_at],
+           limit: 100
+         )
+       )}
+    end
+  end
+
+  def resolve_command(staff, branch_id, command_id, action) when action in ["done", "retry"] do
+    with :ok <- Identity.authorize(staff, "orders.update", branch_id),
+         %Command{} = command <- Repo.get(Command, command_id),
+         %Order{branch_id: ^branch_id} <- Repo.get(Order, command.order_id) do
+      decision = if action == "done", do: :confirmed_effect, else: :retry
+
+      case Commands.resolve(
+             command.id,
+             staff.id,
+             "Manual recovery after checking the CRM provider",
+             decision,
+             action == "retry"
+           ) do
+        {:ok, :ok} -> {:ok, Repo.get(Command, command.id)}
+        other -> other
+      end
+    else
+      nil -> {:error, :command_not_resolvable}
+      %Order{} -> {:error, :command_not_resolvable}
+      error -> error
+    end
+  end
+
+  def resolve_command(_staff, _branch_id, _command_id, _action),
+    do: {:error, :invalid_action}
 
   defp call(order, fun, generation \\ :completion)
 

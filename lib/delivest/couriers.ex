@@ -115,13 +115,13 @@ defmodule Delivest.Couriers do
     |> Enum.group_by(& &1.courier_id)
   end
 
-  def order_moved(%Order{} = order) do
+  def order_moved(%Order{} = order, event_id \\ nil) do
     case order.status do
       :cancelled -> close_active(order.id, :cancelled, :order_cancelled)
       :completed -> complete_active(order.id)
       :delivering -> pick_up_active(order.id)
-      :ready -> [auto_start(order), notify_ready(order.id)]
-      status when is_map_key(@rank, status) -> auto_start(order)
+      :ready -> [auto_start(order, event_id), notify_ready(order.id)]
+      status when is_map_key(@rank, status) -> auto_start(order, event_id)
       _status -> :ok
     end
 
@@ -340,20 +340,27 @@ defmodule Delivest.Couriers do
     end
   end
 
-  defp auto_start(%Order{} = order) do
+  defp auto_start(%Order{} = order, event_id) do
     with true <- eligible?(order),
          true <- automatic?(order.branch_id),
          %CourierSettings{search: search, source: source} when search != :manual <-
            settings(order.branch_id),
          true <- @rank[order.status] >= @rank[search],
          false <- started?(order.id) do
-      start(order, source)
+      start(order, source, event_id)
     end
   end
 
-  defp start(%Order{} = order, key) do
+  defp start(%Order{} = order, key, event_id \\ nil) do
+    changeset = Delivery.new(order.id, order.branch_id, key)
+
+    changeset =
+      if is_binary(event_id),
+        do: Ecto.Changeset.put_change(changeset, :id, event_id),
+        else: changeset
+
     with {:ok, provider} <- Registry.fetch(key),
-         {:ok, delivery} <- order.id |> Delivery.new(order.branch_id, key) |> Repo.insert() do
+         {:ok, delivery} <- Repo.insert(changeset) do
       case provider.start(delivery, order) do
         {:ok, attrs} ->
           delivery

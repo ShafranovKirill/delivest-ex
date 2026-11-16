@@ -148,7 +148,7 @@ defmodule Delivest.Integrations.Crm.SyncState do
 
   def failed(order, error, attempt, alert \\ nil) do
     Audit.record(:system, "order.crm_failed", order, metadata: %{error: error})
-    attrs = %{status: "failed", attempts: attempt, last_error: error}
+    attrs = %{status: "failed", sending_started_at: nil, attempts: attempt, last_error: error}
     attrs = if alert, do: Map.put(attrs, :alert, alert), else: attrs
     Orders.update_order_crm(order, attrs)
   end

@@ -14,7 +14,7 @@ defmodule Delivest.Couriers.OrderSubscriber do
   @impl true
   def handle(event) do
     case Repo.get(Order, event.aggregate_id) do
-      %Order{deleted_at: nil} = order -> Couriers.order_moved(order)
+      %Order{deleted_at: nil} = order -> Couriers.order_moved(order, event.id)
       _order -> :ok
     end
   end

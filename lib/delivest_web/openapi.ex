@@ -1,5 +1,5 @@
 defmodule DelivestWeb.OpenApi do
-  alias OpenApiSpex.{Info, OpenApi, Paths, Server}
+  alias OpenApiSpex.{Components, Info, OpenApi, Paths, SecurityScheme, Server}
   alias DelivestWeb.{Endpoint, Router}
   @behaviour OpenApi
 
@@ -13,6 +13,11 @@ defmodule DelivestWeb.OpenApi do
         title: "My App",
         version: "1.0",
         description: "Все суммы — в копейках, целым числом."
+      },
+      components: %Components{
+        securitySchemes: %{
+          "bearer" => %SecurityScheme{type: "http", scheme: "bearer", bearerFormat: "JWT"}
+        }
       },
       paths: Paths.from_router(Router)
     }

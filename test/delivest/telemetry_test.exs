@@ -52,7 +52,13 @@ defmodule Delivest.TelemetryTest do
   end
 
   test "the poller reports Oban queue depth", %{ref: ref} do
-    {:ok, _job} =
+    baseline =
+      Repo.aggregate(
+        from(j in Oban.Job, where: j.queue == "default" and j.state == "available"),
+        :count
+      )
+
+    {:ok, job} =
       Oban.insert(Oban.Job.new(%{}, worker: "Delivest.TelemetryTest", queue: "default"))
 
     Telemetry.oban_queues()
@@ -60,11 +66,49 @@ defmodule Delivest.TelemetryTest do
     assert_received {[:delivest, :oban, :queue], ^ref, %{count: count},
                      %{queue: "default", state: "available"}}
 
-    assert count >= 1
+    assert count == baseline + 1
+
+    Repo.delete!(job)
+    Telemetry.oban_queues()
+
+    assert_received {[:delivest, :oban, :queue], ^ref, %{count: ^baseline},
+                     %{queue: "default", state: "available"}}
+
+    assert_received {[:delivest, :oban, :queue], ^ref, %{count: 0},
+                     %{queue: "maintenance", state: "discarded"}}
+  end
+
+  test "Oban completion and exception metrics retain queue and state" do
+    metrics = Telemetry.metrics()
+
+    for event <- [:stop, :exception] do
+      summary = Enum.find(metrics, &(&1.name == [:oban, :job, event, :duration]))
+      counter = Enum.find(metrics, &(&1.name == [:oban, :job, event, :count]))
+
+      assert summary.tags == [:queue, :state]
+      assert counter.tags == [:queue, :state]
+
+      metadata = %{job: %Oban.Job{queue: "crm"}, state: :retryable}
+      assert summary.tag_values.(metadata) == %{queue: "crm", state: :retryable}
+    end
   end
 
   test "backlog reports oldest eligible age and resets an empty configured queue", %{ref: ref} do
     now = DateTime.utc_now()
+
+    eligible = fn queue ->
+      Repo.aggregate(
+        from(j in Oban.Job,
+          where:
+            j.queue == ^queue and j.state in ["available", "scheduled", "retryable"] and
+              j.scheduled_at <= ^now
+        ),
+        :count
+      )
+    end
+
+    baseline = eligible.("notifications")
+    default_baseline = eligible.("default")
 
     {:ok, job} =
       Oban.insert(Oban.Job.new(%{}, worker: "Delivest.TelemetryTest", queue: "notifications"))
@@ -75,18 +119,20 @@ defmodule Delivest.TelemetryTest do
 
     Telemetry.oban_backlog()
 
-    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: 1, oldest_age_seconds: age},
-                     %{queue: "notifications"}}
+    expected = baseline + 1
+
+    assert_received {[:delivest, :oban, :backlog], ^ref,
+                     %{count: ^expected, oldest_age_seconds: age}, %{queue: "notifications"}}
 
     assert age >= 90
 
-    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: 0, oldest_age_seconds: 0},
+    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: ^default_baseline},
                      %{queue: "default"}}
 
     Repo.delete!(job)
     Telemetry.oban_backlog()
 
-    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: 0, oldest_age_seconds: 0},
+    assert_received {[:delivest, :oban, :backlog], ^ref, %{count: ^baseline},
                      %{queue: "notifications"}}
   end
 

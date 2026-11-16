@@ -61,7 +61,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
            )
 
     refute has_element?(lv, "#nav-section-main a[href='/staff/integrations']")
-    refute has_element?(lv, "#nav-section-main a[href='/staff/b/#{branch.slug}/integrations']")
+    assert has_element?(lv, "#nav-section-main a[href='/staff/b/#{branch.slug}/integrations']")
   end
 
   test "global integrations use the header scope and preserve legacy branch links", %{

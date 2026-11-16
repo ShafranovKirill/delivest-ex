@@ -1,5 +1,5 @@
 defmodule Delivest.Promo.OrderFlowTest do
-  use Delivest.DataCase, async: true
+  use Delivest.DataCase, async: false
 
   import Delivest.Factory
 

@@ -112,6 +112,12 @@ defmodule DelivestWeb.Router do
     get "/reverse", GeoController, :reverse
   end
 
+  scope "/client", DelivestWeb.Client do
+    pipe_through :client_api
+
+    get "/capabilities", CapabilitiesController, :show
+  end
+
   scope "/client/delivery", DelivestWeb.Client.Delivery do
     pipe_through [:api, :geo_rate_limit]
 
@@ -483,6 +489,7 @@ defmodule DelivestWeb.Router do
 
         scope "/integrations", IntegrationLive do
           live "/", Index, :index
+          live "/recovery", Recovery, :index
           live "/frontpad", Frontpad, :index
           live "/ycart", Ycart, :index
           live "/iiko", Iiko, :index

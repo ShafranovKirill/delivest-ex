@@ -122,6 +122,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
       <DelivestWeb.GatewayNote.gateway_summary :if={@selected_branch} branch={@selected_branch} />
 
+      <.link
+        :if={Identity.can?(@current_staff, "orders.update")}
+        id="integration-recovery"
+        navigate={~p"/staff/b/#{@current_branch}/integrations/recovery"}
+        class="btn btn-outline btn-sm"
+      >
+        {gettext("Review blocked deliveries")}
+      </.link>
+
       <section class="space-y-3">
         <div>
           <h2 class="font-bold">{gettext("Branch settings")}</h2>

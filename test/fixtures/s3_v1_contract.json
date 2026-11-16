@@ -1,0 +1,1302 @@
+{
+  "source": "client dfadbe5 pre-S3 swagger.json; selected v1 public DTOs, transitive references, routes",
+  "paths": {
+    "/client/cart": {
+      "get": [
+        "200",
+        "422"
+      ]
+    },
+    "/client/orders": {
+      "get": [
+        "200",
+        "401"
+      ],
+      "post": [
+        "200",
+        "401",
+        "422",
+        "429"
+      ]
+    },
+    "/client/orders/active": {
+      "get": [
+        "200"
+      ]
+    },
+    "/client/auth/call": {
+      "post": [
+        "200",
+        "422",
+        "429",
+        "503"
+      ]
+    },
+    "/client/auth/call/{id}/complete": {
+      "post": [
+        "200",
+        "202",
+        "403",
+        "404"
+      ]
+    },
+    "/client/branches": {
+      "get": [
+        "200",
+        "500"
+      ]
+    },
+    "/client/branches/{id}/select": {
+      "post": [
+        "200",
+        "404"
+      ]
+    }
+  },
+  "schemas": {
+    "ActiveOrder": {
+      "type": "object",
+      "required": [
+        "id",
+        "number",
+        "short_number",
+        "status",
+        "fulfillment_type",
+        "payment_method",
+        "total_amount",
+        "subtotal_amount",
+        "discount_amount",
+        "delivery_amount",
+        "promotions",
+        "branch_id",
+        "inserted_at",
+        "courier",
+        "items"
+      ],
+      "properties": {
+        "address": {
+          "type": "object",
+          "nullable": true
+        },
+        "awaiting_payment": {
+          "type": "boolean"
+        },
+        "branch_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "can_cancel": {
+          "type": "boolean"
+        },
+        "comment": {
+          "type": "string",
+          "nullable": true
+        },
+        "cook_by": {
+          "type": "string",
+          "format": "date_time",
+          "nullable": true
+        },
+        "courier": {
+          "$ref": "#/components/schemas/OrderCourier"
+        },
+        "delivery_amount": {
+          "type": "integer"
+        },
+        "discount_amount": {
+          "type": "integer"
+        },
+        "fulfillment_type": {
+          "type": "string",
+          "enum": [
+            "dine_in",
+            "delivery",
+            "pickup"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date_time"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/OrderItemResponse"
+          }
+        },
+        "number": {
+          "type": "string"
+        },
+        "payment_method": {
+          "type": "string",
+          "enum": [
+            "cash",
+            "card_offline",
+            "online"
+          ]
+        },
+        "points_earned": {
+          "type": "integer"
+        },
+        "promotions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/OrderPromotion"
+          }
+        },
+        "short_number": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "created",
+            "accepted",
+            "preparing",
+            "ready",
+            "delivering",
+            "completed",
+            "cancelled"
+          ]
+        },
+        "subtotal_amount": {
+          "type": "integer"
+        },
+        "total_amount": {
+          "type": "integer"
+        }
+      }
+    },
+    "ActiveOrdersResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ActiveOrder"
+          }
+        }
+      }
+    },
+    "AddressRequest": {
+      "type": "object",
+      "properties": {
+        "apartment": {
+          "type": "string",
+          "nullable": true
+        },
+        "city": {
+          "type": "string",
+          "nullable": true
+        },
+        "comment": {
+          "type": "string",
+          "nullable": true
+        },
+        "district": {
+          "type": "string",
+          "nullable": true
+        },
+        "entrance": {
+          "type": "string",
+          "nullable": true
+        },
+        "fias_id": {
+          "type": "string",
+          "nullable": true
+        },
+        "floor": {
+          "type": "string",
+          "nullable": true
+        },
+        "formatted": {
+          "type": "string",
+          "nullable": true
+        },
+        "geo_precision": {
+          "type": "integer",
+          "nullable": true
+        },
+        "house": {
+          "type": "string",
+          "nullable": true
+        },
+        "intercom": {
+          "type": "string",
+          "nullable": true
+        },
+        "latitude": {
+          "type": "number",
+          "format": "float",
+          "nullable": true
+        },
+        "longitude": {
+          "type": "number",
+          "format": "float",
+          "nullable": true
+        },
+        "postal_code": {
+          "type": "string",
+          "nullable": true
+        },
+        "street": {
+          "type": "string",
+          "nullable": true
+        }
+      }
+    },
+    "AppliedPromotion": {
+      "type": "object",
+      "required": [
+        "promotion_id",
+        "name",
+        "discount",
+        "gifts"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "nullable": true
+        },
+        "description": {
+          "type": "string",
+          "nullable": true
+        },
+        "discount": {
+          "type": "integer"
+        },
+        "gift_choice": {
+          "$ref": "#/components/schemas/PromoGiftChoice"
+        },
+        "gifts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/PromoGift"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "promotion_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "Branch": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "slug",
+        "is_active"
+      ],
+      "properties": {
+        "branch_info": {},
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "BranchInfoResponse": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "address": {
+          "type": "string",
+          "nullable": true
+        },
+        "city": {
+          "type": "string",
+          "nullable": true
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "delivery_time": {
+          "type": "integer",
+          "nullable": true
+        },
+        "manual_rating": {
+          "type": "number",
+          "format": "float",
+          "nullable": true
+        },
+        "fulfillment_methods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "delivery",
+              "pickup",
+              "dine_in"
+            ]
+          }
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "instagram_url": {
+          "type": "string",
+          "nullable": true
+        },
+        "intake": {
+          "type": "object",
+          "properties": {
+            "extra_minutes": {
+              "type": "integer"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "normal",
+                "load",
+                "paused"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "nullable": true
+            },
+            "until": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          }
+        },
+        "latitude": {
+          "type": "number",
+          "format": "float",
+          "nullable": true
+        },
+        "longitude": {
+          "type": "number",
+          "format": "float",
+          "nullable": true
+        },
+        "loyalty": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "expire_days": {
+              "type": "integer",
+              "nullable": true
+            },
+            "max_percent": {
+              "type": "integer",
+              "nullable": true
+            },
+            "per_rubles": {
+              "type": "integer",
+              "nullable": true
+            },
+            "spend_enabled": {
+              "type": "boolean"
+            },
+            "stars": {
+              "type": "integer",
+              "nullable": true
+            }
+          }
+        },
+        "payment_methods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "card_offline",
+              "online"
+            ]
+          }
+        },
+        "phone_number": {
+          "type": "string",
+          "nullable": true
+        },
+        "special_hours": {
+          "type": "object"
+        },
+        "vk_url": {
+          "type": "string",
+          "nullable": true
+        },
+        "whatsapp_url": {
+          "type": "string",
+          "nullable": true
+        },
+        "working_hours": {
+          "type": "object",
+          "nullable": true
+        },
+        "ycart_settings": {
+          "type": "object",
+          "nullable": true,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "nullable": true
+            },
+            "yandex_org_id": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        }
+      }
+    },
+    "BranchListResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Branch"
+          }
+        }
+      }
+    },
+    "BranchResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/components/schemas/Branch"
+        }
+      }
+    },
+    "CartItemResponse": {
+      "type": "object",
+      "required": [
+        "key",
+        "product_id",
+        "name",
+        "price",
+        "quantity",
+        "total_price",
+        "base_total",
+        "gift",
+        "promotion_ids"
+      ],
+      "properties": {
+        "base_total": {
+          "type": "integer"
+        },
+        "gift": {
+          "type": "boolean"
+        },
+        "image_url": {
+          "type": "string",
+          "nullable": true
+        },
+        "key": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ItemModifier"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "price": {
+          "type": "integer"
+        },
+        "product_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "promotion_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "stars": {
+          "type": "boolean"
+        },
+        "stars_price": {
+          "type": "integer",
+          "nullable": true
+        },
+        "stars_reward": {
+          "type": "integer"
+        },
+        "stopped": {
+          "type": "boolean"
+        },
+        "total_price": {
+          "type": "integer"
+        }
+      }
+    },
+    "CartResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": [
+            "id",
+            "items",
+            "total_quantity",
+            "subtotal_amount",
+            "discount_amount",
+            "total_amount",
+            "promotions",
+            "hints"
+          ],
+          "properties": {
+            "base_stars": {
+              "type": "integer"
+            },
+            "branch_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            },
+            "discount_amount": {
+              "type": "integer"
+            },
+            "fulfillment_type": {
+              "type": "string",
+              "enum": [
+                "dine_in",
+                "delivery",
+                "pickup"
+              ],
+              "nullable": true
+            },
+            "hints": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/PromoHint"
+              }
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CartItemResponse"
+              }
+            },
+            "points_earned": {
+              "type": "integer"
+            },
+            "product_stars": {
+              "type": "integer"
+            },
+            "promo_code": {
+              "$ref": "#/components/schemas/PromoCodeState"
+            },
+            "promotions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/AppliedPromotion"
+              }
+            },
+            "session_id": {
+              "type": "string",
+              "nullable": true
+            },
+            "subtotal_amount": {
+              "type": "integer"
+            },
+            "total_amount": {
+              "type": "integer"
+            },
+            "total_quantity": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "ClientOrdersResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ActiveOrder"
+          }
+        }
+      }
+    },
+    "CreateOrderRequest": {
+      "type": "object",
+      "required": [
+        "cart_id",
+        "branch_id"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/components/schemas/AddressRequest"
+        },
+        "branch_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "cart_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "cash_given": {
+          "type": "integer",
+          "nullable": true
+        },
+        "comment": {
+          "type": "string",
+          "nullable": true
+        },
+        "cook_by": {
+          "type": "string",
+          "format": "date_time",
+          "nullable": true
+        },
+        "customer_name": {
+          "type": "string",
+          "nullable": true
+        },
+        "customer_phone": {
+          "type": "string",
+          "nullable": true
+        },
+        "expected_total": {
+          "type": "integer",
+          "nullable": true
+        },
+        "fulfillment_type": {
+          "type": "string",
+          "enum": [
+            "dine_in",
+            "delivery",
+            "pickup"
+          ],
+          "nullable": true
+        },
+        "payment_method": {
+          "type": "string",
+          "enum": [
+            "cash",
+            "card_offline",
+            "online"
+          ],
+          "nullable": true
+        },
+        "persons": {
+          "type": "integer",
+          "nullable": true
+        },
+        "spend_points": {
+          "type": "integer",
+          "nullable": true
+        }
+      }
+    },
+    "ItemModifier": {
+      "type": "object",
+      "required": [
+        "name",
+        "price",
+        "quantity"
+      ],
+      "properties": {
+        "group_name": {
+          "type": "string",
+          "nullable": true
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "price": {
+          "type": "integer"
+        },
+        "quantity": {
+          "type": "integer"
+        }
+      }
+    },
+    "OrderCourier": {
+      "type": "object",
+      "nullable": true,
+      "required": [
+        "name",
+        "phone",
+        "tracking_url"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "nullable": true
+        },
+        "phone": {
+          "type": "string",
+          "nullable": true
+        },
+        "tracking_url": {
+          "type": "string",
+          "nullable": true
+        }
+      }
+    },
+    "OrderItemResponse": {
+      "type": "object",
+      "required": [
+        "product_id",
+        "title",
+        "price",
+        "base_price",
+        "gift",
+        "quantity"
+      ],
+      "properties": {
+        "base_price": {
+          "type": "integer"
+        },
+        "gift": {
+          "type": "boolean"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ItemModifier"
+          }
+        },
+        "price": {
+          "type": "integer"
+        },
+        "product_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "stars_reward": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "OrderPromotion": {
+      "type": "object",
+      "required": [
+        "name",
+        "discount"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "nullable": true
+        },
+        "discount": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "OrderResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": [
+            "id",
+            "number",
+            "short_number",
+            "status",
+            "fulfillment_type",
+            "payment_method",
+            "total_amount",
+            "subtotal_amount",
+            "discount_amount",
+            "delivery_amount",
+            "promotions",
+            "branch_id",
+            "cart_id",
+            "items"
+          ],
+          "properties": {
+            "address": {
+              "type": "object",
+              "nullable": true
+            },
+            "awaiting_payment": {
+              "type": "boolean"
+            },
+            "branch_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "cart_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "client_id": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            },
+            "comment": {
+              "type": "string",
+              "nullable": true
+            },
+            "cook_by": {
+              "type": "string",
+              "format": "date_time",
+              "nullable": true
+            },
+            "customer_name": {
+              "type": "string",
+              "nullable": true
+            },
+            "customer_phone": {
+              "type": "string",
+              "nullable": true
+            },
+            "customer_phone_ext": {
+              "type": "string",
+              "nullable": true
+            },
+            "delivery_amount": {
+              "type": "integer"
+            },
+            "discount_amount": {
+              "type": "integer"
+            },
+            "fulfillment_type": {
+              "type": "string",
+              "enum": [
+                "dine_in",
+                "delivery",
+                "pickup"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/OrderItemResponse"
+              }
+            },
+            "number": {
+              "type": "string"
+            },
+            "payment": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+                "confirmation_url": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "cash",
+                "card_offline",
+                "online"
+              ]
+            },
+            "persons": {
+              "type": "integer",
+              "nullable": true
+            },
+            "points_earned": {
+              "type": "integer"
+            },
+            "promotions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/OrderPromotion"
+              }
+            },
+            "short_number": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "created",
+                "accepted",
+                "preparing",
+                "ready",
+                "delivering",
+                "completed",
+                "cancelled"
+              ]
+            },
+            "subtotal_amount": {
+              "type": "integer"
+            },
+            "total_amount": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "PromoCodeState": {
+      "type": "object",
+      "nullable": true,
+      "required": [
+        "code",
+        "status",
+        "reasons"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "nullable": true
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "not_found",
+            "inactive",
+            "not_started",
+            "expired",
+            "exhausted",
+            "requires_client",
+            "client_limit",
+            "not_owner",
+            "code_used",
+            "code_required"
+          ],
+          "nullable": true
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/PromoReason"
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "applied",
+            "pending",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "PromoGift": {
+      "type": "object",
+      "required": [
+        "product_id",
+        "name",
+        "quantity"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "product_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "quantity": {
+          "type": "integer"
+        }
+      }
+    },
+    "PromoGiftChoice": {
+      "type": "object",
+      "nullable": true,
+      "required": [
+        "required",
+        "available",
+        "selected",
+        "options"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/PromoGiftOption"
+          }
+        },
+        "required": {
+          "type": "integer"
+        },
+        "selected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    },
+    "PromoGiftOption": {
+      "type": "object",
+      "required": [
+        "product_id",
+        "name",
+        "price"
+      ],
+      "properties": {
+        "image_url": {
+          "type": "string",
+          "nullable": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "price": {
+          "type": "integer"
+        },
+        "product_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "PromoHint": {
+      "type": "object",
+      "required": [
+        "promotion_id",
+        "name",
+        "reasons"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "nullable": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "promotion_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/PromoReason"
+          }
+        }
+      }
+    },
+    "PromoReason": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "nullable": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "dine_in",
+              "delivery",
+              "pickup"
+            ]
+          }
+        },
+        "days": {
+          "type": "array",
+          "nullable": true,
+          "items": {
+            "type": "integer"
+          }
+        },
+        "from": {
+          "type": "string",
+          "nullable": true
+        },
+        "missing": {
+          "type": "integer",
+          "nullable": true
+        },
+        "name": {
+          "type": "string",
+          "nullable": true
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "product_id": {
+          "type": "string",
+          "format": "uuid",
+          "nullable": true
+        },
+        "product_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "to": {
+          "type": "string",
+          "nullable": true
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "subtotal",
+            "quantity",
+            "product",
+            "products",
+            "fulfillment",
+            "time",
+            "weekday",
+            "requires_client"
+          ]
+        }
+      }
+    },
+    "RefreshRequest": {
+      "type": "object",
+      "required": [
+        "refresh_token"
+      ],
+      "properties": {
+        "refresh_token": {
+          "type": "string"
+        }
+      }
+    },
+    "SocketTokenResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": [
+            "token"
+          ],
+          "properties": {
+            "token": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "StartCallRequest": {
+      "type": "object",
+      "required": [
+        "phone"
+      ],
+      "properties": {
+        "phone": {
+          "type": "string"
+        }
+      }
+    },
+    "StartCallResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": [
+            "confirmation_id",
+            "mode",
+            "call_number",
+            "expires_in"
+          ],
+          "properties": {
+            "call_number": {
+              "type": "string",
+              "nullable": true
+            },
+            "confirmation_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "expires_in": {
+              "type": "integer"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "inbound",
+                "flash"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

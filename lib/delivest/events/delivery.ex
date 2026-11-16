@@ -6,6 +6,7 @@ defmodule Delivest.Events.Delivery do
     belongs_to :event, Delivest.Events.Event, type: Ecto.UUID, primary_key: true
     field :subscriber, :string, primary_key: true
     field :status, :string, default: "pending"
+    field :last_error, :string
     field :delivered_at, :utc_datetime_usec
     field :resolved_at, :utc_datetime_usec
     timestamps(type: :utc_datetime_usec)

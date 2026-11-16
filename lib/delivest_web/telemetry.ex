@@ -5,6 +5,8 @@ defmodule DelivestWeb.Telemetry do
 
   alias Delivest.Repo
 
+  @oban_states ~w(available scheduled executing retryable completed cancelled discarded)
+
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end
@@ -126,6 +128,24 @@ defmodule DelivestWeb.Telemetry do
         tags: [:provider, :result, :attempt],
         description: "Order deliveries to a CRM by outcome"
       ),
+      summary("oban.job.stop.duration",
+        unit: {:native, :millisecond},
+        tags: [:queue, :state],
+        tag_values: &oban_job_tags/1
+      ),
+      summary("oban.job.exception.duration",
+        unit: {:native, :millisecond},
+        tags: [:queue, :state],
+        tag_values: &oban_job_tags/1
+      ),
+      counter("oban.job.stop.count",
+        tags: [:queue, :state],
+        tag_values: &oban_job_tags/1
+      ),
+      counter("oban.job.exception.count",
+        tags: [:queue, :state],
+        tag_values: &oban_job_tags/1
+      ),
 
       # Oban: depth of every queue by state
       last_value("delivest.oban.queue.count",
@@ -150,26 +170,27 @@ defmodule DelivestWeb.Telemetry do
   shows as the current queue depth rather than a growing sum.
   """
   def oban_queues do
-    Oban.Job
-    |> group_by([j], [j.queue, j.state])
-    |> select([j], {j.queue, j.state, count(j.id)})
-    |> Repo.all()
-    |> Enum.each(fn {queue, state, count} ->
+    queues = configured_queues()
+
+    counts =
+      Oban.Job
+      |> where([j], j.queue in ^queues)
+      |> group_by([j], [j.queue, j.state])
+      |> select([j], {{j.queue, j.state}, count(j.id)})
+      |> Repo.all()
+      |> Map.new()
+
+    for queue <- queues, state <- @oban_states do
       :telemetry.execute(
         [:delivest, :oban, :queue],
-        %{count: count},
+        %{count: Map.get(counts, {queue, state}, 0)},
         %{queue: queue, state: state}
       )
-    end)
+    end
   end
 
   def oban_backlog do
-    queues =
-      :delivest
-      |> Application.fetch_env!(Oban)
-      |> Keyword.fetch!(:queues)
-      |> Keyword.keys()
-      |> Enum.map(&to_string/1)
+    queues = configured_queues()
 
     now = DateTime.utc_now()
 
@@ -193,6 +214,16 @@ defmodule DelivestWeb.Telemetry do
       )
     end)
   end
+
+  defp configured_queues do
+    :delivest
+    |> Application.fetch_env!(Oban)
+    |> Keyword.fetch!(:queues)
+    |> Keyword.keys()
+    |> Enum.map(&to_string/1)
+  end
+
+  defp oban_job_tags(%{job: job, state: state}), do: %{queue: job.queue, state: state}
 
   defp periodic_measurements do
     [

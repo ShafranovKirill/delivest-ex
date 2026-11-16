@@ -12,6 +12,7 @@ defmodule Delivest.Loyalty.Entry do
     field :order_id, :binary_id
     field :staff_id, :binary_id
     field :kind, Ecto.Enum, values: @kinds
+    field :cycle, :integer, default: 0
     field :amount, :integer
     field :remaining, :integer, default: 0
     field :expires_at, :utc_datetime

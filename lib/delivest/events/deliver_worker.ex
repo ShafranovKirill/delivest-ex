@@ -8,6 +8,8 @@ defmodule Delivest.Events.DeliverWorker do
   import Ecto.Query
 
   alias Delivest.Events.{Delivery, Event, Registry}
+  alias Delivest.Oms.Order
+  alias Delivest.Oms.Orders.Notifier
   alias Delivest.Repo
 
   @impl Oban.Worker
@@ -48,6 +50,7 @@ defmodule Delivest.Events.DeliverWorker do
         :ok
 
       {:ok, :already_done} ->
+        invalidate_delivered_order(id)
         :ok
 
       {:ok, :busy} ->
@@ -58,6 +61,17 @@ defmodule Delivest.Events.DeliverWorker do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp invalidate_delivered_order(event_id) do
+    case Repo.get(Event, event_id) do
+      %Event{aggregate_type: "order", aggregate_id: order_id} ->
+        if order = Repo.get(Order, order_id),
+          do: Notifier.publish({:ok, order}, [:order, :updated])
+
+      _ ->
+        :ok
     end
   end
 
@@ -75,6 +89,9 @@ defmodule Delivest.Events.DeliverWorker do
       case delivery.status do
         status when status in ["delivered", "resolved"] ->
           :already_done
+
+        "blocked" ->
+          Repo.rollback({:cancel, :delivery_blocked})
 
         "pending" ->
           if predecessor_pending?(event, key) do
@@ -115,7 +132,7 @@ defmodule Delivest.Events.DeliverWorker do
       from d in Delivery,
         join: earlier in Event,
         on: earlier.id == d.event_id,
-        where: d.subscriber == ^key and d.status == "pending",
+        where: d.subscriber == ^key and d.status in ["pending", "blocked"],
         where: earlier.aggregate_type == ^event.aggregate_type,
         where: earlier.aggregate_id == ^event.aggregate_id and earlier.sequence < ^event.sequence
     )

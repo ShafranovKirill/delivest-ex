@@ -15,6 +15,7 @@ defmodule Delivest.Oms.Order.CrmSync do
     field :attempts, :integer, default: 0
     field :last_error, :string
     field :sent_at, :utc_datetime
+    field :sending_started_at, :utc_datetime
     field :warnings, :map
     field :alert, :string
     field :remote_status, :string
@@ -33,6 +34,7 @@ defmodule Delivest.Oms.Order.CrmSync do
       :attempts,
       :last_error,
       :sent_at,
+      :sending_started_at,
       :warnings,
       :alert,
       :remote_status,
