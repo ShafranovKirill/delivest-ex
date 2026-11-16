@@ -1,6 +1,6 @@
 # iiko
 
-CRM и POS ресторана через iikoCloud API (iikoTransport). Принимает заказы доставки и самовывоза, присылает статусы и стоп-лист вебхуком, отдаёт меню. Задача — [docs/tasks/iiko.md](../../../../docs/tasks/iiko.md).
+CRM и POS ресторана через iikoCloud API (iikoTransport). Принимает заказы доставки и самовывоза, присылает статусы и стоп-лист вебхуком, отдаёт меню. Задача — [docs/tasks/iiko.md](../../../../../docs/tasks/iiko.md).
 
 - Спецификация OpenAPI 3.0: [docs/openapi.json](docs/openapi.json), 349 методов, получена 2026-10-29
 - Ключ провайдера: `:iiko`

@@ -1,6 +1,6 @@
 # r_keeper
 
-POS ресторана r_keeper 7 через облачный шлюз White Server (WS API v2 для агрегаторов, UCS). Заказ уходит на кассу ресторана, статус и стоп-лист читаем опросом. Задача — [docs/tasks/rkeeper.md](../../../../docs/tasks/rkeeper.md).
+POS ресторана r_keeper 7 через облачный шлюз White Server (WS API v2 для агрегаторов, UCS). Заказ уходит на кассу ресторана, статус и стоп-лист читаем опросом. Задача — [docs/tasks/rkeeper.md](../../../../../docs/tasks/rkeeper.md).
 
 - Коллекция Postman «WS API v2 prod template for agg-s»: [docs/ws-api-v2.postman_collection.json](docs/ws-api-v2.postman_collection.json), получена 2026-10-29. Токен из неё убран — переменная `{{token}}`
 - Публичной документации WS API нет: https://docs.rkeeper.ru/rk7/latest/ru/api-19597826.html — XML-интерфейс локального сервера r_keeper 7, не шлюз. Описание методов и статусов просить у UCS

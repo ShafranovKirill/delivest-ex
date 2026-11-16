@@ -1,6 +1,6 @@
 # ЮKassa
 
-Онлайн-оплата (пока не подключена) и чеки по ней. Задача — [docs/tasks/fiscal-receipts.md](../../../../docs/tasks/fiscal-receipts.md).
+Онлайн-оплата (пока не подключена) и чеки по ней. Задача — [docs/tasks/fiscal-receipts.md](../../../../../docs/tasks/fiscal-receipts.md).
 
 - Источник: https://yookassa.ru/developers/using-api/openapi-specification
 - Спецификация OpenAPI: [docs/openapi.yaml](docs/openapi.yaml), скачана 2026-10-29
