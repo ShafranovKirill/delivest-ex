@@ -159,13 +159,13 @@ defmodule DelivestWeb.StaffNav do
 
   def data_system_entries do
     [
+      %{id: :events, path: ~p"/staff/logs", icon: "hero-clock", label: gettext("Event log")},
       %{
         id: :metrics,
         path: ~p"/staff/diagnostics",
         icon: "hero-chart-bar",
         label: gettext("Metrics")
       },
-      %{id: :events, path: ~p"/staff/logs", icon: "hero-clock", label: gettext("Event log")},
       %{
         id: :raw,
         path: ~p"/staff/logs/raw",

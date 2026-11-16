@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
   import Delivest.OrderFixtures
 
   alias Delivest.Audit
+  alias Delivest.Identity
   alias Delivest.Logs.Entry
   alias Delivest.Repo
 
@@ -32,6 +33,78 @@ defmodule DelivestWeb.Staff.LogLive.IndexTest do
 
     assert html =~ "Staff Ivan"
     assert html =~ "Product «Borsch» created"
+  end
+
+  test "data and system opens live events and keeps branch scope separate from event filter", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    other_branch = insert(:branch)
+    {conn, staff} = login(conn, ["admin"])
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    Audit.record(staff, "product.created", insert(:product, name: "Scoped product"),
+      branch_id: branch.id
+    )
+
+    Audit.record(staff, "product.created", insert(:product, name: "Other product"),
+      branch_id: other_branch.id
+    )
+
+    {:ok, lv, _} = live(conn, "/staff/settings/data-system?branch=#{branch.slug}")
+    assert has_element?(lv, "#data-system-content #audit-events", "Scoped product")
+    assert has_element?(lv, "#data-system-action-events[aria-current='page']")
+
+    assert has_element?(
+             lv,
+             "#data-system-action-events[href='/staff/settings/data-system?branch=#{branch.slug}']"
+           )
+
+    assert has_element?(
+             lv,
+             "#data-system-action-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}']"
+           )
+
+    Audit.record(staff, "staff.logged_in", staff, branch_id: branch.id)
+    assert has_element?(lv, "#audit-events", "Signed in")
+
+    lv |> form("#logs-filter", %{"sort" => "oldest"}) |> render_change()
+    assert_patch(lv, "/staff/settings/data-system?branch=#{branch.slug}&sort=oldest")
+
+    lv |> element(~s(button[phx-click="reset_events"])) |> render_click()
+    assert_patch(lv, "/staff/settings/data-system?branch=#{branch.slug}")
+
+    render_hook(lv, "filter", %{"branch" => branch.id})
+
+    assert_patch(
+      lv,
+      "/staff/settings/data-system?branch=#{branch.slug}&event_branch=#{branch.id}"
+    )
+
+    assert has_element?(lv, "#audit-events", "Scoped product")
+    refute has_element?(lv, "#audit-events", "Other product")
+
+    {:ok, filtered, _} =
+      live(conn, "/staff/settings/data-system?branch=#{branch.slug}&event_branch=#{branch.id}")
+
+    assert has_element?(filtered, "#audit-events", "Scoped product")
+    refute has_element?(filtered, "#audit-events", "Other product")
+
+    assert has_element?(
+             filtered,
+             "#data-system-action-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}']"
+           )
+  end
+
+  test "open log screens close when log permission is revoked", %{conn: conn} do
+    for path <- ["/staff/logs", "/staff/settings/data-system"] do
+      {conn, staff} = login(conn, ["logs.read"])
+      {:ok, view, _} = live(conn, path)
+      admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+      assert {:ok, _} = Identity.update_role(admin, staff.role, %{permissions: ["orders.read"]})
+      assert_redirect(view, "/staff")
+    end
   end
 
   test "events follow the staff language", %{conn: conn} do

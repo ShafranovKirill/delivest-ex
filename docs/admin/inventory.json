@@ -2604,7 +2604,7 @@
       ],
       "event": "filter",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/log_live/index.ex:filter:bd5b2f570ec27f33:1"
+        "event:lib/delivest_web/live/staff/log_live/index.ex:filter:90ad6b1fd21735e0:1"
       ],
       "id": "control:lib/delivest_web/live/staff/log_live/index.ex:filter:dom:logs-filter:1",
       "label": "unlabelled/icon control at source anchor",
@@ -2612,8 +2612,7 @@
         "Map.delete",
         "Map.merge",
         "Map.take",
-        "Query.filters",
-        "Query.path"
+        "Query.filters"
       ],
       "result": [
         "push_patch"
@@ -2624,7 +2623,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:132",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:211",
       "target_section": "Settings / Data and system"
     },
     {
@@ -2636,13 +2635,12 @@
       ],
       "event": "reset_entries",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/log_live/index.ex:reset_entries:8583b3ac07aba235:1"
+        "event:lib/delivest_web/live/staff/log_live/index.ex:reset_entries:60a708a982d83fc2:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/log_live/index.ex:reset_entries:signature:7076a57c7cd27cab:1",
+      "id": "control:lib/delivest_web/live/staff/log_live/index.ex:reset_entries:signature:410d2c0e81c8db41:1",
       "label": "Reset",
       "operation": [
-        "Map.take",
-        "Query.path"
+        "Map.take"
       ],
       "result": [
         "push_patch"
@@ -2653,7 +2651,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:210",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:289",
       "target_section": "Settings / Data and system"
     },
     {
@@ -2665,13 +2663,12 @@
       ],
       "event": "reset_events",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/log_live/index.ex:reset_events:aac8b8f4ab5295d5:1"
+        "event:lib/delivest_web/live/staff/log_live/index.ex:reset_events:829e30eb5a9bc9c4:1"
       ],
       "id": "control:lib/delivest_web/live/staff/log_live/index.ex:reset_events:signature:a969a2b5bbc40053:1",
       "label": "Reset",
       "operation": [
-        "Map.take",
-        "Query.path"
+        "Map.take"
       ],
       "result": [
         "push_patch"
@@ -2682,7 +2679,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:184",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:263",
       "target_section": "Settings / Data and system"
     },
     {
@@ -11351,14 +11348,13 @@
       "disposition": "retain operation; move control with Settings / Data and system",
       "error_state": "no explicit :error in clause",
       "event": "filter",
-      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:filter:bd5b2f570ec27f33:1",
+      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:filter:90ad6b1fd21735e0:1",
       "label": "event: filter",
       "operation": [
         "Map.delete",
         "Map.merge",
         "Map.take",
-        "Query.filters",
-        "Query.path"
+        "Query.filters"
       ],
       "result": [
         "push_patch"
@@ -11369,7 +11365,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:46",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:92",
       "target_section": "Settings / Data and system"
     },
     {
@@ -11378,11 +11374,10 @@
       "disposition": "retain operation; move control with Settings / Data and system",
       "error_state": "no explicit :error in clause",
       "event": "reset_entries",
-      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:reset_entries:8583b3ac07aba235:1",
+      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:reset_entries:60a708a982d83fc2:1",
       "label": "event: reset_entries",
       "operation": [
-        "Map.take",
-        "Query.path"
+        "Map.take"
       ],
       "result": [
         "push_patch"
@@ -11393,7 +11388,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:66",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:112",
       "target_section": "Settings / Data and system"
     },
     {
@@ -11402,11 +11397,10 @@
       "disposition": "retain operation; move control with Settings / Data and system",
       "error_state": "no explicit :error in clause",
       "event": "reset_events",
-      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:reset_events:aac8b8f4ab5295d5:1",
+      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:reset_events:829e30eb5a9bc9c4:1",
       "label": "event: reset_events",
       "operation": [
-        "Map.take",
-        "Query.path"
+        "Map.take"
       ],
       "result": [
         "push_patch"
@@ -11417,7 +11411,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:61",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:107",
       "target_section": "Settings / Data and system"
     },
     {
@@ -11426,12 +11420,11 @@
       "disposition": "retain operation; move control with Settings / Data and system",
       "error_state": "no explicit :error in clause",
       "event": "update_page_size",
-      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:update_page_size:8c9fa78f0625cad0:1",
+      "id": "event:lib/delivest_web/live/staff/log_live/index.ex:update_page_size:c03b572016b2bc90:1",
       "label": "event: update_page_size",
       "operation": [
         "Map.delete",
-        "Map.put",
-        "Query.path"
+        "Map.put"
       ],
       "result": [
         "push_patch"
@@ -11442,7 +11435,7 @@
           "logs.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:56",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:102",
       "target_section": "Settings / Data and system"
     },
     {
@@ -22888,7 +22881,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "action",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:145",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:224",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22909,7 +22902,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "actor",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:158",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:237",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22930,7 +22923,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "branch",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:169",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:248",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22951,7 +22944,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "level",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:204",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:283",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22972,7 +22965,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "q",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:194",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:273",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22993,7 +22986,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "sort",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:180",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:259",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23014,7 +23007,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "type",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/log_live/index.ex:134",
+      "source": "lib/delivest_web/live/staff/log_live/index.ex:213",
       "target_section": "Settings / Data and system / Logs",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -36337,13 +36330,15 @@
       "data_scope": "network or all accessible branches; handler decides",
       "disposition": "move to Settings",
       "feature_dependency": "no registry key established at route declaration",
-      "handler": "SettingsLive.DataSystem::index",
-      "id": "route:live:/staff/settings/data-system:SettingsLive.DataSystem::index",
+      "handler": "LogLive.Index::data_system",
+      "id": "route:live:/staff/settings/data-system:LogLive.Index::data_system",
       "page_type": "settings",
       "rights": {
-        "handler_permissions": [],
-        "handler_source": "lib/delivest_web/live/staff/settings_live/data_system.ex",
-        "interpretation": "no literal Permission/Identity permission in handler",
+        "handler_permissions": [
+          "logs.read"
+        ],
+        "handler_source": "lib/delivest_web/live/staff/log_live/index.ex",
+        "interpretation": "literal handler permission references; branch authorization may further restrict",
         "session_hooks": [
           "{DelivestWeb.Hooks.StaffAuth, :default}",
           "{DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}",

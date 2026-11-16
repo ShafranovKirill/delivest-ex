@@ -384,11 +384,20 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     {:ok, admin, _} = live(admin_conn, "/staff/settings/data-system?branch=#{branch.slug}")
     assert has_element?(admin, "#sidebar-settings-nav-data_system[aria-current='page']")
     assert has_element?(admin, "#settings-nav-data_system[aria-current='page']")
+    assert has_element?(admin, "#data-system-content #audit-events")
+    assert has_element?(admin, "#data-system-action-events[aria-current='page']")
+
+    assert ["data-system-action-events" | _] =
+             admin
+             |> render()
+             |> LazyHTML.from_fragment()
+             |> LazyHTML.query("#data-system-navigation > a")
+             |> LazyHTML.attribute("id")
 
     for {id, path} <- [
           {"data_transfer", "/staff/settings/data-transfer?branch=#{branch.slug}"},
           {"metrics", "/staff/diagnostics"},
-          {"events", "/staff/logs"},
+          {"events", "/staff/settings/data-system?branch=#{branch.slug}"},
           {"raw", "/staff/logs/raw"},
           {"errors", "/staff/logs/errors"}
         ] do
@@ -435,9 +444,10 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     assert has_element?(network_transfer, "#data-transfer-franchise")
 
     branch_conn = login(conn, ["branches.read", "branches.update"], [branch], branch.id)
-    {:ok, branch_view, _} = live(branch_conn, "/staff/settings/data-system?branch=#{branch.slug}")
-    assert has_element?(branch_view, "#data-system-action-data_transfer")
-    refute has_element?(branch_view, "#data-system-action-metrics")
+    transfer_path = "/staff/settings/data-transfer?branch=#{branch.slug}"
+
+    assert {:error, {:redirect, %{to: ^transfer_path}}} =
+             live(branch_conn, "/staff/settings/data-system?branch=#{branch.slug}")
 
     {:ok, branch_transfer, _} =
       live(branch_conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
