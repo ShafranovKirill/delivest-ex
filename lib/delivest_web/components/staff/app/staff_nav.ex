@@ -31,13 +31,13 @@ defmodule DelivestWeb.StaffNav do
         :delivery_settings
 
       String.contains?(path, "/branches/") and String.ends_with?(path, "/hours") ->
-        :branch_settings
+        :branches
 
       String.contains?(path, "/branches/") and String.ends_with?(path, "/snapshot") ->
         :data_transfer
 
       String.contains?(path, "/branches/") and String.contains?(path, "/edit") ->
-        :branch_settings
+        :branches
 
       path == "/staff/branches" ->
         :branches

@@ -120,29 +120,36 @@ defmodule DelivestWeb.Staff.StaffShellTest do
              "#sidebar-group-menu #sidebar-product-section-tab-products[href='/staff/b/#{branch.slug}/products']"
            )
 
-    {:ok, settings, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/hours")
+    for path <- [
+          ~p"/staff/branches/#{branch.slug}/edit",
+          ~p"/staff/branches/#{branch.slug}/edit/hours"
+        ] do
+      {:ok, settings, _} = live(conn, path)
 
-    assert has_element?(
-             settings,
-             "#sidebar-group-settings[open] #sidebar-settings-nav-branch_settings[aria-current='page']"
-           )
+      assert has_element?(
+               settings,
+               "#sidebar-group-settings[open] #sidebar-settings-nav-branches[aria-current='page']"
+             )
 
-    assert has_element?(
-             settings,
-             "#nav-section-settings > li > #sidebar-group-settings > summary#sidebar-group-settings-toggle"
-           )
+      assert has_element?(
+               settings,
+               "#nav-section-settings > li > #sidebar-group-settings > summary#sidebar-group-settings-toggle"
+             )
 
-    assert has_element?(
-             settings,
-             "#sidebar-group-settings > ul > li > #sidebar-settings-nav-branch_settings"
-           )
+      assert has_element?(
+               settings,
+               "#sidebar-group-settings > ul > li > #sidebar-settings-nav-branches"
+             )
 
-    assert has_element?(
-             settings,
-             "#staff-context-navigation #settings-nav-branch_settings[aria-current='page']"
-           )
+      assert has_element?(
+               settings,
+               "#staff-context-navigation #settings-nav-branches[aria-current='page']"
+             )
 
-    refute has_element?(settings, "#sidebar-staff-section-navigation")
+      refute has_element?(settings, "#sidebar-settings-nav-branch_settings")
+      refute has_element?(settings, "#settings-nav-branch_settings")
+      refute has_element?(settings, "#sidebar-staff-section-navigation")
+    end
 
     {:ok, orders, _} = live(conn, ~p"/staff/b/#{branch}/orders")
 
@@ -220,8 +227,8 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     pages = [
       {"/staff/settings?branch=#{branch.slug}", nil, "#settings-feature-filter"},
       {"/staff/franchise/brand", "franchise", "#franchise-settings-form"},
-      {"/staff/branches/#{branch.slug}/edit", "branch_settings", "#branch-section-hours"},
-      {"/staff/branches/#{branch.slug}/edit/hours", "branch_settings", "#branch-form"},
+      {"/staff/branches/#{branch.slug}/edit", "branches", "#branch-section-hours"},
+      {"/staff/branches/#{branch.slug}/edit/hours", "branches", "#branch-form"},
       {"/staff/b/#{branch.slug}/integrations", "integrations", "#integration-frontpad"},
       {"/staff/b/#{branch.slug}/delivery", "delivery_settings", "#delivery-couriers-card"}
     ]
@@ -248,17 +255,12 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert navigation |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() == 1
     direct_hrefs = navigation |> hd() |> elem(2)
-    assert Enum.member?(direct_hrefs, "/staff/branches/#{branch.slug}/edit")
+    assert Enum.member?(direct_hrefs, "/staff/branches")
+    refute Enum.member?(direct_hrefs, "/staff/branches/#{branch.slug}/edit")
 
     for {path, _ids, hrefs} <- navigation do
       if path == "/staff/franchise/brand" do
-        assert Enum.member?(
-                 hrefs,
-                 DelivestWeb.StaffBranchPath.selection_path(
-                   "/staff/branches/#{branch.slug}/edit",
-                   path
-                 )
-               )
+        assert Enum.member?(hrefs, "/staff/branches")
       else
         assert hrefs == direct_hrefs
       end
@@ -279,10 +281,8 @@ defmodule DelivestWeb.Staff.StaffShellTest do
       {:ok, view, _} = live(conn, path)
       assert has_element?(view, "#staff-context-navigation > #settings-navigation")
 
-      assert has_element?(
-               view,
-               "#settings-nav-branch_settings[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fbranches%2F#{allowed.slug}%2Fedit']"
-             )
+      assert has_element?(view, "#settings-nav-branches[href='/staff/branches']")
+      refute has_element?(view, "#settings-nav-branch_settings")
 
       refute has_element?(view, "#settings-navigation a[href*='#{denied.slug}']")
       refute has_element?(view, "#settings-nav-integrations")

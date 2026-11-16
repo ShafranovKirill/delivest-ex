@@ -23,7 +23,9 @@ defmodule DelivestWeb.Staff.SettingsComponents do
       assign(assigns,
         entries:
           DelivestWeb.StaffNav.settings_entries(assigns.staff, branch)
-          |> Enum.reject(&(&1.id in [:settings, :site_snapshot, :instance_backup])),
+          |> Enum.reject(
+            &(&1.id in [:settings, :branch_settings, :site_snapshot, :instance_backup])
+          ),
         active_id: DelivestWeb.StaffNav.active_setting(path)
       )
 
