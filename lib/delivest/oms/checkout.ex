@@ -80,8 +80,12 @@ defmodule Delivest.Oms.Checkout do
         {:error, :address_by_operator_unavailable}
 
       settings.address_mode_set and settings.map_address != false and
-          (not Delivest.Integrations.Dadata.active?() or not coordinates?(address)) ->
+          not coordinates?(address) ->
         {:error, :no_coordinates}
+
+      settings.address_mode_set and not operator? and
+          not complete_address?(address) ->
+        {:error, :incomplete_delivery_address}
 
       true ->
         :ok
@@ -99,6 +103,15 @@ defmodule Delivest.Oms.Checkout do
   end
 
   defp coordinates?(_address), do: false
+
+  defp complete_address?(address) when is_map(address) do
+    Enum.all?([{"street", :street}, {"house", :house}], fn {field, atom} ->
+      value = Map.get(address, field) || Map.get(address, atom)
+      is_binary(value) and String.trim(value) != ""
+    end)
+  end
+
+  defp complete_address?(_address), do: false
 
   defp ensure_keyed_session(nil, nil), do: {:error, :cart_not_found}
   defp ensure_keyed_session(_client, _session_id), do: :ok
@@ -140,7 +153,8 @@ defmodule Delivest.Oms.Checkout do
          address: %{street: street} = address
        })
        when is_binary(street) do
-    Identity.remember_client_address(client.id, Map.from_struct(address))
+    address = address |> Map.from_struct() |> Map.put(:house, Delivest.Geo.House.line(address))
+    Identity.remember_client_address(client.id, address)
   end
 
   defp remember_address(_client, _order), do: :ok

@@ -383,6 +383,15 @@ defmodule DelivestWeb.Client.Order.OrderController do
         "Pick the address on the map"
       )
 
+  defp render_error(conn, :incomplete_delivery_address),
+    do:
+      ApiError.send_error(
+        conn,
+        :unprocessable_entity,
+        :incomplete_delivery_address,
+        "Enter the street and house number"
+      )
+
   defp render_error(conn, :address_by_operator_unavailable),
     do:
       ApiError.send_error(

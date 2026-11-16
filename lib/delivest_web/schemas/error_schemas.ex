@@ -53,6 +53,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "cook_by_outside_hours",
             "fulfillment_unavailable",
             "delivery_no_coordinates",
+            "incomplete_delivery_address",
             "promo_unavailable",
             "promo_gift_not_available",
             "promo_gift_invalid",

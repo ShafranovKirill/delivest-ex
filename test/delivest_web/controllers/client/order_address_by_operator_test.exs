@@ -4,8 +4,10 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
   import Delivest.Factory
 
   alias Delivest.Delivery
+  alias Delivest.Identity
   alias Delivest.Oms.Order
   alias Delivest.Repo
+  alias DelivestWeb.ClientToken
 
   defp cart(conn, branch, product) do
     conn = post(conn, ~p"/client/branches/#{branch.id}/select")
@@ -118,7 +120,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
              conn |> post(~p"/client/orders", payload) |> json_response(422)
   end
 
-  test "explicit map mode requires DaData and coordinates", %{conn: conn} do
+  test "explicit map mode requires coordinates", %{conn: conn} do
     branch = insert(:branch, is_active: true)
     product = insert_branch_product(branch.id, price: 300)
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
@@ -149,5 +151,94 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
 
     assert %{"error" => "delivery_no_coordinates"} =
              conn |> post(~p"/client/orders", payload) |> json_response(422)
+  end
+
+  test "explicit manual mode requires both street and house", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    product = insert_branch_product(branch.id, price: 300)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+    {:ok, _} =
+      Delivery.update_settings(admin, branch.id, %{
+        "mode" => "flat",
+        "map_address" => false,
+        "address_mode_set" => true
+      })
+
+    conn = put_req_header(conn, "x-forwarded-for", "manual-#{System.unique_integer([:positive])}")
+    {conn, cart_id} = cart(conn, branch, product)
+
+    payload = %{
+      "cart_id" => cart_id,
+      "branch_id" => branch.id,
+      "fulfillment_type" => "delivery",
+      "payment_method" => "cash",
+      "customer_phone" => "+79990001122",
+      "address" => %{"street" => "Ленина"}
+    }
+
+    assert %{"error" => "incomplete_delivery_address"} =
+             conn |> post(~p"/client/orders", payload) |> json_response(422)
+  end
+
+  test "explicit map mode accepts a saved coordinate and requires the house", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    product = insert_branch_product(branch.id, price: 300)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+    {:ok, _} =
+      Delivery.update_settings(admin, branch.id, %{
+        "mode" => "flat",
+        "map_address" => true,
+        "address_mode_set" => true
+      })
+
+    conn = put_req_header(conn, "x-forwarded-for", "saved-#{System.unique_integer([:positive])}")
+    {conn, cart_id} = cart(conn, branch, product)
+
+    payload = %{
+      "cart_id" => cart_id,
+      "branch_id" => branch.id,
+      "fulfillment_type" => "delivery",
+      "payment_method" => "cash",
+      "customer_phone" => "+79990001122",
+      "address" => %{"street" => "Ленина", "latitude" => 55.75, "longitude" => 37.61}
+    }
+
+    assert %{"error" => "incomplete_delivery_address"} =
+             conn |> post(~p"/client/orders", payload) |> json_response(422)
+
+    assert %{"data" => %{"id" => _}} =
+             conn
+             |> recycle_with_ip()
+             |> post(~p"/client/orders", put_in(payload, ["address", "house"], "1"))
+             |> json_response(200)
+  end
+
+  test "authenticated checkout remembers the full house line for the next order", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    product = insert_branch_product(branch.id, price: 300)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    client = insert(:client, phone: "+79990001122")
+    access = ClientToken.issue(client.id).access_token
+
+    {:ok, _} =
+      Delivery.update_settings(admin, branch.id, %{"mode" => "flat", "map_address" => false})
+
+    conn = conn |> put_req_header("authorization", "Bearer " <> access)
+    {conn, cart_id} = cart(conn, branch, product)
+
+    payload = %{
+      "cart_id" => cart_id,
+      "branch_id" => branch.id,
+      "fulfillment_type" => "delivery",
+      "payment_method" => "cash",
+      "address" => %{"street" => "Ленина", "house" => "7", "block" => "1", "building" => "2"}
+    }
+
+    assert %{"data" => %{"id" => _}} =
+             conn |> post(~p"/client/orders", payload) |> json_response(200)
+
+    assert [%{house: "7 к 1 стр 2"}] = Identity.list_client_addresses(client.id)
   end
 end
