@@ -17,7 +17,8 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(lv, "#main-sidebar #sidebar-home[href='/staff']")
     assert has_element?(lv, "#main-sidebar #sidebar-toggle[aria-controls='main-sidebar']")
     assert has_element?(lv, "#nav-section-main")
-    assert has_element?(lv, "#nav-section-settings a[href='/staff/settings']")
+    assert has_element?(lv, "#sidebar-group-settings-toggle")
+    assert has_element?(lv, "#nav-section-main > #nav-section-settings")
 
     assert has_element?(
              lv,
@@ -53,6 +54,33 @@ defmodule DelivestWeb.Staff.StaffShellTest do
            )
 
     refute has_element?(lv, "#sidebar-group-menu #sidebar-product-section-tab-categories")
+  end
+
+  test "analytics group is expandable away from reports and exposes six destinations", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["statistics.read", "statistics.network"]))
+
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+    assert has_element?(view, "#sidebar-group-analytics:not([open])")
+    assert has_element?(view, "#sidebar-group-analytics-toggle")
+
+    for id <- [
+          "statistics",
+          "analytics_channels",
+          "analytics_sources",
+          "analytics_funnel",
+          "analytics_customers",
+          "analytics_comparison"
+        ] do
+      assert has_element?(view, "#sidebar-section-nav-#{id}")
+    end
   end
 
   test "active product and settings sections expand in the main sidebar with unique links", %{
@@ -96,7 +124,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(
              settings,
-             "#sidebar-group-settings[open] #sidebar-settings-nav-hours[aria-current='page']"
+             "#sidebar-group-settings[open] #sidebar-settings-nav-branch_settings[aria-current='page']"
            )
 
     assert has_element?(
@@ -106,12 +134,12 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(
              settings,
-             "#sidebar-group-settings > ul > li > #sidebar-settings-nav-hours"
+             "#sidebar-group-settings > ul > li > #sidebar-settings-nav-branch_settings"
            )
 
     assert has_element?(
              settings,
-             "#staff-context-navigation #settings-nav-hours[aria-current='page']"
+             "#staff-context-navigation #settings-nav-branch_settings[aria-current='page']"
            )
 
     refute has_element?(settings, "#sidebar-staff-section-navigation")
@@ -190,10 +218,10 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     pages = [
-      {"/staff/settings?branch=#{branch.slug}", "features", "#settings-feature-filter"},
-      {"/staff/franchise/brand", "brand", "#franchise-settings-form"},
+      {"/staff/settings?branch=#{branch.slug}", nil, "#settings-feature-filter"},
+      {"/staff/franchise/brand", "franchise", "#franchise-settings-form"},
       {"/staff/branches/#{branch.slug}/edit", "branch_settings", "#branch-section-hours"},
-      {"/staff/branches/#{branch.slug}/edit/hours", "hours", "#branch-form"},
+      {"/staff/branches/#{branch.slug}/edit/hours", "branch_settings", "#branch-form"},
       {"/staff/b/#{branch.slug}/integrations", "integrations", "#integration-frontpad"},
       {"/staff/b/#{branch.slug}/delivery", "delivery_settings", "#delivery-couriers-card"}
     ]
@@ -203,7 +231,11 @@ defmodule DelivestWeb.Staff.StaffShellTest do
         {:ok, view, _} = live(conn, path)
         assert has_element?(view, "#staff-context-navigation > #settings-navigation")
         assert has_element?(view, "#settings-center > .min-w-0 #{content}")
-        assert has_element?(view, "#settings-nav-#{active_id}[aria-current='page']")
+
+        if active_id,
+          do: assert(has_element?(view, "#settings-nav-#{active_id}[aria-current='page']")),
+          else: refute(has_element?(view, "#settings-nav-features"))
+
         refute has_element?(view, "#staff-section-navigation")
 
         document = LazyHTML.from_fragment(render(view))
@@ -216,14 +248,14 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert navigation |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() == 1
     direct_hrefs = navigation |> hd() |> elem(2)
-    assert Enum.member?(direct_hrefs, "/staff/branches/#{branch.slug}/edit/hours")
+    assert Enum.member?(direct_hrefs, "/staff/branches/#{branch.slug}/edit")
 
     for {path, _ids, hrefs} <- navigation do
       if path == "/staff/franchise/brand" do
         assert Enum.member?(
                  hrefs,
                  DelivestWeb.StaffBranchPath.selection_path(
-                   "/staff/branches/#{branch.slug}/edit/hours",
+                   "/staff/branches/#{branch.slug}/edit",
                    path
                  )
                )

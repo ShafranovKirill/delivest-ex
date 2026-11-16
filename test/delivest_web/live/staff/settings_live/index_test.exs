@@ -21,7 +21,7 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
 
     assert has_element?(
              lv,
-             "#settings-navigation #settings-nav-brand[href='/staff/franchise/brand']"
+             "#settings-navigation #settings-nav-franchise[href='/staff/franchise']"
            )
 
     assert has_element?(lv, "#settings-navigation #settings-nav-branches[href='/staff/branches']")
@@ -31,7 +31,22 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
              "#settings-navigation #settings-nav-integrations[href^='/staff/branches/select?']"
            )
 
-    assert has_element?(lv, "#settings-nav-features[aria-current='page']")
+    refute has_element?(lv, "#settings-nav-features")
+
+    assert has_element?(
+             lv,
+             "#settings-navigation #settings-nav-data_transfer[href='/staff/settings/data-transfer']"
+           )
+
+    refute has_element?(lv, "#settings-navigation #settings-nav-instance_backup")
+    refute has_element?(lv, "#settings-navigation #settings-nav-site_snapshot")
+
+    refute has_element?(lv, "#settings-navigation #settings-nav-hours")
+    refute has_element?(lv, "#settings-navigation #settings-nav-delivery_zones")
+    refute has_element?(lv, "#settings-navigation #settings-nav-order_settings")
+    refute has_element?(lv, "#settings-navigation #settings-nav-loyalty_settings")
+    refute has_element?(lv, "#settings-navigation #settings-nav-team")
+    refute has_element?(lv, "#settings-navigation #settings-nav-roles_settings")
     assert has_element?(lv, "#settings-feature-filter #settings-filter-disabled")
     assert has_element?(lv, "#feature-segments")
     assert has_element?(lv, "#feature-integration-zvonok")
@@ -52,14 +67,14 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
   test "branches.read alone exposes the branch registry without unrelated settings", %{conn: conn} do
     {:ok, lv, _} = live(login(conn, ["branches.read"]), ~p"/staff/settings")
     assert has_element?(lv, "#settings-nav-branches")
-    refute has_element?(lv, "#settings-nav-brand")
+    refute has_element?(lv, "#settings-nav-franchise")
     refute has_element?(lv, "#settings-nav-integrations")
   end
 
   test "delivery.read alone keeps the branch registry reachable", %{conn: conn} do
     {:ok, lv, _} = live(login(conn, ["delivery.read"]), ~p"/staff/settings")
     assert has_element?(lv, "#settings-nav-branches[href='/staff/branches']")
-    refute has_element?(lv, "#settings-nav-brand")
+    refute has_element?(lv, "#settings-nav-franchise")
     refute has_element?(lv, "#settings-nav-integrations")
   end
 
@@ -67,7 +82,7 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
     {:ok, lv, _} = live(login(conn, ["integrations.read"]), ~p"/staff/settings")
     assert has_element?(lv, "#settings-nav-integrations")
     assert has_element?(lv, "#feature-integration-zvonok")
-    refute has_element?(lv, "#settings-nav-brand")
+    refute has_element?(lv, "#settings-nav-franchise")
     refute has_element?(lv, "#settings-nav-branches")
   end
 

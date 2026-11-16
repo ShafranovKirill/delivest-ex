@@ -291,17 +291,23 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, settings, _} = live(conn, ~p"/staff/settings")
 
-    assert has_element?(
-             settings,
-             "#sidebar-group-settings[open] #sidebar-settings-nav-features[aria-current='page']"
-           )
-
-    refute has_element?(settings, "#nav-section-main a[href='/staff/branches']")
-    refute has_element?(settings, "#nav-section-main a[href='/staff/integrations']")
+    assert has_element?(settings, "#sidebar-group-settings[open]")
+    refute has_element?(settings, "#sidebar-settings-nav-features")
+    assert has_element?(settings, "#sidebar-settings-nav-data_transfer")
 
     refute has_element?(
              settings,
-             "#nav-section-main a[href='/staff/b/#{branch.slug}/delivery']"
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/branches']"
+           )
+
+    refute has_element?(
+             settings,
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/integrations']"
+           )
+
+    refute has_element?(
+             settings,
+             "#nav-section-main > ul:not(#nav-section-settings) a[href='/staff/b/#{branch.slug}/delivery']"
            )
 
     {:ok, delivery, _} = live(conn, ~p"/staff/b/#{branch}/delivery")
@@ -322,6 +328,146 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
              integrations,
              "#sidebar-group-settings[open] #sidebar-settings-nav-integrations[aria-current='page']"
            )
+  end
+
+  test "employees follow finance and respect staff and roles permissions", %{conn: conn} do
+    branch = insert(:branch)
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+
+    main =
+      DelivestWeb.StaffNav.entries(admin, branch)
+      |> Enum.find(&(&1.id == :main))
+      |> Map.fetch!(:entries)
+      |> Enum.map(& &1.id)
+
+    assert Enum.find_index(main, &(&1 == :employees)) ==
+             Enum.find_index(main, &(&1 == :finance)) + 1
+
+    {:ok, staff_view, _} = live(login(conn, ["staff.read"], []), ~p"/staff/employee")
+    assert has_element?(staff_view, "#sidebar-group-employees[open]")
+    assert has_element?(staff_view, "#sidebar-group-employees #sidebar-section-nav-employee")
+    refute has_element?(staff_view, "#sidebar-group-employees #sidebar-section-nav-roles")
+    refute has_element?(staff_view, "#sidebar-group-settings")
+
+    {:ok, roles_view, _} = live(login(conn, ["roles.read"], []), ~p"/staff/roles")
+    assert has_element?(roles_view, "#sidebar-group-employees[open]")
+    assert has_element?(roles_view, "#sidebar-group-employees #sidebar-section-nav-roles")
+    refute has_element?(roles_view, "#sidebar-group-employees #sidebar-section-nav-employee")
+    refute has_element?(roles_view, "#sidebar-group-settings")
+  end
+
+  test "data transfer landing offers only snapshots allowed for the current scope", %{conn: conn} do
+    branch = insert(:branch)
+    admin_conn = login(conn, ["admin"], [branch], branch.id)
+    {:ok, scoped_settings, _} = live(admin_conn, "/staff/settings?branch=#{branch.slug}")
+
+    assert has_element?(
+             scoped_settings,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}']"
+           )
+
+    {:ok, admin, _} = live(admin_conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
+
+    assert has_element?(admin, "#sidebar-settings-nav-data_transfer[aria-current='page']")
+    assert has_element?(admin, "#settings-nav-data_transfer[aria-current='page']")
+
+    assert has_element?(
+             admin,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}']"
+           )
+
+    assert has_element?(
+             admin,
+             "#data-transfer-branch[href='/staff/branches/#{branch.slug}/edit/snapshot']"
+           )
+
+    assert has_element?(admin, "#data-transfer-franchise[href='/staff/franchise/snapshot']")
+    refute has_element?(admin, "#settings-nav-site_snapshot")
+    refute has_element?(admin, "#settings-nav-instance_backup")
+
+    {:ok, branch_snapshot, _} =
+      live(admin_conn, "/staff/branches/#{branch.slug}/edit/snapshot")
+
+    assert has_element?(
+             branch_snapshot,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer?branch=#{branch.slug}'][aria-current='page']"
+           )
+
+    {:ok, franchise_snapshot, _} = live(admin_conn, "/staff/franchise/snapshot")
+
+    assert has_element?(
+             franchise_snapshot,
+             "#settings-nav-data_transfer[href='/staff/settings/data-transfer'][aria-current='page']"
+           )
+
+    {:ok, network, _} = live(admin_conn, "/staff/settings/data-transfer")
+
+    assert has_element?(
+             network,
+             "#data-transfer-branch[href^='/staff/branches/select?'][href*='return_to=%2Fstaff%2Fsettings%2Fdata-transfer']"
+           )
+
+    assert has_element?(network, "#data-transfer-franchise")
+
+    branch_conn = login(conn, ["branches.read", "branches.update"], [branch], branch.id)
+
+    {:ok, branch_view, _} =
+      live(branch_conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
+
+    assert has_element?(branch_view, "#data-transfer-branch")
+    refute has_element?(branch_view, "#data-transfer-franchise")
+
+    reader_conn = login(conn, ["branches.read"], [branch], branch.id)
+    {:ok, reader, _} = live(reader_conn, "/staff/settings?branch=#{branch.slug}")
+    refute has_element?(reader, "#sidebar-settings-nav-data_transfer")
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(reader_conn, "/staff/settings/data-transfer")
+
+    assert {:error, {:live_redirect, %{to: "/staff/settings/data-transfer"}}} =
+             live(admin_conn, "/staff/settings/data-transfer?branch=missing")
+
+    orphan_conn = login(conn, ["branches.read", "branches.update"], [])
+    {:ok, orphan_settings, _} = live(orphan_conn, "/staff/settings")
+    refute has_element?(orphan_settings, "#settings-nav-data_transfer")
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(orphan_conn, "/staff/settings/data-transfer")
+  end
+
+  test "branch switching preserves the data transfer landing", %{conn: conn} do
+    branch = insert(:branch)
+    second = insert(:branch)
+    conn = login(conn, ["admin"], [branch, second], branch.id)
+    {:ok, transfer, _} = live(conn, "/staff/settings/data-transfer?branch=#{branch.slug}")
+    assert has_element?(transfer, "#header-branch")
+
+    assert {:ok, %{path: selected_path}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/settings/data-transfer?branch=#{branch.slug}",
+               {:branch, second.slug}
+             )
+
+    assert selected_path == "/staff/settings/data-transfer?branch=#{second.slug}"
+
+    assert {:ok, %{path: "/staff/settings/data-transfer"}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/settings/data-transfer?branch=#{branch.slug}",
+               :network
+             )
+
+    source = "/staff/branches/#{branch.slug}/edit/snapshot"
+
+    assert {:ok, %{return_to: "/staff/settings/data-transfer"}} =
+             DelivestWeb.StaffBranchPath.selection_intent(
+               source,
+               "/staff/settings/data-transfer"
+             )
+
+    assert {:ok, destination} =
+             DelivestWeb.StaffBranchPath.selection_destination(source, second.slug)
+
+    assert destination == "/staff/branches/#{second.slug}/edit/snapshot"
   end
 
   test "diagnostics group opens on logs and keeps both entries", %{conn: conn} do

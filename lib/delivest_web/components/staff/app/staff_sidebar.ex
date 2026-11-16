@@ -172,34 +172,34 @@ defmodule DelivestWeb.StaffSidebar do
               </li>
             </ul>
           <% end %>
+          <ul
+            :for={section <- Enum.filter(@entries, &(&1.id == :settings))}
+            id="nav-section-settings"
+            class="menu w-full p-0"
+          >
+            <li :for={entry <- section.entries}>
+              <.sidebar_details
+                id="sidebar-group-settings"
+                item={entry}
+                open={not is_nil(DelivestWeb.StaffNav.active_setting(@current_path))}
+              >
+                <DelivestWeb.Staff.SettingsComponents.settings_navigation
+                  variant={:sidebar}
+                  id_prefix="sidebar-"
+                  staff={@current_staff}
+                  branches={@staff_branches}
+                  selected={@navigation_branch && @navigation_branch.id}
+                  current_path={@current_path}
+                  scope_branch={@scope_branch}
+                  return_source={@current_uri || @current_path}
+                />
+                <%= if @page_navigation && DelivestWeb.StaffNav.active_setting(@current_path) && DelivestWeb.StaffNav.active_setting(@current_path) != :data_system do %>
+                  {@page_navigation}
+                <% end %>
+              </.sidebar_details>
+            </li>
+          </ul>
         </div>
-        <ul
-          :for={section <- Enum.filter(@entries, &(&1.id == :settings))}
-          id="nav-section-settings"
-          class="menu w-full p-0 pb-3"
-        >
-          <li :for={entry <- section.entries}>
-            <.sidebar_details
-              id="sidebar-group-settings"
-              item={entry}
-              open={not is_nil(DelivestWeb.StaffNav.active_setting(@current_path))}
-            >
-              <DelivestWeb.Staff.SettingsComponents.settings_navigation
-                variant={:sidebar}
-                id_prefix="sidebar-"
-                staff={@current_staff}
-                branches={@staff_branches}
-                selected={@navigation_branch && @navigation_branch.id}
-                current_path={@current_path}
-                scope_branch={@scope_branch}
-                return_source={@current_uri || @current_path}
-              />
-              <%= if @page_navigation && DelivestWeb.StaffNav.active_setting(@current_path) && DelivestWeb.StaffNav.active_setting(@current_path) != :data_system do %>
-                {@page_navigation}
-              <% end %>
-            </.sidebar_details>
-          </li>
-        </ul>
       </nav>
 
       <div class="staff-sidebar-footer shrink-0 border-t border-base-300 p-1">

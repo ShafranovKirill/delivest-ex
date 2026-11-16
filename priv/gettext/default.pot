@@ -12307,3 +12307,59 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Product operations"
 msgstr ""
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Employees"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Branch snapshot"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Franchise snapshot"
+msgstr ""
+
+#: lib/delivest_web/components/staff/settings_components.ex
+#, elixir-autogen, elixir-format
+msgid "Data transfer"
+msgstr ""
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Select multiple"
+msgstr ""
+
+#: lib/delivest_web/live/staff/product_live/products.ex
+#, elixir-autogen, elixir-format
+msgid "Cancel selection"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Appearance"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Sales channels"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Buyers"
+msgstr ""
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Branch comparison"
+msgstr ""
+
+#: lib/delivest_web/live/staff/analytics_live/placeholder.ex
+#, elixir-autogen, elixir-format
+msgid "Section under development"
+msgstr ""
