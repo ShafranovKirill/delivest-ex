@@ -12379,3 +12379,123 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Automatic Frontpad attempts are over."
 msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:218
+#, elixir-autogen, elixir-format
+msgid "Checking compatibility"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:225
+#, elixir-autogen, elixir-format
+msgid "Checking readiness"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:442
+#, elixir-autogen, elixir-format
+msgid "Elapsed %{seconds} seconds"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:223
+#, elixir-autogen, elixir-format
+msgid "Exporting archive"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:439
+#, elixir-autogen, elixir-format
+msgid "Failed during %{step}"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:330
+#, elixir-autogen, elixir-format
+msgid "Only the latest safely failed restore can reuse its archive."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:457
+#, elixir-autogen, elixir-format
+msgid "Open recovery status"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:219
+#, elixir-autogen, elixir-format
+msgid "Preparing storage"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:222
+#, elixir-autogen, elixir-format
+msgid "Replacing database"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:221
+#, elixir-autogen, elixir-format
+msgid "Replacing storage"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:224
+#, elixir-autogen, elixir-format
+msgid "Restarting application"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:249
+#, elixir-autogen, elixir-format
+msgid "Restored data was installed, but the application did not become ready. Review server logs before resuming."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:574
+#, elixir-autogen, elixir-format
+msgid "Retry restore with same archive"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:553
+#, elixir-autogen, elixir-format
+msgid "Reuse the archive from the last safely failed restore."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:220
+#, elixir-autogen, elixir-format
+msgid "Staging database"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:216
+#, elixir-autogen, elixir-format
+msgid "Stopping the application"
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:254
+#, elixir-autogen, elixir-format
+msgid "The application did not become ready after the backup. Review server logs before resuming."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:246
+#, elixir-autogen, elixir-format
+msgid "The archive failed its integrity check. No data was replaced."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:234
+#, elixir-autogen, elixir-format
+msgid "The archive's migration history is incompatible with this application version. No data was replaced."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:265
+#, elixir-autogen, elixir-format
+msgid "The backup failed safely. Check the cause and retry. Previous data remains available."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:270
+#, elixir-autogen, elixir-format
+msgid "The data state needs manual review. Keep the application stopped and inspect the backup agent logs."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:260
+#, elixir-autogen, elixir-format
+msgid "The restore failed while replacing data. The previous data was restored; check the cause before retrying."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:239
+#, elixir-autogen, elixir-format
+msgid "The staged database's migration history differs from the archive. No data was replaced."
+msgstr ""
+
+#: lib/delivest_web/live/staff/franchise_live/index.ex:217
+#, elixir-autogen, elixir-format
+msgid "Validating archive"
+msgstr ""

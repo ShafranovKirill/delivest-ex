@@ -50,6 +50,12 @@ defmodule Delivest.InstanceBackupTest do
 
     assert %{"mode" => "external", "requested_by" => owner} = InstanceBackup.job(id).request
     assert owner == admin.id
+
+    assert %{"step" => "accepted", "steps" => [%{"step" => "accepted"}]} =
+             InstanceBackup.job(id).status
+
+    assert {:ok, token} = File.read(Path.join(InstanceBackup.job_dir(id), "monitor.token"))
+    assert Regex.match?(~r/\A[0-9a-f]{64}\z/, token)
     assert {:error, :busy} = InstanceBackup.submit(admin, "export")
     assert {:error, :not_found} = InstanceBackup.download(admin, id)
 
@@ -93,6 +99,32 @@ defmodule Delivest.InstanceBackupTest do
     assert Bitwise.band(File.stat!(archive).mode, 0o777) == 0o600
   end
 
+  test "a failed safe import can explicitly reuse only its last archive", %{dir: dir} do
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    upload = Path.join(dir, "upload.tar")
+    File.write!(upload, "tar payload")
+
+    InstanceBackup.write_json(Path.join(dir, "heartbeat.json"), %{
+      protocol: 1,
+      updated_at: DateTime.utc_now()
+    })
+
+    assert {:ok, id} = InstanceBackup.submit(admin, "import", upload)
+    assert {:error, :retry_unavailable} = InstanceBackup.retry_import(admin, id)
+
+    InstanceBackup.write_json(Path.join(InstanceBackup.job_dir(id), "status.json"), %{
+      id: id,
+      action: "import",
+      phase: "failed",
+      safe_to_resume: true
+    })
+
+    assert {:ok, retry_id} = InstanceBackup.retry_import(admin, id)
+    assert retry_id != id
+    assert File.read!(Path.join(InstanceBackup.job_dir(retry_id), "archive.tar")) == "tar payload"
+    assert {:error, :retry_unavailable} = InstanceBackup.retry_import(admin, id)
+  end
+
   test "unsafe status holds boot", %{dir: dir} do
     id = Ecto.UUID.generate()
     job_dir = Path.join([dir, "jobs", id])
@@ -131,6 +163,57 @@ defmodule Delivest.InstanceBackupTest do
     assert Maintenance.hold_boot?(dir)
     File.write!(Path.join(job_dir, "status.json"), "broken")
     assert Maintenance.hold_boot?(dir)
+  end
+
+  test "external restore resumes at restarting and publishes readiness marker after health", %{
+    dir: dir
+  } do
+    id = Ecto.UUID.generate()
+    job_dir = Path.join([dir, "jobs", id])
+    File.mkdir_p!(job_dir)
+    InstanceBackup.write_json(Path.join(dir, "active.json"), %{protocol: 1, id: id})
+
+    InstanceBackup.write_json(Path.join(job_dir, "request.json"), %{
+      id: id,
+      mode: "external",
+      action: "import"
+    })
+
+    InstanceBackup.write_json(Path.join(job_dir, "status.json"), %{
+      id: id,
+      phase: "running",
+      step: "restarting",
+      safe_to_resume: true
+    })
+
+    InstanceBackup.write_json(Path.join(job_dir, "quiesced.json"), %{id: id})
+    refute Maintenance.hold_boot?(dir)
+
+    ready = start_supervised!({Agent, fn -> false end})
+
+    supervisor =
+      start_supervised!(%{
+        id: :backup_ready_test_supervisor,
+        start: {Supervisor, :start_link, [[], [strategy: :one_for_one]]}
+      })
+
+    maintenance =
+      start_supervised!(
+        {Maintenance,
+         supervisor: supervisor,
+         children: [],
+         dir: dir,
+         ready?: fn -> Agent.get(ready, & &1) end,
+         name: :backup_ready_test_maintenance}
+      )
+
+    send(maintenance, :poll)
+    _ = :sys.get_state(maintenance)
+    refute File.exists?(Path.join(job_dir, "resumed.json"))
+    Agent.update(ready, fn _ -> true end)
+    send(maintenance, :poll)
+    _ = :sys.get_state(maintenance)
+    assert %{"id" => ^id} = InstanceBackup.read_json(Path.join(job_dir, "resumed.json"))
   end
 
   test "held boot restores a missing marker while siblings are absent", %{dir: dir} do

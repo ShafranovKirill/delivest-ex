@@ -20,11 +20,13 @@ defmodule Delivest.InstanceBackup.Maintenance do
              true <- InstanceBackup.valid_id?(id),
              %{"mode" => mode} when mode in ["compose", "external"] <-
                InstanceBackup.read_json(Path.join([dir, "jobs", id, "request.json"])),
-             %{"phase" => phase, "safe_to_resume" => safe} <-
+             %{"phase" => phase, "safe_to_resume" => safe} = status <-
                InstanceBackup.read_json(Path.join([dir, "jobs", id, "status.json"])),
              true <- phase in ~w(queued waiting running complete failed interrupted),
              true <- is_boolean(safe) do
-          safe == false or (mode == "external" and phase in ~w(queued waiting running))
+          safe == false or
+            (mode == "external" and phase in ~w(queued waiting running) and
+               not resume_requested?(status))
         else
           _ -> true
         end
@@ -49,7 +51,9 @@ defmodule Delivest.InstanceBackup.Maintenance do
       children: Keyword.fetch!(opts, :children),
       dir: dir,
       held: Keyword.get(opts, :held, false) or recovered_hold,
-      marker: nil
+      marker: nil,
+      ready?:
+        Keyword.get(opts, :ready?, fn -> match?(%{status: "ok"}, Delivest.Health.ready()) end)
     }
 
     schedule()
@@ -65,6 +69,10 @@ defmodule Delivest.InstanceBackup.Maintenance do
 
   defp reconcile(state, job) do
     cond do
+      job && job.request["mode"] == "external" && resume_requested?(job.status) ->
+        state = if state.held, do: resume(state), else: state
+        publish_resumed(state, job)
+
       ((state.held and job) && InstanceBackup.terminal?(job)) and InstanceBackup.safe?(job) ->
         resume(state)
 
@@ -78,6 +86,30 @@ defmodule Delivest.InstanceBackup.Maintenance do
       true ->
         state
     end
+  end
+
+  defp resume_requested?(%{"phase" => "running", "step" => step, "safe_to_resume" => true})
+       when step in ~w(restarting checking_readiness ready),
+       do: true
+
+  defp resume_requested?(_), do: false
+
+  defp publish_resumed(state, job) do
+    marker = Path.join([state.dir, "jobs", job.id, "resumed.json"])
+
+    if not File.exists?(marker) and ready?(state) do
+      :ok = InstanceBackup.write_json(marker, %{id: job.id})
+    end
+
+    state
+  end
+
+  defp ready?(state) do
+    state.ready?.()
+  rescue
+    _ -> false
+  catch
+    :exit, _ -> false
   end
 
   defp quiesce(state, id) do

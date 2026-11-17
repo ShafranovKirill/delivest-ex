@@ -10,6 +10,9 @@ defmodule Delivest.InstanceBackup do
   def dir, do: Application.get_env(:delivest, :instance_backup_dir)
   def managed?, do: Application.get_env(:delivest, :instance_backup_managed, false)
 
+  def monitor_enabled?,
+    do: Application.get_env(:delivest, :instance_backup_monitor_enabled, false)
+
   def max_archive,
     do: Application.get_env(:delivest, :instance_backup_max_archive, 20 * 1024 * 1024 * 1024)
 
@@ -60,6 +63,29 @@ defmodule Delivest.InstanceBackup do
       not enabled?() -> {:error, :disabled}
       not heartbeat?() -> {:error, :agent_unavailable}
       true -> with_lock(fn -> submit_locked(staff, action, upload_path) end)
+    end
+  end
+
+  def retry_import(staff, id) do
+    cond do
+      not authorized?(staff) -> {:error, :forbidden}
+      not enabled?() -> {:error, :disabled}
+      not heartbeat?() -> {:error, :agent_unavailable}
+      true -> with_lock(fn -> retry_import_locked(staff, id) end)
+    end
+  end
+
+  def monitor_url(staff, id) do
+    with true <- authorized?(staff),
+         true <- monitor_enabled?(),
+         %{id: ^id} <- job(id),
+         token_path <- Path.join(job_dir(id), "monitor.token"),
+         {:ok, %{type: :regular}} <- File.lstat(token_path),
+         {:ok, token} <- File.read(token_path),
+         true <- Regex.match?(~r/\A[0-9a-f]{64}\z/, token) do
+      {:ok, "/_backup-status/#" <> token}
+    else
+      _ -> {:error, :not_found}
     end
   end
 
@@ -120,6 +146,19 @@ defmodule Delivest.InstanceBackup do
     end
   end
 
+  defp retry_import_locked(staff, id) do
+    current = active()
+
+    with %{id: ^id, request: %{"action" => "import"}, status: %{"phase" => "failed"}} <- current,
+         true <- safe?(current),
+         path <- Path.join(job_dir(id), "archive.tar"),
+         {:ok, %{type: :regular}} <- File.stat(path) do
+      create_job(staff, "import", path)
+    else
+      _ -> {:error, :retry_unavailable}
+    end
+  end
+
   defp create_job(staff, action, upload_path) do
     id = Ecto.UUID.generate()
     path = job_dir(id)
@@ -141,12 +180,18 @@ defmodule Delivest.InstanceBackup do
       phase: "queued",
       message: "Queued",
       safe_to_resume: true,
-      updated_at: now
+      updated_at: now,
+      step: "accepted",
+      steps: [%{step: "accepted", updated_at: now}]
     }
+
+    token = :crypto.strong_rand_bytes(32) |> Base.encode16(case: :lower)
 
     with :ok <- File.mkdir_p(path),
          :ok <- File.chmod(path, 0o700),
          :ok <- maybe_copy(upload_path, action, path),
+         :ok <- File.write(Path.join(path, "monitor.token"), token, [:exclusive]),
+         :ok <- File.chmod(Path.join(path, "monitor.token"), 0o600),
          :ok <- write_json(Path.join(path, "request.json"), request),
          :ok <- write_json(Path.join(path, "status.json"), status),
          :ok <- write_json(Path.join(dir(), "active.json"), %{protocol: 1, id: id}) do

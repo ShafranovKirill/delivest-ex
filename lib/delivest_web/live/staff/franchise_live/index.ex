@@ -167,6 +167,32 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       else: {:noreply, socket}
   end
 
+  def handle_event("backup_retry_import", %{"confirm" => "replace", "target" => target}, socket) do
+    job = socket.assigns.backup_job
+
+    if job && InstanceBackup.authorized?(socket.assigns.current_staff) &&
+         String.trim(target) == Franchise.get_settings().name do
+      {:noreply,
+       backup_result(socket, InstanceBackup.retry_import(socket.assigns.current_staff, job.id))}
+    else
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         gettext("Type the current instance name and confirm full replacement.")
+       )}
+    end
+  end
+
+  def handle_event("backup_retry_import", _, socket) do
+    {:noreply,
+     put_flash(
+       socket,
+       :error,
+       gettext("Type the current instance name and confirm full replacement.")
+     )}
+  end
+
   defp backup_authorize(socket) do
     if Identity.can?(socket.assigns.current_staff, "admin"),
       do: socket,
@@ -186,25 +212,125 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   defp backup_phase("interrupted"), do: gettext("Interrupted; manual recovery required")
   defp backup_phase(_), do: gettext("Unknown status")
 
+  defp backup_step("accepted"), do: gettext("Accepted")
+  defp backup_step("quiescing"), do: gettext("Stopping the application")
+  defp backup_step("validating_archive"), do: gettext("Validating archive")
+  defp backup_step("checking_compatibility"), do: gettext("Checking compatibility")
+  defp backup_step("preparing_storage"), do: gettext("Preparing storage")
+  defp backup_step("staging_database"), do: gettext("Staging database")
+  defp backup_step("replacing_storage"), do: gettext("Replacing storage")
+  defp backup_step("replacing_database"), do: gettext("Replacing database")
+  defp backup_step("exporting"), do: gettext("Exporting archive")
+  defp backup_step("restarting"), do: gettext("Restarting application")
+  defp backup_step("checking_readiness"), do: gettext("Checking readiness")
+  defp backup_step("ready"), do: gettext("Ready")
+  defp backup_step(_), do: gettext("Preparing")
+
+  defp backup_failure(status, action) do
+    message = status["message"] || ""
+
+    cond do
+      String.contains?(message, "target schema_migrations do not include source versions") ->
+        gettext(
+          "The archive's migration history is incompatible with this application version. No data was replaced."
+        )
+
+      String.contains?(message, "staging schema_migrations differ") ->
+        gettext(
+          "The staged database's migration history differs from the archive. No data was replaced."
+        )
+
+      String.contains?(message, "SHA256 mismatch") or
+        String.contains?(message, "trailing tar data") or
+          String.contains?(message, "invalid or unsupported full backup manifest") ->
+        gettext("The archive failed its integrity check. No data was replaced.")
+
+      status["step"] == "checking_readiness" and action == "import" ->
+        gettext(
+          "Restored data was installed, but the application did not become ready. Review server logs before resuming."
+        )
+
+      status["step"] == "checking_readiness" ->
+        gettext(
+          "The application did not become ready after the backup. Review server logs before resuming."
+        )
+
+      status["safe_to_resume"] == true and
+          status["failed_step"] in ~w(replacing_storage replacing_database) ->
+        gettext(
+          "The restore failed while replacing data. The previous data was restored; check the cause before retrying."
+        )
+
+      status["safe_to_resume"] == true ->
+        gettext(
+          "The backup failed safely. Check the cause and retry. Previous data remains available."
+        )
+
+      true ->
+        gettext(
+          "The data state needs manual review. Keep the application stopped and inspect the backup agent logs."
+        )
+    end
+  end
+
+  defp backup_monitor_link(staff, job) do
+    case InstanceBackup.monitor_url(staff, job.id) do
+      {:ok, url} -> url
+      _ -> nil
+    end
+  end
+
+  defp upload_size(bytes) when is_integer(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MiB"
+  defp upload_size(_), do: "0 MiB"
+
+  defp backup_elapsed(%{"steps" => [%{"updated_at" => started} | _], "updated_at" => current}) do
+    with {:ok, from, _} <- DateTime.from_iso8601(started),
+         {:ok, to, _} <- DateTime.from_iso8601(current) do
+      max(DateTime.diff(to, from, :second), 0)
+    else
+      _ -> nil
+    end
+  end
+
+  defp backup_elapsed(_), do: nil
+
   defp backup_upload_error(:too_large), do: gettext("The archive exceeds the size limit.")
   defp backup_upload_error(:not_accepted), do: gettext("Choose a TAR archive.")
   defp backup_upload_error(_), do: gettext("The archive could not be uploaded.")
   defp backup_size_gib, do: div(InstanceBackup.max_archive() + 1_073_741_823, 1_073_741_824)
 
-  defp backup_result(socket, {:ok, _id}) do
-    socket
-    |> assign(backup_job: InstanceBackup.active())
-    |> put_flash(:info, gettext("Backup job queued."))
+  defp backup_result(socket, {:ok, id}) do
+    case InstanceBackup.monitor_url(socket.assigns.current_staff, id) do
+      {:ok, url} ->
+        redirect(socket, to: url)
+
+      _ ->
+        socket
+        |> assign(backup_job: InstanceBackup.active())
+        |> put_flash(:info, gettext("Backup job queued."))
+    end
   end
 
   defp backup_result(socket, {:error, reason}) do
     message =
       case reason do
-        :forbidden -> gettext("Administrator access is required.")
-        :agent_unavailable -> gettext("Backup agent is unavailable. Start the agent and retry.")
-        :disabled -> gettext("Instance backup is not configured.")
-        :busy -> gettext("A backup job is active or needs manual recovery.")
-        _ -> gettext("Could not submit backup job. Check the archive and retry.")
+        :forbidden ->
+          gettext("Administrator access is required.")
+
+        :agent_unavailable ->
+          gettext("Backup agent is unavailable. Start the agent and retry.")
+
+        :disabled ->
+          gettext("Instance backup is not configured.")
+
+        :busy ->
+          gettext("A backup job is active or needs manual recovery.")
+
+        :retry_unavailable ->
+          gettext("Only the latest safely failed restore can reuse its archive.")
+
+        _ ->
+          gettext("Could not submit backup job. Check the archive and retry.")
       end
 
     put_flash(socket, :error, message)
@@ -306,11 +432,29 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
           </p>
           <div :if={@backup_job} class="mt-3 text-sm">
             <span id="backup-phase">{backup_phase(@backup_job.status["phase"])}</span>
+            <p :if={@backup_job.status["step"]} id="backup-current-step" class="mt-2">
+              {backup_step(@backup_job.status["step"])}
+            </p>
+            <p :if={@backup_job.status["failed_step"]} id="backup-failed-step" class="mt-2">
+              {gettext("Failed during %{step}", step: backup_step(@backup_job.status["failed_step"]))}
+            </p>
+            <p :if={backup_elapsed(@backup_job.status)} id="backup-duration" class="mt-2">
+              {gettext("Elapsed %{seconds} seconds", seconds: backup_elapsed(@backup_job.status))}
+            </p>
+            <ol id="backup-steps" class="mt-2 list-decimal pl-5">
+              <li :for={entry <- @backup_job.status["steps"] || []}>
+                {backup_step(entry["step"])} · {entry["updated_at"]}
+              </li>
+            </ol>
             <span :if={@backup_job.status["phase"] in ~w(failed interrupted)} id="backup-message">
-              {gettext(
-                "Backup did not complete. Check the backup agent and retry after resolving the error."
-              )}
+              {backup_failure(@backup_job.status, @backup_job.request["action"])}
             </span>
+            <.link
+              :if={backup_monitor_link(@current_staff, @backup_job)}
+              id="backup-monitor-link"
+              href={backup_monitor_link(@current_staff, @backup_job)}
+              class="btn btn-outline btn-sm ml-3"
+            >{gettext("Open recovery status")}</.link>
             <.link
               :if={
                 @backup_job.request["action"] == "export" and
@@ -350,8 +494,14 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
             <p class="text-xs text-base-content/60">
               {gettext("TAR archive, up to %{size} GiB.", size: backup_size_gib())}
             </p>
-            <p :for={entry <- @uploads.instance_archive.entries} class="text-xs">
-              {entry.client_name} · {entry.progress}%
+            <p
+              :for={entry <- @uploads.instance_archive.entries}
+              id="backup-upload-progress"
+              class="text-xs"
+            >
+              {entry.client_name} · {upload_size(trunc(entry.client_size * entry.progress / 100))} / {upload_size(
+                entry.client_size
+              )} · {entry.progress}%
             </p>
             <p :for={entry <- @uploads.instance_archive.entries} class="text-sm text-error">
               <span :for={error <- upload_errors(@uploads.instance_archive, entry)}>{backup_upload_error(
@@ -388,6 +538,40 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
               class="btn btn-warning"
             >
               {gettext("Restore archive")}
+            </button>
+          </.form>
+          <.form
+            :if={
+              @backup_job && @backup_job.request["action"] == "import" &&
+                @backup_job.status["phase"] == "failed" && InstanceBackup.safe?(@backup_job)
+            }
+            for={to_form(%{}, as: :retry)}
+            id="backup-retry-form"
+            phx-submit="backup_retry_import"
+            class="space-y-3 rounded-box border border-warning/40 p-4"
+          >
+            <p>{gettext("Reuse the archive from the last safely failed restore.")}</p>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="confirm" value="replace" class="checkbox checkbox-sm" />
+              {gettext("I understand this replaces the full instance")}
+            </label>
+            <label for="backup-retry-target" class="block text-sm font-medium">
+              {gettext("Type %{name} to confirm the target instance", name: @settings.name)}
+            </label>
+            <input
+              id="backup-retry-target"
+              name="target"
+              type="text"
+              autocomplete="off"
+              class="input input-bordered w-full"
+            />
+            <button
+              id="backup-retry-import"
+              type="submit"
+              class="btn btn-warning"
+              disabled={!@backup_agent}
+            >
+              {gettext("Retry restore with same archive")}
             </button>
           </.form>
         </section>

@@ -261,6 +261,117 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
     assert File.dir?(Path.join(dir, "jobs"))
   end
 
+  test "production monitoring redirects the admin to the offline status page", %{
+    conn: conn,
+    staff: staff
+  } do
+    prepare_backup_agent!()
+    previous = Application.get_env(:delivest, :instance_backup_monitor_enabled)
+    Application.put_env(:delivest, :instance_backup_monitor_enabled, true)
+    on_exit(fn -> Application.put_env(:delivest, :instance_backup_monitor_enabled, previous) end)
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+    lv |> element("#backup-export") |> render_click()
+    id = Delivest.InstanceBackup.active().id
+    {:ok, url} = Delivest.InstanceBackup.monitor_url(staff, id)
+    assert_redirect(lv, url)
+  end
+
+  test "a safely failed restore shows stages and retries the saved archive", %{conn: conn} do
+    prepare_backup_agent!()
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+    target = Franchise.get_settings().name
+
+    upload =
+      file_input(lv, "#backup-import-form", :instance_archive, [
+        %{name: "restore.tar", content: "tar payload", type: "application/x-tar"}
+      ])
+
+    assert render_upload(upload, "restore.tar")
+    assert has_element?(lv, "#backup-upload-progress")
+
+    lv
+    |> form("#backup-import-form", %{"confirm" => "replace", "target" => target})
+    |> render_submit()
+
+    id = Delivest.InstanceBackup.active().id
+
+    Delivest.InstanceBackup.write_json(
+      Path.join(Delivest.InstanceBackup.job_dir(id), "status.json"),
+      %{
+        id: id,
+        action: "import",
+        phase: "failed",
+        step: "checking_compatibility",
+        steps: [%{step: "accepted", updated_at: "2026-01-01T00:00:00Z"}],
+        updated_at: "2026-01-01T00:00:05Z",
+        safe_to_resume: true
+      }
+    )
+
+    send(lv.pid, :backup_poll)
+    assert has_element?(lv, "#backup-current-step", "Checking compatibility")
+    assert has_element?(lv, "#backup-steps li", "Accepted")
+    assert has_element?(lv, "#backup-duration", "5 seconds")
+    assert has_element?(lv, "#backup-retry-form")
+
+    lv
+    |> form("#backup-retry-form", %{"confirm" => "replace", "target" => target})
+    |> render_submit()
+
+    assert Delivest.InstanceBackup.active().id != id
+  end
+
+  test "legacy failed restore explains migration mismatch without a step or monitor token", %{
+    conn: conn,
+    staff: staff
+  } do
+    dir = prepare_backup_agent!()
+    upload = Path.join(dir, "legacy.tar")
+    File.write!(upload, "tar payload")
+    assert {:ok, id} = Delivest.InstanceBackup.submit(staff, "import", upload)
+    File.rm!(Path.join(Delivest.InstanceBackup.job_dir(id), "monitor.token"))
+
+    Delivest.InstanceBackup.write_json(
+      Path.join(Delivest.InstanceBackup.job_dir(id), "status.json"),
+      %{
+        id: id,
+        action: "import",
+        phase: "failed",
+        safe_to_resume: true,
+        message: "target schema_migrations do not include source versions"
+      }
+    )
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+    assert has_element?(lv, "#backup-message", "migration history is incompatible")
+    refute has_element?(lv, "#backup-monitor-link")
+  end
+
+  test "failed export readiness never claims restored data was installed", %{
+    conn: conn,
+    staff: staff
+  } do
+    prepare_backup_agent!()
+    assert {:ok, id} = Delivest.InstanceBackup.submit(staff, "export")
+
+    Delivest.InstanceBackup.write_json(
+      Path.join(Delivest.InstanceBackup.job_dir(id), "status.json"),
+      %{
+        id: id,
+        action: "export",
+        phase: "failed",
+        step: "checking_readiness",
+        safe_to_resume: false,
+        message: "application did not become ready after restore"
+      }
+    )
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")
+    assert has_element?(lv, "#backup-message", "did not become ready after the backup")
+    refute render(lv) =~ "Restored data was installed"
+  end
+
   test "restore requires confirmation then stores the upload on disk", %{conn: conn} do
     prepare_backup_agent!()
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise/snapshot")

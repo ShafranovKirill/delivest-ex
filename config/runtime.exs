@@ -36,6 +36,7 @@ backup_dir =
 config :delivest,
   instance_backup_dir: backup_dir,
   instance_backup_managed: System.get_env("INSTANCE_BACKUP_MANAGED") == "true",
+  instance_backup_monitor_enabled: System.get_env("INSTANCE_BACKUP_MONITOR_ENABLED") == "true",
   instance_backup_max_archive:
     String.to_integer(System.get_env("INSTANCE_BACKUP_MAX_ARCHIVE", "21474836480"))
 
