@@ -99,10 +99,25 @@ defmodule Delivest.Integrations.Journal.MaskTest do
   end
 
   test "external advertising identifiers are masked without hiding ordinary IDs" do
-    masked = Mask.body(%{cid: "c", client_id: "c", ClientID: "c", yclid: "y", UserId: "u", user_id: "u", id: "ordinary"})
+    masked =
+      Mask.body(%{
+        cid: "c",
+        client_id: "c",
+        ClientID: "c",
+        yclid: "y",
+        UserId: "u",
+        user_id: "u",
+        id: "ordinary"
+      })
+
     assert Jason.decode!(masked) == %{
-             "cid" => "***", "client_id" => "***", "ClientID" => "***", "yclid" => "***",
-             "UserId" => "***", "user_id" => "***", "id" => "ordinary"
+             "cid" => "***",
+             "client_id" => "***",
+             "ClientID" => "***",
+             "yclid" => "***",
+             "UserId" => "***",
+             "user_id" => "***",
+             "id" => "ordinary"
            }
   end
 end
