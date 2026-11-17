@@ -31,6 +31,7 @@ defmodule Delivest.Oms.OrderEvents do
   def status_changed(repo, %Order{} = order, steps, by, reason) do
     {from, _} = List.first(steps)
     {_, to} = List.last(steps)
+    :ok = Delivest.Integrations.YandexAds.record_transition(order, from, to)
     actor = actor(by, order)
 
     payload =
@@ -45,6 +46,8 @@ defmodule Delivest.Oms.OrderEvents do
   end
 
   def reverted(repo, %Order{} = order, from, to, %Staff{} = staff, reason) do
+    :ok = Delivest.Integrations.YandexAds.record_transition(order, from, to)
+
     payload =
       %{from: from, to: to, source: :staff, reverted: true, reason: reason}
       |> Map.reject(fn {_key, value} -> is_nil(value) end)

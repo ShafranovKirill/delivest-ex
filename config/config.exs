@@ -7,6 +7,10 @@
 # General application configuration
 import Config
 
+config :phoenix,
+       :filter_parameters,
+       ~w(password secret token authorization code ms cid client_id yclid refresh_token measurement_token)
+
 config :delivest, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
@@ -21,7 +25,8 @@ config :delivest, Oban,
     events: 10,
     payments: 2,
     fiscal: 2,
-    background: 1
+    background: 1,
+    yandex_ads: 1
   ],
   lifeline: [rescue_after: {2, :hours}],
   pruner: [max_age: {1, :day}],
@@ -41,7 +46,8 @@ config :delivest, Oban,
     {"23 * * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "dadata"}},
     {"41 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yookassa_reconcile"}},
     {"*/5 * * * *", Delivest.Background.Dispatcher},
-    {"*/5 * * * *", Delivest.Popular.RefreshWorker}
+    {"*/5 * * * *", Delivest.Popular.RefreshWorker},
+    {"13 * * * *", Delivest.Integrations.YandexAds.ScheduleWorker}
   ],
   repo: Delivest.Repo
 

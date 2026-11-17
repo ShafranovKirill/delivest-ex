@@ -9,6 +9,7 @@ defmodule Delivest.Analytics.OrderReceipts do
   def cutoff, do: DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
   def capture(order, opts, as_of_at) do
+    :ok = Delivest.Integrations.YandexAds.capture_order(order, opts, as_of_at)
     branch = {:branch, order.branch_id}
 
     requests =

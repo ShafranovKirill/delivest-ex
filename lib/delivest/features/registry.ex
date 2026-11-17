@@ -7,12 +7,23 @@ defmodule Delivest.Features.Registry do
     "analytics_funnel",
     "analytics_extended",
     "analytics_franchise",
-    "analytics_links"
+    "analytics_links",
+    "yandex_ads",
+    "yandex_browser",
+    "yandex_conversions",
+    "yandex_ecommerce",
+    "yandex_feed",
+    "yandex_costs"
   ]
 
   @dependencies %{
     "marketing_policies" => ["segments", "notifications"],
-    "analytics_franchise" => ["analytics_extended"]
+    "analytics_franchise" => ["analytics_extended"],
+    "yandex_browser" => ["yandex_ads"],
+    "yandex_conversions" => ["yandex_ads"],
+    "yandex_ecommerce" => ["yandex_ads"],
+    "yandex_feed" => ["yandex_ads"],
+    "yandex_costs" => ["yandex_ads"]
   }
   @permission_prefixes %{"segments." => "segments", "marketing." => "marketing_policies"}
 

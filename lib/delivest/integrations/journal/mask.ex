@@ -54,7 +54,18 @@ defmodule Delivest.Integrations.Journal.Mask do
 
   def secret?(key) do
     key = key |> to_string() |> String.downcase()
-    key in ["ms", "code", "code_verifier", "cid", "clientid", "client_id", "yclid", "userid", "user_id"] or
+
+    key in [
+      "ms",
+      "code",
+      "code_verifier",
+      "cid",
+      "clientid",
+      "client_id",
+      "yclid",
+      "userid",
+      "user_id"
+    ] or
       Enum.any?(@secrets, &String.contains?(key, &1))
   end
 
