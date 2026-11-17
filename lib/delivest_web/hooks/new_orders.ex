@@ -39,7 +39,7 @@ defmodule DelivestWeb.Hooks.NewOrders do
   end
 
   defp watched_branch(%{assigns: %{current_branch: %{id: branch_id}, current_staff: staff}}),
-    do: if(Identity.can?(staff, "orders.read"), do: branch_id)
+    do: if(Identity.authorize(staff, "orders.read", branch_id) == :ok, do: branch_id)
 
   defp watched_branch(_socket), do: nil
 
@@ -91,27 +91,73 @@ defmodule DelivestWeb.Hooks.NewOrders do
       else: []
   end
 
-  defp handle_info({:branch_orders_changed, branch_id}, socket),
+  defp handle_info(message, socket) do
+    case watched_branch(socket) do
+      nil ->
+        if branch_notification?(message),
+          do: {:halt, clear_branch_notifications(socket)},
+          else: {:cont, socket}
+
+      branch_id ->
+        handle_branch_info(message, branch_id, socket)
+    end
+  end
+
+  defp branch_notification?(:kitchen_tick), do: true
+
+  defp branch_notification?({kind, _})
+       when kind in [
+              :branch_orders_changed,
+              :kitchen_presence,
+              :kitchen_changed,
+              :kitchen_order_ready
+            ],
+       do: true
+
+  defp branch_notification?(_), do: false
+
+  defp clear_branch_notifications(socket),
+    do:
+      assign(socket,
+        new_orders_count: 0,
+        overdue_orders: [],
+        channel_cancelled_orders: [],
+        kitchen_status: nil,
+        kitchen_late_orders: []
+      )
+
+  defp handle_branch_info({:branch_orders_changed, branch_id}, branch_id, socket),
     do: {:halt, assign_counts(socket, branch_id)}
 
-  defp handle_info({:kitchen_presence, branch_id}, socket),
+  defp handle_branch_info({:kitchen_presence, branch_id}, branch_id, socket),
     do: {:halt, assign_kitchen(socket, branch_id)}
 
-  defp handle_info({:kitchen_changed, _branch_id}, socket), do: {:halt, socket}
-
-  defp handle_info({:kitchen_order_ready, order}, socket) do
+  defp handle_branch_info(
+         {:kitchen_order_ready, %{branch_id: branch_id} = order},
+         branch_id,
+         socket
+       ) do
     {:halt,
      socket
      |> put_flash(:info, gettext("Order #%{number} is ready", number: Order.short_number(order)))
      |> push_event("kitchen:ready", %{number: Order.short_number(order)})}
   end
 
-  defp handle_info(:kitchen_tick, socket) do
-    Process.send_after(self(), :kitchen_tick, @kitchen_tick)
-    {:halt, assign_kitchen(socket, socket.assigns.current_branch.id)}
+  defp handle_branch_info(:kitchen_tick, branch_id, socket) do
+    if operator?(socket.assigns.current_staff, branch_id),
+      do: Process.send_after(self(), :kitchen_tick, @kitchen_tick)
+
+    {:halt, assign_kitchen(socket, branch_id)}
   end
 
-  defp handle_info(_message, socket), do: {:cont, socket}
+  defp handle_branch_info(message, _branch_id, socket) do
+    if branch_notification?(message), do: {:halt, socket}, else: {:cont, socket}
+  end
+
+  defp handle_event(event, _params, %{assigns: %{current_branch: nil}} = socket)
+       when event in @overdue_events or event in ["acknowledge_cancel", "crm_alert"] do
+    {:halt, put_flash(socket, :error, gettext("Permission denied"))}
+  end
 
   defp handle_event(event, %{"id" => order_id}, socket) when event in @overdue_events do
     %{current_staff: staff, current_branch: branch} = socket.assigns

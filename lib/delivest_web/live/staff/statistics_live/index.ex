@@ -18,7 +18,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(page_title: gettext("Sales statistics"))
+     |> assign(
+       page_title: gettext("Sales statistics"),
+       refresh_timer: nil,
+       refresh_epoch: 0,
+       refresh_attempts: 0,
+       refresh_retry?: false
+     )
      |> attach_hook(:analytics_scope_permissions, :handle_info, &recheck_permissions/2)}
   end
 
@@ -32,7 +38,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
       if socket.assigns[:current_branch] &&
            not Enum.any?(branches, &(&1.id == socket.assigns.current_branch.id)) do
-        {:halt, redirect(socket, to: DelivestWeb.StaffBranchPath.home(List.first(branches)))}
+        {:halt,
+         redirect(cancel_report_refresh(socket),
+           to: DelivestWeb.StaffBranchPath.home(List.first(branches))
+         )}
       else
         {:cont,
          if(socket.assigns[:tab] && is_nil(socket.assigns[:period_error]),
@@ -50,6 +59,15 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   @impl true
   def handle_params(params, url, socket) do
+    socket = cancel_report_refresh(socket)
+
+    socket =
+      assign(socket,
+        refresh_epoch: socket.assigns.refresh_epoch + 1,
+        refresh_attempts: 0,
+        refresh_retry?: false
+      )
+
     global? = not String.starts_with?(URI.parse(url).path, "/staff/b/")
     section = params["section"]
     legacy_tab = params["tab"]
@@ -104,13 +122,27 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         custom_from = if preset == "custom", do: safe_date_param(params["from"]), else: nil
         custom_to = if preset == "custom", do: safe_date_param(params["to"]), else: nil
 
+        comparison_mode = comparison_mode(params["compare"])
+
+        {comparison_period, comparison_error} =
+          resolve_comparison(comparison_mode, period, params)
+
         sort = if params["sort"] == "quantity", do: :quantity, else: :revenue
 
         {:noreply,
          socket
          |> assign(
            tab: tab,
-           compare?: params["compare"] == "true",
+           compare?: comparison_mode != nil and comparison_error == nil and period_error == nil,
+           comparison_mode: comparison_mode,
+           comparison_period: comparison_period,
+           comparison_error: comparison_error,
+           comparison_open?: comparison_mode != nil,
+           comparison_draft: comparison_mode || "previous",
+           comparison_draft_from: safe_date_param(params["compare_from"]),
+           comparison_draft_to: safe_date_param(params["compare_to"]),
+           comparison_from: safe_date_param(params["compare_from"]),
+           comparison_to: safe_date_param(params["compare_to"]),
            page_title:
              if(section,
                do: tab_label(if(section == "comparison", do: "franchise", else: section)),
@@ -160,7 +192,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "tab" => socket.assigns.tab,
         "period" => params["period"],
         "sort" => to_string(socket.assigns.sort),
-        "compare" => params["compare"] || if(socket.assigns.compare?, do: "true"),
+        "compare" => socket.assigns.comparison_mode,
+        "compare_from" => socket.assigns.comparison_from,
+        "compare_to" => socket.assigns.comparison_to,
         "channel" => params["channel"] || socket.assigns.report_filters["channel"],
         "branch_id" => params["branch_id"] || socket.assigns.report_filters["branch_id"],
         "link_id" => params["link_id"] || socket.assigns.report_filters["link_id"],
@@ -172,28 +206,163 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     {:noreply, push_patch(socket, to: statistics_path(socket.assigns, query))}
   end
 
-  @impl true
-  def handle_event("rebuild", _, socket) do
-    tab = socket.assigns.tab
+  def handle_event("open_comparison", _, socket),
+    do: {:noreply, assign(socket, comparison_open?: true)}
 
-    result =
-      if tab in @report_tabs and tab != "franchise" and socket.assigns.current_branch do
-        Reports.request_rebuild(
-          socket.assigns.current_staff,
-          Reports.feature_for_tab(tab),
-          socket.assigns.current_branch.id,
-          socket.assigns.period
-        )
-      else
-        {:error, :forbidden}
+  def handle_event("comparison_draft", params, socket) do
+    {:noreply,
+     assign(socket,
+       comparison_draft: comparison_mode(params["compare"]) || "previous",
+       comparison_draft_from:
+         safe_date_param(params["compare_from"] || socket.assigns.comparison_draft_from),
+       comparison_draft_to:
+         safe_date_param(params["compare_to"] || socket.assigns.comparison_draft_to)
+     )}
+  end
+
+  def handle_event("apply_comparison", params, socket) do
+    overrides = %{
+      "compare" => comparison_mode(params["compare"]) || "previous",
+      "compare_from" => safe_date_param(params["compare_from"]),
+      "compare_to" => safe_date_param(params["compare_to"])
+    }
+
+    {:noreply, push_patch(socket, to: tab_path(socket.assigns, socket.assigns.tab, overrides))}
+  end
+
+  def handle_event("close_comparison", _, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         tab_path(socket.assigns, socket.assigns.tab, %{
+           "compare" => nil,
+           "compare_from" => nil,
+           "compare_to" => nil
+         })
+     )}
+  end
+
+  def handle_event("refresh_report", _, socket) do
+    if socket.assigns.tab in @report_tabs and is_nil(socket.assigns.period_error) do
+      {:noreply, socket |> assign(refresh_attempts: 0, refresh_retry?: false) |> load_tab()}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:refresh_report, epoch}, socket) do
+    if epoch == socket.assigns.refresh_epoch and
+         socket.assigns.tab in (@report_tabs ++ @base_tabs) and
+         is_nil(socket.assigns.period_error) do
+      {:noreply,
+       socket
+       |> assign(refresh_attempts: socket.assigns.refresh_attempts + 1)
+       |> refresh_relative_period()
+       |> load_tab()}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
+
+  defp refresh_relative_period(%{assigns: %{preset: "custom"}} = socket), do: socket
+
+  defp refresh_relative_period(socket) do
+    period =
+      Analytics.resolve_period(
+        socket.assigns.preset,
+        nil,
+        nil,
+        socket.assigns.current_branch && socket.assigns.current_branch.id
+      )
+
+    {comparison_period, comparison_error} =
+      resolve_comparison(socket.assigns.comparison_mode, period, %{
+        "compare_from" => socket.assigns.comparison_from,
+        "compare_to" => socket.assigns.comparison_to
+      })
+
+    assign(socket,
+      period: period,
+      comparison_period: comparison_period,
+      comparison_error: comparison_error,
+      compare?: socket.assigns.comparison_mode != nil and comparison_error == nil
+    )
+  end
+
+  defp cancel_report_refresh(socket) do
+    if socket.assigns[:refresh_timer], do: Process.cancel_timer(socket.assigns.refresh_timer)
+    assign(socket, refresh_timer: nil)
+  end
+
+  defp schedule_report_refresh(socket) do
+    socket = cancel_report_refresh(socket)
+
+    pending? =
+      socket.assigns.tab in @report_tabs and
+        Map.get(socket.assigns.report, :refresh_pending, false)
+
+    socket = if pending?, do: socket, else: assign(socket, refresh_attempts: 0)
+    exhausted? = pending? and socket.assigns.refresh_attempts >= 5
+
+    today =
+      Analytics.resolve_period(
+        "today",
+        nil,
+        nil,
+        socket.assigns.current_branch && socket.assigns.current_branch.id
+      )
+      |> elem(0)
+
+    current? =
+      Date.compare(elem(socket.assigns.period, 0), today) != :gt and
+        Date.compare(elem(socket.assigns.period, 1), today) != :lt
+
+    delay =
+      cond do
+        exhausted? and current? -> 30_000
+        exhausted? -> nil
+        pending? -> 2_000
+        current? -> 30_000
+        true -> nil
       end
 
-    case result do
-      {:ok, _} ->
-        {:noreply, socket |> put_flash(:info, gettext("Calculation queued")) |> load_tab()}
+    timer =
+      if connected?(socket) and delay,
+        do: Process.send_after(self(), {:refresh_report, socket.assigns.refresh_epoch}, delay)
 
-      _ ->
-        {:noreply, put_flash(socket, :error, gettext("Calculation could not be queued"))}
+    assign(socket, refresh_timer: timer, refresh_retry?: exhausted?)
+  end
+
+  @impl true
+  def terminate(_reason, socket) do
+    if socket.assigns[:refresh_timer], do: Process.cancel_timer(socket.assigns.refresh_timer)
+    :ok
+  end
+
+  defp comparison_mode(mode) when mode in ["true", "previous"], do: "previous"
+  defp comparison_mode(mode) when mode in ["year", "custom"], do: mode
+  defp comparison_mode(_), do: nil
+
+  defp resolve_comparison(nil, _, _), do: {nil, nil}
+
+  defp resolve_comparison(mode, {from, to} = period, params) do
+    dates =
+      case mode do
+        "previous" -> Analytics.previous_period(period)
+        "year" -> {Date.shift(from, year: -1), Date.shift(to, year: -1)}
+        "custom" -> {params["compare_from"], params["compare_to"]}
+      end
+
+    {from, to} = dates
+    from = if is_struct(from, Date), do: Date.to_iso8601(from), else: from
+    to = if is_struct(to, Date), do: Date.to_iso8601(to), else: to
+
+    case Analytics.validate_custom_period(from, to) do
+      {:ok, value} -> {value, nil}
+      _ -> {nil, gettext("Choose a valid comparison period of up to 366 days")}
     end
   end
 
@@ -220,7 +389,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   defp load_tab(%{assigns: %{tab: "sales"}} = socket) do
     %{period: period, current_branch: branch} = socket.assigns
     summary = Analytics.summary(branch_scope(socket.assigns), period)
-    previous = Analytics.summary(branch_scope(socket.assigns), Analytics.previous_period(period))
+
+    previous =
+      if socket.assigns.compare?,
+        do: Analytics.summary(branch_scope(socket.assigns), socket.assigns.comparison_period),
+        else: nil
 
     assign(socket,
       summary: summary,
@@ -234,6 +407,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         Analytics.breakdown(branch_scope(socket.assigns), period, :fulfillment_type),
       by_payment: Analytics.breakdown(branch_scope(socket.assigns), period, :payment_method)
     )
+    |> schedule_report_refresh()
   end
 
   defp load_tab(%{assigns: %{tab: "products"}} = socket) do
@@ -243,11 +417,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       products:
         Analytics.top_products(branch_scope(socket.assigns), period, limit: 100, sort_by: sort)
     )
+    |> schedule_report_refresh()
   end
 
   defp load_tab(%{assigns: %{tab: "categories"}} = socket) do
     %{period: period} = socket.assigns
+
     assign(socket, categories: Analytics.categories(branch_scope(socket.assigns), period))
+    |> schedule_report_refresh()
   end
 
   defp load_tab(%{assigns: %{tab: tab}} = socket) when tab in @report_tabs do
@@ -280,7 +457,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             end
           end
 
-        assign(socket, report: report, report_previous: previous)
+        socket |> assign(report: report, report_previous: previous) |> schedule_report_refresh()
 
       _ ->
         assign(socket,
@@ -376,7 +553,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "tab" => tab,
         "period" => assigns.preset,
         "sort" => to_string(assigns.sort),
-        "compare" => if(assigns.compare?, do: "true"),
+        "compare" => assigns.comparison_mode,
+        "compare_from" => assigns.comparison_from,
+        "compare_to" => assigns.comparison_to,
         "channel" => assigns.report_filters["channel"],
         "branch_id" => assigns.report_filters["branch_id"],
         "branch_ids" => assigns.report_filters["branch_ids"],
@@ -395,7 +574,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       end)
       |> Map.merge(overrides)
 
-    statistics_path(assigns, query)
+    statistics_path(assigns, compact_query(query))
   end
 
   defp statistics_path(assigns, query) do
@@ -485,13 +664,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           phx-change="filter"
           class="flex flex-wrap items-center gap-2"
         >
-          <.input
-            :if={@tab == "sales"}
-            name="compare"
-            type="checkbox"
-            checked={@compare?}
-            label={gettext("Compare with previous period")}
-          />
           <select name="period" class="select select-bordered select-sm w-44">
             <option :for={preset <- Analytics.presets()} value={preset} selected={preset == @preset}>
               {preset_label(preset)}
@@ -535,7 +707,77 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             class="input input-bordered input-sm w-56"
           />
         </.form>
+        <button
+          :if={@tab == "sales"}
+          id="statistics-compare"
+          type="button"
+          phx-click="open_comparison"
+          class="btn btn-sm btn-outline"
+        >{gettext("Compare")}</button>
       </div>
+      <section
+        :if={@tab == "sales" and @comparison_open?}
+        id="statistics-comparison-controls"
+        class="rounded-xl border border-base-300 p-4 space-y-3"
+      >
+        <.form
+          for={to_form(%{})}
+          id="statistics-comparison-form"
+          phx-change="comparison_draft"
+          phx-submit="apply_comparison"
+          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <.input
+            id="statistics-comparison-mode"
+            name="compare"
+            type="select"
+            value={@comparison_draft}
+            label={gettext("Comparison period")}
+            options={[
+              {gettext("Previous equivalent period"), "previous"},
+              {gettext("Same period last year"), "year"},
+              {gettext("Custom dates"), "custom"}
+            ]}
+          />
+          <.input
+            :if={@comparison_draft == "custom"}
+            id="statistics-comparison-from"
+            name="compare_from"
+            type="date"
+            value={@comparison_draft_from}
+            label={gettext("Comparison start date")}
+          />
+          <.input
+            :if={@comparison_draft == "custom"}
+            id="statistics-comparison-to"
+            name="compare_to"
+            type="date"
+            value={@comparison_draft_to}
+            label={gettext("Comparison end date")}
+          />
+          <div class="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-3">
+            <button type="submit" class="btn btn-sm btn-primary">{gettext("Apply comparison")}</button>
+            <button
+              id="statistics-close-comparison"
+              type="button"
+              phx-click="close_comparison"
+              class="btn btn-sm btn-ghost"
+            >{gettext("Close comparison")}</button>
+          </div>
+        </.form>
+        <p
+          :if={@comparison_error}
+          id="statistics-comparison-error"
+          role="alert"
+          class="text-sm text-error"
+        >
+          {@comparison_error}
+        </p>
+        <div :if={@compare?} id="statistics-comparison-periods" class="text-sm space-y-1">
+          <p>{gettext("Selected period")}: <strong>{format_period(@period)}</strong></p>
+          <p>{gettext("Comparison period")}: <strong>{format_period(@comparison_period)}</strong></p>
+        </div>
+      </section>
 
       <p
         :if={
@@ -566,6 +808,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         show_title={is_nil(@section)}
         report={@report}
         report_previous={@report_previous}
+        refresh_retry?={@refresh_retry?}
         current_staff={@current_staff}
         current_branch={@current_branch}
         staff_branches={@staff_branches}
@@ -580,7 +823,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             label={gettext("Revenue")}
             delta={@compare? && delta(@summary.revenue, @previous.revenue)}
             hint={
-              @compare? && delta(@summary.revenue, @previous.revenue) && gettext("vs previous period")
+              @compare? &&
+                gettext("Comparison: %{value}", value: OrderHelpers.money(@previous.revenue))
             }
           >
             {OrderHelpers.money(@summary.revenue)}
@@ -589,7 +833,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             icon="hero-shopping-bag"
             label={gettext("Orders")}
             delta={@compare? && delta(@summary.orders_count, @previous.orders_count)}
-            hint={excluded_hint(@summary)}
+            hint={
+              if @compare?,
+                do: gettext("Comparison: %{value}", value: @previous.orders_count),
+                else: excluded_hint(@summary)
+            }
           >
             {@summary.orders_count}
           </.stat_card>
@@ -597,6 +845,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             icon="hero-receipt-percent"
             label={gettext("Average check")}
             delta={@compare? && delta(@summary.avg_check, @previous.avg_check)}
+            hint={
+              @compare? &&
+                gettext("Comparison: %{value}", value: OrderHelpers.money(@previous.avg_check))
+            }
           >
             {OrderHelpers.money(@summary.avg_check)}
           </.stat_card>
@@ -604,6 +856,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             icon="hero-cube"
             label={gettext("Items sold")}
             delta={@compare? && delta(@summary.items_sold, @previous.items_sold)}
+            hint={@compare? && gettext("Comparison: %{value}", value: @previous.items_sold)}
           >
             {@summary.items_sold}
           </.stat_card>

@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
   use DelivestWeb.ConnCase, async: false
 
+  @moduletag :repeatable_read
+
   import Phoenix.LiveViewTest
   import Delivest.Factory
   import Delivest.OrderFixtures
@@ -141,22 +143,78 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
              live(conn, ~p"/staff/b/#{branch}/statistics")
   end
 
-  test "period comparison is an optional summary filter", %{conn: conn} do
+  test "comparison opens explicit date controls and applies a preceding equal period", %{
+    conn: conn
+  } do
     {conn, branch} = login(conn, ["statistics.read"])
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
-    refute has_element?(view, "input[name=compare][checked]")
 
-    view
-    |> form("#statistics-filter", %{"period" => "today", "compare" => "true"})
-    |> render_change()
+    {:ok, view, _} =
+      live(conn, ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-11-10&to=2026-11-16")
 
-    assert has_element?(view, "input[name=compare][checked]")
+    refute has_element?(view, "input[name=compare][type=checkbox]")
+    refute has_element?(view, "#statistics-comparison-controls")
+    view |> element("#statistics-compare") |> render_click()
+    view |> form("#statistics-comparison-form", %{"compare" => "previous"}) |> render_submit()
+    assert has_element?(view, "#statistics-comparison-periods", "10.11.2026 — 16.11.2026")
+    assert has_element?(view, "#statistics-comparison-periods", "03.11.2026 — 09.11.2026")
+    view |> element("#statistics-close-comparison") |> render_click()
+    refute has_element?(view, "#statistics-comparison-controls")
+  end
 
-    view
-    |> form("#statistics-filter", %{"period" => "today", "compare" => "false"})
-    |> render_change()
+  test "year and custom comparison links reload with explicit resolved dates", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
 
-    refute has_element?(view, "input[name=compare][checked]")
+    {:ok, view, _} =
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/statistics?period=custom&from=2024-02-29&to=2024-02-29&compare=year"
+      )
+
+    assert has_element?(view, "#statistics-comparison-periods", "28.02.2023")
+
+    render_patch(
+      view,
+      ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-11-10&to=2026-11-16&compare=custom&compare_from=2026-10-01&compare_to=2026-10-07"
+    )
+
+    assert has_element?(view, "#statistics-comparison-periods", "01.10.2026 — 07.10.2026")
+    assert has_element?(view, "#statistics-tab-products[href*='compare_from=2026-10-01']")
+  end
+
+  test "invalid comparison dates are rejected while the selected summary remains available", %{
+    conn: conn
+  } do
+    {conn, branch} = login(conn, ["statistics.read"])
+
+    for comparison <- [
+          "compare=custom&compare_from=bad&compare_to=2026-11-01",
+          "compare=custom&compare_from[x]=bad&compare_to=2026-11-01",
+          "compare=custom&compare_from=2024-01-01&compare_to=2026-01-01"
+        ] do
+      {:ok, view, _} =
+        live(conn, "/staff/b/#{branch.slug}/statistics?period=today&" <> comparison)
+
+      assert has_element?(view, "#statistics-comparison-error")
+      refute has_element?(view, "#statistics-comparison-periods")
+      assert has_element?(view, "h2", "Revenue by day")
+    end
+  end
+
+  test "old comparison links and scope transitions preserve comparison selection", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today&compare=true")
+    assert has_element?(view, "#statistics-comparison-periods")
+
+    assert {:ok, %{path: path}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/b/#{branch.slug}/statistics?period=custom&from=2026-11-01&to=2026-11-07&compare=custom&compare_from=2026-10-01&compare_to=2026-10-07",
+               :network
+             )
+
+    query = URI.decode_query(URI.parse(path).query)
+    assert query["compare"] == "custom"
+    assert query["compare_from"] == "2026-10-01"
+    assert query["compare_to"] == "2026-10-07"
   end
 
   test "network sales exposes only the three sales tabs behind the network feature", %{conn: conn} do
@@ -180,5 +238,124 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     {conn, _branch} = login(conn, ["statistics.read"])
     other = insert(:branch)
     assert {:error, {:redirect, _}} = live(conn, ~p"/staff/b/#{other}/analytics/channels")
+  end
+
+  test "current sales tabs refresh automatically and historical navigation cancels the timer", %{
+    conn: conn
+  } do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+
+    for tab <- ~w(sales products categories) do
+      render_patch(view, "/staff/b/#{branch.slug}/statistics?tab=#{tab}&period=today")
+      state = :sys.get_state(view.pid)
+      timer = state.socket.assigns.refresh_timer
+      assert is_reference(timer)
+      assert Process.read_timer(timer) in 1..30_000
+    end
+
+    timer = :sys.get_state(view.pid).socket.assigns.refresh_timer
+
+    render_patch(
+      view,
+      ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-01-01&to=2026-01-07"
+    )
+
+    assert :sys.get_state(view.pid).socket.assigns.refresh_timer == nil
+    assert Process.read_timer(timer) == false
+  end
+
+  test "automatic sales refresh preserves comparison date drafts", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    view |> element("#statistics-compare") |> render_click()
+    view |> form("#statistics-comparison-form", %{"compare" => "custom"}) |> render_change()
+
+    view
+    |> form("#statistics-comparison-form", %{
+      "compare" => "custom",
+      "compare_from" => "2026-10-01",
+      "compare_to" => "2026-10-07"
+    })
+    |> render_change()
+
+    state = :sys.get_state(view.pid)
+    timer = state.socket.assigns.refresh_timer
+    send(view.pid, {:refresh_report, state.socket.assigns.refresh_epoch})
+    refreshed = :sys.get_state(view.pid)
+    assert refreshed.socket.assigns.refresh_timer != timer
+
+    assert has_element?(
+             view,
+             "#statistics-comparison-form input[name=compare_from][value='2026-10-01']"
+           )
+
+    assert has_element?(
+             view,
+             "#statistics-comparison-form input[name=compare_to][value='2026-10-07']"
+           )
+
+    refute has_element?(view, "#statistics-comparison-periods")
+  end
+
+  test "an expired refresh epoch performs no read" do
+    socket = %Phoenix.LiveView.Socket{assigns: %{refresh_epoch: 2, tab: "sales"}}
+
+    assert {:noreply, ^socket} =
+             DelivestWeb.Staff.StatisticsLive.Index.handle_info({:refresh_report, 1}, socket)
+  end
+
+  test "global statistics ignores old branch kitchen timers and notifications", %{conn: conn} do
+    {conn, branch} = login(conn, ["admin"])
+
+    assert {:ok, _} =
+             Delivest.Features.configure("analytics_franchise", :franchise, true, actor: "host")
+
+    {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
+    send(view.pid, :kitchen_tick)
+    send(view.pid, {:branch_orders_changed, branch.id})
+    send(view.pid, {:kitchen_presence, branch.id})
+    send(view.pid, {:kitchen_order_ready, %{branch_id: branch.id, id: Ecto.UUID.generate()}})
+    state = :sys.get_state(view.pid)
+    assert state.socket.assigns.current_branch == nil
+    assert state.socket.assigns.new_orders_count == 0
+    assert state.socket.assigns.kitchen_status == nil
+    assert state.socket.assigns.kitchen_late_orders == []
+    refute Map.has_key?(state.socket.assigns.flash, "info")
+    assert has_element?(view, "#statistics-sales-tabs")
+
+    assert render_click(view, "overdue_confirm", %{"id" => Ecto.UUID.generate()}) =~
+             "Permission denied"
+
+    assert has_element?(view, "#statistics-sales-tabs")
+  end
+
+  test "automatic refresh advances relative periods after local midnight without resetting drafts",
+       %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today&compare=previous")
+    {today, today} = Delivest.Analytics.resolve_period("today", nil, nil, branch.id)
+    yesterday = Date.add(today, -1)
+
+    :sys.replace_state(view.pid, fn state ->
+      socket =
+        Phoenix.Component.assign(state.socket,
+          period: {yesterday, yesterday},
+          comparison_draft: "custom",
+          comparison_draft_from: "2026-10-01",
+          comparison_draft_to: "2026-10-07"
+        )
+
+      %{state | socket: socket}
+    end)
+
+    epoch = :sys.get_state(view.pid).socket.assigns.refresh_epoch
+    send(view.pid, {:refresh_report, epoch})
+    assigns = :sys.get_state(view.pid).socket.assigns
+    assert assigns.period == {today, today}
+    assert assigns.comparison_period == {yesterday, yesterday}
+    assert assigns.comparison_draft == "custom"
+    assert assigns.comparison_draft_from == "2026-10-01"
+    assert assigns.comparison_draft_to == "2026-10-07"
   end
 end

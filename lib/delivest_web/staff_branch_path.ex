@@ -36,7 +36,7 @@ defmodule DelivestWeb.StaffBranchPath do
     "products" => ~w(search is_active page_size order_by order_directions[]),
     "orders" =>
       ~w(status search period problem sort date_from date_to receiving payment source page_size),
-    "statistics" => ~w(tab period from to channel sort compare),
+    "statistics" => ~w(tab period from to channel sort compare compare_from compare_to),
     "analytics/channels" => ~w(period from to channel page),
     "analytics/sources" => ~w(period from to channel page),
     "analytics/funnel" => ~w(period from to channel page),

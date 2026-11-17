@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.AnalyticsLive.PlaceholderTest do
   use DelivestWeb.ConnCase, async: false
 
+  @moduletag :repeatable_read
+
   import Phoenix.LiveViewTest
   import Delivest.Factory
 

@@ -10,7 +10,7 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
 
   @impl true
   def mount(_params, _session, socket) do
-    today = Date.utc_today()
+    today = Delivest.LocalTime.today(Delivest.LocalTime.timezone())
 
     {:ok,
      socket
@@ -20,6 +20,10 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
        to: today,
        error: nil,
        importing: false,
+       refresh_timer: nil,
+       refresh_epoch: 0,
+       refresh_attempts: 0,
+       refresh_retry?: false,
        can_import: Identity.can?(socket.assigns.current_staff, "admin")
      )
      |> attach_hook(:advertising_permissions, :handle_info, &recheck_permissions/2)
@@ -28,9 +32,16 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
 
   defp recheck_permissions(event, socket) when event in [:role_updated, :staff_updated] do
     if permitted?(socket.assigns.current_staff) do
-      {:cont, socket}
+      period_form = socket.assigns.period
+
+      {:cont,
+       socket
+       |> cancel_refresh()
+       |> assign(refresh_epoch: socket.assigns.refresh_epoch + 1, refresh_attempts: 0)
+       |> load_report()
+       |> assign(period: period_form)}
     else
-      {:halt, redirect(socket, to: ~p"/staff")}
+      {:halt, redirect(cancel_refresh(socket), to: ~p"/staff")}
     end
   end
 
@@ -42,7 +53,18 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
   @impl true
   def handle_params(params, _uri, socket) do
     {from, to} = Delivest.Analytics.resolve_period(params["period"], params["from"], params["to"])
-    {:noreply, socket |> assign(from: from, to: to) |> load_report()}
+
+    {:noreply,
+     socket
+     |> cancel_refresh()
+     |> assign(
+       from: from,
+       to: to,
+       refresh_epoch: socket.assigns.refresh_epoch + 1,
+       refresh_attempts: 0,
+       refresh_retry?: false
+     )
+     |> load_report()}
   end
 
   @impl true
@@ -62,7 +84,8 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
     end
   end
 
-  def handle_event("refresh", _params, socket), do: {:noreply, load_report(socket)}
+  def handle_event("refresh", _params, socket),
+    do: {:noreply, socket |> assign(refresh_attempts: 0, refresh_retry?: false) |> load_report()}
 
   def handle_event("import", _params, socket) do
     case YandexAds.request_costs(
@@ -107,6 +130,66 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
     |> stream(:bindings, bindings, reset: true, dom_id: &"binding-#{&1.advertising_link_id}")
   end
 
+  @impl true
+  def handle_info({:refresh_advertising, epoch}, socket) do
+    if epoch == socket.assigns.refresh_epoch do
+      period_form = socket.assigns.period
+
+      {:noreply,
+       socket
+       |> assign(refresh_attempts: socket.assigns.refresh_attempts + 1)
+       |> load_report()
+       |> assign(period: period_form)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
+
+  defp cancel_refresh(socket) do
+    if socket.assigns[:refresh_timer], do: Process.cancel_timer(socket.assigns.refresh_timer)
+    assign(socket, refresh_timer: nil)
+  end
+
+  defp schedule_refresh(socket) do
+    socket = cancel_refresh(socket)
+
+    pending? =
+      Map.get(socket.assigns.campaign_report, :refresh_pending, false) or
+        Map.get(socket.assigns.report, :refresh_pending, false)
+
+    socket = if pending?, do: socket, else: assign(socket, refresh_attempts: 0)
+    exhausted? = pending? and socket.assigns.refresh_attempts >= 5
+    today = Delivest.LocalTime.today(Delivest.LocalTime.timezone())
+
+    current? =
+      Date.compare(socket.assigns.from, today) != :gt and
+        Date.compare(socket.assigns.to, today) != :lt
+
+    delay =
+      cond do
+        exhausted? and current? -> 30_000
+        exhausted? -> nil
+        pending? -> 2_000
+        current? -> 30_000
+        true -> nil
+      end
+
+    timer =
+      if connected?(socket) and delay,
+        do:
+          Process.send_after(self(), {:refresh_advertising, socket.assigns.refresh_epoch}, delay)
+
+    assign(socket, refresh_timer: timer, refresh_retry?: exhausted?)
+  end
+
+  @impl true
+  def terminate(_, socket) do
+    if socket.assigns[:refresh_timer], do: Process.cancel_timer(socket.assigns.refresh_timer)
+    :ok
+  end
+
   defp load_report(socket) do
     case YandexAds.report(socket.assigns.current_staff, socket.assigns.from, socket.assigns.to) do
       {:ok, report} ->
@@ -134,6 +217,7 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
         |> stream(:costs, report.costs, reset: true, dom_id: &"cost-#{&1.day}-#{&1.campaign_id}")
         |> assign(delivery_issue_count: length(Map.get(report, :delivery_issues, [])))
         |> load_campaigns()
+        |> schedule_refresh()
 
       {:error, _reason} ->
         socket
@@ -228,9 +312,25 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
             )}
           </p>
           <p id="advertising-campaign-coverage" class="text-sm text-base-content/60">
-            {gettext("F04 report state")}: {report_state(@campaign_report.f04_state)} · {gettext(
-              "Last update"
-            )}: {timestamp(Map.get(@campaign_report, :last_success_at))}
+            {gettext("F04 report state")}: {report_state(@campaign_report.f04_state)}
+          </p>
+          <p
+            :if={
+              (Map.get(@campaign_report, :refresh_pending, false) or
+                 Map.get(@report, :refresh_pending, false)) and not @refresh_retry?
+            }
+            id="advertising-report-refreshing"
+            role="status"
+            class="text-sm text-base-content/60"
+          >
+            {gettext("Updating report…")}
+          </p>
+          <p
+            :if={@refresh_retry?}
+            id="advertising-report-refresh-delayed"
+            class="text-sm text-warning"
+          >
+            {gettext("The report is taking longer to update. Try again shortly.")}
           </p>
           <p :if={@campaign_report.truncated} class="text-sm text-warning">
             {gettext("The campaign table is limited. Shorten the period for more detail.")}
@@ -291,7 +391,6 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
               count: @report.identified_orders
             )}
           </p>
-          <p>{gettext("Last successful cost update")}: {timestamp(@report.last_cost_update)}</p>
           <p
             :if={Map.get(@report, :f04_state) not in [nil, :ready, :empty]}
             id="advertising-f04-state"
@@ -389,7 +488,4 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
   defp report_state(:partial), do: gettext("Incomplete collection")
   defp report_state(:stale), do: gettext("Data is stale")
   defp report_state(_), do: gettext("Not collected or disabled")
-
-  defp timestamp(nil), do: gettext("Not imported")
-  defp timestamp(value), do: Calendar.strftime(value, "%Y-%m-%d %H:%M UTC")
 end

@@ -133,7 +133,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:180",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:264",
       "target_section": "Analytics"
     },
     {
@@ -163,7 +163,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:189",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:273",
       "target_section": "Analytics"
     },
     {
@@ -175,7 +175,7 @@
       ],
       "event": "refresh",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:refresh:4474613eb41f9355:1"
+        "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:refresh:7425810aba3376e4:1"
       ],
       "id": "control:lib/delivest_web/live/staff/analytics_live/advertising.ex:refresh:dom:advertising-refresh:1",
       "label": "{gettext( \"Refresh\" )}",
@@ -189,7 +189,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:160",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:244",
       "target_section": "Analytics"
     },
     {
@@ -8428,34 +8428,104 @@
       "target_section": "Settings / Team and access"
     },
     {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "apply_comparison",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/statistics_live/index.ex:apply_comparison:4770277f15bccf73:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/statistics_live/index.ex:apply_comparison:dom:statistics-comparison-form:1",
+      "label": "Apply comparison",
+      "operation": [],
+      "result": [
+        "push_patch"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "statistics.network",
+          "statistics.read"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:723",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "close_comparison",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/statistics_live/index.ex:close_comparison:def4b5b56112a2e4:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/statistics_live/index.ex:close_comparison:dom:statistics-close-comparison:1",
+      "label": "Close comparison",
+      "operation": [],
+      "result": [
+        "push_patch"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "statistics.network",
+          "statistics.read"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:760",
+      "target_section": "Analytics"
+    },
+    {
       "availability": "conditional :if in source",
       "confirmation": "no inline confirmation marker",
       "disposition": "retain control in Analytics",
       "error_state": [
-        "explicit :error branch/reference"
+        "no explicit :error in clause"
       ],
-      "event": "rebuild",
+      "event": "open_comparison",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/statistics_live/index.ex:rebuild:389058e60b5ccc51:1"
+        "event:lib/delivest_web/live/staff/statistics_live/index.ex:open_comparison:b4b34a7eb67132db:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/statistics_live/report_components.ex:rebuild:dom:statistics-rebuild:1",
-      "label": "Recalculate available history",
-      "operation": [
-        "Reports.feature_for_tab",
-        "Reports.request_rebuild"
-      ],
-      "result": [
-        "put_flash"
-      ],
+      "id": "control:lib/delivest_web/live/staff/statistics_live/index.ex:open_comparison:dom:statistics-compare:1",
+      "label": "Compare",
+      "operation": [],
+      "result": [],
       "rights": {
-        "inline": [
-          "admin"
-        ],
+        "inline": [],
         "module_references": [
-          "admin"
+          "statistics.network",
+          "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/report_components.ex:34",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:710",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "conditional :if in source",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "refresh_report",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:9108cbac721a7a9f:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/statistics_live/report_components.ex:refresh_report:dom:statistics-report-retry:1",
+      "label": "Try again",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/report_components.ex:49",
       "target_section": "Analytics"
     },
     {
@@ -8600,7 +8670,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/hooks/new_orders.ex:129",
+      "source": "lib/delivest_web/hooks/new_orders.ex:175",
       "target_section": "System / staff service"
     },
     {
@@ -8622,7 +8692,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/hooks/new_orders.ex:150",
+      "source": "lib/delivest_web/hooks/new_orders.ex:196",
       "target_section": "System / staff service"
     },
     {
@@ -8645,7 +8715,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/hooks/new_orders.ex:142",
+      "source": "lib/delivest_web/hooks/new_orders.ex:188",
       "target_section": "System / staff service"
     },
     {
@@ -8778,7 +8848,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:49",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:71",
       "target_section": "Analytics"
     },
     {
@@ -8803,7 +8873,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:67",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:90",
       "target_section": "Analytics"
     },
     {
@@ -8812,7 +8882,7 @@
       "disposition": "retain operation; move control with Analytics",
       "error_state": "no explicit :error in clause",
       "event": "refresh",
-      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:refresh:4474613eb41f9355:1",
+      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:refresh:7425810aba3376e4:1",
       "label": "{gettext(\n          \"Refresh\"\n        )}",
       "operation": [],
       "result": [],
@@ -8824,7 +8894,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:65",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:87",
       "target_section": "Analytics"
     },
     {
@@ -18322,12 +18392,76 @@
       "target_section": "Settings / Team and access"
     },
     {
-      "availability": "conditional branch in handler clause",
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "apply_comparison",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:apply_comparison:4770277f15bccf73:1",
+      "label": "event: apply_comparison",
+      "operation": [],
+      "result": [
+        "push_patch"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "statistics.network",
+          "statistics.read"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:223",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "close_comparison",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:close_comparison:def4b5b56112a2e4:1",
+      "label": "{gettext(\"Close comparison\")}",
+      "operation": [],
+      "result": [
+        "push_patch"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "statistics.network",
+          "statistics.read"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:233",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "comparison_draft",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:comparison_draft:e4c9fdd36e028db7:1",
+      "label": "event: comparison_draft",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "statistics.network",
+          "statistics.read"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:212",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Analytics",
       "error_state": "no explicit :error in clause",
       "event": "filter",
-      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:filter:260e96fce255337e:1",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:filter:38f529bc4d85f06d:1",
       "label": "event: filter",
       "operation": [],
       "result": [
@@ -18340,24 +18474,19 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:157",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:189",
       "target_section": "Analytics"
     },
     {
-      "availability": "conditional branch in handler clause",
+      "availability": "no inline conditional in handler clause",
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Analytics",
-      "error_state": "explicit :error branch/reference",
-      "event": "rebuild",
-      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:rebuild:389058e60b5ccc51:1",
-      "label": "event: rebuild",
-      "operation": [
-        "Reports.feature_for_tab",
-        "Reports.request_rebuild"
-      ],
-      "result": [
-        "put_flash"
-      ],
+      "error_state": "no explicit :error in clause",
+      "event": "open_comparison",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:open_comparison:b4b34a7eb67132db:1",
+      "label": "{gettext(\"Compare\")}",
+      "operation": [],
+      "result": [],
       "rights": {
         "clause": [],
         "module_references": [
@@ -18365,7 +18494,27 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:176",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:209",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "refresh_report",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:9108cbac721a7a9f:1",
+      "label": "event: refresh_report",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "statistics.network",
+          "statistics.read"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:245",
       "target_section": "Analytics"
     },
     {
@@ -18613,6 +18762,18 @@
     }
   ],
   "background": [
+    {
+      "disposition": "retain; review job-specific gate",
+      "enable_gate": "Base sales reporting is ungated; authorized report reads select the branch scope",
+      "external_call": "No external call; rebuilds at most twelve dirty closed local sales days per batch",
+      "frequency": "30 3 * * *",
+      "id": "cron:Delivest.Analytics.SalesCacheWorker::30 3 * * *",
+      "in_flight_obligation": "Advisory single-flight and revision-conditional publication prevent stale clean snapshots without locking order writes during calculation",
+      "on_disable": "No optional feature disable callback; dirty or missing history falls back to source queries",
+      "producer_scheduler": "Oban cron at config/config.exs",
+      "source": "config/config.exs:51",
+      "worker_process": "Delivest.Analytics.SalesCacheWorker"
+    },
     {
       "disposition": "retain; review job-specific gate",
       "enable_gate": "Background scheduling checks Features.snapshot for each registry feature",
@@ -19035,6 +19196,21 @@
     },
     {
       "disposition": "retain; review job-specific gate",
+      "enable_gate": "Base sales reporting is ungated; authorized report reads select the branch scope",
+      "external_call": "No external call; rebuilds at most twelve dirty closed local sales days per batch",
+      "frequency": "30 3 * * *",
+      "id": "worker:Delivest.Analytics.SalesCacheWorker",
+      "in_flight_obligation": "Advisory single-flight and revision-conditional publication prevent stale clean snapshots without locking order writes during calculation",
+      "on_disable": "No optional feature disable callback; dirty or missing history falls back to source queries",
+      "producer_scheduler": [
+        "config/config.exs Oban cron",
+        "lib/delivest/analytics/sales_cache.ex:151"
+      ],
+      "source": "lib/delivest/analytics/sales_cache_worker.ex",
+      "worker_process": "Delivest.Analytics.SalesCacheWorker"
+    },
+    {
+      "disposition": "retain; review job-specific gate",
       "enable_gate": "Background scheduling checks Features.snapshot for each registry feature",
       "external_call": "No external call; enumerates due optional calculations",
       "frequency": "*/5 * * * *",
@@ -19218,7 +19394,7 @@
       "on_disable": "Pending work becomes stale; browser and server streams are independently gated",
       "producer_scheduler": [
         "lib/delivest/integrations/yandex_ads.ex:431",
-        "lib/delivest/integrations/yandex_ads.ex:788"
+        "lib/delivest/integrations/yandex_ads.ex:789"
       ],
       "source": "lib/delivest/integrations/yandex_ads/conversion_worker.ex",
       "worker_process": "Delivest.Integrations.YandexAds.ConversionWorker"
@@ -20081,7 +20257,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:186",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:270",
       "target_section": "Analytics / Advertising",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20102,7 +20278,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:187",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:271",
       "target_section": "Analytics / Advertising",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28920,7 +29096,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "channel",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:516",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:688",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28941,7 +29117,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:531",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:703",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28962,7 +29138,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:524",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:696",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28983,7 +29159,49 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "compare",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:488",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:730",
+      "target_section": "Analytics",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "name:compare_from",
+      "canonical_form": "lib/delivest_web/live/staff/statistics_live/index.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/statistics_live/index.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Analytics",
+      "expression": null,
+      "field": "compare_from",
+      "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:name:compare_from:compare_from",
+      "name_template": null,
+      "owner": "Delivest.Analytics report filters",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "compare_from",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:742",
+      "target_section": "Analytics",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "name:compare_to",
+      "canonical_form": "lib/delivest_web/live/staff/statistics_live/index.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/statistics_live/index.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Analytics",
+      "expression": null,
+      "field": "compare_to",
+      "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:name:compare_to:compare_to",
+      "name_template": null,
+      "owner": "Delivest.Analytics report filters",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "compare_to",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:750",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29004,7 +29222,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:501",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:673",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29025,7 +29243,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "period",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:495",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:667",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29046,7 +29264,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:507",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:679",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

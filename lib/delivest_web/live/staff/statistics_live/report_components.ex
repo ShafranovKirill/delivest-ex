@@ -1,7 +1,6 @@
 defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
   use DelivestWeb, :html
 
-  alias Delivest.Identity
   alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -10,6 +9,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
   attr :show_title, :boolean, default: true
   attr :report, :map, required: true
   attr :report_previous, :any, default: nil
+  attr :refresh_retry?, :boolean, default: false
   attr :current_staff, :any, required: true
   attr :current_branch, :any, required: true
   attr :staff_branches, :list, required: true
@@ -31,39 +31,30 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
           >
             {gettext("Manage advertising links")}
           </.link>
-          <button
-            :if={
-              Identity.can?(@current_staff, "admin") and not is_nil(@current_branch) and
-                @tab != "franchise"
-            }
-            id="statistics-rebuild"
-            type="button"
-            phx-click="rebuild"
-            class="btn btn-sm btn-outline"
-          >
-            {gettext("Recalculate available history")}
-          </button>
         </div>
         <p id="statistics-report-state" class="text-sm" role="status">
           {report_state_label(@report.state)}
-          <%= if @report.last_checked_at do %>
-            · {gettext("Last successful check")}: {Calendar.strftime(
-              @report.last_checked_at,
-              "%d.%m.%Y %H:%M UTC"
-            )}
-          <% end %>
-          <%= if @report.last_success_at do %>
-            · {gettext("Oldest successful bucket calculation")}: {Calendar.strftime(
-              @report.last_success_at,
-              "%d.%m.%Y %H:%M UTC"
-            )}
-          <% end %>
         </p>
-        <p :if={report_job_state(@report) in [:queued, :running]} class="text-sm text-info">
-          {gettext("Calculation is queued or running")}
+        <p
+          :if={Map.get(@report, :refresh_pending, false) and not @refresh_retry?}
+          id="statistics-report-refreshing"
+          class="text-sm text-base-content/60"
+          role="status"
+        >
+          {gettext("Updating report…")}
         </p>
+        <p :if={@refresh_retry?} id="statistics-report-refresh-delayed" class="text-sm text-warning">
+          {gettext("The report is taking longer to update. Try again shortly.")}
+        </p>
+        <button
+          :if={@refresh_retry? or report_job_state(@report) == :error}
+          id="statistics-report-retry"
+          type="button"
+          phx-click="refresh_report"
+          class="btn btn-sm btn-outline"
+        >{gettext("Try again")}</button>
         <p :if={report_job_state(@report) == :error} class="text-sm text-error">
-          {gettext("Last calculation failed; the previous published result remains available.")}
+          {gettext("The report could not be updated. Previously collected data remains visible.")}
         </p>
         <p :if={@report.covered_days < @report.expected_days} class="text-sm text-warning">
           {gettext("Only %{covered} of %{expected} branch days have complete collection",

@@ -13115,3 +13115,52 @@ msgstr "Итоги отправки показаны за последние с�
 #, elixir-format
 msgid "Branches excluded by feature availability: %{count}"
 msgstr "Филиалов исключено из-за доступности функции: %{count}"
+
+#, elixir-format
+msgid "Comparison period"
+msgstr "Период сравнения"
+
+#, elixir-format
+msgid "Previous equivalent period"
+msgstr "Предыдущий равный период"
+
+#, elixir-format
+msgid "Same period last year"
+msgstr "Тот же период год назад"
+
+#, elixir-format
+msgid "Custom dates"
+msgstr "Свои даты"
+
+#, elixir-format
+msgid "Comparison start date"
+msgstr "Начало периода сравнения"
+
+#, elixir-format
+msgid "Comparison end date"
+msgstr "Конец периода сравнения"
+
+#, elixir-format
+msgid "Apply comparison"
+msgstr "Применить сравнение"
+
+#, elixir-format
+msgid "Close comparison"
+msgstr "Закрыть сравнение"
+
+#, elixir-format
+msgid "Choose a valid comparison period of up to 366 days"
+msgstr "Выберите корректный период сравнения длиной до 366 дней"
+
+#, elixir-format
+msgid "Comparison: %{value}"
+msgstr "В периоде сравнения: %{value}"
+
+msgid "Updating report…"
+msgstr "Обновляем отчёт…"
+
+msgid "The report is taking longer to update. Try again shortly."
+msgstr "Обновление отчёта занимает больше времени. Повторите попытку чуть позже."
+
+msgid "The report could not be updated. Previously collected data remains visible."
+msgstr "Не удалось обновить отчёт. Показаны ранее собранные данные."

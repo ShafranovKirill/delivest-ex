@@ -50,7 +50,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     refute has_element?(view, ~s{a[href*="tab=funnel"]})
   end
 
-  test "enabled funnel tab shows collection state and requires admin for rebuild", %{conn: conn} do
+  test "enabled funnel shows collection state without manual calculation controls", %{conn: conn} do
     branch = insert(:branch)
     assert {:ok, _} = Features.configure("analytics_funnel", :franchise, true, actor: "host")
 
@@ -62,12 +62,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     {:ok, analyst, _} =
       live(analyst_conn, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
 
-    assert has_element?(analyst, "#statistics-report-state", "Data was not collected")
+    assert has_element?(analyst, "#statistics-report-state")
     refute has_element?(analyst, "#statistics-rebuild")
 
     admin_conn = login(conn, ["admin"], branch)
     {:ok, admin, _} = live(admin_conn, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
-    assert has_element?(admin, "#statistics-rebuild")
+    refute has_element?(admin, "#statistics-rebuild")
   end
 
   test "franchise tab needs network permission and feature gate", %{conn: conn} do
@@ -156,6 +156,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
         ~p"/staff/b/#{branch}/analytics/channels?period=today"
       )
 
+    refute has_element?(view, "#statistics-rebuild")
+    refute has_element?(view, "#statistics-report-state", "Last successful check")
+    refute has_element?(view, "#statistics-report-state", "Oldest successful bucket")
     assert has_element?(view, "#statistics-report-summary", "Average check")
     assert has_element?(view, "#statistics-report-summary", OrderHelpers.money(750))
     assert has_element?(view, "#statistics-report-summary", "Cancelled")
@@ -265,7 +268,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     admin_conn = login(conn, ["admin"], branch)
     {:ok, view, _} = live(admin_conn, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
     assert {:ok, _} = Features.configure("analytics_funnel", :franchise, false, actor: "host")
-    assert render_click(element(view, "#statistics-rebuild")) =~ "Calculation could not be queued"
+    refute has_element?(view, "#statistics-rebuild")
     render_patch(view, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
     refute has_element?(view, "#statistics-report")
   end
