@@ -56,6 +56,43 @@ defmodule Delivest.Integrations.JournalTest do
     assert Repo.aggregate(Request, :count) == 0
   end
 
+  test "OAuth and Measurement Protocol credentials never enter the persistent journal" do
+    Req.Test.stub(Client, fn conn ->
+      Req.Test.json(conn, %{
+        "measurement_tokens" => ["issued-measurement-secret"],
+        "access_token" => "issued-access-secret",
+        "expires_in" => 3600
+      })
+    end)
+
+    assert {:ok, %{"access_token" => "issued-access-secret"}} =
+             Client.post(
+               "/token?ms=query-secret",
+               [
+                 {"client_secret", "client-secret"},
+                 {"refresh_token", "refresh-secret"}
+               ],
+               base_url: "https://oauth.test",
+               format: :form,
+               journal: :yandex_ads
+             )
+
+    assert [request] = Journal.list(:yandex_ads, nil)
+    persisted = inspect(Map.take(request, [:url, :request, :response, :error]))
+
+    for secret <- [
+          "query-secret",
+          "client-secret",
+          "refresh-secret",
+          "issued-measurement-secret",
+          "issued-access-secret"
+        ] do
+      refute persisted =~ secret
+    end
+
+    assert Jason.decode!(request.response)["expires_in"] == 3600
+  end
+
   test "failed filter and pruning" do
     {:ok, ok} =
       Journal.record(%{provider: :iiko, direction: :out, method: :get, url: "/", status: 200})

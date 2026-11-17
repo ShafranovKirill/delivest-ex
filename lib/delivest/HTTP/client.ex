@@ -2,6 +2,7 @@ defmodule Delivest.HTTP.Client do
   require Logger
 
   alias Delivest.Integrations.Journal
+  alias Delivest.Integrations.Journal.Mask
 
   @default_timeout 15_000
 
@@ -14,9 +15,18 @@ defmodule Delivest.HTTP.Client do
           decode_json: boolean(),
           format: :json | :form | :multipart,
           journal: atom(),
+          response: :body | :full,
           retry: boolean() | keyword()
         ]
 
+  @doc """
+  Performs an integration request, returning `{:ok, body}` by default.
+
+  Set `response: :full` to retain the HTTP status and response headers alongside
+  the body on successful responses. This includes accepted/queued 201 and 202
+  responses; their status must be checked by the integration before using the body.
+  Error tuples keep their existing shape in either mode.
+  """
   @spec request(method(), String.t(), keyword() | map() | [{String.t(), String.t()}], options()) ::
           {:ok, term()} | {:error, term()}
   def request(method, url, body_or_params \\ [], opts \\ []) do
@@ -55,7 +65,8 @@ defmodule Delivest.HTTP.Client do
           end
       end
 
-    Logger.info("HTTP >>> #{String.upcase(to_string(method))} #{full_url}")
+    safe_url = full_url |> journal_url(method, body_or_params) |> Mask.url()
+    Logger.info("HTTP >>> #{String.upcase(to_string(method))} #{safe_url}")
 
     started_at = System.monotonic_time(:millisecond)
     result = Req.request(req_options)
@@ -69,35 +80,50 @@ defmodule Delivest.HTTP.Client do
         method,
         journal_url(full_url, method, body_or_params),
         journal_body(method, body_or_params),
-        result,
+        journal_result(result),
         duration
       )
     end
 
     case result do
-      {:ok, %{status: status, body: body}} when status in 200..299 ->
-        Logger.info("HTTP <<< [#{status}] Success Response from #{full_url}")
+      {:ok, %{status: status, body: body} = response} when status in 200..299 ->
+        Logger.info("HTTP <<< [#{status}] Success Response from #{safe_url}")
 
-        handle_response_body(body, decode_json?)
+        case Keyword.get(opts, :response, :body) do
+          :full -> {:ok, %{status: status, headers: response.headers, body: body}}
+          :body -> handle_response_body(body, decode_json?)
+        end
 
       {:ok, %{status: status, body: body}} ->
         Logger.warning(
-          "HTTP <<< [#{status}] Error Response from #{full_url}\nBody: #{inspect(body, pretty: true)}"
+          "HTTP <<< [#{status}] Error Response from #{safe_url}\nBody: #{Mask.body(body)}"
         )
 
         {:error, {:http_error, status, body}}
 
       {:error, exception} ->
         Logger.error(
-          "HTTP <<< Connection Exception on #{full_url}\nReason: #{inspect(exception)}"
+          "HTTP <<< Connection Exception on #{safe_url}\nReason: #{transport_reason(exception)}"
         )
 
-        {:error, {:connection_error, Exception.message(exception), transport_reason(exception)}}
+        {:error, {:connection_error, connection_message(exception), transport_reason(exception)}}
     end
   end
 
   defp transport_reason(%{reason: reason}) when is_atom(reason), do: reason
   defp transport_reason(_exception), do: :unknown
+
+  defp connection_message(%Req.TransportError{reason: reason}) when is_atom(reason),
+    do: Exception.message(%Req.TransportError{reason: reason})
+
+  defp connection_message(_exception), do: "HTTP connection failed"
+
+  # Transport errors have fixed descriptions. Other exceptions can embed the
+  # request (including headers and tokens), so do not persist their inspection.
+  defp journal_result({:error, exception}),
+    do: {:error, RuntimeError.exception(connection_message(exception))}
+
+  defp journal_result(result), do: result
 
   defp report_request(provider, {:ok, %{status: status}}, duration) do
     :telemetry.execute(
