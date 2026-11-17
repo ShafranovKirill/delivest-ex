@@ -10,8 +10,11 @@ defmodule Delivest.InstanceBackup do
   def dir, do: Application.get_env(:delivest, :instance_backup_dir)
   def managed?, do: Application.get_env(:delivest, :instance_backup_managed, false)
 
-  def monitor_enabled?,
-    do: Application.get_env(:delivest, :instance_backup_monitor_enabled, false)
+  def monitor_enabled? do
+    enabled = Application.get_env(:delivest, :instance_backup_monitor_enabled, false)
+    marker = Application.get_env(:delivest, :instance_backup_monitor_marker)
+    enabled and (is_nil(marker) or File.regular?(marker))
+  end
 
   def max_archive,
     do: Application.get_env(:delivest, :instance_backup_max_archive, 20 * 1024 * 1024 * 1024)

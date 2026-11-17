@@ -1308,7 +1308,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:469",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:474",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1342,7 +1342,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:486",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:491",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1375,7 +1375,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:543",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:548",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10198,7 +10198,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:126",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:131",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10224,7 +10224,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:156",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:161",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10251,7 +10251,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:131",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:136",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10278,7 +10278,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:170",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:175",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10300,7 +10300,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:187",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:192",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10320,7 +10320,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:124",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:129",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -20867,7 +20867,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "confirm",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:515",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:520",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20888,7 +20888,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "target",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:527",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:532",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

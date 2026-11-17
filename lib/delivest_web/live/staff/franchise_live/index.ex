@@ -41,7 +41,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
          max_entries: 1,
          max_file_size: InstanceBackup.max_archive()
        )
-       |> assign(backup_job: InstanceBackup.active(), backup_agent: InstanceBackup.heartbeat?())}
+       |> assign(
+         backup_job: InstanceBackup.active(),
+         backup_agent: InstanceBackup.heartbeat?(),
+         backup_monitor: InstanceBackup.monitor_enabled?()
+       )}
     else
       {:ok, socket}
     end
@@ -109,7 +113,8 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
       {:noreply,
        assign(socket,
          backup_job: InstanceBackup.active(),
-         backup_agent: InstanceBackup.heartbeat?()
+         backup_agent: InstanceBackup.heartbeat?(),
+         backup_monitor: InstanceBackup.monitor_enabled?()
        )}
     else
       {:noreply, socket}
@@ -450,7 +455,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
               {backup_failure(@backup_job.status, @backup_job.request["action"])}
             </span>
             <.link
-              :if={backup_monitor_link(@current_staff, @backup_job)}
+              :if={@backup_monitor && backup_monitor_link(@current_staff, @backup_job)}
               id="backup-monitor-link"
               href={backup_monitor_link(@current_staff, @backup_job)}
               class="btn btn-outline btn-sm ml-3"
