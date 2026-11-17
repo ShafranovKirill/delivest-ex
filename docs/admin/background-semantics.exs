@@ -1,4 +1,19 @@
 %{
+  "worker:Delivest.Integrations.YandexAds.ConversionWorker" =>
+    {"Metrika offline conversion upload/status and Measurement Protocol purchase",
+     "Current settings/feature state, destination generation and completed OMS status",
+     "Pending work becomes stale; browser and server streams are independently gated",
+     "An interrupted write becomes unknown and is not blindly retried; submitted upload is reconciled by ID"},
+  "worker:Delivest.Integrations.YandexAds.CostWorker" =>
+    {"Read-only Direct Reports API with delayed retry for queued reports",
+     "Current account settings, costs feature state and generation before read and atomic publication",
+     "Disabled or replaced connection cancels queued import; last successful snapshot remains historical",
+     "Publish a complete account-period slice atomically, including removed provider rows"},
+  "worker:Delivest.Integrations.YandexAds.ScheduleWorker" =>
+    {"No direct external call; enqueues one rolling account-level import and performs bounded retention",
+     "Costs active for at least one allowed branch; maintenance retention remains enabled independently",
+     "Disabled costs skip import scheduling; retention continues",
+     "Children recheck configuration before external request; no historical conversion backfill"},
   "worker:Delivest.Background.Dispatcher" =>
     {"No external call; enumerates due optional calculations",
      "Background scheduling checks Features.snapshot for each registry feature",

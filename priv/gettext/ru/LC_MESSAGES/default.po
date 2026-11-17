@@ -12546,3 +12546,534 @@ msgstr "История миграций временной базы отлича
 #, elixir-autogen, elixir-format
 msgid "Validating archive"
 msgstr "Проверка архива"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:352
+#, elixir-autogen, elixir-format
+msgid "A feed is available only for an enabled branch with the platform feature granted. Yandex may retain a previously downloaded copy after disabling it."
+msgstr "Фид доступен для включённого филиала с разрешённой функцией. После отключения у Яндекса может сохраниться ранее загруженная копия."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:340
+#, elixir-autogen, elixir-format
+msgid "Accepted by Yandex"
+msgstr "Принято Яндексом"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:341
+#, elixir-autogen, elixir-format
+msgid "Accepted by Yandex; matching not confirmed"
+msgstr "Принято Яндексом; привязка не подтверждена"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:267
+#, elixir-autogen, elixir-format
+msgid "Accepted, processed and matched are different outcomes. An unknown delivery is not retried as a new sale."
+msgstr "Принятие, обработка и привязка — разные результаты. Отправка с неизвестным исходом не повторяется как новая продажа."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:396
+#, elixir-autogen, elixir-format
+msgid "Access not confirmed. Review credentials and account permissions."
+msgstr "Доступ не подтверждён. Проверьте подключение и права в кабинете."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:86
+#, elixir-autogen, elixir-format
+msgid "Action unavailable"
+msgstr "Действие недоступно"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:257
+#, elixir-autogen, elixir-format
+msgid "Advertising account time zone"
+msgstr "Часовой пояс рекламного кабинета"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex:765
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:17
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:153
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:177
+#, elixir-autogen, elixir-format
+msgid "Advertising analytics"
+msgstr "Рекламная аналитика"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:189
+#, elixir-autogen, elixir-format
+msgid "Advertising costs"
+msgstr "Расходы на рекламу"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:143
+#, elixir-autogen, elixir-format
+msgid "Advertising data is unavailable for this account."
+msgstr "Рекламные данные для этого пользователя недоступны."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:245
+#, elixir-autogen, elixir-format
+msgid "Campaign"
+msgstr "Кампания"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:311
+#, elixir-autogen, elixir-format
+msgid "Check existing upload"
+msgstr "Проверить существующую загрузку"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:308
+#, elixir-autogen, elixir-format
+msgid "Check saved connection"
+msgstr "Проверить сохранённое подключение"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:48
+#, elixir-autogen, elixir-format
+msgid "Choose a period of up to 366 days."
+msgstr "Выберите период не более 366 дней."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:191
+#, elixir-autogen, elixir-format
+msgid "Collection and access"
+msgstr "Сбор данных и доступ"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:158
+#, elixir-autogen, elixir-format
+msgid "Collection starts when the menu opens after you enable it and approve the privacy policy. Webvisor is off."
+msgstr "Сбор начинается с открытия меню после включения и подтверждения политики. Вебвизор выключен."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:390
+#, elixir-autogen, elixir-format
+msgid "Completed order goal"
+msgstr "Цель завершённого заказа"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:252
+#, elixir-autogen, elixir-format
+msgid "Completed order goal identifier"
+msgstr "Идентификатор цели завершённого заказа"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:347
+#, elixir-autogen, elixir-format
+msgid "Completion reverted — review required"
+msgstr "Завершение отменено — нужна проверка"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:297
+#, elixir-autogen, elixir-format
+msgid "Connect with Yandex"
+msgstr "Подключить через Яндекс"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:153
+#, elixir-autogen, elixir-format
+msgid "Connect your counter and advertising account. Campaigns and budgets remain in Direct."
+msgstr "Подключите счётчик и рекламный кабинет. Кампании и бюджеты управляются в Директе."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:291
+#, elixir-autogen, elixir-format
+msgid "Connection checks"
+msgstr "Проверка подключения"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:337
+#, elixir-autogen, elixir-format
+msgid "Conversion"
+msgstr "Конверсия"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:265
+#, elixir-autogen, elixir-format
+msgid "Conversion delivery"
+msgstr "Передача конверсий"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:247
+#, elixir-autogen, elixir-format
+msgid "Cost"
+msgstr "Расход"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:65
+#, elixir-autogen, elixir-format
+msgid "Cost import queued. Refresh the report after processing."
+msgstr "Импорт расходов поставлен в очередь. Обновите отчёт после обработки."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:231
+#, elixir-autogen, elixir-format
+msgid "Costs by campaign and day"
+msgstr "Расходы по кампаниям и дням"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:224
+#, elixir-autogen, elixir-format
+msgid "Costs use the configured advertising account time zone and VAT setting. Order periods use the existing Delivest reporting rules."
+msgstr "Расходы учитываются по часовому поясу кабинета с выбранным режимом НДС. Периоды заказов рассчитываются по правилам отчётности Delivest."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:246
+#, elixir-autogen, elixir-format
+msgid "Counter and account"
+msgstr "Счётчик и кабинет"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:163
+#, elixir-autogen, elixir-format
+msgid "Credential storage is unavailable. Configure YANDEX_ADS_ENCRYPTION_KEY on the server before saving tokens."
+msgstr "Хранилище ключей недоступно. Перед сохранением токенов настройте YANDEX_ADS_ENCRYPTION_KEY на сервере."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:262
+#, elixir-autogen, elixir-format
+msgid "Currency"
+msgstr "Валюта"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:345
+#, elixir-autogen, elixir-format
+msgid "Delivery failed"
+msgstr "Ошибка передачи"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:343
+#, elixir-autogen, elixir-format
+msgid "Delivery outcome unknown — review required"
+msgstr "Исход передачи неизвестен — нужна проверка"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:381
+#, elixir-autogen, elixir-format
+msgid "Direct OAuth token"
+msgstr "OAuth-токен Директа"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:255
+#, elixir-autogen, elixir-format
+msgid "Direct advertiser login (for agency access)"
+msgstr "Логин рекламодателя в Директе (для агентского доступа)"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:195
+#, elixir-autogen, elixir-format
+msgid "Enable Yandex integration"
+msgstr "Включить интеграцию Яндекса"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:306
+#, elixir-autogen, elixir-format
+msgid "Existing Metrika upload ID"
+msgstr "ID существующей загрузки в Метрике"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:326
+#, elixir-autogen, elixir-format
+msgid "Find or create the completed order goal"
+msgstr "Найти или создать цель завершённого заказа"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:208
+#, elixir-autogen, elixir-format
+msgid "I have reviewed the privacy policy and approved analytics collection for these branches"
+msgstr "Политика проверена; сбор аналитики для выбранных филиалов разрешён"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:236
+#, elixir-autogen, elixir-format
+msgid "Import advertising costs"
+msgstr "Импортировать рекламные расходы"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:182
+#, elixir-autogen, elixir-format
+msgid "Import costs"
+msgstr "Импортировать расходы"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:73
+#, elixir-autogen, elixir-format
+msgid "Import unavailable. Check integration settings and access."
+msgstr "Импорт недоступен. Проверьте настройки интеграции и права доступа."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:246
+#, elixir-autogen, elixir-format
+msgid "Impressions"
+msgstr "Показы"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:267
+#, elixir-autogen, elixir-format
+msgid "Include VAT in advertising costs"
+msgstr "Учитывать НДС в рекламных расходах"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:222
+#, elixir-autogen, elixir-format
+msgid "Last successful cost update"
+msgstr "Последнее успешное обновление расходов"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:384
+#, elixir-autogen, elixir-format
+msgid "Measurement Protocol token"
+msgstr "Токен Measurement Protocol"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:382
+#, elixir-autogen, elixir-format
+msgid "Metrika OAuth token"
+msgstr "OAuth-токен Метрики"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:249
+#, elixir-autogen, elixir-format
+msgid "Metrika counter ID"
+msgstr "Номер счётчика Метрики"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:216
+#, elixir-autogen, elixir-format
+msgid "Metrika: visits and funnel"
+msgstr "Метрика: посещения и воронка"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:197
+#, elixir-autogen, elixir-format
+msgid "Net completed revenue"
+msgstr "Выручка завершённых заказов за вычетом возвратов"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:238
+#, elixir-autogen, elixir-format
+msgid "No imported costs for this period. This does not mean the advertising spend was zero."
+msgstr "За этот период расходы не загружены. Это не означает, что расходов на рекламу не было."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:311
+#, elixir-autogen, elixir-format
+msgid "Not checked. Saved credentials alone do not confirm access."
+msgstr "Не проверено. Сохранённый токен сам по себе не подтверждает доступ."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:332
+#, elixir-autogen, elixir-format
+msgid "Not imported"
+msgstr "Не загружено"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:344
+#, elixir-autogen, elixir-format
+msgid "Not sent"
+msgstr "Не отправлено"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:383
+#, elixir-autogen, elixir-format
+msgid "OAuth refresh token"
+msgstr "Токен обновления OAuth"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:334
+#, elixir-autogen, elixir-format
+msgid "Offline goal"
+msgstr "Офлайн-цель"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:346
+#, elixir-autogen, elixir-format
+msgid "Order changed after delivery — review required"
+msgstr "Заказ изменён после передачи — нужна проверка"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:217
+#, elixir-autogen, elixir-format
+msgid "Orders with captured advertising identifiers: %{count}. Captured identifiers do not confirm a match in Yandex."
+msgstr "Заказов с сохранёнными рекламными идентификаторами: %{count}. Это не подтверждает привязку в Яндексе."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:239
+#, elixir-autogen, elixir-format
+msgid "Platform feature permissions also apply. Re-enabling collection does not restore the disabled period."
+msgstr "Также учитываются разрешения функций платформы. После включения пропущенный период не восстанавливается."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:342
+#, elixir-autogen, elixir-format
+msgid "Processed by Yandex"
+msgstr "Обработано Яндексом"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:350
+#, elixir-autogen, elixir-format
+msgid "Product feeds"
+msgstr "Товарные фиды"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:335
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:336
+#, elixir-autogen, elixir-format
+msgid "Product purchase"
+msgstr "Товарная покупка"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:231
+#, elixir-autogen, elixir-format
+msgid "Publish product feeds"
+msgstr "Публиковать товарные фиды"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:212
+#, elixir-autogen, elixir-format
+msgid "ROAS and CPA are unavailable until campaign attribution is verified. Shared campaign costs are counted once, without an invented branch allocation."
+msgstr "ROAS и CPA недоступны без подтверждённой связи с кампанией. Расход общей кампании учитывается один раз, без произвольного распределения между филиалами."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:277
+#, elixir-autogen, elixir-format
+msgid "Recent delivery issues (up to 50). For an uncertain offline upload, enter its existing upload ID from Metrika to check processing without resending the sale."
+msgstr "Последние проблемы передачи (до 50). При неизвестном исходе укажите ID существующей загрузки из Метрики: обработка проверится без повторной отправки продажи."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:95
+#, elixir-autogen, elixir-format
+msgid "Reconciliation unavailable. Check the upload ID and current connection."
+msgstr "Сверка недоступна. Проверьте ID загрузки и текущее подключение."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:335
+#, elixir-autogen, elixir-format
+msgid "Refresh OAuth access"
+msgstr "Обновить доступ OAuth"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:371
+#, elixir-autogen, elixir-format
+msgid "Register feed in Direct"
+msgstr "Зарегистрировать фид в Директе"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:349
+#, elixir-autogen, elixir-format
+msgid "Review required"
+msgstr "Нужна проверка"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:173
+#, elixir-autogen, elixir-format
+msgid "Saved credentials cannot be decrypted. Restore the original encryption key; collection and sending are stopped."
+msgstr "Сохранённые токены не расшифровываются. Восстановите исходный ключ шифрования; сбор и отправка остановлены."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:283
+#, elixir-autogen, elixir-format
+msgid "Saved securely. Leave blank to keep the existing credential."
+msgstr "Сохранено в зашифрованном виде. Оставьте поле пустым, чтобы сохранить текущий токен."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:221
+#, elixir-autogen, elixir-format
+msgid "Send completed orders as offline conversions"
+msgstr "Передавать завершённые заказы как офлайн-конверсии"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:226
+#, elixir-autogen, elixir-format
+msgid "Send product events and server purchases"
+msgstr "Передавать товарные события и покупки с сервера"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:348
+#, elixir-autogen, elixir-format
+msgid "Stopped: settings or access changed"
+msgstr "Остановлено: изменились настройки или доступ"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:233
+#, elixir-autogen, elixir-format
+msgid "The table shows the first 250 rows. Totals include the full period; choose a shorter period for details."
+msgstr "Показаны первые 250 строк. Итоги включают весь период; для детализации сократите период."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:207
+#, elixir-autogen, elixir-format
+msgid "These are account costs and completed orders, not proof that advertising caused those sales."
+msgstr "Здесь показаны расходы кабинета и завершённые заказы. Эти данные сами по себе не доказывают прирост продаж от рекламы."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex:88
+#, elixir-autogen, elixir-format
+msgid "Upload reconciliation queued. No new conversion was sent."
+msgstr "Сверка загрузки поставлена в очередь. Новая конверсия не отправлялась."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:339
+#, elixir-autogen, elixir-format
+msgid "Use one completed order goal for campaign optimization. Creating the goal does not start or change campaigns."
+msgstr "Используйте одну цель завершённого заказа для оптимизации. Создание цели не запускает и не меняет кампании."
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:91
+#, elixir-autogen, elixir-format
+msgid "Visits, product feeds, completed orders and advertising costs."
+msgstr "Посещения, товарные фиды, завершённые заказы и расходы на рекламу."
+
+#: lib/delivest_web/live/staff/integration_live/index.ex:90
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:17
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:132
+#, elixir-autogen, elixir-format
+msgid "Yandex Direct and Metrika"
+msgstr "Яндекс Директ и Метрика"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:106
+#, elixir-autogen, elixir-format
+msgid "Yandex operation completed. Check the result in your account."
+msgstr "Операция выполнена. Проверьте результат в кабинете Яндекса."
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex:116
+#, elixir-autogen, elixir-format
+msgid "Yandex operation failed. Check settings and account permissions."
+msgstr "Операция не выполнена. Проверьте настройки и права в кабинете."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Campaign link saved"
+msgstr "Связь с кампанией сохранена"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Choose an existing advertising link and an imported campaign."
+msgstr "Выберите существующую рекламную ссылку и загруженную кампанию."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Campaign link removed"
+msgstr "Связь с кампанией удалена"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Campaign results from trusted links"
+msgstr "Результаты кампаний по доверенным ссылкам"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Only existing trusted Delivest links bound to a campaign are counted. URL labels alone do not establish a campaign match. Results use F04 reports and their collection coverage."
+msgstr "Учитываются только доверенные ссылки Delivest, связанные с кампанией. Одних меток в адресе недостаточно. Используются отчёты F04 с учётом полноты сбора."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "ROAS is attributed net revenue divided by advertising cost. CPA is cost per completed order. Neither metric proves incremental sales."
+msgstr "ROAS — отношение связанной выручки за вычетом возвратов к расходам. CPA — расход на завершённый заказ. Эти показатели не доказывают прирост продаж от рекламы."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "F04 report state"
+msgstr "Состояние отчёта F04"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Last update"
+msgstr "Последнее обновление"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "The campaign table is limited. Shorten the period for more detail."
+msgstr "Число кампаний в таблице ограничено. Для детализации сократите период."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Bind a trusted link to a Direct campaign"
+msgstr "Связать доверенную ссылку с кампанией Директа"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Mappings apply to the selected account and existing link history. Import costs first; use search if the desired option is outside the first 50 results."
+msgstr "Связи действуют в выбранном кабинете и применяются к истории ссылки. Сначала загрузите расходы. Если нужного варианта нет среди первых 50, воспользуйтесь поиском."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Find a link or campaign"
+msgstr "Найти ссылку или кампанию"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Choose a link"
+msgstr "Выберите ссылку"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Trusted Delivest link"
+msgstr "Доверенная ссылка Delivest"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Choose a campaign"
+msgstr "Выберите кампанию"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Direct campaign"
+msgstr "Кампания Директа"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Remove mapping"
+msgstr "Удалить связь"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Order totals depend on the existing F04 report. Its data may be disabled, incomplete or stale."
+msgstr "Итоги заказов берутся из существующего отчёта F04. Сбор может быть выключен, данные — неполными или устаревшими."
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "No matching data"
+msgstr "Подходящих данных нет"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Incomplete collection"
+msgstr "Неполный сбор"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Data is stale"
+msgstr "Данные устарели"
+
+#: lib/delivest_web/live/staff/analytics_live/advertising.ex
+#, elixir-autogen, elixir-format
+msgid "Not collected or disabled"
+msgstr "Сбор отсутствует или выключен"
+
+#: lib/delivest_web/live/staff/integration_live/yandex_ads.ex
+#, elixir-autogen, elixir-format
+msgid "Configure menu and checkout goals"
+msgstr "Настроить цели меню и оформления"

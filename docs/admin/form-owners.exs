@@ -1,4 +1,7 @@
 %{
+  "analytics_live/advertising.ex" =>
+    {"Delivest.Integrations.YandexAds report period", "Analytics / Advertising",
+     "analytics_live/advertising.ex"},
   "advertising_live/index.ex" =>
     {"lib/delivest/advertising/link.ex", "Marketing / advertising links",
      "advertising_live/index.ex"},
@@ -57,6 +60,9 @@
   "integration_live/dadata.ex" =>
     {"lib/delivest/integrations/dadata/settings.ex", "Settings / Integrations / Dadata",
      "integration_live/dadata.ex"},
+  "integration_live/yandex_ads.ex" =>
+    {"lib/delivest/integrations/yandex_ads/settings.ex",
+     "Settings / Integrations / Yandex Direct and Metrika", "integration_live/yandex_ads.ex"},
   "integration_live/fiscal.ex" =>
     {"lib/delivest/fiscal/branch_settings.ex", "Settings / Integrations / Fiscal",
      "integration_live/fiscal.ex"},

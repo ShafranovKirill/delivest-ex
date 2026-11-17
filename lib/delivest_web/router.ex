@@ -215,6 +215,9 @@ defmodule DelivestWeb.Router do
     get "/:branch_id/stocks", Stock.StockController, :index
     get "/:branch_id/promotions", Promotion.PromotionController, :index
     get "/branches/:branch_id/menu", Menu.MenuController, :index
+    get "/branches/:branch_id/products/:product_key", Menu.ProductController, :show
+    get "/branches/:branch_id/advertising/config", AdvertisingController, :config
+    post "/branches/:branch_id/advertising/identity", AdvertisingController, :identity
   end
 
   pipeline :integration_journal do
@@ -309,6 +312,8 @@ defmodule DelivestWeb.Router do
     get "/", StaffHomeController, :show
     get "/branches/select/:branch_id", StaffActiveBranchController, :set
     get "/branches/all", StaffActiveBranchController, :all
+    get "/integrations/yandex-ads/connect", YandexAdsOAuthController, :connect
+    get "/integrations/yandex-ads/callback", YandexAdsOAuthController, :callback
     get "/b/:branch_slug/products/export", StaffMenuExportController, :show
     get "/b/:branch_slug/products/workbook", StaffProductWorkbookController, :show
     get "/b/:branch_slug/site-snapshot", StaffSiteSnapshotController, :show
@@ -416,6 +421,7 @@ defmodule DelivestWeb.Router do
       end
 
       live "/statistics", StatisticsLive.Index, :index
+      live "/analytics/advertising", AnalyticsLive.Advertising, :index
       live "/analytics/:section", AnalyticsLive.Placeholder, :index
       live "/diagnostics", DiagnosticsLive.Index, :index
 
@@ -425,6 +431,7 @@ defmodule DelivestWeb.Router do
         live "/dadata", Dadata, :index
         live "/yookassa", Yookassa, :index
         live "/yandex-eda", YandexEdaShared, :index
+        live "/yandex-ads", YandexAds, :index
       end
 
       scope "/logs", LogLive do
@@ -559,8 +566,14 @@ defmodule DelivestWeb.Router do
 
   scope "/seo", DelivestWeb.Seo do
     get "/head", SeoController, :head
+    get "/content", SeoController, :content
+    get "/landing-status", SeoController, :landing_status
+    get "/branches/:branch_slug/catalog.xml", CatalogController, :show
     get "/robots.txt", SeoController, :robots
     get "/sitemap.xml", SeoController, :sitemap
+    get "/sitemaps/pages.xml", SitemapController, :pages
+    get "/sitemaps/:branch_slug/categories.xml", SitemapController, :categories
+    get "/sitemaps/:branch_slug/products/:page_file", SitemapController, :products
     get "/site.webmanifest", SeoController, :manifest
     get "/favicon.ico", SeoController, :favicon
   end

@@ -86,6 +86,22 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <.integration_card
+            id="integration-yandex-ads"
+            title={gettext("Yandex Direct and Metrika")}
+            description={gettext("Visits, product feeds, completed orders and advertising costs.")}
+            state={
+              %{
+                configuration:
+                  if(Delivest.Integrations.YandexAds.get_settings().enabled,
+                    do: :enabled,
+                    else: :disabled
+                  )
+              }
+            }
+            branch={@selected_branch}
+            path={@can_edit_shared && ~p"/staff/integrations/yandex-ads"}
+          />
+          <.integration_card
             id="integration-zvonok"
             title={gettext("Sign-in by phone number")}
             description={gettext("Customers confirm the phone number with a call via zvonok.com.")}

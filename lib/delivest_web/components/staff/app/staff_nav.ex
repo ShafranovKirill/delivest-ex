@@ -81,6 +81,23 @@ defmodule DelivestWeb.StaffNav do
   defp feature_description("analytics_franchise"), do: {gettext("Network analytics"), :statistics}
   defp feature_description("analytics_links"), do: {gettext("Advertising links"), :statistics}
 
+  defp feature_description("yandex_ads"),
+    do: {gettext("Yandex Direct and Metrika"), :integrations}
+
+  defp feature_description("yandex_browser"),
+    do: {gettext("Metrika: visits and funnel"), :integrations}
+
+  defp feature_description("yandex_conversions"),
+    do: {gettext("Send completed orders as offline conversions"), :integrations}
+
+  defp feature_description("yandex_ecommerce"),
+    do: {gettext("Send product events and server purchases"), :integrations}
+
+  defp feature_description("yandex_feed"), do: {gettext("Product feeds"), :integrations}
+
+  defp feature_description("yandex_costs"),
+    do: {gettext("Advertising costs"), :analytics_advertising}
+
   def integration_entry(provider, staff, branch) do
     label = integration_label(provider)
 
@@ -759,6 +776,12 @@ defmodule DelivestWeb.StaffNav do
       item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
       |> allowed(staff, "statistics.read"),
       analytics_placeholder(:analytics_channels, "channels", gettext("Sales channels"), staff),
+      analytics_placeholder(
+        :analytics_advertising,
+        "advertising",
+        gettext("Advertising analytics"),
+        staff
+      ),
       analytics_placeholder(:analytics_sources, "sources", gettext("Sources"), staff),
       analytics_placeholder(:analytics_funnel, "funnel", gettext("Funnel"), staff),
       analytics_placeholder(:analytics_customers, "customers", gettext("Buyers"), staff),
