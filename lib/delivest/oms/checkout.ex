@@ -84,7 +84,7 @@ defmodule Delivest.Oms.Checkout do
         {:error, :no_coordinates}
 
       settings.address_mode_set and not operator? and
-          not complete_address?(address) ->
+          not complete_address?(address, settings.map_address == false) ->
         {:error, :incomplete_delivery_address}
 
       true ->
@@ -104,14 +104,17 @@ defmodule Delivest.Oms.Checkout do
 
   defp coordinates?(_address), do: false
 
-  defp complete_address?(address) when is_map(address) do
-    Enum.all?([{"street", :street}, {"house", :house}], fn {field, atom} ->
+  defp complete_address?(address, manual?) when is_map(address) do
+    fields =
+      if manual?, do: [{"street", :street}], else: [{"street", :street}, {"house", :house}]
+
+    Enum.all?(fields, fn {field, atom} ->
       value = Map.get(address, field) || Map.get(address, atom)
       is_binary(value) and String.trim(value) != ""
     end)
   end
 
-  defp complete_address?(_address), do: false
+  defp complete_address?(_address, _manual?), do: false
 
   defp ensure_keyed_session(nil, nil), do: {:error, :cart_not_found}
   defp ensure_keyed_session(_client, _session_id), do: :ok

@@ -153,7 +153,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
              conn |> post(~p"/client/orders", payload) |> json_response(422)
   end
 
-  test "explicit manual mode requires both street and house", %{conn: conn} do
+  test "explicit manual mode accepts a freeform street without a separate house", %{conn: conn} do
     branch = insert(:branch, is_active: true)
     product = insert_branch_product(branch.id, price: 300)
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
@@ -174,11 +174,17 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
       "fulfillment_type" => "delivery",
       "payment_method" => "cash",
       "customer_phone" => "+79990001122",
-      "address" => %{"street" => "Ленина"}
+      "address" => %{"street" => "Ленина, 1", "house" => ""}
     }
 
+    data = conn |> post(~p"/client/orders", payload) |> json_response(200) |> Map.fetch!("data")
+    assert %Order{address: %{street: "Ленина, 1", house: nil}} = Repo.get!(Order, data["id"])
+
     assert %{"error" => "incomplete_delivery_address"} =
-             conn |> post(~p"/client/orders", payload) |> json_response(422)
+             conn
+             |> recycle_with_ip()
+             |> post(~p"/client/orders", put_in(payload, ["address", "street"], "  "))
+             |> json_response(422)
   end
 
   test "explicit map mode accepts a saved coordinate and requires the house", %{conn: conn} do
