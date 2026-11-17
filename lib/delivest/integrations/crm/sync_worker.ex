@@ -11,6 +11,7 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
   alias Delivest.Oms.Orders
 
   @intervals [1, 1, 2, 3, 5, 8, 13]
+  @cash_close_limit 7
 
   @impl Oban.Worker
   def backoff(%Oban.Job{attempt: attempt}),
@@ -119,8 +120,27 @@ defmodule Delivest.Integrations.Crm.SyncWorker do
         Health.auth_failed(order.crm.provider, order.branch_id, reason)
         {:cancel, reason}
 
+      {:snooze, seconds} when reason == {:frontpad, "cash_close"} ->
+        count = (order.crm.cash_close_attempts || 0) + 1
+
+        if count >= @cash_close_limit do
+          SyncState.failed(order, message, attempt, nil, %{
+            cash_close_attempts: count,
+            alert: nil
+          })
+
+          {:cancel, reason}
+        else
+          SyncState.retrying(order, message, attempt, %{
+            alert: nil,
+            cash_close_attempts: count
+          })
+
+          {:snooze, seconds}
+        end
+
       {:snooze, seconds} ->
-        SyncState.retrying(order, message, attempt)
+        SyncState.retrying(order, message, attempt, %{alert: nil})
         {:snooze, seconds}
 
       :retry when attempt >= max_attempts ->

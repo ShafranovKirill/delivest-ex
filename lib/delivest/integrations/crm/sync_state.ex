@@ -126,8 +126,24 @@ defmodule Delivest.Integrations.Crm.SyncState do
     })
   end
 
-  def retrying(order, error, attempt),
-    do: Orders.update_order_crm(order, %{status: "pending", attempts: attempt, last_error: error})
+  def retrying(order, error, attempt, attrs \\ %{}),
+    do:
+      Orders.update_order_crm(
+        order,
+        Map.merge(%{status: "pending", attempts: attempt, last_error: error}, attrs)
+      )
+
+  def cash_closed_alert(branch_name, attempts_over? \\ false) do
+    message =
+      gettext(
+        "Frontpad rejected the order: the cash shift is closed. Open the shift in Cash for branch %{branch}",
+        branch: branch_name
+      )
+
+    if attempts_over?,
+      do: message <> " " <> gettext("Automatic Frontpad attempts are over."),
+      else: message
+  end
 
   def unknown(order, error, attempt) do
     Audit.record(:system, "order.crm_unknown", order, metadata: %{error: error})
@@ -146,11 +162,11 @@ defmodule Delivest.Integrations.Crm.SyncState do
 
   def acknowledge_alert(order), do: Orders.update_order_crm(order, %{alert: nil})
 
-  def failed(order, error, attempt, alert \\ nil) do
+  def failed(order, error, attempt, alert \\ nil, extra_attrs \\ %{}) do
     Audit.record(:system, "order.crm_failed", order, metadata: %{error: error})
     attrs = %{status: "failed", sending_started_at: nil, attempts: attempt, last_error: error}
     attrs = if alert, do: Map.put(attrs, :alert, alert), else: attrs
-    Orders.update_order_crm(order, attrs)
+    Orders.update_order_crm(order, Map.merge(attrs, extra_attrs))
   end
 
   defp advance(order, status, crm) do

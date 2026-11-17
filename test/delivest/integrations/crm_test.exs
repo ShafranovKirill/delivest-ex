@@ -196,15 +196,70 @@ defmodule Delivest.Integrations.CrmTest do
     assert last_error =~ "busy"
   end
 
-  test "rate limit and closed shift postpone the delivery" do
+  test "rate limit and closed shift postpone delivery without sharing the closed-shift limit" do
     {:ok, order} = place_order(branch(frontpad(true)))
 
     stub_frontpad(%{"result" => "error", "error" => "requests_limit"})
     assert {:snooze, 60} = sync(order)
+    assert %{cash_close_attempts: 0, alert: nil} = Repo.reload!(order).crm
 
     stub_frontpad(%{"result" => "error", "error" => "cash_close"})
     assert {:snooze, 600} = sync(order)
-    assert %{status: "pending"} = Repo.reload!(order).crm
+
+    assert %{status: "pending", cash_close_attempts: 1, last_error: error} =
+             Repo.reload!(order).crm
+
+    assert error =~ "cash_close"
+
+    assert Enum.any?(Delivest.Integrations.Journal.for_order(order.id), fn request ->
+             request.status == 200 and inspect(request.response) =~ "cash_close"
+           end)
+  end
+
+  test "closed cash shift has a finite retry limit and a successful send clears its alert" do
+    {:ok, order} = place_order(branch(frontpad(true)))
+    stub_frontpad(%{"result" => "error", "error" => "cash_close"})
+
+    for count <- 1..6 do
+      assert {:snooze, 600} = sync(order)
+      assert %{status: "pending", cash_close_attempts: ^count} = Repo.reload!(order).crm
+    end
+
+    assert {:cancel, {:frontpad, "cash_close"}} = sync(order)
+
+    assert %{status: "failed", cash_close_attempts: 7, last_error: error} =
+             Repo.reload!(order).crm
+
+    assert error =~ "cash_close"
+    assert {:cancel, :order_not_pending} = sync(order)
+
+    staff =
+      insert(:staff,
+        role: build(:role, permissions: ["orders.update"]),
+        branches: [Repo.get!(Delivest.Identity.Branch, order.branch_id)]
+      )
+
+    assert {:ok, _} = Crm.resolve_alert(staff, order.branch_id, order.id, "retry_unsent")
+
+    assert %{status: "pending", cash_close_attempts: 0, last_error: nil} =
+             Repo.reload!(order).crm
+
+    {:ok, fresh} = place_order(branch(frontpad(true)))
+    stub_frontpad(%{"result" => "error", "error" => "cash_close"})
+    assert {:snooze, 600} = sync(fresh)
+    stub_frontpad(%{"result" => "success", "order_id" => "901", "order_number" => "17"})
+    assert :ok = sync(fresh)
+    assert %{status: "sent", alert: nil, external_number: "17"} = Repo.reload!(fresh).crm
+  end
+
+  test "closed-shift notice names the branch in the operator's locale" do
+    message =
+      Gettext.with_locale(DelivestWeb.Gettext, "ru", fn ->
+        Delivest.Integrations.Crm.SyncState.cash_closed_alert("Ковров")
+      end)
+
+    assert message ==
+             "Frontpad отклонил заказ: кассовая смена закрыта. Откройте смену в разделе „Касса“ для филиала „Ковров“"
   end
 
   test "a recently failed provider is not called again" do

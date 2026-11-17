@@ -85,6 +85,40 @@ defmodule Delivest.Integrations.Crm do
   def alert?(%Order{crm: %{alert: alert}}), do: is_binary(alert) and alert != ""
   def alert?(_order), do: false
 
+  def cash_closed?(%Order{
+        crm: %{
+          provider: "frontpad",
+          status: status,
+          last_error: ~s({:frontpad, "cash_close"})
+        }
+      })
+      when status in ["pending", "failed"],
+      do: true
+
+  def cash_closed?(_order), do: false
+
+  def next_retry_at(%Order{} = order) do
+    if cash_closed?(order) and order.crm.status == "pending" do
+      worker = Oban.Worker.to_string(SyncWorker)
+      now = DateTime.utc_now()
+
+      Repo.one(
+        from(job in Oban.Job,
+          where:
+            job.worker == ^worker and
+              fragment("?->>'order_id'", job.args) == ^order.id and
+              fragment("?->>'branch_id'", job.args) == ^order.branch_id and
+              job.state in ["scheduled", "retryable"] and job.scheduled_at > ^now,
+          order_by: [asc: job.scheduled_at],
+          limit: 1,
+          select: job.scheduled_at
+        )
+      )
+    end
+  end
+
+  def next_retry_at(_order), do: nil
+
   def resolve_alert(staff, branch_id, order_id, action, number \\ nil) do
     with :ok <- Identity.authorize(staff, "orders.update", branch_id),
          {:ok, uuid} <- Ecto.UUID.cast(order_id),
@@ -139,7 +173,12 @@ defmodule Delivest.Integrations.Crm do
 
            if active_sync_job?(current.id), do: Repo.rollback(:already_queued)
 
-           case Orders.update_order_crm(current, %{status: "pending", alert: nil, last_error: nil}) do
+           case Orders.update_order_crm(current, %{
+                  status: "pending",
+                  alert: nil,
+                  last_error: nil,
+                  cash_close_attempts: 0
+                }) do
              {:ok, updated} ->
                case enqueue_sync(updated) do
                  {:ok, %Oban.Job{}} ->

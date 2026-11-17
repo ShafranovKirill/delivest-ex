@@ -12410,3 +12410,19 @@ msgstr "Сравнение филиалов"
 #, elixir-autogen, elixir-format
 msgid "Section under development"
 msgstr "Раздел в разработке"
+
+#, elixir-autogen, elixir-format
+msgid "Frontpad rejected the order: the cash shift is closed. Open the shift in Cash for branch %{branch}"
+msgstr "Frontpad отклонил заказ: кассовая смена закрыта. Откройте смену в разделе „Касса“ для филиала „%{branch}“"
+
+#, elixir-autogen, elixir-format
+msgid "Next Frontpad attempt: %{time} (%{zone})"
+msgstr "Следующая попытка отправки в Frontpad: %{time} (%{zone})"
+
+#, elixir-autogen, elixir-format
+msgid "Automatic Frontpad retry is not scheduled"
+msgstr "Автоматическая повторная отправка в Frontpad не запланирована"
+
+#, elixir-autogen, elixir-format
+msgid "Automatic Frontpad attempts are over."
+msgstr "Автоматические попытки отправки в Frontpad завершились."

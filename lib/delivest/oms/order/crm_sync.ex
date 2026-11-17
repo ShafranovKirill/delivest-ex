@@ -13,6 +13,7 @@ defmodule Delivest.Oms.Order.CrmSync do
     field :ref, :string
     field :status, :string, default: "pending"
     field :attempts, :integer, default: 0
+    field :cash_close_attempts, :integer, default: 0
     field :last_error, :string
     field :sent_at, :utc_datetime
     field :sending_started_at, :utc_datetime
@@ -32,6 +33,7 @@ defmodule Delivest.Oms.Order.CrmSync do
       :ref,
       :status,
       :attempts,
+      :cash_close_attempts,
       :last_error,
       :sent_at,
       :sending_started_at,
@@ -45,5 +47,6 @@ defmodule Delivest.Oms.Order.CrmSync do
     |> validate_inclusion(:status, @statuses)
     |> validate_inclusion(:remote_status, @remote_statuses)
     |> validate_number(:attempts, greater_than_or_equal_to: 0)
+    |> validate_number(:cash_close_attempts, greater_than_or_equal_to: 0)
   end
 end

@@ -12308,3 +12308,19 @@ msgstr "Popular"
 #, elixir-autogen, elixir-format
 msgid "Product operations"
 msgstr "Product operations"
+
+#, elixir-autogen, elixir-format
+msgid "Frontpad rejected the order: the cash shift is closed. Open the shift in Cash for branch %{branch}"
+msgstr "Frontpad rejected the order: the cash shift is closed. Open the shift in Cash for branch %{branch}"
+
+#, elixir-autogen, elixir-format
+msgid "Next Frontpad attempt: %{time} (%{zone})"
+msgstr "Next Frontpad attempt: %{time} (%{zone})"
+
+#, elixir-autogen, elixir-format
+msgid "Automatic Frontpad retry is not scheduled"
+msgstr "Automatic Frontpad retry is not scheduled"
+
+#, elixir-autogen, elixir-format
+msgid "Automatic Frontpad attempts are over."
+msgstr "Automatic Frontpad attempts are over."

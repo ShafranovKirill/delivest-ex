@@ -12363,3 +12363,19 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Section under development"
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Frontpad rejected the order: the cash shift is closed. Open the shift in Cash for branch %{branch}"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Next Frontpad attempt: %{time} (%{zone})"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Automatic Frontpad retry is not scheduled"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Automatic Frontpad attempts are over."
+msgstr ""

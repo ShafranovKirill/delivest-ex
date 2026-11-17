@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   alias Delivest.{Couriers, Identity, LocalTime, Payments}
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.{Channels, Crm}
+  alias Delivest.Integrations.Crm.SyncState
   alias Delivest.Integrations.YandexEda.OrderConfirmation
   alias Delivest.Fiscal.Receipt
   alias Delivest.Oms.{Order, OrderFlow}
@@ -23,6 +24,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :estimable, :boolean, default: false
   attr :positions, :list, default: nil
   attr :pickup, :map, default: nil
+  attr :crm_retry_at, :any, default: :lookup
 
   def render_card(assigns) do
     assigns =
@@ -30,7 +32,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         status: assigns.order.status,
         delivery: Couriers.current(assigns.order),
         history: history(assigns.order),
-        last: last_transition(assigns.order)
+        last: last_transition(assigns.order),
+        crm_retry_at:
+          if(assigns.crm_retry_at == :lookup,
+            do: Crm.next_retry_at(assigns.order),
+            else: assigns.crm_retry_at
+          )
       )
 
     ~H"""
@@ -160,13 +167,25 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </p>
 
       <div
-        :if={Crm.alert?(@order)}
+        :if={Crm.alert?(@order) or Crm.cash_closed?(@order)}
         id={"order-crm-alert-#{@order.id}"}
         class="mx-3 sm:mx-4 mb-3 space-y-2 rounded-box bg-error/10 px-3 py-2 text-sm text-error"
       >
         <p class="font-semibold">
           <.icon name="hero-exclamation-triangle" class="size-4" />
-          {@order.crm.alert}
+          {if Crm.cash_closed?(@order),
+            do: SyncState.cash_closed_alert(@current_branch.name, @order.crm.status == "failed"),
+            else: @order.crm.alert}
+        </p>
+        <p :if={Crm.cash_closed?(@order) and @crm_retry_at} id={"order-crm-retry-at-#{@order.id}"}>
+          {gettext("Next Frontpad attempt: %{time} (%{zone})",
+            time:
+              @crm_retry_at |> LocalTime.local(@order.branch_id) |> Calendar.strftime("%d.%m %H:%M"),
+            zone: LocalTime.timezone(@order.branch_id)
+          )}
+        </p>
+        <p :if={Crm.cash_closed?(@order) and @order.crm.status == "pending" and !@crm_retry_at}>
+          {gettext("Automatic Frontpad retry is not scheduled")}
         </p>
         <form
           :if={@order.crm.status == "unknown"}
@@ -213,7 +232,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           </button>
         </form>
         <button
-          :if={@order.crm.status != "unknown"}
+          :if={@order.crm.status != "unknown" and !Crm.cash_closed?(@order)}
           id={"order-crm-acknowledge-#{@order.id}"}
           type="button"
           class="btn btn-error btn-xs"
@@ -229,7 +248,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         :if={
           @order.crm != nil and
             (@order.crm.status == "failed" or
-               (@order.crm.status == "pending" and Crm.alert?(@order))) and
+               (@order.crm.status == "pending" and Crm.alert?(@order) and
+                  !Crm.cash_closed?(@order))) and
             Identity.can?(@current_staff, "orders.update")
         }
         id={"order-crm-retry-unsent-#{@order.id}"}

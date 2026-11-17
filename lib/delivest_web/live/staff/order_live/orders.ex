@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
   alias Delivest.{Couriers, Identity, LocalTime, Money}
-  alias Delivest.Integrations.YandexEda
+  alias Delivest.Integrations.{Crm, YandexEda}
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.OrderLive.{OrdersQuery, StatusErrors}
@@ -41,6 +41,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        order_to_revert: nil,
        shown_id: nil,
        shown_order: nil,
+       crm_retry_at: nil,
+       crm_retry_timer: nil,
+       crm_retry_token: nil,
+       crm_retry_poll_ms: 1_000,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id),
        couriers: couriers,
        estimable: Couriers.settings(branch_id).source == :yandex,
@@ -72,19 +76,23 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       {:ok, {orders, meta}} ->
         counts = Orders.count_by_status(filters)
 
-        {:noreply,
-         socket
-         |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
-         |> assign(receipt_alerts: receipt_alerts(socket.assigns.current_branch.id))
-         |> assign(
-           intake: Delivest.Intake.status(socket.assigns.current_branch.id),
-           delivery_minutes: OrderDeadline.delivery_minutes(socket.assigns.current_branch.id)
-         )
-         |> assign(
-           busy_mode: Delivest.Integrations.YandexEda.busy_mode(socket.assigns.current_branch.id)
-         )
-         |> stream(:orders, Enum.reject(orders, &(&1.id == socket.assigns.shown_id)), reset: true)
-         |> assign_shown()}
+        socket =
+          socket
+          |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
+          |> assign(receipt_alerts: receipt_alerts(socket.assigns.current_branch.id))
+          |> assign(
+            intake: Delivest.Intake.status(socket.assigns.current_branch.id),
+            delivery_minutes: OrderDeadline.delivery_minutes(socket.assigns.current_branch.id)
+          )
+          |> assign(
+            busy_mode: Delivest.Integrations.YandexEda.busy_mode(socket.assigns.current_branch.id)
+          )
+          |> stream(:orders, Enum.reject(orders, &(&1.id == socket.assigns.shown_id)),
+            reset: true
+          )
+          |> assign_shown()
+
+        {:noreply, refresh_crm_retry(socket, true)}
 
       {:error, _meta} ->
         {:noreply, push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
@@ -356,6 +364,15 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
   def handle_info({:deliveries_changed, _branch_id}, socket), do: load(socket)
 
+  def handle_info(
+        {:crm_retry_refresh, id, token},
+        %{assigns: %{shown_id: id, crm_retry_token: token}} = socket
+      ) do
+    {:noreply, socket |> assign_shown() |> refresh_crm_retry()}
+  end
+
+  def handle_info({:crm_retry_refresh, _id, _token}, socket), do: {:noreply, socket}
+
   def handle_info({:courier_presence, branch_id}, socket) do
     positions = CourierPresence.positions(branch_id, socket.assigns.couriers)
 
@@ -363,6 +380,39 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
      socket
      |> assign(positions: positions)
      |> push_event("courier_positions", %{positions: positions})}
+  end
+
+  defp refresh_crm_retry(socket, reset_poll? \\ false) do
+    if socket.assigns.crm_retry_timer, do: Process.cancel_timer(socket.assigns.crm_retry_timer)
+
+    order = socket.assigns.shown_order
+    at = Crm.next_retry_at(order)
+    poll_ms = if reset_poll?, do: 1_000, else: socket.assigns.crm_retry_poll_ms
+
+    socket =
+      assign(socket,
+        crm_retry_at: at,
+        crm_retry_timer: nil,
+        crm_retry_token: nil,
+        crm_retry_poll_ms: if(at, do: 1_000, else: min(poll_ms * 2, 8_000))
+      )
+
+    if connected?(socket) and Crm.cash_closed?(order) and order.crm.status == "pending" do
+      delay =
+        case at do
+          nil -> poll_ms
+          at -> max(DateTime.diff(at, DateTime.utc_now(), :millisecond) + 1_000, 1_000)
+        end
+
+      token = make_ref()
+
+      timer =
+        Process.send_after(self(), {:crm_retry_refresh, socket.assigns.shown_id, token}, delay)
+
+      assign(socket, crm_retry_timer: timer, crm_retry_token: token)
+    else
+      socket
+    end
   end
 
   defp courier_code_error(:forbidden), do: gettext("Permission denied")
@@ -566,6 +616,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           estimable={@estimable}
           positions={@positions}
           pickup={@pickup}
+          crm_retry_at={@crm_retry_at}
         />
       </.slide_over>
 
