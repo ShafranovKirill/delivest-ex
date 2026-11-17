@@ -13077,3 +13077,41 @@ msgstr "Сбор отсутствует или выключен"
 #, elixir-autogen, elixir-format
 msgid "Configure menu and checkout goals"
 msgstr "Настроить цели меню и оформления"
+
+msgid "Sales statistics"
+msgstr "Статистика продаж"
+
+msgid "Sources and advertising"
+msgstr "Источники и реклама"
+
+msgid "Compare with previous period"
+msgstr "Сравнить с предыдущим периодом"
+
+msgid "Order funnel"
+msgstr "Воронка заказа"
+
+msgid "Campaigns"
+msgstr "Кампании"
+
+msgctxt "sales statistics"
+msgid "Summary"
+msgstr "Сводка"
+
+msgid "Current campaign mappings"
+msgstr "Текущие связи кампаний"
+
+msgid "Manage campaign mappings in integration settings"
+msgstr "Настроить связи кампаний в интеграции"
+
+msgid "Recent delivery issues requiring review"
+msgstr "Недавние проблемы отправки, требующие проверки"
+
+msgid "Review delivery diagnostics in integration settings"
+msgstr "Проверить отправку конверсий в настройках интеграции"
+
+msgid "Delivery totals cover the last seven days. Recent issues may include earlier orders."
+msgstr "Итоги отправки показаны за последние семь дней. Список проблем может включать более ранние заказы."
+
+#, elixir-format
+msgid "Branches excluded by feature availability: %{count}"
+msgstr "Филиалов исключено из-за доступности функции: %{count}"

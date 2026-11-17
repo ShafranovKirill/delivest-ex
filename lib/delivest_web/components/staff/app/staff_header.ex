@@ -49,7 +49,9 @@ defmodule DelivestWeb.StaffHeader do
           branches={@staff_branches}
           section={DelivestWeb.StaffBranchPath.section(@current_path)}
           from={@current_uri || @current_path}
-          aggregate={@current_path == "/staff/dashboard"}
+          aggregate={
+            @current_path in ~w(/staff/dashboard /staff/statistics /staff/analytics/channels /staff/analytics/sources /staff/analytics/funnel /staff/analytics/customers /staff/analytics/comparison /staff/analytics/advertising)
+          }
         />
       </div>
       <div class="ml-auto flex shrink-0 items-center gap-2">

@@ -1,5 +1,5 @@
 defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
-  use DelivestWeb.ConnCase, async: true
+  use DelivestWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
@@ -25,6 +25,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
     assert html =~ "Statistics"
     assert html =~ "600 ₽"
+    assert has_element?(lv, "main #statistics-sales-tabs #statistics-tab-sales")
+    refute has_element?(lv, "#main-sidebar #statistics-tab-sales")
+    refute has_element?(lv, "#sidebar-statistics-tab-sales")
 
     html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=products&period=today")
     assert html =~ "Хинкали"
@@ -136,5 +139,46 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     assert {:error, {:redirect, %{to: ^dashboard}}} =
              live(conn, ~p"/staff/b/#{branch}/statistics")
+  end
+
+  test "period comparison is an optional summary filter", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    refute has_element?(view, "input[name=compare][checked]")
+
+    view
+    |> form("#statistics-filter", %{"period" => "today", "compare" => "true"})
+    |> render_change()
+
+    assert has_element?(view, "input[name=compare][checked]")
+
+    view
+    |> form("#statistics-filter", %{"period" => "today", "compare" => "false"})
+    |> render_change()
+
+    refute has_element?(view, "input[name=compare][checked]")
+  end
+
+  test "network sales exposes only the three sales tabs behind the network feature", %{conn: conn} do
+    {conn, _branch} = login(conn, ["statistics.read", "statistics.network"])
+    {:ok, view, _} = live(conn, ~p"/staff/statistics")
+    refute has_element?(view, "#statistics-tab-sales")
+
+    assert {:ok, _} =
+             Delivest.Features.configure("analytics_franchise", :franchise, true, actor: "host")
+
+    {:ok, view, _} = live(conn, ~p"/staff/statistics")
+
+    for tab <- ~w(sales products categories),
+        do: assert(has_element?(view, "#statistics-tab-#{tab}"))
+
+    refute has_element?(view, "#statistics-tab-franchise")
+    refute has_element?(view, "#statistics-scope")
+  end
+
+  test "branch report URLs cannot grant access to an unassigned branch", %{conn: conn} do
+    {conn, _branch} = login(conn, ["statistics.read"])
+    other = insert(:branch)
+    assert {:error, {:redirect, _}} = live(conn, ~p"/staff/b/#{other}/analytics/channels")
   end
 end

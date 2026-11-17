@@ -3,7 +3,7 @@ defmodule DelivestWeb.StaffBranchPath do
   use Gettext, backend: DelivestWeb.Gettext
 
   @branch_lists ~w(
-    dashboard statistics orders deliveries couriers delivery delivery/address delivery/zones
+    dashboard statistics analytics/channels analytics/sources analytics/funnel analytics/customers orders deliveries couriers delivery delivery/address delivery/zones
     delivery/couriers finance/payments finance/transactions finance/receipts integrations integrations/frontpad
     integrations/ycart integrations/iiko integrations/rkeeper integrations/routes
     integrations/zvonok integrations/dadata integrations/yookassa integrations/yandex-eda
@@ -13,13 +13,17 @@ defmodule DelivestWeb.StaffBranchPath do
   )
   @network_routes ~w(
     dashboard statistics analytics/channels analytics/sources analytics/funnel analytics/customers
-    analytics/comparison integrations integrations/zvonok integrations/dadata integrations/yookassa
+    analytics/comparison analytics/advertising integrations integrations/zvonok integrations/dadata integrations/yookassa
     integrations/yandex-eda settings franchise branches employee roles clients segments marketing marketing/bonuses
     marketing/policies diagnostics logs logs/raw logs/errors
   )
   @counterparts %{
     "dashboard" => "dashboard",
     "statistics" => "statistics",
+    "analytics/channels" => "analytics/channels",
+    "analytics/sources" => "analytics/sources",
+    "analytics/funnel" => "analytics/funnel",
+    "analytics/customers" => "analytics/customers",
     "integrations" => "integrations"
   }
   @settings_filters ~w(all enabled disabled attention)
@@ -32,7 +36,13 @@ defmodule DelivestWeb.StaffBranchPath do
     "products" => ~w(search is_active page_size order_by order_directions[]),
     "orders" =>
       ~w(status search period problem sort date_from date_to receiving payment source page_size),
-    "statistics" => ~w(tab period channel),
+    "statistics" => ~w(tab period from to channel sort compare),
+    "analytics/channels" => ~w(period from to channel page),
+    "analytics/sources" => ~w(period from to channel page),
+    "analytics/funnel" => ~w(period from to channel page),
+    "analytics/customers" => ~w(period from to channel page),
+    "analytics/comparison" => ~w(period from to channel page),
+    "analytics/advertising" => ~w(period from to channel page),
     "deliveries" => ~w(status search),
     "couriers" => ~w(status search),
     "promotions" => ~w(search status),

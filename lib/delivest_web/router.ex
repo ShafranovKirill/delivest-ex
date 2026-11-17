@@ -422,7 +422,7 @@ defmodule DelivestWeb.Router do
 
       live "/statistics", StatisticsLive.Index, :index
       live "/analytics/advertising", AnalyticsLive.Advertising, :index
-      live "/analytics/:section", AnalyticsLive.Placeholder, :index
+      live "/analytics/:section", StatisticsLive.Index, :index
       live "/diagnostics", DiagnosticsLive.Index, :index
 
       scope "/integrations", IntegrationLive do
@@ -483,6 +483,7 @@ defmodule DelivestWeb.Router do
         ] do
         live "/dashboard", DashboardLive.Index, :index
         live "/statistics", StatisticsLive.Index, :index
+        live "/analytics/:section", StatisticsLive.Index, :index
         live "/advertising-links", AdvertisingLive.Index, :index
         live "/delivery", DeliveryLive.Index, :index
         live "/delivery/address", DeliveryLive.Address, :index

@@ -45,7 +45,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     branch = insert(:branch)
     conn = login(conn, ["statistics.read"], branch)
 
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=funnel")
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/analytics/funnel")
     refute has_element?(view, "#statistics-report")
     refute has_element?(view, ~s{a[href*="tab=funnel"]})
   end
@@ -60,13 +60,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     analyst_conn = login(conn, ["statistics.read"], branch)
 
     {:ok, analyst, _} =
-      live(analyst_conn, ~p"/staff/b/#{branch}/statistics?tab=funnel&period=today")
+      live(analyst_conn, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
 
     assert has_element?(analyst, "#statistics-report-state", "Data was not collected")
     refute has_element?(analyst, "#statistics-rebuild")
 
     admin_conn = login(conn, ["admin"], branch)
-    {:ok, admin, _} = live(admin_conn, ~p"/staff/b/#{branch}/statistics?tab=funnel&period=today")
+    {:ok, admin, _} = live(admin_conn, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
     assert has_element?(admin, "#statistics-rebuild")
   end
 
@@ -78,44 +78,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
              Features.configure("analytics_franchise", {:branch, branch.id}, true, actor: "host")
 
     analyst_conn = login(conn, ["statistics.read"], branch)
-    {:ok, analyst, _} = live(analyst_conn, ~p"/staff/statistics")
-    refute has_element?(analyst, "#statistics-report")
-
+    assert {:error, {:redirect, _}} = live(analyst_conn, ~p"/staff/analytics/comparison")
     {:ok, analyst_branch, _} = live(analyst_conn, ~p"/staff/b/#{branch}/statistics")
     refute has_element?(analyst_branch, "#statistics-tab-franchise")
-    refute has_element?(analyst_branch, "#sidebar-statistics-tab-franchise")
-
     manager_conn = login(conn, ["statistics.read", "statistics.network"], branch)
-
-    {:ok, manager, _} =
-      live(manager_conn, ~p"/staff/statistics?period=today")
-
-    assert has_element?(manager, "#statistics-report")
+    {:ok, manager, _} = live(manager_conn, ~p"/staff/analytics/comparison?period=today")
     assert has_element?(manager, "#statistics-report-state")
-
-    {:ok, manager_branch, _} =
-      live(
-        manager_conn,
-        ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-11-01&to=2026-11-07&branch_id=#{branch.id}&branch_ids[]=#{branch.id}"
-      )
-
-    for id <- ["#statistics-tab-franchise", "#sidebar-statistics-tab-franchise"] do
-      [href] =
-        manager_branch
-        |> render()
-        |> LazyHTML.from_fragment()
-        |> LazyHTML.query(id)
-        |> LazyHTML.attribute("href")
-
-      assert String.starts_with?(href, "/staff/statistics?")
-      query = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
-      assert query["tab"] == "franchise"
-      assert query["period"] == "custom"
-      assert query["from"] == "2026-11-01"
-      assert query["to"] == "2026-11-07"
-      refute Map.has_key?(query, "branch_id")
-      refute Map.has_key?(query, "branch_ids")
-    end
+    refute has_element?(manager, "#statistics-scope")
+    refute has_element?(manager, "select[name=branch_id]")
   end
 
   test "branch franchise link stays hidden while the global feature is off", %{conn: conn} do
@@ -145,7 +115,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     {:ok, view, _} =
       live(
         login(conn, ["statistics.read"], branch),
-        ~p"/staff/b/#{branch}/statistics?tab=funnel&period=today"
+        ~p"/staff/b/#{branch}/analytics/funnel?period=today"
       )
 
     assert has_element?(view, "#statistics-funnel-path", "Sessions started")
@@ -183,7 +153,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     {:ok, view, _} =
       live(
         login(conn, ["statistics.read"], branch),
-        ~p"/staff/b/#{branch}/statistics?tab=channels&period=today"
+        ~p"/staff/b/#{branch}/analytics/channels?period=today"
       )
 
     assert has_element?(view, "#statistics-report-summary", "Average check")
@@ -194,6 +164,36 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     assert has_element?(view, ~s{select[name="channel"] option}, "App")
     refute has_element?(view, ~s{input[name="channel"]})
     refute has_element?(view, "#statistics-report-table td", "channel")
+  end
+
+  test "network channel totals include only authorized feature-enabled branches" do
+    allowed = insert(:branch)
+    disabled = insert(:branch)
+    denied = insert(:branch)
+
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["statistics.read", "statistics.network"]))
+
+    for branch <- [allowed, disabled], do: insert(:staff_branch, staff: staff, branch: branch)
+    staff = Repo.preload(staff, [:role, :branches])
+    assert {:ok, _} = Features.configure("analytics_extended", :franchise, true, actor: "host")
+
+    for branch <- [allowed, denied] do
+      assert {:ok, _} =
+               Features.configure("analytics_extended", {:branch, branch.id}, true, actor: "host")
+
+      published(branch, "analytics_extended", [
+        {"extended", "channel", "app", %{"created" => 3, "completed" => 2, "revenue" => 1500}}
+      ])
+    end
+
+    today = LocalTime.today(LocalTime.timezone(allowed.id))
+
+    assert {:ok, report} =
+             Delivest.Analytics.Reports.read(staff, :network, {today, today}, "channels")
+
+    assert report.totals["revenue"] == 1500
+    assert report.excluded_branches == 1
   end
 
   test "sources use a bounded human link selector", %{conn: conn} do
@@ -211,101 +211,30 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
              Links.create(staff, branch.id, %{"name" => "Autumn offer", "campaign" => "season"})
 
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=sources&period=today")
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/analytics/sources?period=today")
     assert has_element?(view, ~s{select[name="link_id"] option}, "Autumn offer")
     assert has_element?(view, ~s{input[name="link_search"]})
     refute has_element?(view, ~s{input[name="link_id"]})
   end
 
-  test "switching report tabs resets page while preserving filters and pager links", %{conn: conn} do
-    branch = insert(:branch, is_active: true)
-    other_branch = insert(:branch, is_active: true)
-
-    for feature <- ["analytics_extended", "analytics_links"] do
-      assert {:ok, _} = Features.configure(feature, :franchise, true, actor: "host")
-      assert {:ok, _} = Features.configure(feature, {:branch, branch.id}, true, actor: "host")
-    end
-
-    published(
-      branch,
-      "analytics_extended",
-      for(
-        index <- 1..51,
-        do: {"extended", "channel", "channel-#{index}", %{"created" => 1}}
-      )
-    )
-
-    link =
-      Repo.insert!(%Delivest.Advertising.Link{
-        branch_id: branch.id,
-        token: Ecto.UUID.generate(),
-        campaign: "summer",
-        name: "Source one"
-      })
-
-    published(branch, "analytics_links", [
-      {"links", "link", link.id, %{"created" => 1}}
-    ])
-
-    day = LocalTime.today(LocalTime.timezone(branch.id)) |> Date.to_iso8601()
+  test "legacy report URLs redirect preserving the period and filters", %{conn: conn} do
+    branch = insert(:branch)
     conn = login(conn, ["statistics.read"], branch)
 
-    {:ok, view, _} =
-      live(
-        conn,
-        ~p"/staff/b/#{branch}/statistics?#{%{"tab" => "channels", "period" => "custom", "from" => day, "to" => day, "branch_id" => branch.id, "branch_ids" => [branch.id, other_branch.id], "link_search" => "summer"}}"
-      )
+    assert {:error, {:redirect, %{to: destination}}} =
+             live(
+               conn,
+               ~p"/staff/b/#{branch}/statistics?tab=channels&period=custom&from=2026-11-01&to=2026-11-07&channel=app&page=2"
+             )
 
-    assert has_element?(view, "#statistics-report-pagination a[href*='page=2']", "Next")
-    view |> element("#statistics-report-pagination a", "Next") |> render_click()
-    assert has_element?(view, "#statistics-report-pagination", "2 / 2")
-
-    tab = "a[role='tab'][href*='tab=sources']:not([href*='page='])"
-
-    navigation = render(element(view, "#staff-context-navigation"))
-
-    href =
-      navigation
-      |> LazyHTML.from_fragment()
-      |> LazyHTML.query(tab)
-      |> LazyHTML.attribute("href")
-      |> List.first()
-
-    assert href
-    query = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+    assert URI.parse(destination).path == "/staff/b/#{branch.slug}/analytics/channels"
+    query = URI.decode_query(URI.parse(destination).query)
     assert query["period"] == "custom"
-    assert query["from"] == day and query["to"] == day
-    assert query["branch_id"] == branch.id
-    assert query["link_search"] == "summer"
-
-    branch_ids =
-      href
-      |> URI.parse()
-      |> Map.fetch!(:query)
-      |> URI.query_decoder()
-      |> Enum.filter(fn {key, _} -> String.starts_with?(key, "branch_ids") end)
-      |> Enum.map(&elem(&1, 1))
-
-    assert Enum.sort(branch_ids) == Enum.sort([branch.id, other_branch.id])
-    refute Map.has_key?(query, "page")
-
-    render_patch(view, href)
-    assert has_element?(view, "#statistics-report-table", "Source one")
-    refute has_element?(view, "#statistics-report-pagination")
-
-    render_patch(
-      view,
-      ~p"/staff/b/#{branch}/statistics?tab=channels&period=today&page=2&channel=app&branch_id=#{branch.id}&link_id=#{link.id}&link_search=summer&branch_ids[]=#{branch.id}"
-    )
-
-    navigation = render(element(view, "#staff-context-navigation"))
-
-    assert navigation
-           |> LazyHTML.from_fragment()
-           |> LazyHTML.query(
-             "a[role='tab'][href*='tab=sources'][href*='channel=app'][href*='link_id=#{link.id}']:not([href*='page='])"
-           )
-           |> Enum.any?()
+    assert query["from"] == "2026-11-01"
+    assert query["to"] == "2026-11-07"
+    assert query["channel"] == "app"
+    assert query["page"] == "2"
+    refute Map.has_key?(query, "tab")
   end
 
   test "unavailable report DTO renders after a gate or read failure", %{conn: conn} do
@@ -334,10 +263,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
              Features.configure("analytics_funnel", {:branch, branch.id}, true, actor: "host")
 
     admin_conn = login(conn, ["admin"], branch)
-    {:ok, view, _} = live(admin_conn, ~p"/staff/b/#{branch}/statistics?tab=funnel&period=today")
+    {:ok, view, _} = live(admin_conn, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
     assert {:ok, _} = Features.configure("analytics_funnel", :franchise, false, actor: "host")
     assert render_click(element(view, "#statistics-rebuild")) =~ "Calculation could not be queued"
-    render_patch(view, ~p"/staff/b/#{branch}/statistics?tab=funnel&period=today")
+    render_patch(view, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
     refute has_element?(view, "#statistics-report")
   end
 end

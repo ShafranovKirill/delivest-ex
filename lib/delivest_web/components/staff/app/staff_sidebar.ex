@@ -45,6 +45,28 @@ defmodule DelivestWeb.StaffSidebar do
         end)
       end
 
+    entries =
+      if DelivestWeb.StaffNav.network_analytics_path?(assigns.current_path) do
+        network_analytics =
+          DelivestWeb.StaffNav.entries(assigns.current_staff, nil, nil)
+          |> Enum.flat_map(& &1.entries)
+          |> Enum.find(&(&1.id == :analytics))
+
+        Enum.map(entries, fn section ->
+          %{
+            section
+            | entries:
+                Enum.map(section.entries, fn
+                  %{id: :analytics} -> network_analytics
+                  item -> item
+                end)
+                |> Enum.reject(&is_nil/1)
+          }
+        end)
+      else
+        entries
+      end
+
     return_source = assigns.current_uri || assigns.current_path
 
     entries =

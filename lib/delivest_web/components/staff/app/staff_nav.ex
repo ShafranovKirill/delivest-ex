@@ -259,6 +259,11 @@ defmodule DelivestWeb.StaffNav do
 
   def entries(staff, branch), do: entries(staff, branch, branch)
 
+  def network_analytics_path?(path) when is_binary(path),
+    do: path == "/staff/statistics" or String.starts_with?(path, "/staff/analytics/")
+
+  def network_analytics_path?(_), do: false
+
   attr :staff, :map, required: true
   attr :branch, :any, default: nil
   attr :navigation_branch, :any, default: nil
@@ -271,7 +276,11 @@ defmodule DelivestWeb.StaffNav do
   attr :group_id, :any, default: nil
 
   def local_navigation(assigns) do
-    navigation_branch = assigns.navigation_branch || assigns.branch
+    navigation_branch =
+      if network_analytics_path?(assigns.current_path),
+        do: nil,
+        else: assigns.navigation_branch || assigns.branch
+
     navigation_branch = navigation_branch && Delivest.Repo.preload(navigation_branch, :info)
 
     items =
@@ -773,18 +782,35 @@ defmodule DelivestWeb.StaffNav do
 
   defp common_entries(staff, branch) do
     [
-      item(:statistics, ~p"/staff/statistics", "hero-chart-bar", gettext("Statistics"))
+      item(
+        :statistics,
+        if(branch, do: ~p"/staff/b/#{branch}/statistics", else: ~p"/staff/statistics"),
+        "hero-chart-bar",
+        gettext("Sales statistics")
+      )
       |> allowed(staff, "statistics.read"),
-      analytics_placeholder(:analytics_channels, "channels", gettext("Sales channels"), staff),
+      analytics_placeholder(
+        :analytics_channels,
+        "channels",
+        gettext("Sales channels"),
+        staff,
+        branch
+      ),
       analytics_placeholder(
         :analytics_advertising,
         "advertising",
         gettext("Advertising analytics"),
         staff
       ),
-      analytics_placeholder(:analytics_sources, "sources", gettext("Sources"), staff),
-      analytics_placeholder(:analytics_funnel, "funnel", gettext("Funnel"), staff),
-      analytics_placeholder(:analytics_customers, "customers", gettext("Buyers"), staff),
+      analytics_placeholder(
+        :analytics_sources,
+        "sources",
+        gettext("Sources and advertising"),
+        staff,
+        branch
+      ),
+      analytics_placeholder(:analytics_funnel, "funnel", gettext("Order funnel"), staff, branch),
+      analytics_placeholder(:analytics_customers, "customers", gettext("Buyers"), staff, branch),
       analytics_placeholder(
         :analytics_comparison,
         "comparison",
@@ -796,10 +822,15 @@ defmodule DelivestWeb.StaffNav do
     |> compact_all()
   end
 
-  defp analytics_placeholder(id, section, label, staff) do
-    if can?(staff, "statistics.read") and can?(staff, "statistics.network") do
-      item(id, "/staff/analytics/#{section}", "hero-chart-bar", label)
-      |> Map.put(:read_permissions, ["statistics.read", "statistics.network"])
+  defp analytics_placeholder(id, section, label, staff, branch \\ nil) do
+    if can?(staff, "statistics.read") and (branch || can?(staff, "statistics.network")) do
+      prefix = if branch, do: "/staff/b/#{branch.slug}", else: "/staff"
+
+      item(id, "#{prefix}/analytics/#{section}", "hero-chart-bar", label)
+      |> Map.put(
+        :read_permissions,
+        if(branch, do: ["statistics.read"], else: ["statistics.read", "statistics.network"])
+      )
     end
   end
 

@@ -38,6 +38,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
   @pages [
     {"/staff/dashboard", :dashboard},
     {"/staff/statistics", :statistics},
+    {"/staff/analytics/advertising", :analytics_sources},
     {"/staff/analytics/channels", :analytics_channels},
     {"/staff/analytics/sources", :analytics_sources},
     {"/staff/analytics/funnel", :analytics_funnel},

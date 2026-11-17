@@ -109,75 +109,22 @@
       "confirmation": "no inline confirmation marker",
       "disposition": "retain control in Analytics",
       "error_state": [
-        "explicit :error branch/reference"
-      ],
-      "event": "bind_campaign",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:bind_campaign:851fd34c86866ed8:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/analytics_live/advertising.ex:bind_campaign:dom:advertising-binding-form:1",
-      "label": "Save",
-      "operation": [
-        "Campaigns.bind"
-      ],
-      "result": [
-        "put_flash"
-      ],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "admin",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:327",
-      "target_section": "Analytics"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Analytics",
-      "error_state": [
-        "no explicit :error in clause"
-      ],
-      "event": "binding_search",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:binding_search:009c1ac9063ef4dd:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/analytics_live/advertising.ex:binding_search:dom:advertising-binding-search:1",
-      "label": "Search",
-      "operation": [],
-      "result": [],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "admin",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:318",
-      "target_section": "Analytics"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Analytics",
-      "error_state": [
         "no explicit :error in clause"
       ],
       "event": "filter",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:filter:c3b965866e211a57:1"
+        "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:filter:3367659c9b263f24:1"
       ],
       "id": "control:lib/delivest_web/live/staff/analytics_live/advertising.ex:filter:dom:advertising-period:1",
       "label": "Apply",
       "operation": [
         "Date.diff",
-        "Date.from_iso8601"
+        "Date.from_iso8601",
+        "Date.to_iso8601"
       ],
-      "result": [],
+      "result": [
+        "push_patch"
+      ],
       "rights": {
         "inline": [],
         "module_references": [
@@ -186,7 +133,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:233",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:180",
       "target_section": "Analytics"
     },
     {
@@ -216,7 +163,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:242",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:189",
       "target_section": "Analytics"
     },
     {
@@ -242,37 +189,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:221",
-      "target_section": "Analytics"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Analytics",
-      "error_state": [
-        "explicit :error branch/reference"
-      ],
-      "event": "unbind_campaign",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:unbind_campaign:47c1591686c00797:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/analytics_live/advertising.ex:unbind_campaign:signature:5fb7addca9c2c9e9:1",
-      "label": "Remove mapping",
-      "operation": [
-        "Campaigns.unbind"
-      ],
-      "result": [
-        "put_flash"
-      ],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "admin",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:356",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:160",
       "target_section": "Analytics"
     },
     {
@@ -2622,6 +2539,58 @@
       "error_state": [
         "explicit :error branch/reference"
       ],
+      "event": "bind_campaign",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:bind_campaign:1169c6d92e1d34cf:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:bind_campaign:dom:advertising-binding-form:1",
+      "label": "Save",
+      "operation": [
+        "Campaigns.bind"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:481",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Settings / Integrations",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "binding_search",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:binding_search:009c1ac9063ef4dd:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:binding_search:dom:advertising-binding-search:1",
+      "label": "Search",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:472",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Settings / Integrations",
+      "error_state": [
+        "explicit :error branch/reference"
+      ],
       "event": "check",
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:check:e50be7db81d2bd75:1"
@@ -2641,7 +2610,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:304",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:406",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2665,7 +2634,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:342",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:444",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2689,7 +2658,31 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:324",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:426",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Settings / Integrations",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "refresh_diagnostics",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:refresh_diagnostics:a8623305ad51de45:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:refresh_diagnostics:dom:yandex-refresh-diagnostics:1",
+      "label": "Refresh",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:526",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2713,7 +2706,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:333",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:435",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2737,7 +2730,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:377",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:605",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2749,7 +2742,7 @@
       ],
       "event": "save",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:save:3c5541a592674be3:1"
+        "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:save:e101e22eb7916de4:1"
       ],
       "id": "control:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:save:dom:yandex-ads-settings:1",
       "label": "unlabelled/icon control at source anchor",
@@ -2765,7 +2758,35 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:187",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:289",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Settings / Integrations",
+      "error_state": [
+        "explicit :error branch/reference"
+      ],
+      "event": "unbind_campaign",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:unbind_campaign:94c41790cc05ca76:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:unbind_campaign:signature:5fb7addca9c2c9e9:1",
+      "label": "Remove mapping",
+      "operation": [
+        "Campaigns.unbind"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:510",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2940,11 +2961,13 @@
       ],
       "event": "reconcile",
       "handler_clauses": [
+        "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:reconcile:c84e2cb64ac640a9:1",
         "event:lib/delivest_web/live/staff/integration_live/yandex_eda.ex:reconcile:d4ebea82301cd6ef:1"
       ],
       "id": "control:lib/delivest_web/live/staff/integration_live/yandex_eda_reconciliation.ex:reconcile:dom:yandex-eda-reconcile:1",
       "label": "Reconcile",
       "operation": [
+        "YandexAds.reconcile_delivery",
         "Date.from_iso8601",
         "YandexEda.reconcile"
       ],
@@ -8413,7 +8436,7 @@
       ],
       "event": "rebuild",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/statistics_live/index.ex:rebuild:bd0909f3296be809:1"
+        "event:lib/delivest_web/live/staff/statistics_live/index.ex:rebuild:389058e60b5ccc51:1"
       ],
       "id": "control:lib/delivest_web/live/staff/statistics_live/report_components.ex:rebuild:dom:statistics-rebuild:1",
       "label": "Recalculate available history",
@@ -8432,7 +8455,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/report_components.ex:33",
+      "source": "lib/delivest_web/live/staff/statistics_live/report_components.ex:34",
       "target_section": "Analytics"
     },
     {
@@ -8735,61 +8758,18 @@
       "availability": "conditional branch in handler clause",
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Analytics",
-      "error_state": "explicit :error branch/reference",
-      "event": "bind_campaign",
-      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:bind_campaign:851fd34c86866ed8:1",
-      "label": "event: bind_campaign",
-      "operation": [
-        "Campaigns.bind"
-      ],
-      "result": [
-        "put_flash"
-      ],
-      "rights": {
-        "clause": [],
-        "module_references": [
-          "admin",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:104",
-      "target_section": "Analytics"
-    },
-    {
-      "availability": "no inline conditional in handler clause",
-      "confirmation": "no confirmation marker found in module",
-      "disposition": "retain operation; move control with Analytics",
-      "error_state": "no explicit :error in clause",
-      "event": "binding_search",
-      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:binding_search:009c1ac9063ef4dd:1",
-      "label": "event: binding_search",
-      "operation": [],
-      "result": [],
-      "rights": {
-        "clause": [],
-        "module_references": [
-          "admin",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:101",
-      "target_section": "Analytics"
-    },
-    {
-      "availability": "conditional branch in handler clause",
-      "confirmation": "no confirmation marker found in module",
-      "disposition": "retain operation; move control with Analytics",
       "error_state": "no explicit :error in clause",
       "event": "filter",
-      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:filter:c3b965866e211a57:1",
+      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:filter:3367659c9b263f24:1",
       "label": "event: filter",
       "operation": [
         "Date.diff",
-        "Date.from_iso8601"
+        "Date.from_iso8601",
+        "Date.to_iso8601"
       ],
-      "result": [],
+      "result": [
+        "push_patch"
+      ],
       "rights": {
         "clause": [],
         "module_references": [
@@ -8798,7 +8778,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:43",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:49",
       "target_section": "Analytics"
     },
     {
@@ -8823,32 +8803,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:55",
-      "target_section": "Analytics"
-    },
-    {
-      "availability": "conditional branch in handler clause",
-      "confirmation": "no confirmation marker found in module",
-      "disposition": "retain operation; move control with Analytics",
-      "error_state": "explicit :error branch/reference",
-      "event": "reconcile",
-      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:reconcile:3e856c09f90bb935:1",
-      "label": "event: reconcile",
-      "operation": [
-        "YandexAds.reconcile_delivery"
-      ],
-      "result": [
-        "put_flash"
-      ],
-      "rights": {
-        "clause": [],
-        "module_references": [
-          "admin",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:79",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:67",
       "target_section": "Analytics"
     },
     {
@@ -8869,32 +8824,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:53",
-      "target_section": "Analytics"
-    },
-    {
-      "availability": "conditional branch in handler clause",
-      "confirmation": "no confirmation marker found in module",
-      "disposition": "retain operation; move control with Analytics",
-      "error_state": "explicit :error branch/reference",
-      "event": "unbind_campaign",
-      "id": "event:lib/delivest_web/live/staff/analytics_live/advertising.ex:unbind_campaign:47c1591686c00797:1",
-      "label": "{gettext(\"Remove mapping\")}",
-      "operation": [
-        "Campaigns.unbind"
-      ],
-      "result": [
-        "put_flash"
-      ],
-      "rights": {
-        "clause": [],
-        "module_references": [
-          "admin",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:119",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:65",
       "target_section": "Analytics"
     },
     {
@@ -11730,6 +11660,48 @@
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Settings / Integrations",
       "error_state": "explicit :error branch/reference",
+      "event": "bind_campaign",
+      "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:bind_campaign:1169c6d92e1d34cf:1",
+      "label": "event: bind_campaign",
+      "operation": [
+        "Campaigns.bind"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:106",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Settings / Integrations",
+      "error_state": "no explicit :error in clause",
+      "event": "binding_search",
+      "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:binding_search:009c1ac9063ef4dd:1",
+      "label": "event: binding_search",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:103",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Settings / Integrations",
+      "error_state": "explicit :error branch/reference",
       "event": "check",
       "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:check:e50be7db81d2bd75:1",
       "label": "{if @checks == :checking,\n            do: gettext(\"Checking...\"),\n            else: gettext(\"Check saved connection\")}",
@@ -11748,7 +11720,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:52",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:55",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11767,7 +11739,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:67",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:70",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11786,7 +11758,49 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:65",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:68",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Settings / Integrations",
+      "error_state": "explicit :error branch/reference",
+      "event": "reconcile",
+      "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:reconcile:c84e2cb64ac640a9:1",
+      "label": "event: reconcile",
+      "operation": [
+        "YandexAds.reconcile_delivery"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:78",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Settings / Integrations",
+      "error_state": "no explicit :error in clause",
+      "event": "refresh_diagnostics",
+      "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:refresh_diagnostics:a8623305ad51de45:1",
+      "label": "{gettext(\"Refresh\")}",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:100",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11805,7 +11819,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:70",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:73",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11824,7 +11838,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:72",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:75",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11833,7 +11847,7 @@
       "disposition": "retain operation; move control with Settings / Integrations",
       "error_state": "explicit :error branch/reference",
       "event": "save",
-      "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:save:3c5541a592674be3:1",
+      "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:save:e101e22eb7916de4:1",
       "label": "event: save",
       "operation": [
         "YandexAds.update_settings"
@@ -11847,7 +11861,30 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:34",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:36",
+      "target_section": "Settings / Integrations"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Settings / Integrations",
+      "error_state": "explicit :error branch/reference",
+      "event": "unbind_campaign",
+      "id": "event:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:unbind_campaign:94c41790cc05ca76:1",
+      "label": "{gettext(\"Remove mapping\")}",
+      "operation": [
+        "Campaigns.unbind"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "admin"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:122",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11869,7 +11906,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:27",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:29",
       "target_section": "Settings / Integrations"
     },
     {
@@ -18285,12 +18322,12 @@
       "target_section": "Settings / Team and access"
     },
     {
-      "availability": "no inline conditional in handler clause",
+      "availability": "conditional branch in handler clause",
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Analytics",
       "error_state": "no explicit :error in clause",
       "event": "filter",
-      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:filter:d107e4cf1b126c39:1",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:filter:260e96fce255337e:1",
       "label": "event: filter",
       "operation": [],
       "result": [
@@ -18303,7 +18340,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:99",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:157",
       "target_section": "Analytics"
     },
     {
@@ -18312,7 +18349,7 @@
       "disposition": "retain operation; move control with Analytics",
       "error_state": "explicit :error branch/reference",
       "event": "rebuild",
-      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:rebuild:bd0909f3296be809:1",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:rebuild:389058e60b5ccc51:1",
       "label": "event: rebuild",
       "operation": [
         "Reports.feature_for_tab",
@@ -18328,7 +18365,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:117",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:176",
       "target_section": "Analytics"
     },
     {
@@ -19180,8 +19217,8 @@
       "in_flight_obligation": "An interrupted write becomes unknown and is not blindly retried; submitted upload is reconciled by ID",
       "on_disable": "Pending work becomes stale; browser and server streams are independently gated",
       "producer_scheduler": [
-        "lib/delivest/integrations/yandex_ads.ex:414",
-        "lib/delivest/integrations/yandex_ads.ex:765"
+        "lib/delivest/integrations/yandex_ads.ex:431",
+        "lib/delivest/integrations/yandex_ads.ex:788"
       ],
       "source": "lib/delivest/integrations/yandex_ads/conversion_worker.ex",
       "worker_process": "Delivest.Integrations.YandexAds.ConversionWorker"
@@ -19195,8 +19232,8 @@
       "in_flight_obligation": "Publish a complete account-period slice atomically, including removed provider rows",
       "on_disable": "Disabled or replaced connection cancels queued import; last successful snapshot remains historical",
       "producer_scheduler": [
-        "lib/delivest/integrations/yandex_ads.ex:482",
-        "lib/delivest/integrations/yandex_ads/schedule_worker.ex:22"
+        "lib/delivest/integrations/yandex_ads.ex:500",
+        "lib/delivest/integrations/yandex_ads/schedule_worker.ex:23"
       ],
       "source": "lib/delivest/integrations/yandex_ads/cost_worker.ex",
       "worker_process": "Delivest.Integrations.YandexAds.CostWorker"
@@ -20029,69 +20066,6 @@
       ]
     },
     {
-      "binding": "@binding_form",
-      "canonical_form": "lib/delivest_web/live/staff/analytics_live/advertising.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/analytics_live/advertising.ex"
-      ],
-      "default": "not declared in control/owner schema",
-      "disposition": "retain canonical editor in Analytics / Advertising",
-      "expression": null,
-      "field": "campaign_id",
-      "id": "form:lib/delivest_web/live/staff/analytics_live/advertising.ex:@binding_form:campaign_id",
-      "name_template": null,
-      "owner": "Delivest.Integrations.YandexAds report period",
-      "required": "not declared in control/owner schema",
-      "resolved_field": "campaign_id",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:341",
-      "target_section": "Analytics / Advertising",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
-      "binding": "@binding_form",
-      "canonical_form": "lib/delivest_web/live/staff/analytics_live/advertising.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/analytics_live/advertising.ex"
-      ],
-      "default": "not declared in control/owner schema",
-      "disposition": "retain canonical editor in Analytics / Advertising",
-      "expression": null,
-      "field": "link_id",
-      "id": "form:lib/delivest_web/live/staff/analytics_live/advertising.ex:@binding_form:link_id",
-      "name_template": null,
-      "owner": "Delivest.Integrations.YandexAds report period",
-      "required": "not declared in control/owner schema",
-      "resolved_field": "link_id",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:334",
-      "target_section": "Analytics / Advertising",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
-      "binding": "@binding_search",
-      "canonical_form": "lib/delivest_web/live/staff/analytics_live/advertising.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/analytics_live/advertising.ex"
-      ],
-      "default": "not applicable: transient query value",
-      "disposition": "retain canonical editor in Analytics / Advertising",
-      "expression": null,
-      "field": "q",
-      "id": "form:lib/delivest_web/live/staff/analytics_live/advertising.ex:@binding_search:q",
-      "name_template": null,
-      "owner": "transient search/query operation in analytics_live/advertising.ex",
-      "required": "not applicable: transient search/query input",
-      "resolved_field": "q",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:324",
-      "target_section": "Analytics / Advertising",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
       "binding": "@period",
       "canonical_form": "lib/delivest_web/live/staff/analytics_live/advertising.ex",
       "current_forms": [
@@ -20107,7 +20081,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:239",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:186",
       "target_section": "Analytics / Advertising",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -20128,49 +20102,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:240",
-      "target_section": "Analytics / Advertising",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
-      "binding": "name:reconcile[conversion_id]",
-      "canonical_form": "lib/delivest_web/live/staff/analytics_live/advertising.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/analytics_live/advertising.ex"
-      ],
-      "default": "not declared in control/owner schema",
-      "disposition": "retain canonical editor in Analytics / Advertising",
-      "expression": null,
-      "field": "reconcile[conversion_id]",
-      "id": "form:lib/delivest_web/live/staff/analytics_live/advertising.ex:name:reconcile[conversion_id]:reconcile[conversion_id]",
-      "name_template": null,
-      "owner": "Delivest.Integrations.YandexAds report period",
-      "required": "not declared in control/owner schema",
-      "resolved_field": "reconcile[conversion_id]",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:475",
-      "target_section": "Analytics / Advertising",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
-      "binding": "name:reconcile[upload_id]",
-      "canonical_form": "lib/delivest_web/live/staff/analytics_live/advertising.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/analytics_live/advertising.ex"
-      ],
-      "default": "not declared in control/owner schema",
-      "disposition": "retain canonical editor in Analytics / Advertising",
-      "expression": null,
-      "field": "reconcile[upload_id]",
-      "id": "form:lib/delivest_web/live/staff/analytics_live/advertising.ex:name:reconcile[upload_id]:reconcile[upload_id]",
-      "name_template": null,
-      "owner": "Delivest.Integrations.YandexAds report period",
-      "required": "HTML required attribute; server validation must be checked",
-      "resolved_field": "reconcile[upload_id]",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:476",
+      "source": "lib/delivest_web/live/staff/analytics_live/advertising.ex:187",
       "target_section": "Analytics / Advertising",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23484,6 +23416,69 @@
       "validation": "form operation; no direct schema field"
     },
     {
+      "binding": "@binding_form",
+      "canonical_form": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/integration_live/yandex_ads.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Settings / Integrations / Yandex Direct and Metrika",
+      "expression": null,
+      "field": "campaign_id",
+      "id": "form:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:@binding_form:campaign_id",
+      "name_template": null,
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "campaign_id",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:495",
+      "target_section": "Settings / Integrations / Yandex Direct and Metrika",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "@binding_form",
+      "canonical_form": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/integration_live/yandex_ads.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Settings / Integrations / Yandex Direct and Metrika",
+      "expression": null,
+      "field": "link_id",
+      "id": "form:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:@binding_form:link_id",
+      "name_template": null,
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "link_id",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:488",
+      "target_section": "Settings / Integrations / Yandex Direct and Metrika",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "@binding_search",
+      "canonical_form": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/integration_live/yandex_ads.ex"
+      ],
+      "default": "not applicable: transient query value",
+      "disposition": "retain canonical editor in Settings / Integrations / Yandex Direct and Metrika",
+      "expression": null,
+      "field": "q",
+      "id": "form:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:@binding_search:q",
+      "name_template": null,
+      "owner": "transient search/query operation in integration_live/yandex_ads.ex",
+      "required": "not applicable: transient search/query input",
+      "resolved_field": "q",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:478",
+      "target_section": "Settings / Integrations / Yandex Direct and Metrika",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
       "binding": "@form",
       "canonical_form": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex",
       "current_forms": [
@@ -23499,7 +23494,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "branch_ids",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:branch_ids",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:203",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:305",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23522,7 +23517,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "browser_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:browser_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:219",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:321",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23543,7 +23538,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "client_login",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:client_login",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:259",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:361",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23566,7 +23561,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "conversions_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:conversions_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:224",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:326",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23587,7 +23582,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "costs_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:costs_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:239",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:341",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23608,7 +23603,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "counter_id",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:counter_id",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:253",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:355",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23631,7 +23626,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "currency",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:currency",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:264",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:366",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23655,7 +23650,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "ecommerce_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:ecommerce_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:229",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:331",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23676,7 +23671,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:198",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:300",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23697,7 +23692,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "feed_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:feed_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:234",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:336",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23718,7 +23713,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "goal",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:goal",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:257",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:359",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23742,7 +23737,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "include_vat",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:include_vat",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:270",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:372",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23763,7 +23758,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "privacy_approved",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:privacy_approved",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:210",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:312",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23784,7 +23779,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "timezone",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:timezone",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:262",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:364",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23808,7 +23803,49 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:@form[key]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:277",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:379",
+      "target_section": "Settings / Integrations / Yandex Direct and Metrika",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "name:reconcile[conversion_id]",
+      "canonical_form": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/integration_live/yandex_ads.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Settings / Integrations / Yandex Direct and Metrika",
+      "expression": null,
+      "field": "reconcile[conversion_id]",
+      "id": "form:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:name:reconcile[conversion_id]:reconcile[conversion_id]",
+      "name_template": null,
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "reconcile[conversion_id]",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:572",
+      "target_section": "Settings / Integrations / Yandex Direct and Metrika",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "name:reconcile[upload_id]",
+      "canonical_form": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/integration_live/yandex_ads.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Settings / Integrations / Yandex Direct and Metrika",
+      "expression": null,
+      "field": "reconcile[upload_id]",
+      "id": "form:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:name:reconcile[upload_id]:reconcile[upload_id]",
+      "name_template": null,
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "required": "HTML required attribute; server validation must be checked",
+      "resolved_field": "reconcile[upload_id]",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:573",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28876,27 +28913,6 @@
       "default": "not declared in control/owner schema",
       "disposition": "retain canonical editor in Analytics",
       "expression": null,
-      "field": "branch_id",
-      "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:@form:branch_id",
-      "name_template": null,
-      "owner": "Delivest.Analytics report filters",
-      "required": "not declared in control/owner schema",
-      "resolved_field": "branch_id",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:484",
-      "target_section": "Analytics",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
-      "binding": "@form",
-      "canonical_form": "lib/delivest_web/live/staff/statistics_live/index.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/statistics_live/index.ex"
-      ],
-      "default": "not declared in control/owner schema",
-      "disposition": "retain canonical editor in Analytics",
-      "expression": null,
       "field": "channel",
       "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:@form:channel",
       "name_template": null,
@@ -28904,7 +28920,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "channel",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:476",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:516",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28925,7 +28941,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:499",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:531",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28946,7 +28962,28 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:492",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:524",
+      "target_section": "Analytics",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "name:compare",
+      "canonical_form": "lib/delivest_web/live/staff/statistics_live/index.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/statistics_live/index.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Analytics",
+      "expression": null,
+      "field": "compare",
+      "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:name:compare:compare",
+      "name_template": null,
+      "owner": "Delivest.Analytics report filters",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "compare",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:488",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28967,7 +29004,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:461",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:501",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28988,7 +29025,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "period",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:455",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:495",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29009,7 +29046,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:467",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:507",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -35549,15 +35586,15 @@
       "data_scope": "network or all accessible branches; handler decides",
       "disposition": "move to Analytics",
       "feature_dependency": "no registry key established at route declaration",
-      "handler": "AnalyticsLive.Placeholder::index",
-      "id": "route:live:/staff/analytics/:section:AnalyticsLive.Placeholder::index",
+      "handler": "StatisticsLive.Index::index",
+      "id": "route:live:/staff/analytics/:section:StatisticsLive.Index::index",
       "page_type": "list",
       "rights": {
         "handler_permissions": [
           "statistics.network",
           "statistics.read"
         ],
-        "handler_source": "lib/delivest_web/live/staff/analytics_live/placeholder.ex",
+        "handler_source": "lib/delivest_web/live/staff/statistics_live/index.ex",
         "interpretation": "literal handler permission references; branch authorization may further restrict",
         "session_hooks": [
           "{DelivestWeb.Hooks.StaffAuth, :default}",
@@ -35630,9 +35667,39 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/advertising-links",
-      "source": "lib/delivest_web/router.ex:486",
+      "source": "lib/delivest_web/router.ex:487",
       "target_section": "Marketing",
       "variant": null
+    },
+    {
+      "branch_switch": "open same list/queue for new branch; reset selection and page",
+      "data_scope": "branch from URL; server authorization required",
+      "disposition": "move to Analytics",
+      "feature_dependency": "no registry key established at route declaration",
+      "handler": "StatisticsLive.Index::index",
+      "id": "route:live:/staff/b/:branch_slug/analytics/:section:StatisticsLive.Index::index",
+      "page_type": "list",
+      "rights": {
+        "handler_permissions": [
+          "statistics.network",
+          "statistics.read"
+        ],
+        "handler_source": "lib/delivest_web/live/staff/statistics_live/index.ex",
+        "interpretation": "literal handler permission references; branch authorization may further restrict",
+        "session_hooks": [
+          "{DelivestWeb.Hooks.StaffAuth, :default}",
+          "{DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}",
+          "{DelivestWeb.Hooks.StaffActiveBranch, :default}",
+          "{DelivestWeb.Hooks.NewOrders, :default}",
+          "{DelivestWeb.Hooks.StaffBranches, :default}",
+          "{DelivestWeb.Hooks.CommandPalette, :default}",
+          "{DelivestWeb.Hooks.StaffPath, :default}"
+        ]
+      },
+      "route": "LIVE /staff/b/:branch_slug/analytics/:section",
+      "source": "lib/delivest_web/router.ex:486",
+      "target_section": "Analytics",
+      "variant": "analytics"
     },
     {
       "branch_switch": "go to same section list in new branch; discard object ID",
@@ -35663,7 +35730,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/:id/edit",
-      "source": "lib/delivest_web/router.ex:515",
+      "source": "lib/delivest_web/router.ex:516",
       "target_section": "Menu",
       "variant": null
     },
@@ -35696,7 +35763,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/:id/products",
-      "source": "lib/delivest_web/router.ex:516",
+      "source": "lib/delivest_web/router.ex:517",
       "target_section": "Menu",
       "variant": null
     },
@@ -35729,7 +35796,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/new",
-      "source": "lib/delivest_web/router.ex:517",
+      "source": "lib/delivest_web/router.ex:518",
       "target_section": "Menu",
       "variant": null
     },
@@ -35762,7 +35829,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories",
-      "source": "lib/delivest_web/router.ex:514",
+      "source": "lib/delivest_web/router.ex:515",
       "target_section": "Menu",
       "variant": null
     },
@@ -35791,7 +35858,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/couriers",
-      "source": "lib/delivest_web/router.ex:492",
+      "source": "lib/delivest_web/router.ex:493",
       "target_section": "Delivery",
       "variant": null
     },
@@ -35852,7 +35919,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/deliveries",
-      "source": "lib/delivest_web/router.ex:491",
+      "source": "lib/delivest_web/router.ex:492",
       "target_section": "Delivery",
       "variant": null
     },
@@ -35882,7 +35949,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/address",
-      "source": "lib/delivest_web/router.ex:488",
+      "source": "lib/delivest_web/router.ex:489",
       "target_section": "Settings / Delivery",
       "variant": null
     },
@@ -35912,7 +35979,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/couriers",
-      "source": "lib/delivest_web/router.ex:490",
+      "source": "lib/delivest_web/router.ex:491",
       "target_section": "Delivery",
       "variant": null
     },
@@ -35942,7 +36009,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/zones",
-      "source": "lib/delivest_web/router.ex:489",
+      "source": "lib/delivest_web/router.ex:490",
       "target_section": "Settings / Delivery",
       "variant": null
     },
@@ -35971,7 +36038,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery",
-      "source": "lib/delivest_web/router.ex:487",
+      "source": "lib/delivest_web/router.ex:488",
       "target_section": "Delivery",
       "variant": "hub"
     },
@@ -36002,7 +36069,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/payments",
-      "source": "lib/delivest_web/router.ex:493",
+      "source": "lib/delivest_web/router.ex:494",
       "target_section": "Finance",
       "variant": null
     },
@@ -36031,7 +36098,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/receipts",
-      "source": "lib/delivest_web/router.ex:495",
+      "source": "lib/delivest_web/router.ex:496",
       "target_section": "Finance",
       "variant": null
     },
@@ -36061,7 +36128,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/transactions",
-      "source": "lib/delivest_web/router.ex:494",
+      "source": "lib/delivest_web/router.ex:495",
       "target_section": "Finance",
       "variant": null
     },
@@ -36090,7 +36157,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/dadata",
-      "source": "lib/delivest_web/router.ex:506",
+      "source": "lib/delivest_web/router.ex:507",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36120,7 +36187,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/fiscal",
-      "source": "lib/delivest_web/router.ex:510",
+      "source": "lib/delivest_web/router.ex:511",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36151,7 +36218,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/frontpad",
-      "source": "lib/delivest_web/router.ex:500",
+      "source": "lib/delivest_web/router.ex:501",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36181,7 +36248,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/iiko",
-      "source": "lib/delivest_web/router.ex:502",
+      "source": "lib/delivest_web/router.ex:503",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36210,7 +36277,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/recovery",
-      "source": "lib/delivest_web/router.ex:499",
+      "source": "lib/delivest_web/router.ex:500",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36240,7 +36307,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/rkeeper",
-      "source": "lib/delivest_web/router.ex:503",
+      "source": "lib/delivest_web/router.ex:504",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36270,7 +36337,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/routes",
-      "source": "lib/delivest_web/router.ex:504",
+      "source": "lib/delivest_web/router.ex:505",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36300,7 +36367,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yandex-delivery",
-      "source": "lib/delivest_web/router.ex:509",
+      "source": "lib/delivest_web/router.ex:510",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36334,7 +36401,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yandex-eda",
-      "source": "lib/delivest_web/router.ex:508",
+      "source": "lib/delivest_web/router.ex:509",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36364,7 +36431,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/ycart",
-      "source": "lib/delivest_web/router.ex:501",
+      "source": "lib/delivest_web/router.ex:502",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36393,7 +36460,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yookassa",
-      "source": "lib/delivest_web/router.ex:507",
+      "source": "lib/delivest_web/router.ex:508",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36422,7 +36489,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/zvonok",
-      "source": "lib/delivest_web/router.ex:505",
+      "source": "lib/delivest_web/router.ex:506",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36453,7 +36520,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations",
-      "source": "lib/delivest_web/router.ex:498",
+      "source": "lib/delivest_web/router.ex:499",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -36511,7 +36578,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/loyalty",
-      "source": "lib/delivest_web/router.ex:545",
+      "source": "lib/delivest_web/router.ex:546",
       "target_section": "Settings / Loyalty",
       "variant": null
     },
@@ -36541,7 +36608,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/menu/popular",
-      "source": "lib/delivest_web/router.ex:536",
+      "source": "lib/delivest_web/router.ex:537",
       "target_section": "Menu",
       "variant": null
     },
@@ -36571,7 +36638,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/:id/edit",
-      "source": "lib/delivest_web/router.ex:560",
+      "source": "lib/delivest_web/router.ex:561",
       "target_section": "Orders",
       "variant": null
     },
@@ -36601,7 +36668,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/:id",
-      "source": "lib/delivest_web/router.ex:561",
+      "source": "lib/delivest_web/router.ex:562",
       "target_section": "Orders",
       "variant": null
     },
@@ -36631,7 +36698,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/new",
-      "source": "lib/delivest_web/router.ex:559",
+      "source": "lib/delivest_web/router.ex:560",
       "target_section": "Orders",
       "variant": null
     },
@@ -36661,7 +36728,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders",
-      "source": "lib/delivest_web/router.ex:558",
+      "source": "lib/delivest_web/router.ex:559",
       "target_section": "Orders",
       "variant": null
     },
@@ -36721,7 +36788,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/:id/edit",
-      "source": "lib/delivest_web/router.ex:530",
+      "source": "lib/delivest_web/router.ex:531",
       "target_section": "Menu",
       "variant": null
     },
@@ -36754,7 +36821,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/:id",
-      "source": "lib/delivest_web/router.ex:532",
+      "source": "lib/delivest_web/router.ex:533",
       "target_section": "Menu",
       "variant": null
     },
@@ -36783,7 +36850,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/bulk",
-      "source": "lib/delivest_web/router.ex:522",
+      "source": "lib/delivest_web/router.ex:523",
       "target_section": "Menu",
       "variant": null
     },
@@ -36815,7 +36882,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/modifiers",
-      "source": "lib/delivest_web/router.ex:525",
+      "source": "lib/delivest_web/router.ex:526",
       "target_section": "Menu",
       "variant": null
     },
@@ -36848,7 +36915,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/new",
-      "source": "lib/delivest_web/router.ex:531",
+      "source": "lib/delivest_web/router.ex:532",
       "target_section": "Menu",
       "variant": null
     },
@@ -36877,7 +36944,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/operations",
-      "source": "lib/delivest_web/router.ex:523",
+      "source": "lib/delivest_web/router.ex:524",
       "target_section": "Menu",
       "variant": null
     },
@@ -36907,7 +36974,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/stops",
-      "source": "lib/delivest_web/router.ex:524",
+      "source": "lib/delivest_web/router.ex:525",
       "target_section": "Menu",
       "variant": null
     },
@@ -36937,7 +37004,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/suggested",
-      "source": "lib/delivest_web/router.ex:526",
+      "source": "lib/delivest_web/router.ex:527",
       "target_section": "Menu",
       "variant": null
     },
@@ -36967,7 +37034,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags/:id/edit",
-      "source": "lib/delivest_web/router.ex:529",
+      "source": "lib/delivest_web/router.ex:530",
       "target_section": "Menu",
       "variant": null
     },
@@ -36997,7 +37064,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags/new",
-      "source": "lib/delivest_web/router.ex:528",
+      "source": "lib/delivest_web/router.ex:529",
       "target_section": "Menu",
       "variant": null
     },
@@ -37027,7 +37094,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags",
-      "source": "lib/delivest_web/router.ex:527",
+      "source": "lib/delivest_web/router.ex:528",
       "target_section": "Menu",
       "variant": null
     },
@@ -37060,7 +37127,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products",
-      "source": "lib/delivest_web/router.ex:521",
+      "source": "lib/delivest_web/router.ex:522",
       "target_section": "Menu",
       "variant": null
     },
@@ -37092,7 +37159,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/:id/codes",
-      "source": "lib/delivest_web/router.ex:554",
+      "source": "lib/delivest_web/router.ex:555",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37124,7 +37191,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/:id/edit",
-      "source": "lib/delivest_web/router.ex:553",
+      "source": "lib/delivest_web/router.ex:554",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37156,7 +37223,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new/first-order",
-      "source": "lib/delivest_web/router.ex:551",
+      "source": "lib/delivest_web/router.ex:552",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37188,7 +37255,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new/full",
-      "source": "lib/delivest_web/router.ex:550",
+      "source": "lib/delivest_web/router.ex:551",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37220,7 +37287,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new",
-      "source": "lib/delivest_web/router.ex:549",
+      "source": "lib/delivest_web/router.ex:550",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37252,7 +37319,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/sale",
-      "source": "lib/delivest_web/router.ex:552",
+      "source": "lib/delivest_web/router.ex:553",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37284,7 +37351,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions",
-      "source": "lib/delivest_web/router.ex:548",
+      "source": "lib/delivest_web/router.ex:549",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37347,7 +37414,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks/:id/edit",
-      "source": "lib/delivest_web/router.ex:541",
+      "source": "lib/delivest_web/router.ex:542",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37380,7 +37447,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks/new",
-      "source": "lib/delivest_web/router.ex:542",
+      "source": "lib/delivest_web/router.ex:543",
       "target_section": "Marketing",
       "variant": null
     },
@@ -37413,7 +37480,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks",
-      "source": "lib/delivest_web/router.ex:540",
+      "source": "lib/delivest_web/router.ex:541",
       "target_section": "Marketing",
       "variant": null
     },

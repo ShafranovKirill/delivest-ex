@@ -7,6 +7,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
 
   attr :tab, :string, required: true
   attr :title, :string, required: true
+  attr :show_title, :boolean, default: true
   attr :report, :map, required: true
   attr :report_previous, :any, default: nil
   attr :current_staff, :any, required: true
@@ -20,18 +21,21 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
       <div class="rounded-2xl border border-base-300 bg-base-100 p-5 space-y-2">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold">{@title}</h2>
+            <h2 :if={@show_title} class="text-lg font-semibold">{@title}</h2>
             <p class="text-sm text-base-content/60">{report_explanation(@tab)}</p>
           </div>
           <.link
-            :if={@tab == "sources"}
+            :if={@tab == "sources" and not is_nil(@current_branch)}
             navigate={~p"/staff/b/#{@current_branch}/advertising-links"}
             class="btn btn-sm btn-outline"
           >
             {gettext("Manage advertising links")}
           </.link>
           <button
-            :if={Identity.can?(@current_staff, "admin") and @tab != "franchise"}
+            :if={
+              Identity.can?(@current_staff, "admin") and not is_nil(@current_branch) and
+                @tab != "franchise"
+            }
             id="statistics-rebuild"
             type="button"
             phx-click="rebuild"

@@ -253,4 +253,85 @@ defmodule Delivest.AnalyticsTest do
     assert %{crm_orders: 0, crm_revenue: 0, avg_confirm_seconds: nil} =
              Analytics.crm_split(@branch_id, {~D[2026-10-19], ~D[2026-10-19]})
   end
+
+  test "network sales aggregate only the supplied unique branches with weighted totals", ctx do
+    {:ok, _} =
+      Delivest.Relations.create_relation(Repo, "Branch", @other_branch_id, "Product", ctx.tea.id)
+
+    order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 10:00:00Z])
+    order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 11:00:00Z])
+    order!(@other_branch_id, [{ctx.tea, 3}], ~U[2026-10-19 12:00:00Z])
+    excluded = insert(:branch)
+    excluded_product = insert_branch_product(excluded.id, price: 999)
+    order!(excluded.id, [{excluded_product, 8}], ~U[2026-10-19 12:00:00Z])
+
+    ids = [@branch_id, @other_branch_id, @branch_id]
+    period = {~D[2026-10-19], ~D[2026-10-19]}
+
+    assert %{orders_count: 3, revenue: 500, avg_check: 167, items_sold: 5} =
+             Analytics.summary(ids, period)
+
+    assert [%{product_id: id, orders: 3, quantity: 5, revenue: 500}] =
+             Analytics.top_products(ids, period, limit: 1)
+
+    assert id == ctx.tea.id
+
+    assert [%{products: 1, orders: 3, quantity: 5, revenue: 500}] =
+             Analytics.categories(ids, period)
+
+    assert [%{key: :pickup, orders: 3, revenue: 500}] =
+             Analytics.breakdown(ids, period, :fulfillment_type)
+
+    assert %{created: 3} = Analytics.status_counts(ids, period)
+
+    assert %{crm_orders: 0, crm_revenue: 0, avg_confirm_seconds: nil} =
+             Analytics.crm_split(ids, period)
+  end
+
+  test "empty network scope never falls back to all branches", ctx do
+    order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 10:00:00Z])
+    period = {~D[2026-10-19], ~D[2026-10-19]}
+
+    assert %{orders_count: 0, revenue: 0, avg_check: 0, items_sold: 0} =
+             Analytics.summary([], period)
+
+    assert %{crm_orders: 0, crm_revenue: 0} = Analytics.crm_split([], period)
+    assert [] == Analytics.top_products([], period)
+    assert [] == Analytics.categories([], period)
+    assert [] == Analytics.breakdown([], period, :payment_method)
+    assert %{} == Analytics.status_counts([], period)
+    assert [%{date: ~D[2026-10-19], orders: 0, revenue: 0}] == Analytics.daily([], period)
+    assert length(Analytics.hourly([], period)) == 24
+    assert Enum.all?(Analytics.hourly([], period), &(&1.orders == 0 and &1.revenue == 0))
+  end
+
+  test "network series use each branch's local day bounds and hour buckets" do
+    west = insert(:branch)
+    east = insert(:branch)
+
+    Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+      branch_id: west.id,
+      timezone: "Europe/Moscow"
+    })
+
+    Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+      branch_id: east.id,
+      timezone: "Asia/Yekaterinburg"
+    })
+
+    west_product = insert_branch_product(west.id, price: 100)
+    east_product = insert_branch_product(east.id, price: 300)
+    # The same UTC instant is yesterday in Moscow and today in Yekaterinburg.
+    order!(west.id, [{west_product, 1}], ~U[2026-10-18 20:30:00Z])
+    order!(east.id, [{east_product, 1}], ~U[2026-10-18 20:30:00Z])
+    order!(west.id, [{west_product, 1}], ~U[2026-10-19 10:00:00Z])
+    order!(east.id, [{east_product, 1}], ~U[2026-10-19 08:00:00Z])
+    scope = [west.id, east.id]
+    period = {~D[2026-10-19], ~D[2026-10-19]}
+    assert %{orders_count: 3, revenue: 700} = Analytics.summary(scope, period)
+    assert [%{date: ~D[2026-10-19], orders: 3, revenue: 700}] = Analytics.daily(scope, period)
+    hours = Analytics.hourly(scope, period)
+    assert Enum.at(hours, 1) == %{hour: 1, orders: 1, revenue: 300}
+    assert Enum.at(hours, 13) == %{hour: 13, orders: 2, revenue: 400}
+  end
 end

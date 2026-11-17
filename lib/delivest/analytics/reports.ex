@@ -87,6 +87,29 @@ defmodule Delivest.Analytics.Reports do
     end
   end
 
+  def read(staff, :network, {from, to}, tab, filters)
+      when tab in ~w(channels sources funnel customers) do
+    feature = feature_for_tab(tab)
+
+    with true <-
+           Identity.can?(staff, "statistics.read") and Identity.can?(staff, "statistics.network"),
+         :ok <- valid_period(from, to) do
+      all_ids = staff |> Identity.list_branch_for_staff() |> Enum.map(& &1.id)
+      enabled = Features.enabled_branches(feature, all_ids)
+      ids = Enum.filter(all_ids, &MapSet.member?(enabled, &1))
+      job = Query.schedule_health(ids, @kind_by_feature[feature])
+
+      report =
+        present(feature, ids, {from, to}, tab, filters, job, Query.current_period?(ids, to))
+
+      excluded = length(all_ids) - length(ids)
+      state = if excluded > 0 and report.state != :not_collected, do: :partial, else: report.state
+      {:ok, %{report | excluded_branches: excluded, state: state} |> Map.put(:job, job)}
+    else
+      _ -> {:error, :forbidden}
+    end
+  end
+
   def read(_, _, _, _, _), do: {:error, :forbidden}
 
   @doc "Reads an authorized network scope of existing published link buckets."

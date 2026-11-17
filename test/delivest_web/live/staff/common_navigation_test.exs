@@ -33,53 +33,53 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     conn = login(conn, ["statistics.read", "statistics.network"], [branch])
 
     {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
-    assert has_element?(view, "#statistics-report")
-    assert has_element?(view, "#statistics-scope a[href='/staff/statistics?period=today']")
 
-    assert has_element?(
-             view,
-             "#statistics-scope a[href*='/staff/b/#{branch.slug}/statistics']"
-           )
+    for tab <- ~w(sales products categories),
+        do: assert(has_element?(view, "#statistics-tab-#{tab}"))
+
+    assert has_element?(view, "#header-branch")
+    refute has_element?(view, "#statistics-scope")
   end
 
-  test "limited statistics role sees explicit branches but no franchise report", %{conn: conn} do
-    branch = insert(:branch)
-    conn = login(conn, ["statistics.read"], [branch])
-
-    {:ok, view, _} = live(conn, ~p"/staff/statistics")
-    assert has_element?(view, "#statistics-choose-branch")
-    assert has_element?(view, "#staff-page-header h1")
-    refute has_element?(view, "#staff-page-header [role='tablist']")
-    refute has_element?(view, "#statistics-report")
-    refute has_element?(view, "#statistics-scope a[href^='/staff/statistics']")
-
-    assert has_element?(
-             view,
-             "#statistics-scope a[href*='/staff/b/#{branch.slug}/statistics']"
-           )
-  end
-
-  test "statistics branch links preserve compatible filters but drop another branch link", %{
+  test "limited statistics role opens its branch and cannot open the network summary", %{
     conn: conn
   } do
+    branch = insert(:branch)
+    conn = login(conn, ["statistics.read"], [branch])
+    assert {:error, {:redirect, _}} = live(conn, ~p"/staff/statistics")
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics")
+    assert has_element?(view, "#statistics-tab-sales")
+    refute has_element?(view, "#statistics-scope")
+    refute has_element?(view, "#sidebar-section-nav-analytics_comparison")
+  end
+
+  test "header statistics transitions preserve compatible filters but drop another branch link",
+       %{conn: conn} do
     first = insert(:branch)
     second = insert(:branch)
     conn = login(conn, ["statistics.read"], [first, second], first.id)
-
     {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
     {:ok, _} = Features.configure("analytics_links", {:branch, first.id}, true, actor: "test")
-    {:ok, _} = Features.configure("analytics_links", {:branch, second.id}, true, actor: "test")
 
     {:ok, view, _} =
       live(
         conn,
-        ~p"/staff/b/#{first}/statistics?tab=sources&period=custom&from=2026-11-01&to=2026-11-07&link_id=123"
+        ~p"/staff/b/#{first}/analytics/sources?period=custom&from=2026-11-01&to=2026-11-07&link_id=123"
       )
 
-    assert has_element?(
-             view,
-             "#statistics-scope a[href*='#{second.slug}/statistics?'][href*='tab=sources'][href*='from=2026-11-01']:not([href*='link_id'])"
-           )
+    assert has_element?(view, "#header-branch")
+    refute has_element?(view, "#statistics-scope")
+
+    assert {:ok, %{path: path}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/b/#{first.slug}/analytics/sources?period=custom&from=2026-11-01&to=2026-11-07&link_id=123",
+               {:branch, second.slug}
+             )
+
+    assert URI.parse(path).path == "/staff/b/#{second.slug}/analytics/sources"
+    query = URI.decode_query(URI.parse(path).query)
+    assert query["from"] == "2026-11-01" and query["to"] == "2026-11-07"
+    refute query["link_id"]
   end
 
   test "marketing hub requires explicit allowed branch selection", %{conn: conn} do

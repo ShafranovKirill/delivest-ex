@@ -5,6 +5,7 @@ defmodule Delivest.Analytics do
   alias Delivest.Oms.{Order, OrderItem, OrderScopes}
   alias Delivest.Repo
 
+  @type branch_scope :: binary() | [binary()]
   @type period :: {Date.t(), Date.t()}
 
   @presets ~w(today yesterday week month this_month custom)
@@ -69,7 +70,7 @@ defmodule Delivest.Analytics do
     {Date.add(from, -days), Date.add(from, -1)}
   end
 
-  @spec summary(binary(), period()) :: map()
+  @spec summary(branch_scope(), period()) :: map()
   def summary(branch_id, period) do
     totals = branch_id |> period_orders(period) |> select(^period_totals()) |> Repo.one()
 
@@ -92,7 +93,7 @@ defmodule Delivest.Analytics do
     }
   end
 
-  @spec crm_split(binary(), period()) :: map()
+  @spec crm_split(branch_scope(), period()) :: map()
   def crm_split(branch_id, period) do
     result = branch_id |> sales_orders(period) |> select(^crm_totals()) |> Repo.one()
 
@@ -103,7 +104,19 @@ defmodule Delivest.Analytics do
     }
   end
 
-  @spec daily(binary(), period()) :: [%{date: Date.t(), revenue: integer(), orders: integer()}]
+  @spec daily(branch_scope(), period()) :: [
+          %{date: Date.t(), revenue: integer(), orders: integer()}
+        ]
+  def daily(branch_ids, {from, to} = period) when is_list(branch_ids) do
+    days = Date.diff(to, from) + 1
+
+    if days < 1 or days > @max_period_days do
+      raise ArgumentError, "daily period must contain 1 to #{@max_period_days} days"
+    end
+
+    merge_series(branch_ids, period, :date, &daily/2, Date.range(from, to))
+  end
+
   def daily(branch_id, {from, to} = period) do
     days = Date.diff(to, from) + 1
 
@@ -135,7 +148,13 @@ defmodule Delivest.Analytics do
     end
   end
 
-  @spec hourly(binary(), period()) :: [%{hour: 0..23, revenue: integer(), orders: integer()}]
+  @spec hourly(branch_scope(), period()) :: [
+          %{hour: 0..23, revenue: integer(), orders: integer()}
+        ]
+  def hourly(branch_ids, period) when is_list(branch_ids) do
+    merge_series(branch_ids, period, :hour, &hourly/2, 0..23)
+  end
+
   def hourly(branch_id, period) do
     tz = LocalTime.timezone(branch_id)
 
@@ -165,7 +184,7 @@ defmodule Delivest.Analytics do
     end
   end
 
-  @spec top_products(binary(), period(), keyword()) :: [map()]
+  @spec top_products(branch_scope(), period(), keyword()) :: [map()]
   def top_products(branch_id, period, opts \\ []) do
     limit = Keyword.get(opts, :limit, 20)
 
@@ -190,7 +209,7 @@ defmodule Delivest.Analytics do
   defp maybe_limit(query, :all), do: query
   defp maybe_limit(query, limit), do: limit(query, ^limit)
 
-  @spec categories(binary(), period()) :: [map()]
+  @spec categories(branch_scope(), period()) :: [map()]
   def categories(branch_id, period) do
     branch_id
     |> items_query(period)
@@ -209,7 +228,7 @@ defmodule Delivest.Analytics do
     |> with_share(:revenue)
   end
 
-  @spec breakdown(binary(), period(), :fulfillment_type | :payment_method) :: [map()]
+  @spec breakdown(branch_scope(), period(), :fulfillment_type | :payment_method) :: [map()]
   def breakdown(branch_id, period, field) when field in [:fulfillment_type, :payment_method] do
     branch_id
     |> sales_orders(period)
@@ -225,7 +244,7 @@ defmodule Delivest.Analytics do
     |> with_share(:orders)
   end
 
-  @spec status_counts(binary(), period()) :: %{atom() => non_neg_integer()}
+  @spec status_counts(branch_scope(), period()) :: %{atom() => non_neg_integer()}
   def status_counts(branch_id, period) do
     branch_id
     |> period_orders(period)
@@ -285,12 +304,51 @@ defmodule Delivest.Analytics do
     |> Map.put(:favourites, favourites)
   end
 
+  # Each authorized branch has its own local calendar-day boundaries. Keeping
+  # the union in SQL preserves weighted averages and distinct item counts.
+  defp period_orders(branch_ids, {from, to}) when is_list(branch_ids) do
+    scope =
+      branch_ids
+      |> Enum.uniq()
+      |> Enum.reduce(dynamic(false), fn branch_id, scope ->
+        zone = LocalTime.timezone(branch_id)
+        starts_at = LocalTime.start_of_day_utc(from, zone)
+        ends_at = LocalTime.end_of_day_utc(to, zone)
+
+        dynamic(
+          [o],
+          ^scope or
+            (o.branch_id == ^branch_id and o.inserted_at >= ^starts_at and
+               o.inserted_at <= ^ends_at)
+        )
+      end)
+
+    from(o in Order, where: is_nil(o.deleted_at), where: ^scope)
+  end
+
   defp period_orders(branch_id, {from, to}) do
     from(o in Order,
       where: o.branch_id == ^branch_id and is_nil(o.deleted_at),
       where: o.inserted_at >= ^LocalTime.start_of_day_utc(from, LocalTime.timezone(branch_id)),
       where: o.inserted_at <= ^LocalTime.end_of_day_utc(to, LocalTime.timezone(branch_id))
     )
+  end
+
+  # Bucket in each branch's timezone before combining the same local dates/hours.
+  defp merge_series(branch_ids, period, key, fetch, buckets) do
+    rows =
+      branch_ids
+      |> Enum.uniq()
+      |> Enum.flat_map(&fetch.(&1, period))
+      |> Enum.reduce(%{}, fn row, rows ->
+        Map.update(rows, Map.fetch!(row, key), row, fn total ->
+          %{total | revenue: total.revenue + row.revenue, orders: total.orders + row.orders}
+        end)
+      end)
+
+    for bucket <- buckets do
+      Map.get(rows, bucket, %{key => bucket, :revenue => 0, :orders => 0})
+    end
   end
 
   defp sales_orders(branch_id, period) do
