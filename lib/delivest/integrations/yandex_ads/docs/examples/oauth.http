@@ -1,0 +1,26 @@
+# Статические шаблоны: НЕ отправлять напрямую. Секреты — только placeholders.
+# https://yandex.ru/dev/id/doc/ru/codes/code-url
+# https://yandex.ru/dev/id/doc/ru/tokens/refresh-client
+# Сгенерировать непредсказуемый state на каждую попытку и сверить callback.
+# Для PKCE использовать S256: сохранить code_verifier приватно, передать
+# code_challenge в authorize и code_verifier при обмене; ниже показан
+# обычный confidential-client exchange с client_secret без PKCE.
+# Redirect URI должен точно совпадать с зарегистрированным адресом.
+
+GET https://oauth.yandex.ru/authorize?response_type=code&client_id=<YANDEX_CLIENT_ID>&redirect_uri=https%3A%2F%2Fexample.invalid%2Foauth%2Fcallback&state=<RANDOM_STATE>
+
+###
+
+# Ответ с access_token/refresh_token, код и secret не журналировать.
+POST https://oauth.yandex.ru/token
+Content-Type: application/x-www-form-urlencoded; charset=utf-8
+
+grant_type=authorization_code&code=<ONE_TIME_CODE>&client_id=<YANDEX_CLIENT_ID>&client_secret=<YANDEX_CLIENT_SECRET>
+
+###
+
+# Сохранить новый refresh_token из ответа атомарно с access_token.
+POST https://oauth.yandex.ru/token
+Content-Type: application/x-www-form-urlencoded; charset=utf-8
+
+grant_type=refresh_token&refresh_token=<YANDEX_REFRESH_TOKEN>&client_id=<YANDEX_CLIENT_ID>&client_secret=<YANDEX_CLIENT_SECRET>

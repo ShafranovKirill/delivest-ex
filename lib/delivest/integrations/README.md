@@ -13,6 +13,7 @@
 | Яндекс Доставка | `yandex_delivery/` | Курьерский провайдер: вызов курьера на заказ | на филиал, `branch_info.yandex_delivery` | [yandex_delivery/README.md](yandex_delivery/README.md) |
 | АТОЛ Онлайн | `atol_online/` | Облачная касса: фискальные чеки 54-ФЗ (в разработке) | на филиал | [atol_online/README.md](atol_online/README.md) |
 | ЮKassa | `yookassa/` | Онлайн-оплата и чеки по ней (не подключена) | на филиал | [yookassa/README.md](yookassa/README.md) |
+| Яндекс Директ и Метрика | `yandex_ads/` | F04: документация API подготовлена, адаптер не реализован | не настроены | [yandex_ads/README.md](yandex_ads/README.md) |
 
 Все HTTP-запросы идут через `Delivest.HTTP.Client`. В тестах он подменяется через `Req.Test.stub(Delivest.HTTP.Client, ...)`.
 

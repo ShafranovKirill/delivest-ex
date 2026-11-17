@@ -1,0 +1,65 @@
+# Подготовленные запросы; НЕ отправлялись. Идентификаторы/секреты синтетические.
+# Источники: https://yandex.ru/dev/metrika/ru/management/openapi/counter/counters
+# https://yandex.ru/dev/metrika/ru/management/openapi/goal/addGoal
+# https://yandex.ru/dev/metrika/ru/management/openapi/offline_conversions/upload_1
+# https://yandex.ru/dev/metrika/ru/stat/openapi/data_1
+# https://yandex.ru/dev/metrika/ru/data-import/measurement-upload
+
+GET https://api-metrika.yandex.net/management/v1/counters
+Authorization: OAuth <METRIKA_OAUTH_TOKEN>
+
+###
+
+GET https://api-metrika.yandex.net/management/v1/counter/12345678/goals
+Authorization: OAuth <METRIKA_OAUTH_TOKEN>
+
+###
+
+# Требует metrika:write и согласования владельца счетчика.
+POST https://api-metrika.yandex.net/management/v1/counter/12345678/goals
+Authorization: OAuth <METRIKA_OAUTH_TOKEN>
+Content-Type: application/json; charset=utf-8
+
+{
+  "goal": {
+    "name": "Delivest completed",
+    "type": "action",
+    "conditions": [{"type": "exact", "url": "delivest_order_completed"}]
+  }
+}
+
+###
+
+# Синтетический multipart; тот же CSV в offline-conversions.csv.
+# В реальном клиенте boundary и файл формируются программно.
+POST https://api-metrika.yandex.net/management/v1/counter/12345678/offline_conversions/upload
+Authorization: OAuth <METRIKA_OAUTH_TOKEN>
+Content-Type: multipart/form-data; boundary=delivest-synthetic-boundary
+
+--delivest-synthetic-boundary
+Content-Disposition: form-data; name="file"; filename="offline-conversions.csv"
+Content-Type: text/csv; charset=utf-8
+
+ClientId,Target,DateTime,Price,Currency
+123456789012345678,delivest_order_completed,1793476800,1250.00,RUB
+--delivest-synthetic-boundary--
+
+###
+
+GET https://api-metrika.yandex.net/management/v1/counter/12345678/offline_conversions/uploading/987654
+Authorization: OAuth <METRIKA_OAUTH_TOKEN>
+
+###
+
+# Не интерпретировать sampled отчет как точный финансовый ledger.
+GET https://api-metrika.yandex.net/stat/v1/data?ids=12345678&metrics=ym%3As%3Avisits&dimensions=ym%3As%3Adate&date1=2026-11-01&date2=2026-11-02&limit=100&offset=1
+Authorization: OAuth <METRIKA_OAUTH_TOKEN>
+
+###
+
+# MP: ms — отдельный секрет. Тело URL-кодировать; не писать URL/body в журнал.
+# et опущен: при тестировании время должно относиться к текущему реальному визиту.
+POST https://mc.yandex.ru/collect
+Content-Type: application/x-www-form-urlencoded; charset=utf-8
+
+tid=12345678&cid=123456789012345678&ms=%3CMEASUREMENT_TOKEN%3E&t=event&pa=purchase&ti=order-synthetic-42&tr=1250.00&cu=RUB&pr1id=offer-synthetic-7&pr1pr=1250.00&pr1qt=1

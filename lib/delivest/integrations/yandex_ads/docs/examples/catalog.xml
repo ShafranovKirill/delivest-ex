@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Синтетический фрагмент YML; не зарегистрирован в Direct.
+     https://yandex.ru/support/direct/ru/feeds/requirements-yml -->
+<!DOCTYPE yml_catalog SYSTEM "shops.dtd">
+<yml_catalog date="2026-11-17 12:00">
+  <shop>
+    <name>Delivest Example</name>
+    <company>Delivest Example</company>
+    <url>https://example.invalid/menu</url>
+    <currencies><currency id="RUR" rate="1"/></currencies>
+    <categories><category id="1">Пицца</category></categories>
+    <offers>
+      <offer id="offer-synthetic-7" available="true">
+        <url>https://example.invalid/menu?product=pizza-primer</url>
+        <price>1250.00</price>
+        <currencyId>RUR</currencyId>
+        <categoryId>1</categoryId>
+        <name>Пицца Пример</name>
+        <description>Вымышленный товар для проверки структуры фида.</description>
+      </offer>
+    </offers>
+  </shop>
+</yml_catalog>

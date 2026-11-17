@@ -1,0 +1,45 @@
+# Подготовленные запросы; НЕ отправлялись. Значения синтетические.
+# В HTTP-клиенте подставлять секреты из защищенного хранилища; не журналировать заголовки.
+# Источники: https://yandex.ru/dev/direct/doc/ru/campaigns/get
+# https://yandex.ru/dev/direct/doc/ru/spec
+
+POST https://api.direct.yandex.com/json/v501/campaigns
+Authorization: Bearer <DIRECT_OAUTH_TOKEN>
+Client-Login: <CLIENT_LOGIN>
+Accept-Language: ru
+Content-Type: application/json; charset=utf-8
+
+{
+  "method": "get",
+  "params": {
+    "SelectionCriteria": {},
+    "FieldNames": ["Id", "Name", "Type", "State", "Currency", "TimeZone"],
+    "UnifiedCampaignFieldNames": ["CounterIds", "PriorityGoals"],
+    "Page": {"Limit": 100, "Offset": 0}
+  }
+}
+
+###
+
+# Сохранять заголовок колонок TSV; 201/202 => повтор ИДЕНТИЧНОГО body после retryIn.
+# Пример дат иллюстративен; реальный период выбирать в локальном часовом поясе кампании.
+POST https://api.direct.yandex.com/json/v501/reports
+Authorization: Bearer <DIRECT_OAUTH_TOKEN>
+Client-Login: <CLIENT_LOGIN>
+Accept-Language: ru
+Content-Type: application/json; charset=utf-8
+processingMode: auto
+skipReportHeader: true
+skipReportSummary: true
+
+{
+  "params": {
+    "SelectionCriteria": {"DateFrom": "2026-11-01", "DateTo": "2026-11-02"},
+    "FieldNames": ["Date", "CampaignId", "CampaignName", "Impressions", "Clicks", "Cost"],
+    "ReportName": "Delivest F04 synthetic daily costs",
+    "ReportType": "CAMPAIGN_PERFORMANCE_REPORT",
+    "DateRangeType": "CUSTOM_DATE",
+    "Format": "TSV",
+    "IncludeVAT": "YES"
+  }
+}
