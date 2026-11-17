@@ -53,7 +53,7 @@ defmodule DelivestWeb.Advertising.RedirectControllerTest do
     assert {:ok, link} =
              Links.create(staff(branch), branch.id, %{"campaign" => "spring", "name" => "Spring"})
 
-    response = get(conn, ~p"/r/#{link.token}")
+    response = get(conn, ~p"/r/#{link.token}", %{"yclid" => "12345678901234567890"})
     assert response.status in [301, 302]
     assert count("advertising_clicks") == 1
 
@@ -153,5 +153,82 @@ defmodule DelivestWeb.Advertising.RedirectControllerTest do
 
     assert get_in(json_response(tampered, 200), ["data", "claimed"]) == 0
     assert Attribution.first_source(client.id) == nil
+  end
+
+  test "redirect carries permitted click context and legacy product keys only to its stored branch",
+       %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    other_branch = insert(:branch, is_active: true)
+    enable(branch)
+
+    assert {:ok, link} =
+             Links.create(staff(branch), branch.id, %{"campaign" => "safe", "name" => "Safe"})
+
+    permitted = %{
+      "yclid" => "12345678901234567890",
+      "campaign_id" => "98765432109876543210",
+      "ad_id" => "1234567890",
+      "utm_source" => "yandex",
+      "utm_medium" => "cpc",
+      "utm_campaign" => "autumn-menu",
+      "product" => "pizza-large"
+    }
+
+    untrusted = %{
+      "host" => "evil.example",
+      "url" => "https://evil.example/steal",
+      "redirect" => "//evil.example/steal",
+      "return_to" => "/" <> other_branch.slug,
+      "branch_id" => other_branch.id,
+      "branch" => other_branch.slug,
+      "phone" => "+79991234567",
+      "utm_content" => "unreviewed-content",
+      "category" => Ecto.UUID.generate()
+    }
+
+    response = get(conn, ~p"/r/#{link.token}", Map.merge(permitted, untrusted))
+    destination = redirected_to(response) |> URI.parse()
+    origin = Application.fetch_env!(:delivest, :client_origin) |> URI.parse()
+
+    assert {destination.scheme, destination.host, destination.port} ==
+             {origin.scheme, origin.host, origin.port}
+
+    assert destination.path == "/" <> branch.slug
+    assert URI.decode_query(destination.query) == permitted
+    assert destination.fragment == nil
+    assert count("advertising_clicks") == 1
+
+    id = Ecto.UUID.generate()
+
+    uuid_redirect =
+      get(build_conn(), ~p"/r/#{link.token}", %{"product" => id})
+      |> redirected_to()
+      |> URI.parse()
+
+    assert uuid_redirect.path == "/" <> branch.slug
+    assert URI.decode_query(uuid_redirect.query) == %{"product" => id}
+  end
+
+  test "redirect drops malformed, oversized and structured parameters without changing the old destination",
+       %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    enable(branch)
+
+    assert {:ok, link} =
+             Links.create(staff(branch), branch.id, %{"campaign" => "safe", "name" => "Safe"})
+
+    invalid = %{
+      "yclid" => String.duplicate("1", 129),
+      "campaign_id" => "123/456",
+      "ad_id" => ["123"],
+      "product" => "../another-branch/product",
+      "utm_source" => "79991234567",
+      "utm_medium" => "person@example.com",
+      "utm_campaign" => String.duplicate("a", 65)
+    }
+
+    destination = Application.fetch_env!(:delivest, :client_origin) <> "/" <> branch.slug
+    assert get(conn, ~p"/r/#{link.token}", invalid) |> redirected_to() == destination
+    assert get(build_conn(), ~p"/r/#{link.token}") |> redirected_to() == destination
   end
 end

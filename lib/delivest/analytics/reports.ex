@@ -89,6 +89,43 @@ defmodule Delivest.Analytics.Reports do
 
   def read(_, _, _, _, _), do: {:error, :forbidden}
 
+  @doc "Reads an authorized network scope of existing published link buckets."
+  def read_link_scope(staff, ids, {from, to}) when is_list(ids) do
+    with true <-
+           Identity.can?(staff, "statistics.read") and Identity.can?(staff, "statistics.network"),
+         :ok <- valid_period(from, to) do
+      all_ids = Enum.uniq(ids)
+      staff = Repo.preload(staff, [:role, :branches])
+      allowed = staff |> Identity.list_branch_for_staff() |> Enum.map(& &1.id) |> MapSet.new()
+
+      if Enum.all?(all_ids, &MapSet.member?(allowed, &1)) do
+        enabled = Features.enabled_branches("analytics_links", all_ids)
+        enabled_ids = Enum.filter(all_ids, &MapSet.member?(enabled, &1))
+        job = Query.schedule_health(enabled_ids, "analytics.links")
+        current? = Query.current_period?(enabled_ids, to)
+
+        report =
+          present("analytics_links", enabled_ids, {from, to}, "sources", %{}, job, current?)
+
+        excluded = length(all_ids) - length(enabled_ids)
+
+        state =
+          if excluded > 0 and report.state != :not_collected, do: :partial, else: report.state
+
+        {:ok,
+         %{report | excluded_branches: excluded, state: state}
+         |> Map.put(:branch_ids, enabled_ids)
+         |> Map.put(:job, job)}
+      else
+        {:error, :forbidden}
+      end
+    else
+      _ -> {:error, :forbidden}
+    end
+  end
+
+  def read_link_scope(_, _, _), do: {:error, :forbidden}
+
   def request_rebuild(staff, feature, branch_id, {from, to}) do
     with true <- Identity.can?(staff, "admin"),
          true <- feature in Map.keys(@kind_by_feature),
