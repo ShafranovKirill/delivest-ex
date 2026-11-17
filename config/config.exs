@@ -47,7 +47,8 @@ config :delivest, Oban,
     {"41 4 * * *", Delivest.Integrations.Poller.Worker, args: %{poller: "yookassa_reconcile"}},
     {"*/5 * * * *", Delivest.Background.Dispatcher},
     {"*/5 * * * *", Delivest.Popular.RefreshWorker},
-    {"13 * * * *", Delivest.Integrations.YandexAds.ScheduleWorker}
+    {"13 * * * *", Delivest.Integrations.YandexAds.ScheduleWorker},
+    {"30 3 * * *", Delivest.Analytics.SalesCacheWorker}
   ],
   repo: Delivest.Repo
 

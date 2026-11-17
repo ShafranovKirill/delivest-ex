@@ -8,7 +8,7 @@ defmodule Delivest.Analytics.ReportsTest do
   import Delivest.OrderFixtures
 
   alias Delivest.{Analytics.Reports, Background, Features, Funnel, LocalTime, Payments, Repo}
-  alias Delivest.Analytics.Reports.{Prune, Query}
+  alias Delivest.Analytics.Reports.{Prune, Query, Refresh}
   alias Delivest.Advertising.{Click, Links}
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Carts, Orders}
@@ -418,7 +418,29 @@ defmodule Delivest.Analytics.ReportsTest do
 
     day = today(ctx.branch)
 
-    assert {:ok, %{state: :not_collected, expected_days: 50}} =
+    assert {:ok, %{refresh_pending: true, expected_days: 50}} =
+             Reports.read(ctx.admin, :franchise, {day, day}, "franchise")
+
+    # Entry does a fixed bucket budget, not one calculation per branch.
+    assert Agent.get(counter, & &1) < 250
+
+    # Model the already-published remainder, then verify warm network reads keep
+    # their original constant SQL bound rather than visiting each branch.
+    Repo.query!("""
+    WITH published AS (
+      INSERT INTO analytics_report_snapshots
+        (id,feature,branch_id,day,revision,franchise_generation,branch_generation,source_asof,inserted_at)
+      SELECT gen_random_uuid(),feature,branch_id,day,revision,1,1,timezone('UTC',now()),timezone('UTC',now())
+      FROM analytics_report_states WHERE feature='analytics_extended' AND snapshot_id IS NULL
+      RETURNING id,feature,branch_id,day
+    )
+    UPDATE analytics_report_states s SET snapshot_id=p.id,source_asof=timezone('UTC',now())
+    FROM published p WHERE s.feature=p.feature AND s.branch_id=p.branch_id AND s.day=p.day
+    """)
+
+    Agent.update(counter, fn _ -> 0 end)
+
+    assert {:ok, %{refresh_pending: false, expected_days: 50}} =
              Reports.read(ctx.admin, :franchise, {day, day}, "franchise")
 
     assert Agent.get(counter, & &1) < 30
@@ -436,14 +458,14 @@ defmodule Delivest.Analytics.ReportsTest do
     refute Query.current_period?([], ~D[2026-11-10], now)
   end
 
-  test "manual rebuild is host admin only and never runs on read", ctx do
+  test "manual full rebuild stays admin only while entry refreshes requested work", ctx do
     enable("analytics_extended", ctx.branch)
     period = {today(ctx.branch), today(ctx.branch)}
 
     assert {:error, :forbidden} =
              Reports.request_rebuild(ctx.analyst, "analytics_extended", ctx.branch.id, period)
 
-    assert {:ok, %{state: :not_collected}} =
+    assert {:ok, %{refresh_pending: false}} =
              Reports.read(ctx.analyst, {:branch, ctx.branch.id}, period, "channels")
 
     assert {:ok, :queued} =
@@ -605,7 +627,7 @@ defmodule Delivest.Analytics.ReportsTest do
              Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
   end
 
-  test "current report freshness follows successful checks without new events", ctx do
+  test "current clean buckets stay fresh even when scheduled checks are old", ctx do
     enable("analytics_funnel", ctx.branch)
     enable("analytics_extended", ctx.branch)
     collected_before("analytics_funnel", ctx.branch, today(ctx.branch))
@@ -626,7 +648,7 @@ defmodule Delivest.Analytics.ReportsTest do
         [hours, kind, "branch:" <> ctx.branch.id]
       )
 
-      assert {:ok, %{state: :stale}} =
+      assert {:ok, %{state: :empty, refresh_pending: false}} =
                Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, tab)
 
       run_report(kind, ctx.branch)
@@ -898,5 +920,150 @@ defmodule Delivest.Analytics.ReportsTest do
     assert counts["created"] == 1
     assert counts["completed"] == 1
     assert counts["revenue"] == 900
+  end
+
+  test "opening a cold current report publishes captured orders and reuses its clean bucket",
+       ctx do
+    enable("analytics_extended", ctx.branch)
+    day = today(ctx.branch)
+    collected_before("analytics_extended", ctx.branch, day)
+    order = order_fixture(ctx.branch.id, price: 700)
+    {:ok, _} = Orders.advance_order(order, :completed, :system)
+
+    assert {:ok, %{refresh_pending: false, totals: %{"revenue" => 700}}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+
+    first = snapshot_id(ctx.branch.id, day)
+    assert is_binary(first)
+
+    assert {:ok, %{refresh_pending: false}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+
+    assert snapshot_id(ctx.branch.id, day) == first
+  end
+
+  test "opening historical dirty report incorporates a late refund without rebuilding clean history",
+       ctx do
+    enable("analytics_extended", ctx.branch)
+    day = Date.add(today(ctx.branch), -5)
+    collected_before("analytics_extended", ctx.branch, day)
+    order = order_fixture(ctx.branch.id, price: 2_000)
+
+    order =
+      Repo.update!(
+        Ecto.Changeset.change(order,
+          inserted_at: LocalTime.start_of_day_utc(day, LocalTime.timezone(ctx.branch.id))
+        )
+      )
+
+    {:ok, completed} = Orders.advance_order(order, :completed, :system)
+
+    assert {:ok, %{totals: %{"revenue" => 2_000}}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+
+    before_refund = snapshot_id(ctx.branch.id, day)
+    [payment] = Payments.list(completed.id)
+    assert {:ok, %{status: :succeeded}} = Payments.refund(payment, 500)
+
+    assert {:ok, %{refresh_pending: false, totals: %{"revenue" => 1_500}}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+
+    assert snapshot_id(ctx.branch.id, day) != before_refund
+    after_refund = snapshot_id(ctx.branch.id, day)
+    assert {:ok, _} = Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "channels")
+    assert snapshot_id(ctx.branch.id, day) == after_refund
+  end
+
+  test "entry budget leaves dirty work pending and never creates pre-collection days", ctx do
+    enable("analytics_extended", ctx.branch)
+    day = today(ctx.branch)
+    order_fixture(ctx.branch.id)
+    assert Refresh.on_read("analytics_extended", [ctx.branch.id], {day, day}, bucket_limit: 0)
+    assert is_nil(snapshot_id(ctx.branch.id, day))
+    historical = Date.add(day, -10)
+    refute Refresh.on_read("analytics_extended", [ctx.branch.id], {historical, historical})
+
+    assert Repo.query!(
+             "SELECT count(*) FROM analytics_report_states WHERE branch_id=$1::text::uuid AND day=$2",
+             [ctx.branch.id, historical]
+           ).rows == [[0]]
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, ctx.branch.id}, false,
+               actor: "host"
+             )
+
+    refute Refresh.on_read("analytics_extended", [ctx.branch.id], {day, day})
+    assert is_nil(snapshot_id(ctx.branch.id, day))
+  end
+
+  test "another refresh owner coalesces entry instead of recalculating its bucket", ctx do
+    enable("analytics_extended", ctx.branch)
+    day = today(ctx.branch)
+    order_fixture(ctx.branch.id)
+    config = Keyword.take(Repo.config(), [:hostname, :port, :username, :password, :database])
+    connection = start_supervised!({Postgrex, config})
+    key = "analytics-report:analytics_extended:" <> ctx.branch.id
+    Postgrex.query!(connection, "SELECT pg_advisory_lock(hashtextextended($1,0))", [key])
+    assert Refresh.on_read("analytics_extended", [ctx.branch.id], {day, day})
+    assert is_nil(snapshot_id(ctx.branch.id, day))
+    Postgrex.query!(connection, "SELECT pg_advisory_unlock(hashtextextended($1,0))", [key])
+    refute Refresh.on_read("analytics_extended", [ctx.branch.id], {day, day})
+    assert is_binary(snapshot_id(ctx.branch.id, day))
+  end
+
+  test "nightly reconciliation finalizes yesterday once and reuses the closed bucket", ctx do
+    enable("analytics_extended", ctx.branch)
+    day = Date.add(today(ctx.branch), -1)
+    collected_before("analytics_extended", ctx.branch, day)
+    refute Refresh.on_read("analytics_extended", [ctx.branch.id], {day, day})
+    original = snapshot_id(ctx.branch.id, day)
+    open_asof = LocalTime.start_of_day_utc(day, LocalTime.timezone(ctx.branch.id))
+
+    Repo.query!("UPDATE analytics_report_snapshots SET source_asof=$1 WHERE id=$2::text::uuid", [
+      open_asof,
+      original
+    ])
+
+    run_report("analytics.extended", ctx.branch)
+    closed = snapshot_id(ctx.branch.id, day)
+    refute closed == original
+    run_report("analytics.extended", ctx.branch)
+    assert snapshot_id(ctx.branch.id, day) == closed
+  end
+
+  test "interactive staged result never publishes across a feature revoke", ctx do
+    enable("analytics_extended", ctx.branch)
+    day = today(ctx.branch)
+    order_fixture(ctx.branch.id)
+    handler = "reports-interactive-disable-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:delivest, :analytics, :reports, :staged],
+        fn _, _, metadata, _ ->
+          if metadata.branch_id == ctx.branch.id do
+            Features.configure("analytics_extended", {:branch, ctx.branch.id}, false,
+              actor: "host"
+            )
+          end
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    assert Refresh.on_read("analytics_extended", [ctx.branch.id], {day, day})
+    assert is_nil(snapshot_id(ctx.branch.id, day))
+  end
+
+  defp snapshot_id(branch_id, day) do
+    case Repo.query!(
+           "SELECT snapshot_id::text FROM analytics_report_states WHERE feature='analytics_extended' AND branch_id=$1::text::uuid AND day=$2",
+           [branch_id, day]
+         ).rows do
+      [[id]] -> id
+      _ -> nil
+    end
   end
 end

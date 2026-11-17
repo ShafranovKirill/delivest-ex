@@ -723,6 +723,7 @@ defmodule Delivest.Integrations.YandexAds do
          identified_orders: identified,
          net_revenue: net,
          f04_state: f04.state,
+         refresh_pending: Map.get(f04, :refresh_pending, false),
          f04_coverage:
            Map.take(f04, [:covered_days, :expected_days, :partial_days, :last_success_at]),
          roas: nil,

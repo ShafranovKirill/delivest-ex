@@ -1,4 +1,9 @@
 %{
+  "worker:Delivest.Analytics.SalesCacheWorker" =>
+    {"No external call; rebuilds at most twelve dirty closed local sales days per batch",
+     "Base sales reporting is ungated; authorized report reads select the branch scope",
+     "No optional feature disable callback; dirty or missing history falls back to source queries",
+     "Advisory single-flight and revision-conditional publication prevent stale clean snapshots without locking order writes during calculation"},
   "worker:Delivest.Integrations.YandexAds.ConversionWorker" =>
     {"Metrika offline conversion upload/status and Measurement Protocol purchase",
      "Current settings/feature state, destination generation and completed OMS status",

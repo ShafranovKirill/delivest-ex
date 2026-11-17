@@ -177,76 +177,75 @@ defmodule Delivest.Integrations.YandexAds.Campaigns do
     with true <- network_read?(staff),
          true <- Date.diff(to, from) in 0..366,
          {:ok, {limit, offset}} <- pagination(opts) do
-      Repo.transaction(fn ->
-        YandexAds.lock_settings()
-        settings = YandexAds.get_settings()
+      ids = Repo.all(from(b in Branch, where: is_nil(b.deleted_at), select: b.id))
 
-        ids = Repo.all(from(b in Branch, where: is_nil(b.deleted_at), select: b.id))
+      # Daily source staging owns its repeatable-read transaction. Keep it outside
+      # the advertiser settings lock; link buckets do not belong to an ad account.
+      with {:ok, f04} <- Reports.read_link_scope(staff, ids, {from, to}) do
+        Repo.transaction(fn ->
+          YandexAds.lock_settings()
+          settings = YandexAds.get_settings()
 
-        f04 =
-          case Reports.read_link_scope(staff, ids, {from, to}) do
-            {:ok, report} -> report
-            _ -> Repo.rollback(:forbidden)
-          end
+          result =
+            Repo.query!(report_sql(), [
+              YandexAds.account_key(settings),
+              from,
+              to,
+              Enum.map(f04.branch_ids, &Ecto.UUID.dump!/1),
+              limit,
+              offset
+            ])
 
-        result =
-          Repo.query!(report_sql(), [
-            YandexAds.account_key(settings),
-            from,
-            to,
-            Enum.map(f04.branch_ids, &Ecto.UUID.dump!/1),
-            limit,
-            offset
-          ])
+          cost_period_complete = cost_period_complete?(settings, from, to)
 
-        cost_period_complete = cost_period_complete?(settings, from, to)
+          campaigns =
+            Enum.map(
+              result.rows,
+              &campaign_row(&1, Map.put(f04, :cost_period_complete, cost_period_complete))
+            )
 
-        campaigns =
-          Enum.map(
-            result.rows,
-            &campaign_row(&1, Map.put(f04, :cost_period_complete, cost_period_complete))
-          )
+          total =
+            case result.rows do
+              [row | _] ->
+                List.last(row)
 
-        total =
-          case result.rows do
-            [row | _] ->
-              List.last(row)
+              [] ->
+                %{rows: [[count]]} =
+                  Repo.query!(
+                    """
+                    SELECT COUNT(*)::bigint FROM (
+                      SELECT campaign_id FROM yandex_ads_costs WHERE account=$1 AND day BETWEEN $2 AND $3
+                      UNION SELECT campaign_id FROM yandex_ads_campaign_bindings WHERE account_scope=$1
+                    ) campaigns
+                    """,
+                    [YandexAds.account_key(settings), from, to]
+                  )
 
-            [] ->
-              %{rows: [[count]]} =
-                Repo.query!(
-                  """
-                  SELECT COUNT(*)::bigint FROM (
-                    SELECT campaign_id FROM yandex_ads_costs WHERE account=$1 AND day BETWEEN $2 AND $3
-                    UNION SELECT campaign_id FROM yandex_ads_campaign_bindings WHERE account_scope=$1
-                  ) campaigns
-                  """,
-                  [YandexAds.account_key(settings), from, to]
-                )
+                count
+            end
 
-              count
-          end
-
-        %{
-          campaigns: campaigns,
-          total_campaigns: total,
-          truncated: total > offset + length(campaigns),
-          limit: limit,
-          offset: offset,
-          coverage: "trusted_internal_links_current_mapping",
-          warning: @warning,
-          order_period: "branch_local_order_creation_date",
-          cost_period: "direct_campaign_report_date",
-          cost_timezone: settings.timezone,
-          cost_period_complete: cost_period_complete,
-          f04_state: f04.state,
-          covered_days: f04.covered_days,
-          expected_days: f04.expected_days,
-          excluded_branches: f04.excluded_branches,
-          last_success_at: f04.last_success_at,
-          last_checked_at: f04.last_checked_at
-        }
-      end)
+          %{
+            campaigns: campaigns,
+            total_campaigns: total,
+            truncated: total > offset + length(campaigns),
+            limit: limit,
+            offset: offset,
+            coverage: "trusted_internal_links_current_mapping",
+            warning: @warning,
+            order_period: "branch_local_order_creation_date",
+            cost_period: "direct_campaign_report_date",
+            cost_timezone: settings.timezone,
+            cost_period_complete: cost_period_complete,
+            f04_state: f04.state,
+            refresh_pending: Map.get(f04, :refresh_pending, false),
+            covered_days: f04.covered_days,
+            expected_days: f04.expected_days,
+            excluded_branches: f04.excluded_branches,
+            last_success_at: f04.last_success_at,
+            last_checked_at: f04.last_checked_at
+          }
+        end)
+      end
     else
       _ -> {:error, :forbidden_or_invalid_period}
     end
@@ -274,8 +273,8 @@ defmodule Delivest.Integrations.YandexAds.Campaigns do
     complete = f04.excluded_branches == 0 and f04.covered_days == f04.expected_days and available
 
     comparable =
-      complete and f04.cost_period_complete and not mixed and cost_rows > 0 and mappings > 0 and
-        cost > 0
+      complete and not Map.get(f04, :refresh_pending, false) and f04.cost_period_complete and
+        not mixed and cost_rows > 0 and mappings > 0 and cost > 0
 
     %{
       campaign_id: id,

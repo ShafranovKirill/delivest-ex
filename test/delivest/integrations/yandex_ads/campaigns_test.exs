@@ -1,5 +1,6 @@
 defmodule Delivest.Integrations.YandexAds.CampaignsTest do
   use Delivest.DataCase, async: false
+  @moduletag :repeatable_read
   import Delivest.Factory
   import Delivest.OrderFixtures
   alias Delivest.{Features, LocalTime}
@@ -115,7 +116,7 @@ defmodule Delivest.Integrations.YandexAds.CampaignsTest do
     snapshot
   end
 
-  test "trusted published net completed revenue produces exact ROAS and CPA; raw corrections stay stale until F04 publishes",
+  test "trusted revenue produces exact ratios and entry republishes late corrections",
        ctx do
     ad_link = link(ctx.branch)
     cost(ctx.settings)
@@ -162,11 +163,11 @@ defmodule Delivest.Integrations.YandexAds.CampaignsTest do
     assert Decimal.equal?(row.cpa_micros, Decimal.new("100000000"))
     Repo.update!(Ecto.Changeset.change(order, total_amount: 99_000))
 
-    assert {:ok, %{campaigns: [unchanged], f04_state: :stale}} =
+    assert {:ok, %{campaigns: [updated], f04_state: :ready, refresh_pending: false}} =
              Campaigns.report(ctx.admin, @day, @day)
 
-    assert unchanged.net_revenue == 20_000
-    assert unchanged.f04_state == :stale
+    assert updated.net_revenue == 94_000
+    assert Decimal.equal?(updated.roas, Decimal.new("9.4"))
   end
 
   test "one account campaign shared across two branches counts its spend once", ctx do
@@ -272,7 +273,7 @@ defmodule Delivest.Integrations.YandexAds.CampaignsTest do
     assert {:error, _} = Campaigns.report(ctx.admin, @day, @day, limit: 251)
   end
 
-  test "an unpublished enabled branch marks coverage partial and prevents ratios", ctx do
+  test "a busy branch refresh keeps ratios pending until its bucket can publish", ctx do
     other = insert(:branch, is_active: true)
     enable(other)
     ad_link = link(ctx.branch)
@@ -280,15 +281,29 @@ defmodule Delivest.Integrations.YandexAds.CampaignsTest do
     {:ok, _} = Campaigns.bind(ctx.admin, ad_link.id, "123")
     publish(ctx.branch, [%{key: ad_link.id, counts: %{"completed" => 1, "revenue" => 20_000}}])
 
-    assert {:ok, %{campaigns: [row], f04_state: :partial, covered_days: 1, expected_days: 2}} =
+    # Hold the same lock as an active source calculation. This makes the pending
+    # state deterministic instead of relying on entry timing or bucket order.
+    config = Keyword.take(Repo.config(), [:hostname, :port, :username, :password, :database])
+    connection = start_supervised!({Postgrex, config})
+    key = "analytics-report:analytics_links:" <> other.id
+    Postgrex.query!(connection, "SELECT pg_advisory_lock(hashtextextended($1,0))", [key])
+
+    assert {:ok,
+            %{
+              campaigns: [row],
+              f04_state: :partial,
+              refresh_pending: true,
+              covered_days: 1,
+              expected_days: 2
+            }} =
              Campaigns.report(ctx.admin, @day, @day)
 
     assert row.net_revenue == 20_000
     assert row.roas == nil
     assert row.reason == "f04_partial_coverage"
-    publish(other, [])
+    Postgrex.query!(connection, "SELECT pg_advisory_unlock(hashtextextended($1,0))", [key])
 
-    assert {:ok, %{campaigns: [complete], f04_state: :ready}} =
+    assert {:ok, %{campaigns: [complete], f04_state: :ready, refresh_pending: false}} =
              Campaigns.report(ctx.admin, @day, @day)
 
     assert Decimal.equal?(complete.roas, Decimal.new("2"))

@@ -1,7 +1,7 @@
 defmodule Delivest.Analytics.Reports do
   @moduledoc "Authorized read model over published daily analytics buckets."
   alias Delivest.{Background, Features, Identity, LocalTime, Repo}
-  alias Delivest.Analytics.Reports.Query
+  alias Delivest.Analytics.Reports.{Query, Refresh}
 
   @feature_by_tab %{
     "funnel" => "analytics_funnel",
@@ -204,6 +204,12 @@ defmodule Delivest.Analytics.Reports do
   defp restrict_branches(ids, _), do: ids
 
   defp present(feature, ids, {from, to}, tab, filters, job, current?) do
+    refresh_from =
+      if tab in ["customers", "franchise"],
+        do: Date.add(from, -(Date.diff(to, from) + 1)),
+        else: from
+
+    refresh_pending = Refresh.on_read(feature, ids, {refresh_from, to})
     page = page(filters)
     data = Query.read(feature, ids, from, to, tab, filters, page)
     coverage = data.coverage
@@ -212,6 +218,7 @@ defmodule Delivest.Analytics.Reports do
     %{
       tab: tab,
       feature: feature,
+      refresh_pending: refresh_pending,
       state:
         if(coverage.days == 0,
           do: :not_collected,
@@ -222,8 +229,8 @@ defmodule Delivest.Analytics.Reports do
               Enum.sum(Map.values(data.totals)),
               checked_at(job),
               feature,
-              current?,
-              coverage.dirty
+              current? and refresh_pending,
+              coverage.dirty or refresh_pending
             )
         ),
       covered_days: coverage.complete_days,

@@ -70,8 +70,117 @@ defmodule Delivest.Analytics do
     {Date.add(from, -days), Date.add(from, -1)}
   end
 
+  # Closed local days are reused; an incomplete cache always falls back to the
+  # original whole-period SQL, never to a partially populated report.
+  def summary(scope, period) do
+    Delivest.Analytics.SalesCache.read(scope, period, :summary, [], fn ->
+      raw_summary(scope, period)
+    end)
+  end
+
+  def crm_split(scope, period) do
+    Delivest.Analytics.SalesCache.read(scope, period, :crm_split, [], fn ->
+      raw_crm_split(scope, period)
+    end)
+  end
+
+  def daily(scope, period) do
+    Delivest.Analytics.SalesCache.read(scope, period, :daily, [], fn ->
+      raw_daily(scope, period)
+    end)
+  end
+
+  def hourly(scope, period) do
+    Delivest.Analytics.SalesCache.read(scope, period, :hourly, [], fn ->
+      raw_hourly(scope, period)
+    end)
+  end
+
+  def categories(scope, period) do
+    Delivest.Analytics.SalesCache.read(scope, period, :categories, [], fn ->
+      raw_categories(scope, period)
+    end)
+  end
+
+  def status_counts(scope, period) do
+    Delivest.Analytics.SalesCache.read(scope, period, :status_counts, [], fn ->
+      raw_status_counts(scope, period)
+    end)
+  end
+
+  def top_products(scope, period, opts \\ []) do
+    Delivest.Analytics.SalesCache.read(scope, period, :top_products, opts, fn ->
+      raw_top_products(scope, period, opts)
+    end)
+  end
+
+  def breakdown(scope, period, field) when field in [:fulfillment_type, :payment_method] do
+    Delivest.Analytics.SalesCache.read(scope, period, field, [], fn ->
+      raw_breakdown(scope, period, field)
+    end)
+  end
+
+  @doc false
+  def sales_day_payload(branch_id, day) do
+    period = {day, day}
+
+    confirmation =
+      branch_id
+      |> sales_orders(period)
+      |> where(
+        [o],
+        fragment("?->>'status'", o.crm) == "sent" and not is_nil(fragment("?->>'sent_at'", o.crm))
+      )
+      |> select([o], %{
+        count: count(o.id),
+        sum:
+          coalesce(
+            sum(
+              fragment(
+                "extract(epoch from ((?->>'sent_at')::timestamptz - ?))",
+                o.crm,
+                o.inserted_at
+              )
+            ),
+            0
+          )
+      })
+      |> Repo.one()
+
+    category_products =
+      branch_id
+      |> items_query(period)
+      |> group_by([_o, i], i.category_id)
+      |> select(
+        [_o, i],
+        {i.category_id,
+         type(fragment("array_agg(DISTINCT ?)", i.product_id), {:array, :binary_id})}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    %{
+      summary: raw_summary(branch_id, period),
+      crm_split: raw_crm_split(branch_id, period),
+      confirmation: %{
+        count: confirmation.count,
+        sum: Decimal.to_string(Decimal.new(confirmation.sum))
+      },
+      hourly: raw_hourly(branch_id, period),
+      top_products: raw_top_products(branch_id, period, limit: :all),
+      categories:
+        Enum.map(
+          raw_categories(branch_id, period),
+          &Map.put(&1, :product_ids, Map.get(category_products, &1.category_id, []))
+        ),
+      fulfillment_type: raw_breakdown(branch_id, period, :fulfillment_type),
+      payment_method: raw_breakdown(branch_id, period, :payment_method),
+      status_counts: raw_status_counts(branch_id, period)
+    }
+  end
+
   @spec summary(branch_scope(), period()) :: map()
-  def summary(branch_id, period) do
+  def raw_summary(branch_id, period) do
     totals = branch_id |> period_orders(period) |> select(^period_totals()) |> Repo.one()
 
     items_sold =
@@ -94,7 +203,7 @@ defmodule Delivest.Analytics do
   end
 
   @spec crm_split(branch_scope(), period()) :: map()
-  def crm_split(branch_id, period) do
+  def raw_crm_split(branch_id, period) do
     result = branch_id |> sales_orders(period) |> select(^crm_totals()) |> Repo.one()
 
     %{
@@ -107,17 +216,17 @@ defmodule Delivest.Analytics do
   @spec daily(branch_scope(), period()) :: [
           %{date: Date.t(), revenue: integer(), orders: integer()}
         ]
-  def daily(branch_ids, {from, to} = period) when is_list(branch_ids) do
+  def raw_daily(branch_ids, {from, to} = period) when is_list(branch_ids) do
     days = Date.diff(to, from) + 1
 
     if days < 1 or days > @max_period_days do
       raise ArgumentError, "daily period must contain 1 to #{@max_period_days} days"
     end
 
-    merge_series(branch_ids, period, :date, &daily/2, Date.range(from, to))
+    merge_series(branch_ids, period, :date, &raw_daily/2, Date.range(from, to))
   end
 
-  def daily(branch_id, {from, to} = period) do
+  def raw_daily(branch_id, {from, to} = period) do
     days = Date.diff(to, from) + 1
 
     if days < 1 or days > @max_period_days do
@@ -151,11 +260,11 @@ defmodule Delivest.Analytics do
   @spec hourly(branch_scope(), period()) :: [
           %{hour: 0..23, revenue: integer(), orders: integer()}
         ]
-  def hourly(branch_ids, period) when is_list(branch_ids) do
-    merge_series(branch_ids, period, :hour, &hourly/2, 0..23)
+  def raw_hourly(branch_ids, period) when is_list(branch_ids) do
+    merge_series(branch_ids, period, :hour, &raw_hourly/2, 0..23)
   end
 
-  def hourly(branch_id, period) do
+  def raw_hourly(branch_id, period) do
     tz = LocalTime.timezone(branch_id)
 
     rows =
@@ -185,7 +294,7 @@ defmodule Delivest.Analytics do
   end
 
   @spec top_products(branch_scope(), period(), keyword()) :: [map()]
-  def top_products(branch_id, period, opts \\ []) do
+  def raw_top_products(branch_id, period, opts \\ []) do
     limit = Keyword.get(opts, :limit, 20)
 
     branch_id
@@ -210,7 +319,7 @@ defmodule Delivest.Analytics do
   defp maybe_limit(query, limit), do: limit(query, ^limit)
 
   @spec categories(branch_scope(), period()) :: [map()]
-  def categories(branch_id, period) do
+  def raw_categories(branch_id, period) do
     branch_id
     |> items_query(period)
     |> group_by([_o, i], i.category_id)
@@ -229,7 +338,8 @@ defmodule Delivest.Analytics do
   end
 
   @spec breakdown(branch_scope(), period(), :fulfillment_type | :payment_method) :: [map()]
-  def breakdown(branch_id, period, field) when field in [:fulfillment_type, :payment_method] do
+  def raw_breakdown(branch_id, period, field)
+      when field in [:fulfillment_type, :payment_method] do
     branch_id
     |> sales_orders(period)
     |> group_by([o], field(o, ^field))
@@ -245,7 +355,7 @@ defmodule Delivest.Analytics do
   end
 
   @spec status_counts(branch_scope(), period()) :: %{atom() => non_neg_integer()}
-  def status_counts(branch_id, period) do
+  def raw_status_counts(branch_id, period) do
     branch_id
     |> period_orders(period)
     |> group_by([o], o.status)
