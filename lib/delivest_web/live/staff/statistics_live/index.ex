@@ -610,61 +610,42 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={@page_title}
-      subtitle={
-        if is_nil(@period_error),
-          do:
-            "#{if(@current_branch, do: @current_branch.name, else: gettext("All branches"))} · #{format_period(@period)}",
-          else: if(@current_branch, do: @current_branch.name, else: gettext("All branches"))
-      }
+    <div
+      id="staff-page-header"
+      class="mb-3 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
     >
-    </.page_header>
-    """
-  end
-
-  def staff_page_navigation(_assigns), do: nil
-
-  @impl true
-  def render(assigns) do
-    ~H"""
-    <div class="space-y-6">
-      <nav
-        :if={is_nil(@section) and @visible_tabs != []}
-        id="statistics-sales-tabs"
-        aria-label={gettext("Statistics reports")}
-        class="overflow-x-auto whitespace-nowrap"
-      >
-        <div role="tablist" class="tabs">
-          <.link
-            :for={tab <- @visible_tabs}
-            id={"statistics-tab-#{tab}"}
-            patch={tab_path(assigns, tab)}
-            role="tab"
-            class={["tab", @tab == tab && "tab-active"]}
-            aria-current={@tab == tab && "page"}
-          >{tab_label(tab)}</.link>
+      <div class="min-w-0 shrink-0">
+        <div class="relative flex items-center gap-2">
+          <h1 class="text-2xl font-semibold leading-tight">{@page_title}</h1>
+          <details :if={@section} id="statistics-report-description">
+            <summary
+              aria-label={gettext("Report description")}
+              title={gettext("Report description")}
+              class="flex cursor-pointer list-none items-center text-base-content/50 hover:text-base-content"
+            >
+              <.icon name="hero-information-circle" class="size-4" />
+            </summary>
+            <p class="absolute left-0 top-full z-20 mt-2 w-72 max-w-[80vw] rounded-xl border border-base-300 bg-base-100 p-3 text-sm leading-relaxed shadow-lg">
+              {report_description(@tab)}
+            </p>
+          </details>
         </div>
-      </nav>
-      <nav
-        :if={@section == "sources" and Identity.can?(@current_staff, "statistics.network")}
-        id="sources-advertising-tabs"
-        class="tabs"
-      >
-        <span class="tab tab-active">{gettext("Sources")}</span>
-        <.link
-          navigate={"/staff/analytics/advertising?" <> URI.encode_query(%{"period" => @preset, "from" => elem(@period, 0), "to" => elem(@period, 1)})}
-          class="tab"
-        >{gettext("Campaigns")}</.link>
-      </nav>
-      <div class="flex flex-wrap justify-start gap-4">
+        <p :if={is_nil(@period_error)} class="mt-1 text-xs text-base-content/60">
+          {format_period(@period)}
+        </p>
+      </div>
+      <div class="flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
         <.form
           for={@form}
           id="statistics-filter"
           phx-change="filter"
-          class="flex flex-wrap items-center gap-2"
+          class="flex min-w-0 flex-wrap items-center gap-2 [&>fieldset]:mb-0 [&>fieldset]:w-auto"
         >
-          <select name="period" class="select select-bordered select-sm w-44">
+          <select
+            name="period"
+            aria-label={gettext("Period")}
+            class="select select-bordered select-sm w-40"
+          >
             <option :for={preset <- Analytics.presets()} value={preset} selected={preset == @preset}>
               {preset_label(preset)}
             </option>
@@ -674,13 +655,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               type="date"
               name="from"
               value={@custom_from}
-              class="input input-bordered input-sm w-40"
+              class="input input-bordered input-sm w-36"
             />
             <input
               type="date"
               name="to"
               value={@custom_to}
-              class="input input-bordered input-sm w-40"
+              class="input input-bordered input-sm w-36"
             />
           <% end %>
           <.input
@@ -696,7 +677,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             field={@form[:link_search]}
             type="text"
             placeholder={gettext("Find advertising link")}
-            class="input input-bordered input-sm w-44"
+            class="input input-bordered input-sm w-40"
           />
           <.input
             :if={@tab == "sources"}
@@ -704,7 +685,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             type="select"
             prompt={gettext("All advertising links")}
             options={@link_options}
-            class="input input-bordered input-sm w-56"
+            class="input input-bordered input-sm w-48"
           />
         </.form>
         <button
@@ -715,17 +696,55 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           class="btn btn-sm btn-outline"
         >{gettext("Compare")}</button>
       </div>
+    </div>
+    """
+  end
+
+  def staff_page_navigation(_assigns), do: nil
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="space-y-3">
+      <nav
+        :if={is_nil(@section) and @visible_tabs != []}
+        id="statistics-sales-tabs"
+        aria-label={gettext("Statistics reports")}
+        class="overflow-x-auto whitespace-nowrap"
+      >
+        <div role="tablist" class="tabs tabs-sm">
+          <.link
+            :for={tab <- @visible_tabs}
+            id={"statistics-tab-#{tab}"}
+            patch={tab_path(assigns, tab)}
+            role="tab"
+            class={["tab", @tab == tab && "tab-active"]}
+            aria-current={@tab == tab && "page"}
+          >{tab_label(tab)}</.link>
+        </div>
+      </nav>
+      <nav
+        :if={@section == "sources" and Identity.can?(@current_staff, "statistics.network")}
+        id="sources-advertising-tabs"
+        class="tabs tabs-sm"
+      >
+        <span class="tab tab-active">{gettext("Sources")}</span>
+        <.link
+          navigate={"/staff/analytics/advertising?" <> URI.encode_query(%{"period" => @preset, "from" => elem(@period, 0), "to" => elem(@period, 1)})}
+          class="tab"
+        >{gettext("Campaigns")}</.link>
+      </nav>
       <section
         :if={@tab == "sales" and @comparison_open?}
         id="statistics-comparison-controls"
-        class="rounded-xl border border-base-300 p-4 space-y-3"
+        class="rounded-xl border border-base-300 p-3 space-y-2"
       >
         <.form
           for={to_form(%{})}
           id="statistics-comparison-form"
           phx-change="comparison_draft"
           phx-submit="apply_comparison"
-          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          class="flex flex-wrap items-end gap-2 [&>fieldset]:mb-0 [&>fieldset]:w-auto [&_input]:w-40 [&_input]:input-sm [&_select]:w-60 [&_select]:select-sm [&_.label-text]:text-xs"
         >
           <.input
             id="statistics-comparison-mode"
@@ -755,7 +774,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             value={@comparison_draft_to}
             label={gettext("Comparison end date")}
           />
-          <div class="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-3">
+          <div class="flex flex-wrap items-center gap-2 pb-0.5">
             <button type="submit" class="btn btn-sm btn-primary">{gettext("Apply comparison")}</button>
             <button
               id="statistics-close-comparison"
@@ -773,7 +792,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         >
           {@comparison_error}
         </p>
-        <div :if={@compare?} id="statistics-comparison-periods" class="text-sm space-y-1">
+        <div
+          :if={@compare?}
+          id="statistics-comparison-periods"
+          class="flex flex-wrap gap-x-5 gap-y-1 text-xs text-base-content/70"
+        >
           <p>{gettext("Selected period")}: <strong>{format_period(@period)}</strong></p>
           <p>{gettext("Comparison period")}: <strong>{format_period(@comparison_period)}</strong></p>
         </div>

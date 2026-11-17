@@ -239,20 +239,49 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header title={gettext("Advertising analytics")}>
-      <:actions>
-        <button type="button" phx-click="refresh" id="advertising-refresh" class="btn btn-outline">{gettext(
-          "Refresh"
-        )}</button>
-      </:actions>
-    </.page_header>
+    <div
+      id="staff-page-header"
+      class="mb-3 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div class="min-w-0 shrink-0">
+        <h1 class="text-2xl font-semibold leading-tight">{gettext("Advertising analytics")}</h1>
+        <p class="mt-1 text-xs text-base-content/60">
+          {Calendar.strftime(@from, "%d.%m.%Y")} — {Calendar.strftime(@to, "%d.%m.%Y")}
+        </p>
+      </div>
+      <div class="flex flex-wrap items-end gap-2 lg:ml-auto lg:justify-end">
+        <.form
+          for={@period}
+          id="advertising-period"
+          phx-submit="filter"
+          class="flex min-w-0 flex-wrap items-end gap-2 [&>fieldset]:mb-0 [&>fieldset]:w-36 [&_input]:input-sm [&_.label-text]:text-xs"
+        >
+          <.input field={@period[:from]} type="date" label={gettext("From")} />
+          <.input field={@period[:to]} type="date" label={gettext("To")} />
+          <button type="submit" class="btn btn-sm btn-primary">{gettext("Apply")}</button>
+          <button
+            :if={@can_import}
+            type="button"
+            phx-click="import"
+            id="advertising-import"
+            class="btn btn-sm btn-outline"
+          >{gettext("Import costs")}</button>
+        </.form>
+        <button
+          type="button"
+          phx-click="refresh"
+          id="advertising-refresh"
+          class="btn btn-sm btn-ghost"
+        >{gettext("Refresh")}</button>
+      </div>
+    </div>
     """
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <nav id="sources-advertising-tabs" class="tabs">
+    <nav id="sources-advertising-tabs" class="tabs tabs-sm mb-3">
       <.link
         navigate={"/staff/analytics/sources?" <> URI.encode_query(%{"period" => "custom", "from" => @from, "to" => @to})}
         class="tab"
@@ -260,24 +289,7 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
       <span class="tab tab-active">{gettext("Campaigns")}</span>
     </nav>
 
-    <div class="space-y-6">
-      <.form
-        for={@period}
-        id="advertising-period"
-        phx-submit="filter"
-        class="flex flex-wrap items-end gap-3 rounded-box border border-base-300 bg-base-100 p-5"
-      >
-        <.input field={@period[:from]} type="date" label={gettext("From")} />
-        <.input field={@period[:to]} type="date" label={gettext("To")} />
-        <button type="submit" class="btn btn-primary">{gettext("Apply")}</button>
-        <button
-          :if={@can_import}
-          type="button"
-          phx-click="import"
-          id="advertising-import"
-          class="btn btn-outline"
-        >{gettext("Import costs")}</button>
-      </.form>
+    <div class="space-y-3">
       <p :if={@error} id="advertising-error" role="alert" class="text-error">{@error}</p>
 
       <%= if @report_available do %>

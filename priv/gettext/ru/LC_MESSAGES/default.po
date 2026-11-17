@@ -13164,3 +13164,6 @@ msgstr "Обновление отчёта занимает больше врем
 
 msgid "The report could not be updated. Previously collected data remains visible."
 msgstr "Не удалось обновить отчёт. Показаны ранее собранные данные."
+
+msgid "Report description"
+msgstr "Описание отчёта"
