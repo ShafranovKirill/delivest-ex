@@ -385,11 +385,13 @@ defmodule Delivest.Net.Products do
   def list_branch_products_by_slugs(_branch_id, []), do: %{}
 
   def list_branch_products_by_slugs(branch_id, slugs) when is_list(slugs) do
-    product_ids = Relations.list_target_ids("Branch", branch_id, "Product")
-
     Product
-    |> where([p], p.slug in ^slugs and p.id in ^product_ids)
-    |> where([p], is_nil(p.deleted_at) and p.is_active == true)
+    |> join(:inner, [p], r in EntityRelation,
+      on:
+        r.to_id == p.id and r.to_entity_type == "Product" and
+          r.from_entity_type == "Branch" and r.from_id == ^branch_id
+    )
+    |> where([p], p.slug in ^slugs and is_nil(p.deleted_at) and p.is_active == true)
     |> preload(:media)
     |> Repo.all()
     |> Map.new(&{&1.slug, &1})

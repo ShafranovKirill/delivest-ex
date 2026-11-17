@@ -47,7 +47,7 @@ defmodule Delivest.Net.MenuView do
     if Enum.all?(values, fn {_key, value} -> is_nil(value) end), do: nil, else: values
   end
 
-  defp build_product(product, tags) do
+  def build_product(product, tags \\ %{}) do
     %{
       id: product.id,
       name: product.name,

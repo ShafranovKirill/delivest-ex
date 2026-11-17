@@ -2,7 +2,7 @@ defmodule DelivestWeb.Client.Menu.MenuController do
   use DelivestWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Delivest.{Net, Promo}
+  alias Delivest.Net.PublicOffers
   alias DelivestWeb.Helpers.ApiError
   alias DelivestWeb.Schemas.ErrorSchemas.ErrorResponse
   alias DelivestWeb.Schemas.MenuSchemas.MenuResponse
@@ -31,28 +31,10 @@ defmodule DelivestWeb.Client.Menu.MenuController do
     ]
   )
 
-  defp menu_modifiers(menu) do
-    categories =
-      if is_map(menu) and Map.has_key?(menu, :categories), do: menu.categories, else: menu
-
-    categories
-    |> Enum.flat_map(&(&1.products || []))
-    |> Enum.map(& &1.id)
-    |> Net.Modifiers.for_products()
-  end
-
   def index(conn, %{"branch_id" => branch_id}) do
-    case Net.get_menu_for_branch(branch_id) do
+    case PublicOffers.menu(branch_id) do
       {:ok, menu} ->
-        menu = Promo.overlay_menu(menu, branch_id)
-
-        render(conn, :index,
-          menu: localize_popular_category(menu, conn),
-          rewards: Map.new(Net.list_branch_products(branch_id), &{&1.id, &1.stars_reward}),
-          stopped: Net.Stops.stopped_ids(branch_id),
-          modifiers: menu_modifiers(menu),
-          stopped_modifiers: Net.Modifiers.stopped_ids(branch_id)
-        )
+        render(conn, :index, menu: localize_popular_category(menu, conn), prepared: true)
 
       {:error, _reason} ->
         ApiError.send_error(conn, :bad_request, :bad_request, "Failed to fetch menu")

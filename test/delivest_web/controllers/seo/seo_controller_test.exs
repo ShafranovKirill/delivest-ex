@@ -76,7 +76,7 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
     insert(:branch, slug: "center", is_active: true)
     insert(:branch, slug: "closed", is_active: false)
 
-    conn = get(conn, ~p"/seo/sitemap.xml")
+    conn = get(conn, ~p"/seo/sitemaps/pages.xml")
     body = response(conn, 200)
 
     assert response_content_type(conn, :xml)
