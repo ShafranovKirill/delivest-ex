@@ -23,6 +23,10 @@ defmodule Delivest.Integrations.YandexAds do
     costs: {:costs_enabled, "yandex_costs"}
   }
   @identifiers ~w(client_id yclid campaign_id ad_id)
+  # Fence collected identities and conversions only when their destination or
+  # collection permissions change. Expense and feed preferences are independent.
+  @collection_fields ~w(enabled privacy_approved browser_enabled conversions_enabled ecommerce_enabled branch_ids counter_id goal client_login direct_token metrika_token refresh_token measurement_token)a
+  @cost_fields ~w(updated_at generation enabled costs_enabled branch_ids account_scope direct_token client_login currency timezone include_vat)a
 
   def get_settings do
     Repo.get(Settings, 1) || %Settings{id: 1}
@@ -52,6 +56,19 @@ defmodule Delivest.Integrations.YandexAds do
             changeset
           end
 
+        changeset =
+          if Enum.any?(
+               [:include_vat, :currency, :timezone],
+               &Ecto.Changeset.changed?(changeset, &1)
+             ) do
+            changeset
+            |> Ecto.Changeset.put_change(:costs_refreshed_at, nil)
+            |> Ecto.Changeset.put_change(:costs_from, nil)
+            |> Ecto.Changeset.put_change(:costs_to, nil)
+          else
+            changeset
+          end
+
         branch_ids = Ecto.Changeset.get_field(changeset, :branch_ids) || []
 
         known_ids =
@@ -69,9 +86,9 @@ defmodule Delivest.Integrations.YandexAds do
               Ecto.Changeset.add_error(changeset, :branch_ids, "contains unavailable branches")
 
         generation =
-          if map_size(changeset.changes) == 0,
-            do: previous.generation,
-            else: previous.generation + 1
+          if Enum.any?(@collection_fields, &Ecto.Changeset.changed?(changeset, &1)),
+            do: previous.generation + 1,
+            else: previous.generation
 
         case changeset
              |> Ecto.Changeset.put_change(:generation, generation)
@@ -479,6 +496,7 @@ defmodule Delivest.Integrations.YandexAds do
         do:
           %{generation: settings.generation, from: Date.to_iso8601(from), to: Date.to_iso8601(to)}
           |> Map.put(:feature_generations, costs_token(settings))
+          |> Map.put(:settings_version, cost_settings_version(settings))
           |> Delivest.Integrations.YandexAds.CostWorker.new()
           |> Oban.insert(),
         else: {:error, :disabled_or_invalid_period}
@@ -486,6 +504,11 @@ defmodule Delivest.Integrations.YandexAds do
       {:error, :forbidden}
     end
   end
+
+  def cost_settings_version(settings), do: DateTime.to_iso8601(settings.updated_at)
+
+  def same_cost_settings?(current, snapshot),
+    do: Map.take(current, @cost_fields) == Map.take(snapshot, @cost_fields)
 
   def costs_active?(settings), do: Enum.any?(settings.branch_ids, &enabled?(settings, :costs, &1))
 

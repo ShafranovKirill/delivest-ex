@@ -2,7 +2,10 @@ defmodule Delivest.Integrations.YandexAds.CostWorker do
   use Oban.Worker,
     queue: :yandex_ads,
     max_attempts: 5,
-    unique: [period: 3600, keys: [:generation, :from, :to, :feature_generations]]
+    unique: [
+      period: 3600,
+      keys: [:generation, :from, :to, :feature_generations, :settings_version]
+    ]
 
   import Ecto.Query
   alias Delivest.Repo
@@ -17,6 +20,7 @@ defmodule Delivest.Integrations.YandexAds.CostWorker do
     token = args["feature_generations"]
 
     with true <- settings.generation == generation and YandexAds.costs_active?(settings),
+         true <- args["settings_version"] == YandexAds.cost_settings_version(settings),
          true <-
            is_map(token) and map_size(token) > 0 and token == YandexAds.costs_token(settings),
          {:ok, from} <- Date.from_iso8601(raw_from),
@@ -53,9 +57,11 @@ defmodule Delivest.Integrations.YandexAds.CostWorker do
     case Repo.transaction(fn ->
            YandexAds.lock_settings()
 
-           if YandexAds.get_settings().generation != settings.generation or
-                token != YandexAds.costs_token(settings) or map_size(token) == 0 or
-                not YandexAds.costs_active?(settings),
+           current = YandexAds.get_settings()
+
+           if not YandexAds.same_cost_settings?(current, settings) or
+                token != YandexAds.costs_token(current) or map_size(token) == 0 or
+                not YandexAds.costs_active?(current),
               do: Repo.rollback(:disabled)
 
            case Delivest.Features.publish_if_enabled(YandexAds.publication_requests(token), fn ->

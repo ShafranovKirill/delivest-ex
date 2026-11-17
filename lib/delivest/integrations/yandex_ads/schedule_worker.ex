@@ -17,7 +17,8 @@ defmodule Delivest.Integrations.YandexAds.ScheduleWorker do
         generation: settings.generation,
         from: Date.to_iso8601(Date.add(today, -7)),
         to: Date.to_iso8601(today),
-        feature_generations: YandexAds.costs_token(settings)
+        feature_generations: YandexAds.costs_token(settings),
+        settings_version: YandexAds.cost_settings_version(settings)
       }
       |> CostWorker.new()
       |> Oban.insert()

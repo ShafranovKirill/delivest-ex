@@ -91,7 +91,7 @@ defmodule Delivest.Integrations.YandexAds.Api do
   defp report(settings, from, to, offset, acc) do
     current = Delivest.Integrations.YandexAds.get_settings()
 
-    if current.generation != settings.generation or
+    if not Delivest.Integrations.YandexAds.same_cost_settings?(current, settings) or
          Delivest.Integrations.YandexAds.costs_token(current) != settings.cost_feature_generations or
          not Delivest.Integrations.YandexAds.costs_active?(current),
        do: {:error, :disabled},

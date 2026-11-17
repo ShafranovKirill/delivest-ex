@@ -67,7 +67,7 @@ defmodule Delivest.Integrations.YandexAdsTest do
     settings
   end
 
-  defp complete_with_receipt(ctx) do
+  defp complete_with_receipt(ctx, before_completion \\ fn -> :ok end) do
     settings = configure(ctx)
     owner = "guest:" <> Ecto.UUID.generate()
 
@@ -90,6 +90,7 @@ defmodule Delivest.Integrations.YandexAdsTest do
         )
       end)
 
+    before_completion.()
     order = order |> Ecto.Changeset.change(status: :completed) |> Repo.update!()
 
     {:ok, :ok} =
@@ -238,6 +239,108 @@ defmodule Delivest.Integrations.YandexAdsTest do
       Repo.transaction(fn -> YandexAds.record_transition(order, :ready, :completed) end)
 
     assert Repo.aggregate(Conversion, :count) == 1
+  end
+
+  test "expense and feed preferences preserve collected receipts and pending conversions", ctx do
+    {order, conversion, settings} =
+      complete_with_receipt(ctx, fn ->
+        {:ok, _} = YandexAds.update_settings(ctx.staff, %{include_vat: false})
+      end)
+
+    assert conversion.generation == settings.generation
+    assert Repo.get!(OrderReceipt, order.id).generation == settings.generation
+
+    for attrs <- [
+          %{costs_enabled: true},
+          %{costs_enabled: false},
+          %{feed_enabled: true},
+          %{feed_enabled: false},
+          %{timezone: "UTC"}
+        ] do
+      {:ok, changed} = YandexAds.update_settings(ctx.staff, attrs)
+      assert changed.generation == settings.generation
+      assert Repo.get!(Conversion, conversion.id).status == "pending"
+    end
+
+    Req.Test.stub(Delivest.HTTP.Client, fn conn ->
+      Req.Test.json(conn, %{"uploading" => %{"id" => 98_765}})
+    end)
+
+    assert {:snooze, 60} =
+             ConversionWorker.perform(%Oban.Job{args: %{"conversion_id" => conversion.id}})
+
+    assert Repo.get!(Conversion, conversion.id).status == "submitted"
+  end
+
+  for attrs <- [
+        %{counter_id: "87654321"},
+        %{direct_token: "another-account"},
+        %{privacy_approved: false},
+        %{browser_enabled: false},
+        %{conversions_enabled: false}
+      ] do
+    test "collection change #{inspect(attrs)} invalidates pending conversions", ctx do
+      {_order, conversion, settings} = complete_with_receipt(ctx)
+      attrs = unquote(Macro.escape(attrs))
+
+      {:ok, changed} = YandexAds.update_settings(ctx.staff, attrs)
+      assert changed.generation > settings.generation
+      assert Repo.get!(Conversion, conversion.id).status == "stale"
+    end
+  end
+
+  test "changing branch scope invalidates pending conversions", ctx do
+    {_order, conversion, settings} = complete_with_receipt(ctx)
+    branch = insert(:branch, is_active: true)
+    {:ok, changed} = YandexAds.update_settings(ctx.staff, %{branch_ids: [branch.id]})
+    assert changed.generation > settings.generation
+    assert Repo.get!(Conversion, conversion.id).status == "stale"
+  end
+
+  test "in-flight cost snapshots cannot publish after VAT change or expense revocation", ctx do
+    settings = configure(ctx, %{costs_enabled: true})
+    token = YandexAds.costs_token(settings)
+    {:ok, changed} = YandexAds.update_settings(ctx.staff, %{include_vat: false})
+    assert changed.generation == settings.generation
+
+    assert {:cancel, :disabled} =
+             CostWorker.publish(settings, ~D[2026-11-17], ~D[2026-11-17], [], token)
+
+    assert is_nil(YandexAds.get_settings().costs_refreshed_at)
+
+    {:ok, revoked} = YandexAds.update_settings(ctx.staff, %{costs_enabled: false})
+    assert revoked.generation == changed.generation
+
+    assert {:cancel, :disabled} =
+             CostWorker.publish(changed, ~D[2026-11-17], ~D[2026-11-17], [], token)
+
+    assert is_nil(YandexAds.get_settings().costs_refreshed_at)
+  end
+
+  test "queued expense imports stay revoked across settings off and on", ctx do
+    settings = configure(ctx, %{costs_enabled: true})
+    assert {:ok, job} = YandexAds.request_costs(ctx.staff, ~D[2026-11-17], ~D[2026-11-17])
+    {:ok, _} = YandexAds.update_settings(ctx.staff, %{costs_enabled: false})
+    {:ok, changed} = YandexAds.update_settings(ctx.staff, %{costs_enabled: true})
+    assert changed.generation == settings.generation
+    Req.Test.stub(Delivest.HTTP.Client, fn _conn -> flunk("revoked job must not issue HTTP") end)
+
+    assert {:cancel, :disabled_or_invalid_period} =
+             CostWorker.perform(Repo.get!(Oban.Job, job.id))
+
+    assert {:ok, replacement} = YandexAds.request_costs(ctx.staff, ~D[2026-11-17], ~D[2026-11-17])
+    refute replacement.id == job.id
+  end
+
+  test "changing expense basis clears published period freshness", ctx do
+    settings = configure(ctx, %{costs_enabled: true})
+    assert :ok = CostWorker.publish(settings, ~D[2026-11-17], ~D[2026-11-17], [])
+    assert YandexAds.get_settings().costs_refreshed_at
+    {:ok, changed} = YandexAds.update_settings(ctx.staff, %{include_vat: false})
+    assert changed.generation == settings.generation
+    assert is_nil(changed.costs_refreshed_at)
+    assert is_nil(changed.costs_from)
+    assert is_nil(changed.costs_to)
   end
 
   test "offline CSV preserves either single identifier without adding fabricated identifiers" do
@@ -614,6 +717,7 @@ defmodule Delivest.Integrations.YandexAdsTest do
         "generation" => settings.generation,
         "from" => "2026-11-17",
         "to" => "2026-11-17",
+        "settings_version" => YandexAds.cost_settings_version(settings),
         "feature_generations" => YandexAds.costs_token(settings)
       }
     }
@@ -720,8 +824,7 @@ defmodule Delivest.Integrations.YandexAdsTest do
     {_order, conversion, _initial_settings} = complete_with_receipt(ctx)
     {:ok, settings} = YandexAds.update_settings(ctx.staff, %{costs_enabled: true})
     cost_token = YandexAds.costs_token(settings)
-    # The settings edit already fenced this old conversion. Create a fresh intent
-    # to exercise the independent platform gate generation rather than settings.
+    # Keep a fresh stream token to exercise the independent platform gate.
     row =
       conversion
       |> Ecto.Changeset.change(
@@ -753,6 +856,7 @@ defmodule Delivest.Integrations.YandexAdsTest do
         "generation" => settings.generation,
         "from" => "2026-11-17",
         "to" => "2026-11-17",
+        "settings_version" => YandexAds.cost_settings_version(settings),
         "feature_generations" => cost_token
       }
     }
@@ -806,6 +910,7 @@ defmodule Delivest.Integrations.YandexAdsTest do
         "generation" => settings.generation,
         "from" => "2026-11-17",
         "to" => "2026-11-17",
+        "settings_version" => YandexAds.cost_settings_version(settings),
         "feature_generations" => YandexAds.costs_token(settings)
       }
     }
