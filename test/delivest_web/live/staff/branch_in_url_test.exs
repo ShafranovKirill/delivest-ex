@@ -327,6 +327,32 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
              target
   end
 
+  test "comparison navigation preserves only an explicit report period", ctx do
+    target = "/staff/analytics/comparison"
+
+    source =
+      "/staff/b/#{ctx.own.slug}/statistics?tab=sales&period=custom&from=2026-11-01&to=2026-11-14&branch_id=#{ctx.own.id}&link_id=untrusted"
+
+    for scope <- [ctx.own, nil] do
+      result = StaffBranchPath.contextual_navigation_path(target, scope, source)
+      uri = URI.parse(result)
+
+      assert uri.path == target
+
+      assert URI.decode_query(uri.query) == %{
+               "period" => "custom",
+               "from" => "2026-11-01",
+               "to" => "2026-11-14"
+             }
+    end
+
+    assert StaffBranchPath.contextual_navigation_path(
+             target,
+             ctx.own,
+             "/staff/b/#{ctx.own.slug}/analytics/sources"
+           ) == target
+  end
+
   test "selection intent preserves new order while ordinary scope switching keeps its list",
        ctx do
     source = "/staff/b/#{ctx.own.slug}/orders/new"

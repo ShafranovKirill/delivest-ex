@@ -85,15 +85,37 @@ defmodule DelivestWeb.StaffBranchPath do
   def contextual_navigation_path(path, scope_branch, return_source) do
     parsed_path = if is_binary(path), do: URI.parse(path).path
 
-    if parsed_path in @data_settings_paths do
-      case scope_branch do
-        %{slug: slug} -> scoped_settings_path(parsed_path, slug)
-        _ -> scoped_settings_path(parsed_path, nil)
-      end
-    else
-      if is_nil(scope_branch), do: selection_path(path, return_source) || path, else: path
+    cond do
+      path == "/staff/analytics/comparison" ->
+        comparison_period_path(path, return_source)
+
+      parsed_path in @data_settings_paths ->
+        case scope_branch do
+          %{slug: slug} -> scoped_settings_path(parsed_path, slug)
+          _ -> scoped_settings_path(parsed_path, nil)
+        end
+
+      is_nil(scope_branch) ->
+        selection_path(path, return_source) || path
+
+      true ->
+        path
     end
   end
+
+  defp comparison_period_path(path, source) when is_binary(source) do
+    case classify(source) do
+      {:ok, {:branch, _slug, route}, query} ->
+        if route in ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers),
+          do: path <> encode_query(query, ~w(period from to)),
+          else: path
+
+      _ ->
+        path
+    end
+  end
+
+  defp comparison_period_path(path, _source), do: path
 
   def selection_path(target_path, return_source) do
     case selection_intent(target_path, return_source) do
