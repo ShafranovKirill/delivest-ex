@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Staff.LogLive.IndexTest do
-  use DelivestWeb.ConnCase, async: true
+  # Audit events use a shared PubSub topic across the application.
+  use DelivestWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Delivest.Factory

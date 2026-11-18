@@ -6,7 +6,7 @@ defmodule Delivest.Integrations.YandexAds.CampaignsTest do
   alias Delivest.{Features, LocalTime}
   alias Delivest.Advertising.{Link, OrderAttribution}
   alias Delivest.Analytics.Reports
-  alias Delivest.Analytics.Reports.Calculator
+  alias Delivest.Analytics.Reports.{Calculator, Refresh}
   alias Delivest.Integrations.YandexAds
   alias Delivest.Integrations.YandexAds.{Campaigns, Cost}
 
@@ -302,6 +302,10 @@ defmodule Delivest.Integrations.YandexAds.CampaignsTest do
     assert row.roas == nil
     assert row.reason == "f04_partial_coverage"
     Postgrex.query!(connection, "SELECT pg_advisory_unlock(hashtextextended($1,0))", [key])
+
+    # A normal read may exhaust its small entry budget under CI load. Complete
+    # the unlocked bucket explicitly before checking the fully published report.
+    refute Refresh.on_read("analytics_links", [other.id], {@day, @day}, budget_ms: 30_000)
 
     assert {:ok, %{campaigns: [complete], f04_state: :ready, refresh_pending: false}} =
              Campaigns.report(ctx.admin, @day, @day)
