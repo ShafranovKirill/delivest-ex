@@ -74,6 +74,7 @@ defmodule Delivest.Features.SettingsTest do
     scope: scope
   } do
     other = insert(:branch)
+    audit_ids_before = Repo.all(from audit in "feature_audits", select: audit.id)
 
     for feature <- Settings.branch_features() do
       assert {:ok, _} = Settings.configure(admin, feature, scope, true)
@@ -87,8 +88,19 @@ defmodule Delivest.Features.SettingsTest do
     assert Enum.all?(rows, & &1.enabled)
     assert Enum.sort(Enum.map(rows, & &1.feature)) == Enum.sort(Settings.branch_features())
 
-    %{rows: actors} = Repo.query!("SELECT DISTINCT actor FROM feature_audits")
-    assert actors == [["staff:" <> admin.id]]
+    audits =
+      Repo.all(
+        from audit in "feature_audits",
+          where: audit.id not in ^audit_ids_before,
+          select: {audit.feature, audit.scope_key, audit.actor}
+      )
+
+    assert audits != []
+    assert Enum.all?(audits, fn {_, _, actor} -> actor == "staff:" <> admin.id end)
+
+    for feature <- Settings.branch_features() do
+      assert {feature, "branch:" <> elem(scope, 1), "staff:" <> admin.id} in audits
+    end
   end
 
   test "network controls enable dependencies without enabling every branch", %{
