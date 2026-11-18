@@ -1,11 +1,9 @@
 defmodule Delivest.Integrations.YandexAds.Settings do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Delivest.Integrations.YandexAds.Secret
-
   @primary_key {:id, :integer, autogenerate: false}
   @flags ~w(enabled privacy_approved browser_enabled conversions_enabled ecommerce_enabled feed_enabled costs_enabled)a
-  @secrets ~w(direct_token metrika_token refresh_token measurement_token)a
+  @secrets ~w(direct_token metrika_token refresh_token measurement_token oauth_client_secret)a
 
   schema "yandex_ads_settings" do
     field :enabled, :boolean, default: false
@@ -23,12 +21,19 @@ defmodule Delivest.Integrations.YandexAds.Settings do
     field :currency, :string, default: "RUB"
     field :timezone, :string, default: "Europe/Moscow"
     field :include_vat, :boolean, default: true
-    field :direct_token, Secret, redact: true
-    field :metrika_token, Secret, redact: true
-    field :refresh_token, Secret, redact: true
-    field :measurement_token, Secret, redact: true
+    field :direct_token, :string, source: :direct_token_plain, redact: true
+    field :metrika_token, :string, source: :metrika_token_plain, redact: true
+    field :refresh_token, :string, source: :refresh_token_plain, redact: true
+    field :measurement_token, :string, source: :measurement_token_plain, redact: true
+    field :legacy_direct_token, :binary, source: :direct_token, redact: true
+    field :legacy_metrika_token, :binary, source: :metrika_token, redact: true
+    field :legacy_refresh_token, :binary, source: :refresh_token, redact: true
+    field :legacy_measurement_token, :binary, source: :measurement_token, redact: true
+    field :oauth_client_id, :string
+    field :oauth_client_secret, :string, redact: true
     field :generation, :integer, default: 1
     field :credential_error, :boolean, virtual: true, default: false
+    field :credential_errors, {:array, :string}, virtual: true, default: []
     field :cost_feature_generations, :map, virtual: true
     field :costs_refreshed_at, :utc_datetime_usec
     field :costs_from, :date
@@ -39,7 +44,7 @@ defmodule Delivest.Integrations.YandexAds.Settings do
   def changeset(settings, attrs) do
     attrs =
       Enum.reject(attrs, fn {key, value} ->
-        to_string(key) in Enum.map(@secrets, &to_string/1) and value in [nil, ""]
+        to_string(key) in Enum.map(@secrets, &to_string/1) and blank_secret?(value)
       end)
       |> Map.new()
 
@@ -48,7 +53,16 @@ defmodule Delivest.Integrations.YandexAds.Settings do
       attrs,
       @flags ++
         @secrets ++
-        [:branch_ids, :counter_id, :goal, :client_login, :currency, :timezone, :include_vat]
+        [
+          :branch_ids,
+          :counter_id,
+          :goal,
+          :client_login,
+          :oauth_client_id,
+          :currency,
+          :timezone,
+          :include_vat
+        ]
     )
     |> validate_format(:counter_id, ~r/^[1-9][0-9]{0,19}$/)
     |> validate_format(:goal, ~r/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/)
@@ -59,6 +73,8 @@ defmodule Delivest.Integrations.YandexAds.Settings do
     |> validate_length(:metrika_token, max: 4096)
     |> validate_length(:measurement_token, max: 4096)
     |> validate_length(:refresh_token, max: 4096)
+    |> validate_length(:oauth_client_id, max: 512)
+    |> validate_length(:oauth_client_secret, max: 4096)
     |> validate_required([:goal, :currency, :timezone])
     |> validate_change(:timezone, fn :timezone, zone ->
       case DateTime.shift_zone(DateTime.utc_now(), zone) do
@@ -66,20 +82,12 @@ defmodule Delivest.Integrations.YandexAds.Settings do
         _ -> [timezone: "is invalid"]
       end
     end)
-    |> validate_encryption()
     |> validate_enabled()
   end
 
-  defp validate_encryption(changeset) do
-    if Enum.any?(@secrets, &changed?(changeset, &1)) and not Secret.configured?(),
-      do:
-        add_error(
-          changeset,
-          :direct_token,
-          "configure YANDEX_ADS_ENCRYPTION_KEY before saving credentials"
-        ),
-      else: changeset
-  end
+  defp blank_secret?(nil), do: true
+  defp blank_secret?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank_secret?(_), do: false
 
   defp validate_enabled(changeset) do
     if get_field(changeset, :enabled) do
@@ -92,18 +100,21 @@ defmodule Delivest.Integrations.YandexAds.Settings do
            ), do: validate_required(changeset, [:counter_id]), else: changeset
 
       changeset =
-        if get_field(changeset, :conversions_enabled),
-          do: validate_required(changeset, [:metrika_token]),
-          else: changeset
+        if get_field(changeset, :conversions_enabled) and
+             (changed?(changeset, :enabled) or changed?(changeset, :conversions_enabled)),
+           do: validate_required(changeset, [:metrika_token]),
+           else: changeset
 
       changeset =
-        if get_field(changeset, :ecommerce_enabled),
-          do: validate_required(changeset, [:measurement_token]),
-          else: changeset
+        if get_field(changeset, :ecommerce_enabled) and
+             (changed?(changeset, :enabled) or changed?(changeset, :ecommerce_enabled)),
+           do: validate_required(changeset, [:measurement_token]),
+           else: changeset
 
-      if get_field(changeset, :costs_enabled),
-        do: validate_required(changeset, [:direct_token]),
-        else: changeset
+      if get_field(changeset, :costs_enabled) and
+           (changed?(changeset, :enabled) or changed?(changeset, :costs_enabled)),
+         do: validate_required(changeset, [:direct_token]),
+         else: changeset
     else
       changeset
     end

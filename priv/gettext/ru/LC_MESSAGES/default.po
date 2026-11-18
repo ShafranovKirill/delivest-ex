@@ -13167,3 +13167,24 @@ msgstr "Не удалось обновить отчёт. Показаны ран
 
 msgid "Report description"
 msgstr "Описание отчёта"
+
+msgid "Stored credentials could not be read. Enter new values for the marked fields; affected integration streams are paused."
+msgstr "Некоторые сохранённые токены недоступны. Введите их заново в отмеченных полях; зависящие от них функции приостановлены."
+
+msgid "Re-enter this credential to restore access."
+msgstr "Введите этот токен заново, чтобы восстановить доступ."
+
+msgid "Saved. Leave blank to keep the existing credential."
+msgstr "Сохранено. Оставьте поле пустым, чтобы сохранить прежнее значение."
+
+msgid "Yandex OAuth application ID"
+msgstr "ID OAuth-приложения Яндекса"
+
+msgid "Yandex OAuth application secret"
+msgstr "Секрет OAuth-приложения Яндекса"
+
+msgid "OAuth callback URL to enter in Yandex"
+msgstr "Адрес возврата для настройки в Яндексе"
+
+msgid "Set the Yandex OAuth application credentials in integration settings"
+msgstr "Введите ID и секрет OAuth-приложения Яндекса в настройках интеграции"

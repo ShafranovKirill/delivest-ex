@@ -12,7 +12,8 @@ defmodule Delivest.Integrations.YandexAds do
     ConversionWorker,
     Api,
     Cost,
-    OAuth
+    OAuth,
+    Secret
   }
 
   @streams %{
@@ -25,24 +26,77 @@ defmodule Delivest.Integrations.YandexAds do
   @identifiers ~w(client_id yclid campaign_id ad_id)
   # Fence collected identities and conversions only when their destination or
   # collection permissions change. Expense and feed preferences are independent.
-  @collection_fields ~w(enabled privacy_approved browser_enabled conversions_enabled ecommerce_enabled branch_ids counter_id goal client_login direct_token metrika_token refresh_token measurement_token)a
+  @collection_fields ~w(enabled privacy_approved browser_enabled conversions_enabled ecommerce_enabled branch_ids counter_id goal client_login direct_token metrika_token refresh_token measurement_token oauth_client_id oauth_client_secret)a
+  @legacy_tokens ~w(direct_token metrika_token refresh_token measurement_token)a
   @cost_fields ~w(updated_at generation enabled costs_enabled branch_ids account_scope direct_token client_login currency timezone include_vat)a
 
   def get_settings do
-    Repo.get(Settings, 1) || %Settings{id: 1}
-  rescue
-    ArgumentError -> %Settings{id: 1, credential_error: true}
+    settings = Repo.get(Settings, 1) || %Settings{id: 1}
+
+    legacy_present? =
+      Enum.any?(@legacy_tokens, fn field ->
+        is_nil(Map.get(settings, field)) and is_binary(Map.get(settings, legacy_field(field)))
+      end)
+
+    errors =
+      Enum.flat_map(@legacy_tokens, fn field ->
+        legacy = Map.get(settings, legacy_field(field))
+
+        if is_nil(Map.get(settings, field)) and is_binary(legacy) do
+          case Secret.load(legacy) do
+            {:ok, value} ->
+              column = Atom.to_string(field)
+
+              Repo.query!(
+                "UPDATE yandex_ads_settings SET #{column}_plain=$1, #{column}=NULL WHERE id=1 AND #{column}_plain IS NULL AND #{column}=$2",
+                [value, legacy],
+                log: false
+              )
+
+              []
+
+            :error ->
+              [Atom.to_string(field)]
+          end
+        else
+          []
+        end
+      end)
+
+    settings = if legacy_present?, do: Repo.get(Settings, 1) || settings, else: settings
+
+    errors =
+      Enum.filter(errors, fn field ->
+        token = String.to_existing_atom(field)
+        is_nil(Map.get(settings, token)) and is_binary(Map.get(settings, legacy_field(token)))
+      end)
+
+    %{settings | credential_error: errors != [], credential_errors: errors}
   end
+
+  defp legacy_field(field), do: String.to_existing_atom("legacy_" <> Atom.to_string(field))
 
   def change_settings(settings, attrs \\ %{}), do: Settings.changeset(settings, attrs)
 
-  def update_settings(staff, attrs) do
+  def update_settings(staff, attrs), do: update_settings(staff, attrs, nil)
+
+  def update_settings(staff, attrs, expected_generation) do
     if Accounts.can?(staff, "admin") do
       Repo.transaction(fn ->
         Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended('yandex-ads-settings',0))")
         previous = get_settings()
-        if previous.credential_error, do: Repo.rollback(:credentials_unavailable)
+
+        if expected_generation && previous.generation != expected_generation,
+          do: Repo.rollback(:connection_changed)
+
         changeset = Settings.changeset(previous, attrs)
+
+        changeset =
+          Enum.reduce(@legacy_tokens, changeset, fn field, acc ->
+            if Ecto.Changeset.changed?(acc, field),
+              do: Ecto.Changeset.put_change(acc, legacy_field(field), nil),
+              else: acc
+          end)
 
         changeset =
           if Ecto.Changeset.changed?(changeset, :direct_token) or
@@ -92,7 +146,7 @@ defmodule Delivest.Integrations.YandexAds do
 
         case changeset
              |> Ecto.Changeset.put_change(:generation, generation)
-             |> Repo.insert_or_update() do
+             |> Repo.insert_or_update(log: false) do
           {:ok, settings} ->
             Repo.update_all(
               from(c in Conversion,
@@ -105,7 +159,7 @@ defmodule Delivest.Integrations.YandexAds do
               metadata: %{generation: settings.generation}
             )
 
-            settings
+            get_settings()
 
           {:error, changeset} ->
             Repo.rollback(changeset)
@@ -151,7 +205,9 @@ defmodule Delivest.Integrations.YandexAds do
   def enabled?(%Settings{} = settings, stream, branch_id) do
     case @streams[stream] do
       {flag, feature} ->
-        settings.enabled and Map.get(settings, flag) == true and branch_id in settings.branch_ids and
+        credential_available?(settings, stream) and settings.enabled and
+          Map.get(settings, flag) == true and
+          branch_id in settings.branch_ids and
           (stream in [:feed, :costs] or settings.privacy_approved) and
           Features.enabled?(feature, {:branch, branch_id})
 
@@ -159,6 +215,17 @@ defmodule Delivest.Integrations.YandexAds do
         false
     end
   end
+
+  defp credential_available?(settings, :conversions),
+    do: "metrika_token" not in settings.credential_errors
+
+  defp credential_available?(settings, :ecommerce),
+    do: "measurement_token" not in settings.credential_errors
+
+  defp credential_available?(settings, :costs),
+    do: "direct_token" not in settings.credential_errors
+
+  defp credential_available?(_settings, _stream), do: true
 
   def public_config(branch_id) do
     settings = get_settings()
@@ -536,7 +603,7 @@ defmodule Delivest.Integrations.YandexAds do
       settings = get_settings()
 
       with token when is_binary(token) <- settings.refresh_token,
-           {:ok, result} <- OAuth.refresh(token) do
+           {:ok, result} <- OAuth.refresh(token, settings) do
         Repo.transaction(fn ->
           Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended('yandex-ads-settings',0))")
           current = get_settings()
@@ -548,7 +615,10 @@ defmodule Delivest.Integrations.YandexAds do
             "metrika_token" => result["access_token"],
             "refresh_token" => result["refresh_token"]
           })
-          |> Repo.update!()
+          |> Ecto.Changeset.put_change(:legacy_direct_token, nil)
+          |> Ecto.Changeset.put_change(:legacy_metrika_token, nil)
+          |> Ecto.Changeset.put_change(:legacy_refresh_token, nil)
+          |> Repo.update!(log: false)
         end)
       else
         _ -> {:error, :refresh_unavailable}

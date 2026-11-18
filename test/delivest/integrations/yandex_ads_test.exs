@@ -142,28 +142,86 @@ defmodule Delivest.Integrations.YandexAdsTest do
     assert Repo.aggregate(Identity, :count) == 0
   end
 
-  test "credentials are authenticated ciphertext and key loss fails closed", ctx do
+  test "new credentials work without an encryption key and blank input preserves them", ctx do
+    Application.delete_env(:delivest, :yandex_ads_encryption_key)
     settings = configure(ctx)
 
-    %{rows: [[encrypted]]} =
-      Repo.query!("SELECT metrika_token FROM yandex_ads_settings WHERE id=1")
+    %{rows: [[plain, legacy]]} =
+      Repo.query!("SELECT metrika_token_plain, metrika_token FROM yandex_ads_settings WHERE id=1")
 
-    refute String.contains?(encrypted, "metrika-secret")
-    assert {:ok, "metrika-secret"} = Secret.load(encrypted)
+    assert plain == "metrika-secret"
+    assert is_nil(legacy)
     assert YandexAds.get_settings().metrika_token == "metrika-secret"
     {:ok, unchanged} = YandexAds.update_settings(ctx.staff, %{"metrika_token" => ""})
     assert unchanged.generation == settings.generation
+    {:ok, unchanged} = YandexAds.update_settings(ctx.staff, %{"metrika_token" => "   "})
+    assert unchanged.metrika_token == "metrika-secret"
 
-    Application.put_env(
-      :delivest,
-      :yandex_ads_encryption_key,
-      Base.encode64(:binary.copy(<<43>>, 32))
+    assert YandexAds.get_settings().metrika_token == "metrika-secret"
+    assert {:ok, _} = YandexAds.update_settings(ctx.staff, %{direct_token: "another-token"})
+  end
+
+  test "unreadable optional legacy token pauses only its dependent stream", ctx do
+    configure(ctx, %{
+      ecommerce_enabled: true,
+      measurement_token: "measurement-secret",
+      costs_enabled: true
+    })
+
+    assert {:ok, encrypted} = Secret.dump("legacy-measurement")
+
+    Repo.query!(
+      "UPDATE yandex_ads_settings SET measurement_token_plain=NULL, measurement_token=$1 WHERE id=1",
+      [encrypted]
     )
 
-    assert %{enabled: false, credential_error: true} = YandexAds.get_settings()
+    Application.delete_env(:delivest, :yandex_ads_encryption_key)
+    assert %{credential_errors: ["measurement_token"]} = YandexAds.get_settings()
+    assert YandexAds.enabled?(:browser, ctx.branch.id)
+    assert YandexAds.enabled?(:conversions, ctx.branch.id)
+    assert YandexAds.enabled?(:costs, ctx.branch.id)
+    refute YandexAds.enabled?(:ecommerce, ctx.branch.id)
+  end
 
-    assert {:error, :credentials_unavailable} =
-             YandexAds.update_settings(ctx.staff, %{enabled: false})
+  test "readable legacy token migrates and unreadable token can be replaced", ctx do
+    settings = configure(ctx)
+    assert {:ok, encrypted} = Secret.dump("legacy-token")
+
+    Repo.query!(
+      "UPDATE yandex_ads_settings SET direct_token_plain=NULL, direct_token=$1 WHERE id=1",
+      [encrypted]
+    )
+
+    assert YandexAds.get_settings().direct_token == "legacy-token"
+
+    assert %{rows: [["legacy-token", nil]]} =
+             Repo.query!(
+               "SELECT direct_token_plain, direct_token FROM yandex_ads_settings WHERE id=1"
+             )
+
+    Repo.query!(
+      "UPDATE yandex_ads_settings SET direct_token_plain=NULL, direct_token=$1 WHERE id=1",
+      [encrypted]
+    )
+
+    Application.delete_env(:delivest, :yandex_ads_encryption_key)
+
+    assert %{credential_error: true, credential_errors: ["direct_token"]} =
+             YandexAds.get_settings()
+
+    refute YandexAds.enabled?(:costs, ctx.branch.id)
+
+    assert {:ok, recovered} =
+             YandexAds.update_settings(ctx.staff, %{direct_token: "replacement-token"})
+
+    refute recovered.credential_error
+    assert recovered.direct_token == "replacement-token"
+    assert recovered.generation > settings.generation
+
+    assert %{rows: [["replacement-token", nil]]} =
+             Repo.query!(
+               "SELECT direct_token_plain, direct_token FROM yandex_ads_settings WHERE id=1"
+             )
   end
 
   test "admin approval, feature gates and branch scope are independent", ctx do
@@ -792,21 +850,19 @@ defmodule Delivest.Integrations.YandexAdsTest do
   end
 
   test "OAuth refresh preserves advertiser namespace and destination generation", ctx do
-    settings = configure(ctx, %{refresh_token: "refresh-secret"})
-    vars = ~w(YANDEX_ADS_OAUTH_CLIENT_ID YANDEX_ADS_OAUTH_CLIENT_SECRET)
-    previous = Map.new(vars, &{&1, System.get_env(&1)})
-    Enum.each(vars, &System.put_env(&1, "test-value"))
-
-    on_exit(fn ->
-      Enum.each(previous, fn {key, value} ->
-        if value, do: System.put_env(key, value), else: System.delete_env(key)
-      end)
-    end)
+    settings =
+      configure(ctx, %{
+        refresh_token: "refresh-secret",
+        oauth_client_id: "db-client",
+        oauth_client_secret: "db-secret"
+      })
 
     Req.Test.stub(Delivest.HTTP.Client, fn conn ->
       assert conn.host == "oauth.yandex.ru"
       {:ok, body, conn} = Plug.Conn.read_body(conn)
       assert URI.decode_query(body)["grant_type"] == "refresh_token"
+      assert URI.decode_query(body)["client_id"] == "db-client"
+      assert URI.decode_query(body)["client_secret"] == "db-secret"
 
       Req.Test.json(conn, %{
         "access_token" => "renewed-access",

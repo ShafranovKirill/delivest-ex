@@ -75,6 +75,98 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAdsTest do
     refute render(view) =~ "direct-secret-must-not-render"
   end
 
+  test "OAuth application is entered in settings and its secret never appears in the form", %{
+    conn: conn,
+    staff: staff
+  } do
+    {:ok, view, html} = live(conn, ~p"/staff/integrations/yandex-ads")
+    assert html =~ "yandex-oauth-redirect-uri"
+    assert html =~ "/staff/integrations/yandex-ads/callback"
+
+    changed =
+      view
+      |> form("#yandex-ads-settings",
+        yandex_ads: %{oauth_client_id: "test-client", oauth_client_secret: "secret-not-in-html"}
+      )
+      |> render_change()
+
+    refute changed =~ "secret-not-in-html"
+
+    view
+    |> form("#yandex-ads-settings",
+      yandex_ads: %{oauth_client_id: "test-client", oauth_client_secret: "secret-not-in-html"}
+    )
+    |> render_submit()
+
+    assert YandexAds.get_settings().oauth_client_id == "test-client"
+    assert YandexAds.get_settings().oauth_client_secret == "secret-not-in-html"
+    refute render(view) =~ "secret-not-in-html"
+    assert has_element?(view, "#yandex-oauth_client_secret-saved")
+
+    assert {:ok, unchanged} = YandexAds.update_settings(staff, %{oauth_client_secret: ""})
+    assert unchanged.oauth_client_secret == "secret-not-in-html"
+    assert {:ok, unchanged} = YandexAds.update_settings(staff, %{oauth_client_secret: "  "})
+    assert unchanged.oauth_client_secret == "secret-not-in-html"
+  end
+
+  test "OAuth connect uses saved application and callback saves tokens", %{
+    conn: conn,
+    staff: staff
+  } do
+    assert {:ok, _} =
+             YandexAds.update_settings(staff, %{
+               oauth_client_id: "database-client",
+               oauth_client_secret: "database-secret"
+             })
+
+    connected = get(conn, ~p"/staff/integrations/yandex-ads/connect")
+    [location] = get_resp_header(connected, "location")
+    assert URI.parse(location).host == "oauth.yandex.ru"
+    query = location |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+    assert query["client_id"] == "database-client"
+    assert query["redirect_uri"] == Delivest.Integrations.YandexAds.OAuth.redirect_uri()
+
+    Req.Test.stub(Delivest.HTTP.Client, fn request ->
+      {:ok, body, request} = Plug.Conn.read_body(request)
+      assert URI.decode_query(body)["client_id"] == "database-client"
+      assert URI.decode_query(body)["client_secret"] == "database-secret"
+      Req.Test.json(request, %{"access_token" => "from-oauth", "refresh_token" => "from-refresh"})
+    end)
+
+    callback =
+      connected
+      |> recycle()
+      |> get(~p"/staff/integrations/yandex-ads/callback?code=valid&state=#{query["state"]}")
+
+    assert redirected_to(callback) == ~p"/staff/integrations/yandex-ads"
+    assert YandexAds.get_settings().direct_token == "from-oauth"
+    assert YandexAds.get_settings().refresh_token == "from-refresh"
+  end
+
+  test "OAuth callback rejects an application changed after connect", %{conn: conn, staff: staff} do
+    assert {:ok, _} =
+             YandexAds.update_settings(staff, %{
+               oauth_client_id: "initial-client",
+               oauth_client_secret: "initial-secret"
+             })
+
+    connected = get(conn, ~p"/staff/integrations/yandex-ads/connect")
+    [location] = get_resp_header(connected, "location")
+
+    state =
+      location |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query() |> Map.fetch!("state")
+
+    assert {:ok, _} = YandexAds.update_settings(staff, %{oauth_client_id: "replacement-client"})
+
+    callback =
+      connected
+      |> recycle()
+      |> get(~p"/staff/integrations/yandex-ads/callback?code=valid&state=#{state}")
+
+    assert redirected_to(callback) == ~p"/staff/integrations/yandex-ads"
+    assert is_nil(YandexAds.get_settings().direct_token)
+  end
+
   test "non-admin cannot open or mutate advertising settings", %{conn: conn, branch: branch} do
     staff = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))
     insert(:staff_branch, staff: staff, branch: branch)
