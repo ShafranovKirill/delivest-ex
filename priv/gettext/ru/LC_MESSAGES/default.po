@@ -13188,3 +13188,51 @@ msgstr "Адрес возврата для настройки в Яндексе"
 
 msgid "Set the Yandex OAuth application credentials in integration settings"
 msgstr "Введите ID и секрет OAuth-приложения Яндекса в настройках интеграции"
+
+msgid "Analytics and tracking"
+msgstr "Аналитика и отслеживание"
+
+msgid "Customer segments, sales funnel and extended analytics."
+msgstr "Сегменты клиентов, воронка продаж и расширенная аналитика."
+
+msgid "Extended analytics and branch comparison across the network."
+msgstr "Расширенная аналитика и сравнение филиалов всей сети."
+
+msgid "Customer segments"
+msgstr "Сегменты клиентов"
+
+msgid "Group customers by conditions and order history. Segments are shared across the network."
+msgstr "Группировка клиентов по условиям и истории заказов. Сегменты общие для всей сети."
+
+msgid "Track the path from viewing the menu to placing an order."
+msgstr "Отслеживание пути от просмотра меню до оформления заказа."
+
+msgid "Additional sales and customer reports."
+msgstr "Дополнительные отчёты по продажам и клиентам."
+
+msgid "Track advertising sources and orders from advertising links."
+msgstr "Отслеживание источников рекламы и заказов по рекламным ссылкам."
+
+msgid "Compare branches with extended analytics. Basic network sales statistics are always available to staff with network statistics access."
+msgstr "Сравнение филиалов с расширенной аналитикой. Обычная статистика продаж всей сети доступна сотрудникам с правом просмотра статистики сети."
+
+msgid "Changes are saved immediately. Enabling a feature also enables its required features. Previously collected data is preserved when tracking is disabled."
+msgstr "Изменения сохраняются сразу. Необходимые связанные функции включаются вместе. При отключении отслеживания ранее собранные данные сохраняются."
+
+msgid "Enabling a feature activates it for this branch and enables its required network modules. Changes affecting other branches require confirmation."
+msgstr "Функция включается для этого филиала вместе с необходимыми общими модулями сети. Если включение затронет другие филиалы, потребуется подтверждение."
+
+msgid "Disable %{feature}? New data collection and dependent reports will stop. Existing data will be preserved."
+msgstr "Выключить «%{feature}»? Сбор новых данных и связанные отчёты будут остановлены. Ранее собранные данные сохранятся."
+
+msgid "Also disabled: %{features}"
+msgstr "Также будут выключены: %{features}"
+
+msgid "Settings changed. Review and confirm again."
+msgstr "Настройки изменились. Проверьте изменения и подтвердите ещё раз."
+
+msgid "Sales across the network"
+msgstr "Продажи всей сети"
+
+msgid "The shared network module is disabled. Enabling it will also resume tracking for: %{branches}."
+msgstr "Общий модуль сети выключен. Включение также возобновит отслеживание в филиалах: %{branches}."

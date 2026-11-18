@@ -59,6 +59,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   @impl true
   def handle_params(params, url, socket) do
+    params = sanitize_branch_filter(params)
     socket = cancel_report_refresh(socket)
 
     socket =
@@ -146,7 +147,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
            page_title:
              if(section,
                do: tab_label(if(section == "comparison", do: "franchise", else: section)),
-               else: gettext("Sales statistics")
+               else:
+                 if(global?,
+                   do: gettext("Sales across the network"),
+                   else: gettext("Sales statistics")
+                 )
              ),
            preset: preset,
            period: period,
@@ -505,7 +510,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     Enum.filter(tabs, fn tab ->
       cond do
         tab in @base_tabs ->
-          not is_nil(branch) or Features.enabled?("analytics_franchise", :franchise)
+          true
 
         tab == "franchise" ->
           Identity.can?(staff, "statistics.network") and is_nil(branch) and
@@ -527,8 +532,28 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   defp branch_scope(assigns) do
     ids = Enum.map(assigns.staff_branches, & &1.id)
-    enabled = Features.enabled_branches("analytics_franchise", ids)
-    Enum.filter(ids, &MapSet.member?(enabled, &1))
+
+    case {assigns.report_filters["branch_id"], assigns.report_filters["branch_ids"]} do
+      {id, _} when is_binary(id) and id != "" ->
+        Enum.filter(ids, &(&1 == id))
+
+      {id, nil} when id in [nil, ""] ->
+        ids
+
+      {id, selected} when id in [nil, ""] and is_list(selected) ->
+        Enum.filter(ids, &(&1 in selected))
+
+      _ ->
+        []
+    end
+  end
+
+  defp sanitize_branch_filter(params) do
+    case Map.fetch(params, "branch_id") do
+      :error -> params
+      {:ok, value} when is_binary(value) -> params
+      _ -> Map.put(params, "branch_id", "invalid-branch")
+    end
   end
 
   defp report_filters(params),
@@ -664,6 +689,15 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               class="input input-bordered input-sm w-36"
             />
           <% end %>
+          <.input
+            :if={@global_statistics? and @tab in ~w(sales products categories)}
+            field={@form[:branch_id]}
+            id="statistics-network-branch"
+            type="select"
+            prompt={gettext("All branches")}
+            options={Enum.map(@staff_branches, &{&1.name, &1.id})}
+            class="select select-bordered select-sm w-44"
+          />
           <.input
             :if={@tab in ~w(channels comparison franchise)}
             field={@form[:channel]}
@@ -801,20 +835,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           <p>{gettext("Comparison period")}: <strong>{format_period(@comparison_period)}</strong></p>
         </div>
       </section>
-
-      <p
-        :if={
-          @tab in ~w(sales products categories) and is_nil(@current_branch) and
-            length(@staff_branches) > length(branch_scope(assigns))
-        }
-        id="statistics-excluded-branches"
-        role="status"
-        class="text-sm text-base-content/70"
-      >
-        {gettext("Branches excluded by feature availability: %{count}",
-          count: length(@staff_branches) - length(branch_scope(assigns))
-        )}
-      </p>
 
       <p :if={is_nil(@tab)} id="statistics-choose-branch" class="alert">
         {gettext("Choose a branch to view statistics.")}

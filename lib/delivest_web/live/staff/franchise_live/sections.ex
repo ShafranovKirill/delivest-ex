@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.FranchiseLive.Sections do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @ids ~w(brand auth seller loyalty logo images documents snapshot)a
+  @ids ~w(brand auth seller loyalty logo images documents analytics snapshot)a
 
   def all, do: Enum.map(@ids, &describe/1)
 
@@ -91,6 +91,15 @@ defmodule DelivestWeb.Staff.FranchiseLive.Sections do
         "hero-device-phone-mobile",
         gettext("Icon and link preview"),
         gettext("Shown in the browser tab, on the phone home screen and when the link is shared.")
+      )
+
+  def describe(:analytics),
+    do:
+      section(
+        :analytics,
+        "hero-chart-bar",
+        gettext("Network analytics"),
+        gettext("Extended analytics and branch comparison across the network.")
       )
 
   def describe(:documents),

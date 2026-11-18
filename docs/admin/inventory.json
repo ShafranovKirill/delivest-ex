@@ -371,6 +371,7 @@
       "rights": {
         "inline": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -380,7 +381,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:565",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:595",
       "target_section": "Settings / Branches"
     },
     {
@@ -408,6 +409,7 @@
       "rights": {
         "inline": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -417,7 +419,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:542",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:572",
       "target_section": "Settings / Branches"
     },
     {
@@ -449,6 +451,7 @@
       "rights": {
         "inline": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -458,7 +461,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:456",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:486",
       "target_section": "Settings / Branches"
     },
     {
@@ -484,6 +487,7 @@
       "rights": {
         "inline": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -493,7 +497,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:497",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:527",
       "target_section": "Settings / Branches"
     },
     {
@@ -1396,7 +1400,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:474",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:498",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1430,7 +1434,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:491",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:515",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1463,7 +1467,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:548",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:572",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -8374,6 +8378,122 @@
     {
       "availability": "no inline :if",
       "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "cancel_disable",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:cancel_disable:300b78ee38eeba62:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/settings_live/analytics_component.ex:cancel_disable:signature:5743bf7a5418c06f:1",
+      "label": "Cancel",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:204",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "cancel_disable",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:cancel_disable:300b78ee38eeba62:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/settings_live/analytics_component.ex:cancel_disable:signature:5743bf7a5418c06f:2",
+      "label": "Cancel",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:235",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "confirmation marker in control",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "confirm_disable",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_disable:3ab17569a030257c:1",
+        "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_disable:a393399c1877ba74:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_disable:dom:analytics-confirm-disable:1",
+      "label": "Disable",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:228",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "confirmation marker in control",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "confirm_enable",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_enable:a1d771bc648c9c64:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_enable:dom:analytics-confirm-enable:1",
+      "label": "Enable",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:197",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "toggle",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:toggle:c8cd363f1c0a6ca2:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/settings_live/analytics_component.ex:toggle:signature:2de0f6a6bf20239c:1",
+      "label": "Enabled",
+      "operation": [
+        "Enum.find",
+        "Integer.to_string",
+        "Settings.authorized?",
+        "Settings.preview"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:167",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
       "disposition": "retain control in Settings / Team and access",
       "error_state": [
         "no explicit :error in clause"
@@ -8451,7 +8571,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:742",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:776",
       "target_section": "Analytics"
     },
     {
@@ -8478,7 +8598,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:779",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:813",
       "target_section": "Analytics"
     },
     {
@@ -8503,7 +8623,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:691",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:725",
       "target_section": "Analytics"
     },
     {
@@ -9132,6 +9252,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9141,7 +9262,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:162",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:171",
       "target_section": "Settings / Branches"
     },
     {
@@ -9159,6 +9280,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9168,7 +9290,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:197",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:206",
       "target_section": "Settings / Branches"
     },
     {
@@ -9190,6 +9312,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9199,7 +9322,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:165",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:174",
       "target_section": "Settings / Branches"
     },
     {
@@ -9215,6 +9338,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9224,7 +9348,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:251",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:260",
       "target_section": "Settings / Branches"
     },
     {
@@ -9251,6 +9375,7 @@
           "branches.update"
         ],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9260,7 +9385,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:203",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:212",
       "target_section": "Settings / Branches"
     },
     {
@@ -9278,6 +9403,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9287,7 +9413,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:142",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:151",
       "target_section": "Settings / Branches"
     },
     {
@@ -9308,6 +9434,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9317,7 +9444,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:124",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:133",
       "target_section": "Settings / Branches"
     },
     {
@@ -9333,6 +9460,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9342,7 +9470,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:201",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:210",
       "target_section": "Settings / Branches"
     },
     {
@@ -9360,6 +9488,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9369,7 +9498,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:159",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:168",
       "target_section": "Settings / Branches"
     },
     {
@@ -9387,6 +9516,7 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -9396,7 +9526,7 @@
           "integrations.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:150",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:159",
       "target_section": "Settings / Branches"
     },
     {
@@ -10688,7 +10818,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:131",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:144",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10714,7 +10844,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:161",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:174",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10741,7 +10871,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:136",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:149",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10768,7 +10898,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:175",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:188",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10790,7 +10920,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:192",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:205",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -10810,7 +10940,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:129",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:142",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -18186,6 +18316,96 @@
     {
       "availability": "no inline conditional in handler clause",
       "confirmation": "confirmation marker in module; inspect event flow",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "cancel_disable",
+      "id": "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:cancel_disable:300b78ee38eeba62:1",
+      "label": "{gettext(\"Cancel\")} / {gettext(\"Cancel\")}",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:81",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "confirmation marker in module; inspect event flow",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "confirm_disable",
+      "id": "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_disable:3ab17569a030257c:1",
+      "label": "{gettext(\"Disable\")}",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:73",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "confirmation marker in module; inspect event flow",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "confirm_disable",
+      "id": "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_disable:a393399c1877ba74:1",
+      "label": "{gettext(\"Disable\")}",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:80",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "confirmation marker in module; inspect event flow",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "confirm_enable",
+      "id": "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:confirm_enable:a1d771bc648c9c64:1",
+      "label": "{gettext(\"Enable\")}",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:66",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "confirmation marker in module; inspect event flow",
+      "disposition": "retain operation; move control with Analytics",
+      "error_state": "no explicit :error in clause",
+      "event": "toggle",
+      "id": "event:lib/delivest_web/live/staff/settings_live/analytics_component.ex:toggle:c8cd363f1c0a6ca2:1",
+      "label": "{if row.enabled, do: gettext(\"Enabled\"), else: gettext(\"Disabled\")}",
+      "operation": [
+        "Enum.find",
+        "Integer.to_string",
+        "Settings.authorized?",
+        "Settings.preview"
+      ],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/settings_live/analytics_component.ex:49",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "confirmation marker in module; inspect event flow",
       "disposition": "retain operation; move control with Settings / Team and access",
       "error_state": "no explicit :error in clause",
       "event": "save",
@@ -18410,7 +18630,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:223",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:228",
       "target_section": "Analytics"
     },
     {
@@ -18432,7 +18652,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:233",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:238",
       "target_section": "Analytics"
     },
     {
@@ -18452,7 +18672,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:212",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:217",
       "target_section": "Analytics"
     },
     {
@@ -18474,7 +18694,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:189",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:194",
       "target_section": "Analytics"
     },
     {
@@ -18494,7 +18714,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:209",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:214",
       "target_section": "Analytics"
     },
     {
@@ -18514,7 +18734,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:245",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:250",
       "target_section": "Analytics"
     },
     {
@@ -20774,7 +20994,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:558",
+      "source": "lib/delivest_web/live/staff/branch_live/edit.ex:588",
       "target_section": "Settings / Branches",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21935,7 +22155,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "confirm",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:520",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:544",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21956,7 +22176,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "target",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:532",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:556",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29119,6 +29339,27 @@
       "default": "not declared in control/owner schema",
       "disposition": "retain canonical editor in Analytics",
       "expression": null,
+      "field": "branch_id",
+      "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:@form:branch_id",
+      "name_template": null,
+      "owner": "Delivest.Analytics report filters",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "branch_id",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:694",
+      "target_section": "Analytics",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/statistics_live/index.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/statistics_live/index.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Analytics",
+      "expression": null,
       "field": "channel",
       "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:@form:channel",
       "name_template": null,
@@ -29126,7 +29367,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "channel",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:669",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:703",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29147,7 +29388,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:684",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:718",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29168,7 +29409,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:677",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:711",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29189,7 +29430,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "compare",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:749",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:783",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29210,7 +29451,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "compare_from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:761",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:795",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29231,7 +29472,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "compare_to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:769",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:803",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29252,7 +29493,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:654",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:679",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29273,7 +29514,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "period",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:644",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:669",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29294,7 +29535,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:660",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:685",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -37798,6 +38039,7 @@
       "page_type": "settings",
       "rights": {
         "handler_permissions": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -37833,6 +38075,7 @@
       "page_type": "settings",
       "rights": {
         "handler_permissions": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",
@@ -37868,6 +38111,7 @@
       "page_type": "settings",
       "rights": {
         "handler_permissions": [
+          "admin",
           "branches.create",
           "branches.delete",
           "branches.read",

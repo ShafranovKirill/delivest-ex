@@ -149,6 +149,13 @@ defmodule Delivest.Features do
       Repo.transaction(fn ->
         gates = ensure_and_lock(changes, key)
 
+        if enabled and key == "franchise" and Keyword.has_key?(opts, :activation_branch) do
+          preview = activation_preview(changes, gates, Keyword.fetch!(opts, :activation_branch))
+
+          if preview.branches != [] and Keyword.get(opts, :confirm_activation) != preview,
+            do: Repo.rollback({:activation_required, preview})
+        end
+
         active_dependents =
           Enum.filter(transitive_dependents(feature), &enabled_in?(&1, key, gates))
 
@@ -233,6 +240,50 @@ defmodule Delivest.Features do
       |> Base.encode16(case: :lower)
 
     %{features: dependents, fingerprint: fingerprint}
+  end
+
+  defp activation_preview(names, gates, target_branch) do
+    disabled = Enum.filter(names, fn name -> !gates[{name, "franchise"}].enabled end)
+    target_key = "branch:" <> target_branch
+
+    children =
+      Repo.all(
+        from g in Gate,
+          where:
+            g.feature in ^disabled and g.enabled and g.scope_key != "franchise" and
+              g.scope_key != ^target_key,
+          order_by: [g.feature, g.scope_key]
+      )
+
+    ids =
+      Enum.flat_map(children, fn g ->
+        case g.scope_key do
+          "branch:" <> id -> [id]
+          _ -> []
+        end
+      end)
+
+    branches =
+      Repo.all(
+        from b in Branch,
+          where: b.id in ^ids and is_nil(b.deleted_at),
+          order_by: b.id,
+          select: %{id: b.id, name: b.name}
+      )
+
+    parents =
+      Enum.map(Enum.sort(names), fn name ->
+        g = gates[{name, "franchise"}]
+        {name, g.enabled, g.generation}
+      end)
+
+    fingerprint =
+      {parents, Enum.map(children, &{&1.feature, &1.scope_key, &1.generation}), branches}
+      |> :erlang.term_to_binary()
+      |> then(&:crypto.hash(:sha256, &1))
+      |> Base.encode16(case: :lower)
+
+    %{branches: branches, fingerprint: fingerprint}
   end
 
   defp closure(feature),

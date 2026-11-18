@@ -217,21 +217,52 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert query["compare_to"] == "2026-10-07"
   end
 
-  test "network sales exposes only the three sales tabs behind the network feature", %{conn: conn} do
-    {conn, _branch} = login(conn, ["statistics.read", "statistics.network"])
-    {:ok, view, _} = live(conn, ~p"/staff/statistics")
-    refute has_element?(view, "#statistics-tab-sales")
+  test "network sales includes only authorized branches without optional feature gates", %{
+    conn: conn
+  } do
+    {conn, first} = login(conn, ["statistics.read", "statistics.network"])
+    second = insert(:branch)
+    other = insert(:branch)
+    staff_id = Plug.Conn.get_session(conn, "staff_id")
 
-    assert {:ok, _} =
-             Delivest.Features.configure("analytics_franchise", :franchise, true, actor: "host")
+    insert(:staff_branch,
+      staff: Delivest.Repo.get!(Delivest.Identity.Staff, staff_id),
+      branch: second
+    )
 
-    {:ok, view, _} = live(conn, ~p"/staff/statistics")
+    order_fixture(first.id, price: 10_000)
+    order_fixture(second.id, price: 20_000)
+    order_fixture(other.id, price: 90_000)
+
+    {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
 
     for tab <- ~w(sales products categories),
         do: assert(has_element?(view, "#statistics-tab-#{tab}"))
 
     refute has_element?(view, "#statistics-tab-franchise")
-    refute has_element?(view, "#statistics-scope")
+    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 30_000
+    assert has_element?(view, "#statistics-network-branch")
+    render_patch(view, ~p"/staff/statistics?period=today&branch_id=#{second.id}")
+    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 20_000
+    render_patch(view, ~p"/staff/statistics?period=today&branch_id=#{other.id}")
+    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 0
+
+    render_patch(
+      view,
+      ~p"/staff/statistics?period=today&branch_ids[]=#{first.id}&branch_ids[]=#{other.id}"
+    )
+
+    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 10_000
+    render_patch(view, ~p"/staff/statistics?period=today&branch_ids=invalid")
+    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 0
+
+    for query <- ["branch_id[]=invalid", "branch_id[x]=invalid", "branch_ids[x]=invalid"] do
+      render_patch(view, "/staff/statistics?period=today&" <> query)
+      assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 0
+    end
+
+    render_patch(view, ~p"/staff/statistics?period=today")
+    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 30_000
   end
 
   test "branch report URLs cannot grant access to an unassigned branch", %{conn: conn} do

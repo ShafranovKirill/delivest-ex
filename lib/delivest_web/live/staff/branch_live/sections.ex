@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.Sections do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @ids ~w(general fulfillment location hours kitchen board links snapshot)a
+  @ids ~w(general fulfillment location hours kitchen board links analytics snapshot)a
 
   def all, do: Enum.map(@ids, &describe/1)
 
@@ -59,6 +59,15 @@ defmodule DelivestWeb.Staff.BranchLive.Sections do
 
   def describe(:links),
     do: section(:links, "hero-chat-bubble-left-right", gettext("Social Links & Messengers"), nil)
+
+  def describe(:analytics),
+    do:
+      section(
+        :analytics,
+        "hero-chart-bar",
+        gettext("Analytics and tracking"),
+        gettext("Customer segments, sales funnel and extended analytics.")
+      )
 
   def describe(:snapshot),
     do:

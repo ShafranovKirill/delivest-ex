@@ -329,6 +329,7 @@ defmodule DelivestWeb.StaffNav do
                 :employee,
                 :roles,
                 :statistics,
+                :network_sales,
                 :analytics_channels,
                 :analytics_sources,
                 :analytics_funnel,
@@ -497,6 +498,7 @@ defmodule DelivestWeb.StaffNav do
           Enum.map(
             [
               :statistics,
+              :network_sales,
               :analytics_channels,
               :analytics_sources,
               :analytics_funnel,
@@ -782,13 +784,25 @@ defmodule DelivestWeb.StaffNav do
 
   defp common_entries(staff, branch) do
     [
+      if(branch,
+        do:
+          item(
+            :network_sales,
+            ~p"/staff/statistics",
+            "hero-globe-alt",
+            gettext("Sales across the network")
+          )
+      )
+      |> allowed(staff, "statistics.read")
+      |> allowed(staff, "statistics.network"),
       item(
         :statistics,
         if(branch, do: ~p"/staff/b/#{branch}/statistics", else: ~p"/staff/statistics"),
         "hero-chart-bar",
-        gettext("Sales statistics")
+        if(branch, do: gettext("Sales statistics"), else: gettext("Sales across the network"))
       )
-      |> allowed(staff, "statistics.read"),
+      |> allowed(staff, "statistics.read")
+      |> then(fn entry -> if branch || can?(staff, "statistics.network"), do: entry end),
       analytics_placeholder(
         :analytics_channels,
         "channels",

@@ -25,7 +25,10 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
 
   def mount(params, _session, socket) do
     with {:ok, branch} <- load(socket.assigns.live_action, params, socket.assigns.current_staff),
-         {:ok, section} <- section(socket.assigns.live_action, params) do
+         {:ok, section} <- section(socket.assigns.live_action, params),
+         true <-
+           is_nil(section) or section.id != :analytics or
+             Delivest.Features.Settings.authorized?(socket.assigns.current_staff) do
       socket =
         assign(socket,
           branch: branch,
@@ -53,6 +56,12 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
         {:ok, socket}
       end
     else
+      false ->
+        {:ok,
+         socket
+         |> put_flash(:error, gettext("Permission denied"))
+         |> push_navigate(to: ~p"/staff/branches")}
+
       {:error, message, to} ->
         {:ok, socket |> put_flash(:error, message) |> push_navigate(to: to)}
     end
@@ -339,7 +348,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     """
   end
 
-  def staff_page_header(%{section: %{id: :board}} = assigns) do
+  def staff_page_header(%{section: %{id: id}} = assigns) when id in [:board, :analytics] do
     ~H"""
     <.page_header
       navigation_label={gettext("Settings")}
@@ -381,7 +390,17 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     <div class="space-y-6">
       <.settings_cards>
         <.settings_card
-          :for={section <- if(@can_edit_identity, do: Sections.all(), else: [])}
+          :for={
+            section <-
+              if(@can_edit_identity,
+                do:
+                  Enum.filter(
+                    Sections.all(),
+                    &(&1.id != :analytics or Identity.can?(@current_staff, "admin"))
+                  ),
+                else: []
+              )
+          }
           id={"branch-section-#{section.id}"}
           navigate={~p"/staff/branches/#{@branch.slug}/edit/#{section.id}"}
           icon={section.icon}
@@ -406,6 +425,17 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
         />
       </.settings_cards>
     </div>
+    """
+  end
+
+  def render(%{section: %{id: :analytics}} = assigns) do
+    ~H"""
+    <.live_component
+      module={DelivestWeb.Staff.SettingsLive.AnalyticsComponent}
+      id="branch-analytics-settings"
+      current_staff={@current_staff}
+      scope={{:branch, @branch.id}}
+    />
     """
   end
 

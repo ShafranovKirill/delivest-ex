@@ -23,13 +23,36 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     init_test_session(conn, session)
   end
 
+  test "network sales navigation remains available with an active branch and requires both permissions" do
+    branch = insert(:branch)
+
+    for permissions <- [
+          ["statistics.read"],
+          ["statistics.network"],
+          ["statistics.read", "statistics.network"]
+        ] do
+      staff = insert(:staff, role: insert(:role, permissions: permissions))
+      insert(:staff_branch, staff: staff, branch: branch)
+      staff = Repo.preload(staff, [:role, :branches])
+      pages = DelivestWeb.StaffNav.pages(staff, branch)
+      network = Enum.find(pages, &(&1.id == :network_sales))
+
+      if length(permissions) == 2 do
+        assert network.path == "/staff/statistics"
+
+        assert Enum.find(pages, &(&1.id == :statistics)).path ==
+                 "/staff/b/#{branch.slug}/statistics"
+
+        global = DelivestWeb.StaffNav.pages(staff, nil)
+        assert Enum.count(global, &(&1.path == "/staff/statistics")) == 1
+      else
+        refute network
+      end
+    end
+  end
+
   test "global statistics renders franchise report without an active branch", %{conn: conn} do
     branch = insert(:branch)
-    {:ok, _} = Features.configure("analytics_franchise", :franchise, true, actor: "test")
-
-    {:ok, _} =
-      Features.configure("analytics_franchise", {:branch, branch.id}, true, actor: "test")
-
     conn = login(conn, ["statistics.read", "statistics.network"], [branch])
 
     {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
