@@ -5,17 +5,25 @@ defmodule DelivestWeb.Staff.YandexAdsOAuthController do
   alias Delivest.Integrations.YandexAds.OAuth
 
   def connect(conn, _) do
-    if admin?(conn) and Delivest.Integrations.YandexAds.Secret.configured?() do
+    if admin?(conn) do
+      settings = YandexAds.get_settings()
       state = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
 
-      case OAuth.authorize_url(state) do
+      case OAuth.authorize_url(state, settings) do
         {:ok, url} ->
           conn
-          |> put_session(:yandex_ads_oauth, %{state: state, at: System.system_time(:second)})
+          |> put_session(:yandex_ads_oauth, %{
+            state: state,
+            at: System.system_time(:second),
+            generation: settings.generation
+          })
           |> redirect(external: url)
 
         _ ->
-          fail(conn, "OAuth is not configured on this server")
+          fail(
+            conn,
+            gettext("Set the Yandex OAuth application credentials in integration settings")
+          )
       end
     else
       send_resp(conn, :forbidden, "Forbidden")
@@ -27,18 +35,24 @@ defmodule DelivestWeb.Staff.YandexAdsOAuthController do
     conn = delete_session(conn, :yandex_ads_oauth)
 
     with true <- admin?(conn),
-         %{state: state, at: at} <- saved,
+         %{state: state, at: at, generation: generation} <- saved,
          provided when is_binary(provided) <- params["state"],
          true <- byte_size(state) == byte_size(provided),
          true <- Plug.Crypto.secure_compare(state, provided),
          true <- (System.system_time(:second) - at) in 0..600,
-         {:ok, tokens} <- OAuth.exchange(params["code"]),
+         settings = YandexAds.get_settings(),
+         true <- settings.generation == generation,
+         {:ok, tokens} <- OAuth.exchange(params["code"], settings),
          {:ok, _} <-
-           YandexAds.update_settings(conn.assigns.current_staff, %{
-             "direct_token" => tokens["access_token"],
-             "metrika_token" => tokens["access_token"],
-             "refresh_token" => tokens["refresh_token"]
-           }) do
+           YandexAds.update_settings(
+             conn.assigns.current_staff,
+             %{
+               "direct_token" => tokens["access_token"],
+               "metrika_token" => tokens["access_token"],
+               "refresh_token" => tokens["refresh_token"]
+             },
+             generation
+           ) do
       conn
       |> put_flash(
         :info,

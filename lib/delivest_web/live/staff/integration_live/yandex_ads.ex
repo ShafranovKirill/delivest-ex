@@ -3,12 +3,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
 
   alias Delivest.Identity
   alias Delivest.Integrations.YandexAds
-  alias Delivest.Integrations.YandexAds.Secret
+  alias Delivest.Integrations.YandexAds.OAuth
   alias Delivest.Integrations.YandexAds.Campaigns
 
   on_mount {DelivestWeb.Hooks.Permission, "admin"}
 
-  @secrets ~w(direct_token metrika_token refresh_token measurement_token)a
+  @secrets ~w(direct_token metrika_token refresh_token measurement_token oauth_client_secret)a
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,7 +17,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
      |> assign(
        page_title: gettext("Yandex Direct and Metrika"),
        branches: Identity.list_branch_for_staff(socket.assigns.current_staff),
-       encryption_ready: Secret.configured?(),
        checks: nil,
        operation: nil
      )
@@ -224,12 +223,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
   end
 
   defp assign_settings(socket, settings) do
-    # Decrypted secrets must never become HTML input values or LiveView diffs.
+    # Credentials must never become HTML input values or LiveView diffs.
     display = Enum.reduce(@secrets, settings, &Map.put(&2, &1, nil))
 
     assign(socket,
       settings: settings,
       saved_secrets: Map.new(@secrets, &{&1, is_binary(Map.get(settings, &1))}),
+      oauth_redirect_uri: OAuth.redirect_uri(),
       form: to_form(YandexAds.change_settings(display, %{}), as: :yandex_ads)
     )
   end
@@ -266,11 +266,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
             "Collection starts when the menu opens after you enable it and approve the privacy policy. Webvisor is off."
           )}
         </p>
-        <p :if={!@encryption_ready} id="yandex-encryption-required" role="status" class="text-warning">
-          {gettext(
-            "Credential storage is unavailable. Configure YANDEX_ADS_ENCRYPTION_KEY on the server before saving tokens."
-          )}
-        </p>
         <p
           :if={@settings.credential_error}
           id="yandex-credentials-unavailable"
@@ -278,7 +273,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
           class="text-error"
         >
           {gettext(
-            "Saved credentials cannot be decrypted. Restore the original encryption key; collection and sending are stopped."
+            "Stored credentials could not be read. Enter new values for the marked fields; affected integration streams are paused."
           )}
         </p>
         <.link navigate={~p"/staff/analytics/advertising"} class="link link-primary">{gettext(
@@ -361,6 +356,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
             field={@form[:client_login]}
             label={gettext("Direct advertiser login (for agency access)")}
           />
+          <.input field={@form[:oauth_client_id]} label={gettext("Yandex OAuth application ID")} />
+          <p id="yandex-oauth-redirect-uri" class="text-sm text-base-content/70">
+            {gettext("OAuth callback URL to enter in Yandex")}: {@oauth_redirect_uri}
+          </p>
           <.input field={@form[:timezone]} label={gettext("Advertising account time zone")} />
           <.input
             field={@form[:currency]}
@@ -383,11 +382,19 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
                 label={label}
               />
               <p
+                :if={Atom.to_string(key) in @settings.credential_errors}
+                id={"yandex-#{key}-replace"}
+                role="alert"
+                class="text-xs text-error"
+              >
+                {gettext("Re-enter this credential to restore access.")}
+              </p>
+              <p
                 :if={@saved_secrets[key]}
                 id={"yandex-#{key}-saved"}
                 class="text-xs text-base-content/60"
               >
-                {gettext("Saved securely. Leave blank to keep the existing credential.")}
+                {gettext("Saved. Leave blank to keep the existing credential.")}
               </p>
             </div>
           <% end %>
@@ -623,7 +630,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
       direct_token: gettext("Direct OAuth token"),
       metrika_token: gettext("Metrika OAuth token"),
       refresh_token: gettext("OAuth refresh token"),
-      measurement_token: gettext("Measurement Protocol token")
+      measurement_token: gettext("Measurement Protocol token"),
+      oauth_client_secret: gettext("Yandex OAuth application secret")
     ]
   end
 

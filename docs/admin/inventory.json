@@ -2557,7 +2557,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:481",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:488",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2581,7 +2581,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:472",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:479",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2610,7 +2610,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:406",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:413",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2634,7 +2634,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:444",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:451",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2658,7 +2658,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:426",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:433",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2682,7 +2682,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:526",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:533",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2706,7 +2706,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:435",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:442",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2730,7 +2730,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:605",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:612",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2758,7 +2758,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:289",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:284",
       "target_section": "Settings / Integrations"
     },
     {
@@ -2786,7 +2786,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:510",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:517",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11745,7 +11745,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:106",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:105",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11764,7 +11764,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:103",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:102",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11790,7 +11790,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:55",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:54",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11809,7 +11809,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:70",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:69",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11828,7 +11828,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:68",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:67",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11851,7 +11851,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:78",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:77",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11870,7 +11870,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:100",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:99",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11889,7 +11889,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:73",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:72",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11908,7 +11908,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:75",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:74",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11931,7 +11931,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:36",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:35",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11954,7 +11954,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:122",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:121",
       "target_section": "Settings / Integrations"
     },
     {
@@ -11976,7 +11976,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:29",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:28",
       "target_section": "Settings / Integrations"
     },
     {
@@ -19393,8 +19393,8 @@
       "in_flight_obligation": "An interrupted write becomes unknown and is not blindly retried; submitted upload is reconciled by ID",
       "on_disable": "Pending work becomes stale; browser and server streams are independently gated",
       "producer_scheduler": [
-        "lib/delivest/integrations/yandex_ads.ex:431",
-        "lib/delivest/integrations/yandex_ads.ex:789"
+        "lib/delivest/integrations/yandex_ads.ex:498",
+        "lib/delivest/integrations/yandex_ads.ex:859"
       ],
       "source": "lib/delivest/integrations/yandex_ads/conversion_worker.ex",
       "worker_process": "Delivest.Integrations.YandexAds.ConversionWorker"
@@ -19408,7 +19408,7 @@
       "in_flight_obligation": "Publish a complete account-period slice atomically, including removed provider rows",
       "on_disable": "Disabled or replaced connection cancels queued import; last successful snapshot remains historical",
       "producer_scheduler": [
-        "lib/delivest/integrations/yandex_ads.ex:500",
+        "lib/delivest/integrations/yandex_ads.ex:567",
         "lib/delivest/integrations/yandex_ads/schedule_worker.ex:23"
       ],
       "source": "lib/delivest/integrations/yandex_ads/cost_worker.ex",
@@ -20077,7 +20077,7 @@
       "effective_enabled": "Delivest.Integrations.YandexAds.enabled?/2; generation fence before provider request",
       "execution_owner": "lib/delivest/integrations/yandex_ads",
       "id": "integration:yandex_ads",
-      "scope": "network: yandex_ads_settings with branch allowlist and encrypted credentials",
+      "scope": "network: yandex_ads_settings with branch allowlist and database credentials",
       "source": "lib/delivest/integrations/yandex_ads/settings.ex",
       "stored_configuration": [
         "account_scope",
@@ -20092,6 +20092,7 @@
         "costs_to",
         "counter_id",
         "credential_error",
+        "credential_errors",
         "currency",
         "direct_token",
         "ecommerce_enabled",
@@ -20100,8 +20101,14 @@
         "generation",
         "goal",
         "include_vat",
+        "legacy_direct_token",
+        "legacy_measurement_token",
+        "legacy_metrika_token",
+        "legacy_refresh_token",
         "measurement_token",
         "metrika_token",
+        "oauth_client_id",
+        "oauth_client_secret",
         "privacy_approved",
         "refresh_token",
         "timezone"
@@ -23607,7 +23614,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "campaign_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:495",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:502",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23628,7 +23635,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:488",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:495",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23649,7 +23656,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "q",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:478",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:485",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23670,7 +23677,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "branch_ids",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:branch_ids",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:305",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:300",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23693,7 +23700,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "browser_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:browser_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:321",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:316",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23714,7 +23721,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "client_login",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:client_login",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:361",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:356",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23737,7 +23744,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "conversions_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:conversions_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:326",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:321",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23758,7 +23765,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "costs_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:costs_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:341",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:336",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23779,7 +23786,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "counter_id",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:counter_id",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:355",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:350",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23802,7 +23809,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "currency",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:currency",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:366",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:365",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23826,7 +23833,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "ecommerce_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:ecommerce_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:331",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:326",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23847,7 +23854,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:300",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:295",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23868,7 +23875,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "feed_enabled",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:feed_enabled",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:336",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:331",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23889,7 +23896,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "goal",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:goal",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:359",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:354",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23913,10 +23920,33 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "include_vat",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:include_vat",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:372",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:371",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
+    },
+    {
+      "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/integration_live/yandex_ads.ex"
+      ],
+      "default": "not declared",
+      "disposition": "retain canonical editor in Settings / Integrations / Yandex Direct and Metrika",
+      "expression": null,
+      "field": "oauth_client_id",
+      "id": "form:lib/delivest_web/live/staff/integration_live/yandex_ads.ex:@form:oauth_client_id",
+      "name_template": null,
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "required": "no literal validate_required call for field",
+      "resolved_field": "oauth_client_id",
+      "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:oauth_client_id",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:359",
+      "target_section": "Settings / Integrations / Yandex Direct and Metrika",
+      "type": "literal staff form control",
+      "validation": [
+        "validate_length"
+      ]
     },
     {
       "binding": "@form",
@@ -23934,7 +23964,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "privacy_approved",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:privacy_approved",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:312",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:307",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": []
@@ -23955,7 +23985,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "timezone",
       "schema_field": "schema:lib/delivest/integrations/yandex_ads/settings.ex:timezone",
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:364",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:363",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": [
@@ -23979,7 +24009,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "field-expression:@form[key]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:379",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:378",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24000,7 +24030,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "reconcile[conversion_id]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:572",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:579",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24021,7 +24051,7 @@
       "required": "HTML required attribute; server validation must be checked",
       "resolved_field": "reconcile[upload_id]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:573",
+      "source": "lib/delivest_web/live/staff/integration_live/yandex_ads.ex:580",
       "target_section": "Settings / Integrations / Yandex Direct and Metrika",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -32362,7 +32392,7 @@
       "field": "account_scope",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:account_scope",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:22",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:20",
       "type": ":string"
     },
     {
@@ -32370,7 +32400,7 @@
       "field": "branch_ids",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:branch_ids",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:18",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:16",
       "type": "{:array, Ecto.UUID}"
     },
     {
@@ -32378,7 +32408,7 @@
       "field": "browser_enabled",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:browser_enabled",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:13",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:11",
       "type": ":boolean"
     },
     {
@@ -32386,7 +32416,7 @@
       "field": "client_login",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:client_login",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:21",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:19",
       "type": ":string"
     },
     {
@@ -32394,7 +32424,7 @@
       "field": "conversions_enabled",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:conversions_enabled",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:14",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:12",
       "type": ":boolean"
     },
     {
@@ -32402,7 +32432,7 @@
       "field": "cost_feature_generations",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:cost_feature_generations",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:32",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:37",
       "type": ":map"
     },
     {
@@ -32410,7 +32440,7 @@
       "field": "costs_enabled",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:costs_enabled",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:17",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:15",
       "type": ":boolean"
     },
     {
@@ -32418,7 +32448,7 @@
       "field": "costs_from",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:costs_from",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:34",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:39",
       "type": ":date"
     },
     {
@@ -32426,7 +32456,7 @@
       "field": "costs_refreshed_at",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:costs_refreshed_at",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:33",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:38",
       "type": ":utc_datetime_usec"
     },
     {
@@ -32434,7 +32464,7 @@
       "field": "costs_to",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:costs_to",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:35",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:40",
       "type": ":date"
     },
     {
@@ -32442,7 +32472,7 @@
       "field": "counter_id",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:counter_id",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:19",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:17",
       "type": ":string"
     },
     {
@@ -32450,15 +32480,23 @@
       "field": "credential_error",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:credential_error",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:31",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:35",
       "type": ":boolean"
+    },
+    {
+      "default": "[]",
+      "field": "credential_errors",
+      "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:credential_errors",
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:36",
+      "type": "{:array, :string}"
     },
     {
       "default": "\"RUB\"",
       "field": "currency",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:currency",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:23",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:21",
       "type": ":string"
     },
     {
@@ -32466,15 +32504,15 @@
       "field": "direct_token",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:direct_token",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:26",
-      "type": "Secret"
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:24",
+      "type": ":string"
     },
     {
       "default": "false",
       "field": "ecommerce_enabled",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:ecommerce_enabled",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:15",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:13",
       "type": ":boolean"
     },
     {
@@ -32482,7 +32520,7 @@
       "field": "enabled",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:enabled",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:11",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:9",
       "type": ":boolean"
     },
     {
@@ -32490,7 +32528,7 @@
       "field": "feed_enabled",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:feed_enabled",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:16",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:14",
       "type": ":boolean"
     },
     {
@@ -32498,7 +32536,7 @@
       "field": "generation",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:generation",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:30",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:34",
       "type": ":integer"
     },
     {
@@ -32506,7 +32544,7 @@
       "field": "goal",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:goal",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:20",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:18",
       "type": ":string"
     },
     {
@@ -32514,31 +32552,79 @@
       "field": "include_vat",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:include_vat",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:25",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:23",
       "type": ":boolean"
+    },
+    {
+      "default": "not declared",
+      "field": "legacy_direct_token",
+      "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:legacy_direct_token",
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:28",
+      "type": ":binary"
+    },
+    {
+      "default": "not declared",
+      "field": "legacy_measurement_token",
+      "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:legacy_measurement_token",
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:31",
+      "type": ":binary"
+    },
+    {
+      "default": "not declared",
+      "field": "legacy_metrika_token",
+      "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:legacy_metrika_token",
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:29",
+      "type": ":binary"
+    },
+    {
+      "default": "not declared",
+      "field": "legacy_refresh_token",
+      "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:legacy_refresh_token",
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:30",
+      "type": ":binary"
     },
     {
       "default": "not declared",
       "field": "measurement_token",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:measurement_token",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:29",
-      "type": "Secret"
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:27",
+      "type": ":string"
     },
     {
       "default": "not declared",
       "field": "metrika_token",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:metrika_token",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:27",
-      "type": "Secret"
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:25",
+      "type": ":string"
+    },
+    {
+      "default": "not declared",
+      "field": "oauth_client_id",
+      "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:oauth_client_id",
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:32",
+      "type": ":string"
+    },
+    {
+      "default": "not declared",
+      "field": "oauth_client_secret",
+      "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:oauth_client_secret",
+      "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:33",
+      "type": ":string"
     },
     {
       "default": "false",
       "field": "privacy_approved",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:privacy_approved",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:12",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:10",
       "type": ":boolean"
     },
     {
@@ -32546,15 +32632,15 @@
       "field": "refresh_token",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:refresh_token",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:28",
-      "type": "Secret"
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:26",
+      "type": ":string"
     },
     {
       "default": "\"Europe/Moscow\"",
       "field": "timezone",
       "id": "schema:lib/delivest/integrations/yandex_ads/settings.ex:timezone",
       "owner": "lib/delivest/integrations/yandex_ads/settings.ex",
-      "source": "lib/delivest/integrations/yandex_ads/settings.ex:24",
+      "source": "lib/delivest/integrations/yandex_ads/settings.ex:22",
       "type": ":string"
     },
     {

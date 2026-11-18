@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Admin.Inventory do
   }
   @integration_semantics %{
     "yandex_ads" =>
-      {"network: yandex_ads_settings with branch allowlist and encrypted credentials",
+      {"network: yandex_ads_settings with branch allowlist and database credentials",
        "settings.enabled and independent stream flag plus platform feature entitlement",
        "Delivest.Integrations.YandexAds.enabled?/2; generation fence before provider request"},
     "atol_online" =>
