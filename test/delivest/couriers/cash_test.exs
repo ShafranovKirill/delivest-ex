@@ -4,7 +4,7 @@ defmodule Delivest.Couriers.CashTest do
   import Delivest.Factory
   import Delivest.OrderFixtures
 
-  alias Delivest.Couriers
+  alias Delivest.{Couriers, Features}
   alias Delivest.Couriers.Settlement
   alias Delivest.Audit.Event
   alias Delivest.Identity.Branch.BranchInfo
@@ -14,6 +14,8 @@ defmodule Delivest.Couriers.CashTest do
   setup do
     branch = insert(:branch)
     Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: %{}})
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
 
     %{
       branch: branch,

@@ -6,7 +6,7 @@ The machine-readable [inventory](inventory.json) contains stable IDs, source anc
 | Register | Entries |
 | --- | ---: |
 | Screens | 105 |
-| Staff form controls | 432 |
+| Staff form controls | 431 |
 | Actions (handler clauses and controls) | 761 |
 | Features/integrations | 27 |
 | Background jobs | 77 |

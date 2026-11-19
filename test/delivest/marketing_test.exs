@@ -315,7 +315,16 @@ defmodule Delivest.MarketingTest do
     assert {:ok, %{status: :ready}} = Marketing.preview(ctx.staff, policy.id)
 
     assert {:ok, _} = Features.configure("marketing_policies", :franchise, false, actor: "test")
-    assert {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+
+    assert {:error, {:activation_required, preview}} =
+             Features.configure("marketing_policies", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", :franchise, true,
+               actor: "test",
+               confirm_activation: preview
+             )
+
     assert {:error, :preview_required} = Marketing.activate(ctx.staff, policy.id, policy.revision)
     assert {:ok, %{status: :pending}} = Marketing.preview(ctx.staff, policy.id)
 
@@ -563,7 +572,16 @@ defmodule Delivest.MarketingTest do
 
     original = issue_context()
     assert {:ok, _} = Features.configure("marketing_policies", :franchise, false, actor: "test")
-    assert {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+
+    assert {:error, {:activation_required, preview}} =
+             Features.configure("marketing_policies", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("marketing_policies", :franchise, true,
+               actor: "test",
+               confirm_activation: preview
+             )
+
     assert {:error, :disabled} = Marketing.issue(active, ctx.client.id, original)
     assert Repo.aggregate(Issue, :count) == 0
   end

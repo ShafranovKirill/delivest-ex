@@ -47,6 +47,9 @@ for feature <- [
   {:ok, _} = Features.configure(feature, scope, true, actor: "e2e-seed")
 end
 
+{:ok, _} = Features.configure("couriers", :franchise, true, actor: "e2e-seed")
+{:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "e2e-seed")
+
 Repo.get_by(BranchInfo, branch_id: branch.id) ||
   %BranchInfo{
     board_token: "e2e-board",

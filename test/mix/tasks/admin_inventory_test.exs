@@ -126,7 +126,7 @@ defmodule Mix.Tasks.Admin.InventoryTest do
 
   test "shared filter bars retain their source-backed search controls", %{inventory: inventory} do
     for source <-
-          ~w(client_live/clients.ex staff_live/staffs.ex product_live/products.ex product_live/stop_list.ex order_live/components/orders_toolbar.ex receipt_live/index.ex finance_live/transactions.ex) do
+          ~w(client_live/clients.ex staff_live/staffs.ex product_live/products.ex product_live/stop_list.ex receipt_live/index.ex finance_live/transactions.ex) do
       assert Enum.any?(inventory["fields"], fn field ->
                String.contains?(field["source"], source) and field["field"] == "search" and
                  String.starts_with?(field["binding"], "filter_bar:") and
@@ -134,6 +134,12 @@ defmodule Mix.Tasks.Admin.InventoryTest do
              end),
              "missing shared search input for #{source}"
     end
+
+    assert Enum.any?(inventory["fields"], fn field ->
+             String.contains?(field["source"], "order_live/components/orders_toolbar.ex") and
+               field["field"] == "search" and field["binding"] == "name:search" and
+               field["owner"] == "order queue search/date/status filters"
+           end)
   end
 
   test "banner stock routes, fields and actions target Marketing", %{inventory: inventory} do

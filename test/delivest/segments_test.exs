@@ -317,7 +317,16 @@ defmodule Delivest.SegmentsTest do
     {:ok, _} = Features.configure("segments", :franchise, false, actor: "test")
     Repo.update_all(from(o in Order, where: o.id == ^order.id), set: [status: :cancelled])
     assert dirty_count(branch.id) == 0
-    {:ok, _} = Features.configure("segments", :franchise, true, actor: "test")
+
+    assert {:error, {:activation_required, preview}} =
+             Features.configure("segments", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("segments", :franchise, true,
+               actor: "test",
+               confirm_activation: preview
+             )
+
     assert :ok = Refresh.perform(:franchise, refresh_context())
     assert {:ok, []} = Segments.list_members(manager, group.id)
   end

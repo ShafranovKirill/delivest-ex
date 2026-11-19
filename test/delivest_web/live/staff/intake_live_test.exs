@@ -18,7 +18,7 @@ defmodule DelivestWeb.Staff.IntakeLiveTest do
 
     assert has_element?(
              lv,
-             "#staff-page-header-actions #intake-pause-form[phx-submit='intake_pause']"
+             "#intake-dialog #intake-pause-form[phx-submit*='intake_pause']"
            )
 
     render_submit(lv, "intake_pause", %{"duration" => "30", "reason" => "поломка"})

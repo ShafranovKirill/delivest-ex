@@ -315,7 +315,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     {:ok, settings, _} = live(conn, ~p"/staff/settings")
 
     assert has_element?(settings, "#sidebar-group-settings[open]")
-    refute has_element?(settings, "#sidebar-settings-nav-features")
+    assert has_element?(settings, "#sidebar-settings-nav-features[aria-current='page']")
 
     assert has_element?(
              settings,

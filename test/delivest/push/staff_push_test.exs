@@ -5,7 +5,7 @@ defmodule Delivest.Push.StaffPushTest do
   import Delivest.Factory
   import Delivest.OrderFixtures
 
-  alias Delivest.{Couriers, Push, PushClient}
+  alias Delivest.{Couriers, Features, Push, PushClient}
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Kitchen, Orders}
   alias Delivest.Push.{StaffSubscription, StaffWorker}
@@ -13,6 +13,8 @@ defmodule Delivest.Push.StaffPushTest do
   setup do
     branch = insert(:branch)
     Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: %{}, kitchen: %{enabled: true}})
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
     test_pid = self()
 
     Req.Test.stub(Delivest.Push.Sender, fn conn ->
