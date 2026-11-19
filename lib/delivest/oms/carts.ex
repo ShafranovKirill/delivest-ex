@@ -445,6 +445,45 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
+  def remove_item_for_session(cart_id, key, opts, session_id) do
+    with {:ok, {status, snapshot}} <-
+           mutate_owned(cart_id, session_id, fn cart ->
+             {product_id, modifier_key} = parse_item_key(key)
+
+             with {:ok, uuid} <- Ecto.UUID.cast(product_id) do
+               query =
+                 from ci in CartItem,
+                   where:
+                     ci.cart_id == ^cart.id and ci.product_id == ^uuid and
+                       ci.modifier_key == ^modifier_key
+
+               case remove_item_rows(query, Keyword.get(opts, :all, false)) do
+                 {:ok, status} -> {:ok, {status, unpriced_snapshot(cart)}}
+                 error -> error
+               end
+             else
+               :error -> {:error, :not_found}
+             end
+           end) do
+      cache_put(snapshot.id, snapshot)
+      {:ok, status, CartPricing.apply(snapshot)}
+    end
+  end
+
+  defp remove_item_rows(query, true) do
+    case Repo.delete_all(query) do
+      {0, _} -> {:error, :not_found}
+      {_, _} -> {:ok, :deleted}
+    end
+  end
+
+  defp remove_item_rows(query, false) do
+    case Repo.update_all(from(ci in query, where: ci.quantity > 1), inc: [quantity: -1]) do
+      {1, _} -> {:ok, :updated}
+      {0, _} -> remove_item_rows(query, true)
+    end
+  end
+
   def delete_cart(%Cart{} = cart) do
     Repo.transaction(fn ->
       case Repo.delete(cart) do
@@ -612,6 +651,19 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
+  def update_context_for_session(cart_id, attrs, session_id) do
+    with {:ok, snapshot} <-
+           mutate_owned(cart_id, session_id, fn cart ->
+             case cart |> Cart.context_changeset(attrs) |> Repo.update() do
+               {:ok, updated} -> {:ok, unpriced_snapshot(updated)}
+               error -> error
+             end
+           end) do
+      cache_put(snapshot.id, snapshot)
+      {:ok, CartPricing.apply(snapshot)}
+    end
+  end
+
   def detach_cart(%CartView{id: cart_id}) do
     detach_cart(cart_id)
   end
@@ -768,7 +820,9 @@ defmodule Delivest.Oms.Carts do
   end
 
   defp cache_put(key, view) do
-    Cachex.put(@cache_store, key, view, expire: @cache_ttl)
+    if Repo.in_transaction?(),
+      do: :ok,
+      else: Cachex.put(@cache_store, key, view, expire: @cache_ttl)
   catch
     :exit, _ -> :ok
   end

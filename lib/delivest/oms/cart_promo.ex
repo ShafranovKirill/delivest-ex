@@ -26,6 +26,10 @@ defmodule Delivest.Oms.CartPromo do
   def set_fulfillment(cart_id, fulfillment_type),
     do: Carts.update_context(cart_id, %{fulfillment_type: fulfillment_type})
 
+  def set_fulfillment(cart_id, fulfillment_type, session_id),
+    do:
+      Carts.update_context_for_session(cart_id, %{fulfillment_type: fulfillment_type}, session_id)
+
   def bind_client(%CartView{client_id: client_id} = view, client_id), do: {:ok, view}
 
   def bind_client(%CartView{id: cart_id}, client_id),

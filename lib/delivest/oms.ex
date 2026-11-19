@@ -21,11 +21,17 @@ defmodule Delivest.Oms do
   defdelegate clear_cart(cart_id), to: Carts
   defdelegate add_item(cart_id, product_id, quantity \\ 1), to: Carts
   defdelegate repeat_order(cart_id, client_id, order_id), to: OrderRepeat, as: :run
+  defdelegate repeat_order_for_session(cart_id, session_id, client_id, order_id), to: Carts
   defdelegate remove_item(cart_id, product_id, opts \\ []), to: Carts
+  defdelegate remove_item_for_session(cart_id, key, opts, session_id), to: Carts
   defdelegate replace_item(cart_id, key, modifiers), to: Carts
   defdelegate delete_cart(cart_or_id), to: Carts
   defdelegate detach_cart(cart_or_id), to: Carts
   defdelegate update_cart_context(cart_id, attrs), to: Carts, as: :update_context
+
+  defdelegate update_cart_context_for_session(cart_id, attrs, session_id),
+    to: Carts,
+    as: :update_context_for_session
 
   defdelegate choose_promotion_gifts(cart_id, promotion_id, ids), to: CartPromo, as: :choose_gifts
 
@@ -38,5 +44,10 @@ defmodule Delivest.Oms do
   defdelegate remove_promo_code(cart_id), to: CartPromo, as: :remove_code
   defdelegate remove_promo_code(cart_id, session_id), to: CartPromo, as: :remove_code
   defdelegate set_cart_fulfillment(cart_id, fulfillment_type), to: CartPromo, as: :set_fulfillment
+
+  defdelegate set_cart_fulfillment(cart_id, fulfillment_type, session_id),
+    to: CartPromo,
+    as: :set_fulfillment
+
   defdelegate bind_cart_client(cart_view, client_id), to: CartPromo, as: :bind_client
 end

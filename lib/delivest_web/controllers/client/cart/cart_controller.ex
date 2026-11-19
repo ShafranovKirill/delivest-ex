@@ -156,8 +156,8 @@ defmodule DelivestWeb.Client.Cart.CartController do
   )
 
   def update_context(conn, %{"cart_id" => cart_id} = params) do
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, cart_view} <- Oms.set_cart_fulfillment(cart_id, params["fulfillment_type"]) do
+    with {:ok, cart_view} <-
+           Oms.set_cart_fulfillment(cart_id, params["fulfillment_type"], session_id(conn)) do
       render(conn, :show, cart: cart_view)
     else
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -234,8 +234,13 @@ defmodule DelivestWeb.Client.Cart.CartController do
   )
 
   def repeat(conn, %{"cart_id" => cart_id, "order_id" => order_id}) do
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, cart_view} <- Oms.repeat_order(cart_id, current_client_id(conn), order_id) do
+    with {:ok, cart_view} <-
+           Oms.repeat_order_for_session(
+             cart_id,
+             session_id(conn),
+             current_client_id(conn),
+             order_id
+           ) do
       render(conn, :show, cart: cart_view)
     else
       {:error, :order_not_found} ->
@@ -423,10 +428,8 @@ defmodule DelivestWeb.Client.Cart.CartController do
         []
       end
 
-    with :ok <- authorize_cart(conn, cart_id),
-         {product_part, _modifier_key} = Carts.parse_item_key(product_id),
-         {:ok, _uuid} <- cast_uuid(product_part),
-         {:ok, _status, cart_view} <- Carts.remove_item(cart_id, product_id, opts) do
+    with {:ok, _status, cart_view} <-
+           Carts.remove_item_for_session(cart_id, product_id, opts, session_id(conn)) do
       render(conn, :show, cart: cart_view)
     else
       {:error, :cart_not_found} ->
@@ -437,22 +440,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
     end
   end
 
-  defp authorize_cart(conn, cart_id) do
-    session_id = session_id(conn)
-
-    if Carts.owned_by_session?(cart_id, session_id),
-      do: :ok,
-      else: {:error, :cart_not_found}
-  end
-
   defp session_id(conn), do: CookieHelper.get_cookie(conn, "session_id")
-
-  defp cast_uuid(value) do
-    case Ecto.UUID.cast(value) do
-      {:ok, uuid} -> {:ok, uuid}
-      :error -> {:error, :invalid_uuid}
-    end
-  end
 
   defp cart_not_found(conn) do
     ApiError.send_error(conn, :not_found, :cart_not_found, "Cart not found")

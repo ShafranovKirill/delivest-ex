@@ -814,10 +814,12 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     } do
       client = insert(:client, phone: "+79995556678")
       retired = insert_branch_product(branch.id, price: 100)
+      stopped = insert_branch_product(branch.id, price: 100)
       conn = start_session(conn, branch)
       {conn, cart_id} = cart_with_product(conn, branch, product)
       conn = post(conn, ~p"/client/cart/#{cart_id}/items/#{product.id}")
       conn = post(recycle_with_headers(conn), ~p"/client/cart/#{cart_id}/items/#{retired.id}")
+      conn = post(recycle_with_headers(conn), ~p"/client/cart/#{cart_id}/items/#{stopped.id}")
 
       order_id =
         conn
@@ -828,6 +830,11 @@ defmodule DelivestWeb.Client.OrderControllerTest do
         |> get_in(["data", "id"])
 
       retired |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
+
+      staff =
+        insert(:staff, role: build(:role, permissions: ["stops.update"]), branches: [branch])
+
+      assert {:ok, _stop} = Delivest.Net.Stops.stop(staff, branch.id, stopped, :until_resumed)
 
       conn = conn |> recycle_with_headers() |> get(~p"/client/cart?branch_id=#{branch.id}")
       new_cart_id = json_response(conn, 200)["data"]["id"]
