@@ -166,6 +166,7 @@ defmodule DelivestWeb.Router do
     scope "/analytics", Analytics do
       pipe_through :analytics_rate_limit
       post "/events", EventController, :create
+      post "/events/batch", BatchController, :create
     end
 
     scope "/branches", Branch do
