@@ -33,12 +33,15 @@ defmodule Delivest.Promo.Catalog do
     end
   end
 
+  def list_uncached(nil), do: []
+  def list_uncached(branch_id), do: load(branch_id)
+
   defp cached(branch_id, version) do
     key = {:compiled_promo, branch_id, version}
 
     result =
       try do
-        Cachex.fetch(@cache, key, fn _key -> {:commit, load(branch_id), ttl: @ttl} end)
+        Cachex.fetch(@cache, key, fn _key -> {:commit, load(branch_id), expire: @ttl} end)
       catch
         :exit, _ -> {:error, :cache_unavailable}
       end

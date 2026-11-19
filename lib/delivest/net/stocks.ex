@@ -29,7 +29,7 @@ defmodule Delivest.Net.Stocks do
   def list_stocks_for_branch(branch_id) when not is_nil(branch_id) do
     case Cachex.fetch(:stock_cache, branch_id, fn _key ->
            stocks = fetch_stocks_for_branch(branch_id)
-           {:commit, stocks, ttl: :timer.hours(1)}
+           {:commit, stocks, expire: :timer.hours(1)}
          end) do
       {:ok, stocks} -> stocks
       {:commit, stocks} -> stocks
@@ -38,6 +38,11 @@ defmodule Delivest.Net.Stocks do
   end
 
   def list_stocks_for_branch(_), do: []
+
+  def list_stocks_uncached_for_branch(branch_id) when not is_nil(branch_id),
+    do: fetch_stocks_for_branch(branch_id)
+
+  def list_stocks_uncached_for_branch(_), do: []
 
   def create_stock(staff, branch_id, attrs) do
     staff

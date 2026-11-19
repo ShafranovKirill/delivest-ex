@@ -132,6 +132,17 @@ defmodule DelivestWeb.Router do
     get "/documents/:kind", FranchiseController, :document
   end
 
+  scope "/client/storefront/v1", DelivestWeb.Client.Storefront do
+    pipe_through :api
+    get "/bootstrap", BootstrapController, :show
+    get "/manifest", BootstrapController, :manifest
+  end
+
+  scope "/client/session", DelivestWeb.Client.Session do
+    pipe_through [:client_api, :client_identity]
+    get "/bootstrap", BootstrapController, :show
+  end
+
   scope "/client", DelivestWeb.Client do
     pipe_through [:client_api, :client_identity, :client_required]
 
@@ -166,6 +177,7 @@ defmodule DelivestWeb.Router do
     scope "/analytics", Analytics do
       pipe_through :analytics_rate_limit
       post "/events", EventController, :create
+      post "/events/batch", BatchController, :create
     end
 
     scope "/branches", Branch do

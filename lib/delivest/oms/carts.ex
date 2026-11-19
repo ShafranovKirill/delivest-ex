@@ -594,7 +594,7 @@ defmodule Delivest.Oms.Carts do
   end
 
   defp cache_put(key, view) do
-    Cachex.put(@cache_store, key, view, ttl: @cache_ttl)
+    Cachex.put(@cache_store, key, view, expire: @cache_ttl)
   catch
     :exit, _ -> :ok
   end

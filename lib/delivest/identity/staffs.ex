@@ -229,7 +229,7 @@ defmodule Delivest.Identity.Staffs do
   defp active, do: from(s in Staff, where: is_nil(s.deleted_at))
 
   defp cache_staff(id, staff) do
-    Cachex.put(:staff_cache, id, staff, ttl: :timer.minutes(5))
+    Cachex.put(:staff_cache, id, staff, expire: :timer.minutes(5))
   end
 
   defp maybe_preload_staff(staff, opts) do

@@ -31,6 +31,8 @@ defmodule Delivest.Application do
       cache(:crm_cache),
       cache(:token_cache),
       cache(:stop_cache),
+      cache(:storefront_cache, limit: 1_000),
+      Delivest.Storefront.Revisions,
       DelivestWeb.KitchenPresence,
       DelivestWeb.CourierPresence,
       DelivestWeb.Endpoint
