@@ -19,7 +19,12 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(branch_id: socket.assigns.current_branch.id, promotion: nil, template: nil, to_delete: nil)
+     |> assign(
+       branch_id: socket.assigns.current_branch.id,
+       promotion: nil,
+       template: nil,
+       to_delete: nil
+     )
      |> load()}
   end
 
@@ -293,7 +298,9 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         >
           <.icon name="hero-gift" class="size-8 text-primary" />
           <h2 class="font-bold text-lg">{gettext("Gift above a cart total")}</h2>
-          <p class="text-sm text-base-content/60">{gettext("Set a cart minimum and choose a gift.")}</p>
+          <p class="text-sm text-base-content/60">
+            {gettext("Set a cart minimum and choose a gift.")}
+          </p>
         </.link>
         <.link
           id="scenario-bundle"
@@ -302,7 +309,9 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
         >
           <.icon name="hero-shopping-bag" class="size-8 text-primary" />
           <h2 class="font-bold text-lg">{gettext("Bundle discount")}</h2>
-          <p class="text-sm text-base-content/60">{gettext("Discount on an order with two chosen products.")}</p>
+          <p class="text-sm text-base-content/60">
+            {gettext("Discount on an order with two chosen products.")}
+          </p>
         </.link>
         <.link
           id="scenario-pickup"

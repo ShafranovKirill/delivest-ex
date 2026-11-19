@@ -7741,7 +7741,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:688",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:720",
       "target_section": "Marketing"
     },
     {
@@ -7765,7 +7765,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:542",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:571",
       "target_section": "Marketing"
     },
     {
@@ -7790,7 +7790,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1080",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1112",
       "target_section": "Marketing"
     },
     {
@@ -7815,7 +7815,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1169",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1201",
       "target_section": "Marketing"
     },
     {
@@ -7841,7 +7841,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:419",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:454",
       "target_section": "Marketing"
     },
     {
@@ -7872,7 +7872,7 @@
           "promotions.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:376",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:419",
       "target_section": "Marketing"
     },
     {
@@ -7904,7 +7904,7 @@
           "promotions.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:348",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:391",
       "target_section": "Marketing"
     },
     {
@@ -17500,7 +17500,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:145",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:148",
       "target_section": "Marketing"
     },
     {
@@ -17519,7 +17519,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:154",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:157",
       "target_section": "Marketing"
     },
     {
@@ -17539,7 +17539,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:191",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:194",
       "target_section": "Marketing"
     },
     {
@@ -17558,7 +17558,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:119",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:122",
       "target_section": "Marketing"
     },
     {
@@ -17580,7 +17580,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:167",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:170",
       "target_section": "Marketing"
     },
     {
@@ -17600,7 +17600,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:151",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:154",
       "target_section": "Marketing"
     },
     {
@@ -17620,7 +17620,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:157",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:160",
       "target_section": "Marketing"
     },
     {
@@ -17640,7 +17640,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:160",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:163",
       "target_section": "Marketing"
     },
     {
@@ -17661,7 +17661,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:83",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:86",
       "target_section": "Marketing"
     },
     {
@@ -17680,7 +17680,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:148",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:151",
       "target_section": "Marketing"
     },
     {
@@ -17697,7 +17697,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:206",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:209",
       "target_section": "Marketing"
     },
     {
@@ -17714,7 +17714,7 @@
         "clause": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:79",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:82",
       "target_section": "Marketing"
     },
     {
@@ -17736,7 +17736,7 @@
           "promotions.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:99",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:110",
       "target_section": "Marketing"
     },
     {
@@ -17763,7 +17763,7 @@
           "promotions.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:102",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:113",
       "target_section": "Marketing"
     },
     {
@@ -17787,7 +17787,7 @@
           "promotions.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:92",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:103",
       "target_section": "Marketing"
     },
     {
@@ -17812,7 +17812,7 @@
           "promotions.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:84",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:95",
       "target_section": "Marketing"
     },
     {
@@ -28214,7 +28214,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "code",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:code",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:475",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:504",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28238,7 +28238,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "combinable",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:combinable",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:755",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:787",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": []
@@ -28259,7 +28259,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "description",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:description",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:486",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:515",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28282,7 +28282,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "enabled",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:enabled",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:759",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:791",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": []
@@ -28303,7 +28303,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "ends_at",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:ends_at",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:724",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:756",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": []
@@ -28324,7 +28324,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "kind",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:kind",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:445",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:474",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28347,7 +28347,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "name",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:name",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:472",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:501",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28371,7 +28371,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "per_client_limit",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:per_client_limit",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:737",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:769",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28394,7 +28394,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "priority",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:priority",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:753",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:785",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28417,7 +28417,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "rules",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:rules",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:677",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:709",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28441,7 +28441,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "starts_at",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:starts_at",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:718",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:750",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": []
@@ -28462,7 +28462,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "usage_limit",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:usage_limit",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:731",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:763",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28485,7 +28485,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"#{@prefix}[count]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1227",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1259",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28506,7 +28506,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"#{@prefix}[product]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1215",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1247",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28527,7 +28527,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[conditions][#{@index}][from]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:992",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1024",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28548,7 +28548,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[conditions][#{@index}][op]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:911",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:943",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28569,7 +28569,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[conditions][#{@index}][to]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1000",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1032",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28590,7 +28590,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[conditions][#{@index}][value]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:919",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:951",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28611,7 +28611,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[conditions][#{index}][type]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:612",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:644",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28632,7 +28632,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[effects][#{@index}][cap]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1058",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1090",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28653,7 +28653,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[effects][#{@index}][price]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1140",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1172",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28674,7 +28674,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[effects][#{@index}][product]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1129",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1161",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28695,7 +28695,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[effects][#{@index}][products][]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1078",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1110",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28716,7 +28716,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[effects][#{@index}][target]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1045",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1077",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28737,7 +28737,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[effects][#{@index}][value]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1019",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1051",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28758,7 +28758,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:\"builder[effects][#{index}][type]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:646",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:678",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28779,7 +28779,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "kind",
       "schema_field": "schema:lib/delivest/promo/promotion.ex:kind",
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:453",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:482",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": [
@@ -28802,7 +28802,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:@name",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1248",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1280",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28823,7 +28823,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:@prefix <> \"[count]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1191",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1223",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28844,7 +28844,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "name-expression:@prefix <> \"[products][]\"",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1167",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:1199",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28865,7 +28865,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "builder[match]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:578",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:610",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28886,7 +28886,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "certificate[code]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:531",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:560",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -28907,28 +28907,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "certificate[provider]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:517",
-      "target_section": "Marketing / Promotions",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
-      "binding": "name:promotion[kind]",
-      "canonical_form": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex"
-      ],
-      "default": "not declared in control/owner schema",
-      "disposition": "retain canonical editor in Marketing / Promotions",
-      "expression": null,
-      "field": "promotion[kind]",
-      "id": "form:lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:name:promotion[kind]:promotion[kind]",
-      "name_template": null,
-      "owner": "lib/delivest/promo/promotion.ex",
-      "required": "not declared in control/owner schema",
-      "resolved_field": "promotion[kind]",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:430",
+      "source": "lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex:546",
       "target_section": "Marketing / Promotions",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

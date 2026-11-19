@@ -4,6 +4,7 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
+  alias Delivest.Features
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Repo
 
@@ -21,6 +22,8 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
     setup %{conn: conn}, do: setup_branch(conn, nil)
 
     test "shows every section", %{conn: conn, branch: branch} do
+      {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+      {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/receipts")
 
       refute has_element?(lv, "#gateway-note")

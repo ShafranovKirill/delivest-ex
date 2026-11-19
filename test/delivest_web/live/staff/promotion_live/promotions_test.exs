@@ -174,7 +174,10 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
              Repo.get_by!(Promotion, name: "First order")
   end
 
-  test "normal full form switches between automatic and public code", %{conn: conn, branch: branch} do
+  test "normal full form switches between automatic and public code", %{
+    conn: conn,
+    branch: branch
+  } do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/promotions/new/full")
     lv |> element("#add-effect button[phx-value-type=percent]") |> render_click()
     lv |> form("#promotion-form", promotion: %{code: "SAVE10"}) |> render_change()
@@ -203,7 +206,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   end
 
   test "gift above a cart total requires all values and saves its rules", %{
-    conn: conn, branch: branch, product: product
+    conn: conn,
+    branch: branch,
+    product: product
   } do
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/promotions/new/full?template=gift_threshold")
     assert has_element?(lv, "#promotion-kind input[value=public_code][checked]")
@@ -230,7 +235,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   end
 
   test "bundle requires distinct products and discounts the order", %{
-    conn: conn, branch: branch, product: cola
+    conn: conn,
+    branch: branch,
+    product: cola
   } do
     tea = insert_branch_product(branch.id, slug: "tea", name: "Tea", price: 70)
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/promotions/new/full?template=bundle")
@@ -267,12 +274,14 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
       builder: %{effects: %{"0" => %{value: "100"}}}
     )
     |> render_submit()
+
     assert Repo.get_by!(Promotion, name: "Bundle").rules ==
              ~s(when has "cola" x1\n  and has "tea" x1\nthen discount 100 rub)
   end
 
   test "pickup template keeps its condition through validation and saves", %{
-    conn: conn, branch: branch
+    conn: conn,
+    branch: branch
   } do
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/promotions/new/full?template=pickup")
     assert has_element?(lv, "#builder-c0-pickup[checked]")
@@ -295,7 +304,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionsTest do
   end
 
   test "switching templates resets draft rules while ordinary validation keeps them", %{
-    conn: conn, branch: branch
+    conn: conn,
+    branch: branch
   } do
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/promotions/new/full?template=gift_threshold")
 

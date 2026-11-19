@@ -126,7 +126,16 @@ defmodule Delivest.Analytics.ReportsTest do
     assert {:ok, _} = Features.configure("analytics_extended", :franchise, false, actor: "host")
     gap = order_fixture(ctx.branch.id, price: 200)
     Repo.update!(Ecto.Changeset.change(gap, status: :completed))
-    assert {:ok, _} = Features.configure("analytics_extended", :franchise, true, actor: "host")
+
+    assert {:error, {:activation_required, preview}} =
+             Features.configure("analytics_extended", :franchise, true, actor: "host")
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", :franchise, true,
+               actor: "host",
+               confirm_activation: preview
+             )
+
     after_gap = order_fixture(ctx.branch.id, price: 300)
     Repo.update!(Ecto.Changeset.change(after_gap, status: :completed))
     run_report("analytics.extended", ctx.branch)

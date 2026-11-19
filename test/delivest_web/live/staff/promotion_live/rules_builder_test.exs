@@ -17,8 +17,13 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilderTest do
     assert [%{"type" => "gift", "product" => "", "count" => ""}] = gift.effects
 
     bundle = RulesBuilder.template("bundle")
-    assert [%{"type" => "has", "product" => "", "count" => "1"}, %{"type" => "has", "product" => "", "count" => "1"}] =
+
+    assert [
+             %{"type" => "has", "product" => "", "count" => "1"},
+             %{"type" => "has", "product" => "", "count" => "1"}
+           ] =
              bundle.conditions
+
     assert [%{"type" => "amount", "value" => "", "target" => "cart"}] = bundle.effects
 
     pickup = RulesBuilder.template("pickup")

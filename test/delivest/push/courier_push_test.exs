@@ -5,7 +5,7 @@ defmodule Delivest.Push.CourierPushTest do
   import Delivest.Factory
   import Delivest.OrderFixtures
 
-  alias Delivest.{Couriers, Oms, Push, PushClient}
+  alias Delivest.{Couriers, Features, Oms, Push, PushClient}
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.Orders
   alias Delivest.Push.Worker
@@ -14,6 +14,8 @@ defmodule Delivest.Push.CourierPushTest do
   setup do
     branch = insert(:branch)
     Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: %{}})
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
 
     operator =
       insert(:staff, role: build(:role, permissions: ["orders.update"]), branches: [branch])
