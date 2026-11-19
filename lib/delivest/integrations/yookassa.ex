@@ -1,6 +1,8 @@
 defmodule Delivest.Integrations.Yookassa do
+  import Ecto.Query
   alias Delivest.{Identity, Repo}
   alias Delivest.Integrations.Health
+  alias Delivest.Integrations.Health.Status
   alias Delivest.Integrations.Yookassa.{Api, Settings}
 
   def get_settings, do: Repo.one(Settings) || %Settings{}
@@ -40,6 +42,22 @@ defmodule Delivest.Integrations.Yookassa do
         %{status: :ok, checked_at: checked_at} when not is_nil(checked_at),
         Health.get(:yookassa, nil)
       )
+  end
+
+  @doc "Read global payment readiness once for a prepared branch projection."
+  def ready_snapshot? do
+    case Repo.one(
+           from s in Settings,
+             left_join: h in Status,
+             on: h.provider == "yookassa" and is_nil(h.branch_id),
+             select: {s, h.status, h.checked_at}
+         ) do
+      {%Settings{} = settings, :ok, checked_at} when not is_nil(checked_at) ->
+        Settings.complete?(settings)
+
+      _ ->
+        false
+    end
   end
 
   def webhook_url(token),

@@ -147,7 +147,7 @@ defmodule Delivest.Net.Stops do
   defp cached(branch_id) do
     result =
       try do
-        Cachex.fetch(@cache, branch_id, &{:commit, load(&1), ttl: @ttl})
+        Cachex.fetch(@cache, branch_id, &{:commit, load(&1), expire: @ttl})
       catch
         :exit, _ -> {:error, :cache_unavailable}
       end

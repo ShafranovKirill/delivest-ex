@@ -28,7 +28,45 @@ defmodule Delivest.Funnel do
 
   def capture(_, _), do: {:error, :invalid_payload}
 
-  defp validate(attrs) do
+  @doc "Capture one bounded packet under the same gate and owner lock as single events."
+  def capture_many(attrs, owner_key)
+      when is_list(attrs) and length(attrs) in 1..20 and is_binary(owner_key) do
+    with {:ok, events} <- validate_many(attrs),
+         branch_id <- hd(events).branch_id,
+         {:ok, token} <- Features.snapshot("analytics_funnel", {:branch, branch_id}),
+         {:ok, accepted} <-
+           Features.with_enabled("analytics_funnel", {:branch, branch_id}, token, fn ->
+             record_many(events, owner_key)
+           end) do
+      {:ok, %{events: accepted}}
+    else
+      {:error, :invalid_payload} -> {:error, :invalid_payload}
+      _ -> {:error, :disabled}
+    end
+  end
+
+  def capture_many(_, _), do: {:error, :invalid_payload}
+
+  defp validate_many(attrs) do
+    case Enum.reduce_while(attrs, [], fn item, acc ->
+           case validate(item) do
+             {:ok, event} -> {:cont, [event | acc]}
+             _ -> {:halt, :error}
+           end
+         end) do
+      :error ->
+        {:error, :invalid_payload}
+
+      reversed ->
+        events = Enum.reverse(reversed)
+
+        if Enum.all?(events, &(&1.branch_id == hd(events).branch_id)),
+          do: {:ok, events},
+          else: {:error, :invalid_payload}
+    end
+  end
+
+  defp validate(attrs) when is_map(attrs) do
     with true <- Enum.all?(Map.keys(attrs), &(&1 in @fields)),
          {:ok, event_id} <- uuid(attrs["event_id"]),
          {:ok, branch_id} <- uuid(attrs["branch_id"]),
@@ -52,6 +90,8 @@ defmodule Delivest.Funnel do
       _ -> {:error, :invalid_payload}
     end
   end
+
+  defp validate(_), do: {:error, :invalid_payload}
 
   defp uuid(value) when is_binary(value), do: Ecto.UUID.cast(value)
   defp uuid(_), do: :error
@@ -94,6 +134,87 @@ defmodule Delivest.Funnel do
       [[session_id]] -> session_id
       [] -> insert_event(event, owner_key)
     end
+  end
+
+  defp record_many(events, owner_key) do
+    branch_id = hd(events).branch_id
+
+    Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+      branch_id <> ":" <> owner_key
+    ])
+
+    active =
+      Repo.query!(
+        "SELECT 1 FROM branches WHERE id = $1::text::uuid AND is_active = true AND deleted_at IS NULL",
+        [branch_id]
+      ).num_rows == 1
+
+    if not active, do: Repo.rollback(:disabled)
+
+    ids = events |> Enum.map(& &1.event_id) |> Enum.uniq()
+
+    existing =
+      Repo.query!(
+        "SELECT event_id::text, session_id::text FROM funnel_events WHERE branch_id = $1::text::uuid AND owner_key = $2 AND event_id::text = ANY($3::text[])",
+        [branch_id, owner_key, ids]
+      ).rows
+      |> Map.new(fn [event_id, session_id] -> {event_id, session_id} end)
+
+    new_events =
+      Enum.uniq_by(events, & &1.event_id) |> Enum.reject(&Map.has_key?(existing, &1.event_id))
+
+    accepted =
+      if new_events == [] do
+        existing
+      else
+        now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+        rows =
+          Repo.query!(
+            "SELECT id::text, last_at FROM funnel_sessions WHERE branch_id = $1::text::uuid AND owner_key = $2 ORDER BY last_at DESC LIMIT 1 FOR UPDATE",
+            [branch_id, owner_key]
+          ).rows
+
+        session_id =
+          case rows do
+            [[id, last_at]] ->
+              if NaiveDateTime.diff(DateTime.to_naive(now), to_naive(last_at), :microsecond) <
+                   @idle_seconds * 1_000_000 do
+                Repo.query!("UPDATE funnel_sessions SET last_at = $1 WHERE id = $2::text::uuid", [
+                  now,
+                  id
+                ])
+
+                id
+              else
+                new_session(branch_id, owner_key, now)
+              end
+
+            _ ->
+              new_session(branch_id, owner_key, now)
+          end
+
+        payload = new_events
+
+        Repo.query!(
+          """
+          INSERT INTO funnel_events
+            (event_id, branch_id, owner_key, session_id, event, source_type,
+             utm_source, utm_medium, utm_campaign, received_at)
+          SELECT (entry.value->>'event_id')::uuid, $2::text::uuid, $3, $4::text::uuid,
+                 entry.value->>'event', entry.value->>'source_type',
+                 entry.value->>'utm_source', entry.value->>'utm_medium',
+                 entry.value->>'utm_campaign', $5
+          FROM jsonb_array_elements($1::jsonb) WITH ORDINALITY AS entry(value, position)
+          ORDER BY entry.position
+          """,
+          [payload, branch_id, owner_key, session_id, now]
+        )
+
+        Map.merge(existing, Map.new(new_events, &{&1.event_id, session_id}))
+      end
+
+    Enum.map(events, &%{event_id: &1.event_id, session_id: Map.fetch!(accepted, &1.event_id)})
   end
 
   defp insert_event(event, owner_key) do

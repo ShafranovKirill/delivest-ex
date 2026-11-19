@@ -4,6 +4,7 @@ defmodule DelivestWeb.ClientSocket do
   alias DelivestWeb.ClientToken
 
   channel "orders", DelivestWeb.OrdersChannel
+  channel "storefront:*", DelivestWeb.StorefrontChannel
   channel "auth:*", DelivestWeb.AuthChannel
 
   @impl true

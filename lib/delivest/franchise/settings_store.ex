@@ -13,6 +13,8 @@ defmodule Delivest.Franchise.SettingsStore do
     end
   end
 
+  def get_uncached, do: load()
+
   def change(%Settings{} = settings, attrs \\ %{}), do: Settings.changeset(settings, attrs)
 
   def save(attrs) do

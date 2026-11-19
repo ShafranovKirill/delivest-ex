@@ -78,7 +78,7 @@ defmodule Delivest.Identity.Branches do
             {:error, :not_found}
 
           branch_id ->
-            Cachex.put(:branch_cache, slug_cache_key, branch_id, ttl: :timer.hours(24))
+            Cachex.put(:branch_cache, slug_cache_key, branch_id, expire: :timer.hours(24))
 
             get_branch(branch_id, opts)
         end
@@ -523,6 +523,6 @@ defmodule Delivest.Identity.Branches do
   @spec cache_branch(integer(), Branch.t()) ::
           {:commit, true} | {:commit, false} | {:error, term()}
   defp cache_branch(id, branch) do
-    Cachex.put(:branch_cache, id, branch, ttl: :timer.hours(1))
+    Cachex.put(:branch_cache, id, branch, expire: :timer.hours(1))
   end
 end

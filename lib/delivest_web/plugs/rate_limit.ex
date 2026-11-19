@@ -21,8 +21,10 @@ defmodule DelivestWeb.Plugs.RateLimit do
     window = div(System.system_time(:millisecond), period)
     key = {bucket, client_ip(conn), window}
 
-    case Cachex.incr(@cache, key) do
-      {:ok, 1} ->
+    weight = request_weight(conn, bucket)
+
+    case Cachex.incr(@cache, key, weight) do
+      {:ok, ^weight} ->
         Cachex.expire(@cache, key, period)
         conn
 
@@ -33,6 +35,18 @@ defmodule DelivestWeb.Plugs.RateLimit do
         conn
     end
   end
+
+  defp request_weight(
+         %{
+           path_info: ["client", "analytics", "events", "batch"],
+           body_params: %{"events" => events}
+         },
+         :analytics
+       )
+       when is_list(events) and length(events) in 1..20,
+       do: length(events)
+
+  defp request_weight(_, _), do: 1
 
   defp reject(conn, %{format: :text, period: period}) do
     conn
