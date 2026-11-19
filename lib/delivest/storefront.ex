@@ -222,7 +222,6 @@ defmodule Delivest.Storefront do
   defp maybe_menu(branch_id, locale, revision) do
     case cached({:menu, branch_id, locale, revision}, fn ->
            boundary = next_menu_boundary(branch_id)
-           if boundary, do: Revisions.schedule_boundary(branch_id, boundary)
 
            case load_menu(branch_id, locale) do
              {:error, _} = error ->
@@ -369,9 +368,15 @@ defmodule Delivest.Storefront do
 
   defp load_franchise do
     settings = SettingsStore.get_uncached()
+    now = DateTime.utc_now()
     rating = Rating.current(:yandex)
+
+    rating =
+      if rating && DateTime.compare(now, DateTime.add(rating.fetched_at, 7, :day)) == :lt,
+        do: rating,
+        else: nil
+
     boundary = if rating, do: DateTime.add(rating.fetched_at, 7, :day), else: nil
-    if boundary, do: Revisions.schedule_boundary("franchise", "*", boundary)
 
     data =
       FranchiseJSON.show(%{
@@ -406,8 +411,6 @@ defmodule Delivest.Storefront do
       end)
       |> Enum.filter(&(match?(%DateTime{}, &1) and DateTime.compare(&1, started_at) == :gt))
       |> Enum.min_by(&DateTime.to_unix(&1, :millisecond), fn -> nil end)
-
-    if boundary, do: Revisions.schedule_boundary("branches", "*", boundary)
 
     details =
       full

@@ -20,12 +20,12 @@ defmodule Delivest.Storefront.Revisions do
 
       _ ->
         case :ets.lookup(@table, :snapshot) do
-          [{:snapshot, revisions, epoch, checked_at}]
+          [{:snapshot, revisions, boundaries, epoch, checked_at}]
           when is_integer(checked_at) ->
             if System.monotonic_time(:millisecond) - checked_at <= @max_age_ms do
               global = Map.get(revisions, {section, "*"}, 0)
               local = if scope == "*", do: 0, else: Map.get(revisions, {section, scope}, 0)
-              phase = temporal_phase(section, scope)
+              phase = temporal_phase(boundaries, section, scope, System.system_time(:millisecond))
               {:ok, "#{epoch}:#{global}:#{local}:#{phase}"}
             else
               {:error, :stale}
@@ -44,7 +44,7 @@ defmodule Delivest.Storefront.Revisions do
 
       _ ->
         case :ets.lookup(@table, :snapshot) do
-          [{:snapshot, _revisions, _epoch, checked_at}] ->
+          [{:snapshot, _revisions, _boundaries, _epoch, checked_at}] ->
             max(0, @max_age_ms - (System.monotonic_time(:millisecond) - checked_at))
 
           _ ->
@@ -75,28 +75,27 @@ defmodule Delivest.Storefront.Revisions do
     end
   end
 
-  def schedule_boundary(branch_id, %DateTime{} = boundary),
-    do: schedule_boundary("menu", branch_id, boundary)
-
-  def schedule_boundary(section, scope, %DateTime{} = boundary) do
-    GenServer.cast(
-      __MODULE__,
-      {:boundary, section, scope, DateTime.to_unix(boundary, :millisecond)}
-    )
-  end
-
-  defp temporal_phase(section, scope) do
-    case :ets.lookup(@table, {:temporal, section, scope}) do
-      [{{:temporal, ^section, ^scope}, phase}] -> phase
-      _ -> 0
-    end
+  defp temporal_phase(boundaries, section, scope, now) do
+    boundaries
+    |> Map.get({section, scope}, [])
+    |> Enum.reduce(0, fn time, latest -> if time <= now, do: max(time, latest), else: latest end)
   end
 
   @impl true
   def init(_state) do
     Process.flag(:trap_exit, true)
     :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
-    state = %{notifier: nil, revisions: %{}, epoch: nil, pending: false, boundaries: %{}}
+
+    state = %{
+      notifier: nil,
+      revisions: %{},
+      epoch: nil,
+      pending: false,
+      boundaries: %{},
+      temporal: %{},
+      phases: %{}
+    }
+
     state = connect_notifications(state)
     rotate_epoch()
     state = refresh(state)
@@ -138,17 +137,8 @@ defmodule Delivest.Storefront.Revisions do
 
     case state.boundaries[key] do
       {^time, _ref} ->
-        phase = temporal_phase(section, scope) + 1
-        :ets.insert(@table, {{:temporal, section, scope}, phase})
-        prune(section, scope)
-
-        Phoenix.PubSub.broadcast(Delivest.PubSub, "storefront:#{scope}", %{
-          section: section,
-          scope: scope,
-          revision: phase
-        })
-
-        {:noreply, %{state | boundaries: Map.delete(state.boundaries, key)}}
+        state = %{state | boundaries: Map.delete(state.boundaries, key)}
+        {:noreply, reconcile_boundaries(state)}
 
       _ ->
         {:noreply, state}
@@ -163,41 +153,128 @@ defmodule Delivest.Storefront.Revisions do
     {:reply, :ok, state}
   end
 
-  @impl true
-  def handle_cast({:boundary, section, scope, time}, state) do
-    key = {section, scope}
-
-    case state.boundaries[key] do
-      {existing, _ref} when existing <= time ->
-        {:noreply, state}
-
-      {_existing, ref} ->
-        Process.cancel_timer(ref)
-        {:noreply, put_boundary(state, key, time)}
-
-      nil ->
-        {:noreply, put_boundary(state, key, time)}
-    end
-  end
-
   defp put_boundary(state, {section, scope} = key, time) do
     delay = max(1, time - System.system_time(:millisecond))
     ref = Process.send_after(self(), {:boundary_reached, section, scope, time}, delay)
     %{state | boundaries: Map.put(state.boundaries, key, {time, ref})}
   end
 
-  defp refresh(state) do
-    sql =
-      "SELECT e.epoch, r.section, r.scope, r.revision FROM storefront_epoch e LEFT JOIN storefront_revisions r ON true"
+  defp reconcile_boundaries(state) do
+    now = System.system_time(:millisecond)
 
-    case Repo.query(sql, []) do
+    phases =
+      Map.new(state.temporal, fn {{section, scope} = key, _times} ->
+        {key, temporal_phase(state.temporal, section, scope, now)}
+      end)
+
+    Enum.each(phases, fn {{section, scope} = key, phase} ->
+      if Map.get(state.phases, key, 0) != phase do
+        prune(section, scope)
+
+        Phoenix.PubSub.broadcast(Delivest.PubSub, "storefront:#{scope}", %{
+          section: section,
+          scope: scope,
+          revision: phase
+        })
+      end
+    end)
+
+    next =
+      Map.new(state.temporal, fn {key, times} ->
+        {key, times |> Enum.filter(&(&1 > now)) |> Enum.min(fn -> nil end)}
+      end)
+      |> Enum.reject(fn {_key, time} -> is_nil(time) end)
+      |> Map.new()
+
+    state = %{state | phases: phases}
+
+    Enum.reduce((Map.keys(state.boundaries) ++ Map.keys(next)) |> Enum.uniq(), state, fn key,
+                                                                                         acc ->
+      case {Map.get(acc.boundaries, key), Map.get(next, key)} do
+        {{time, _ref}, time} ->
+          acc
+
+        {{_time, ref}, nil} ->
+          Process.cancel_timer(ref)
+          %{acc | boundaries: Map.delete(acc.boundaries, key)}
+
+        {{_time, ref}, time} ->
+          Process.cancel_timer(ref)
+          put_boundary(acc, key, time)
+
+        {nil, nil} ->
+          acc
+
+        {nil, time} ->
+          put_boundary(acc, key, time)
+      end
+    end)
+  end
+
+  defp refresh(state) do
+    # One statement gives revisions, epoch and temporal data the same MVCC view.
+    # Keep only the latest elapsed boundary per scope plus all future boundaries.
+    sql = """
+    WITH temporal_source AS (
+      SELECT 'menu'::text AS section, branch_id::text AS scope, until AS boundary
+      FROM product_stops WHERE until IS NOT NULL
+      UNION ALL
+      SELECT 'menu', branch_id::text, until FROM modifier_stops WHERE until IS NOT NULL
+      UNION ALL
+      SELECT 'menu', branch_id::text, starts_at
+      FROM promotions WHERE enabled AND deleted_at IS NULL AND starts_at IS NOT NULL
+      UNION ALL
+      SELECT 'menu', branch_id::text, ends_at
+      FROM promotions WHERE enabled AND deleted_at IS NULL AND ends_at IS NOT NULL
+      UNION ALL
+      SELECT 'branches', '*', NULLIF(intake->>'paused_until', '')::timestamptz AT TIME ZONE 'UTC'
+      FROM branch_info i JOIN branches b ON b.id = i.branch_id
+      WHERE b.is_active AND b.deleted_at IS NULL AND intake->>'paused_until' IS NOT NULL
+      UNION ALL
+      SELECT 'branches', '*', NULLIF(intake->>'load_until', '')::timestamptz AT TIME ZONE 'UTC'
+      FROM branch_info i JOIN branches b ON b.id = i.branch_id
+      WHERE b.is_active AND b.deleted_at IS NULL AND intake->>'load_until' IS NOT NULL
+      UNION ALL
+      SELECT 'franchise', '*', fetched_at + INTERVAL '7 days'
+      FROM franchise_ratings WHERE provider = 'yandex'
+    ), boundary_times AS (
+      SELECT section, scope,
+        (extract(epoch FROM boundary AT TIME ZONE 'UTC') * 1000)::bigint AS time
+      FROM temporal_source WHERE boundary IS NOT NULL
+    ), bounded AS (
+      SELECT section, scope, time FROM boundary_times WHERE time > $1
+      UNION ALL
+      SELECT section, scope, max(time) FROM boundary_times
+      WHERE time <= $1 GROUP BY section, scope
+    )
+    SELECT e.epoch, 'revision' AS kind, r.section, r.scope, r.revision::bigint
+    FROM storefront_epoch e JOIN storefront_revisions r ON true
+    UNION ALL
+    SELECT e.epoch, 'boundary', b.section, b.scope, b.time
+    FROM storefront_epoch e JOIN bounded b ON true
+    UNION ALL
+    SELECT e.epoch, 'epoch', NULL::text, NULL::text, NULL::bigint FROM storefront_epoch e
+    """
+
+    case Repo.query(sql, [System.system_time(:millisecond)]) do
       {:ok, %{rows: rows}} when rows != [] ->
         epoch = rows |> hd() |> hd()
 
         revisions =
           rows
-          |> Enum.reject(fn [_epoch, section | _] -> is_nil(section) end)
-          |> Map.new(fn [_epoch, section, scope, revision] -> {{section, scope}, revision} end)
+          |> Enum.filter(fn [_epoch, kind | _] -> kind == "revision" end)
+          |> Map.new(fn [_epoch, _kind, section, scope, revision] ->
+            {{section, scope}, revision}
+          end)
+
+        temporal =
+          rows
+          |> Enum.filter(fn [_epoch, kind | _] -> kind == "boundary" end)
+          |> Enum.group_by(
+            fn [_epoch, _kind, section, scope, _time] -> {section, scope} end,
+            fn [_epoch, _kind, _section, _scope, time] -> time end
+          )
+          |> Map.new(fn {key, times} -> {key, Enum.uniq(times)} end)
 
         changed =
           if epoch == state.epoch do
@@ -235,7 +312,10 @@ defmodule Delivest.Storefront.Revisions do
           Enum.each(changed, fn {{section, scope}, _revision} -> prune(section, scope) end)
         end
 
-        :ets.insert(@table, {:snapshot, revisions, epoch, System.monotonic_time(:millisecond)})
+        :ets.insert(
+          @table,
+          {:snapshot, revisions, temporal, epoch, System.monotonic_time(:millisecond)}
+        )
 
         for {{section, scope}, revision} <- changed do
           Phoenix.PubSub.broadcast(Delivest.PubSub, "storefront:#{scope}", %{
@@ -245,7 +325,8 @@ defmodule Delivest.Storefront.Revisions do
           })
         end
 
-        %{state | revisions: revisions, epoch: epoch}
+        %{state | revisions: revisions, temporal: temporal, epoch: epoch}
+        |> reconcile_boundaries()
 
       {:error, reason} ->
         Logger.warning("Storefront revision refresh failed: #{inspect(reason)}")

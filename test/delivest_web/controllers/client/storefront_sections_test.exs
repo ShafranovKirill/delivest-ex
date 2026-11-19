@@ -185,13 +185,214 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
     [tag] = get_resp_header(first, "etag")
     assert stopped?(json_response(first, 200)["data"], product.id)
 
+    [{:snapshot, revisions, boundaries, epoch, _checked_at}] =
+      :ets.lookup(:storefront_revisions_snapshot, :snapshot)
+
     wait_ms = max(0, DateTime.diff(until, DateTime.utc_now(), :millisecond) + 100)
     Process.send_after(self(), :boundary_elapsed, wait_ms)
     assert_receive :boundary_elapsed, wait_ms + 1_000
     second = first |> recycle() |> put_req_header("if-none-match", tag) |> get(path)
     assert second.status == 200
-    assert get_resp_header(second, "etag") != [tag]
+    [new_tag] = get_resp_header(second, "etag")
+    assert new_tag != tag
     refute stopped?(json_response(second, 200)["data"], product.id)
+
+    # A node with the pre-boundary snapshot must calculate the same phase even
+    # when its local timer has not run. A fresh post-boundary snapshot agrees.
+    :ets.insert(:storefront_revisions_snapshot, {
+      :snapshot,
+      revisions,
+      boundaries,
+      epoch,
+      System.monotonic_time(:millisecond)
+    })
+
+    late = second |> recycle() |> put_req_header("if-none-match", tag) |> get(path)
+    assert late.status == 200
+    assert get_resp_header(late, "etag") == [new_tag]
+
+    :sys.replace_state(Delivest.Storefront.Revisions, fn state ->
+      Enum.each(state.boundaries, fn {_key, {_time, ref}} -> Process.cancel_timer(ref) end)
+      %{state | boundaries: %{}, temporal: %{}, phases: %{}}
+    end)
+
+    refresh_worker()
+    Cachex.clear(:storefront_cache)
+    cold = late |> recycle() |> put_req_header("if-none-match", tag) |> get(path)
+    assert cold.status == 200
+    assert get_resp_header(cold, "etag") == [new_tag]
+
+    assert cold
+           |> recycle()
+           |> put_req_header("if-none-match", new_tag)
+           |> get(path)
+           |> Map.get(:status) == 304
+
+    revision_before_duplicate = Delivest.Storefront.Revisions.current("menu", branch.id)
+
+    send(Delivest.Storefront.Revisions, {
+      :boundary_reached,
+      "menu",
+      branch.id,
+      DateTime.to_unix(until, :millisecond)
+    })
+
+    :sys.get_state(Delivest.Storefront.Revisions)
+    assert Delivest.Storefront.Revisions.current("menu", branch.id) == revision_before_duplicate
+  end
+
+  test "promotion start and end produce stable menu validators", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    category = insert(:category)
+    product = insert(:product, category_id: category.id, slug: "promo-temporal")
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+    start_at = DateTime.utc_now() |> DateTime.add(3, :second) |> DateTime.truncate(:second)
+    end_at = DateTime.add(start_at, 2, :second)
+
+    insert(:promotion,
+      branch_id: branch.id,
+      starts_at: start_at,
+      ends_at: end_at,
+      rules: ~s(then price "promo-temporal" 50)
+    )
+
+    refresh_worker()
+
+    path = "/client/storefront/v1/sections/menu?branch_id=#{branch.id}&locale=ru"
+    first = get(conn, path)
+    [before_tag] = get_resp_header(first, "etag")
+    before_price = menu_price(json_response(first, 200)["data"], product.id)
+
+    await_boundary(start_at)
+    started = first |> recycle() |> put_req_header("if-none-match", before_tag) |> get(path)
+    assert started.status == 200
+    [active_tag] = get_resp_header(started, "etag")
+    assert active_tag != before_tag
+    active_price = menu_price(json_response(started, 200)["data"], product.id)
+    assert active_price < before_price
+
+    await_boundary(end_at)
+    ended = started |> recycle() |> put_req_header("if-none-match", active_tag) |> get(path)
+    assert ended.status == 200
+    [ended_tag] = get_resp_header(ended, "etag")
+    assert ended_tag != active_tag
+    assert menu_price(json_response(ended, 200)["data"], product.id) == before_price
+
+    refresh_worker()
+    Cachex.clear(:storefront_cache)
+
+    assert ended
+           |> recycle()
+           |> put_req_header("if-none-match", ended_tag)
+           |> get(path)
+           |> Map.get(:status) == 304
+  end
+
+  test "modifier stop expiry restores the menu offer", %{conn: conn} do
+    alias Delivest.Net.{Modifier, ModifierGroup, ModifierStop, ProductModifierGroup}
+
+    branch = insert(:branch, is_active: true)
+    category = insert(:category)
+    product = insert(:product, category_id: category.id)
+    group = Repo.insert!(%ModifierGroup{name: "Size", min: 1, max: 1})
+    modifier = Repo.insert!(%Modifier{group_id: group.id, name: "Large", price: 500})
+    Repo.insert!(%ProductModifierGroup{group_id: group.id, product_id: product.id})
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+    until = DateTime.utc_now() |> DateTime.add(3, :second) |> DateTime.truncate(:second)
+    Repo.insert!(%ModifierStop{branch_id: branch.id, modifier_id: modifier.id, until: until})
+    refresh_worker()
+
+    path = "/client/storefront/v1/sections/menu?branch_id=#{branch.id}&locale=ru"
+    first = get(conn, path)
+    [tag] = get_resp_header(first, "etag")
+    assert modifier_stopped?(json_response(first, 200)["data"], product.id, modifier.id)
+
+    await_boundary(until)
+    second = first |> recycle() |> put_req_header("if-none-match", tag) |> get(path)
+    assert second.status == 200
+    refute modifier_stopped?(json_response(second, 200)["data"], product.id, modifier.id)
+    assert get_resp_header(second, "etag") != [tag]
+  end
+
+  test "branch intake pause and load expiry change the branches validator", %{conn: conn} do
+    alias Delivest.Identity.Branch.{BranchInfo, IntakeSettings}
+
+    branch = insert(:branch, is_active: true)
+    pause_until = DateTime.utc_now() |> DateTime.add(3, :second) |> DateTime.truncate(:second)
+    load_until = DateTime.add(pause_until, 2, :second)
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      intake: %IntakeSettings{
+        paused_until: pause_until,
+        load_until: load_until,
+        load_minutes: 10
+      }
+    })
+
+    refresh_worker()
+    path = "/client/storefront/v1/sections/branches"
+    first = get(conn, path)
+    [pause_tag] = get_resp_header(first, "etag")
+
+    await_boundary(pause_until)
+    second = first |> recycle() |> put_req_header("if-none-match", pause_tag) |> get(path)
+    assert second.status == 200
+    [load_tag] = get_resp_header(second, "etag")
+    assert load_tag != pause_tag
+
+    await_boundary(load_until)
+    third = second |> recycle() |> put_req_header("if-none-match", load_tag) |> get(path)
+    assert third.status == 200
+    assert get_resp_header(third, "etag") != [load_tag]
+  end
+
+  test "rating expiry changes the franchise validator and removes stale rating", %{conn: conn} do
+    expires = DateTime.utc_now() |> DateTime.add(3, :second) |> DateTime.truncate(:second)
+
+    Repo.insert!(%Delivest.Franchise.Rating{
+      provider: :yandex,
+      rating: 4.8,
+      reviews_count: 15,
+      fetched_at: DateTime.add(expires, -7, :day)
+    })
+
+    refresh_worker()
+    path = "/client/storefront/v1/sections/franchise"
+    first = get(conn, path)
+    [tag] = get_resp_header(first, "etag")
+    assert json_response(first, 200)["data"]["rating"] != nil
+
+    await_boundary(expires)
+    second = first |> recycle() |> put_req_header("if-none-match", tag) |> get(path)
+    assert second.status == 200
+    assert get_resp_header(second, "etag") != [tag]
+    assert json_response(second, 200)["data"]["rating"] == nil
+  end
+
+  defp await_boundary(boundary) do
+    wait_ms = max(0, DateTime.diff(boundary, DateTime.utc_now(), :millisecond) + 100)
+    Process.send_after(self(), :boundary_elapsed, wait_ms)
+    assert_receive :boundary_elapsed, wait_ms + 1_000
+  end
+
+  defp menu_price(categories, product_id) do
+    categories
+    |> Enum.flat_map(& &1["products"])
+    |> Enum.find(&(&1["id"] == product_id))
+    |> Map.fetch!("price")
+  end
+
+  defp modifier_stopped?(categories, product_id, modifier_id) do
+    categories
+    |> Enum.flat_map(& &1["products"])
+    |> Enum.find(&(&1["id"] == product_id))
+    |> Map.fetch!("modifier_groups")
+    |> Enum.flat_map(& &1["modifiers"])
+    |> Enum.find(&(&1["id"] == modifier_id))
+    |> Map.fetch!("stopped")
   end
 
   defp stopped?(categories, product_id) do
