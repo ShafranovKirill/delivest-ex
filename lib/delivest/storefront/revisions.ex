@@ -8,6 +8,7 @@ defmodule Delivest.Storefront.Revisions do
   @table :storefront_revisions_snapshot
   @poll_ms 5_000
   @max_age_ms 20_000
+  @compaction_batch 1_000
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
 
@@ -55,11 +56,21 @@ defmodule Delivest.Storefront.Revisions do
 
   def db_matches?(section, scope, expected) do
     sql = """
+    WITH effective_revisions AS (
+      SELECT section, scope, SUM(revision)::bigint AS revision
+      FROM (
+        SELECT section, scope, revision FROM storefront_revisions
+        UNION ALL
+        SELECT section, scope, delta FROM storefront_revision_pending
+      ) changes
+      WHERE section = $1 AND scope IN ('*', $2)
+      GROUP BY section, scope
+    )
     SELECT e.epoch,
       COALESCE(MAX(r.revision) FILTER (WHERE r.scope = '*'), 0),
       COALESCE(MAX(r.revision) FILTER (WHERE r.scope = $2), 0)
     FROM storefront_epoch e
-    LEFT JOIN storefront_revisions r ON r.section = $1 AND r.scope IN ('*', $2)
+    LEFT JOIN effective_revisions r ON true
     GROUP BY e.epoch
     """
 
@@ -106,6 +117,7 @@ defmodule Delivest.Storefront.Revisions do
   @impl true
   def handle_info(:poll, state) do
     state = state |> connect_notifications() |> refresh()
+    maybe_compact()
     Process.send_after(self(), :poll, @poll_ms)
     {:noreply, state}
   end
@@ -246,9 +258,17 @@ defmodule Delivest.Storefront.Revisions do
       UNION ALL
       SELECT section, scope, max(time) FROM boundary_times
       WHERE time <= $1 GROUP BY section, scope
+    ), effective_revisions AS (
+      SELECT section, scope, SUM(revision)::bigint AS revision
+      FROM (
+        SELECT section, scope, revision FROM storefront_revisions
+        UNION ALL
+        SELECT section, scope, delta FROM storefront_revision_pending
+      ) changes
+      GROUP BY section, scope
     )
     SELECT e.epoch, 'revision' AS kind, r.section, r.scope, r.revision::bigint
-    FROM storefront_epoch e JOIN storefront_revisions r ON true
+    FROM storefront_epoch e JOIN effective_revisions r ON true
     UNION ALL
     SELECT e.epoch, 'boundary', b.section, b.scope, b.time
     FROM storefront_epoch e JOIN bounded b ON true
@@ -335,6 +355,56 @@ defmodule Delivest.Storefront.Revisions do
       _ ->
         state
     end
+  end
+
+  @doc "Transfers a bounded set of committed pending revisions into compact base counts."
+  def compact(limit \\ @compaction_batch) when is_integer(limit) and limit > 0 do
+    Repo.transaction(fn ->
+      case Repo.query!("SELECT pg_try_advisory_xact_lock(2026, 12054)", []).rows do
+        [[true]] ->
+          sql = """
+          WITH picked AS MATERIALIZED (
+            SELECT transaction_id, section, scope
+            FROM storefront_revision_pending
+            ORDER BY transaction_id, section, scope
+            LIMIT $1 FOR UPDATE SKIP LOCKED
+          ), removed AS (
+            DELETE FROM storefront_revision_pending p USING picked
+            WHERE p.transaction_id = picked.transaction_id
+              AND p.section = picked.section AND p.scope = picked.scope
+            RETURNING p.section, p.scope, p.delta
+          ), totals AS (
+            SELECT section, scope, SUM(delta) AS delta FROM removed GROUP BY section, scope
+          ), merged AS (
+            INSERT INTO storefront_revisions(section, scope, revision)
+            SELECT section, scope, delta FROM totals
+            ON CONFLICT (section, scope)
+            DO UPDATE SET revision = storefront_revisions.revision + EXCLUDED.revision
+            RETURNING 1
+          )
+          SELECT COUNT(*) FROM removed
+          """
+
+          Repo.query!(sql, [limit]).rows |> hd() |> hd()
+
+        _ ->
+          0
+      end
+    end)
+  end
+
+  defp maybe_compact do
+    if Repo.config()[:pool] != Ecto.Adapters.SQL.Sandbox do
+      case compact() do
+        {:ok, _count} ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("Storefront revision compaction failed: #{inspect(reason)}")
+      end
+    end
+  rescue
+    error -> Logger.warning("Storefront revision compaction failed: #{inspect(error)}")
   end
 
   defp rotate_epoch do

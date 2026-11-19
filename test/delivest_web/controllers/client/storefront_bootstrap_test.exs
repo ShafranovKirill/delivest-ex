@@ -518,13 +518,19 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
   end
 
   defp revision(section, scope) do
-    case Repo.query!(
-           "SELECT revision FROM storefront_revisions WHERE section = $1 AND scope = $2",
-           [section, scope]
-         ).rows do
-      [[value]] -> value
-      [] -> 0
-    end
+    [[value]] =
+      Repo.query!(
+        """
+        SELECT COALESCE(SUM(revision), 0)::bigint FROM (
+          SELECT revision FROM storefront_revisions WHERE section = $1 AND scope = $2
+          UNION ALL
+          SELECT delta FROM storefront_revision_pending WHERE section = $1 AND scope = $2
+        ) changes
+        """,
+        [section, scope]
+      ).rows
+
+    value
   end
 
   defp refresh_revisions do
