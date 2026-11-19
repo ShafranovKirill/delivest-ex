@@ -3,7 +3,17 @@ defmodule Delivest.Net.PublicOffers do
   import Ecto.Query
 
   alias Delivest.{Identity, Net, Popular, Promo, Repo}
-  alias Delivest.Net.{Category, MenuView, ModifierStop, Product, ProductStop, ProductTag}
+
+  alias Delivest.Net.{
+    Catalogs,
+    Category,
+    MenuView,
+    ModifierStop,
+    Product,
+    ProductStop,
+    ProductTag
+  }
+
   alias Delivest.Relations.EntityRelation
   alias Delivest.Net.PublicOffer
 
@@ -13,6 +23,20 @@ defmodule Delivest.Net.PublicOffers do
     with {:ok, _} <- active_branch(branch_id),
          {:ok, categories} <- Net.get_menu_for_branch(branch_id) do
       {:ok, decorate(categories, branch_id)}
+    end
+  end
+
+  def menu_fresh(branch_id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(branch_id),
+         true <-
+           Repo.exists?(
+             from b in Delivest.Identity.Branch,
+               where: b.id == ^uuid and b.is_active and is_nil(b.deleted_at)
+           ),
+         {:ok, categories} <- Catalogs.get_menu_uncached_for_branch(uuid) do
+      {:ok, decorate(categories, uuid, false, true)}
+    else
+      _ -> {:error, :not_found}
     end
   end
 
@@ -154,7 +178,7 @@ defmodule Delivest.Net.PublicOffers do
       end)
   end
 
-  defp decorate(categories, branch_id, load_popular? \\ false) do
+  defp decorate(categories, branch_id, load_popular? \\ false, fresh? \\ false) do
     ids = categories |> Enum.flat_map(& &1.products) |> Enum.map(& &1.id) |> Enum.uniq()
     groups = Net.Modifiers.for_products(ids)
 
@@ -193,7 +217,11 @@ defmodule Delivest.Net.PublicOffers do
     popular = if load_popular?, do: popular_ids(branch_id, ids), else: nil
 
     categories
-    |> Promo.overlay_menu(branch_id)
+    |> then(fn values ->
+      if fresh?,
+        do: Promo.overlay_menu_fresh(values, branch_id),
+        else: Promo.overlay_menu(values, branch_id)
+    end)
     |> Enum.map(fn category ->
       Map.update!(category, :products, fn products ->
         Enum.map(products, fn product ->

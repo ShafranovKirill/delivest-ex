@@ -10,6 +10,14 @@ defmodule Delivest.Delivery do
   def get_settings(branch_id),
     do: Repo.get_by(Settings, branch_id: branch_id) || %Settings{branch_id: branch_id}
 
+  @doc "Read public settings for known branches in one query."
+  def get_settings_many(ids) when is_list(ids) do
+    settings =
+      Repo.all(from s in Settings, where: s.branch_id in ^ids) |> Map.new(&{&1.branch_id, &1})
+
+    Map.new(ids, fn id -> {id, Map.get(settings, id, %Settings{branch_id: id})} end)
+  end
+
   def change_settings(%Settings{} = settings, attrs \\ %{}),
     do: Settings.changeset(settings, attrs)
 

@@ -12,6 +12,7 @@ defmodule Delivest.Promo do
   def price(items, context), do: Engine.run(items, Context.new(context))
 
   defdelegate overlay_menu(categories, branch_id), to: MenuPrices, as: :overlay
+  defdelegate overlay_menu_fresh(categories, branch_id), to: MenuPrices, as: :overlay_fresh
   defdelegate redeem(order, result), to: Redemptions, as: :replace
 
   defdelegate list_promotions(staff, branch_id), to: Promotions, as: :list

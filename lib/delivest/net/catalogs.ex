@@ -20,13 +20,32 @@ defmodule Delivest.Net.Catalogs do
     end
   end
 
+  def get_menu_uncached_for_branch(branch_id) do
+    case Ecto.UUID.cast(branch_id) do
+      {:ok, uuid} -> {:ok, build(uuid)}
+      :error -> {:error, :invalid_branch_id}
+    end
+  end
+
   def clear_menu_cache(branch_id) do
     bump_versions([branch_id])
     invalidate_menu_cache(branch_id)
   end
 
   def invalidate_menu_cache(branch_id) do
-    safe_cache(fn -> Cachex.del(@cache, branch_id) end)
+    safe_cache(fn ->
+      case Cachex.keys(@cache) do
+        {:ok, keys} ->
+          Enum.each(keys, fn
+            {:branch_catalog, ^branch_id, _} = key -> Cachex.del(@cache, key)
+            _ -> :ok
+          end)
+
+        _ ->
+          :ok
+      end
+    end)
+
     Channels.menu_changed(branch_id)
     Phoenix.PubSub.broadcast(Delivest.PubSub, "branch_products:#{branch_id}", :catalog_changed)
     :ok
@@ -64,7 +83,7 @@ defmodule Delivest.Net.Catalogs do
     key = {:branch_catalog, branch_id, version}
 
     case safe_cache(fn ->
-           Cachex.fetch(@cache, key, fn _ -> {:commit, build(branch_id), ttl: @ttl} end)
+           Cachex.fetch(@cache, key, fn _ -> {:commit, build(branch_id), expire: @ttl} end)
          end) do
       {:ok, menu} -> {:ok, menu}
       {:commit, menu} -> {:ok, menu}

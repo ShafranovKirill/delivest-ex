@@ -3,27 +3,49 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         branches: branches,
         notification_capabilities: capabilities,
         analytics_capabilities: analytics,
-        links_capabilities: links
+        links_capabilities: links,
+        delivery_settings: delivery,
+        payment_ready: payment_ready,
+        loyalty_policy: loyalty_policy,
+        timezones: timezones
       }) do
-    %{data: for(branch <- branches, do: branch_data(branch, capabilities, analytics, links))}
+    prepared = {delivery, payment_ready, loyalty_policy, timezones}
+
+    %{
+      data:
+        for(branch <- branches, do: branch_data(branch, capabilities, analytics, links, prepared))
+    }
   end
 
   def show(%{
         branch: branch,
         notification_capabilities: capabilities,
         analytics_capabilities: analytics,
-        links_capabilities: links
+        links_capabilities: links,
+        delivery_settings: delivery,
+        payment_ready: payment_ready,
+        loyalty_policy: loyalty_policy,
+        timezones: timezones
       }) do
-    %{data: branch_data(branch, capabilities, analytics, links)}
+    %{
+      data:
+        branch_data(
+          branch,
+          capabilities,
+          analytics,
+          links,
+          {delivery, payment_ready, loyalty_policy, timezones}
+        )
+    }
   end
 
-  defp branch_data(branch, capabilities, analytics, links) do
+  defp branch_data(branch, capabilities, analytics, links, prepared) do
     %{
       id: branch.id,
       name: branch.name,
       slug: branch.slug,
       is_active: branch.is_active,
-      branch_info: branch_info(branch.info, branch, capabilities, analytics, links)
+      branch_info: branch_info(branch.info, branch, capabilities, analytics, links, prepared)
     }
   end
 
@@ -43,17 +65,20 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
 
   defp intake(_info), do: %{mode: :normal, extra_minutes: 0, until: nil, reason: nil}
 
-  defp payment_methods(%{payments: %Delivest.Identity.Branch.PaymentSettings{} = payments}),
-    do:
-      Delivest.Identity.Branch.PaymentSettings.enabled(
-        payments,
-        Delivest.Integrations.Yookassa.ready?()
-      )
+  defp payment_methods(
+         %{payments: %Delivest.Identity.Branch.PaymentSettings{} = payments},
+         ready?
+       ),
+       do:
+         Delivest.Identity.Branch.PaymentSettings.enabled(
+           payments,
+           ready?
+         )
 
-  defp payment_methods(_info), do: [:cash, :card_offline]
+  defp payment_methods(_info, _ready?), do: [:cash, :card_offline]
 
-  defp delivery_settings(branch_id) do
-    settings = Delivest.Delivery.get_settings(branch_id)
+  defp delivery_settings(branch_id, prepared) do
+    settings = Map.fetch!(prepared, branch_id)
 
     %{
       map_address: settings.map_address != false,
@@ -63,8 +88,14 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     }
   end
 
-  defp loyalty(%{loyalty: %Delivest.Identity.Branch.LoyaltySettings{}}, branch) do
-    loyalty = Delivest.Loyalty.settings(branch)
+  defp loyalty(%{loyalty: %Delivest.Identity.Branch.LoyaltySettings{} = loyalty}, branch, policy) do
+    loyalty = %{
+      loyalty
+      | per_rubles: policy.per_rubles,
+        stars: policy.stars,
+        expire_days: policy.expire_days
+    }
+
     enabled = loyalty.enabled and Delivest.Gateway.own?(branch, :loyalty)
 
     %{
@@ -77,7 +108,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     }
   end
 
-  defp loyalty(_info, _branch),
+  defp loyalty(_info, _branch, _policy),
     do: %{
       enabled: false,
       per_rubles: nil,
@@ -87,17 +118,31 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       max_percent: nil
     }
 
-  defp branch_info(%Ecto.Association.NotLoaded{}, _branch, _capabilities, _analytics, _links),
-    do: nil
+  defp branch_info(
+         %Ecto.Association.NotLoaded{},
+         _branch,
+         _capabilities,
+         _analytics,
+         _links,
+         _prepared
+       ),
+       do: nil
 
-  defp branch_info(nil, _branch, _capabilities, _analytics, _links), do: nil
+  defp branch_info(nil, _branch, _capabilities, _analytics, _links, _prepared), do: nil
 
-  defp branch_info(info, branch, capabilities, analytics, links) do
+  defp branch_info(
+         info,
+         branch,
+         capabilities,
+         analytics,
+         links,
+         {delivery, payment_ready, loyalty_policy, timezones}
+       ) do
     %{
       id: info.id,
       address: info.address,
       city: info.city,
-      timezone: Delivest.LocalTime.timezone(info),
+      timezone: Map.fetch!(timezones, branch.id),
       latitude: info.latitude,
       longitude: info.longitude,
       phone_number: info.phone_number,
@@ -105,9 +150,9 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       manual_rating: info.manual_rating,
       intake: intake(info),
       fulfillment_methods: Delivest.Identity.Branch.FulfillmentSettings.enabled(info.fulfillment),
-      delivery: delivery_settings(branch.id),
-      payment_methods: payment_methods(info),
-      loyalty: loyalty(info, branch),
+      delivery: delivery_settings(branch.id, delivery),
+      payment_methods: payment_methods(info, payment_ready),
+      loyalty: loyalty(info, branch, loyalty_policy),
       notifications_enabled: MapSet.member?(capabilities, branch.id),
       analytics_funnel_enabled: MapSet.member?(analytics, branch.id),
       analytics_links_enabled: MapSet.member?(links, branch.id),
