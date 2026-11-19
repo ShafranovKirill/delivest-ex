@@ -14,6 +14,12 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
 
   test "public bootstrap includes selected branch and no session cookie", %{conn: conn} do
     branch = insert(:branch, is_active: true)
+
+    Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
+      branch_id: branch.id,
+      phone_number: "+74951234567"
+    })
+
     refresh_revisions()
     response = get(conn, "/client/storefront/v1/bootstrap?slug=#{branch.slug}&locale=ru")
     data = json_response(response, 200)
@@ -22,6 +28,10 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
     assert data["locale"] == "ru"
     assert data["selected_branch"]["id"] == branch.id
     assert is_list(data["branches"])
+
+    assert Enum.find(data["branches"], &(&1["id"] == branch.id))["branch_info"]["phone_number"] ==
+             "+74951234567"
+
     assert is_list(data["menu"])
     assert is_list(data["stories"])
     assert is_map(data["advertising"])

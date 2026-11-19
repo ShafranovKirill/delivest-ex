@@ -434,6 +434,7 @@ defmodule Delivest.Storefront do
                 Map.take(info, [
                   :address,
                   :city,
+                  :phone_number,
                   :manual_rating,
                   :latitude,
                   :longitude,
