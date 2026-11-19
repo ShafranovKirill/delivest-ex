@@ -136,6 +136,7 @@ defmodule DelivestWeb.Router do
     pipe_through :api
     get "/bootstrap", BootstrapController, :show
     get "/manifest", BootstrapController, :manifest
+    get "/sections/:section", SectionController, :show
   end
 
   scope "/client/session", DelivestWeb.Client.Session do

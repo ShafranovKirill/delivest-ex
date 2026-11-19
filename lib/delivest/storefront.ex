@@ -22,6 +22,102 @@ defmodule Delivest.Storefront do
 
   def bootstrap(params), do: retry_stale(fn -> do_bootstrap(params) end, 2)
 
+  @sections ~w(franchise branches menu stories advertising)
+
+  def section(name, params) when name in @sections do
+    retry_stale(fn -> do_section(name, params) end, 2)
+  end
+
+  def section(_name, _params), do: {:error, :unknown_section}
+
+  defp do_section(name, params) do
+    locale = normalize_locale(params["locale"])
+    branch_id = normalize_id(params["branch_id"])
+
+    cond do
+      name in ~w(menu stories advertising) and is_nil(branch_id) ->
+        {:error, :invalid_branch}
+
+      Map.has_key?(params, "branch_id") and is_nil(branch_id) ->
+        {:error, :invalid_branch}
+
+      true ->
+        load_section(name, branch_id, locale)
+    end
+  end
+
+  defp load_section("franchise", _branch_id, _locale) do
+    with {:ok, revision} <- Revisions.current("franchise"),
+         {:ok, {:timed, data, boundary}} <- cached({:franchise, revision}, &load_franchise/0),
+         :fresh <- if(crossed_boundary?(boundary), do: :stale, else: :fresh),
+         true <- Revisions.current("franchise") == {:ok, revision} do
+      {:ok, %{data: data, revision: revision, valid_until: valid_until([boundary])}}
+    else
+      :stale -> {:error, :stale}
+      false -> {:error, :stale}
+      error -> error
+    end
+  end
+
+  defp load_section("branches", _branch_id, _locale) do
+    with {:ok, revision} <- Revisions.current("branches"),
+         {:ok, {:timed, branches, boundary}} <- cached({:branches, revision}, &load_branches/0),
+         :fresh <- if(crossed_boundary?(boundary), do: :stale, else: :fresh),
+         true <- Revisions.current("branches") == {:ok, revision} do
+      {:ok,
+       %{
+         data: Enum.map(branches.full, &Map.fetch!(branches.details, &1.id)),
+         revision: revision,
+         valid_until: valid_until([boundary])
+       }}
+    else
+      :stale -> {:error, :stale}
+      false -> {:error, :stale}
+      error -> error
+    end
+  end
+
+  defp load_section(name, branch_id, locale) do
+    with {:ok, branches_revision} <- Revisions.current("branches"),
+         {:ok, {:timed, branches, branch_boundary}} <-
+           cached({:branches, branches_revision}, &load_branches/0),
+         :active <-
+           if(Enum.any?(branches.full, &(&1.id == branch_id)), do: :active, else: :missing),
+         {:ok, revision} <- Revisions.current(name, branch_id),
+         {:ok, data, boundary} <- section_data(name, branch_id, locale, revision),
+         :fresh <-
+           if(crossed_boundary?(branch_boundary) or crossed_boundary?(boundary),
+             do: :stale,
+             else: :fresh
+           ),
+         true <- Revisions.current("branches") == {:ok, branches_revision},
+         true <- Revisions.current(name, branch_id) == {:ok, revision} do
+      {:ok,
+       %{
+         data: data,
+         revision: revision,
+         valid_until: valid_until([branch_boundary, boundary])
+       }}
+    else
+      :missing -> {:error, :not_found}
+      :stale -> {:error, :stale}
+      false -> {:error, :stale}
+      {:error, :not_found} = error -> error
+      error -> error
+    end
+  end
+
+  defp section_data("menu", branch_id, locale, revision),
+    do: maybe_menu(branch_id, locale, revision)
+
+  defp section_data("stories", branch_id, _locale, revision) do
+    with {:ok, data} <- maybe_stories(branch_id, revision), do: {:ok, data, nil}
+  end
+
+  defp section_data("advertising", branch_id, _locale, revision) do
+    with {:ok, data} <- maybe_advertising(branch_id, revision), do: {:ok, data, nil}
+  end
+
   defp do_bootstrap(params) do
     slug = normalize_slug(params["slug"])
     locale = normalize_locale(params["locale"])
