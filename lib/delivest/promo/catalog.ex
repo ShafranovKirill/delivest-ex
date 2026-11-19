@@ -37,6 +37,21 @@ defmodule Delivest.Promo.Catalog do
   def list_uncached(branch_id), do: load(branch_id)
 
   defp cached(branch_id, version) do
+    if Repo.in_transaction?(),
+      do: read_cached(branch_id, version),
+      else: fetch_cached(branch_id, version)
+  end
+
+  defp read_cached(branch_id, version) do
+    case Cachex.get(@cache, {:compiled_promo, branch_id, version}) do
+      {:ok, compiled} when is_list(compiled) -> compiled
+      _ -> load(branch_id)
+    end
+  catch
+    :exit, _ -> load(branch_id)
+  end
+
+  defp fetch_cached(branch_id, version) do
     key = {:compiled_promo, branch_id, version}
 
     result =

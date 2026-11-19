@@ -8,7 +8,8 @@ defmodule Delivest.Oms.Orders.CartGuard do
 
   def acquire(cart_id, branch_id, order_id \\ nil, opts \\ []) do
     with {:ok, cart_id} <- cast_id(cart_id),
-         {:ok, {locked_cart, version, epoch}} <- lock(cart_id),
+         {:ok, {locked_cart, version}} <- lock(cart_id),
+         epoch <- lock_epoch(),
          :ok <- ensure_owner(locked_cart, opts),
          :ok <- ensure_epoch(epoch),
          {:ok, items} <- lock_items(cart_id),
@@ -73,13 +74,17 @@ defmodule Delivest.Oms.Orders.CartGuard do
         on: b.id == c.branch_id,
         where: c.id == ^cart_id,
         lock: "FOR UPDATE OF c0",
-        select: {c, b.catalog_version, fragment("(SELECT epoch FROM storefront_epoch)")}
+        select: {c, b.catalog_version}
       )
 
     case Repo.one(query) do
-      {%Cart{}, _version, _epoch} = locked -> {:ok, locked}
+      {%Cart{}, _version} = locked -> {:ok, locked}
       nil -> {:error, :cart_not_found}
     end
+  end
+
+  defp lock_epoch do
+    Repo.one(from e in "storefront_epoch", select: field(e, :epoch), lock: "FOR SHARE")
   end
 
   defp ensure_not_ordered(cart_id, order_id) do
