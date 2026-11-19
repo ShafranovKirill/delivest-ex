@@ -73,8 +73,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
   )
 
   def apply_promo_code(conn, %{"cart_id" => cart_id} = params) do
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, cart_view} <- Oms.apply_promo_code(cart_id, params["code"]) do
+    with {:ok, cart_view} <- Oms.apply_promo_code(cart_id, params["code"], session_id(conn)) do
       render(conn, :show, cart: cart_view)
     else
       {:error, {:promo, reason}} -> promo_error(conn, reason)
@@ -101,8 +100,13 @@ defmodule DelivestWeb.Client.Cart.CartController do
         conn,
         %{"cart_id" => cart_id, "promotion_id" => promotion_id} = params
       ) do
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, view} <- Oms.choose_promotion_gifts(cart_id, promotion_id, params["product_ids"]) do
+    with {:ok, view} <-
+           Oms.choose_promotion_gifts(
+             cart_id,
+             promotion_id,
+             params["product_ids"],
+             session_id(conn)
+           ) do
       render(conn, :show, cart: view)
     else
       {:error, {:promo, :gift_not_available}} ->
@@ -129,8 +133,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
   )
 
   def remove_promo_code(conn, %{"cart_id" => cart_id}) do
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, cart_view} <- Oms.remove_promo_code(cart_id) do
+    with {:ok, cart_view} <- Oms.remove_promo_code(cart_id, session_id(conn)) do
       render(conn, :show, cart: cart_view)
     else
       _ -> cart_not_found(conn)
@@ -244,8 +247,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
   end
 
   def clear(conn, %{"cart_id" => cart_id}) do
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, cart_view} <- Carts.clear_cart(cart_id) do
+    with {:ok, cart_view} <- Carts.clear_cart_for_session(cart_id, session_id(conn)) do
       render(conn, :show, cart: cart_view)
     else
       _ -> cart_not_found(conn)
@@ -254,14 +256,23 @@ defmodule DelivestWeb.Client.Cart.CartController do
 
   defp add_cart_item(conn, cart_id, product_id, quantity, %{"stars" => true}) do
     if conn.assigns.current_client do
-      Carts.add_star_item(cart_id, product_id, quantity)
+      Carts.add_star_item_for_session(cart_id, product_id, quantity, session_id(conn))
     else
-      {:error, :product_unavailable}
+      if Carts.owned_by_session?(cart_id, session_id(conn)),
+        do: {:error, :product_unavailable},
+        else: {:error, :cart_not_found}
     end
   end
 
-  defp add_cart_item(_conn, cart_id, product_id, quantity, params),
-    do: Carts.add_item(cart_id, product_id, quantity, params["modifiers"])
+  defp add_cart_item(conn, cart_id, product_id, quantity, params),
+    do:
+      Carts.add_item_for_session(
+        cart_id,
+        product_id,
+        quantity,
+        params["modifiers"],
+        session_id(conn)
+      )
 
   def add_item(conn, %{"cart_id" => cart_id, "product_id" => product_id} = params) do
     quantity =
@@ -269,8 +280,7 @@ defmodule DelivestWeb.Client.Cart.CartController do
         do: params["quantity"],
         else: 1
 
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, _item, cart_view} <-
+    with {:ok, _item, cart_view} <-
            add_cart_item(conn, cart_id, product_id, quantity, params) do
       render(conn, :show, cart: cart_view)
     else
@@ -335,8 +345,8 @@ defmodule DelivestWeb.Client.Cart.CartController do
   )
 
   def replace_item(conn, %{"cart_id" => cart_id, "product_id" => key} = params) do
-    with :ok <- authorize_cart(conn, cart_id),
-         {:ok, cart_view} <- Carts.replace_item(cart_id, key, params["modifiers"]) do
+    with {:ok, cart_view} <-
+           Carts.replace_item_for_session(cart_id, key, params["modifiers"], session_id(conn)) do
       render(conn, :show, cart: cart_view)
     else
       {:error, :cart_not_found} ->
@@ -428,12 +438,14 @@ defmodule DelivestWeb.Client.Cart.CartController do
   end
 
   defp authorize_cart(conn, cart_id) do
-    session_id = CookieHelper.get_cookie(conn, "session_id")
+    session_id = session_id(conn)
 
     if Carts.owned_by_session?(cart_id, session_id),
       do: :ok,
       else: {:error, :cart_not_found}
   end
+
+  defp session_id(conn), do: CookieHelper.get_cookie(conn, "session_id")
 
   defp cast_uuid(value) do
     case Ecto.UUID.cast(value) do

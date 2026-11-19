@@ -28,8 +28,15 @@ defmodule Delivest.Oms do
   defdelegate update_cart_context(cart_id, attrs), to: Carts, as: :update_context
 
   defdelegate choose_promotion_gifts(cart_id, promotion_id, ids), to: CartPromo, as: :choose_gifts
+
+  defdelegate choose_promotion_gifts(cart_id, promotion_id, ids, session_id),
+    to: CartPromo,
+    as: :choose_gifts
+
   defdelegate apply_promo_code(cart_id, code), to: CartPromo, as: :apply_code
+  defdelegate apply_promo_code(cart_id, code, session_id), to: CartPromo, as: :apply_code
   defdelegate remove_promo_code(cart_id), to: CartPromo, as: :remove_code
+  defdelegate remove_promo_code(cart_id, session_id), to: CartPromo, as: :remove_code
   defdelegate set_cart_fulfillment(cart_id, fulfillment_type), to: CartPromo, as: :set_fulfillment
   defdelegate bind_cart_client(cart_view, client_id), to: CartPromo, as: :bind_client
 end

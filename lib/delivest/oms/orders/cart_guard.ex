@@ -8,10 +8,11 @@ defmodule Delivest.Oms.Orders.CartGuard do
 
   def acquire(cart_id, branch_id, order_id \\ nil, opts \\ []) do
     with {:ok, cart_id} <- cast_id(cart_id),
-         {:ok, {locked_cart, version}} <- lock(cart_id),
+         {:ok, {locked_cart, version, epoch}} <- lock(cart_id),
          :ok <- ensure_owner(locked_cart, opts),
+         :ok <- ensure_epoch(epoch),
          {:ok, items} <- lock_items(cart_id),
-         :ok <- ensure_revision(locked_cart, version, items, opts),
+         :ok <- ensure_revision(locked_cart, version, items, epoch, opts),
          :ok <- ensure_not_ordered(cart_id, order_id),
          {:ok, cart} <- fetch(%{locked_cart | items: items}, version),
          :ok <- ensure_branch(cart, branch_id),
@@ -35,12 +36,15 @@ defmodule Delivest.Oms.Orders.CartGuard do
         else: reraise(error, __STACKTRACE__)
   end
 
-  defp ensure_revision(cart, version, items, opts) do
+  defp ensure_revision(cart, version, items, epoch, opts) do
     if is_nil(opts[:cart_revision]) or
-         opts[:cart_revision] == CartRevision.from_raw(cart, version, items),
+         opts[:cart_revision] == CartRevision.from_raw(cart, version, items, epoch),
        do: :ok,
        else: {:error, :cart_changed}
   end
+
+  defp ensure_epoch(epoch) when is_binary(epoch) and byte_size(epoch) > 0, do: :ok
+  defp ensure_epoch(_epoch), do: {:error, :cart_changed}
 
   defp ensure_owner(%Cart{session_id: session_id}, opts) do
     if not Keyword.has_key?(opts, :public_session_id) or
@@ -69,11 +73,11 @@ defmodule Delivest.Oms.Orders.CartGuard do
         on: b.id == c.branch_id,
         where: c.id == ^cart_id,
         lock: "FOR UPDATE OF c0",
-        select: {c, b.catalog_version}
+        select: {c, b.catalog_version, fragment("(SELECT epoch FROM storefront_epoch)")}
       )
 
     case Repo.one(query) do
-      {%Cart{}, _version} = locked -> {:ok, locked}
+      {%Cart{}, _version, _epoch} = locked -> {:ok, locked}
       nil -> {:error, :cart_not_found}
     end
   end

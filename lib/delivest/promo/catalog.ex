@@ -64,12 +64,10 @@ defmodule Delivest.Promo.Catalog do
 
   def invalidate(branch_id) do
     Delivest.Net.Catalogs.clear_menu_cache(branch_id)
-    Cachex.clear(:cart_cache)
   end
 
   def invalidate_after_commit(branch_id) do
     Delivest.Net.Catalogs.invalidate_menu_cache(branch_id)
-    Cachex.clear(:cart_cache)
   end
 
   defp load(branch_id) do
