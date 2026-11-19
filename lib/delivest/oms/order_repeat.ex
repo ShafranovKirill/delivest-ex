@@ -8,7 +8,7 @@ defmodule Delivest.Oms.OrderRepeat do
     end
   end
 
-  defp lines(%Order{items: items}) do
+  def lines(%Order{items: items}) do
     items
     |> Enum.reject(&(&1.gift or is_nil(&1.product_id)))
     |> Enum.group_by(&{&1.product_id, OrderItem.selection(&1)}, & &1.quantity)

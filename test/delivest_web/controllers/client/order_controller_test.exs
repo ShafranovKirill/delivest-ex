@@ -228,6 +228,49 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              |> json_response(200)
   end
 
+  test "restored epoch invalidates an old revision even when catalog version is reused", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    old_revision =
+      conn
+      |> get(~p"/client/cart?branch_id=#{branch.id}")
+      |> json_response(200)
+      |> get_in(["data", "revision"])
+
+    catalog_version = Repo.get!(Delivest.Identity.Branch, branch.id).catalog_version
+
+    Repo.query!(
+      "UPDATE storefront_epoch SET epoch = md5(random()::text || clock_timestamp()::text)"
+    )
+
+    product |> Ecto.Changeset.change(price: 500) |> Repo.update!()
+    assert Repo.get!(Delivest.Identity.Branch, branch.id).catalog_version == catalog_version
+
+    assert %{"error" => "cart_changed"} =
+             conn
+             |> recycle_with_headers()
+             |> post(
+               ~p"/client/orders",
+               order_params(branch, cart_id, %{"cart_revision" => old_revision})
+             )
+             |> json_response(409)
+
+    refreshed =
+      conn
+      |> recycle_with_headers()
+      |> get(~p"/client/cart?branch_id=#{branch.id}")
+      |> json_response(200)
+      |> Map.fetch!("data")
+
+    assert refreshed["total_amount"] == 500
+    refute refreshed["revision"] == old_revision
+  end
+
   test "branch payload does not expose CRM credentials", %{conn: conn, branch: branch} do
     body = conn |> post(~p"/client/branches/#{branch.id}/select") |> json_response(200)
 

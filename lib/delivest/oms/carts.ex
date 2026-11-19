@@ -22,14 +22,38 @@ defmodule Delivest.Oms.Carts do
 
   def get_cart(opts) when is_list(opts) do
     case fetch_raw_cart(opts) do
-      %Cart{id: cart_id} -> get_cart_by_id(cart_id, opts)
-      nil -> nil
+      {%Cart{} = cart, version, epoch} ->
+        fetch_cached_or_recalculate(
+          cart.id,
+          Keyword.get(opts, :force, false),
+          {cart, version, epoch}
+        )
+
+      nil ->
+        nil
     end
   end
 
   def get_cart_by_id(cart_id, opts \\ []) when is_integer(cart_id) or is_binary(cart_id) do
     force? = Keyword.get(opts, :force, false)
     fetch_cached_or_recalculate(cart_id, force?)
+  end
+
+  def get_cart_by_id_for_session(cart_id, session_id, opts \\ [])
+  def get_cart_by_id_for_session(_cart_id, nil, _opts), do: nil
+
+  def get_cart_by_id_for_session(cart_id, session_id, opts) do
+    case Ecto.UUID.cast(cart_id) do
+      {:ok, uuid} ->
+        fetch_cached_or_recalculate(
+          uuid,
+          Keyword.get(opts, :force, false),
+          cart_and_catalog_version(uuid, session_id)
+        )
+
+      :error ->
+        nil
+    end
   end
 
   def create_cart(attrs) when is_map(attrs) or is_list(attrs) do
@@ -49,12 +73,39 @@ defmodule Delivest.Oms.Carts do
   end
 
   def clear_cart(cart_id) do
-    Repo.transaction(fn ->
-      {_count, _} = Repo.delete_all(from ci in CartItem, where: ci.cart_id == ^cart_id)
+    clear_cart_owned(cart_id, :any)
+  end
 
-      Repo.update_all(from(c in Cart, where: c.id == ^cart_id), set: [promo_gifts: %{}])
-      refresh_and_cache(cart_id)
-    end)
+  def clear_cart_for_session(cart_id, session_id), do: clear_cart_owned(cart_id, session_id)
+
+  defp clear_cart_owned(_cart_id, nil), do: {:error, :cart_not_found}
+
+  defp clear_cart_owned(cart_id, session_id) do
+    case Ecto.UUID.cast(cart_id) do
+      {:ok, uuid} ->
+        with {:ok, snapshot} <-
+               Repo.transaction(fn ->
+                 query = from c in Cart, where: c.id == ^uuid, lock: "FOR UPDATE"
+
+                 query =
+                   if session_id == :any,
+                     do: query,
+                     else: where(query, [c], c.session_id == ^session_id)
+
+                 cart = Repo.one(query)
+                 if is_nil(cart), do: Repo.rollback(:cart_not_found)
+
+                 Repo.delete_all(from ci in CartItem, where: ci.cart_id == ^uuid)
+                 Repo.update_all(from(c in Cart, where: c.id == ^uuid), set: [promo_gifts: %{}])
+                 unpriced_snapshot(%{cart | promo_gifts: %{}})
+               end) do
+          cache_put(snapshot.id, snapshot)
+          {:ok, CartPricing.apply(snapshot)}
+        end
+
+      :error ->
+        {:error, :cart_not_found}
+    end
   end
 
   def owned_by_session?(_cart_id, nil), do: false
@@ -72,20 +123,54 @@ defmodule Delivest.Oms.Carts do
   def add_item(cart_id, product_id, quantity \\ 1, modifiers \\ nil)
       when is_integer(quantity) and quantity > 0 do
     with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found},
-         {:ok, product_uuid} <- available_product(product_id, cart.branch_id),
-         {:ok, choices} <- choose(product_uuid, cart.branch_id, modifiers),
-         {:ok, item} <- upsert_item(cart.id, product_uuid, quantity, choices) do
+         {:ok, item} <- insert_item(cart, product_id, quantity, modifiers) do
       {:ok, item, recalculate_and_cache(cart)}
+    end
+  end
+
+  def add_item_for_session(cart_id, product_id, quantity, modifiers, session_id)
+      when is_integer(quantity) and quantity > 0 do
+    with {:ok, {item, snapshot}} <-
+           mutate_owned(cart_id, session_id, fn cart ->
+             with {:ok, item} <- insert_item(cart, product_id, quantity, modifiers),
+                  do: {:ok, {item, unpriced_snapshot(cart)}}
+           end) do
+      cache_put(snapshot.id, snapshot)
+      {:ok, item, CartPricing.apply(snapshot)}
+    end
+  end
+
+  defp insert_item(cart, product_id, quantity, modifiers) do
+    with {:ok, product_uuid} <- available_product(product_id, cart.branch_id),
+         {:ok, choices} <- choose(product_uuid, cart.branch_id, modifiers) do
+      upsert_item(cart.id, product_uuid, quantity, choices)
     end
   end
 
   def add_star_item(cart_id, product_id, quantity \\ 1)
       when is_integer(quantity) and quantity > 0 do
     with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found},
-         {:ok, product_uuid} <- available_product(product_id, cart.branch_id),
-         :ok <- star_product(product_uuid, cart.branch_id),
-         {:ok, item} <- upsert_item(cart.id, product_uuid, quantity, [], @star_key) do
+         {:ok, item} <- insert_star_item(cart, product_id, quantity) do
       {:ok, item, recalculate_and_cache(cart)}
+    end
+  end
+
+  def add_star_item_for_session(cart_id, product_id, quantity, session_id)
+      when is_integer(quantity) and quantity > 0 do
+    with {:ok, {item, snapshot}} <-
+           mutate_owned(cart_id, session_id, fn cart ->
+             with {:ok, item} <- insert_star_item(cart, product_id, quantity),
+                  do: {:ok, {item, unpriced_snapshot(cart)}}
+           end) do
+      cache_put(snapshot.id, snapshot)
+      {:ok, item, CartPricing.apply(snapshot)}
+    end
+  end
+
+  defp insert_star_item(cart, product_id, quantity) do
+    with {:ok, product_uuid} <- available_product(product_id, cart.branch_id),
+         :ok <- star_product(product_uuid, cart.branch_id) do
+      upsert_item(cart.id, product_uuid, quantity, [], @star_key)
     end
   end
 
@@ -102,19 +187,61 @@ defmodule Delivest.Oms.Carts do
   end
 
   def replace_item(cart_id, key, modifiers) do
+    with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found},
+         {:ok, _item} <- swap_item(cart, key, modifiers) do
+      {:ok, recalculate_and_cache(cart)}
+    end
+  end
+
+  def replace_item_for_session(cart_id, key, modifiers, session_id) do
+    with {:ok, snapshot} <-
+           mutate_owned(cart_id, session_id, fn cart ->
+             with {:ok, _item} <- swap_item(cart, key, modifiers),
+                  do: {:ok, unpriced_snapshot(cart)}
+           end) do
+      cache_put(snapshot.id, snapshot)
+      {:ok, CartPricing.apply(snapshot)}
+    end
+  end
+
+  defp swap_item(cart, key, modifiers) do
     {product_part, modifier_key} = parse_item_key(key)
 
-    with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found},
-         {:ok, product_uuid} <- available_product(product_part, cart.branch_id),
+    with {:ok, product_uuid} <- available_product(product_part, cart.branch_id),
          {:ok, choices} <- choose(product_uuid, cart.branch_id, modifiers),
          %CartItem{} = old <-
            Repo.get_by(CartItem,
              cart_id: cart.id,
              product_id: product_uuid,
              modifier_key: modifier_key
-           ) || {:error, :item_not_found},
-         {:ok, _item} <- swap_choices(old, choices) do
-      {:ok, recalculate_and_cache(cart)}
+           ) || {:error, :item_not_found} do
+      swap_choices(old, choices)
+    end
+  end
+
+  defp mutate_owned(_cart_id, nil, _fun), do: {:error, :cart_not_found}
+
+  defp mutate_owned(cart_id, session_id, fun) do
+    case Ecto.UUID.cast(cart_id) do
+      {:ok, uuid} ->
+        Repo.transaction(fn ->
+          cart =
+            Repo.one(
+              from c in Cart,
+                where: c.id == ^uuid and c.session_id == ^session_id,
+                lock: "FOR UPDATE"
+            )
+
+          if is_nil(cart), do: Repo.rollback(:cart_not_found)
+
+          case fun.(cart) do
+            {:ok, value} -> value
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+
+      :error ->
+        {:error, :cart_not_found}
     end
   end
 
@@ -173,16 +300,37 @@ defmodule Delivest.Oms.Carts do
 
   def add_items(cart_id, lines) do
     with %Cart{} = cart <- Repo.get(Cart, cart_id) || {:error, :cart_not_found} do
-      Enum.each(lines, fn line ->
-        {product_id, quantity, modifiers} = line_parts(line)
-
-        with {:ok, uuid} <- available_product(product_id, cart.branch_id),
-             {:ok, choices} <- choose(uuid, cart.branch_id, modifiers),
-             do: upsert_item(cart.id, uuid, quantity, choices)
-      end)
+      append_lines(cart, lines)
 
       {:ok, recalculate_and_cache(cart)}
     end
+  end
+
+  def repeat_order_for_session(cart_id, session_id, client_id, order_id) do
+    with {:ok, snapshot} <-
+           mutate_owned(cart_id, session_id, fn cart ->
+             case Delivest.Oms.Orders.get_client_order(client_id, order_id) do
+               %Delivest.Oms.Order{} = order ->
+                 append_lines(cart, Delivest.Oms.OrderRepeat.lines(order))
+                 {:ok, unpriced_snapshot(cart)}
+
+               nil ->
+                 {:error, :order_not_found}
+             end
+           end) do
+      cache_put(snapshot.id, snapshot)
+      {:ok, CartPricing.apply(snapshot)}
+    end
+  end
+
+  defp append_lines(cart, lines) do
+    Enum.each(lines, fn line ->
+      {product_id, quantity, modifiers} = line_parts(line)
+
+      with {:ok, uuid} <- available_product(product_id, cart.branch_id),
+           {:ok, choices} <- choose(uuid, cart.branch_id, modifiers),
+           do: upsert_item(cart.id, uuid, quantity, choices)
+    end)
   end
 
   defp line_parts({product_id, quantity}), do: {product_id, quantity, nil}
@@ -506,12 +654,14 @@ defmodule Delivest.Oms.Carts do
     end
   end
 
-  defp fetch_cached_or_recalculate(cart_id, force?) do
-    case cart_and_catalog_version(cart_id) do
+  defp fetch_cached_or_recalculate(cart_id, force?, loaded \\ :fetch) do
+    loaded = if loaded == :fetch, do: cart_and_catalog_version(cart_id), else: loaded
+
+    case loaded do
       nil ->
         nil
 
-      {cart, version} ->
+      {cart, version, epoch} ->
         items =
           Repo.all(
             from ci in CartItem,
@@ -519,7 +669,7 @@ defmodule Delivest.Oms.Carts do
               order_by: [asc: ci.inserted_at, asc: ci.id]
           )
 
-        revision = CartRevision.from_raw(cart, version, items)
+        revision = CartRevision.from_raw(cart, version, items, epoch)
         cart = %{cart | items: items}
 
         case {force?, cache_get(cart_id)} do
@@ -535,32 +685,35 @@ defmodule Delivest.Oms.Carts do
             } = cached_view}} ->
             CartPricing.apply(%{
               cached_view
-              | promo_gifts: cart.promo_gifts || %{},
+              | session_id: cart.session_id,
+                promo_gifts: cart.promo_gifts || %{},
                 promo_code: cart.promo_code
             })
 
           _ ->
-            recalculate_and_cache(cart, version)
+            recalculate_and_cache(cart, version, epoch)
         end
     end
   end
 
   defp fetch_and_recalculate(cart_id) do
     case cart_and_catalog_version(cart_id) do
-      {cart, version} -> recalculate_and_cache(cart, version)
+      {cart, version, epoch} -> recalculate_and_cache(cart, version, epoch)
       nil -> nil
     end
   end
 
-  defp cart_and_catalog_version(cart_id) do
-    Repo.one(
+  defp cart_and_catalog_version(cart_id, session_id \\ :any) do
+    query =
       from(c in Cart,
         left_join: b in Branch,
         on: b.id == c.branch_id,
         where: c.id == ^cart_id,
-        select: {c, b.catalog_version}
+        select: {c, b.catalog_version, fragment("(SELECT epoch FROM storefront_epoch)")}
       )
-    )
+
+    query = if session_id == :any, do: query, else: where(query, [c], c.session_id == ^session_id)
+    Repo.one(query)
   end
 
   defp refresh_and_cache(cart_id) do
@@ -568,23 +721,44 @@ defmodule Delivest.Oms.Carts do
   end
 
   defp recalculate_and_cache(%Cart{} = cart) do
-    version = catalog_version(cart.branch_id)
-    recalculate_and_cache(cart, version)
+    {version, epoch} = catalog_generation(cart.branch_id)
+    recalculate_and_cache(cart, version, epoch)
   end
 
-  defp catalog_version(nil), do: nil
+  defp catalog_generation(nil),
+    do: {nil, Repo.one(from e in "storefront_epoch", select: field(e, :epoch))}
 
-  defp catalog_version(branch_id),
-    do: Repo.one(from b in Branch, where: b.id == ^branch_id, select: b.catalog_version)
+  defp catalog_generation(branch_id) do
+    Repo.one(
+      from b in Branch,
+        where: b.id == ^branch_id,
+        select: {b.catalog_version, fragment("(SELECT epoch FROM storefront_epoch)")}
+    ) || catalog_generation(nil)
+  end
 
-  defp recalculate_and_cache(%Cart{} = cart, version) do
+  defp recalculate_and_cache(%Cart{} = cart, version, epoch) do
+    {cached_view, priced_view} = recalculate_view(cart, version, epoch)
+    cache_put(cart.id, cached_view)
+    priced_view
+  end
+
+  def unpriced_snapshot(%Cart{} = cart),
+    do:
+      cart.branch_id
+      |> catalog_generation()
+      |> then(fn {version, epoch} -> unpriced_snapshot(cart, version, epoch) end)
+
+  defp recalculate_view(%Cart{} = cart, version, epoch) do
+    cart_view = unpriced_snapshot(cart, version, epoch)
+    {cart_view, CartPricing.apply(cart_view)}
+  end
+
+  defp unpriced_snapshot(%Cart{} = cart, version, epoch) do
     cart = Repo.preload(cart, :items)
-    revision = CartRevision.from_raw(cart, version, cart.items)
+    revision = CartRevision.from_raw(cart, version, cart.items, epoch)
     cart_view = build_cart_view(cart)
     # Pruned rows leave a conservative token: checkout fails until refreshed.
-    cart_view = %{cart_view | catalog_version: version, revision: revision}
-    cache_put(cart.id, cart_view)
-    CartPricing.apply(cart_view)
+    %{cart_view | catalog_version: version, revision: revision}
   end
 
   defp cache_get(key) do
@@ -608,9 +782,12 @@ defmodule Delivest.Oms.Carts do
       not is_nil(session_id) ->
         query =
           from c in Cart,
+            left_join: b in Branch,
+            on: b.id == c.branch_id,
             where: c.session_id == ^session_id,
             order_by: [desc: c.updated_at, desc: c.inserted_at],
-            limit: 1
+            limit: 1,
+            select: {c, b.catalog_version, fragment("(SELECT epoch FROM storefront_epoch)")}
 
         query = if branch_id, do: from(c in query, where: c.branch_id == ^branch_id), else: query
         Repo.one(query)
@@ -618,9 +795,12 @@ defmodule Delivest.Oms.Carts do
       not is_nil(staff_id) ->
         query =
           from c in Cart,
+            left_join: b in Branch,
+            on: b.id == c.branch_id,
             where: c.staff_id == ^staff_id,
             order_by: [desc: c.inserted_at],
-            limit: 1
+            limit: 1,
+            select: {c, b.catalog_version, fragment("(SELECT epoch FROM storefront_epoch)")}
 
         query = if branch_id, do: from(c in query, where: c.branch_id == ^branch_id), else: query
 
