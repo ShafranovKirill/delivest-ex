@@ -161,16 +161,16 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
     refute StaffBranchPath.valid_section?("/invented")
   end
 
-  test "settings summary changes only URL scope and keeps a safe status filter", ctx do
+  test "settings summary changes only URL scope and discards obsolete filters", ctx do
     source = "/staff/settings?branch=#{ctx.own.slug}&filter=attention&page=3&selected=old"
 
     assert {:ok, %{path: branch_path}} =
              StaffBranchPath.transition(source, {:branch, ctx.second.slug})
 
-    assert branch_path == "/staff/settings?branch=#{ctx.second.slug}&filter=attention"
+    assert branch_path == "/staff/settings?branch=#{ctx.second.slug}"
 
     assert {:ok, %{path: network_path}} = StaffBranchPath.transition(source, :network)
-    assert network_path == "/staff/settings?filter=attention"
+    assert network_path == "/staff/settings"
 
     assert {:ok, %{path: "/staff/settings"}} =
              StaffBranchPath.transition(

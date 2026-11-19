@@ -18,4 +18,7 @@ defmodule Delivest.Couriers.OrderSubscriber do
       _order -> :ok
     end
   end
+
+  @impl true
+  def after_commit(event), do: Couriers.publish_started_staff_delivery(event.id)
 end

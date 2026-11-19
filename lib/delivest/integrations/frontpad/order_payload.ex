@@ -8,6 +8,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
 
   alias Delivest.Integrations.Frontpad.{
     AddressFields,
+    CertificateExport,
     PaymentCodes,
     Settings,
     StatusCodes,
@@ -39,6 +40,9 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
           hook_status: [String.t()],
           tags: [String.t()],
           sale_amount: String.t() | nil,
+          certificate: String.t() | nil,
+          certificate_snapshot: map() | nil,
+          certificate_alert: {atom(), String.t()} | nil,
           products: [product_item()]
         }
 
@@ -58,13 +62,22 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     :datetime,
     :hook_url,
     :sale_amount,
+    :certificate,
+    :certificate_snapshot,
+    :certificate_alert,
     hook_status: [],
     tags: [],
     products: []
   ]
 
   @spec build(Delivest.Oms.Order.t(), Settings.t(), map()) :: {:ok, t()} | {:error, term()}
-  def build(order, %Settings{} = settings, products_map) do
+  def build(order, %Settings{} = settings, products_map),
+    do: build(order, settings, products_map, true)
+
+  def build_site(order, %Settings{} = settings, products_map),
+    do: build(order, settings, products_map, false)
+
+  defp build(order, %Settings{} = settings, products_map, native_certificate?) do
     with {:ok, secret} <- extract_secret(settings),
          {:ok, formatted_products} <- extract_products(order.items, products_map, settings) do
       payload =
@@ -83,6 +96,11 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
         }
         |> struct!(AddressFields.build(order.address))
         |> put_hooks(settings)
+        |> then(fn payload ->
+          if native_certificate?,
+            do: CertificateExport.apply(order, settings, payload),
+            else: payload
+        end)
 
       {:ok, payload}
     end
@@ -106,7 +124,8 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
         {"pay", view.pay},
         {"datetime", view.datetime},
         {"hook_url", view.hook_url},
-        {"sale_amount", view.sale_amount}
+        {"sale_amount", view.sale_amount},
+        {"certificate", view.certificate}
       ]
       |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
 

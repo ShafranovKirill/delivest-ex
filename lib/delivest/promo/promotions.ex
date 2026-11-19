@@ -2,6 +2,7 @@ defmodule Delivest.Promo.Promotions do
   import Ecto.Query, warn: false
 
   alias Delivest.{Audit, Identity, Repo}
+  alias Delivest.Integrations.Crm.Certificates
   alias Delivest.Promo.{Catalog, Codes, PromoCode, Promotion, References, Usage}
   alias Ecto.Multi
 
@@ -59,22 +60,59 @@ defmodule Delivest.Promo.Promotions do
 
   def create(staff, branch_id, attrs) do
     authorized(staff, "promotions.create", branch_id, fn ->
-      %Promotion{branch_id: branch_id}
-      |> Promotion.changeset(attrs)
-      |> References.validate(branch_id)
-      |> save(&Multi.insert(&1, :promotion, &2))
+      kind = Map.get(attrs, "kind", Map.get(attrs, :kind, :automatic))
+
+      with {:ok, attrs} <- certificate_attrs(attrs, branch_id, kind) do
+        %Promotion{branch_id: branch_id}
+        |> Promotion.changeset(Map.delete(attrs, :crm_certificate))
+        |> put_certificate(attrs)
+        |> References.validate(branch_id)
+        |> save(&Multi.insert(&1, :promotion, &2))
+      end
     end)
     |> Audit.track(staff, "promotion.created", branch_id: branch_id)
   end
 
   def update(staff, %Promotion{} = promotion, attrs) do
     authorized(staff, "promotions.update", promotion.branch_id, fn ->
-      promotion
-      |> Promotion.changeset(attrs)
-      |> References.validate(promotion.branch_id)
-      |> save(&Multi.update(&1, :promotion, &2))
+      with {:ok, attrs} <- certificate_attrs(attrs, promotion.branch_id, promotion.kind) do
+        promotion
+        |> Promotion.changeset(Map.delete(attrs, :crm_certificate))
+        |> put_certificate(attrs)
+        |> References.validate(promotion.branch_id)
+        |> save(&Multi.update(&1, :promotion, &2))
+      end
     end)
     |> Audit.track(staff, "promotion.updated", branch_id: promotion.branch_id)
+  end
+
+  defp certificate_attrs(attrs, branch_id, kind) do
+    attrs = Map.drop(attrs, [:crm_certificate, "crm_certificate"])
+    token = Map.get(attrs, "crm_certificate_token", Map.get(attrs, :crm_certificate_token))
+    attrs = Map.drop(attrs, [:crm_certificate_token, "crm_certificate_token"])
+
+    cond do
+      is_nil(token) ->
+        {:ok, attrs}
+
+      kind not in [:public_code, "public_code"] ->
+        {:error, :invalid_certificate_binding}
+
+      token == "" ->
+        {:ok, Map.put(attrs, :crm_certificate, nil)}
+
+      true ->
+        case Certificates.binding(branch_id, token) do
+          {:ok, snapshot} -> {:ok, Map.put(attrs, :crm_certificate, snapshot)}
+          error -> error
+        end
+    end
+  end
+
+  defp put_certificate(changeset, attrs) do
+    if Map.has_key?(attrs, :crm_certificate),
+      do: Ecto.Changeset.put_change(changeset, :crm_certificate, attrs.crm_certificate),
+      else: changeset
   end
 
   def toggle(staff, %Promotion{} = promotion) do

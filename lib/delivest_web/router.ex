@@ -360,6 +360,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.NewOrders, :default},
         {DelivestWeb.Hooks.StaffBranches, :default},
         {DelivestWeb.Hooks.CommandPalette, :default},
+        {DelivestWeb.Hooks.IntegrationAccess, :default},
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/settings", SettingsLive.Index, :index
@@ -479,6 +480,7 @@ defmodule DelivestWeb.Router do
           {DelivestWeb.Hooks.NewOrders, :default},
           {DelivestWeb.Hooks.StaffBranches, :default},
           {DelivestWeb.Hooks.CommandPalette, :default},
+          {DelivestWeb.Hooks.IntegrationAccess, :default},
           {DelivestWeb.Hooks.StaffPath, :default}
         ] do
         live "/dashboard", DashboardLive.Index, :index

@@ -75,6 +75,29 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAdsTest do
     refute render(view) =~ "direct-secret-must-not-render"
   end
 
+  test "enables a stream from the integration settings without a separate platform switch", %{
+    conn: conn,
+    branch: branch
+  } do
+    {:ok, view, _html} = live(conn, ~p"/staff/integrations/yandex-ads")
+    refute YandexAds.enabled?(:browser, branch.id)
+
+    view
+    |> form("#yandex-ads-settings",
+      yandex_ads: %{
+        enabled: "true",
+        browser_enabled: "true",
+        privacy_approved: "true",
+        counter_id: "12345",
+        branch_ids: [branch.id]
+      }
+    )
+    |> render_submit()
+
+    assert YandexAds.enabled?(:browser, branch.id)
+    refute YandexAds.enabled?(:costs, branch.id)
+  end
+
   test "OAuth application is entered in settings and its secret never appears in the form", %{
     conn: conn,
     staff: staff

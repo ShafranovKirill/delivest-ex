@@ -6,12 +6,15 @@ defmodule DelivestWeb.Staff.CourierLive.OperatorTest do
   import Delivest.OrderFixtures
 
   alias Delivest.Couriers
+  alias Delivest.Features
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Repo
 
   setup %{conn: conn} do
     branch = insert(:branch)
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
     Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: %{search: :manual}})
     operator = staff(["orders.read", "orders.update"], branch)
     courier = staff(["orders.deliver"], branch)
@@ -52,6 +55,15 @@ defmodule DelivestWeb.Staff.CourierLive.OperatorTest do
 
     assert lv |> element("#order-delivery-state-#{ctx.order.id}") |> render() =~
              "Courier assigned"
+  end
+
+  test "the operator cannot start own courier work while the feature is off", ctx do
+    {:ok, _} = Features.configure("couriers", {:branch, ctx.branch.id}, false, actor: "test")
+    {:ok, lv, _html} = orders_page(ctx.conn, ctx.branch)
+
+    refute has_element?(lv, "#order-find-courier-#{ctx.order.id}")
+    refute has_element?(lv, "#order-assign-courier-#{ctx.order.id}")
+    refute has_element?(lv, "#order-delivery-panel-#{ctx.order.id}")
   end
 
   test "the operator assigns and removes a courier", ctx do

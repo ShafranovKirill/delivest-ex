@@ -10164,6 +10164,54 @@ msgstr "Нет исключённых групп"
 msgid "Choose a promotion scenario"
 msgstr "Выберите сценарий акции"
 
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "What would you like to create?"
+msgstr "Что создать?"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Create promo code"
+msgstr "Создать промокод"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Automatic promotion"
+msgstr "Автоматическая скидка"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Gift above a cart total"
+msgstr "Подарок от суммы"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Set a cart minimum and choose a gift."
+msgstr "Укажите минимальную сумму заказа и выберите подарок."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Bundle discount"
+msgstr "Набор дешевле"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Discount on an order with two chosen products."
+msgstr "Скидка на заказ с парой выбранных товаров."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Pickup promo code"
+msgstr "Промокод на самовывоз"
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Choose a reward for pickup orders."
+msgstr "Выберите награду для заказов на самовывоз."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Choose a reward, conditions and how to issue the code."
+msgstr "Выберите награду, условия и способ выдачи кода."
+
+#: lib/delivest_web/live/staff/promotion_live/promotions.ex
+msgid "Create"
+msgstr "Создать"
+
+#: lib/delivest_web/live/staff/promotion_live/promotion_form_component.ex
+msgid "How should it apply?"
+msgstr "Как применять?"
+
 #: lib/delivest_web/live/staff/promotion_live/promotions.ex:261
 #, elixir-autogen, elixir-format
 msgid "Choose products, a discount and how customers receive it."
@@ -13236,3 +13284,99 @@ msgstr "Продажи всей сети"
 
 msgid "The shared network module is disabled. Enabling it will also resume tracking for: %{branches}."
 msgstr "Общий модуль сети выключен. Включение также возобновит отслеживание в филиалах: %{branches}."
+
+msgid "Additional Yandex capabilities"
+msgstr "Дополнительные возможности Яндекса"
+
+msgid "Manage your own couriers. Existing assignments remain available until completion."
+msgstr "Управляйте своими курьерами. Текущие назначения можно завершить после отключения."
+
+msgid "Group customers by conditions and order history."
+msgstr "Объединяйте клиентов по условиям и истории заказов."
+
+msgid "Send optional customer notifications."
+msgstr "Отправляйте клиентам дополнительные уведомления."
+
+msgid "Automate offers for customer groups."
+msgstr "Автоматизируйте предложения для групп клиентов."
+
+msgid "Compare branches using extended analytics."
+msgstr "Сравнивайте филиалы с помощью расширенной аналитики."
+
+msgid "Connect Yandex Direct and Metrika data."
+msgstr "Подключайте данные Яндекс Директа и Метрики."
+
+msgid "Optional integration capability."
+msgstr "Дополнительная возможность интеграции."
+
+msgid "Choose the functions your service uses"
+msgstr "Выберите функции для работы сервиса"
+
+msgid "Enable the functions your service needs, then open each section to configure it."
+msgstr "Включайте нужные функции и переходите к их подробным настройкам."
+
+msgid "Changes apply to this branch. Required network functions are enabled together."
+msgstr "Изменения применяются к этому филиалу. Необходимые сетевые функции включатся вместе с ним."
+
+msgid "Changes apply across the network. Enabled branches may resume optional work."
+msgstr "Изменения применяются ко всей сети. Ранее включённые филиалы могут возобновить работу функции."
+
+msgid "Enabling this network function will also resume it for previously enabled branches: %{branches}."
+msgstr "Включение функции для сети возобновит её в ранее включённых филиалах: %{branches}."
+
+msgid "Disable %{feature}? New optional work will stop. Existing data is preserved."
+msgstr "Выключить «%{feature}»? Новая работа функции прекратится, ранее собранные данные сохранятся."
+
+msgid "Existing courier assignments remain available until completion."
+msgstr "Текущие назначения курьеров останутся доступными до завершения."
+
+msgid "Enabled here, but unavailable at the network level."
+msgstr "Включено здесь, но недоступно на уровне сети."
+
+msgid "Yandex connection and stream settings are configured separately."
+msgstr "Подключение Яндекса и параметры потоков настраиваются отдельно."
+
+msgid "Open settings"
+msgstr "Перейти к настройке"
+
+msgid "Enable to open settings"
+msgstr "Включите для настройки"
+
+msgid "Select a branch to configure couriers."
+msgstr "Выберите филиал для настройки курьеров."
+
+msgid "Connections"
+msgstr "Подключения"
+
+msgid "This change affects all branches in the network."
+msgstr "Изменение затронет все филиалы сети."
+
+msgid "Own couriers are disabled for this branch"
+msgstr "Собственные доставщики отключены для этого филиала"
+
+msgid "Enable «%{feature}»?"
+msgstr "Включить «%{feature}»?"
+
+msgid "Disable «%{feature}»?"
+msgstr "Выключить «%{feature}»?"
+
+msgid "Scope: network"
+msgstr "Область действия: вся сеть"
+
+msgid "Scope: %{branch}"
+msgstr "Область действия: %{branch}"
+
+msgid "Connection details"
+msgstr "Подробнее о подключении"
+
+msgid "Controls visibility in admin settings across the network."
+msgstr "Определяет видимость в настройках администратора во всей сети."
+
+msgid "The integration will be hidden in the admin interface. Existing connection activity will continue."
+msgstr "Интеграция будет скрыта в админке. Текущая работа подключения продолжится."
+
+msgid "The integration will appear in the admin interface across the network."
+msgstr "Интеграция появится в админке во всей сети."
+
+msgid "Yandex Cart"
+msgstr "Яндекс Корзина"

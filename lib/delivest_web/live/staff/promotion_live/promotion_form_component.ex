@@ -2,12 +2,11 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   use DelivestWeb, :live_component
 
   alias Delivest.{Net, Promo, Repo}
+  alias Delivest.Integrations.Crm.Certificates
+  alias Delivest.Promo.CertificateComparison
   alias Delivest.Promo.Dsl
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
   alias Phoenix.LiveView.JS
-
-  import DelivestWeb.Staff.FoundationComponents,
-    only: [error_summary: 1, changeset_errors: 1]
 
   alias DelivestWeb.Staff.PromotionLive.{
     PromotionHelpers,
@@ -51,8 +50,8 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       {:ok, socket}
     else
       {mode, builder} =
-        if assigns.scenario == :first_order,
-          do: {:builder, RulesBuilder.template("first_order")},
+        if assigns.template in ~w(gift_threshold bundle pickup),
+          do: {:builder, RulesBuilder.template(assigns.template)},
           else: initial_builder(assigns.promotion.rules)
 
       {:ok,
@@ -66,9 +65,14 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
          mode: mode,
          builder: builder,
          params: %{},
-         default_code: "FIRST#{Ecto.UUID.generate() |> String.slice(0, 8) |> String.upcase()}",
          show_errors: false,
-         mode_error: false
+         mode_error: false,
+         certificate_provider: (assigns.promotion.crm_certificate || %{})["provider"] || "",
+         certificate_code: (assigns.promotion.crm_certificate || %{})["code"] || "",
+         certificate_original: assigns.promotion.crm_certificate,
+         certificate_result: assigns.promotion.crm_certificate,
+         certificate_token: nil,
+         certificate_error: nil
        )
        |> refresh(nil)}
     end
@@ -80,30 +84,64 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
   end
 
   def handle_event("save", %{"promotion" => params} = all, socket) do
-    socket = take_params(socket, params, all)
+    socket = socket |> take_params(params, all) |> assign(show_errors: true) |> refresh(:insert)
 
-    if builder_errors(socket.assigns) == %{} do
-      case save(socket.assigns, full_params(socket.assigns)) do
-        {:ok, promotion} ->
-          send(self(), {__MODULE__, {:saved, promotion}})
-          {:noreply, push_event(socket, "staff:form-saved", %{id: "promotion-form"})}
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, socket |> assign(show_errors: true) |> assign_form(changeset)}
-
-        {:error, :forbidden} ->
-          {:noreply,
-           put_flash(
-             socket,
-             :error,
-             gettext("You don't have permission to perform this action.")
-           )}
-
-        {:error, _reason} ->
-          {:noreply, put_flash(socket, :error, gettext("Failed to save promotion"))}
-      end
+    if certificate_save_token(socket.assigns) == :unverified do
+      {:noreply, assign(socket, certificate_error: "Сначала проверьте номер сертификата")}
     else
-      {:noreply, socket |> assign(show_errors: true) |> refresh(:insert)}
+      if builder_errors(socket.assigns) == %{} do
+        case save(
+               socket.assigns,
+               full_params(socket.assigns)
+               |> Map.put("crm_certificate_token", certificate_save_token(socket.assigns))
+             ) do
+          {:ok, promotion} ->
+            send(self(), {__MODULE__, {:saved, promotion}})
+            {:noreply, push_event(socket, "staff:form-saved", %{id: "promotion-form"})}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, socket |> assign(show_errors: true) |> assign_form(changeset)}
+
+          {:error, :forbidden} ->
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               gettext("You don't have permission to perform this action.")
+             )}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Failed to save promotion"))}
+        end
+      else
+        {:noreply, socket |> assign(show_errors: true) |> refresh(:insert)}
+      end
+    end
+  end
+
+  def handle_event("check_certificate", _params, socket) do
+    case Certificates.verify(
+           socket.assigns.current_staff,
+           socket.assigns.branch_id,
+           socket.assigns.certificate_provider,
+           socket.assigns.certificate_code,
+           if(socket.assigns.action == :new, do: "promotions.create", else: "promotions.update")
+         ) do
+      {:ok, snapshot, token} ->
+        {:noreply,
+         assign(socket,
+           certificate_result: snapshot,
+           certificate_token: token,
+           certificate_error: nil
+         )}
+
+      {:error, reason} ->
+        {:noreply,
+         assign(socket,
+           certificate_result: nil,
+           certificate_token: nil,
+           certificate_error: certificate_error(reason)
+         )}
     end
   end
 
@@ -153,16 +191,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     end
   end
 
-  def handle_event("text_mode", _params, socket) do
-    params =
-      Map.put(socket.assigns.params, "rules", RulesBuilder.to_rules(socket.assigns.builder))
-
-    {:noreply,
-     socket
-     |> assign(mode: :text, params: params, mode_error: false)
-     |> refresh(form_action(socket))}
-  end
-
   def handle_event("builder_mode", _params, socket) do
     rules = Ecto.Changeset.get_field(socket.assigns.form.source, :rules)
 
@@ -178,8 +206,42 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     end
   end
 
+  def handle_event("text_mode", _params, socket), do: {:noreply, socket}
+
   defp take_params(socket, params, all) do
+    params = Map.merge(Map.take(socket.assigns.params, ["code"]), params)
     socket = assign(socket, params: params)
+    certificate = Map.get(all, "certificate", %{})
+    certificate = if is_map(certificate), do: certificate, else: %{}
+    provider = Map.get(certificate, "provider", socket.assigns.certificate_provider)
+    code = Map.get(certificate, "code", socket.assigns.certificate_code)
+    provider = if is_binary(provider), do: provider, else: ""
+    code = if is_binary(code), do: code, else: ""
+
+    socket =
+      cond do
+        socket.assigns.action == :new and params["kind"] in ["personal_code", "automatic"] ->
+          assign(socket,
+            certificate_provider: "",
+            certificate_code: "",
+            certificate_result: nil,
+            certificate_token: nil,
+            certificate_error: nil
+          )
+
+        {provider, code} ==
+            {socket.assigns.certificate_provider, socket.assigns.certificate_code} ->
+          socket
+
+        true ->
+          assign(socket,
+            certificate_provider: provider,
+            certificate_code: code,
+            certificate_result: nil,
+            certificate_token: nil,
+            certificate_error: nil
+          )
+      end
 
     if socket.assigns.mode == :builder,
       do: assign(socket, builder: RulesBuilder.from_params(Map.get(all, "builder", %{}))),
@@ -199,43 +261,71 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       |> Promo.change_promotion(full_params(socket.assigns))
       |> Map.put(:action, action)
 
+    changeset =
+      if action == :validate and not socket.assigns.show_errors do
+        %{
+          changeset
+          | errors:
+              Enum.filter(changeset.errors, fn {key, _} ->
+                Map.has_key?(socket.assigns.params, to_string(key)) and
+                  not Map.has_key?(socket.assigns.params, "_unused_#{key}")
+              end)
+        }
+      else
+        changeset
+      end
+
     assign_form(socket, changeset)
   end
 
-  defp full_params(%{scenario: :first_order, builder: builder, params: params} = assigns) do
-    kind = Map.get(params, "kind", "automatic")
-
-    rules =
-      RulesBuilder.to_rules(%{builder | match: "all", conditions: [%{"type" => "first_order"}]})
-
-    %{
-      "name" => gettext("First order offer"),
-      "kind" => kind,
-      "code" => if(kind == "public_code", do: first_order_code(assigns), else: nil),
-      "rules" => rules,
-      "per_client_limit" => 1,
-      "combinable" => false,
-      "enabled" => true,
-      "priority" => 100
-    }
-  end
-
-  defp full_params(%{mode: :builder, builder: builder, params: params}),
+  defp full_params(%{mode: :builder, builder: builder} = assigns),
     do:
-      params
+      assigns.params
       |> Map.put("rules", RulesBuilder.to_rules(builder))
+      |> put_kind(assigns)
       |> PromotionHelpers.window_to_utc()
 
-  defp full_params(%{params: params}), do: PromotionHelpers.window_to_utc(params)
+  defp full_params(assigns),
+    do: assigns.params |> put_kind(assigns) |> PromotionHelpers.window_to_utc()
 
-  defp builder_errors(%{scenario: :first_order, builder: builder}),
-    do: RulesBuilder.errors(%{builder | conditions: []})
+  defp put_kind(params, %{action: :edit, promotion: promotion}),
+    do: Map.put(params, "kind", to_string(promotion.kind))
+
+  defp put_kind(params, %{promotion: promotion}),
+    do:
+      Map.put(
+        params,
+        "kind",
+        if(params["kind"] in ~w(public_code personal_code automatic),
+          do: params["kind"],
+          else: to_string(promotion.kind)
+        )
+      )
+
+  defp builder_errors(%{mode: :builder, builder: builder, template: "bundle"}) do
+    errors = RulesBuilder.errors(builder)
+
+    {_, duplicate} =
+      builder.conditions
+      |> Enum.with_index()
+      |> Enum.reduce({MapSet.new(), nil}, fn
+        {%{"type" => "has", "product" => product}, index}, {seen, duplicate}
+        when is_binary(product) and product != "" ->
+          if MapSet.member?(seen, product),
+            do: {seen, duplicate || index},
+            else: {MapSet.put(seen, product), duplicate}
+
+        _, state ->
+          state
+      end)
+
+    if duplicate,
+      do: Map.put(errors, {:condition, duplicate}, "Выберите другой товар для набора"),
+      else: errors
+  end
 
   defp builder_errors(%{mode: :builder, builder: builder}), do: RulesBuilder.errors(builder)
   defp builder_errors(_assigns), do: %{}
-
-  defp first_order_code(%{params: params, default_code: default_code}),
-    do: if(String.trim(params["code"] || "") == "", do: default_code, else: params["code"])
 
   defp save(%{action: :new} = assigns, params),
     do:
@@ -292,11 +382,14 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
   defp rules_placeholder, do: "when subtotal >= 1500\nthen discount 10%"
 
-  defp rules_errors(form) do
-    form[:rules].errors
-    |> Enum.map(&translate_error/1)
-    |> Enum.map(&String.replace(&1, ~r/^\d+:\d+ /, ""))
-  end
+  defp template_hint("gift_threshold"),
+    do: "Укажите минимальную сумму, подарок и количество."
+
+  defp template_hint("bundle"),
+    do: "Выберите два разных товара и укажите скидку на заказ."
+
+  defp template_hint("pickup"),
+    do: "Укажите награду для самовывоза."
 
   defp condition_label("subtotal"), do: gettext("Cart total")
   defp condition_label("quantity"), do: gettext("Number of items")
@@ -367,50 +460,13 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
         phx-submit="save"
         class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] items-start"
       >
-        <div :if={changeset_errors(@form.source) != %{}} class="lg:col-span-2">
-          <.error_summary
-            id="promotion-error-summary"
-            errors={changeset_errors(@form.source)}
-            form_name={@form.name}
-          />
-        </div>
         <div class="space-y-4 min-w-0">
-          <.step
-            :if={@scenario == :first_order}
-            number={1}
-            title={gettext("How should customers receive it?")}
-          >
-            <div id="first-order-kind" class="grid gap-2 sm:grid-cols-3">
-              <label
-                :for={kind <- PromotionHelpers.kinds()}
-                class="rounded-box border border-base-300 p-3 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name={@form[:kind].name}
-                  value={kind}
-                  checked={to_string(@form[:kind].value) == to_string(kind)}
-                />
-                <span class="font-semibold">{PromotionHelpers.kind_label(kind)}</span>
-                <span class="block text-xs text-base-content/60">{PromotionHelpers.kind_hint(kind)}</span>
-              </label>
-            </div>
-            <.input
-              :if={to_string(@form[:kind].value) == "public_code"}
-              field={@form[:code]}
-              type="text"
-              label={gettext("Promo code")}
-              placeholder={@default_code}
-            />
-            <p class="text-xs text-base-content/60">
-              {gettext(
-                "Once per client in this branch, on the first website or app order. Does not combine with other promotions."
-              )}
-            </p>
-          </.step>
-
-          <.step :if={@scenario != :first_order} number={1} title={gettext("Basics")}>
-            <div id="promotion-kind" class="grid gap-2 sm:grid-cols-3">
+          <.step number={1} title={gettext("Basics")}>
+            <p class="text-sm text-base-content/70">{gettext("How should it apply?")}</p>
+            <div
+              id="promotion-kind"
+              class="grid gap-2 sm:grid-cols-3"
+            >
               <label
                 :for={kind <- PromotionHelpers.kinds()}
                 class={[
@@ -473,12 +529,81 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
             </p>
           </.step>
 
+          <div
+            :if={to_string(@form[:kind].value) == "public_code"}
+            id="promotion-crm-certificate"
+            class="rounded-box border border-base-300 p-4 space-y-3"
+          >
+            <div>
+              <p class="font-semibold text-sm">Сертификат CRM</p>
+              <p class="text-xs text-base-content/60">
+                Можно связать промокод с уже созданным сертификатом. Проверка выполняется только по кнопке.
+              </p>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label for="promotion-certificate-provider" class="label">CRM</label>
+                <select
+                  id="promotion-certificate-provider"
+                  name="certificate[provider]"
+                  class="select w-full"
+                >
+                  <option value="" selected={@certificate_provider == ""}>Без сертификата</option>
+                  <option value="frontpad" selected={@certificate_provider == "frontpad"}>
+                    Frontpad
+                  </option>
+                  <option value="rkeeper" disabled>r_keeper — проверка пока недоступна</option>
+                </select>
+              </div>
+              <div>
+                <label for="promotion-certificate-code" class="label">Номер сертификата</label>
+                <input
+                  id="promotion-certificate-code"
+                  name="certificate[code]"
+                  value={@certificate_code}
+                  maxlength="20"
+                  autocomplete="off"
+                  class="input w-full"
+                  disabled={@certificate_provider == ""}
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline"
+              phx-click="check_certificate"
+              phx-target={@myself}
+              disabled={@certificate_provider == ""}
+            >
+              Проверить
+            </button>
+            <p :if={@certificate_error} class="text-sm text-error">{@certificate_error}</p>
+            <div
+              :if={@certificate_result && @certificate_provider != ""}
+              id="promotion-certificate-result"
+              class="space-y-1 text-sm"
+            >
+              <p class="text-success font-medium">
+                Сертификат проверен: {certificate_label(@certificate_result)}
+              </p>
+              <p
+                :for={
+                  warning <- CertificateComparison.warnings(@certificate_result, @rules, @branch_id)
+                }
+                class="text-warning"
+              >
+                {warning}
+              </p>
+            </div>
+          </div>
+
           <%= if @mode == :builder do %>
+            <p :if={@template} id="promotion-template-hint" class="text-sm text-base-content/70">
+              {template_hint(@template)}
+            </p>
             <.step
-              :if={@scenario != :first_order}
               number={2}
               title={gettext("When does it apply?")}
-              hint={gettext("Leave empty to apply to every order.")}
             >
               <div :if={length(@builder.conditions) > 1} class="flex items-center gap-2 text-sm">
                 <span>{gettext("Apply when")}</span>
@@ -499,6 +624,9 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
                 value={@builder.match}
               />
 
+              <p :if={@builder.conditions == []} class="text-sm text-base-content/60">
+                Без условий награда действует для всех заказов. Добавьте условие, если нужно ограничение.
+              </p>
               <div id="builder-conditions" class="grid gap-2 xl:grid-cols-2">
                 <.rule_card
                   :for={{row, index} <- Enum.with_index(@builder.conditions)}
@@ -533,7 +661,7 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
             </.step>
 
             <.step
-              number={if(@scenario == :first_order, do: 2, else: 3)}
+              number={3}
               title={gettext("What does the customer get?")}
             >
               <div id="builder-effects" class="grid gap-2 xl:grid-cols-2">
@@ -554,9 +682,16 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
               <p
                 :if={@builder.effects == []}
-                class="rounded-box border border-dashed border-base-300 p-3 text-sm text-base-content/60"
+                id="promotion-reward-error"
+                class={[
+                  "rounded-box border border-dashed p-3 text-sm",
+                  @show_errors && "border-error text-error",
+                  !@show_errors && "border-base-300 text-base-content/60"
+                ]}
               >
-                {gettext("Add at least one reward.")}
+                {if @show_errors,
+                  do: "Добавьте награду перед сохранением.",
+                  else: "Выберите, что получит клиент."}
               </p>
 
               <.add_buttons
@@ -568,16 +703,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
                 id="add-effect"
               />
             </.step>
-
-            <button
-              :if={@scenario != :first_order}
-              type="button"
-              class="btn btn-ghost btn-xs text-base-content/60"
-              phx-click="text_mode"
-              phx-target={@myself}
-            >
-              <.icon name="hero-code-bracket" class="size-4" /> {gettext("Edit as text")}
-            </button>
           <% else %>
             <.step number={2} title={gettext("Rules")}>
               <.input
@@ -611,17 +736,13 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
         <aside class="space-y-4 lg:sticky lg:top-4">
           <.step title={gettext("Summary")}>
-            <.rules_preview
-              preview={@preview}
-              rules={@scenario != :first_order && @mode == :builder && @rules}
-            />
+            <.rules_preview preview={@preview} />
             <p :if={!@preview} class="text-sm text-base-content/60">
               {gettext("Add a reward to see what the customer gets.")}
             </p>
           </.step>
 
           <.step
-            :if={@scenario != :first_order}
             title={gettext("Limits")}
             hint={gettext("Leave empty for no limit. Per-client limits need the client's phone.")}
           >
@@ -654,7 +775,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
           </.step>
 
           <.step
-            :if={@scenario != :first_order}
             title={gettext("Compatibility")}
             hint={
               gettext(
@@ -670,15 +790,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
             />
             <.input field={@form[:enabled]} type="checkbox" label={gettext("Enabled")} />
           </.step>
-
-          <div
-            :if={@show_errors and (@errors != %{} or rules_errors(@form) != [])}
-            id="builder-errors"
-            class="rounded-box border border-error/40 bg-error/5 p-3 text-sm text-error space-y-1"
-          >
-            <p :if={@errors != %{}}>{gettext("Fill in the highlighted fields.")}</p>
-            <p :for={message <- rules_errors(@form)}>{message}</p>
-          </div>
 
           <div class="flex gap-3">
             <.link patch={@patch} class="btn btn-ghost flex-1">{gettext("Cancel")}</.link>
@@ -778,25 +889,29 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
 
   defp add_buttons(assigns) do
     ~H"""
-    <div id={@id} class="flex flex-wrap gap-1.5">
-      <button
-        :for={type <- @types}
-        type="button"
-        class="btn btn-xs btn-outline btn-primary"
-        phx-click={@event}
-        phx-value-type={type}
-        phx-target={@target}
-      >
-        <.icon name="hero-plus" class="size-3" />
-        <.icon name={@icon.(type)} class="size-3.5" />
-        {@label.(type)}
-      </button>
-    </div>
+    <details id={@id} class="group">
+      <summary class="btn btn-sm btn-outline btn-primary cursor-pointer list-none">
+        <.icon name="hero-plus" class="size-4" />
+        {if @event == "add_effect", do: "Добавить награду", else: "Добавить условие"}
+      </summary>
+      <div class="flex flex-wrap gap-1.5 pt-3">
+        <button
+          :for={type <- @types}
+          type="button"
+          class="btn btn-xs btn-outline btn-primary"
+          phx-click={@event}
+          phx-value-type={type}
+          phx-target={@target}
+        >
+          <.icon name={@icon.(type)} class="size-3.5" />
+          {@label.(type)}
+        </button>
+      </div>
+    </details>
     """
   end
 
   attr :preview, :map, default: nil
-  attr :rules, :string, default: nil
 
   defp rules_preview(assigns) do
     ~H"""
@@ -812,15 +927,6 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
       <p>
         <span class="font-bold">{gettext("Then")}:</span> {Enum.join(@preview.effects, "; ")}
       </p>
-      <details :if={@rules} class="pt-1">
-        <summary class="cursor-pointer select-none text-xs text-base-content/50">
-          {gettext("Rules code")}
-        </summary>
-        <pre
-          id="rules-code"
-          class="mt-1 rounded bg-base-100 border border-base-300 p-2 text-xs overflow-x-auto"
-        >{@rules}</pre>
-      </details>
     </div>
     """
   end
@@ -1192,4 +1298,40 @@ defmodule DelivestWeb.Staff.PromotionLive.PromotionFormComponent do
     </div>
     """
   end
+
+  defp certificate_error({:frontpad, "invalid_certificate"}),
+    do: "Сертификат не найден или недействителен"
+
+  defp certificate_error({:throttled, _}),
+    do: "Слишком частые запросы. Повторите через несколько секунд"
+
+  defp certificate_error(:unsupported_provider),
+    do: "Проверка сертификатов этой CRM пока не поддерживается"
+
+  defp certificate_error(:inactive_provider), do: "Выбранная CRM не подключена к заказам сайта"
+  defp certificate_error(:feature_disabled), do: "Доступ к интеграции отключён"
+  defp certificate_error(:invalid_code), do: "Укажите номер сертификата (не более 20 символов)"
+  defp certificate_error(_), do: "Не удалось проверить сертификат в CRM"
+
+  defp certificate_label(%{"type" => "percent", "sale" => sale}), do: "скидка #{sale}%"
+
+  defp certificate_label(%{"type" => "amount", "amount" => amount}),
+    do: "скидка #{Delivest.Money.format(amount)}"
+
+  defp certificate_label(%{"type" => "product", "name" => name, "price" => price}),
+    do: "#{name}, цена #{Delivest.Money.format(price)}"
+
+  defp certificate_save_token(%{certificate_provider: "", certificate_original: nil}), do: nil
+  defp certificate_save_token(%{certificate_provider: ""}), do: ""
+
+  defp certificate_save_token(%{
+         certificate_provider: provider,
+         certificate_code: code,
+         certificate_original: %{"provider" => provider, "code" => code},
+         certificate_token: nil
+       }),
+       do: nil
+
+  defp certificate_save_token(%{certificate_token: token}) when is_binary(token), do: token
+  defp certificate_save_token(_assigns), do: :unverified
 end

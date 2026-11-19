@@ -43,7 +43,7 @@ defmodule DelivestWeb.BranchSwitcher do
         aria-label={@scope_label}
         aria-controls="header-branch-menu"
         title={@scope_label}
-        class="staff-branch-trigger flex w-full min-w-0 cursor-pointer list-none items-center gap-2 rounded-field border border-base-300 px-2.5 py-2 hover:bg-base-200 [&::-webkit-details-marker]:hidden"
+        class="staff-branch-trigger flex h-10 min-h-10 w-full min-w-0 cursor-pointer list-none items-center gap-2 rounded-field border border-base-300 px-2.5 hover:bg-base-200 [&::-webkit-details-marker]:hidden"
       >
         <.icon name="hero-building-storefront" class="size-4 text-base-content/70 shrink-0" />
         <span

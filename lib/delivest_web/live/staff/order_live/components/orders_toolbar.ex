@@ -1,32 +1,36 @@
 defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
   use DelivestWeb, :html
-  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
-
   attr :selected, :map, required: true
   attr :reset_path, :string, required: true
 
   def orders_toolbar(assigns) do
     ~H"""
-    <div class="flex flex-col sm:flex-row flex-wrap gap-3 justify-between items-stretch sm:items-center">
-      <.filter_bar
-        id="orders-filter"
-        query={@selected.search}
-        query_name="search"
-        query_input_id="orders-search"
-        query_placeholder={gettext("Number, phone, name or address")}
-        reset_path={@reset_path}
-        event="filter"
-        active={
-          @selected.period != "today" or @selected.problem or @selected.receiving != "" or
-            @selected.payment != "" or @selected.source != ""
-        }
+    <div id="orders-filter" class="contents">
+      <form
+        id="orders-filter-form"
+        phx-change="filter"
+        phx-submit="filter"
+        role="search"
+        class="contents"
       >
-        <:filter>
+        <div class="orders-search-field min-w-0">
+          <label for="orders-search" class="sr-only">{gettext("Search")}</label>
+          <input
+            id="orders-search"
+            type="search"
+            name="search"
+            value={@selected.search}
+            placeholder={gettext("Number, phone, name or address")}
+            phx-debounce="350"
+            class="input input-sm w-full"
+          />
+        </div>
+        <div class="orders-filter-fields flex min-w-0 flex-wrap items-center gap-2">
           <label for="orders-period" class="sr-only">{gettext("Period")}</label>
           <select
             id="orders-period"
             name="period"
-            class="select select-bordered select-sm w-full sm:w-44"
+            class="select select-bordered select-sm min-w-28 flex-1"
           >
             <option
               :for={{value, label} <- periods()}
@@ -37,7 +41,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             </option>
           </select>
           <label for="orders-receiving" class="sr-only">{gettext("Receiving")}</label>
-          <select id="orders-receiving" name="receiving" class="select select-bordered select-sm">
+          <select
+            id="orders-receiving"
+            name="receiving"
+            class="select select-bordered select-sm min-w-32 flex-1"
+          >
             <option value="">{gettext("All receiving types")}</option>
             <option value="dine_in" selected={@selected.receiving == "dine_in"}>
               {gettext("Dine in")}
@@ -50,7 +58,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             </option>
           </select>
           <label for="orders-payment" class="sr-only">{gettext("Payment")}</label>
-          <select id="orders-payment" name="payment" class="select select-bordered select-sm">
+          <select
+            id="orders-payment"
+            name="payment"
+            class="select select-bordered select-sm min-w-28 flex-1"
+          >
             <option value="">{gettext("All payment methods")}</option>
             <option value="cash" selected={@selected.payment == "cash"}>{gettext("Cash")}</option>
             <option value="card_offline" selected={@selected.payment == "card_offline"}>
@@ -61,7 +73,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             </option>
           </select>
           <label for="orders-source" class="sr-only">{gettext("Source")}</label>
-          <select id="orders-source" name="source" class="select select-bordered select-sm">
+          <select
+            id="orders-source"
+            name="source"
+            class="select select-bordered select-sm min-w-28 flex-1"
+          >
             <option value="">{gettext("All sources")}</option>
             <option
               :for={source <- Delivest.Oms.OrderSource.all()}
@@ -71,7 +87,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
               {source_label(source)}
             </option>
           </select>
-          <label class="label cursor-pointer gap-2 py-0">
+          <label class="label cursor-pointer gap-1.5 whitespace-nowrap py-0">
             <input type="hidden" name="problem" value="false" />
             <input
               id="orders-problem"
@@ -81,27 +97,43 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
               checked={@selected.problem}
               class="checkbox checkbox-sm"
             />
-            <span class="text-sm">{gettext("With a problem")}</span>
+            <span class="text-sm">{gettext("Needs attention")}</span>
           </label>
-          <div :if={@selected.period == "custom"} class="flex items-center gap-1">
-            <input
-              type="date"
-              name="date_from"
-              value={@selected.date_from}
-              class="input input-bordered input-sm"
-            />
-            <span class="text-base-content/40">—</span>
-            <input
-              type="date"
-              name="date_to"
-              value={@selected.date_to}
-              class="input input-bordered input-sm"
-            />
-          </div>
-        </:filter>
-      </.filter_bar>
+          <button type="submit" class="btn btn-sm btn-outline">{gettext("Apply")}</button>
+          <.link
+            :if={
+              @selected.period != "today" or @selected.problem or @selected.receiving != "" or
+                @selected.payment != "" or @selected.source != "" or @selected.search != ""
+            }
+            patch={@reset_path}
+            class="btn btn-sm btn-ghost"
+          >{gettext("Reset")}</.link>
+        </div>
+        <div
+          :if={@selected.period == "custom"}
+          class="orders-date-range flex min-w-0 items-center gap-1"
+        >
+          <label for="orders-date-from" class="sr-only">{gettext("From")}</label>
+          <input
+            id="orders-date-from"
+            type="date"
+            name="date_from"
+            value={@selected.date_from}
+            class="input input-bordered input-sm min-w-0 w-32"
+          />
+          <span class="text-base-content/40">—</span>
+          <label for="orders-date-to" class="sr-only">{gettext("To")}</label>
+          <input
+            id="orders-date-to"
+            type="date"
+            name="date_to"
+            value={@selected.date_to}
+            class="input input-bordered input-sm min-w-0 w-32"
+          />
+        </div>
+      </form>
 
-      <div class="flex items-center gap-2">
+      <div class="orders-sort flex items-center justify-end">
         <div class="join" role="radiogroup" aria-label={gettext("Sort")}>
           <button
             :for={{value, label, icon} <- sorts()}

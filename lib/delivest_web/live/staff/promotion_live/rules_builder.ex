@@ -18,13 +18,31 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   def fulfillments, do: @fulfillments
   def weekdays, do: @weekdays
 
-  def new, do: %__MODULE__{effects: [blank_effect("percent")]}
+  def new, do: %__MODULE__{}
 
   def template("discount"), do: new()
 
   def template("first_order"),
     do: %__MODULE__{
       conditions: [blank_condition("first_order")],
+      effects: [blank_effect("percent")]
+    }
+
+  def template("gift_threshold"),
+    do: %__MODULE__{
+      conditions: [blank_condition("subtotal")],
+      effects: [blank_effect("gift")]
+    }
+
+  def template("bundle"),
+    do: %__MODULE__{
+      conditions: [blank_condition("has"), blank_condition("has")],
+      effects: [blank_effect("amount")]
+    }
+
+  def template("pickup"),
+    do: %__MODULE__{
+      conditions: [%{"type" => "fulfillment", "values" => ["pickup"]}],
       effects: [blank_effect("percent")]
     }
 
@@ -272,8 +290,8 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilder do
   defp blank_effect("amount"),
     do: %{"type" => "amount", "value" => "", "target" => "cart", "products" => []}
 
-  defp blank_effect("gift_any"), do: %{"type" => "gift_any", "products" => [], "count" => "1"}
-  defp blank_effect("gift"), do: %{"type" => "gift", "product" => "", "count" => "1"}
+  defp blank_effect("gift_any"), do: %{"type" => "gift_any", "products" => [], "count" => ""}
+  defp blank_effect("gift"), do: %{"type" => "gift", "product" => "", "count" => ""}
   defp blank_effect("price"), do: %{"type" => "price", "product" => "", "price" => ""}
 
   defp normalize_condition(row) do

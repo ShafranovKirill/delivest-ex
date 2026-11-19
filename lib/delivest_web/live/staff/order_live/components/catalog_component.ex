@@ -8,7 +8,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
   def render_catalog(assigns) do
     ~H"""
     <div class="flex flex-col flex-1 min-h-0">
-      <div class="p-3 border-b border-base-200 space-y-2 shrink-0 bg-base-100">
+      <div class="shrink-0 space-y-1 border-b border-base-200 bg-base-100 p-2 lg:space-y-2 lg:p-3">
         <form
           id="catalog-search-form"
           phx-change="search_products"
@@ -99,7 +99,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
         }
       </script>
 
-      <div class="flex-1 min-h-0 lg:overflow-y-auto p-3">
+      <div
+        id="catalog-products"
+        class="min-h-12 flex-1 overflow-y-auto overscroll-y-contain p-2 lg:min-h-0 lg:p-3"
+      >
         <% products = filtered_products(@categories, @selected_category_id, @search_query) %>
 
         <%= if Enum.empty?(products) do %>
@@ -147,10 +150,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
         <% end %>
       </div>
 
-      <div class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-base-100 border-t border-base-300 shadow-2xl rounded-t-2xl transition-all">
+      <div class="flex max-h-[55%] min-h-0 flex-col overflow-clip border-t border-base-300 bg-base-100 lg:hidden">
         <div
           phx-click="toggle_mobile_cart"
-          class="p-3 flex items-center justify-between cursor-pointer select-none bg-base-200/50 rounded-t-2xl border-b border-base-200"
+          class="flex shrink-0 cursor-pointer select-none items-center justify-between border-b border-base-200 bg-base-200/50 px-3 py-1.5"
         >
           <div class="flex items-center gap-2">
             <.icon name="hero-shopping-bag" class="size-5 text-primary" />
@@ -170,7 +173,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
         </div>
 
         <%= if @mobile_cart_expanded do %>
-          <div class="max-h-60 overflow-y-auto p-3 space-y-2 bg-base-100">
+          <div class="min-h-0 max-h-60 space-y-2 overflow-y-auto overscroll-y-contain bg-base-100 px-3 py-1">
             <%= if Enum.empty?(@cart.items) do %>
               <p class="text-xs text-center text-base-content/50 py-4">{gettext("Cart is empty")}</p>
             <% else %>
@@ -238,7 +241,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
           </div>
         <% end %>
 
-        <div class="p-3 bg-base-100">
+        <div class="shrink-0 bg-base-100 px-3 py-1.5">
           <button
             type="button"
             phx-click="switch_tab"

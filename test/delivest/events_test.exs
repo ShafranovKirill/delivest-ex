@@ -10,6 +10,7 @@ defmodule Delivest.EventsTest do
   alias Delivest.Events
   alias Delivest.Events.{DeliverWorker, Event, Recovery, Registry}
   alias Delivest.Events.Delivery, as: EventDelivery
+  alias Delivest.Features
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Order, Orders}
 
@@ -129,6 +130,8 @@ defmodule Delivest.EventsTest do
     on_exit(fn -> Application.delete_env(:delivest, :event_subscribers) end)
 
     branch = branch()
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
     operator = operator(branch)
 
     order =
@@ -146,11 +149,105 @@ defmodule Delivest.EventsTest do
     assert :ok = perform_job(DeliverWorker, %{event_id: event.id, subscriber: "flaky"})
     assert_received {:handled, id} when id == event.id
 
-    for _run <- 1..2,
-        do:
-          assert(:ok = perform_job(DeliverWorker, %{event_id: event.id, subscriber: "couriers"}))
+    Delivest.Couriers.subscribe(branch.id)
+    test_pid = self()
+    handler = "courier-event-commit-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:delivest, :repo, :query],
+        fn _, _, metadata, _ ->
+          if self() == test_pid and String.downcase(metadata.query || "") == "commit",
+            do: send(test_pid, :courier_event_committed)
+        end,
+        nil
+      )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    assert :ok = perform_job(DeliverWorker, %{event_id: event.id, subscriber: "couriers"})
+
+    receive do
+      :courier_event_committed -> :ok
+      {:deliveries_changed, _} -> flunk("courier search announced before event commit")
+    after
+      1_000 -> flunk("courier event commit was not observed")
+    end
+
+    assert_receive {:deliveries_changed, branch_id}
+    assert branch_id == branch.id
+    assert :ok = perform_job(DeliverWorker, %{event_id: event.id, subscriber: "couriers"})
 
     assert [%Delivery{status: :searching}] = Repo.all(where(Delivery, order_id: ^order.id))
+  end
+
+  test "disabled own couriers do not fail order event delivery" do
+    branch = branch()
+    operator = operator(branch)
+
+    order =
+      branch.id
+      |> order_fixture()
+      |> Ecto.Changeset.change(fulfillment_type: :delivery, status: :accepted)
+      |> Repo.update!()
+
+    {:ok, _order} = Orders.advance_order(order, :preparing, {:staff, operator})
+    [event] = events(order, "order.status_changed")
+
+    assert :ok = perform_job(DeliverWorker, %{event_id: event.id, subscriber: "couriers"})
+    assert Repo.all(where(Delivery, order_id: ^order.id)) == []
+
+    assert %EventDelivery{status: "delivered"} =
+             Repo.get_by!(EventDelivery, event_id: event.id, subscriber: "couriers")
+  end
+
+  test "courier event handler defers search notification until after its outer transaction" do
+    branch = branch()
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
+
+    order =
+      branch.id
+      |> order_fixture()
+      |> Ecto.Changeset.change(fulfillment_type: :delivery, status: :preparing)
+      |> Repo.update!()
+
+    {:ok, event} =
+      Events.record("order.status_changed", order, %{"to" => "preparing"}, %{kind: :system})
+
+    Delivest.Couriers.subscribe(branch.id)
+
+    assert {:ok, {:ok, _order}} =
+             Repo.transaction(fn ->
+               result = Delivest.Couriers.OrderSubscriber.handle(event)
+               refute_receive {:deliveries_changed, _}
+               result
+             end)
+
+    refute_received {:deliveries_changed, _}
+    assert :ok = Delivest.Couriers.OrderSubscriber.after_commit(event)
+    assert_receive {:deliveries_changed, branch_id}
+    assert branch_id == branch.id
+    assert %Delivery{status: :searching} = Repo.get(Delivery, event.id)
+  end
+
+  test "stale courier feature token skips optional work without rolling back the event transaction" do
+    branch = branch()
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
+    scope = {:branch, branch.id}
+    {:ok, stale_token} = Features.snapshot("couriers", scope)
+    {:ok, _} = Features.configure("couriers", scope, false, actor: "test")
+
+    assert {:ok, :event_can_commit} =
+             Repo.transaction(fn ->
+               assert {:error, :disabled} =
+                        Features.publish_if_enabled([{"couriers", scope, stale_token}], fn ->
+                          flunk("disabled courier work ran")
+                        end)
+
+               :event_can_commit
+             end)
   end
 
   test "an unknown subscriber is given up" do

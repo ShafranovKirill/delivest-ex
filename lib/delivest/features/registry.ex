@@ -4,6 +4,7 @@ defmodule Delivest.Features.Registry do
     "segments",
     "notifications",
     "marketing_policies",
+    "couriers",
     "analytics_funnel",
     "analytics_extended",
     "analytics_franchise",
@@ -27,8 +28,10 @@ defmodule Delivest.Features.Registry do
   }
   @permission_prefixes %{"segments." => "segments", "marketing." => "marketing_policies"}
 
-  def known?(feature), do: feature in @features
-  def features, do: @features
+  alias Delivest.Integrations.StaffAccess
+
+  def known?(feature), do: feature in @features or StaffAccess.permission?(feature)
+  def features, do: @features ++ StaffAccess.keys()
   def dependencies(feature), do: Map.get(@dependencies, feature, [])
 
   def permission_features, do: @permission_prefixes |> Map.values() |> Enum.uniq()

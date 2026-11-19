@@ -8,6 +8,8 @@ defmodule Delivest.Promo.Result do
           name: String.t(),
           description: String.t() | nil,
           discount: non_neg_integer(),
+          crm_certificate: map() | nil,
+          certificate_export_mode: String.t() | nil,
           gifts: [%{product_id: binary(), name: String.t(), quantity: pos_integer()}]
         }
 
@@ -102,10 +104,16 @@ defmodule Delivest.Promo.Result do
       name: promotion.name,
       description: promotion.description,
       discount: Basket.discount_for(basket, promotion.id),
+      crm_certificate: Map.get(promotion, :crm_certificate),
+      certificate_export_mode: certificate_export_mode(compiled.strategy),
       gift_choice: Delivest.Promo.Effects.Gifts.choice(compiled, choices),
       gifts: gifts(basket, promotion.id)
     }
   end
+
+  defp certificate_export_mode(%{effects: [{:amount, _value, :cart}]}), do: "cart_amount"
+  defp certificate_export_mode(%{effects: [{:gift, _slug, 1}]}), do: "single_gift"
+  defp certificate_export_mode(_strategy), do: nil
 
   defp effective?(%{code: code}) when is_binary(code), do: true
   defp effective?(%{gift_choice: choice}) when not is_nil(choice), do: true

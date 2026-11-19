@@ -1,16 +1,42 @@
 defmodule Delivest.Integrations.Frontpad.Warnings do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @critical ~w(invalid_product_keys invalid_hook_status invalid_datetime)
+  @critical ~w(invalid_product_keys invalid_hook_status invalid_datetime invalid_certificate)
 
-  def apply(%{warnings: warnings} = delivery, payload, order) when is_map(warnings) do
-    case alerts(warnings, payload, order) do
+  def apply(delivery, payload, order) do
+    warnings = if is_map(delivery[:warnings]), do: delivery.warnings, else: %{}
+
+    case local_alert(payload) ++ alerts(warnings, payload, order) do
       [] -> delivery
       alerts -> Map.put(delivery, :alert, Enum.join(alerts, ". "))
     end
   end
 
-  def apply(delivery, _payload, _order), do: delivery
+  defp local_alert(%{certificate_alert: {:unsupported_certificate, code}}),
+    do: [
+      gettext("Сертификат Frontpad %{code} не применён: отправлена рассчитанная сайтом скидка",
+        code: code
+      )
+    ]
+
+  defp local_alert(%{certificate_alert: {:unmatched_certificate, code}}),
+    do: [
+      gettext("Сертификат Frontpad %{code} не соответствует заказу: отправлена скидка сайта",
+        code: code
+      )
+    ]
+
+  defp local_alert(%{certificate_alert: {:changed_certificate, code}}),
+    do: [gettext("Сертификат Frontpad %{code} изменился: отправлена скидка сайта", code: code)]
+
+  defp local_alert(%{certificate_alert: {:verification_failed, code}}),
+    do: [
+      gettext("Сертификат Frontpad %{code} не удалось перепроверить: отправлена скидка сайта",
+        code: code
+      )
+    ]
+
+  defp local_alert(_payload), do: []
 
   defp alerts(warnings, payload, order) do
     warnings
@@ -40,6 +66,12 @@ defmodule Delivest.Integrations.Frontpad.Warnings do
       gettext(
         "Frontpad did not accept the time of the preorder, order %{number} is cooked at once",
         number: order.number
+      )
+
+  defp text("invalid_certificate", _value, %{certificate: code}, _order),
+    do:
+      gettext("Frontpad не применил сертификат %{code}; проверьте сумму заказа",
+        code: code || "?"
       )
 
   defp indexes(value) when is_list(value), do: Enum.flat_map(value, &index/1)

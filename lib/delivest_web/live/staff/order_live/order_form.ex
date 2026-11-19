@@ -353,25 +353,17 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
     do: ~p"/staff/b/#{socket.assigns.current_branch}/orders?#{socket.assigns.list_query}"
 
   def staff_page_header(assigns) do
-    ~H"""
-    <.page_header title={@page_title} subtitle={@current_branch.name}>
-      <:actions>
-        <.link
-          navigate={~p"/staff/b/#{@current_branch}/orders?#{@list_query}"}
-          class="btn btn-outline"
-        >
-          {gettext("Back to orders")}
-        </.link>
-      </:actions>
-    </.page_header>
-    """
+    ~H""
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="w-full min-h-screen lg:min-h-0 lg:h-[calc(100vh-4rem)] flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden gap-3 bg-base-200 pb-20 lg:pb-0">
-      <div class="lg:hidden shrink-0 bg-base-100 p-2 rounded-box border border-base-300 shadow-sm sticky top-0 z-20">
+    <div
+      id="order-workspace"
+      class="flex h-full min-h-0 w-full flex-col gap-2 overflow-clip bg-base-200 lg:flex-row lg:gap-3"
+    >
+      <div class="lg:hidden shrink-0 bg-base-100 p-2 rounded-box border border-base-300 shadow-sm">
         <TabsComponent.render_tabs
           active_tab={@active_tab}
           quantity={@cart.total_quantity}
@@ -382,7 +374,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       </div>
 
       <div class={[
-        "w-full lg:w-7/12 xl:w-8/12 flex flex-col bg-base-100 rounded-box border border-base-300 lg:overflow-hidden shadow-sm",
+        "flex min-h-0 w-full flex-1 flex-col overflow-clip rounded-box border border-base-300 bg-base-100 shadow-sm lg:w-7/12 lg:flex-initial xl:w-8/12",
         @active_tab != :cart && "hidden lg:flex"
       ]}>
         <CatalogComponent.render_catalog
@@ -396,10 +388,13 @@ defmodule DelivestWeb.Staff.OrderLive.OrderForm do
       </div>
 
       <div class={[
-        "w-full lg:w-5/12 xl:w-4/12 flex flex-col bg-base-100 rounded-box border border-base-300 lg:overflow-hidden shadow-sm",
+        "flex min-h-0 w-full flex-1 flex-col overflow-clip rounded-box border border-base-300 bg-base-100 shadow-sm lg:w-5/12 lg:flex-initial xl:w-4/12",
         @active_tab != :details && "hidden lg:flex"
       ]}>
-        <div class="flex-1 lg:overflow-y-auto p-3 lg:p-4">
+        <div
+          id="order-checkout-scroll"
+          class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 lg:p-4"
+        >
           <div class="hidden lg:block">
             <CartComponent.render_items cart={@cart} out_of_stock={@is_edit} />
           </div>

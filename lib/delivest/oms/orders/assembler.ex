@@ -64,6 +64,8 @@ defmodule Delivest.Oms.Orders.Assembler do
       name: applied.name,
       code: applied.code,
       discount: applied.discount,
+      crm_certificate: Map.get(applied, :crm_certificate),
+      certificate_export_mode: Map.get(applied, :certificate_export_mode),
       gift_product_ids:
         if(
           applied.gift_choice &&

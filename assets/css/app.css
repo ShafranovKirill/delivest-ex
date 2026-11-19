@@ -267,6 +267,17 @@
   .foundation-shell :is(.btn, .input, .select, input[type="checkbox"]),
   .foundation-workspace :is(.btn, .input, .select, input[type="checkbox"]) { min-height: var(--foundation-touch-height); }
 }
+@media (pointer: coarse), (max-width: 639px) {
+  .foundation-shell .staff-header .staff-branch-trigger {
+    height: var(--foundation-touch-height);
+    min-height: var(--foundation-touch-height);
+  }
+  .foundation-shell :is(#header-sidebar-toggle, #sidebar-toggle) {
+    width: var(--foundation-touch-height);
+    min-width: var(--foundation-touch-height);
+    height: var(--foundation-touch-height);
+  }
+}
 @media (max-width: 639px) {
   .foundation-shell :is(.btn, .input, .select) { min-height: var(--foundation-touch-height); }
   .foundation-shell .btn-square { min-width: var(--foundation-touch-height); }

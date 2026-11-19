@@ -26,6 +26,7 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
   def message(:with_courier), do: gettext("The order is with the courier")
   def message(:nothing_to_revert), do: gettext("There is no step to revert")
   def message(:not_available), do: gettext("This order is not delivered by our couriers")
+  def message(:disabled), do: gettext("Own couriers are disabled for this branch")
   def message(:already_searching), do: gettext("A courier is already being searched for")
   def message(:not_a_courier), do: gettext("This employee is not a courier of the branch")
   def message(:not_assigned), do: gettext("No courier is assigned")

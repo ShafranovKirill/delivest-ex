@@ -22,6 +22,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :delivery_minutes, :integer, required: true
   attr :couriers, :list, default: []
   attr :estimable, :boolean, default: false
+  attr :own_couriers_enabled, :boolean, default: false
   attr :positions, :list, default: nil
   attr :pickup, :map, default: nil
   attr :crm_retry_at, :any, default: :lookup
@@ -108,11 +109,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </div>
 
       <.courier_panel
-        :if={@delivery != nil or Couriers.assignable?(@order)}
+        :if={
+          @delivery != nil or
+            (Couriers.assignable?(@order) and (@own_couriers_enabled or @estimable))
+        }
         order={@order}
         delivery={@delivery}
         couriers={@couriers}
         estimable={@estimable}
+        own_couriers_enabled={@own_couriers_enabled}
         can_manage={Identity.can?(@current_staff, "orders.update")}
       />
 
@@ -279,8 +284,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
             if(overdue?(accept_by(@order)), do: "badge-error", else: "badge-warning")
           ]}
         >
-          <.icon name="hero-clock" class="size-3.5" />
-          {gettext("Confirm by %{time}", time: OrderHelpers.local_time(accept_by(@order)))}
+          <.icon
+            name={if(overdue?(accept_by(@order)), do: "hero-exclamation-circle", else: "hero-clock")}
+            class="size-3.5"
+          />
+          {if overdue?(accept_by(@order)),
+            do:
+              gettext("%{minutes} min late",
+                minutes: max(1, div(DateTime.diff(DateTime.utc_now(), accept_by(@order)) + 59, 60))
+              ),
+            else: gettext("Confirm by %{time}", time: OrderHelpers.local_time(accept_by(@order)))}
         </span>
         <.status_control order={@order} current_staff={@current_staff} last={@last} />
         <form
@@ -779,6 +792,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :delivery, :map, default: nil
   attr :couriers, :list, default: []
   attr :estimable, :boolean, default: false
+  attr :own_couriers_enabled, :boolean, default: false
   attr :can_manage, :boolean, default: false
 
   defp courier_panel(assigns) do
@@ -833,9 +847,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           {gettext("Confirm the paid cancel")}
         </button>
       </div>
-      <div :if={@assignable} class="ml-auto flex flex-wrap items-center gap-2">
+      <div
+        :if={
+          @assignable and
+            (@own_couriers_enabled or @estimable or
+               (@delivery && @delivery.status == :assigned))
+        }
+        class="ml-auto flex flex-wrap items-center gap-2"
+      >
         <button
-          :if={is_nil(@delivery)}
+          :if={is_nil(@delivery) and (@own_couriers_enabled or @estimable)}
           type="button"
           id={"order-find-courier-#{@order.id}"}
           class="btn btn-xs btn-primary"
@@ -855,7 +876,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <.icon name="hero-calculator" class="size-3.5" /> {gettext("Estimate delivery")}
         </button>
         <form
-          :if={@couriers != [] and (is_nil(@delivery) or @delivery.status != :picked_up)}
+          :if={
+            @own_couriers_enabled and @couriers != [] and
+              (is_nil(@delivery) or @delivery.status != :picked_up)
+          }
           id={"order-assign-courier-#{@order.id}"}
           phx-change="assign_courier"
           phx-value-order-id={@order.id}

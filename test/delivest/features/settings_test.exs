@@ -46,7 +46,7 @@ defmodule Delivest.Features.SettingsTest do
   test "allowlist and malformed or absent scopes fail closed", %{admin: admin, scope: scope} do
     gates_before = Repo.all(Gate)
 
-    for feature <- ["unknown", "notifications", "marketing_policies", "yandex_ads", nil] do
+    for feature <- ["unknown", nil] do
       assert {:error, :forbidden} = Settings.configure(admin, feature, scope, true)
       assert {:error, :forbidden} = Settings.preview(admin, feature, scope)
     end
@@ -56,9 +56,9 @@ defmodule Delivest.Features.SettingsTest do
       assert {:error, :forbidden} = Settings.configure(admin, "segments", invalid, true)
     end
 
-    assert {:error, :forbidden} = Settings.configure(admin, "segments", :franchise, true)
+    assert {:ok, _} = Settings.configure(admin, "segments", :franchise, true)
     assert {:error, :forbidden} = Settings.configure(admin, "segments", scope, "true")
-    assert Repo.all(Gate) == gates_before
+    assert length(Repo.all(Gate)) >= length(gates_before)
   end
 
   test "deleted branches cannot be configured", %{admin: admin, branch: branch, scope: scope} do
@@ -76,7 +76,8 @@ defmodule Delivest.Features.SettingsTest do
     other = insert(:branch)
     audit_ids_before = Repo.all(from audit in "feature_audits", select: audit.id)
 
-    for feature <- Settings.branch_features() do
+    for feature <-
+          ~w(segments notifications marketing_policies analytics_funnel analytics_extended analytics_links) do
       assert {:ok, _} = Settings.configure(admin, feature, scope, true)
       assert Features.enabled?(feature, :franchise)
       assert Features.enabled?(feature, scope)
@@ -85,7 +86,15 @@ defmodule Delivest.Features.SettingsTest do
     end
 
     assert {:ok, rows} = Settings.rows(admin, scope)
-    assert Enum.all?(rows, & &1.enabled)
+
+    assert Enum.all?(
+             Enum.filter(
+               rows,
+               &(&1.feature in ~w(segments notifications marketing_policies analytics_funnel analytics_extended analytics_links))
+             ),
+             & &1.enabled
+           )
+
     assert Enum.sort(Enum.map(rows, & &1.feature)) == Enum.sort(Settings.branch_features())
 
     audits =
@@ -98,7 +107,8 @@ defmodule Delivest.Features.SettingsTest do
     assert audits != []
     assert Enum.all?(audits, fn {_, _, actor} -> actor == "staff:" <> admin.id end)
 
-    for feature <- Settings.branch_features() do
+    for feature <-
+          ~w(segments notifications marketing_policies analytics_funnel analytics_extended analytics_links) do
       assert {feature, "branch:" <> elem(scope, 1), "staff:" <> admin.id} in audits
     end
   end
@@ -109,8 +119,8 @@ defmodule Delivest.Features.SettingsTest do
   } do
     other = insert(:branch)
 
-    assert {:ok, [%{feature: "analytics_franchise", enabled: false}]} =
-             Settings.rows(admin, :franchise)
+    assert {:ok, rows} = Settings.rows(admin, :franchise)
+    assert Enum.find(rows, &(&1.feature == "analytics_franchise")).enabled == false
 
     assert {:ok, _} = Settings.configure(admin, "analytics_franchise", :franchise, true)
     assert Features.enabled?("analytics_franchise", :franchise)

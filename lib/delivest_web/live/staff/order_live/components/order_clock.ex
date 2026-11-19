@@ -37,7 +37,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderClock do
       data-at={DateTime.to_iso8601(@deadline)}
       data-text={gettext("%{minutes} min left", minutes: "%{minutes}")}
       data-late-text={gettext("%{minutes} min late", minutes: "%{minutes}")}
-      class={clock_class()}
+      class={[clock_class(), "order-deadline-clock"]}
     ></span>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".OrderClock">
       export default {

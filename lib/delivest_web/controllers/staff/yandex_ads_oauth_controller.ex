@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.YandexAdsOAuthController do
   use DelivestWeb, :controller
   alias Delivest.Identity
-  alias Delivest.Integrations.YandexAds
+  alias Delivest.Integrations.{StaffAccess, YandexAds}
   alias Delivest.Integrations.YandexAds.OAuth
 
   def connect(conn, _) do
@@ -65,7 +65,9 @@ defmodule DelivestWeb.Staff.YandexAdsOAuthController do
   end
 
   defp admin?(conn),
-    do: conn.assigns[:current_staff] && Identity.can?(conn.assigns.current_staff, "admin")
+    do:
+      conn.assigns[:current_staff] && Identity.can?(conn.assigns.current_staff, "admin") &&
+        StaffAccess.allowed?(:yandex_ads)
 
   defp fail(conn, message),
     do: conn |> put_flash(:error, message) |> redirect(to: "/staff/integrations/yandex-ads")

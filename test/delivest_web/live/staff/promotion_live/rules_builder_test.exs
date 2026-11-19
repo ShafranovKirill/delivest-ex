@@ -3,6 +3,29 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilderTest do
 
   alias DelivestWeb.Staff.PromotionLive.RulesBuilder
 
+  test "new rules start without conditions or rewards" do
+    assert %{conditions: [], effects: []} = RulesBuilder.new()
+    assert RulesBuilder.to_rules(RulesBuilder.new()) == ""
+
+    assert [%{"count" => ""}] =
+             RulesBuilder.new() |> RulesBuilder.add_effect("gift") |> Map.fetch!(:effects)
+  end
+
+  test "scenario templates leave products and benefits for the user" do
+    gift = RulesBuilder.template("gift_threshold")
+    assert [%{"type" => "subtotal", "value" => ""}] = gift.conditions
+    assert [%{"type" => "gift", "product" => "", "count" => ""}] = gift.effects
+
+    bundle = RulesBuilder.template("bundle")
+    assert [%{"type" => "has", "product" => "", "count" => "1"}, %{"type" => "has", "product" => "", "count" => "1"}] =
+             bundle.conditions
+    assert [%{"type" => "amount", "value" => "", "target" => "cart"}] = bundle.effects
+
+    pickup = RulesBuilder.template("pickup")
+    assert [%{"type" => "fulfillment", "values" => ["pickup"]}] = pickup.conditions
+    assert [%{"type" => "percent", "value" => "", "target" => "cart"}] = pickup.effects
+  end
+
   test "round-trips constructor rules" do
     rules =
       "when subtotal >= 1500\n  and has \"pizza\" x2\n  and time 11:00..16:00\n  and weekday in (mon, fri)\n" <>
@@ -74,7 +97,7 @@ defmodule DelivestWeb.Staff.PromotionLive.RulesBuilderTest do
       |> RulesBuilder.add_condition("weekday")
       |> RulesBuilder.add_effect("amount")
 
-    assert %{{:condition, 0} => _, {:effect, 0} => _, {:effect, 1} => _} =
+    assert %{{:condition, 0} => _, {:effect, 0} => _} =
              RulesBuilder.errors(builder)
 
     assert RulesBuilder.to_rules(builder) == ""

@@ -48,6 +48,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id),
        couriers: couriers,
        estimable: Couriers.settings(branch_id).source == :yandex,
+       own_couriers_enabled: Couriers.own_enabled?(branch_id),
        pickup: branch.info,
        positions: CourierPresence.positions(branch_id, couriers)
      )
@@ -510,30 +511,41 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   defp receipt_alerts(branch_id), do: length(Delivest.Fiscal.pending_alerts(branch_id))
 
-  def staff_page_header(assigns) do
-    ~H"""
-    <.page_header
-      title={gettext("Orders")}
-      subtitle={gettext("Manage customer orders, track statuses and process fulfillment.")}
-    >
-      <:actions>
-        <IntakeControls.menu
-          can_manage={Identity.can?(@current_staff, "orders.update")}
-          branches={Identity.list_branch_for_staff(@current_staff)}
-        />
-        <.link navigate={~p"/staff/b/#{@current_branch}/orders/new?#{@query}"} class="btn btn-primary">
-          <.icon name="hero-plus" class="size-5" />
-          {gettext("New Order")}
-        </.link>
-      </:actions>
-    </.page_header>
-    """
-  end
+  def staff_page_header(assigns), do: ~H""
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="orders-page" class="space-y-6">
+    <div id="orders-page" phx-hook="WorkspaceFullscreen" class="space-y-3 p-2 sm:p-3">
+      <header class="orders-page-header flex flex-wrap items-center gap-2">
+        <h1 class="mr-auto text-base font-semibold">{gettext("Orders")}</h1>
+        <IntakeControls.menu
+          can_manage={Identity.can?(@current_staff, "orders.update")}
+          branches={Identity.list_branch_for_staff(@current_staff)}
+        />
+        <button
+          id="orders-fullscreen"
+          type="button"
+          class="btn btn-sm btn-outline"
+          aria-label={gettext("Full screen")}
+          aria-pressed="false"
+          data-fullscreen-toggle
+          data-enter-label={gettext("Full screen")}
+          data-exit-label={gettext("Exit full screen")}
+        >
+          <.icon name="hero-arrows-pointing-out" class="size-4 orders-fullscreen-enter" />
+          <.icon name="hero-arrows-pointing-in" class="size-4 orders-fullscreen-exit" />
+          <span class="hidden sm:inline orders-fullscreen-enter">{gettext("Full screen")}</span>
+          <span class="hidden sm:inline orders-fullscreen-exit">{gettext("Exit full screen")}</span>
+        </button>
+        <.link
+          navigate={~p"/staff/b/#{@current_branch}/orders/new?#{@query}"}
+          class="btn btn-sm btn-primary"
+        >
+          <.icon name="hero-plus" class="size-4" />
+          {gettext("New Order")}
+        </.link>
+      </header>
       <IntakeControls.plate
         intake={@intake}
         branch_id={@current_branch.id}
@@ -562,7 +574,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         </.link>
       </div>
 
-      <.card id="orders-filters" class="flex flex-col gap-4 p-3 sm:p-4">
+      <.card id="orders-filters" class="grid gap-2 p-2 sm:p-3">
         <StatusTabs.status_tabs
           counts={@counts}
           selected={@selected.status}
@@ -588,6 +600,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
           estimable={@estimable}
+          own_couriers_enabled={@own_couriers_enabled}
         />
       </div>
 
@@ -614,6 +627,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
           estimable={@estimable}
+          own_couriers_enabled={@own_couriers_enabled}
           positions={@positions}
           pickup={@pickup}
           crm_retry_at={@crm_retry_at}

@@ -149,8 +149,9 @@ defmodule Delivest.Features do
       Repo.transaction(fn ->
         gates = ensure_and_lock(changes, key)
 
-        if enabled and key == "franchise" and Keyword.has_key?(opts, :activation_branch) do
-          preview = activation_preview(changes, gates, Keyword.fetch!(opts, :activation_branch))
+        if enabled and key == "franchise" and
+             not Keyword.get(opts, :selected_integration_branches, false) do
+          preview = activation_preview(changes, gates, Keyword.get(opts, :activation_branch))
 
           if preview.branches != [] and Keyword.get(opts, :confirm_activation) != preview,
             do: Repo.rollback({:activation_required, preview})
@@ -244,7 +245,7 @@ defmodule Delivest.Features do
 
   defp activation_preview(names, gates, target_branch) do
     disabled = Enum.filter(names, fn name -> !gates[{name, "franchise"}].enabled end)
-    target_key = "branch:" <> target_branch
+    target_key = if target_branch, do: "branch:" <> target_branch, else: "franchise"
 
     children =
       Repo.all(
@@ -314,7 +315,8 @@ defmodule Delivest.Features do
           do: %{
             feature: name,
             scope_key: scope_key,
-            enabled: false,
+            enabled:
+              scope_key == "franchise" and Delivest.Integrations.StaffAccess.permission?(name),
             generation: 0,
             inserted_at: now,
             updated_at: now

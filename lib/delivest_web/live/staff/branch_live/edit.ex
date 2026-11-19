@@ -8,6 +8,20 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   alias Delivest.SiteSnapshot
   alias DelivestWeb.Staff.BranchLive.{BranchFormComponent, Sections}
 
+  def mount(%{"slug" => slug, "section" => "analytics"}, _session, socket) do
+    staff = socket.assigns.current_staff
+
+    if Delivest.Features.Settings.authorized?(staff) and
+         Enum.any?(Identity.list_branch_for_staff(staff), &(&1.slug == slug)) do
+      {:ok, push_navigate(socket, to: ~p"/staff/settings?#{%{branch: slug}}")}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, gettext("Permission denied"))
+       |> push_navigate(to: ~p"/staff/branches")}
+    end
+  end
+
   @impl true
   def mount(%{"slug" => slug, "section" => "ycart"}, _session, socket) do
     staff = socket.assigns.current_staff
@@ -393,11 +407,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           :for={
             section <-
               if(@can_edit_identity,
-                do:
-                  Enum.filter(
-                    Sections.all(),
-                    &(&1.id != :analytics or Identity.can?(@current_staff, "admin"))
-                  ),
+                do: Enum.reject(Sections.all(), &(&1.id == :analytics)),
                 else: []
               )
           }
@@ -425,17 +435,6 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
         />
       </.settings_cards>
     </div>
-    """
-  end
-
-  def render(%{section: %{id: :analytics}} = assigns) do
-    ~H"""
-    <.live_component
-      module={DelivestWeb.Staff.SettingsLive.AnalyticsComponent}
-      id="branch-analytics-settings"
-      current_staff={@current_staff}
-      scope={{:branch, @branch.id}}
-    />
     """
   end
 

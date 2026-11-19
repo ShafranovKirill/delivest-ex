@@ -4,6 +4,8 @@ defmodule DelivestWeb.Staff.StaffShellTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
+  alias Delivest.Features
+
   test "global header owns scope, search and mobile toggle; sidebar owns tasks and profile", %{
     conn: conn
   } do
@@ -27,6 +29,10 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(lv, "#staff-header #command-palette-trigger")
     assert has_element?(lv, "#staff-header #header-sidebar-toggle[data-sidebar-toggle]")
+    assert has_element?(lv, "#staff-header #header-sidebar-toggle.h-10")
+    assert has_element?(lv, "#staff-header #header-sidebar-toggle.border-base-300")
+    assert has_element?(lv, "#main-sidebar #sidebar-toggle.h-10.border-base-300")
+    assert has_element?(lv, "#staff-header #header-branch .staff-branch-trigger.h-10")
     refute has_element?(lv, "#main-sidebar #header-branch")
     refute has_element?(lv, "#main-sidebar #command-palette-trigger")
     assert has_element?(lv, "#staff-profile-trigger[aria-expanded='false']")
@@ -54,6 +60,28 @@ defmodule DelivestWeb.Staff.StaffShellTest do
            )
 
     refute has_element?(lv, "#sidebar-group-menu #sidebar-product-section-tab-categories")
+  end
+
+  test "courier navigation follows the branch capability", %{conn: conn} do
+    branch = insert(:branch)
+
+    staff =
+      insert(:staff,
+        role: insert(:role, permissions: ["orders.read", "orders.deliver", "orders.update"])
+      )
+
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, off, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+    refute has_element?(off, "#sidebar-section-nav-deliveries")
+    refute has_element?(off, "#sidebar-section-nav-couriers")
+
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "host")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "host")
+    {:ok, on, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+    assert has_element?(on, "#sidebar-section-nav-deliveries")
+    assert has_element?(on, "#sidebar-section-nav-couriers")
   end
 
   test "analytics group is expandable away from reports and exposes six destinations", %{
@@ -228,7 +256,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     pages = [
-      {"/staff/settings?branch=#{branch.slug}", nil, "#settings-feature-filter"},
+      {"/staff/settings?branch=#{branch.slug}", "features", "#settings-features"},
       {"/staff/franchise/brand", "franchise", "#franchise-settings-form"},
       {"/staff/branches/#{branch.slug}/edit", "branches", "#branch-section-hours"},
       {"/staff/branches/#{branch.slug}/edit/hours", "branches", "#branch-form"},

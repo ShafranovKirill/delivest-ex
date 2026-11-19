@@ -2,7 +2,7 @@ defmodule Delivest.Integrations.Frontpad do
   @behaviour Delivest.Integrations.Crm.Provider
 
   alias Delivest.Integrations.Crm
-  alias Delivest.Integrations.Frontpad.{Api, OrderPayload, Warnings, Webhook}
+  alias Delivest.Integrations.Frontpad.{Api, CertificateExport, OrderPayload, Warnings, Webhook}
   alias Delivest.Net.ProductCrmIds
 
   @not_sent [:econnrefused, :nxdomain, :ehostunreach, :enetunreach]
@@ -60,9 +60,40 @@ defmodule Delivest.Integrations.Frontpad do
       |> Map.merge(modifier_articles(order))
 
     with {:ok, payload} <- OrderPayload.build(order, settings, products),
-         {:ok, delivery} <- payload |> OrderPayload.to_form_params() |> Api.new_order() do
+         {:ok, payload, checked?} <- recheck_certificate(payload, order, settings, products),
+         {:ok, delivery} <- send_order(payload, settings, checked?) do
       {:ok, Warnings.apply(delivery, payload, order)}
     end
+  end
+
+  defp recheck_certificate(%{certificate: nil} = payload, _order, _settings, _products),
+    do: {:ok, payload, false}
+
+  defp recheck_certificate(%{certificate: code} = payload, order, settings, products) do
+    case Api.get_certificate(settings.api_key, code) do
+      {:ok, current} ->
+        if CertificateExport.current?(payload, current),
+          do: {:ok, payload, true},
+          else: site_payload(order, settings, products, code, :changed_certificate)
+
+      {:error, _reason} ->
+        site_payload(order, settings, products, code, :verification_failed)
+    end
+  end
+
+  defp site_payload(order, settings, products, code, reason) do
+    case OrderPayload.build_site(order, settings, products) do
+      {:ok, payload} -> {:ok, CertificateExport.fallback(payload, code, reason), true}
+      error -> error
+    end
+  end
+
+  defp send_order(payload, settings, checked?) do
+    request = fn -> payload |> OrderPayload.to_form_params() |> Api.new_order() end
+
+    if checked?,
+      do: Crm.Throttle.run_wait(rate_limit(settings), request),
+      else: request.()
   end
 
   @impl true
@@ -76,6 +107,11 @@ defmodule Delivest.Integrations.Frontpad do
   end
 
   def fetch_catalog(_settings), do: {:error, :missing_api_key}
+
+  def get_certificate(%{api_key: api_key}, code) when is_binary(api_key) and api_key != "",
+    do: Api.get_certificate(api_key, code)
+
+  def get_certificate(_settings, _code), do: {:error, :missing_api_key}
 
   @impl true
   def stops_enabled?(%{sync_stops: true} = settings), do: configured?(settings)

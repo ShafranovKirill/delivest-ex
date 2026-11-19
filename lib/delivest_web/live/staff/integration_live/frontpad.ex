@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
 
   alias Delivest.{Identity, Net}
   alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.Crm.Certificates
 
   alias Delivest.Integrations.Crm.{
     AcceptPrice,
@@ -33,6 +34,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
        can_accept_price: Identity.can?(socket.assigns.current_staff, "products.update"),
        accepting_price: nil,
        accepting_price_value: nil,
+       certificate_code: "",
+       certificate_result: nil,
+       certificate_error: nil,
        query: "",
        refresh_timer: nil,
        stop_refresh_timer: nil,
@@ -120,8 +124,46 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
   end
 
   def handle_event("tab", %{"tab" => tab}, socket)
-      when tab in ~w(settings check products journal),
+      when tab in ~w(settings check products certificates journal),
       do: {:noreply, assign(socket, tab: String.to_existing_atom(tab))}
+
+  def handle_event("certificate_change", %{"certificate" => %{"code" => code}}, socket)
+      when is_binary(code),
+      do:
+        {:noreply,
+         assign(socket, certificate_code: code, certificate_result: nil, certificate_error: nil)}
+
+  def handle_event("certificate_change", _params, socket), do: {:noreply, socket}
+
+  def handle_event("certificate_check", %{"certificate" => %{"code" => code}}, socket)
+      when is_binary(code) do
+    case Certificates.verify(
+           socket.assigns.current_staff,
+           socket.assigns.current_branch.id,
+           "frontpad",
+           code,
+           "integrations.read"
+         ) do
+      {:ok, result, _token} ->
+        {:noreply,
+         assign(socket,
+           certificate_code: code,
+           certificate_result: result,
+           certificate_error: nil
+         )}
+
+      {:error, reason} ->
+        {:noreply,
+         assign(socket,
+           certificate_code: code,
+           certificate_result: nil,
+           certificate_error: certificate_error(reason)
+         )}
+    end
+  end
+
+  def handle_event("certificate_check", _params, socket),
+    do: {:noreply, assign(socket, certificate_error: certificate_error(:invalid_code))}
 
   def handle_event("search", %{"q" => query}, socket),
     do: {:noreply, assign(socket, query: query)}
@@ -573,6 +615,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
           {gettext("Frontpad products")}
           <span :if={@snapshot}>({length(@snapshot.products)})</span>
         </.tab_button>
+        <.tab_button tab={:certificates} current={@tab} icon="hero-ticket">
+          Сертификаты
+        </.tab_button>
         <.tab_button tab={:journal} current={@tab} icon="hero-queue-list">
           {gettext("Request journal")}
         </.tab_button>
@@ -618,6 +663,42 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         staff={@current_staff}
         context={@context}
       />
+
+      <section
+        :if={@tab == :certificates}
+        id="frontpad-certificates"
+        class="rounded-box border border-base-300 bg-base-100 p-5 space-y-4"
+      >
+        <div>
+          <h2 class="font-semibold">Проверка сертификата</h2>
+          <p class="text-sm text-base-content/60">
+            Frontpad проверяет только введённый номер. Список сертификатов через API недоступен.
+          </p>
+        </div>
+        <form
+          id="frontpad-certificate-form"
+          phx-change="certificate_change"
+          phx-submit="certificate_check"
+          class="flex flex-wrap items-end gap-3"
+        >
+          <div class="min-w-56 flex-1">
+            <label for="frontpad-certificate-code" class="label">Номер сертификата</label>
+            <input
+              id="frontpad-certificate-code"
+              name="certificate[code]"
+              value={@certificate_code}
+              maxlength="20"
+              class="input w-full"
+              autocomplete="off"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary" phx-disable-with="Проверяем...">Проверить</button>
+        </form>
+        <p :if={@certificate_error} class="alert alert-error">{@certificate_error}</p>
+        <div :if={@certificate_result} id="frontpad-certificate-result" class="alert alert-success">
+          <span>{certificate_result_label(@certificate_result)}</span>
+        </div>
+      </section>
 
       <.guide :if={@tab == :settings} crm={@crm} branch={@current_branch} />
 
@@ -1176,4 +1257,25 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
     </div>
     """
   end
+
+  defp certificate_error({:frontpad, "invalid_certificate"}),
+    do: "Сертификат не найден или недействителен"
+
+  defp certificate_error({:throttled, _}),
+    do: "Слишком частые запросы. Повторите через несколько секунд"
+
+  defp certificate_error(:invalid_code), do: "Укажите номер сертификата (не более 20 символов)"
+  defp certificate_error(:inactive_provider), do: "Frontpad не подключён к заказам сайта"
+  defp certificate_error(:not_configured), do: "Ключ Frontpad не настроен"
+  defp certificate_error(:forbidden), do: "Недостаточно прав для проверки сертификата"
+  defp certificate_error(_), do: "Не удалось проверить сертификат во Frontpad"
+
+  defp certificate_result_label(%{"type" => "percent", "sale" => sale}),
+    do: "Скидка #{sale}%"
+
+  defp certificate_result_label(%{"type" => "amount", "amount" => amount}),
+    do: "Скидка #{Delivest.Money.format(amount)}"
+
+  defp certificate_result_label(%{"type" => "product", "name" => name, "price" => price}),
+    do: "Товар: #{name}, цена #{Delivest.Money.format(price)}"
 end

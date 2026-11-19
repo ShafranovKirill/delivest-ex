@@ -33,7 +33,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAds do
   end
 
   def handle_event("save", %{"yandex_ads" => attrs}, socket) do
-    case YandexAds.update_settings(socket.assigns.current_staff, attrs) do
+    case YandexAds.update_collection_settings(socket.assigns.current_staff, attrs) do
       {:ok, settings} ->
         {:noreply,
          socket

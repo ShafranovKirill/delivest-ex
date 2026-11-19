@@ -6,12 +6,20 @@ defmodule Delivest.CouriersTest do
 
   alias Delivest.Couriers
   alias Delivest.Couriers.Delivery
+  alias Delivest.Features
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.{Order, Orders, OrderTransition}
 
   defp branch(couriers \\ %{}) do
     branch = insert(:branch)
     Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: couriers})
+    enable_own_couriers(branch)
+    branch
+  end
+
+  defp enable_own_couriers(branch) do
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
     branch
   end
 
@@ -47,6 +55,16 @@ defmodule Delivest.CouriersTest do
   end
 
   describe "starting the search" do
+    test "a newly created branch has own couriers off until enabled" do
+      branch = insert(:branch)
+      Repo.insert!(%BranchInfo{branch_id: branch.id})
+      refute Couriers.own_enabled?(branch.id)
+
+      order = order(branch)
+      advance(order, [:accepted, :preparing], operator(branch))
+      assert deliveries(order) == []
+    end
+
     test "starts when cooking begins by default" do
       branch = branch()
       order = order(branch)
@@ -78,6 +96,41 @@ defmodule Delivest.CouriersTest do
       assert {:error, :already_searching} = Couriers.find(operator, order)
     end
 
+    test "new staff search is announced after its database commit" do
+      branch = branch(%{search: :manual})
+      operator = operator(branch)
+      order = order(branch) |> advance([:accepted], operator)
+      Couriers.subscribe(branch.id)
+
+      test_pid = self()
+      handler = "courier-search-commit-#{System.unique_integer([:positive])}"
+
+      :ok =
+        :telemetry.attach(
+          handler,
+          [:delivest, :repo, :query],
+          fn _, _, metadata, _ ->
+            if self() == test_pid and String.downcase(metadata.query || "") == "commit",
+              do: send(test_pid, :courier_search_committed)
+          end,
+          nil
+        )
+
+      on_exit(fn -> :telemetry.detach(handler) end)
+      assert {:ok, %Delivery{status: :searching}} = Couriers.find(operator, order)
+
+      receive do
+        :courier_search_committed -> :ok
+        {:deliveries_changed, _} -> flunk("courier search was announced before commit")
+      after
+        1_000 -> flunk("courier search commit was not observed")
+      end
+
+      assert_receive {:deliveries_changed, branch_id}
+      assert branch_id == branch.id
+      assert %Delivery{status: :searching} = Couriers.active(order.id)
+    end
+
     test "pickup orders get no courier" do
       branch = branch()
       pickup = order(branch, fulfillment_type: :pickup)
@@ -86,7 +139,7 @@ defmodule Delivest.CouriersTest do
     end
 
     test "a frontpad branch searches only when the operator asks and only outside the crm" do
-      frontpad = insert(:branch)
+      frontpad = insert(:branch) |> enable_own_couriers()
 
       Repo.insert!(%BranchInfo{
         branch_id: frontpad.id,
@@ -132,6 +185,35 @@ defmodule Delivest.CouriersTest do
       assert Couriers.list_open(ctx.branch.id) == []
       assert [%Delivery{order: %Order{}}] = Couriers.list_mine(first, ctx.branch.id)
       assert Couriers.list_mine(second, ctx.branch.id) == []
+    end
+
+    test "turning off own couriers stops new assignments but preserves an active delivery", ctx do
+      first = courier(ctx.branch)
+      second = courier(ctx.branch)
+      {:ok, assigned} = Couriers.take(first, ctx.branch.id, ctx.delivery.id)
+      assert Couriers.active_for_staff?(first, ctx.branch.id)
+
+      {:ok, _} = Features.configure("couriers", {:branch, ctx.branch.id}, false, actor: "test")
+      refute Couriers.own_enabled?(ctx.branch.id)
+      assert Couriers.list_open(ctx.branch.id) == []
+      assert {:error, :disabled} = Couriers.take(second, ctx.branch.id, assigned.id)
+      assert [%Delivery{id: id}] = Couriers.list_mine(first, ctx.branch.id)
+      assert id == assigned.id
+
+      assert {:ok, _closed} = Couriers.refuse(first, ctx.branch.id, assigned.id)
+      refute Couriers.active_for_staff?(first, ctx.branch.id)
+      assert deliveries(ctx.order) == [{:failed, :refused}]
+    end
+
+    test "a courier can finish a previously assigned delivery while the feature is off", ctx do
+      courier = courier(ctx.branch)
+      {:ok, delivery} = Couriers.take(courier, ctx.branch.id, ctx.delivery.id)
+      {:ok, _} = Features.configure("couriers", {:branch, ctx.branch.id}, false, actor: "test")
+
+      advance(Repo.reload!(ctx.order), [:ready], operator(ctx.branch))
+      assert {:ok, _order} = Couriers.pick_up(courier, ctx.branch.id, delivery.id)
+      assert {:ok, _order} = Couriers.hand_over(courier, ctx.branch.id, delivery.id)
+      assert deliveries(ctx.order) == [{:delivered, nil}]
     end
 
     test "a courier of another branch cannot take it", ctx do
@@ -234,6 +316,30 @@ defmodule Delivest.CouriersTest do
   end
 
   describe "operator assignment" do
+    test "unassigning while disabled closes the existing assignment without searching again" do
+      branch = branch(%{search: :manual})
+      operator = operator(branch)
+      courier = courier(branch)
+      order = order(branch) |> advance([:accepted], operator)
+      {:ok, _delivery} = Couriers.assign(operator, order, courier.id)
+      {:ok, _} = Features.configure("couriers", {:branch, branch.id}, false, actor: "test")
+
+      assert {:ok, _closed} = Couriers.unassign(operator, order)
+      assert deliveries(order) == [{:failed, :unassigned}]
+    end
+
+    test "disabled own couriers block manual search and assignment" do
+      branch = branch(%{search: :manual})
+      operator = operator(branch)
+      courier = courier(branch)
+      order = order(branch) |> advance([:accepted], operator)
+      {:ok, _} = Features.configure("couriers", {:branch, branch.id}, false, actor: "test")
+
+      assert {:error, :disabled} = Couriers.find(operator, order)
+      assert {:error, :disabled} = Couriers.assign(operator, order, courier.id)
+      assert deliveries(order) == []
+    end
+
     test "assigns, replaces and removes a courier before pickup" do
       branch = branch(%{search: :manual})
       operator = operator(branch)

@@ -128,7 +128,7 @@ defmodule DelivestWeb.StaffSidebar do
               aria-expanded="false"
               aria-label={gettext("Expand menu")}
               title={gettext("Expand menu")}
-              class="staff-sidebar-toggle btn btn-ghost btn-square btn-sm shrink-0"
+              class="staff-sidebar-toggle btn btn-square h-10 min-h-10 w-10 shrink-0 rounded-field border border-base-300 bg-base-100 hover:bg-base-200"
             >
               <.icon name="panel-left" class="size-5" />
             </button>

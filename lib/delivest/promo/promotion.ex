@@ -29,6 +29,7 @@ defmodule Delivest.Promo.Promotion do
     field :usage_limit, :integer
     field :per_client_limit, :integer
     field :code, :string, virtual: true
+    field :crm_certificate, :map
     field :deleted_at, :utc_datetime
 
     has_many :codes, PromoCode

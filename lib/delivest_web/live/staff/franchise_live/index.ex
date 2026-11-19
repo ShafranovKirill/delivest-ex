@@ -55,12 +55,10 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   def handle_params(params, _url, socket) do
     case section(socket.assigns.live_action, params) do
       {:ok, section} ->
-        if section && section.id == :analytics &&
-             !Delivest.Features.Settings.authorized?(socket.assigns.current_staff) do
+        if section && section.id == :analytics do
           {:noreply,
            socket
-           |> put_flash(:error, gettext("Permission denied"))
-           |> push_navigate(to: ~p"/staff/franchise")}
+           |> push_navigate(to: ~p"/staff/settings")}
         else
           {:noreply,
            assign(socket,
@@ -131,11 +129,11 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
 
   defp load_documents(socket), do: assign(socket, documents: Franchise.list_documents())
 
-  defp visible_sections(staff),
+  defp visible_sections(_staff),
     do:
       Enum.reject(
         Sections.all(),
-        &(&1.id == :snapshot or (&1.id == :analytics and !Identity.can?(staff, "admin")))
+        &(&1.id in [:snapshot, :analytics])
       )
 
   @impl true
@@ -420,17 +418,6 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
         />
       </.settings_cards>
     </div>
-    """
-  end
-
-  def render(%{section: %{id: :analytics}} = assigns) do
-    ~H"""
-    <.live_component
-      module={DelivestWeb.Staff.SettingsLive.AnalyticsComponent}
-      id="franchise-analytics-settings"
-      current_staff={@current_staff}
-      scope={:franchise}
-    />
     """
   end
 

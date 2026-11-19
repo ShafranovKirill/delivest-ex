@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(branch_id: socket.assigns.current_branch.id, promotion: nil, to_delete: nil)
+     |> assign(branch_id: socket.assigns.current_branch.id, promotion: nil, template: nil, to_delete: nil)
      |> load()}
   end
 
@@ -33,22 +33,29 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
   defp apply_action(socket, :new, _params) do
     if can?(socket, "promotions.create"),
-      do: assign(socket, page_title: gettext("Choose a promotion scenario"), promotion: nil),
+      do: assign(socket, page_title: gettext("What would you like to create?"), promotion: nil),
       else: deny(socket)
   end
 
-  defp apply_action(socket, action, _params) when action in [:full, :first_order] do
+  defp apply_action(socket, :first_order, _params) do
+    if can?(socket, "promotions.create"),
+      do:
+        push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/promotions/new/full"),
+      else: deny(socket)
+  end
+
+  defp apply_action(socket, :full, params) do
+    template =
+      if params["template"] in ~w(gift_threshold bundle pickup), do: params["template"], else: nil
+
     if can?(socket, "promotions.create"),
       do:
         assign(socket,
-          page_title:
-            if(action == :first_order,
-              do: gettext("First order offer"),
-              else: gettext("Full promotion form")
-            ),
+          template: template,
+          page_title: template_title(template, params["kind"]),
           promotion: %Promotion{
             branch_id: socket.assigns.branch_id,
-            kind: if(action == :full, do: :public_code, else: :automatic)
+            kind: if(params["kind"] == "automatic", do: :automatic, else: :public_code)
           }
         ),
       else: deny(socket)
@@ -56,7 +63,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
   defp apply_action(socket, :sale, _params) do
     if can?(socket, "promotions.create"),
-      do: assign(socket, page_title: gettext("Product discount"), promotion: nil),
+      do: assign(socket, page_title: gettext("Product discount"), promotion: nil, template: nil),
       else: deny(socket)
   end
 
@@ -64,7 +71,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
     with true <- can?(socket, "promotions.update"),
          {:ok, promotion} <-
            Promo.get_promotion(socket.assigns.current_staff, socket.assigns.branch_id, id) do
-      assign(socket, page_title: title(action, promotion), promotion: promotion)
+      assign(socket, page_title: title(action, promotion), promotion: promotion, template: nil)
     else
       _ -> deny(socket)
     end
@@ -72,6 +79,12 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
   defp title(:edit, promotion), do: gettext("Edit «%{name}»", name: promotion.name)
   defp title(:codes, promotion), do: gettext("Codes «%{name}»", name: promotion.name)
+
+  defp template_title("gift_threshold", _kind), do: gettext("Gift above a cart total")
+  defp template_title("bundle", _kind), do: gettext("Bundle discount")
+  defp template_title("pickup", _kind), do: gettext("Pickup promo code")
+  defp template_title(_, "automatic"), do: gettext("Automatic promotion")
+  defp template_title(_, _kind), do: gettext("Create promo code")
 
   @impl true
   def handle_event("toggle", %{"id" => id}, socket) do
@@ -173,7 +186,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
 
   def staff_page_header(assigns) do
     ~H"""
-    <div :if={@promotion && @live_action in [:full, :first_order, :edit]}>
+    <div :if={@promotion && @live_action in [:full, :edit]}>
       <.page_header
         navigation_label={gettext("Marketing areas")}
         title={@page_title}
@@ -216,7 +229,7 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
             class="btn btn-outline"
             id="new-promotion"
           >
-            <.icon name="hero-plus" class="size-5" /> {gettext("Create promotion")}
+            <.icon name="hero-plus" class="size-5" /> {gettext("Create")}
           </.link>
         </:actions>
       </.page_header>
@@ -228,15 +241,16 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
   def render(assigns) do
     ~H"""
     <div
-      :if={@promotion && @live_action in [:full, :first_order, :edit]}
+      :if={@promotion && @live_action in [:full, :edit]}
       id="promotion-editor"
       class="space-y-6"
     >
       <.live_component
         module={PromotionFormComponent}
-        id={@promotion.id || @live_action}
+        id={@promotion.id || "#{@live_action}-#{@promotion.kind}-#{@template}"}
         action={if(@live_action == :edit, do: :edit, else: :new)}
-        scenario={@live_action}
+        scenario={if(@live_action == :edit, do: :edit, else: @promotion.kind)}
+        template={if(@live_action == :edit, do: nil, else: @template)}
         promotion={@promotion}
         branch_id={@branch_id}
         current_staff={@current_staff}
@@ -249,7 +263,18 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
       id="promotion-scenarios"
       class="space-y-6"
     >
-      <div class="grid gap-4 md:grid-cols-3">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <.link
+          id="scenario-full"
+          patch={~p"/staff/b/#{@current_branch}/promotions/new/full"}
+          class="rounded-box border border-base-300 bg-base-100 p-6 hover:border-primary transition-colors space-y-3"
+        >
+          <.icon name="hero-ticket" class="size-8 text-primary" />
+          <h2 class="font-bold text-lg">{gettext("Create promo code")}</h2>
+          <p class="text-sm text-base-content/60">
+            {gettext("Choose a reward, conditions and how to issue the code.")}
+          </p>
+        </.link>
         <.link
           id="scenario-product"
           patch={~p"/staff/b/#{@current_branch}/promotions/sale"}
@@ -262,26 +287,31 @@ defmodule DelivestWeb.Staff.PromotionLive.Promotions do
           </p>
         </.link>
         <.link
-          id="scenario-first-order"
-          patch={~p"/staff/b/#{@current_branch}/promotions/new/first-order"}
+          id="scenario-gift-threshold"
+          patch={~p"/staff/b/#{@current_branch}/promotions/new/full?template=gift_threshold"}
           class="rounded-box border border-base-300 bg-base-100 p-6 hover:border-primary transition-colors space-y-3"
         >
-          <.icon name="hero-sparkles" class="size-8 text-primary" />
-          <h2 class="font-bold text-lg">{gettext("First order offer")}</h2>
-          <p class="text-sm text-base-content/60">
-            {gettext("Choose a reward for each client's first website or app order in this branch.")}
-          </p>
+          <.icon name="hero-gift" class="size-8 text-primary" />
+          <h2 class="font-bold text-lg">{gettext("Gift above a cart total")}</h2>
+          <p class="text-sm text-base-content/60">{gettext("Set a cart minimum and choose a gift.")}</p>
         </.link>
         <.link
-          id="scenario-full"
-          patch={~p"/staff/b/#{@current_branch}/promotions/new/full"}
+          id="scenario-bundle"
+          patch={~p"/staff/b/#{@current_branch}/promotions/new/full?template=bundle"}
           class="rounded-box border border-base-300 bg-base-100 p-6 hover:border-primary transition-colors space-y-3"
         >
-          <.icon name="hero-adjustments-horizontal" class="size-8 text-primary" />
-          <h2 class="font-bold text-lg">{gettext("Full promotion form")}</h2>
-          <p class="text-sm text-base-content/60">
-            {gettext("Configure rules, limits and compatibility yourself.")}
-          </p>
+          <.icon name="hero-shopping-bag" class="size-8 text-primary" />
+          <h2 class="font-bold text-lg">{gettext("Bundle discount")}</h2>
+          <p class="text-sm text-base-content/60">{gettext("Discount on an order with two chosen products.")}</p>
+        </.link>
+        <.link
+          id="scenario-pickup"
+          patch={~p"/staff/b/#{@current_branch}/promotions/new/full?template=pickup"}
+          class="rounded-box border border-base-300 bg-base-100 p-6 hover:border-primary transition-colors space-y-3"
+        >
+          <.icon name="hero-truck" class="size-8 text-primary" />
+          <h2 class="font-bold text-lg">{gettext("Pickup promo code")}</h2>
+          <p class="text-sm text-base-content/60">{gettext("Choose a reward for pickup orders.")}</p>
         </.link>
       </div>
     </div>

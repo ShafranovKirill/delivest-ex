@@ -1,8 +1,9 @@
 defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
   use Delivest.DataCase, async: true
 
-  alias Delivest.Integrations.Frontpad.{OrderPayload, Settings}
+  alias Delivest.Integrations.Frontpad.{OrderPayload, Settings, Warnings}
   alias Delivest.Oms.{Order, OrderItem}
+  alias Delivest.Oms.Order.AppliedPromotion
 
   test "maps cook_by to Frontpad datetime using the required format" do
     order = %Order{
@@ -174,6 +175,173 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
 
       assert {"sale_amount", "131"} in params
       refute Enum.any?(params, fn {key, _} -> String.starts_with?(key, "product_price") end)
+    end
+  end
+
+  describe "CRM certificates" do
+    defp order(certificate, mode, attrs \\ %{}) do
+      promotion = %AppliedPromotion{
+        promotion_id: Ecto.UUID.generate(),
+        promo_code_id: Ecto.UUID.generate(),
+        code: "SITE20",
+        name: "Promo",
+        discount: 2_000,
+        crm_certificate: certificate,
+        certificate_export_mode: mode
+      }
+
+      struct!(
+        %Order{
+          items: [
+            %OrderItem{
+              product_id: "p1",
+              quantity: 1,
+              base_price: 10_000,
+              price: 8_000,
+              modifiers: []
+            }
+          ],
+          subtotal_amount: 10_000,
+          discount_amount: 2_000,
+          total_amount: 8_000,
+          promotions: [promotion]
+        },
+        attrs
+      )
+    end
+
+    defp form(
+           order,
+           settings \\ %Settings{api_key: "secret"},
+           products \\ %{"p1" => %{external_id: "a1"}}
+         ) do
+      assert {:ok, payload} = OrderPayload.build(order, settings, products)
+      {payload, OrderPayload.to_form_params(payload)}
+    end
+
+    test "sends matching amount once instead of the website discount" do
+      cert = %{
+        "provider" => "frontpad",
+        "code" => "CERT20",
+        "type" => "amount",
+        "amount" => 2_000
+      }
+
+      {_payload, params} = form(order(cert, "cart_amount"))
+
+      assert {"certificate", "CERT20"} in params
+      refute Enum.any?(params, fn {key, _} -> key == "sale_amount" end)
+
+      {_payload, params} =
+        form(order(cert, "cart_amount"), %Settings{api_key: "secret", price_override: true})
+
+      assert {"certificate", "CERT20"} in params
+      assert {"product_price[0]", "100"} in params
+      refute {"product_price[0]", "80"} in params
+    end
+
+    test "keeps website discount for percent, mismatch, points and a second promotion" do
+      percent = %{"provider" => "frontpad", "code" => "CERT20", "type" => "percent", "sale" => 20}
+
+      amount = %{
+        "provider" => "frontpad",
+        "code" => "CERT20",
+        "type" => "amount",
+        "amount" => 2_000
+      }
+
+      for checked <- [
+            order(percent, nil),
+            order(%{amount | "amount" => 1_000}, "cart_amount"),
+            order(amount, "cart_amount", %{points_spent: 1}),
+            order(amount, "cart_amount", %{
+              promotions: [
+                hd(order(amount, "cart_amount").promotions),
+                %AppliedPromotion{name: "Other"}
+              ]
+            })
+          ] do
+        {payload, params} = form(checked)
+        assert {"sale_amount", "20"} in params
+        refute Enum.any?(params, fn {key, _} -> key == "certificate" end)
+        assert payload.certificate_alert
+        assert String.contains?(Warnings.apply(%{}, payload, checked).alert, "CERT20")
+      end
+    end
+
+    test "sends a single free gift as certificate without duplicating its product" do
+      cert = %{
+        "provider" => "frontpad",
+        "code" => "GIFT01",
+        "type" => "product",
+        "product_id" => "gift",
+        "price" => 0
+      }
+
+      gift = %OrderItem{
+        product_id: "p2",
+        quantity: 1,
+        base_price: 5_000,
+        price: 0,
+        gift: true,
+        modifiers: []
+      }
+
+      checked =
+        order(cert, "single_gift", %{
+          items: [
+            %OrderItem{
+              product_id: "p1",
+              quantity: 1,
+              base_price: 10_000,
+              price: 10_000,
+              modifiers: []
+            },
+            gift
+          ],
+          discount_amount: 0,
+          total_amount: 10_000
+        })
+
+      checked = %{checked | promotions: [%{hd(checked.promotions) | discount: 0}]}
+
+      {_payload, params} =
+        form(checked, %Settings{api_key: "secret"}, %{
+          "p1" => %{external_id: "a1"},
+          "p2" => %{external_id: "gift"}
+        })
+
+      assert {"certificate", "GIFT01"} in params
+      assert {"product[0]", "a1"} in params
+      refute Enum.any?(params, fn {key, _} -> key == "product[1]" end)
+      refute Enum.any?(params, fn {key, _} -> key == "sale_amount" end)
+    end
+
+    test "keeps old behavior without a binding and falls back on malformed binding" do
+      cert = %{"provider" => "frontpad", "code" => nil, "type" => "amount", "amount" => 2_000}
+      {_payload, params} = form(order(cert, "cart_amount"))
+      assert {"sale_amount", "20"} in params
+      refute Enum.any?(params, fn {key, _} -> key == "certificate" end)
+
+      {_payload, params} = form(%{order(cert, "cart_amount") | promotions: []})
+      assert {"sale_amount", "20"} in params
+      refute Enum.any?(params, fn {key, _} -> key == "certificate" end)
+    end
+
+    test "warns when Frontpad accepts an order but rejects its certificate" do
+      cert = %{
+        "provider" => "frontpad",
+        "code" => "CERT20",
+        "type" => "amount",
+        "amount" => 2_000
+      }
+
+      checked = order(cert, "cart_amount")
+      {payload, _params} = form(checked)
+
+      delivery = Warnings.apply(%{warnings: %{"invalid_certificate" => true}}, payload, checked)
+      assert String.contains?(delivery.alert, "CERT20")
+      assert String.contains?(delivery.alert, "не применил")
     end
   end
 

@@ -1,18 +1,24 @@
 defmodule Delivest.Features.Settings do
-  @moduledoc "Administrator controls for the analytics settings exposed in staff UI."
+  @moduledoc "Administrator controls for optional features exposed in staff settings."
   alias Delivest.{Features, Identity, Repo}
+  alias Delivest.Features.Registry
   alias Delivest.Identity.Staff
-
-  @branch_features ~w(segments analytics_funnel analytics_extended analytics_links)
+  alias Delivest.Integrations.StaffAccess
 
   def authorized?(staff), do: Identity.can?(Identity.fresh_staff(staff), "admin")
-  def branch_features, do: @branch_features
+  def branch_features, do: Enum.reject(Registry.features(), &StaffAccess.permission?/1)
 
   def rows(staff, scope) do
     with :ok <- authorize(staff), :ok <- valid_scope(scope) do
-      features = if scope == :franchise, do: ["analytics_franchise"], else: @branch_features
-      {:ok, Enum.map(features, &%{feature: &1, enabled: Features.enabled?(&1, scope)})}
+      features = if scope == :franchise, do: Registry.features(), else: branch_features()
+      {:ok, Enum.map(features, &%{feature: &1, enabled: enabled?(&1, scope)})}
     end
+  end
+
+  defp enabled?(feature, scope) do
+    if StaffAccess.permission?(feature),
+      do: StaffAccess.allowed_key?(feature),
+      else: Features.enabled?(feature, scope)
   end
 
   def preview(staff, feature, scope) do
@@ -42,7 +48,7 @@ defmodule Delivest.Features.Settings do
         end
 
         if enabled do
-          configure!(feature, scope, true, actor)
+          configure!(feature, scope, true, actor, confirmation)
         else
           {:ok, preview} = Features.disable_preview(feature, scope)
           if confirmation != preview, do: Repo.rollback({:confirmation_required, preview})
@@ -56,26 +62,26 @@ defmodule Delivest.Features.Settings do
 
   def configure(_, _, _, _, _), do: {:error, :forbidden}
 
-  defp configure!(feature, scope, enabled, actor, confirmation \\ nil) do
+  defp configure!(feature, scope, enabled, actor, confirmation) do
     case Features.configure(feature, scope, enabled,
            actor: actor,
-           confirm_dependents: confirmation
+           confirm_dependents: confirmation,
+           confirm_activation: confirmation
          ) do
       {:ok, result} -> result
       {:error, {:dependent_features, preview}} -> Repo.rollback({:confirmation_required, preview})
+      {:error, {:activation_required, preview}} -> Repo.rollback({:activation_required, preview})
       {:error, reason} -> Repo.rollback(reason)
     end
   end
 
   defp authorize(staff), do: if(authorized?(staff), do: :ok, else: {:error, :forbidden})
 
-  defp allowed("analytics_franchise", :franchise), do: :ok
-  defp allowed("analytics_franchise", {:branch, _} = scope), do: valid_scope(scope)
-
-  defp allowed(feature, {:branch, _} = scope) when feature in @branch_features,
-    do: valid_scope(scope)
-
-  defp allowed(_, _), do: {:error, :forbidden}
+  defp allowed(feature, scope) do
+    if Registry.known?(feature) and (scope == :franchise or not StaffAccess.permission?(feature)),
+      do: valid_scope(scope),
+      else: {:error, :forbidden}
+  end
 
   defp valid_scope(:franchise), do: :ok
 

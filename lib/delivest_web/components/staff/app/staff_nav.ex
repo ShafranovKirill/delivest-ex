@@ -3,7 +3,7 @@ defmodule DelivestWeb.StaffNav do
 
   import Delivest.Identity.Acl
 
-  alias Delivest.{Features, Gateway, Identity, Segments}
+  alias Delivest.{Couriers, Features, Gateway, Identity, Segments}
 
   def pages(staff, branch) do
     staff
@@ -71,6 +71,7 @@ defmodule DelivestWeb.StaffNav do
   end
 
   defp feature_description("segments"), do: {gettext("Segments"), :segments}
+  defp feature_description("couriers"), do: {gettext("Own couriers"), :delivery_settings}
   defp feature_description("notifications"), do: {gettext("Notifications"), nil}
 
   defp feature_description("marketing_policies"),
@@ -106,10 +107,11 @@ defmodule DelivestWeb.StaffNav do
         not can?(staff, "integrations.read") ->
           nil
 
-        provider in [:zvonok, :dadata, :yookassa, :yandex_eda] and can?(staff, "admin") ->
+        provider in [:zvonok, :dadata, :yookassa, :yandex_eda, :yandex_ads] and
+            can?(staff, "admin") ->
           "/staff/integrations/#{provider_slug(provider)}"
 
-        provider in [:zvonok, :dadata, :yookassa, :yandex_eda] ->
+        provider in [:zvonok, :dadata, :yookassa, :yandex_eda, :yandex_ads] ->
           nil
 
         is_nil(branch) ->
@@ -124,11 +126,15 @@ defmodule DelivestWeb.StaffNav do
       label: label,
       path: path,
       scope:
-        if(provider in [:zvonok, :dadata, :yookassa, :yandex_eda], do: :network, else: :branch)
+        if(provider in [:zvonok, :dadata, :yookassa, :yandex_eda, :yandex_ads],
+          do: :network,
+          else: :branch
+        )
     }
   end
 
   defp provider_slug(:yandex_eda), do: "yandex-eda"
+  defp provider_slug(:yandex_ads), do: "yandex-ads"
   defp provider_slug(:yandex_delivery), do: "yandex-delivery"
   defp provider_slug(:atol), do: "fiscal"
   defp provider_slug(provider), do: Atom.to_string(provider)
@@ -140,7 +146,9 @@ defmodule DelivestWeb.StaffNav do
   defp integration_label(:dadata), do: gettext("Address suggestions")
   defp integration_label(:yookassa), do: gettext("Online payment")
   defp integration_label(:yandex_eda), do: gettext("Yandex Eda")
+  defp integration_label(:yandex_ads), do: gettext("Yandex Direct and Metrika")
   defp integration_label(:yandex_delivery), do: gettext("Yandex Delivery")
+  defp integration_label(:ycart), do: gettext("Yandex Cart")
   defp integration_label(:atol), do: gettext("Fiscal receipts")
 
   def catalog(staff, branch) do
@@ -542,13 +550,20 @@ defmodule DelivestWeb.StaffNav do
            has_available_branch?(staff))
 
     [
-      setting(:settings, gettext("Settings"), "/staff/settings", "hero-cog-6-tooth", :network, [
-        "franchise.update",
-        "branches.read",
-        "delivery.read",
-        "integrations.read",
-        "logs.read"
-      ]),
+      setting(
+        :settings,
+        gettext("Settings"),
+        "/staff/settings",
+        "hero-cog-6-tooth",
+        :network,
+        [
+          "franchise.update",
+          "branches.read",
+          "delivery.read",
+          "integrations.read",
+          "logs.read"
+        ]
+      ),
       setting(
         :data_transfer,
         gettext("Data transfer"),
@@ -595,6 +610,14 @@ defmodule DelivestWeb.StaffNav do
         "hero-puzzle-piece",
         :mixed,
         ["integrations.read"]
+      ),
+      setting(
+        :features,
+        gettext("Capabilities"),
+        setting_path(:features, branch),
+        "hero-adjustments-horizontal",
+        :mixed,
+        ["franchise.update", "branches.read", "delivery.read", "integrations.read", "logs.read"]
       ),
       setting(
         :data_system,
@@ -663,6 +686,8 @@ defmodule DelivestWeb.StaffNav do
   end
 
   defp setting_path(:settings, _), do: "/staff/settings"
+  defp setting_path(:features, nil), do: "/staff/settings"
+  defp setting_path(:features, branch), do: "/staff/settings?branch=#{branch.slug}"
   defp setting_path(:data_transfer, nil), do: "/staff/settings/data-transfer"
 
   defp setting_path(:data_transfer, branch),
@@ -735,7 +760,8 @@ defmodule DelivestWeb.StaffNav do
           gettext("Deliveries")
         )
         |> allowed(staff, "orders.deliver")
-        |> owned(branch, :couriers),
+        |> owned(branch, :couriers)
+        |> courier_available(staff, branch, :own),
         item(
           :couriers,
           branch && ~p"/staff/b/#{branch}/couriers",
@@ -744,6 +770,7 @@ defmodule DelivestWeb.StaffNav do
         )
         |> allowed(staff, "orders.update")
         |> owned(branch, :couriers)
+        |> courier_available(staff, branch, :dispatch)
       ]),
       group(:finance, "hero-banknotes", gettext("Finance"), [
         item(
@@ -1006,6 +1033,25 @@ defmodule DelivestWeb.StaffNav do
 
   defp owned(item, branch, area),
     do: if(Gateway.own?(branch, area), do: %{item | feature: {:gateway, area}})
+
+  defp courier_available(nil, _staff, _branch, _kind), do: nil
+  defp courier_available(item, _staff, nil, _kind), do: item
+
+  defp courier_available(item, staff, branch, kind) do
+    available? =
+      Couriers.own_enabled?(branch.id) or can?(staff, "admin") or
+        case kind do
+          :own ->
+            Couriers.active_for_staff?(staff, branch.id) or
+              Couriers.unsettled_for_staff?(staff, branch.id)
+
+          :dispatch ->
+            Couriers.active_any_in_branch?(branch.id) or
+              Couriers.unsettled_any_in_branch?(branch.id)
+        end
+
+    if available?, do: item
+  end
 
   defp operating(nil, _branch), do: nil
   defp operating(item, nil), do: item

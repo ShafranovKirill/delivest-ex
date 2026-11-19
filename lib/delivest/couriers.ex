@@ -3,12 +3,13 @@ defmodule Delivest.Couriers do
 
   require Logger
 
-  alias Delivest.{Audit, Identity, Push, Repo}
+  alias Delivest.{Audit, Features, Identity, Push, Repo}
   alias Delivest.Couriers.{Cash, Contact, Delivery, Registry}
   alias Delivest.Identity.{Branch, Staff, StaffBranch}
   alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
   alias Delivest.Gateway
   alias Delivest.Oms.{Order, OrderFlow, Orders}
+  alias Delivest.Payments.Payment
 
   @permission "orders.deliver"
   @before_pickup [:accepted, :preparing, :ready]
@@ -48,6 +49,53 @@ defmodule Delivest.Couriers do
       {:ok, branch} -> not Gateway.active?(branch)
       _error -> false
     end
+  end
+
+  def own_enabled?(branch_id), do: Features.enabled?("couriers", {:branch, branch_id})
+
+  def active_for_staff?(%Staff{id: courier_id}, branch_id) do
+    Repo.exists?(
+      where(
+        Delivery,
+        [d],
+        d.branch_id == ^branch_id and d.provider == :staff and d.courier_id == ^courier_id and
+          d.status in [:assigned, :picked_up]
+      )
+    )
+  end
+
+  def active_any_in_branch?(branch_id) do
+    Repo.exists?(
+      where(
+        Delivery,
+        [d],
+        d.branch_id == ^branch_id and d.provider == :staff and
+          d.status in [:assigned, :picked_up]
+      )
+    )
+  end
+
+  def unsettled_any_in_branch?(branch_id) do
+    Repo.exists?(
+      where(
+        Payment,
+        [p],
+        p.branch_id == ^branch_id and p.status == :paid and
+          p.method in [:cash, :card] and not is_nil(p.collected_by_id) and
+          is_nil(p.settlement_id)
+      )
+    )
+  end
+
+  def unsettled_for_staff?(%Staff{id: courier_id}, branch_id) do
+    Repo.exists?(
+      where(
+        Payment,
+        [p],
+        p.branch_id == ^branch_id and p.collected_by_id == ^courier_id and
+          p.status == :paid and p.method in [:cash, :card] and is_nil(p.settlement_id)
+      )
+    )
   end
 
   def eligible?(%Order{fulfillment_type: :delivery, crm: nil} = order),
@@ -94,10 +142,14 @@ defmodule Delivest.Couriers do
   end
 
   def list_open(branch_id) do
-    branch_id
-    |> deliveries()
-    |> where([d], d.status == :searching and d.provider == :staff)
-    |> Repo.all()
+    if own_enabled?(branch_id) do
+      branch_id
+      |> deliveries()
+      |> where([d], d.status == :searching and d.provider == :staff)
+      |> Repo.all()
+    else
+      []
+    end
   end
 
   def list_mine(%Staff{id: courier_id}, branch_id) do
@@ -156,9 +208,10 @@ defmodule Delivest.Couriers do
   def assign(%Staff{} = staff, %Order{} = order, courier_id) do
     with :ok <- Identity.authorize(staff, "orders.update", order.branch_id),
          true <- assignable?(order) || {:error, :not_available},
-         %Staff{} = courier <- branch_courier(order.branch_id, courier_id) do
+         %Staff{} = courier <- branch_courier(order.branch_id, courier_id),
+         {:ok, generation} <- own_generation(order.branch_id) do
       order
-      |> locked(&reassign(&1, order, courier, staff))
+      |> locked(&reassign(&1, order, courier, staff), generation)
       |> audited(staff, "order.courier_assigned", order, %{courier: courier.name || courier.login})
       |> notified(:delivery_assigned)
     end
@@ -166,34 +219,88 @@ defmodule Delivest.Couriers do
 
   def unassign(%Staff{} = staff, %Order{} = order) do
     with :ok <- Identity.authorize(staff, "orders.update", order.branch_id) do
-      order
-      |> locked(fn
-        %Delivery{status: :assigned} = delivery -> restart(delivery, :unassigned)
-        _delivery -> {:error, :not_assigned}
-      end)
-      |> audited(staff, "order.courier_unassigned", order)
+      action = fn restart?, generation ->
+        order
+        |> locked(
+          fn
+            %Delivery{status: :assigned, provider: :staff} = delivery ->
+              if restart?,
+                do: restart(delivery, :unassigned),
+                else: close(delivery, :failed, :unassigned)
+
+            %Delivery{status: :assigned} = delivery ->
+              restart(delivery, :unassigned)
+
+            _delivery ->
+              {:error, :not_assigned}
+          end,
+          generation
+        )
+        |> requested()
+        |> audited(staff, "order.courier_unassigned", order)
+      end
+
+      case own_generation(order.branch_id) do
+        {:ok, generation} ->
+          case action.(true, generation) do
+            {:error, :disabled} -> action.(false, nil)
+            result -> result
+          end
+
+        {:error, :disabled} ->
+          action.(false, nil)
+      end
     end
   end
 
   def take(%Staff{} = courier, branch_id, delivery_id) do
-    with :ok <- Identity.authorize(courier, @permission, branch_id) do
-      transact(branch_id, delivery_id, fn
-        %Delivery{status: :searching, provider: :staff} = delivery ->
-          delivery |> Delivery.assign_changeset(courier, nil) |> Repo.update()
+    with :ok <- Identity.authorize(courier, @permission, branch_id),
+         {:ok, generation} <- own_generation(branch_id) do
+      transact(
+        branch_id,
+        delivery_id,
+        fn
+          %Delivery{status: :searching, provider: :staff} = delivery ->
+            delivery |> Delivery.assign_changeset(courier, nil) |> Repo.update()
 
-        _delivery ->
-          {:error, :taken}
-      end)
+          _delivery ->
+            {:error, :taken}
+        end,
+        generation
+      )
     end
   end
 
   def refuse(%Staff{} = courier, branch_id, delivery_id) do
     with :ok <- Identity.authorize(courier, @permission, branch_id) do
-      transact(branch_id, delivery_id, fn delivery ->
-        if mine?(delivery, courier, :assigned),
-          do: restart(delivery, :refused),
-          else: {:error, :not_yours}
-      end)
+      action = fn restart?, generation ->
+        transact(
+          branch_id,
+          delivery_id,
+          fn delivery ->
+            if mine?(delivery, courier, :assigned) do
+              if restart?,
+                do: restart(delivery, :refused),
+                else: close(delivery, :failed, :refused)
+            else
+              {:error, :not_yours}
+            end
+          end,
+          generation
+        )
+        |> requested()
+      end
+
+      case own_generation(branch_id) do
+        {:ok, generation} ->
+          case action.(true, generation) do
+            {:error, :disabled} -> action.(false, nil)
+            result -> result
+          end
+
+        {:error, :disabled} ->
+          action.(false, nil)
+      end
     end
   end
 
@@ -206,9 +313,20 @@ defmodule Delivest.Couriers do
   def report(%Delivery{id: id}, state, details) do
     case Repo.get(Delivery, id) do
       %Delivery{} = delivery ->
-        if Delivery.active?(delivery),
-          do: delivery |> put_details(details) |> reported(state),
-          else: {:ok, delivery}
+        if Delivery.active?(delivery) do
+          action = fn -> delivery |> put_details(details) |> reported(state) end
+
+          if delivery.provider == :staff and state == :lost do
+            case with_own_couriers(delivery.branch_id, action) do
+              {:error, :disabled} -> close(delivery, :failed, :not_found)
+              result -> result |> changed() |> requested()
+            end
+          else
+            action.()
+          end
+        else
+          {:ok, delivery}
+        end
 
       nil ->
         {:error, :not_found}
@@ -329,7 +447,6 @@ defmodule Delivest.Couriers do
       delivery.order_id
       |> Delivery.new(delivery.branch_id, delivery.provider)
       |> Repo.insert()
-      |> notified(:delivery_requested)
     end
   end
 
@@ -351,7 +468,32 @@ defmodule Delivest.Couriers do
     end
   end
 
-  defp start(%Order{} = order, key, event_id \\ nil) do
+  defp start(order, key, event_id \\ nil)
+
+  defp start(%Order{} = order, :staff, event_id) do
+    event_transaction? = is_binary(event_id) and Repo.in_transaction?()
+
+    with_own_couriers(order.branch_id, fn ->
+      changeset = Delivery.new(order.id, order.branch_id, :staff)
+
+      changeset =
+        if is_binary(event_id),
+          do: Ecto.Changeset.put_change(changeset, :id, event_id),
+          else: changeset
+
+      case Repo.insert(changeset) do
+        {:error, %Ecto.Changeset{}} -> {:error, :already_searching}
+        result -> result
+      end
+    end)
+    |> then(fn result ->
+      if event_transaction?, do: result, else: result |> changed() |> requested()
+    end)
+  end
+
+  defp start(%Order{} = order, key, event_id), do: do_start(order, key, event_id)
+
+  defp do_start(%Order{} = order, key, event_id) do
     changeset = Delivery.new(order.id, order.branch_id, key)
 
     changeset =
@@ -382,6 +524,38 @@ defmodule Delivest.Couriers do
       error -> error
     end
   end
+
+  defp with_own_couriers(branch_id, fun) do
+    scope = {:branch, branch_id}
+
+    with {:ok, generation} <- Features.snapshot("couriers", scope),
+         {:ok, result} <- publish_own_courier_work(scope, generation, fun) do
+      result
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp publish_own_courier_work(scope, generation, fun) do
+    if Repo.in_transaction?() do
+      Features.publish_if_enabled([{"couriers", scope, generation}], fun)
+    else
+      Features.with_enabled("couriers", scope, generation, fun)
+    end
+  end
+
+  def publish_started_staff_delivery(event_id) do
+    case Repo.get(Delivery, event_id) do
+      %Delivery{provider: :staff, status: :searching} = delivery ->
+        {:ok, delivery} |> changed() |> requested()
+        :ok
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp own_generation(branch_id), do: Features.snapshot("couriers", {:branch, branch_id})
 
   def give_up(%Delivery{} = delivery) do
     if Delivery.active?(delivery),
@@ -513,17 +687,19 @@ defmodule Delivest.Couriers do
     end
   end
 
-  defp transact(branch_id, delivery_id, fun) do
+  defp transact(branch_id, delivery_id, fun, generation) do
     with {:ok, uuid} <- Ecto.UUID.cast(delivery_id) do
       Repo.transaction(fn ->
-        Delivery
-        |> where([d], d.id == ^uuid and d.branch_id == ^branch_id)
-        |> lock("FOR UPDATE")
-        |> Repo.one()
-        |> case do
-          nil -> Repo.rollback(:not_found)
-          delivery -> unwrap(fun.(delivery))
-        end
+        with_gate(branch_id, generation, fn ->
+          Delivery
+          |> where([d], d.id == ^uuid and d.branch_id == ^branch_id)
+          |> lock("FOR UPDATE")
+          |> Repo.one()
+          |> case do
+            nil -> Repo.rollback(:not_found)
+            delivery -> unwrap(fun.(delivery))
+          end
+        end)
       end)
       |> broadcast(branch_id)
     else
@@ -531,16 +707,25 @@ defmodule Delivest.Couriers do
     end
   end
 
-  defp locked(%Order{} = order, fun) do
+  defp locked(%Order{} = order, fun, generation) do
     Repo.transaction(fn ->
-      Delivery
-      |> where([d], d.order_id == ^order.id and d.status in ^Delivery.active())
-      |> lock("FOR UPDATE")
-      |> Repo.one()
-      |> fun.()
-      |> unwrap()
+      with_gate(order.branch_id, generation, fn ->
+        Delivery
+        |> where([d], d.order_id == ^order.id and d.status in ^Delivery.active())
+        |> lock("FOR UPDATE")
+        |> Repo.one()
+        |> fun.()
+        |> unwrap()
+      end)
     end)
     |> broadcast(order.branch_id)
+  end
+
+  defp with_gate(_branch_id, nil, fun), do: fun.()
+
+  defp with_gate(branch_id, generation, fun) do
+    Features.publish_if_enabled([{"couriers", {:branch, branch_id}, generation}], fun)
+    |> unwrap()
   end
 
   defp audited(result, staff, action, order, metadata \\ %{})
@@ -552,7 +737,7 @@ defmodule Delivest.Couriers do
 
   defp audited(error, _staff, _action, _order, _metadata), do: error
 
-  defp requested({:ok, %Delivery{provider: :staff}} = result),
+  defp requested({:ok, %Delivery{provider: :staff, status: :searching}} = result),
     do: notified(result, :delivery_requested)
 
   defp requested(result), do: result

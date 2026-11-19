@@ -18,6 +18,66 @@ defmodule Delivest.Integrations.Frontpad.Api do
     |> products()
   end
 
+  def get_certificate(secret, certificate) do
+    "/api/index.php?get_certificate"
+    |> Client.post([{"secret", secret}, {"certificate", certificate}],
+      base_url: @base_url,
+      format: :form,
+      journal: :frontpad
+    )
+    |> decode()
+    |> certificate()
+  end
+
+  defp certificate(
+         {:ok, %{"result" => "success", "product_id" => id, "name" => name, "price" => price}}
+       )
+       when (is_binary(id) or is_integer(id)) and is_binary(name) do
+    case certificate_price(price) do
+      {:ok, value} when byte_size(name) > 0 ->
+        {:ok, %{type: :product, product_id: to_string(id), name: name, price: value}}
+
+      _ ->
+        {:error, :invalid_certificate_response}
+    end
+  end
+
+  defp certificate({:ok, %{"result" => "success", "sale" => sale}})
+       when is_binary(sale) or is_integer(sale),
+       do: certificate_sale(to_string(sale))
+
+  defp certificate({:ok, %{"result" => "success", "amount" => amount}}) do
+    case certificate_price(amount) do
+      {:ok, value} -> {:ok, %{type: :amount, amount: value}}
+      :error -> {:error, :invalid_certificate_response}
+    end
+  end
+
+  defp certificate({:ok, %{"result" => "error", "error" => error}}),
+    do: {:error, {:frontpad, error}}
+
+  defp certificate({:ok, _body}), do: {:error, :invalid_certificate_response}
+  defp certificate(error), do: error
+
+  defp certificate_sale(value) do
+    case Integer.parse(value) do
+      {sale, ""} when sale in 1..100 -> {:ok, %{type: :percent, sale: sale}}
+      _ -> {:error, :invalid_certificate_response}
+    end
+  end
+
+  defp certificate_price(value) when is_binary(value) do
+    case Money.parse(value) do
+      {:ok, amount} when amount >= 0 -> {:ok, amount}
+      _ -> :error
+    end
+  end
+
+  defp certificate_price(value) when is_integer(value) and value >= 0,
+    do: {:ok, Money.from_rubles(value)}
+
+  defp certificate_price(_value), do: :error
+
   def get_stops(secret) do
     "/api/index.php?get_stops"
     |> Client.post([{"secret", secret}], base_url: @base_url, format: :form, journal: :frontpad)

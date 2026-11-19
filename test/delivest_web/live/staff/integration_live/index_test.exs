@@ -57,6 +57,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
 
     assert has_element?(
              lv,
+             "#integration-frontpad-details:not([open]) > summary",
+             "Connection details"
+           )
+
+    assert has_element?(lv, "#integration-frontpad-credentials", "Filled in")
+    assert has_element?(lv, "#integration-frontpad-connection")
+    assert has_element?(lv, "#integration-frontpad-usage")
+
+    assert has_element?(
+             lv,
              "#sidebar-group-settings[open] #sidebar-settings-nav-integrations[aria-current='page']"
            )
 
@@ -71,6 +81,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     {:ok, lv, _html} = live(conn, ~p"/staff/integrations")
 
     refute has_element?(lv, "a#integration-zvonok")
+
+    assert has_element?(
+             lv,
+             "#integration-zvonok-details:not([open]) > summary",
+             "Connection details"
+           )
+
+    refute has_element?(lv, "#integration-yandex-ads-details")
     assert has_element?(lv, "#header-branch-#{branch.id}")
     refute has_element?(lv, "#integration-branch-selector")
     refute has_element?(lv, "#integration-frontpad")
@@ -84,6 +102,28 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
              lv,
              "a#integration-frontpad[href='/staff/b/#{branch.slug}/integrations/frontpad']"
            )
+  end
+
+  test "connection details show status without revealing stored credentials", %{
+    conn: conn,
+    branch: branch
+  } do
+    secret = "frontpad-private-api-token-20261119"
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{provider: :frontpad, frontpad: %Frontpad.Settings{api_key: secret}}
+    })
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/integrations")
+
+    assert has_element?(
+             lv,
+             "a#integration-frontpad[href='/staff/b/#{branch.slug}/integrations/frontpad']"
+           )
+
+    assert has_element?(lv, "#integration-frontpad-details:not([open]) > summary")
+    refute render(lv) =~ secret
   end
 
   test "global branch query exits explicitly when access is revoked", %{conn: conn} do
@@ -108,6 +148,38 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
 
     assert has_element?(lv, "#gateway-area-kitchen", "iiko")
     assert has_element?(lv, "#gateway-area-menu", "Delivest")
+  end
+
+  test "network permission hides the integration and blocks configuration", %{
+    conn: conn,
+    branch: branch
+  } do
+    alias Delivest.Features.Settings
+
+    admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    editor = sign_in_editor(conn, branch)
+    overview = ~p"/staff/b/#{branch}/integrations"
+    provider = ~p"/staff/b/#{branch}/integrations/frontpad"
+
+    {:ok, open_provider, _html} = live(editor, provider)
+
+    assert {:error, :forbidden} =
+             Settings.preview(admin, "integration_frontpad", {:branch, branch.id})
+
+    assert {:ok, preview} = Settings.preview(admin, "integration_frontpad", :franchise)
+
+    assert {:ok, _} =
+             Settings.configure(admin, "integration_frontpad", :franchise, false, preview)
+
+    {:ok, index, _html} = live(editor, overview)
+    refute has_element?(index, "#integration-frontpad")
+    assert has_element?(index, "#integration-iiko")
+    assert {:error, {:redirect, %{to: ^overview}}} = live(editor, provider)
+    assert {:error, {:redirect, %{to: ^overview}}} = render_click(open_provider, "save", %{})
+
+    assert {:ok, _} = Settings.configure(admin, "integration_frontpad", :franchise, true)
+    assert {:ok, _index, html} = live(editor, overview)
+    assert html =~ "integration-frontpad"
   end
 
   test "opens settings when frontpad is not set up", %{conn: conn, branch: branch} do

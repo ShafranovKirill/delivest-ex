@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   use DelivestWeb, :live_view
 
   alias Delivest.Identity
-  alias Delivest.Integrations.{Channels, Crm}
+  alias Delivest.Integrations.{Channels, Crm, StaffAccess}
   alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Oms.{OrderSource, SourceStats}
   alias DelivestWeb.Staff.IntegrationLive.{Presentation, StateComponents}
@@ -30,14 +30,20 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   def handle_event("toggle", %{"source" => source}, socket) do
     sources = toggle(socket.assigns.crm.sources || [], source)
 
-    case Crm.update_branch_settings(
-           socket.assigns.current_staff,
-           socket.assigns.current_branch.id,
-           %{"sources" => sources}
-         ) do
-      {:ok, crm} -> {:noreply, assign_crm(socket, crm)}
-      {:error, :forbidden} -> {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
-      {:error, _reason} -> {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    with true <- StaffAccess.allowed?(socket.assigns.provider),
+         {:ok, crm} <-
+           Crm.update_branch_settings(
+             socket.assigns.current_staff,
+             socket.assigns.current_branch.id,
+             %{"sources" => sources}
+           ) do
+      {:noreply, assign_crm(socket, crm)}
+    else
+      reason when reason in [false, {:error, :forbidden}] ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
     end
   end
 
@@ -47,6 +53,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
 
   defp assign_crm(socket, crm) do
     provider = BranchSettings.active_provider(crm)
+    provider = if StaffAccess.allowed?(provider), do: provider
     context = %{socket.assigns.context | crm: crm}
     state = provider && Presentation.state(provider, context)
 

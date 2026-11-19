@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.Identity
-  alias Delivest.Integrations.Crm
+  alias Delivest.Integrations.{Crm, StaffAccess}
   alias Delivest.Integrations.Crm.BranchSettings
   alias DelivestWeb.Staff.IntegrationLive.Presentation
 
@@ -46,7 +46,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     {:noreply,
      assign(socket,
        selected_branch: context.branch,
-       states: Map.new(providers, &{&1, Presentation.state(&1, context)}),
+       states:
+         providers
+         |> Enum.filter(&StaffAccess.allowed?/1)
+         |> Map.new(&{&1, Presentation.state(&1, context)}),
        routes_state: if(branch, do: routes_state(context), else: nil)
      )}
   end
@@ -54,7 +57,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   defp routes_state(context) do
     case BranchSettings.active_provider(context.crm) do
       nil -> nil
-      provider -> Presentation.state(provider, context)
+      provider -> if StaffAccess.allowed?(provider), do: Presentation.state(provider, context)
     end
   end
 
@@ -86,6 +89,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <.integration_card
+            :if={StaffAccess.allowed?(:yandex_ads)}
             id="integration-yandex-ads"
             title={gettext("Yandex Direct and Metrika")}
             description={gettext("Visits, product feeds, completed orders and advertising costs.")}
@@ -102,6 +106,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={@can_edit_shared && ~p"/staff/integrations/yandex-ads"}
           />
           <.integration_card
+            :if={Map.has_key?(@states, :zvonok)}
             id="integration-zvonok"
             title={gettext("Sign-in by phone number")}
             description={gettext("Customers confirm the phone number with a call via zvonok.com.")}
@@ -110,6 +115,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={@can_edit_shared && ~p"/staff/integrations/zvonok"}
           />
           <.integration_card
+            :if={Map.has_key?(@states, :dadata)}
             id="integration-dadata"
             title={gettext("Delivery address on the map")}
             description={gettext("Address suggestions and the map via dadata.ru.")}
@@ -118,6 +124,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={@can_edit_shared && ~p"/staff/integrations/dadata"}
           />
           <.integration_card
+            :if={Map.has_key?(@states, :yookassa)}
             id="integration-yookassa"
             title={gettext("Online payment")}
             description={gettext("Card and SBP payments through YooKassa.")}
@@ -126,6 +133,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={@can_edit_shared && ~p"/staff/integrations/yookassa"}
           />
           <.integration_card
+            :if={Map.has_key?(@states, :yandex_eda)}
             id="integration-yandex-eda-shared"
             title={gettext("Yandex Eda access")}
             description={gettext("Access credentials shared by every branch.")}
@@ -161,6 +169,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
         <div :if={@selected_branch} class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <.integration_card
+            :if={StaffAccess.allowed?(:ycart)}
             id="integration-ycart"
             title={gettext("YCart")}
             description={gettext("Branch map and organization link on Yandex Maps.")}
@@ -177,6 +186,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={~p"/staff/b/#{@selected_branch}/integrations/routes"}
           />
           <.integration_card
+            :if={Map.has_key?(@states, :yandex_eda)}
             id="integration-yandex-eda"
             title={gettext("Yandex Eda")}
             description={gettext("Orders from Yandex Eda and Delivery Club.")}
@@ -185,6 +195,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={~p"/staff/b/#{@selected_branch}/integrations/yandex-eda"}
           />
           <.integration_card
+            :if={Map.has_key?(@states, :atol)}
             id="integration-fiscal"
             title={gettext("Receipts")}
             description={gettext("Fiscal receipts through ATOL Online.")}
@@ -193,6 +204,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
             path={~p"/staff/b/#{@selected_branch}/integrations/fiscal"}
           />
           <.integration_card
+            :if={Map.has_key?(@states, :yandex_delivery)}
             id="integration-yandex-delivery"
             title={gettext("Yandex Delivery")}
             description={gettext("A Yandex courier for the delivery orders.")}
@@ -202,6 +214,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
           />
           <.integration_card
             :for={{provider, name} <- Crm.providers()}
+            :if={Map.has_key?(@states, provider)}
             id={"integration-#{provider}"}
             title={name}
             description={gettext("Orders to the CRM and products matching with the app menu.")}
@@ -224,19 +237,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
   defp integration_card(%{path: path} = assigns) when is_binary(path) do
     ~H"""
-    <.link
-      id={@id}
-      navigate={@path}
-      class="card bg-base-100 border border-base-300 hover:border-primary transition-colors"
-    >
-      <.card_body
-        id={@id}
-        title={@title}
-        description={@description}
-        state={@state}
-        branch={@branch}
-      />
-    </.link>
+    <div class="card border border-base-300 bg-base-100">
+      <.link id={@id} navigate={@path} class="rounded-t-box hover:bg-base-200">
+        <.card_body
+          id={@id}
+          title={@title}
+          description={@description}
+          state={@state}
+          branch={@branch}
+        />
+      </.link>
+      <.connection_details id={@id} state={@state} branch={@branch} />
+    </div>
     """
   end
 
@@ -250,7 +262,44 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
         state={@state}
         branch={@branch}
       />
+      <.connection_details id={@id} state={@state} branch={@branch} />
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :state, :map, default: nil
+  attr :branch, :any, required: true
+
+  defp connection_details(assigns) do
+    ~H"""
+    <details
+      :if={
+        @state && Map.has_key?(@state, :credentials) &&
+          Map.has_key?(@state, :connection) && Map.has_key?(@state, :usage)
+      }
+      id={"#{@id}-details"}
+      class="border-t border-base-300 px-6 py-3 text-sm"
+    >
+      <summary class="cursor-pointer font-medium text-primary">
+        {gettext("Connection details")}
+      </summary>
+      <div class="mt-3 space-y-2">
+        <DelivestWeb.Staff.IntegrationLive.StateComponents.credentials_row
+          id={"#{@id}-credentials"}
+          credentials={@state.credentials}
+        />
+        <DelivestWeb.Staff.IntegrationLive.StateComponents.connection_row
+          id={"#{@id}-connection"}
+          connection={@state.connection}
+          branch={@branch}
+        />
+        <DelivestWeb.Staff.IntegrationLive.StateComponents.usage_rows
+          id={"#{@id}-usage"}
+          usage={@state.usage}
+        />
+      </div>
+    </details>
     """
   end
 

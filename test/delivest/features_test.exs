@@ -41,7 +41,18 @@ defmodule Delivest.FeaturesTest do
     assert {:ok, _} = Features.configure("segments", :franchise, false, actor: "host")
     refute Features.enabled?("segments", {:branch, branch.id})
     assert Repo.aggregate(Schedule, :count) == 0
-    assert {:ok, _} = Features.configure("segments", :franchise, true, actor: "host")
+
+    assert {:error, {:activation_required, preview}} =
+             Features.configure("segments", :franchise, true, actor: "host")
+
+    assert Enum.any?(preview.branches, &(&1.id == branch.id))
+
+    assert {:ok, _} =
+             Features.configure("segments", :franchise, true,
+               actor: "host",
+               confirm_activation: preview
+             )
+
     assert Features.enabled?("segments", {:branch, branch.id})
 
     assert {:error, :disabled} =

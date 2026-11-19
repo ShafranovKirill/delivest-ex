@@ -26,7 +26,6 @@ defmodule DelivestWeb.StaffBranchPath do
     "analytics/customers" => "analytics/customers",
     "integrations" => "integrations"
   }
-  @settings_filters ~w(all enabled disabled attention)
   @data_settings_paths ~w(/staff/settings/data-transfer /staff/settings/data-system)
   @creation_routes ~w(
     orders/new products/new products/tags/new categories/new promotions/new promotions/new/full
@@ -86,6 +85,10 @@ defmodule DelivestWeb.StaffBranchPath do
     parsed_path = if is_binary(path), do: URI.parse(path).path
 
     cond do
+      parsed_path == "/staff/settings" and is_binary(return_source) and
+          URI.parse(return_source).path == "/staff/settings" ->
+        settings_source_path(return_source)
+
       path == "/staff/analytics/comparison" ->
         comparison_period_path(path, return_source)
 
@@ -100,6 +103,13 @@ defmodule DelivestWeb.StaffBranchPath do
 
       true ->
         path
+    end
+  end
+
+  defp settings_source_path(source) do
+    case classify(source) do
+      {:ok, {:settings_summary, branch}, _query} -> settings_path(branch)
+      _ -> "/staff/settings"
     end
   end
 
@@ -196,7 +206,7 @@ defmodule DelivestWeb.StaffBranchPath do
   defp safe_network_return(source) when is_binary(source) do
     case classify(source) do
       {:ok, {:network, _route}, _query} -> network_return(source)
-      {:ok, {:settings_summary, _slug, _filter}, _query} -> network_return(source)
+      {:ok, {:settings_summary, _slug}, _query} -> network_return(source)
       {:ok, {:data_transfer, _slug}, _query} -> network_return(source)
       {:ok, {:data_system, _slug}, _query} -> network_return(source)
       _ -> "/staff/dashboard"
@@ -257,8 +267,7 @@ defmodule DelivestWeb.StaffBranchPath do
       path == "/staff/settings" ->
         branch = query["branch"]
         branch = if is_binary(branch) and valid_slug?(branch), do: branch, else: nil
-        filter = if query["filter"] in @settings_filters, do: query["filter"], else: nil
-        {:ok, {:settings_summary, branch, filter}, %{}}
+        {:ok, {:settings_summary, branch}, %{}}
 
       true ->
         classify_network(path, query)
@@ -365,15 +374,15 @@ defmodule DelivestWeb.StaffBranchPath do
   defp destination({:branch_settings, _slug, _section}, :network),
     do: {:ok, "/staff/dashboard", :network_overview}
 
-  defp destination({:settings_summary, _source_slug, filter}, {:branch, target_slug})
+  defp destination({:settings_summary, _source_slug}, {:branch, target_slug})
        when is_binary(target_slug) do
     if valid_slug?(target_slug),
-      do: {:ok, settings_path(target_slug, filter), :direct},
+      do: {:ok, settings_path(target_slug), :direct},
       else: :error
   end
 
-  defp destination({:settings_summary, _source_slug, filter}, :network),
-    do: {:ok, settings_path(nil, filter), :direct}
+  defp destination({:settings_summary, _source_slug}, :network),
+    do: {:ok, settings_path(nil), :direct}
 
   defp destination({kind, _source_slug}, {:branch, target_slug})
        when kind in [:data_transfer, :data_system] and is_binary(target_slug) do
@@ -406,15 +415,8 @@ defmodule DelivestWeb.StaffBranchPath do
     if map_size(allowed) == 0, do: "", else: "?" <> URI.encode_query(allowed)
   end
 
-  defp settings_path(branch, filter) do
-    params = %{}
-    params = if branch, do: Map.put(params, "branch", branch), else: params
-    params = if filter, do: Map.put(params, "filter", filter), else: params
-
-    if map_size(params) == 0,
-      do: "/staff/settings",
-      else: "/staff/settings?" <> URI.encode_query(params)
-  end
+  defp settings_path(nil), do: "/staff/settings"
+  defp settings_path(branch), do: "/staff/settings?" <> URI.encode_query(%{"branch" => branch})
 
   defp data_settings_path(:data_transfer), do: "/staff/settings/data-transfer"
   defp data_settings_path(:data_system), do: "/staff/settings/data-system"

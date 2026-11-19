@@ -226,16 +226,23 @@ defmodule DelivestWeb.Staff.PosLive.Index do
 
   defp key(item), do: Map.get(item, :key, item.product_id)
 
-  def staff_page_header(assigns) do
+  def staff_page_header(assigns), do: ~H""
+
+  @impl true
+  def render(assigns) do
     ~H"""
-    <.page_header title={gettext("POS")} subtitle={@current_branch.name}>
-      <:actions>
+    <div id="pos" phx-hook="WorkspaceFullscreen" class="flex min-h-0 min-w-0 flex-col select-none">
+      <header class="flex shrink-0 flex-wrap items-center gap-2 border-b border-base-300 bg-base-100 p-2 sm:px-4">
+        <div class="mr-auto min-w-0">
+          <h1 class="text-lg font-semibold">{gettext("POS")}</h1>
+          <p class="truncate text-xs text-base-content/60">{@current_branch.name}</p>
+        </div>
         <div class="join">
           <button
             id="pos-tab-sale"
             phx-click="screen"
             phx-value-to="sale"
-            class={["btn join-item", @screen != :handout && "btn-primary"]}
+            class={["btn btn-sm join-item", @screen != :handout && "btn-primary"]}
           >
             {gettext("Sale")}
           </button>
@@ -243,24 +250,40 @@ defmodule DelivestWeb.Staff.PosLive.Index do
             id="pos-tab-handout"
             phx-click="screen"
             phx-value-to="handout"
-            class={["btn join-item", @screen == :handout && "btn-primary"]}
+            class={["btn btn-sm join-item", @screen == :handout && "btn-primary"]}
           >
             {gettext("Hand out")}
             <span :if={@ready != []} class="badge badge-sm">{length(@ready)}</span>
           </button>
         </div>
-        <.link navigate={~p"/staff/b/#{@current_branch}/orders"} class="btn btn-ghost ml-auto">
-          <.icon name="hero-arrow-left-on-rectangle" class="size-5" /> {gettext("Exit")}
+        <button
+          id="pos-fullscreen"
+          type="button"
+          class="btn btn-sm btn-outline"
+          data-fullscreen-toggle
+          aria-label={gettext("Full screen")}
+          aria-pressed="false"
+          data-enter-label={gettext("Full screen")}
+          data-exit-label={gettext("Exit full screen")}
+        >
+          <span class="pos-fullscreen-enter flex items-center gap-1">
+            <.icon name="hero-arrows-pointing-out" class="size-4" />
+            <span class="hidden sm:inline">{gettext("Full screen")}</span>
+          </span>
+          <span class="pos-fullscreen-exit flex items-center gap-1">
+            <.icon name="hero-arrows-pointing-in" class="size-4" />
+            <span class="hidden sm:inline">{gettext("Exit full screen")}</span>
+          </span>
+        </button>
+        <.link
+          navigate={~p"/staff/b/#{@current_branch}/orders"}
+          class="btn btn-ghost btn-sm"
+          aria-label={gettext("Exit")}
+        >
+          <.icon name="hero-arrow-left-on-rectangle" class="size-4" />
+          <span class="hidden sm:inline">{gettext("Exit")}</span>
         </.link>
-      </:actions>
-    </.page_header>
-    """
-  end
-
-  @impl true
-  def render(assigns) do
-    ~H"""
-    <div id="pos" class="flex flex-col select-none">
+      </header>
       <div :if={@screen == :sale} class="flex min-h-0 flex-1">
         <aside class="w-44 shrink-0 space-y-1 overflow-y-auto border-r border-base-300 bg-base-100 p-2">
           <button
@@ -284,8 +307,8 @@ defmodule DelivestWeb.Staff.PosLive.Index do
           </button>
         </aside>
 
-        <section class="relative flex min-w-0 flex-1 flex-col">
-          <form id="pos-search-form" phx-change="search" phx-submit="search" class="p-3">
+        <section class="relative flex min-h-0 min-w-0 flex-1 flex-col">
+          <form id="pos-search-form" phx-change="search" phx-submit="search" class="p-2 sm:p-3">
             <input
               id="pos-search"
               name="query"
@@ -293,10 +316,10 @@ defmodule DelivestWeb.Staff.PosLive.Index do
               placeholder={gettext("Search products by name...")}
               autocomplete="off"
               phx-debounce="150"
-              class="input input-lg w-full"
+              class="input w-full sm:input-lg"
             />
           </form>
-          <div class="grid flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto p-3 pt-0 md:grid-cols-3 xl:grid-cols-4">
+          <div class="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto p-3 pt-0 md:grid-cols-3 xl:grid-cols-4">
             <button
               :for={product <- products(@categories, @category_id, @query)}
               id={"pos-product-#{product.id}"}
@@ -351,7 +374,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
           </form>
         </section>
 
-        <div class="flex flex-col">
+        <div id="pos-cart-panel" class="flex min-h-0 min-w-0 flex-col">
           <form id="pos-promo" phx-submit="promo" class="flex gap-2 p-3">
             <input
               name="code"
@@ -374,7 +397,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
       <div
         :if={@screen == :payment}
         id="pos-payment"
-        class="mx-auto w-full max-w-xl flex-1 space-y-6 p-6"
+        class="mx-auto min-h-0 w-full max-w-xl flex-1 space-y-6 overflow-y-auto p-6"
       >
         <p class="text-center text-base-content/60">{gettext("To pay")}</p>
         <p id="pos-total" class="text-center font-mono text-5xl font-black">
@@ -410,7 +433,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
               class="input input-lg w-full text-center font-mono text-2xl"
             />
           </form>
-          <div class="grid grid-cols-4 gap-2">
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button
               :for={bill <- bills(@cart.total_amount)}
               phx-click="bill"
@@ -452,7 +475,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
       <div
         :if={@screen == :done}
         id="pos-done"
-        class="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center gap-4 p-6 text-center"
+        class="mx-auto flex min-h-0 max-w-xl flex-1 flex-col items-center justify-center-safe gap-4 overflow-y-auto p-6 text-center"
       >
         <.icon name="hero-check-circle" class="size-20 text-success" />
         <p class="text-base-content/60">{gettext("Order number")}</p>
@@ -470,7 +493,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
         </button>
       </div>
 
-      <div :if={@screen == :handout} id="pos-handout" class="flex-1 overflow-y-auto p-4">
+      <div :if={@screen == :handout} id="pos-handout" class="min-h-0 flex-1 overflow-y-auto p-4">
         <p :if={@ready == []} class="py-16 text-center text-base-content/50">
           {gettext("No ready orders")}
         </p>
@@ -497,7 +520,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
     ~H"""
     <aside
       id="pos-check"
-      class="flex w-80 shrink-0 flex-col border-l border-base-300 bg-base-100 xl:w-96"
+      class="flex min-h-0 w-80 flex-1 flex-col overflow-y-auto border-l border-base-300 bg-base-100 xl:w-96"
     >
       <div class="join m-3">
         <button
@@ -518,7 +541,7 @@ defmodule DelivestWeb.Staff.PosLive.Index do
         </button>
       </div>
 
-      <div class="flex-1 space-y-2 overflow-y-auto px-3">
+      <div class="min-h-0 flex-1 space-y-2 overflow-y-auto px-3">
         <p :if={@cart.items == []} class="py-10 text-center text-base-content/50">
           {gettext("The check is empty")}
         </p>

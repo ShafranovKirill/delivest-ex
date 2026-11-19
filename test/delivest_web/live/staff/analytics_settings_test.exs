@@ -11,98 +11,87 @@ defmodule DelivestWeb.Staff.AnalyticsSettingsTest do
     {init_test_session(conn, %{"staff_id" => staff.id}), staff}
   end
 
-  test "administrator can enable, reload and confirm disabling branch tracking", %{conn: conn} do
+  test "administrator can enable and confirm disabling branch tracking centrally", %{conn: conn} do
     branch = insert(:branch)
     {conn, _} = login(conn, ["admin"])
-    {:ok, settings, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
-    assert has_element?(settings, "#branch-section-analytics")
-    {:ok, view, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/analytics")
-    refute has_element?(view, "#branch-save")
-    assert has_element?(view, "#analytics-toggle-1[aria-checked=false]")
-    view |> element("#analytics-toggle-1") |> render_click()
+    {:ok, view, _} = live(conn, ~p"/staff/settings?#{%{branch: branch.slug}}")
+    assert has_element?(view, "#feature-toggle-analytics_funnel[aria-checked=false]")
+    view |> element("#feature-toggle-analytics_funnel") |> render_click()
     assert Features.enabled?("analytics_funnel", {:branch, branch.id})
-    {:ok, view, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/analytics")
-    assert has_element?(view, "#analytics-toggle-1[aria-checked=true]")
-    view |> element("#analytics-toggle-1") |> render_click()
-    assert has_element?(view, "#analytics-disable-confirmation")
+    assert has_element?(view, "#feature-toggle-analytics_funnel[aria-checked=true]")
+    view |> element("#feature-toggle-analytics_funnel") |> render_click()
+    assert has_element?(view, "#feature-confirmation[role=dialog][aria-modal=true]")
+    assert has_element?(view, "#feature-confirmation[phx-key=escape]")
+    assert has_element?(view, "#feature-confirmation-focus")
+    assert has_element?(view, "#feature-cancel")
     assert Features.enabled?("analytics_funnel", {:branch, branch.id})
-    view |> element("#analytics-confirm-disable") |> render_click()
+    view |> element("#feature-confirm") |> render_click()
     refute Features.enabled?("analytics_funnel", {:branch, branch.id})
     assert Features.enabled?("analytics_funnel", :franchise)
   end
 
-  test "branch editors cannot see or open tracking controls", %{conn: conn} do
+  test "legacy analytics addresses redirect administrators to capabilities", %{conn: conn} do
+    branch = insert(:branch)
+    {conn, _} = login(conn, ["admin"])
+
+    assert {:error, {:live_redirect, %{to: target}}} =
+             live(conn, ~p"/staff/branches/#{branch.slug}/edit/analytics")
+
+    assert target == "/staff/settings?branch=#{branch.slug}"
+
+    assert {:error, {:live_redirect, %{to: "/staff/settings"}}} =
+             live(conn, ~p"/staff/franchise/analytics")
+  end
+
+  test "branch editors cannot see disabled controls or change gates via forged events", %{
+    conn: conn
+  } do
     branch = insert(:branch)
     {conn, staff} = login(conn, ["branches.read", "branches.update", "franchise.update"])
     insert(:staff_branch, staff: staff, branch: branch)
-    {:ok, view, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
-    refute has_element?(view, "#branch-section-analytics")
+    {:ok, view, _} = live(conn, ~p"/staff/settings?#{%{branch: branch.slug}}")
+    refute has_element?(view, "#feature-analytics_funnel")
+    view |> render_click("toggle", %{"feature" => "analytics_funnel"})
+    refute Features.enabled?("analytics_funnel", :franchise)
+    refute has_element?(view, "#feature-toggle-analytics_funnel")
 
     assert {:error, {:live_redirect, _}} =
              live(conn, ~p"/staff/branches/#{branch.slug}/edit/analytics")
-
-    {:ok, view, _} = live(conn, ~p"/staff/franchise")
-    refute has_element?(view, "#franchise-section-analytics")
-    assert {:error, {:live_redirect, _}} = live(conn, ~p"/staff/franchise/analytics")
   end
 
-  test "forged component rows and revoked administrator cannot change features", %{conn: conn} do
+  test "forged keys and revoked administrator cannot change features", %{conn: conn} do
     branch = insert(:branch)
     {conn, staff} = login(conn, ["admin"])
-    {:ok, view, _} = live(conn, ~p"/staff/branches/#{branch.slug}/edit/analytics")
-
-    view
-    |> with_target("#branch-analytics-settings")
-    |> render_click("toggle", %{"row" => "999", "feature" => "yandex_ads"})
-
+    {:ok, view, _} = live(conn, ~p"/staff/settings?#{%{branch: branch.slug}}")
+    view |> render_click("toggle", %{"feature" => "not_a_feature"})
     refute Features.enabled?("yandex_ads", :franchise)
 
     staff.role
     |> Ecto.Changeset.change(permissions: ["branches.read", "branches.update"])
     |> Repo.update!()
 
-    view |> with_target("#branch-analytics-settings") |> render_click("toggle", %{"row" => "1"})
+    view |> render_click("toggle", %{"feature" => "analytics_funnel"})
     refute Features.enabled?("analytics_funnel", :franchise)
-    refute has_element?(view, "#analytics-toggle-1")
+    refute has_element?(view, "#feature-toggle-analytics_funnel")
   end
 
-  test "enabling a dormant parent requires explicit confirmation of other affected branches", %{
-    conn: conn
-  } do
-    target = insert(:branch)
+  test "enabling a dormant network function confirms all affected branches and rejects stale confirmation",
+       %{conn: conn} do
     other = insert(:branch, name: "Previously enabled branch")
     third = insert(:branch)
     {conn, _} = login(conn, ["admin"])
     {:ok, _} = Features.configure("analytics_funnel", {:branch, other.id}, true, actor: "host")
+    {:ok, view, _} = live(conn, ~p"/staff/settings")
+    view |> element("#feature-toggle-analytics_funnel") |> render_click()
+    assert has_element?(view, "#feature-confirmation", other.name)
     refute Features.enabled?("analytics_funnel", :franchise)
 
-    {:ok, view, _} = live(conn, ~p"/staff/branches/#{target.slug}/edit/analytics")
-    view |> element("#analytics-toggle-1") |> render_click()
-    assert has_element?(view, "#analytics-enable-confirmation", other.name)
-    refute Features.enabled?("analytics_funnel", :franchise)
-    refute Features.enabled?("analytics_funnel", {:branch, target.id})
-
-    # A newly affected branch invalidates the stored confirmation under the parent lock.
     {:ok, _} = Features.configure("analytics_funnel", {:branch, third.id}, true, actor: "host")
-    view |> element("#analytics-confirm-enable") |> render_click()
-    assert has_element?(view, "#analytics-enable-confirmation", third.name)
+    view |> element("#feature-confirm") |> render_click()
+    assert has_element?(view, "#feature-confirmation", third.name)
     refute Features.enabled?("analytics_funnel", :franchise)
-    view |> element("#analytics-confirm-enable") |> render_click()
-    assert Features.enabled?("analytics_funnel", {:branch, target.id})
+    view |> element("#feature-confirm") |> render_click()
     assert Features.enabled?("analytics_funnel", {:branch, other.id})
     assert Features.enabled?("analytics_funnel", {:branch, third.id})
-  end
-
-  test "network controls enable the network and selected branches", %{conn: conn} do
-    branch = insert(:branch)
-    {conn, _} = login(conn, ["admin"])
-    {:ok, view, _} = live(conn, ~p"/staff/franchise/analytics")
-    view |> element("#analytics-toggle-0") |> render_click()
-    assert Features.enabled?("analytics_franchise", :franchise)
-    assert Features.enabled?("analytics_extended", :franchise)
-    refute Features.enabled?("analytics_franchise", {:branch, branch.id})
-    view |> element("#analytics-toggle-1") |> render_click()
-    assert Features.enabled?("analytics_franchise", {:branch, branch.id})
-    assert Features.enabled?("analytics_extended", {:branch, branch.id})
   end
 end

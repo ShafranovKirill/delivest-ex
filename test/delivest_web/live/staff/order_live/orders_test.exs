@@ -37,6 +37,11 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       assert html =~ "Orders"
       assert html =~ "By urgency"
       assert html =~ "order-status-tab-created"
+      assert html =~ "order-status-select"
+      assert html =~ "orders-fullscreen"
+      refute html =~ "Manage customer orders, track statuses and process fulfillment."
+      assert html =~ "intake-dialog"
+      refute html =~ "intake-popover"
       assert html =~ "orders-search"
       assert html =~ "orders-sound-toggle"
     end
@@ -245,6 +250,12 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
              )
 
       render_patch(lv, ~p"/staff/b/#{branch}/orders?status=preparing")
+
+      assert has_element?(
+               lv,
+               "#order-status-select",
+               DelivestWeb.Staff.OrderLive.OrderHelpers.status_label(:preparing)
+             )
 
       refute has_element?(lv, "#orders-#{order.id}")
       assert_patch(lv, ~p"/staff/b/#{branch}/orders?status=preparing")

@@ -175,7 +175,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
              Repo.get_by!(OrderTransition, order_id: order.id)
   end
 
-  test "order editor keeps queue filters for back and successful save", %{
+  test "order editor uses full workspace and keeps queue filters on save", %{
     conn: conn,
     branch: branch,
     product: product
@@ -183,10 +183,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrderFormTest do
     query = %{period: "all", status: "created", receiving: "pickup", page: "2"}
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders/new?#{query}")
 
-    assert has_element?(
-             lv,
-             "#staff-page-header a[href*='/orders?'][href*='period=all'][href*='page=2']"
-           )
+    assert has_element?(lv, "#order-workspace")
+    refute has_element?(lv, "#staff-page-header")
 
     render_click(lv, "add_item", %{"product-id" => product.id})
 

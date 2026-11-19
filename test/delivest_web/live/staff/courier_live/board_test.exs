@@ -6,12 +6,15 @@ defmodule DelivestWeb.Staff.CourierLive.BoardTest do
   import Delivest.OrderFixtures
 
   alias Delivest.Couriers
+  alias Delivest.Features
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.Order.Address
   alias Delivest.Repo
 
   setup %{conn: conn} do
     branch = insert(:branch)
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
 
     Repo.insert!(%BranchInfo{
       branch_id: branch.id,

@@ -8,6 +8,7 @@ import { LocationMap } from "./hooks/location_map";
 import { ZoneMap } from "./hooks/zone_map";
 import { Alarm, ring } from "./hooks/alarm";
 import { KitchenScreen } from "./hooks/kitchen_screen";
+import { WorkspaceFullscreen } from "./hooks/workspace_fullscreen";
 import { PickupBoard } from "./hooks/pickup_board";
 import { CourierMap } from "./hooks/courier_map";
 import { CourierLocation } from "./hooks/courier_location";
@@ -209,6 +210,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ZoneMap,
     Alarm,
     KitchenScreen,
+    WorkspaceFullscreen,
     PickupBoard,
     CourierMap,
     CourierLocation,
@@ -320,8 +322,17 @@ document.addEventListener("click", (event) => {
   }
 });
 
+document.addEventListener("delivest:show-intake", (event) => event.target.showModal());
+document.addEventListener("delivest:close-intake", (event) => event.target.close());
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    const intakeClose = document.querySelector("#intake-dialog[open] #intake-close");
+    if (intakeClose) {
+      event.preventDefault();
+      intakeClose.click();
+      return;
+    }
     const button = document.querySelector("[data-profile-trigger]");
     if (button?.getAttribute("aria-expanded") === "true") {
       setProfileOpen(false);

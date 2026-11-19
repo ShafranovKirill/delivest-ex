@@ -25,10 +25,6 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
     }
   end
 
-  defp header_action?(view, selector) do
-    has_element?(view, "#staff-page-header-actions #{selector}")
-  end
-
   test "the cashier sells for cash with change and the order goes to the kitchen", ctx do
     {:ok, lv, _html} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/pos")
 
@@ -40,12 +36,10 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
            )
 
     assert has_element?(lv, "#staff-context-navigation #section-nav-pos[aria-current='page']")
-    assert has_element?(lv, "#staff-page-header")
-    assert header_action?(lv, "#pos-tab-sale")
-    assert header_action?(lv, "#pos-tab-handout")
-    assert header_action?(lv, "a[href='/staff/b/#{ctx.branch.slug}/orders']")
-
-    refute has_element?(lv, "#pos header")
+    assert has_element?(lv, "#pos header #pos-tab-sale")
+    assert has_element?(lv, "#pos header #pos-tab-handout")
+    assert has_element?(lv, "#pos header #pos-fullscreen")
+    assert has_element?(lv, "#pos header a[href='/staff/b/#{ctx.branch.slug}/orders']")
 
     lv |> element("#pos-product-#{ctx.product.id}") |> render_click()
     lv |> element("#pos-product-#{ctx.product.id}") |> render_click()

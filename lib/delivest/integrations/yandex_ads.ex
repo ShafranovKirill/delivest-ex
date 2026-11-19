@@ -80,8 +80,14 @@ defmodule Delivest.Integrations.YandexAds do
 
   def update_settings(staff, attrs), do: update_settings(staff, attrs, nil)
 
-  def update_settings(staff, attrs, expected_generation) do
-    if Accounts.can?(staff, "admin") do
+  def update_settings(staff, attrs, expected_generation),
+    do: save_settings(staff, attrs, expected_generation, false)
+
+  def update_collection_settings(staff, attrs), do: save_settings(staff, attrs, nil, true)
+
+  defp save_settings(staff, attrs, expected_generation, configure_streams?) do
+    if Accounts.can?(Accounts.fresh_staff(staff), "admin") and
+         Delivest.Integrations.StaffAccess.allowed?(:yandex_ads) do
       Repo.transaction(fn ->
         Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended('yandex-ads-settings',0))")
         previous = get_settings()
@@ -148,6 +154,8 @@ defmodule Delivest.Integrations.YandexAds do
              |> Ecto.Changeset.put_change(:generation, generation)
              |> Repo.insert_or_update(log: false) do
           {:ok, settings} ->
+            if configure_streams?, do: configure_streams(settings, "staff:" <> staff.id)
+
             Repo.update_all(
               from(c in Conversion,
                 where: c.generation != ^settings.generation and c.status in ["pending", "sending"]
@@ -167,6 +175,32 @@ defmodule Delivest.Integrations.YandexAds do
       end)
     else
       {:error, :forbidden}
+    end
+  end
+
+  # Stream settings are authoritative for collection. The grants retain existing generation
+  # fences for jobs and event publication and are staged with the selected branches.
+  defp configure_streams(%Settings{enabled: true, branch_ids: [_ | _]} = settings, actor) do
+    for {field, feature} <- Enum.sort(Map.values(@streams)), Map.get(settings, field) do
+      grant_stream(feature, :franchise, actor)
+
+      for branch_id <- Enum.sort(settings.branch_ids) do
+        grant_stream(feature, {:branch, branch_id}, actor)
+      end
+    end
+
+    :ok
+  end
+
+  defp configure_streams(_settings, _actor), do: :ok
+
+  defp grant_stream(feature, scope, actor) do
+    case Features.configure(feature, scope, true,
+           actor: actor,
+           selected_integration_branches: true
+         ) do
+      {:ok, _} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
