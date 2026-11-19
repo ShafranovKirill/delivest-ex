@@ -23,6 +23,7 @@ defmodule Delivest.Integrations.YandexAds do
     feed: {:feed_enabled, "yandex_feed"},
     costs: {:costs_enabled, "yandex_costs"}
   }
+  @public_streams [:browser, :conversions, :ecommerce]
   @identifiers ~w(client_id yclid campaign_id ad_id)
   # Fence collected identities and conversions only when their destination or
   # collection permissions change. Expense and feed preferences are independent.
@@ -238,16 +239,21 @@ defmodule Delivest.Integrations.YandexAds do
 
   def enabled?(%Settings{} = settings, stream, branch_id) do
     case @streams[stream] do
-      {flag, feature} ->
-        credential_available?(settings, stream) and settings.enabled and
-          Map.get(settings, flag) == true and
-          branch_id in settings.branch_ids and
-          (stream in [:feed, :costs] or settings.privacy_approved) and
+      {_flag, feature} ->
+        stream_allowed?(settings, stream, branch_id) and
           Features.enabled?(feature, {:branch, branch_id})
 
       _ ->
         false
     end
+  end
+
+  defp stream_allowed?(settings, stream, branch_id) do
+    {flag, _feature} = Map.fetch!(@streams, stream)
+
+    credential_available?(settings, stream) and settings.enabled and
+      Map.get(settings, flag) == true and branch_id in settings.branch_ids and
+      (stream in [:feed, :costs] or settings.privacy_approved)
   end
 
   defp credential_available?(settings, :conversions),
@@ -264,25 +270,44 @@ defmodule Delivest.Integrations.YandexAds do
   def public_config(branch_id) do
     settings = get_settings()
 
+    snapshots =
+      @public_streams
+      |> Enum.map(fn stream -> elem(Map.fetch!(@streams, stream), 1) end)
+      |> Features.snapshots({:branch, branch_id})
+
+    tokens =
+      Map.new(@public_streams, fn stream ->
+        {_flag, feature} = Map.fetch!(@streams, stream)
+
+        token =
+          case snapshots[feature] do
+            {:ok, value} -> %{"franchise" => value.franchise, "branch" => value.branch}
+            _ -> nil
+          end
+
+        {stream, token}
+      end)
+
     feature_version =
-      {settings.generation,
-       Enum.map([:browser, :conversions, :ecommerce], &feature_token(&1, branch_id))}
+      {settings.generation, Enum.map(@public_streams, &tokens[&1])}
       |> :erlang.term_to_binary()
       |> then(&:crypto.hash(:sha256, &1))
       |> Base.url_encode64(padding: false)
 
-    browser = enabled?(settings, :browser, branch_id)
+    allowed =
+      Map.new(@public_streams, fn stream ->
+        {stream, stream_allowed?(settings, stream, branch_id) and not is_nil(tokens[stream])}
+      end)
 
-    capture =
-      browser or enabled?(settings, :conversions, branch_id) or
-        enabled?(settings, :ecommerce, branch_id)
+    browser = allowed.browser
+    capture = browser or allowed.conversions or allowed.ecommerce
 
     %{
       enabled: browser,
       counter_id: if(browser, do: settings.counter_id),
       generation: settings.generation,
       feature_version: feature_version,
-      ecommerce: browser and enabled?(settings, :ecommerce, branch_id),
+      ecommerce: browser and allowed.ecommerce,
       capture: capture,
       collection_basis: if(capture, do: "admin_approved", else: "disabled"),
       webvisor: false

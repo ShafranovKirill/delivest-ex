@@ -19647,8 +19647,8 @@
       "in_flight_obligation": "An interrupted write becomes unknown and is not blindly retried; submitted upload is reconciled by ID",
       "on_disable": "Pending work becomes stale; browser and server streams are independently gated",
       "producer_scheduler": [
-        "lib/delivest/integrations/yandex_ads.ex:532",
-        "lib/delivest/integrations/yandex_ads.ex:893"
+        "lib/delivest/integrations/yandex_ads.ex:557",
+        "lib/delivest/integrations/yandex_ads.ex:918"
       ],
       "source": "lib/delivest/integrations/yandex_ads/conversion_worker.ex",
       "worker_process": "Delivest.Integrations.YandexAds.ConversionWorker"
@@ -19662,7 +19662,7 @@
       "in_flight_obligation": "Publish a complete account-period slice atomically, including removed provider rows",
       "on_disable": "Disabled or replaced connection cancels queued import; last successful snapshot remains historical",
       "producer_scheduler": [
-        "lib/delivest/integrations/yandex_ads.ex:601",
+        "lib/delivest/integrations/yandex_ads.ex:626",
         "lib/delivest/integrations/yandex_ads/schedule_worker.ex:23"
       ],
       "source": "lib/delivest/integrations/yandex_ads/cost_worker.ex",

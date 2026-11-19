@@ -105,6 +105,37 @@ defmodule Delivest.Features do
     end
   end
 
+  @doc "Read several feature snapshots for one scope with one branch check and one gate query."
+  def snapshots(features, scope) when is_list(features) do
+    with {:ok, key} <- scope_key(scope),
+         :ok <- valid_branch(scope) do
+      known = Enum.filter(Enum.uniq(features), &Registry.known?/1)
+      names = known |> Enum.flat_map(&closure/1) |> Enum.uniq()
+      gates = if names == [], do: %{}, else: read_gates(names, key)
+
+      Map.new(features, fn feature ->
+        result =
+          if feature in known do
+            dependencies = closure(feature)
+            parent = gates[{feature, "franchise"}]
+            child = if key == "franchise", do: nil, else: gates[{feature, key}]
+
+            if Enum.all?(dependencies, &enabled_in?(&1, key, gates)) do
+              {:ok, %{franchise: parent.generation, branch: if(child, do: child.generation)}}
+            else
+              {:error, :disabled}
+            end
+          else
+            {:error, :disabled}
+          end
+
+        {feature, result}
+      end)
+    else
+      _ -> Map.new(features, &{&1, {:error, :disabled}})
+    end
+  end
+
   def still_enabled?(feature, scope, generation),
     do: snapshot(feature, scope) == {:ok, generation}
 
