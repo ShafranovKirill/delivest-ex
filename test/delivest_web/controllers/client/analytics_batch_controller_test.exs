@@ -30,9 +30,10 @@ defmodule DelivestWeb.Client.Analytics.BatchControllerTest do
     assert first_ack["session_id"] == second_ack["session_id"]
     assert count("funnel_events") == 2
     assert count("funnel_sessions") == 1
+
     assert [first["event_id"], second["event_id"]] ==
-             (Repo.query!("SELECT event_id::text FROM funnel_events ORDER BY id").rows
-              |> Enum.map(fn [id] -> id end))
+             Repo.query!("SELECT event_id::text FROM funnel_events ORDER BY id").rows
+             |> Enum.map(fn [id] -> id end)
 
     partial =
       packet
