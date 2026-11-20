@@ -12,11 +12,13 @@ defmodule Delivest.Identity.Branches do
     "channels",
     "yandex_delivery",
     "ycart_settings",
+    "vk_ads",
     "fiscal",
     :crm,
     :channels,
     :yandex_delivery,
     :ycart_settings,
+    :vk_ads,
     :fiscal
   ]
   @own_settings @integrations ++ ["couriers", :couriers]

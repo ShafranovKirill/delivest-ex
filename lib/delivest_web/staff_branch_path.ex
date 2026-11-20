@@ -5,7 +5,7 @@ defmodule DelivestWeb.StaffBranchPath do
   @branch_lists ~w(
     dashboard statistics analytics/channels analytics/sources analytics/funnel analytics/customers orders deliveries couriers delivery delivery/address delivery/zones
     delivery/couriers finance/payments finance/transactions finance/receipts integrations integrations/frontpad
-    integrations/ycart integrations/iiko integrations/rkeeper integrations/routes
+    integrations/ycart integrations/vk-ads integrations/iiko integrations/rkeeper integrations/routes
     integrations/zvonok integrations/dadata integrations/yookassa integrations/yandex-eda
     integrations/yandex-delivery integrations/fiscal categories products products/bulk
     products/operations products/stops products/modifiers products/suggested products/tags

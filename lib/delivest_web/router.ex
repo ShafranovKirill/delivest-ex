@@ -515,6 +515,7 @@ defmodule DelivestWeb.Router do
           live "/recovery", Recovery, :index
           live "/frontpad", Frontpad, :index
           live "/ycart", Ycart, :index
+          live "/vk-ads", VkAds, :index
           live "/iiko", Iiko, :index
           live "/rkeeper", Rkeeper, :index
           live "/routes", Routes, :index

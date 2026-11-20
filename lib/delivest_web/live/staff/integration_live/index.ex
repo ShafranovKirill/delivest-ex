@@ -169,6 +169,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
 
         <div :if={@selected_branch} class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <.integration_card
+            :if={StaffAccess.allowed?(:vk_ads)}
+            id="integration-vk-ads"
+            title={gettext("VK Реклама / Top.Mail.Ru")}
+            description={gettext("Просмотры страниц публичной витрины выбранного филиала.")}
+            state={vk_ads_state(@selected_branch)}
+            branch={@selected_branch}
+            path={~p"/staff/b/#{@selected_branch}/integrations/vk-ads"}
+          />
+          <.integration_card
             :if={StaffAccess.allowed?(:ycart)}
             id="integration-ycart"
             title={gettext("YCart")}
@@ -358,6 +367,13 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   defp ycart_state(branch) do
     settings = branch.info && branch.info.ycart_settings
     %{configuration: if(settings && settings.enabled, do: :enabled, else: :disabled)}
+  end
+
+  defp vk_ads_state(branch) do
+    config =
+      Delivest.Identity.Branch.VkAdsSettings.public_config(branch.info && branch.info.vk_ads)
+
+    %{configuration: if(config.enabled, do: :enabled, else: :disabled)}
   end
 
   defp status_badge(assigns) do

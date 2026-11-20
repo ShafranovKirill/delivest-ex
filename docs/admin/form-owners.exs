@@ -99,6 +99,9 @@
   "integration_live/ycart.ex" =>
     {"lib/delivest/identity/branch/ycart_settings.ex", "Settings / Integrations / Ycart",
      "integration_live/ycart.ex"},
+  "integration_live/vk_ads.ex" =>
+    {"lib/delivest/identity/branch/vk_ads_settings.ex", "Settings / Integrations / VK Ads",
+     "integration_live/vk_ads.ex"},
   "integration_live/yookassa.ex" =>
     {"lib/delivest/integrations/yookassa/settings.ex", "Settings / Integrations / Yookassa",
      "integration_live/yookassa.ex"},

@@ -4,7 +4,7 @@ defmodule Delivest.Integrations.StaffAccess do
   alias Delivest.Features.Gate
   alias Delivest.Repo
 
-  @providers ~w(yandex_ads zvonok dadata yookassa yandex_eda yandex_delivery atol ycart frontpad iiko rkeeper)a
+  @providers ~w(yandex_ads vk_ads zvonok dadata yookassa yandex_eda yandex_delivery atol ycart frontpad iiko rkeeper)a
   @entries Enum.map(@providers, &{&1, "integration_#{&1}"})
   @keys Enum.map(@entries, &elem(&1, 1))
 

@@ -36,7 +36,7 @@ defmodule Delivest.SiteSnapshot.Fields do
 
   @catalog_order ~w(categories groups media tags products modifiers links)
 
-  @branch_integration_fields ~w(crm fiscal channels yandex_delivery ycart_settings)a
+  @branch_integration_fields ~w(crm fiscal channels yandex_delivery ycart_settings vk_ads)a
 
   @global_integrations [
     {"yookassa", Delivest.Integrations.Yookassa.Settings, ~w(shop_id secret_key webhook_token)a},
@@ -123,7 +123,7 @@ defmodule Delivest.SiteSnapshot.Fields do
   def branch_integrations(nil),
     do:
       Map.new(
-        ~w(crm fiscal channels yandex_delivery ycart_settings)a,
+        @branch_integration_fields,
         &{to_string(&1), nil}
       )
 

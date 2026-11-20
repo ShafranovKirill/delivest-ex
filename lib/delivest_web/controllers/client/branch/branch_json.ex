@@ -161,7 +161,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       vk_url: info.vk_url,
       whatsapp_url: info.whatsapp_url,
       instagram_url: info.instagram_url,
-      ycart_settings: info.ycart_settings || %{}
+      ycart_settings: info.ycart_settings || %{},
+      vk_ads: Delivest.Identity.Branch.VkAdsSettings.public_config(info.vk_ads)
     }
   end
 end

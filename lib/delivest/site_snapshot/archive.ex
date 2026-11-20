@@ -431,9 +431,11 @@ defmodule Delivest.SiteSnapshot.Archive do
   end
 
   defp valid_branch_integrations?(integrations, branch_id) when is_map(integrations) do
-    allowed = ~w(crm fiscal channels yandex_delivery ycart_settings)
+    required = ~w(crm fiscal channels yandex_delivery ycart_settings)
+    allowed = ~w(crm fiscal channels yandex_delivery ycart_settings vk_ads)
+    keys = MapSet.new(Map.keys(integrations))
 
-    MapSet.new(Map.keys(integrations)) == MapSet.new(allowed) and
+    MapSet.subset?(MapSet.new(required), keys) and MapSet.subset?(keys, MapSet.new(allowed)) and
       Enum.all?(integrations, fn {_key, value} -> is_nil(value) or is_map(value) end) and
       integrations
       |> Map.reject(fn {_key, value} -> is_nil(value) end)

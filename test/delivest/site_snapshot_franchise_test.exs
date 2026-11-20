@@ -8,7 +8,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
   alias Delivest.Franchise.{Documents, LegalDocument}
   alias Delivest.Franchise.Settings, as: FranchiseSettings
   alias Delivest.Identity.Branch
-  alias Delivest.Identity.Branch.{BranchInfo, YcartSettings}
+  alias Delivest.Identity.Branch.{BranchInfo, VkAdsSettings, YcartSettings}
   alias Delivest.Integrations.Yookassa
   alias Delivest.Net.{Category, Product, ProductExternalId, ProductModifierGroup}
   alias Delivest.Relations.EntityRelation
@@ -26,7 +26,8 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     Repo.insert!(%BranchInfo{
       branch_id: main.id,
       timezone: "Asia/Yekaterinburg",
-      ycart_settings: %YcartSettings{enabled: true, yandex_org_id: "org-1"}
+      ycart_settings: %YcartSettings{enabled: true, yandex_org_id: "org-1"},
+      vk_ads: %VkAdsSettings{enabled: true, counter_id: "3817108", privacy_approved: true}
     })
 
     Repo.insert!(%BranchInfo{branch_id: north.id, timezone: "Europe/Moscow"})
@@ -81,6 +82,11 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     ycart = Repo.get_by!(BranchInfo, branch_id: main.id).ycart_settings
     assert ycart.enabled
     assert ycart.yandex_org_id == "org-1"
+
+    vk_ads = Repo.get_by!(BranchInfo, branch_id: main.id).vk_ads
+    assert vk_ads.enabled
+    assert vk_ads.counter_id == "3817108"
+    assert vk_ads.privacy_approved
 
     assert Repo.one!(FranchiseSettings).name == "Brand"
     assert Documents.get(:privacy).body == "Our privacy"
@@ -387,6 +393,16 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     assert Repo.one!(Delivest.Integrations.Yookassa.Settings).shop_id == "111111"
     assert Documents.get(:privacy).body == "Target privacy"
     assert Repo.get!(Branch, source.id).name == "Source"
+
+    old_branch_format =
+      update_in(integration_data["branches"], fn branches ->
+        Enum.map(branches, fn branch ->
+          update_in(branch["integrations"], &Map.delete(&1, "vk_ads"))
+        end)
+      end)
+
+    assert {:ok, old_archive} = Archive.encode(old_branch_format, %{}, :memory, :franchise)
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, old_archive)
 
     assert {:ok, _} =
              SiteSnapshot.import_franchise(staff, franchise)

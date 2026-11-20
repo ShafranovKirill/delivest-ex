@@ -8,7 +8,8 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     KitchenSettings,
     LoyaltySettings,
     PaymentSettings,
-    YcartSettings
+    YcartSettings,
+    VkAdsSettings
   }
 
   alias Delivest.Integrations.Crm.BranchSettings
@@ -40,6 +41,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     embeds_one :fiscal, Delivest.Fiscal.BranchSettings, on_replace: :update
     embeds_one :channels, Delivest.Integrations.Channels.BranchSettings, on_replace: :update
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
+    embeds_one :vk_ads, VkAdsSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update, defaults_to_struct: true
 
     embeds_one :fulfillment, Delivest.Identity.Branch.FulfillmentSettings,
@@ -94,6 +96,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> cast_embed(:fiscal, with: &Delivest.Fiscal.BranchSettings.changeset/2)
     |> cast_embed(:channels, with: &Delivest.Integrations.Channels.BranchSettings.changeset/2)
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
+    |> cast_embed(:vk_ads, with: &VkAdsSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
     |> cast_embed(:fulfillment, with: &Delivest.Identity.Branch.FulfillmentSettings.changeset/2)
     |> cast_embed(:intake, with: &IntakeSettings.changeset/2)

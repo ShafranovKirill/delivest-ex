@@ -15,6 +15,7 @@ defmodule DelivestWeb.Hooks.IntegrationAccess do
     IntegrationLive.YandexDelivery => :yandex_delivery,
     IntegrationLive.Fiscal => :atol,
     IntegrationLive.Ycart => :ycart,
+    IntegrationLive.VkAds => :vk_ads,
     IntegrationLive.Frontpad => :frontpad,
     IntegrationLive.Iiko => :iiko,
     IntegrationLive.Rkeeper => :rkeeper

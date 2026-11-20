@@ -65,6 +65,117 @@ defmodule DelivestWeb.Seo.SeoControllerTest do
     end
   end
 
+  test "noscript pixel appears only for the enabled branch public pages", %{conn: conn} do
+    alias Delivest.Identity.Branch.BranchInfo
+    alias Delivest.Repo
+
+    enabled = insert(:branch, slug: "pixel-shop", is_active: true)
+    disabled = insert(:branch, slug: "plain-shop", is_active: true)
+
+    %BranchInfo{branch_id: enabled.id}
+    |> BranchInfo.changeset(%{
+      vk_ads: %{enabled: true, counter_id: "3817108", privacy_approved: true}
+    })
+    |> Repo.insert!()
+
+    %BranchInfo{branch_id: disabled.id}
+    |> BranchInfo.changeset(%{
+      vk_ads: %{enabled: false, counter_id: "777", privacy_approved: true}
+    })
+    |> Repo.insert!()
+
+    for path <- [
+          "/pixel-shop",
+          "/pixel-shop/promotions",
+          "/pixel-shop/branch-info",
+          "/pixel-shop/contacts",
+          "/pixel-shop/legal/offer",
+          "/pixel-shop/legal/terms",
+          "/pixel-shop/legal/privacy",
+          "/pixel-shop/legal/consent"
+        ] do
+      pixel =
+        conn
+        |> recycle()
+        |> put_req_header("x-original-uri", path)
+        |> get(~p"/seo/content")
+        |> html_response(200)
+
+      assert pixel =~ "counter?id=3817108;js=na"
+      refute pixel =~ "777"
+    end
+
+    for path <- [
+          "/plain-shop",
+          "/pixel-shop/checkout",
+          "/pixel-shop/legal/arbitrary",
+          "/unknown-shop",
+          "/"
+        ] do
+      response(
+        conn |> recycle() |> put_req_header("x-original-uri", path) |> get(~p"/seo/content"),
+        204
+      )
+    end
+  end
+
+  test "public product and category include the selected branch pixel and disabling clears it", %{
+    conn: conn,
+    admin: admin
+  } do
+    alias Delivest.{Identity, Relations, Repo}
+
+    branch = insert(:branch, slug: "pixel-menu", is_active: true)
+    category = insert(:category)
+    {:ok, _} = Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    product = insert_branch_product(branch.id, category_id: category.id, slug: "pixel-product")
+
+    {:ok, branch} =
+      Identity.update_integrations(admin, branch, %{
+        "vk_ads" => %{"enabled" => true, "counter_id" => "3817108", "privacy_approved" => true}
+      })
+
+    for path <- [
+          "/pixel-menu/product/#{product.slug}",
+          "/pixel-menu/category/#{category.id}"
+        ] do
+      html =
+        conn
+        |> recycle()
+        |> put_req_header("x-original-uri", path)
+        |> get(~p"/seo/content")
+        |> html_response(200)
+
+      assert html =~ "counter?id=3817108;js=na"
+    end
+
+    {:ok, _} = Identity.update_integrations(admin, branch, %{"vk_ads" => %{"enabled" => false}})
+
+    html =
+      conn
+      |> recycle()
+      |> put_req_header("x-original-uri", "/pixel-menu/product/#{product.slug}")
+      |> get(~p"/seo/content")
+      |> html_response(200)
+
+    refute html =~ "top-fwz1.mail.ru"
+
+    inactive = insert(:branch, slug: "inactive-pixel", is_active: false)
+
+    {:ok, _} =
+      Identity.update_integrations(admin, inactive, %{
+        "vk_ads" => %{"enabled" => true, "counter_id" => "999", "privacy_approved" => true}
+      })
+
+    response(
+      conn
+      |> recycle()
+      |> put_req_header("x-original-uri", "/inactive-pixel")
+      |> get(~p"/seo/content"),
+      204
+    )
+  end
+
   test "robots.txt closes private pages and points to the sitemap", %{conn: conn} do
     body = conn |> get(~p"/seo/robots.txt") |> text_response(200)
 

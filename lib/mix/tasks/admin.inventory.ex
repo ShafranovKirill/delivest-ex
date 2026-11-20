@@ -1302,6 +1302,9 @@ defmodule Mix.Tasks.Admin.Inventory do
       [
         {"ycart", "lib/delivest/identity/branch/ycart_settings.ex", "branch_info.ycart",
          "settings.enabled", "Delivest.Identity.Branch.YcartSettings changeset and caller"},
+        {"vk_ads", "lib/delivest/identity/branch/vk_ads_settings.ex", "branch_info.vk_ads",
+         "settings.enabled",
+         "Delivest.Identity.Branch.VkAdsSettings changeset and public_config/1"},
         {"fiscal", "lib/delivest/fiscal/branch_settings.ex", "branch_info.fiscal",
          "settings.mode", "Delivest.Fiscal.BranchSettings.own?/1 and Fiscal callers"},
         {"routes", "lib/delivest/integrations/channels/branch_settings.ex",

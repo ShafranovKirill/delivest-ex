@@ -136,6 +136,13 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
           },
           additionalProperties: true,
           nullable: true
+        },
+        vk_ads: %Schema{
+          type: :object,
+          properties: %{
+            enabled: %Schema{type: :boolean},
+            counter_id: %Schema{type: :string, nullable: true}
+          }
         }
       },
       required: [:id]
