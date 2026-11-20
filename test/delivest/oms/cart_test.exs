@@ -45,6 +45,20 @@ defmodule Delivest.Oms.CartTest do
       assert %CartView{total_amount: 250} = Carts.get_cart_by_id(cart.id)
     end
 
+    test "promotion invalidation rebuilds its branch without clearing another cart" do
+      first = insert(:branch)
+      second = insert(:branch)
+      {:ok, first_cart} = Carts.create_cart(%{session_id: "promo-first", branch_id: first.id})
+      {:ok, second_cart} = Carts.create_cart(%{session_id: "promo-second", branch_id: second.id})
+      {:ok, first_cached} = Cachex.get(:cart_cache, first_cart.id)
+      {:ok, second_cached} = Cachex.get(:cart_cache, second_cart.id)
+
+      Delivest.Promo.Catalog.invalidate(first.id)
+
+      assert Cachex.get(:cart_cache, second_cart.id) == {:ok, second_cached}
+      assert Carts.get_cart_by_id(first_cart.id).catalog_version > first_cached.catalog_version
+    end
+
     test "rebuilds cached carts missing loyalty fields without losing items" do
       product = insert_branch_product(@branch_id, price: 100)
       {:ok, cart} = Carts.create_cart(%{session_id: "legacy-cache", branch_id: @branch_id})

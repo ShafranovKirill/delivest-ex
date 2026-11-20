@@ -348,6 +348,20 @@ defmodule Delivest.Promo.OrderFlowTest do
     assert {:ok, repeated} = Oms.repeat_order(target.id, client.id, updated.id)
     assert repeated.promo_gifts == %{}
     refute Enum.any?(repeated.items, & &1.gift)
+
+    {:ok, scoped_target} =
+      Carts.create_cart(%{branch_id: branch.id, session_id: Ecto.UUID.generate()})
+
+    assert {:ok, scoped_repeated} =
+             Oms.repeat_order_for_session(
+               scoped_target.id,
+               scoped_target.session_id,
+               client.id,
+               updated.id
+             )
+
+    assert scoped_repeated.promo_gifts == %{}
+    refute Enum.any?(scoped_repeated.items, & &1.gift)
   end
 
   test "unavailable saved choice blocks checkout until explicit clear", %{
@@ -390,14 +404,22 @@ defmodule Delivest.Promo.OrderFlowTest do
   } do
     promo = insert_promotion(branch.id, rules: ~s|then gift ("pizza", "cola") x1|)
     cart = cart_with(branch, pizza, 1)
+    version = Repo.get!(Delivest.Identity.Branch, branch.id).catalog_version
+    promo_key = {:compiled_promo, branch.id, version}
+    Cachex.del(:promo_cache, promo_key)
+    Cachex.del(:branch_cache, branch.id)
 
     assert {:error, :cancelled} =
              Repo.transaction(fn ->
                assert {:ok, view} = Oms.choose_promotion_gifts(cart.id, promo.id, [pizza.id])
                assert view.promo_gifts[promo.id] == [pizza.id]
+               assert {:ok, nil} = Cachex.get(:promo_cache, promo_key)
+               assert {:ok, nil} = Cachex.get(:branch_cache, branch.id)
                Repo.rollback(:cancelled)
              end)
 
+    assert {:ok, nil} = Cachex.get(:promo_cache, promo_key)
+    assert {:ok, nil} = Cachex.get(:branch_cache, branch.id)
     assert Carts.get_cart_by_id(cart.id).promo_gifts == %{}
   end
 

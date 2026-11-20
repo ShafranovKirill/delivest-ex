@@ -3,8 +3,9 @@ defmodule Delivest.Oms.CartRevision do
 
   alias Delivest.Oms.Cart
 
-  def from_raw(%Cart{} = cart, catalog_version, items) do
+  def from_raw(%Cart{} = cart, catalog_version, items, source_epoch) do
     snapshot = [
+      source_epoch,
       cart.branch_id,
       cart.client_id,
       cart.fulfillment_type,

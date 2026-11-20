@@ -44,6 +44,49 @@ defmodule Delivest.Features do
 
   def enabled_branches(_, _), do: MapSet.new()
 
+  @doc "Read several feature dependency closures for known branches in one query."
+  def enabled_branches_many(features, ids) when is_list(features) and is_list(ids) do
+    canonical =
+      ids
+      |> Enum.flat_map(fn id ->
+        case Ecto.UUID.cast(id) do
+          {:ok, value} -> [value]
+          _ -> []
+        end
+      end)
+      |> Enum.uniq()
+
+    known = Enum.filter(Enum.uniq(features), &Registry.known?/1)
+    names = known |> Enum.flat_map(&closure/1) |> Enum.uniq()
+    keys = ["franchise" | Enum.map(canonical, &("branch:" <> &1))]
+
+    gates =
+      if names == [] or canonical == [] do
+        %{}
+      else
+        Repo.all(from g in Gate, where: g.feature in ^names and g.scope_key in ^keys)
+        |> Map.new(&{{&1.feature, &1.scope_key}, &1})
+      end
+
+    Map.new(features, fn feature ->
+      enabled =
+        if feature in known do
+          dependencies = closure(feature)
+
+          canonical
+          |> Enum.filter(fn id ->
+            key = "branch:" <> id
+            Enum.all?(dependencies, &enabled_in?(&1, key, gates))
+          end)
+          |> MapSet.new()
+        else
+          MapSet.new()
+        end
+
+      {feature, enabled}
+    end)
+  end
+
   def snapshot(feature, scope) do
     with {:ok, key} <- scope_key(scope),
          true <- Registry.known?(feature),
@@ -59,6 +102,37 @@ defmodule Delivest.Features do
       end
     else
       _ -> {:error, :disabled}
+    end
+  end
+
+  @doc "Read several feature snapshots for one scope with one branch check and one gate query."
+  def snapshots(features, scope) when is_list(features) do
+    with {:ok, key} <- scope_key(scope),
+         :ok <- valid_branch(scope) do
+      known = Enum.filter(Enum.uniq(features), &Registry.known?/1)
+      names = known |> Enum.flat_map(&closure/1) |> Enum.uniq()
+      gates = if names == [], do: %{}, else: read_gates(names, key)
+
+      Map.new(features, fn feature ->
+        result =
+          if feature in known do
+            dependencies = closure(feature)
+            parent = gates[{feature, "franchise"}]
+            child = if key == "franchise", do: nil, else: gates[{feature, key}]
+
+            if Enum.all?(dependencies, &enabled_in?(&1, key, gates)) do
+              {:ok, %{franchise: parent.generation, branch: if(child, do: child.generation)}}
+            else
+              {:error, :disabled}
+            end
+          else
+            {:error, :disabled}
+          end
+
+        {feature, result}
+      end)
+    else
+      _ -> Map.new(features, &{&1, {:error, :disabled}})
     end
   end
 

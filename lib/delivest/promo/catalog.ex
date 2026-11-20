@@ -33,12 +33,30 @@ defmodule Delivest.Promo.Catalog do
     end
   end
 
+  def list_uncached(nil), do: []
+  def list_uncached(branch_id), do: load(branch_id)
+
   defp cached(branch_id, version) do
+    if Repo.in_transaction?(),
+      do: read_cached(branch_id, version),
+      else: fetch_cached(branch_id, version)
+  end
+
+  defp read_cached(branch_id, version) do
+    case Cachex.get(@cache, {:compiled_promo, branch_id, version}) do
+      {:ok, compiled} when is_list(compiled) -> compiled
+      _ -> load(branch_id)
+    end
+  catch
+    :exit, _ -> load(branch_id)
+  end
+
+  defp fetch_cached(branch_id, version) do
     key = {:compiled_promo, branch_id, version}
 
     result =
       try do
-        Cachex.fetch(@cache, key, fn _key -> {:commit, load(branch_id), ttl: @ttl} end)
+        Cachex.fetch(@cache, key, fn _key -> {:commit, load(branch_id), expire: @ttl} end)
       catch
         :exit, _ -> {:error, :cache_unavailable}
       end
@@ -61,12 +79,10 @@ defmodule Delivest.Promo.Catalog do
 
   def invalidate(branch_id) do
     Delivest.Net.Catalogs.clear_menu_cache(branch_id)
-    Cachex.clear(:cart_cache)
   end
 
   def invalidate_after_commit(branch_id) do
     Delivest.Net.Catalogs.invalidate_menu_cache(branch_id)
-    Cachex.clear(:cart_cache)
   end
 
   defp load(branch_id) do

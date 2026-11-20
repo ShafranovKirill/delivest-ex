@@ -46,7 +46,7 @@ defmodule Delivest.LocalTime do
 
         _miss ->
           zone = own_zone(branch_id)
-          Cachex.put(:branch_cache, key, {:zone, zone}, ttl: :timer.hours(1))
+          Cachex.put(:branch_cache, key, {:zone, zone}, expire: :timer.hours(1))
           zone
       end
 

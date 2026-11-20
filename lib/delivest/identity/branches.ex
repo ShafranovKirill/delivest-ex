@@ -55,10 +55,24 @@ defmodule Delivest.Identity.Branches do
   def get_branch(id, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
-    case Cachex.get(:branch_cache, id) do
-      {:ok, nil} -> fetch_from_db_and_cache(id, opts)
-      {:ok, %Branch{} = branch} -> ensure_preloaded_and_cached(branch, preloads, id, opts)
-      _ -> {:error, :not_found}
+    if Repo.in_transaction?() do
+      case Cachex.get(:branch_cache, id) do
+        {:ok, %Branch{} = branch} -> {:ok, maybe_preload_branch(branch, opts)}
+        _ -> fetch_from_db_without_cache(id, opts)
+      end
+    else
+      case Cachex.get(:branch_cache, id) do
+        {:ok, nil} -> fetch_from_db_and_cache(id, opts)
+        {:ok, %Branch{} = branch} -> ensure_preloaded_and_cached(branch, preloads, id, opts)
+        _ -> {:error, :not_found}
+      end
+    end
+  end
+
+  defp fetch_from_db_without_cache(id, opts) do
+    case fetch_not_deleted(id) do
+      nil -> {:error, :not_found}
+      branch -> {:ok, maybe_preload_branch(branch, opts)}
     end
   end
 
@@ -78,7 +92,7 @@ defmodule Delivest.Identity.Branches do
             {:error, :not_found}
 
           branch_id ->
-            Cachex.put(:branch_cache, slug_cache_key, branch_id, ttl: :timer.hours(24))
+            Cachex.put(:branch_cache, slug_cache_key, branch_id, expire: :timer.hours(24))
 
             get_branch(branch_id, opts)
         end
@@ -523,6 +537,6 @@ defmodule Delivest.Identity.Branches do
   @spec cache_branch(integer(), Branch.t()) ::
           {:commit, true} | {:commit, false} | {:error, term()}
   defp cache_branch(id, branch) do
-    Cachex.put(:branch_cache, id, branch, ttl: :timer.hours(1))
+    Cachex.put(:branch_cache, id, branch, expire: :timer.hours(1))
   end
 end

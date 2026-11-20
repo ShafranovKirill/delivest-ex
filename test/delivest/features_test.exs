@@ -18,6 +18,27 @@ defmodule Delivest.FeaturesTest do
     assert Repo.aggregate(Schedule, :count) == 0
   end
 
+  test "batch gate snapshot preserves independent closures and unknown feature behavior" do
+    branch = insert(:branch)
+    other = insert(:branch)
+    features = ["notifications", "analytics_funnel", "analytics_links", "unknown"]
+    ids = [branch.id, other.id]
+
+    assert {:ok, _} = Features.configure("notifications", :franchise, true, actor: "host")
+
+    assert {:ok, _} =
+             Features.configure("notifications", {:branch, branch.id}, true, actor: "host")
+
+    many = Features.enabled_branches_many(features, ids)
+
+    for feature <- features do
+      assert many[feature] == Features.enabled_branches(feature, ids)
+    end
+
+    assert many["notifications"] == MapSet.new([branch.id])
+    assert many["unknown"] == MapSet.new()
+  end
+
   test "parent and branch gates, repeat configuration, and stale publish fence" do
     branch = insert(:branch)
     assert {:ok, parent} = Features.configure("segments", :franchise, true, actor: "host")

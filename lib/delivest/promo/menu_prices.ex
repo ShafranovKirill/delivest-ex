@@ -3,14 +3,19 @@ defmodule Delivest.Promo.MenuPrices do
   alias Delivest.Promo.Effects.ProductPrices
 
   def overlay(categories, branch_id) when is_list(categories) do
-    offers = branch_id |> sales() |> ProductPrices.offers_by_product()
+    offers = branch_id |> sales(false) |> ProductPrices.offers_by_product()
     Enum.map(categories, &overlay_category(&1, offers))
   end
 
-  defp sales(branch_id) do
+  def overlay_fresh(categories, branch_id) when is_list(categories) do
+    offers = branch_id |> sales(true) |> ProductPrices.offers_by_product()
+    Enum.map(categories, &overlay_category(&1, offers))
+  end
+
+  defp sales(branch_id, fresh?) do
     candidates =
       branch_id
-      |> Catalog.list()
+      |> then(fn id -> if fresh?, do: Catalog.list_uncached(id), else: Catalog.list(id) end)
       |> Catalog.refresh_products(branch_id)
       |> Enum.filter(&(Compiled.automatic?(&1) and Strategy.unconditional?(&1.strategy)))
 

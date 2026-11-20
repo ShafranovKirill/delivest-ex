@@ -228,6 +228,49 @@ defmodule DelivestWeb.Client.OrderControllerTest do
              |> json_response(200)
   end
 
+  test "restored epoch invalidates an old revision even when catalog version is reused", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    old_revision =
+      conn
+      |> get(~p"/client/cart?branch_id=#{branch.id}")
+      |> json_response(200)
+      |> get_in(["data", "revision"])
+
+    catalog_version = Repo.get!(Delivest.Identity.Branch, branch.id).catalog_version
+
+    Repo.query!(
+      "UPDATE storefront_epoch SET epoch = md5(random()::text || clock_timestamp()::text)"
+    )
+
+    product |> Ecto.Changeset.change(price: 500) |> Repo.update!()
+    assert Repo.get!(Delivest.Identity.Branch, branch.id).catalog_version == catalog_version
+
+    assert %{"error" => "cart_changed"} =
+             conn
+             |> recycle_with_headers()
+             |> post(
+               ~p"/client/orders",
+               order_params(branch, cart_id, %{"cart_revision" => old_revision})
+             )
+             |> json_response(409)
+
+    refreshed =
+      conn
+      |> recycle_with_headers()
+      |> get(~p"/client/cart?branch_id=#{branch.id}")
+      |> json_response(200)
+      |> Map.fetch!("data")
+
+    assert refreshed["total_amount"] == 500
+    refute refreshed["revision"] == old_revision
+  end
+
   test "branch payload does not expose CRM credentials", %{conn: conn, branch: branch} do
     body = conn |> post(~p"/client/branches/#{branch.id}/select") |> json_response(200)
 
@@ -771,10 +814,12 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     } do
       client = insert(:client, phone: "+79995556678")
       retired = insert_branch_product(branch.id, price: 100)
+      stopped = insert_branch_product(branch.id, price: 100)
       conn = start_session(conn, branch)
       {conn, cart_id} = cart_with_product(conn, branch, product)
       conn = post(conn, ~p"/client/cart/#{cart_id}/items/#{product.id}")
       conn = post(recycle_with_headers(conn), ~p"/client/cart/#{cart_id}/items/#{retired.id}")
+      conn = post(recycle_with_headers(conn), ~p"/client/cart/#{cart_id}/items/#{stopped.id}")
 
       order_id =
         conn
@@ -785,6 +830,11 @@ defmodule DelivestWeb.Client.OrderControllerTest do
         |> get_in(["data", "id"])
 
       retired |> Ecto.Changeset.change(is_active: false) |> Repo.update!()
+
+      staff =
+        insert(:staff, role: build(:role, permissions: ["stops.update"]), branches: [branch])
+
+      assert {:ok, _stop} = Delivest.Net.Stops.stop(staff, branch.id, stopped, :until_resumed)
 
       conn = conn |> recycle_with_headers() |> get(~p"/client/cart?branch_id=#{branch.id}")
       new_cart_id = json_response(conn, 200)["data"]["id"]
