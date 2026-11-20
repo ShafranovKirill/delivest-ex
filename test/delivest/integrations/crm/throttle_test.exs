@@ -5,11 +5,12 @@ defmodule Delivest.Integrations.Crm.ThrottleTest do
 
   test "spaces calls sharing a key by the interval" do
     key = make_ref()
+    interval = 60_000
 
-    assert :ok = Throttle.run({key, 100}, fn -> :ok end)
+    assert :ok = Throttle.run({key, interval}, fn -> :ok end)
 
-    assert {:error, {:throttled, wait_ms}} = Throttle.run({key, 100}, fn -> :done end)
-    assert wait_ms > 0 and wait_ms <= 100
+    assert {:error, {:throttled, wait_ms}} = Throttle.run({key, interval}, fn -> :done end)
+    assert wait_ms in 1..interval
   end
 
   test "a call after the interval runs at once" do
