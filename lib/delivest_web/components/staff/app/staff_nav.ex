@@ -135,6 +135,7 @@ defmodule DelivestWeb.StaffNav do
 
   defp provider_slug(:yandex_eda), do: "yandex-eda"
   defp provider_slug(:yandex_ads), do: "yandex-ads"
+  defp provider_slug(:vk_ads), do: "vk-ads"
   defp provider_slug(:yandex_delivery), do: "yandex-delivery"
   defp provider_slug(:atol), do: "fiscal"
   defp provider_slug(provider), do: Atom.to_string(provider)
@@ -147,6 +148,7 @@ defmodule DelivestWeb.StaffNav do
   defp integration_label(:yookassa), do: gettext("Online payment")
   defp integration_label(:yandex_eda), do: gettext("Yandex Eda")
   defp integration_label(:yandex_ads), do: gettext("Yandex Direct and Metrika")
+  defp integration_label(:vk_ads), do: gettext("VK Реклама / Top.Mail.Ru")
   defp integration_label(:yandex_delivery), do: gettext("Yandex Delivery")
   defp integration_label(:ycart), do: gettext("Yandex Cart")
   defp integration_label(:atol), do: gettext("Fiscal receipts")

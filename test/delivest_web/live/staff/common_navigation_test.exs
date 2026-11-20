@@ -23,6 +23,17 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     init_test_session(conn, session)
   end
 
+  test "VK pixel integration uses the selected branch route" do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))
+    entry = DelivestWeb.StaffNav.integration_entry(:vk_ads, staff, branch)
+
+    assert entry.label == "VK Реклама / Top.Mail.Ru"
+    assert entry.path == "/staff/b/#{branch.slug}/integrations/vk-ads"
+    assert entry.scope == :branch
+    assert DelivestWeb.StaffNav.integration_entry(:vk_ads, staff, nil).path == nil
+  end
+
   test "network sales navigation remains available with an active branch and requires both permissions" do
     branch = insert(:branch)
 
