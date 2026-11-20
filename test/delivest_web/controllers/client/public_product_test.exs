@@ -72,10 +72,14 @@ defmodule DelivestWeb.Client.PublicProductTest do
 
     on_exit(fn -> :telemetry.detach(handler) end)
 
+    Cachex.del(:branch_cache, ctx.branch.id)
+    Cachex.clear(:promo_cache)
     assert {:ok, _} = PublicOffers.product(ctx.branch.id, ctx.product.id)
     before = query_rows([])
     for _ <- 1..220, do: insert_branch_product(ctx.branch.id, category_id: ctx.category.id)
     query_rows([])
+    Cachex.del(:branch_cache, ctx.branch.id)
+    Cachex.clear(:promo_cache)
     assert {:ok, _} = PublicOffers.product(ctx.branch.id, ctx.product.id)
     after_growth = query_rows([])
     assert Enum.sum(after_growth) <= Enum.sum(before)
