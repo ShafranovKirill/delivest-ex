@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Client.OrderControllerTest do
-  use DelivestWeb.ConnCase, async: true
+  # The epoch restore test updates a shared singleton inside its sandbox transaction.
+  use DelivestWeb.ConnCase, async: false
 
   import Delivest.Factory
 
