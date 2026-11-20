@@ -11,6 +11,7 @@ defmodule DelivestWeb.Client.OrderAuthRequiredTest do
 
   setup %{conn: conn} do
     Cachex.clear(:franchise_cache)
+    on_exit(fn -> Cachex.clear(:franchise_cache) end)
     branch = insert(:branch, is_active: true)
     product = insert_branch_product(branch.id, price: 300)
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
