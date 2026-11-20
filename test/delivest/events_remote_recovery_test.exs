@@ -118,7 +118,7 @@ defmodule Delivest.EventsRemoteRecoveryTest do
         handler,
         [:delivest, :repo, :query],
         fn _, _, metadata, _ ->
-          if Process.get(:s3_barrier) and
+          if Process.get(:s3_barrier) == true and
                String.contains?(metadata.query || "", "UPDATE \"event_deliveries\"") do
             send(parent, {:before_commit, self()})
 
@@ -399,7 +399,7 @@ defmodule Delivest.EventsRemoteRecoveryTest do
         handler,
         [:delivest, :repo, :query],
         fn _, _, metadata, _ ->
-          if Process.get(:s3_delivery_barrier) and
+          if Process.get(:s3_delivery_barrier) == true and
                String.contains?(metadata.query || "", "UPDATE \"event_deliveries\"") do
             send(parent, {:delivery_before_commit, self()})
 
@@ -514,7 +514,7 @@ defmodule Delivest.EventsRemoteRecoveryTest do
         handler,
         [:delivest, :repo, :query],
         fn _, _, metadata, _ ->
-          if Process.get(:s3_payment_barrier) and
+          if Process.get(:s3_payment_barrier) == true and
                String.contains?(metadata.query || "", "UPDATE \"order_payments\"") do
             send(parent, {:payment_before_commit, self()})
 
