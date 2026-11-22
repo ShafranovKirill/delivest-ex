@@ -1,5 +1,5 @@
 defmodule Delivest.PrintingTest do
-  use DelivestWeb.ConnCase, async: true
+  use DelivestWeb.ConnCase, async: false
   import Delivest.Factory
   import Delivest.OrderFixtures
 
@@ -91,13 +91,14 @@ defmodule Delivest.PrintingTest do
            |> response(404)
 
     pdf_conn = get(conn, ~p"/staff/b/#{branch.slug}/printing/kitchen/#{own_order.id}")
+    pdf = response(pdf_conn, 200)
 
     assert get_resp_header(pdf_conn, "content-type")
            |> hd()
            |> String.starts_with?("application/pdf")
 
     assert get_resp_header(pdf_conn, "cache-control") == ["private, no-store"]
-    assert binary_part(response(pdf_conn, 200), 0, 5) == "%PDF-"
+    assert binary_part(pdf, 0, 5) == "%PDF-"
 
     download = get(conn, ~p"/staff/b/#{branch.slug}/printing/kitchen/#{own_order.id}?download=1")
 
