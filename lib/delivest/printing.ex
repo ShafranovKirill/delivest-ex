@@ -5,6 +5,9 @@ defmodule Delivest.Printing do
   alias Delivest.Printing.{Preset, Settings}
   require Logger
 
+  @type pdf_result :: {:ok, binary(), :a4 | :a5} | {:error, :renderer_unavailable}
+  @type printing_settings :: %Settings{}
+
   def settings(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
       {:ok, %{info: %{printing: %Settings{} = settings}}} -> settings
@@ -35,6 +38,8 @@ defmodule Delivest.Printing do
   def enabled?(%Settings{} = settings, :kitchen), do: settings.kitchen_enabled
   def enabled?(%Settings{} = settings, :customer), do: settings.customer_enabled
 
+  @spec render_order(term(), binary(), term(), term()) ::
+          pdf_result() | {:error, :forbidden | :not_found}
   def render_order(staff, branch_id, order_id, type) when type in [:kitchen, :customer] do
     with true <- allowed?(staff, branch_id, type) || {:error, :forbidden},
          {:ok, uuid} <- Ecto.UUID.cast(order_id),
@@ -63,14 +68,14 @@ defmodule Delivest.Printing do
 
   def render_order(_, _, _, _), do: {:error, :not_found}
 
+  @spec render(Delivest.Oms.Order.t(), :kitchen | :customer, printing_settings()) :: pdf_result()
   def render(order, type, settings) when type in [:kitchen, :customer] do
     preset = Map.get(settings, type) || Preset.default(type)
     html = html(order, type, preset)
-    paper = if type == :customer, do: preset.paper, else: :a4
+    paper = if type == :customer and preset.paper == :a5, do: :a5, else: :a4
 
     case ChromicPDF.print_to_pdf({:html, html},
-           print_to_pdf: %{preferCSSPageSize: true, printBackground: true},
-           timeout: 20_000
+           print_to_pdf: %{preferCSSPageSize: true, printBackground: true}
          ) do
       {:ok, encoded} ->
         {:ok, Base.decode64!(encoded), paper}
