@@ -142,6 +142,22 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           form_name={@form.name}
         />
         <section
+          :if={@section == :maintenance}
+          id="franchise-maintenance-settings"
+          class="rounded-box border border-base-300 bg-base-100 p-5 space-y-3"
+        >
+          <.input
+            field={@form[:maintenance_enabled]}
+            type="checkbox"
+            label={gettext("Maintenance on all storefronts")}
+          />
+          <p class="text-sm text-base-content/60">
+            {gettext(
+              "Existing orders and staff tools remain available. New orders through the public storefront are paused."
+            )}
+          </p>
+        </section>
+        <section
           :if={@section == :brand}
           class="p-5 bg-base-100 rounded-box border border-base-300 space-y-4"
         >

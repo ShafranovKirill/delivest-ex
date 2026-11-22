@@ -13380,3 +13380,33 @@ msgstr "Интеграция появится в админке во всей с
 
 msgid "Yandex Cart"
 msgstr "Яндекс Корзина"
+
+msgid "Maintenance"
+msgstr "Техобслуживание"
+
+msgid "Temporarily close every public storefront while keeping staff and existing orders available."
+msgstr "Временно закрыть все витрины. Админка и уже принятые заказы останутся доступны."
+
+msgid "Maintenance on all storefronts"
+msgstr "Техобслуживание во всех филиалах"
+
+msgid "Existing orders and staff tools remain available. New orders through the public storefront are paused."
+msgstr "Принятые заказы и инструменты сотрудников доступны. Новые заказы через витрину временно не принимаются."
+
+msgid "Maintenance for this branch"
+msgstr "Техобслуживание этого филиала"
+
+msgid "Maintenance is enabled for the entire franchise. This branch cannot override it."
+msgstr "Включено для всей франшизы. Этот филиал не может отменить общий режим."
+
+msgid "Existing orders and staff tools remain available."
+msgstr "Принятые заказы и инструменты сотрудников остаются доступны."
+
+msgid "entire franchise"
+msgstr "всей франшизы"
+
+msgid "Maintenance enabled for %{scope}"
+msgstr "Техобслуживание включено для %{scope}"
+
+msgid "Maintenance disabled for %{scope}"
+msgstr "Техобслуживание выключено для %{scope}"

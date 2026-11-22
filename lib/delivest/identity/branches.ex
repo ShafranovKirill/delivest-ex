@@ -282,17 +282,33 @@ defmodule Delivest.Identity.Branches do
       branch = Repo.preload(branch, :info)
 
       Ecto.Multi.new()
+      |> Ecto.Multi.run(:maintenance_lock, fn repo, _ ->
+        if Map.has_key?(info_attrs, :maintenance_enabled) or
+             Map.has_key?(info_attrs, "maintenance_enabled") do
+          Delivest.Storefront.Maintenance.lock_branch(repo, branch.id)
+        end
+
+        {:ok, :locked}
+      end)
       |> Ecto.Multi.run(:check_baseline, fn repo, _changes ->
         check_branch_baseline(repo, branch.id, opts[:expected])
       end)
-      |> Ecto.Multi.update(:branch, Branch.changeset(branch, branch_attrs))
-      |> Ecto.Multi.run(:info, fn repo, _changes ->
-        upsert_branch_info(repo, branch, info_attrs)
+      |> Ecto.Multi.run(:current_info, fn repo, _ ->
+        {:ok, repo.one(from i in BranchInfo, where: i.branch_id == ^branch.id)}
       end)
-      |> Ecto.Multi.run(:kitchen_replan, fn _repo, %{branch: updated_branch, info: info} ->
+      |> Ecto.Multi.update(:branch, Branch.changeset(branch, branch_attrs))
+      |> Ecto.Multi.run(:info, fn repo, %{current_info: current_info} ->
+        upsert_branch_info(repo, %{branch | info: current_info}, info_attrs)
+      end)
+      |> Ecto.Multi.run(:kitchen_replan, fn _repo,
+                                            %{
+                                              branch: updated_branch,
+                                              info: info,
+                                              current_info: current_info
+                                            } ->
         updated = %{updated_branch | info: info}
 
-        if kitchen_changed?(branch, updated) do
+        if kitchen_changed?(%{branch | info: current_info}, updated) do
           %{branch_id: updated.id}
           |> ReplanBranchWorker.new()
           |> Oban.insert()
@@ -302,10 +318,19 @@ defmodule Delivest.Identity.Branches do
       end)
       |> Repo.transaction()
       |> case do
-        {:ok, %{branch: updated_branch, info: updates_info}} ->
+        {:ok, %{branch: updated_branch, info: updates_info, current_info: current_info}} ->
           Cachex.clear(:branch_cache)
           updated = %{updated_branch | info: updates_info}
           Delivest.Oms.Kitchen.notify_availability(updated.id)
+
+          if ((current_info && current_info.maintenance_enabled) || false) !=
+               updates_info.maintenance_enabled do
+            Audit.record(staff, "storefront.maintenance_changed", updated,
+              branch_id: updated.id,
+              metadata: %{"scope" => "branch", "enabled" => updates_info.maintenance_enabled}
+            )
+          end
+
           {:ok, updated}
 
         {:error, :kitchen_replan, reason, _changes} ->
@@ -348,7 +373,8 @@ defmodule Delivest.Identity.Branches do
       :whatsapp_url,
       :instagram_url,
       :fulfillment,
-      :kitchen
+      :kitchen,
+      :maintenance_enabled
     ]
 
     if current_branch &&

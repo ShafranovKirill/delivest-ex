@@ -37,6 +37,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     field :instagram_url, :string
     field :board_token, :string
     field :timezone, :string
+    field :maintenance_enabled, :boolean, default: false
     embeds_one :crm, BranchSettings, on_replace: :update
     embeds_one :fiscal, Delivest.Fiscal.BranchSettings, on_replace: :update
 
@@ -93,6 +94,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
         :whatsapp_url,
         :instagram_url,
         :timezone,
+        :maintenance_enabled,
         :branch_id
       ],
       empty_values: [nil, ""]

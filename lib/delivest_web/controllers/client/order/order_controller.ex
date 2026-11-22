@@ -38,6 +38,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
       conflict: {"Ключ уже использован с другим запросом", "application/json", ErrorResponse},
       unprocessable_entity: {"Ошибка создания заказа", "application/json", ErrorResponse},
       bad_gateway: {"Сервис оплаты недоступен", "application/json", ErrorResponse},
+      service_unavailable: {"На витрине технические работы", "application/json", ErrorResponse},
       too_many_requests: {"Слишком много запросов", "application/json", ErrorResponse}
     ]
   )
@@ -299,6 +300,16 @@ defmodule DelivestWeb.Client.Order.OrderController do
       :branch_paused,
       "The branch is not taking orders now",
       %{until: status.until, reason: status.reason}
+    )
+  end
+
+  defp render_error(conn, :storefront_maintenance) do
+    conn
+    |> Plug.Conn.put_resp_header("retry-after", "60")
+    |> ApiError.send_error(
+      :service_unavailable,
+      :storefront_maintenance,
+      "The storefront is temporarily unavailable for maintenance"
     )
   end
 

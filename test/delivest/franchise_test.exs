@@ -25,6 +25,28 @@ defmodule Delivest.FranchiseTest do
     assert %{name: "Pizza", primary_color: "#ff0000"} = Franchise.get_settings()
   end
 
+  test "maintenance toggle requires franchise permission and records only real changes", %{
+    admin: admin,
+    manager: manager
+  } do
+    assert {:error, :forbidden} =
+             Franchise.update_settings(manager, %{"maintenance_enabled" => "true"})
+
+    assert Franchise.get_settings().maintenance_enabled == false
+
+    assert {:ok, %{maintenance_enabled: true}} =
+             Franchise.update_settings(admin, %{"maintenance_enabled" => "true"})
+
+    assert {:ok, _} = Franchise.update_settings(admin, %{"maintenance_enabled" => "true"})
+
+    events =
+      Repo.query!(
+        "SELECT actor_id, metadata->>'scope', metadata->>'enabled' FROM audit_events WHERE action = 'storefront.maintenance_changed'"
+      ).rows
+
+    assert events == [[Ecto.UUID.dump!(admin.id), "franchise", "true"]]
+  end
+
   test "the dark theme color is optional and cleared by an empty value", %{admin: admin} do
     assert {:ok, %{dark_primary_color: "#b86a69"}} =
              Franchise.update_settings(admin, %{"dark_primary_color" => "#B86A69"})

@@ -18,10 +18,29 @@ defmodule Delivest.Franchise.SettingsStore do
   def change(%Settings{} = settings, attrs \\ %{}), do: Settings.changeset(settings, attrs)
 
   def save(attrs) do
-    load()
-    |> Settings.changeset(attrs)
-    |> Repo.insert_or_update()
-    |> tap(fn _result -> Cachex.del(@cache, @key) end)
+    case save_with_previous(attrs) do
+      {:ok, {_previous, settings}} -> {:ok, settings}
+      error -> error
+    end
+  end
+
+  def save_with_previous(attrs) do
+    result =
+      Repo.transaction(fn ->
+        if Map.has_key?(attrs, :maintenance_enabled) or Map.has_key?(attrs, "maintenance_enabled") do
+          Delivest.Storefront.Maintenance.lock_franchise(Repo)
+        end
+
+        previous = load()
+
+        case previous |> Settings.changeset(attrs) |> Repo.insert_or_update() do
+          {:ok, settings} -> {previous, settings}
+          {:error, changeset} -> Repo.rollback(changeset)
+        end
+      end)
+
+    Cachex.del(@cache, @key)
+    result
   end
 
   def save_images(attrs) do

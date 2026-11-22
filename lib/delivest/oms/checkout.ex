@@ -35,7 +35,8 @@ defmodule Delivest.Oms.Checkout do
       public_guest: is_nil(client),
       authenticated_client_id: client && client.id,
       analytics_guest_id: analytics_guest_id,
-      cart_revision: attrs["cart_revision"]
+      cart_revision: attrs["cart_revision"],
+      public_checkout: true
     ]
 
     preflight = fn ->

@@ -54,6 +54,7 @@ defmodule DelivestWeb.Schemas.FranchiseSchemas do
               description: "Цвет для тёмной темы; если пусто, подбирается из основного"
             },
             default_theme: %Schema{type: :string, enum: ["light", "dark"], example: "light"},
+            maintenance_enabled: %Schema{type: :boolean},
             logo_url: %Schema{type: :string, format: :uri, nullable: true},
             logo_dark_url: %Schema{type: :string, format: :uri, nullable: true},
             legal: Legal,

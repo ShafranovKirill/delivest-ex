@@ -35,6 +35,7 @@ defmodule Delivest.Franchise.Settings do
     field :logo_key, :string
     field :logo_dark_key, :string
     field :client_auth_required, :boolean, default: false
+    field :maintenance_enabled, :boolean, default: false
     field :marketing_push_limit_count, :integer, default: 1
     field :marketing_push_window_hours, :integer, default: 24
 
@@ -126,6 +127,7 @@ defmodule Delivest.Franchise.Settings do
       :loyalty_stars,
       :loyalty_expire_days,
       :client_auth_required,
+      :maintenance_enabled,
       :marketing_push_limit_count,
       :marketing_push_window_hours
     ]

@@ -39,6 +39,84 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
     assert get_resp_header(response, "cache-control") == ["no-store"]
   end
 
+  test "maintenance changes effective branch state and both public revisions", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    other_branch = insert(:branch, is_active: true)
+    info = Repo.insert!(%Delivest.Identity.Branch.BranchInfo{branch_id: branch.id})
+    Repo.insert!(%Delivest.Identity.Branch.BranchInfo{branch_id: other_branch.id})
+    refresh_revisions()
+
+    initial =
+      conn
+      |> get("/client/storefront/v1/bootstrap?slug=#{branch.slug}&locale=ru")
+      |> json_response(200)
+
+    assert initial["franchise"]["maintenance_enabled"] == false
+
+    assert initial["selected_branch"]["branch_info"]["maintenance"] ==
+             %{"enabled" => false, "reason" => nil}
+
+    info |> Ecto.Changeset.change(maintenance_enabled: true) |> Repo.update!()
+    refresh_revisions()
+
+    by_branch =
+      conn
+      |> recycle()
+      |> get("/client/storefront/v1/bootstrap?slug=#{branch.slug}&locale=ru")
+      |> json_response(200)
+
+    assert by_branch["selected_branch"]["branch_info"]["maintenance"] ==
+             %{"enabled" => true, "reason" => "branch"}
+
+    assert Enum.find(by_branch["branches"], &(&1["id"] == other_branch.id))["branch_info"][
+             "maintenance"
+           ] ==
+             %{"enabled" => false, "reason" => nil}
+
+    assert by_branch["revisions"]["branches"] != initial["revisions"]["branches"]
+
+    stale_settings = Delivest.Franchise.SettingsStore.get()
+    {:ok, _} = Delivest.Franchise.SettingsStore.save(%{maintenance_enabled: true})
+    refresh_revisions()
+    Cachex.put(:franchise_cache, :settings, stale_settings)
+
+    by_franchise =
+      conn
+      |> recycle()
+      |> get("/client/storefront/v1/bootstrap?slug=#{branch.slug}&locale=ru")
+      |> json_response(200)
+
+    assert by_franchise["franchise"]["maintenance_enabled"] == true
+
+    assert by_franchise["selected_branch"]["branch_info"]["maintenance"] ==
+             %{"enabled" => true, "reason" => "franchise"}
+
+    assert Enum.find(by_franchise["branches"], &(&1["id"] == other_branch.id))["branch_info"][
+             "maintenance"
+           ] ==
+             %{"enabled" => true, "reason" => "franchise"}
+
+    assert by_franchise["revisions"]["franchise"] != by_branch["revisions"]["franchise"]
+    assert by_franchise["revisions"]["branches"] != by_branch["revisions"]["branches"]
+
+    {:ok, _} = Delivest.Franchise.SettingsStore.save(%{maintenance_enabled: false})
+    refresh_revisions()
+
+    restored =
+      conn
+      |> recycle()
+      |> get("/client/storefront/v1/bootstrap?slug=#{branch.slug}&locale=ru")
+      |> json_response(200)
+
+    assert restored["selected_branch"]["branch_info"]["maintenance"] ==
+             %{"enabled" => true, "reason" => "branch"}
+
+    assert Enum.find(restored["branches"], &(&1["id"] == other_branch.id))["branch_info"][
+             "maintenance"
+           ] ==
+             %{"enabled" => false, "reason" => nil}
+  end
+
   test "unknown slug is not substituted with another branch", %{conn: conn} do
     insert(:branch, is_active: true)
     refresh_revisions()

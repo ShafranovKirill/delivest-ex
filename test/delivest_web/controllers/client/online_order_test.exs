@@ -288,6 +288,15 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
              )
     end
 
+    test "a payment notification completes an existing order during maintenance", ctx do
+      {:ok, _} = Delivest.Franchise.SettingsStore.save(%{maintenance_enabled: true})
+      remote(ctx.external_id, "waiting_for_capture")
+      notify(ctx.conn, ctx.token, "payment.waiting_for_capture", ctx.external_id)
+
+      refute Repo.get!(Order, ctx.order.id).awaiting_payment
+      assert [%{status: :authorized}] = Payments.list(ctx.order.id)
+    end
+
     test "a repeated notification changes nothing", ctx do
       remote(ctx.external_id, "waiting_for_capture")
       notify(ctx.conn, ctx.token, "payment.waiting_for_capture", ctx.external_id)

@@ -9,7 +9,9 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         loyalty_policy: loyalty_policy,
         timezones: timezones
       }) do
-    prepared = {delivery, payment_ready, loyalty_policy, timezones}
+    prepared =
+      {delivery, payment_ready, loyalty_policy, timezones,
+       Delivest.Franchise.SettingsStore.get_uncached().maintenance_enabled}
 
     %{
       data:
@@ -34,7 +36,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
           capabilities,
           analytics,
           links,
-          {delivery, payment_ready, loyalty_policy, timezones}
+          {delivery, payment_ready, loyalty_policy, timezones,
+           Delivest.Franchise.SettingsStore.get_uncached().maintenance_enabled}
         )
     }
   end
@@ -136,7 +139,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
          capabilities,
          analytics,
          links,
-         {delivery, payment_ready, loyalty_policy, timezones}
+         {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance}
        ) do
     %{
       id: info.id,
@@ -149,6 +152,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       delivery_time: effective_time(info),
       manual_rating: info.manual_rating,
       intake: intake(info),
+      maintenance:
+        Delivest.Storefront.Maintenance.status_of(franchise_maintenance, info.maintenance_enabled),
       fulfillment_methods: Delivest.Identity.Branch.FulfillmentSettings.enabled(info.fulfillment),
       delivery: delivery_settings(branch.id, delivery),
       payment_methods: payment_methods(info, payment_ready),
