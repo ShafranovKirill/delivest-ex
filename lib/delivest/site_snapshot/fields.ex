@@ -11,9 +11,9 @@ defmodule Delivest.SiteSnapshot.Fields do
   @branch_fields ~w(name is_active)a
   @franchise_branch_fields ~w(name slug code is_active)a
 
-  @info_fields ~w(address city latitude longitude phone_number delivery_time working_hours special_hours vk_url whatsapp_url instagram_url timezone)a
+  @info_fields ~w(address city latitude longitude phone_number delivery_time working_hours special_hours vk_url whatsapp_url instagram_url timezone maintenance_enabled)a
 
-  @franchise_fields ~w(name description primary_color dark_primary_color timezone legal_form legal_name inn ogrn legal_address email phone loyalty_per_rubles loyalty_stars loyalty_expire_days icon_key share_image_key logo_key logo_dark_key)a
+  @franchise_fields ~w(name description primary_color dark_primary_color timezone legal_form legal_name inn ogrn legal_address email phone loyalty_per_rubles loyalty_stars loyalty_expire_days icon_key share_image_key logo_key logo_dark_key maintenance_enabled)a
   @image_fields ~w(icon_key share_image_key logo_key logo_dark_key)a
 
   @category_fields ~w(name order is_active)a

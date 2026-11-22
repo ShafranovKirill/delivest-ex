@@ -1396,7 +1396,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:485",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:500",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1430,7 +1430,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:502",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:517",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1463,7 +1463,7 @@
           "franchise.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:559",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:574",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1487,7 +1487,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:246",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:262",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1511,7 +1511,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:213",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:229",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1570,7 +1570,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:387",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:403",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -8743,11 +8743,12 @@
       "rights": {
         "inline": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:776",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:970",
       "target_section": "Analytics"
     },
     {
@@ -8770,11 +8771,12 @@
       "rights": {
         "inline": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:813",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:1007",
       "target_section": "Analytics"
     },
     {
@@ -8795,11 +8797,12 @@
       "rights": {
         "inline": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:725",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:919",
       "target_section": "Analytics"
     },
     {
@@ -8811,7 +8814,33 @@
       ],
       "event": "refresh_report",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:9108cbac721a7a9f:1"
+        "event:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:88743262a194f0c7:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:dom:statistics-overview-retry:1",
+      "label": "Try again",
+      "operation": [],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "orders.read",
+          "statistics.network",
+          "statistics.read"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:1060",
+      "target_section": "Analytics"
+    },
+    {
+      "availability": "conditional :if in source",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Analytics",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "refresh_report",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:88743262a194f0c7:1"
       ],
       "id": "control:lib/delivest_web/live/staff/statistics_live/report_components.ex:refresh_report:dom:statistics-report-retry:1",
       "label": "Try again",
@@ -19028,11 +19057,12 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:228",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:273",
       "target_section": "Analytics"
     },
     {
@@ -19050,11 +19080,12 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:238",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:283",
       "target_section": "Analytics"
     },
     {
@@ -19070,11 +19101,12 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:217",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:262",
       "target_section": "Analytics"
     },
     {
@@ -19092,11 +19124,12 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:194",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:239",
       "target_section": "Analytics"
     },
     {
@@ -19112,11 +19145,12 @@
       "rights": {
         "clause": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:214",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:259",
       "target_section": "Analytics"
     },
     {
@@ -19125,18 +19159,19 @@
       "disposition": "retain operation; move control with Analytics",
       "error_state": "no explicit :error in clause",
       "event": "refresh_report",
-      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:9108cbac721a7a9f:1",
-      "label": "event: refresh_report",
+      "id": "event:lib/delivest_web/live/staff/statistics_live/index.ex:refresh_report:88743262a194f0c7:1",
+      "label": "{gettext(\"Try again\")}",
       "operation": [],
       "result": [],
       "rights": {
         "clause": [],
         "module_references": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:250",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:295",
       "target_section": "Analytics"
     },
     {
@@ -19826,6 +19861,7 @@
       "on_disable": "No optional feature disable callback; dirty or missing history falls back to source queries",
       "producer_scheduler": [
         "config/config.exs Oban cron",
+        "lib/delivest/analytics/overview.ex:243",
         "lib/delivest/analytics/sales_cache.ex:151"
       ],
       "source": "lib/delivest/analytics/sales_cache_worker.ex",
@@ -20269,7 +20305,7 @@
       "in_flight_obligation": "Existing kitchen jobs need replacement/reconciliation after replan",
       "on_disable": "No feature disable callback",
       "producer_scheduler": [
-        "lib/delivest/identity/branches.ex:297"
+        "lib/delivest/identity/branches.ex:313"
       ],
       "source": "lib/delivest/oms/kitchen/replan_branch_worker.ex",
       "worker_process": "Delivest.Oms.Kitchen.ReplanBranchWorker"
@@ -21043,7 +21079,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "fulfillment",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:287",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:306",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -21064,7 +21100,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "instagram_url",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:instagram_url",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:342",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:361",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -21106,10 +21142,31 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "kitchen",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:327",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:346",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/branch_live/branch_form_component.ex"
+      ],
+      "default": "false",
+      "disposition": "retain canonical editor in Settings / Branch operations",
+      "expression": null,
+      "field": "maintenance_enabled",
+      "id": "form:lib/delivest_web/live/staff/branch_live/branch_form_component.ex:@form:maintenance_enabled",
+      "name_template": null,
+      "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
+      "required": "no literal validate_required call for field",
+      "resolved_field": "maintenance_enabled",
+      "schema_field": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:maintenance_enabled",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:287",
+      "target_section": "Settings / Branch operations",
+      "type": "literal staff form control",
+      "validation": []
     },
     {
       "binding": "@form",
@@ -21244,7 +21301,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "vk_url",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:vk_url",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:340",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:359",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -21265,7 +21322,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "whatsapp_url",
       "schema_field": "schema:lib/delivest/identity/branch/branch_info.ex:whatsapp_url",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:341",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:360",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -21286,7 +21343,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "enabled",
       "schema_field": "schema:lib/delivest/identity/branch/kitchen_settings.ex:enabled",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:328",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:347",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": []
@@ -21307,7 +21364,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "lead_minutes",
       "schema_field": "schema:lib/delivest/identity/branch/kitchen_settings.ex:lead_minutes",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:331",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:350",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -21331,7 +21388,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "client_cancellation",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:client_cancellation",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:294",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:313",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -21354,7 +21411,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "delivery",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:delivery",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:289",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:308",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -21377,7 +21434,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "dine_in",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:dine_in",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:291",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:310",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -21400,7 +21457,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "pickup",
       "schema_field": "schema:lib/delivest/identity/branch/fulfillment_settings.ex:pickup",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:290",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form_component.ex:309",
       "target_section": "Settings / Branch operations",
       "type": "literal staff form control",
       "validation": [
@@ -22584,7 +22641,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "confirm",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:531",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:546",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22605,7 +22662,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "target",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:543",
+      "source": "lib/delivest_web/live/staff/franchise_live/index.ex:558",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22626,7 +22683,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "client_auth_required",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:client_auth_required",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:319",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:335",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": []
@@ -22647,7 +22704,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "dark_primary_color",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:dark_primary_color",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:262",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:278",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22670,7 +22727,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "default_theme",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:default_theme",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:163",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:179",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22694,7 +22751,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "description",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:description",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:156",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:172",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22717,7 +22774,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "email",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:email",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:353",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:369",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22740,7 +22797,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "inn",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:inn",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:346",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:362",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22763,7 +22820,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "legal_address",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:legal_address",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:357",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:373",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22786,7 +22843,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "legal_form",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:legal_form",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:332",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:348",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22809,12 +22866,33 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "legal_name",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:legal_name",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:339",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:355",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
         "validate_length"
       ]
+    },
+    {
+      "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex"
+      ],
+      "default": "false",
+      "disposition": "retain canonical editor in Settings / Network and brand",
+      "expression": null,
+      "field": "maintenance_enabled",
+      "id": "form:lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:@form:maintenance_enabled",
+      "name_template": null,
+      "owner": "lib/delivest/franchise/settings.ex",
+      "required": "no literal validate_required call for field",
+      "resolved_field": "maintenance_enabled",
+      "schema_field": "schema:lib/delivest/franchise/settings.ex:maintenance_enabled",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150",
+      "target_section": "Settings / Network and brand",
+      "type": "literal staff form control",
+      "validation": []
     },
     {
       "binding": "@form",
@@ -22832,7 +22910,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "marketing_push_limit_count",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:marketing_push_limit_count",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:287",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:303",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22856,7 +22934,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "marketing_push_window_hours",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:marketing_push_window_hours",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:294",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:310",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22880,7 +22958,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "name",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:name",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:148",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:164",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22904,7 +22982,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "ogrn",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:ogrn",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:348",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:364",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22927,7 +23005,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "phone",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:phone",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:354",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:370",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": []
@@ -22948,7 +23026,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "primary_color",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:primary_color",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:199",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:215",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22972,7 +23050,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "timezone",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:timezone",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:166",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -22995,7 +23073,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "rating",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:396",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:412",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23016,7 +23094,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "reviews_count",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:404",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:420",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23037,7 +23115,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "settings[dark_primary_color]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:209",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:225",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -23058,7 +23136,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "settings[primary_color]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:175",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:191",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30086,27 +30164,6 @@
       "default": "not declared in control/owner schema",
       "disposition": "retain canonical editor in Analytics",
       "expression": null,
-      "field": "branch_id",
-      "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:@form:branch_id",
-      "name_template": null,
-      "owner": "Delivest.Analytics report filters",
-      "required": "not declared in control/owner schema",
-      "resolved_field": "branch_id",
-      "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:694",
-      "target_section": "Analytics",
-      "type": "literal staff form control",
-      "validation": "form operation; no direct schema field"
-    },
-    {
-      "binding": "@form",
-      "canonical_form": "lib/delivest_web/live/staff/statistics_live/index.ex",
-      "current_forms": [
-        "lib/delivest_web/live/staff/statistics_live/index.ex"
-      ],
-      "default": "not declared in control/owner schema",
-      "disposition": "retain canonical editor in Analytics",
-      "expression": null,
       "field": "channel",
       "id": "form:lib/delivest_web/live/staff/statistics_live/index.ex:@form:channel",
       "name_template": null,
@@ -30114,7 +30171,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "channel",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:703",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:897",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30135,7 +30192,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:718",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:912",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30156,7 +30213,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "link_search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:711",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:905",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30177,7 +30234,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "compare",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:783",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:977",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30198,7 +30255,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "compare_from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:795",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:989",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30219,7 +30276,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "compare_to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:803",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:997",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30240,7 +30297,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "from",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:679",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:882",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30261,7 +30318,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "period",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:669",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:872",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30282,7 +30339,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "to",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:685",
+      "source": "lib/delivest_web/live/staff/statistics_live/index.ex:888",
       "target_section": "Analytics",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -31504,11 +31561,19 @@
       "type": ":integer"
     },
     {
+      "default": "false",
+      "field": "maintenance_enabled",
+      "id": "schema:lib/delivest/franchise/settings.ex:maintenance_enabled",
+      "owner": "lib/delivest/franchise/settings.ex",
+      "source": "lib/delivest/franchise/settings.ex:38",
+      "type": ":boolean"
+    },
+    {
       "default": "1",
       "field": "marketing_push_limit_count",
       "id": "schema:lib/delivest/franchise/settings.ex:marketing_push_limit_count",
       "owner": "lib/delivest/franchise/settings.ex",
-      "source": "lib/delivest/franchise/settings.ex:38",
+      "source": "lib/delivest/franchise/settings.ex:39",
       "type": ":integer"
     },
     {
@@ -31516,7 +31581,7 @@
       "field": "marketing_push_window_hours",
       "id": "schema:lib/delivest/franchise/settings.ex:marketing_push_window_hours",
       "owner": "lib/delivest/franchise/settings.ex",
-      "source": "lib/delivest/franchise/settings.ex:39",
+      "source": "lib/delivest/franchise/settings.ex:40",
       "type": ":integer"
     },
     {
@@ -31766,6 +31831,14 @@
       "owner": "lib/delivest/identity/branch/branch_info.ex",
       "source": "lib/delivest/identity/branch/branch_info.ex:29",
       "type": ":float"
+    },
+    {
+      "default": "false",
+      "field": "maintenance_enabled",
+      "id": "schema:lib/delivest/identity/branch/branch_info.ex:maintenance_enabled",
+      "owner": "lib/delivest/identity/branch/branch_info.ex",
+      "source": "lib/delivest/identity/branch/branch_info.ex:40",
+      "type": ":boolean"
     },
     {
       "default": "not declared",
@@ -36860,7 +36933,7 @@
       "field": "address",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:address",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:17",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:18",
       "type": ":string"
     },
     {
@@ -36868,7 +36941,7 @@
       "field": "city",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:city",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:18",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:19",
       "type": ":string"
     },
     {
@@ -36884,7 +36957,7 @@
       "field": "delivery_time",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:delivery_time",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:22",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:23",
       "type": ":integer"
     },
     {
@@ -36892,7 +36965,7 @@
       "field": "instagram_url",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:instagram_url",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:28",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:29",
       "type": ":string"
     },
     {
@@ -36908,7 +36981,7 @@
       "field": "latitude",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:latitude",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:19",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:20",
       "type": ":float"
     },
     {
@@ -36916,15 +36989,23 @@
       "field": "longitude",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:longitude",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:20",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:21",
       "type": ":float"
+    },
+    {
+      "default": "false",
+      "field": "maintenance_enabled",
+      "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:maintenance_enabled",
+      "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:16",
+      "type": ":boolean"
     },
     {
       "default": "not declared",
       "field": "manual_rating",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:manual_rating",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:23",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:24",
       "type": ":float"
     },
     {
@@ -36940,7 +37021,7 @@
       "field": "phone_number",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:phone_number",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:21",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:22",
       "type": ":string"
     },
     {
@@ -36956,7 +37037,7 @@
       "field": "timezone",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:timezone",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:24",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:25",
       "type": ":string"
     },
     {
@@ -36964,7 +37045,7 @@
       "field": "vk_url",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:vk_url",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:26",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:27",
       "type": ":string"
     },
     {
@@ -36972,7 +37053,7 @@
       "field": "whatsapp_url",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:whatsapp_url",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:27",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:28",
       "type": ":string"
     },
     {
@@ -36980,7 +37061,7 @@
       "field": "working_hours",
       "id": "schema:lib/delivest_web/live/staff/branch_live/branch_form.ex:working_hours",
       "owner": "lib/delivest_web/live/staff/branch_live/branch_form.ex",
-      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:25",
+      "source": "lib/delivest_web/live/staff/branch_live/branch_form.ex:26",
       "type": ":map"
     }
   ],
@@ -36995,6 +37076,7 @@
       "page_type": "list",
       "rights": {
         "handler_permissions": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ],
@@ -37088,6 +37170,7 @@
       "page_type": "list",
       "rights": {
         "handler_permissions": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ],
@@ -38887,6 +38970,7 @@
       "page_type": "list",
       "rights": {
         "handler_permissions": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ],
@@ -40374,6 +40458,7 @@
       "page_type": "list",
       "rights": {
         "handler_permissions": [
+          "orders.read",
           "statistics.network",
           "statistics.read"
         ],

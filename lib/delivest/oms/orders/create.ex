@@ -65,6 +65,11 @@ defmodule Delivest.Oms.Orders.Create do
 
   defp create_multi(attrs, opts, client_opts, pricing) do
     Multi.new()
+    |> Multi.run(:storefront_maintenance, fn repo, _ ->
+      if opts[:public_checkout],
+        do: Delivest.Storefront.Maintenance.ensure_available(repo, attrs["branch_id"]),
+        else: {:ok, :not_public}
+    end)
     |> Multi.run(:client_id, fn _, _ -> ClientResolver.resolve(attrs, client_opts) end)
     |> Multi.run(:cart, fn _, _ ->
       CartGuard.acquire(attrs["cart_id"], attrs["branch_id"], nil, opts)

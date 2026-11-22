@@ -45,9 +45,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     branch = insert(:branch)
     conn = login(conn, ["statistics.read"], branch)
 
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/analytics/funnel")
-    refute has_element?(view, "#statistics-report")
-    refute has_element?(view, ~s{a[href*="tab=funnel"]})
+    assert {:error, {:redirect, %{to: destination}}} =
+             live(conn, ~p"/staff/b/#{branch}/analytics/funnel")
+
+    assert destination =~ "/staff/b/#{branch.slug}/statistics"
   end
 
   test "enabled funnel shows collection state without manual calculation controls", %{conn: conn} do
@@ -163,8 +164,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     assert has_element?(view, "#statistics-report-summary", OrderHelpers.money(750))
     assert has_element?(view, "#statistics-report-summary", "Cancelled")
     assert has_element?(view, "#statistics-report-summary", "Refunded")
-    assert has_element?(view, "#statistics-report-table", "App")
-    assert has_element?(view, ~s{select[name="channel"] option}, "App")
+    assert has_element?(view, "#statistics-report-table", "Storefront")
+    assert has_element?(view, ~s{select[name="channel"] option}, "Storefront")
     refute has_element?(view, ~s{input[name="channel"]})
     refute has_element?(view, "#statistics-report-table td", "channel")
   end
@@ -268,8 +269,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     admin_conn = login(conn, ["admin"], branch)
     {:ok, view, _} = live(admin_conn, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
     assert {:ok, _} = Features.configure("analytics_funnel", :franchise, false, actor: "host")
-    refute has_element?(view, "#statistics-rebuild")
-    render_patch(view, ~p"/staff/b/#{branch}/analytics/funnel?period=today")
-    refute has_element?(view, "#statistics-report")
+    assert_redirect(view, ~p"/staff/b/#{branch}/statistics?period=today")
   end
 end

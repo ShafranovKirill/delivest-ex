@@ -442,6 +442,7 @@ defmodule Delivest.Storefront do
                   :working_hours,
                   :special_hours,
                   :intake,
+                  :maintenance,
                   :fulfillment_methods
                 ]),
               else: nil

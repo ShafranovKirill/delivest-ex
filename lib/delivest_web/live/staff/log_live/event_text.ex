@@ -23,6 +23,17 @@ defmodule DelivestWeb.Staff.LogLive.EventText do
     )
   end
 
+  def describe(%Event{action: "storefront.maintenance_changed", metadata: metadata} = event) do
+    scope =
+      if metadata["scope"] == "franchise",
+        do: gettext("entire franchise"),
+        else: subject(event)
+
+    if metadata["enabled"] == true,
+      do: gettext("Maintenance enabled for %{scope}", scope: scope),
+      else: gettext("Maintenance disabled for %{scope}", scope: scope)
+  end
+
   def describe(%Event{} = event) do
     text(event.action, %{
       subject: subject(event),

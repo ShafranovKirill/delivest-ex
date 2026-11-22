@@ -15,7 +15,26 @@ defmodule Delivest.Franchise do
 
   @logo_fields %{light: :logo_key, dark: :logo_dark_key}
 
-  def update_settings(staff, attrs), do: authorized(staff, fn -> SettingsStore.save(attrs) end)
+  def update_settings(staff, attrs) do
+    authorized(staff, fn ->
+      case SettingsStore.save_with_previous(attrs) do
+        {:ok, {before, after_save}} ->
+          if before.maintenance_enabled != after_save.maintenance_enabled do
+            Delivest.Audit.record(staff, "storefront.maintenance_changed", :franchise,
+              metadata: %{
+                "scope" => "franchise",
+                "enabled" => after_save.maintenance_enabled
+              }
+            )
+          end
+
+          {:ok, after_save}
+
+        error ->
+          error
+      end
+    end)
+  end
 
   def update_yandex_rating(staff, attrs), do: Rating.store_manual(staff, attrs)
 

@@ -67,6 +67,12 @@ defmodule DelivestWeb.StaffNav do
     path =
       staff |> catalog(nil) |> Enum.find_value(fn entry -> if entry.id == id, do: entry.path end)
 
+    path =
+      if key == "yandex_costs" and can?(staff, "statistics.read") and
+           can?(staff, "statistics.network"),
+         do: ~p"/staff/analytics/advertising",
+         else: path
+
     %{label: label, path: path}
   end
 
@@ -505,18 +511,7 @@ defmodule DelivestWeb.StaffNav do
           :analytics,
           gettext("Analytics"),
           "hero-chart-bar",
-          Enum.map(
-            [
-              :statistics,
-              :network_sales,
-              :analytics_channels,
-              :analytics_sources,
-              :analytics_funnel,
-              :analytics_customers,
-              :analytics_comparison
-            ],
-            find
-          )
+          Enum.map([:statistics], find)
         )
       ]
       |> Enum.reject(&is_nil/1)
@@ -820,68 +815,17 @@ defmodule DelivestWeb.StaffNav do
 
   defp common_entries(staff, branch) do
     [
-      if(branch,
-        do:
-          item(
-            :network_sales,
-            ~p"/staff/statistics",
-            "hero-globe-alt",
-            gettext("Sales across the network")
-          )
-      )
-      |> allowed(staff, "statistics.read")
-      |> allowed(staff, "statistics.network"),
       item(
         :statistics,
         if(branch, do: ~p"/staff/b/#{branch}/statistics", else: ~p"/staff/statistics"),
         "hero-chart-bar",
-        if(branch, do: gettext("Sales statistics"), else: gettext("Sales across the network"))
+        gettext("Statistics")
       )
       |> allowed(staff, "statistics.read")
       |> then(fn entry -> if branch || can?(staff, "statistics.network"), do: entry end),
-      analytics_placeholder(
-        :analytics_channels,
-        "channels",
-        gettext("Sales channels"),
-        staff,
-        branch
-      ),
-      analytics_placeholder(
-        :analytics_advertising,
-        "advertising",
-        gettext("Advertising analytics"),
-        staff
-      ),
-      analytics_placeholder(
-        :analytics_sources,
-        "sources",
-        gettext("Sources and advertising"),
-        staff,
-        branch
-      ),
-      analytics_placeholder(:analytics_funnel, "funnel", gettext("Order funnel"), staff, branch),
-      analytics_placeholder(:analytics_customers, "customers", gettext("Buyers"), staff, branch),
-      analytics_placeholder(
-        :analytics_comparison,
-        "comparison",
-        gettext("Branch comparison"),
-        staff
-      ),
       group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch))
     ]
     |> compact_all()
-  end
-
-  defp analytics_placeholder(id, section, label, staff, branch \\ nil) do
-    if can?(staff, "statistics.read") and (branch || can?(staff, "statistics.network")) do
-      prefix = if branch, do: "/staff/b/#{branch.slug}", else: "/staff"
-
-      item(id, "#{prefix}/analytics/#{section}", "hero-chart-bar", label)
-      |> Map.put(
-        :read_permissions,
-        if(branch, do: ["statistics.read"], else: ["statistics.read", "statistics.network"])
-      )
-    end
   end
 
   defp marketing_entries(staff, branch) do

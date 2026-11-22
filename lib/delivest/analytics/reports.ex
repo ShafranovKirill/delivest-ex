@@ -2,6 +2,7 @@ defmodule Delivest.Analytics.Reports do
   @moduledoc "Authorized read model over published daily analytics buckets."
   alias Delivest.{Background, Features, Identity, LocalTime, Repo}
   alias Delivest.Analytics.Reports.{Query, Refresh}
+  alias Delivest.Analytics.Overview
 
   @feature_by_tab %{
     "funnel" => "analytics_funnel",
@@ -50,12 +51,14 @@ defmodule Delivest.Analytics.Reports do
     with true <- feature != nil and tab != "franchise",
          :ok <- Identity.authorize(staff, "statistics.read", branch_id),
          true <- Features.enabled?(feature, {:branch, branch_id}),
-         :ok <- valid_period(from, to) do
+         :ok <- valid_period(from, to),
+         :ok <- validate_channel_filter([branch_id], tab, filters) do
       job = Background.calculation_status(@kind_by_feature[feature], {:branch, branch_id})
       current? = Date.compare(to, LocalTime.today(LocalTime.timezone(branch_id))) != :lt
       report = present(feature, [branch_id], {from, to}, tab, filters, job, current?)
       {:ok, Map.put(report, :job, job)}
     else
+      {:error, :hidden_filter} -> {:error, :hidden_filter}
       _ -> {:error, :forbidden}
     end
   end
@@ -73,15 +76,23 @@ defmodule Delivest.Analytics.Reports do
 
       enabled = Features.enabled_branches("analytics_franchise", all_ids)
       ids = Enum.filter(all_ids, &MapSet.member?(enabled, &1))
-      job = Query.schedule_health(ids, "analytics.extended")
 
-      current? = Query.current_period?(ids, to)
+      if validate_channel_filter(ids, "franchise", filters) == :ok do
+        job = Query.schedule_health(ids, "analytics.extended")
+        current? = Query.current_period?(ids, to)
 
-      report = present("analytics_extended", ids, {from, to}, "franchise", filters, job, current?)
+        report =
+          present("analytics_extended", ids, {from, to}, "franchise", filters, job, current?)
 
-      excluded = length(all_ids) - MapSet.size(enabled)
-      state = if excluded > 0 and report.state != :not_collected, do: :partial, else: report.state
-      {:ok, %{report | excluded_branches: excluded, state: state} |> Map.put(:job, job)}
+        excluded = length(all_ids) - MapSet.size(enabled)
+
+        state =
+          if excluded > 0 and report.state != :not_collected, do: :partial, else: report.state
+
+        {:ok, %{report | excluded_branches: excluded, state: state} |> Map.put(:job, job)}
+      else
+        {:error, :hidden_filter}
+      end
     else
       _ -> {:error, :forbidden}
     end
@@ -97,14 +108,22 @@ defmodule Delivest.Analytics.Reports do
       all_ids = staff |> Identity.list_branch_for_staff() |> Enum.map(& &1.id)
       enabled = Features.enabled_branches(feature, all_ids)
       ids = Enum.filter(all_ids, &MapSet.member?(enabled, &1))
-      job = Query.schedule_health(ids, @kind_by_feature[feature])
 
-      report =
-        present(feature, ids, {from, to}, tab, filters, job, Query.current_period?(ids, to))
+      if validate_channel_filter(ids, tab, filters) == :ok do
+        job = Query.schedule_health(ids, @kind_by_feature[feature])
 
-      excluded = length(all_ids) - length(ids)
-      state = if excluded > 0 and report.state != :not_collected, do: :partial, else: report.state
-      {:ok, %{report | excluded_branches: excluded, state: state} |> Map.put(:job, job)}
+        report =
+          present(feature, ids, {from, to}, tab, filters, job, Query.current_period?(ids, to))
+
+        excluded = length(all_ids) - length(ids)
+
+        state =
+          if excluded > 0 and report.state != :not_collected, do: :partial, else: report.state
+
+        {:ok, %{report | excluded_branches: excluded, state: state} |> Map.put(:job, job)}
+      else
+        {:error, :hidden_filter}
+      end
     else
       _ -> {:error, :forbidden}
     end
@@ -203,6 +222,17 @@ defmodule Delivest.Analytics.Reports do
 
   defp restrict_branches(ids, _), do: ids
 
+  defp validate_channel_filter(ids, tab, %{"channel" => key})
+       when tab in ~w(channels customers franchise) and is_binary(key) and key != "" do
+    allowed = Overview.allowed_sources(ids)
+
+    if key == "other" or Enum.any?(Map.values(allowed), &(key in &1)),
+      do: :ok,
+      else: {:error, :hidden_filter}
+  end
+
+  defp validate_channel_filter(_, _, _), do: :ok
+
   defp present(feature, ids, {from, to}, tab, filters, job, current?) do
     refresh_from =
       if tab in ["customers", "franchise"],
@@ -211,7 +241,7 @@ defmodule Delivest.Analytics.Reports do
 
     refresh_pending = Refresh.on_read(feature, ids, {refresh_from, to})
     page = page(filters)
-    data = Query.read(feature, ids, from, to, tab, filters, page)
+    data = Query.read(feature, ids, from, to, tab, filters, page, Overview.allowed_sources(ids))
     coverage = data.coverage
     expected = length(ids) * (Date.diff(to, from) + 1)
 

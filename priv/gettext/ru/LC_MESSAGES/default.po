@@ -12436,6 +12436,11 @@ msgstr "Отменить выбор"
 msgid "Appearance"
 msgstr "Внешний вид"
 
+#: lib/delivest_web/live/staff/franchise_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Other settings"
+msgstr "Другие настройки"
+
 #: lib/delivest_web/components/staff/app/staff_nav.ex
 #: lib/delivest_web/live/staff/analytics_live/placeholder.ex
 #, elixir-autogen, elixir-format
@@ -13380,3 +13385,219 @@ msgstr "Интеграция появится в админке во всей с
 
 msgid "Yandex Cart"
 msgstr "Яндекс Корзина"
+
+msgid "Maintenance"
+msgstr "Техобслуживание"
+
+msgid "Temporarily close every public storefront while keeping staff and existing orders available."
+msgstr "Временно закрыть все витрины. Админка и уже принятые заказы останутся доступны."
+
+msgid "Maintenance on all storefronts"
+msgstr "Техобслуживание во всех филиалах"
+
+msgid "Existing orders and staff tools remain available. New orders through the public storefront are paused."
+msgstr "Принятые заказы и инструменты сотрудников доступны. Новые заказы через витрину временно не принимаются."
+
+msgid "Maintenance for this branch"
+msgstr "Техобслуживание этого филиала"
+
+msgid "Maintenance is enabled for the entire franchise. This branch cannot override it."
+msgstr "Включено для всей франшизы. Этот филиал не может отменить общий режим."
+
+msgid "Existing orders and staff tools remain available."
+msgstr "Принятые заказы и инструменты сотрудников остаются доступны."
+
+msgid "entire franchise"
+msgstr "всей франшизы"
+
+msgid "Maintenance enabled for %{scope}"
+msgstr "Техобслуживание включено для %{scope}"
+
+msgid "Maintenance disabled for %{scope}"
+msgstr "Техобслуживание выключено для %{scope}"
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1284
+#, elixir-autogen, elixir-format
+msgid "Advertising attribution"
+msgstr "Рекламная атрибуция"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1342
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1380
+#, elixir-autogen, elixir-format
+msgid "Back to sales"
+msgstr "К продажам"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1177
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1242
+#, elixir-autogen, elixir-format
+msgid "Back to statistics"
+msgstr "К статистике"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1369
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1399
+#, elixir-autogen, elixir-format
+msgid "Before refunds"
+msgstr "До возвратов"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1127
+#, elixir-autogen, elixir-format
+msgid "Cancellation details"
+msgstr "Подробнее об отменах"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1112
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1160
+#, elixir-autogen, elixir-format
+msgid "Cancellation rate"
+msgstr "Доля отмен"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1135
+#, elixir-autogen, elixir-format
+msgid "Cancellation rate uses completed plus cancelled orders as its denominator."
+msgstr "Доля отмен рассчитывается от суммы завершённых и отменённых заказов."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1111
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1419
+#, elixir-autogen, elixir-format
+msgid "Cancellations"
+msgstr "Отмены"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1384
+#, elixir-autogen, elixir-format
+msgid "Category amounts are before refunds; order refunds are shown separately in the sales total."
+msgstr "Суммы по категориям указаны до возвратов; возвраты по заказам учтены отдельно в общей выручке."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1024
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1246
+#, elixir-autogen, elixir-format
+msgid "Completed orders by local creation date. Successful refunds reduce sales for the original order date."
+msgstr "Завершённые заказы учитываются по местной дате создания. Успешные возвраты уменьшают выручку за дату исходного заказа."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1103
+#, elixir-autogen, elixir-format
+msgid "Identified orders"
+msgstr "Заказы с известным клиентом"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1099
+#, elixir-autogen, elixir-format
+msgid "New"
+msgstr "Новые"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1007
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1364
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1392
+#, elixir-autogen, elixir-format
+msgid "No completed orders in this period"
+msgstr "За этот период нет завершённых заказов"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1185
+#, elixir-autogen, elixir-format
+msgid "No orders in this period"
+msgstr "За этот период нет заказов"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1312
+#, elixir-autogen, elixir-format
+msgid "Order source"
+msgstr "Источник заказа"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1331
+#, elixir-autogen, elixir-format
+msgid "Order source describes where an order began; sending it to a CRM does not change that source."
+msgstr "Источник показывает, где был создан заказ; передача в CRM не меняет его источник."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1299
+#, elixir-autogen, elixir-format
+msgid "Payment method"
+msgstr "Способ оплаты"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1346
+#, elixir-autogen, elixir-format
+msgid "Product amounts are before refunds; order refunds are shown separately in the sales total."
+msgstr "Суммы по товарам указаны до возвратов; возвраты по заказам учтены отдельно в общей выручке."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1132
+#, elixir-autogen, elixir-format
+msgid "Refund details"
+msgstr "Подробнее о возвратах"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1116
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1199
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1420
+#, elixir-autogen, elixir-format
+msgid "Refunds"
+msgstr "Возвраты"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1100
+#, elixir-autogen, elixir-format
+msgid "Returning"
+msgstr "Повторные"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1036
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1151
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1251
+#, elixir-autogen, elixir-format
+msgid "Sales after refunds"
+msgstr "Выручка после возвратов"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1261
+#, elixir-autogen, elixir-format
+msgid "Sales details"
+msgstr "Подробнее о продажах"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1086
+#, elixir-autogen, elixir-format
+msgid "Sales over time"
+msgstr "Выручка по дням"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1109
+#, elixir-autogen, elixir-format
+msgid "Service quality"
+msgstr "Качество обслуживания"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1014
+#, elixir-autogen, elixir-format
+msgid "Some daily totals are updating. The latest published figures are shown."
+msgstr "Данные за часть дней обновляются. Показаны последние опубликованные значения."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:440
+#: lib/delivest_web/live/staff/statistics_live/index.ex:490
+#, elixir-autogen, elixir-format
+msgid "Statistics are unavailable"
+msgstr "Статистика недоступна"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1083
+#, elixir-autogen, elixir-format
+msgid "The comparison period has no completed orders; percentage change is unavailable."
+msgstr "В периоде сравнения нет завершённых заказов; процент изменения недоступен."
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1323
+#, elixir-autogen, elixir-format
+msgid "Transfer destination"
+msgstr "Направление передачи"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1022
+#: lib/delivest_web/live/staff/statistics_live/report_components.ex:55
+#, elixir-autogen, elixir-format
+msgid "Try again"
+msgstr "Повторить"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:816
+#, elixir-autogen, elixir-format
+msgid "Updated at %{time}"
+msgstr "Обновлено %{time}"
+
+#: lib/delivest_web/components/staff/app/staff_nav.ex:156
+#: lib/delivest_web/live/staff/integration_live/index.ex:174
+#: lib/delivest_web/live/staff/integration_live/vk_ads.ex:16
+#: lib/delivest_web/live/staff/integration_live/vk_ads.ex:75
+#, elixir-autogen, elixir-format
+msgid "VK Реклама / Top.Mail.Ru"
+msgstr ""
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:1164
+#, elixir-autogen, elixir-format
+msgid "View branch"
+msgstr "Открыть филиал"
+
+#: lib/delivest_web/live/staff/statistics_live/index.ex:777
+#, elixir-autogen, elixir-format
+msgid "Without CRM transfer"
+msgstr "Без передачи в CRM"

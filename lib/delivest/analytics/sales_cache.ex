@@ -199,7 +199,11 @@ defmodule Delivest.Analytics.SalesCache do
 
             if Date.before?(day, LocalTime.today(zone)) do
               Cachex.del(:branch_cache, {:timezone, id})
-              payload = encode(Analytics.sales_day_payload(id, day))
+
+              payload =
+                Analytics.sales_day_payload(id, day)
+                |> Map.put(:overview, Delivest.Analytics.Overview.day_payload(id, day))
+                |> encode()
 
               Repo.query!(
                 """

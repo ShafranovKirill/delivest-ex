@@ -1,8 +1,8 @@
 defmodule DelivestWeb.Staff.StatisticsLive.Index do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Analytics, Features, Gateway, Identity}
-  alias Delivest.Analytics.Reports
+  alias Delivest.{Analytics, Features, Identity}
+  alias Delivest.Analytics.{Overview, Reports}
   alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -11,15 +11,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   on_mount {DelivestWeb.Hooks.Permission, "statistics.read"}
 
-  @base_tabs ~w(sales products categories)
+  @base_tabs ~w(overview sales products categories orders cancelled refunds)
   @report_tabs ~w(funnel sources customers channels comparison franchise)
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket),
+      do: Phoenix.PubSub.subscribe(Delivest.PubSub, "analytics:visibility")
+
     {:ok,
      socket
      |> assign(
-       page_title: gettext("Sales statistics"),
+       page_title: gettext("Statistics"),
        refresh_timer: nil,
        refresh_epoch: 0,
        refresh_attempts: 0,
@@ -75,7 +78,41 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     branch = if global?, do: nil, else: socket.assigns.current_branch
     socket = assign(socket, current_branch: branch, global_statistics?: global?, section: section)
 
+    legacy_branch =
+      if global? and is_binary(params["branch_id"]),
+        do:
+          Enum.find(
+            socket.assigns.staff_branches,
+            &(&1.id == params["branch_id"] || &1.slug == params["branch_id"])
+          ),
+        else: nil
+
     cond do
+      legacy_branch ->
+        query = params |> Map.drop(["branch_id", "branch_slug", "section"]) |> scalar_query()
+        destination = if section, do: "analytics/#{section}", else: "statistics"
+
+        {:noreply,
+         redirect(socket,
+           to:
+             "/staff/b/#{legacy_branch.slug}/#{destination}?" <>
+               Plug.Conn.Query.encode(query)
+         )}
+
+      global? and Map.has_key?(params, "branch_id") ->
+        query = params |> Map.drop(["branch_id", "branch_slug", "section"]) |> scalar_query()
+        destination = if section, do: "analytics/#{section}", else: "statistics"
+
+        if Identity.can?(socket.assigns.current_staff, "statistics.network") do
+          {:noreply,
+           redirect(socket, to: "/staff/#{destination}?" <> Plug.Conn.Query.encode(query))}
+        else
+          {:noreply,
+           redirect(socket,
+             to: DelivestWeb.StaffBranchPath.home(List.first(socket.assigns.staff_branches))
+           )}
+        end
+
       global? and not Identity.can?(socket.assigns.current_staff, "statistics.network") ->
         {:noreply,
          redirect(socket,
@@ -99,12 +136,24 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       section != nil and section not in ~w(channels sources funnel customers comparison) ->
         {:noreply, redirect(socket, to: "/staff/statistics")}
 
+      section != nil and visible_tabs(socket) == [] ->
+        query =
+          params
+          |> Map.take(~w(period from to compare compare_from compare_to))
+          |> Enum.filter(fn {_key, value} -> is_binary(value) end)
+          |> Map.new()
+
+        prefix = if branch, do: "/staff/b/#{branch.slug}", else: "/staff"
+
+        {:noreply,
+         redirect(socket, to: prefix <> "/statistics?" <> Plug.Conn.Query.encode(query))}
+
       true ->
         visible_tabs = visible_tabs(socket)
         tab = if params["tab"] in visible_tabs, do: params["tab"], else: List.first(visible_tabs)
 
         preset =
-          if params["period"] in Analytics.presets(), do: params["period"], else: "week"
+          if params["period"] in Analytics.presets(), do: params["period"], else: "today"
 
         {period, period_error} =
           if preset == "custom" do
@@ -113,7 +162,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
                 {period, nil}
 
               {:error, :invalid_period} ->
-                {Analytics.resolve_period("week", nil, nil, branch && branch.id),
+                {Analytics.resolve_period("today", nil, nil, branch && branch.id),
                  gettext("Choose a valid period of up to 366 days")}
             end
           else
@@ -147,11 +196,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
            page_title:
              if(section,
                do: tab_label(if(section == "comparison", do: "franchise", else: section)),
-               else:
-                 if(global?,
-                   do: gettext("Sales across the network"),
-                   else: gettext("Sales statistics")
-                 )
+               else: gettext("Statistics")
              ),
            preset: preset,
            period: period,
@@ -248,7 +293,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   end
 
   def handle_event("refresh_report", _, socket) do
-    if socket.assigns.tab in @report_tabs and is_nil(socket.assigns.period_error) do
+    if socket.assigns.tab in (@report_tabs ++ @base_tabs) and is_nil(socket.assigns.period_error) do
       {:noreply, socket |> assign(refresh_attempts: 0, refresh_retry?: false) |> load_tab()}
     else
       {:noreply, socket}
@@ -256,6 +301,26 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   end
 
   @impl true
+  def handle_info(:analytics_visibility_changed, socket) do
+    tabs = visible_tabs(socket)
+    socket = assign(socket, visible_tabs: tabs)
+
+    cond do
+      socket.assigns.section && tabs == [] ->
+        {:noreply, push_navigate(socket, to: overview_path(socket.assigns))}
+
+      socket.assigns.tab in ~w(orders cancelled refunds) and
+          not Identity.can?(socket.assigns.current_staff, "orders.read") ->
+        {:noreply, push_navigate(socket, to: overview_path(socket.assigns))}
+
+      is_nil(socket.assigns.period_error) ->
+        {:noreply, load_tab(socket)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_info({:refresh_report, epoch}, socket) do
     if epoch == socket.assigns.refresh_epoch and
          socket.assigns.tab in (@report_tabs ++ @base_tabs) and
@@ -306,8 +371,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     socket = cancel_report_refresh(socket)
 
     pending? =
-      socket.assigns.tab in @report_tabs and
-        Map.get(socket.assigns.report, :refresh_pending, false)
+      (socket.assigns.tab in @report_tabs and
+         Map.get(socket.assigns.report, :refresh_pending, false)) or
+        ((socket.assigns.tab == "overview" and
+            socket.assigns[:overview]) && socket.assigns.overview.state == :partial)
 
     socket = if pending?, do: socket, else: assign(socket, refresh_attempts: 0)
     exhausted? = pending? and socket.assigns.refresh_attempts >= 5
@@ -391,45 +458,89 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   defp safe_date_param(_value), do: ""
 
+  defp load_tab(%{assigns: %{tab: "overview"}} = socket) do
+    assigns = socket.assigns
+    scope = if(assigns.current_branch, do: {:branch, assigns.current_branch.id}, else: :network)
+
+    opts =
+      if assigns.compare? and assigns.comparison_period,
+        do: [comparison_period: assigns.comparison_period],
+        else: []
+
+    case Overview.read(assigns.current_staff, scope, assigns.period, opts) do
+      {:ok, overview} ->
+        socket |> assign(overview: overview) |> schedule_report_refresh()
+
+      {:error, _} ->
+        socket |> put_flash(:error, gettext("Statistics are unavailable"))
+    end
+  end
+
+  defp load_tab(%{assigns: %{tab: tab}} = socket) when tab in ~w(orders cancelled refunds) do
+    assigns = socket.assigns
+    scope = if(assigns.current_branch, do: {:branch, assigns.current_branch.id}, else: :network)
+    kind = %{"orders" => :completed, "cancelled" => :cancelled, "refunds" => :refunds}[tab]
+
+    page =
+      case Integer.parse(assigns.report_filters["page"] || "1") do
+        {n, ""} when n in 1..10_000 -> n
+        _ -> 1
+      end
+
+    case Overview.orders(assigns.current_staff, scope, assigns.period, kind, page: page) do
+      {:ok, result} ->
+        assign(socket, order_drilldown: result)
+
+      {:error, _} ->
+        assign(socket, order_drilldown: %{rows: [], page: 1, pages: 1, total_rows: 0})
+    end
+  end
+
   defp load_tab(%{assigns: %{tab: "sales"}} = socket) do
-    %{period: period, current_branch: branch} = socket.assigns
-    summary = Analytics.summary(branch_scope(socket.assigns), period)
+    assigns = socket.assigns
+    scope = if(assigns.current_branch, do: {:branch, assigns.current_branch.id}, else: :network)
 
-    previous =
-      if socket.assigns.compare?,
-        do: Analytics.summary(branch_scope(socket.assigns), socket.assigns.comparison_period),
-        else: nil
+    opts =
+      if assigns.compare? and assigns.comparison_period,
+        do: [comparison_period: assigns.comparison_period],
+        else: []
 
-    assign(socket,
-      summary: summary,
-      previous: previous,
-      crm_split:
-        branch && Gateway.active?(branch) &&
-          Analytics.crm_split(branch_scope(socket.assigns), period),
-      daily: Analytics.daily(branch_scope(socket.assigns), period),
-      hourly: Analytics.hourly(branch_scope(socket.assigns), period),
-      by_fulfillment:
-        Analytics.breakdown(branch_scope(socket.assigns), period, :fulfillment_type),
-      by_payment: Analytics.breakdown(branch_scope(socket.assigns), period, :payment_method)
-    )
-    |> schedule_report_refresh()
+    with {:ok, overview} <- Overview.read(assigns.current_staff, scope, assigns.period, opts),
+         {:ok, fulfillment} <-
+           Overview.details(assigns.current_staff, scope, assigns.period, :fulfillment),
+         {:ok, payment} <-
+           Overview.details(assigns.current_staff, scope, assigns.period, :payment),
+         {:ok, sources} <- Overview.details(assigns.current_staff, scope, assigns.period, :source),
+         {:ok, destinations} <-
+           Overview.details(assigns.current_staff, scope, assigns.period, :destination) do
+      assign(socket,
+        overview: overview,
+        by_fulfillment: fulfillment,
+        by_payment: payment,
+        by_source: sources,
+        by_destination: destinations
+      )
+      |> schedule_report_refresh()
+    else
+      _ -> put_flash(socket, :error, gettext("Statistics are unavailable"))
+    end
   end
 
   defp load_tab(%{assigns: %{tab: "products"}} = socket) do
-    %{period: period, sort: sort} = socket.assigns
-
-    assign(socket,
-      products:
-        Analytics.top_products(branch_scope(socket.assigns), period, limit: 100, sort_by: sort)
-    )
-    |> schedule_report_refresh()
+    assigns = socket.assigns
+    scope = if(assigns.current_branch, do: {:branch, assigns.current_branch.id}, else: :network)
+    {:ok, products} = Overview.details(assigns.current_staff, scope, assigns.period, :products)
+    assign(socket, products: sort_details(products, assigns.sort)) |> schedule_report_refresh()
   end
 
   defp load_tab(%{assigns: %{tab: "categories"}} = socket) do
-    %{period: period} = socket.assigns
+    assigns = socket.assigns
+    scope = if(assigns.current_branch, do: {:branch, assigns.current_branch.id}, else: :network)
 
-    assign(socket, categories: Analytics.categories(branch_scope(socket.assigns), period))
-    |> schedule_report_refresh()
+    {:ok, categories} =
+      Overview.details(assigns.current_staff, scope, assigns.period, :categories)
+
+    assign(socket, categories: categories) |> schedule_report_refresh()
   end
 
   defp load_tab(%{assigns: %{tab: tab}} = socket) when tab in @report_tabs do
@@ -464,6 +575,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
         socket |> assign(report: report, report_previous: previous) |> schedule_report_refresh()
 
+      {:error, reason} when reason in [:hidden_filter, :forbidden] ->
+        push_navigate(socket, to: overview_path(socket.assigns))
+
       _ ->
         assign(socket,
           report: unavailable_report(),
@@ -471,6 +585,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         )
     end
   end
+
+  defp sort_details(rows, :quantity), do: Enum.sort_by(rows, &{-&1.quantity, -&1.revenue})
+  defp sort_details(rows, _), do: Enum.sort_by(rows, &{-&1.revenue, -&1.quantity})
 
   @doc false
   def unavailable_report do
@@ -509,6 +626,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
     Enum.filter(tabs, fn tab ->
       cond do
+        tab in ~w(orders cancelled refunds) ->
+          Identity.can?(staff, "orders.read")
+
         tab in @base_tabs ->
           true
 
@@ -528,26 +648,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     end)
   end
 
-  defp branch_scope(%{current_branch: %{id: id}}), do: id
-
-  defp branch_scope(assigns) do
-    ids = Enum.map(assigns.staff_branches, & &1.id)
-
-    case {assigns.report_filters["branch_id"], assigns.report_filters["branch_ids"]} do
-      {id, _} when is_binary(id) and id != "" ->
-        Enum.filter(ids, &(&1 == id))
-
-      {id, nil} when id in [nil, ""] ->
-        ids
-
-      {id, selected} when id in [nil, ""] and is_list(selected) ->
-        Enum.filter(ids, &(&1 in selected))
-
-      _ ->
-        []
-    end
-  end
-
   defp sanitize_branch_filter(params) do
     case Map.fetch(params, "branch_id") do
       :error -> params
@@ -559,15 +659,19 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   defp report_filters(params),
     do: Map.take(params, ["channel", "link_id", "link_search", "branch_ids", "branch_id", "page"])
 
-  defp channel_options do
-    [
-      {gettext("App"), "app"},
-      {gettext("Admin"), "staff"},
-      {gettext("POS"), "pos"},
-      {gettext("Unknown channel"), "unknown"}
-    ]
-    |> Kernel.++(Enum.map(Channels.list(), fn {key, name} -> {name, key} end))
-    |> Enum.uniq_by(&elem(&1, 1))
+  defp channel_options(assigns) do
+    ids =
+      if assigns.current_branch,
+        do: [assigns.current_branch.id],
+        else: Enum.map(assigns.staff_branches, & &1.id)
+
+    ids
+    |> Overview.allowed_sources()
+    |> Map.values()
+    |> List.flatten()
+    |> Kernel.++(["other"])
+    |> Enum.uniq()
+    |> Enum.map(fn key -> {source_label(key), key} end)
   end
 
   defp tab_path(assigns, tab, overrides \\ %{}) do
@@ -622,16 +726,105 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   defp format_period({from, to}),
     do: "#{Calendar.strftime(from, "%d.%m.%Y")} — #{Calendar.strftime(to, "%d.%m.%Y")}"
 
-  defp confirm_time(nil), do: "—"
-  defp confirm_time(seconds) when seconds < 60, do: gettext("%{n} s", n: seconds)
-  defp confirm_time(seconds), do: gettext("%{n} min", n: Float.round(seconds / 60, 1))
+  defp format_updated(nil, _zone), do: "—"
+
+  defp format_updated(%DateTime{} = at, zone) do
+    local =
+      case DateTime.shift_zone(at, zone) do
+        {:ok, value} -> value
+        _ -> at
+      end
+
+    "#{Calendar.strftime(local, "%d.%m.%Y %H:%M")} #{local.time_zone}"
+  end
+
+  defp percent(nil), do: "—"
+  defp percent(value), do: "#{value}%"
+
+  defp scalar_query(params),
+    do: params |> Enum.filter(fn {_key, value} -> is_binary(value) end) |> Map.new()
+
+  defp display_count(nil), do: "—"
+  defp display_count(value), do: value
+
+  defp comparison_delta(
+         %{state: :ready, comparison: %{state: :ready, summary: previous}, summary: current},
+         key
+       ),
+       do: delta(Map.fetch!(current, key), Map.fetch!(previous, key))
+
+  defp comparison_delta(_, _), do: nil
+
+  defp period_query(assigns) do
+    {from, to} = assigns.period
+
+    %{
+      "period" => assigns.preset,
+      "compare" => assigns.comparison_mode,
+      "compare_from" => assigns.comparison_from,
+      "compare_to" => assigns.comparison_to
+    }
+    |> then(fn query ->
+      if assigns.preset == "custom",
+        do: Map.merge(query, %{"from" => Date.to_iso8601(from), "to" => Date.to_iso8601(to)}),
+        else: query
+    end)
+    |> compact_query()
+  end
+
+  defp branch_overview_path(assigns, id) do
+    branch = Enum.find(assigns.staff_branches, &(&1.id == id))
+    "/staff/b/#{branch.slug}/statistics?" <> Plug.Conn.Query.encode(period_query(assigns))
+  end
+
+  defp drilldown_path(assigns, tab),
+    do: statistics_path(assigns, Map.put(period_query(assigns), "tab", tab))
+
+  defp overview_path(assigns) do
+    prefix =
+      if(assigns.current_branch, do: "/staff/b/#{assigns.current_branch.slug}", else: "/staff")
+
+    prefix <> "/statistics?" <> Plug.Conn.Query.encode(period_query(assigns))
+  end
+
+  defp order_path(assigns, row) do
+    branch = Enum.find(assigns.staff_branches, &(&1.id == row.branch_id))
+    "/staff/b/#{branch.slug}/orders/#{row.id}"
+  end
+
+  defp report_path(assigns, "comparison"),
+    do: "/staff/analytics/comparison?" <> Plug.Conn.Query.encode(period_query(assigns))
+
+  defp report_path(assigns, report) do
+    prefix =
+      if(assigns.current_branch, do: "/staff/b/#{assigns.current_branch.slug}", else: "/staff")
+
+    prefix <> "/analytics/#{report}?" <> Plug.Conn.Query.encode(period_query(assigns))
+  end
+
+  defp fulfillment_label("other"), do: gettext("Other")
+  defp fulfillment_label(key), do: OrderHelpers.fulfillment_label(key)
+  defp payment_label(key), do: OrderHelpers.payment_label(key)
+
+  defp source_label("app"), do: gettext("Storefront")
+  defp source_label("staff"), do: gettext("Admin")
+  defp source_label("pos"), do: gettext("POS")
+  defp source_label("other"), do: gettext("Other")
+  defp source_label(key), do: Channels.name(key)
+
+  defp destination_label("own"), do: gettext("Without CRM transfer")
+  defp destination_label("other"), do: gettext("Other")
+
+  defp destination_label(key) do
+    case Delivest.Integrations.Crm.provider_name(key) do
+      name when is_binary(name) -> name
+      _ -> key
+    end
+  end
 
   defp short_date(date), do: Calendar.strftime(date, "%d.%m")
 
   defp label_every(rows), do: max(div(length(rows) + 11, 12), 1)
-
-  defp breakdown_label(:fulfillment_type, key), do: OrderHelpers.fulfillment_label(key)
-  defp breakdown_label(:payment_method, key), do: OrderHelpers.payment_label(key)
 
   def staff_page_header(assigns) do
     ~H"""
@@ -656,7 +849,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           </details>
         </div>
         <p :if={is_nil(@period_error)} class="mt-1 text-xs text-base-content/60">
-          {format_period(@period)}
+          {if(@current_branch, do: @current_branch.name, else: gettext("All branches"))} · {format_period(
+            @period
+          )}
+        </p>
+        <p
+          :if={@tab == "overview" and is_nil(@period_error) and assigns[:overview]}
+          class="text-xs text-base-content/60"
+        >
+          {gettext("Updated at %{time}",
+            time: format_updated(@overview.updated_at, @overview.timezone)
+          )}
         </p>
       </div>
       <div class="flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
@@ -690,20 +893,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             />
           <% end %>
           <.input
-            :if={@global_statistics? and @tab in ~w(sales products categories)}
-            field={@form[:branch_id]}
-            id="statistics-network-branch"
-            type="select"
-            prompt={gettext("All branches")}
-            options={Enum.map(@staff_branches, &{&1.name, &1.id})}
-            class="select select-bordered select-sm w-44"
-          />
-          <.input
             :if={@tab in ~w(channels comparison franchise)}
             field={@form[:channel]}
             type="select"
             prompt={gettext("All channels")}
-            options={channel_options()}
+            options={channel_options(assigns)}
             class="select select-bordered select-sm w-36"
           />
           <.input
@@ -723,7 +917,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           />
         </.form>
         <button
-          :if={@tab == "sales"}
+          :if={@tab in ~w(overview sales)}
           id="statistics-compare"
           type="button"
           phx-click="open_comparison"
@@ -741,14 +935,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     ~H"""
     <div class="space-y-3">
       <nav
-        :if={is_nil(@section) and @visible_tabs != []}
+        :if={is_nil(@section) and @tab != "overview" and @visible_tabs != []}
         id="statistics-sales-tabs"
         aria-label={gettext("Statistics reports")}
         class="overflow-x-auto whitespace-nowrap"
       >
         <div role="tablist" class="tabs tabs-sm">
           <.link
-            :for={tab <- @visible_tabs}
+            :for={tab <- Enum.filter(@visible_tabs, &(&1 in ~w(overview sales products categories)))}
             id={"statistics-tab-#{tab}"}
             patch={tab_path(assigns, tab)}
             role="tab"
@@ -769,7 +963,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         >{gettext("Campaigns")}</.link>
       </nav>
       <section
-        :if={@tab == "sales" and @comparison_open?}
+        :if={@tab in ~w(overview sales) and @comparison_open?}
         id="statistics-comparison-controls"
         class="rounded-xl border border-base-300 p-3 space-y-2"
       >
@@ -844,6 +1038,232 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         {@period_error}
       </p>
 
+      <section
+        :if={@tab == "overview" and is_nil(@period_error) and assigns[:overview]}
+        id="statistics-overview"
+        class="space-y-5"
+      >
+        <p
+          :if={@overview.state == :empty}
+          id="statistics-no-data"
+          class="rounded-box border border-base-300 bg-base-100 p-4 text-sm text-base-content/70"
+        >
+          {gettext("No completed orders in this period")}
+        </p>
+        <p
+          :if={@overview.state == :partial}
+          id="statistics-partial"
+          class="rounded-box border border-warning/50 bg-warning/10 p-4 text-sm"
+        >
+          {gettext("Some daily totals are updating. The latest published figures are shown.")}
+        </p>
+        <button
+          :if={@refresh_retry?}
+          id="statistics-overview-retry"
+          type="button"
+          phx-click="refresh_report"
+          class="btn btn-sm btn-outline"
+        >{gettext("Try again")}</button>
+        <p class="text-xs text-base-content/60">
+          {gettext(
+            "Completed orders by local creation date. Successful refunds reduce sales for the original order date."
+          )}
+        </p>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <.link
+            id="statistics-sales-link"
+            patch={tab_path(assigns, "sales")}
+            class="block rounded-box focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <.stat_card
+              icon="hero-banknotes"
+              label={gettext("Sales after refunds")}
+              delta={comparison_delta(@overview, :revenue)}
+            >
+              {OrderHelpers.money(@overview.summary.revenue)}
+            </.stat_card>
+          </.link>
+          <.link
+            :if={Identity.can?(@current_staff, "orders.read")}
+            id="statistics-orders-link"
+            patch={drilldown_path(assigns, "orders")}
+            class="block rounded-box focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <.stat_card
+              icon="hero-shopping-bag"
+              label={gettext("Completed orders")}
+              delta={comparison_delta(@overview, :orders_count)}
+            >
+              {@overview.summary.orders_count}
+            </.stat_card>
+          </.link>
+          <div :if={!Identity.can?(@current_staff, "orders.read")}>
+            <.stat_card
+              icon="hero-shopping-bag"
+              label={gettext("Completed orders")}
+              delta={comparison_delta(@overview, :orders_count)}
+            >
+              {@overview.summary.orders_count}
+            </.stat_card>
+          </div>
+          <.link
+            id="statistics-average-link"
+            patch={tab_path(assigns, "sales")}
+            class="block rounded-box focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <.stat_card
+              icon="hero-receipt-percent"
+              label={gettext("Average check")}
+              delta={comparison_delta(@overview, :avg_check)}
+            >
+              {OrderHelpers.money(@overview.summary.avg_check)}
+            </.stat_card>
+          </.link>
+        </div>
+        <p
+          :if={(@compare? and @overview.comparison) && @overview.comparison.summary.orders_count == 0}
+          class="text-sm text-base-content/60"
+        >
+          {gettext("The comparison period has no completed orders; percentage change is unavailable.")}
+        </p>
+        <.card class="p-4 space-y-3">
+          <h2 class="font-semibold">{gettext("Sales over time")}</h2>
+          <.bar_chart
+            rows={@overview.daily}
+            value={& &1.revenue}
+            label={&short_date(&1.date)}
+            title={&"#{Calendar.strftime(&1.date, "%d.%m.%Y")}: #{OrderHelpers.money(&1.revenue)}"}
+            label_every={label_every(@overview.daily)}
+          />
+        </.card>
+        <div class="grid gap-3 md:grid-cols-2">
+          <section id="statistics-clients" class="rounded-box border border-base-300 bg-base-100 p-4">
+            <h2 class="font-semibold">{gettext("Customers")}</h2>
+            <p class="mt-2 text-sm">
+              {gettext("New")}: <strong>{display_count(@overview.clients.new)}</strong>
+              · {gettext("Returning")}: <strong>{display_count(@overview.clients.returning)}</strong>
+            </p>
+            <p class="mt-1 text-xs text-base-content/60">
+              {gettext("Identified orders")}: {display_count(@overview.clients.identified_orders)}/{display_count(
+                @overview.clients.total_orders
+              )} ({percent(@overview.clients.coverage)})
+            </p>
+          </section>
+          <section id="statistics-quality" class="rounded-box border border-base-300 bg-base-100 p-4">
+            <h2 class="font-semibold">{gettext("Service quality")}</h2>
+            <p class="mt-2 text-sm">
+              {gettext("Cancellations")}: <strong>{@overview.summary.cancelled_count}</strong>
+              · {gettext("Cancellation rate")}:
+              <strong>{percent(@overview.summary.cancellation_rate)}</strong>
+            </p>
+            <p class="mt-1 text-sm">
+              {gettext("Refunds")}:
+              <strong>{OrderHelpers.money(@overview.summary.refund_amount)}</strong>
+            </p>
+            <div
+              :if={Identity.can?(@current_staff, "orders.read")}
+              class="mt-2 flex flex-wrap gap-3 text-xs"
+            >
+              <.link
+                id="statistics-cancelled-link"
+                patch={drilldown_path(assigns, "cancelled")}
+                class="link link-primary"
+              >{gettext("Cancellation details")}</.link>
+              <.link
+                id="statistics-refunds-link"
+                patch={drilldown_path(assigns, "refunds")}
+                class="link link-primary"
+              >{gettext("Refund details")}</.link>
+            </div>
+            <p class="mt-1 text-xs text-base-content/60">
+              {gettext("Cancellation rate uses completed plus cancelled orders as its denominator.")}
+            </p>
+          </section>
+        </div>
+        <section
+          :if={@global_statistics?}
+          id="statistics-branch-summary"
+          class="rounded-box border border-base-300 bg-base-100 p-4 overflow-x-auto"
+        >
+          <h2 class="font-semibold mb-3">{gettext("Branches")}</h2>
+          <.table
+            id="statistics-overview-branches"
+            rows={@overview.branches}
+            row_id={fn branch -> "statistics-overview-branch-#{branch.id}" end}
+          >
+            <:col :let={branch} key="branch" label={gettext("Branch")}>{branch.name}</:col>
+            <:col :let={branch} key="revenue" label={gettext("Sales after refunds")} numeric>
+              {OrderHelpers.money(branch.revenue)}
+            </:col>
+            <:col :let={branch} key="orders" label={gettext("Completed orders")} numeric>
+              {branch.orders_count}
+            </:col>
+            <:col :let={branch} key="average" label={gettext("Average check")} numeric>
+              {OrderHelpers.money(branch.avg_check)}
+            </:col>
+            <:col :let={branch} key="cancelled" label={gettext("Cancellation rate")} numeric>
+              {percent(branch.cancellation_rate)}
+            </:col>
+            <:action :let={branch}>
+              <.link navigate={branch_overview_path(assigns, branch.id)} class="link link-primary">{gettext(
+                "View branch"
+              )}</.link>
+            </:action>
+          </.table>
+        </section>
+      </section>
+
+      <section
+        :if={@tab in ~w(orders cancelled refunds) and is_nil(@period_error)}
+        id="statistics-order-details"
+        class="space-y-4"
+      >
+        <.link patch={drilldown_path(assigns, "overview")} class="btn btn-sm btn-ghost">{gettext(
+          "Back to statistics"
+        )}</.link>
+        <h2 class="text-xl font-semibold">{tab_label(@tab)}</h2>
+        <p
+          :if={@order_drilldown.total_rows == 0}
+          class="rounded-box border border-base-300 bg-base-100 p-4 text-sm text-base-content/60"
+        >
+          {gettext("No orders in this period")}
+        </p>
+        <.table
+          id="statistics-order-rows"
+          rows={@order_drilldown.rows}
+          row_id={fn row -> "statistics-order-#{row.id}" end}
+        >
+          <:col :let={row} key="number" label={gettext("Order")}>
+            <.link navigate={order_path(assigns, row)} class="link link-primary">#{row.number}</.link>
+          </:col>
+          <:col :let={row} key="branch" label={gettext("Branch")}>{row.branch_name}</:col>
+          <:col :let={row} key="amount" label={gettext("Amount")} numeric>
+            {OrderHelpers.money(row.total_amount)}
+          </:col>
+          <:col :let={row} key="refund" label={gettext("Refunds")} numeric>
+            {OrderHelpers.money(row.refund_amount)}
+          </:col>
+          <:col :let={row} key="reason" label={gettext("Reason")}>{row.reason || "—"}</:col>
+        </.table>
+        <nav
+          :if={@order_drilldown.pages > 1}
+          aria-label={gettext("Pages")}
+          class="flex items-center gap-3"
+        >
+          <.link
+            :if={@order_drilldown.page > 1}
+            patch={tab_path(assigns, @tab, %{"page" => to_string(@order_drilldown.page - 1)})}
+            class="btn btn-sm btn-outline"
+          >{gettext("Previous")}</.link>
+          <span class="text-sm">{@order_drilldown.page}/{@order_drilldown.pages}</span>
+          <.link
+            :if={@order_drilldown.page < @order_drilldown.pages}
+            patch={tab_path(assigns, @tab, %{"page" => to_string(@order_drilldown.page + 1)})}
+            class="btn btn-sm btn-outline"
+          >{gettext("Next")}</.link>
+        </nav>
+      </section>
+
       <.report_panel
         :if={@tab in @report_tabs and is_nil(@period_error)}
         tab={@tab}
@@ -858,209 +1278,180 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         page_path={fn page -> tab_path(assigns, @tab, %{"page" => Integer.to_string(page)}) end}
       />
 
-      <%= if @tab == "sales" and is_nil(@period_error) do %>
-        <.empty_state :if={@summary.orders_count == 0} title={gettext("No sales in this period")} />
-        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <.stat_card
-            icon="hero-banknotes"
-            label={gettext("Revenue")}
-            delta={@compare? && delta(@summary.revenue, @previous.revenue)}
-            hint={
-              @compare? &&
-                gettext("Comparison: %{value}", value: OrderHelpers.money(@previous.revenue))
-            }
-          >
-            {OrderHelpers.money(@summary.revenue)}
+      <section
+        :if={@tab == "sales" and is_nil(@period_error)}
+        id="statistics-sales-detail"
+        class="space-y-4"
+      >
+        <.link patch={drilldown_path(assigns, "overview")} class="btn btn-sm btn-ghost">{gettext(
+          "Back to statistics"
+        )}</.link>
+        <p class="text-sm text-base-content/70">
+          {gettext(
+            "Completed orders by local creation date. Successful refunds reduce sales for the original order date."
+          )}
+        </p>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <.stat_card icon="hero-banknotes" label={gettext("Sales after refunds")}>
+            {OrderHelpers.money(@overview.summary.revenue)}
           </.stat_card>
-          <.stat_card
-            icon="hero-shopping-bag"
-            label={gettext("Orders")}
-            delta={@compare? && delta(@summary.orders_count, @previous.orders_count)}
-            hint={
-              if @compare?,
-                do: gettext("Comparison: %{value}", value: @previous.orders_count),
-                else: excluded_hint(@summary)
-            }
-          >
-            {@summary.orders_count}
+          <.stat_card icon="hero-shopping-bag" label={gettext("Completed orders")}>
+            {@overview.summary.orders_count}
           </.stat_card>
-          <.stat_card
-            icon="hero-receipt-percent"
-            label={gettext("Average check")}
-            delta={@compare? && delta(@summary.avg_check, @previous.avg_check)}
-            hint={
-              @compare? &&
-                gettext("Comparison: %{value}", value: OrderHelpers.money(@previous.avg_check))
-            }
-          >
-            {OrderHelpers.money(@summary.avg_check)}
-          </.stat_card>
-          <.stat_card
-            icon="hero-cube"
-            label={gettext("Items sold")}
-            delta={@compare? && delta(@summary.items_sold, @previous.items_sold)}
-            hint={@compare? && gettext("Comparison: %{value}", value: @previous.items_sold)}
-          >
-            {@summary.items_sold}
+          <.stat_card icon="hero-receipt-percent" label={gettext("Average check")}>
+            {OrderHelpers.money(@overview.summary.avg_check)}
           </.stat_card>
         </div>
-
-        <div :if={@crm_split} id="crm-split" class="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <.stat_card icon="hero-arrows-right-left" label={gettext("Orders via the CRM")}>
-            {@crm_split.crm_orders}
-          </.stat_card>
-          <.stat_card icon="hero-banknotes" label={gettext("Revenue via the CRM")}>
-            {OrderHelpers.money(@crm_split.crm_revenue)}
-          </.stat_card>
-          <.stat_card icon="hero-clock" label={gettext("Time until the CRM took the order")}>
-            {confirm_time(@crm_split.avg_confirm_seconds)}
-          </.stat_card>
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <.card class="p-4 space-y-4">
-            <h2 class="font-bold">{gettext("Revenue by day")}</h2>
-            <.bar_chart
-              rows={@daily}
-              value={& &1.revenue}
-              label={&short_date(&1.date)}
-              title={
-                &"#{Calendar.strftime(&1.date, "%d.%m.%Y")}: #{OrderHelpers.money(&1.revenue)}, #{&1.orders} #{gettext("orders")}"
+        <nav class="flex flex-wrap gap-2" aria-label={gettext("Sales details")}>
+          <.link
+            id="statistics-detail-products"
+            patch={tab_path(assigns, "products")}
+            class="btn btn-sm btn-outline"
+          >{gettext("Products")}</.link>
+          <.link
+            id="statistics-detail-categories"
+            patch={tab_path(assigns, "categories")}
+            class="btn btn-sm btn-outline"
+          >{gettext("Categories")}</.link>
+          <.link
+            :for={report <- @overview.visibility.reports}
+            navigate={report_path(assigns, report)}
+            class="btn btn-sm btn-outline"
+          >{tab_label(report)}</.link>
+          <.link
+            :if={
+              Identity.can?(@current_staff, "statistics.network") and
+                Features.enabled?("yandex_costs", :franchise)
+            }
+            navigate={"/staff/analytics/advertising?" <> Plug.Conn.Query.encode(period_query(assigns))}
+            class="btn btn-sm btn-outline"
+          >{gettext("Advertising attribution")}</.link>
+        </nav>
+        <div class="grid gap-3 md:grid-cols-2">
+          <section
+            :if={@overview.visibility.fulfillment != []}
+            id="statistics-fulfillment"
+            class="rounded-box border border-base-300 bg-base-100 p-4"
+          >
+            <h2 class="font-semibold">{gettext("Fulfillment method")}</h2>
+            <div
+              :for={
+                row <- Enum.filter(@by_fulfillment, &(&1.key in @overview.visibility.fulfillment))
               }
-              label_every={label_every(@daily)}
-            />
-          </.card>
-
-          <.card class="p-4 space-y-4">
-            <h2 class="font-bold">{gettext("Orders by hour")}</h2>
-            <.bar_chart
-              rows={@hourly}
-              value={& &1.orders}
-              label={&"#{&1.hour}"}
-              title={
-                &"#{&1.hour}:00 — #{&1.orders} #{gettext("orders")}, #{OrderHelpers.money(&1.revenue)}"
-              }
-              label_every={2}
-            />
-          </.card>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            :for={
-              {field, title, rows} <- [
-                {:fulfillment_type, gettext("By fulfillment type"), @by_fulfillment},
-                {:payment_method, gettext("By payment method"), @by_payment}
-              ]
-            }
-            class="bg-base-100 rounded-box border border-base-300 p-4 space-y-3"
-          >
-            <h2 class="font-bold">{title}</h2>
-            <p :if={rows == []} class="text-sm text-base-content/50">{gettext("No sales")}</p>
-            <div :for={row <- rows} class="space-y-1">
-              <div class="flex justify-between text-sm">
-                <span class="font-medium">{breakdown_label(field, row.key)}</span>
-                <span class="text-base-content/60 tabular-nums">
-                  {row.orders} · {OrderHelpers.money(row.revenue)}
-                </span>
-              </div>
-              <.share_bar value={row.share} />
+              class="mt-2 flex justify-between gap-3 text-sm"
+            >
+              <span>{fulfillment_label(row.key)}</span>
+              <span class="tabular-nums">{row.orders} · {OrderHelpers.money(row.revenue)}</span>
             </div>
-          </div>
-        </div>
-      <% end %>
-
-      <%= if @tab == "products" and is_nil(@period_error) do %>
-        <.card class="overflow-x-auto">
-          <div class="p-4 flex items-center justify-between gap-3 border-b border-base-200">
-            <h2 class="font-bold">{gettext("Products sold")}</h2>
-            <div class="join">
-              <.link
-                patch={tab_path(assigns, "products", %{"sort" => "revenue"})}
-                class={["join-item btn btn-xs", @sort == :revenue && "btn-primary"]}
-              >
-                {gettext("By revenue")}
-              </.link>
-              <.link
-                patch={tab_path(assigns, "products", %{"sort" => "quantity"})}
-                class={["join-item btn btn-xs", @sort == :quantity && "btn-primary"]}
-              >
-                {gettext("By quantity")}
-              </.link>
+          </section>
+          <section id="statistics-payment" class="rounded-box border border-base-300 bg-base-100 p-4">
+            <h2 class="font-semibold">{gettext("Payment method")}</h2>
+            <div :for={row <- @by_payment} class="mt-2 flex justify-between gap-3 text-sm">
+              <span>{payment_label(row.key)}</span>
+              <span class="tabular-nums">{row.orders} · {OrderHelpers.money(row.revenue)}</span>
             </div>
-          </div>
-
-          <.table
-            id="statistics-products"
-            rows={Enum.with_index(@products, 1)}
-            row_id={fn {_row, index} -> "statistics-product-#{index}" end}
-            empty_title={gettext("No sales in this period")}
+          </section>
+        </div>
+        <div class="grid gap-3 md:grid-cols-2">
+          <section
+            :if={@by_source != []}
+            id="statistics-order-source"
+            class="rounded-box border border-base-300 bg-base-100 p-4"
           >
-            <:col :let={{_row, index}} key="position" label="#">{index}</:col>
-            <:col :let={{row, _index}} key="product" label={gettext("Product")}>{row.title}</:col>
-            <:col :let={{row, _index}} key="category" label={gettext("Category")} secondary>
-              {row.category_name || "—"}
-            </:col>
-            <:col :let={{row, _index}} key="quantity" label={gettext("Qty")} numeric>
-              {row.quantity}
-            </:col>
-            <:col :let={{row, _index}} key="orders" label={gettext("Orders")} numeric secondary>
-              {row.orders}
-            </:col>
-            <:col :let={{row, _index}} key="revenue" label={gettext("Revenue")} numeric>
-              {OrderHelpers.money(row.revenue)}
-            </:col>
-            <:col :let={{row, _index}} key="share" label={gettext("Share of revenue")} secondary>
-              <.share_bar value={row.share} />
-            </:col>
-          </.table>
-        </.card>
-      <% end %>
-
-      <%= if @tab == "categories" and is_nil(@period_error) do %>
-        <.card class="overflow-x-auto">
-          <.table
-            id="statistics-categories"
-            rows={Enum.with_index(@categories, 1)}
-            row_id={fn {_row, index} -> "statistics-category-#{index}" end}
-            empty_title={gettext("No sales in this period")}
+            <h2 class="font-semibold">{gettext("Order source")}</h2>
+            <div :for={row <- @by_source} class="mt-2 flex justify-between gap-3 text-sm">
+              <span>{source_label(row.key)}</span>
+              <span class="tabular-nums">{row.orders} · {OrderHelpers.money(row.revenue)}</span>
+            </div>
+          </section>
+          <section
+            :if={@by_destination != []}
+            id="statistics-transfer-destination"
+            class="rounded-box border border-base-300 bg-base-100 p-4"
           >
-            <:col :let={{row, _index}} key="category" label={gettext("Category")}>
-              {row.category_name || gettext("Without category")}
-            </:col>
-            <:col :let={{row, _index}} key="products" label={gettext("Products")} numeric secondary>
-              {row.products}
-            </:col>
-            <:col :let={{row, _index}} key="quantity" label={gettext("Qty")} numeric>
-              {row.quantity}
-            </:col>
-            <:col :let={{row, _index}} key="orders" label={gettext("Orders")} numeric secondary>
-              {row.orders}
-            </:col>
-            <:col :let={{row, _index}} key="revenue" label={gettext("Revenue")} numeric>
-              {OrderHelpers.money(row.revenue)}
-            </:col>
-            <:col :let={{row, _index}} key="share" label={gettext("Share of revenue")} secondary>
-              <.share_bar value={row.share} />
-            </:col>
-          </.table>
-        </.card>
-      <% end %>
+            <h2 class="font-semibold">{gettext("Transfer destination")}</h2>
+            <div :for={row <- @by_destination} class="mt-2 flex justify-between gap-3 text-sm">
+              <span>{destination_label(row.key)}</span>
+              <span class="tabular-nums">{row.orders} · {OrderHelpers.money(row.revenue)}</span>
+            </div>
+          </section>
+        </div>
+        <p :if={@overview.visibility.channels != []} class="text-xs text-base-content/60">
+          {gettext(
+            "Order source describes where an order began; sending it to a CRM does not change that source."
+          )}
+        </p>
+      </section>
+
+      <section
+        :if={@tab == "products" and is_nil(@period_error)}
+        id="statistics-products-detail"
+        class="space-y-3"
+      >
+        <.link patch={tab_path(assigns, "sales")} class="btn btn-sm btn-ghost">{gettext(
+          "Back to sales"
+        )}</.link>
+        <p class="text-sm text-base-content/70">
+          {gettext(
+            "Product amounts are before refunds; order refunds are shown separately in the sales total."
+          )}
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <.link
+            patch={tab_path(assigns, "products", %{"sort" => "revenue"})}
+            class={["btn btn-sm", @sort == :revenue && "btn-primary"]}
+          >{gettext("By revenue")}</.link>
+          <.link
+            patch={tab_path(assigns, "products", %{"sort" => "quantity"})}
+            class={["btn btn-sm", @sort == :quantity && "btn-primary"]}
+          >{gettext("By quantity")}</.link>
+        </div>
+        <.table
+          id="statistics-products"
+          rows={@products}
+          row_id={fn row -> "statistics-product-#{row.key}" end}
+          empty_title={gettext("No completed orders in this period")}
+        >
+          <:col :let={row} key="product" label={gettext("Product")}>{row.title}</:col>
+          <:col :let={row} key="quantity" label={gettext("Qty")} numeric>{row.quantity}</:col>
+          <:col :let={row} key="orders" label={gettext("Orders")} numeric>{row.orders}</:col>
+          <:col :let={row} key="revenue" label={gettext("Before refunds")} numeric>
+            {OrderHelpers.money(row.revenue)}
+          </:col>
+        </.table>
+      </section>
+
+      <section
+        :if={@tab == "categories" and is_nil(@period_error)}
+        id="statistics-categories-detail"
+        class="space-y-3"
+      >
+        <.link patch={tab_path(assigns, "sales")} class="btn btn-sm btn-ghost">{gettext(
+          "Back to sales"
+        )}</.link>
+        <p class="text-sm text-base-content/70">
+          {gettext(
+            "Category amounts are before refunds; order refunds are shown separately in the sales total."
+          )}
+        </p>
+        <.table
+          id="statistics-categories"
+          rows={@categories}
+          row_id={fn row -> "statistics-category-#{row.key || "none"}" end}
+          empty_title={gettext("No completed orders in this period")}
+        >
+          <:col :let={row} key="category" label={gettext("Category")}>
+            {row.title || gettext("Without category")}
+          </:col>
+          <:col :let={row} key="quantity" label={gettext("Qty")} numeric>{row.quantity}</:col>
+          <:col :let={row} key="orders" label={gettext("Orders")} numeric>{row.orders}</:col>
+          <:col :let={row} key="revenue" label={gettext("Before refunds")} numeric>
+            {OrderHelpers.money(row.revenue)}
+          </:col>
+        </.table>
+      </section>
     </div>
     """
-  end
-
-  defp excluded_hint(%{cancelled_count: cancelled, lost_count: lost}) do
-    [
-      cancelled > 0 && gettext("%{count} cancelled", count: cancelled),
-      lost > 0 && gettext("%{count} not delivered to CRM", count: lost)
-    ]
-    |> Enum.filter(& &1)
-    |> Enum.join(", ")
-    |> case do
-      "" -> nil
-      hint -> hint
-    end
   end
 
   defp tab_label("sales"), do: pgettext("sales statistics", "Summary")
@@ -1072,4 +1463,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   defp tab_label("channels"), do: gettext("Sales channels")
   defp tab_label("comparison"), do: gettext("Comparison")
   defp tab_label("franchise"), do: gettext("Branch comparison")
+  defp tab_label("overview"), do: gettext("Overview")
+  defp tab_label("orders"), do: gettext("Completed orders")
+  defp tab_label("cancelled"), do: gettext("Cancellations")
+  defp tab_label("refunds"), do: gettext("Refunds")
 end

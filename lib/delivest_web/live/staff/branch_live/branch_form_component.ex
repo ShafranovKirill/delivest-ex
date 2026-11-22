@@ -282,6 +282,25 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
               />
             </div>
             <.input field={@form[:is_active]} type="checkbox" label={gettext("Active")} />
+            <div id="branch-maintenance-settings" class="border-t border-base-300 pt-4 space-y-2">
+              <.input
+                field={@form[:maintenance_enabled]}
+                type="checkbox"
+                label={gettext("Maintenance for this branch")}
+              />
+              <p
+                :if={Delivest.Franchise.get_settings().maintenance_enabled}
+                id="branch-maintenance-inherited"
+                class="text-sm text-warning"
+              >
+                {gettext(
+                  "Maintenance is enabled for the entire franchise. This branch cannot override it."
+                )}
+              </p>
+              <p class="text-sm text-base-content/60">
+                {gettext("Existing orders and staff tools remain available.")}
+              </p>
+            </div>
           </div>
 
           <.inputs_for :let={method} :if={@section.id == :fulfillment} field={@form[:fulfillment]}>

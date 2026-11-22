@@ -65,23 +65,34 @@ defmodule Delivest.Analytics.Reports.Query do
     {:ok, %{state: state, last_success_at: utc(checked)}}
   end
 
-  def read(_feature, [], _from, _to, _tab, _filters, _page), do: empty()
+  def read(feature, ids, from, to, tab, filters, page, visibility \\ nil)
 
-  def read(feature, ids, from, to, tab, filters, page) do
+  def read(_feature, [], _from, _to, _tab, _filters, _page, _visibility), do: empty()
+
+  def read(feature, ids, from, to, tab, filters, page, visibility) do
     ids = Enum.map(ids, &Ecto.UUID.dump!/1)
     dimension = dimension(tab)
     key = key_filter(tab, filters)
-    args = [feature, ids, from, to, dimension, key]
 
-    customer_stats = customer_stats(feature, ids, from, to, tab, filters)
+    args = [
+      feature,
+      ids,
+      from,
+      to,
+      dimension,
+      key,
+      if(visibility, do: Jason.encode!(visibility), else: nil)
+    ]
+
+    customer_stats = customer_stats(feature, ids, from, to, tab, filters, visibility)
 
     %{
       rows: page_rows(args, page),
       total_rows: count_groups(args),
       totals: totals(args),
       coverage: coverage(feature, ids, from, to),
-      branch_rows: branch_rows(feature, ids, from, to, tab, filters, page),
-      branch_total: branch_total(feature, ids, from, to, tab, filters),
+      branch_rows: branch_rows(feature, ids, from, to, tab, filters, page, visibility),
+      branch_total: branch_total(feature, ids, from, to, tab, filters, visibility),
       verified_buyers: customer_stats.verified_buyers,
       repeat_buyers: customer_stats.repeat_buyers,
       retention: customer_stats.retention
@@ -113,18 +124,32 @@ defmodule Delivest.Analytics.Reports.Query do
 
   defp key_filter(_, _), do: nil
 
+  @visible_rows """
+  WITH visible_rows AS (
+    SELECT s.branch_id,s.feature,s.day,r.family,
+      CASE WHEN $7::text::jsonb IS NOT NULL AND r.dimension LIKE 'customer:%'
+        AND NOT COALESCE(($7::text::jsonb -> s.branch_id::text) ? split_part(r.dimension,':',2),false)
+        THEN 'customer:other' ELSE r.dimension END dimension,
+      CASE WHEN $7::text::jsonb IS NOT NULL AND r.dimension IN ('channel','source')
+        AND NOT COALESCE(($7::text::jsonb -> s.branch_id::text) ? r.key,false)
+        THEN 'other' ELSE r.key END key,
+      r.counts
+    FROM analytics_report_states s JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
+    WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
+  )
+  """
+
   defp page_rows(args, page) do
     Repo.query!(
-      """
-      SELECT r.family,r.dimension,r.key,#{@sums}
-      FROM analytics_report_states s
-      JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
-      WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
-        AND ($5::text IS NULL OR r.dimension=$5)
-        AND ($6::text IS NULL OR r.key=$6)
-      GROUP BY r.family,r.dimension,r.key
-      ORDER BY r.dimension,r.key LIMIT #{@page_size} OFFSET $7
-      """,
+      @visible_rows <>
+        """
+        SELECT r.family,r.dimension,r.key,#{@sums}
+        FROM visible_rows r
+        WHERE ($5::text IS NULL OR r.dimension=$5)
+          AND ($6::text IS NULL OR r.key=$6)
+        GROUP BY r.family,r.dimension,r.key
+        ORDER BY r.dimension,r.key LIMIT #{@page_size} OFFSET $8
+        """,
       args ++ [(page - 1) * @page_size]
     ).rows
     |> Enum.map(fn [family, dimension, key | counts] ->
@@ -140,16 +165,15 @@ defmodule Delivest.Analytics.Reports.Query do
   defp count_groups(args) do
     [[count]] =
       Repo.query!(
-        """
-        SELECT count(*)::bigint FROM (
-          SELECT 1 FROM analytics_report_states s
-          JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
-          WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
-            AND ($5::text IS NULL OR r.dimension=$5)
-            AND ($6::text IS NULL OR r.key=$6)
-          GROUP BY r.family,r.dimension,r.key
-        ) grouped
-        """,
+        @visible_rows <>
+          """
+          SELECT count(*)::bigint FROM (
+            SELECT 1 FROM visible_rows r
+            WHERE ($5::text IS NULL OR r.dimension=$5)
+              AND ($6::text IS NULL OR r.key=$6)
+            GROUP BY r.family,r.dimension,r.key
+          ) grouped
+          """,
         args
       ).rows
 
@@ -159,22 +183,21 @@ defmodule Delivest.Analytics.Reports.Query do
   defp totals(args) do
     [[created, completed, cancelled, revenue, refunded, sessions, clicks, first_sources]] =
       Repo.query!(
-        """
-        SELECT COALESCE(sum((r.counts->>'created')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'completed')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'refunded')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'sessions')::bigint) FILTER
-            (WHERE r.dimension='stage' AND r.key='session_started'),0)::bigint,
-          COALESCE(sum((r.counts->>'clicks')::bigint),0)::bigint,
-          COALESCE(sum((r.counts->>'first_source_clients')::bigint),0)::bigint
-        FROM analytics_report_states s
-        JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
-        WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
-          AND ($5::text IS NULL OR r.dimension=$5)
-          AND ($6::text IS NULL OR r.key=$6)
-        """,
+        @visible_rows <>
+          """
+          SELECT COALESCE(sum((r.counts->>'created')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'completed')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'refunded')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'sessions')::bigint) FILTER
+              (WHERE r.dimension='stage' AND r.key='session_started'),0)::bigint,
+            COALESCE(sum((r.counts->>'clicks')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'first_source_clients')::bigint),0)::bigint
+          FROM visible_rows r
+          WHERE ($5::text IS NULL OR r.dimension=$5)
+            AND ($6::text IS NULL OR r.key=$6)
+          """,
         args
       ).rows
 
@@ -240,27 +263,36 @@ defmodule Delivest.Analytics.Reports.Query do
     }
   end
 
-  defp branch_rows(_feature, _ids, _from, _to, tab, _filters, _page) when tab != "franchise",
-    do: []
+  defp branch_rows(_feature, _ids, _from, _to, tab, _filters, _page, _visibility)
+       when tab != "franchise",
+       do: []
 
-  defp branch_rows(feature, ids, from, to, _tab, filters, page) do
+  defp branch_rows(feature, ids, from, to, _tab, filters, page, visibility) do
     channel = key_filter("franchise", filters)
 
     Repo.query!(
-      """
-      SELECT s.branch_id::text,
-        COALESCE(sum((r.counts->>'created')::bigint),0)::bigint,
-        COALESCE(sum((r.counts->>'completed')::bigint),0)::bigint,
-        COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
-        COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint
-      FROM analytics_report_states s
-      JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
-      WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
-        AND r.dimension='channel'
-        AND ($5::text IS NULL OR r.key=$5)
-      GROUP BY s.branch_id ORDER BY s.branch_id LIMIT #{@page_size} OFFSET $6
-      """,
-      [feature, ids, from, to, channel, (page - 1) * @page_size]
+      @visible_rows <>
+        """
+        SELECT r.branch_id::text,
+          COALESCE(sum((r.counts->>'created')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'completed')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
+          COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint
+        FROM visible_rows r
+        WHERE ($5::text IS NULL OR r.dimension=$5)
+          AND ($6::text IS NULL OR r.key=$6)
+        GROUP BY r.branch_id ORDER BY r.branch_id LIMIT #{@page_size} OFFSET $8
+        """,
+      [
+        feature,
+        ids,
+        from,
+        to,
+        "channel",
+        channel,
+        if(visibility, do: Jason.encode!(visibility), else: nil),
+        (page - 1) * @page_size
+      ]
     ).rows
     |> Enum.map(fn [id, created, completed, cancelled, revenue] ->
       %{
@@ -275,30 +307,39 @@ defmodule Delivest.Analytics.Reports.Query do
     end)
   end
 
-  defp branch_total(_feature, _ids, _from, _to, tab, _filters) when tab != "franchise", do: 0
+  defp branch_total(_feature, _ids, _from, _to, tab, _filters, _visibility)
+       when tab != "franchise", do: 0
 
-  defp branch_total(feature, ids, from, to, _tab, filters) do
+  defp branch_total(feature, ids, from, to, _tab, filters, visibility) do
     channel = key_filter("franchise", filters)
 
     [[count]] =
       Repo.query!(
-        """
-        SELECT count(DISTINCT s.branch_id)::bigint FROM analytics_report_states s
-        JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
-        WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
-          AND r.dimension='channel' AND ($5::text IS NULL OR r.key=$5)
-        """,
-        [feature, ids, from, to, channel]
+        @visible_rows <>
+          """
+          SELECT count(DISTINCT r.branch_id)::bigint FROM visible_rows r
+          WHERE ($5::text IS NULL OR r.dimension=$5)
+            AND ($6::text IS NULL OR r.key=$6)
+          """,
+        [
+          feature,
+          ids,
+          from,
+          to,
+          "channel",
+          channel,
+          if(visibility, do: Jason.encode!(visibility), else: nil)
+        ]
       ).rows
 
     count
   end
 
-  defp customer_stats(feature, _ids, _from, _to, tab, _filters)
+  defp customer_stats(feature, _ids, _from, _to, tab, _filters, _visibility)
        when feature != "analytics_extended" or tab not in ["customers", "franchise"],
        do: %{verified_buyers: nil, repeat_buyers: nil, retention: nil}
 
-  defp customer_stats(_feature, ids, from, to, _tab, filters) do
+  defp customer_stats(_feature, ids, from, to, _tab, filters, visibility) do
     channel = Map.get(filters, "channel")
     dimension = if is_binary(channel) and channel != "", do: "customer:" <> channel, else: nil
     days = Date.diff(to, from) + 1
@@ -315,7 +356,8 @@ defmodule Delivest.Analytics.Reports.Query do
           FROM analytics_report_states s JOIN analytics_report_rows r ON r.snapshot_id=s.snapshot_id
           WHERE s.feature='analytics_extended' AND s.branch_id=ANY($1::uuid[])
             AND s.day BETWEEN $4 AND $3 AND r.dimension LIKE 'customer:%'
-            AND ($6::text IS NULL OR r.dimension=$6)
+            AND ($6::text IS NULL OR (r.dimension=$6 AND
+              ($7::text::jsonb IS NULL OR COALESCE(($7::text::jsonb -> s.branch_id::text) ? split_part(r.dimension,':',2),false))))
           GROUP BY r.key
         )
         SELECT count(*) FILTER (WHERE current_orders>0)::bigint,
@@ -324,7 +366,15 @@ defmodule Delivest.Analytics.Reports.Query do
           count(*) FILTER (WHERE prior_orders>0)::bigint
         FROM buyers
         """,
-        [ids, from, to, previous_from, previous_to, dimension]
+        [
+          ids,
+          from,
+          to,
+          previous_from,
+          previous_to,
+          dimension,
+          if(visibility, do: Jason.encode!(visibility), else: nil)
+        ]
       ).rows
 
     current_coverage = coverage("analytics_extended", ids, from, to).complete_days

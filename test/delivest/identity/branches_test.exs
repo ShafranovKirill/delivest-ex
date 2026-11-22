@@ -700,4 +700,48 @@ defmodule Delivest.Identity.BranchesTest do
       assert {:ok, %Branch{}} = Branches.create_branch(admin, max_attrs, %{})
     end
   end
+
+  test "maintenance keeps the latest branch value and records each toggle", %{admin: admin} do
+    branch = insert(:branch, is_active: true)
+
+    assert {:ok, enabled} =
+             Branches.update_branch(admin, branch, %{}, %{"maintenance_enabled" => true})
+
+    assert enabled.info.maintenance_enabled == true
+
+    # The caller still holds the original struct with no info association.
+    assert {:ok, disabled} =
+             Branches.update_branch(admin, branch, %{}, %{"maintenance_enabled" => false})
+
+    assert disabled.info.maintenance_enabled == false
+    assert Delivest.Storefront.Maintenance.status(branch.id) == %{enabled: false, reason: nil}
+
+    events =
+      Repo.query!(
+        "SELECT metadata->>'enabled' FROM audit_events WHERE action = 'storefront.maintenance_changed' AND branch_id = $1 ORDER BY inserted_at, id",
+        [Ecto.UUID.dump!(branch.id)]
+      ).rows
+
+    assert Enum.sort(events) == [["false"], ["true"]]
+  end
+
+  test "branch maintenance requires branch settings permission and franchise mode takes precedence",
+       %{
+         admin: admin,
+         forbidden_staff: forbidden
+       } do
+    branch = insert(:branch, is_active: true)
+
+    assert {:error, :forbidden} =
+             Branches.update_branch(forbidden, branch, %{}, %{"maintenance_enabled" => true})
+
+    assert {:ok, _} =
+             Branches.update_branch(admin, branch, %{}, %{"maintenance_enabled" => true})
+
+    assert Delivest.Storefront.Maintenance.status(branch.id) ==
+             %{enabled: true, reason: :branch}
+
+    assert %{enabled: true, reason: :franchise} =
+             Delivest.Storefront.Maintenance.status_of(true, true)
+  end
 end

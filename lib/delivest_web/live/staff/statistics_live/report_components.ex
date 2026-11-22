@@ -330,10 +330,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
 
   defp row_label(row, _), do: channel_label(row.key)
 
-  defp channel_label("app"), do: gettext("App")
+  defp channel_label("app"), do: gettext("Storefront")
   defp channel_label("staff"), do: gettext("Admin")
   defp channel_label("pos"), do: gettext("POS")
   defp channel_label("unknown"), do: gettext("Unknown channel")
+  defp channel_label("other"), do: gettext("Other")
 
   defp channel_label(key) do
     case Ecto.UUID.cast(key) do

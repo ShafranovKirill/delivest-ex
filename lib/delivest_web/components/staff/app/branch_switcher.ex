@@ -8,6 +8,7 @@ defmodule DelivestWeb.BranchSwitcher do
   attr :section, :string, default: nil
   attr :from, :string, default: nil
   attr :aggregate, :boolean, default: false
+  attr :network_allowed, :boolean, default: true
 
   def branch_switcher(assigns) do
     source = assigns.from || "/staff/dashboard"
@@ -38,7 +39,19 @@ defmodule DelivestWeb.BranchSwitcher do
       )
 
     ~H"""
-    <details id="header-branch" class="group/branch relative w-full min-w-0">
+    <div
+      :if={length(@branches) == 1 and not @network_allowed}
+      id="header-branch-static"
+      class="flex h-10 items-center gap-2 rounded-field border border-base-300 px-2.5 text-sm font-medium"
+    >
+      <.icon name="hero-building-storefront" class="size-4 text-base-content/70" />
+      <span class="truncate">{hd(@branches).name}</span>
+    </div>
+    <details
+      :if={length(@branches) != 1 or @network_allowed}
+      id="header-branch"
+      class="group/branch relative w-full min-w-0"
+    >
       <summary
         aria-label={@scope_label}
         aria-controls="header-branch-menu"
@@ -79,7 +92,7 @@ defmodule DelivestWeb.BranchSwitcher do
         </label>
 
         <ul class="menu w-full max-h-80 flex-nowrap overflow-y-auto p-0">
-          <li data-name={String.downcase(gettext("All branches"))}>
+          <li :if={@network_allowed} data-name={String.downcase(gettext("All branches"))}>
             <.link
               id="header-branch-all"
               href={@network_path}

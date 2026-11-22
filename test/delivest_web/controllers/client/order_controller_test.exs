@@ -97,6 +97,70 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     assert Repo.aggregate(Order, :count) == 1
   end
 
+  test "franchise maintenance rejects new public orders but preserves a keyed retry and order status",
+       %{
+         conn: conn,
+         branch: branch,
+         product: product
+       } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    key = Ecto.UUID.generate()
+    params = order_params(branch, cart_id)
+    first = conn |> keyed(key) |> post(~p"/client/orders", params) |> json_response(200)
+    id = first["data"]["id"]
+
+    staff = insert(:staff, role: insert(:role, permissions: ["franchise.update"]))
+
+    assert {:ok, _} =
+             Delivest.Franchise.update_settings(staff, %{"maintenance_enabled" => "true"})
+
+    assert %{"error" => "storefront_maintenance"} =
+             conn
+             |> recycle_with_headers()
+             |> post(~p"/client/orders", params)
+             |> json_response(503)
+
+    assert %{"data" => %{"id" => ^id}} =
+             conn
+             |> recycle_with_headers()
+             |> keyed(key)
+             |> post(~p"/client/orders", params)
+             |> json_response(200)
+
+    assert %{"data" => %{"id" => ^id}} =
+             conn |> recycle_with_headers() |> get(~p"/client/orders/#{id}") |> json_response(200)
+
+    assert Repo.aggregate(Order, :count) == 1
+  end
+
+  test "branch maintenance rejects fresh public checkout and resumes after disabling", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    assert {:ok, _} =
+             Delivest.Identity.update_branch(staff, branch, %{}, %{"maintenance_enabled" => true})
+
+    response = conn |> post(~p"/client/orders", order_params(branch, cart_id))
+    assert get_resp_header(response, "retry-after") == ["60"]
+    assert json_response(response, 503)["error"] == "storefront_maintenance"
+
+    assert {:ok, _} =
+             Delivest.Identity.update_branch(staff, branch, %{}, %{"maintenance_enabled" => false})
+
+    assert %{"data" => %{"id" => _}} =
+             conn
+             |> recycle_with_headers()
+             |> post(~p"/client/orders", order_params(branch, cart_id))
+             |> json_response(200)
+  end
+
   test "keyed retry with changed accepted payload conflicts, ignored fields do not", %{
     conn: conn,
     branch: branch,

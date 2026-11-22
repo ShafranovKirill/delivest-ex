@@ -55,6 +55,15 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
             reason: %Schema{type: :string, nullable: true}
           }
         },
+        maintenance: %Schema{
+          type: :object,
+          description: "Эффективный режим технических работ витрины",
+          properties: %{
+            enabled: %Schema{type: :boolean},
+            reason: %Schema{type: :string, nullable: true, enum: ["franchise", "branch"]}
+          },
+          required: [:enabled, :reason]
+        },
         loyalty: %Schema{
           type: :object,
           description: "Бонусная система филиала: за каждые per_rubles ₽ начисляется stars звёзд",

@@ -48,6 +48,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "delivery_below_minimum",
             "delivery_outside_zones",
             "branch_paused",
+            "storefront_maintenance",
             "branch_closed",
             "cook_by_in_past",
             "cook_by_outside_hours",

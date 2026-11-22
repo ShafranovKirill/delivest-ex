@@ -2,6 +2,7 @@ defmodule Delivest.Storefront.BranchProjection do
   @moduledoc "Prepares branch JSON dependencies in a fixed number of reads."
 
   alias Delivest.{Delivery, Features, LocalTime, Loyalty}
+  alias Delivest.Franchise.SettingsStore
   alias Delivest.Identity.Branch.{LoyaltySettings, PaymentSettings}
   alias Delivest.Integrations.Yookassa
 
@@ -12,6 +13,7 @@ defmodule Delivest.Storefront.BranchProjection do
     with_info = Enum.filter(branches, &match?(%{info: %{id: _}}, &1))
     info_ids = Enum.map(with_info, & &1.id)
     gates = Features.enabled_branches_many(@features, ids)
+    franchise = SettingsStore.get_uncached()
 
     delivery = if info_ids == [], do: %{}, else: Delivery.get_settings_many(info_ids)
 
@@ -22,12 +24,12 @@ defmodule Delivest.Storefront.BranchProjection do
 
     loyalty_policy =
       if Enum.any?(with_info, &match?(%LoyaltySettings{}, &1.info.loyalty)),
-        do: Loyalty.policy(),
+        do: Loyalty.policy(franchise),
         else: nil
 
     fallback_timezone =
       if Enum.any?(with_info, &is_nil(&1.info.timezone)),
-        do: LocalTime.timezone(),
+        do: LocalTime.timezone(franchise),
         else: nil
 
     timezones =
@@ -43,6 +45,7 @@ defmodule Delivest.Storefront.BranchProjection do
       delivery_settings: delivery,
       payment_ready: payment_ready,
       loyalty_policy: loyalty_policy,
+      franchise_maintenance: franchise.maintenance_enabled,
       timezones: timezones
     }
   end

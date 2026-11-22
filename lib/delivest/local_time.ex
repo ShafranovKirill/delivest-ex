@@ -1,7 +1,7 @@
 defmodule Delivest.LocalTime do
   import Ecto.Query, only: [from: 2]
 
-  alias Delivest.Franchise.SettingsStore
+  alias Delivest.Franchise.{Settings, SettingsStore}
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Repo
@@ -27,9 +27,10 @@ defmodule Delivest.LocalTime do
   def zones, do: @russia
 
   @spec timezone() :: String.t()
-  def timezone, do: SettingsStore.get().timezone || @default_timezone
+  def timezone, do: timezone(SettingsStore.get())
 
-  @spec timezone(Branch.t() | BranchInfo.t() | String.t() | nil) :: String.t()
+  @spec timezone(Branch.t() | BranchInfo.t() | Settings.t() | String.t() | nil) :: String.t()
+  def timezone(%Settings{timezone: zone}), do: zone || @default_timezone
   def timezone(nil), do: timezone()
   def timezone(%Branch{info: %BranchInfo{} = info}), do: timezone(info)
   def timezone(%Branch{id: id}), do: timezone(id)

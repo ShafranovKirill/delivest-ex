@@ -2,6 +2,7 @@ defmodule Delivest.Loyalty do
   import Ecto.Query
 
   alias Delivest.{Audit, Franchise, Gateway, Identity, Repo}
+  alias Delivest.Franchise.Settings, as: FranchiseSettings
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.{BranchInfo, LoyaltySettings}
   alias Delivest.Loyalty.{Account, Entry}
@@ -12,9 +13,9 @@ defmodule Delivest.Loyalty do
   @doc """
   The accrual rate and the expiry period are set once for the whole franchise.
   """
-  def policy do
-    settings = Franchise.get_settings()
+  def policy, do: policy(Franchise.get_settings())
 
+  def policy(%FranchiseSettings{} = settings) do
     %{
       per_rubles: settings.loyalty_per_rubles || 100,
       stars: settings.loyalty_stars || 5,

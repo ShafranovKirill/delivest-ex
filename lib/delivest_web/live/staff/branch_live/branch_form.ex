@@ -13,6 +13,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
     field :slug, :string
     field :code, :string
     field :is_active, :boolean
+    field :maintenance_enabled, :boolean, default: false
 
     field :address, :string
     field :city, :string
@@ -51,7 +52,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       :instagram_url,
       :slug,
       :code,
-      :is_active
+      :is_active,
+      :maintenance_enabled
     ])
     |> cast_embed(:fulfillment, with: &Delivest.Identity.Branch.FulfillmentSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
@@ -74,6 +76,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
       slug: branch.slug,
       code: branch.code,
       is_active: branch.is_active,
+      maintenance_enabled: (info && info.maintenance_enabled) || false,
       address: info && info.address,
       city: info && info.city,
       latitude: info && info.latitude,
@@ -217,7 +220,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchForm do
         :working_hours,
         :vk_url,
         :whatsapp_url,
-        :instagram_url
+        :instagram_url,
+        :maintenance_enabled
       ])
       |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
       |> Map.put("fulfillment", embed_params(data.fulfillment))
