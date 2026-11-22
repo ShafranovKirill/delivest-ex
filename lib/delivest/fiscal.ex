@@ -168,9 +168,15 @@ defmodule Delivest.Fiscal do
   defp by_status(query, _status, _branch_id), do: query
 
   def issue(%Order{} = order, payments, opts \\ []) do
+    do_issue(order, payments, opts, false)
+  end
+
+  defp do_issue(%Order{} = order, payments, opts, existing_refund?) do
     settings = settings(order.branch_id)
 
-    with true <- BranchSettings.own?(settings) || {:error, :not_own},
+    with true <-
+           ((settings.enabled or existing_refund?) and BranchSettings.own?(settings)) ||
+             {:error, :not_own},
          {:ok, module} <- Registry.fetch(settings.provider),
          %{} <- Map.get(settings, module.key()) || {:error, :missing_settings},
          [_ | _] <- payments || {:error, :no_payments} do
@@ -220,12 +226,21 @@ defmodule Delivest.Fiscal do
         {:ok, nil}
 
       %Receipt{} = sale ->
-        issue(order, [%{payment | amount: amount}],
-          kind: :sell_refund,
-          stage: sale.stage,
-          refund_of_id: sale.id,
-          payment_ids: [payment.id]
-        )
+        if existing_sale?(sale, order) and payment.order_id == order.id do
+          do_issue(
+            order,
+            [%{payment | amount: amount}],
+            [
+              kind: :sell_refund,
+              stage: sale.stage,
+              refund_of_id: sale.id,
+              payment_ids: [payment.id]
+            ],
+            true
+          )
+        else
+          {:error, :not_refundable}
+        end
     end
   end
 
@@ -278,6 +293,16 @@ defmodule Delivest.Fiscal do
   def refund(%Receipt{kind: :sell, status: :done} = receipt, staff) do
     order = Repo.get!(Order, receipt.order_id)
 
+    if existing_sale?(receipt, order) do
+      do_refund(receipt, staff, order)
+    else
+      {:error, :not_refundable}
+    end
+  end
+
+  def refund(_receipt, _staff), do: {:error, :not_refundable}
+
+  defp do_refund(receipt, staff, order) do
     if Repo.exists?(
          from(r in Receipt, where: r.refund_of_id == ^receipt.id and r.status != :fail)
        ) do
@@ -285,18 +310,27 @@ defmodule Delivest.Fiscal do
     else
       payments = receipt_payments(receipt)
 
-      order
-      |> issue(payments,
-        kind: :sell_refund,
-        refund_of_id: receipt.id,
-        staff_id: staff.id,
-        payment_ids: receipt.payment_ids
+      do_issue(
+        order,
+        payments,
+        [
+          kind: :sell_refund,
+          refund_of_id: receipt.id,
+          staff_id: staff.id,
+          payment_ids: receipt.payment_ids
+        ],
+        true
       )
       |> tap(&audit(&1, staff, "fiscal.refunded", order))
     end
   end
 
-  def refund(_receipt, _staff), do: {:error, :not_refundable}
+  defp existing_sale?(%Receipt{kind: :sell, status: :done} = receipt, %Order{} = order) do
+    receipt.order_id == order.id and receipt.branch_id == order.branch_id and
+      receipt.provider == to_string(settings(order.branch_id).provider)
+  end
+
+  defp existing_sale?(_, _), do: false
 
   def register(%Receipt{} = receipt) do
     with {:ok, module, settings} <- provider(receipt) do

@@ -6,6 +6,8 @@ defmodule Delivest.SiteSnapshotTest do
   alias Delivest.{Relations, Repo, SiteSnapshot}
   alias Delivest.Net.{Product, Modifier, ModifierGroup, ProductModifierGroup}
   alias Delivest.Media.File, as: MediaFile
+  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Printing.{Preset, Settings}
   alias Delivest.Franchise.Settings, as: FranchiseSettings
   alias Delivest.Relations.EntityRelation
 
@@ -32,6 +34,74 @@ defmodule Delivest.SiteSnapshotTest do
     assert Relations.related?("Branch", target.id, "Category", category.id)
     assert {:ok, %{products: 1}} = SiteSnapshot.import(staff, target.id, archive)
     assert Repo.aggregate(Product, :count) == 1
+  end
+
+  test "round-trips printing settings and rejects unknown preset fields" do
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    source = insert(:branch)
+    target = source
+
+    Repo.insert!(%BranchInfo{
+      branch_id: source.id,
+      printing: %Settings{
+        kitchen_enabled: true,
+        customer_enabled: true,
+        kitchen: %Preset{blocks: ~w(items number)},
+        customer: %Preset{blocks: ~w(qr items), paper: :a5, qr_url: "https://example.org/menu"}
+      }
+    })
+
+    assert {:ok, archive} = SiteSnapshot.export_franchise(staff, [:integrations])
+    source_info = Repo.get_by!(BranchInfo, branch_id: source.id)
+
+    Repo.update!(
+      BranchInfo.changeset(source_info, %{"printing" => %{"kitchen_enabled" => false}})
+    )
+
+    assert {:ok, _} = SiteSnapshot.import_franchise(staff, archive)
+    target_info = Repo.get_by!(BranchInfo, branch_id: target.id)
+    assert target_info.printing.kitchen.blocks == ~w(items number)
+    assert target_info.printing.customer.paper == :a5
+
+    {:ok, files} = :zip.extract(archive, [:memory])
+
+    data =
+      files
+      |> Enum.find_value(fn {name, body} -> if name == ~c"data.json", do: Jason.decode!(body) end)
+
+    data =
+      update_in(data["branches"], fn branches ->
+        Enum.map(branches, fn branch ->
+          if branch["branch_id"] == source.id,
+            do: put_in(branch, ["integrations", "printing", "customer", "unsafe"], "value"),
+            else: branch
+        end)
+      end)
+
+    body = Jason.encode!(data)
+
+    files =
+      Enum.map(files, fn
+        {~c"data.json", _} ->
+          {~c"data.json", body}
+
+        {~c"manifest.json", raw} ->
+          manifest =
+            raw
+            |> Jason.decode!()
+            |> Map.put("data_size", byte_size(body))
+            |> Map.put("data_sha256", Base.encode16(:crypto.hash(:sha256, body), case: :lower))
+
+          {~c"manifest.json", Jason.encode!(manifest)}
+
+        other ->
+          other
+      end)
+
+    {:ok, {_, forged}} =
+      :zip.create(~c"forged-printing.zip", files, [:memory, {:uncompress, :all}])
+
+    assert {:error, :invalid_archive} = SiteSnapshot.import_franchise(staff, forged)
   end
 
   test "branch editor cannot import installation-global modifier entries" do

@@ -11,6 +11,18 @@ defmodule Delivest.Application do
   def start(_type, _args) do
     children = [
       Delivest.Repo,
+      {ChromicPDF,
+       [
+         offline: true,
+         disable_scripts: true,
+         no_sandbox: System.get_env("CHROME_NO_SANDBOX") == "true",
+         on_demand: Application.get_env(:delivest, :chromic_pdf_on_demand, true),
+         session_pool: [size: 2, timeout: 20_000]
+       ] ++
+         if(System.get_env("CHROME_EXECUTABLE"),
+           do: [chrome_executable: System.get_env("CHROME_EXECUTABLE")],
+           else: []
+         )},
       DelivestWeb.Telemetry,
       log_buffer(),
       {Oban, Application.fetch_env!(:delivest, Oban)},

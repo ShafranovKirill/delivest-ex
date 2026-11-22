@@ -18,6 +18,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :order, :map, required: true
   attr :current_staff, :map, required: true
   attr :current_branch, :map, required: true
+  attr :printing, :map, default: nil
   attr :return_query, :map, default: %{}
   attr :delivery_minutes, :integer, required: true
   attr :couriers, :list, default: []
@@ -30,6 +31,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   def render_card(assigns) do
     assigns =
       assign(assigns,
+        printing: assigns.printing || Delivest.Printing.settings(assigns.current_branch.id),
         status: assigns.order.status,
         delivery: Couriers.current(assigns.order),
         history: history(assigns.order),
@@ -63,6 +65,32 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           #{Delivest.Oms.Order.short_number(@order)}
         </span>
         <span class="font-mono text-xs text-base-content/50">{@order.number}</span>
+        <a
+          :if={@printing.kitchen_enabled}
+          id={"print-kitchen-#{@order.id}"}
+          href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}"}
+          target="_blank"
+          rel="noopener"
+          class="btn btn-ghost btn-xs"
+        >Кухонный талон PDF</a>
+        <a
+          :if={@printing.kitchen_enabled}
+          href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}?download=1"}
+          class="btn btn-ghost btn-xs"
+        >Скачать</a>
+        <a
+          :if={@printing.customer_enabled}
+          id={"print-customer-#{@order.id}"}
+          href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}"}
+          target="_blank"
+          rel="noopener"
+          class="btn btn-ghost btn-xs"
+        >Лист заказа PDF</a>
+        <a
+          :if={@printing.customer_enabled}
+          href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}?download=1"}
+          class="btn btn-ghost btn-xs"
+        >Скачать</a>
         <span class="badge badge-sm badge-ghost gap-1 font-medium">
           <.icon name={fulfillment_icon(@order.fulfillment_type)} class="size-3.5" />
           {OrderHelpers.fulfillment_label(@order.fulfillment_type)}
