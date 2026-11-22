@@ -15,6 +15,9 @@ defmodule Delivest.SiteSnapshotTest do
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
     source = insert(:branch, name: "Source")
     target = insert(:branch, name: "Target")
+    Repo.insert!(%BranchInfo{branch_id: source.id, maintenance_enabled: true})
+    franchise = Repo.one(FranchiseSettings) || Repo.insert!(%FranchiseSettings{})
+    Repo.update!(FranchiseSettings.changeset(franchise, %{maintenance_enabled: true}))
     category = insert(:category, name: "Pizza")
     product = insert(:product, name: "Margherita", category_id: category.id, price: 50_000)
 
@@ -27,9 +30,14 @@ defmodule Delivest.SiteSnapshotTest do
     Repo.delete_all(from r in EntityRelation, where: r.from_id == ^source.id)
     Repo.delete!(product)
     Repo.delete!(category)
+    Repo.delete!(Repo.get_by!(BranchInfo, branch_id: source.id))
     Repo.delete!(source)
+    franchise = Repo.one!(FranchiseSettings)
+    Repo.update!(FranchiseSettings.changeset(franchise, %{maintenance_enabled: false}))
 
     assert {:ok, %{products: 1, categories: 1}} = SiteSnapshot.import(staff, target.id, archive)
+    assert Repo.get_by!(BranchInfo, branch_id: target.id).maintenance_enabled
+    assert Repo.one!(FranchiseSettings).maintenance_enabled
     assert Repo.get!(Product, product.id).price == 50_000
     assert Relations.related?("Branch", target.id, "Category", category.id)
     assert {:ok, %{products: 1}} = SiteSnapshot.import(staff, target.id, archive)

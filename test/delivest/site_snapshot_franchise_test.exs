@@ -25,6 +25,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
 
     Repo.insert!(%BranchInfo{
       branch_id: main.id,
+      maintenance_enabled: true,
       timezone: "Asia/Yekaterinburg",
       ycart_settings: %YcartSettings{enabled: true, yandex_org_id: "org-1"},
       vk_ads: %VkAdsSettings{enabled: true, counter_id: "3817108", privacy_approved: true}
@@ -40,7 +41,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     franchise = Repo.one(FranchiseSettings) || Repo.insert!(%FranchiseSettings{name: "Brand"})
 
     franchise
-    |> Ecto.Changeset.change(name: "Brand", phone: "+79990000000")
+    |> Ecto.Changeset.change(name: "Brand", phone: "+79990000000", maintenance_enabled: true)
     |> Repo.update!()
 
     assert {:ok, _} = Documents.save(:privacy, "Our privacy")
@@ -61,7 +62,10 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     Enum.each([main, north, extra], &delete_branch!/1)
     Repo.delete_all(Yookassa.Settings)
     Repo.delete_all(LegalDocument)
-    franchise |> Ecto.Changeset.change(name: "Old brand") |> Repo.update!()
+
+    franchise
+    |> Ecto.Changeset.change(name: "Old brand", maintenance_enabled: false)
+    |> Repo.update!()
 
     assert {:ok, counts} = SiteSnapshot.import_franchise(staff, archive)
     assert counts.branches_created == 3
@@ -77,6 +81,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     assert Repo.get_by!(Branch, slug: "extra").name == "Extra"
 
     assert Repo.get_by!(BranchInfo, branch_id: main.id).timezone == "Asia/Yekaterinburg"
+    assert Repo.get_by!(BranchInfo, branch_id: main.id).maintenance_enabled
     assert Repo.get_by!(BranchInfo, branch_id: north.id).timezone == "Europe/Moscow"
 
     ycart = Repo.get_by!(BranchInfo, branch_id: main.id).ycart_settings
@@ -89,6 +94,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     assert vk_ads.privacy_approved
 
     assert Repo.one!(FranchiseSettings).name == "Brand"
+    assert Repo.one!(FranchiseSettings).maintenance_enabled
     assert Documents.get(:privacy).body == "Our privacy"
     assert Documents.get(:offer).body == "Our offer"
     assert Repo.one!(Yookassa.Settings).shop_id == "123456"
