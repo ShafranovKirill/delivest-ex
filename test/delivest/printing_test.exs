@@ -119,6 +119,7 @@ defmodule Delivest.PrintingTest do
     on_exit(fn ->
       assert {:ok, _pid} = Supervisor.restart_child(Delivest.Supervisor, ChromicPDF)
     end)
+
     assert :ok = Supervisor.terminate_child(Delivest.Supervisor, ChromicPDF)
 
     conn =
