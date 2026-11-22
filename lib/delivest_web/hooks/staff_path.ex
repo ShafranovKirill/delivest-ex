@@ -53,6 +53,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/finance/payments", :payments},
     {"/staff/finance/transactions", :payments},
     {"/staff/finance/receipts", :receipts},
+    {"/staff/finance/printing", :printing},
     {"/staff/categories", :categories},
     {"/staff/menu/popular", :popular},
     {"/staff/products/stops", :stops},

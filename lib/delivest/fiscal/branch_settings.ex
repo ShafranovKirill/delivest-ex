@@ -12,6 +12,7 @@ defmodule Delivest.Fiscal.BranchSettings do
   @primary_key false
   embedded_schema do
     field :mode, Ecto.Enum, values: @modes, default: :off
+    field :enabled, :boolean, default: true
     field :provider, Ecto.Enum, values: [:atol], default: :atol
     field :inn, :string
     field :sno, Ecto.Enum, values: @snos, default: :usn_income
@@ -32,6 +33,7 @@ defmodule Delivest.Fiscal.BranchSettings do
       settings
       |> cast(attrs, [
         :mode,
+        :enabled,
         :provider,
         :inn,
         :sno,

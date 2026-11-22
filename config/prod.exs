@@ -1,4 +1,5 @@
 import Config
+config :delivest, :chromic_pdf_on_demand, false
 
 # Note we also include the path to a cache manifest
 # containing the digested version of static files. This

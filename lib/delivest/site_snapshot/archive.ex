@@ -432,11 +432,17 @@ defmodule Delivest.SiteSnapshot.Archive do
 
   defp valid_branch_integrations?(integrations, branch_id) when is_map(integrations) do
     required = ~w(crm fiscal channels yandex_delivery ycart_settings)
-    allowed = ~w(crm fiscal channels yandex_delivery ycart_settings vk_ads)
+    allowed = ~w(crm fiscal printing channels yandex_delivery ycart_settings vk_ads)
     keys = MapSet.new(Map.keys(integrations))
 
     MapSet.subset?(MapSet.new(required), keys) and MapSet.subset?(keys, MapSet.new(allowed)) and
       Enum.all?(integrations, fn {_key, value} -> is_nil(value) or is_map(value) end) and
+      Fields.nested_fields?(
+        integrations,
+        "printing",
+        ~w(kitchen_enabled customer_enabled kitchen customer)
+      ) and
+      printing_preset_fields?(integrations["printing"]) and
       integrations
       |> Map.reject(fn {_key, value} -> is_nil(value) end)
       |> then(&BranchInfo.changeset(%BranchInfo{branch_id: branch_id}, &1))
@@ -444,6 +450,15 @@ defmodule Delivest.SiteSnapshot.Archive do
   end
 
   defp valid_branch_integrations?(_integrations, _branch_id), do: false
+
+  defp printing_preset_fields?(nil), do: true
+
+  defp printing_preset_fields?(printing) when is_map(printing) do
+    Fields.nested_fields?(printing, "kitchen", ~w(blocks paper free_text qr_url qr_kind)) and
+      Fields.nested_fields?(printing, "customer", ~w(blocks paper free_text qr_url qr_kind))
+  end
+
+  defp printing_preset_fields?(_), do: false
 
   defp franchise_part_valid?(data, false, _integrations?) do
     not Map.has_key?(data, "franchise") and not Map.has_key?(data, "documents")

@@ -142,6 +142,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
         class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
       >
         <.input
+          field={@form[:enabled]}
+          type="checkbox"
+          label="Выпуск новых фискальных чеков"
+          disabled={not @can_edit}
+        />
+        <.input
           field={@form[:mode]}
           type="select"
           label={gettext("Receipts")}

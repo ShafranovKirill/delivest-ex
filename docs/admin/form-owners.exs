@@ -188,6 +188,9 @@
      "promotion_live/promotion_form_component.ex"},
   "receipt_live/index.ex" =>
     {"fiscal receipt register filters", "Finance / Receipts", "receipt_live/index.ex"},
+  "receipt_live/printing.ex" =>
+    {"lib/delivest/printing/settings.ex", "Finance / Receipts and printing",
+     "receipt_live/printing.ex"},
   "role_live/role_form_component.ex" =>
     {"lib/delivest/identity/role.ex", "Settings / Team and access / Roles",
      "role_live/role_form_component.ex"},

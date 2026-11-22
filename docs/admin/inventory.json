@@ -5264,7 +5264,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:150",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:178",
       "target_section": "Orders"
     },
     {
@@ -5294,7 +5294,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:756",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:784",
       "target_section": "Orders"
     },
     {
@@ -5321,7 +5321,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:767",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:795",
       "target_section": "Orders"
     },
     {
@@ -5351,7 +5351,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:838",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:866",
       "target_section": "Orders"
     },
     {
@@ -5378,7 +5378,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:502",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:530",
       "target_section": "Orders"
     },
     {
@@ -5410,7 +5410,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:652",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:680",
       "target_section": "Orders"
     },
     {
@@ -5446,7 +5446,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:252",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:280",
       "target_section": "Orders"
     },
     {
@@ -5480,7 +5480,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:239",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:267",
       "target_section": "Orders"
     },
     {
@@ -5514,7 +5514,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:195",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:223",
       "target_section": "Orders"
     },
     {
@@ -5548,7 +5548,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:213",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:241",
       "target_section": "Orders"
     },
     {
@@ -5577,7 +5577,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:331",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:359",
       "target_section": "Orders"
     },
     {
@@ -5609,7 +5609,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:868",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:896",
       "target_section": "Orders"
     },
     {
@@ -5639,7 +5639,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:858",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:886",
       "target_section": "Orders"
     },
     {
@@ -5668,7 +5668,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:515",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:543",
       "target_section": "Orders"
     },
     {
@@ -5697,7 +5697,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:490",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:518",
       "target_section": "Orders"
     },
     {
@@ -5724,7 +5724,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:777",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:805",
       "target_section": "Orders"
     },
     {
@@ -5754,7 +5754,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:904",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:932",
       "target_section": "Orders"
     },
     {
@@ -7938,6 +7938,193 @@
       },
       "source": "lib/delivest_web/live/staff/promotion_live/promotions.ex:391",
       "target_section": "Marketing"
+    },
+    {
+      "availability": "conditional :if in source",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Finance",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "block",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/receipt_live/printing.ex:block:eb063e8db4d1d10b:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/receipt_live/printing.ex:block:signature:2cab2f1836c1f6f5:1",
+      "label": "↓",
+      "operation": [
+        "Map.get",
+        "Map.put",
+        "Preset.customer_blocks",
+        "Preset.default",
+        "Preset.kitchen_blocks",
+        "String.to_existing_atom"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:245",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Finance",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "block",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/receipt_live/printing.ex:block:eb063e8db4d1d10b:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/receipt_live/printing.ex:block:signature:71b830fe59815806:1",
+      "label": "+ {block_label(block)}",
+      "operation": [
+        "Map.get",
+        "Map.put",
+        "Preset.customer_blocks",
+        "Preset.default",
+        "Preset.kitchen_blocks",
+        "String.to_existing_atom"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:261",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "conditional :if in source",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Finance",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "block",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/receipt_live/printing.ex:block:eb063e8db4d1d10b:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/receipt_live/printing.ex:block:signature:8d523eb764372162:1",
+      "label": "↑",
+      "operation": [
+        "Map.get",
+        "Map.put",
+        "Preset.customer_blocks",
+        "Preset.default",
+        "Preset.kitchen_blocks",
+        "String.to_existing_atom"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:235",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Finance",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "block",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/receipt_live/printing.ex:block:eb063e8db4d1d10b:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/receipt_live/printing.ex:block:signature:e2ef295f19097c33:1",
+      "label": "✓ {block_label(block)}",
+      "operation": [
+        "Map.get",
+        "Map.put",
+        "Preset.customer_blocks",
+        "Preset.default",
+        "Preset.kitchen_blocks",
+        "String.to_existing_atom"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:224",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "conditional :if in source",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Finance",
+      "error_state": [
+        "explicit :error branch/reference"
+      ],
+      "event": "fiscal_toggle",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/receipt_live/printing.ex:fiscal_toggle:d7faca696e7d23ac:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/receipt_live/printing.ex:fiscal_toggle:dom:fiscal-toggle:1",
+      "label": "{fiscal_toggle_label(@fiscal)}",
+      "operation": [
+        "Delivest.Fiscal.update_settings",
+        "Identity.fresh_staff"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:160",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Finance",
+      "error_state": [
+        "explicit :error branch/reference"
+      ],
+      "event": "save",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/receipt_live/printing.ex:save:b2e0ab03917f9148:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/receipt_live/printing.ex:save:dom:printing-settings:1",
+      "label": "Сохранить",
+      "operation": [
+        "Printing.update_settings"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "inline": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:185",
+      "target_section": "Finance"
     },
     {
       "availability": "no inline :if",
@@ -14816,7 +15003,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:140",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:141",
       "target_section": "Orders"
     },
     {
@@ -14839,7 +15026,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:180",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:181",
       "target_section": "Orders"
     },
     {
@@ -14859,7 +15046,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:200",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:201",
       "target_section": "Orders"
     },
     {
@@ -14879,7 +15066,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:361",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:362",
       "target_section": "Orders"
     },
     {
@@ -14901,7 +15088,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:207",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:208",
       "target_section": "Orders"
     },
     {
@@ -14921,7 +15108,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:359",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:360",
       "target_section": "Orders"
     },
     {
@@ -14946,7 +15133,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:341",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:342",
       "target_section": "Orders"
     },
     {
@@ -14969,7 +15156,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:170",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:171",
       "target_section": "Orders"
     },
     {
@@ -14992,7 +15179,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:228",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:229",
       "target_section": "Orders"
     },
     {
@@ -15012,7 +15199,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:305",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:306",
       "target_section": "Orders"
     },
     {
@@ -15037,7 +15224,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:311",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:312",
       "target_section": "Orders"
     },
     {
@@ -15059,7 +15246,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:334",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:335",
       "target_section": "Orders"
     },
     {
@@ -15079,7 +15266,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:218",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:219",
       "target_section": "Orders"
     },
     {
@@ -15099,7 +15286,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:242",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:243",
       "target_section": "Orders"
     },
     {
@@ -15124,7 +15311,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:160",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:161",
       "target_section": "Orders"
     },
     {
@@ -15148,7 +15335,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:125",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:126",
       "target_section": "Orders"
     },
     {
@@ -15171,7 +15358,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:150",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:151",
       "target_section": "Orders"
     },
     {
@@ -15195,7 +15382,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:276",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:277",
       "target_section": "Orders"
     },
     {
@@ -15218,7 +15405,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:260",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:261",
       "target_section": "Orders"
     },
     {
@@ -15241,7 +15428,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:296",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:297",
       "target_section": "Orders"
     },
     {
@@ -15261,7 +15448,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:308",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:309",
       "target_section": "Orders"
     },
     {
@@ -15281,7 +15468,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:302",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:303",
       "target_section": "Orders"
     },
     {
@@ -15301,7 +15488,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:221",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:222",
       "target_section": "Orders"
     },
     {
@@ -15324,7 +15511,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:132",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:133",
       "target_section": "Orders"
     },
     {
@@ -15347,7 +15534,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:190",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:191",
       "target_section": "Orders"
     },
     {
@@ -15370,7 +15557,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:136",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:137",
       "target_section": "Orders"
     },
     {
@@ -15394,7 +15581,7 @@
           "orders.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/order_live/orders.ex:245",
+      "source": "lib/delivest_web/live/staff/order_live/orders.ex:246",
       "target_section": "Orders"
     },
     {
@@ -17946,6 +18133,105 @@
       "target_section": "Finance"
     },
     {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Finance",
+      "error_state": "no explicit :error in clause",
+      "event": "block",
+      "id": "event:lib/delivest_web/live/staff/receipt_live/printing.ex:block:eb063e8db4d1d10b:1",
+      "label": "✓ {block_label(block)} / ↑ / ↓ / + {block_label(block)}",
+      "operation": [
+        "Map.get",
+        "Map.put",
+        "Preset.customer_blocks",
+        "Preset.default",
+        "Preset.kitchen_blocks",
+        "String.to_existing_atom"
+      ],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:69",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Finance",
+      "error_state": "explicit :error branch/reference",
+      "event": "fiscal_toggle",
+      "id": "event:lib/delivest_web/live/staff/receipt_live/printing.ex:fiscal_toggle:d7faca696e7d23ac:1",
+      "label": "{fiscal_toggle_label(@fiscal)}",
+      "operation": [
+        "Delivest.Fiscal.update_settings",
+        "Identity.fresh_staff"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:26",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "conditional branch in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Finance",
+      "error_state": "explicit :error branch/reference",
+      "event": "save",
+      "id": "event:lib/delivest_web/live/staff/receipt_live/printing.ex:save:b2e0ab03917f9148:1",
+      "label": "event: save",
+      "operation": [
+        "Printing.update_settings"
+      ],
+      "result": [
+        "put_flash"
+      ],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:52",
+      "target_section": "Finance"
+    },
+    {
+      "availability": "no inline conditional in handler clause",
+      "confirmation": "no confirmation marker found in module",
+      "disposition": "retain operation; move control with Finance",
+      "error_state": "no explicit :error in clause",
+      "event": "validate",
+      "id": "event:lib/delivest_web/live/staff/receipt_live/printing.ex:validate:8e0cb9cb3452d7c5:1",
+      "label": "event: validate",
+      "operation": [
+        "Ecto.Changeset.apply_changes",
+        "Settings.changeset"
+      ],
+      "result": [],
+      "rights": {
+        "clause": [],
+        "module_references": [
+          "integrations.read",
+          "integrations.update"
+        ]
+      },
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:43",
+      "target_section": "Finance"
+    },
+    {
       "availability": "no inline conditional in handler clause",
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Settings / Team and access",
@@ -19599,7 +19885,7 @@
       "in_flight_obligation": "Issued receipt needs terminal fiscal status even if editor configuration later changes",
       "on_disable": "No global feature disable callback",
       "producer_scheduler": [
-        "lib/delivest/fiscal.ex:438"
+        "lib/delivest/fiscal.ex:472"
       ],
       "source": "lib/delivest/fiscal/poll_worker.ex",
       "worker_process": "Delivest.Fiscal.PollWorker"
@@ -19613,8 +19899,8 @@
       "in_flight_obligation": "Submitted receipt can be externally accepted before local result; snooze/retry or terminal error must reconcile",
       "on_disable": "No global feature disable callback",
       "producer_scheduler": [
-        "lib/delivest/fiscal.ex:405",
-        "lib/delivest/fiscal.ex:464"
+        "lib/delivest/fiscal.ex:439",
+        "lib/delivest/fiscal.ex:498"
       ],
       "source": "lib/delivest/fiscal/register_worker.ex",
       "worker_process": "Delivest.Fiscal.RegisterWorker"
@@ -19983,7 +20269,7 @@
       "in_flight_obligation": "Existing kitchen jobs need replacement/reconciliation after replan",
       "on_disable": "No feature disable callback",
       "producer_scheduler": [
-        "lib/delivest/identity/branches.ex:295"
+        "lib/delivest/identity/branches.ex:297"
       ],
       "source": "lib/delivest/oms/kitchen/replan_branch_worker.ex",
       "worker_process": "Delivest.Oms.Kitchen.ReplanBranchWorker"
@@ -20339,6 +20625,7 @@
         "courier_card",
         "delivery_vat",
         "email",
+        "enabled",
         "inn",
         "mode",
         "payment_address",
@@ -22836,7 +23123,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "atol",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:153",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:159",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -22857,7 +23144,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "courier_card",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:courier_card",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:225",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:231",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -22878,7 +23165,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "delivery_vat",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:delivery_vat",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:218",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:224",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -22899,12 +23186,33 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "email",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:email",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:205",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:211",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": [
         "validate_format"
       ]
+    },
+    {
+      "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/integration_live/fiscal.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/integration_live/fiscal.ex"
+      ],
+      "default": "true",
+      "disposition": "retain canonical editor in Settings / Integrations / Fiscal",
+      "expression": null,
+      "field": "enabled",
+      "id": "form:lib/delivest_web/live/staff/integration_live/fiscal.ex:@form:enabled",
+      "name_template": null,
+      "owner": "lib/delivest/fiscal/branch_settings.ex",
+      "required": "no literal validate_required call for field",
+      "resolved_field": "enabled",
+      "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:enabled",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:145",
+      "target_section": "Settings / Integrations / Fiscal",
+      "type": "literal staff form control",
+      "validation": []
     },
     {
       "binding": "@form",
@@ -22922,7 +23230,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "inn",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:inn",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:190",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:196",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": [
@@ -22945,7 +23253,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "mode",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:mode",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:145",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:151",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -22966,7 +23274,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "payment_address",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:payment_address",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:199",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:205",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -22987,7 +23295,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "sno",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:sno",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:192",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:198",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -23008,7 +23316,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "vat",
       "schema_field": "schema:lib/delivest/fiscal/branch_settings.ex:vat",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:211",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:217",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -23029,7 +23337,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "group_code",
       "schema_field": "schema:lib/delivest/integrations/atol_online/settings.ex:group_code",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:172",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:178",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -23050,7 +23358,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "login",
       "schema_field": "schema:lib/delivest/integrations/atol_online/settings.ex:login",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:156",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:162",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -23071,7 +23379,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "password",
       "schema_field": "schema:lib/delivest/integrations/atol_online/settings.ex:password",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:162",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:168",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -23092,7 +23400,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "sandbox",
       "schema_field": "schema:lib/delivest/integrations/atol_online/settings.ex:sandbox",
-      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:178",
+      "source": "lib/delivest_web/live/staff/integration_live/fiscal.ex:184",
       "target_section": "Settings / Integrations / Fiscal",
       "type": "literal staff form control",
       "validation": []
@@ -26631,7 +26939,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "action",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:202",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:230",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -26652,7 +26960,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "code",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:659",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:687",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -26673,7 +26981,7 @@
       "required": "HTML required attribute; server validation must be checked",
       "resolved_field": "confirmed",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:222",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:250",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -26694,7 +27002,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "courier_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:887",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:915",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -26715,7 +27023,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "number",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:203",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:231",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -26736,7 +27044,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "order-id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:658",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:686",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -26757,7 +27065,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "order_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:201",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:229",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -26778,7 +27086,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "payment_method",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:305",
+      "source": "lib/delivest_web/live/staff/order_live/components/order_card_component.ex:333",
       "target_section": "Orders / Order",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -29140,6 +29448,174 @@
     },
     {
       "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "false",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": null,
+      "field": "customer_enabled",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:@form:customer_enabled",
+      "name_template": null,
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "no literal validate_required call for field",
+      "resolved_field": "customer_enabled",
+      "schema_field": "schema:lib/delivest/printing/settings.ex:customer_enabled",
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:199",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": []
+    },
+    {
+      "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "false",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": null,
+      "field": "kitchen_enabled",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:@form:kitchen_enabled",
+      "name_template": null,
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "no literal validate_required call for field",
+      "resolved_field": "kitchen_enabled",
+      "schema_field": "schema:lib/delivest/printing/settings.ex:kitchen_enabled",
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:193",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": []
+    },
+    {
+      "binding": "dynamic-field",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": "@form[kind]",
+      "field": "field-expression:@form[kind]",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:dynamic-field:field-expression:@form[kind]",
+      "name_template": null,
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "field-expression:@form[kind]",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:212",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "dynamic-name",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": "\"printing[#{kind}][blocks][]\"",
+      "field": "name-expression:\"printing[#{kind}][blocks][]\"",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:dynamic-name:name-expression:\"printing[#{kind}][blocks][]\"",
+      "name_template": "printing[<dynamic>][blocks][]",
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "name-expression:\"printing[#{kind}][blocks][]\"",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:213",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "preset",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": null,
+      "field": "free_text",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:preset:free_text",
+      "name_template": null,
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "free_text",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:280",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "preset",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": null,
+      "field": "paper",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:preset:paper",
+      "name_template": null,
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "paper",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:273",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "preset",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": null,
+      "field": "qr_kind",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:preset:qr_kind",
+      "name_template": null,
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "qr_kind",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:286",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "preset",
+      "canonical_form": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/receipt_live/printing.ex"
+      ],
+      "default": "not declared in control/owner schema",
+      "disposition": "retain canonical editor in Finance / Receipts and printing",
+      "expression": null,
+      "field": "qr_url",
+      "id": "form:lib/delivest_web/live/staff/receipt_live/printing.ex:preset:qr_url",
+      "name_template": null,
+      "owner": "lib/delivest/printing/settings.ex",
+      "required": "not declared in control/owner schema",
+      "resolved_field": "qr_url",
+      "schema_field": null,
+      "source": "lib/delivest_web/live/staff/receipt_live/printing.ex:293",
+      "target_section": "Finance / Receipts and printing",
+      "type": "literal staff form control",
+      "validation": "form operation; no direct schema field"
+    },
+    {
+      "binding": "@form",
       "canonical_form": "lib/delivest_web/live/staff/role_live/role_form_component.ex",
       "current_forms": [
         "lib/delivest_web/live/staff/role_live/role_form_component.ex"
@@ -30672,7 +31148,7 @@
       "field": "courier_card",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:courier_card",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:22",
+      "source": "lib/delivest/fiscal/branch_settings.ex:23",
       "type": "Ecto.Enum"
     },
     {
@@ -30680,7 +31156,7 @@
       "field": "delivery_vat",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:delivery_vat",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:21",
+      "source": "lib/delivest/fiscal/branch_settings.ex:22",
       "type": "Ecto.Enum"
     },
     {
@@ -30688,15 +31164,23 @@
       "field": "email",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:email",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:19",
+      "source": "lib/delivest/fiscal/branch_settings.ex:20",
       "type": ":string"
+    },
+    {
+      "default": "true",
+      "field": "enabled",
+      "id": "schema:lib/delivest/fiscal/branch_settings.ex:enabled",
+      "owner": "lib/delivest/fiscal/branch_settings.ex",
+      "source": "lib/delivest/fiscal/branch_settings.ex:15",
+      "type": ":boolean"
     },
     {
       "default": "not declared",
       "field": "inn",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:inn",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:16",
+      "source": "lib/delivest/fiscal/branch_settings.ex:17",
       "type": ":string"
     },
     {
@@ -30712,7 +31196,7 @@
       "field": "payment_address",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:payment_address",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:18",
+      "source": "lib/delivest/fiscal/branch_settings.ex:19",
       "type": ":string"
     },
     {
@@ -30720,7 +31204,7 @@
       "field": "provider",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:provider",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:15",
+      "source": "lib/delivest/fiscal/branch_settings.ex:16",
       "type": "Ecto.Enum"
     },
     {
@@ -30728,7 +31212,7 @@
       "field": "sno",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:sno",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:17",
+      "source": "lib/delivest/fiscal/branch_settings.ex:18",
       "type": "Ecto.Enum"
     },
     {
@@ -30736,7 +31220,7 @@
       "field": "vat",
       "id": "schema:lib/delivest/fiscal/branch_settings.ex:vat",
       "owner": "lib/delivest/fiscal/branch_settings.ex",
-      "source": "lib/delivest/fiscal/branch_settings.ex:20",
+      "source": "lib/delivest/fiscal/branch_settings.ex:21",
       "type": "Ecto.Enum"
     },
     {
@@ -35828,6 +36312,62 @@
       "type": ":boolean"
     },
     {
+      "default": "[]",
+      "field": "blocks",
+      "id": "schema:lib/delivest/printing/preset.ex:blocks",
+      "owner": "lib/delivest/printing/preset.ex",
+      "source": "lib/delivest/printing/preset.ex:10",
+      "type": "{:array, :string}"
+    },
+    {
+      "default": "not declared",
+      "field": "free_text",
+      "id": "schema:lib/delivest/printing/preset.ex:free_text",
+      "owner": "lib/delivest/printing/preset.ex",
+      "source": "lib/delivest/printing/preset.ex:12",
+      "type": ":string"
+    },
+    {
+      "default": ":a4",
+      "field": "paper",
+      "id": "schema:lib/delivest/printing/preset.ex:paper",
+      "owner": "lib/delivest/printing/preset.ex",
+      "source": "lib/delivest/printing/preset.ex:11",
+      "type": "Ecto.Enum"
+    },
+    {
+      "default": ":menu",
+      "field": "qr_kind",
+      "id": "schema:lib/delivest/printing/preset.ex:qr_kind",
+      "owner": "lib/delivest/printing/preset.ex",
+      "source": "lib/delivest/printing/preset.ex:14",
+      "type": "Ecto.Enum"
+    },
+    {
+      "default": "not declared",
+      "field": "qr_url",
+      "id": "schema:lib/delivest/printing/preset.ex:qr_url",
+      "owner": "lib/delivest/printing/preset.ex",
+      "source": "lib/delivest/printing/preset.ex:13",
+      "type": ":string"
+    },
+    {
+      "default": "false",
+      "field": "customer_enabled",
+      "id": "schema:lib/delivest/printing/settings.ex:customer_enabled",
+      "owner": "lib/delivest/printing/settings.ex",
+      "source": "lib/delivest/printing/settings.ex:8",
+      "type": ":boolean"
+    },
+    {
+      "default": "false",
+      "field": "kitchen_enabled",
+      "id": "schema:lib/delivest/printing/settings.ex:kitchen_enabled",
+      "owner": "lib/delivest/printing/settings.ex",
+      "source": "lib/delivest/printing/settings.ex:7",
+      "type": ":boolean"
+    },
+    {
       "default": "not declared",
       "field": "branch_id",
       "id": "schema:lib/delivest/promo/promo_code.ex:branch_id",
@@ -36472,7 +37012,7 @@
         ]
       },
       "route": "LIVE /staff/analytics/:section",
-      "source": "lib/delivest_web/router.ex:439",
+      "source": "lib/delivest_web/router.ex:440",
       "target_section": "Analytics",
       "variant": "analytics"
     },
@@ -36504,7 +37044,7 @@
         ]
       },
       "route": "LIVE /staff/analytics/advertising",
-      "source": "lib/delivest_web/router.ex:438",
+      "source": "lib/delivest_web/router.ex:439",
       "target_section": "Marketing",
       "variant": "analytics"
     },
@@ -36534,7 +37074,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/advertising-links",
-      "source": "lib/delivest_web/router.ex:502",
+      "source": "lib/delivest_web/router.ex:503",
       "target_section": "Marketing",
       "variant": null
     },
@@ -36565,7 +37105,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/analytics/:section",
-      "source": "lib/delivest_web/router.ex:501",
+      "source": "lib/delivest_web/router.ex:502",
       "target_section": "Analytics",
       "variant": "analytics"
     },
@@ -36599,7 +37139,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/:id/edit",
-      "source": "lib/delivest_web/router.ex:532",
+      "source": "lib/delivest_web/router.ex:534",
       "target_section": "Menu",
       "variant": null
     },
@@ -36633,7 +37173,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/:id/products",
-      "source": "lib/delivest_web/router.ex:533",
+      "source": "lib/delivest_web/router.ex:535",
       "target_section": "Menu",
       "variant": null
     },
@@ -36667,7 +37207,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories/new",
-      "source": "lib/delivest_web/router.ex:534",
+      "source": "lib/delivest_web/router.ex:536",
       "target_section": "Menu",
       "variant": null
     },
@@ -36701,7 +37241,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/categories",
-      "source": "lib/delivest_web/router.ex:531",
+      "source": "lib/delivest_web/router.ex:533",
       "target_section": "Menu",
       "variant": null
     },
@@ -36731,7 +37271,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/couriers",
-      "source": "lib/delivest_web/router.ex:508",
+      "source": "lib/delivest_web/router.ex:509",
       "target_section": "Delivery",
       "variant": null
     },
@@ -36764,7 +37304,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/dashboard",
-      "source": "lib/delivest_web/router.ex:499",
+      "source": "lib/delivest_web/router.ex:500",
       "target_section": "Overview",
       "variant": "overview"
     },
@@ -36794,7 +37334,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/deliveries",
-      "source": "lib/delivest_web/router.ex:507",
+      "source": "lib/delivest_web/router.ex:508",
       "target_section": "Delivery",
       "variant": null
     },
@@ -36825,7 +37365,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/address",
-      "source": "lib/delivest_web/router.ex:504",
+      "source": "lib/delivest_web/router.ex:505",
       "target_section": "Settings / Delivery",
       "variant": null
     },
@@ -36856,7 +37396,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/couriers",
-      "source": "lib/delivest_web/router.ex:506",
+      "source": "lib/delivest_web/router.ex:507",
       "target_section": "Delivery",
       "variant": null
     },
@@ -36887,7 +37427,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery/zones",
-      "source": "lib/delivest_web/router.ex:505",
+      "source": "lib/delivest_web/router.ex:506",
       "target_section": "Settings / Delivery",
       "variant": null
     },
@@ -36917,7 +37457,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/delivery",
-      "source": "lib/delivest_web/router.ex:503",
+      "source": "lib/delivest_web/router.ex:504",
       "target_section": "Delivery",
       "variant": "hub"
     },
@@ -36949,7 +37489,38 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/payments",
-      "source": "lib/delivest_web/router.ex:509",
+      "source": "lib/delivest_web/router.ex:510",
+      "target_section": "Finance",
+      "variant": null
+    },
+    {
+      "branch_switch": "open same list/queue for new branch; reset selection and page",
+      "data_scope": "branch from URL; server authorization required",
+      "disposition": "move to Finance",
+      "feature_dependency": "no registry key established at route declaration",
+      "handler": "ReceiptLive.Printing::index",
+      "id": "route:live:/staff/b/:branch_slug/finance/printing:ReceiptLive.Printing::index",
+      "page_type": "list",
+      "rights": {
+        "handler_permissions": [
+          "integrations.read",
+          "integrations.update"
+        ],
+        "handler_source": "lib/delivest_web/live/staff/receipt_live/printing.ex",
+        "interpretation": "literal handler permission references; branch authorization may further restrict",
+        "session_hooks": [
+          "{DelivestWeb.Hooks.StaffAuth, :default}",
+          "{DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff}",
+          "{DelivestWeb.Hooks.StaffActiveBranch, :default}",
+          "{DelivestWeb.Hooks.NewOrders, :default}",
+          "{DelivestWeb.Hooks.StaffBranches, :default}",
+          "{DelivestWeb.Hooks.CommandPalette, :default}",
+          "{DelivestWeb.Hooks.IntegrationAccess, :default}",
+          "{DelivestWeb.Hooks.StaffPath, :default}"
+        ]
+      },
+      "route": "LIVE /staff/b/:branch_slug/finance/printing",
+      "source": "lib/delivest_web/router.ex:513",
       "target_section": "Finance",
       "variant": null
     },
@@ -36979,7 +37550,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/receipts",
-      "source": "lib/delivest_web/router.ex:511",
+      "source": "lib/delivest_web/router.ex:512",
       "target_section": "Finance",
       "variant": null
     },
@@ -37010,7 +37581,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/finance/transactions",
-      "source": "lib/delivest_web/router.ex:510",
+      "source": "lib/delivest_web/router.ex:511",
       "target_section": "Finance",
       "variant": null
     },
@@ -37040,7 +37611,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/dadata",
-      "source": "lib/delivest_web/router.ex:523",
+      "source": "lib/delivest_web/router.ex:525",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37071,7 +37642,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/fiscal",
-      "source": "lib/delivest_web/router.ex:527",
+      "source": "lib/delivest_web/router.ex:529",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37103,7 +37674,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/frontpad",
-      "source": "lib/delivest_web/router.ex:516",
+      "source": "lib/delivest_web/router.ex:518",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37134,7 +37705,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/iiko",
-      "source": "lib/delivest_web/router.ex:519",
+      "source": "lib/delivest_web/router.ex:521",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37164,7 +37735,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/recovery",
-      "source": "lib/delivest_web/router.ex:515",
+      "source": "lib/delivest_web/router.ex:517",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37195,7 +37766,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/rkeeper",
-      "source": "lib/delivest_web/router.ex:520",
+      "source": "lib/delivest_web/router.ex:522",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37226,7 +37797,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/routes",
-      "source": "lib/delivest_web/router.ex:521",
+      "source": "lib/delivest_web/router.ex:523",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37257,7 +37828,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/vk-ads",
-      "source": "lib/delivest_web/router.ex:518",
+      "source": "lib/delivest_web/router.ex:520",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37288,7 +37859,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yandex-delivery",
-      "source": "lib/delivest_web/router.ex:526",
+      "source": "lib/delivest_web/router.ex:528",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37323,7 +37894,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yandex-eda",
-      "source": "lib/delivest_web/router.ex:525",
+      "source": "lib/delivest_web/router.ex:527",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37354,7 +37925,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/ycart",
-      "source": "lib/delivest_web/router.ex:517",
+      "source": "lib/delivest_web/router.ex:519",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37384,7 +37955,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/yookassa",
-      "source": "lib/delivest_web/router.ex:524",
+      "source": "lib/delivest_web/router.ex:526",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37414,7 +37985,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations/zvonok",
-      "source": "lib/delivest_web/router.ex:522",
+      "source": "lib/delivest_web/router.ex:524",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37446,7 +38017,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/integrations",
-      "source": "lib/delivest_web/router.ex:514",
+      "source": "lib/delivest_web/router.ex:516",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -37473,7 +38044,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/kitchen",
-      "source": "lib/delivest_web/router.ex:470",
+      "source": "lib/delivest_web/router.ex:471",
       "target_section": "Orders",
       "variant": "fullscreen kitchen"
     },
@@ -37505,7 +38076,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/loyalty",
-      "source": "lib/delivest_web/router.ex:562",
+      "source": "lib/delivest_web/router.ex:564",
       "target_section": "Settings / Loyalty",
       "variant": null
     },
@@ -37536,7 +38107,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/menu/popular",
-      "source": "lib/delivest_web/router.ex:553",
+      "source": "lib/delivest_web/router.ex:555",
       "target_section": "Menu",
       "variant": null
     },
@@ -37567,7 +38138,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/:id/edit",
-      "source": "lib/delivest_web/router.ex:577",
+      "source": "lib/delivest_web/router.ex:579",
       "target_section": "Orders",
       "variant": null
     },
@@ -37598,7 +38169,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/:id",
-      "source": "lib/delivest_web/router.ex:578",
+      "source": "lib/delivest_web/router.ex:580",
       "target_section": "Orders",
       "variant": null
     },
@@ -37629,7 +38200,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders/new",
-      "source": "lib/delivest_web/router.ex:576",
+      "source": "lib/delivest_web/router.ex:578",
       "target_section": "Orders",
       "variant": null
     },
@@ -37660,7 +38231,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/orders",
-      "source": "lib/delivest_web/router.ex:575",
+      "source": "lib/delivest_web/router.ex:577",
       "target_section": "Orders",
       "variant": null
     },
@@ -37687,7 +38258,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/pos",
-      "source": "lib/delivest_web/router.ex:484",
+      "source": "lib/delivest_web/router.ex:485",
       "target_section": "Orders",
       "variant": "fullscreen POS"
     },
@@ -37721,7 +38292,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/:id/edit",
-      "source": "lib/delivest_web/router.ex:547",
+      "source": "lib/delivest_web/router.ex:549",
       "target_section": "Menu",
       "variant": null
     },
@@ -37755,7 +38326,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/:id",
-      "source": "lib/delivest_web/router.ex:549",
+      "source": "lib/delivest_web/router.ex:551",
       "target_section": "Menu",
       "variant": null
     },
@@ -37785,7 +38356,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/bulk",
-      "source": "lib/delivest_web/router.ex:539",
+      "source": "lib/delivest_web/router.ex:541",
       "target_section": "Menu",
       "variant": null
     },
@@ -37818,7 +38389,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/modifiers",
-      "source": "lib/delivest_web/router.ex:542",
+      "source": "lib/delivest_web/router.ex:544",
       "target_section": "Menu",
       "variant": null
     },
@@ -37852,7 +38423,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/new",
-      "source": "lib/delivest_web/router.ex:548",
+      "source": "lib/delivest_web/router.ex:550",
       "target_section": "Menu",
       "variant": null
     },
@@ -37882,7 +38453,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/operations",
-      "source": "lib/delivest_web/router.ex:540",
+      "source": "lib/delivest_web/router.ex:542",
       "target_section": "Menu",
       "variant": null
     },
@@ -37913,7 +38484,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/stops",
-      "source": "lib/delivest_web/router.ex:541",
+      "source": "lib/delivest_web/router.ex:543",
       "target_section": "Menu",
       "variant": null
     },
@@ -37944,7 +38515,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/suggested",
-      "source": "lib/delivest_web/router.ex:543",
+      "source": "lib/delivest_web/router.ex:545",
       "target_section": "Menu",
       "variant": null
     },
@@ -37975,7 +38546,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags/:id/edit",
-      "source": "lib/delivest_web/router.ex:546",
+      "source": "lib/delivest_web/router.ex:548",
       "target_section": "Menu",
       "variant": null
     },
@@ -38006,7 +38577,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags/new",
-      "source": "lib/delivest_web/router.ex:545",
+      "source": "lib/delivest_web/router.ex:547",
       "target_section": "Menu",
       "variant": null
     },
@@ -38037,7 +38608,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products/tags",
-      "source": "lib/delivest_web/router.ex:544",
+      "source": "lib/delivest_web/router.ex:546",
       "target_section": "Menu",
       "variant": null
     },
@@ -38071,7 +38642,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/products",
-      "source": "lib/delivest_web/router.ex:538",
+      "source": "lib/delivest_web/router.ex:540",
       "target_section": "Menu",
       "variant": null
     },
@@ -38104,7 +38675,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/:id/codes",
-      "source": "lib/delivest_web/router.ex:571",
+      "source": "lib/delivest_web/router.ex:573",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38137,7 +38708,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/:id/edit",
-      "source": "lib/delivest_web/router.ex:570",
+      "source": "lib/delivest_web/router.ex:572",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38170,7 +38741,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new/first-order",
-      "source": "lib/delivest_web/router.ex:568",
+      "source": "lib/delivest_web/router.ex:570",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38203,7 +38774,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new/full",
-      "source": "lib/delivest_web/router.ex:567",
+      "source": "lib/delivest_web/router.ex:569",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38236,7 +38807,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/new",
-      "source": "lib/delivest_web/router.ex:566",
+      "source": "lib/delivest_web/router.ex:568",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38269,7 +38840,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions/sale",
-      "source": "lib/delivest_web/router.ex:569",
+      "source": "lib/delivest_web/router.ex:571",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38302,7 +38873,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/promotions",
-      "source": "lib/delivest_web/router.ex:565",
+      "source": "lib/delivest_web/router.ex:567",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38333,7 +38904,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/statistics",
-      "source": "lib/delivest_web/router.ex:500",
+      "source": "lib/delivest_web/router.ex:501",
       "target_section": "Analytics",
       "variant": "analytics"
     },
@@ -38367,7 +38938,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks/:id/edit",
-      "source": "lib/delivest_web/router.ex:558",
+      "source": "lib/delivest_web/router.ex:560",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38401,7 +38972,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks/new",
-      "source": "lib/delivest_web/router.ex:559",
+      "source": "lib/delivest_web/router.ex:561",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38435,7 +39006,7 @@
         ]
       },
       "route": "LIVE /staff/b/:branch_slug/stocks",
-      "source": "lib/delivest_web/router.ex:557",
+      "source": "lib/delivest_web/router.ex:559",
       "target_section": "Marketing",
       "variant": null
     },
@@ -38471,7 +39042,7 @@
         ]
       },
       "route": "LIVE /staff/branches/:slug/edit/:section",
-      "source": "lib/delivest_web/router.ex:394",
+      "source": "lib/delivest_web/router.ex:395",
       "target_section": "Settings / Branches",
       "variant": null
     },
@@ -38507,7 +39078,7 @@
         ]
       },
       "route": "LIVE /staff/branches/:slug/edit",
-      "source": "lib/delivest_web/router.ex:393",
+      "source": "lib/delivest_web/router.ex:394",
       "target_section": "Settings / Branches",
       "variant": null
     },
@@ -38543,7 +39114,7 @@
         ]
       },
       "route": "LIVE /staff/branches/new",
-      "source": "lib/delivest_web/router.ex:392",
+      "source": "lib/delivest_web/router.ex:393",
       "target_section": "Settings / Branches",
       "variant": "branch creation"
     },
@@ -38571,7 +39142,7 @@
         ]
       },
       "route": "LIVE /staff/branches/select",
-      "source": "lib/delivest_web/router.ex:388",
+      "source": "lib/delivest_web/router.ex:389",
       "target_section": "Settings / Branches",
       "variant": null
     },
@@ -38604,7 +39175,7 @@
         ]
       },
       "route": "LIVE /staff/branches",
-      "source": "lib/delivest_web/router.ex:391",
+      "source": "lib/delivest_web/router.ex:392",
       "target_section": "Settings / Branches",
       "variant": null
     },
@@ -38637,7 +39208,7 @@
         ]
       },
       "route": "LIVE /staff/clients/:id/edit",
-      "source": "lib/delivest_web/router.ex:419",
+      "source": "lib/delivest_web/router.ex:420",
       "target_section": "Clients",
       "variant": null
     },
@@ -38673,7 +39244,7 @@
         ]
       },
       "route": "LIVE /staff/clients/:id",
-      "source": "lib/delivest_web/router.ex:418",
+      "source": "lib/delivest_web/router.ex:419",
       "target_section": "Clients",
       "variant": null
     },
@@ -38706,7 +39277,7 @@
         ]
       },
       "route": "LIVE /staff/clients/new",
-      "source": "lib/delivest_web/router.ex:417",
+      "source": "lib/delivest_web/router.ex:418",
       "target_section": "Clients",
       "variant": null
     },
@@ -38739,7 +39310,7 @@
         ]
       },
       "route": "LIVE /staff/clients",
-      "source": "lib/delivest_web/router.ex:416",
+      "source": "lib/delivest_web/router.ex:417",
       "target_section": "Clients",
       "variant": null
     },
@@ -38770,7 +39341,7 @@
         ]
       },
       "route": "LIVE /staff/dashboard",
-      "source": "lib/delivest_web/router.ex:364",
+      "source": "lib/delivest_web/router.ex:365",
       "target_section": "Overview",
       "variant": "overview"
     },
@@ -38800,7 +39371,7 @@
         ]
       },
       "route": "LIVE /staff/diagnostics",
-      "source": "lib/delivest_web/router.ex:440",
+      "source": "lib/delivest_web/router.ex:441",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -38833,7 +39404,7 @@
         ]
       },
       "route": "LIVE /staff/employee/:id/edit",
-      "source": "lib/delivest_web/router.ex:399",
+      "source": "lib/delivest_web/router.ex:400",
       "target_section": "Settings / Team and access",
       "variant": null
     },
@@ -38866,7 +39437,7 @@
         ]
       },
       "route": "LIVE /staff/employee/new",
-      "source": "lib/delivest_web/router.ex:400",
+      "source": "lib/delivest_web/router.ex:401",
       "target_section": "Settings / Team and access",
       "variant": null
     },
@@ -38899,7 +39470,7 @@
         ]
       },
       "route": "LIVE /staff/employee",
-      "source": "lib/delivest_web/router.ex:398",
+      "source": "lib/delivest_web/router.ex:399",
       "target_section": "Settings / Team and access",
       "variant": null
     },
@@ -38930,7 +39501,7 @@
         ]
       },
       "route": "LIVE /staff/franchise/:section",
-      "source": "lib/delivest_web/router.ex:406",
+      "source": "lib/delivest_web/router.ex:407",
       "target_section": "Settings / Network and brand",
       "variant": null
     },
@@ -38961,7 +39532,7 @@
         ]
       },
       "route": "LIVE /staff/franchise/documents/:kind",
-      "source": "lib/delivest_web/router.ex:405",
+      "source": "lib/delivest_web/router.ex:406",
       "target_section": "Settings / Network and brand",
       "variant": null
     },
@@ -38992,7 +39563,7 @@
         ]
       },
       "route": "LIVE /staff/franchise",
-      "source": "lib/delivest_web/router.ex:404",
+      "source": "lib/delivest_web/router.ex:405",
       "target_section": "Settings / Network and brand",
       "variant": null
     },
@@ -39022,7 +39593,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/dadata",
-      "source": "lib/delivest_web/router.ex:445",
+      "source": "lib/delivest_web/router.ex:446",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -39052,7 +39623,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/yandex-ads",
-      "source": "lib/delivest_web/router.ex:448",
+      "source": "lib/delivest_web/router.ex:449",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -39082,7 +39653,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/yandex-eda",
-      "source": "lib/delivest_web/router.ex:447",
+      "source": "lib/delivest_web/router.ex:448",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -39112,7 +39683,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/yookassa",
-      "source": "lib/delivest_web/router.ex:446",
+      "source": "lib/delivest_web/router.ex:447",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -39142,7 +39713,7 @@
         ]
       },
       "route": "LIVE /staff/integrations/zvonok",
-      "source": "lib/delivest_web/router.ex:444",
+      "source": "lib/delivest_web/router.ex:445",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -39174,7 +39745,7 @@
         ]
       },
       "route": "LIVE /staff/integrations",
-      "source": "lib/delivest_web/router.ex:443",
+      "source": "lib/delivest_web/router.ex:444",
       "target_section": "Settings / Integrations",
       "variant": null
     },
@@ -39204,7 +39775,7 @@
         ]
       },
       "route": "LIVE /staff/logs/errors",
-      "source": "lib/delivest_web/router.ex:454",
+      "source": "lib/delivest_web/router.ex:455",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -39234,7 +39805,7 @@
         ]
       },
       "route": "LIVE /staff/logs/raw",
-      "source": "lib/delivest_web/router.ex:453",
+      "source": "lib/delivest_web/router.ex:454",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -39264,7 +39835,7 @@
         ]
       },
       "route": "LIVE /staff/logs",
-      "source": "lib/delivest_web/router.ex:452",
+      "source": "lib/delivest_web/router.ex:453",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -39299,7 +39870,7 @@
         ]
       },
       "route": "LIVE /staff/marketing/:id/edit",
-      "source": "lib/delivest_web/router.ex:434",
+      "source": "lib/delivest_web/router.ex:435",
       "target_section": "Marketing",
       "variant": null
     },
@@ -39334,7 +39905,7 @@
         ]
       },
       "route": "LIVE /staff/marketing/:id",
-      "source": "lib/delivest_web/router.ex:433",
+      "source": "lib/delivest_web/router.ex:434",
       "target_section": "Marketing",
       "variant": null
     },
@@ -39365,7 +39936,7 @@
         ]
       },
       "route": "LIVE /staff/marketing/bonuses",
-      "source": "lib/delivest_web/router.ex:387",
+      "source": "lib/delivest_web/router.ex:388",
       "target_section": "Settings / Loyalty",
       "variant": null
     },
@@ -39400,7 +39971,7 @@
         ]
       },
       "route": "LIVE /staff/marketing/new",
-      "source": "lib/delivest_web/router.ex:432",
+      "source": "lib/delivest_web/router.ex:433",
       "target_section": "Marketing",
       "variant": null
     },
@@ -39435,7 +40006,7 @@
         ]
       },
       "route": "LIVE /staff/marketing/policies",
-      "source": "lib/delivest_web/router.ex:431",
+      "source": "lib/delivest_web/router.ex:432",
       "target_section": "Marketing",
       "variant": null
     },
@@ -39465,7 +40036,7 @@
         ]
       },
       "route": "LIVE /staff/marketing",
-      "source": "lib/delivest_web/router.ex:430",
+      "source": "lib/delivest_web/router.ex:431",
       "target_section": "Marketing",
       "variant": null
     },
@@ -39499,7 +40070,7 @@
         ]
       },
       "route": "LIVE /staff/roles/:id/edit",
-      "source": "lib/delivest_web/router.ex:411",
+      "source": "lib/delivest_web/router.ex:412",
       "target_section": "Settings / Team and access",
       "variant": null
     },
@@ -39533,7 +40104,7 @@
         ]
       },
       "route": "LIVE /staff/roles/new",
-      "source": "lib/delivest_web/router.ex:412",
+      "source": "lib/delivest_web/router.ex:413",
       "target_section": "Settings / Team and access",
       "variant": null
     },
@@ -39567,7 +40138,7 @@
         ]
       },
       "route": "LIVE /staff/roles",
-      "source": "lib/delivest_web/router.ex:410",
+      "source": "lib/delivest_web/router.ex:411",
       "target_section": "Settings / Team and access",
       "variant": null
     },
@@ -39600,7 +40171,7 @@
         ]
       },
       "route": "LIVE /staff/segments/:id/edit",
-      "source": "lib/delivest_web/router.ex:425",
+      "source": "lib/delivest_web/router.ex:426",
       "target_section": "Clients",
       "variant": null
     },
@@ -39633,7 +40204,7 @@
         ]
       },
       "route": "LIVE /staff/segments/:id",
-      "source": "lib/delivest_web/router.ex:426",
+      "source": "lib/delivest_web/router.ex:427",
       "target_section": "Clients",
       "variant": null
     },
@@ -39666,7 +40237,7 @@
         ]
       },
       "route": "LIVE /staff/segments/new",
-      "source": "lib/delivest_web/router.ex:424",
+      "source": "lib/delivest_web/router.ex:425",
       "target_section": "Clients",
       "variant": null
     },
@@ -39699,7 +40270,7 @@
         ]
       },
       "route": "LIVE /staff/segments",
-      "source": "lib/delivest_web/router.ex:423",
+      "source": "lib/delivest_web/router.ex:424",
       "target_section": "Clients",
       "variant": null
     },
@@ -39729,7 +40300,7 @@
         ]
       },
       "route": "LIVE /staff/settings/data-system",
-      "source": "lib/delivest_web/router.ex:381",
+      "source": "lib/delivest_web/router.ex:382",
       "target_section": "Settings",
       "variant": null
     },
@@ -39761,7 +40332,7 @@
         ]
       },
       "route": "LIVE /staff/settings/data-transfer",
-      "source": "lib/delivest_web/router.ex:380",
+      "source": "lib/delivest_web/router.ex:381",
       "target_section": "Settings",
       "variant": null
     },
@@ -39789,7 +40360,7 @@
         ]
       },
       "route": "LIVE /staff/settings",
-      "source": "lib/delivest_web/router.ex:379",
+      "source": "lib/delivest_web/router.ex:380",
       "target_section": "Settings",
       "variant": null
     },
@@ -39820,7 +40391,7 @@
         ]
       },
       "route": "LIVE /staff/statistics",
-      "source": "lib/delivest_web/router.ex:437",
+      "source": "lib/delivest_web/router.ex:438",
       "target_section": "Analytics",
       "variant": "analytics"
     }
@@ -39861,6 +40432,27 @@
       },
       "route": "DELETE /staff/push/subscriptions",
       "source": "lib/delivest_web/router.ex:317",
+      "target_section": "System / staff service",
+      "variant": null
+    },
+    {
+      "branch_switch": "open same list/queue for new branch; reset selection and page",
+      "data_scope": "branch from URL; server authorization required",
+      "disposition": "move to System / staff service",
+      "feature_dependency": "no registry key established at route declaration",
+      "handler": "PrintingController::show",
+      "id": "route:get:/staff/b/:branch_slug/printing/:type/:order_id:PrintingController::show",
+      "page_type": "service",
+      "rights": {
+        "handler_permissions": [
+          "integrations.update"
+        ],
+        "handler_source": "lib/delivest_web/controllers/staff/printing_controller.ex",
+        "interpretation": "literal handler permission references; branch authorization may further restrict",
+        "session_hooks": []
+      },
+      "route": "GET /staff/b/:branch_slug/printing/:type/:order_id",
+      "source": "lib/delivest_web/router.ex:332",
       "target_section": "System / staff service",
       "variant": null
     },
@@ -39917,7 +40509,7 @@
         "session_hooks": []
       },
       "route": "GET /staff/b/:branch_slug/site-snapshot",
-      "source": "lib/delivest_web/router.ex:332",
+      "source": "lib/delivest_web/router.ex:333",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -39974,7 +40566,7 @@
         "session_hooks": []
       },
       "route": "GET /staff/franchise/instance-backup/:id",
-      "source": "lib/delivest_web/router.ex:334",
+      "source": "lib/delivest_web/router.ex:335",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -39993,7 +40585,7 @@
         "session_hooks": []
       },
       "route": "GET /staff/franchise/site-snapshot",
-      "source": "lib/delivest_web/router.ex:333",
+      "source": "lib/delivest_web/router.ex:334",
       "target_section": "Settings / Data and system",
       "variant": null
     },
@@ -40117,7 +40709,7 @@
         ]
       },
       "route": "LIVE /staff/auth/login",
-      "source": "lib/delivest_web/router.ex:350",
+      "source": "lib/delivest_web/router.ex:351",
       "target_section": "System / staff service",
       "variant": null
     },
@@ -40145,7 +40737,7 @@
         ]
       },
       "route": "LIVE /staff/foundation-gallery",
-      "source": "lib/delivest_web/router.ex:384",
+      "source": "lib/delivest_web/router.ex:385",
       "target_section": "System / staff service",
       "variant": null
     },

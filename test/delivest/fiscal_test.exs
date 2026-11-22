@@ -464,4 +464,41 @@ defmodule Delivest.FiscalTest do
       assert [_failed] = Fiscal.list(order.id)
     end
   end
+
+  test "disabled issuance preserves an existing receipt and lets registration drain", %{
+    order: order,
+    payments: payments
+  } do
+    stub_atol(&Req.Test.json(&1, %{"uuid" => "u-1", "status" => "wait"}))
+    {:ok, receipt} = Fiscal.issue(order, payments)
+
+    info = Repo.get_by!(BranchInfo, branch_id: order.branch_id)
+    Repo.update!(BranchInfo.changeset(info, %{"fiscal" => %{"enabled" => false}}))
+    Cachex.clear(:branch_cache)
+
+    assert {:error, :not_own} = Fiscal.issue(order, payments)
+    assert [^receipt] = Fiscal.list(order.id)
+    assert :ok = register(receipt)
+    assert %Receipt{status: :wait} = Fiscal.get(receipt.id)
+  end
+
+  test "disabled sales still allow refund of a registered own sale", %{
+    order: order,
+    payments: payments
+  } do
+    stub_atol(&Req.Test.json(&1, %{"uuid" => "u-1", "status" => "done"}))
+    {:ok, sale} = Fiscal.issue(order, payments)
+    :ok = register(sale)
+    done = Fiscal.get(sale.id)
+
+    info = Repo.get_by!(BranchInfo, branch_id: order.branch_id)
+    Repo.update!(BranchInfo.changeset(info, %{"fiscal" => %{"enabled" => false}}))
+    Cachex.clear(:branch_cache)
+
+    staff = insert(:staff)
+    assert {:error, :not_own} = Fiscal.issue(order, payments)
+    assert {:ok, %Receipt{kind: :sell_refund, refund_of_id: id}} = Fiscal.refund(done, staff)
+    assert id == sale.id
+    assert {:error, :not_refundable} = Fiscal.refund(%{done | provider: "other"}, staff)
+  end
 end

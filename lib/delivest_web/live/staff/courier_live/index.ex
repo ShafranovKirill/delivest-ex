@@ -30,7 +30,7 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
      |> assign(
        page_title: gettext("Deliveries"),
        pickup: branch.info,
-       fiscal: BranchSettings.own?(Fiscal.settings(branch_id)),
+       fiscal: (settings = Fiscal.settings(branch_id)).enabled and BranchSettings.own?(settings),
        handed: nil,
        receipt: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id)

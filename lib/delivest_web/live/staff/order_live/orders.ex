@@ -50,6 +50,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        estimable: Couriers.settings(branch_id).source == :yandex,
        own_couriers_enabled: Couriers.own_enabled?(branch_id),
        pickup: branch.info,
+       printing: Delivest.Printing.settings(branch_id),
        positions: CourierPresence.positions(branch_id, couriers)
      )
      |> stream(:orders, [])}
@@ -596,6 +597,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           order={order}
           current_staff={@current_staff}
           current_branch={@current_branch}
+          printing={@printing}
           return_query={@query}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
@@ -623,6 +625,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           order={@shown_order}
           current_staff={@current_staff}
           current_branch={@current_branch}
+          printing={@printing}
           return_query={@query}
           delivery_minutes={@delivery_minutes}
           couriers={@couriers}
