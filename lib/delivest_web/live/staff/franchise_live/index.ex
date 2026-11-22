@@ -387,9 +387,15 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
   @impl true
   def render(%{section: nil} = assigns) do
     ~H"""
-    <div class="space-y-6">
-      <section id="franchise-appearance" class="space-y-4">
-        <h2 class="text-xl font-semibold">{gettext("Appearance")}</h2>
+    <div class="space-y-8">
+      <section
+        id="franchise-appearance"
+        aria-labelledby="franchise-appearance-heading"
+        class="space-y-5 rounded-box border border-base-300 bg-base-200/50 p-4 sm:p-6"
+      >
+        <h2 id="franchise-appearance-heading" class="text-xl font-semibold">
+          {gettext("Appearance")}
+        </h2>
         <.settings_cards>
           <.settings_card
             :for={
@@ -404,19 +410,28 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
           />
         </.settings_cards>
       </section>
-      <.settings_cards>
-        <.settings_card
-          :for={
-            section <-
-              Enum.reject(visible_sections(@current_staff), &(&1.id in [:brand, :logo, :images]))
-          }
-          id={"franchise-section-#{section.id}"}
-          navigate={~p"/staff/franchise/#{section.id}"}
-          icon={section.icon}
-          title={section.title}
-          description={section.description}
-        />
-      </.settings_cards>
+      <section
+        id="franchise-other-settings"
+        aria-labelledby="franchise-other-settings-heading"
+        class="space-y-5 rounded-box border border-base-300 bg-base-100 p-4 sm:p-6"
+      >
+        <h2 id="franchise-other-settings-heading" class="text-xl font-semibold">
+          {gettext("Other settings")}
+        </h2>
+        <.settings_cards>
+          <.settings_card
+            :for={
+              section <-
+                Enum.reject(visible_sections(@current_staff), &(&1.id in [:brand, :logo, :images]))
+            }
+            id={"franchise-section-#{section.id}"}
+            navigate={~p"/staff/franchise/#{section.id}"}
+            icon={section.icon}
+            title={section.title}
+            description={section.description}
+          />
+        </.settings_cards>
+      </section>
     </div>
     """
   end

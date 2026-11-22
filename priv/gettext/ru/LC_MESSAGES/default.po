@@ -12436,6 +12436,11 @@ msgstr "Отменить выбор"
 msgid "Appearance"
 msgstr "Внешний вид"
 
+#: lib/delivest_web/live/staff/franchise_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Other settings"
+msgstr "Другие настройки"
+
 #: lib/delivest_web/components/staff/app/staff_nav.ex
 #: lib/delivest_web/live/staff/analytics_live/placeholder.ex
 #, elixir-autogen, elixir-format
