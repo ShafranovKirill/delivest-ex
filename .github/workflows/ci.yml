@@ -9,11 +9,12 @@ on:
 env:
   MIX_ENV: test
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/delivest
+  CHROME_EXECUTABLE: /usr/bin/google-chrome
 
 jobs:
   test_and_lint:
     name: Build, Test, and Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       db:
@@ -69,6 +70,14 @@ jobs:
 
       - name: Install dependencies
         run: mix deps.get
+
+      - name: Check Chrome startup
+        run: |
+          google-chrome --version
+          timeout 30s google-chrome --headless --disable-gpu --user-data-dir="$RUNNER_TEMP/delivest-pdf-probe" --dump-dom about:blank
+
+      - name: Render PDF smoke
+        run: mix test test/delivest/printing_test.exs --max-cases 1
 
       - name: Check Code Format
         run: mix format --check-formatted

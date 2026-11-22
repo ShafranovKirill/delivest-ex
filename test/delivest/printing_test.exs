@@ -108,4 +108,24 @@ defmodule Delivest.PrintingTest do
 
     assert binary_part(response(download, 200), 0, 5) == "%PDF-"
   end
+
+  test "renderer shutdown returns 503 instead of crashing the PDF route", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["orders.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    Repo.insert!(%BranchInfo{branch_id: branch.id, printing: %Settings{kitchen_enabled: true}})
+    order = order_fixture(branch.id)
+
+    on_exit(fn ->
+      assert {:ok, _pid} = Supervisor.restart_child(Delivest.Supervisor, ChromicPDF)
+    end)
+    assert :ok = Supervisor.terminate_child(Delivest.Supervisor, ChromicPDF)
+
+    conn =
+      conn
+      |> init_test_session(%{"staff_id" => staff.id})
+      |> get(~p"/staff/b/#{branch.slug}/printing/kitchen/#{order.id}")
+
+    assert response(conn, 503) == ""
+  end
 end

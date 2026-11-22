@@ -15,6 +15,7 @@ defmodule Delivest.Application do
        [
          offline: true,
          disable_scripts: true,
+         discard_stderr: System.get_env("CI") != "true",
          no_sandbox: System.get_env("CHROME_NO_SANDBOX") == "true",
          on_demand: Application.get_env(:delivest, :chromic_pdf_on_demand, true),
          session_pool: [size: 2, timeout: 20_000, init_timeout: 20_000, checkout_timeout: 20_000]

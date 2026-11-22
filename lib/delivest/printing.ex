@@ -88,6 +88,10 @@ defmodule Delivest.Printing do
     error ->
       Logger.error("PDF render failed: #{Exception.message(error)}")
       {:error, :renderer_unavailable}
+  catch
+    :exit, reason ->
+      Logger.error("PDF renderer exited: #{inspect(reason)}")
+      {:error, :renderer_unavailable}
   end
 
   def html(order, type, preset) do
