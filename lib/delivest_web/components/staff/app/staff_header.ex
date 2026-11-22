@@ -49,6 +49,12 @@ defmodule DelivestWeb.StaffHeader do
           branches={@staff_branches}
           section={DelivestWeb.StaffBranchPath.section(@current_path)}
           from={@current_uri || @current_path}
+          network_allowed={
+            not (DelivestWeb.StaffNav.network_analytics_path?(@current_path) or
+                   String.contains?(@current_path || "", "/statistics") or
+                   String.contains?(@current_path || "", "/analytics/")) or
+              Delivest.Identity.can?(@current_staff, "statistics.network")
+          }
           aggregate={
             @current_path in ~w(/staff/dashboard /staff/statistics /staff/analytics/channels /staff/analytics/sources /staff/analytics/funnel /staff/analytics/customers /staff/analytics/comparison /staff/analytics/advertising)
           }

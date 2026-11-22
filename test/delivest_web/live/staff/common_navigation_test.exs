@@ -34,7 +34,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     assert DelivestWeb.StaffNav.integration_entry(:vk_ads, staff, nil).path == nil
   end
 
-  test "network sales navigation remains available with an active branch and requires both permissions" do
+  test "analytics navigation has one statistics entry and limits network access" do
     branch = insert(:branch)
 
     for permissions <- [
@@ -46,20 +46,37 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
       insert(:staff_branch, staff: staff, branch: branch)
       staff = Repo.preload(staff, [:role, :branches])
       pages = DelivestWeb.StaffNav.pages(staff, branch)
-      network = Enum.find(pages, &(&1.id == :network_sales))
+
+      assert Enum.count(pages, &(&1.id == :statistics)) ==
+               if("statistics.read" in permissions, do: 1, else: 0)
+
+      refute Enum.any?(pages, &(&1.id == :network_sales))
 
       if length(permissions) == 2 do
-        assert network.path == "/staff/statistics"
-
         assert Enum.find(pages, &(&1.id == :statistics)).path ==
                  "/staff/b/#{branch.slug}/statistics"
 
         global = DelivestWeb.StaffNav.pages(staff, nil)
         assert Enum.count(global, &(&1.path == "/staff/statistics")) == 1
-      else
-        refute network
       end
     end
+  end
+
+  test "advertising feature link requires both statistics permissions" do
+    network_only =
+      insert(:staff, role: insert(:role, permissions: ["statistics.network"]))
+      |> Repo.preload([:role, :branches])
+
+    authorized =
+      insert(:staff,
+        role: insert(:role, permissions: ["statistics.read", "statistics.network"])
+      )
+      |> Repo.preload([:role, :branches])
+
+    assert DelivestWeb.StaffNav.feature_entry("yandex_costs", network_only).path == nil
+
+    assert DelivestWeb.StaffNav.feature_entry("yandex_costs", authorized).path ==
+             "/staff/analytics/advertising"
   end
 
   test "global statistics renders franchise report without an active branch", %{conn: conn} do
@@ -68,8 +85,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
 
-    for tab <- ~w(sales products categories),
-        do: assert(has_element?(view, "#statistics-tab-#{tab}"))
+    assert has_element?(view, "#statistics-overview")
 
     assert has_element?(view, "#header-branch")
     refute has_element?(view, "#statistics-scope")
@@ -82,7 +98,8 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     conn = login(conn, ["statistics.read"], [branch])
     assert {:error, {:redirect, _}} = live(conn, ~p"/staff/statistics")
     {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics")
-    assert has_element?(view, "#statistics-tab-sales")
+    assert has_element?(view, "#statistics-overview")
+    assert has_element?(view, "#header-branch-static")
     refute has_element?(view, "#statistics-scope")
     refute has_element?(view, "#sidebar-section-nav-analytics_comparison")
   end

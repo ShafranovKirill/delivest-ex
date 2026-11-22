@@ -331,6 +331,12 @@ defmodule Delivest.Identity.Branches do
             )
           end
 
+          Phoenix.PubSub.broadcast(
+            Delivest.PubSub,
+            "analytics:visibility",
+            :analytics_visibility_changed
+          )
+
           {:ok, updated}
 
         {:error, :kitchen_replan, reason, _changes} ->

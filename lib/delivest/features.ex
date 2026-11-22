@@ -278,6 +278,17 @@ defmodule Delivest.Features do
 
         Repo.get_by!(Gate, feature: feature, scope_key: key)
       end)
+      |> tap(fn
+        {:ok, _} ->
+          Phoenix.PubSub.broadcast(
+            Delivest.PubSub,
+            "analytics:visibility",
+            :analytics_visibility_changed
+          )
+
+        _ ->
+          :ok
+      end)
     else
       _ -> {:error, :invalid_configuration}
     end

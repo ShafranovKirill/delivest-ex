@@ -15,6 +15,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     {init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id}), branch}
   end
 
+  defp completed(order) do
+    order
+    |> Ecto.Changeset.change(status: :completed)
+    |> Delivest.Repo.update!()
+  end
+
   test "shows sales, products and categories of the branch", %{conn: conn} do
     {conn, branch} = login(conn, ["statistics.read"])
     category = insert(:category, name: "Горячее")
@@ -22,14 +28,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     product =
       insert_branch_product(branch.id, name: "Хинкали", price: 30_000, category_id: category.id)
 
-    order_fixture(branch.id, product: product, quantity: 2)
+    branch.id |> order_fixture(product: product, quantity: 2) |> completed()
 
     {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
     assert html =~ "Statistics"
     assert html =~ "600 ₽"
-    assert has_element?(lv, "main #statistics-sales-tabs #statistics-tab-sales")
+    assert has_element?(lv, "#statistics-overview")
+    refute has_element?(lv, "#statistics-sales-tabs")
     refute has_element?(lv, "#main-sidebar #statistics-tab-sales")
     refute has_element?(lv, "#sidebar-statistics-tab-sales")
+
+    render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=sales&period=today")
+    assert has_element?(lv, "#statistics-order-source", "Storefront")
 
     html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=products&period=today")
     assert html =~ "Хинкали"
@@ -42,7 +52,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     {conn, branch} = login(conn, ["statistics.read"])
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
-    refute has_element?(lv, "#crm-split")
+    refute has_element?(lv, "#statistics-transfer-destination")
 
     Delivest.Repo.insert!(%Delivest.Identity.Branch.BranchInfo{
       branch_id: branch.id,
@@ -51,8 +61,82 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     Cachex.del(:branch_cache, branch.id)
 
-    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
-    assert has_element?(lv, "#crm-split", "CRM")
+    branch.id |> order_fixture() |> completed()
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=sales&period=today")
+    assert has_element?(lv, "#statistics-transfer-destination")
+  end
+
+  test "overview defers details and completed orders open a scoped drilldown", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read", "orders.read"])
+    order = branch.id |> order_fixture(price: 12_000) |> completed()
+
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    assigns = :sys.get_state(view.pid).socket.assigns
+    refute Map.has_key?(assigns, :products)
+    refute Map.has_key?(assigns, :by_fulfillment)
+    assert has_element?(view, "#statistics-orders-link[href*='tab=orders']")
+
+    render_patch(view, ~p"/staff/b/#{branch}/statistics?tab=orders&period=today")
+    assert has_element?(view, "#statistics-order-#{order.id}")
+    assert has_element?(view, "#statistics-order-rows a[href*='/orders/#{order.id}']")
+
+    assert has_element?(
+             view,
+             "#statistics-order-details a[href*='period=today']",
+             "Back to statistics"
+           )
+  end
+
+  test "order drilldown stays hidden without order read permission", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    refute has_element?(view, "#statistics-orders-link")
+    refute has_element?(view, "#statistics-cancelled-link")
+    refute has_element?(view, "#statistics-refunds-link")
+
+    render_patch(view, ~p"/staff/b/#{branch}/statistics?tab=orders&period=today")
+    assert has_element?(view, "#statistics-overview")
+    refute has_element?(view, "#statistics-order-details")
+  end
+
+  test "open sales and channel report react to branch visibility changes without changing revenue",
+       %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read", "integrations.update"])
+    staff = Delivest.Repo.get!(Delivest.Identity.Staff, Plug.Conn.get_session(conn, "staff_id"))
+    staff = Delivest.Repo.preload(staff, :role)
+
+    assert {:ok, branch} =
+             Delivest.Identity.Branches.update_integrations(staff, branch, %{
+               "channels" => %{"yandex_eda" => %{"enabled" => true}}
+             })
+
+    order = branch.id |> order_fixture(price: 12_000) |> completed()
+    Delivest.Repo.update!(Ecto.Changeset.change(order, source: "yandex_eda"))
+
+    assert {:ok, _} =
+             Delivest.Features.configure("analytics_extended", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Delivest.Features.configure("analytics_extended", {:branch, branch.id}, true,
+               actor: "test"
+             )
+
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=sales&period=today")
+    assert has_element?(view, "#statistics-order-source", "Яндекс Еда")
+    revenue = :sys.get_state(view.pid).socket.assigns.overview.summary.revenue
+    assert revenue == 12_000
+
+    assert {:ok, _} =
+             Delivest.Identity.Branches.update_integrations(staff, branch, %{
+               "channels" => %{"yandex_eda" => %{"enabled" => false}}
+             })
+
+    assert has_element?(view, "#statistics-order-source", "Other")
+    refute has_element?(view, "#statistics-order-source", "Яндекс Еда")
+    assert :sys.get_state(view.pid).socket.assigns.overview.summary.revenue == revenue
+
+    render_patch(view, ~p"/staff/b/#{branch}/analytics/channels?period=today")
+    refute has_element?(view, ~s{select[name="channel"] option[value="yandex_eda"]})
   end
 
   test "custom period comes from the filter form", %{conn: conn} do
@@ -64,14 +148,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     |> render_change()
 
     today = Delivest.LocalTime.today()
-    from = Date.to_iso8601(Date.add(today, -6))
+    from = Date.to_iso8601(today)
     to = Date.to_iso8601(today)
 
     query = %{
       "from" => from,
       "period" => "custom",
       "sort" => "revenue",
-      "tab" => "sales",
+      "tab" => "overview",
       "to" => to
     }
 
@@ -87,8 +171,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     assert has_element?(lv, "#statistics-period-error[role=alert]")
     assert has_element?(lv, ~s{input[name="from"][value=""]})
-    refute has_element?(lv, "#crm-split")
-    refute has_element?(lv, "h2", "Revenue by day")
+    refute has_element?(lv, "#statistics-overview")
+    refute has_element?(lv, "#statistics-overview")
 
     lv
     |> form("#statistics-filter", %{
@@ -99,7 +183,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     |> render_change()
 
     refute has_element?(lv, "#statistics-period-error")
-    assert has_element?(lv, "h2", "Revenue by day")
+    assert has_element?(lv, "#statistics-overview")
     assert has_element?(lv, ~s{input[name="from"][value="2026-01-02"]})
   end
 
@@ -116,7 +200,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, "#statistics-period-error")
     assert has_element?(lv, ~s{input[name="from"][value=""]})
     assert has_element?(lv, ~s{input[name="to"][value=""]})
-    refute has_element?(lv, "h2", "Revenue by day")
+    refute has_element?(lv, "#statistics-overview")
 
     render_patch(lv, path <> "?tab=products&period=custom&from[x]=2026-01-01&to[]=2026-01-02")
     assert has_element?(lv, "#statistics-period-error")
@@ -178,6 +262,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     )
 
     assert has_element?(view, "#statistics-comparison-periods", "01.10.2026 — 07.10.2026")
+
+    render_patch(
+      view,
+      ~p"/staff/b/#{branch}/statistics?tab=sales&period=custom&from=2026-11-10&to=2026-11-16&compare=custom&compare_from=2026-10-01&compare_to=2026-10-07"
+    )
+
     assert has_element?(view, "#statistics-tab-products[href*='compare_from=2026-10-01']")
   end
 
@@ -196,7 +286,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
       assert has_element?(view, "#statistics-comparison-error")
       refute has_element?(view, "#statistics-comparison-periods")
-      assert has_element?(view, "h2", "Revenue by day")
+      assert has_element?(view, "#statistics-overview")
     end
   end
 
@@ -230,39 +320,50 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
       branch: second
     )
 
-    order_fixture(first.id, price: 10_000)
-    order_fixture(second.id, price: 20_000)
-    order_fixture(other.id, price: 90_000)
+    first.id |> order_fixture(price: 10_000) |> completed()
+    second.id |> order_fixture(price: 20_000) |> completed()
+    other.id |> order_fixture(price: 90_000) |> completed()
 
     {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
 
-    for tab <- ~w(sales products categories),
-        do: assert(has_element?(view, "#statistics-tab-#{tab}"))
+    assert has_element?(view, "#statistics-overview-branches")
+    refute has_element?(view, "#statistics-network-branch")
+    assert :sys.get_state(view.pid).socket.assigns.overview.summary.revenue == 30_000
 
-    refute has_element?(view, "#statistics-tab-franchise")
-    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 30_000
-    assert has_element?(view, "#statistics-network-branch")
-    render_patch(view, ~p"/staff/statistics?period=today&branch_id=#{second.id}")
-    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 20_000
-    render_patch(view, ~p"/staff/statistics?period=today&branch_id=#{other.id}")
-    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 0
+    assert {:error, {:redirect, %{to: selected_path}}} =
+             live(conn, ~p"/staff/statistics?period=today&branch_id=#{second.id}")
+
+    assert selected_path == "/staff/b/#{second.slug}/statistics?period=today"
+
+    {:ok, selected, _} = live(conn, selected_path)
+    assert :sys.get_state(selected.pid).socket.assigns.overview.summary.revenue == 20_000
+
+    assert {:error, {:redirect, %{to: safe_path}}} =
+             live(conn, ~p"/staff/statistics?period=today&branch_id=#{other.id}")
+
+    assert safe_path == "/staff/statistics?period=today"
 
     render_patch(
       view,
       ~p"/staff/statistics?period=today&branch_ids[]=#{first.id}&branch_ids[]=#{other.id}"
     )
 
-    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 10_000
+    assert :sys.get_state(view.pid).socket.assigns.overview.summary.revenue == 30_000
     render_patch(view, ~p"/staff/statistics?period=today&branch_ids=invalid")
-    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 0
+    assert :sys.get_state(view.pid).socket.assigns.overview.summary.revenue == 30_000
 
-    for query <- ["branch_id[]=invalid", "branch_id[x]=invalid", "branch_ids[x]=invalid"] do
+    for query <- ["branch_ids[x]=invalid"] do
       render_patch(view, "/staff/statistics?period=today&" <> query)
-      assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 0
+      assert :sys.get_state(view.pid).socket.assigns.overview.summary.revenue == 30_000
+    end
+
+    for query <- ["branch_id[]=invalid", "branch_id[x]=invalid"] do
+      assert {:error, {:redirect, %{to: "/staff/statistics?period=today"}}} =
+               live(conn, "/staff/statistics?period=today&" <> query)
     end
 
     render_patch(view, ~p"/staff/statistics?period=today")
-    assert :sys.get_state(view.pid).socket.assigns.summary.revenue == 30_000
+    assert :sys.get_state(view.pid).socket.assigns.overview.summary.revenue == 30_000
   end
 
   test "branch report URLs cannot grant access to an unassigned branch", %{conn: conn} do
@@ -271,9 +372,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert {:error, {:redirect, _}} = live(conn, ~p"/staff/b/#{other}/analytics/channels")
   end
 
-  test "current sales tabs refresh automatically and historical navigation cancels the timer", %{
-    conn: conn
-  } do
+  test "current sales tabs refresh automatically and partial historical data retries a bounded number of times",
+       %{
+         conn: conn
+       } do
     {conn, branch} = login(conn, ["statistics.read"])
     {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
 
@@ -292,7 +394,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
       ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-01-01&to=2026-01-07"
     )
 
-    assert :sys.get_state(view.pid).socket.assigns.refresh_timer == nil
+    assert is_reference(:sys.get_state(view.pid).socket.assigns.refresh_timer)
     assert Process.read_timer(timer) == false
   end
 
@@ -353,12 +455,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert state.socket.assigns.kitchen_status == nil
     assert state.socket.assigns.kitchen_late_orders == []
     refute Map.has_key?(state.socket.assigns.flash, "info")
-    assert has_element?(view, "#statistics-sales-tabs")
+    assert has_element?(view, "#statistics-overview")
 
     assert render_click(view, "overdue_confirm", %{"id" => Ecto.UUID.generate()}) =~
              "Permission denied"
 
-    assert has_element?(view, "#statistics-sales-tabs")
+    assert has_element?(view, "#statistics-overview")
   end
 
   test "automatic refresh advances relative periods after local midnight without resetting drafts",
