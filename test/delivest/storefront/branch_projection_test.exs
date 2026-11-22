@@ -4,6 +4,7 @@ defmodule Delivest.Storefront.BranchProjectionTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Franchise.Settings, as: FranchiseSettings
   alias Delivest.Repo
   alias Delivest.Storefront.BranchProjection
   alias Delivest.Integrations.Health.Status
@@ -62,6 +63,42 @@ defmodule Delivest.Storefront.BranchProjectionTest do
 
     assert BranchJSON.show(BranchProjection.prepare([loaded]) |> Map.put(:branch, loaded)).data.branch_info.payment_methods ==
              [:cash, :card_offline, :online]
+  end
+
+  test "projection uses fresh franchise settings for maintenance, timezone and loyalty" do
+    branch = insert(:branch, is_active: true)
+    Repo.insert!(%BranchInfo{branch_id: branch.id})
+
+    (Repo.one(FranchiseSettings) || %FranchiseSettings{})
+    |> FranchiseSettings.changeset(%{
+      timezone: "Asia/Yekaterinburg",
+      maintenance_enabled: true,
+      loyalty_per_rubles: 250,
+      loyalty_stars: 9,
+      loyalty_expire_days: 45
+    })
+    |> Repo.insert_or_update!()
+
+    Cachex.put(:franchise_cache, :settings, %FranchiseSettings{
+      timezone: "Europe/Moscow",
+      maintenance_enabled: false,
+      loyalty_per_rubles: 100,
+      loyalty_stars: 5,
+      loyalty_expire_days: 180
+    })
+
+    on_exit(fn -> Cachex.del(:franchise_cache, :settings) end)
+    loaded = Repo.preload(branch, :info, force: true)
+    {prepare_count, prepared} = count_queries(fn -> BranchProjection.prepare([loaded]) end)
+    {render_count, %{data: [data]}} = count_queries(fn -> BranchJSON.index(prepared) end)
+
+    assert prepare_count <= 4
+    assert render_count == 0
+    assert data.branch_info.maintenance == %{enabled: true, reason: :franchise}
+    assert data.branch_info.timezone == "Asia/Yekaterinburg"
+    assert data.branch_info.loyalty.per_rubles == 250
+    assert data.branch_info.loyalty.stars == 9
+    assert data.branch_info.loyalty.expire_days == 45
   end
 
   defp count_queries(fun) do

@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.AnalyticsLive.PlaceholderTest do
       assert has_element?(view, "#statistics-report-state")
       refute has_element?(view, "#analytics-placeholder")
       refute has_element?(view, "#statistics-scope")
-      assert has_element?(view, "#sidebar-section-nav-analytics_#{section}[aria-current='page']")
+      assert has_element?(view, "#sidebar-group-analytics a[href='/staff/statistics']")
     end
   end
 
@@ -42,7 +42,12 @@ defmodule DelivestWeb.Staff.AnalyticsLive.PlaceholderTest do
     for section <- ~w(channels sources funnel customers) do
       {:ok, view, _} = live(conn, "/staff/b/#{branch.slug}/analytics/#{section}")
       assert has_element?(view, "#statistics-report-state")
-      assert has_element?(view, "#sidebar-section-nav-analytics_#{section}")
+
+      assert has_element?(
+               view,
+               "#sidebar-group-analytics a[href='/staff/b/#{branch.slug}/statistics']"
+             )
+
       assert {:error, {:redirect, _}} = live(conn, "/staff/analytics/#{section}")
     end
 
@@ -77,15 +82,7 @@ defmodule DelivestWeb.Staff.AnalyticsLive.PlaceholderTest do
     {conn, _branch} = login(conn, ["statistics.read", "statistics.network"])
     {:ok, view, _} = live(conn, "/staff/analytics/advertising")
 
-    for {id, path} <- [
-          {"statistics", "/staff/statistics"},
-          {"analytics_channels", "/staff/analytics/channels"},
-          {"analytics_sources", "/staff/analytics/sources"},
-          {"analytics_funnel", "/staff/analytics/funnel"},
-          {"analytics_customers", "/staff/analytics/customers"}
-        ] do
-      assert has_element?(view, "#sidebar-section-nav-#{id}[href='#{path}']")
-    end
+    assert has_element?(view, "#sidebar-group-analytics a[href='/staff/statistics']")
 
     refute has_element?(view, "#sidebar-group-analytics a[href^='/staff/branches/select']")
   end

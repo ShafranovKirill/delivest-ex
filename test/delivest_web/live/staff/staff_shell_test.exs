@@ -84,7 +84,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(on, "#sidebar-section-nav-couriers")
   end
 
-  test "analytics group is expandable away from reports and exposes six destinations", %{
+  test "analytics group is expandable away from reports and links to statistics", %{
     conn: conn
   } do
     branch = insert(:branch)
@@ -99,16 +99,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     assert has_element?(view, "#sidebar-group-analytics:not([open])")
     assert has_element?(view, "#sidebar-group-analytics-toggle")
 
-    for id <- [
-          "statistics",
-          "analytics_channels",
-          "analytics_sources",
-          "analytics_funnel",
-          "analytics_customers",
-          "analytics_comparison"
-        ] do
-      assert has_element?(view, "#sidebar-section-nav-#{id}")
-    end
+    assert has_element?(view, "#sidebar-section-nav-statistics")
   end
 
   test "active product and settings sections expand in the main sidebar with unique links", %{
