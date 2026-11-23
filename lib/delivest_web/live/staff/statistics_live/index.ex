@@ -223,6 +223,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
              }),
            sort: sort,
            granularity: granularity(params["granularity"], period),
+           granularity_override: valid_granularity(params["granularity"], period),
            visible_tabs: visible_tabs,
            report_tabs: @report_tabs,
            link_options:
@@ -251,7 +252,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "tab" => socket.assigns.tab,
         "period" => params["period"] || socket.assigns.preset,
         "sort" => to_string(socket.assigns.sort),
-        "granularity" => params["granularity"] || socket.assigns.granularity,
         "compare" => socket.assigns.comparison_mode,
         "compare_from" => socket.assigns.comparison_from,
         "compare_to" => socket.assigns.comparison_to,
@@ -271,6 +271,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   def handle_event("open_comparison", _, socket),
     do: {:noreply, assign(socket, comparison_open?: true)}
+
+  def handle_event("chart_step", %{"granularity" => value}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to: tab_path(socket.assigns, socket.assigns.tab, %{"granularity" => value})
+     )}
+  end
 
   def handle_event("comparison_draft", params, socket) do
     {:noreply,
@@ -369,6 +376,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
     assign(socket,
       period: period,
+      granularity: granularity(socket.assigns.granularity_override, period),
+      granularity_override: valid_granularity(socket.assigns.granularity_override, period),
       comparison_period: comparison_period,
       comparison_error: comparison_error,
       compare?: socket.assigns.comparison_mode != nil and comparison_error == nil
@@ -713,7 +722,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "tab" => tab,
         "period" => assigns.preset,
         "sort" => to_string(assigns.sort),
-        "granularity" => assigns.granularity,
+        "granularity" => assigns.granularity_override,
         "compare" => assigns.comparison_mode,
         "compare_from" => assigns.comparison_from,
         "compare_to" => assigns.comparison_to,
@@ -787,8 +796,25 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   defp comparison_delta(_, _), do: nil
 
-  defp granularity(value, _period) when value in ~w(day month), do: value
-  defp granularity(_, {from, to}), do: if(Date.diff(to, from) > 45, do: "month", else: "day")
+  defp available_granularities({from, to}) do
+    case Date.diff(to, from) + 1 do
+      days when days <= 7 -> ~w(day)
+      days when days <= 31 -> ~w(day week)
+      _ -> ~w(day week month)
+    end
+  end
+
+  defp valid_granularity(value, period),
+    do: if(value in available_granularities(period), do: value, else: nil)
+
+  defp granularity(value, {from, to} = period) do
+    valid_granularity(value, period) ||
+      case Date.diff(to, from) + 1 do
+        days when days <= 31 -> "day"
+        days when days <= 90 -> "week"
+        _ -> "month"
+      end
+  end
 
   defp period_query(assigns) do
     {from, to} = assigns.period
@@ -904,7 +930,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           phx-change="filter"
           class="flex min-w-0 flex-wrap items-center gap-2 [&>fieldset]:mb-0 [&>fieldset]:w-auto"
         >
+          <label for="statistics-period" class="text-xs text-base-content/70">{gettext("Period")}</label>
           <select
+            id="statistics-period"
             name="period"
             aria-label={gettext("Period")}
             class="select select-bordered select-sm w-40"
@@ -912,16 +940,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             <option :for={preset <- Analytics.presets()} value={preset} selected={preset == @preset}>
               {preset_label(preset)}
             </option>
-          </select>
-          <select
-            :if={@tab == "sales"}
-            id="statistics-granularity"
-            name="granularity"
-            aria-label={gettext("Granularity")}
-            class="select select-bordered select-sm w-28"
-          >
-            <option value="day" selected={@granularity == "day"}>{gettext("Day")}</option>
-            <option value="month" selected={@granularity == "month"}>{gettext("Month")}</option>
           </select>
           <%= if @preset == "custom" do %>
             <input
@@ -960,6 +978,33 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             options={@link_options}
             class="input input-bordered input-sm w-48"
           />
+        </.form>
+        <.form
+          :if={@tab == "sales" and length(available_granularities(@period)) > 1}
+          for={to_form(%{})}
+          id="statistics-chart-step-form"
+          phx-change="chart_step"
+          class="flex items-center gap-2"
+        >
+          <label for="statistics-granularity" class="text-xs text-base-content/70">{gettext(
+            "Chart grouping"
+          )}</label>
+          <select
+            id="statistics-granularity"
+            name="granularity"
+            aria-label={gettext("Chart grouping")}
+            class="select select-bordered select-sm w-36"
+          >
+            <option value="day" selected={@granularity == "day"}>{gettext("By day")}</option>
+            <option value="week" selected={@granularity == "week"}>{gettext("By week")}</option>
+            <option
+              :if={"month" in available_granularities(@period)}
+              value="month"
+              selected={@granularity == "month"}
+            >
+              {gettext("By month")}
+            </option>
+          </select>
         </.form>
         <button
           :if={@tab in ~w(overview sales)}
@@ -1404,7 +1449,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         </p>
         <div
           id="statistics-sales-charts"
-          class={["grid gap-3", @granularity == "month" && "xl:grid-cols-3"]}
+          class={["grid grid-cols-1 gap-3", @granularity == "month" && "xl:grid-cols-3"]}
         >
           <.chart
             :for={metric <- [:revenue, :orders, :avg_check]}

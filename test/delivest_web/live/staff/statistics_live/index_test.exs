@@ -71,6 +71,27 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert december.revenue == 6_000
   end
 
+  test "weekly chart follows Monday boundaries across months and years" do
+    daily = [
+      %{date: ~D[2027-01-01], revenue: 1_000, orders: 2},
+      %{date: ~D[2026-11-02], revenue: 3_000, orders: 1},
+      %{date: ~D[2026-10-30], revenue: 6_000, orders: 2},
+      %{date: ~D[2026-12-31], revenue: 2_000, orders: 1},
+      %{date: ~D[2026-11-01], revenue: -1_000, orders: 1}
+    ]
+
+    assert [october, november, new_year] =
+             DelivestWeb.Staff.StatisticsLive.SalesChart.buckets(daily, "week")
+
+    assert {october.from, october.to, october.revenue, october.orders, october.avg_check} ==
+             {~D[2026-10-30], ~D[2026-11-01], 5_000, 3, 1_667}
+
+    assert {november.from, november.to} == {~D[2026-11-02], ~D[2026-11-02]}
+
+    assert {new_year.from, new_year.to, new_year.avg_check} ==
+             {~D[2026-12-31], ~D[2027-01-01], 1_000}
+  end
+
   test "the crm split shows only for a branch on a crm", %{conn: conn} do
     {conn, branch} = login(conn, ["statistics.read"])
 
@@ -176,7 +197,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     query = %{
       "from" => from,
-      "granularity" => "day",
       "period" => "custom",
       "sort" => "revenue",
       "tab" => "overview",
@@ -187,39 +207,86 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, ~s{input[name="from"][value="#{from}"]})
   end
 
-  test "network sales keeps the custom period when changing chart granularity", %{conn: conn} do
-    {conn, _branch} = login(conn, ["statistics.read", "statistics.network", "orders.read"])
+  test "available chart steps follow the selected period", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+
+    {:ok, short, _} =
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-11-10&to=2026-11-16&granularity=month"
+      )
+
+    assert :sys.get_state(short.pid).socket.assigns.granularity == "day"
+    refute has_element?(short, "#statistics-chart-step-form")
+
+    {:ok, middle, _} =
+      live(conn, ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-11-10&to=2026-11-23")
+
+    assert has_element?(middle, "#statistics-granularity option[value=day][selected]")
+    assert has_element?(middle, "#statistics-granularity option[value=week]")
+    refute has_element?(middle, "#statistics-granularity option[value=month]")
+
+    {:ok, long, _} =
+      live(conn, ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-08-01&to=2026-09-30")
+
+    assert has_element?(long, "#statistics-granularity option[value=week][selected]")
+    assert has_element?(long, "#statistics-granularity option[value=month]")
+
+    {:ok, longest, _} =
+      live(conn, ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-01-01&to=2026-04-30")
+
+    assert has_element?(longest, "#statistics-granularity option[value=month][selected]")
+  end
+
+  test "branch chart step preserves custom comparison and resets on period change", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
 
     {:ok, view, _} =
-      live(conn, ~p"/staff/statistics?period=custom&from=2026-11-10&to=2026-11-16")
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/statistics?period=custom&from=2026-11-10&to=2026-11-23&compare=custom&compare_from=2026-10-10&compare_to=2026-10-23"
+      )
 
     assert has_element?(view, "#statistics-sales-detail")
     assert has_element?(view, "#statistics-granularity option[value=day][selected]")
 
     view
-    |> form("#statistics-filter", %{
-      "period" => "custom",
-      "from" => "2026-11-10",
-      "to" => "2026-11-16",
-      "granularity" => "month"
-    })
+    |> form("#statistics-chart-step-form", %{"granularity" => "week"})
     |> render_change()
 
     query = %{
+      "compare" => "custom",
+      "compare_from" => "2026-10-10",
+      "compare_to" => "2026-10-23",
       "from" => "2026-11-10",
-      "granularity" => "month",
+      "granularity" => "week",
       "period" => "custom",
       "sort" => "revenue",
       "tab" => "sales",
-      "to" => "2026-11-16"
+      "to" => "2026-11-23"
     }
 
-    assert_patch(view, ~p"/staff/statistics?#{query}")
+    assert_patch(view, ~p"/staff/b/#{branch}/statistics?#{query}")
 
-    assert has_element?(view, "#statistics-granularity option[value=month][selected]")
+    assert has_element?(view, "#statistics-granularity option[value=week][selected]")
     assert has_element?(view, ~s{input[name="from"][value="2026-11-10"]})
-    assert has_element?(view, ~s{input[name="to"][value="2026-11-16"]})
+    assert has_element?(view, ~s{input[name="to"][value="2026-11-23"]})
     assert has_element?(view, "#statistics-chart-revenue [data-series=selected]")
+
+    view |> form("#statistics-filter", %{"period" => "today"}) |> render_change()
+
+    reset_query = %{
+      "compare" => "custom",
+      "compare_from" => "2026-10-10",
+      "compare_to" => "2026-10-23",
+      "period" => "today",
+      "sort" => "revenue",
+      "tab" => "sales"
+    }
+
+    assert_patch(view, ~p"/staff/b/#{branch}/statistics?#{reset_query}")
+
+    refute has_element?(view, "#statistics-chart-step-form")
   end
 
   test "invalid custom period shows an error and can be corrected", %{conn: conn} do

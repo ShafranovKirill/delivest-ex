@@ -39,7 +39,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
     ~H"""
     <section
       id={"statistics-chart-#{@metric}"}
-      class="rounded-box border border-base-300 bg-base-100 p-4"
+      class="min-w-0 rounded-box border border-base-300 bg-base-100 p-4"
     >
       <h2 class="font-semibold">{metric_label(@metric)}</h2>
       <p class="mt-1 text-xs text-base-content/60">
@@ -69,7 +69,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
         <div class="flex w-full gap-1 border-b border-base-300 pb-2">
           <div
             :for={{current, previous} <- @pairs}
-            class={[(@granularity == "month" && "min-w-12") || "min-w-6", "grow basis-0 text-center"]}
+            class={[
+              case @granularity do
+                "day" -> "min-w-6"
+                "week" -> "min-w-20"
+                _ -> "min-w-12"
+              end,
+              "grow basis-0 text-center"
+            ]}
           >
             <div class="relative h-32 border-b border-base-300">
               <div :if={@signed?} class="absolute inset-x-0 top-1/2 border-t border-base-content/30">
@@ -138,11 +145,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
   end
 
   @doc false
-  def buckets(rows, "month") do
+  def buckets(rows, granularity) when granularity in ["week", "month"] do
     rows
-    |> Enum.group_by(&Date.beginning_of_month(&1.date))
-    |> Enum.sort_by(fn {month, _} -> month end)
-    |> Enum.map(fn {_month, days} ->
+    |> Enum.group_by(fn row ->
+      if(granularity == "week",
+        do: Date.beginning_of_week(row.date, :monday),
+        else: Date.beginning_of_month(row.date)
+      )
+    end)
+    |> Enum.sort_by(fn {start, _} -> start end, Date)
+    |> Enum.map(fn {_start, unsorted_days} ->
+      days = Enum.sort_by(unsorted_days, & &1.date, Date)
       revenue = Enum.sum(Enum.map(days, & &1.revenue))
       orders = Enum.sum(Enum.map(days, & &1.orders))
 
@@ -181,8 +194,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
   defp range_label([]), do: "—"
   defp range_label(rows), do: date_label(hd(rows).from) <> " — " <> date_label(List.last(rows).to)
 
+  defp bucket_label(row, "day"), do: Calendar.strftime(row.from, "%d.%m")
   defp bucket_label(row, "month"), do: Calendar.strftime(row.from, "%m.%Y")
-  defp bucket_label(row, _), do: Calendar.strftime(row.from, "%d.%m")
+
+  defp bucket_label(row, "week"),
+    do: Calendar.strftime(row.from, "%d.%m") <> "–" <> Calendar.strftime(row.to, "%d.%m")
 
   defp point_title(row, metric),
     do: date_label(row.from) <> " — " <> date_label(row.to) <> ": " <> value_label(row, metric)

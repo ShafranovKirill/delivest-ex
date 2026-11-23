@@ -13660,3 +13660,15 @@ msgstr "Топ-5 категорий"
 
 msgid "All products"
 msgstr "Все товары"
+
+msgid "Chart grouping"
+msgstr "Группировка графика"
+
+msgid "By day"
+msgstr "По дням"
+
+msgid "By week"
+msgstr "По неделям"
+
+msgid "By month"
+msgstr "По месяцам"
