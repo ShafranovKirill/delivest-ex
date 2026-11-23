@@ -156,7 +156,7 @@ defmodule DelivestWeb.StaffBranchPath do
     case selection_intent(target_path, return_source) do
       {:ok, %{source: source, return_to: return_to}} ->
         "/staff/branches/select?" <>
-          URI.encode_query(%{"modal" => "true", "from" => source, "return_to" => return_to})
+          URI.encode_query(%{"from" => source, "return_to" => return_to})
 
       :error ->
         nil

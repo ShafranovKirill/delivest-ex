@@ -18,19 +18,29 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
       {:ok, lv, html} = live(conn, ~p"/staff/branches/select")
 
       assert html =~ "Select a branch"
+      assert has_element?(lv, "#branch-select-page")
       assert has_element?(lv, "main #staff-page-header h1", "Select a branch")
       assert render(element(lv, "#staff-page-header")) =~ "Select a branch"
-      assert html =~ "North Branch"
-      assert html =~ "Click to activate this branch"
+      assert has_element?(lv, "#branch-select-card-#{branch.id}", "North Branch")
+
+      assert has_element?(
+               lv,
+               "#branch-select-go-#{branch.id}[aria-describedby='branch-select-title-#{branch.id}']",
+               "Go"
+             )
+
+      assert has_element?(lv, "#branch-select-all", "All branches")
+      refute html =~ "Click to activate this branch"
     end
 
     test "shows empty state when staff has no branches", %{conn: conn} do
       staff = insert(:staff)
       conn = init_test_session(conn, %{"staff_id" => staff.id})
 
-      {:ok, _lv, html} = live(conn, ~p"/staff/branches/select")
+      {:ok, lv, html} = live(conn, ~p"/staff/branches/select")
 
       assert html =~ "You do not have access to any active branches"
+      refute has_element?(lv, "#branch-select-all")
     end
 
     test "kitchen staff sees only branches with a working kitchen", %{conn: conn} do
@@ -48,6 +58,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
       {:ok, lv, _html} = live(conn, ~p"/staff/branches/select")
 
       assert has_element?(lv, "#branch-select-kitchen-note")
+      refute has_element?(lv, "#branch-select-all")
+      assert has_element?(lv, "#branch-select-go-#{working.id}")
       assert has_element?(lv, ~s|a[href="/staff/branches/select/#{working.id}"]|)
       refute has_element?(lv, ~s|a[href="/staff/branches/select/#{off.id}"]|)
 
@@ -111,7 +123,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
     end
   end
 
-  test "modal chooser keeps the target until the selected branch is explicit", %{conn: conn} do
+  test "chooser keeps the target until the selected branch is explicit", %{conn: conn} do
     first = insert(:branch, name: "First")
     second = insert(:branch, name: "Second")
     denied = insert(:branch, name: "Denied")
@@ -121,32 +133,28 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => first.id})
     target = "/staff/b/#{first.slug}/products"
     chooser = DelivestWeb.StaffBranchPath.selection_path(target, "/staff/dashboard")
+    refute chooser =~ "modal="
 
     for _ <- 1..2 do
       {:ok, view, _} = live(conn, chooser)
 
+      assert has_element?(view, "#branch-select-page")
+      assert has_element?(view, "#staff-page-header a[href='/staff/dashboard']")
+      refute has_element?(view, "#branch-select-dialog")
+      refute has_element?(view, "#branch-select-all")
+
       assert has_element?(
                view,
-               "#branch-select-dialog[role='dialog'][aria-modal='true'][data-close-event='close_branch_selector']"
+               "#branch-select-go-#{first.id}[href^='/staff/branches/select/#{first.id}?'][href*='from=']"
              )
 
       assert has_element?(
                view,
-               "#branch-select-dialog a[href^='/staff/branches/select/#{first.id}?'][href*='from=']"
+               "#branch-select-go-#{second.id}[href^='/staff/branches/select/#{second.id}?'][href*='from=']"
              )
 
-      assert has_element?(
-               view,
-               "#branch-select-dialog a[href^='/staff/branches/select/#{second.id}?'][href*='from=']"
-             )
-
-      refute has_element?(view, "#branch-select-dialog a[href*='#{denied.id}']")
-      assert has_element?(view, "#branch-select-dialog button[phx-click='close_branch_selector']")
+      refute has_element?(view, "#branch-select-go-#{denied.id}")
     end
-
-    {:ok, view, _} = live(conn, chooser)
-    render_click(view, "close_branch_selector", %{})
-    assert_redirect(view, "/staff/dashboard")
 
     selected =
       get(conn, "/staff/branches/select/#{second.id}?" <> URI.encode_query(%{"from" => target}))
@@ -155,7 +163,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
     assert get_session(selected, :active_branch_id) == second.id
   end
 
-  test "modal chooser rejects an external source and keeps cancel local", %{conn: conn} do
+  test "chooser rejects an external source and keeps Back local", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff)
     insert(:staff_branch, staff: staff, branch: branch)
@@ -165,6 +173,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
       live(conn, "/staff/branches/select?modal=true&from=https%3A%2F%2Fevil.example")
 
     refute has_element?(invalid, "#branch-select-dialog")
+    refute has_element?(invalid, "#staff-page-header a")
+    assert has_element?(invalid, "#branch-select-card-#{branch.id}")
 
     chooser =
       DelivestWeb.StaffBranchPath.selection_path(
@@ -173,12 +183,15 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
       )
 
     {:ok, view, _} = live(conn, chooser)
-    assert has_element?(view, "#branch-select-dialog")
-    render_click(view, "close_branch_selector", %{})
-    assert_redirect(view, "/staff/dashboard")
+    assert has_element?(view, "#staff-page-header a[href='/staff/dashboard']")
+    refute has_element?(view, "#branch-select-dialog")
+
+    legacy = chooser <> "&modal=true"
+    {:ok, old, _} = live(conn, legacy)
+    assert has_element?(old, "#branch-select-go-#{branch.id}[href*='from=']")
   end
 
-  test "modal chooser shows an empty state when no branches are accessible", %{conn: conn} do
+  test "chooser shows an empty state when no branches are accessible", %{conn: conn} do
     staff = insert(:staff)
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
@@ -192,10 +205,62 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
 
     assert has_element?(
              view,
-             "#branch-select-dialog",
+             "#branch-select-page",
              "You do not have access to any active branches"
            )
 
-    refute has_element?(view, "#branch-select-dialog a[href^='/staff/branches/select/']")
+    refute has_element?(view, "#branch-select-page a[href^='/staff/branches/select/']")
+    refute has_element?(view, "#branch-select-all")
+  end
+
+  test "network card appears only for a compatible allowed scope", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["statistics.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    source = "/staff/b/#{branch.slug}/statistics?period=custom&from=2026-11-01&to=2026-11-07"
+    chooser = DelivestWeb.StaffBranchPath.selection_path(source, "/staff/dashboard")
+
+    {:ok, limited, _} = live(conn, chooser)
+    refute has_element?(limited, "#branch-select-all")
+
+    network_staff =
+      insert(:staff,
+        role: insert(:role, permissions: ["statistics.read", "statistics.network"])
+      )
+
+    insert(:staff_branch, staff: network_staff, branch: branch)
+    network_conn = init_test_session(conn, %{"staff_id" => network_staff.id})
+    {:ok, allowed, _} = live(network_conn, chooser)
+    assert has_element?(allowed, "#branch-select-all")
+    assert has_element?(allowed, "#branch-select-all-go[href*='from=']", "Go")
+
+    selected =
+      get(network_conn, "/staff/branches/all?" <> URI.encode_query(%{"from" => source}))
+
+    assert redirected_to(selected) ==
+             "/staff/statistics?from=2026-11-01&period=custom&to=2026-11-07"
+  end
+
+  test "general chooser excludes network card for kitchen and branch creation", %{conn: conn} do
+    branch = insert(:branch)
+    kitchen = insert(:staff, role: build(:role, permissions: ["orders.cook"]))
+    insert(:staff_branch, staff: kitchen, branch: branch)
+    kitchen_conn = init_test_session(conn, %{"staff_id" => kitchen.id})
+    {:ok, kitchen_view, _} = live(kitchen_conn, ~p"/staff/branches/select")
+    refute has_element?(kitchen_view, "#branch-select-all")
+
+    staff = insert(:staff, role: insert(:role, permissions: ["orders.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    staff_conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    chooser =
+      DelivestWeb.StaffBranchPath.selection_path(
+        "/staff/b/#{branch.slug}/orders/new",
+        "/staff/dashboard"
+      )
+
+    {:ok, create_view, _} = live(staff_conn, chooser)
+    refute has_element?(create_view, "#branch-select-all")
   end
 end
