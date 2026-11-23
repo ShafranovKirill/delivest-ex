@@ -285,7 +285,12 @@ defmodule DelivestWeb.StaffSidebar do
 
   defp sidebar_details(assigns) do
     ~H"""
-    <details id={@id} open={@open} phx-mounted={JS.ignore_attributes("open")}>
+    <details
+      id={@id}
+      open={@open}
+      phx-mounted={JS.ignore_attributes("open")}
+      class="[&>summary+ul]:mt-1 [&>ul>li+li]:mt-1"
+    >
       <summary
         id={"#{@id}-toggle"}
         title={@item.label}
