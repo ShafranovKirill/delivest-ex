@@ -511,7 +511,7 @@ defmodule DelivestWeb.StaffNav do
           :analytics,
           gettext("Analytics"),
           "hero-chart-bar",
-          Enum.map([:statistics], find)
+          [find.(:statistics) | analytics_entries(staff, branch)]
         )
       ]
       |> Enum.reject(&is_nil/1)
@@ -814,13 +814,62 @@ defmodule DelivestWeb.StaffNav do
         :statistics,
         if(branch, do: ~p"/staff/b/#{branch}/statistics", else: ~p"/staff/statistics"),
         "hero-chart-bar",
-        gettext("Statistics")
+        gettext("Sales")
       )
+      |> covering([:analytics_channels, :analytics_comparison])
       |> allowed(staff, "statistics.read")
       |> then(fn entry -> if branch || can?(staff, "statistics.network"), do: entry end),
       group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch))
     ]
     |> compact_all()
+  end
+
+  defp analytics_entries(staff, branch) do
+    if can?(staff, "statistics.read") and (branch || can?(staff, "statistics.network")) do
+      branch_ids =
+        if(branch,
+          do: [branch.id],
+          else: Enum.map(Identity.list_branch_for_staff(staff), & &1.id)
+        )
+
+      enabled =
+        Features.enabled_branches_many(
+          ~w(analytics_links analytics_funnel analytics_extended),
+          branch_ids
+        )
+
+      available? = fn feature -> MapSet.size(Map.get(enabled, feature, MapSet.new())) > 0 end
+
+      acquisition =
+        cond do
+          available?.("analytics_links") -> "sources"
+          available?.("analytics_funnel") -> "funnel"
+          is_nil(branch) and Features.enabled?("yandex_costs", :franchise) -> "advertising"
+          true -> nil
+        end
+
+      acquisition_path =
+        case {branch, acquisition} do
+          {_, nil} -> nil
+          {nil, section} -> "/staff/analytics/#{section}"
+          {branch, section} -> "/staff/b/#{branch.slug}/analytics/#{section}"
+        end
+
+      buyers_path =
+        if available?.("analytics_extended") do
+          if branch,
+            do: ~p"/staff/b/#{branch}/analytics/customers",
+            else: ~p"/staff/analytics/customers"
+        end
+
+      [
+        item(:analytics_acquisition, acquisition_path, "hero-megaphone", gettext("Acquisition"))
+        |> covering([:analytics_sources, :analytics_funnel]),
+        item(:analytics_customers, buyers_path, "hero-users", gettext("Buyers"))
+      ]
+    else
+      []
+    end
   end
 
   defp marketing_entries(staff, branch) do

@@ -30,33 +30,45 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     branch.id |> order_fixture(product: product, quantity: 2) |> completed()
 
-    {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
-    assert html =~ "Statistics"
+    {:ok, lv, html} = live(conn, ~p"/staff/b/#{branch}/statistics")
+    assert html =~ "Sales"
     assert html =~ "600 ₽"
-    assert has_element?(lv, "#statistics-overview")
-    assert has_element?(lv, "#statistics-sales-tabs[aria-label]")
-    assert has_element?(lv, "#statistics-tab-overview[aria-current=page]")
-
-    for tab <- ~w(sales products categories) do
-      assert has_element?(lv, "#statistics-tab-#{tab}")
-    end
-
-    for tab <- ~w(orders cancelled refunds) do
-      refute has_element?(lv, "#statistics-tab-#{tab}")
-    end
-
-    refute has_element?(lv, "#main-sidebar #statistics-tab-sales")
-    refute has_element?(lv, "#sidebar-statistics-tab-sales")
-
-    lv |> element("#statistics-tab-sales") |> render_click()
-    assert has_element?(lv, "#statistics-tab-sales[aria-current=page]")
+    assert has_element?(lv, "#statistics-filter option[value=month][selected]")
+    assert has_element?(lv, "#statistics-sales-detail")
+    refute has_element?(lv, "#statistics-sales-tabs")
+    assert has_element?(lv, "#statistics-chart-revenue")
+    assert has_element?(lv, "#statistics-chart-orders")
+    assert has_element?(lv, "#statistics-chart-avg_check")
+    assert has_element?(lv, "#statistics-top-products", "Хинкали")
+    assert has_element?(lv, "#statistics-top-categories", "Горячее")
     assert has_element?(lv, "#statistics-order-source", "Storefront")
 
-    html = lv |> element("#statistics-tab-products") |> render_click()
+    html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=products&period=today")
     assert html =~ "Хинкали"
 
-    html = lv |> element("#statistics-tab-categories") |> render_click()
+    html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=categories&period=today")
     assert html =~ "Горячее"
+  end
+
+  test "monthly chart uses weighted average check and retains signed revenue" do
+    daily = [
+      %{date: ~D[2026-11-01], revenue: 20_000, orders: 1},
+      %{date: ~D[2026-11-02], revenue: -5_000, orders: 2},
+      %{date: ~D[2026-12-01], revenue: 6_000, orders: 1}
+    ]
+
+    assert [november, december] =
+             DelivestWeb.Staff.StatisticsLive.SalesChart.buckets(daily, "month")
+
+    assert november == %{
+             from: ~D[2026-11-01],
+             to: ~D[2026-11-02],
+             revenue: 15_000,
+             orders: 3,
+             avg_check: 5_000
+           }
+
+    assert december.revenue == 6_000
   end
 
   test "the crm split shows only for a branch on a crm", %{conn: conn} do
@@ -81,18 +93,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     {conn, branch} = login(conn, ["statistics.read", "orders.read"])
     order = branch.id |> order_fixture(price: 12_000) |> completed()
 
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=overview&period=today")
     assigns = :sys.get_state(view.pid).socket.assigns
     refute Map.has_key?(assigns, :products)
     refute Map.has_key?(assigns, :by_fulfillment)
     assert has_element?(view, "#statistics-orders-link[href*='tab=orders']")
 
-    for tab <- ~w(orders cancelled refunds) do
-      assert has_element?(view, "#statistics-tab-#{tab}")
-    end
-
-    view |> element("#statistics-tab-orders") |> render_click()
-    assert has_element?(view, "#statistics-tab-orders[aria-current=page]")
+    render_patch(view, ~p"/staff/b/#{branch}/statistics?tab=orders&period=today")
     assert has_element?(view, "#statistics-order-#{order.id}")
     assert has_element?(view, "#statistics-order-rows a[href*='/orders/#{order.id}']")
 
@@ -105,17 +112,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
   test "order drilldown stays hidden without order read permission", %{conn: conn} do
     {conn, branch} = login(conn, ["statistics.read"])
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?period=today")
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=overview&period=today")
     refute has_element?(view, "#statistics-orders-link")
     refute has_element?(view, "#statistics-cancelled-link")
     refute has_element?(view, "#statistics-refunds-link")
 
-    for tab <- ~w(orders cancelled refunds) do
-      refute has_element?(view, "#statistics-tab-#{tab}")
-    end
-
     render_patch(view, ~p"/staff/b/#{branch}/statistics?tab=orders&period=today")
-    assert has_element?(view, "#statistics-overview")
+    assert has_element?(view, "#statistics-sales-detail")
     refute has_element?(view, "#statistics-order-details")
   end
 
@@ -161,7 +164,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
   test "custom period comes from the filter form", %{conn: conn} do
     {conn, branch} = login(conn, ["statistics.read"])
-    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics")
+    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=overview")
 
     lv
     |> form("#statistics-filter", %{"period" => "custom"})
@@ -173,6 +176,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     query = %{
       "from" => from,
+      "granularity" => "day",
       "period" => "custom",
       "sort" => "revenue",
       "tab" => "overview",
@@ -183,35 +187,49 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, ~s{input[name="from"][value="#{from}"]})
   end
 
-  test "network report tabs preserve a custom period when navigating", %{conn: conn} do
+  test "network sales keeps the custom period when changing chart granularity", %{conn: conn} do
     {conn, _branch} = login(conn, ["statistics.read", "statistics.network", "orders.read"])
 
     {:ok, view, _} =
       live(conn, ~p"/staff/statistics?period=custom&from=2026-11-10&to=2026-11-16")
 
-    assert has_element?(view, "#statistics-tab-overview[aria-current=page]")
+    assert has_element?(view, "#statistics-sales-detail")
+    assert has_element?(view, "#statistics-granularity option[value=day][selected]")
 
-    for tab <- ~w(overview sales products categories orders cancelled refunds) do
-      assert has_element?(
-               view,
-               "#statistics-tab-#{tab}[href*='period=custom'][href*='from=2026-11-10'][href*='to=2026-11-16']"
-             )
-    end
+    view
+    |> form("#statistics-filter", %{
+      "period" => "custom",
+      "from" => "2026-11-10",
+      "to" => "2026-11-16",
+      "granularity" => "month"
+    })
+    |> render_change()
 
-    view |> element("#statistics-tab-sales") |> render_click()
-    assert has_element?(view, "#statistics-tab-sales[aria-current=page]")
+    query = %{
+      "from" => "2026-11-10",
+      "granularity" => "month",
+      "period" => "custom",
+      "sort" => "revenue",
+      "tab" => "sales",
+      "to" => "2026-11-16"
+    }
 
-    view |> element("#statistics-tab-cancelled") |> render_click()
-    assert has_element?(view, "#statistics-tab-cancelled[aria-current=page]")
+    assert_patch(view, ~p"/staff/statistics?#{query}")
+
+    assert has_element?(view, "#statistics-granularity option[value=month][selected]")
     assert has_element?(view, ~s{input[name="from"][value="2026-11-10"]})
     assert has_element?(view, ~s{input[name="to"][value="2026-11-16"]})
+    assert has_element?(view, "#statistics-chart-revenue [data-series=selected]")
   end
 
   test "invalid custom period shows an error and can be corrected", %{conn: conn} do
     {conn, branch} = login(conn, ["statistics.read"])
 
     {:ok, lv, _html} =
-      live(conn, ~p"/staff/b/#{branch}/statistics?period=custom&from=bad&to=2026-01-01")
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/statistics?tab=overview&period=custom&from=bad&to=2026-01-01"
+      )
 
     assert has_element?(lv, "#statistics-period-error[role=alert]")
     assert has_element?(lv, ~s{input[name="from"][value=""]})
@@ -312,7 +330,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
       ~p"/staff/b/#{branch}/statistics?tab=sales&period=custom&from=2026-11-10&to=2026-11-16&compare=custom&compare_from=2026-10-01&compare_to=2026-10-07"
     )
 
-    assert has_element?(view, "#statistics-tab-products[href*='compare_from=2026-10-01']")
+    assert has_element?(view, "#statistics-top-products a[href*='compare_from=2026-10-01']")
   end
 
   test "invalid comparison dates are rejected while the selected summary remains available", %{
@@ -326,7 +344,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
           "compare=custom&compare_from=2024-01-01&compare_to=2026-01-01"
         ] do
       {:ok, view, _} =
-        live(conn, "/staff/b/#{branch.slug}/statistics?period=today&" <> comparison)
+        live(conn, "/staff/b/#{branch.slug}/statistics?tab=overview&period=today&" <> comparison)
 
       assert has_element?(view, "#statistics-comparison-error")
       refute has_element?(view, "#statistics-comparison-periods")
@@ -368,7 +386,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     second.id |> order_fixture(price: 20_000) |> completed()
     other.id |> order_fixture(price: 90_000) |> completed()
 
-    {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
+    {:ok, view, _} = live(conn, ~p"/staff/statistics?tab=overview&period=today")
 
     assert has_element?(view, "#statistics-overview-branches")
     refute has_element?(view, "#statistics-network-branch")
@@ -488,7 +506,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert {:ok, _} =
              Delivest.Features.configure("analytics_franchise", :franchise, true, actor: "host")
 
-    {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
+    {:ok, view, _} = live(conn, ~p"/staff/statistics?tab=overview&period=today")
     send(view.pid, :kitchen_tick)
     send(view.pid, {:branch_orders_changed, branch.id})
     send(view.pid, {:kitchen_presence, branch.id})

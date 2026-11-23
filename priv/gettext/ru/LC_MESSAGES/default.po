@@ -13636,3 +13636,27 @@ msgid_plural "%{count} more items"
 msgstr[0] "Ещё %{count} позиция"
 msgstr[1] "Ещё %{count} позиции"
 msgstr[2] "Ещё %{count} позиций"
+
+msgid "Acquisition"
+msgstr "Привлечение"
+
+msgid "Granularity"
+msgstr "Шаг графика"
+
+msgid "Chart data"
+msgstr "Данные графика"
+
+msgid "Compare periods"
+msgstr "Сравнить периоды"
+
+msgid "Compare branches"
+msgstr "Сравнить филиалы"
+
+msgid "Top 5 products"
+msgstr "Топ-5 товаров"
+
+msgid "Top 5 categories"
+msgstr "Топ-5 категорий"
+
+msgid "All products"
+msgstr "Все товары"

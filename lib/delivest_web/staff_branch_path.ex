@@ -27,6 +27,7 @@ defmodule DelivestWeb.StaffBranchPath do
     "integrations" => "integrations"
   }
   @data_settings_paths ~w(/staff/settings/data-transfer /staff/settings/data-system)
+  @analytics_routes ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers analytics/comparison analytics/advertising)
   @creation_routes ~w(
     orders/new products/new products/tags/new categories/new promotions/new promotions/new/full
     promotions/new/first-order promotions/sale stocks/new
@@ -35,7 +36,8 @@ defmodule DelivestWeb.StaffBranchPath do
     "products" => ~w(search is_active page_size order_by order_directions[]),
     "orders" =>
       ~w(status search period problem sort date_from date_to receiving payment source page_size),
-    "statistics" => ~w(tab period from to channel sort compare compare_from compare_to),
+    "statistics" =>
+      ~w(tab period from to channel sort compare compare_from compare_to granularity),
     "analytics/channels" => ~w(period from to channel page),
     "analytics/sources" => ~w(period from to channel page),
     "analytics/funnel" => ~w(period from to channel page),
@@ -89,8 +91,8 @@ defmodule DelivestWeb.StaffBranchPath do
           URI.parse(return_source).path == "/staff/settings" ->
         settings_source_path(return_source)
 
-      path == "/staff/analytics/comparison" ->
-        comparison_period_path(path, return_source)
+      analytics_target?(path) ->
+        analytics_period_path(path, return_source)
 
       parsed_path in @data_settings_paths ->
         case scope_branch do
@@ -113,19 +115,42 @@ defmodule DelivestWeb.StaffBranchPath do
     end
   end
 
-  defp comparison_period_path(path, source) when is_binary(source) do
+  defp analytics_target?(path) when is_binary(path) do
+    case classify(path) do
+      {:ok, {:branch, _, route}, _} -> route in @analytics_routes
+      {:ok, {:network, route}, _} -> route in @analytics_routes
+      _ -> false
+    end
+  end
+
+  defp analytics_target?(_), do: false
+
+  defp analytics_period_path(path, source) when is_binary(source) do
     case classify(source) do
       {:ok, {:branch, _slug, route}, query} ->
-        if route in ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers),
-          do: path <> encode_query(query, ~w(period from to)),
-          else: path
+        if route in @analytics_routes, do: merge_period(path, query), else: path
+
+      {:ok, {:network, route}, query} ->
+        if route in @analytics_routes, do: merge_period(path, query), else: path
 
       _ ->
         path
     end
   end
 
-  defp comparison_period_path(path, _source), do: path
+  defp analytics_period_path(path, _source), do: path
+
+  defp merge_period(path, source_query) do
+    uri = URI.parse(path)
+
+    query =
+      Map.merge(Map.take(source_query, ~w(period from to)), URI.decode_query(uri.query || ""))
+
+    URI.to_string(%{
+      uri
+      | query: if(map_size(query) == 0, do: nil, else: URI.encode_query(query))
+    })
+  end
 
   def selection_path(target_path, return_source) do
     case selection_intent(target_path, return_source) do

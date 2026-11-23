@@ -8,6 +8,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
   import DelivestWeb.Staff.StatsComponents
   import DelivestWeb.Staff.StatisticsLive.ReportComponents
+  import DelivestWeb.Staff.StatisticsLive.SalesChart
 
   on_mount {DelivestWeb.Hooks.Permission, "statistics.read"}
 
@@ -150,10 +151,16 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
       true ->
         visible_tabs = visible_tabs(socket)
-        tab = if params["tab"] in visible_tabs, do: params["tab"], else: List.first(visible_tabs)
+
+        tab =
+          if params["tab"] in visible_tabs,
+            do: params["tab"],
+            else: if(section, do: List.first(visible_tabs), else: "sales")
 
         preset =
-          if params["period"] in Analytics.presets(), do: params["period"], else: "today"
+          if params["period"] in Analytics.presets(),
+            do: params["period"],
+            else: if(tab == "sales", do: "month", else: "today")
 
         {period, period_error} =
           if preset == "custom" do
@@ -194,10 +201,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
            comparison_from: safe_date_param(params["compare_from"]),
            comparison_to: safe_date_param(params["compare_to"]),
            page_title:
-             if(section,
-               do: tab_label(if(section == "comparison", do: "franchise", else: section)),
-               else: gettext("Statistics")
-             ),
+             cond do
+               section -> tab_label(if(section == "comparison", do: "franchise", else: section))
+               tab == "sales" -> gettext("Sales")
+               true -> gettext("Statistics")
+             end,
            preset: preset,
            period: period,
            period_error: period_error,
@@ -214,6 +222,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
                "link_search" => params["link_search"]
              }),
            sort: sort,
+           granularity: granularity(params["granularity"], period),
            visible_tabs: visible_tabs,
            report_tabs: @report_tabs,
            link_options:
@@ -240,8 +249,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     query =
       %{
         "tab" => socket.assigns.tab,
-        "period" => params["period"],
+        "period" => params["period"] || socket.assigns.preset,
         "sort" => to_string(socket.assigns.sort),
+        "granularity" => params["granularity"] || socket.assigns.granularity,
         "compare" => socket.assigns.comparison_mode,
         "compare_from" => socket.assigns.comparison_from,
         "compare_to" => socket.assigns.comparison_to,
@@ -251,7 +261,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "link_search" => params["link_search"] || socket.assigns.report_filters["link_search"]
       }
       |> compact_query()
-      |> maybe_put_custom(params, socket.assigns.period)
+      |> maybe_put_custom(
+        Map.put(params, "period", params["period"] || socket.assigns.preset),
+        socket.assigns.period
+      )
 
     {:noreply, push_patch(socket, to: statistics_path(socket.assigns, query))}
   end
@@ -373,8 +386,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     pending? =
       (socket.assigns.tab in @report_tabs and
          Map.get(socket.assigns.report, :refresh_pending, false)) or
-        ((socket.assigns.tab == "overview" and
-            socket.assigns[:overview]) && socket.assigns.overview.state == :partial)
+        ((socket.assigns.tab in ~w(overview sales) and socket.assigns[:overview]) &&
+           (socket.assigns.overview.state == :partial or
+              match?(%{state: :partial}, socket.assigns.overview.comparison)))
 
     socket = if pending?, do: socket, else: assign(socket, refresh_attempts: 0)
     exhausted? = pending? and socket.assigns.refresh_attempts >= 5
@@ -512,13 +526,19 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
            Overview.details(assigns.current_staff, scope, assigns.period, :payment),
          {:ok, sources} <- Overview.details(assigns.current_staff, scope, assigns.period, :source),
          {:ok, destinations} <-
-           Overview.details(assigns.current_staff, scope, assigns.period, :destination) do
+           Overview.details(assigns.current_staff, scope, assigns.period, :destination),
+         {:ok, products} <-
+           Overview.details(assigns.current_staff, scope, assigns.period, :products),
+         {:ok, categories} <-
+           Overview.details(assigns.current_staff, scope, assigns.period, :categories) do
       assign(socket,
         overview: overview,
         by_fulfillment: fulfillment,
         by_payment: payment,
         by_source: sources,
-        by_destination: destinations
+        by_destination: destinations,
+        top_products: Enum.take(sort_details(products, :revenue), 5),
+        top_categories: Enum.take(categories, 5)
       )
       |> schedule_report_refresh()
     else
@@ -648,6 +668,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     end)
   end
 
+  defp report_available?(assigns, tab) do
+    feature = Reports.feature_for_tab(tab)
+
+    if assigns.current_branch do
+      Features.enabled?(feature, {:branch, assigns.current_branch.id})
+    else
+      ids = Enum.map(assigns.staff_branches, & &1.id)
+      MapSet.size(Features.enabled_branches(feature, ids)) > 0
+    end
+  end
+
   defp sanitize_branch_filter(params) do
     case Map.fetch(params, "branch_id") do
       :error -> params
@@ -682,6 +713,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "tab" => tab,
         "period" => assigns.preset,
         "sort" => to_string(assigns.sort),
+        "granularity" => assigns.granularity,
         "compare" => assigns.comparison_mode,
         "compare_from" => assigns.comparison_from,
         "compare_to" => assigns.comparison_to,
@@ -754,6 +786,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
        do: delta(Map.fetch!(current, key), Map.fetch!(previous, key))
 
   defp comparison_delta(_, _), do: nil
+
+  defp granularity(value, _period) when value in ~w(day month), do: value
+  defp granularity(_, {from, to}), do: if(Date.diff(to, from) > 45, do: "month", else: "day")
 
   defp period_query(assigns) do
     {from, to} = assigns.period
@@ -854,7 +889,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           )}
         </p>
         <p
-          :if={@tab == "overview" and is_nil(@period_error) and assigns[:overview]}
+          :if={@tab in ~w(overview sales) and is_nil(@period_error) and assigns[:overview]}
           class="text-xs text-base-content/60"
         >
           {gettext("Updated at %{time}",
@@ -877,6 +912,16 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             <option :for={preset <- Analytics.presets()} value={preset} selected={preset == @preset}>
               {preset_label(preset)}
             </option>
+          </select>
+          <select
+            :if={@tab == "sales"}
+            id="statistics-granularity"
+            name="granularity"
+            aria-label={gettext("Granularity")}
+            class="select select-bordered select-sm w-28"
+          >
+            <option value="day" selected={@granularity == "day"}>{gettext("Day")}</option>
+            <option value="month" selected={@granularity == "month"}>{gettext("Month")}</option>
           </select>
           <%= if @preset == "custom" do %>
             <input
@@ -922,7 +967,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           type="button"
           phx-click="open_comparison"
           class="btn btn-sm btn-outline"
-        >{gettext("Compare")}</button>
+        >{gettext("Compare periods")}</button>
       </div>
     </div>
     """
@@ -935,29 +980,27 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     ~H"""
     <div class="space-y-3">
       <nav
-        :if={is_nil(@section) and @visible_tabs != []}
-        id="statistics-sales-tabs"
-        aria-label={gettext("Statistics reports")}
-        class="overflow-x-auto whitespace-nowrap"
-      >
-        <div role="tablist" class="tabs tabs-sm">
-          <.link
-            :for={tab <- @visible_tabs}
-            id={"statistics-tab-#{tab}"}
-            patch={tab_path(assigns, tab)}
-            role="tab"
-            class={["tab", @tab == tab && "tab-active"]}
-            aria-current={@tab == tab && "page"}
-          >{tab_label(tab)}</.link>
-        </div>
-      </nav>
-      <nav
-        :if={@section == "sources" and Identity.can?(@current_staff, "statistics.network")}
+        :if={@section in ~w(sources funnel)}
         id="sources-advertising-tabs"
         class="tabs tabs-sm"
       >
-        <span class="tab tab-active">{gettext("Sources")}</span>
         <.link
+          :if={report_available?(assigns, "sources")}
+          navigate={report_path(assigns, "sources")}
+          class={["tab", @section == "sources" && "tab-active"]}
+          aria-current={@section == "sources" && "page"}
+        >{gettext("Sources")}</.link>
+        <.link
+          :if={report_available?(assigns, "funnel")}
+          navigate={report_path(assigns, "funnel")}
+          class={["tab", @section == "funnel" && "tab-active"]}
+          aria-current={@section == "funnel" && "page"}
+        >{gettext("Order funnel")}</.link>
+        <.link
+          :if={
+            Identity.can?(@current_staff, "statistics.network") and
+              Features.enabled?("yandex_costs", :franchise)
+          }
           navigate={"/staff/analytics/advertising?" <> URI.encode_query(%{"period" => @preset, "from" => elem(@period, 0), "to" => elem(@period, 1)})}
           class="tab"
         >{gettext("Campaigns")}</.link>
@@ -1283,49 +1326,152 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         id="statistics-sales-detail"
         class="space-y-4"
       >
-        <.link patch={drilldown_path(assigns, "overview")} class="btn btn-sm btn-ghost">{gettext(
-          "Back to statistics"
-        )}</.link>
+        <p
+          :if={@overview.state == :partial}
+          id="statistics-partial"
+          class="rounded-box border border-warning/50 bg-warning/10 p-4 text-sm"
+        >
+          {gettext("Some daily totals are updating. The latest published figures are shown.")}
+        </p>
+        <p
+          :if={@overview.state == :empty}
+          id="statistics-no-data"
+          class="rounded-box border border-base-300 bg-base-100 p-4 text-sm"
+        >
+          {gettext("No completed orders in this period")}
+        </p>
+        <button
+          :if={@refresh_retry?}
+          id="statistics-sales-retry"
+          type="button"
+          phx-click="refresh_report"
+          class="btn btn-sm btn-outline"
+        >{gettext("Try again")}</button>
         <p class="text-sm text-base-content/70">
           {gettext(
             "Completed orders by local creation date. Successful refunds reduce sales for the original order date."
           )}
         </p>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <.stat_card icon="hero-banknotes" label={gettext("Sales after refunds")}>
+          <.stat_card
+            icon="hero-banknotes"
+            label={gettext("Sales after refunds")}
+            delta={comparison_delta(@overview, :revenue)}
+          >
             {OrderHelpers.money(@overview.summary.revenue)}
           </.stat_card>
-          <.stat_card icon="hero-shopping-bag" label={gettext("Completed orders")}>
+          <.stat_card
+            icon="hero-shopping-bag"
+            label={gettext("Orders")}
+            delta={comparison_delta(@overview, :orders_count)}
+          >
             {@overview.summary.orders_count}
           </.stat_card>
-          <.stat_card icon="hero-receipt-percent" label={gettext("Average check")}>
+          <.stat_card
+            icon="hero-receipt-percent"
+            label={gettext("Average check")}
+            delta={comparison_delta(@overview, :avg_check)}
+          >
             {OrderHelpers.money(@overview.summary.avg_check)}
           </.stat_card>
         </div>
+        <p
+          :if={(@compare? and @overview.comparison) && @overview.comparison.state == :ready}
+          id="statistics-sales-comparison-values"
+          class="text-sm text-base-content/70"
+        >
+          {gettext("Comparison period")}: {format_period(@overview.comparison.period)} · {gettext(
+            "Sales after refunds"
+          )}: {OrderHelpers.money(@overview.comparison.summary.revenue)} · {gettext("Orders")}: {@overview.comparison.summary.orders_count} · {gettext(
+            "Average check"
+          )}: {OrderHelpers.money(@overview.comparison.summary.avg_check)}
+        </p>
+        <p
+          :if={(@compare? and @overview.comparison) && @overview.comparison.state == :partial}
+          id="statistics-comparison-partial"
+          class="text-sm text-warning"
+        >
+          {gettext("Some daily totals are updating. The latest published figures are shown.")}
+        </p>
+        <p
+          :if={
+            (@compare? and @overview.comparison) && @overview.comparison.state == :ready &&
+              @overview.comparison.summary.orders_count == 0
+          }
+          class="text-sm text-base-content/60"
+        >
+          {gettext("The comparison period has no completed orders; percentage change is unavailable.")}
+        </p>
+        <div
+          id="statistics-sales-charts"
+          class={["grid gap-3", @granularity == "month" && "xl:grid-cols-3"]}
+        >
+          <.chart
+            :for={metric <- [:revenue, :orders, :avg_check]}
+            daily={@overview.daily}
+            comparison={
+              if(@compare? && @overview.comparison && @overview.comparison.state == :ready,
+                do: @overview.comparison
+              )
+            }
+            granularity={@granularity}
+            metric={metric}
+          />
+        </div>
+        <div class="grid gap-3 md:grid-cols-2">
+          <section
+            id="statistics-top-products"
+            class="rounded-box border border-base-300 bg-base-100 p-4"
+          >
+            <h2 class="font-semibold">{gettext("Top 5 products")}</h2>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Product amounts are before refunds; order refunds are shown separately in the sales total."
+              )}
+            </p>
+            <div :for={row <- @top_products} class="mt-2 flex justify-between gap-3 text-sm">
+              <span>{row.title}</span><span class="tabular-nums">{row.quantity} · {OrderHelpers.money(
+                row.revenue
+              )}</span>
+            </div>
+            <.link patch={tab_path(assigns, "products")} class="link link-primary text-sm">{gettext(
+              "All products"
+            )}</.link>
+          </section>
+          <section
+            id="statistics-top-categories"
+            class="rounded-box border border-base-300 bg-base-100 p-4"
+          >
+            <h2 class="font-semibold">{gettext("Top 5 categories")}</h2>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Category amounts are before refunds; order refunds are shown separately in the sales total."
+              )}
+            </p>
+            <div :for={row <- @top_categories} class="mt-2 flex justify-between gap-3 text-sm">
+              <span>{row.title || gettext("Without category")}</span><span class="tabular-nums">{row.quantity} · {OrderHelpers.money(
+                row.revenue
+              )}</span>
+            </div>
+            <.link patch={tab_path(assigns, "categories")} class="link link-primary text-sm">{gettext(
+              "All categories"
+            )}</.link>
+          </section>
+        </div>
         <nav class="flex flex-wrap gap-2" aria-label={gettext("Sales details")}>
           <.link
-            id="statistics-detail-products"
-            patch={tab_path(assigns, "products")}
+            :if={"channels" in @overview.visibility.reports}
+            navigate={report_path(assigns, "channels")}
             class="btn btn-sm btn-outline"
-          >{gettext("Products")}</.link>
-          <.link
-            id="statistics-detail-categories"
-            patch={tab_path(assigns, "categories")}
-            class="btn btn-sm btn-outline"
-          >{gettext("Categories")}</.link>
-          <.link
-            :for={report <- @overview.visibility.reports}
-            navigate={report_path(assigns, report)}
-            class="btn btn-sm btn-outline"
-          >{tab_label(report)}</.link>
+          >{tab_label("channels")}</.link>
           <.link
             :if={
               Identity.can?(@current_staff, "statistics.network") and
-                Features.enabled?("yandex_costs", :franchise)
+                Features.enabled?("analytics_franchise", :franchise)
             }
-            navigate={"/staff/analytics/advertising?" <> Plug.Conn.Query.encode(period_query(assigns))}
+            navigate={report_path(assigns, "comparison")}
             class="btn btn-sm btn-outline"
-          >{gettext("Advertising attribution")}</.link>
+          >{gettext("Compare branches")}</.link>
         </nav>
         <div class="grid gap-3 md:grid-cols-2">
           <section
