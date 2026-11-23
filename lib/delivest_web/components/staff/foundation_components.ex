@@ -34,15 +34,16 @@ defmodule DelivestWeb.Staff.FoundationComponents do
     <nav
       id={@id}
       aria-label={gettext("Page sections")}
-      class="foundation-section-nav flex gap-2 overflow-x-auto border-b border-base-300"
+      class="foundation-section-nav tabs tabs-box max-w-full flex-nowrap overflow-x-auto whitespace-nowrap"
     >
       <.link
         :for={item <- @items}
+        id={item[:link_id]}
         patch={item.path}
         aria-current={@active == item.id && "page"}
         class={[
-          "shrink-0 px-3 py-2 text-sm",
-          @active == item.id && "border-b-2 border-primary font-semibold"
+          "tab shrink-0",
+          @active == item.id && "tab-active"
         ]}
       >{item.label}</.link>
     </nav>
@@ -245,6 +246,36 @@ defmodule DelivestWeb.Staff.FoundationComponents do
   end
 
   attr :id, :string, required: true
+  attr :page_size_id, :string, default: nil
+  attr :count_label, :string, required: true
+  attr :page, :map, required: true
+  attr :path_fn, :any, required: true
+
+  def pagination_footer(assigns) do
+    page = assigns.page
+
+    assigns =
+      assign(assigns, :meta, %Flop.Meta{
+        current_page: page.page,
+        page_size: page.page_size,
+        total_pages: page.pages,
+        total_count: page.total
+      })
+
+    ~H"""
+    <div id={@id}>
+      <p class="text-sm text-base-content/70">{@count_label}</p>
+      <.pagination
+        id={@page_size_id || "#{@id}-page-size"}
+        meta={@meta}
+        path_fn={@path_fn}
+        page_sizes={[25, 50, 100]}
+      />
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
   attr :title, :string, required: true
   attr :description, :string, default: nil
   slot :inner_block, required: true
@@ -256,6 +287,34 @@ defmodule DelivestWeb.Staff.FoundationComponents do
       <p :if={@description} class="text-sm text-base-content/70">{@description}</p>
       <div class="mt-4 space-y-4">{render_slot(@inner_block)}</div>
     </section>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :patch, :string, default: nil
+  attr :navigate, :string, default: nil
+  attr :save_action, :string, default: nil
+  attr :save_label, :string, default: nil
+  attr :cancel_label, :string, default: nil
+  attr :readonly, :boolean, default: false
+
+  def editor_actions(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-base-200 bg-base-100 p-6"
+    >
+      <.link patch={@patch} navigate={@navigate} class="btn btn-ghost">
+        {@cancel_label || gettext("Cancel")}
+      </.link>
+      <button
+        :if={!@readonly}
+        type="submit"
+        class="btn btn-primary"
+        data-staff-save={@save_action}
+        phx-disable-with={gettext("Saving...")}
+      >{@save_label || gettext("Save")}</button>
+    </div>
     """
   end
 
@@ -350,6 +409,7 @@ defmodule DelivestWeb.Staff.FoundationComponents do
   attr :id, :string, required: true
   attr :label, :string, required: true
   attr :tone, :atom, default: :neutral
+  attr :class, :any, default: nil
 
   def status_badge(assigns) do
     ~H"""
@@ -358,8 +418,11 @@ defmodule DelivestWeb.Staff.FoundationComponents do
       class={[
         "badge",
         @tone == :success && "badge-success",
+        @tone == :info && "badge-info",
         @tone == :warning && "badge-warning",
-        @tone == :error && "badge-error"
+        @tone == :error && "badge-error",
+        @tone == :muted && "badge-ghost text-base-content/60",
+        @class
       ]}
     >{@label}</span>
     """
@@ -520,8 +583,15 @@ defmodule DelivestWeb.Staff.FoundationComponents do
     <div
       id={@id}
       role={if @kind == :error, do: "alert", else: "status"}
-      class="rounded-box border border-base-300 p-6 text-center"
+      class={[
+        "rounded-box border p-6 text-center",
+        @kind == :error && "alert alert-error border-error",
+        @kind == :loading &&
+          "flex items-center justify-center gap-2 border-base-300 bg-base-200 text-base-content/70",
+        @kind not in [:error, :loading] && "border-base-300"
+      ]}
     >
+      <span :if={@kind == :loading} class="loading loading-spinner loading-sm" aria-hidden="true"></span>
       {@title}
     </div>
     """
@@ -586,7 +656,7 @@ defmodule DelivestWeb.Staff.FoundationComponents do
               name="q"
               value={@query}
               phx-debounce="300"
-              class="input input-bordered w-full"
+              class="input w-full"
             />
           </form>
           <ul>

@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   alias Delivest.Identity
   alias Delivest.Identity.Client
   alias DelivestWeb.Staff.ClientLive.ClientFormComponent
-  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
+  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1, status_badge: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "clients.read"}
 
@@ -318,15 +318,32 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
         <:col :let={{_id, client}} label={gettext("Status")} sort="status">
           <%= case client.status do %>
             <% :active -> %>
-              <span class="badge badge-success badge-sm whitespace-nowrap">{gettext("Active")}</span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={gettext("Active")}
+                tone={:success}
+                class="badge-sm whitespace-nowrap"
+              />
             <% :guest -> %>
-              <span class="badge badge-info badge-sm whitespace-nowrap">{gettext("Guest")}</span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={gettext("Guest")}
+                tone={:info}
+                class="badge-sm whitespace-nowrap"
+              />
             <% :blocked -> %>
-              <span class="badge badge-error badge-sm text-error-content whitespace-nowrap">
-                {gettext("Blocked")}
-              </span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={gettext("Blocked")}
+                tone={:error}
+                class="badge-sm whitespace-nowrap"
+              />
             <% _ -> %>
-              <span class="badge badge-ghost badge-sm">{client.status}</span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={to_string(client.status)}
+                class="badge-sm badge-ghost"
+              />
           <% end %>
         </:col>
 

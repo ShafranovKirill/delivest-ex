@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.ReceiptLive.Index do
   use DelivestWeb, :live_view
-  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [filter_bar: 1, pagination_footer: 1, section_nav: 1, status_badge: 1]
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.Receipt
@@ -153,7 +155,12 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
             <span class="tabular-nums">{Delivest.Money.format(receipt.amount)}</span>
           </:col>
           <:col :let={{receipt, _number}} label={gettext("Status")}>
-            <span class={["badge badge-sm", badge(receipt.status)]}>{status(receipt.status)}</span>
+            <.status_badge
+              id={"receipt-status-#{receipt.id}"}
+              label={status(receipt.status)}
+              tone={status_tone(receipt.status)}
+              class="badge-sm whitespace-nowrap"
+            />
             <a
               :if={url = Receipt.ofd_url(receipt)}
               href={url}
@@ -172,14 +179,12 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
             </span>
           </:col>
         </.table>
-        <p class="px-3 pt-3 text-sm text-base-content/70">
-          {gettext("%{count} receipts", count: @pagination.total)}
-        </p>
-        <.pagination
-          id="receipts-page-size"
-          meta={pagination_meta(@pagination)}
+        <.pagination_footer
+          id="receipts-footer"
+          page_size_id="receipts-page-size"
+          count_label={gettext("%{count} receipts", count: @pagination.total)}
+          page={@pagination}
           path_fn={fn overrides -> receipt_path(assigns, Map.merge(@query, overrides)) end}
-          page_sizes={[25, 50, 100]}
         />
       </.card>
     </div>
@@ -191,13 +196,18 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
     ~p"/staff/b/#{assigns.current_branch}/finance/receipts?#{params}"
   end
 
-  defp pagination_meta(page) do
-    %Flop.Meta{
-      current_page: page.page,
-      page_size: page.page_size,
-      total_pages: page.pages,
-      total_count: page.total
-    }
+  defp status_tabs(assigns) do
+    Enum.map(assigns.filters, fn {value, label} ->
+      id = to_string(value || "all")
+      query = Map.merge(assigns.query, %{"status" => value && to_string(value), "page" => 1})
+
+      %{
+        id: id,
+        link_id: "receipts-filter-#{id}",
+        label: label,
+        path: receipt_path(assigns, query)
+      }
+    end)
   end
 
   defp filters,
@@ -219,7 +229,7 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
   defp status(:done), do: gettext("Issued")
   defp status(:fail), do: gettext("Failed")
 
-  defp badge(:done), do: "badge-success"
-  defp badge(:fail), do: "badge-error"
-  defp badge(_status), do: "badge-warning"
+  defp status_tone(:done), do: :success
+  defp status_tone(:fail), do: :error
+  defp status_tone(_status), do: :warning
 end

@@ -1,7 +1,8 @@
 defmodule DelivestWeb.Staff.FinanceLive.Transactions do
   use DelivestWeb, :live_view
 
-  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [filter_bar: 1, pagination_footer: 1, status_badge: 1]
 
   alias Delivest.{Identity, Payments}
 
@@ -127,7 +128,12 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
           <span class="tabular-nums">{Delivest.Money.format(payment.amount)}</span>
         </:col>
         <:col :let={{payment, _number}} key="status" label={gettext("Status")}>
-          <span class={["badge badge-sm", status_tone(payment.status)]}>{status(payment.status)}</span>
+          <.status_badge
+            id={"payment-status-#{payment.id}"}
+            label={status(payment.status)}
+            tone={status_tone(payment.status)}
+            class="badge-sm whitespace-nowrap"
+          />
         </:col>
         <:col :let={{payment, _number}} key="method" label={gettext("Method")} secondary>
           {method(payment.method)}
@@ -145,14 +151,12 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
         </:col>
       </.table>
 
-      <p class="text-sm text-base-content/70">
-        {gettext("%{count} payments", count: @pagination.total)}
-      </p>
-      <.pagination
-        id="transactions-page-size"
-        meta={pagination_meta(@pagination)}
+      <.pagination_footer
+        id="transactions-footer"
+        page_size_id="transactions-page-size"
+        count_label={gettext("%{count} payments", count: @pagination.total)}
+        page={@pagination}
         path_fn={fn overrides -> transactions_path(assigns, Map.merge(@query, overrides)) end}
-        page_sizes={[25, 50, 100]}
       />
     </div>
     """
@@ -163,24 +167,15 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
     ~p"/staff/b/#{assigns.current_branch}/finance/transactions?#{params}"
   end
 
-  defp pagination_meta(page) do
-    %Flop.Meta{
-      current_page: page.page,
-      page_size: page.page_size,
-      total_pages: page.pages,
-      total_count: page.total
-    }
-  end
-
   defp status(:pending), do: gettext("Pending")
   defp status(:authorized), do: gettext("Authorized")
   defp status(:paid), do: gettext("Paid")
   defp status(:failed), do: gettext("Failed")
   defp status(:cancelled), do: gettext("Cancelled")
 
-  defp status_tone(:paid), do: "badge-success"
-  defp status_tone(status) when status in [:failed, :cancelled], do: "badge-error"
-  defp status_tone(_), do: "badge-warning"
+  defp status_tone(:paid), do: :success
+  defp status_tone(status) when status in [:failed, :cancelled], do: :error
+  defp status_tone(_), do: :warning
 
   defp method(:cash), do: gettext("Cash")
   defp method(:card), do: gettext("Card")

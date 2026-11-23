@@ -17,6 +17,83 @@ defmodule DelivestWeb.Staff.FoundationComponentsTest do
     assert html =~ ~s(<option value="100">100</option>)
   end
 
+  test "shared footer keeps page links and the page size form ID" do
+    document =
+      render_component(&FoundationComponents.pagination_footer/1,
+        id: "payments-footer",
+        page_size_id: "payments-page-size",
+        count_label: "42 payments",
+        page: %{page_size: 25, page: 2, pages: 3, total: 42},
+        path_fn: fn %{"page" => page} -> "/payments?status=paid&page=#{page}" end
+      )
+      |> LazyHTML.from_fragment()
+
+    assert document
+           |> LazyHTML.query("#payments-page-size option[value='25'][selected]")
+           |> LazyHTML.to_tree()
+           |> Enum.any?()
+
+    assert document
+           |> LazyHTML.query("a[href='/payments?status=paid&page=1']")
+           |> LazyHTML.to_tree()
+           |> Enum.any?()
+
+    assert document
+           |> LazyHTML.query("a[href='/payments?status=paid&page=3']")
+           |> LazyHTML.to_tree()
+           |> Enum.any?()
+  end
+
+  test "shared form actions preserve submit and cancel behavior" do
+    document =
+      render_component(&FoundationComponents.editor_actions/1,
+        id: "staff-actions",
+        navigate: "/staff",
+        save_action: "edit"
+      )
+      |> LazyHTML.from_fragment()
+
+    assert document
+           |> LazyHTML.query("#staff-actions a[href='/staff'][data-phx-link='redirect']")
+           |> LazyHTML.to_tree()
+           |> Enum.any?()
+
+    assert document
+           |> LazyHTML.query(
+             "#staff-actions button[type='submit'][data-staff-save='edit'][phx-disable-with]"
+           )
+           |> LazyHTML.to_tree()
+           |> Enum.any?()
+  end
+
+  test "state notices expose loading and error semantics" do
+    loading =
+      render_component(&FoundationComponents.state_notice/1,
+        id: "loading",
+        kind: :loading,
+        title: "Loading"
+      )
+
+    error =
+      render_component(&FoundationComponents.state_notice/1,
+        id: "error",
+        kind: :error,
+        title: "Failed"
+      )
+
+    assert loading
+           |> LazyHTML.from_fragment()
+           |> LazyHTML.query("#loading[role='status'] .loading[aria-hidden='true']")
+           |> LazyHTML.to_tree()
+           |> Enum.any?()
+
+    assert error
+           |> LazyHTML.from_fragment()
+           |> LazyHTML.query("#error[role='alert']")
+           |> LazyHTML.to_tree()
+           |> Enum.any?()
+  end
+
   test "event controls accept a LiveComponent target" do
     filter =
       render_component(&FoundationComponents.filter_bar/1,

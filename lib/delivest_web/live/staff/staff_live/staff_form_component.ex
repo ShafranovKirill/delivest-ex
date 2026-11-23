@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
   import Ecto.Changeset
 
   import DelivestWeb.Staff.FoundationComponents,
-    only: [form_section: 1, error_summary: 1, changeset_errors: 1]
+    only: [form_section: 1, error_summary: 1, changeset_errors: 1, editor_actions: 1]
 
   @impl true
   def update(assigns, socket) do
@@ -265,17 +265,11 @@ defmodule DelivestWeb.Staff.StaffLive.StaffFormComponent do
           </.form_section>
         </div>
 
-        <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
-          <.link navigate={@patch} class="btn btn-ghost">{gettext("Cancel")}</.link>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            data-staff-save={if @action == :new, do: "create", else: "edit"}
-            phx-disable-with={gettext("Saving...")}
-          >
-            {gettext("Save")}
-          </button>
-        </div>
+        <.editor_actions
+          id="staff-form-actions"
+          navigate={@patch}
+          save_action={if @action == :new, do: "create", else: "edit"}
+        />
       </.form>
     </div>
     """
