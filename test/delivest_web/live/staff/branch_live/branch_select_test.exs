@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Features
   alias Delivest.Repo
 
   describe "branch selection page" do
@@ -262,5 +263,60 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
 
     {:ok, create_view, _} = live(staff_conn, chooser)
     refute has_element?(create_view, "#branch-select-all")
+  end
+
+  test "network analytics chooser filters branches by report feature and keeps both destinations",
+       %{
+         conn: conn
+       } do
+    enabled = insert(:branch)
+    disabled = insert(:branch)
+
+    staff =
+      insert(:staff,
+        role: insert(:role, permissions: ["statistics.read", "statistics.network"])
+      )
+
+    insert(:staff_branch, staff: staff, branch: enabled)
+    insert(:staff_branch, staff: staff, branch: disabled)
+    assert {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_links", {:branch, enabled.id}, true, actor: "test")
+
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    source = "/staff/analytics/sources?period=month"
+    chooser = DelivestWeb.StaffBranchPath.selection_path(source, "/staff/dashboard")
+    {:ok, view, _} = live(conn, chooser)
+
+    assert has_element?(view, "#branch-select-all-go[href*='from=']")
+    assert has_element?(view, "#branch-select-go-#{enabled.id}[href*='selection=true']")
+    refute has_element?(view, "#branch-select-card-#{disabled.id}")
+
+    selected =
+      get(
+        conn,
+        "/staff/branches/select/#{enabled.id}?" <>
+          URI.encode_query(%{"from" => source, "selection" => "true"})
+      )
+
+    assert redirected_to(selected) == "/staff/b/#{enabled.slug}/analytics/sources?period=month"
+
+    all = get(conn, "/staff/branches/all?" <> URI.encode_query(%{"from" => source}))
+    assert redirected_to(all) == source
+  end
+
+  test "analytics chooser hides network choice without network permission", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["statistics.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    chooser =
+      DelivestWeb.StaffBranchPath.selection_path("/staff/statistics", "/staff/dashboard")
+
+    {:ok, view, _} = live(conn, chooser)
+    assert has_element?(view, "#branch-select-go-#{branch.id}")
+    refute has_element?(view, "#branch-select-all")
   end
 end

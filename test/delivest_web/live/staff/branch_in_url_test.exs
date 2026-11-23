@@ -354,6 +354,68 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
            ) == target
   end
 
+  test "analytics navigation opens chooser outside reports and keeps direct report links inside",
+       ctx do
+    orders = "/staff/b/#{ctx.own.slug}/orders?status=new&unexpected=1"
+    sales = "/staff/b/#{ctx.own.slug}/statistics?period=month&unexpected=1"
+    chooser = StaffBranchPath.contextual_navigation_path(sales, ctx.own, orders)
+    assert URI.parse(chooser).path == "/staff/branches/select"
+
+    params = URI.decode_query(URI.parse(chooser).query)
+
+    assert params == %{
+             "from" => "/staff/b/#{ctx.own.slug}/statistics?period=month",
+             "return_to" => "/staff/b/#{ctx.own.slug}/orders?status=new"
+           }
+
+    network =
+      StaffBranchPath.contextual_navigation_path("/staff/statistics", nil, "/staff/dashboard")
+
+    network_params = URI.decode_query(URI.parse(network).query)
+    assert URI.parse(network).path == "/staff/branches/select"
+    assert network_params == %{"from" => "/staff/statistics", "return_to" => "/staff/dashboard"}
+
+    inside =
+      "/staff/b/#{ctx.own.slug}/analytics/sources?period=custom&from=2026-11-01&to=2026-11-07"
+
+    assert StaffBranchPath.contextual_navigation_path(
+             "/staff/b/#{ctx.own.slug}/analytics/funnel",
+             ctx.own,
+             inside
+           ) ==
+             "/staff/b/#{ctx.own.slug}/analytics/funnel?from=2026-11-01&period=custom&to=2026-11-07"
+
+    assert StaffBranchPath.contextual_navigation_path("/staff/analytics/advertising", nil, orders) ==
+             "/staff/analytics/advertising"
+  end
+
+  test "network analytics chooser retains safe destinations and rejects forged returns", ctx do
+    source = "/staff/analytics/sources?period=custom&from=2026-11-01&to=2026-11-07&unexpected=1"
+
+    assert {:ok, %{source: canonical, return_to: back}} =
+             StaffBranchPath.selection_intent(
+               source,
+               "/staff/b/#{ctx.own.slug}/orders?status=new&evil=1"
+             )
+
+    assert canonical == "/staff/analytics/sources?from=2026-11-01&period=custom&to=2026-11-07"
+    assert back == "/staff/b/#{ctx.own.slug}/orders?status=new"
+
+    assert {:ok, destination} = StaffBranchPath.selection_destination(canonical, ctx.second.slug)
+
+    assert destination ==
+             "/staff/b/#{ctx.second.slug}/analytics/sources?from=2026-11-01&period=custom&to=2026-11-07"
+
+    assert {:ok, %{return_to: "/staff/dashboard"}} =
+             StaffBranchPath.selection_intent(source, "https://evil.example/")
+
+    assert StaffBranchPath.selection_report_section(source) == "sources"
+    assert StaffBranchPath.selection_report_section("/staff/statistics") == nil
+
+    assert StaffBranchPath.selection_path("/staff/analytics/comparison", "/staff/dashboard") ==
+             nil
+  end
+
   test "selection intent preserves new order while ordinary scope switching keeps its list",
        ctx do
     source = "/staff/b/#{ctx.own.slug}/orders/new"

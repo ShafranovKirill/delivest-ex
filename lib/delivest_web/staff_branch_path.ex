@@ -28,6 +28,7 @@ defmodule DelivestWeb.StaffBranchPath do
   }
   @data_settings_paths ~w(/staff/settings/data-transfer /staff/settings/data-system)
   @analytics_routes ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers analytics/comparison analytics/advertising)
+  @choosable_analytics_routes ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers)
   @creation_routes ~w(
     orders/new products/new products/tags/new categories/new promotions/new promotions/new/full
     promotions/new/first-order promotions/sale stocks/new
@@ -92,7 +93,11 @@ defmodule DelivestWeb.StaffBranchPath do
         settings_source_path(return_source)
 
       analytics_target?(path) ->
-        analytics_period_path(path, return_source)
+        if analytics_target?(return_source) or not choosable_analytics_target?(path) do
+          analytics_period_path(path, return_source)
+        else
+          selection_path(path, return_source) || path
+        end
 
       parsed_path in @data_settings_paths ->
         case scope_branch do
@@ -124,6 +129,16 @@ defmodule DelivestWeb.StaffBranchPath do
   end
 
   defp analytics_target?(_), do: false
+
+  defp choosable_analytics_target?(path) when is_binary(path) do
+    case classify(path) do
+      {:ok, {:branch, _, route}, _} -> route in @choosable_analytics_routes
+      {:ok, {:network, route}, _} -> route in @choosable_analytics_routes
+      _ -> false
+    end
+  end
+
+  defp choosable_analytics_target?(_), do: false
 
   defp analytics_period_path(path, source) when is_binary(source) do
     case classify(source) do
@@ -185,9 +200,32 @@ defmodule DelivestWeb.StaffBranchPath do
 
   def selection_intent(target_path, return_source) do
     with {:ok, source} <- selection_source(target_path) do
-      {:ok, %{source: source, return_to: safe_network_return(return_source)}}
+      return_to =
+        if choosable_analytics_target?(source),
+          do: safe_analytics_return(return_source),
+          else: safe_network_return(return_source)
+
+      {:ok, %{source: source, return_to: return_to}}
     end
   end
+
+  @doc "Optional report tab for branch feature filtering on the selection page."
+  def selection_report_section(source) when is_binary(source) do
+    case classify(source) do
+      {:ok, {:branch, _, "analytics/" <> tab}, _}
+      when tab in ~w(channels sources funnel customers) ->
+        tab
+
+      {:ok, {:network, "analytics/" <> tab}, _}
+      when tab in ~w(channels sources funnel customers) ->
+        tab
+
+      _ ->
+        nil
+    end
+  end
+
+  def selection_report_section(_), do: nil
 
   defp selection_source(source) when is_binary(source) do
     case classify(source) do
@@ -200,6 +238,12 @@ defmodule DelivestWeb.StaffBranchPath do
 
       {:ok, {:branch_settings, slug, _section}, _query} ->
         canonical_branch_source(source, slug)
+
+      {:ok, {:network, route}, _query} when route in @choosable_analytics_routes ->
+        case transition(source, :network) do
+          {:ok, %{path: path}} -> {:ok, path}
+          _ -> :error
+        end
 
       _ ->
         :error
@@ -239,6 +283,21 @@ defmodule DelivestWeb.StaffBranchPath do
   end
 
   defp safe_network_return(_), do: "/staff/dashboard"
+
+  defp safe_analytics_return(source) when is_binary(source) do
+    case classify(source) do
+      {:ok, {:branch, slug, _route}, _query} ->
+        case canonical_branch_source(source, slug) do
+          {:ok, path} -> path
+          :error -> "/staff/dashboard"
+        end
+
+      _ ->
+        safe_network_return(source)
+    end
+  end
+
+  defp safe_analytics_return(_), do: "/staff/dashboard"
 
   defp network_return(source) do
     case transition(source, :network) do

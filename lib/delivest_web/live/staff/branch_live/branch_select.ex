@@ -1,7 +1,8 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Couriers, Identity}
+  alias Delivest.{Couriers, Features, Identity}
+  alias Delivest.Analytics.Reports
   alias Delivest.Oms.Kitchen
 
   alias DelivestWeb.{KitchenAccess, StaffBranchPath}
@@ -22,9 +23,15 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
 
     to = if(from, do: nil, else: to)
 
+    branches = Identity.list_branch_for_staff(staff, preload: :info)
+    feature = from |> StaffBranchPath.selection_report_section() |> Reports.feature_for_tab()
+
+    enabled_ids =
+      if feature, do: Features.enabled_branches(feature, Enum.map(branches, & &1.id))
+
     entries =
-      staff
-      |> Identity.list_branch_for_staff(preload: :info)
+      branches
+      |> Enum.filter(&(is_nil(enabled_ids) or MapSet.member?(enabled_ids, &1.id)))
       |> Enum.map(fn branch ->
         %{
           branch: branch,
