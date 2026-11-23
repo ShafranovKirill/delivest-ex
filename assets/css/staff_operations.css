@@ -97,7 +97,7 @@
   max-width: 10rem;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 767px) {
   #orders-filters {
     grid-template-columns: minmax(0, 1fr) minmax(3.75rem, 5.25rem) repeat(3, 2rem) auto;
     gap: .25rem;
@@ -147,12 +147,28 @@
 }
 
 @media (max-width: 359px) {
+  #orders-page {
+    padding-inline: .25rem;
+  }
+
   #orders-filters {
+    grid-template-columns: minmax(0, 1fr) 3.75rem repeat(3, 2rem) auto;
+    gap: .1875rem;
     padding: .25rem;
+  }
+
+  #orders-filters #orders-period {
+    padding-inline: .375rem .875rem;
+    font-size: .6875rem;
+  }
+
+  #orders-filters .orders-search-field input {
+    padding-inline: .375rem;
   }
 
   #orders-filters .orders-new-order {
     font-size: .75rem;
+    padding-inline: .25rem;
   }
 
   #orders-filters .orders-new-order .hero-plus {
