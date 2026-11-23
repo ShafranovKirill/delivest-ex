@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   def mount(_params, _session, socket) do
     staff = socket.assigns.current_staff
 
-    if Identity.can?(staff, "branches.read") or Identity.can?(staff, "delivery.read") do
+    if Enum.any?(["branches.read", "delivery.read", "orders.update"], &Identity.can?(staff, &1)) do
       branches = Identity.list_branch_for_staff(staff, preload: [:info])
 
       {:ok,
@@ -70,7 +70,8 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
                 :if={
                   (Identity.can?(@current_staff, "branches.read") and
                      Identity.can?(@current_staff, "branches.update")) or
-                    Identity.authorize(@current_staff, "delivery.read", branch.id) == :ok
+                    Identity.authorize(@current_staff, "delivery.read", branch.id) == :ok or
+                    Identity.authorize(@current_staff, "orders.update", branch.id) == :ok
                 }
                 id={"branch-edit-#{branch.id}"}
                 navigate={~p"/staff/branches/#{branch.slug}/edit"}

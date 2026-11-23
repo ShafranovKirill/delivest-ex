@@ -557,6 +557,7 @@ defmodule DelivestWeb.StaffNav do
           "franchise.update",
           "branches.read",
           "delivery.read",
+          "orders.update",
           "integrations.read",
           "logs.read"
         ]
@@ -580,7 +581,8 @@ defmodule DelivestWeb.StaffNav do
       ),
       setting(:branches, gettext("Branches"), "/staff/branches", "hero-map-pin", :network, [
         "branches.read",
-        "delivery.read"
+        "delivery.read",
+        "orders.update"
       ]),
       setting(
         :branch_settings,

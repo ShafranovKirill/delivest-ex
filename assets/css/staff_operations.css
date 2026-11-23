@@ -22,13 +22,6 @@
   background: var(--color-base-200);
 }
 
-#orders-page:fullscreen .orders-page-header {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: var(--color-base-200);
-}
-
 #orders-page .orders-fullscreen-exit,
 #orders-page:fullscreen .orders-fullscreen-enter {
   display: none;
@@ -38,75 +31,132 @@
   display: inline-block;
 }
 
-@media (max-width: 639px) {
-  #orders-page:fullscreen span.orders-fullscreen-exit {
-    display: none;
-  }
-}
-
 #orders-filters {
-  grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr) auto;
-  grid-template-areas:
-    "status search sort"
-    "fields fields fields";
+  position: sticky;
+  top: var(--staff-header-height);
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem) minmax(8rem, 11rem) auto auto auto;
+  align-items: start;
+  background: var(--color-base-100);
 }
 
-#orders-filters #order-status-tabs {
-  grid-area: status;
+#orders-page:fullscreen #orders-filters {
+  top: 0;
+}
+
+#orders-filters .orders-search-field,
+#orders-filters #orders-period {
   min-width: 0;
 }
 
-#orders-filters .orders-search-field {
-  grid-area: search;
+#orders-filters .orders-search-field,
+#orders-filters #orders-period,
+#orders-filters #order-status-tabs,
+#orders-filters .orders-extra-filters,
+#orders-filters #orders-fullscreen,
+#orders-filters .orders-new-order {
+  grid-row: 1;
 }
 
-#orders-filters .orders-sort {
-  grid-area: sort;
+#orders-filters #orders-period {
+  width: 100%;
 }
 
-#orders-filters .orders-filter-fields {
-  grid-area: fields;
+#orders-filters .orders-extra-filters {
+  position: relative;
+}
+
+#orders-filters .orders-extra-filters > summary {
+  list-style: none;
+}
+
+#orders-filters .orders-extra-filters > summary::-webkit-details-marker {
+  display: none;
+}
+
+#orders-filters .orders-filter-panel {
+  position: absolute;
+  top: calc(100% + .5rem);
+  right: 0;
+  width: min(22rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - var(--staff-header-height) - 4rem);
+  overflow-y: auto;
+}
+
+#orders-filters .orders-status-icon {
+  display: none;
 }
 
 #orders-filters .orders-date-range {
-  grid-area: dates;
+  grid-column: 1 / -1;
 }
 
-@media (min-width: 1024px) {
-  #orders-filters:has(.orders-date-range) {
-    grid-template-columns: 8rem minmax(7rem, 1fr) auto auto;
-    grid-template-areas:
-      "status search sort dates"
-      "fields fields fields fields";
-  }
+#orders-filters .orders-date-range input {
+  flex: 1 1 0;
+  max-width: 10rem;
+}
 
-  #orders-filters .orders-filter-fields {
-    flex-wrap: nowrap;
+@media (max-width: 639px) {
+  #orders-filters {
+    grid-template-columns: minmax(0, 1fr) minmax(3.75rem, 5.25rem) repeat(3, 2rem) auto;
     gap: .25rem;
   }
 
-  #orders-filters .orders-filter-fields select {
-    min-width: 0;
+  #orders-filters .orders-filter-label,
+  #orders-filters .orders-status-label,
+  #orders-filters .orders-status-chevron {
+    display: none;
+  }
+
+  #orders-filters .orders-status-icon {
+    display: inline-block;
+  }
+
+  #orders-filters #orders-period {
+    padding-inline: .5rem 1.25rem;
+    background-position: right .375rem center;
+  }
+
+  #orders-filters .orders-extra-filters > summary,
+  #orders-filters #orders-fullscreen,
+  #orders-filters #order-status-select {
+    width: 2rem;
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  #orders-filters .orders-new-order {
+    padding-inline: .375rem;
+    white-space: nowrap;
+  }
+
+  #orders-filters .orders-extra-filters,
+  #orders-filters #order-status-tabs .dropdown {
+    position: static;
+  }
+
+  #orders-filters .orders-filter-panel,
+  #orders-filters .orders-status-menu {
+    top: calc(100% + .5rem);
+    margin-top: 0;
+    right: 0;
+    left: 0;
+    width: auto;
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 359px) {
   #orders-filters {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "status sort"
-      "search search"
-      "fields fields"
-      "dates dates";
+    padding: .25rem;
   }
-}
 
-@media (min-width: 768px) and (max-width: 1023px) {
-  #orders-filters:has(.orders-date-range) {
-    grid-template-areas:
-      "status search sort"
-      "dates dates dates"
-      "fields fields fields";
+  #orders-filters .orders-new-order {
+    font-size: .75rem;
+  }
+
+  #orders-filters .orders-new-order .hero-plus {
+    display: none;
   }
 }
 

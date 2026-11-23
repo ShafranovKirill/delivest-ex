@@ -13307,3 +13307,7 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Yandex Cart"
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Filters"
+msgstr ""

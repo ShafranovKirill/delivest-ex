@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Couriers, Identity, LocalTime, Money}
+  alias Delivest.{Couriers, Identity, Intake, LocalTime, Money}
   alias Delivest.Integrations.{Crm, YandexEda}
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias DelivestWeb.CourierPresence
@@ -26,6 +26,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
     if connected?(socket) do
       Orders.subscribe(branch_id)
+      Intake.subscribe(branch_id)
       Couriers.subscribe(branch_id)
       CourierPresence.subscribe(branch_id)
     end
@@ -83,7 +84,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           |> assign(meta: meta, counts: counts, page_title: gettext("Orders"))
           |> assign(receipt_alerts: receipt_alerts(socket.assigns.current_branch.id))
           |> assign(
-            intake: Delivest.Intake.status(socket.assigns.current_branch.id),
+            intake: Intake.status(socket.assigns.current_branch.id),
             delivery_minutes: OrderDeadline.delivery_minutes(socket.assigns.current_branch.id)
           )
           |> assign(
@@ -258,48 +259,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     end
   end
 
-  def handle_event("intake_pause", %{"duration" => duration} = params, socket) do
-    %{current_staff: staff, current_branch: branch} = socket.assigns
-    staff = Identity.fresh_staff(staff)
-
-    result =
-      Delivest.Intake.pause_many(
-        staff,
-        branch,
-        params["branches"] || [],
-        duration(duration),
-        params["reason"]
-      )
-
-    intake_result(socket, result)
-  end
-
-  def handle_event(
-        "intake_load",
-        %{"minutes" => minutes, "duration" => duration} = params,
-        socket
-      ) do
-    %{current_staff: staff, current_branch: branch} = socket.assigns
-    staff = Identity.fresh_staff(staff)
-
-    result =
-      Delivest.Intake.start_load_many(
-        staff,
-        branch,
-        params["branches"] || [],
-        String.to_integer(minutes),
-        duration(duration)
-      )
-
-    intake_result(socket, result)
-  end
-
-  def handle_event("intake_resume", _params, socket) do
-    %{current_staff: staff, current_branch: branch} = socket.assigns
-    staff = Identity.fresh_staff(staff)
-    intake_result(socket, Delivest.Intake.resume(staff, branch))
-  end
-
   def handle_event("retry_receipt", %{"id" => id}, socket),
     do: receipt_action(socket, id, "finance.receipts_retry", &Delivest.Fiscal.retry/2)
 
@@ -364,6 +323,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   @impl true
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
+
+  def handle_info({:intake_changed, branch_id}, socket) do
+    {:noreply, assign(socket, :intake, Intake.status(branch_id))}
+  end
+
   def handle_info({:deliveries_changed, _branch_id}, socket), do: load(socket)
 
   def handle_info(
@@ -425,15 +389,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: gettext("Yandex Eda push access is not set up")
 
   defp courier_code_error(_reason), do: gettext("Yandex Eda did not accept the request")
-
-  defp duration("end_of_day"), do: :end_of_day
-  defp duration(minutes), do: String.to_integer(minutes)
-
-  defp intake_result(socket, {:ok, _status}), do: load(socket)
-  defp intake_result(socket, {:error, :forbidden}), do: failed(socket, {:error, :forbidden})
-
-  defp intake_result(socket, _error),
-    do: {:noreply, put_flash(socket, :error, gettext("Failed to update the order"))}
 
   defp receipt_action(socket, id, permission, action) do
     branch_id = socket.assigns.current_branch.id
@@ -518,12 +473,17 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def render(assigns) do
     ~H"""
     <div id="orders-page" phx-hook="WorkspaceFullscreen" class="space-y-3 p-2 sm:p-3">
-      <header class="orders-page-header flex flex-wrap items-center gap-2">
-        <h1 class="mr-auto text-base font-semibold">{gettext("Orders")}</h1>
-        <IntakeControls.menu
-          can_manage={Identity.can?(@current_staff, "orders.update")}
-          branches={Identity.list_branch_for_staff(@current_staff)}
-        />
+      <.card id="orders-filters" class="orders-toolbar gap-2 p-2 sm:p-3">
+        <OrdersToolbar.orders_toolbar
+          selected={@selected}
+          reset_path={orders_path(@current_branch, %{})}
+        >
+          <StatusTabs.status_tabs
+            counts={@counts}
+            selected={@selected.status}
+            path_fn={&tab_path(@current_branch, @query, &1)}
+          />
+        </OrdersToolbar.orders_toolbar>
         <button
           id="orders-fullscreen"
           type="button"
@@ -536,21 +496,19 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
         >
           <.icon name="hero-arrows-pointing-out" class="size-4 orders-fullscreen-enter" />
           <.icon name="hero-arrows-pointing-in" class="size-4 orders-fullscreen-exit" />
-          <span class="hidden sm:inline orders-fullscreen-enter">{gettext("Full screen")}</span>
-          <span class="hidden sm:inline orders-fullscreen-exit">{gettext("Exit full screen")}</span>
         </button>
         <.link
           navigate={~p"/staff/b/#{@current_branch}/orders/new?#{@query}"}
-          class="btn btn-sm btn-primary"
+          class="orders-new-order btn btn-sm btn-primary"
+          aria-label={gettext("New Order")}
         >
           <.icon name="hero-plus" class="size-4" />
-          {gettext("New Order")}
+          <span>{gettext("New Order")}</span>
         </.link>
-      </header>
+      </.card>
       <IntakeControls.plate
         intake={@intake}
         branch_id={@current_branch.id}
-        can_manage={Identity.can?(@current_staff, "orders.update")}
       />
 
       <DelivestWeb.Staff.IntegrationLive.YandexEdaBusy.plate
@@ -574,18 +532,6 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           {gettext("Open receipts")}
         </.link>
       </div>
-
-      <.card id="orders-filters" class="grid gap-2 p-2 sm:p-3">
-        <StatusTabs.status_tabs
-          counts={@counts}
-          selected={@selected.status}
-          path_fn={&tab_path(@current_branch, @query, &1)}
-        />
-        <OrdersToolbar.orders_toolbar
-          selected={@selected}
-          reset_path={orders_path(@current_branch, %{})}
-        />
-      </.card>
 
       <div id="orders" phx-update="stream" class="space-y-3">
         <div id="orders-empty" class="hidden only:block">

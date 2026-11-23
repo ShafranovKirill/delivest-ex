@@ -3,10 +3,11 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
 
   import DelivestWeb.Staff.SettingsComponents
 
-  alias Delivest.Identity
+  alias Delivest.{Identity, Intake}
   alias Delivest.Identity.Branch
   alias Delivest.SiteSnapshot
   alias DelivestWeb.Staff.BranchLive.{BranchFormComponent, Sections}
+  alias DelivestWeb.Staff.OrderLive.Components.IntakeControls
 
   def mount(%{"slug" => slug, "section" => "analytics"}, _session, socket) do
     staff = socket.assigns.current_staff
@@ -50,10 +51,20 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
           page_title: title(branch, section),
           settings_branches: Identity.list_branch_for_staff(socket.assigns.current_staff),
           can_edit_identity: can_edit_identity?(socket.assigns.current_staff),
+          can_manage_intake:
+            is_nil(section) and can_manage_intake?(socket.assigns.current_staff, branch.id),
           delete_open: false,
           delete_name: "",
           delete_form: to_form(%{"name" => ""}, as: :confirmation)
         )
+
+      socket =
+        if socket.assigns.can_manage_intake do
+          if connected?(socket), do: Intake.subscribe(branch.id)
+          assign(socket, :intake, Intake.status(branch.id))
+        else
+          socket
+        end
 
       if section && section.id == :snapshot do
         {:ok,
@@ -93,7 +104,8 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
            Enum.find(Identity.list_branch_for_staff(staff), &(&1.slug == slug)),
          true <-
            can_edit_identity?(staff) or
-             Identity.authorize(staff, "delivery.read", branch.id) == :ok,
+             Identity.authorize(staff, "delivery.read", branch.id) == :ok or
+             (action == :edit and can_manage_intake?(staff, branch.id)),
          {:ok, branch} <- Identity.get_branch(branch.id, preload: [:info]) do
       {:ok, branch}
     else
@@ -129,6 +141,9 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   defp can_edit_identity?(staff),
     do: Identity.can?(staff, "branches.read") and Identity.can?(staff, "branches.update")
 
+  defp can_manage_intake?(staff, branch_id),
+    do: Identity.authorize(staff, "orders.update", branch_id) == :ok
+
   defp can_delete?(%{branch: %Branch{id: id}, current_staff: staff, section: %{id: :general}})
        when not is_nil(id),
        do: can_edit_identity?(staff) and Identity.authorize(staff, "branches.delete", id) == :ok
@@ -144,6 +159,51 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   end
 
   @impl true
+  def handle_event(
+        "intake_pause",
+        %{"duration" => duration} = params,
+        %{assigns: %{can_manage_intake: true}} = socket
+      ) do
+    %{current_staff: staff, branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
+
+    result =
+      with {:ok, duration} <- intake_duration(duration),
+           reason = params["reason"],
+           true <- is_nil(reason) or is_binary(reason) do
+        Intake.pause_many(staff, branch, params["branches"] || [], duration, reason)
+      end
+
+    intake_result(socket, result)
+  end
+
+  def handle_event(
+        "intake_load",
+        %{"minutes" => minutes, "duration" => duration} = params,
+        %{assigns: %{can_manage_intake: true}} = socket
+      ) do
+    %{current_staff: staff, branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
+
+    result =
+      with {:ok, minutes} <- intake_minutes(minutes),
+           {:ok, duration} <- intake_duration(duration) do
+        Intake.start_load_many(staff, branch, params["branches"] || [], minutes, duration)
+      end
+
+    intake_result(socket, result)
+  end
+
+  def handle_event("intake_resume", _params, %{assigns: %{can_manage_intake: true}} = socket) do
+    %{current_staff: staff, branch: branch} = socket.assigns
+    staff = Identity.fresh_staff(staff)
+    intake_result(socket, Intake.resume(staff, branch))
+  end
+
+  def handle_event(event, _params, socket)
+      when event in ["intake_pause", "intake_load", "intake_resume"],
+      do: intake_result(socket, {:error, :forbidden})
+
   def handle_event("reset_board_token", _params, socket) do
     if match?(%{id: :board}, socket.assigns.section) and socket.assigns.can_edit_identity do
       case Identity.reset_board_token(
@@ -278,6 +338,10 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   end
 
   @impl true
+  def handle_info({:intake_changed, branch_id}, socket) do
+    {:noreply, assign(socket, :intake, Intake.status(branch_id))}
+  end
+
   def handle_info({:snapshot_result, result}, socket) do
     message =
       case result do
@@ -329,6 +393,27 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     do: gettext("You do not have permission to import this archive.")
 
   defp snapshot_error(_), do: gettext("Import failed. Check the archive and try again.")
+
+  defp intake_duration("end_of_day"), do: {:ok, :end_of_day}
+  defp intake_duration(minutes), do: intake_minutes(minutes)
+
+  defp intake_minutes(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {minutes, ""} -> {:ok, minutes}
+      _ -> :error
+    end
+  end
+
+  defp intake_minutes(_value), do: :error
+
+  defp intake_result(socket, {:ok, _status}),
+    do: {:noreply, assign(socket, :intake, Intake.status(socket.assigns.branch.id))}
+
+  defp intake_result(socket, {:error, :forbidden}),
+    do: {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+  defp intake_result(socket, _error),
+    do: {:noreply, put_flash(socket, :error, gettext("Failed to update the order"))}
 
   defp board_url(%Branch{info: %{board_token: token}}) when is_binary(token),
     do: url(~p"/board/#{token}")
@@ -402,6 +487,13 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   def render(%{section: nil} = assigns) do
     ~H"""
     <div class="space-y-6">
+      <div :if={@can_manage_intake} id="branch-intake-settings" class="space-y-3">
+        <IntakeControls.menu
+          can_manage={@can_manage_intake}
+          branches={Enum.reject(@settings_branches, &(&1.id == @branch.id))}
+        />
+        <IntakeControls.plate intake={@intake} branch_id={@branch.id} can_manage={true} />
+      </div>
       <.settings_cards>
         <.settings_card
           :for={

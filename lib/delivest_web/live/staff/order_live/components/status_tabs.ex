@@ -23,12 +23,21 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
 
     ~H"""
     <nav id="order-status-tabs" aria-label={gettext("Status")}>
-      <details class="dropdown w-full">
-        <summary id="order-status-select" class="btn btn-sm btn-outline w-full justify-between">
-          <span class="truncate">{@selected_label}</span>
-          <.icon name="hero-chevron-down" class="size-4 shrink-0" />
+      <details class="dropdown w-full" name="orders-toolbar-menu">
+        <summary
+          id="order-status-select"
+          class={[
+            "btn btn-sm btn-outline w-full justify-between",
+            @selected != "" && "btn-active"
+          ]}
+          aria-label={"#{gettext("Status")} — #{@selected_label}"}
+          title={@selected_label}
+        >
+          <.icon name="hero-list-bullet" class="orders-status-icon size-4 shrink-0" />
+          <span class="orders-status-label truncate">{@selected_label}</span>
+          <.icon name="hero-chevron-down" class="orders-status-chevron size-4 shrink-0" />
         </summary>
-        <div class="dropdown-content z-20 mt-1 max-h-80 w-full overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
+        <div class="orders-status-menu dropdown-content z-20 mt-1 max-h-80 min-w-48 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
           <.tab
             id="order-status-tab-all"
             label={gettext("All")}

@@ -13601,3 +13601,7 @@ msgstr "Открыть филиал"
 #, elixir-autogen, elixir-format
 msgid "Without CRM transfer"
 msgstr "Без передачи в CRM"
+
+#, elixir-autogen, elixir-format
+msgid "Filters"
+msgstr "Фильтры"
