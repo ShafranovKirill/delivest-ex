@@ -104,6 +104,26 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
            )
   end
 
+  test "recovery link requires a selected authorized branch in global scope", %{branch: branch} do
+    staff =
+      insert(:staff,
+        role: insert(:role, permissions: ["integrations.read", "orders.update"])
+      )
+
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(build_conn(), %{"staff_id" => staff.id})
+
+    {:ok, global, _html} = live(conn, ~p"/staff/integrations")
+    refute has_element?(global, "#integration-recovery")
+
+    {:ok, selected, _html} = live(conn, ~p"/staff/integrations?branch=#{branch.slug}")
+
+    assert has_element?(
+             selected,
+             "#integration-recovery[href='/staff/b/#{branch.slug}/integrations/recovery']"
+           )
+  end
+
   test "connection details show status without revealing stored credentials", %{
     conn: conn,
     branch: branch
