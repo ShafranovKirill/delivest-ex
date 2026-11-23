@@ -2,7 +2,20 @@ defmodule DelivestWeb.Staff.PrintingController do
   use DelivestWeb, :controller
 
   alias Delivest.{Identity, Printing}
-  alias Delivest.Oms.{Order, OrderItem}
+
+  @print_controls """
+  <style>
+    #document-print { display: block; margin: 0 0 16px auto; padding: 8px 14px; font: inherit; cursor: pointer }
+    @media print { #document-print { display: none } }
+  </style>
+  <button id="document-print" type="button">Печать</button>
+  <script>
+    document.getElementById('document-print').addEventListener('click', () => window.print());
+    window.addEventListener('load', () => window.print(), { once: true });
+  </script>
+  """
+
+  def settings_redirect(conn, _params), do: redirect(conn, to: ~p"/staff/franchise/printing")
 
   def show(%{assigns: %{current_staff: staff}} = conn, params) when not is_nil(staff) do
     with {:ok, branch} <- Identity.get_branch_by_slug(params["branch_slug"]),
@@ -21,6 +34,35 @@ defmodule DelivestWeb.Staff.PrintingController do
 
   def show(conn, _), do: send_resp(conn, :unauthorized, "")
 
+  def print(%{assigns: %{current_staff: staff}} = conn, params) when not is_nil(staff) do
+    with {:ok, branch} <- Identity.get_branch_by_slug(params["branch_slug"]),
+         {:ok, type} <- type(params["type"]),
+         {:ok, document} <- Printing.render_order_html(staff, branch.id, params["order_id"], type) do
+      conn
+      |> put_resp_content_type("text/html")
+      |> put_resp_header("cache-control", "private, no-store")
+      |> send_resp(:ok, browser_print_document(document))
+    else
+      {:error, :renderer_unavailable} -> send_resp(conn, :service_unavailable, "")
+      _ -> send_resp(conn, :not_found, "")
+    end
+  end
+
+  def print(conn, _), do: send_resp(conn, :unauthorized, "")
+
+  defp browser_print_document(document) do
+    document =
+      if Regex.match?(~r/<body data-paper="roll(?:58|80)">/, document) do
+        String.replace(document, "</head>", "<style>@page{size:auto}</style></head>",
+          global: false
+        )
+      else
+        document
+      end
+
+    Regex.replace(~r/<body\b[^>]*>/, document, &(&1 <> @print_controls), global: false)
+  end
+
   defp type("kitchen"), do: {:ok, :kitchen}
   defp type("customer"), do: {:ok, :customer}
   defp type(_), do: {:error, :invalid_type}
@@ -28,23 +70,7 @@ defmodule DelivestWeb.Staff.PrintingController do
   defp document(staff, branch_id, "demo", type) do
     if Printing.allowed?(staff, branch_id, type) and
          Identity.authorize(staff, "integrations.update", branch_id) == :ok do
-      demo = %Order{
-        number: "DEMO-123",
-        branch_id: branch_id,
-        comment: "Без лука. Пожалуйста, упакуйте отдельно.",
-        total_amount: 74_500,
-        items: [
-          %OrderItem{
-            title: "Пицца с очень длинным названием и дополнительным сыром",
-            quantity: 2,
-            price: 34_000,
-            modifiers: []
-          },
-          %OrderItem{title: "Чай облепиховый", quantity: 1, price: 6500, modifiers: []}
-        ]
-      }
-
-      Printing.render(demo, type, Printing.settings(branch_id))
+      Printing.render_sample(type, Printing.settings(branch_id), branch_id)
     else
       {:error, :forbidden}
     end

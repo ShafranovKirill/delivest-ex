@@ -14,6 +14,7 @@ defmodule Delivest.Payments.OnlineFiscalTest do
   alias Delivest.Repo
 
   setup %{conn: conn} do
+    {:ok, _} = Delivest.Franchise.SettingsStore.save(%{fiscal_enabled: true})
     branch = insert(:branch, is_active: true)
 
     Repo.insert!(%BranchInfo{

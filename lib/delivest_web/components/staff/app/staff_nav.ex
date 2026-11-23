@@ -771,13 +771,6 @@ defmodule DelivestWeb.StaffNav do
       ]),
       group(:finance, "hero-banknotes", gettext("Finance"), [
         item(
-          :printing,
-          branch && ~p"/staff/b/#{branch}/finance/printing",
-          "hero-printer",
-          "Чеки и печать"
-        )
-        |> allowed(staff, "integrations.read"),
-        item(
           :payments,
           branch && ~p"/staff/b/#{branch}/finance/transactions",
           "hero-credit-card",

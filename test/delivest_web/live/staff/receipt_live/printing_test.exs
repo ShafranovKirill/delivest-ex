@@ -1,86 +1,101 @@
 defmodule DelivestWeb.Staff.ReceiptLive.PrintingTest do
-  use DelivestWeb.ConnCase, async: true
+  use DelivestWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
-  alias Delivest.{Fiscal, Printing, Repo}
-  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Printing
 
   setup %{conn: conn} do
-    branch = insert(:branch)
-    Repo.insert!(%BranchInfo{branch_id: branch.id})
+    Cachex.clear(:franchise_cache)
+    on_exit(fn -> Cachex.clear(:franchise_cache) end)
 
+    staff = insert(:staff, role: insert(:role, permissions: ["franchise.update"]))
+    insert(:staff_branch, staff: staff, branch: insert(:branch, is_active: true))
+    %{conn: init_test_session(conn, %{"staff_id" => staff.id})}
+  end
+
+  test "overview has separate cards, toggles and configure links", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/staff/franchise/printing")
+
+    for type <- ~w(fiscal kitchen customer) do
+      assert has_element?(view, "#preset-#{type}")
+      assert has_element?(view, "#preset-#{type} a[href='/staff/franchise/printing/#{type}']")
+    end
+
+    refute has_element?(view, "#preview-kitchen")
+    render_click(view, "toggle_enabled", %{"type" => "kitchen"})
+    assert Printing.settings().kitchen_enabled
+  end
+
+  test "editor saves a two-column layout and changes the paper format", %{conn: conn} do
+    first = insert(:branch)
+    second = insert(:branch)
+    {:ok, view, _} = live(conn, ~p"/staff/franchise/printing/kitchen")
+
+    assert has_element?(view, "#preview-kitchen")
+    render_click(view, "layout_action", %{"action" => "add_column", "row" => "0"})
+
+    render_hook(view, "layout_reorder", %{
+      "rows" => [
+        [["number"], []],
+        [["readiness"]],
+        [["items"]],
+        [["kitchen_comments"]]
+      ]
+    })
+
+    view |> form("#editor-settings", %{"editor" => %{"paper" => "roll80"}}) |> render_change()
+    render_click(view, "save", %{})
+
+    for branch <- [first, second] do
+      assert %{kitchen: %{paper: :roll80, layout: %{"rows" => rows}}} =
+               Printing.settings(branch.id)
+
+      assert length(hd(rows)["columns"]) == 2
+    end
+  end
+
+  test "unsaved customer QR preview exports a PDF", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/staff/franchise/printing/customer")
+    render_click(view, "layout_action", %{"action" => "add_block", "block" => "qr"})
+
+    assert has_element?(view, "#preview-customer [data-id=qr] img[src^='data:image/svg+xml']")
+
+    refute "qr" in (Printing.settings().customer || Delivest.Printing.Preset.default(:customer)).blocks
+
+    render_click(view, "preview_pdf", %{})
+    assert_push_event(view, "printing_pdf", %{base64: encoded})
+    assert <<"%PDF-", _::binary>> = Base.decode64!(encoded)
+  end
+
+  test "legacy block order survives opening the editor and an invalid reorder", %{conn: conn} do
+    assert {:ok, _} =
+             Delivest.Franchise.SettingsStore.save(%{
+               "printing" => %{"kitchen" => %{"blocks" => ["items", "number"]}}
+             })
+
+    {:ok, view, html} = live(conn, ~p"/staff/franchise/printing/kitchen")
+    assert html =~ ~r/data-id="items".*data-id="number"/s
+    refute has_element?(view, "#print-layout [data-id=readiness]")
+
+    render_hook(view, "layout_reorder", %{"rows" => [[[]], [[]], [["items", "number"]]]})
+    assert has_element?(view, "#print-layout [data-id=items]")
+    assert has_element?(view, "#print-layout [data-id=number]")
+  end
+
+  test "fiscal chooser links to each branch", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/staff/franchise/printing/fiscal")
+    assert has_element?(view, "a[href*='/integrations/fiscal']")
+  end
+
+  test "branch integration access does not grant franchise printing", %{conn: conn} do
     staff =
       insert(:staff,
         role: insert(:role, permissions: ["integrations.read", "integrations.update"])
       )
 
-    insert(:staff_branch, staff: staff, branch: branch)
-    %{conn: init_test_session(conn, %{"staff_id" => staff.id}), branch: branch}
-  end
-
-  test "independent toggles and ordered blocks persist in the current branch", %{
-    conn: conn,
-    branch: branch
-  } do
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/finance/printing")
-    assert has_element?(view, "#printing-settings")
-    assert has_element?(view, "#preset-kitchen")
-    assert has_element?(view, "#preset-customer")
-
-    view
-    |> element("#preset-kitchen button[phx-value-block='readiness'][phx-value-action='toggle']")
-    |> render_click()
-
-    view
-    |> element("#preset-kitchen button[phx-value-block='items'][phx-value-action='up']")
-    |> render_click()
-
-    view
-    |> form("#printing-settings", printing: %{kitchen_enabled: "true", customer_enabled: "false"})
-    |> render_submit()
-
-    assert %{kitchen_enabled: true, customer_enabled: false, kitchen: %{blocks: blocks}} =
-             Printing.settings(branch.id)
-
-    assert blocks == ~w(items number kitchen_comments)
-
-    {:ok, reloaded, _} = live(conn, ~p"/staff/b/#{branch}/finance/printing")
-
-    assert has_element?(
-             reloaded,
-             "#preset-kitchen button[phx-value-block='items'][phx-value-action='up']"
-           )
-
-    Enum.each(blocks, fn block ->
-      reloaded
-      |> element("#preset-kitchen button[phx-value-block='#{block}'][phx-value-action='toggle']")
-      |> render_click()
-    end)
-
-    reloaded
-    |> form("#printing-settings", printing: %{kitchen_enabled: "true", customer_enabled: "false"})
-    |> render_submit()
-
-    assert Printing.settings(branch.id).kitchen.blocks == []
-
-    other = insert(:branch)
-    assert Printing.settings(other.id).kitchen_enabled == false
-
-    view |> element("#fiscal-toggle") |> render_click()
-    assert Fiscal.settings(branch.id).enabled == false
-    assert Printing.settings(branch.id).kitchen_enabled == true
-  end
-
-  test "read-only staff cannot forge a save command", %{conn: conn, branch: branch} do
-    reader = insert(:staff, role: insert(:role, permissions: ["integrations.read"]))
-    insert(:staff_branch, staff: reader, branch: branch)
-    conn = init_test_session(conn, %{"staff_id" => reader.id})
-
-    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/finance/printing")
-    refute has_element?(view, "#save-printing")
-    render_submit(view, "save", %{"printing" => %{"kitchen_enabled" => "true"}})
-    assert Printing.settings(branch.id).kitchen_enabled == false
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    assert {:error, {:redirect, %{to: _}}} = live(conn, ~p"/staff/franchise/printing")
   end
 end

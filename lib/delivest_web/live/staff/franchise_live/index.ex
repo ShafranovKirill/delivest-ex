@@ -420,6 +420,13 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
         </h2>
         <.settings_cards>
           <.settings_card
+            id="franchise-section-printing"
+            navigate={~p"/staff/franchise/printing"}
+            icon="hero-printer"
+            title="Чеки и печать"
+            description="Фискальные чеки, кухонные талоны и листы заказа для всех филиалов."
+          />
+          <.settings_card
             :for={
               section <-
                 Enum.reject(visible_sections(@current_staff), &(&1.id in [:brand, :logo, :images]))

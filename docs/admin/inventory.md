@@ -5,15 +5,15 @@ The machine-readable [inventory](inventory.json) contains stable IDs, source anc
 
 | Register | Entries |
 | --- | ---: |
-| Screens | 107 |
-| Staff form controls | 444 |
-| Actions (handler clauses and controls) | 775 |
+| Screens | 108 |
+| Staff form controls | 446 |
+| Actions (handler clauses and controls) | 785 |
 | Features/integrations | 28 |
 | Background jobs | 77 |
 
-The separate schema census has 824 declarations. It guards source drift; only staff controls receive editor assignments. The 19 service, authentication and internal routes are outside the four page types. The foundation gallery is an internal dev/test fixture and is excluded from controls and actions.
+The separate schema census has 826 declarations. It guards source drift; only staff controls receive editor assignments. The 21 service, authentication and internal routes are outside the four page types. The foundation gallery is an internal dev/test fixture and is excluded from controls and actions.
 
-320/320 literal event controls have a source handler candidate. The hook receiver for `acknowledge_cancel` and `crm_alert` is `DelivestWeb.Hooks.NewOrders`.
+324/324 literal event controls have a source handler candidate. The hook receiver for `acknowledge_cancel` and `crm_alert` is `DelivestWeb.Hooks.NewOrders`.
 
 ## Evidence and limits
 

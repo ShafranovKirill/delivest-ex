@@ -12,6 +12,7 @@ defmodule Delivest.FiscalTest do
   alias Delivest.{Payments, Repo}
 
   setup do
+    {:ok, _} = Delivest.Franchise.SettingsStore.save(%{fiscal_enabled: true})
     branch = insert(:branch, is_active: true)
 
     Repo.insert!(%BranchInfo{
@@ -500,5 +501,20 @@ defmodule Delivest.FiscalTest do
     assert {:ok, %Receipt{kind: :sell_refund, refund_of_id: id}} = Fiscal.refund(done, staff)
     assert id == sale.id
     assert {:error, :not_refundable} = Fiscal.refund(%{done | provider: "other"}, staff)
+  end
+
+  test "global switch stops new sales but drains an existing receipt and permits its refund", %{
+    order: order,
+    payments: payments
+  } do
+    stub_atol(&Req.Test.json(&1, %{"uuid" => "u-1", "status" => "done"}))
+    {:ok, sale} = Fiscal.issue(order, payments)
+    {:ok, _} = Delivest.Franchise.SettingsStore.save(%{fiscal_enabled: false})
+
+    assert {:error, :not_own} = Fiscal.issue(order, payments)
+    assert :ok = register(sale)
+    done = Fiscal.get(sale.id)
+    assert done.status == :done
+    assert {:ok, %Receipt{kind: :sell_refund}} = Fiscal.refund(done, insert(:staff))
   end
 end

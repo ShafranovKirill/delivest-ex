@@ -68,29 +68,29 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         <a
           :if={@printing.kitchen_enabled}
           id={"print-kitchen-#{@order.id}"}
-          href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}"}
+          href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}/print"}
           target="_blank"
           rel="noopener"
           class="btn btn-ghost btn-xs"
-        >Кухонный талон PDF</a>
+        >Печать талона</a>
         <a
           :if={@printing.kitchen_enabled}
           href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}?download=1"}
           class="btn btn-ghost btn-xs"
-        >Скачать</a>
+        >Талон PDF</a>
         <a
           :if={@printing.customer_enabled}
           id={"print-customer-#{@order.id}"}
-          href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}"}
+          href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}/print"}
           target="_blank"
           rel="noopener"
           class="btn btn-ghost btn-xs"
-        >Лист заказа PDF</a>
+        >Печать листа заказа</a>
         <a
           :if={@printing.customer_enabled}
           href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}?download=1"}
           class="btn btn-ghost btn-xs"
-        >Скачать</a>
+        >Лист заказа PDF</a>
         <span class="badge badge-sm badge-ghost gap-1 font-medium">
           <.icon name={fulfillment_icon(@order.fulfillment_type)} class="size-3.5" />
           {OrderHelpers.fulfillment_label(@order.fulfillment_type)}

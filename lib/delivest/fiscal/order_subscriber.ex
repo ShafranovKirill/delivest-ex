@@ -21,6 +21,7 @@ defmodule Delivest.Fiscal.OrderSubscriber do
     with false <- Map.get(payload, "reverted", false),
          %Order{deleted_at: nil, channel: nil, crm: nil} = order <-
            Repo.get(Order, event.aggregate_id),
+         true <- Fiscal.globally_enabled?(),
          %BranchSettings{mode: :own, enabled: true} = settings <- Fiscal.settings(order.branch_id) do
       case payments(order, settings) do
         [] ->
@@ -38,6 +39,7 @@ defmodule Delivest.Fiscal.OrderSubscriber do
   def handle(%{payload: %{"change" => "paid", "method" => "online", "payment_id" => id}} = event) do
     with %Order{deleted_at: nil, channel: nil, crm: nil} = order <-
            Repo.get(Order, event.aggregate_id),
+         true <- Fiscal.globally_enabled?(),
          %BranchSettings{mode: :own, enabled: true} <- Fiscal.settings(order.branch_id),
          %Payment{status: :paid} = payment <- Repo.get(Payment, id),
          false <- prepaid?(order) do

@@ -161,6 +161,19 @@
   :root[data-sidebar-collapsed] .staff-shell-content { margin-left: 0; }
   :root[data-sidebar-collapsed] .staff-header { left: 0; }
   :root[data-sidebar-collapsed] .staff-header-sidebar-controls { display: flex; }
+
+  .staff-shell-content:has(#printing-editor-workspace) {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .staff-shell-content:has(#printing-editor-workspace) > main,
+  .staff-shell-content > main div:has(#printing-editor-workspace) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
 }
 @media (max-width: 1023px) {
   :root:not([data-sidebar-open]) .staff-sidebar { display: none; }
