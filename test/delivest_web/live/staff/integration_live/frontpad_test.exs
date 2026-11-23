@@ -28,6 +28,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.FrontpadTest do
     render_hook(lv, "sync_stops", %{})
     assert has_element?(lv, "#frontpad-guide")
     assert has_element?(lv, "#frontpad-health-summary-capabilities table")
+
+    assert has_element?(lv, ~s(button[phx-value-tab="settings"][aria-pressed="true"]))
+    assert has_element?(lv, ~s(button[phx-value-tab="check"][aria-pressed="false"]))
+    lv |> element(~s(button[phx-value-tab="check"])) |> render_click()
+    assert has_element?(lv, ~s(button[phx-value-tab="settings"][aria-pressed="false"]))
+    assert has_element?(lv, ~s(button[phx-value-tab="check"][aria-pressed="true"]))
   end
 
   test "payment codes and order marks are saved", %{conn: conn} do

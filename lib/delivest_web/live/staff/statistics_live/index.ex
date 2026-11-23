@@ -1139,7 +1139,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             id="statistics-period"
             name="period"
             aria-label={gettext("Period")}
-            class="select select-bordered select-sm w-40"
+            class="select select-sm w-40"
           >
             <option :for={preset <- Analytics.presets()} value={preset} selected={preset == @preset}>
               {preset_label(preset)}
@@ -1150,13 +1150,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
               type="date"
               name="from"
               value={@custom_from}
-              class="input input-bordered input-sm w-36"
+              class="input input-sm w-36"
             />
             <input
               type="date"
               name="to"
               value={@custom_to}
-              class="input input-bordered input-sm w-36"
+              class="input input-sm w-36"
             />
           <% end %>
           <.input
@@ -1165,14 +1165,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             type="select"
             prompt={gettext("All channels")}
             options={channel_options(assigns)}
-            class="select select-bordered select-sm w-36"
+            class="select select-sm w-36"
           />
           <.input
             :if={@tab == "sources"}
             field={@form[:link_search]}
             type="text"
             placeholder={gettext("Find advertising link")}
-            class="input input-bordered input-sm w-40"
+            class="input input-sm w-40"
           />
           <.input
             :if={@tab == "sources"}
@@ -1180,7 +1180,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             type="select"
             prompt={gettext("All advertising links")}
             options={@link_options}
-            class="input input-bordered input-sm w-48"
+            class="select select-sm w-48"
           />
         </.form>
         <.form
@@ -1231,7 +1231,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       <nav
         :if={@section in ~w(sources funnel)}
         id="sources-advertising-tabs"
-        class="tabs tabs-sm"
+        class="tabs tabs-box tabs-sm max-w-full flex-nowrap overflow-x-auto"
       >
         <.link
           :if={report_available?(assigns, "sources")}

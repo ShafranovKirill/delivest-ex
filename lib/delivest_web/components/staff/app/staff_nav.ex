@@ -4,6 +4,7 @@ defmodule DelivestWeb.StaffNav do
   import Delivest.Identity.Acl
 
   alias Delivest.{Couriers, Features, Gateway, Identity, Segments}
+  alias DelivestWeb.Staff.SubsectionNavigation
 
   def pages(staff, branch) do
     staff
@@ -361,75 +362,36 @@ defmodule DelivestWeb.StaffNav do
         assigns.items_override
       end
 
-    assigns = assign(assigns, items: items)
+    entries =
+      Enum.map(items, fn item ->
+        %{
+          id:
+            assigns.id_prefix <>
+              if(item.parent == :menu,
+                do: "product-section-tab-#{item.id}",
+                else: "section-nav-#{item.id}"
+              ),
+          path:
+            DelivestWeb.StaffBranchPath.contextual_navigation_path(
+              item.path,
+              assigns.scope_branch,
+              assigns.return_source
+            ),
+          label: item.label,
+          active: active_local?(item, assigns.current_page, assigns.current_path)
+        }
+      end)
+
+    assigns = assign(assigns, entries: entries)
 
     ~H"""
-    <ul
-      :if={@items != [] and @id_prefix == "sidebar-"}
+    <SubsectionNavigation.subsection_navigation
+      :if={@entries != []}
       id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
-      phx-hook="ActiveSectionNav"
-      aria-label={gettext("Page sections")}
-    >
-      <li :for={item <- @items}>
-        <.local_link
-          item={item}
-          id_prefix={@id_prefix}
-          scope_branch={@scope_branch}
-          return_source={@return_source}
-          current_page={@current_page}
-          current_path={@current_path}
-        />
-      </li>
-    </ul>
-    <nav
-      :if={@items != [] and @id_prefix == ""}
-      id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
-      phx-hook="ActiveSectionNav"
-      aria-label={gettext("Page sections")}
-      class="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-base-300 px-4 py-2 sm:px-6"
-    >
-      <.local_link
-        :for={item <- @items}
-        item={item}
-        id_prefix={@id_prefix}
-        scope_branch={@scope_branch}
-        return_source={@return_source}
-        current_page={@current_page}
-        current_path={@current_path}
-      />
-    </nav>
-    """
-  end
-
-  attr :item, :map, required: true
-  attr :id_prefix, :string, required: true
-  attr :scope_branch, :any, default: nil
-  attr :return_source, :string, default: nil
-  attr :current_page, :any, default: nil
-  attr :current_path, :string, default: nil
-
-  defp local_link(assigns) do
-    ~H"""
-    <.link
-      id={@id_prefix <> if(@item.parent == :menu, do: "product-section-tab-#{@item.id}", else: "section-nav-#{@item.id}")}
-      navigate={
-        DelivestWeb.StaffBranchPath.contextual_navigation_path(
-          @item.path,
-          @scope_branch,
-          @return_source
-        )
-      }
-      aria-current={active_local?(@item, @current_page, @current_path) && "page"}
-      class={
-        if(@id_prefix == "sidebar-",
-          do: active_local?(@item, @current_page, @current_path) && "menu-active",
-          else: [
-            "whitespace-nowrap rounded-field px-3 py-2 text-sm hover:bg-base-200",
-            active_local?(@item, @current_page, @current_path) && "bg-base-200 font-semibold"
-          ]
-        )
-      }
-    >{@item.label}</.link>
+      label={gettext("Page sections")}
+      entries={@entries}
+      sidebar={@id_prefix == "sidebar-"}
+    />
     """
   end
 

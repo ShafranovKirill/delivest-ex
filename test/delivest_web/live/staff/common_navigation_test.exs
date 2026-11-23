@@ -426,6 +426,9 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
              "#staff-section-navigation a[href='/staff/clients'][aria-current='page']"
            )
 
+    assert has_element?(clients, "#staff-section-navigation.tabs-box .tab-active")
+    assert has_element?(clients, "#sidebar-staff-section-navigation .menu-active")
+
     assert has_element?(clients, "#staff-section-navigation a[href='/staff/segments']")
 
     {:ok, segments, _} = live(conn, ~p"/staff/segments")
@@ -639,6 +642,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     {:ok, admin, _} = live(admin_conn, "/staff/settings/data-system?branch=#{branch.slug}")
     assert has_element?(admin, "#sidebar-settings-nav-data_system[aria-current='page']")
     assert has_element?(admin, "#settings-nav-data_system[aria-current='page']")
+    assert has_element?(admin, "#settings-navigation.tabs-box .tab-active")
     assert has_element?(admin, "#data-system-content #audit-events")
     assert has_element?(admin, "#data-system-action-events[aria-current='page']")
 

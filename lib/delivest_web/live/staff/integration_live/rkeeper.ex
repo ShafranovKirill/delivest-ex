@@ -135,32 +135,11 @@ defmodule DelivestWeb.Staff.IntegrationLive.Rkeeper do
         <span>{gettext("The aggregator token RKEEPER_TOKEN is not set on the server.")}</span>
       </div>
 
-      <div role="tablist" class="tabs tabs-boxed w-fit">
-        <button
-          type="button"
-          phx-click="tab"
-          phx-value-tab="settings"
-          class={["tab", @tab == :settings && "tab-active font-bold"]}
-        >
-          {gettext("Settings")}
-        </button>
-        <button
-          type="button"
-          phx-click="tab"
-          phx-value-tab="menu"
-          class={["tab", @tab == :menu && "tab-active font-bold"]}
-        >
-          {gettext("Menu")}
-        </button>
-        <button
-          type="button"
-          phx-click="tab"
-          phx-value-tab="journal"
-          class={["tab", @tab == :journal && "tab-active font-bold"]}
-        >
-          {gettext("Request journal")}
-        </button>
-      </div>
+      <DelivestWeb.Staff.SubsectionNavigation.integration_tabs active={@tab}>
+        <:tab value={:settings}>{gettext("Settings")}</:tab>
+        <:tab value={:menu}>{gettext("Menu")}</:tab>
+        <:tab value={:journal}>{gettext("Request journal")}</:tab>
+      </DelivestWeb.Staff.SubsectionNavigation.integration_tabs>
 
       <.live_component
         :if={@tab == :settings}
