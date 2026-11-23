@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.StatsComponents do
 
   import DelivestWeb.CoreComponents, only: [icon: 1]
 
-  attr :icon, :string, required: true
+  attr :icon, :string, default: nil
   attr :label, :string, required: true
   attr :delta, :any, default: nil
   attr :hint, :string, default: nil
@@ -14,20 +14,23 @@ defmodule DelivestWeb.Staff.StatsComponents do
   def stat_card(assigns) do
     ~H"""
     <div class={[
-      "bg-base-100 rounded-box border border-base-300 p-3 sm:p-4 flex flex-col sm:flex-row items-start gap-2 sm:gap-3",
+      "stat min-w-0 rounded-box border border-base-300 bg-base-100 p-3 sm:p-4 flex flex-col sm:flex-row items-start gap-2 sm:gap-3",
       @class
     ]}>
-      <div class="bg-primary/10 text-primary rounded-field p-2 shrink-0">
+      <div :if={@icon} class="bg-primary/10 text-primary rounded-field p-2 shrink-0">
         <.icon name={@icon} class="size-5" />
       </div>
       <div class="min-w-0 flex-1">
-        <p class="text-xs text-base-content/60 uppercase tracking-wide font-semibold line-clamp-2 break-words">
+        <p class="stat-title whitespace-normal uppercase tracking-wide font-semibold line-clamp-2 break-words">
           {@label}
         </p>
-        <p class="text-lg sm:text-xl font-bold tabular-nums whitespace-nowrap">
+        <p class="stat-value whitespace-normal break-words text-lg sm:text-xl font-bold tabular-nums">
           {render_slot(@inner_block)}
         </p>
-        <div class="flex flex-wrap items-center gap-x-2 mt-0.5 min-h-5">
+        <div
+          :if={@hint || is_number(@delta)}
+          class="stat-desc flex flex-wrap items-center gap-x-2 mt-0.5 min-h-5 whitespace-normal"
+        >
           <span
             :if={is_number(@delta)}
             class={[

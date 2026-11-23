@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
   use DelivestWeb, :html
 
+  import DelivestWeb.Staff.StatsComponents, only: [stat_card: 1]
+
   alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
   import DelivestWeb.Staff.StatsComponents, only: [analytics_chart: 1]
@@ -459,13 +461,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         id="statistics-report-summary"
         class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
       >
-        <div
-          :for={{label, value} <- summary_metrics(@report)}
-          class="rounded-2xl border border-base-300 bg-base-100 p-4"
-        >
-          <p class="text-xs text-base-content/60">{label}</p>
-          <p class="text-lg font-semibold tabular-nums">{value}</p>
-        </div>
+        <.stat_card :for={{label, value} <- summary_metrics(@report)} label={label}>
+          {value}
+        </.stat_card>
       </div>
 
       <.comparison_panel
