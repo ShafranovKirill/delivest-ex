@@ -23,13 +23,13 @@ defmodule DelivestWeb.Staff.SubsectionNavigation do
       id={@id}
       phx-hook="ActiveSectionNav"
       aria-label={@label}
-      class="tabs tabs-border max-w-full flex-nowrap overflow-x-auto whitespace-nowrap"
+      class="tabs tabs-box rounded-none max-w-full flex-nowrap overflow-x-auto whitespace-nowrap"
     >
       <.link
         :for={entry <- @entries}
         id={entry.id}
         navigate={entry.path}
-        class={["tab shrink-0 rounded-none", entry.active && "tab-active"]}
+        class={["tab shrink-0", entry.active && "tab-active"]}
         aria-current={entry.active && "page"}
       >{entry.label}</.link>
     </nav>
