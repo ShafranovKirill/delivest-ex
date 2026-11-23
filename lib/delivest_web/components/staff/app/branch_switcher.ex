@@ -24,8 +24,7 @@ defmodule DelivestWeb.BranchSwitcher do
       assign(assigns,
         branch_links: branch_links,
         network_path: network_path(source, network),
-        network_choice: match?({:choice, _}, network),
-        network_label: network_label(network),
+        network_label: gettext("Whole franchise"),
         scope_label:
           if(assigns.current_branch,
             do: assigns.current_branch.name,
@@ -92,7 +91,10 @@ defmodule DelivestWeb.BranchSwitcher do
         </label>
 
         <ul class="menu w-full max-h-80 flex-nowrap overflow-y-auto p-0">
-          <li :if={@network_allowed} data-name={String.downcase(gettext("All branches"))}>
+          <li
+            :if={@network_allowed}
+            data-name={String.downcase(@network_label <> " " <> gettext("All branches"))}
+          >
             <.link
               id="header-branch-all"
               href={@network_path}
@@ -100,9 +102,6 @@ defmodule DelivestWeb.BranchSwitcher do
             >
               {@network_label}
             </.link>
-          </li>
-          <li :if={@network_choice}>
-            <.link href={@from || "/staff/dashboard"}>{gettext("Stay in this branch")}</.link>
           </li>
           <li :for={{branch, path, label} <- @branch_links} data-name={String.downcase(branch.name)}>
             <.link
@@ -178,9 +177,4 @@ defmodule DelivestWeb.BranchSwitcher do
   defp switch_label({:fallback, %{label: label}}), do: label
   defp switch_label({:ok, _}), do: nil
   defp switch_label(_), do: gettext("Overview of the branch")
-
-  defp network_label({:choice, _}), do: gettext("Overview of the network")
-  defp network_label({:ok, %{path: "/staff/dashboard"}}), do: gettext("All accessible branches")
-  defp network_label({:ok, _}), do: gettext("Network")
-  defp network_label(_), do: gettext("Overview of the network")
 end

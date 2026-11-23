@@ -86,6 +86,7 @@ defmodule DelivestWeb.Staff.BranchInUrlTest do
 
     {:ok, all, _} = live(conn, ~p"/staff/dashboard")
     assert has_element?(all, "#header-branch-all.menu-active")
+    assert has_element?(all, "#header-branch-all", "Whole franchise")
     assert has_element?(all, ~s(#main-sidebar a[href="/staff/dashboard"]))
     refute has_element?(all, ~s(#main-sidebar a[href="/staff/b/#{ctx.own.slug}/dashboard"]))
 

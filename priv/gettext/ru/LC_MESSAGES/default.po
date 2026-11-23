@@ -11591,8 +11591,8 @@ msgstr "Выберите «Обзор точки», чтобы перейти с
 
 #: lib/delivest_web/controllers/staff/staff_active_branch_controller.ex:22
 #, elixir-autogen, elixir-format
-msgid "Choose Overview of the network to leave this branch page."
-msgstr "Выберите «Обзор сети», чтобы выйти со страницы точки."
+msgid "Choose Whole franchise to leave this branch page."
+msgstr "Выберите «Вся франшиза», чтобы выйти со страницы точки."
 
 #: lib/delivest_web/components/staff/foundation_components.ex:479
 #, elixir-autogen, elixir-format
@@ -11761,6 +11761,9 @@ msgstr "Обзор точки"
 #, elixir-autogen, elixir-format
 msgid "Overview of the network"
 msgstr "Обзор сети"
+
+msgid "Whole franchise"
+msgstr "Вся франшиза"
 
 #: lib/delivest_web/components/staff/foundation_components.ex:194
 #, elixir-autogen, elixir-format
