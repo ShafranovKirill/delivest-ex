@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.ProductLive.BranchProducts do
           name="search"
           value={@search}
           placeholder={gettext("Search products...")}
-          class="input input-bordered w-full pl-10"
+          class="input w-full pl-10"
           phx-debounce="300"
         />
       </div>

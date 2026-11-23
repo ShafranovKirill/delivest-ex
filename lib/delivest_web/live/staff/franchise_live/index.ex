@@ -567,7 +567,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
               name="target"
               type="text"
               autocomplete="off"
-              class="input input-bordered w-full"
+              class="input w-full"
             />
             <button
               id="backup-import"
@@ -601,7 +601,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.Index do
               name="target"
               type="text"
               autocomplete="off"
-              class="input input-bordered w-full"
+              class="input w-full"
             />
             <button
               id="backup-retry-import"

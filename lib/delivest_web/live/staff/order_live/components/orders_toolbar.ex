@@ -27,7 +27,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
           />
         </div>
         <label for="orders-period" class="sr-only">{gettext("Period")}</label>
-        <select id="orders-period" name="period" class="select select-bordered select-sm">
+        <select id="orders-period" name="period" class="select select-sm">
           <option
             :for={{value, label} <- periods()}
             value={value}
@@ -63,7 +63,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
               <select
                 id="orders-receiving"
                 name="receiving"
-                class="select select-bordered select-sm w-full"
+                class="select select-sm w-full"
               >
                 <option value="">{gettext("All receiving types")}</option>
                 <option value="dine_in" selected={@selected.receiving == "dine_in"}>
@@ -80,7 +80,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
               <select
                 id="orders-payment"
                 name="payment"
-                class="select select-bordered select-sm w-full"
+                class="select select-sm w-full"
               >
                 <option value="">{gettext("All payment methods")}</option>
                 <option value="cash" selected={@selected.payment == "cash"}>{gettext("Cash")}</option>
@@ -95,7 +95,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
               <select
                 id="orders-source"
                 name="source"
-                class="select select-bordered select-sm w-full"
+                class="select select-sm w-full"
               >
                 <option value="">{gettext("All sources")}</option>
                 <option
@@ -158,7 +158,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             type="date"
             name="date_from"
             value={@selected.date_from}
-            class="input input-bordered input-sm min-w-0 w-32"
+            class="input input-sm min-w-0 w-32"
           />
           <span class="text-base-content/40">—</span>
           <label for="orders-date-to" class="sr-only">{gettext("To")}</label>
@@ -167,7 +167,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             type="date"
             name="date_to"
             value={@selected.date_to}
-            class="input input-bordered input-sm min-w-0 w-32"
+            class="input input-sm min-w-0 w-32"
           />
         </div>
       </form>

@@ -302,7 +302,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <input
             type="text"
             name="number"
-            class="input input-xs input-bordered w-32 text-base-content"
+            class="input input-xs w-32 text-base-content"
             placeholder={gettext("Order number in the CRM")}
           />
           <button type="submit" class="btn btn-error btn-xs btn-outline">
@@ -401,7 +401,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           phx-change="update_payment"
           phx-value-order-id={@order.id}
         >
-          <select name="payment_method" class="select select-sm select-bordered font-medium">
+          <select name="payment_method" class="select select-sm font-medium">
             <option value="cash" selected={@order.payment_method == :cash}>{gettext("Cash")}</option>
             <option value="card_offline" selected={@order.payment_method == :card_offline}>
               {gettext("Card Offline")}
@@ -1018,7 +1018,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         >
           <select
             name="courier_id"
-            class="select select-xs select-bordered"
+            class="select select-xs"
             aria-label={gettext("Assign a courier")}
           >
             <option value="" disabled selected={is_nil(@courier_id)}>

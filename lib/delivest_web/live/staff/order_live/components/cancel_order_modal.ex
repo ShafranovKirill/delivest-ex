@@ -47,7 +47,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CancelOrderModal do
           rows="2"
           maxlength="300"
           placeholder={gettext("Comment, if needed")}
-          class="textarea textarea-bordered w-full"
+          class="textarea w-full"
         ></textarea>
         <div class="modal-action">
           <button type="button" class="btn btn-ghost btn-sm" phx-click="dismiss_cancel">

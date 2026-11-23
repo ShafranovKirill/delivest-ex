@@ -210,7 +210,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
       />
       <form id="logs-filter" phx-change="filter" phx-submit="filter" class="flex flex-wrap gap-3">
         <%= if @events? do %>
-          <select name="type" class="select select-bordered w-full sm:w-48">
+          <select name="type" class="select w-full sm:w-48">
             <option value="">{gettext("All sections")}</option>
             <option
               :for={{value, label} <- @subject_types}
@@ -221,7 +221,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </option>
           </select>
 
-          <select name="action" class="select select-bordered w-full sm:w-52">
+          <select name="action" class="select w-full sm:w-52">
             <option value="">{gettext("All events")}</option>
             <optgroup :for={{section, actions} <- @options.actions} label={section}>
               <option
@@ -234,7 +234,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </optgroup>
           </select>
 
-          <select name="actor" class="select select-bordered w-full sm:w-48">
+          <select name="actor" class="select w-full sm:w-48">
             <option value="">{gettext("All employees")}</option>
             <option
               :for={{id, name} <- @options.actors}
@@ -245,7 +245,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </option>
           </select>
 
-          <select name="branch" class="select select-bordered w-full sm:w-44">
+          <select name="branch" class="select w-full sm:w-44">
             <option value="">{gettext("All branches")}</option>
             <option
               :for={{id, name} <- Enum.sort_by(@options.branches, &elem(&1, 1))}
@@ -256,7 +256,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </option>
           </select>
 
-          <select name="sort" class="select select-bordered w-full sm:w-44">
+          <select name="sort" class="select w-full sm:w-44">
             {Phoenix.HTML.Form.options_for_select(sort_options(), @filters["sort"] || "")}
           </select>
 
@@ -276,11 +276,11 @@ defmodule DelivestWeb.Staff.LogLive.Index do
           name="q"
           value={@filters["q"]}
           placeholder={gettext("Search in messages...")}
-          class="input input-bordered w-full sm:max-w-sm"
+          class="input w-full sm:max-w-sm"
           phx-debounce="500"
         />
 
-        <select :if={@live_action == :raw} name="level" class="select select-bordered w-full sm:w-44">
+        <select :if={@live_action == :raw} name="level" class="select w-full sm:w-44">
           <option value="">{gettext("All levels")}</option>
           <option :for={level <- @levels} value={level} selected={@filters["level"] == level}>
             {level}

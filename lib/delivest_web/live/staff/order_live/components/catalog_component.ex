@@ -25,7 +25,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.CatalogComponent do
             name="search[query]"
             value={@search_query}
             placeholder={gettext("Search products by name...")}
-            class="input input-bordered input-sm w-full pl-9 pr-10"
+            class="input input-sm w-full pl-9 pr-10"
             autocomplete="off"
             phx-debounce="150"
             phx-hook=".SearchHotkey"

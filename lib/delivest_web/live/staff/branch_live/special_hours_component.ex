@@ -92,9 +92,9 @@ defmodule DelivestWeb.Staff.BranchLive.SpecialHoursComponent do
         phx-target={@myself}
         class="grid grid-cols-2 items-end gap-2 sm:grid-cols-5"
       >
-        <input type="date" name="date" required class="input input-bordered input-sm sm:col-span-2" />
-        <input type="time" name="open" class="input input-bordered input-sm" />
-        <input type="time" name="close" class="input input-bordered input-sm" />
+        <input type="date" name="date" required class="input input-sm sm:col-span-2" />
+        <input type="time" name="open" class="input input-sm" />
+        <input type="time" name="close" class="input input-sm" />
         <label class="flex items-center gap-2 text-sm">
           <input type="checkbox" name="closed" value="true" class="checkbox checkbox-sm" />
           {gettext("Closed")}
