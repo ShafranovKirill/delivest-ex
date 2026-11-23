@@ -13605,3 +13605,34 @@ msgstr "Без передачи в CRM"
 #, elixir-autogen, elixir-format
 msgid "Filters"
 msgstr "Фильтры"
+
+#, elixir-autogen, elixir-format
+msgid "Print Order"
+msgstr "Печать заказа"
+
+#, elixir-autogen, elixir-format
+msgid "Print kitchen ticket"
+msgstr "Печать талона"
+
+#, elixir-autogen, elixir-format
+msgid "Download kitchen ticket PDF"
+msgstr "Скачать талон PDF"
+
+#, elixir-autogen, elixir-format
+msgid "Print order sheet"
+msgstr "Печать листа заказа"
+
+#, elixir-autogen, elixir-format
+msgid "Download order sheet PDF"
+msgstr "Скачать лист заказа PDF"
+
+#, elixir-autogen, elixir-format
+msgid "View Order"
+msgstr "Посмотреть заказ"
+
+#, elixir-autogen, elixir-format
+msgid "%{count} more item"
+msgid_plural "%{count} more items"
+msgstr[0] "Ещё %{count} позиция"
+msgstr[1] "Ещё %{count} позиции"
+msgstr[2] "Ещё %{count} позиций"

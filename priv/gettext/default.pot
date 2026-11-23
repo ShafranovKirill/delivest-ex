@@ -13311,3 +13311,33 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Filters"
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Print Order"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Print kitchen ticket"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Download kitchen ticket PDF"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Print order sheet"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Download order sheet PDF"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "View Order"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "%{count} more item"
+msgid_plural "%{count} more items"
+msgstr[0] ""
+msgstr[1] ""

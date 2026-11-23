@@ -11,6 +11,64 @@
   font-weight: 800;
 }
 
+.order-card-header,
+.order-card-footer {
+  --order-card-control-height: 2rem;
+}
+
+@media (pointer: coarse), (max-width: 639px) {
+  .order-card-header,
+  .order-card-footer {
+    --order-card-control-height: var(--foundation-touch-height);
+  }
+}
+
+.order-card-header {
+  column-gap: .5rem;
+}
+
+.order-card-print-menu {
+  position: absolute;
+  top: calc(100% + .25rem);
+  inset-inline-start: 0;
+  width: max-content;
+  max-width: min(15rem, calc(100vw - 6rem));
+  z-index: 20;
+}
+
+.order-card-header > .badge,
+.order-card-header .order-card-chip,
+.order-card-header .order-card-printer > summary,
+.foundation-shell .order-card-footer :is(.badge, .btn, .select) {
+  height: var(--order-card-control-height);
+  min-height: var(--order-card-control-height);
+  white-space: nowrap;
+}
+
+.order-card-header .order-card-printer > summary,
+.order-card-footer .btn-square {
+  width: var(--order-card-control-height);
+}
+
+.order-card-header .order-card-chip {
+  display: inline-flex;
+  align-items: center;
+}
+
+article:has(> .order-card-header .order-card-printer[open]) {
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+}
+
+.order-card-printer > summary {
+  list-style: none;
+}
+
+.order-card-printer > summary::-webkit-details-marker {
+  display: none;
+}
+
 .staff-shell-content:has(#orders-page) main {
   padding: 0;
 }

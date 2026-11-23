@@ -569,6 +569,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           :if={@shown_order}
           id="shown-order"
           order={@shown_order}
+          expanded={true}
           current_staff={@current_staff}
           current_branch={@current_branch}
           printing={@printing}

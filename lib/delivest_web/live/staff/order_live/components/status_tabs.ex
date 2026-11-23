@@ -72,15 +72,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
       patch={@to}
       aria-current={@active && "page"}
       class={[
-        "flex w-full items-center justify-between rounded-field px-3 py-2 text-left text-sm hover:bg-base-200",
-        @active && "btn-primary",
-        !@active && "bg-base-100"
+        "flex w-full items-center justify-between rounded-field px-3 py-2 text-left text-sm",
+        @active && "bg-primary text-primary-content hover:bg-primary/90",
+        !@active && "bg-base-100 hover:bg-base-200"
       ]}
     >
       {@label}
       <span class={[
         "badge badge-sm font-mono",
-        @active && "bg-primary-content/20 border-0 text-primary-content",
+        @active && "border-transparent bg-base-100 text-base-content",
         !@active && "badge-ghost"
       ]}>
         {@count}

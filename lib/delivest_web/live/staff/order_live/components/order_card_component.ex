@@ -27,6 +27,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :positions, :list, default: nil
   attr :pickup, :map, default: nil
   attr :crm_retry_at, :any, default: :lookup
+  attr :expanded, :boolean, default: false
 
   def render_card(assigns) do
     assigns =
@@ -54,44 +55,61 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       ]}
     >
       <header class={[
-        "px-3 sm:px-4 py-2.5 border-b border-base-200 flex flex-wrap items-center gap-x-3 gap-y-1.5",
+        "order-card-header rounded-t-box px-3 sm:px-4 py-2.5 border-b border-base-200 flex flex-wrap items-center gap-x-3 gap-y-1.5",
         if(@status == :created, do: "bg-info/10", else: "bg-base-200/40")
       ]}>
         <span :if={@status == :created} class="relative flex size-2.5">
           <span class="absolute inline-flex size-full animate-ping rounded-full bg-info opacity-75" />
           <span class="relative inline-flex size-2.5 rounded-full bg-info" />
         </span>
-        <span class="font-mono font-bold text-base text-primary">
+        <span
+          :if={not @expanded}
+          class="order-card-number font-mono font-bold text-base text-primary"
+          title={@order.number}
+        >
           #{Delivest.Oms.Order.short_number(@order)}
         </span>
-        <span class="font-mono text-xs text-base-content/50">{@order.number}</span>
-        <a
-          :if={@printing.kitchen_enabled}
-          id={"print-kitchen-#{@order.id}"}
-          href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}/print"}
-          target="_blank"
-          rel="noopener"
-          class="btn btn-ghost btn-xs"
-        >Печать талона</a>
-        <a
-          :if={@printing.kitchen_enabled}
-          href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}?download=1"}
-          class="btn btn-ghost btn-xs"
-        >Талон PDF</a>
-        <a
-          :if={@printing.customer_enabled}
-          id={"print-customer-#{@order.id}"}
-          href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}/print"}
-          target="_blank"
-          rel="noopener"
-          class="btn btn-ghost btn-xs"
-        >Печать листа заказа</a>
-        <a
-          :if={@printing.customer_enabled}
-          href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}?download=1"}
-          class="btn btn-ghost btn-xs"
-        >Лист заказа PDF</a>
-        <span class="badge badge-sm badge-ghost gap-1 font-medium">
+        <details
+          :if={@printing.kitchen_enabled or @printing.customer_enabled}
+          class="order-card-printer relative"
+        >
+          <summary
+            class="btn btn-ghost btn-xs btn-square"
+            aria-label={gettext("Print Order")}
+            title={gettext("Print Order")}
+          >
+            <.icon name="hero-printer" class="size-4" />
+          </summary>
+          <div class="order-card-print-menu rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
+            <a
+              :if={@printing.kitchen_enabled}
+              id={"print-kitchen-#{@order.id}"}
+              href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}/print"}
+              target="_blank"
+              rel="noopener"
+              class="block rounded-field px-3 py-2 text-sm hover:bg-base-200"
+            >{gettext("Print kitchen ticket")}</a>
+            <a
+              :if={@printing.kitchen_enabled}
+              href={~p"/staff/b/#{@current_branch}/printing/kitchen/#{@order.id}?download=1"}
+              class="block rounded-field px-3 py-2 text-sm hover:bg-base-200"
+            >{gettext("Download kitchen ticket PDF")}</a>
+            <a
+              :if={@printing.customer_enabled}
+              id={"print-customer-#{@order.id}"}
+              href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}/print"}
+              target="_blank"
+              rel="noopener"
+              class="block rounded-field px-3 py-2 text-sm hover:bg-base-200"
+            >{gettext("Print order sheet")}</a>
+            <a
+              :if={@printing.customer_enabled}
+              href={~p"/staff/b/#{@current_branch}/printing/customer/#{@order.id}?download=1"}
+              class="block rounded-field px-3 py-2 text-sm hover:bg-base-200"
+            >{gettext("Download order sheet PDF")}</a>
+          </div>
+        </details>
+        <span class="order-card-chip badge badge-sm badge-ghost gap-1 font-medium">
           <.icon name={fulfillment_icon(@order.fulfillment_type)} class="size-3.5" />
           {OrderHelpers.fulfillment_label(@order.fulfillment_type)}
         </span>
@@ -133,7 +151,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
               Identity.can?(@current_staff, "orders.update")
           }
         />
-        <.items order={@order} />
+        <.items order={@order} expanded={@expanded} />
       </div>
 
       <.courier_panel
@@ -296,11 +314,11 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </button>
       </form>
 
-      <footer class="px-3 sm:px-4 py-2.5 border-t border-base-200 flex flex-wrap items-center gap-2">
+      <footer class="order-card-footer px-3 sm:px-4 py-2.5 border-t border-base-200 flex flex-wrap items-center gap-2">
         <span
           :if={@order.source != "app"}
           id={"order-source-#{@order.id}"}
-          class="badge badge-sm badge-outline"
+          class="order-card-chip badge badge-sm badge-outline"
         >
           {source_label(@order.source)}
         </span>
@@ -308,7 +326,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           :if={@status == :created and accept_by(@order)}
           id={"order-accept-by-#{@order.id}"}
           class={[
-            "badge badge-sm",
+            "order-card-chip badge badge-sm",
             if(overdue?(accept_by(@order)), do: "badge-error", else: "badge-warning")
           ]}
         >
@@ -340,7 +358,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         <.payment_badge order={@order} />
         <span
           :for={promotion <- @order.promotions}
-          class="badge badge-success badge-sm whitespace-nowrap"
+          class="order-card-chip badge badge-success badge-sm whitespace-nowrap"
           title={promotion.name}
         >
           <.icon name="hero-receipt-percent" class="size-3.5" />
@@ -348,6 +366,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <span :if={promotion.discount > 0}>−{promotion.discount}</span>
         </span>
         <div class="ml-auto flex items-center gap-1">
+          <.link
+            :if={not @expanded}
+            id={"order-view-#{@order.id}"}
+            patch={~p"/staff/b/#{@current_branch}/orders/#{@order.id}?#{@return_query}"}
+            class="btn btn-outline btn-sm"
+          >
+            {gettext("View Order")}
+          </.link>
           <.link
             :if={not Order.crm_managed?(@order)}
             navigate={~p"/staff/b/#{@current_branch}/orders/#{@order.id}/edit?#{@return_query}"}
@@ -402,7 +428,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     assigns = assign(assigns, balance: Payments.balance(assigns.order.total_amount, payments))
 
     ~H"""
-    <span id={"order-balance-#{@order.id}"} class={["badge badge-sm", balance_badge(@balance)]}>
+    <span
+      id={"order-balance-#{@order.id}"}
+      class={["order-card-chip badge badge-sm", balance_badge(@balance)]}
+    >
       <.icon :if={@balance == :paid} name="hero-check-circle" class="size-3.5" />
       {balance_label(@balance)}
     </span>
@@ -730,17 +759,29 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   end
 
   attr :order, :map, required: true
+  attr :expanded, :boolean, required: true
 
   defp items(assigns) do
+    assigns =
+      assign(assigns,
+        visible_items:
+          if(assigns.expanded, do: assigns.order.items, else: Enum.take(assigns.order.items, 3)),
+        hidden_count: if(assigns.expanded, do: 0, else: max(length(assigns.order.items) - 3, 0))
+      )
+
     ~H"""
-    <ul class="min-w-0 space-y-1 @3xl:border-l @3xl:border-base-200 @3xl:pl-3">
-      <li :for={item <- @order.items} class="flex justify-between gap-2">
+    <ul class="order-card-items min-w-0 space-y-1 @3xl:border-l @3xl:border-base-200 @3xl:pl-3">
+      <li :for={item <- @visible_items} class="flex justify-between gap-2">
         <span class="min-w-0 text-base-content/90">
-          <span class="font-mono font-bold">{item.quantity}×</span>
-          <.icon :if={item.gift} name="hero-gift" class="size-3.5 text-success" />
-          {item.title}
+          <span class="flex min-w-0 items-center gap-1">
+            <span class="shrink-0 font-mono font-bold">{item.quantity}×</span>
+            <.icon :if={item.gift} name="hero-gift" class="size-3.5 shrink-0 text-success" />
+            <span class={[@expanded && "break-words", not @expanded && "truncate"]} title={item.title}>
+              {item.title}
+            </span>
+          </span>
           <span
-            :for={name <- Delivest.Oms.OrderItem.modifier_names(item)}
+            :for={name <- if(@expanded, do: Delivest.Oms.OrderItem.modifier_names(item), else: [])}
             class="block pl-6 text-xs text-base-content/60"
           >
             + {name}
@@ -749,6 +790,9 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         <span class="font-mono text-xs text-base-content/60 shrink-0 pt-0.5">
           {OrderHelpers.money(item.price * item.quantity)}
         </span>
+      </li>
+      <li :if={@hidden_count > 0} class="text-xs text-base-content/60">
+        {ngettext("%{count} more item", "%{count} more items", @hidden_count)}
       </li>
     </ul>
     """
@@ -773,7 +817,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     ~H"""
     <span
       id={"order-status-#{@order.id}"}
-      class={["badge badge-sm border font-medium", OrderHelpers.status_color(@order.status)]}
+      class={[
+        "order-card-chip badge badge-sm border font-medium",
+        OrderHelpers.status_color(@order.status)
+      ]}
     >
       {if @order.awaiting_payment,
         do: gettext("Awaiting payment"),

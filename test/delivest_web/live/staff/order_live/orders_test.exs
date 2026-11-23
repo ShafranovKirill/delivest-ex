@@ -223,6 +223,48 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       assert Delivest.Repo.reload!(order).status == :accepted
     end
 
+    test "the card previews three items and opens the complete order with the same filters", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      for index <- 2..10 do
+        product = insert_branch_product(branch.id, price: 100)
+
+        item =
+          Delivest.Repo.insert!(%Delivest.Oms.OrderItem{
+            order_id: order.id,
+            product_id: product.id,
+            title: "Item #{index}",
+            quantity: 1,
+            price: 100
+          })
+
+        Delivest.Repo.insert!(%Delivest.Oms.OrderItemModifier{
+          order_item_id: item.id,
+          name: "Modifier #{index}",
+          quantity: 1,
+          price: 0
+        })
+      end
+
+      {:ok, lv, _html} =
+        live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders?period=all")
+
+      card = "#orders-#{order.id}"
+      assert has_element?(lv, "#{card} .order-card-number", "##{order.daily_number}")
+      assert has_element?(lv, "#{card} .order-card-number[title='#{order.number}']")
+      assert has_element?(lv, "#{card} .order-card-items li", "7 more items")
+      refute has_element?(lv, "#{card} .order-card-items li:nth-child(5)")
+      refute has_element?(lv, "#{card} .order-card-items", "Modifier")
+
+      lv |> element("#order-view-#{order.id}") |> render_click()
+      assert_patch(lv, ~p"/staff/b/#{branch}/orders/#{order.id}?period=all")
+      assert has_element?(lv, "#shown-order .order-card-items li:nth-child(10)")
+      assert has_element?(lv, "#shown-order .order-card-items", "Modifier 10")
+      refute has_element?(lv, "#shown-order .order-card-number")
+    end
+
     test "a missing order goes back to the list", %{conn: conn, branch: branch} do
       conn = login(conn, ["admin"], branch)
 
