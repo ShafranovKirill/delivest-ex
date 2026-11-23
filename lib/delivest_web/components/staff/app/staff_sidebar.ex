@@ -289,7 +289,7 @@ defmodule DelivestWeb.StaffSidebar do
       id={@id}
       open={@open}
       phx-mounted={JS.ignore_attributes("open")}
-      class="[&>summary+ul]:mt-1 [&>ul>li+li]:mt-1"
+      class="[&>summary+ul]:mt-0.5 [&>ul>li+li]:mt-0.5"
     >
       <summary
         id={"#{@id}-toggle"}
