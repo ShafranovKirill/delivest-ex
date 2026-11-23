@@ -26,6 +26,8 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => first.id})
 
       {:ok, all, html} = live(conn, ~p"/staff/dashboard")
+      assert has_element?(all, "#dashboard-orders-by-hour-plot[data-chart]")
+      assert has_element?(all, "#dashboard-orders-by-hour-plot table")
       assert has_element?(all, "#dashboard-order-#{a.id}")
       assert has_element?(all, "#dashboard-order-#{b.id}")
       refute has_element?(all, "#dashboard-order-#{c.id}")
@@ -91,6 +93,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
 
       conn = init_test_session(conn, %{"staff_id" => staff.id})
       {:ok, view, _} = live(conn, ~p"/staff/dashboard")
+      assert has_element?(view, "#dashboard-top-products-plot[data-chart]")
       assert has_element?(view, "#dashboard-product-#{shared.id}")
     end
 

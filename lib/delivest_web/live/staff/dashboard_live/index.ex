@@ -404,31 +404,95 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             <p :if={@top_products == []} class="text-sm text-base-content/50">
               {gettext("No sales yet today")}
             </p>
-            <div
-              :for={row <- @top_products}
-              id={"dashboard-product-#{row.product_id}"}
-              class="space-y-1"
+            <.analytics_chart
+              :if={@top_products != []}
+              id="dashboard-top-products-plot"
+              label={gettext("Best sellers today")}
+              data={
+                %{
+                  kind: "products",
+                  title: gettext("Best sellers today"),
+                  share_label: gettext("Share of revenue"),
+                  revenue_label: gettext("Revenue") <> " (" <> gettext("Before refunds") <> ")",
+                  quantity_label: gettext("Quantity"),
+                  products:
+                    Enum.map(@top_products, fn row ->
+                      %{
+                        name: row.title,
+                        share: row.share,
+                        quantity: row.quantity,
+                        revenue: OrderHelpers.money(row.revenue)
+                      }
+                    end),
+                  locale: Gettext.get_locale(DelivestWeb.Gettext)
+                }
+              }
             >
-              <div class="flex justify-between gap-3 text-sm">
-                <span class="font-medium truncate">{row.title}</span>
-                <span class="text-base-content/60 tabular-nums shrink-0">
-                  × {row.quantity} · {OrderHelpers.money(row.revenue)}
-                </span>
-              </div>
-              <.share_bar value={row.share} />
-            </div>
+              <details class="text-xs">
+                <summary class="cursor-pointer">{gettext("Chart data")}</summary>
+                <div class="max-h-64 overflow-auto">
+                  <table class="table table-xs w-full">
+                    <thead>
+                      <tr>
+                        <th>{gettext("Product")}</th><th>
+                          {gettext("Revenue")} ({gettext("Before refunds")})
+                        </th><th>{gettext("Quantity")}</th><th>{gettext("Share of revenue")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr :for={row <- @top_products} id={"dashboard-product-#{row.product_id}"}>
+                        <td>{row.title}</td><td>{OrderHelpers.money(row.revenue)}</td><td>
+                          {row.quantity}
+                        </td><td>{row.share}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            </.analytics_chart>
           </.card>
 
           <.card class="p-4 space-y-3">
             <h2 class="font-bold">{gettext("Orders by hour")}</h2>
-            <.bar_chart
-              rows={@hourly}
-              value={& &1.orders}
-              label={&"#{&1.hour}"}
-              title={&"#{&1.hour}:00 — #{&1.orders}"}
-              height="h-28"
-              label_every={3}
-            />
+            <.analytics_chart
+              id="dashboard-orders-by-hour-plot"
+              label={gettext("Orders by hour")}
+              height="h-52"
+              data={
+                %{
+                  kind: "hourly",
+                  title: gettext("Orders by hour"),
+                  orders_label: gettext("Orders"),
+                  revenue_label: gettext("Revenue") <> " (" <> gettext("Before refunds") <> ")",
+                  hours: Enum.map(@hourly, & &1.hour),
+                  orders: Enum.map(@hourly, & &1.orders),
+                  revenue: Enum.map(@hourly, &OrderHelpers.money(&1.revenue)),
+                  locale: Gettext.get_locale(DelivestWeb.Gettext)
+                }
+              }
+            >
+              <details class="text-xs">
+                <summary class="cursor-pointer">{gettext("Chart data")}</summary>
+                <div class="max-h-64 overflow-auto">
+                  <table class="table table-xs w-full">
+                    <thead>
+                      <tr>
+                        <th>{gettext("Time")}</th><th>{gettext("Orders")}</th><th>
+                          {gettext("Revenue")} ({gettext("Before refunds")})
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr :for={row <- @hourly}>
+                        <td>{row.hour}:00</td><td>{row.orders}</td><td>
+                          {OrderHelpers.money(row.revenue)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            </.analytics_chart>
           </.card>
         </div>
       </div>

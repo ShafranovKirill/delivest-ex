@@ -883,10 +883,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     end
   end
 
-  defp short_date(date), do: Calendar.strftime(date, "%d.%m")
-
-  defp label_every(rows), do: max(div(length(rows) + 11, 12), 1)
-
   def staff_page_header(assigns) do
     ~H"""
     <div
@@ -1209,19 +1205,34 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
           </.link>
         </div>
         <p
-          :if={(@compare? and @overview.comparison) && @overview.comparison.summary.orders_count == 0}
+          :if={
+            (@compare? and @overview.comparison) && @overview.comparison.state == :ready &&
+              @overview.comparison.summary.orders_count == 0
+          }
           class="text-sm text-base-content/60"
         >
           {gettext("The comparison period has no completed orders; percentage change is unavailable.")}
         </p>
-        <.card class="p-4 space-y-3">
-          <h2 class="font-semibold">{gettext("Sales over time")}</h2>
-          <.bar_chart
-            rows={@overview.daily}
-            value={& &1.revenue}
-            label={&short_date(&1.date)}
-            title={&"#{Calendar.strftime(&1.date, "%d.%m.%Y")}: #{OrderHelpers.money(&1.revenue)}"}
-            label_every={label_every(@overview.daily)}
+        <p
+          :if={(@compare? and @overview.comparison) && @overview.comparison.state == :partial}
+          id="statistics-overview-comparison-partial"
+          class="text-sm text-warning"
+        >
+          {gettext("Some daily totals are updating. The latest published figures are shown.")}
+        </p>
+        <.card class="p-4">
+          <.chart
+            id="statistics-overview-sales"
+            title={gettext("Sales over time")}
+            compact
+            daily={@overview.daily}
+            comparison={
+              if(@compare? && @overview.comparison && @overview.comparison.state == :ready,
+                do: @overview.comparison
+              )
+            }
+            granularity="day"
+            metric={:revenue}
           />
         </.card>
         <div class="grid gap-3 md:grid-cols-2">

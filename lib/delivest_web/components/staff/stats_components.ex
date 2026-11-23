@@ -48,60 +48,25 @@ defmodule DelivestWeb.Staff.StatsComponents do
     """
   end
 
-  attr :rows, :list, required: true
-  attr :value, :any, required: true, doc: "fn row -> number"
-  attr :label, :any, required: true, doc: "fn row -> axis label"
-  attr :title, :any, required: true, doc: "fn row -> tooltip text"
-  attr :height, :string, default: "h-48"
-  attr :label_every, :integer, default: 1, doc: "show every n-th axis label"
+  attr :id, :string, required: true
+  attr :data, :map, required: true
+  attr :label, :string, required: true
+  attr :height, :string, default: "h-64"
+  slot :inner_block
 
-  def bar_chart(assigns) do
-    max = assigns.rows |> Enum.map(assigns.value) |> Enum.max(fn -> 0 end)
-    assigns = assign(assigns, :max, max(max, 1))
-
+  def analytics_chart(assigns) do
     ~H"""
-    <div class="w-full">
-      <div class={["flex items-end gap-0.5 sm:gap-1", @height]}>
+    <div id={@id} phx-hook="AnalyticsChart" data-chart={Jason.encode!(@data)} class="min-w-0">
+      <div phx-update="ignore" id={"#{@id}-canvas"}>
         <div
-          :for={row <- @rows}
-          class="group relative flex-1 h-full flex items-end"
-          title={@title.(row)}
+          id={"#{@id}-plot"}
+          class={["w-full", @height]}
+          role="img"
+          aria-label={@label}
         >
-          <div
-            class={[
-              "w-full rounded-t-sm transition-colors",
-              if(@value.(row) > 0,
-                do: "bg-primary/70 group-hover:bg-primary",
-                else: "bg-base-200"
-              )
-            ]}
-            style={"height: #{max(@value.(row) / @max * 100, 2)}%"}
-          />
         </div>
       </div>
-      <div class="flex gap-0.5 sm:gap-1 mt-1 h-4">
-        <div :for={{row, index} <- Enum.with_index(@rows)} class="relative flex-1">
-          <span
-            :if={rem(index, @label_every) == 0}
-            class="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-base-content/50 tabular-nums"
-          >
-            {@label.(row)}
-          </span>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  attr :value, :any, required: true
-
-  def share_bar(assigns) do
-    ~H"""
-    <div class="flex items-center gap-2">
-      <div class="h-2 flex-1 rounded-full bg-base-200 overflow-hidden">
-        <div class="h-full rounded-full bg-primary" style={"width: #{min(@value, 100)}%"} />
-      </div>
-      <span class="w-12 text-right text-xs tabular-nums text-base-content/60">{@value}%</span>
+      {render_slot(@inner_block)}
     </div>
     """
   end

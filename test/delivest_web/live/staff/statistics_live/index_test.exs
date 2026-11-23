@@ -39,6 +39,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert has_element?(lv, "#statistics-chart-revenue")
     assert has_element?(lv, "#statistics-chart-orders")
     assert has_element?(lv, "#statistics-chart-avg_check")
+    assert has_element?(lv, "#statistics-chart-revenue-plot[data-chart]")
+    assert has_element?(lv, "#statistics-chart-orders-plot[data-chart]")
+    assert has_element?(lv, "#statistics-chart-avg_check-plot[data-chart]")
+    assert has_element?(lv, "#statistics-chart-revenue-plot table td[data-series=selected]")
     assert has_element?(lv, "#statistics-top-products", "Хинкали")
     assert has_element?(lv, "#statistics-top-categories", "Горячее")
     assert has_element?(lv, "#statistics-order-source", "Storefront")
@@ -585,6 +589,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert state.socket.assigns.kitchen_late_orders == []
     refute Map.has_key?(state.socket.assigns.flash, "info")
     assert has_element?(view, "#statistics-overview")
+    assert has_element?(view, "#statistics-overview-sales-plot[data-chart]")
 
     assert render_click(view, "overdue_confirm", %{"id" => Ecto.UUID.generate()}) =~
              "Permission denied"

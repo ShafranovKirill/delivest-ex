@@ -20,6 +20,7 @@ import { FoundationColumns } from "./hooks/foundation_columns";
 import { FoundationDirty } from "./hooks/foundation_dirty";
 import { StaffDirtyGuard } from "./hooks/staff_dirty_guard";
 import { ActiveSectionNav } from "./hooks/active_section_nav";
+import { AnalyticsChart } from "./hooks/analytics_chart";
 
 let Uploaders = {};
 
@@ -296,6 +297,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CopyLink,
     HeaderScroll,
     ActiveSectionNav,
+    AnalyticsChart,
     FoundationDialog,
     FoundationColumns,
     FoundationDirty,

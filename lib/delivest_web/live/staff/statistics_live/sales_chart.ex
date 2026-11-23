@@ -2,20 +2,21 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
   use DelivestWeb, :html
 
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
+  import DelivestWeb.Staff.StatsComponents, only: [analytics_chart: 1]
 
   attr :daily, :list, required: true
   attr :comparison, :map, default: nil
   attr :granularity, :string, required: true
   attr :metric, :atom, required: true
+  attr :id, :string, default: nil
+  attr :title, :string, default: nil
+  attr :compact, :boolean, default: false
 
   def chart(assigns) do
     current = buckets(assigns.daily, assigns.granularity)
 
     previous =
       if assigns.comparison, do: buckets(assigns.comparison.daily, assigns.granularity), else: []
-
-    scale =
-      [1 | Enum.map(current ++ previous, &abs(metric_value(&1, assigns.metric)))] |> Enum.max()
 
     count = max(length(current), length(previous))
 
@@ -25,121 +26,81 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
         previous ++ List.duplicate(nil, count - length(previous))
       )
 
+    chart_id = assigns.id || "statistics-chart-#{assigns.metric}"
+
+    data = %{
+      kind: "sales",
+      metric: Atom.to_string(assigns.metric),
+      title: assigns.title || metric_label(assigns.metric),
+      selected: gettext("Selected period"),
+      comparison: gettext("Comparison period"),
+      labels:
+        Enum.map(pairs, fn {selected, comparison} ->
+          bucket_label(selected || comparison, assigns.granularity)
+        end),
+      current: Enum.map(current, &point_data(&1, assigns.metric)),
+      previous: Enum.map(previous, &point_data(&1, assigns.metric)),
+      locale: Gettext.get_locale(DelivestWeb.Gettext)
+    }
+
     assigns =
       assign(assigns,
         current: current,
         previous: previous,
-        scale: scale,
         pairs: pairs,
-        signed?:
-          assigns.metric in [:revenue, :avg_check] and
-            Enum.any?(current ++ previous, &(metric_value(&1, assigns.metric) < 0))
+        data: data,
+        chart_id: chart_id
       )
 
     ~H"""
     <section
-      id={"statistics-chart-#{@metric}"}
-      class="min-w-0 rounded-box border border-base-300 bg-base-100 p-4"
+      id={@chart_id}
+      class={[
+        "min-w-0",
+        if(@compact, do: "", else: "rounded-box border border-base-300 bg-base-100 p-4")
+      ]}
     >
-      <h2 class="font-semibold">{metric_label(@metric)}</h2>
+      <h2 class="font-semibold">{@title || metric_label(@metric)}</h2>
       <p class="mt-1 text-xs text-base-content/60">
         {gettext("Selected period")}: {range_label(@current)}
         <span :if={@comparison}>
           · {gettext("Comparison period")}: {range_label(@previous)}
         </span>
       </p>
-      <div class="mt-3 flex gap-4 text-xs">
-        <span class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded bg-primary"></span>{gettext(
-          "Selected period"
-        )}</span>
-        <span :if={@comparison} class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded bg-secondary"></span>{gettext(
-          "Comparison period"
-        )}</span>
-      </div>
-      <p class="mt-2 text-xs tabular-nums text-base-content/60">
-        {if(@signed?,
-          do:
-            "−" <>
-              value_label(%{@metric => @scale}, @metric) <>
-              " — 0 — +" <> value_label(%{@metric => @scale}, @metric),
-          else: "0 — " <> value_label(%{@metric => @scale}, @metric)
-        )}
-      </p>
-      <div class="mt-3 min-w-0 overflow-x-auto" role="group" aria-label={metric_label(@metric)}>
-        <div class="flex w-full gap-1 border-b border-base-300 pb-2">
-          <div
-            :for={{current, previous} <- @pairs}
-            class={[
-              case @granularity do
-                "day" -> "min-w-6"
-                "week" -> "min-w-20"
-                _ -> "min-w-12"
-              end,
-              "grow basis-0 text-center"
-            ]}
-          >
-            <div class="relative h-32 border-b border-base-300">
-              <div :if={@signed?} class="absolute inset-x-0 top-1/2 border-t border-base-content/30">
-              </div>
-              <div
-                :if={current}
-                class="absolute left-1/2 w-2 -translate-x-full rounded-sm bg-primary"
-                style={bar_style(current, @metric, @scale, @signed?)}
-                title={point_title(current, @metric)}
-                aria-label={point_title(current, @metric)}
-                data-series="selected"
-                data-value={metric_value(current, @metric)}
-              >
-              </div>
-              <div
-                :if={previous}
-                class="absolute left-1/2 w-2 rounded-sm bg-secondary"
-                style={bar_style(previous, @metric, @scale, @signed?)}
-                title={point_title(previous, @metric)}
-                aria-label={point_title(previous, @metric)}
-                data-series="comparison"
-                data-value={metric_value(previous, @metric)}
-              >
-              </div>
-            </div>
-            <span
-              class="mt-1 block text-[10px] tabular-nums"
-              title={if(current, do: point_title(current, @metric))}
-            >
-              {if(current, do: bucket_label(current, @granularity), else: "\u00a0")}
-            </span>
-            <span
-              :if={@comparison}
-              class="block text-[10px] tabular-nums text-secondary"
-              title={if(previous, do: point_title(previous, @metric))}
-            >
-              {if(previous, do: bucket_label(previous, @granularity), else: "\u00a0")}
-            </span>
+      <.analytics_chart
+        id={@chart_id <> "-plot"}
+        data={@data}
+        label={@title || metric_label(@metric)}
+        height="h-80"
+      >
+        <details class="mt-2 text-xs">
+          <summary class="cursor-pointer">{gettext("Chart data")}</summary>
+          <div class="max-h-64 overflow-auto">
+            <table class="table table-xs w-full">
+              <thead>
+                <tr>
+                  <th>{gettext("Selected period")}</th><th :if={@comparison}>
+                    {gettext("Comparison period")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={{current, previous} <- @pairs}>
+                  <td
+                    data-series={if(current, do: "selected")}
+                    data-value={if(current, do: metric_value(current, @metric))}
+                  >
+                    {if(current, do: point_title(current, @metric), else: "—")}
+                  </td>
+                  <td :if={@comparison} data-series={if(previous, do: "comparison")}>
+                    {if(previous, do: point_title(previous, @metric), else: "—")}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
-      <details class="mt-2 text-xs">
-        <summary class="cursor-pointer">{gettext("Chart data")}</summary>
-        <div class="max-h-64 overflow-auto">
-          <table class="table table-xs w-full">
-            <thead>
-              <tr>
-                <th>{gettext("Selected period")}</th><th :if={@comparison}>
-                  {gettext("Comparison period")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr :for={{current, previous} <- @pairs}>
-                <td>{if(current, do: point_title(current, @metric), else: "—")}</td>
-                <td :if={@comparison}>
-                  {if(previous, do: point_title(previous, @metric), else: "—")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
+        </details>
+      </.analytics_chart>
     </section>
     """
   end
@@ -203,13 +164,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.SalesChart do
   defp point_title(row, metric),
     do: date_label(row.from) <> " — " <> date_label(row.to) <> ": " <> value_label(row, metric)
 
-  defp bar_style(row, metric, scale, signed?) do
-    value = metric_value(row, metric)
-    height = max(abs(value) / scale * if(signed?, do: 50, else: 100), 1)
-
-    position =
-      if(signed? and value < 0, do: "top: 50%", else: "bottom: #{if(signed?, do: 50, else: 0)}%")
-
-    "height: #{height}%; #{position}"
-  end
+  defp point_data(row, metric),
+    do: %{
+      value: metric_value(row, metric),
+      range: date_label(row.from) <> " — " <> date_label(row.to)
+    }
 end
