@@ -35,11 +35,15 @@ defmodule DelivestWeb.Staff.ClientLive.ShowTest do
     assert html =~ "Edit Order"
   end
 
-  test "orders list links to the client card", %{conn: conn, branch: branch} do
+  test "the orders list opens a modal with a link to the client card", %{
+    conn: conn,
+    branch: branch
+  } do
     order = order_fixture(branch.id, attrs: %{"customer_phone" => "+79991112244"})
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
-    assert has_element?(lv, ~s{a[href="/staff/clients/#{order.client_id}"]})
+    lv |> element("#order-customer-#{order.id}") |> render_click()
+    assert has_element?(lv, ~s{#order-customer-modal a[href="/staff/clients/#{order.client_id}"]})
   end
 
   test "unknown client redirects back to the list", %{conn: conn} do

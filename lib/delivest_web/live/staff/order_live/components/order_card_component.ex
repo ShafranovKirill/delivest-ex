@@ -143,7 +143,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </header>
 
       <div class="p-3 sm:p-4 grid gap-3 text-sm @3xl:grid-cols-[1fr_1.4fr_1.2fr]">
-        <.customer order={@order} current_staff={@current_staff} />
+        <.customer order={@order} />
         <.fulfillment
           order={@order}
           can_check_code={
@@ -355,6 +355,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
             </option>
           </select>
         </form>
+        <span
+          :if={Order.crm_managed?(@order) or @order.payment_method == :online}
+          class="order-card-chip badge badge-sm badge-outline"
+        >
+          {if @order.payment_method == :online,
+            do: gettext("Online"),
+            else: OrderHelpers.payment_label(@order.payment_method)}
+        </span>
         <.payment_badge order={@order} />
         <span
           :for={promotion <- @order.promotions}
@@ -394,14 +402,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         </div>
       </footer>
 
-      <.payments order={@order} />
+      <.payments :if={@expanded} order={@order} />
       <.receipts order={@order} current_staff={@current_staff} />
 
       <ol
         :if={@history != []}
         id={"order-history-#{@order.id}"}
         class="px-3 sm:px-4 py-2 border-t border-base-200 flex flex-wrap gap-x-4 gap-y-1 text-xs text-base-content/60"
-        aria-label={gettext("Who handled the order")}
+        aria-label={
+          if(@expanded, do: gettext("Who handled the order"), else: gettext("Order history"))
+        }
       >
         <li
           :for={transition <- @history}
@@ -416,7 +426,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           <span class="font-medium text-base-content/80">
             {OrderHelpers.status_label(transition.to)}
           </span>
-          <span>{actor_label(@order, transition)}</span>
+          <span :if={@expanded}>{actor_label(@order, transition)}</span>
           <span class="tabular-nums">{OrderHelpers.local_time(transition.inserted_at)}</span>
         </li>
       </ol>
@@ -622,41 +632,35 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   defp fulfillment_icon(_type), do: "hero-building-storefront"
 
   attr :order, :map, required: true
-  attr :current_staff, :map, required: true
 
   defp customer(assigns) do
     assigns =
       assign(assigns,
-        phone: phone_line(assigns.order),
-        tel:
-          Enum.join(
-            Enum.reject(
-              [assigns.order.customer_phone, assigns.order.customer_phone_ext],
-              &is_nil/1
-            ),
-            ","
+        phone:
+          OrderHelpers.format_phone(
+            assigns.order.customer_phone,
+            assigns.order.customer_phone_ext
           ),
-        name: assigns.order.customer_name,
-        linked?: assigns.order.client_id && Identity.can?(assigns.current_staff, "clients.read")
+        name: assigns.order.customer_name
       )
 
     ~H"""
     <div class="min-w-0 flex items-start gap-2">
       <.icon name="hero-user" class="size-4 mt-0.5 shrink-0 text-base-content/40" />
-      <div :if={@phone || @name} class="min-w-0">
-        <a :if={@phone} href={"tel:#{@tel}"} class="font-mono font-semibold hover:text-primary">
-          {@phone}
-        </a>
-        <.link
-          :if={@linked?}
-          navigate={~p"/staff/clients/#{@order.client_id}"}
-          class="block text-base-content/60 truncate hover:text-primary hover:underline"
-        >
-          {@name || gettext("Open client card")}
-        </.link>
-        <p :if={!@linked? && @name} class="text-base-content/60 truncate">{@name}</p>
-      </div>
-      <p :if={!(@phone || @name)} class="text-base-content/50 italic">
+      <button
+        :if={@phone || @name || @order.client_id}
+        id={"order-customer-#{@order.id}"}
+        type="button"
+        phx-click={JS.push_focus() |> JS.push("show_customer", value: %{id: @order.id})}
+        class="min-w-0 text-left hover:text-primary hover:underline"
+      >
+        <span :if={@name} class="block truncate font-medium">{@name}</span>
+        <span :if={@phone} class="block font-mono font-semibold">{@phone}</span>
+        <span :if={!(@phone || @name)} class="italic text-base-content/50">
+          {gettext("Open client card")}
+        </span>
+      </button>
+      <p :if={!(@phone || @name || @order.client_id)} class="italic text-base-content/50">
         {gettext("Customer not specified")}
       </p>
     </div>
@@ -1172,12 +1176,6 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
        do: code
 
   defp unmapped_crm_code(_order), do: nil
-
-  defp phone_line(%{customer_phone: phone, customer_phone_ext: ext})
-       when is_binary(phone) and is_binary(ext),
-       do: gettext("%{number} ext. %{ext}", number: phone, ext: ext)
-
-  defp phone_line(%{customer_phone: phone}), do: phone
 
   defp channel_detail(%{channel: %{details: details}}, key) when is_map(details), do: details[key]
   defp channel_detail(_order, _key), do: nil

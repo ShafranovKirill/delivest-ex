@@ -248,10 +248,14 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
         })
       end
 
+      {:ok, _order} = Delivest.Oms.Orders.advance_order(order, :accepted, :system)
+
       {:ok, lv, _html} =
         live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders?period=all")
 
       card = "#orders-#{order.id}"
+      refute has_element?(lv, "#{card} #order-payments-#{order.id}")
+      refute has_element?(lv, "#{card} #order-history-#{order.id}", "System")
       assert has_element?(lv, "#{card} .order-card-number", "##{order.daily_number}")
       assert has_element?(lv, "#{card} .order-card-number[title='#{order.number}']")
       assert has_element?(lv, "#{card} .order-card-items li", "7 more items")
@@ -263,6 +267,103 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       assert has_element?(lv, "#shown-order .order-card-items li:nth-child(10)")
       assert has_element?(lv, "#shown-order .order-card-items", "Modifier 10")
       refute has_element?(lv, "#shown-order .order-card-number")
+      assert has_element?(lv, "#shown-order #order-payments-#{order.id}")
+      assert has_element?(lv, "#shown-order #order-history-#{order.id}", "System")
+    end
+
+    test "the customer modal follows the employee's profile and branch permissions", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      client =
+        insert(:client,
+          name: "Known customer",
+          phone: "+79995551234",
+          operator_note: "Profile note"
+        )
+
+      order = with_customer(order, client_id: client.id, customer_phone: client.phone)
+      another = create_order(branch.id) |> with_customer(client_id: client.id)
+      foreign = create_order(insert(:branch).id) |> with_customer(client_id: client.id)
+
+      {:ok, lv, _html} =
+        live(
+          login(conn, ["orders.read", "clients.read"], branch),
+          ~p"/staff/b/#{branch}/orders?period=all"
+        )
+
+      assert has_element?(lv, "#order-customer-#{order.id}", "+7 (999) 555-12-34")
+      refute has_element?(lv, "#orders-#{order.id} a[href^='tel:']")
+
+      lv |> element("#order-customer-#{order.id}") |> render_click()
+      assert has_element?(lv, "#order-customer-modal[role=dialog]", "Known customer")
+      assert has_element?(lv, "#order-customer-modal", "Profile note")
+      assert has_element?(lv, "#customer-history-order-#{another.id}")
+      refute has_element?(lv, "#customer-history-order-#{foreign.id}")
+
+      lv |> element("#customer-history-order-#{another.id} a") |> render_click()
+      assert_patch(lv, ~p"/staff/b/#{branch}/orders/#{another.id}?period=all")
+      refute has_element?(lv, "#order-customer-modal")
+
+      render_click(lv, "show_customer", %{"id" => foreign.id})
+      refute has_element?(lv, "#order-customer-modal")
+
+      {:ok, limited, _html} =
+        live(login(conn, ["orders.read"], branch), ~p"/staff/b/#{branch}/orders")
+
+      limited |> element("#order-customer-#{order.id}") |> render_click()
+      assert has_element?(limited, "#customer-history-order-#{order.id}")
+      refute has_element?(limited, "#customer-history-order-#{another.id}")
+      refute has_element?(limited, "#order-customer-modal", "Profile note")
+    end
+
+    test "guest history matches phone and extension within one branch", %{
+      conn: conn,
+      branch: branch,
+      order: order
+    } do
+      phone = "+79995551234"
+      linked = insert(:client, phone: phone, operator_note: "Hidden client note")
+
+      guest =
+        with_customer(order,
+          client_id: linked.id,
+          guest_session_access: true,
+          customer_phone: phone,
+          customer_phone_ext: "22"
+        )
+
+      same_guest =
+        create_order(branch.id) |> with_customer(customer_phone: phone, customer_phone_ext: "22")
+
+      other_extension =
+        create_order(branch.id) |> with_customer(customer_phone: phone, customer_phone_ext: "23")
+
+      registered =
+        create_order(branch.id)
+        |> with_customer(client_id: linked.id, customer_phone: phone, customer_phone_ext: "22")
+
+      foreign =
+        create_order(insert(:branch).id)
+        |> with_customer(customer_phone: phone, customer_phone_ext: "22")
+
+      {:ok, lv, _html} = live(login(conn, ["admin"], branch), ~p"/staff/b/#{branch}/orders")
+
+      lv |> element("#order-customer-#{guest.id}") |> render_click()
+      assert has_element?(lv, "#order-customer-modal", "+7 (999) 555-12-34")
+      assert has_element?(lv, "#customer-history-order-#{same_guest.id}")
+      refute has_element?(lv, "#customer-history-order-#{other_extension.id}")
+      refute has_element?(lv, "#customer-history-order-#{registered.id}")
+      refute has_element?(lv, "#customer-history-order-#{foreign.id}")
+      refute has_element?(lv, "#order-customer-modal", "Hidden client note")
+
+      lv |> element("#order-customer-close") |> render_click()
+      refute has_element?(lv, "#order-customer-modal")
+    end
+
+    defp with_customer(order, attrs) do
+      order |> Ecto.Changeset.change(attrs) |> Delivest.Repo.update!()
     end
 
     test "a missing order goes back to the list", %{conn: conn, branch: branch} do

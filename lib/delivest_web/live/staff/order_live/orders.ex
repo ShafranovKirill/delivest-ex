@@ -11,6 +11,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     CancelOrderModal,
     IntakeControls,
     OrderCardComponent,
+    OrderCustomerModal,
     RevertStatusModal,
     OrdersToolbar,
     StatusTabs
@@ -40,6 +41,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        order_to_delete: nil,
        order_to_cancel: nil,
        order_to_revert: nil,
+       order_customer: nil,
        shown_id: nil,
        shown_order: nil,
        crm_retry_at: nil,
@@ -67,7 +69,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       filters: parsed.filters,
       page: parsed.page,
       query: parsed.query,
-      shown_id: params["id"]
+      shown_id: params["id"],
+      order_customer: nil
     )
     |> load()
   end
@@ -138,6 +141,26 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   def handle_event("update_page_size", %{"page_size" => size}, socket) do
     socket.assigns.query |> Map.put("page_size", size) |> Map.delete("page") |> patch(socket)
   end
+
+  def handle_event("show_customer", %{"id" => id}, socket) do
+    staff = Identity.fresh_staff(socket.assigns.current_staff)
+    branch = socket.assigns.current_branch
+
+    with :ok <- Identity.authorize(staff, "orders.read", branch.id),
+         {:ok, %Order{deleted_at: nil} = order} <- fetch_branch_order(socket, id) do
+      customer = OrderCustomerModal.load(staff, branch, order)
+      {:noreply, assign(socket, :order_customer, customer)}
+    else
+      {:error, :forbidden} ->
+        {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Order not found"))}
+    end
+  end
+
+  def handle_event("hide_customer", _, socket),
+    do: {:noreply, assign(socket, :order_customer, nil)}
 
   def handle_event("advance", %{"order-id" => id, "to" => to}, socket) do
     with {:ok, to} <- StatusErrors.parse_status(to),
@@ -583,6 +606,13 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           crm_retry_at={@crm_retry_at}
         />
       </.slide_over>
+
+      <OrderCustomerModal.customer_modal
+        :if={@order_customer}
+        customer={@order_customer}
+        current_branch={@current_branch}
+        return_query={@query}
+      />
 
       <CancelOrderModal.cancel_order_modal order={@order_to_cancel} />
       <RevertStatusModal.revert_status_modal order={@order_to_revert} />

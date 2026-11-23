@@ -47,6 +47,21 @@ defmodule DelivestWeb.Staff.OrderLive.OrderHelpers do
   def payment_label("online"), do: gettext("Paid online")
   def payment_label(_), do: "—"
 
+  def format_phone(phone) when is_binary(phone) do
+    case Regex.run(~r/^\+7(\d{3})(\d{3})(\d{2})(\d{2})$/, phone) do
+      [_, area, exchange, first, second] -> "+7 (#{area}) #{exchange}-#{first}-#{second}"
+      _ -> phone
+    end
+  end
+
+  def format_phone(phone), do: phone
+
+  def format_phone(phone, extension)
+      when is_binary(phone) and is_binary(extension) and extension != "",
+      do: gettext("%{number} ext. %{ext}", number: format_phone(phone), ext: extension)
+
+  def format_phone(phone, _extension), do: format_phone(phone)
+
   def format_address(%Delivest.Oms.Order.Address{} = addr) do
     [
       addr.city,

@@ -136,6 +136,24 @@ defmodule Delivest.Oms.Orders do
     |> Repo.all()
   end
 
+  def list_guest_orders(branch_id, phone, extension, limit)
+      when is_binary(phone) and phone != "" do
+    Order
+    |> where([o], o.branch_id == ^branch_id and is_nil(o.deleted_at))
+    |> where([o], is_nil(o.client_id) or o.guest_session_access)
+    |> where([o], o.customer_phone == ^phone)
+    |> guest_extension(extension)
+    |> order_by([o], desc: o.inserted_at, desc: o.id)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  defp guest_extension(query, extension) when extension in [nil, ""],
+    do: where(query, [o], is_nil(o.customer_phone_ext) or o.customer_phone_ext == "")
+
+  defp guest_extension(query, extension),
+    do: where(query, [o], o.customer_phone_ext == ^extension)
+
   def list_client_orders_page(client_id, limit, cursor) do
     query =
       Order
