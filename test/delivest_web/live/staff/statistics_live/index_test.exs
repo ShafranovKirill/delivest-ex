@@ -34,17 +34,28 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert html =~ "Statistics"
     assert html =~ "600 ₽"
     assert has_element?(lv, "#statistics-overview")
-    refute has_element?(lv, "#statistics-sales-tabs")
+    assert has_element?(lv, "#statistics-sales-tabs[aria-label]")
+    assert has_element?(lv, "#statistics-tab-overview[aria-current=page]")
+
+    for tab <- ~w(sales products categories) do
+      assert has_element?(lv, "#statistics-tab-#{tab}")
+    end
+
+    for tab <- ~w(orders cancelled refunds) do
+      refute has_element?(lv, "#statistics-tab-#{tab}")
+    end
+
     refute has_element?(lv, "#main-sidebar #statistics-tab-sales")
     refute has_element?(lv, "#sidebar-statistics-tab-sales")
 
-    render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=sales&period=today")
+    lv |> element("#statistics-tab-sales") |> render_click()
+    assert has_element?(lv, "#statistics-tab-sales[aria-current=page]")
     assert has_element?(lv, "#statistics-order-source", "Storefront")
 
-    html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=products&period=today")
+    html = lv |> element("#statistics-tab-products") |> render_click()
     assert html =~ "Хинкали"
 
-    html = render_patch(lv, ~p"/staff/b/#{branch}/statistics?tab=categories&period=today")
+    html = lv |> element("#statistics-tab-categories") |> render_click()
     assert html =~ "Горячее"
   end
 
@@ -76,7 +87,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     refute Map.has_key?(assigns, :by_fulfillment)
     assert has_element?(view, "#statistics-orders-link[href*='tab=orders']")
 
-    render_patch(view, ~p"/staff/b/#{branch}/statistics?tab=orders&period=today")
+    for tab <- ~w(orders cancelled refunds) do
+      assert has_element?(view, "#statistics-tab-#{tab}")
+    end
+
+    view |> element("#statistics-tab-orders") |> render_click()
+    assert has_element?(view, "#statistics-tab-orders[aria-current=page]")
     assert has_element?(view, "#statistics-order-#{order.id}")
     assert has_element?(view, "#statistics-order-rows a[href*='/orders/#{order.id}']")
 
@@ -93,6 +109,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     refute has_element?(view, "#statistics-orders-link")
     refute has_element?(view, "#statistics-cancelled-link")
     refute has_element?(view, "#statistics-refunds-link")
+
+    for tab <- ~w(orders cancelled refunds) do
+      refute has_element?(view, "#statistics-tab-#{tab}")
+    end
 
     render_patch(view, ~p"/staff/b/#{branch}/statistics?tab=orders&period=today")
     assert has_element?(view, "#statistics-overview")
@@ -161,6 +181,30 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
 
     assert_patch(lv, ~p"/staff/b/#{branch}/statistics?#{query}")
     assert has_element?(lv, ~s{input[name="from"][value="#{from}"]})
+  end
+
+  test "network report tabs preserve a custom period when navigating", %{conn: conn} do
+    {conn, _branch} = login(conn, ["statistics.read", "statistics.network", "orders.read"])
+
+    {:ok, view, _} =
+      live(conn, ~p"/staff/statistics?period=custom&from=2026-11-10&to=2026-11-16")
+
+    assert has_element?(view, "#statistics-tab-overview[aria-current=page]")
+
+    for tab <- ~w(overview sales products categories orders cancelled refunds) do
+      assert has_element?(
+               view,
+               "#statistics-tab-#{tab}[href*='period=custom'][href*='from=2026-11-10'][href*='to=2026-11-16']"
+             )
+    end
+
+    view |> element("#statistics-tab-sales") |> render_click()
+    assert has_element?(view, "#statistics-tab-sales[aria-current=page]")
+
+    view |> element("#statistics-tab-cancelled") |> render_click()
+    assert has_element?(view, "#statistics-tab-cancelled[aria-current=page]")
+    assert has_element?(view, ~s{input[name="from"][value="2026-11-10"]})
+    assert has_element?(view, ~s{input[name="to"][value="2026-11-16"]})
   end
 
   test "invalid custom period shows an error and can be corrected", %{conn: conn} do

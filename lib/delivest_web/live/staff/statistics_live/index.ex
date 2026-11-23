@@ -935,14 +935,14 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
     ~H"""
     <div class="space-y-3">
       <nav
-        :if={is_nil(@section) and @tab != "overview" and @visible_tabs != []}
+        :if={is_nil(@section) and @visible_tabs != []}
         id="statistics-sales-tabs"
         aria-label={gettext("Statistics reports")}
         class="overflow-x-auto whitespace-nowrap"
       >
         <div role="tablist" class="tabs tabs-sm">
           <.link
-            :for={tab <- Enum.filter(@visible_tabs, &(&1 in ~w(overview sales products categories)))}
+            :for={tab <- @visible_tabs}
             id={"statistics-tab-#{tab}"}
             patch={tab_path(assigns, tab)}
             role="tab"
