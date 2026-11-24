@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
   use DelivestWeb, :live_view
 
   import DelivestWeb.Staff.FoundationComponents,
-    only: [filter_bar: 1, pagination_footer: 1, section_nav: 1, status_badge: 1]
+    only: [filter_bar: 1, pagination_footer: 1, status_badge: 1]
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.Receipt
@@ -194,20 +194,6 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
   defp receipt_path(assigns, params) do
     params = Map.reject(params, fn {_key, value} -> value in [nil, "", []] end)
     ~p"/staff/b/#{assigns.current_branch}/finance/receipts?#{params}"
-  end
-
-  defp status_tabs(assigns) do
-    Enum.map(assigns.filters, fn {value, label} ->
-      id = to_string(value || "all")
-      query = Map.merge(assigns.query, %{"status" => value && to_string(value), "page" => 1})
-
-      %{
-        id: id,
-        link_id: "receipts-filter-#{id}",
-        label: label,
-        path: receipt_path(assigns, query)
-      }
-    end)
   end
 
   defp filters,

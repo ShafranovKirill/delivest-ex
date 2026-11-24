@@ -1,11 +1,9 @@
 defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
   use DelivestWeb, :html
 
-  import DelivestWeb.Staff.StatsComponents, only: [stat_card: 1]
-
   alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
-  import DelivestWeb.Staff.StatsComponents, only: [analytics_chart: 1]
+  import DelivestWeb.Staff.StatsComponents, only: [analytics_chart: 1, stat_card: 1]
 
   attr :heatmap, :map, required: true
   attr :detail, :any, default: nil
