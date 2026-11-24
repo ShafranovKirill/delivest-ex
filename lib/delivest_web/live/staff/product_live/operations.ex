@@ -1,6 +1,6 @@
 defmodule DelivestWeb.Staff.ProductLive.Operations do
   use DelivestWeb, :live_view
-  alias Delivest.{Identity, Net.ProductOperations}
+  alias Delivest.{Features, Identity, Net.ProductOperations}
   alias Delivest.Net.ProductWorkbook
 
   on_mount {DelivestWeb.Hooks.Permission, "products.read"}
@@ -37,6 +37,7 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
        error: nil,
        summary: nil,
        applying: false,
+       import_enabled?: import_enabled?(socket),
        workbook_headers: Enum.join(ProductWorkbook.headers(), ", ")
      )
      |> allow_upload(:workbook,
@@ -122,6 +123,36 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
     end
   end
 
+  @impl true
+  def handle_info(:features_changed, socket) do
+    enabled? = import_enabled?(socket)
+
+    socket =
+      if enabled? do
+        socket
+      else
+        socket
+        |> cancel_workbook_uploads()
+        |> maybe_clear_import_preview()
+      end
+
+    {:noreply, assign(socket, import_enabled?: enabled?)}
+  end
+
+  defp import_enabled?(socket),
+    do: Features.enabled?("product_import", {:branch, socket.assigns.current_branch.id})
+
+  defp cancel_workbook_uploads(socket) do
+    Enum.reduce(socket.assigns.uploads.workbook.entries, socket, fn entry, socket ->
+      cancel_upload(socket, :workbook, entry.ref)
+    end)
+  end
+
+  defp maybe_clear_import_preview(%{assigns: %{operation: :import}} = socket),
+    do: assign(socket, preview: nil, operation: nil, applying: false)
+
+  defp maybe_clear_import_preview(socket), do: socket
+
   defp set_preview(socket, {:ok, preview}, operation),
     do:
       {:noreply, assign(socket, preview: preview, operation: operation, error: nil, summary: nil)}
@@ -200,7 +231,11 @@ defmodule DelivestWeb.Staff.ProductLive.Operations do
           </p>
           <.link href={~p"/staff/b/#{@current_branch}/products/workbook"} class="btn btn-outline">Скачать .xlsx</.link>
         </section>
-        <section id="workbook-import" class="rounded-xl border border-base-300 p-5 space-y-3">
+        <section
+          :if={@import_enabled?}
+          id="workbook-import"
+          class="rounded-xl border border-base-300 p-5 space-y-3"
+        >
           <h2 class="font-semibold">Импорт Excel</h2>
           <p class="text-sm text-base-content/60">
             До 5 МБ и 1000 строк. source_key обязателен; для новых строк укажите постоянный ключ SKU.

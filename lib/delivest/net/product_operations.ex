@@ -2,7 +2,7 @@ defmodule Delivest.Net.ProductOperations do
   @moduledoc "Preview and atomically apply local catalog workbook rows and branch copies."
   require Logger
   import Ecto.Query
-  alias Delivest.{Audit, Identity, Money, Relations, Repo}
+  alias Delivest.{Audit, Features, Identity, Money, Relations, Repo}
 
   alias Delivest.Net.{
     Category,
@@ -61,7 +61,8 @@ defmodule Delivest.Net.ProductOperations do
   end
 
   def import_preview(staff, target_id, binary) do
-    with :ok <- Identity.authorize(staff, "products.create", target_id),
+    with :ok <- import_enabled(target_id),
+         :ok <- Identity.authorize(staff, "products.create", target_id),
          :ok <- target_menu_guard(target_id),
          {:ok, rows} <- ProductWorkbook.decode(binary) do
       preview(staff, target_id, rows, nil)
@@ -73,7 +74,8 @@ defmodule Delivest.Net.ProductOperations do
         %{branch_id: branch_id, rows: rows, source_branch_id: source_id} = preview,
         choices \\ %{}
       ) do
-    with :ok <- Identity.authorize(staff, "products.create", branch_id),
+    with :ok <- operation_enabled(staff, preview),
+         :ok <- Identity.authorize(staff, "products.create", branch_id),
          :ok <- target_menu_guard(branch_id),
          :ok <- source_access(staff, source_id),
          {:ok, fresh} <-
@@ -88,6 +90,9 @@ defmodule Delivest.Net.ProductOperations do
         Repo.query!("SELECT pg_advisory_xact_lock(hashtext($1))", [
           "product-operations:" <> branch_id
         ])
+
+        if is_nil(source_id) and import_enabled(branch_id) != :ok,
+          do: Repo.rollback(:disabled)
 
         lock_ids =
           (Enum.map(rows, & &1.target_id) ++
@@ -556,6 +561,36 @@ defmodule Delivest.Net.ProductOperations do
 
   defp source_access(_staff, nil), do: :ok
   defp source_access(staff, id), do: Identity.authorize(staff, "products.read", id)
+
+  defp operation_enabled(_staff, %{source_branch_id: nil, branch_id: branch_id}),
+    do: import_enabled(branch_id)
+
+  defp operation_enabled(staff, %{source_branch_id: source_id, branch_id: branch_id, rows: rows}) do
+    ids = Enum.map(rows, & &1.values["source_key"])
+
+    if match?({:ok, _}, Ecto.UUID.cast(source_id)) and
+         Enum.all?(ids, &match?({:ok, _}, Ecto.UUID.cast(&1))) do
+      case copy_preview(staff, ids, source_id, branch_id) do
+        {:ok, fresh} ->
+          identity = &Map.take(&1, [:values, :source_version])
+
+          if Enum.map(rows, identity) == Enum.map(fresh.rows, identity),
+            do: :ok,
+            else: {:error, :stale_source}
+
+        error ->
+          error
+      end
+    else
+      {:error, :stale_source}
+    end
+  end
+
+  defp import_enabled(branch_id) do
+    if Features.enabled?("product_import", {:branch, branch_id}),
+      do: :ok,
+      else: {:error, :disabled}
+  end
 
   defp update_allowed?(staff, branch_id, target),
     do:

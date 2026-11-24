@@ -1,7 +1,7 @@
 defmodule Delivest.Net.ProductOperationsTest do
   use Delivest.DataCase, async: false
   import Delivest.Factory
-  alias Delivest.{Net.ProductOperations, Net.ProductWorkbook, Relations}
+  alias Delivest.{Features, Net.ProductOperations, Net.ProductWorkbook, Relations}
   alias Delivest.Net.Product
 
   setup do
@@ -205,6 +205,59 @@ defmodule Delivest.Net.ProductOperationsTest do
 
     assert {:ok, %{updated: 1}} =
              ProductOperations.apply_changes(ctx.staff, repeat, %{"sku-1" => "update"})
+  end
+
+  test "disabled workbook import rejects preview and stale apply while copy and export remain available",
+       ctx do
+    source = insert_branch_product(ctx.source.id, name: "Copy source", price: 125)
+
+    row =
+      Map.new(ProductWorkbook.headers(), &{&1, ""})
+      |> Map.merge(%{
+        "source_key" => source.id,
+        "name" => "Tampered workbook row",
+        "price_rub" => "1,25",
+        "is_active" => "true",
+        "measure_unit" => "g",
+        "suggested" => "false"
+      })
+
+    {:ok, workbook} = ProductWorkbook.encode([row])
+
+    assert {:ok, import_preview} =
+             ProductOperations.import_preview(ctx.staff, ctx.target.id, workbook)
+
+    assert {:ok, copy_preview} =
+             ProductOperations.copy_preview(ctx.staff, [source.id], ctx.source.id, ctx.target.id)
+
+    {:ok, _} =
+      Features.configure("product_import", {:branch, ctx.target.id}, false, actor: "test")
+
+    assert {:error, :disabled} =
+             ProductOperations.import_preview(ctx.staff, ctx.target.id, workbook)
+
+    assert {:error, :disabled} = ProductOperations.apply_changes(ctx.staff, import_preview)
+    assert Relations.list_target_ids("Branch", ctx.target.id, "Product") == []
+
+    forged = %{
+      import_preview
+      | source_branch_id: ctx.source.id,
+        rows: [
+          Map.put(hd(import_preview.rows), :source_version, hd(copy_preview.rows).source_version)
+        ]
+    }
+
+    assert {:error, :stale_source} = ProductOperations.apply_changes(ctx.staff, forged)
+
+    invalid_key =
+      put_in(forged, [:rows, Access.at(0), :values, "source_key"], "workbook-sku")
+
+    assert {:error, :stale_source} = ProductOperations.apply_changes(ctx.staff, invalid_key)
+    assert {:ok, %{created: 1}} = ProductOperations.apply_changes(ctx.staff, copy_preview)
+    assert {:ok, _workbook} = ProductOperations.export(ctx.staff, ctx.target.id)
+
+    {:ok, _} = Features.configure("product_import", {:branch, ctx.target.id}, true, actor: "test")
+    assert {:ok, _} = ProductOperations.import_preview(ctx.staff, ctx.target.id, workbook)
   end
 
   test "preview becomes stale after another import", ctx do

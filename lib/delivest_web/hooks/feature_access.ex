@@ -55,6 +55,9 @@ defmodule DelivestWeb.Hooks.FeatureAccess do
            :features_changed, %{view: Staff.MarketingLive.Hub} = socket ->
              {:cont, bump_navigation(socket)}
 
+           :features_changed, %{view: Staff.ProductLive.Operations} = socket ->
+             {:cont, bump_navigation(socket)}
+
            :features_changed, socket ->
              socket = bump_navigation(socket)
 
