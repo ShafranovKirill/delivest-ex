@@ -55,6 +55,13 @@ defmodule Delivest.Features.Settings do
           configure!(feature, scope, false, actor, preview)
         end
       end)
+      |> tap(fn
+        {:ok, _} ->
+          Phoenix.PubSub.broadcast(Delivest.PubSub, "features:changed", :features_changed)
+
+        _ ->
+          :ok
+      end)
     else
       _ -> {:error, :forbidden}
     end

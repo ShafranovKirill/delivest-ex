@@ -5,7 +5,7 @@ defmodule Delivest.Integrations.AtolOnline.KktPoller do
 
   alias Delivest.Fiscal.BranchSettings
   alias Delivest.Identity.Branch.BranchInfo
-  alias Delivest.Integrations.{AtolOnline, Health, Journal}
+  alias Delivest.Integrations.{AtolOnline, Health, Journal, StaffAccess}
   alias Delivest.Integrations.AtolOnline.{Api, Kkt}
   alias Delivest.Repo
 
@@ -19,14 +19,22 @@ defmodule Delivest.Integrations.AtolOnline.KktPoller do
 
   @impl true
   def targets do
-    from(i in BranchInfo, select: {i.branch_id, i.fiscal})
-    |> Repo.all()
-    |> Enum.filter(fn {_id, fiscal} -> monitored?(fiscal) end)
-    |> Enum.map(&elem(&1, 0))
+    if StaffAccess.allowed?(:atol) do
+      from(i in BranchInfo, select: {i.branch_id, i.fiscal})
+      |> Repo.all()
+      |> Enum.filter(fn {_id, fiscal} -> monitored?(fiscal) end)
+      |> Enum.map(&elem(&1, 0))
+    else
+      []
+    end
   end
 
   @impl true
   def poll(branch_id) do
+    if StaffAccess.allowed?(:atol), do: poll_enabled(branch_id), else: :done
+  end
+
+  defp poll_enabled(branch_id) do
     case Delivest.Fiscal.settings(branch_id) do
       %BranchSettings{atol: %AtolOnline.Settings{} = settings} = fiscal ->
         if monitored?(fiscal), do: check(branch_id, settings), else: :done

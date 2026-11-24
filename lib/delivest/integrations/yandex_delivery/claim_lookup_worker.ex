@@ -4,6 +4,7 @@ defmodule Delivest.Integrations.YandexDelivery.ClaimLookupWorker do
   alias Delivest.{Couriers, Repo}
   alias Delivest.Couriers.Delivery
   alias Delivest.Integrations.Journal
+  alias Delivest.Integrations.StaffAccess
   alias Delivest.Integrations.Poller
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.YandexDelivery.Api
@@ -12,15 +13,25 @@ defmodule Delivest.Integrations.YandexDelivery.ClaimLookupWorker do
   @window 300
 
   def enqueue(%Delivery{} = delivery, order) do
-    %{delivery_id: delivery.id, number: order.number, started_at: System.os_time(:second)}
-    |> new(schedule_in: pause())
-    |> Oban.insert()
+    if StaffAccess.allowed?(:yandex_delivery) do
+      %{delivery_id: delivery.id, number: order.number, started_at: System.os_time(:second)}
+      |> new(schedule_in: pause())
+      |> Oban.insert()
+    else
+      {:error, :disabled}
+    end
   end
 
   @impl Oban.Worker
   def perform(%Oban.Job{
         args: %{"delivery_id" => id, "number" => number, "started_at" => started}
       }) do
+    if StaffAccess.allowed?(:yandex_delivery),
+      do: perform_enabled(id, number, started),
+      else: {:cancel, :disabled}
+  end
+
+  defp perform_enabled(id, number, started) do
     case Repo.get(Delivery, id) do
       %Delivery{external_id: nil, status: :searching} = delivery ->
         lookup(delivery, number, started)

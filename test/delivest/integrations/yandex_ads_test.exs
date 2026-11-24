@@ -3,6 +3,7 @@ defmodule Delivest.Integrations.YandexAdsTest do
   import Delivest.Factory
   import Delivest.OrderFixtures
   alias Delivest.Features
+  alias Delivest.Features.Gate
   alias Delivest.Integrations.YandexAds
 
   alias Delivest.Integrations.YandexAds.{
@@ -104,6 +105,24 @@ defmodule Delivest.Integrations.YandexAdsTest do
       Map.put_new(attrs, "feature_version", YandexAds.public_config(branch_id).feature_version)
 
     YandexAds.capture_identity(branch_id, owner, attrs)
+  end
+
+  test "network switch revokes public trackers and queued stream tokens", ctx do
+    settings = configure(ctx, %{costs_enabled: true})
+    token = YandexAds.feature_token(:conversions, ctx.branch.id)
+    assert is_map(token)
+    assert YandexAds.enabled?(:costs, ctx.branch.id)
+
+    Repo.insert!(
+      %Gate{feature: "integration_yandex_ads", scope_key: "franchise", enabled: false},
+      on_conflict: {:replace, [:enabled]},
+      conflict_target: [:feature, :scope_key]
+    )
+
+    refute YandexAds.enabled?(:costs, ctx.branch.id)
+    refute YandexAds.costs_active?(settings)
+    refute YandexAds.valid_feature_token?(:conversions, ctx.branch.id, token)
+    refute YandexAds.public_config(ctx.branch.id).capture
   end
 
   test "off by default: order and public configuration create no optional records", ctx do

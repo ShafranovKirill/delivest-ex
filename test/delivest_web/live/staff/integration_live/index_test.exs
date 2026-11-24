@@ -195,7 +195,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.IndexTest do
     refute has_element?(index, "#integration-frontpad")
     assert has_element?(index, "#integration-iiko")
     assert {:error, {:redirect, %{to: ^overview}}} = live(editor, provider)
-    assert {:error, {:redirect, %{to: ^overview}}} = render_click(open_provider, "save", %{})
+    assert_redirect(open_provider, overview)
 
     assert {:ok, _} = Settings.configure(admin, "integration_frontpad", :franchise, true)
     assert {:ok, _index, html} = live(editor, overview)

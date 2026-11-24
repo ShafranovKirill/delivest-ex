@@ -8,7 +8,11 @@ defmodule DelivestWeb.Hooks.CommandPalette do
     {:cont,
      socket
      |> search("")
-     |> attach_hook(:command_palette, :handle_event, &handle_event/3)}
+     |> attach_hook(:command_palette, :handle_event, &handle_event/3)
+     |> attach_hook(:command_palette_refresh, :handle_info, fn
+       :features_changed, socket -> {:cont, search(socket, socket.assigns[:command_query] || "")}
+       _, socket -> {:cont, socket}
+     end)}
   end
 
   defp handle_event("command_search", %{"query" => query}, socket),

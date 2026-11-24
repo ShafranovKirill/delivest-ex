@@ -1,5 +1,5 @@
 defmodule Delivest.Identity.Branch.VkAdsSettingsTest do
-  use ExUnit.Case, async: true
+  use Delivest.DataCase, async: true
 
   alias Delivest.Identity.Branch.VkAdsSettings
 

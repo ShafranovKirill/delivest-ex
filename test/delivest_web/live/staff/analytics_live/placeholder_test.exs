@@ -79,7 +79,12 @@ defmodule DelivestWeb.Staff.AnalyticsLive.PlaceholderTest do
   end
 
   test "network campaign navigation ignores a remembered branch", %{conn: conn} do
-    {conn, _branch} = login(conn, ["statistics.read", "statistics.network"])
+    {conn, branch} = login(conn, ["statistics.read", "statistics.network"])
+    assert {:ok, _} = Features.configure("yandex_costs", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("yandex_costs", {:branch, branch.id}, true, actor: "test")
+
     {:ok, view, _} = live(conn, "/staff/analytics/advertising")
 
     assert has_element?(view, "#sidebar-group-analytics a[href='/staff/statistics']")

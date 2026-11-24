@@ -13,6 +13,7 @@ defmodule DelivestWeb.StaffSidebar do
   attr :current_uri, :string, default: nil
   attr :new_orders_count, :integer, default: 0
   attr :page_navigation, :any, default: nil
+  attr :capability_revision, :integer, default: 0
 
   def staff_sidebar(assigns) do
     navigation_branch = assigns.navigation_branch || assigns.current_branch
@@ -85,6 +86,7 @@ defmodule DelivestWeb.StaffSidebar do
 
     ~H"""
     <aside
+      data-capability-revision={@capability_revision}
       id="main-sidebar"
       class="staff-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-base-300 bg-base-100 transition-[width] duration-300"
     >

@@ -2,13 +2,17 @@ defmodule Delivest.Integrations.YandexEda.Places do
   alias Delivest.Identity
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.YandexEda.BranchSettings
+  alias Delivest.Integrations.StaffAccess
 
   def list do
-    for branch <- Identity.list_branches(preload: [:info]), settings(branch), do: branch
+    if StaffAccess.allowed?(:yandex_eda),
+      do: for(branch <- Identity.list_branches(preload: [:info]), settings(branch), do: branch),
+      else: []
   end
 
   def fetch(restaurant_id) do
-    with {:ok, _uuid} <- Ecto.UUID.cast(restaurant_id),
+    with true <- StaffAccess.allowed?(:yandex_eda),
+         {:ok, _uuid} <- Ecto.UUID.cast(restaurant_id),
          {:ok, %Branch{} = branch} <- Identity.get_branch(restaurant_id, preload: [:info]),
          %BranchSettings{enabled: true} = settings <- settings(branch) do
       {:ok, branch, settings}

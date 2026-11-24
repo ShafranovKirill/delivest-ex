@@ -23,7 +23,7 @@ defmodule DelivestWeb.Staff.MarketingLive.IndexTest do
   end
 
   test "feature gate hides policy screen", %{conn: conn} do
-    assert {:error, {:redirect, %{to: "/staff/branches/select"}}} =
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
              live(conn, ~p"/staff/marketing/policies")
   end
 

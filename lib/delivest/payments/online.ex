@@ -288,6 +288,10 @@ defmodule Delivest.Payments.Online do
   end
 
   defp create(order, payment) do
+    if Yookassa.ready?(), do: create_enabled(order, payment), else: {:error, :online_unavailable}
+  end
+
+  defp create_enabled(order, payment) do
     settings = Yookassa.get_settings()
 
     with {:ok, body} <- Api.create_payment(settings, payment.id, body(order, payment)),

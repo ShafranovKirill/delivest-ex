@@ -8,9 +8,12 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
 
   @groups [
     {"delivery", ~w(couriers)},
-    {"marketing", ~w(segments notifications marketing_policies)},
-    {"analytics", ~w(analytics_funnel analytics_extended analytics_links analytics_franchise)},
-    {"integrations", []}
+    {"operations", ~w(kitchen product_import event_log)},
+    {"marketing", ~w(segments notifications marketing_policies stocks promotions loyalty)},
+    {"analytics",
+     ~w(analytics_basic analytics_funnel analytics_extended analytics_links analytics_franchise)},
+    {"integrations",
+     ~w(yandex_ads yandex_browser yandex_conversions yandex_ecommerce yandex_feed yandex_costs)}
   ]
 
   @impl true
@@ -104,7 +107,7 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
       label: entry.label,
       description:
         if(integration,
-          do: gettext("Controls visibility in admin settings across the network."),
+          do: gettext("Stops new integration work and hides its controls across the network."),
           else: description(key)
         ),
       group: group(key),
@@ -126,6 +129,7 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
   end
 
   defp group_label("delivery"), do: gettext("Delivery")
+  defp group_label("operations"), do: gettext("Operations")
   defp group_label("marketing"), do: gettext("Marketing")
   defp group_label("analytics"), do: gettext("Analytics and tracking")
   defp group_label("integrations"), do: gettext("Integrations")
@@ -171,8 +175,15 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
   end
 
   defp description("couriers"),
-    do:
-      gettext("Manage your own couriers. Existing assignments remain available until completion.")
+    do: gettext("Manage your own couriers. Order history is preserved when disabled.")
+
+  defp description("product_import"), do: gettext("Import products from a file.")
+  defp description("event_log"), do: gettext("View event and application logs.")
+  defp description("analytics_basic"), do: gettext("View sales statistics.")
+  defp description("stocks"), do: gettext("Show campaign banners.")
+  defp description("promotions"), do: gettext("Apply discounts and promotion codes.")
+  defp description("loyalty"), do: gettext("Award and redeem loyalty points.")
+  defp description("kitchen"), do: gettext("Show the kitchen order display.")
 
   defp description("segments"), do: gettext("Group customers by conditions and order history.")
   defp description("notifications"), do: gettext("Send optional customer notifications.")

@@ -361,6 +361,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffAuth, :require_authenticated_staff},
         {DelivestWeb.Hooks.StaffBranches, :default},
         {DelivestWeb.Hooks.CommandPalette, :default},
+        {DelivestWeb.Hooks.FeatureAccess, :default},
         {DelivestWeb.Hooks.StaffPath, :default},
         {DelivestWeb.Hooks.NewOrders, :default}
       ] do
@@ -377,6 +378,7 @@ defmodule DelivestWeb.Router do
         {DelivestWeb.Hooks.StaffBranches, :default},
         {DelivestWeb.Hooks.CommandPalette, :default},
         {DelivestWeb.Hooks.IntegrationAccess, :default},
+        {DelivestWeb.Hooks.FeatureAccess, :default},
         {DelivestWeb.Hooks.StaffPath, :default}
       ] do
       live "/settings", SettingsLive.Index, :index
@@ -470,6 +472,7 @@ defmodule DelivestWeb.Router do
           {DelivestWeb.Hooks.StaffBranches, :default},
           {DelivestWeb.Hooks.CommandPalette, :default},
           {DelivestWeb.Hooks.StaffPath, :default},
+          {DelivestWeb.Hooks.FeatureAccess, :default},
           {DelivestWeb.Hooks.Permission, "orders.cook"}
         ] do
         live "/kitchen", KitchenLive.Index, :index
@@ -483,6 +486,7 @@ defmodule DelivestWeb.Router do
           {DelivestWeb.Hooks.StaffActiveBranch, :default},
           {DelivestWeb.Hooks.StaffBranches, :default},
           {DelivestWeb.Hooks.CommandPalette, :default},
+          {DelivestWeb.Hooks.FeatureAccess, :default},
           {DelivestWeb.Hooks.StaffPath, :default},
           {DelivestWeb.Hooks.Permission, "pos.use"}
         ] do
@@ -499,6 +503,7 @@ defmodule DelivestWeb.Router do
           {DelivestWeb.Hooks.StaffBranches, :default},
           {DelivestWeb.Hooks.CommandPalette, :default},
           {DelivestWeb.Hooks.IntegrationAccess, :default},
+          {DelivestWeb.Hooks.FeatureAccess, :default},
           {DelivestWeb.Hooks.StaffPath, :default}
         ] do
         live "/dashboard", DashboardLive.Index, :index

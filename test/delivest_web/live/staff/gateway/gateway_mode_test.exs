@@ -70,6 +70,8 @@ defmodule DelivestWeb.Staff.GatewayModeTest do
       conn: conn,
       branch: branch
     } do
+      {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+      {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
       {:ok, receipts, _} = live(conn, ~p"/staff/b/#{branch}/finance/receipts")
       assert has_element?(receipts, "#receipts-page")
       assert has_element?(receipts, "#receipts-external-owner")

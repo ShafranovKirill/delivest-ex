@@ -6,6 +6,7 @@ defmodule Delivest.Push.CourierPushTest do
   import Delivest.OrderFixtures
 
   alias Delivest.{Couriers, Features, Oms, Push, PushClient}
+  alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.Orders
   alias Delivest.Push.Worker
@@ -85,7 +86,7 @@ defmodule Delivest.Push.CourierPushTest do
 
     assert_receive {:client_order, published}
 
-    assert %{courier: %{name: "Иван", phone: "+79001112233", tracking_url: nil}} =
+    assert %{courier: %{provider: :staff, name: "Иван", phone: "+79001112233", tracking_url: nil}} =
              OrderJSON.active_order_data(published)
 
     assert pushed(ctx) == ["Courier Иван is heading to pick up order #{order.daily_number}"]
@@ -97,6 +98,32 @@ defmodule Delivest.Push.CourierPushTest do
     {:ok, _order} = Couriers.pick_up(ctx.courier, ctx.branch.id, delivery.id)
     deliver_events()
     assert pushed(ctx) == ["Courier Иван is on the way with order #{order.daily_number}"]
+  end
+
+  test "disabled courier providers are absent from active order JSON", ctx do
+    own_delivery = %Delivery{provider: :staff, status: :assigned, courier: ctx.courier}
+    own_order = %{ctx.order | deliveries: [own_delivery]}
+    assert %{courier: %{provider: :staff}} = OrderJSON.active_order_data(own_order)
+
+    {:ok, _} = Features.configure("couriers", {:branch, ctx.branch.id}, false, actor: "test")
+    assert %{courier: nil} = OrderJSON.active_order_data(own_order)
+
+    yandex_delivery = %Delivery{
+      provider: :yandex,
+      status: :assigned,
+      details: %{
+        "performer" => %{"name" => "Яндекс"},
+        "tracking_url" => "https://example.test/track"
+      }
+    }
+
+    yandex_order = %{ctx.order | deliveries: [yandex_delivery]}
+    assert %{courier: %{provider: :yandex}} = OrderJSON.active_order_data(yandex_order)
+
+    {:ok, _} =
+      Features.configure("integration_yandex_delivery", :franchise, false, actor: "test")
+
+    assert %{courier: nil} = OrderJSON.active_order_data(yandex_order)
   end
 
   test "no courier is shown before one takes the order", ctx do

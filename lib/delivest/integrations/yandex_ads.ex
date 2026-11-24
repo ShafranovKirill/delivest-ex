@@ -3,6 +3,7 @@ defmodule Delivest.Integrations.YandexAds do
   import Ecto.Query
   alias Delivest.{Features, Repo}
   alias Delivest.Identity, as: Accounts
+  alias Delivest.Integrations.StaffAccess
 
   alias Delivest.Integrations.YandexAds.{
     Settings,
@@ -212,9 +213,13 @@ defmodule Delivest.Integrations.YandexAds do
   def feature_token(stream, branch_id) do
     {_flag, feature} = Map.fetch!(@streams, stream)
 
-    case Features.snapshot(feature, {:branch, branch_id}) do
-      {:ok, token} -> %{"franchise" => token.franchise, "branch" => token.branch}
-      _ -> nil
+    if StaffAccess.allowed?(:yandex_ads) do
+      case Features.snapshot(feature, {:branch, branch_id}) do
+        {:ok, token} -> %{"franchise" => token.franchise, "branch" => token.branch}
+        _ -> nil
+      end
+    else
+      nil
     end
   end
 
@@ -240,7 +245,7 @@ defmodule Delivest.Integrations.YandexAds do
   def enabled?(%Settings{} = settings, stream, branch_id) do
     case @streams[stream] do
       {_flag, feature} ->
-        stream_allowed?(settings, stream, branch_id) and
+        StaffAccess.allowed?(:yandex_ads) and stream_allowed?(settings, stream, branch_id) and
           Features.enabled?(feature, {:branch, branch_id})
 
       _ ->
@@ -269,6 +274,7 @@ defmodule Delivest.Integrations.YandexAds do
 
   def public_config(branch_id) do
     settings = get_settings()
+    integration_allowed? = StaffAccess.allowed?(:yandex_ads)
 
     snapshots =
       @public_streams
@@ -296,7 +302,9 @@ defmodule Delivest.Integrations.YandexAds do
 
     allowed =
       Map.new(@public_streams, fn stream ->
-        {stream, stream_allowed?(settings, stream, branch_id) and not is_nil(tokens[stream])}
+        {stream,
+         integration_allowed? and stream_allowed?(settings, stream, branch_id) and
+           not is_nil(tokens[stream])}
       end)
 
     browser = allowed.browser

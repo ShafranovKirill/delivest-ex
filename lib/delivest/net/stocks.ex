@@ -3,7 +3,7 @@ defmodule Delivest.Net.Stocks do
   require Logger
   alias Delivest.Net.Stock
   alias Ecto.Multi
-  alias Delivest.{Repo, Identity, Relations}
+  alias Delivest.{Features, Repo, Identity, Relations}
   alias Delivest.Audit
 
   def list_staff_stocks_for_branch(staff, branch_id) when not is_nil(branch_id) do
@@ -27,6 +27,14 @@ defmodule Delivest.Net.Stocks do
   def list_staff_stocks_for_branch(_staff, _branch_id), do: []
 
   def list_stocks_for_branch(branch_id) when not is_nil(branch_id) do
+    if Features.enabled?("stocks", {:branch, branch_id}),
+      do: list_enabled_stocks(branch_id),
+      else: []
+  end
+
+  def list_stocks_for_branch(_), do: []
+
+  defp list_enabled_stocks(branch_id) do
     case Cachex.fetch(:stock_cache, branch_id, fn _key ->
            stocks = fetch_stocks_for_branch(branch_id)
            {:commit, stocks, expire: :timer.hours(1)}
@@ -37,10 +45,12 @@ defmodule Delivest.Net.Stocks do
     end
   end
 
-  def list_stocks_for_branch(_), do: []
-
   def list_stocks_uncached_for_branch(branch_id) when not is_nil(branch_id),
-    do: fetch_stocks_for_branch(branch_id)
+    do:
+      if(Features.enabled?("stocks", {:branch, branch_id}),
+        do: fetch_stocks_for_branch(branch_id),
+        else: []
+      )
 
   def list_stocks_uncached_for_branch(_), do: []
 

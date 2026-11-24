@@ -6,6 +6,7 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
   import Delivest.YandexEdaFixtures, only: [menu_category: 1, menu_product: 3]
 
   alias Delivest.{Payments, Pos, Repo}
+  alias Delivest.Features.{Gate, Registry}
   alias Delivest.Oms.Order
 
   setup %{conn: conn} do
@@ -80,6 +81,37 @@ defmodule DelivestWeb.Staff.PosLive.IndexTest do
 
     assert [%Order{fulfillment_type: :dine_in} = order] = Repo.all(Order)
     assert [%{method: :card, status: :paid}] = Payments.list(order.id)
+  end
+
+  test "cashier can create a cash order with every optional capability disabled", ctx do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    for feature <- Registry.features(), scope_key <- ["franchise", "branch:" <> ctx.branch.id] do
+      Repo.insert_all(
+        Gate,
+        [
+          %{
+            feature: feature,
+            scope_key: scope_key,
+            enabled: false,
+            generation: 2,
+            inserted_at: now,
+            updated_at: now
+          }
+        ],
+        on_conflict: [set: [enabled: false, generation: 2]],
+        conflict_target: [:feature, :scope_key]
+      )
+    end
+
+    {:ok, lv, _} = live(ctx.conn, ~p"/staff/b/#{ctx.branch}/pos")
+    lv |> element("#pos-product-#{ctx.product.id}") |> render_click()
+    lv |> element("#pos-pay") |> render_click()
+    lv |> form("#pos-cash", %{cash: "500"}) |> render_change()
+    lv |> element("#pos-confirm") |> render_click()
+
+    assert [%Order{source: "pos", status: :accepted} = order] = Repo.all(Order)
+    assert [%{method: :cash, status: :paid}] = Payments.list(order.id)
   end
 
   test "staff without the pos permission is turned away", ctx do

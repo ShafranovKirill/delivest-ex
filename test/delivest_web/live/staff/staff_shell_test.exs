@@ -124,7 +124,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
 
     assert has_element?(
              products,
-             "#sidebar-group-menu > ul > li > #sidebar-product-section-tab-tags"
+             "#sidebar-group-menu ul > li > #sidebar-product-section-tab-tags"
            )
 
     refute has_element?(products, "#sidebar-group-menu > .staff-sidebar-nav-link")

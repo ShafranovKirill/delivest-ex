@@ -5,6 +5,13 @@ defmodule Delivest.Features.Registry do
     "notifications",
     "marketing_policies",
     "couriers",
+    "product_import",
+    "event_log",
+    "stocks",
+    "promotions",
+    "loyalty",
+    "kitchen",
+    "analytics_basic",
     "analytics_funnel",
     "analytics_extended",
     "analytics_franchise",
@@ -18,6 +25,9 @@ defmodule Delivest.Features.Registry do
   ]
 
   @dependencies %{
+    "analytics_funnel" => ["analytics_basic"],
+    "analytics_extended" => ["analytics_basic"],
+    "analytics_links" => ["analytics_basic"],
     "marketing_policies" => ["segments", "notifications"],
     "analytics_franchise" => ["analytics_extended"],
     "yandex_browser" => ["yandex_ads"],

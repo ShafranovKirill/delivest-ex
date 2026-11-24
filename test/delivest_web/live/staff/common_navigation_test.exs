@@ -374,11 +374,34 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
            )
   end
 
+  test "marketing hub keeps stocks available without notifications and closes a disabled section",
+       %{
+         conn: conn
+       } do
+    branch = insert(:branch)
+    conn = login(conn, ["stocks.read", "promotions.read"], [branch])
+
+    refute Features.enabled?("notifications", :franchise)
+    assert Features.enabled?("stocks", {:branch, branch.id})
+    assert Features.enabled?("promotions", {:branch, branch.id})
+
+    {:ok, hub, _} = live(conn, ~p"/staff/marketing?section=stocks&branch=#{branch.slug}")
+    assert has_element?(hub, "#marketing-hub")
+
+    {:ok, _} = Features.configure("stocks", {:branch, branch.id}, false, actor: "test")
+    Phoenix.PubSub.broadcast(Delivest.PubSub, "features:changed", :features_changed)
+    assert_redirect(hub, ~p"/staff/dashboard")
+
+    {:ok, remaining, _} = live(conn, ~p"/staff/marketing")
+    assert has_element?(remaining, "#marketing-hub")
+  end
+
   test "network marketing keeps permitted branch areas and segments live under clients", %{
     conn: conn
   } do
     branch = insert(:branch)
     {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("marketing_policies", {:branch, branch.id}, true, actor: "test")
     {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
     {:ok, _} = Features.configure("analytics_links", {:branch, branch.id}, true, actor: "test")
     {:ok, _} = Features.configure("segments", :franchise, true, actor: "test")
@@ -445,6 +468,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
   test "policy list has its own route and branch screen has common marketing nav", %{conn: conn} do
     branch = insert(:branch)
     {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("marketing_policies", {:branch, branch.id}, true, actor: "test")
     conn = login(conn, ["marketing.read", "stocks.read"], [branch])
 
     {:ok, policies, _} = live(conn, ~p"/staff/marketing/policies")
@@ -495,6 +519,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
   test "marketing sidebar group exposes all authorized areas in the current branch", %{conn: conn} do
     branch = insert(:branch)
     {:ok, _} = Features.configure("marketing_policies", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("marketing_policies", {:branch, branch.id}, true, actor: "test")
     {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
     {:ok, _} = Features.configure("analytics_links", {:branch, branch.id}, true, actor: "test")
 

@@ -48,7 +48,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     assert {:error, {:redirect, %{to: destination}}} =
              live(conn, ~p"/staff/b/#{branch}/analytics/funnel")
 
-    assert destination =~ "/staff/b/#{branch.slug}/statistics"
+    assert destination == "/staff/dashboard"
   end
 
   test "enabled funnel shows collection state without manual calculation controls", %{conn: conn} do

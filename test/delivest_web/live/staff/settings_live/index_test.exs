@@ -3,6 +3,60 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
+  alias Delivest.Features
+  alias Delivest.Features.Settings
+  alias Delivest.Identity.Branch.BranchInfo
+
+  test "disabled optional section disappears from navigation and rejects its direct URL", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+
+    assert {:ok, _} =
+             Features.configure("kitchen", {:branch, branch.id}, false, actor: "test")
+
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, orders, _} = live(conn, ~p"/staff/b/#{branch}/orders")
+    refute has_element?(orders, "#main-sidebar a[href='/staff/b/#{branch.slug}/kitchen']")
+
+    refute has_element?(
+             orders,
+             "#staff-context-navigation a[href='/staff/b/#{branch.slug}/kitchen']"
+           )
+
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
+             live(conn, ~p"/staff/b/#{branch}/kitchen")
+
+    {:ok, settings, _} = live(conn, ~p"/staff/settings")
+    assert has_element?(settings, "#feature-toggle-kitchen")
+  end
+
+  test "toggling an add-on refreshes open core navigation without leaving the order page", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    Delivest.Repo.insert!(%BranchInfo{branch_id: branch.id, kitchen: %{enabled: true}})
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    {:ok, orders, _} = live(conn, ~p"/staff/b/#{branch}/orders")
+    assert has_element?(orders, "a[href='/staff/b/#{branch.slug}/kitchen']")
+
+    {:ok, preview} = Features.disable_preview("kitchen", {:branch, branch.id})
+    assert {:ok, _} = Settings.configure(staff, "kitchen", {:branch, branch.id}, false, preview)
+    refute Features.enabled?("kitchen", {:branch, branch.id})
+
+    refute inspect(DelivestWeb.StaffNav.entries(staff, branch)) =~
+             "/staff/b/#{branch.slug}/kitchen"
+
+    assert has_element?(orders, "#main-sidebar[data-capability-revision='1']")
+    refute has_element?(orders, "#main-sidebar a[href='/staff/b/#{branch.slug}/kitchen']")
+    assert has_element?(orders, "#nav-section-main")
+  end
 
   defp login(conn, permissions) do
     staff = insert(:staff, role: insert(:role, permissions: permissions))
@@ -11,7 +65,7 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
 
   test "admin settings uses persistent canonical navigation without duplicate scope or filters",
        %{conn: conn} do
-    branch = insert(:branch)
+    insert(:branch)
     {:ok, lv, _} = live(login(conn, ["admin"]), ~p"/staff/settings")
 
     assert has_element?(
@@ -54,20 +108,20 @@ defmodule DelivestWeb.Staff.SettingsLive.IndexTest do
     assert has_element?(lv, "#feature-integration_yandex_ads")
     assert has_element?(lv, "#feature-integration_ycart")
     assert has_element?(lv, "#feature-toggle-integration_yandex_ads[aria-checked=true]")
-    refute has_element?(lv, "#feature-yandex_ads")
-    refute has_element?(lv, "#feature-yandex_browser")
+    assert has_element?(lv, "#feature-yandex_ads")
+    assert has_element?(lv, "#feature-yandex_browser")
     assert has_element?(lv, "#feature-toggle-segments[aria-checked=false]")
     assert has_element?(lv, "#feature-segments")
     refute has_element?(lv, "#settings-connections")
 
     assert has_element?(
              lv,
-             "#nav-section-main a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Forders']"
+             "#nav-section-main a[href^='/staff/branches/select?'][href*='%2Forders']"
            )
 
     assert has_element?(
              lv,
-             "#nav-section-main a[href^='/staff/branches/select?'][href*='from=%2Fstaff%2Fb%2F#{branch.slug}%2Fproducts']"
+             "#nav-section-main a[href^='/staff/branches/select?'][href*='%2Fproducts']"
            )
 
     refute has_element?(lv, "[id^='settings-branch-card-']")

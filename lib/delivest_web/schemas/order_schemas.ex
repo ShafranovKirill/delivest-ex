@@ -318,6 +318,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       nullable: true,
       description: "Курьер, который взял заказ. Есть с назначения курьера до вручения",
       properties: %{
+        provider: %Schema{type: :string, enum: ["staff", "yandex"]},
         name: %Schema{type: :string, nullable: true, example: "Иван"},
         phone: %Schema{
           type: :string,

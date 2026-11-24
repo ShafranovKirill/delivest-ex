@@ -3,6 +3,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
   alias Delivest.Media
   alias Delivest.Net
   alias Delivest.Oms.Order
+  alias Delivest.Integrations.StaffAccess
 
   def create(%{order: order, confirmation_url: url}) do
     %{data: order |> order_data() |> Map.put(:payment, payment_data(order, url))}
@@ -55,10 +56,29 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       comment: order.comment,
       address: serialize_address(order.address),
       inserted_at: order.inserted_at,
-      courier: Couriers.contact(order),
+      courier: courier_data(order),
       can_cancel: Delivest.Oms.Orders.client_cancellable?(order, enabled?),
       items: Enum.map(order.items, &item_data/1)
     }
+  end
+
+  defp courier_data(order) do
+    case Couriers.contact(order) do
+      nil ->
+        nil
+
+      contact ->
+        case Couriers.current(order) do
+          %{provider: :staff} ->
+            if Couriers.own_enabled?(order.branch_id), do: Map.put(contact, :provider, :staff)
+
+          %{provider: :yandex} ->
+            if StaffAccess.allowed?(:yandex_delivery), do: Map.put(contact, :provider, :yandex)
+
+          _ ->
+            nil
+        end
+    end
   end
 
   defp payment_data(%{awaiting_payment: true}, url) when is_binary(url),

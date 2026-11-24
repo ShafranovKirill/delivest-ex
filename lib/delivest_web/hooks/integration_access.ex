@@ -27,8 +27,13 @@ defmodule DelivestWeb.Hooks.IntegrationAccess do
         case require_access(socket, provider) do
           {:cont, socket} ->
             {:cont,
-             attach_hook(socket, :integration_access, :handle_event, fn _, _, socket ->
+             socket
+             |> attach_hook(:integration_access, :handle_event, fn _, _, socket ->
                require_access(socket, provider)
+             end)
+             |> attach_hook(:integration_access_info, :handle_info, fn
+               :features_changed, socket -> require_access(socket, provider)
+               _, socket -> {:cont, socket}
              end)}
 
           halted ->

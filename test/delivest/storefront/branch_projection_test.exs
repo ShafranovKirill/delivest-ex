@@ -4,6 +4,7 @@ defmodule Delivest.Storefront.BranchProjectionTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Features
   alias Delivest.Franchise.Settings, as: FranchiseSettings
   alias Delivest.Repo
   alias Delivest.Storefront.BranchProjection
@@ -39,7 +40,8 @@ defmodule Delivest.Storefront.BranchProjectionTest do
       end
 
     assert Enum.uniq(counts) |> length() == 1
-    assert hd(counts) <= 4
+    # One network courier integration gate is read for the whole projection.
+    assert hd(counts) <= 5
   end
 
   test "prepared online payment readiness matches the legacy global check" do
@@ -63,6 +65,19 @@ defmodule Delivest.Storefront.BranchProjectionTest do
 
     assert BranchJSON.show(BranchProjection.prepare([loaded]) |> Map.put(:branch, loaded)).data.branch_info.payment_methods ==
              [:cash, :card_offline, :online]
+  end
+
+  test "projection exposes the Yandex Delivery switch without per-branch reads" do
+    branch = insert(:branch, is_active: true)
+    Repo.insert!(%BranchInfo{branch_id: branch.id})
+    loaded = Repo.preload(branch, :info, force: true)
+
+    assert BranchJSON.show(BranchProjection.prepare([loaded]) |> Map.put(:branch, loaded)).data.branch_info.yandex_delivery_enabled
+
+    {:ok, _} =
+      Features.configure("integration_yandex_delivery", :franchise, false, actor: "test")
+
+    refute BranchJSON.show(BranchProjection.prepare([loaded]) |> Map.put(:branch, loaded)).data.branch_info.yandex_delivery_enabled
   end
 
   test "projection uses fresh franchise settings for maintenance, timezone and loyalty" do
@@ -92,7 +107,7 @@ defmodule Delivest.Storefront.BranchProjectionTest do
     {prepare_count, prepared} = count_queries(fn -> BranchProjection.prepare([loaded]) end)
     {render_count, %{data: [data]}} = count_queries(fn -> BranchJSON.index(prepared) end)
 
-    assert prepare_count <= 4
+    assert prepare_count <= 5
     assert render_count == 0
     assert data.branch_info.maintenance == %{enabled: true, reason: :franchise}
     assert data.branch_info.timezone == "Asia/Yekaterinburg"

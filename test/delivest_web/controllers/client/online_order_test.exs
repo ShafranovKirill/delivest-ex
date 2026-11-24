@@ -5,6 +5,7 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
   import Delivest.Factory
 
   alias Delivest.Events.Event
+  alias Delivest.Features
   alias Delivest.Identity.Branch.{BranchInfo, PaymentSettings}
   alias Delivest.Integrations.{Health, Yookassa}
   alias Delivest.Oms.{Order, OrderFlow}
@@ -286,6 +287,18 @@ defmodule DelivestWeb.Client.OnlineOrderTest do
       assert Repo.exists?(
                from(e in Event, where: e.type == "order.created" and e.aggregate_id == ^order.id)
              )
+    end
+
+    test "a payment started before disable still settles from its callback", ctx do
+      assert {:ok, _} =
+               Features.configure("integration_yookassa", :franchise, false, actor: "test")
+
+      refute Yookassa.ready?()
+      remote(ctx.external_id, "waiting_for_capture")
+      notify(ctx.conn, ctx.token, "payment.waiting_for_capture", ctx.external_id)
+
+      assert [%{status: :authorized}] = Payments.list(ctx.order.id)
+      refute Repo.get!(Order, ctx.order.id).awaiting_payment
     end
 
     test "a payment notification completes an existing order during maintenance", ctx do

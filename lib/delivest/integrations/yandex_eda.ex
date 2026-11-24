@@ -3,7 +3,7 @@ defmodule Delivest.Integrations.YandexEda do
 
   alias Delivest.{Identity, Repo}
   alias Delivest.Integrations.Channels.Products
-  alias Delivest.Integrations.{Health, Journal}
+  alias Delivest.Integrations.{Health, Journal, StaffAccess}
 
   alias Delivest.Integrations.YandexEda.{
     BranchSettings,
@@ -40,7 +40,9 @@ defmodule Delivest.Integrations.YandexEda do
   def settings_schema, do: BranchSettings
 
   @impl true
-  def configured?(%BranchSettings{enabled: enabled}), do: enabled
+  def configured?(%BranchSettings{enabled: enabled}),
+    do: enabled and StaffAccess.allowed?(:yandex_eda)
+
   def configured?(_settings), do: false
 
   @impl true
@@ -111,10 +113,13 @@ defmodule Delivest.Integrations.YandexEda do
 
   def get_settings, do: Repo.one(Settings) || %Settings{}
 
-  def push_available?, do: PushApi.configured?(get_settings())
+  def push_available?,
+    do: StaffAccess.allowed?(:yandex_eda) and PushApi.configured?(get_settings())
 
   def enabled_branch_ids do
-    for branch <- Places.list(), Places.settings(branch).enabled, do: branch.id
+    if StaffAccess.allowed?(:yandex_eda),
+      do: for(branch <- Places.list(), Places.settings(branch).enabled, do: branch.id),
+      else: []
   end
 
   def busy_mode(branch_id), do: BusyMode.active(branch_id)
@@ -145,7 +150,7 @@ defmodule Delivest.Integrations.YandexEda do
   defp with_push(branch_id, fun) do
     settings = get_settings()
 
-    if PushApi.configured?(settings),
+    if StaffAccess.allowed?(:yandex_eda) and PushApi.configured?(settings),
       do: Journal.scope([branch_id: branch_id], fn -> fun.(settings) end),
       else: {:error, :push_not_configured}
   end
@@ -195,14 +200,15 @@ defmodule Delivest.Integrations.YandexEda do
   def issue_token(client_id, client_secret) do
     settings = get_settings()
 
-    if Settings.credentials?(settings) and
+    if StaffAccess.allowed?(:yandex_eda) and Settings.credentials?(settings) and
          Plug.Crypto.secure_compare(settings.client_id, to_string(client_id)) and
          Plug.Crypto.secure_compare(settings.client_secret, to_string(client_secret)),
        do: {:ok, Token.issue(settings)},
        else: {:error, :invalid_client}
   end
 
-  def valid_token?(token), do: Token.valid?(get_settings(), token)
+  def valid_token?(token),
+    do: StaffAccess.allowed?(:yandex_eda) and Token.valid?(get_settings(), token)
 
   def restaurants, do: Enum.map(Places.list(), &Places.view/1)
 
@@ -283,7 +289,7 @@ defmodule Delivest.Integrations.YandexEda do
   def base_url, do: DelivestWeb.Endpoint.url() <> "/integrations/yandex-eda"
 
   defp reload_menu(branch_id, operation, opts \\ []) do
-    if get_branch_settings(branch_id).enabled,
+    if StaffAccess.allowed?(:yandex_eda) and get_branch_settings(branch_id).enabled,
       do:
         %{
           "branch_id" => branch_id,

@@ -9,7 +9,7 @@ defmodule Delivest.Integrations.YandexDelivery do
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Journal, as: RequestJournal
-  alias Delivest.Integrations.{Error, Poller}
+  alias Delivest.Integrations.{Error, Poller, StaffAccess}
   alias Delivest.Integrations.YandexDelivery.{Api, Claim, ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders}
 
@@ -33,7 +33,7 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   @impl true
   def health_check(%Settings{} = settings) do
-    if Settings.configured?(settings),
+    if StaffAccess.allowed?(:yandex_delivery) and Settings.configured?(settings),
       do: with({:ok, _journal} <- Api.journal(settings.token, nil), do: :ok),
       else: {:error, :not_configured}
   end
@@ -193,9 +193,12 @@ defmodule Delivest.Integrations.YandexDelivery do
   def cancel(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
 
   def cancel(%Delivery{} = delivery) do
-    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
-      cancel_claim(delivery)
-    end)
+    if StaffAccess.allowed?(:yandex_delivery),
+      do:
+        RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+          cancel_claim(delivery)
+        end),
+      else: {:error, :disabled}
   end
 
   defp cancel_claim(%Delivery{external_id: claim_id} = delivery) do
@@ -223,16 +226,23 @@ defmodule Delivest.Integrations.YandexDelivery do
   def order_ready(%Delivery{details: %{"status" => status}}) when status in @final, do: :ok
 
   def order_ready(%Delivery{external_id: claim_id} = delivery) do
-    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
-      case Api.set_point_ready(settings(delivery.branch_id).token, claim_id) do
-        {:ok, _response} -> :ok
-        {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
-        error -> error
-      end
-    end)
+    if StaffAccess.allowed?(:yandex_delivery),
+      do:
+        RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+          case Api.set_point_ready(settings(delivery.branch_id).token, claim_id) do
+            {:ok, _response} -> :ok
+            {:error, {:yandex_delivery, _status, "inappropriate_status"}} -> :ok
+            error -> error
+          end
+        end),
+      else: {:error, :disabled}
   end
 
   def poll(branch_id) do
+    if StaffAccess.allowed?(:yandex_delivery), do: poll_enabled(branch_id), else: :done
+  end
+
+  defp poll_enabled(branch_id) do
     settings = settings(branch_id)
 
     case active(branch_id) do
@@ -265,9 +275,12 @@ defmodule Delivest.Integrations.YandexDelivery do
   end
 
   def sync(%Delivery{} = delivery, %Settings{} = settings) do
-    RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
-      sync_claim(delivery, settings)
-    end)
+    if StaffAccess.allowed?(:yandex_delivery),
+      do:
+        RequestJournal.scope([branch_id: delivery.branch_id, order_id: delivery.order_id], fn ->
+          sync_claim(delivery, settings)
+        end),
+      else: {:error, :disabled}
   end
 
   defp sync_claim(%Delivery{external_id: claim_id} = delivery, %Settings{token: token}) do
@@ -415,7 +428,9 @@ defmodule Delivest.Integrations.YandexDelivery do
   defp price(_pricing), do: nil
 
   defp configured(%Branch{info: %{yandex_delivery: %Settings{} = settings}}) do
-    if Settings.configured?(settings), do: settings, else: {:error, :not_configured}
+    if StaffAccess.allowed?(:yandex_delivery) and Settings.configured?(settings),
+      do: settings,
+      else: {:error, :not_configured}
   end
 
   defp configured(_branch), do: {:error, :not_configured}
@@ -449,10 +464,14 @@ defmodule Delivest.Integrations.YandexDelivery do
   end
 
   def active_branches do
-    Delivery
-    |> where([d], d.provider == :yandex and d.status in ^Delivery.active())
-    |> distinct(true)
-    |> select([d], d.branch_id)
-    |> Repo.all()
+    if StaffAccess.allowed?(:yandex_delivery) do
+      Delivery
+      |> where([d], d.provider == :yandex and d.status in ^Delivery.active())
+      |> distinct(true)
+      |> select([d], d.branch_id)
+      |> Repo.all()
+    else
+      []
+    end
   end
 end

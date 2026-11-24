@@ -15,7 +15,7 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
          current_branch: nil
        )}
     else
-      {:ok, redirect(socket, to: ~p"/staff/branches/select")}
+      {:ok, redirect(socket, to: ~p"/staff/dashboard")}
     end
   end
 
@@ -32,7 +32,30 @@ defmodule DelivestWeb.Staff.MarketingLive.Hub do
         _ -> :hub
       end
 
-    {:noreply, assign(socket, current_branch: branch, section: section)}
+    if Navigation.available_section?(
+         socket.assigns.current_staff,
+         socket.assigns.staff_branches,
+         branch,
+         section
+       ) do
+      {:noreply, assign(socket, current_branch: branch, section: section)}
+    else
+      {:noreply, redirect(socket, to: ~p"/staff/dashboard")}
+    end
+  end
+
+  @impl true
+  def handle_info(:features_changed, socket) do
+    if Navigation.available_section?(
+         socket.assigns.current_staff,
+         socket.assigns.staff_branches,
+         socket.assigns.current_branch,
+         socket.assigns.section
+       ) do
+      {:noreply, socket}
+    else
+      {:noreply, redirect(socket, to: ~p"/staff/dashboard")}
+    end
   end
 
   def staff_page_header(assigns) do
