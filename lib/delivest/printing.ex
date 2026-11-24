@@ -82,12 +82,6 @@ defmodule Delivest.Printing do
     with {:ok, order} <- authorized_order(staff, branch_id, order_id, type) do
       render(order, type, settings(branch_id))
     else
-      nil ->
-        {:error, :not_found}
-
-      :error ->
-        {:error, :not_found}
-
       {:error, reason} when reason in [:forbidden, :not_found] ->
         {:error, reason}
 
