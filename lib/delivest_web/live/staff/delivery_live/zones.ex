@@ -395,13 +395,13 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
             type="number"
             min="1"
             max="600"
-            label={gettext("Average travel after ready, minutes")}
+            label={gettext("Courier travel time, minutes")}
             disabled={not @can_edit}
           />
         </div>
         <p class="text-sm text-base-content/60">
           {gettext(
-            "Full time is used in one-time mode. In calculated mode, travel starts after the order is ready. A zone may have its own travel time."
+            "In calculated mode, courier time runs from the order being ready to handover. A zone may have its own courier time."
           )}
         </p>
         <div :if={@can_edit} class="flex justify-end">

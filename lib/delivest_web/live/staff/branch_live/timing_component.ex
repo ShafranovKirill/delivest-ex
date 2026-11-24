@@ -13,15 +13,18 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
       settings = OrderTiming.get(assigns.branch.id)
       params = params(settings, assigns.branch.info && assigns.branch.info.delivery_time)
 
+      products = Products.list_product_options_for_branch(assigns.branch.id)
+
       {:ok,
        socket
        |> assign(assigns)
        |> assign(
          categories: Categories.list_branch_categories(assigns.branch.id),
-         products: Products.list_product_options_for_branch(assigns.branch.id),
+         products: products,
+         product_names: Map.new(products, fn {name, id} -> {id, name} end),
          params: params,
-         category_ids: Map.keys(params["category_minutes"]),
-         product_ids: Map.keys(params["product_minutes"]),
+         product_ids:
+           for({_name, id} <- products, Map.has_key?(params["product_minutes"], id), do: id),
          form: to_form(params, as: "timing")
        )}
     end
@@ -30,17 +33,6 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
   @impl true
   def handle_event("change", %{"timing" => params}, socket) do
     {:noreply, put_params(socket, params)}
-  end
-
-  def handle_event("add_category", _params, socket) do
-    id = socket.assigns.params["new_category_id"]
-    known = Enum.any?(socket.assigns.categories, &(&1.id == id))
-
-    if known and id not in socket.assigns.category_ids do
-      {:noreply, assign(socket, category_ids: socket.assigns.category_ids ++ [id])}
-    else
-      {:noreply, socket}
-    end
   end
 
   def handle_event("add_product", _params, socket) do
@@ -52,13 +44,6 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
     else
       {:noreply, socket}
     end
-  end
-
-  def handle_event("remove_category", %{"id" => id}, socket) do
-    {:noreply,
-     socket
-     |> assign(category_ids: List.delete(socket.assigns.category_ids, id))
-     |> put_params(Map.update!(socket.assigns.params, "category_minutes", &Map.delete(&1, id)))}
   end
 
   def handle_event("remove_product", %{"id" => id}, socket) do
@@ -76,13 +61,13 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
         params
         |> Map.put(
           "category_minutes",
-          only_present(params["category_minutes"], socket.assigns.category_ids)
+          only_present(params["category_minutes"], Enum.map(socket.assigns.categories, & &1.id))
         )
         |> Map.put(
           "product_minutes",
           only_present(params["product_minutes"], socket.assigns.product_ids)
         )
-        |> Map.drop(["new_category_id", "new_product_id"])
+        |> Map.drop(["new_product_id", "travel_minutes"])
       else
         Map.take(params, ["mode", "fixed_delivery_minutes"])
       end
@@ -126,10 +111,8 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
       "fixed_delivery_minutes" => fixed || 60,
       "kitchen_minutes" => settings.kitchen_minutes,
       "packing_minutes" => settings.packing_minutes,
-      "travel_minutes" => settings.travel_minutes,
       "category_minutes" => settings.category_minutes || %{},
       "product_minutes" => settings.product_minutes || %{},
-      "new_category_id" => "",
       "new_product_id" => ""
     }
   end
@@ -214,106 +197,121 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
               )}
             </p>
           </div>
-          <div class="grid gap-4 sm:grid-cols-3">
-            <.input
-              field={@form[:kitchen_minutes]}
-              type="number"
-              min="1"
-              max="600"
-              label={gettext("Default cooking, minutes")}
-            />
-            <.input
-              field={@form[:packing_minutes]}
-              type="number"
-              min="0"
-              max="120"
-              label={gettext("Packing, minutes")}
-            />
-            <.input
-              field={@form[:travel_minutes]}
-              type="number"
-              min="1"
-              max="600"
-              label={gettext("Average travel after ready, minutes")}
-            />
+          <div class="overflow-hidden rounded-box border border-base-300">
+            <table class="table table-sm table-fixed w-full">
+              <colgroup><col /><col class="w-28" /></colgroup>
+              <thead class="bg-base-200/70">
+                <tr>
+                  <th scope="col">{gettext("Category or default")}</th><th scope="col">
+                    {gettext("Minutes")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="bg-primary/10">
+                  <th scope="row" class="whitespace-normal">
+                    <label for="timing_kitchen_minutes" class="font-semibold">
+                      {gettext("Default preparation time")}
+                      <span class="block text-xs font-normal text-base-content/65">{gettext(
+                        "From starting preparation until the order is ready for handover."
+                      )}</span>
+                    </label>
+                  </th>
+                  <td>
+                    <input
+                      id="timing_kitchen_minutes"
+                      name="timing[kitchen_minutes]"
+                      value={@params["kitchen_minutes"]}
+                      type="number"
+                      min="1"
+                      max="600"
+                      required
+                      phx-debounce="blur"
+                      aria-label={gettext("Default preparation time, minutes")}
+                      class="input input-bordered w-full min-w-0"
+                    />
+                  </td>
+                </tr>
+                <tr :for={category <- @categories}>
+                  <th scope="row" class="whitespace-normal break-words font-normal">
+                    <label for={"timing-category-#{category.id}"}>{category.name}</label>
+                  </th>
+                  <td>
+                    <input
+                      id={"timing-category-#{category.id}"}
+                      name={"timing[category_minutes][#{category.id}]"}
+                      value={@params["category_minutes"][category.id]}
+                      type="number"
+                      min="1"
+                      max="600"
+                      placeholder={to_string(@params["kitchen_minutes"])}
+                      phx-debounce="blur"
+                      aria-label={
+                        gettext("Preparation time for %{name}, minutes", name: category.name)
+                      }
+                      class="input input-bordered w-full min-w-0"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div class="border-t border-base-200 pt-4 space-y-3">
-            <h3 class="font-semibold">{gettext("Category times")}</h3>
-            <div :for={id <- @category_ids} class="flex items-end gap-2">
-              <label class="form-control flex-1 min-w-0">
-                <span class="label-text text-sm">{Enum.find_value(
-                  @categories,
-                  &(&1.id == id && &1.name)
-                )}</span>
-                <input
-                  id={"timing-category-#{id}"}
-                  name={"timing[category_minutes][#{id}]"}
-                  value={@params["category_minutes"][id]}
-                  type="number"
-                  min="1"
-                  max="600"
-                  class="input input-bordered w-full"
-                />
-              </label>
-              <button
-                type="button"
-                phx-click="remove_category"
-                phx-target={@myself}
-                phx-value-id={id}
-                class="btn btn-ghost"
-                aria-label={gettext("Remove category time")}
-              ><.icon name="hero-x-mark" class="size-4" /></button>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <select
-                id="timing-add-category"
-                name="timing[new_category_id]"
-                class="select select-bordered flex-1 min-w-36"
-              >
-                <option value="">{gettext("Choose category")}</option>
-                <option
-                  :for={category <- @categories}
-                  :if={category.id not in @category_ids}
-                  value={category.id}
-                  selected={@params["new_category_id"] == category.id}
-                >
-                  {category.name}
-                </option>
-              </select>
-              <button
-                id="timing-add-category-button"
-                type="button"
-                phx-click="add_category"
-                phx-target={@myself}
-                class="btn btn-outline"
-              >{gettext("Add category")}</button>
-            </div>
-          </div>
+          <p class="text-xs text-base-content/65">
+            {gettext("Leave a category blank to use the default time.")}
+          </p>
           <div class="border-t border-base-200 pt-4 space-y-3">
             <h3 class="font-semibold">{gettext("Product exceptions")}</h3>
-            <div :for={id <- @product_ids} class="flex items-end gap-2">
-              <label class="form-control flex-1 min-w-0">
-                <span class="label-text text-sm">{Enum.find_value(@products, fn {name, product_id} ->
-                  product_id == id && name
-                end)}</span>
-                <input
-                  id={"timing-product-#{id}"}
-                  name={"timing[product_minutes][#{id}]"}
-                  value={@params["product_minutes"][id]}
-                  type="number"
-                  min="1"
-                  max="600"
-                  class="input input-bordered w-full"
-                />
-              </label>
-              <button
-                type="button"
-                phx-click="remove_product"
-                phx-target={@myself}
-                phx-value-id={id}
-                class="btn btn-ghost"
-                aria-label={gettext("Remove product time")}
-              ><.icon name="hero-x-mark" class="size-4" /></button>
+            <p class="text-sm text-base-content/70">
+              {gettext(
+                "Add only products whose preparation time differs from their category. A blank value inherits the category time."
+              )}
+            </p>
+            <div :if={@product_ids != []} class="overflow-hidden rounded-box border border-base-300">
+              <table class="table table-sm table-fixed w-full">
+                <colgroup><col /><col class="w-24 sm:w-28" /><col class="w-10" /></colgroup>
+                <thead class="bg-base-200/70">
+                  <tr>
+                    <th scope="col">{gettext("Product")}</th><th scope="col">{gettext("Minutes")}</th><th
+                      scope="col"
+                      class="sr-only"
+                    >
+                      {gettext("Remove")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr :for={id <- @product_ids}>
+                    <th scope="row" class="whitespace-normal break-words font-normal">
+                      <label for={"timing-product-#{id}"}>{@product_names[id]}</label>
+                    </th>
+                    <td>
+                      <input
+                        id={"timing-product-#{id}"}
+                        name={"timing[product_minutes][#{id}]"}
+                        value={@params["product_minutes"][id]}
+                        type="number"
+                        min="1"
+                        max="600"
+                        phx-debounce="blur"
+                        aria-label={
+                          gettext("Preparation time for %{name}, minutes", name: @product_names[id])
+                        }
+                        class="input input-bordered w-full min-w-0"
+                      />
+                    </td>
+                    <td class="p-0 pr-1">
+                      <button
+                        type="button"
+                        phx-click="remove_product"
+                        phx-target={@myself}
+                        phx-value-id={id}
+                        class="btn btn-ghost btn-square"
+                        aria-label={gettext("Remove time for %{name}", name: @product_names[id])}
+                      ><.icon name="hero-x-mark" class="size-4" /></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
             <div class="flex flex-wrap gap-2">
               <select
@@ -340,6 +338,29 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
               >{gettext("Add product")}</button>
             </div>
           </div>
+          <details id="timing-advanced" class="rounded-box border border-base-300 bg-base-100 p-4">
+            <summary class="cursor-pointer font-medium">{gettext("Advanced")}</summary>
+            <div class="mt-4 max-w-xs space-y-2">
+              <.input
+                field={@form[:packing_minutes]}
+                type="number"
+                min="0"
+                max="120"
+                label={gettext("Additional buffer, minutes")}
+              />
+              <p class="text-xs text-base-content/65">
+                {gettext(
+                  "Optional extra time added after the kitchen estimate; leave 0 if not needed."
+                )}
+              </p>
+            </div>
+          </details>
+          <p class="text-sm text-base-content/70">
+            {gettext("Courier travel time is configured in Delivery settings.")}
+            <.link navigate={~p"/staff/b/#{@branch}/delivery/zones"} class="link link-primary">
+              {gettext("Open delivery settings")}
+            </.link>
+          </p>
         </section>
         <div class="flex justify-end">
           <button

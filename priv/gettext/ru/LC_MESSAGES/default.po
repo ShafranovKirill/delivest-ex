@@ -13949,3 +13949,54 @@ msgstr "Время доставки сохранено"
 
 msgid "Travel after ready, min"
 msgstr "Доставка после готовности, мин"
+
+msgid "Category or default"
+msgstr "Категория или значение по умолчанию"
+
+msgid "Minutes"
+msgstr "Минуты"
+
+msgid "Default preparation time"
+msgstr "Время готовности по умолчанию"
+
+msgid "From starting preparation until the order is ready for handover."
+msgstr "От начала приготовления до заказа, готового к выдаче."
+
+msgid "Default preparation time, minutes"
+msgstr "Время готовности по умолчанию, мин"
+
+msgid "Preparation time for %{name}, minutes"
+msgstr "Время готовности «%{name}», мин"
+
+msgid "Leave a category blank to use the default time."
+msgstr "Пустое поле категории использует время по умолчанию."
+
+msgid "Add only products whose preparation time differs from their category. A blank value inherits the category time."
+msgstr "Добавляйте только товары, время которых отличается от категории. Пустое поле наследует время категории."
+
+msgid "Remove time for %{name}"
+msgstr "Убрать время товара «%{name}»"
+
+msgid "Advanced"
+msgstr "Дополнительно"
+
+msgid "Additional buffer, minutes"
+msgstr "Дополнительный запас, мин"
+
+msgid "Optional extra time added after the kitchen estimate; leave 0 if not needed."
+msgstr "Необязательное дополнительное время после расчёта кухни; оставьте 0, если не нужно."
+
+msgid "Courier travel time is configured in Delivery settings."
+msgstr "Время курьера настраивается в разделе «Доставка»."
+
+msgid "Open delivery settings"
+msgstr "Открыть настройки доставки"
+
+msgid "Courier travel time, minutes"
+msgstr "Время курьера, мин"
+
+msgid "Courier travel time for this zone, minutes"
+msgstr "Время курьера для этой зоны, мин"
+
+msgid "In calculated mode, courier time runs from the order being ready to handover. A zone may have its own courier time."
+msgstr "В расчётном режиме время курьера отсчитывается от готовности заказа до вручения. У зоны может быть своё время курьера."

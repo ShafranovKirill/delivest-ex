@@ -160,7 +160,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonePanel do
           field={@form[:delivery_minutes]}
           type="number"
           min="1"
-          label={gettext("Travel after ready, min")}
+          label={gettext("Courier travel time for this zone, minutes")}
           disabled={not @can_edit}
         />
         <div :if={@can_edit} class="flex justify-between gap-2">
