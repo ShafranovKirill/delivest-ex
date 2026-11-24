@@ -183,6 +183,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
     <.page_toolbar
       id="popular-toolbar"
       title={gettext("Popular products")}
+      show_title
       back={~p"/staff/b/#{@current_branch}/products/collections"}
     >
       <:primary_action :if={@can_edit}>

@@ -388,11 +388,13 @@ defmodule DelivestWeb.CoreComponents do
   @doc """
   Renders the controls for a staff list page in one compact row.
 
-  The page title remains available to assistive technology; the section navigation
-  already identifies the visible page. Filters and actions are supplied by the page.
+  The page title remains available to assistive technology by default. Set
+  `show_title` for pages that need a visible title beside the back link.
+  Filters and actions are supplied by the page.
   """
   attr :id, :string, required: true
   attr :title, :string, required: true
+  attr :show_title, :boolean, default: false
   attr :more_id, :string, default: nil
   attr :back, :string, default: nil
   slot :filters
@@ -409,7 +411,9 @@ defmodule DelivestWeb.CoreComponents do
         aria-label={gettext("Back")}
         title={gettext("Back")}
       ><.icon name="hero-arrow-left" class="size-4" /></.link>
-      <h1 class="sr-only">{@title}</h1>
+      <h1 class={if(@show_title, do: "min-w-0 flex-1 text-base font-semibold", else: "sr-only")}>
+        {@title}
+      </h1>
       <div :if={@filters != []} class="staff-page-toolbar-filters min-w-0 flex-1">
         {render_slot(@filters)}
       </div>

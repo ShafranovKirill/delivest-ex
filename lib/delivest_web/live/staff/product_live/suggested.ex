@@ -114,6 +114,7 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
     <.page_toolbar
       id="suggested-toolbar"
       title={gettext("Recommended")}
+      show_title
       back={~p"/staff/b/#{@current_branch}/products/collections"}
     >
       <:primary_action>
@@ -133,9 +134,6 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <p class="text-sm text-base-content/70">
-        {gettext("Choose products to recommend to customers.")}
-      </p>
       <BranchProducts.product_list
         id="suggested-list"
         products={Enum.filter(@products, & &1.suggested)}

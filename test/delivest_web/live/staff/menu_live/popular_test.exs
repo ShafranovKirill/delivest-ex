@@ -44,7 +44,7 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
              "#staff-context-navigation #staff-section-navigation #product-section-tab-collections[aria-current='page']"
            )
 
-    assert has_element?(lv, "main #popular-toolbar h1.sr-only", "Popular products")
+    assert has_element?(lv, "main #popular-toolbar h1:not(.sr-only)", "Popular products")
 
     assert has_element?(
              lv,
