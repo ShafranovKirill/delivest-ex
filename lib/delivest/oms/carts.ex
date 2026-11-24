@@ -551,6 +551,7 @@ defmodule Delivest.Oms.Carts do
                 view_item = %{
                   key: item_key(item.product_id, item.modifier_key),
                   product_id: item.product_id,
+                  category_id: product.category_id,
                   name: product.name,
                   image_url: Delivest.Media.thumb_url_from_file(product.media),
                   price: product.price,
@@ -575,6 +576,7 @@ defmodule Delivest.Oms.Carts do
                 view_item = %{
                   key: item_key(item.product_id, item.modifier_key),
                   product_id: item.product_id,
+                  category_id: product.category_id,
                   name: product.name,
                   image_url: Delivest.Media.thumb_url_from_file(product.media),
                   price: price,
@@ -614,6 +616,7 @@ defmodule Delivest.Oms.Carts do
     %{
       key: item_key(item.product_id, item.modifier_key),
       product_id: item.product_id,
+      category_id: if(product, do: product.category_id, else: nil),
       name: if(product, do: product.name, else: "Unavailable product"),
       image_url: if(product, do: Delivest.Media.thumb_url_from_file(product.media), else: nil),
       price: if(product, do: product.price, else: 0),

@@ -6,14 +6,30 @@ defmodule Delivest.Oms.Orders.DeliveryFee do
   @quoted_sources ["app", "staff"]
 
   def run(branch_id, attrs, pricing, opts, order \\ nil) do
+    case run_with_quote(branch_id, attrs, pricing, opts, order) do
+      {:ok, %{price: price}} -> {:ok, price}
+      error -> error
+    end
+  end
+
+  def run_with_quote(branch_id, attrs, pricing, opts, order \\ nil) do
     source = Keyword.get(opts, :source, "staff")
 
     cond do
-      Keyword.has_key?(opts, :delivery_amount) -> {:ok, opts[:delivery_amount] || 0}
-      fulfillment(attrs, order) != "delivery" -> {:ok, 0}
-      by_operator?(attrs, order) -> {:ok, 0}
-      source not in @quoted_sources -> {:ok, 0}
-      true -> quote(branch_id, address(attrs, order), pricing.total, source)
+      Keyword.has_key?(opts, :delivery_amount) ->
+        {:ok, %{price: opts[:delivery_amount] || 0, minutes: nil}}
+
+      fulfillment(attrs, order) != "delivery" ->
+        {:ok, %{price: 0, minutes: nil}}
+
+      by_operator?(attrs, order) ->
+        {:ok, %{price: 0, minutes: nil}}
+
+      source not in @quoted_sources ->
+        {:ok, %{price: 0, minutes: nil}}
+
+      true ->
+        quote(branch_id, address(attrs, order), pricing.total, source)
     end
   end
 
@@ -28,17 +44,17 @@ defmodule Delivest.Oms.Orders.DeliveryFee do
 
   defp quote(branch_id, address, total, source) do
     case {Delivery.quote(branch_id, point(address), total), source} do
-      {{:ok, %{price: price}}, _source} ->
-        {:ok, price}
+      {{:ok, %{price: price, minutes: minutes}}, _source} ->
+        {:ok, %{price: price, minutes: minutes}}
 
       {{:error, :no_coordinates}, "app"} ->
-        if blank?(address), do: {:ok, 0}, else: {:error, :no_coordinates}
+        if blank?(address), do: {:ok, %{price: 0, minutes: nil}}, else: {:error, :no_coordinates}
 
       {{:error, reason}, source} when source in @strict_sources ->
         {:error, reason}
 
       {{:error, _reason}, _source} ->
-        {:ok, 0}
+        {:ok, %{price: 0, minutes: nil}}
     end
   end
 

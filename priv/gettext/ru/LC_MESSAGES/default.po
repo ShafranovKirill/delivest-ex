@@ -13859,3 +13859,93 @@ msgstr "Выберите действия в каталоге"
 
 msgid "To confirm"
 msgstr "Подтвердить"
+
+msgid "Order timing"
+msgstr "Время заказов"
+
+msgid "Choose the customer delivery time and optional kitchen estimates."
+msgstr "Настройте время доставки для клиентов и оценки работы кухни."
+
+msgid "Customer delivery estimate"
+msgstr "Время доставки для клиента"
+
+msgid "Choose how the time shown to customers is calculated."
+msgstr "Выберите способ расчёта времени, которое видит клиент."
+
+msgid "One delivery time"
+msgstr "Единое время доставки"
+
+msgid "Show one full time from order to handover for every delivery."
+msgstr "Один полный срок от заказа до вручения для всех доставок."
+
+msgid "Calculated time"
+msgstr "Расчётное время"
+
+msgid "Kitchen time plus the time to deliver to the address."
+msgstr "Время кухни плюс время доставки по адресу."
+
+msgid "Full delivery time, minutes"
+msgstr "Полный срок доставки, мин"
+
+msgid "Used in one-time mode. Includes cooking and delivery. This value is also editable in Delivery settings."
+msgstr "Используется в режиме единого времени. Включает приготовление и доставку. Значение также меняется в настройках доставки."
+
+msgid "Kitchen estimate"
+msgstr "Время кухни"
+
+msgid "Enter times for categories. Add a product only when it differs from its category."
+msgstr "Укажите время категорий. Отдельный товар добавляйте, только если его время отличается."
+
+msgid "Default cooking, minutes"
+msgstr "Обычное время кухни, мин"
+
+msgid "Packing, minutes"
+msgstr "Упаковка, мин"
+
+msgid "Average travel after ready, minutes"
+msgstr "Доставка после готовности, мин"
+
+msgid "Category times"
+msgstr "Время категорий"
+
+msgid "Product exceptions"
+msgstr "Исключения для товаров"
+
+msgid "Choose category"
+msgstr "Выберите категорию"
+
+msgid "Add category"
+msgstr "Добавить категорию"
+
+msgid "Remove category time"
+msgstr "Убрать время категории"
+
+msgid "Choose product"
+msgstr "Выберите товар"
+
+msgid "Add product"
+msgstr "Добавить товар"
+
+msgid "Remove product time"
+msgstr "Убрать время товара"
+
+msgid "Order timing saved"
+msgstr "Время заказов сохранено"
+
+msgid "Check the time settings"
+msgstr "Проверьте настройки времени"
+
+msgid "Delivery time"
+msgstr "Время доставки"
+
+msgid "Choose the time shown to customers. Kitchen details are configured in branch Order timing."
+msgstr "Настройте время для клиентов. Время кухни задаётся в разделе «Время заказов» филиала."
+
+msgid "Full time is used in one-time mode. In calculated mode, travel starts after the order is ready. A zone may have its own travel time."
+msgstr "Полный срок используется в режиме единого времени. В расчётном режиме доставка отсчитывается после готовности заказа. У зоны может быть своё время."
+
+msgid "Delivery time saved"
+msgstr "Время доставки сохранено"
+
+msgid "Travel after ready, min"
+msgstr "Доставка после готовности, мин"

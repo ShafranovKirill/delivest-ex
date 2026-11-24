@@ -9,7 +9,13 @@ defmodule Delivest.Oms.Orders.Assembler do
         attrs,
         %{cart: cart, lines: lines, client_id: client_id, pricing: pricing} = changes
       ) do
-    delivery = Map.get(changes, :delivery, 0)
+    delivery =
+      case Map.get(changes, :delivery, 0) do
+        %{price: price} -> price
+        price when is_integer(price) -> price
+      end
+
+    timing = Map.get(changes, :timing)
 
     params =
       attrs
@@ -29,6 +35,15 @@ defmodule Delivest.Oms.Orders.Assembler do
 
     order
     |> Order.changeset(params)
+    |> then(fn changeset ->
+      if timing do
+        changeset
+        |> Ecto.Changeset.put_change(:estimated_ready_at, timing.ready_at)
+        |> Ecto.Changeset.put_change(:estimated_delivery_at, timing.delivered_at)
+      else
+        changeset
+      end
+    end)
     |> Ecto.Changeset.put_assoc(:items, lines.items)
     |> Ecto.Changeset.put_embed(:promotions, Enum.map(pricing.applied, &applied/1))
   end

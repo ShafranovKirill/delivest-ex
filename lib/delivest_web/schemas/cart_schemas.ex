@@ -392,6 +392,11 @@ defmodule DelivestWeb.Schemas.CartSchemas do
             base_stars: %Schema{type: :integer},
             product_stars: %Schema{type: :integer},
             total_amount: %Schema{type: :integer, example: 150_000, description: "К оплате"},
+            prep_minutes: %Schema{
+              type: :integer,
+              nullable: true,
+              description: "Оценка готовности корзины в расчётном режиме"
+            },
             promo_code: PromoCodeState,
             promotions: %Schema{type: :array, items: AppliedPromotion},
             hints: %Schema{type: :array, items: PromoHint}

@@ -77,6 +77,8 @@ defmodule Delivest.Oms.Order do
     field :delivery_amount, :integer, default: 0
     embeds_many :promotions, AppliedPromotion, on_replace: :delete
     field :cook_by, :utc_datetime
+    field :estimated_ready_at, :utc_datetime
+    field :estimated_delivery_at, :utc_datetime
     field :initial_promised_delivery_at, :utc_datetime
     field :promised_delivery_at, :utc_datetime
     field :delivered_at, :utc_datetime

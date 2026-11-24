@@ -251,11 +251,6 @@ defmodule DelivestWeb.Staff.BranchLive.BranchFormComponent do
                 class="input w-full uppercase"
               />
               <.input field={@form[:phone_number]} type="text" label={gettext("Phone Number")} />
-              <.input
-                field={@form[:delivery_time]}
-                type="number"
-                label={gettext("Delivery Time (minutes)")}
-              />
               <div class="flex items-end gap-2">
                 <.input
                   field={@form[:manual_rating]}

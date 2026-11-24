@@ -6,7 +6,7 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
   alias Delivest.{Identity, Intake}
   alias Delivest.Identity.Branch
   alias Delivest.SiteSnapshot
-  alias DelivestWeb.Staff.BranchLive.{BranchFormComponent, Sections}
+  alias DelivestWeb.Staff.BranchLive.{BranchFormComponent, Sections, TimingComponent}
   alias DelivestWeb.Staff.OrderLive.Components.IntakeControls
 
   def mount(%{"slug" => slug, "section" => "analytics"}, _session, socket) do
@@ -447,7 +447,8 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
     """
   end
 
-  def staff_page_header(%{section: %{id: id}} = assigns) when id in [:board, :analytics] do
+  def staff_page_header(%{section: %{id: id}} = assigns)
+      when id in [:board, :analytics, :timing] do
     ~H"""
     <.page_header
       navigation_label={gettext("Settings")}
@@ -626,6 +627,17 @@ defmodule DelivestWeb.Staff.BranchLive.Edit do
         </button>
       </section>
     </div>
+    """
+  end
+
+  def render(%{section: %{id: :timing}} = assigns) do
+    ~H"""
+    <.live_component
+      module={TimingComponent}
+      id={@branch.id}
+      branch={@branch}
+      current_staff={@current_staff}
+    />
     """
   end
 

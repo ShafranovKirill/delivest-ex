@@ -16,6 +16,7 @@ defmodule Delivest.Promo.Line do
   defstruct [
     :key,
     :product_id,
+    :category_id,
     :name,
     :image_url,
     base_price: 0,
@@ -32,6 +33,7 @@ defmodule Delivest.Promo.Line do
     %__MODULE__{
       key: Map.get(item, :key, item.product_id),
       product_id: item.product_id,
+      category_id: Map.get(item, :category_id),
       modifiers: Map.get(item, :modifiers, []),
       name: item.name,
       image_url: item.image_url,
@@ -45,6 +47,7 @@ defmodule Delivest.Promo.Line do
     %__MODULE__{
       key: "gift:#{promotion_id}:#{product.id}",
       product_id: product.id,
+      category_id: product.category_id,
       name: product.name,
       image_url: Delivest.Media.thumb_url_from_file(product.media),
       base_price: product.price,

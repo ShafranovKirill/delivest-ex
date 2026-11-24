@@ -276,6 +276,8 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               nullable: true,
               example: "2026-10-05T18:30:00"
             },
+            estimated_ready_at: %Schema{type: :string, format: :date_time, nullable: true},
+            estimated_delivery_at: %Schema{type: :string, format: :date_time, nullable: true},
             comment: %Schema{type: :string, nullable: true, example: "Без лука"},
             customer_phone: %Schema{type: :string, nullable: true, example: "+79990000000"},
             customer_phone_ext: %Schema{type: :string, nullable: true, example: "1234"},
@@ -382,6 +384,8 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         promotions: %Schema{type: :array, items: DelivestWeb.Schemas.OrderSchemas.OrderPromotion},
         branch_id: %Schema{type: :string, format: :uuid},
         cook_by: %Schema{type: :string, format: :date_time, nullable: true},
+        estimated_ready_at: %Schema{type: :string, format: :date_time, nullable: true},
+        estimated_delivery_at: %Schema{type: :string, format: :date_time, nullable: true},
         promised_delivery_at: %Schema{
           type: :string,
           format: :date_time,

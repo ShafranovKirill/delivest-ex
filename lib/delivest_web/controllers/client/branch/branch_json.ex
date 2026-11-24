@@ -52,8 +52,18 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     }
   end
 
-  defp effective_time(%{delivery_time: nil}), do: nil
-  defp effective_time(%{delivery_time: time} = info), do: time + intake(info).extra_minutes
+  defp effective_time(%{timing: %Delivest.Oms.OrderTiming.Settings{mode: :calculated}} = info) do
+    settings = timing(info)
+
+    settings.kitchen_minutes + settings.packing_minutes + settings.travel_minutes +
+      intake(info).extra_minutes
+  end
+
+  defp effective_time(%{delivery_time: time}) when is_integer(time) and time > 0, do: time
+  defp effective_time(_info), do: 60
+
+  defp fixed_time(%{delivery_time: time}) when is_integer(time) and time > 0, do: time
+  defp fixed_time(_info), do: 60
 
   defp intake(%{intake: %Delivest.Identity.Branch.IntakeSettings{} = intake}) do
     status = Delivest.Intake.status_of(intake, DateTime.utc_now())
@@ -150,6 +160,11 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       longitude: info.longitude,
       phone_number: info.phone_number,
       delivery_time: effective_time(info),
+      timing_mode: timing(info).mode,
+      fixed_delivery_minutes: fixed_time(info),
+      kitchen_minutes: timing(info).kitchen_minutes,
+      packing_minutes: timing(info).packing_minutes,
+      travel_minutes: timing(info).travel_minutes,
       manual_rating: info.manual_rating,
       intake: intake(info),
       maintenance:
@@ -170,4 +185,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       vk_ads: Delivest.Identity.Branch.VkAdsSettings.public_config(info.vk_ads)
     }
   end
+
+  defp timing(%{timing: %Delivest.Oms.OrderTiming.Settings{} = settings}), do: settings
+  defp timing(_info), do: %Delivest.Oms.OrderTiming.Settings{}
 end

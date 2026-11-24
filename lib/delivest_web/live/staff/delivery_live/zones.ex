@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
 
   alias Delivest.{Delivery, Identity, Money}
   alias Delivest.Delivery.Conditions
+  alias Delivest.Oms.OrderTiming
   alias DelivestWeb.Staff.DeliveryLive.ZonePanel
 
   on_mount {DelivestWeb.Hooks.Permission, "delivery.read"}
@@ -23,7 +24,35 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
        address_map: Delivest.Integrations.Dadata.active?()
      )
      |> assign_settings(settings)
+     |> assign_timing()
      |> assign_zones(zones, zones |> List.first() |> then(&(&1 && &1.id)))}
+  end
+
+  def handle_event("timing_change", %{"order_timing" => params}, socket),
+    do:
+      {:noreply,
+       assign(socket, timing_params: params, timing_form: to_form(params, as: "order_timing"))}
+
+  def handle_event("save_timing", %{"order_timing" => params}, socket) do
+    case OrderTiming.update_delivery(
+           Identity.fresh_staff(socket.assigns.current_staff),
+           branch_id(socket),
+           params
+         ) do
+      {:ok, _settings} ->
+        {:noreply,
+         socket
+         |> assign_timing()
+         |> put_flash(:info, gettext("Delivery time saved"))
+         |> push_event("staff:form-saved", %{id: "delivery-timing-form"})}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(timing_params: params, timing_form: to_form(params, as: "order_timing"))
+         |> put_flash(:error, gettext("Check the time settings"))
+         |> push_event("staff:form-failed", %{id: "delivery-timing-form"})}
+    end
   end
 
   @impl true
@@ -180,6 +209,24 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
 
   defp branch_id(socket), do: socket.assigns.current_branch.id
 
+  defp assign_timing(socket) do
+    settings = OrderTiming.get(branch_id(socket))
+
+    fixed =
+      case Identity.get_branch(branch_id(socket), preload: :info) do
+        {:ok, branch} -> branch.info && branch.info.delivery_time
+        _ -> nil
+      end
+
+    params = %{
+      "mode" => to_string(settings.mode),
+      "fixed_delivery_minutes" => fixed || 60,
+      "travel_minutes" => settings.travel_minutes
+    }
+
+    assign(socket, timing_params: params, timing_form: to_form(params, as: "order_timing"))
+  end
+
   defp branch_point(branch_id) do
     case Delivery.branch_point(branch_id) do
       {lat, lng} -> %{lat: lat, lng: lng}
@@ -292,6 +339,80 @@ defmodule DelivestWeb.Staff.DeliveryLive.Zones do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <.form
+        for={@timing_form}
+        id="delivery-timing-form"
+        phx-change="timing_change"
+        phx-submit="save_timing"
+        data-staff-dirty
+        class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
+      >
+        <div>
+          <h2 class="text-lg font-semibold">{gettext("Delivery time")}</h2>
+          <p class="text-sm text-base-content/70">
+            {gettext(
+              "Choose the time shown to customers. Kitchen details are configured in branch Order timing."
+            )}
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-5">
+          <label class="flex cursor-pointer items-center gap-2">
+            <input
+              id="delivery-timing-fixed"
+              type="radio"
+              name="order_timing[mode]"
+              value="fixed"
+              checked={@timing_params["mode"] == "fixed"}
+              class="radio radio-primary radio-sm"
+              disabled={not @can_edit}
+            />
+            {gettext("One delivery time")}
+          </label>
+          <label class="flex cursor-pointer items-center gap-2">
+            <input
+              id="delivery-timing-calculated"
+              type="radio"
+              name="order_timing[mode]"
+              value="calculated"
+              checked={@timing_params["mode"] == "calculated"}
+              class="radio radio-primary radio-sm"
+              disabled={not @can_edit}
+            />
+            {gettext("Calculated time")}
+          </label>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <.input
+            field={@timing_form[:fixed_delivery_minutes]}
+            type="number"
+            min="1"
+            max="600"
+            label={gettext("Full delivery time, minutes")}
+            disabled={not @can_edit}
+          />
+          <.input
+            field={@timing_form[:travel_minutes]}
+            type="number"
+            min="1"
+            max="600"
+            label={gettext("Average travel after ready, minutes")}
+            disabled={not @can_edit}
+          />
+        </div>
+        <p class="text-sm text-base-content/60">
+          {gettext(
+            "Full time is used in one-time mode. In calculated mode, travel starts after the order is ready. A zone may have its own travel time."
+          )}
+        </p>
+        <div :if={@can_edit} class="flex justify-end">
+          <button
+            id="delivery-timing-save"
+            type="submit"
+            class="btn btn-primary"
+            phx-disable-with={gettext("Saving...")}
+          >{gettext("Save")}</button>
+        </div>
+      </.form>
       <.form
         for={@settings_form}
         id="delivery-settings"

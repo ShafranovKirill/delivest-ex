@@ -69,6 +69,69 @@ defmodule DelivestWeb.Client.OrderControllerTest do
 
   defp keyed(conn, key), do: put_req_header(conn, "idempotency-key", key)
 
+  test "checkout saves a fixed or calculated ready estimate for immediate pickup", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    fixed = conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+    fixed_ready = DateTime.from_iso8601(fixed["data"]["estimated_ready_at"]) |> elem(1)
+    fixed_created = DateTime.from_iso8601(fixed["data"]["inserted_at"]) |> elem(1)
+    assert DateTime.diff(fixed_ready, fixed_created, :minute) in 29..31
+    assert fixed["data"]["estimated_delivery_at"] == nil
+
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    assert {:ok, _} =
+             Delivest.Oms.OrderTiming.update(staff, branch.id, %{
+               mode: "calculated",
+               kitchen_minutes: "25",
+               packing_minutes: "3"
+             })
+
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    calculated =
+      conn |> post(~p"/client/orders", order_params(branch, cart_id)) |> json_response(200)
+
+    ready = DateTime.from_iso8601(calculated["data"]["estimated_ready_at"]) |> elem(1)
+    created = DateTime.from_iso8601(calculated["data"]["inserted_at"]) |> elem(1)
+    assert DateTime.diff(ready, created, :minute) in 27..29
+    assert calculated["data"]["estimated_delivery_at"] == nil
+  end
+
+  test "fixed delivery ETA is exactly the configured total", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    assert {:ok, _} =
+             Delivest.Oms.OrderTiming.update(staff, branch.id, %{fixed_delivery_minutes: "47"})
+
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    params =
+      order_params(branch, cart_id, %{
+        "fulfillment_type" => "delivery",
+        "address" => %{"street" => "Ленина", "house" => "1"}
+      })
+
+    data = conn |> post(~p"/client/orders", params) |> json_response(200) |> Map.fetch!("data")
+    delivered = DateTime.from_iso8601(data["estimated_delivery_at"]) |> elem(1)
+    created = DateTime.from_iso8601(data["inserted_at"]) |> elem(1)
+
+    assert DateTime.diff(delivered, created, :minute) in 46..48
+    assert data["estimated_ready_at"] == nil
+  end
+
   test "keyed retry returns the original order after cart detach and branch pause", %{
     conn: conn,
     branch: branch,

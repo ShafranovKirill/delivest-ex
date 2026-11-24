@@ -91,6 +91,7 @@ defmodule Delivest.Oms.CartView do
     %{
       key: line.key,
       product_id: line.product_id,
+      category_id: line.category_id,
       name: line.name,
       image_url: line.image_url,
       price: line.base_price,
