@@ -36,6 +36,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         status: assigns.order.status,
         delivery: Couriers.current(assigns.order),
         history: history(assigns.order),
+        promise_form:
+          to_form(
+            %{
+              "at" =>
+                LocalTime.input(assigns.order.promised_delivery_at, assigns.order.branch_id) || "",
+              "reason" => ""
+            },
+            as: :promise
+          ),
         last: last_transition(assigns.order),
         crm_retry_at:
           if(assigns.crm_retry_at == :lookup,
@@ -152,6 +161,50 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           }
         />
         <.items order={@order} expanded={@expanded} />
+      </div>
+
+      <div
+        :if={@order.fulfillment_type == :delivery and @status in [:accepted, :preparing, :ready]}
+        id={"delivery-promise-#{@order.id}"}
+        class="mx-3 sm:mx-4 mb-3 rounded-box border border-primary/20 bg-primary/5 p-3 text-sm"
+      >
+        <p :if={@order.promised_delivery_at} class="font-semibold">
+          Подтверждённое вручение до {Calendar.strftime(
+            LocalTime.local(@order.promised_delivery_at, @order.branch_id),
+            "%d.%m %H:%M"
+          )}
+        </p>
+        <p :if={is_nil(@order.promised_delivery_at)} class="text-base-content/70">
+          Время вручения покупателю пока не подтверждено
+        </p>
+        <.form
+          :if={Identity.can?(@current_staff, "orders.update")}
+          for={@promise_form}
+          id={"delivery-promise-form-#{@order.id}"}
+          phx-submit="confirm_delivery_promise"
+          class="mt-2 flex flex-wrap items-end gap-2"
+        >
+          <input type="hidden" name="order_id" value={@order.id} />
+          <.input
+            field={@promise_form[:at]}
+            type="datetime-local"
+            label="Вручим до (местное время)"
+            required
+          />
+          <.input
+            :if={@order.initial_promised_delivery_at}
+            field={@promise_form[:reason]}
+            type="text"
+            label="Причина изменения"
+            required
+          />
+          <button type="submit" class="btn btn-sm btn-primary">
+            {if(@order.initial_promised_delivery_at,
+              do: "Изменить обещание",
+              else: "Подтвердить обещание"
+            )}
+          </button>
+        </.form>
       </div>
 
       <.courier_panel

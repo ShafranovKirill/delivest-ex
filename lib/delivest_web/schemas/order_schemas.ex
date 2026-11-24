@@ -264,6 +264,12 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               nullable: true,
               example: "c4a3b8e0-1234-5678-9abc-def012345678"
             },
+            promised_delivery_at: %Schema{
+              type: :string,
+              format: :date_time,
+              nullable: true,
+              description: "Подтверждённый крайний срок вручения (UTC), не желаемое cook_by"
+            },
             cook_by: %Schema{
               type: :string,
               format: :date_time,
@@ -376,6 +382,12 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
         promotions: %Schema{type: :array, items: DelivestWeb.Schemas.OrderSchemas.OrderPromotion},
         branch_id: %Schema{type: :string, format: :uuid},
         cook_by: %Schema{type: :string, format: :date_time, nullable: true},
+        promised_delivery_at: %Schema{
+          type: :string,
+          format: :date_time,
+          nullable: true,
+          description: "Подтверждённый крайний срок вручения (UTC)"
+        },
         comment: %Schema{type: :string, nullable: true},
         address: %Schema{type: :object, nullable: true, additionalProperties: true},
         inserted_at: %Schema{type: :string, format: :date_time},

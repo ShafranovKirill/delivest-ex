@@ -310,3 +310,5 @@ unless Relations.related?("Branch", other_pagination_branch.id, "Product", other
 end
 
 IO.puts("E2E data is ready")
+
+Code.require_file("e2e_analytics_seeds.exs", __DIR__)

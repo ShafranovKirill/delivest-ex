@@ -13341,3 +13341,54 @@ msgid "%{count} more item"
 msgid_plural "%{count} more items"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "Legacy funnel days are excluded until refreshed."
+msgstr ""
+
+msgid "From previous step"
+msgstr ""
+
+msgid "From start"
+msgstr ""
+
+msgid "Lost before next step"
+msgstr ""
+
+msgid "Stage"
+msgstr ""
+
+msgid "Sessions"
+msgstr ""
+
+msgid "Delivery quality"
+msgstr ""
+
+msgid "On-time rate"
+msgstr ""
+
+msgid "Measurement coverage"
+msgstr ""
+
+msgid "Measured deliveries"
+msgstr ""
+
+msgid "Late deliveries"
+msgstr ""
+
+msgid "Completed deliveries by local order creation date. On-time rate uses only deliveries with a confirmed staff promise and a verified actual delivery event. The original promise is used for revised orders."
+msgstr ""
+
+msgid "No confirmed delivery measurements in this period"
+msgstr ""
+
+msgid "Delivery quality by day"
+msgstr ""
+
+msgid "Completed deliveries"
+msgstr ""
+
+msgid "On time"
+msgstr ""
+
+msgid "Missing measurements"
+msgstr ""

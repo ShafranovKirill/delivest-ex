@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   use DelivestWeb, :live_view
 
   alias Delivest.{Analytics, Features, Identity}
-  alias Delivest.Analytics.{Overview, Reports}
+  alias Delivest.Analytics.{BranchComparison, DeliveryQuality, OrderHeatmap, Overview, Reports}
   alias Delivest.Integrations.Channels
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -70,7 +70,8 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       assign(socket,
         refresh_epoch: socket.assigns.refresh_epoch + 1,
         refresh_attempts: 0,
-        refresh_retry?: false
+        refresh_retry?: false,
+        heatmap_detail: nil
       )
 
     global? = not String.starts_with?(URI.parse(url).path, "/staff/b/")
@@ -184,6 +185,9 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         {comparison_period, comparison_error} =
           resolve_comparison(comparison_mode, period, params)
 
+        {heatmap_period, heatmap_error} =
+          resolve_heatmap_period(params, if(branch, do: {:branch, branch.id}, else: :network))
+
         sort = if params["sort"] == "quantity", do: :quantity, else: :revenue
 
         {:noreply,
@@ -237,7 +241,37 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
                  ),
                else: []
              ),
-           report_filters: report_filters(params)
+           report_filters: report_filters(params),
+           heatmap_period: heatmap_period,
+           heatmap_error: heatmap_error,
+           heatmap_from:
+             if(Map.has_key?(params, "heatmap_from"),
+               do: safe_date_param(params["heatmap_from"]),
+               else: Date.to_iso8601(elem(heatmap_period, 0))
+             ),
+           heatmap_to:
+             if(Map.has_key?(params, "heatmap_to"),
+               do: safe_date_param(params["heatmap_to"]),
+               else: Date.to_iso8601(elem(heatmap_period, 1))
+             ),
+           heatmap_fulfillment:
+             if(params["fulfillment"] in ~w(all delivery pickup dine_in),
+               do: params["fulfillment"],
+               else: "all"
+             ),
+           comparison_metric:
+             if(params["metric"] in ~w(revenue orders_per_day avg_check),
+               do: params["metric"],
+               else: "revenue"
+             ),
+           heatmap_branch_id:
+             if(
+               global? and
+                 Enum.any?(socket.assigns.staff_branches, &(&1.id == params["heatmap_branch"])),
+               do: params["heatmap_branch"],
+               else: nil
+             ),
+           heatmap_detail: nil
          )
          |> then(fn socket ->
            if not is_nil(period_error) or is_nil(tab), do: socket, else: load_tab(socket)
@@ -258,7 +292,18 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "channel" => params["channel"] || socket.assigns.report_filters["channel"],
         "branch_id" => params["branch_id"] || socket.assigns.report_filters["branch_id"],
         "link_id" => params["link_id"] || socket.assigns.report_filters["link_id"],
-        "link_search" => params["link_search"] || socket.assigns.report_filters["link_search"]
+        "link_search" => params["link_search"] || socket.assigns.report_filters["link_search"],
+        "metric" =>
+          if(socket.assigns.comparison_metric != "revenue",
+            do: socket.assigns.comparison_metric
+          ),
+        "heatmap_from" => heatmap_query_value(socket.assigns, :heatmap_from),
+        "heatmap_to" => heatmap_query_value(socket.assigns, :heatmap_to),
+        "fulfillment" =>
+          if(socket.assigns.heatmap_fulfillment != "all",
+            do: socket.assigns.heatmap_fulfillment
+          ),
+        "heatmap_branch" => socket.assigns.heatmap_branch_id
       }
       |> compact_query()
       |> maybe_put_custom(
@@ -268,6 +313,79 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
 
     {:noreply, push_patch(socket, to: statistics_path(socket.assigns, query))}
   end
+
+  def handle_event("heatmap_filter", params, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         tab_path(socket.assigns, socket.assigns.tab, %{
+           "heatmap_from" => params["heatmap_from"],
+           "heatmap_to" => params["heatmap_to"],
+           "fulfillment" => params["fulfillment"],
+           "heatmap_branch" => params["heatmap_branch"]
+         })
+     )}
+  end
+
+  def handle_event("comparison_metric", %{"metric" => metric}, socket) do
+    {:noreply,
+     push_patch(socket, to: tab_path(socket.assigns, socket.assigns.tab, %{"metric" => metric}))}
+  end
+
+  def handle_event(
+        "heatmap_detail",
+        %{"day" => day, "hour" => hour},
+        %{assigns: %{heatmap: %{period: _}}} = socket
+      ) do
+    with {day, ""} <- Integer.parse(to_string(day)),
+         {hour, ""} <- Integer.parse(to_string(hour)),
+         {:ok, detail} <-
+           OrderHeatmap.detail(
+             socket.assigns.current_staff,
+             statistics_scope(socket.assigns),
+             socket.assigns.heatmap.period,
+             socket.assigns.heatmap_fulfillment,
+             day,
+             hour,
+             socket.assigns.heatmap_branch_id
+           ) do
+      {:noreply, assign(socket, heatmap_detail: %{day: day, hour: hour, rows: detail})}
+    else
+      _ -> {:noreply, assign(socket, heatmap_detail: nil)}
+    end
+  end
+
+  def handle_event("heatmap_detail", _, socket),
+    do: {:noreply, assign(socket, heatmap_detail: nil)}
+
+  def handle_event("close_heatmap_detail", _, socket),
+    do: {:noreply, assign(socket, heatmap_detail: nil)}
+
+  def handle_event(
+        "delivery_day_detail",
+        %{"day" => day},
+        %{assigns: %{tab: "overview", delivery_quality: _}} = socket
+      )
+      when is_binary(day) do
+    with {:ok, date} <- Date.from_iso8601(day),
+         {:ok, detail} <-
+           DeliveryQuality.detail(
+             socket.assigns.current_staff,
+             statistics_scope(socket.assigns),
+             socket.assigns.period,
+             date
+           ) do
+      {:noreply, assign(socket, delivery_detail: detail)}
+    else
+      _ -> {:noreply, assign(socket, delivery_detail: nil)}
+    end
+  end
+
+  def handle_event("delivery_day_detail", _, socket),
+    do: {:noreply, assign(socket, delivery_detail: nil)}
+
+  def handle_event("close_delivery_day_detail", _, socket),
+    do: {:noreply, assign(socket, delivery_detail: nil)}
 
   def handle_event("open_comparison", _, socket),
     do: {:noreply, assign(socket, comparison_open?: true)}
@@ -317,6 +435,54 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
       {:noreply, socket |> assign(refresh_attempts: 0, refresh_retry?: false) |> load_tab()}
     else
       {:noreply, socket}
+    end
+  end
+
+  defp statistics_scope(assigns),
+    do: if(assigns.current_branch, do: {:branch, assigns.current_branch.id}, else: :network)
+
+  defp heatmap_query_value(assigns, key) do
+    {from, to} = OrderHeatmap.default_period(statistics_scope(assigns))
+    defaults = %{heatmap_from: Date.to_iso8601(from), heatmap_to: Date.to_iso8601(to)}
+
+    if assigns.heatmap_from == defaults.heatmap_from and
+         assigns.heatmap_to == defaults.heatmap_to,
+       do: nil,
+       else: Map.fetch!(assigns, key)
+  end
+
+  defp resolve_heatmap_period(params, scope) do
+    default = OrderHeatmap.default_period(scope)
+
+    if Map.has_key?(params, "heatmap_from") or Map.has_key?(params, "heatmap_to") do
+      with {:ok, from} <- Date.from_iso8601(params["heatmap_from"] || ""),
+           {:ok, to} <- Date.from_iso8601(params["heatmap_to"] || ""),
+           :ok <- OrderHeatmap.valid_period({from, to}) do
+        {{from, to}, nil}
+      else
+        _ -> {default, gettext("Choose a range of complete Monday–Sunday weeks (up to 52 weeks)")}
+      end
+    else
+      {default, nil}
+    end
+  end
+
+  defp load_heatmap(socket) do
+    scope = statistics_scope(socket.assigns)
+
+    if socket.assigns.heatmap_error do
+      assign(socket, heatmap: nil, heatmap_detail: nil)
+    else
+      case OrderHeatmap.read(
+             socket.assigns.current_staff,
+             scope,
+             socket.assigns.heatmap_period,
+             socket.assigns.heatmap_fulfillment,
+             socket.assigns.heatmap_branch_id
+           ) do
+        {:ok, heatmap} -> assign(socket, heatmap: heatmap, heatmap_detail: nil)
+        {:error, _} -> assign(socket, heatmap: nil, heatmap_detail: nil)
+      end
     end
   end
 
@@ -490,12 +656,15 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         do: [comparison_period: assigns.comparison_period],
         else: []
 
-    case Overview.read(assigns.current_staff, scope, assigns.period, opts) do
-      {:ok, overview} ->
-        socket |> assign(overview: overview) |> schedule_report_refresh()
-
-      {:error, _} ->
-        socket |> put_flash(:error, gettext("Statistics are unavailable"))
+    with {:ok, overview} <- Overview.read(assigns.current_staff, scope, assigns.period, opts),
+         {:ok, delivery_quality} <-
+           DeliveryQuality.read(assigns.current_staff, scope, assigns.period) do
+      socket
+      |> assign(overview: overview, delivery_quality: delivery_quality, delivery_detail: nil)
+      |> load_heatmap()
+      |> schedule_report_refresh()
+    else
+      {:error, _} -> put_flash(socket, :error, gettext("Statistics are unavailable"))
     end
   end
 
@@ -573,6 +742,39 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
   end
 
   defp load_tab(%{assigns: %{tab: tab}} = socket) when tab in @report_tabs do
+    if tab == "franchise" do
+      case Reports.read(
+             socket.assigns.current_staff,
+             :franchise,
+             socket.assigns.period,
+             "franchise",
+             socket.assigns.report_filters
+           ) do
+        {:ok, report} ->
+          branches = socket.assigns.staff_branches
+
+          rows =
+            Enum.map(report.branch_rows, fn row ->
+              branch = Enum.find(branches, &(&1.id == row.branch_id))
+              Map.put(row, :name, if(branch, do: branch.name, else: row.branch_id))
+            end)
+
+          rows =
+            BranchComparison.rows(rows, socket.assigns.period, socket.assigns.comparison_metric)
+
+          socket
+          |> assign(report: report, report_previous: nil, comparison_rows: rows)
+          |> schedule_report_refresh()
+
+        {:error, _} ->
+          push_navigate(socket, to: overview_path(socket.assigns))
+      end
+    else
+      load_collected_report(socket, tab)
+    end
+  end
+
+  defp load_collected_report(socket, tab) do
     scope =
       cond do
         tab == "franchise" -> :franchise
@@ -730,7 +932,13 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         "branch_id" => assigns.report_filters["branch_id"],
         "branch_ids" => assigns.report_filters["branch_ids"],
         "link_id" => assigns.report_filters["link_id"],
-        "link_search" => assigns.report_filters["link_search"]
+        "link_search" => assigns.report_filters["link_search"],
+        "heatmap_from" => heatmap_query_value(assigns, :heatmap_from),
+        "heatmap_to" => heatmap_query_value(assigns, :heatmap_to),
+        "fulfillment" =>
+          if(assigns[:heatmap_fulfillment] != "all", do: assigns[:heatmap_fulfillment]),
+        "heatmap_branch" => assigns[:heatmap_branch_id],
+        "metric" => if(assigns[:comparison_metric] != "revenue", do: assigns[:comparison_metric])
       }
       |> compact_query()
       |> then(fn q ->
@@ -1204,6 +1412,17 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             </.stat_card>
           </.link>
         </div>
+        <.heatmap_panel
+          :if={assigns[:heatmap] || @heatmap_error}
+          heatmap={@heatmap || %{cells: [], branches: [], period: @heatmap_period, state: :empty}}
+          detail={@heatmap_detail}
+          from={@heatmap_from}
+          to={@heatmap_to}
+          error={@heatmap_error}
+          fulfillment={@heatmap_fulfillment}
+          branch_id={@heatmap_branch_id}
+          network?={@global_statistics?}
+        />
         <p
           :if={
             (@compare? and @overview.comparison) && @overview.comparison.state == :ready &&
@@ -1279,6 +1498,7 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
             </p>
           </section>
         </div>
+        <.delivery_quality_panel quality={@delivery_quality} detail={@delivery_detail} />
         <section
           :if={@global_statistics?}
           id="statistics-branch-summary"
@@ -1374,6 +1594,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         current_staff={@current_staff}
         current_branch={@current_branch}
         staff_branches={@staff_branches}
+        ranking_rows={assigns[:comparison_rows] || []}
+        ranking_metric={@comparison_metric}
+        period={@period}
+        branch_path={fn id -> branch_overview_path(assigns, id) end}
         page_path={fn page -> tab_path(assigns, @tab, %{"page" => Integer.to_string(page)}) end}
       />
 

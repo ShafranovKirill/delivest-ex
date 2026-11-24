@@ -1,7 +1,7 @@
 defmodule Delivest.Analytics.Reports do
   @moduledoc "Authorized read model over published daily analytics buckets."
   alias Delivest.{Background, Features, Identity, LocalTime, Repo}
-  alias Delivest.Analytics.Reports.{Query, Refresh}
+  alias Delivest.Analytics.Reports.{FunnelPresentation, Query, Refresh}
   alias Delivest.Analytics.Overview
 
   @feature_by_tab %{
@@ -241,7 +241,14 @@ defmodule Delivest.Analytics.Reports do
 
     refresh_pending = Refresh.on_read(feature, ids, {refresh_from, to})
     page = page(filters)
-    data = Query.read(feature, ids, from, to, tab, filters, page, Overview.allowed_sources(ids))
+    visibility = Overview.allowed_sources(ids)
+    data = Query.read(feature, ids, from, to, tab, filters, page, visibility)
+
+    data =
+      if tab == "funnel",
+        do: FunnelPresentation.apply(data, ids, from, to, visibility),
+        else: data
+
     coverage = data.coverage
     expected = length(ids) * (Date.diff(to, from) + 1)
 
@@ -253,14 +260,18 @@ defmodule Delivest.Analytics.Reports do
         if(coverage.days == 0,
           do: :not_collected,
           else:
-            state(
-              coverage.complete_days,
-              expected,
-              Enum.sum(Map.values(data.totals)),
-              checked_at(job),
-              feature,
-              current? and refresh_pending,
-              coverage.dirty or refresh_pending
+            if(Map.get(data, :legacy_days, 0) > 0,
+              do: :partial,
+              else:
+                state(
+                  coverage.complete_days,
+                  expected,
+                  Enum.sum(Map.values(data.totals)),
+                  checked_at(job),
+                  feature,
+                  current? and refresh_pending,
+                  coverage.dirty or refresh_pending
+                )
             )
         ),
       covered_days: coverage.complete_days,
@@ -273,6 +284,8 @@ defmodule Delivest.Analytics.Reports do
       page: page,
       pages: max(ceil(max(data.total_rows, data.branch_total) / Query.page_size()), 1),
       totals: data.totals,
+      conversion_ready?:
+        tab == "funnel" and Map.get(data, :legacy_days, 0) == 0 and coverage.days > 0,
       branch_rows: data.branch_rows,
       verified_buyers: if(coverage.days == 0, do: nil, else: data.verified_buyers),
       repeat_buyers: if(coverage.days == 0, do: nil, else: data.repeat_buyers),

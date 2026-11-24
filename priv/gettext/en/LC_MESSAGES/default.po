@@ -12975,3 +12975,54 @@ msgstr "Not collected or disabled"
 #, elixir-autogen, elixir-format
 msgid "Configure menu and checkout goals"
 msgstr "Configure menu and checkout goals"
+
+msgid "Legacy funnel days are excluded until refreshed."
+msgstr "Legacy funnel days are excluded until refreshed."
+
+msgid "From previous step"
+msgstr "From previous step"
+
+msgid "From start"
+msgstr "From start"
+
+msgid "Lost before next step"
+msgstr "Lost before next step"
+
+msgid "Stage"
+msgstr "Stage"
+
+msgid "Sessions"
+msgstr "Sessions"
+
+msgid "Delivery quality"
+msgstr "Delivery quality"
+
+msgid "On-time rate"
+msgstr "On-time rate"
+
+msgid "Measurement coverage"
+msgstr "Measurement coverage"
+
+msgid "Measured deliveries"
+msgstr "Measured deliveries"
+
+msgid "Late deliveries"
+msgstr "Late deliveries"
+
+msgid "Completed deliveries by local order creation date. On-time rate uses only deliveries with a confirmed staff promise and a verified actual delivery event. The original promise is used for revised orders."
+msgstr "Completed deliveries by local order creation date. On-time rate uses only deliveries with a confirmed staff promise and a verified actual delivery event. The original promise is used for revised orders."
+
+msgid "No confirmed delivery measurements in this period"
+msgstr "No confirmed delivery measurements in this period"
+
+msgid "Delivery quality by day"
+msgstr "Delivery quality by day"
+
+msgid "Completed deliveries"
+msgstr "Completed deliveries"
+
+msgid "On time"
+msgstr "On time"
+
+msgid "Missing measurements"
+msgstr "Missing measurements"

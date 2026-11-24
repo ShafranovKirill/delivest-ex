@@ -54,6 +54,48 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert html =~ "Горячее"
   end
 
+  test "overview heatmap changes fulfillment and lazily opens zero-date details", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+    {_, to} = Delivest.Analytics.OrderHeatmap.default_period({:branch, branch.id})
+    {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics?tab=overview")
+    assert has_element?(view, "#statistics-heatmap-chart[data-chart]")
+    assert has_element?(view, "#statistics-heatmap-data tbody tr")
+    refute has_element?(view, "#statistics-heatmap-detail")
+
+    view
+    |> element("#statistics-heatmap-filter")
+    |> render_change(%{
+      "heatmap_from" => Date.to_iso8601(Date.add(to, -55)),
+      "heatmap_to" => Date.to_iso8601(to),
+      "fulfillment" => "pickup"
+    })
+
+    assert_patch(view)
+
+    assert has_element?(
+             view,
+             "#statistics-heatmap-filter select[name=fulfillment] option[value=pickup][selected]"
+           )
+
+    view |> element("#statistics-heatmap-data tbody tr:first-child button") |> render_click()
+    assert has_element?(view, "#statistics-heatmap-detail tbody tr")
+  end
+
+  test "overview rejects partial-week heatmap date range", %{conn: conn} do
+    {conn, branch} = login(conn, ["statistics.read"])
+
+    {:ok, view, _} =
+      live(
+        conn,
+        ~p"/staff/b/#{branch}/statistics?tab=overview&heatmap_from=2026-10-27&heatmap_to=2026-11-22"
+      )
+
+    assert has_element?(view, "#statistics-heatmap-period-error")
+    refute has_element?(view, "#statistics-heatmap-data tbody tr")
+    render_hook(view, "heatmap_detail", %{"day" => "1", "hour" => "12"})
+    refute has_element?(view, "#statistics-heatmap-detail")
+  end
+
   test "monthly chart uses weighted average check and retains signed revenue" do
     daily = [
       %{date: ~D[2026-11-01], revenue: 20_000, orders: 1},
@@ -590,6 +632,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     refute Map.has_key?(state.socket.assigns.flash, "info")
     assert has_element?(view, "#statistics-overview")
     assert has_element?(view, "#statistics-overview-sales-plot[data-chart]")
+    assert has_element?(view, "#statistics-delivery-quality-chart[data-chart]")
+    assert has_element?(view, "#statistics-delivery-quality-data")
+    view |> element("#statistics-delivery-quality-data tbody button") |> render_click()
+    assert has_element?(view, "#statistics-delivery-quality-detail")
+    view |> element("#statistics-delivery-quality-detail button") |> render_click()
+    refute has_element?(view, "#statistics-delivery-quality-detail")
 
     assert render_click(view, "overdue_confirm", %{"id" => Ecto.UUID.generate()}) =~
              "Permission denied"

@@ -5,6 +5,59 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
   import Delivest.Factory
 
   describe "dashboard page" do
+    test "network and branch dashboards expose interactive authorized heatmaps", %{conn: conn} do
+      branch = insert(:branch)
+
+      staff =
+        insert(:staff,
+          role: insert(:role, permissions: ["statistics.read", "statistics.network"])
+        )
+
+      insert(:staff_branch, staff: staff, branch: branch)
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      {:ok, network, _} = live(conn, ~p"/staff/dashboard")
+      {_, to} = Delivest.Analytics.OrderHeatmap.default_period(:network)
+      assert has_element?(network, "#dashboard-order-heatmap #statistics-heatmap-chart")
+      assert has_element?(network, "#statistics-heatmap-filter select[name=heatmap_branch]")
+
+      network
+      |> element("#statistics-heatmap-filter")
+      |> render_change(%{
+        "heatmap_from" => Date.to_iso8601(Date.add(to, -55)),
+        "heatmap_to" => Date.to_iso8601(to),
+        "fulfillment" => "delivery",
+        "heatmap_branch" => branch.id
+      })
+
+      assert has_element?(
+               network,
+               "#statistics-heatmap-filter select[name=fulfillment] option[value=delivery][selected]"
+             )
+
+      network |> element("#statistics-heatmap-data tbody tr:first-child button") |> render_click()
+      assert has_element?(network, "#statistics-heatmap-detail tbody tr")
+
+      network
+      |> element("#statistics-heatmap-filter")
+      |> render_change(%{
+        "heatmap_from" => "2026-10-27",
+        "heatmap_to" => "2026-11-22",
+        "fulfillment" => "all"
+      })
+
+      assert has_element?(network, "#statistics-heatmap-period-error")
+      refute has_element?(network, "#statistics-heatmap-data tbody tr")
+      network
+      |> with_target("#dashboard-order-heatmap")
+      |> render_hook("heatmap_detail", %{"day" => "1", "hour" => "12"})
+      refute has_element?(network, "#statistics-heatmap-detail")
+
+      {:ok, local, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+      assert has_element?(local, "#dashboard-order-heatmap #statistics-heatmap-chart")
+      refute has_element?(local, "#statistics-heatmap-filter select[name=heatmap_branch]")
+    end
+
     test "all-branch dashboard includes only accessible branches", %{conn: conn} do
       first = insert(:branch, name: "First")
       second = insert(:branch, name: "Second")

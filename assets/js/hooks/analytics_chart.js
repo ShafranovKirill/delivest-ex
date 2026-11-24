@@ -1,5 +1,5 @@
 import * as echarts from "echarts/core";
-import { BarChart, LineChart } from "echarts/charts";
+import { BarChart, HeatmapChart, LineChart } from "echarts/charts";
 import {
   AriaComponent,
   DataZoomComponent,
@@ -7,12 +7,14 @@ import {
   LegendComponent,
   ToolboxComponent,
   TooltipComponent,
+  VisualMapComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 
 echarts.use([
   AriaComponent,
   BarChart,
+  HeatmapChart,
   CanvasRenderer,
   DataZoomComponent,
   GridComponent,
@@ -20,6 +22,7 @@ echarts.use([
   LineChart,
   ToolboxComponent,
   TooltipComponent,
+  VisualMapComponent,
 ]);
 
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
@@ -85,7 +88,12 @@ function toolbox(data, colors, zoomable, top = 0) {
       } : {}),
       saveAsImage: {
         title: labels.image,
-        name: data.kind === "products" ? "best-sellers" : data.kind === "hourly" ? "orders-by-hour" : `sales-${data.metric}`,
+        name: data.kind === "products" ? "best-sellers" :
+          data.kind === "hourly" ? "orders-by-hour" :
+          data.kind === "heatmap" ? "orders-heatmap" :
+          data.kind === "ranking" ? "branch-ranking" :
+          data.kind === "funnel" ? "order-funnel" :
+          data.kind === "delivery" ? "delivery-quality" : `sales-${data.metric}`,
         backgroundColor: colors.surface,
         pixelRatio: 2,
       },
@@ -117,6 +125,7 @@ function salesOption(data, colors) {
     legend: comparison ? { show: true, left: 8, top: 8, right: 8, textStyle: { color: colors.text } } : { show: false },
     toolbox: toolbox(data, colors, true, comparison ? 51 : 0),
     tooltip: {
+      className: "echarts-tooltip",
       trigger: "axis",
       confine: true,
       backgroundColor: colors.surface,
@@ -173,6 +182,7 @@ function hourlyOption(data, colors) {
     grid: { left: 10, right: 12, top: 42, bottom: 32, containLabel: true },
     toolbox: toolbox(data, colors, false),
     tooltip: {
+      className: "echarts-tooltip",
       trigger: "axis",
       confine: true,
       backgroundColor: colors.surface,
@@ -210,6 +220,7 @@ function productsOption(data, colors) {
     grid: { left: 12, right: 32, top: 42, bottom: 25, containLabel: true },
     toolbox: toolbox(data, colors, false),
     tooltip: {
+      className: "echarts-tooltip",
       trigger: "item",
       confine: true,
       backgroundColor: colors.surface,
@@ -239,10 +250,166 @@ function productsOption(data, colors) {
   };
 }
 
+function heatmapOption(data, colors) {
+  const max = Math.max(1, ...data.cells.map((cell) => cell.value));
+  return {
+    animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    aria: { enabled: true, label: { description: data.title } },
+    textStyle: { color: colors.text },
+    grid: { left: 72, right: 18, top: 48, bottom: 70 },
+    toolbox: toolbox(data, colors, false),
+    tooltip: {
+      className: "echarts-tooltip",
+      trigger: "item", confine: true, backgroundColor: colors.surface,
+      textStyle: { color: colors.text, width: 280, overflow: "break" },
+      extraCssText: "max-width: min(320px, 90vw); white-space: normal;",
+      formatter({ data: point }) {
+        if (!point) return "";
+        const end = String((point.hour + 1) % 24).padStart(2, "0");
+        const start = String(point.hour).padStart(2, "0");
+        return `${escapeHtml(data.days[point.day])} · ${start}:00—${end}:00<br>` +
+          `${escapeHtml(data.labels.total)}: <strong>${escapeHtml(count(point.total, data.locale))}</strong><br>` +
+          `${escapeHtml(data.labels.dates)}: ${escapeHtml(count(point.dates, data.locale))}<br>` +
+          `${escapeHtml(data.labels.average)}: ${escapeHtml(new Intl.NumberFormat(data.locale, { maximumFractionDigits: 2 }).format(point.average))}`;
+      },
+    },
+    xAxis: { type: "category", data: Array.from({ length: 24 }, (_, h) => String(h)),
+      axisLabel: { color: colors.text, interval: 2 }, axisLine: { lineStyle: { color: colors.grid } } },
+    yAxis: { type: "category", inverse: true, data: data.days,
+      axisLabel: { color: colors.text }, axisLine: { lineStyle: { color: colors.grid } } },
+    visualMap: { min: 0, max, calculable: true, orient: "horizontal", left: "center", bottom: 4,
+      text: [data.labels.scale, "0"], textStyle: { color: colors.text },
+      inRange: { color: [colors.surface, colors.primary] } },
+    series: [{ type: "heatmap", data: data.cells.map((cell) => ({
+      ...cell, average: cell.value, value: [cell.hour, cell.day, cell.value],
+    })), emphasis: { itemStyle: { borderColor: colors.text, borderWidth: 1 } } }],
+  };
+}
+
+function rankingOption(data, colors) {
+  return {
+    animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    aria: { enabled: true, label: { description: data.title } },
+    textStyle: { color: colors.text },
+    grid: { left: 12, right: 24, top: 45, bottom: 20, containLabel: true },
+    toolbox: toolbox(data, colors, false),
+    tooltip: {
+      className: "echarts-tooltip",
+      trigger: "item", confine: true, backgroundColor: colors.surface,
+      textStyle: { color: colors.text },
+      extraCssText: "max-width: min(320px, 90vw); white-space: normal;",
+      formatter({ dataIndex }) {
+        const row = data.rows[dataIndex];
+        if (!row) return "";
+        const value = row.value == null ? "—" : data.metric === "orders_per_day"
+          ? new Intl.NumberFormat(data.locale, { maximumFractionDigits: 2 }).format(row.value)
+          : money(row.value, data.locale);
+        return `${escapeHtml(row.name)}: <strong>${escapeHtml(value)}</strong><br>` +
+          `${escapeHtml(data.labels.period)}: ${escapeHtml(data.period)}<br>` +
+          `${escapeHtml(data.labels.completed)}: ${escapeHtml(count(row.completed, data.locale))}<br>` +
+          `${escapeHtml(data.labels.calendar_days)}: ${escapeHtml(count(row.days, data.locale))}`;
+      },
+    },
+    xAxis: { type: "value", axisLabel: { color: colors.text,
+      formatter: (v) => data.metric === "orders_per_day" ? count(v, data.locale) : money(v, data.locale) },
+    splitLine: { lineStyle: { color: colors.grid } } },
+    yAxis: { type: "category", inverse: true, data: data.rows.map((row) => row.name),
+      axisLabel: { color: colors.text, width: 110, overflow: "truncate" } },
+    series: [{ type: "bar", data: data.rows.map((row) => row.value), color: colors.primary, barMaxWidth: 26 }],
+  };
+}
+
+function funnelOption(data, colors) {
+  return {
+    animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    aria: { enabled: true, label: { description: data.title } },
+    textStyle: { color: colors.text },
+    grid: { left: 8, right: 24, top: 44, bottom: 28, containLabel: true },
+    toolbox: toolbox(data, colors, false),
+    tooltip: {
+      className: "echarts-tooltip",
+      trigger: "item", confine: true, backgroundColor: colors.surface,
+      textStyle: { color: colors.text },
+      extraCssText: "max-width: min(320px, 90vw); white-space: normal;",
+      formatter({ dataIndex }) {
+        const stage = data.stages[dataIndex];
+        if (!stage) return "";
+        const percentage = (value) => value == null ? "—" : `${count(value, data.locale)}%`;
+        return `<strong>${escapeHtml(stage.name)}</strong>: ${escapeHtml(count(stage.sessions, data.locale))}<br>` +
+          `${escapeHtml(data.labels.previous)}: ${escapeHtml(percentage(stage.previous))}<br>` +
+          `${escapeHtml(data.labels.start)}: ${escapeHtml(percentage(stage.start))}<br>` +
+          `${escapeHtml(data.labels.lost)}: ${stage.lost == null ? "—" : escapeHtml(count(stage.lost, data.locale))}`;
+      },
+    },
+    xAxis: { type: "value", min: 0, minInterval: 1,
+      axisLabel: { color: colors.text, formatter: (value) => count(value, data.locale) },
+      splitLine: { lineStyle: { color: colors.grid } } },
+    yAxis: { type: "category", inverse: true, data: data.stages.map((stage) => stage.name),
+      axisLabel: { color: colors.text, width: 120, overflow: "truncate" } },
+    series: [{ type: "bar", data: data.stages.map((stage) => stage.sessions),
+      color: colors.primary, barMaxWidth: 28 }],
+  };
+}
+
+function deliveryOption(data, colors) {
+  const series = [
+    { name: data.labels.on_time_rate, key: "on_time_rate", color: colors.primary },
+    { name: data.labels.coverage, key: "coverage", color: colors.secondary },
+  ];
+  const zoomable = data.days.length > 14;
+  return {
+    animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    aria: { enabled: true, label: { description: data.title } },
+    textStyle: { color: colors.text },
+    grid: { left: 12, right: 12, top: 90, bottom: zoomable ? 70 : 38, containLabel: true },
+    legend: { show: true, left: 8, top: 8, right: 8, textStyle: { color: colors.text } },
+    toolbox: toolbox(data, colors, true, 51),
+    tooltip: {
+      className: "echarts-tooltip",
+      trigger: "axis", confine: true, backgroundColor: colors.surface,
+      textStyle: { color: colors.text },
+      extraCssText: "max-width: min(320px, 90vw); white-space: normal;",
+      formatter(params) {
+        const day = data.days[params[0]?.dataIndex];
+        if (!day) return "";
+        const percentage = (value) => value == null ? "—" : `${count(value, data.locale)}%`;
+        return `<strong>${escapeHtml(day.date)}</strong><br>` +
+          `${escapeHtml(data.labels.on_time_rate)}: ${escapeHtml(percentage(day.on_time_rate))}<br>` +
+          `${escapeHtml(data.labels.coverage)}: ${escapeHtml(percentage(day.coverage))}<br>` +
+          `${escapeHtml(data.labels.measured)}: ${escapeHtml(count(day.measured, data.locale))}/${escapeHtml(count(day.total, data.locale))}<br>` +
+          `${escapeHtml(data.labels.late)}: ${escapeHtml(count(day.late, data.locale))}`;
+      },
+    },
+    xAxis: { type: "category", data: data.days.map((day) => day.date.slice(5)),
+      axisLabel: { color: colors.text, hideOverlap: true },
+      axisLine: { lineStyle: { color: colors.grid } } },
+    yAxis: { type: "value", min: 0, max: 100,
+      axisLabel: { color: colors.text, formatter: "{value}%" },
+      splitLine: { lineStyle: { color: colors.grid } } },
+    dataZoom: zoomable ? [
+      { type: "inside", xAxisIndex: 0, zoomOnMouseWheel: false, moveOnMouseWheel: false, moveOnMouseMove: true },
+      { type: "slider", xAxisIndex: 0, bottom: 8, height: 18,
+        borderColor: colors.grid,
+        fillerColor: colors.primary.replace("rgb(", "rgba(").replace(")", ", 0.16)"),
+      },
+    ] : [],
+    series: series.map(({ name, key, color }, index) => ({
+      name, type: "line", color, symbol: index === 0 ? "circle" : "diamond",
+      lineStyle: { width: 2.5, type: index === 0 ? "solid" : "dashed" },
+      showSymbol: data.days.length <= 24, connectNulls: false,
+      data: data.days.map((day) => ({ value: day[key], date: day.date })),
+    })),
+  };
+}
+
 function options(data) {
   const colors = palette();
   if (data.kind === "sales") return salesOption(data, colors);
   if (data.kind === "hourly") return hourlyOption(data, colors);
+  if (data.kind === "heatmap") return heatmapOption(data, colors);
+  if (data.kind === "ranking") return rankingOption(data, colors);
+  if (data.kind === "funnel") return funnelOption(data, colors);
+  if (data.kind === "delivery") return deliveryOption(data, colors);
   return productsOption(data, colors);
 }
 
@@ -250,6 +417,14 @@ export const AnalyticsChart = {
   mounted() {
     this.surface = this.el.querySelector(`[id="${this.el.id}-plot"]`);
     this.chart = echarts.init(this.surface, null, { renderer: "canvas" });
+    this.chart.on("click", ({ data }) => {
+      if (data?.day !== undefined && data?.hour !== undefined) {
+        const payload = { day: data.day + 1, hour: data.hour };
+        if (this.el.dataset.target) this.pushEventTo(this.el.dataset.target, "heatmap_detail", payload);
+        else this.pushEvent("heatmap_detail", payload);
+      }
+      if (typeof data?.date === "string") this.pushEvent("delivery_day_detail", { day: data.date });
+    });
     this.renderChart();
     this.resizeObserver = new ResizeObserver(() => this.chart.resize());
     this.resizeObserver.observe(this.el);
@@ -274,7 +449,7 @@ export const AnalyticsChart = {
       labels: data.labels,
       current: data.current.map((point) => point.range),
       previous: data.previous.map((point) => point.range),
-    }) : null;
+    }) : data.kind === "delivery" ? JSON.stringify(data.days.map((day) => day.date)) : null;
     const oldOption = this.chart.getOption();
     const oldZoom = labels === this.labels && oldOption.dataZoom?.[0];
     const oldLegend = labels === this.labels && oldOption.legend?.[0]?.selected;

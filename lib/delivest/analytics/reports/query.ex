@@ -126,7 +126,7 @@ defmodule Delivest.Analytics.Reports.Query do
 
   @visible_rows """
   WITH visible_rows AS (
-    SELECT s.branch_id,s.feature,s.day,r.family,
+    SELECT s.snapshot_id,s.branch_id,s.feature,s.day,r.family,
       CASE WHEN $7::text::jsonb IS NOT NULL AND r.dimension LIKE 'customer:%'
         AND NOT COALESCE(($7::text::jsonb -> s.branch_id::text) ? split_part(r.dimension,':',2),false)
         THEN 'customer:other' ELSE r.dimension END dimension,
@@ -138,6 +138,80 @@ defmodule Delivest.Analytics.Reports.Query do
     WHERE s.feature=$1 AND s.branch_id=ANY($2::uuid[]) AND s.day BETWEEN $3 AND $4
   )
   """
+
+  @doc """
+  Funnel conversion uses the same visible row projection as the ordinary
+  report, but refuses pre-version and previous feature-generation snapshots.
+  Source visibility remains the shared projection's responsibility; channel
+  filters do not apply to the funnel's session-source classification.
+  """
+  def funnel_aggregate([], _from, _to, _visibility), do: %{legacy_days: 0, rows: []}
+
+  def funnel_aggregate(ids, from, to, visibility) do
+    args = [
+      "analytics_funnel",
+      Enum.map(ids, &Ecto.UUID.dump!/1),
+      from,
+      to,
+      nil,
+      nil,
+      if(visibility, do: Jason.encode!(visibility), else: nil)
+    ]
+
+    scoped = """
+    , snapshots AS (
+      SELECT DISTINCT r.snapshot_id,r.branch_id,r.day,
+        p.franchise_generation=parent.generation AND
+          p.branch_generation=child.generation AND parent.enabled AND child.enabled AS current_generation
+      FROM visible_rows r
+      JOIN analytics_report_snapshots p ON p.id=r.snapshot_id
+      LEFT JOIN feature_gates parent ON parent.feature=$1 AND parent.scope_key='franchise'
+      LEFT JOIN feature_gates child ON child.feature=$1
+        AND child.scope_key='branch:'||r.branch_id::text
+      WHERE $5::text IS NULL AND $6::text IS NULL
+    ), versioned AS (
+      SELECT s.snapshot_id FROM snapshots s
+      WHERE s.current_generation AND EXISTS (
+        SELECT 1 FROM visible_rows r
+        WHERE r.snapshot_id=s.snapshot_id AND r.dimension='stage'
+          AND r.key='session_started' AND r.counts->>'algorithm_version'='2'
+      )
+    )
+    """
+
+    [[legacy_days]] =
+      Repo.query!(
+        @visible_rows <>
+          scoped <>
+          """
+          SELECT count(*)::bigint FROM snapshots s
+          WHERE NOT EXISTS (SELECT 1 FROM versioned v WHERE v.snapshot_id=s.snapshot_id)
+          """,
+        args
+      ).rows
+
+    rows =
+      Repo.query!(
+        @visible_rows <>
+          scoped <>
+          """
+          SELECT r.dimension,r.key,
+            COALESCE(sum((r.counts->>'sessions')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'direct_product_entry')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'quick_add_entry')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'checkout_without_cart_event')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'checkout_out_of_order')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'linked_order_without_checkout')::bigint),0)::bigint,
+            COALESCE(sum((r.counts->>'linked_order_before_checkout')::bigint),0)::bigint
+          FROM visible_rows r JOIN versioned v ON v.snapshot_id=r.snapshot_id
+          WHERE r.dimension IN ('stage','coverage')
+          GROUP BY r.dimension,r.key
+          """,
+        args
+      ).rows
+
+    %{legacy_days: legacy_days, rows: rows}
+  end
 
   defp page_rows(args, page) do
     Repo.query!(
@@ -267,21 +341,21 @@ defmodule Delivest.Analytics.Reports.Query do
        when tab != "franchise",
        do: []
 
-  defp branch_rows(feature, ids, from, to, _tab, filters, page, visibility) do
+  defp branch_rows(feature, ids, from, to, _tab, filters, _page, visibility) do
     channel = key_filter("franchise", filters)
 
     Repo.query!(
       @visible_rows <>
         """
-        SELECT r.branch_id::text,
+        SELECT b.id::text,
           COALESCE(sum((r.counts->>'created')::bigint),0)::bigint,
           COALESCE(sum((r.counts->>'completed')::bigint),0)::bigint,
           COALESCE(sum((r.counts->>'cancelled')::bigint),0)::bigint,
           COALESCE(sum((r.counts->>'revenue')::bigint),0)::bigint
-        FROM visible_rows r
-        WHERE ($5::text IS NULL OR r.dimension=$5)
+        FROM unnest($2::uuid[]) AS b(id)
+        LEFT JOIN visible_rows r ON r.branch_id=b.id AND r.dimension=$5
           AND ($6::text IS NULL OR r.key=$6)
-        GROUP BY r.branch_id ORDER BY r.branch_id LIMIT #{@page_size} OFFSET $8
+        GROUP BY b.id ORDER BY b.id
         """,
       [
         feature,
@@ -290,8 +364,7 @@ defmodule Delivest.Analytics.Reports.Query do
         to,
         "channel",
         channel,
-        if(visibility, do: Jason.encode!(visibility), else: nil),
-        (page - 1) * @page_size
+        if(visibility, do: Jason.encode!(visibility), else: nil)
       ]
     ).rows
     |> Enum.map(fn [id, created, completed, cancelled, revenue] ->

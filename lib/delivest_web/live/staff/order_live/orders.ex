@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
-  alias Delivest.{Couriers, Identity, Intake, LocalTime, Money}
+  alias Delivest.{Couriers, DeliveryMeasurement, Identity, Intake, LocalTime, Money}
   alias Delivest.Integrations.{Crm, YandexEda}
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias DelivestWeb.CourierPresence
@@ -169,6 +169,31 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       load(socket)
     else
       error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("confirm_delivery_promise", %{"order_id" => id, "promise" => params}, socket) do
+    branch_id = socket.assigns.current_branch.id
+    promised_at = LocalTime.parse(Map.get(params, "at", ""), branch_id)
+
+    with %DateTime{} = at <- promised_at,
+         {:ok, _order} <-
+           DeliveryMeasurement.confirm_promise(
+             Identity.fresh_staff(socket.assigns.current_staff),
+             branch_id,
+             id,
+             at,
+             Map.get(params, "reason")
+           ) do
+      load(socket)
+    else
+      _ ->
+        socket
+        |> put_flash(
+          :error,
+          "Не удалось подтвердить время доставки. Проверьте время и причину изменения."
+        )
+        |> load()
     end
   end
 
