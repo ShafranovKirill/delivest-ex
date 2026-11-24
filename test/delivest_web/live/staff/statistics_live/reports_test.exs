@@ -103,17 +103,25 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
 
     conn = login(conn, ["statistics.read", "statistics.network"], branch)
     {:ok, view, _} = live(conn, ~p"/staff/analytics/comparison?period=today&channel=app")
+    row = "#statistics-branch-#{branch.id}"
+
     assert has_element?(view, "#statistics-ranking-chart[data-chart]")
-    assert has_element?(view, "#statistics-branch-comparison-table tbody tr td", branch.name)
-    assert has_element?(view, "#statistics-branch-comparison-table tbody tr td", "42")
-    refute has_element?(view, "#statistics-branch-comparison-table tbody tr td", "44")
+
+    assert has_element?(
+             view,
+             "#{row} td[data-column=branch]",
+             ~r/^\s*#{Regex.escape(branch.name)}\s*$/
+           )
+
+    assert has_element?(view, "#{row} td[data-column=completed]", ~r/^\s*42\s*$/)
+    refute has_element?(view, "#{row} td[data-column=completed]", ~r/^\s*44\s*$/)
 
     view
     |> element("#statistics-ranking-metric")
     |> render_change(%{"metric" => "orders_per_day"})
 
     assert_patch(view)
-    assert has_element?(view, "#statistics-branch-comparison-table tbody tr td", "42.00")
+    assert has_element?(view, "#{row} td[data-column=per_day]", ~r/^\s*42\.00\s*$/)
   end
 
   test "branch franchise link stays hidden while the global feature is off", %{conn: conn} do
