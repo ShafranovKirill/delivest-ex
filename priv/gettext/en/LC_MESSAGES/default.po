@@ -13026,3 +13026,61 @@ msgstr "On time"
 
 msgid "Missing measurements"
 msgstr "Missing measurements"
+
+msgid "Customize"
+msgstr "Customize"
+
+msgid "Save layout"
+msgstr "Save layout"
+
+msgid "Restore the default dashboard layout?"
+msgstr "Restore the default dashboard layout?"
+
+msgid "Reset to default"
+msgstr "Reset to default"
+
+msgid "Could not save dashboard layout"
+msgstr "Could not save dashboard layout"
+
+msgid "Could not reset dashboard layout"
+msgstr "Could not reset dashboard layout"
+
+msgid "yesterday by this time %{amount}"
+msgstr "yesterday by this time %{amount}"
+
+msgid "yesterday by this time %{count}"
+msgstr "yesterday by this time %{count}"
+
+msgid "Revenue through the day"
+msgstr "Revenue through the day"
+
+msgid "Widget catalog"
+msgstr "Widget catalog"
+
+msgid "Choose what appears on your dashboard, then drag or resize the cards."
+msgstr "Choose what appears on your dashboard, then drag or resize the cards."
+
+msgid "Quick actions"
+msgstr "Quick actions"
+
+msgid "Drag widget"
+msgstr "Drag widget"
+
+msgid "Hide widget"
+msgstr "Hide widget"
+
+msgid "Your dashboard is empty. Customize it to add widgets."
+msgstr "Your dashboard is empty. Customize it to add widgets."
+
+msgid "Everything is under control"
+msgstr "Everything is under control"
+
+msgid "Problem orders"
+msgstr "Problem orders"
+
+
+msgid "Choose actions in the catalog"
+msgstr "Choose actions in the catalog"
+
+msgid "To confirm"
+msgstr "To confirm"

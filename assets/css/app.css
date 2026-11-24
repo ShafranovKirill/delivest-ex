@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 @import "maplibre-gl/dist/maplibre-gl.css";
+@import "gridstack/dist/gridstack.min.css";
 @import "./staff_operations.css";
+@import "./dashboard_grid.css";
 @source "../css";
 @source "../js";
 @source "../../lib/delivest_web/";

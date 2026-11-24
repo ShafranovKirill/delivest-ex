@@ -90,6 +90,7 @@ function toolbox(data, colors, zoomable, top = 0) {
         title: labels.image,
         name: data.kind === "products" ? "best-sellers" :
           data.kind === "hourly" ? "orders-by-hour" :
+          data.kind === "cumulative" ? "revenue-through-day" :
           data.kind === "heatmap" ? "orders-heatmap" :
           data.kind === "ranking" ? "branch-ranking" :
           data.kind === "funnel" ? "order-funnel" :
@@ -209,6 +210,28 @@ function hourlyOption(data, colors) {
       splitLine: { lineStyle: { color: colors.grid } },
     },
     series: [{ name: data.orders_label, type: "bar", data: data.orders, color: colors.primary, barMaxWidth: 22 }],
+  };
+}
+
+function cumulativeOption(data, colors) {
+  return {
+    animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    aria: { enabled: true, label: { description: data.title } },
+    textStyle: { color: colors.text },
+    grid: { left: 10, right: 12, top: 42, bottom: 32, containLabel: true },
+    toolbox: toolbox(data, colors, false),
+    tooltip: {
+      className: "echarts-tooltip", trigger: "axis", confine: true,
+      backgroundColor: colors.surface, textStyle: { color: colors.text },
+      formatter(params) {
+        const point = params[0];
+        if (!point) return "";
+        return `${escapeHtml(data.hours[point.dataIndex])}:00<br>${escapeHtml(data.revenue_label)}: <strong>${escapeHtml(money(point.value, data.locale))}</strong>`;
+      },
+    },
+    xAxis: { type: "category", data: data.hours.map(String), axisLabel: { interval: 2, color: colors.text }, axisLine: { lineStyle: { color: colors.grid } }, axisTick: { show: false } },
+    yAxis: { type: "value", min: 0, axisLabel: { color: colors.text, formatter: (value) => money(value, data.locale) }, splitLine: { lineStyle: { color: colors.grid } } },
+    series: [{ name: data.revenue_label, type: "line", smooth: true, showSymbol: false, data: data.values, color: colors.primary, lineStyle: { width: 2.5 }, areaStyle: { opacity: 0.09 } }],
   };
 }
 
@@ -406,6 +429,7 @@ function options(data) {
   const colors = palette();
   if (data.kind === "sales") return salesOption(data, colors);
   if (data.kind === "hourly") return hourlyOption(data, colors);
+  if (data.kind === "cumulative") return cumulativeOption(data, colors);
   if (data.kind === "heatmap") return heatmapOption(data, colors);
   if (data.kind === "ranking") return rankingOption(data, colors);
   if (data.kind === "funnel") return funnelOption(data, colors);
@@ -423,6 +447,12 @@ export const AnalyticsChart = {
         this.pushEvent("heatmap_detail", payload);
       }
       if (typeof data?.date === "string") this.pushEvent("delivery_day_detail", { day: data.date });
+    });
+    this.chart.on("click", ({ dataIndex }) => {
+      const chartData = JSON.parse(this.el.dataset.chart);
+      if (chartData.kind === "hourly" && chartData.drilldown && Number.isInteger(dataIndex)) {
+        this.pushEvent("dashboard_hour", { hour: chartData.hours[dataIndex] });
+      }
     });
     this.renderChart();
     this.resizeObserver = new ResizeObserver(() => this.chart.resize());

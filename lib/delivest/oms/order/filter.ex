@@ -1,7 +1,7 @@
 defmodule Delivest.Oms.Orders.Filter do
   import Ecto.Query, warn: false
 
-  alias Delivest.Oms.Order
+  alias Delivest.Oms.{Order, OrderAttention, OrderScopes}
   alias Delivest.Oms.Orders.Search
 
   @statuses Enum.map(Order.statuses(), &to_string/1)
@@ -25,26 +25,34 @@ defmodule Delivest.Oms.Orders.Filter do
       {"date_to", val}, q -> filter_date_to(q, val, zone(params))
       {"search", val}, q -> Search.apply(q, val)
       {"problem", val}, q when val in [true, "true", "on"] -> problem(q, params["branch_id"])
+      {"sold", val}, q when val in [true, "true", "on"] -> OrderScopes.sold(q)
+      {"hour", val}, q -> filter_hour(q, val, zone(params))
       {"sort_by", val}, q -> apply_sort(q, val, params["sort_dir"])
       _, q -> q
     end)
   end
 
   defp problem(q, branch_id) do
-    delivery_minutes = Delivest.Oms.OrderDeadline.delivery_minutes(branch_id)
-
-    crm_problem =
-      dynamic(
-        [o],
-        fragment(
-          "coalesce(?->>'alert', '') <> '' OR ?->>'status' IN ('failed', 'unknown')",
-          o.crm,
-          o.crm
-        )
-      )
-
-    where(q, ^dynamic(^crm_problem or ^Delivest.Oms.OrderDeadline.overdue_expr(delivery_minutes)))
+    where(q, ^OrderAttention.expression(branch_id))
   end
+
+  defp filter_hour(q, hour, zone) when is_integer(hour) and hour in 0..23 do
+    where(
+      q,
+      [o],
+      fragment("extract(hour from timezone(?, timezone('UTC', ?)))::int", ^zone, o.inserted_at) ==
+        ^hour
+    )
+  end
+
+  defp filter_hour(q, hour, zone) when is_binary(hour) do
+    case Integer.parse(hour) do
+      {parsed, ""} -> filter_hour(q, parsed, zone)
+      _ -> q
+    end
+  end
+
+  defp filter_hour(q, _hour, _zone), do: q
 
   defp filter_status(q, status) when is_atom(status), do: filter_status(q, to_string(status))
 

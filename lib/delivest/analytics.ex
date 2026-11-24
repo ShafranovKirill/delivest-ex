@@ -202,6 +202,38 @@ defmodule Delivest.Analytics do
     }
   end
 
+  @doc "Summary for a local day through the same branch-local wall-clock time."
+  def dashboard_summary_to(branch_id, %Date{} = date, %Time{} = local_time) do
+    zone = LocalTime.timezone(branch_id)
+
+    totals =
+      branch_id
+      |> period_orders({date, date})
+      |> where(
+        [o],
+        fragment(
+          "timezone(?, timezone('UTC', ?))::time <= ?::time",
+          ^zone,
+          o.inserted_at,
+          ^local_time
+        )
+      )
+      |> select(^period_totals())
+      |> Repo.one()
+
+    revenue = to_int(totals.revenue)
+    orders_count = totals.orders_count
+
+    %{
+      revenue: revenue,
+      orders_count: orders_count,
+      avg_check: if(orders_count > 0, do: round(revenue / orders_count), else: 0),
+      items_sold: 0,
+      cancelled_count: totals.cancelled_count,
+      lost_count: totals.lost_count
+    }
+  end
+
   @spec crm_split(branch_scope(), period()) :: map()
   def raw_crm_split(branch_id, period) do
     result = branch_id |> sales_orders(period) |> select(^crm_totals()) |> Repo.one()

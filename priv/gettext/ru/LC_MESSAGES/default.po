@@ -13801,3 +13801,61 @@ msgstr "Вовремя"
 
 msgid "Missing measurements"
 msgstr "Без измерений"
+
+msgid "Customize"
+msgstr "Настроить"
+
+msgid "Save layout"
+msgstr "Сохранить"
+
+msgid "Restore the default dashboard layout?"
+msgstr "Восстановить стандартную раскладку?"
+
+msgid "Reset to default"
+msgstr "Сбросить раскладку"
+
+msgid "Could not save dashboard layout"
+msgstr "Не удалось сохранить раскладку"
+
+msgid "Could not reset dashboard layout"
+msgstr "Не удалось сбросить раскладку"
+
+msgid "yesterday by this time %{amount}"
+msgstr "вчера к этому времени %{amount}"
+
+msgid "yesterday by this time %{count}"
+msgstr "вчера к этому времени %{count}"
+
+msgid "Revenue through the day"
+msgstr "Накопленная выручка за день"
+
+msgid "Widget catalog"
+msgstr "Каталог виджетов"
+
+msgid "Choose what appears on your dashboard, then drag or resize the cards."
+msgstr "Выберите виджеты, затем перетаскивайте карточки и меняйте их размер."
+
+msgid "Quick actions"
+msgstr "Быстрые действия"
+
+msgid "Drag widget"
+msgstr "Перетащить виджет"
+
+msgid "Hide widget"
+msgstr "Скрыть виджет"
+
+msgid "Your dashboard is empty. Customize it to add widgets."
+msgstr "Панель пуста. Откройте настройки, чтобы добавить виджеты."
+
+msgid "Everything is under control"
+msgstr "Всё под контролем"
+
+msgid "Problem orders"
+msgstr "Проблемные заказы"
+
+
+msgid "Choose actions in the catalog"
+msgstr "Выберите действия в каталоге"
+
+msgid "To confirm"
+msgstr "Подтвердить"

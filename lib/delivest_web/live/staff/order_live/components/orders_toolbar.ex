@@ -36,6 +36,16 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             {label}
           </option>
         </select>
+        <input :if={@selected.sold} type="hidden" name="sold" value="true" />
+        <div :if={@selected.hour != nil} class="flex items-center gap-1.5 whitespace-nowrap text-xs">
+          <input type="hidden" name="hour" value={@selected.hour} />
+          <span class="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
+            {gettext("Hour")}: {String.pad_leading(to_string(@selected.hour), 2, "0")}:00
+          </span>
+          <.link patch={@reset_path} aria-label={gettext("Reset")} class="btn btn-ghost btn-xs px-1">
+            <.icon name="hero-x-mark" class="size-3.5" />
+          </.link>
+        </div>
         {render_slot(@inner_block)}
         <details
           id="orders-extra-filters"
@@ -129,7 +139,8 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
                 :if={
                   @selected.period != "today" or @selected.problem or @selected.receiving != "" or
                     @selected.payment != "" or @selected.source != "" or @selected.search != "" or
-                    @selected.status != "" or @selected.sort != "urgency"
+                    @selected.status != "" or @selected.sort != "urgency" or
+                    @selected.hour != nil or @selected.sold
                 }
                 patch={@reset_path}
                 class="btn btn-sm btn-ghost"

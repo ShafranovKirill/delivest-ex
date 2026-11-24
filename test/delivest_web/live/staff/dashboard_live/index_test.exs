@@ -256,9 +256,12 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       assert has_element?(lv, "#header-new-orders-count", "2")
     end
 
-    test "links to the problem orders only when there are some", %{conn: conn, branch: branch} do
+    test "dashboard shows current attention counts and links to the branch's problem orders", %{
+      conn: conn,
+      branch: branch
+    } do
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
-      refute has_element?(lv, "#dashboard-problem-orders")
+      assert has_element?(lv, "#dashboard-alert-problem", "0")
 
       order = Delivest.OrderFixtures.order_fixture(branch.id, price: 10_000)
 
@@ -269,7 +272,10 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       |> Delivest.Repo.update!()
 
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
-      assert has_element?(lv, "#dashboard-problem-orders", "1")
+      assert has_element?(lv, "#dashboard-alert-problem", "1")
+      assert has_element?(lv, ~s(#dashboard-alert-problem a[href*="problem=true"]))
+      assert has_element?(lv, ~s(#dashboard-alert-waiting a[href*="status=created"]))
+      assert has_element?(lv, ~s(#dashboard-alert-ready a[href*="status=ready"]))
     end
 
     test "profile controls stay in the sidebar and scope lives in the header", %{

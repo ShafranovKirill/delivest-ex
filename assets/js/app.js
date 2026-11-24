@@ -21,6 +21,7 @@ import { FoundationDirty } from "./hooks/foundation_dirty";
 import { StaffDirtyGuard } from "./hooks/staff_dirty_guard";
 import { ActiveSectionNav } from "./hooks/active_section_nav";
 import { AnalyticsChart } from "./hooks/analytics_chart";
+import { DashboardGrid } from "./hooks/dashboard_grid";
 
 let Uploaders = {};
 
@@ -273,6 +274,22 @@ const csrfToken = document
   .getAttribute("content");
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
+  dom: {
+    onBeforeElUpdated(from, to) {
+      if (from.id === "dashboard-grid" || from.classList.contains("grid-stack-item")) {
+        if (from.hasAttribute("style")) to.setAttribute("style", from.getAttribute("style"));
+        for (const name of from.classList) {
+          if (name.startsWith("ui-") || name.startsWith("gridstack-") || name.startsWith("gs-") ||
+              name === "dashboard-grid-compact" || name === "dashboard-grid-mobile") to.classList.add(name);
+        }
+        if (from.classList.contains("grid-stack-item")) {
+          for (const handle of from.querySelectorAll(":scope > .ui-resizable-handle")) {
+            if (!to.querySelector(`:scope > .${handle.classList[1]}`)) to.appendChild(handle.cloneNode(true));
+          }
+        }
+      }
+    },
+  },
   params: { _csrf_token: csrfToken },
   uploaders: Uploaders,
   hooks: {
@@ -298,6 +315,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     HeaderScroll,
     ActiveSectionNav,
     AnalyticsChart,
+    DashboardGrid,
     FoundationDialog,
     FoundationColumns,
     FoundationDirty,
