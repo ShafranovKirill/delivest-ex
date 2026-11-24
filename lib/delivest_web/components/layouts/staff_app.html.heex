@@ -3,6 +3,17 @@
 <% settings_branch = DelivestWeb.StaffHeader.settings_branch(assigns) %>
 <% actual_scope_branch = DelivestWeb.StaffHeader.scope_branch_from_assigns(assigns) %>
 <% navigation_branch = DelivestWeb.StaffHeader.navigation_branch_from_assigns(assigns) %>
+<% chooser_path = assigns[:chooser_navigation_path] %>
+<% section_path = if chooser_path, do: URI.parse(chooser_path).path, else: assigns[:current_path] %>
+<% section_page =
+  if chooser_path,
+    do: DelivestWeb.Hooks.StaffPath.page_for_path(chooser_path),
+    else: assigns[:current_page] %>
+<% section_branch =
+  if chooser_path, do: assigns[:chooser_navigation_branch], else: navigation_branch %>
+<% section_scope = if chooser_path, do: nil, else: actual_scope_branch %>
+<% section_return =
+  if chooser_path, do: assigns[:return_to], else: assigns[:current_uri] || assigns[:current_path] %>
 <div
   class={[
     "min-h-screen bg-base-200 text-base-content",
@@ -67,25 +78,25 @@
   />
 
   <div class="staff-shell-content flex min-h-screen flex-col transition-[margin] duration-300">
-    <div id="staff-context-navigation">
+    <div id="staff-context-navigation" data-branch-chooser-nav={chooser_path && "true"}>
       <DelivestWeb.Staff.SettingsComponents.settings_navigation
-        :if={DelivestWeb.StaffNav.active_setting(assigns[:current_path])}
+        :if={DelivestWeb.StaffNav.active_setting(section_path)}
         variant={:sidebar}
         staff={@current_staff}
         branches={branches}
-        selected={navigation_branch && navigation_branch.id}
-        current_path={assigns[:current_path]}
-        scope_branch={actual_scope_branch}
-        return_source={assigns[:current_uri] || assigns[:current_path]}
+        selected={section_branch && section_branch.id}
+        current_path={section_path}
+        scope_branch={section_scope}
+        return_source={section_return}
       />
       <DelivestWeb.StaffNav.local_navigation
         staff={@current_staff}
-        branch={assigns[:current_branch]}
-        navigation_branch={navigation_branch}
-        current_page={assigns[:current_page]}
-        current_path={assigns[:current_path]}
-        scope_branch={actual_scope_branch}
-        return_source={assigns[:current_uri] || assigns[:current_path]}
+        branch={if chooser_path, do: nil, else: assigns[:current_branch]}
+        navigation_branch={section_branch}
+        current_page={section_page}
+        current_path={section_path}
+        scope_branch={section_scope}
+        return_source={section_return}
       />
       {DelivestWeb.StaffHeader.page_navigation(assigns)}
     </div>

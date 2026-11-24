@@ -39,6 +39,9 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
         }
       end)
 
+    navigation_branch = chooser_navigation_branch(entries, from)
+    navigation_path = chooser_navigation_path(from, to, navigation_branch)
+
     {:ok,
      assign(socket,
        entries: entries,
@@ -48,6 +51,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
        to: to,
        from: from,
        return_to: return_to,
+       chooser_navigation_path: navigation_path,
+       chooser_navigation_branch: navigation_branch,
        network_path: if(entries == [], do: nil, else: network_choice_path(staff, from, to))
      )}
   end
@@ -176,6 +181,45 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
 
   defp select_path(branch, nil, nil), do: ~p"/staff/branches/select/#{branch.id}"
   defp select_path(branch, to, nil), do: ~p"/staff/branches/select/#{branch.id}?#{%{to: to}}"
+
+  defp chooser_navigation_branch(entries, from) do
+    source_slug =
+      case Regex.run(~r{^/staff/b/([^/]+)}, from || "") do
+        [_, slug] -> slug
+        _ -> nil
+      end
+
+    Enum.find_value(entries, fn %{branch: branch, kitchen?: available?} ->
+      if available? and branch.slug == source_slug, do: branch
+    end) ||
+      Enum.find_value(entries, fn %{branch: branch, kitchen?: available?} ->
+        if available?, do: branch
+      end)
+  end
+
+  defp chooser_navigation_path(from, _to, %{slug: slug}) when is_binary(from) do
+    if DelivestWeb.StaffNav.network_analytics_path?(URI.parse(from).path) do
+      case StaffBranchPath.selection_destination(from, slug) do
+        {:ok, branch_path} -> branch_path
+        :error -> from
+      end
+    else
+      from
+    end
+  end
+
+  defp chooser_navigation_path(from, _to, _branch) when is_binary(from), do: from
+
+  defp chooser_navigation_path(nil, to, %{slug: slug}) when is_binary(to) do
+    source = "/staff/b/#{slug}#{to}"
+
+    case StaffBranchPath.selection_intent(source, nil) do
+      {:ok, %{source: canonical}} -> canonical
+      :error -> nil
+    end
+  end
+
+  defp chooser_navigation_path(_, _, _), do: nil
 
   defp network_choice_path(staff, source, to) do
     cond do

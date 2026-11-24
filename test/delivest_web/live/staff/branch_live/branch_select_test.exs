@@ -20,6 +20,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
 
       assert html =~ "Select a branch"
       assert has_element?(lv, "#branch-select-page")
+      refute has_element?(lv, "#staff-context-navigation[data-branch-chooser-nav='true']")
       assert has_element?(lv, "main #staff-page-header h1", "Select a branch")
       assert render(element(lv, "#staff-page-header")) =~ "Select a branch"
       assert has_element?(lv, "#branch-select-card-#{branch.id}", "North Branch")
@@ -162,6 +163,77 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
 
     assert redirected_to(selected) == "/staff/b/#{second.slug}/products"
     assert get_session(selected, :active_branch_id) == second.id
+  end
+
+  test "chooser keeps popular products active and sibling links inside selection", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    source = "/staff/b/#{branch.slug}/menu/popular"
+    chooser = DelivestWeb.StaffBranchPath.selection_path(source, "/staff/segments")
+
+    {:ok, view, _} = live(conn, chooser)
+
+    assert has_element?(view, "#staff-context-navigation[data-branch-chooser-nav='true']")
+
+    assert has_element?(
+             view,
+             "#staff-section-navigation #product-section-tab-popular[aria-current='page']"
+           )
+
+    assert has_element?(
+             view,
+             "#staff-section-navigation #product-section-tab-products[href^='/staff/branches/select?'][href*='from=']"
+           )
+
+    assert has_element?(view, "#branch-select-go-#{branch.id}[href*='from=']")
+  end
+
+  test "chooser keeps order and settings section navigation", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+
+    for {source, selector} <- [
+          {"/staff/b/#{branch.slug}/orders",
+           "#staff-section-navigation #section-nav-orders[aria-current='page']"},
+          {"/staff/b/#{branch.slug}/deliveries",
+           "#staff-section-navigation #section-nav-deliveries[aria-current='page']"},
+          {"/staff/b/#{branch.slug}/integrations",
+           "#settings-navigation #settings-nav-integrations[aria-current='page']"}
+        ] do
+      chooser = DelivestWeb.StaffBranchPath.selection_path(source, "/staff/dashboard")
+      {:ok, view, _} = live(conn, chooser)
+      assert has_element?(view, "#staff-context-navigation[data-branch-chooser-nav='true']")
+      assert has_element?(view, selector)
+      assert has_element?(view, "#branch-select-go-#{branch.id}[href*='from=']")
+    end
+  end
+
+  test "chooser navigation uses an accessible branch when the source branch is denied", %{
+    conn: conn
+  } do
+    allowed = insert(:branch)
+    denied = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["products.read"]))
+    insert(:staff_branch, staff: staff, branch: allowed)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    source = "/staff/b/#{denied.slug}/products"
+    chooser = DelivestWeb.StaffBranchPath.selection_path(source, "/staff/dashboard")
+
+    {:ok, view, _} = live(conn, chooser)
+
+    assert has_element?(view, "#staff-context-navigation[data-branch-chooser-nav='true']")
+
+    assert has_element?(
+             view,
+             "#staff-section-navigation #product-section-tab-products[aria-current='page']"
+           )
+
+    assert has_element?(view, "#branch-select-go-#{allowed.id}[href*='from=']")
+    refute has_element?(view, "#branch-select-card-#{denied.id}")
   end
 
   test "chooser rejects an external source and keeps Back local", %{conn: conn} do

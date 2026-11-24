@@ -158,6 +158,7 @@
   .staff-shell-content { margin-left: var(--staff-sidebar-width); }
   .staff-header { left: var(--staff-sidebar-width); }
   #staff-context-navigation { display: none; }
+  #staff-context-navigation[data-branch-chooser-nav="true"] { display: block; }
   :root[data-sidebar-collapsed] #staff-context-navigation { display: block; }
   :root[data-sidebar-collapsed] .staff-sidebar { display: none; }
   :root[data-sidebar-collapsed] .staff-shell-content { margin-left: 0; }
