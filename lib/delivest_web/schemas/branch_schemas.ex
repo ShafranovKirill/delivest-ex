@@ -44,6 +44,7 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         stocks_enabled: %Schema{type: :boolean},
         promotions_enabled: %Schema{type: :boolean},
         couriers_enabled: %Schema{type: :boolean},
+        yandex_delivery_enabled: %Schema{type: :boolean},
         analytics_funnel_enabled: %Schema{
           type: :boolean,
           description: "Funnel event capture is enabled for this branch"

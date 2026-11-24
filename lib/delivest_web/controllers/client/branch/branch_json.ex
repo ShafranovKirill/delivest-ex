@@ -5,6 +5,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         analytics_capabilities: analytics,
         links_capabilities: links,
         optional_capabilities: optional,
+        yandex_delivery_enabled: yandex_delivery_enabled,
         delivery_settings: delivery,
         payment_ready: payment_ready,
         loyalty_policy: loyalty_policy,
@@ -12,7 +13,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         timezones: timezones
       }) do
     prepared =
-      {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional}
+      {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional,
+       yandex_delivery_enabled}
 
     %{
       data:
@@ -26,6 +28,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         analytics_capabilities: analytics,
         links_capabilities: links,
         optional_capabilities: optional,
+        yandex_delivery_enabled: yandex_delivery_enabled,
         delivery_settings: delivery,
         payment_ready: payment_ready,
         loyalty_policy: loyalty_policy,
@@ -39,7 +42,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
           capabilities,
           analytics,
           links,
-          {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional}
+          {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional,
+           yandex_delivery_enabled}
         )
     }
   end
@@ -156,7 +160,8 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
          capabilities,
          analytics,
          links,
-         {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional}
+         {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional,
+          yandex_delivery_enabled}
        ) do
     %{
       id: info.id,
@@ -187,6 +192,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       stocks_enabled: MapSet.member?(optional["stocks"], branch.id),
       promotions_enabled: MapSet.member?(optional["promotions"], branch.id),
       couriers_enabled: MapSet.member?(optional["couriers"], branch.id),
+      yandex_delivery_enabled: yandex_delivery_enabled,
       working_hours: info.working_hours || %{},
       special_hours: info.special_hours || %{},
       vk_url: info.vk_url,
