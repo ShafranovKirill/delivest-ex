@@ -3,7 +3,7 @@ defmodule Delivest.Oms.Kitchen do
 
   require Logger
 
-  alias Delivest.{Identity, Push, Repo}
+  alias Delivest.{Features, Identity, Push, Repo}
   alias Delivest.Identity.{Branch, Staff}
   alias Delivest.Identity.Branch.{BranchInfo, KitchenSettings}
   alias Delivest.Gateway
@@ -65,7 +65,11 @@ defmodule Delivest.Oms.Kitchen do
   def unavailable_reason(
         %Branch{info: %BranchInfo{kitchen: %KitchenSettings{enabled: true}}} = branch
       ) do
-    if Gateway.own?(branch, :kitchen), do: nil, else: :crm
+    cond do
+      not Features.enabled?("kitchen", {:branch, branch.id}) -> :disabled
+      not Gateway.own?(branch, :kitchen) -> :crm
+      true -> nil
+    end
   end
 
   def unavailable_reason(%Branch{}), do: :disabled

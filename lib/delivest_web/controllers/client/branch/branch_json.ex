@@ -5,6 +5,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         analytics_capabilities: analytics,
         links_capabilities: links,
         optional_capabilities: optional,
+        own_loyalty: own_loyalty,
         yandex_delivery_enabled: yandex_delivery_enabled,
         delivery_settings: delivery,
         payment_ready: payment_ready,
@@ -14,7 +15,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       }) do
     prepared =
       {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional,
-       yandex_delivery_enabled}
+       own_loyalty, yandex_delivery_enabled}
 
     %{
       data:
@@ -28,6 +29,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         analytics_capabilities: analytics,
         links_capabilities: links,
         optional_capabilities: optional,
+        own_loyalty: own_loyalty,
         yandex_delivery_enabled: yandex_delivery_enabled,
         delivery_settings: delivery,
         payment_ready: payment_ready,
@@ -43,7 +45,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
           analytics,
           links,
           {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional,
-           yandex_delivery_enabled}
+           own_loyalty, yandex_delivery_enabled}
         )
     }
   end
@@ -109,9 +111,10 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
 
   defp loyalty(
          %{loyalty: %Delivest.Identity.Branch.LoyaltySettings{} = loyalty},
-         branch,
+         _branch,
          policy,
-         gate_enabled?
+         gate_enabled?,
+         own_loyalty?
        ) do
     loyalty = %{
       loyalty
@@ -120,7 +123,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         expire_days: policy.expire_days
     }
 
-    enabled = gate_enabled? and loyalty.enabled and Delivest.Gateway.own?(branch, :loyalty)
+    enabled = gate_enabled? and loyalty.enabled and own_loyalty?
 
     %{
       enabled: enabled,
@@ -132,7 +135,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     }
   end
 
-  defp loyalty(_info, _branch, _policy, _gate_enabled?),
+  defp loyalty(_info, _branch, _policy, _gate_enabled?, _own_loyalty?),
     do: %{
       enabled: false,
       per_rubles: nil,
@@ -161,7 +164,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
          analytics,
          links,
          {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional,
-          yandex_delivery_enabled}
+          own_loyalty, yandex_delivery_enabled}
        ) do
     %{
       id: info.id,
@@ -185,7 +188,13 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       delivery: delivery_settings(branch.id, delivery),
       payment_methods: payment_methods(info, payment_ready),
       loyalty:
-        loyalty(info, branch, loyalty_policy, MapSet.member?(optional["loyalty"], branch.id)),
+        loyalty(
+          info,
+          branch,
+          loyalty_policy,
+          MapSet.member?(optional["loyalty"], branch.id),
+          MapSet.member?(own_loyalty, branch.id)
+        ),
       notifications_enabled: MapSet.member?(capabilities, branch.id),
       analytics_funnel_enabled: MapSet.member?(analytics, branch.id),
       analytics_links_enabled: MapSet.member?(links, branch.id),

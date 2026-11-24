@@ -5,6 +5,8 @@ defmodule DelivestWeb.Client.AllOptionalOffOrderTest do
 
   alias Delivest.Features.{Gate, Registry}
   alias Delivest.Identity.Branch.{BranchInfo, PaymentSettings}
+  alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Integrations.Frontpad
   alias Delivest.Oms.{Order, Orders}
   alias Delivest.Repo
 
@@ -15,6 +17,11 @@ defmodule DelivestWeb.Client.AllOptionalOffOrderTest do
 
     Repo.insert!(%BranchInfo{
       branch_id: branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :frontpad,
+        frontpad: %Frontpad.Settings{api_key: "key", affiliate: "3"}
+      },
       payments: %PaymentSettings{cash: false, card_offline: false, online: true}
     })
 
@@ -78,6 +85,7 @@ defmodule DelivestWeb.Client.AllOptionalOffOrderTest do
     assert body["data"]["total_amount"] == 300
 
     order = Repo.get!(Order, body["data"]["id"])
+    assert order.crm == nil
     staff = insert(:staff, role: insert(:role, permissions: ["orders.update"]))
     insert(:staff_branch, staff: staff, branch: branch)
     staff = Repo.preload(staff, [:role, :branches])

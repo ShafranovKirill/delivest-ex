@@ -9,7 +9,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   alias Delivest.Integrations.Crm.SyncState
   alias Delivest.Integrations.YandexEda.OrderConfirmation
   alias Delivest.Fiscal.Receipt
-  alias Delivest.Oms.{Order, OrderFlow}
+  alias Delivest.Oms.OrderFlow
   alias DelivestWeb.Staff.OrderLive.{CancelReasons, NextStep, OrderHelpers}
   alias DelivestWeb.Staff.CourierLive.LocationComponents
   alias DelivestWeb.Staff.OrderLive.Components.OrderClock
@@ -28,10 +28,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :pickup, :map, default: nil
   attr :crm_retry_at, :any, default: :lookup
   attr :expanded, :boolean, default: false
+  attr :capability_revision, :integer, default: 0
 
   def render_card(assigns) do
+    crm_managed = Crm.effective_managed?(assigns.order)
+
     assigns =
       assign(assigns,
+        crm_managed: crm_managed,
         printing: assigns.printing || Delivest.Printing.settings(assigns.current_branch.id),
         status: assigns.order.status,
         delivery: Couriers.current(assigns.order),
@@ -47,7 +51,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           ),
         last: last_transition(assigns.order),
         crm_retry_at:
-          if(assigns.crm_retry_at == :lookup,
+          if(crm_managed and assigns.crm_retry_at == :lookup,
             do: Crm.next_retry_at(assigns.order),
             else: assigns.crm_retry_at
           )
@@ -56,6 +60,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
     ~H"""
     <article
       id={@id}
+      data-capability-revision={@capability_revision}
       class={[
         "@container bg-base-100 rounded-box border shadow-sm overflow-hidden transition-colors",
         @status == :created && "border-info ring-2 ring-info/30",
@@ -258,7 +263,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </div>
 
       <p
-        :if={Crm.manual_cancel_required?(@order)}
+        :if={@crm_managed and Crm.manual_cancel_required?(@order)}
         id={"order-crm-cancel-#{@order.id}"}
         class="mx-3 sm:mx-4 mb-3 rounded-box bg-error/10 px-3 py-2 text-sm font-semibold text-error"
       >
@@ -271,7 +276,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
       </p>
 
       <div
-        :if={Crm.alert?(@order) or Crm.cash_closed?(@order)}
+        :if={@crm_managed and (Crm.alert?(@order) or Crm.cash_closed?(@order))}
         id={"order-crm-alert-#{@order.id}"}
         class="mx-3 sm:mx-4 mb-3 space-y-2 rounded-box bg-error/10 px-3 py-2 text-sm text-error"
       >
@@ -350,7 +355,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
       <form
         :if={
-          @order.crm != nil and
+          @crm_managed and
             (@order.crm.status == "failed" or
                (@order.crm.status == "pending" and Crm.alert?(@order) and
                   !Crm.cash_closed?(@order))) and
@@ -394,9 +399,14 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
               ),
             else: gettext("Confirm by %{time}", time: OrderHelpers.local_time(accept_by(@order)))}
         </span>
-        <.status_control order={@order} current_staff={@current_staff} last={@last} />
+        <.status_control
+          order={@order}
+          current_staff={@current_staff}
+          last={@last}
+          crm_managed={@crm_managed}
+        />
         <form
-          :if={not Order.crm_managed?(@order) and @order.payment_method != :online}
+          :if={not @crm_managed and @order.payment_method != :online}
           id={"order-payment-#{@order.id}"}
           phx-change="update_payment"
           phx-value-order-id={@order.id}
@@ -409,7 +419,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
           </select>
         </form>
         <span
-          :if={Order.crm_managed?(@order) or @order.payment_method == :online}
+          :if={@crm_managed or @order.payment_method == :online}
           class="order-card-chip badge badge-sm badge-outline"
         >
           {if @order.payment_method == :online,
@@ -436,7 +446,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
             {gettext("View Order")}
           </.link>
           <.link
-            :if={not Order.crm_managed?(@order)}
+            :if={not @crm_managed}
             navigate={~p"/staff/b/#{@current_branch}/orders/#{@order.id}/edit?#{@return_query}"}
             class="btn btn-ghost btn-sm btn-square"
             title={gettext("Edit Order")}
@@ -858,14 +868,18 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
   attr :order, :map, required: true
   attr :current_staff, :map, required: true
   attr :last, :map, default: nil
+  attr :crm_managed, :boolean, required: true
 
   defp status_control(assigns) do
     %{order: order, current_staff: staff} = assigns
+    # The card already resolved the integration gate. Domain actions recheck the saved order.
+    control_order = if assigns.crm_managed, do: order, else: %{order | crm: nil}
 
     assigns =
       assign(assigns,
-        next: NextStep.for_order(order, staff),
-        can_cancel: OrderFlow.can?(order, :cancelled, {:staff, staff}),
+        next: if(assigns.crm_managed, do: nil, else: NextStep.for_order(control_order, staff)),
+        can_cancel:
+          not assigns.crm_managed and OrderFlow.can?(control_order, :cancelled, {:staff, staff}),
         can_revert:
           assigns.last != nil and OrderFlow.can_revert?(staff, order) and
             not Couriers.handed_over?(order)
@@ -883,8 +897,12 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
         do: gettext("Awaiting payment"),
         else: OrderHelpers.status_label(@order.status)}
     </span>
-    <.crm_state :if={@order.crm} order={@order} />
-    <DelivestWeb.GatewayNote.order_gateway_note order={@order} name={crm_name(@order)} />
+    <.crm_state :if={@crm_managed} order={@order} />
+    <DelivestWeb.GatewayNote.order_gateway_note
+      :if={@crm_managed}
+      order={@order}
+      name={crm_name(@order)}
+    />
     <button
       :if={@next}
       type="button"
@@ -1167,7 +1185,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrderCardComponent do
 
   defp crm_state(assigns) do
     ~H"""
-    <span class="text-xs text-base-content/60">
+    <span id={"order-crm-state-#{@order.id}"} class="text-xs text-base-content/60">
       CRM:
       <%= case @order.crm.status do %>
         <% "sent" -> %>

@@ -8,7 +8,7 @@ The machine-readable [inventory](inventory.json) contains stable IDs, source anc
 | Screens | 109 |
 | Staff form controls | 465 |
 | Actions (handler clauses and controls) | 826 |
-| Features/integrations | 28 |
+| Features/integrations | 35 |
 | Background jobs | 77 |
 
 The separate schema census has 851 declarations. It guards source drift; only staff controls receive editor assignments. The 21 service, authentication and internal routes are outside the four page types. The foundation gallery is an internal dev/test fixture and is excluded from controls and actions.

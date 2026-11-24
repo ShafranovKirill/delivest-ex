@@ -86,9 +86,12 @@ defmodule Delivest.Oms.OrderLock do
     do: {:error, :channel_order}
 
   defp check(%Order{crm: %{}} = order, change, payments) do
-    if Crm.can?(order, Map.fetch!(@capabilities, kind(change))),
-      do: by_state(order, change, payments),
-      else: {:error, :crm_order}
+    if Crm.effective_managed?(order) and
+         not Crm.can?(order, Map.fetch!(@capabilities, kind(change))) do
+      {:error, :crm_order}
+    else
+      by_state(order, change, payments)
+    end
   end
 
   defp check(order, change, payments), do: by_state(order, change, payments)

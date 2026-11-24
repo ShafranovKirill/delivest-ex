@@ -4,6 +4,12 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
   import Phoenix.LiveViewTest
   import Delivest.Factory
 
+  alias Delivest.Features.Settings
+  alias Delivest.Identity.Branch.{BranchInfo, CourierSettings}
+  alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Oms.Order
+  alias Delivest.Repo
+
   defp eventually(fun, attempts \\ 120) do
     cond do
       fun.() ->
@@ -45,6 +51,145 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       assert html =~ "orders-search"
       assert html =~ "orders-sound-toggle"
     end
+  end
+
+  test "an open CRM order card gains manual controls when its integration turns off", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{enabled: true, provider: :frontpad}
+    })
+
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    product = insert_branch_product(branch.id, price: 150)
+    {:ok, cart} = Delivest.Oms.Carts.create_cart(%{branch_id: branch.id})
+    {:ok, _, _} = Delivest.Oms.Carts.add_item(cart.id, product.id, 1)
+
+    {:ok, order} =
+      Delivest.Oms.Orders.create_order(%{
+        "cart_id" => cart.id,
+        "branch_id" => branch.id,
+        "fulfillment_type" => "pickup",
+        "payment_method" => "cash"
+      })
+
+    order =
+      order |> Order.crm_changeset(%{provider: "frontpad", status: "pending"}) |> Repo.update!()
+
+    path = ~p"/staff/b/#{branch}/orders?period=all"
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    {:ok, lv, _} = live(conn, path)
+
+    assert has_element?(lv, "#order-crm-state-#{order.id}")
+    refute has_element?(lv, "#order-payment-#{order.id}")
+    refute has_element?(lv, "#order-next-#{order.id}")
+    refute has_element?(lv, "#orders-#{order.id} a[title='Edit Order']")
+    assert has_element?(lv, "#order-gateway-#{order.id}")
+
+    assert {:ok, preview} = Settings.preview(staff, "integration_frontpad", :franchise)
+
+    assert {:ok, _} =
+             Settings.configure(staff, "integration_frontpad", :franchise, false, preview)
+
+    assert eventually(fn -> has_element?(lv, "#order-payment-#{order.id}") end)
+    assert has_element?(lv, "#order-next-#{order.id}")
+    assert has_element?(lv, "#orders-#{order.id} a[title='Edit Order']")
+    refute has_element?(lv, "#order-crm-state-#{order.id}")
+    refute has_element?(lv, "#order-gateway-#{order.id}")
+    assert has_element?(lv, "#orders-#{order.id}[data-capability-revision='1']")
+
+    assert {:ok, _} = Settings.configure(staff, "integration_frontpad", :franchise, true)
+    assert eventually(fn -> has_element?(lv, "#order-crm-state-#{order.id}") end)
+    assert has_element?(lv, "#order-gateway-#{order.id}")
+    refute has_element?(lv, "#order-payment-#{order.id}")
+    refute has_element?(lv, "#order-next-#{order.id}")
+    assert has_element?(lv, "#orders-#{order.id}[data-capability-revision='2']")
+  end
+
+  test "an open delivery order card refreshes courier controls when the capability changes", %{
+    conn: conn
+  } do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    product = insert_branch_product(branch.id, price: 150)
+    {:ok, cart} = Delivest.Oms.Carts.create_cart(%{branch_id: branch.id})
+    {:ok, _, _} = Delivest.Oms.Carts.add_item(cart.id, product.id, 1)
+
+    {:ok, order} =
+      Delivest.Oms.Orders.create_order(%{
+        "cart_id" => cart.id,
+        "branch_id" => branch.id,
+        "fulfillment_type" => "pickup",
+        "payment_method" => "cash"
+      })
+
+    order =
+      order
+      |> Ecto.Changeset.change(fulfillment_type: :delivery, status: :accepted)
+      |> Repo.update!()
+
+    assert {:ok, _} = Settings.configure(staff, "couriers", {:branch, branch.id}, true)
+
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders?period=all")
+    assert has_element?(lv, "#order-find-courier-#{order.id}")
+
+    assert {:ok, preview} = Settings.preview(staff, "couriers", {:branch, branch.id})
+    assert {:ok, _} = Settings.configure(staff, "couriers", {:branch, branch.id}, false, preview)
+    assert eventually(fn -> not has_element?(lv, "#order-find-courier-#{order.id}") end)
+    assert has_element?(lv, "#orders-#{order.id}[data-capability-revision='1']")
+
+    assert {:ok, _} = Settings.configure(staff, "couriers", {:branch, branch.id}, true)
+    assert eventually(fn -> has_element?(lv, "#order-find-courier-#{order.id}") end)
+    assert has_element?(lv, "#orders-#{order.id}[data-capability-revision='2']")
+  end
+
+  test "an open Yandex courier card hides search when its integration turns off", %{conn: conn} do
+    branch = insert(:branch)
+    Repo.insert!(%BranchInfo{branch_id: branch.id, couriers: %CourierSettings{source: :yandex}})
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    product = insert_branch_product(branch.id, price: 150)
+    {:ok, cart} = Delivest.Oms.Carts.create_cart(%{branch_id: branch.id})
+    {:ok, _, _} = Delivest.Oms.Carts.add_item(cart.id, product.id, 1)
+
+    {:ok, order} =
+      Delivest.Oms.Orders.create_order(%{
+        "cart_id" => cart.id,
+        "branch_id" => branch.id,
+        "fulfillment_type" => "pickup",
+        "payment_method" => "cash"
+      })
+
+    order =
+      order
+      |> Ecto.Changeset.change(fulfillment_type: :delivery, status: :accepted)
+      |> Repo.update!()
+
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/orders?period=all")
+    assert has_element?(lv, "#order-find-courier-#{order.id}")
+    assert has_element?(lv, "#order-estimate-delivery-#{order.id}")
+
+    assert {:ok, preview} = Settings.preview(staff, "integration_yandex_delivery", :franchise)
+
+    assert {:ok, _} =
+             Settings.configure(staff, "integration_yandex_delivery", :franchise, false, preview)
+
+    assert eventually(fn -> not has_element?(lv, "#order-find-courier-#{order.id}") end)
+    refute has_element?(lv, "#order-estimate-delivery-#{order.id}")
+
+    assert {:ok, _} = Settings.configure(staff, "integration_yandex_delivery", :franchise, true)
+    assert eventually(fn -> has_element?(lv, "#order-find-courier-#{order.id}") end)
+    assert has_element?(lv, "#order-estimate-delivery-#{order.id}")
   end
 
   describe "order actions" do

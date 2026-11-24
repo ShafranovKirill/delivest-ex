@@ -7,6 +7,7 @@ defmodule Delivest.Oms.KitchenTest do
   import Ecto.Query
 
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Features
   alias Delivest.Oms.{Kitchen, Order, Orders, OrderTransition}
   alias Delivest.Oms.Kitchen.{OrderSubscriber, ReadyWorker, ReplanBranchWorker, SendWorker}
 
@@ -47,6 +48,36 @@ defmodule Delivest.Oms.KitchenTest do
   end
 
   describe "sending to the kitchen" do
+    test "disabled kitchen leaves scheduled sends inert and manual order steps available" do
+      branch = kitchen_branch()
+      later = order(branch, cook_by: in_minutes(120))
+      assert {:ok, accepted} = Orders.advance_order(later, :accepted, operator(branch))
+      deliver_events()
+      assert send_job(later.id)
+
+      assert {:ok, _} = Features.configure("kitchen", {:branch, branch.id}, false, actor: "test")
+      assert Kitchen.unavailable_reason(branch.id) == :disabled
+      refute Kitchen.working?(branch.id)
+      assert :ok = perform_job(SendWorker, %{order_id: later.id})
+      assert Repo.reload!(later).status == :accepted
+
+      assert :ok = Kitchen.reschedule_branch(branch.id)
+      assert send_job(later.id) == nil
+
+      assert {:ok, preparing} = Orders.advance_order(accepted, :preparing, operator(branch))
+      assert {:ok, ready} = Orders.advance_order(preparing, :ready, operator(branch))
+      assert {:ok, completed} = Orders.advance_order(ready, :completed, operator(branch))
+      assert completed.status == :completed
+
+      waiting = order(branch, status: :accepted, cook_by: in_minutes(120))
+      assert {:ok, _} = Kitchen.order_accepted(waiting)
+      assert send_job(waiting.id) == nil
+
+      assert {:ok, _} = Features.configure("kitchen", {:branch, branch.id}, true, actor: "test")
+      assert :ok = Kitchen.reschedule_branch(branch.id)
+      assert send_job(waiting.id)
+    end
+
     test "an order for now goes to the kitchen when it is confirmed" do
       branch = kitchen_branch()
       order = order(branch, [])

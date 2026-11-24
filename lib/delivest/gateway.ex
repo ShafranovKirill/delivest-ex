@@ -2,19 +2,37 @@ defmodule Delivest.Gateway do
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Integrations.Crm.Registry
+  alias Delivest.Integrations.StaffAccess
 
   @areas [:kitchen, :pos, :couriers, :receipts, :statuses, :menu, :stops, :loyalty]
 
   def areas, do: @areas
 
-  def mode(%Branch{info: %{crm: %BranchSettings{} = settings}}) do
+  def mode(branch), do: mode(branch, nil)
+
+  def mode(%Branch{info: %{crm: %BranchSettings{} = settings}}, access) do
     case BranchSettings.active_provider(settings) do
-      nil -> own()
-      provider -> crm(provider, settings)
+      nil ->
+        own()
+
+      provider ->
+        case Registry.fetch(provider) do
+          {:ok, module} ->
+            enabled? =
+              if is_map(access),
+                do: Map.get(access, module.key(), false),
+                else: StaffAccess.allowed?(module.key())
+
+            if enabled?, do: crm(provider, settings), else: own()
+
+          {:error, :unknown_provider} ->
+            crm(provider, settings)
+        end
     end
   end
 
-  def mode(_branch), do: own()
+  def mode(_branch, _access), do: own()
 
   def active?(branch), do: mode(branch).provider != nil
 

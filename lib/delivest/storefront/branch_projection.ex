@@ -1,7 +1,7 @@
 defmodule Delivest.Storefront.BranchProjection do
   @moduledoc "Prepares branch JSON dependencies in a fixed number of reads."
 
-  alias Delivest.{Delivery, Features, LocalTime, Loyalty}
+  alias Delivest.{Delivery, Features, Gateway, LocalTime, Loyalty}
   alias Delivest.Franchise.SettingsStore
   alias Delivest.Identity.Branch.{LoyaltySettings, PaymentSettings}
   alias Delivest.Integrations.{StaffAccess, Yookassa}
@@ -21,7 +21,14 @@ defmodule Delivest.Storefront.BranchProjection do
     with_info = Enum.filter(branches, &match?(%{info: %{id: _}}, &1))
     info_ids = Enum.map(with_info, & &1.id)
     gates = Features.enabled_branches_many(@features, ids)
-    yandex_delivery_enabled = StaffAccess.allowed?(:yandex_delivery)
+    integration_access = StaffAccess.snapshot()
+    yandex_delivery_enabled = Map.fetch!(integration_access, :yandex_delivery)
+
+    own_loyalty =
+      with_info
+      |> Enum.filter(&(Gateway.mode(&1, integration_access).areas.loyalty == :own))
+      |> MapSet.new(& &1.id)
+
     franchise = SettingsStore.get_uncached()
 
     delivery = if info_ids == [], do: %{}, else: Delivery.get_settings_many(info_ids)
@@ -52,6 +59,7 @@ defmodule Delivest.Storefront.BranchProjection do
       analytics_capabilities: Map.fetch!(gates, "analytics_funnel"),
       links_capabilities: Map.fetch!(gates, "analytics_links"),
       optional_capabilities: Map.take(gates, ~w(stocks promotions couriers loyalty)),
+      own_loyalty: own_loyalty,
       yandex_delivery_enabled: yandex_delivery_enabled,
       delivery_settings: delivery,
       payment_ready: payment_ready,

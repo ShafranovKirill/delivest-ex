@@ -3,7 +3,8 @@ defmodule Delivest.Storefront.BranchProjectionTest do
 
   import Delivest.Factory
 
-  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Identity.Branch.{BranchInfo, LoyaltySettings}
+  alias Delivest.Integrations.Crm.BranchSettings
   alias Delivest.Features
   alias Delivest.Franchise.Settings, as: FranchiseSettings
   alias Delivest.Repo
@@ -17,7 +18,14 @@ defmodule Delivest.Storefront.BranchProjectionTest do
     branches =
       for n <- 1..30 do
         branch = insert(:branch, is_active: true, slug: "projection-#{n}")
-        Repo.insert!(%BranchInfo{branch_id: branch.id, city: "City #{n}"})
+
+        Repo.insert!(%BranchInfo{
+          branch_id: branch.id,
+          city: "City #{n}",
+          loyalty: %LoyaltySettings{enabled: true},
+          crm: %BranchSettings{enabled: true, provider: :frontpad}
+        })
+
         branch
       end
 
@@ -36,12 +44,44 @@ defmodule Delivest.Storefront.BranchProjectionTest do
         assert length(data) == size
         assert Enum.all?(data, &match?(%{branch_info: %{city: _}}, &1))
         assert Enum.all?(data, &match?(%{branch_info: %{timezone: "Europe/Moscow"}}, &1))
+        assert Enum.all?(data, &(not &1.branch_info.loyalty.enabled))
         count
       end
 
     assert Enum.uniq(counts) |> length() == 1
     # One network courier integration gate is read for the whole projection.
     assert hd(counts) <= 5
+  end
+
+  test "prepared CRM ownership follows the global switch without JSON reads" do
+    branch = insert(:branch, is_active: true)
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      loyalty: %LoyaltySettings{enabled: true},
+      crm: %BranchSettings{enabled: true, provider: :frontpad}
+    })
+
+    loaded = Repo.preload(branch, :info, force: true)
+    assert Delivest.Gateway.crm?(loaded, :loyalty)
+
+    {:ok, _} = Features.configure("integration_frontpad", :franchise, false, actor: "test")
+    assert Delivest.Gateway.own?(loaded, :loyalty)
+    {_, prepared} = count_queries(fn -> BranchProjection.prepare([loaded]) end)
+    {render_count, %{data: [data]}} = count_queries(fn -> BranchJSON.index(prepared) end)
+    assert render_count == 0
+    assert data.branch_info.loyalty.enabled
+
+    {:ok, _} =
+      Features.configure("integration_frontpad", :franchise, true,
+        actor: "test",
+        selected_integration_branches: true
+      )
+
+    {_, prepared} = count_queries(fn -> BranchProjection.prepare([loaded]) end)
+    {render_count, %{data: [data]}} = count_queries(fn -> BranchJSON.index(prepared) end)
+    assert render_count == 0
+    refute data.branch_info.loyalty.enabled
   end
 
   test "prepared online payment readiness matches the legacy global check" do

@@ -216,7 +216,8 @@ defmodule Delivest.Oms.Orders do
   end
 
   def client_cancellable?(%Order{} = order, enabled?) do
-    order.status == :created and is_nil(order.crm) and is_nil(order.channel) and
+    order.status == :created and not Delivest.Integrations.Crm.effective_managed?(order) and
+      is_nil(order.channel) and
       (order.payment_method in [:cash, :card_offline] or order.awaiting_payment) and
       is_nil(order.deleted_at) and enabled?
   end
