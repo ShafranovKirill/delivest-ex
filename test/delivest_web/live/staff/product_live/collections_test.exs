@@ -29,7 +29,14 @@ defmodule DelivestWeb.Staff.ProductLive.CollectionsTest do
 
     {:ok, suggested, _} = live(conn, ~p"/staff/b/#{branch}/products/suggested")
     assert has_element?(suggested, "#product-section-tab-collections[aria-current='page']")
-    assert has_element?(suggested, "#collections-tab-suggested[aria-current='page']")
+
+    assert has_element?(
+             suggested,
+             "#suggested-toolbar a[href='/staff/b/#{branch.slug}/products/collections'][aria-label='Back']"
+           )
+
+    refute has_element?(suggested, "#collections-tab-popular")
+    refute has_element?(suggested, "#collections-tab-suggested")
     refute has_element?(suggested, "#suggested-add-products")
   end
 

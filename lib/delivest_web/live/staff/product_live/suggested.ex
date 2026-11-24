@@ -111,13 +111,11 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_toolbar id="suggested-toolbar" title={gettext("Recommended")}>
-      <:filters>
-        <DelivestWeb.Staff.CollectionsNavigation.collections_navigation
-          branch={@current_branch}
-          active={:suggested}
-        />
-      </:filters>
+    <.page_toolbar
+      id="suggested-toolbar"
+      title={gettext("Recommended")}
+      back={~p"/staff/b/#{@current_branch}/products/collections"}
+    >
       <:primary_action>
         <button
           :if={@can_edit}

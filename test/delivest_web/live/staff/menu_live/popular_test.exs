@@ -45,8 +45,14 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
            )
 
     assert has_element?(lv, "main #popular-toolbar h1.sr-only", "Popular products")
-    assert has_element?(lv, "#collections-tab-popular[aria-current='page']")
-    assert has_element?(lv, "#collections-tab-suggested")
+
+    assert has_element?(
+             lv,
+             "#popular-toolbar a[href='/staff/b/#{branch.slug}/products/collections'][aria-label='Back']"
+           )
+
+    refute has_element?(lv, "#collections-tab-popular")
+    refute has_element?(lv, "#collections-tab-suggested")
     refute has_element?(lv, "#staff-header-context")
 
     assert Enum.count(

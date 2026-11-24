@@ -180,13 +180,11 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_toolbar id="popular-toolbar" title={gettext("Popular products")}>
-      <:filters>
-        <DelivestWeb.Staff.CollectionsNavigation.collections_navigation
-          branch={@current_branch}
-          active={:popular}
-        />
-      </:filters>
+    <.page_toolbar
+      id="popular-toolbar"
+      title={gettext("Popular products")}
+      back={~p"/staff/b/#{@current_branch}/products/collections"}
+    >
       <:primary_action :if={@can_edit}>
         <button
           type="submit"

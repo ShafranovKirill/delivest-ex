@@ -4749,7 +4749,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:372",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:370",
       "target_section": "Menu"
     },
     {
@@ -4781,7 +4781,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:380",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:378",
       "target_section": "Menu"
     },
     {
@@ -4810,7 +4810,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:206",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:204",
       "target_section": "Menu"
     },
     {
@@ -4839,7 +4839,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:388",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:386",
       "target_section": "Menu"
     },
     {
@@ -4870,7 +4870,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:228",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:226",
       "target_section": "Menu"
     },
     {
@@ -7821,7 +7821,7 @@
           "products.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/suggested.ex:147",
+      "source": "lib/delivest_web/live/staff/product_live/suggested.ex:145",
       "target_section": "Menu"
     },
     {
@@ -27941,7 +27941,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "auto_limit",
       "schema_field": "schema:lib/delivest/popular/settings.ex:auto_limit",
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:258",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:256",
       "target_section": "Menu / Popular",
       "type": "literal staff form control",
       "validation": [
@@ -27964,7 +27964,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "mode",
       "schema_field": "schema:lib/delivest/popular/settings.ex:mode",
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:248",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:246",
       "target_section": "Menu / Popular",
       "type": "literal staff form control",
       "validation": [
@@ -27988,7 +27988,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "show_in_cart",
       "schema_field": "schema:lib/delivest/popular/settings.ex:show_in_cart",
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:287",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:285",
       "target_section": "Menu / Popular",
       "type": "literal staff form control",
       "validation": [
@@ -28011,7 +28011,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "show_in_menu",
       "schema_field": "schema:lib/delivest/popular/settings.ex:show_in_menu",
-      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:276",
+      "source": "lib/delivest_web/live/staff/menu_live/popular.ex:274",
       "target_section": "Menu / Popular",
       "type": "literal staff form control",
       "validation": [
