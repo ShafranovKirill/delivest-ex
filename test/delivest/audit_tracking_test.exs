@@ -32,7 +32,7 @@ defmodule Delivest.AuditTrackingTest do
   end
 
   test "guest order is recorded as created by the customer" do
-    order_fixture(@branch_id, attrs: %{"customer_phone" => "+79990001122"})
+    order_fixture(@branch_id, attrs: %{"customer_phone" => build(:client).phone})
 
     assert [%Event{action: "client.created"}, %Event{action: "order.created"} = created] =
              events()

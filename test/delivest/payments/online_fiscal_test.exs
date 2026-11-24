@@ -66,7 +66,7 @@ defmodule Delivest.Payments.OnlineFiscalTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "pickup",
       "payment_method" => "online",
-      "customer_phone" => "+79990001122",
+      "customer_phone" => build(:client).phone,
       "customer_name" => "Иван"
     }
 

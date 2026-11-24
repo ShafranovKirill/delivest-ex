@@ -54,7 +54,7 @@ defmodule DelivestWeb.Client.OrderDeliveryTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "delivery",
       "payment_method" => "cash",
-      "customer_phone" => "+79990001122",
+      "customer_phone" => build(:client).phone,
       "address" => address
     }
   end
@@ -89,19 +89,17 @@ defmodule DelivestWeb.Client.OrderDeliveryTest do
     product: product
   } do
     {conn, cart_id} = cart(conn, branch, product)
+    payload = params(branch, cart_id, %{"street" => "Ленина", "house" => "1"})
 
     assert %{"error" => "delivery_no_coordinates"} =
              conn
-             |> post(
-               ~p"/client/orders",
-               params(branch, cart_id, %{"street" => "Ленина", "house" => "1"})
-             )
+             |> post(~p"/client/orders", payload)
              |> json_response(422)
 
     assert %{"data" => %{"delivery_amount" => 0}} =
              conn
              |> recycle_with_ip()
-             |> post(~p"/client/orders", params(branch, cart_id, %{}))
+             |> post(~p"/client/orders", Map.put(payload, "address", %{}))
              |> json_response(200)
   end
 

@@ -47,7 +47,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "delivery",
       "payment_method" => "cash",
-      "customer_phone" => "+79990001122",
+      "customer_phone" => build(:client).phone,
       "address_by_operator" => true
     }
 
@@ -112,7 +112,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "delivery",
       "payment_method" => "cash",
-      "customer_phone" => "+79990001122",
+      "customer_phone" => build(:client).phone,
       "address_by_operator" => true
     }
 
@@ -145,7 +145,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "delivery",
       "payment_method" => "cash",
-      "customer_phone" => "+79990001122",
+      "customer_phone" => build(:client).phone,
       "address" => %{"street" => "Ленина", "house" => "1"}
     }
 
@@ -173,7 +173,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "delivery",
       "payment_method" => "cash",
-      "customer_phone" => "+79990001122",
+      "customer_phone" => build(:client).phone,
       "address" => %{"street" => "Ленина, 1", "house" => ""}
     }
 
@@ -207,7 +207,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
       "branch_id" => branch.id,
       "fulfillment_type" => "delivery",
       "payment_method" => "cash",
-      "customer_phone" => "+79990001122",
+      "customer_phone" => build(:client).phone,
       "address" => %{"street" => "Ленина", "latitude" => 55.75, "longitude" => 37.61}
     }
 
@@ -225,7 +225,7 @@ defmodule DelivestWeb.Client.OrderAddressByOperatorTest do
     branch = insert(:branch, is_active: true)
     product = insert_branch_product(branch.id, price: 300)
     admin = insert(:staff, role: insert(:role, permissions: ["admin"]))
-    client = insert(:client, phone: "+79990001122")
+    client = insert(:client)
     access = ClientToken.issue(client.id).access_token
 
     {:ok, _} =

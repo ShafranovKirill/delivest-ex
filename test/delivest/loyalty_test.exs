@@ -18,7 +18,7 @@ defmodule Delivest.LoyaltyTest do
       loyalty: %LoyaltySettings{enabled: true, per_rubles: 100, stars: 5, expire_days: 180}
     })
 
-    client = insert(:client, phone: "+79990001122")
+    client = insert(:client)
     manager = insert(:staff, role: build(:role, permissions: ["orders.update", "clients.update"]))
     insert(:staff_branch, staff: manager, branch: branch)
     manager = Repo.preload(manager, [:role, :branches])
