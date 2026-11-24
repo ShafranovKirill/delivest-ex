@@ -5,8 +5,14 @@ const parseLayout = (el) => {
 };
 
 const widthColumns = (width) => width < 640 ? 1 : width < 1100 ? 6 : 12;
-const mobileHeight = (item) => ({ attention: 2, quick_actions: 2,
-  revenue: 3, orders: 3, avg_check: 3, in_work: 3 })[item.id] || item.h;
+const mobileHeight = (item, editing, el) => {
+  if (item.id === "attention") return editing ? 3 : 2;
+  if (item.id === "quick_actions") {
+    const actions = el.querySelectorAll(".dashboard-action-link").length;
+    return editing || actions > 4 ? 3 : 2;
+  }
+  return ({ revenue: 3, orders: 3, avg_check: 3, in_work: 3 })[item.id] || item.h;
+};
 
 export const DashboardGrid = {
   mounted() {
@@ -81,7 +87,18 @@ export const DashboardGrid = {
     }
     this.resize();
     if (this.columns === 1) this.applyMobileOrder();
+    if (this.columns === 6) this.applyCompactHeights();
     this.silent = false;
+  },
+
+  applyCompactHeights() {
+    for (const item of this.canonical) {
+      if (item.id !== "attention" && item.id !== "quick_actions") continue;
+      const el = [...this.container.children].find((entry) => entry.dataset.widgetId === item.id);
+      if (!el) continue;
+      const manyActions = item.id === "quick_actions" && el.querySelectorAll(".dashboard-action-link").length > 4;
+      this.grid.update(el, { h: this.editing || manyActions ? Math.max(3, item.h) : item.h });
+    }
   },
 
   applyMobileOrder() {
@@ -90,7 +107,7 @@ export const DashboardGrid = {
     for (const item of this.canonical) {
       const el = [...this.container.children].find((entry) => entry.dataset.widgetId === item.id);
       if (!el) continue;
-      const h = mobileHeight(item);
+      const h = mobileHeight(item, this.editing, el);
       this.grid.update(el, { x: 0, y, w: 1, h });
       y += h;
     }
@@ -114,6 +131,8 @@ export const DashboardGrid = {
       }
     } else if (columns === 1) {
       this.applyMobileOrder();
+    } else if (columns === 6) {
+      this.applyCompactHeights();
     }
     this.silent = false;
   },
