@@ -27,6 +27,15 @@ defmodule DelivestWeb.Staff.BranchLive.TimingTest do
     refute has_element?(branch_view, "#timing-add-category")
     refute has_element?(branch_view, "#timing_travel_minutes")
 
+    branch_view |> element("#timing-advanced summary") |> render_click()
+    assert has_element?(branch_view, "#timing-advanced[open]")
+
+    branch_view
+    |> form("#branch-timing-form", timing: %{kitchen_minutes: "21"})
+    |> render_change()
+
+    assert has_element?(branch_view, "#timing-advanced[open]")
+
     {:ok, delivery_view, _} = live(conn, ~p"/staff/b/#{branch}/delivery/zones")
 
     delivery_view

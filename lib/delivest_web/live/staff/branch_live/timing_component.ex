@@ -25,6 +25,7 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
          params: params,
          product_ids:
            for({_name, id} <- products, Map.has_key?(params["product_minutes"], id), do: id),
+         advanced_open: false,
          form: to_form(params, as: "timing")
        )}
     end
@@ -33,6 +34,10 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
   @impl true
   def handle_event("change", %{"timing" => params}, socket) do
     {:noreply, put_params(socket, params)}
+  end
+
+  def handle_event("toggle_advanced", _params, socket) do
+    {:noreply, assign(socket, advanced_open: not socket.assigns.advanced_open)}
   end
 
   def handle_event("add_product", _params, socket) do
@@ -338,8 +343,18 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
               >{gettext("Add product")}</button>
             </div>
           </div>
-          <details id="timing-advanced" class="rounded-box border border-base-300 bg-base-100 p-4">
-            <summary class="cursor-pointer font-medium">{gettext("Advanced")}</summary>
+          <details
+            id="timing-advanced"
+            open={@advanced_open}
+            class="rounded-box border border-base-300 bg-base-100 p-4"
+          >
+            <summary
+              phx-click="toggle_advanced"
+              phx-target={@myself}
+              class="cursor-pointer font-medium"
+            >
+              {gettext("Advanced")}
+            </summary>
             <div class="mt-4 max-w-xs space-y-2">
               <.input
                 field={@form[:packing_minutes]}
