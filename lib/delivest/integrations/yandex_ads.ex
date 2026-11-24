@@ -274,6 +274,7 @@ defmodule Delivest.Integrations.YandexAds do
 
   def public_config(branch_id) do
     settings = get_settings()
+    integration_allowed? = StaffAccess.allowed?(:yandex_ads)
 
     snapshots =
       @public_streams
@@ -302,7 +303,7 @@ defmodule Delivest.Integrations.YandexAds do
     allowed =
       Map.new(@public_streams, fn stream ->
         {stream,
-         StaffAccess.allowed?(:yandex_ads) and stream_allowed?(settings, stream, branch_id) and
+         integration_allowed? and stream_allowed?(settings, stream, branch_id) and
            not is_nil(tokens[stream])}
       end)
 

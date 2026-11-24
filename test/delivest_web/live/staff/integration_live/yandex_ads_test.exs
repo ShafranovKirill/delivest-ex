@@ -5,6 +5,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAdsTest do
   import Delivest.Factory
 
   alias Delivest.Repo
+  alias Delivest.Features
   alias Delivest.Integrations.YandexAds
 
   setup %{conn: conn} do
@@ -23,6 +24,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexAdsTest do
     end)
 
     branch = insert(:branch, is_active: true)
+    assert {:ok, _} = Features.configure("yandex_costs", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("yandex_costs", {:branch, branch.id}, true, actor: "test")
 
     staff =
       insert(:staff,

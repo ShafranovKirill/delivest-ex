@@ -5,9 +5,12 @@ defmodule DelivestWeb.Staff.DeliveryLive.CouriersTest do
   import Delivest.Factory
 
   alias Delivest.Couriers
+  alias Delivest.Features
   alias Delivest.Identity.Branch.CourierSettings
 
   defp sign_in(conn, branch, permissions) do
+    {:ok, _} = Features.configure("couriers", :franchise, true, actor: "test")
+    {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "test")
     staff = insert(:staff, role: insert(:role, permissions: permissions))
     insert(:staff_branch, staff: staff, branch: branch)
     init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})

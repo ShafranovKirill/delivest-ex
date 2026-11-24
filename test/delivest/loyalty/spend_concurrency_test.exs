@@ -6,6 +6,7 @@ defmodule Delivest.Loyalty.SpendConcurrencyTest do
 
   alias Delivest.Loyalty
   alias Delivest.Loyalty.{Account, Entry}
+  alias Delivest.Identity.Branch.{BranchInfo, LoyaltySettings}
   alias Delivest.Oms.{Cart, Carts, Order}
   alias Delivest.Repo
   alias Ecto.Adapters.SQL.Sandbox
@@ -14,6 +15,12 @@ defmodule Delivest.Loyalty.SpendConcurrencyTest do
     {branch, client, carts, orders} =
       Sandbox.unboxed_run(Repo, fn ->
         branch = insert(:branch)
+
+        Repo.insert!(%BranchInfo{
+          branch_id: branch.id,
+          loyalty: %LoyaltySettings{enabled: true, spend_enabled: true}
+        })
+
         client = insert(:client)
         Repo.insert!(%Account{client_id: client.id, balance: 100})
 
@@ -82,6 +89,7 @@ defmodule Delivest.Loyalty.SpendConcurrencyTest do
         Repo.delete_all(from c in Cart, where: c.id in ^Enum.map(carts, & &1.id))
         Repo.delete_all(from a in Account, where: a.client_id == ^client.id)
         Repo.delete!(client)
+        Repo.delete_all(from info in BranchInfo, where: info.branch_id == ^branch.id)
         Repo.delete!(branch)
       end)
 

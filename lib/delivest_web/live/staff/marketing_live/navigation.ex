@@ -4,15 +4,21 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
   alias Delivest.{Features, Gateway, Identity}
 
   def available?(staff, branches) do
-    Identity.can?(staff, "franchise.update") or
-      (Identity.can?(staff, "marketing.read") and
-         Features.enabled?("marketing_policies", :franchise)) or
-      Enum.any?(branches, fn branch ->
-        Identity.authorize(staff, "stocks.read", branch.id) == :ok or
-          Identity.authorize(staff, "promotions.read", branch.id) == :ok or
-          (Identity.authorize(staff, "statistics.read", branch.id) == :ok and
-             Features.enabled?("analytics_links", {:branch, branch.id}))
-      end)
+    available_section?(staff, branches, nil, :hub)
+  end
+
+  def available_section?(staff, branches, _branch, :hub) do
+    (Identity.can?(staff, "marketing.read") and
+       Features.enabled?("marketing_policies", :franchise)) or
+      Enum.any?(
+        [:stocks, :promotions, :loyalty, :links],
+        &available_section?(staff, branches, nil, &1)
+      )
+  end
+
+  def available_section?(staff, branches, branch, section) do
+    candidates = if branch, do: [branch], else: branches
+    Enum.any?(candidates, &(not is_nil(branch_target(staff, &1, section))))
   end
 
   attr :staff, :any, required: true
@@ -63,18 +69,20 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
   end
 
   defp branch_target(staff, branch, :stocks) do
-    if Identity.authorize(staff, "stocks.read", branch.id) == :ok,
-      do: ~p"/staff/b/#{branch}/stocks"
+    if Identity.authorize(staff, "stocks.read", branch.id) == :ok and
+         Features.enabled?("stocks", {:branch, branch.id}),
+       do: ~p"/staff/b/#{branch}/stocks"
   end
 
   defp branch_target(staff, branch, :promotions) do
-    if Identity.authorize(staff, "promotions.read", branch.id) == :ok,
-      do: ~p"/staff/b/#{branch}/promotions"
+    if Identity.authorize(staff, "promotions.read", branch.id) == :ok and
+         Features.enabled?("promotions", {:branch, branch.id}),
+       do: ~p"/staff/b/#{branch}/promotions"
   end
 
   defp branch_target(staff, branch, :loyalty) do
     if Identity.authorize(staff, "promotions.read", branch.id) == :ok and
-         Gateway.own?(branch, :loyalty),
+         Gateway.own?(branch, :loyalty) and Features.enabled?("loyalty", {:branch, branch.id}),
        do: ~p"/staff/b/#{branch}/loyalty"
   end
 
@@ -86,7 +94,8 @@ defmodule DelivestWeb.Staff.MarketingLive.Navigation do
 
   defp branch_target(staff, branch, _active) do
     if branch_target(staff, branch, :stocks) || branch_target(staff, branch, :promotions) ||
-         branch_target(staff, branch, :links),
+         branch_target(staff, branch, :loyalty) || branch_target(staff, branch, :links) ||
+         branch_target(staff, branch, :policies),
        do: ~p"/staff/marketing?#{%{branch: branch.slug}}"
   end
 end

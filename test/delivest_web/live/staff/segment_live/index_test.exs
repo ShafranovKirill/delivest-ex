@@ -48,7 +48,7 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
   end
 
   test "disabled feature redirects direct route", %{conn: conn} do
-    assert {:error, {:redirect, %{to: "/staff/branches/select"}}} =
+    assert {:error, {:redirect, %{to: "/staff/dashboard"}}} =
              live(conn, ~p"/staff/segments")
   end
 
@@ -78,7 +78,7 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     )
     |> render_submit()
 
-    assert_redirect(view, ~p"/staff/branches/select")
+    assert_redirect(view, ~p"/staff/dashboard")
     refute Repo.exists?(from s in Segment, where: s.name == "Blocked")
   end
 

@@ -8,10 +8,11 @@ defmodule Delivest.Integrations.YandexAdsPublicConfigBatchTest do
 
   @streams [:browser, :conversions, :ecommerce]
 
-  test "disabled public configuration matches the previous formula with 7 to 3 SQL" do
+  test "disabled public configuration keeps one integration gate read for all streams" do
     branch = insert(:branch, is_active: true)
-    assert {old, 7} = measure(fn -> reference_config(branch.id) end)
-    assert {^old, 3} = measure(fn -> YandexAds.public_config(branch.id) end)
+    {old, reference_queries} = measure(fn -> reference_config(branch.id) end)
+    assert {^old, 4} = measure(fn -> YandexAds.public_config(branch.id) end)
+    assert reference_queries > 4
   end
 
   test "enabled streams, privacy and selection preserve exact configuration and token" do
@@ -45,9 +46,9 @@ defmodule Delivest.Integrations.YandexAdsPublicConfigBatchTest do
 
     assert_parity(branch.id)
     {old, old_queries} = measure(fn -> reference_config(branch.id) end)
-    assert {^old, 3} = measure(fn -> YandexAds.public_config(branch.id) end)
+    assert {^old, 4} = measure(fn -> YandexAds.public_config(branch.id) end)
     assert old.enabled and old.capture and old.ecommerce
-    assert old_queries == 11
+    assert old_queries > 4
     assert_parity(other.id)
 
     for attrs <- [

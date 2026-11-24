@@ -131,8 +131,11 @@ defmodule DelivestWeb.StaffNav do
         is_nil(branch) ->
           nil
 
-        true ->
+        provider in [:frontpad, :iiko, :rkeeper, :vk_ads, :yandex_delivery, :ycart, :atol] ->
           "/staff/b/#{branch.slug}/integrations/#{provider_slug(provider)}"
+
+        true ->
+          nil
       end
 
     %{
@@ -166,6 +169,7 @@ defmodule DelivestWeb.StaffNav do
   defp integration_label(:yandex_delivery), do: gettext("Yandex Delivery")
   defp integration_label(:ycart), do: gettext("Yandex Cart")
   defp integration_label(:atol), do: gettext("Fiscal receipts")
+  defp integration_label(provider), do: provider |> Atom.to_string() |> String.replace("_", " ")
 
   def catalog(staff, branch) do
     legacy =

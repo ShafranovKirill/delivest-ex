@@ -65,7 +65,14 @@ defmodule DelivestWeb.Client.PublicProductTest do
       handler,
       [:delivest, :repo, :query],
       fn _, _, metadata, _ ->
-        if self() == pid, do: send(pid, {:offer_query, metadata.result})
+        if self() == pid do
+          kind =
+            if String.contains?(metadata.query || "", "feature_gates"),
+              do: :gate_query,
+              else: :offer_query
+
+          send(pid, {kind, metadata.result})
+        end
       end,
       nil
     )
@@ -75,16 +82,18 @@ defmodule DelivestWeb.Client.PublicProductTest do
     Cachex.del(:branch_cache, ctx.branch.id)
     Cachex.clear(:promo_cache)
     assert {:ok, _} = PublicOffers.product(ctx.branch.id, ctx.product.id)
-    before = query_rows([])
+    {before, before_gates} = query_rows([], [])
     for _ <- 1..220, do: insert_branch_product(ctx.branch.id, category_id: ctx.category.id)
-    query_rows([])
+    query_rows([], [])
     Cachex.del(:branch_cache, ctx.branch.id)
     Cachex.clear(:promo_cache)
     assert {:ok, _} = PublicOffers.product(ctx.branch.id, ctx.product.id)
-    after_growth = query_rows([])
+    {after_growth, after_gates} = query_rows([], [])
     assert Enum.sum(after_growth) <= Enum.sum(before)
     assert length(after_growth) <= length(before)
     assert Enum.max(after_growth) <= 1
+    assert Enum.max(before_gates) <= 2
+    assert Enum.max(after_gates) <= 2
   end
 
   test "SEO canonical UUID, visible escaped content and absent landing status", ctx do
@@ -217,12 +226,14 @@ defmodule DelivestWeb.Client.PublicProductTest do
              Jason.decode!(Jason.encode!(offer.modifier_groups))
   end
 
-  defp query_rows(rows) do
+  defp query_rows(rows, gates) do
     receive do
-      {:offer_query, {:ok, %{num_rows: count}}} -> query_rows([count | rows])
-      {:offer_query, _} -> query_rows(rows)
+      {:offer_query, {:ok, %{num_rows: count}}} -> query_rows([count | rows], gates)
+      {:gate_query, {:ok, %{num_rows: count}}} -> query_rows(rows, [count | gates])
+      {:offer_query, _} -> query_rows(rows, gates)
+      {:gate_query, _} -> query_rows(rows, gates)
     after
-      0 -> rows
+      0 -> {rows, gates}
     end
   end
 end

@@ -8,7 +8,6 @@ defmodule DelivestWeb.Hooks.FeatureAccess do
   @views %{
     Staff.SegmentLive.Index => "segments",
     Staff.MarketingLive.Index => "marketing_policies",
-    Staff.MarketingLive.Hub => "notifications",
     Staff.CourierLive.Index => "couriers",
     Staff.CourierLive.Board => "couriers",
     Staff.DeliveryLive.Couriers => "couriers",
@@ -51,6 +50,9 @@ defmodule DelivestWeb.Hooks.FeatureAccess do
              {:halt, bump_navigation(socket)}
 
            :features_changed, %{view: Staff.DashboardLive.Index} = socket ->
+             {:cont, bump_navigation(socket)}
+
+           :features_changed, %{view: Staff.MarketingLive.Hub} = socket ->
              {:cont, bump_navigation(socket)}
 
            :features_changed, socket ->
