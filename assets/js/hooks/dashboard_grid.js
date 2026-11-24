@@ -5,11 +5,11 @@ const parseLayout = (el) => {
 };
 
 const widthColumns = (width) => width < 640 ? 1 : width < 1100 ? 6 : 12;
-const mobileHeight = (item, editing, el) => {
-  if (item.id === "attention") return editing ? 3 : 2;
+const mobileHeight = (item, editing, el, extraNarrow) => {
+  if (item.id === "attention") return editing || extraNarrow ? 3 : 2;
   if (item.id === "quick_actions") {
     const actions = el.querySelectorAll(".dashboard-action-link").length;
-    return editing || actions > 4 ? 3 : 2;
+    return editing || extraNarrow || actions > 4 ? 3 : 2;
   }
   return ({ revenue: 3, orders: 3, avg_check: 3, in_work: 3 })[item.id] || item.h;
 };
@@ -21,6 +21,7 @@ export const DashboardGrid = {
     this.canonical = parseLayout(this.el);
     this.visible = this.el.dataset.visible;
     this.columns = widthColumns(this.container.clientWidth);
+    this.extraNarrow = this.container.clientWidth < 340;
     this.silent = true;
     this.grid = GridStack.init({
       column: 12,
@@ -107,7 +108,7 @@ export const DashboardGrid = {
     for (const item of this.canonical) {
       const el = [...this.container.children].find((entry) => entry.dataset.widgetId === item.id);
       if (!el) continue;
-      const h = mobileHeight(item, this.editing, el);
+      const h = mobileHeight(item, this.editing, el, this.extraNarrow);
       this.grid.update(el, { x: 0, y, w: 1, h });
       y += h;
     }
@@ -115,10 +116,21 @@ export const DashboardGrid = {
   },
 
   resize() {
-    const columns = widthColumns(this.container.clientWidth);
-    if (columns === this.columns && this.grid.opts.column === columns) return;
+    const width = this.container.clientWidth;
+    const columns = widthColumns(width);
+    const extraNarrow = width < 340;
+    if (columns === this.columns && this.grid.opts.column === columns) {
+      if (columns === 1 && extraNarrow !== this.extraNarrow) {
+        this.extraNarrow = extraNarrow;
+        this.silent = true;
+        this.applyMobileOrder();
+        this.silent = false;
+      }
+      return;
+    }
     this.silent = true;
     this.columns = columns;
+    this.extraNarrow = extraNarrow;
     this.container.classList.toggle("dashboard-grid-compact", columns < 12);
     this.container.classList.toggle("dashboard-grid-mobile", columns === 1);
     this.grid.column(columns, "compact");

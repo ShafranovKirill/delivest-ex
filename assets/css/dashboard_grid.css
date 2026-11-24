@@ -3,6 +3,16 @@
   overflow: auto;
   border-radius: var(--radius-box);
 }
+#dashboard-grid > .grid-stack-item > .grid-stack-item-content:has(> .dashboard-widget-controls) {
+  display: flex;
+  flex-direction: column;
+}
+#dashboard-grid .grid-stack-item-content > .dashboard-widget-controls { flex: 0 0 auto; }
+#dashboard-grid .grid-stack-item-content:has(> .dashboard-widget-controls) > :last-child {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
 .dashboard-widget-card {
   height: 100%;
   min-width: 0;
