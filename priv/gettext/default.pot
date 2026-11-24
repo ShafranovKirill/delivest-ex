@@ -13504,3 +13504,77 @@ msgstr ""
 
 msgid "Product limit"
 msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:269
+#, elixir-autogen, elixir-format
+msgid "Branches today"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:20
+#, elixir-autogen, elixir-format
+msgid "Widgets"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:22
+#, elixir-autogen, elixir-format
+msgid "Drag a card by its handle. Resize it from the lower corner."
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:25
+#, elixir-autogen, elixir-format
+msgid "Use the arrows on cards to change their order."
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:28
+#, elixir-autogen, elixir-format
+msgid "This layout is shared across all branches. Changes take effect after you save."
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:32
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:34
+#, elixir-autogen, elixir-format
+msgid "Visible widgets"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:63
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:65
+#, elixir-autogen, elixir-format
+msgid "Hidden widgets"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:59
+#, elixir-autogen, elixir-format
+msgid "No visible widgets"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:90
+#, elixir-autogen, elixir-format
+msgid "All widgets are visible"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:51
+#, elixir-autogen, elixir-format
+msgid "Hide"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:101
+#, elixir-autogen, elixir-format
+msgid "Choose which shortcuts appear on the overview."
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:23
+#, elixir-autogen, elixir-format
+msgid "No orders need attention"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:44
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:311
+#, elixir-autogen, elixir-format
+msgid "Awaiting confirmation"
+msgstr ""
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:50
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:318
+#, elixir-autogen, elixir-format
+msgid "Ready for handoff"
+msgstr ""

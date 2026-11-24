@@ -7,10 +7,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   alias Delivest.{Analytics, Couriers, Gateway, Identity, LocalTime}
   alias Delivest.Oms.Kitchen
   alias DelivestWeb.Staff.DashboardLive.DayLabel
+  alias DelivestWeb.Staff.DashboardLive.Editor
   alias DelivestWeb.Staff.DashboardLive.Widgets
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
-
-  import DelivestWeb.Staff.StatsComponents, only: [delta: 2]
 
   @active_statuses [:created, :accepted, :preparing, :ready, :delivering]
   @reload_delay :timer.seconds(2)
@@ -110,17 +109,25 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             local_time =
               now |> DateTime.shift_zone!(LocalTime.timezone(branch.id)) |> DateTime.to_time()
 
-            {Analytics.summary(branch.id, period),
-             Analytics.dashboard_summary_to(branch.id, yesterday, local_time),
-             Analytics.hourly(branch.id, period),
-             Analytics.top_products(branch.id, period, limit: :all)}
+            %{
+              branch_id: branch.id,
+              summary: Analytics.summary(branch.id, period),
+              yesterday: Analytics.dashboard_summary_to(branch.id, yesterday, local_time),
+              hourly: Analytics.hourly(branch.id, period),
+              yesterday_hourly: Analytics.hourly(branch.id, {yesterday, yesterday}),
+              products: Analytics.top_products(branch.id, period, limit: :all),
+              local_hour: local_time.hour
+            }
           end)
 
         assign(socket,
-          summary: merge_summaries(Enum.map(rows, &elem(&1, 0))),
-          yesterday: merge_summaries(Enum.map(rows, &elem(&1, 1))),
-          hourly: merge_hourly(Enum.flat_map(rows, &elem(&1, 2))),
-          top_products: merge_products(Enum.flat_map(rows, &elem(&1, 3)))
+          branch_stats: Map.new(rows, &{&1.branch_id, &1.summary}),
+          summary: merge_summaries(Enum.map(rows, & &1.summary)),
+          yesterday: merge_summaries(Enum.map(rows, & &1.yesterday)),
+          hourly: merge_hourly(Enum.flat_map(rows, & &1.hourly)),
+          yesterday_hourly: merge_hourly(Enum.flat_map(rows, & &1.yesterday_hourly)),
+          current_hour: rows |> Enum.map(& &1.local_hour) |> Enum.max(fn -> -1 end),
+          top_products: merge_products(Enum.flat_map(rows, & &1.products))
         )
       else
         socket
@@ -134,25 +141,29 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             period = {day, day}
             filters = %{branch_id: branch.id, date_from: day, date_to: day}
 
-            {Analytics.status_counts(branch.id, period), Orders.list_latest_orders(filters, 8),
-             OrderAttention.count_for_day(branch.id, day)}
+            {branch.id, Analytics.status_counts(branch.id, period),
+             Orders.list_latest_orders(filters, 8), OrderAttention.count_for_day(branch.id, day)}
           end)
 
         counts =
-          Enum.reduce(rows, %{}, fn {status, _, _}, acc ->
+          Enum.reduce(rows, %{}, fn {_, status, _, _}, acc ->
             Map.merge(acc, status, fn _, a, b -> a + b end)
           end)
 
         latest =
           rows
-          |> Enum.flat_map(&elem(&1, 1))
+          |> Enum.flat_map(&elem(&1, 2))
           |> Enum.sort_by(&{DateTime.to_unix(&1.inserted_at, :microsecond), &1.id}, :desc)
           |> Enum.take(8)
 
-        problem_count = Enum.sum(Enum.map(rows, &elem(&1, 2)))
+        problem_count = Enum.sum(Enum.map(rows, &elem(&1, 3)))
 
         assign(socket,
           problem_count: problem_count,
+          branch_queues:
+            Map.new(rows, fn {id, counts, _, problems} ->
+              {id, %{counts: counts, problems: problems}}
+            end),
           status_counts: counts,
           in_work: counts |> Map.take(@active_statuses) |> Map.values() |> Enum.sum(),
           latest_orders: latest
@@ -161,6 +172,16 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         socket
       end
     end)
+  end
+
+  defp header_statistics_href(assigns) do
+    visible_hourly? = Enum.any?(assigns.dashboard_layout.widgets, &(&1.id == "hourly"))
+
+    stats_allowed? =
+      "statistics" in allowed_action_ids(assigns) and
+        "statistics" in assigns.dashboard_layout.actions
+
+    if stats_allowed? and not visible_hourly?, do: action_href("statistics", assigns)
   end
 
   defp dashboard_branches(%{assigns: %{live_action: :all}} = socket),
@@ -198,39 +219,41 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   end
 
   defp merge_products(rows) do
-    merged =
-      rows
-      |> Enum.group_by(& &1.product_id)
-      |> Enum.map(fn {id, products} ->
-        first = hd(products)
+    rows
+    |> Enum.group_by(& &1.product_id)
+    |> Enum.map(fn {id, products} ->
+      first = hd(products)
 
-        %{
-          product_id: id,
-          title: first.title,
-          category_name: first.category_name,
-          quantity: Enum.sum(Enum.map(products, & &1.quantity)),
-          revenue: Enum.sum(Enum.map(products, & &1.revenue)),
-          orders: Enum.sum(Enum.map(products, & &1.orders))
-        }
-      end)
-      |> Enum.sort_by(&{&1.revenue, &1.quantity}, :desc)
-
-    total = Enum.sum(Enum.map(merged, & &1.revenue))
-
-    Enum.map(
-      Enum.take(merged, 5),
-      &Map.put(&1, :share, if(total > 0, do: Float.round(&1.revenue * 100 / total, 1), else: 0.0))
-    )
+      %{
+        product_id: id,
+        title: first.title,
+        category_name: first.category_name,
+        quantity: Enum.sum(Enum.map(products, & &1.quantity)),
+        revenue: Enum.sum(Enum.map(products, & &1.revenue)),
+        orders: Enum.sum(Enum.map(products, & &1.orders))
+      }
+    end)
+    |> Enum.sort_by(&{&1.revenue, &1.quantity}, :desc)
+    |> Enum.take(5)
   end
 
   def staff_page_header(assigns) do
+    assigns = assign(assigns, :header_statistics_href, header_statistics_href(assigns))
+
     ~H"""
-    <.page_header title={
-      if @current_branch,
-        do: "#{gettext("Today")}, #{DayLabel.format(@today)}",
-        else: gettext("Today")
-    }>
-      <:actions>
+    <div id="staff-page-header" class="flex w-full flex-wrap items-center justify-between gap-3">
+      <div class="min-w-0">
+        <h1 class="text-2xl font-semibold text-base-content">
+          {gettext("Today")}, {DayLabel.format(@today)}
+        </h1>
+        <.link
+          :if={@can_stats && @header_statistics_href}
+          id="dashboard-header-statistics"
+          navigate={@header_statistics_href}
+          class="text-sm text-primary hover:underline"
+        >{gettext("Statistics")}</.link>
+      </div>
+      <div id="staff-page-header-actions" class="flex flex-wrap items-center gap-2">
         <button
           :if={!@editing_dashboard}
           id="dashboard-edit"
@@ -257,11 +280,10 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
           id="dashboard-reset"
           type="button"
           phx-click="dashboard_reset"
-          data-confirm={gettext("Restore the default dashboard layout?")}
           class="btn btn-sm btn-ghost"
         >{gettext("Reset to default")}</button>
-      </:actions>
-    </.page_header>
+      </div>
+    </div>
     """
   end
 
@@ -275,7 +297,8 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
     "hourly" => "Orders by hour",
     "cumulative_revenue" => "Revenue through the day",
     "latest_orders" => "Latest orders",
-    "top_products" => "Best sellers today"
+    "top_products" => "Best sellers today",
+    "branch_summary" => "Branches today"
   }
 
   @action_titles %{
@@ -319,7 +342,8 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         %{"widgets" => widgets},
         %{assigns: %{editing_dashboard: true}} = socket
       ) do
-    current = Map.new(socket.assigns.dashboard_layout.widgets, &{&1.id, &1})
+    current_widgets = socket.assigns.dashboard_layout.widgets
+    current = Map.new(current_widgets, &{&1.id, &1})
     allowed = MapSet.new(allowed_widget_ids(socket.assigns))
 
     valid? =
@@ -342,11 +366,19 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
     if valid? do
       updated =
-        Map.new(widgets, fn item ->
-          {item["id"], %{id: item["id"], x: item["x"], y: item["y"], w: item["w"], h: item["h"]}}
+        Enum.flat_map(widgets, fn %{"id" => id, "x" => x, "y" => y, "w" => w, "h" => h} ->
+          if MapSet.member?(allowed, id), do: [%{id: id, x: x, y: y, w: w, h: h}], else: []
         end)
 
-      ordered = Enum.map(socket.assigns.dashboard_layout.widgets, &Map.fetch!(updated, &1.id))
+      {ordered, []} =
+        Enum.map_reduce(current_widgets, updated, fn item, remaining ->
+          if MapSet.member?(allowed, item.id) do
+            [next | rest] = remaining
+            {next, rest}
+          else
+            {item, remaining}
+          end
+        end)
 
       {:noreply,
        assign(socket, :dashboard_layout, %{socket.assigns.dashboard_layout | widgets: ordered})}
@@ -430,12 +462,13 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
     if is_integer(other) and other >= 0 and other < length(visible) do
       first = Enum.at(visible, index)
       second = Enum.at(visible, other)
-      swapped = visible |> List.replace_at(index, second) |> List.replace_at(other, first)
-      swap_ids = Enum.map(swapped, & &1.id)
-      lookup = Map.new(widgets, &{&1.id, &1})
 
       ordered =
-        Enum.map(swap_ids, &Map.fetch!(lookup, &1)) ++ Enum.reject(widgets, &(&1.id in swap_ids))
+        Enum.map(widgets, fn
+          ^first -> second
+          ^second -> first
+          item -> item
+        end)
 
       {:noreply,
        assign(socket, :dashboard_layout, %{socket.assigns.dashboard_layout | widgets: ordered})}
@@ -464,18 +497,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   end
 
   def handle_event("dashboard_reset", _params, %{assigns: %{editing_dashboard: true}} = socket) do
-    case DashboardLayout.reset(socket.assigns.current_staff.id) do
-      {:ok, layout} ->
-        {:noreply,
-         assign(socket,
-           dashboard_layout: layout,
-           saved_layout: layout,
-           editing_dashboard: false
-         )}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, gettext("Could not reset dashboard layout"))}
-    end
+    {:noreply, assign(socket, :dashboard_layout, DashboardLayout.default())}
   end
 
   def handle_event(event, _params, socket)
@@ -497,11 +519,16 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         id in ["revenue", "orders", "avg_check", "hourly", "cumulative_revenue", "top_products"] ->
           assigns.can_stats
 
+        id == "branch_summary" ->
+          assigns.live_action == :all and length(assigns.dashboard_branches) > 1 and
+            (assigns.can_stats or assigns.can_orders)
+
         id in ["attention", "in_work", "latest_orders"] ->
           assigns.can_orders
 
         id == "quick_actions" ->
-          true
+          assigns.current_branch != nil and
+            Enum.any?(allowed_action_ids(assigns), &(&1 != "statistics"))
 
         true ->
           false
@@ -555,8 +582,26 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   defp action_href("stop_list", assigns),
     do: ~p"/staff/b/#{assigns.current_branch}/products/stops"
 
+  defp queue_href(%{current_branch: branch}, query) when not is_nil(branch),
+    do: ~p"/staff/b/#{branch}/orders?#{query}"
+
+  defp queue_href(assigns, query) do
+    case assigns.dashboard_branches do
+      [branch] ->
+        ~p"/staff/b/#{branch}/orders?#{query}"
+
+      [branch | _] ->
+        path = ~p"/staff/b/#{branch}/orders?#{query}"
+        DelivestWeb.StaffBranchPath.selection_path(path, ~p"/staff/dashboard")
+
+      [] ->
+        nil
+    end
+  end
+
   defp widget_data(assigns) do
     hourly = assigns[:hourly] || []
+    yesterday_hourly = assigns[:yesterday_hourly] || []
 
     cumulative =
       Enum.map_reduce(hourly, 0, fn row, sum ->
@@ -579,14 +624,42 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         }
       end)
 
+    statistics_action = Enum.find(actions, &(&1.id == "statistics"))
+    quick_actions = Enum.reject(actions, &(&1.id == "statistics"))
+
+    branch_summary =
+      Enum.map(assigns.dashboard_branches, fn branch ->
+        stats = (assigns[:branch_stats] || %{})[branch.id]
+        queue = (assigns[:branch_queues] || %{})[branch.id] || %{counts: %{}, problems: 0}
+
+        %{
+          id: branch.id,
+          name: branch.name,
+          dashboard_href: ~p"/staff/b/#{branch}/dashboard",
+          revenue: stats && stats.revenue,
+          orders: stats && stats.orders_count,
+          problems: queue.problems,
+          created: Map.get(queue.counts, :created, 0),
+          ready: Map.get(queue.counts, :ready, 0),
+          problem_href: ~p"/staff/b/#{branch}/orders?problem=true",
+          created_href: ~p"/staff/b/#{branch}/orders?status=created&period=today",
+          ready_href: ~p"/staff/b/#{branch}/orders?status=ready&period=today"
+        }
+      end)
+
     %{
       summary: assigns[:summary],
+      revenue_change: assigns[:summary] && assigns.summary.revenue - assigns.yesterday.revenue,
       revenue_delta:
-        assigns[:summary] && delta(assigns.summary.revenue, assigns.yesterday.revenue),
+        assigns[:summary] && percent_delta(assigns.summary.revenue, assigns.yesterday.revenue),
+      orders_change:
+        assigns[:summary] && assigns.summary.orders_count - assigns.yesterday.orders_count,
       orders_delta:
-        assigns[:summary] && delta(assigns.summary.orders_count, assigns.yesterday.orders_count),
+        assigns[:summary] &&
+          percent_delta(assigns.summary.orders_count, assigns.yesterday.orders_count),
+      avg_change: assigns[:summary] && assigns.summary.avg_check - assigns.yesterday.avg_check,
       avg_delta:
-        assigns[:summary] && delta(assigns.summary.avg_check, assigns.yesterday.avg_check),
+        assigns[:summary] && percent_delta(assigns.summary.avg_check, assigns.yesterday.avg_check),
       revenue_hint:
         assigns[:yesterday] &&
           gettext("yesterday by this time %{amount}",
@@ -604,25 +677,34 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
       problem_count: assigns[:problem_count] || 0,
       created_count: Map.get(assigns[:status_counts] || %{}, :created, 0),
       ready_count: Map.get(assigns[:status_counts] || %{}, :ready, 0),
-      problem_href:
-        assigns.current_branch && ~p"/staff/b/#{assigns.current_branch}/orders?problem=true",
-      created_href:
-        assigns.current_branch &&
-          ~p"/staff/b/#{assigns.current_branch}/orders?status=created&period=today",
-      ready_href:
-        assigns.current_branch &&
-          ~p"/staff/b/#{assigns.current_branch}/orders?status=ready&period=today",
-      actions: actions,
+      problem_href: queue_href(assigns, %{problem: true}),
+      created_href: queue_href(assigns, %{status: "created", period: "today"}),
+      ready_href: queue_href(assigns, %{status: "ready", period: "today"}),
+      actions: quick_actions,
+      statistics_action: statistics_action,
+      branch_summary: branch_summary,
+      can_stats: assigns.can_stats,
+      can_orders: assigns.can_orders,
+      no_hourly_sales:
+        Enum.all?(hourly, &(&1.orders == 0)) and
+          Enum.all?(yesterday_hourly, &(&1.orders == 0)),
       hourly: hourly,
+      yesterday_hourly: yesterday_hourly,
       cumulative: cumulative,
       hourly_chart: %{
         kind: "hourly",
         title: gettext("Orders by hour"),
         orders_label: gettext("Orders"),
+        today_label: gettext("Today"),
+        yesterday_label: gettext("Yesterday"),
         drilldown: not is_nil(assigns.current_branch) and assigns.can_orders,
         revenue_label: gettext("Revenue") <> " (" <> gettext("Before refunds") <> ")",
         hours: Enum.map(hourly, & &1.hour),
-        orders: Enum.map(hourly, & &1.orders),
+        orders:
+          Enum.map(hourly, fn row ->
+            if row.hour <= (assigns[:current_hour] || 0), do: row.orders
+          end),
+        yesterday_orders: Enum.map(yesterday_hourly, & &1.orders),
         revenue: Enum.map(hourly, &OrderHelpers.money(&1.revenue)),
         locale: Gettext.get_locale(DelivestWeb.Gettext)
       },
@@ -635,29 +717,15 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         locale: Gettext.get_locale(DelivestWeb.Gettext)
       },
       top_products: assigns[:top_products] || [],
-      products_chart: %{
-        kind: "products",
-        title: gettext("Best sellers today"),
-        share_label: gettext("Share of revenue"),
-        revenue_label: gettext("Revenue") <> " (" <> gettext("Before refunds") <> ")",
-        quantity_label: gettext("Quantity"),
-        products:
-          Enum.map(assigns[:top_products] || [], fn row ->
-            %{
-              name: row.title,
-              share: row.share,
-              quantity: row.quantity,
-              revenue: OrderHelpers.money(row.revenue)
-            }
-          end),
-        locale: Gettext.get_locale(DelivestWeb.Gettext)
-      },
       latest_orders: assigns[:latest_orders] || [],
       status_counts: assigns[:status_counts] || %{},
       branch_by_id: assigns.branch_by_id,
       can_clients: assigns.can_clients
     }
   end
+
+  defp percent_delta(_current, 0), do: nil
+  defp percent_delta(current, previous), do: Float.round((current - previous) * 100 / previous, 1)
 
   @impl true
   def render(assigns) do
@@ -673,117 +741,80 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
         Map.new(DashboardLayout.widget_ids(), &{&1, DashboardLayout.widget_limits(&1)})
       )
 
-    ~H"""
-    <div id="dashboard-workspace" class="space-y-4">
-      <p :if={is_nil(@current_branch)} class="text-sm text-base-content/60">
-        {gettext("All branches")}
-      </p>
-      <section
-        :if={@editing_dashboard}
-        id="dashboard-catalog"
-        class="rounded-box border border-base-300 bg-base-100 p-4 space-y-4"
-      >
-        <div>
-          <h2 class="font-semibold">{gettext("Widget catalog")}</h2><p class="text-sm text-base-content/60">
-            {gettext("Choose what appears on your dashboard, then drag or resize the cards.")}
-          </p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <%= for id <- @allowed_widgets do %>
-            <button
-              :if={not Enum.any?(@dashboard_layout.widgets, &(&1.id == id))}
-              id={"dashboard-add-#{id}"}
-              type="button"
-              phx-click="dashboard_add"
-              phx-value-id={id}
-              class="btn btn-sm btn-outline"
-            ><.icon name="hero-plus" class="size-4" />{Gettext.gettext(
-              DelivestWeb.Gettext,
-              Map.fetch!(@widget_titles, id)
-            )}</button>
-          <% end %>
-        </div>
-        <div :if={"quick_actions" in @allowed_widgets} class="border-t border-base-200 pt-3">
-          <h3 class="text-sm font-semibold mb-2">{gettext("Quick actions")}</h3><div class="flex flex-wrap gap-2">
-            <button
-              :for={id <- @allowed_actions}
-              id={"dashboard-action-#{id}"}
-              type="button"
-              phx-click="dashboard_action"
-              phx-value-id={id}
-              class={[
-                "btn btn-sm",
-                if(id in @dashboard_layout.actions, do: "btn-primary", else: "btn-outline")
-              ]}
-              aria-pressed={to_string(id in @dashboard_layout.actions)}
-            >{Gettext.gettext(DelivestWeb.Gettext, elem(Map.fetch!(@action_titles, id), 0))}</button>
-          </div>
-        </div>
-      </section>
+    visible_widgets =
+      Enum.filter(assigns.dashboard_layout.widgets, fn item ->
+        item.id in assigns.allowed_widgets and
+          (item.id != "quick_actions" or assigns.editing_dashboard or
+             assigns.widget_data.actions != [])
+      end)
 
-      <div
-        id="dashboard-grid-controller"
-        phx-hook="DashboardGrid"
-        phx-update="ignore"
-        data-editing={to_string(@editing_dashboard)}
-        data-layout={Jason.encode!(@dashboard_layout.widgets)}
-        data-visible={Jason.encode!(@allowed_widgets)}
-      >
-      </div>
-      <div id="dashboard-grid" class={["grid-stack", @editing_dashboard && "dashboard-grid-editing"]}>
+    assigns = assign(assigns, :visible_widgets, visible_widgets)
+
+    ~H"""
+    <div id="dashboard-workspace" class={[@editing_dashboard && "dashboard-editor-workspace"]}>
+      <Editor.catalog
+        :if={@editing_dashboard}
+        layout={@dashboard_layout}
+        allowed_widgets={@allowed_widgets}
+        allowed_actions={@allowed_actions}
+        widget_titles={@widget_titles}
+        action_titles={@action_titles}
+      />
+      <div class="dashboard-editor-preview min-w-0">
         <div
-          :for={item <- @dashboard_layout.widgets}
-          :if={item.id in @allowed_widgets}
-          id={"dashboard-widget-#{item.id}"}
-          class="grid-stack-item"
-          data-widget-id={item.id}
-          gs-id={item.id}
-          gs-x={item.x}
-          gs-y={item.y}
-          gs-w={item.w}
-          gs-h={item.h}
-          gs-min-w={Map.fetch!(@widget_limits, item.id).min_w}
-          gs-max-w={Map.fetch!(@widget_limits, item.id).max_w}
-          gs-min-h={Map.fetch!(@widget_limits, item.id).min_h}
-          gs-max-h={Map.fetch!(@widget_limits, item.id).max_h}
+          id="dashboard-grid-controller"
+          phx-hook="DashboardGrid"
+          phx-update="ignore"
+          data-editing={to_string(@editing_dashboard)}
+          data-default-layout={
+            to_string(@dashboard_layout.widgets == DashboardLayout.default().widgets)
+          }
+          data-layout={Jason.encode!(@dashboard_layout.widgets)}
         >
-          <div class="grid-stack-item-content">
-            <div :if={@editing_dashboard} class="dashboard-widget-controls">
-              <span class="dashboard-drag-handle" role="img" aria-label={gettext("Drag widget")}>⠿</span><span class="text-xs truncate">{Gettext.gettext(
-                DelivestWeb.Gettext,
-                Map.fetch!(@widget_titles, item.id)
-              )}</span><button
-                id={"dashboard-move-up-#{item.id}"}
-                type="button"
-                phx-click="dashboard_move"
-                phx-value-id={item.id}
-                phx-value-direction="up"
-                aria-label={gettext("Move up")}
-                class="btn btn-xs btn-ghost"
-              ><.icon name="hero-arrow-up" class="size-4" /></button><button
-                id={"dashboard-move-down-#{item.id}"}
-                type="button"
-                phx-click="dashboard_move"
-                phx-value-id={item.id}
-                phx-value-direction="down"
-                aria-label={gettext("Move down")}
-                class="btn btn-xs btn-ghost"
-              ><.icon name="hero-arrow-down" class="size-4" /></button><button
-                id={"dashboard-remove-#{item.id}"}
-                type="button"
-                phx-click="dashboard_remove"
-                phx-value-id={item.id}
-                aria-label={gettext("Hide widget")}
-                class="btn btn-xs btn-ghost"
-              ><.icon name="hero-x-mark" class="size-4" /></button>
+        </div>
+        <div
+          id="dashboard-grid"
+          class={["grid-stack", @editing_dashboard && "dashboard-grid-editing"]}
+        >
+          <div
+            :for={item <- @visible_widgets}
+            id={"dashboard-widget-#{item.id}"}
+            class="grid-stack-item"
+            data-widget-id={item.id}
+            data-dashboard-empty={
+              to_string(
+                !@editing_dashboard and
+                  ((item.id == "top_products" and @widget_data.top_products == []) or
+                     (item.id == "latest_orders" and @widget_data.latest_orders == []) or
+                     (item.id == "attention" and @widget_data.problem_count == 0 and
+                        @widget_data.created_count == 0 and @widget_data.ready_count == 0) or
+                     (item.id == "hourly" and @widget_data.no_hourly_sales))
+              )
+            }
+            gs-id={item.id}
+            gs-x={item.x}
+            gs-y={item.y}
+            gs-w={item.w}
+            gs-h={item.h}
+            gs-min-w={Map.fetch!(@widget_limits, item.id).min_w}
+            gs-max-w={Map.fetch!(@widget_limits, item.id).max_w}
+            gs-min-h={Map.fetch!(@widget_limits, item.id).min_h}
+            gs-max-h={Map.fetch!(@widget_limits, item.id).max_h}
+          >
+            <div class="grid-stack-item-content">
+              <Editor.widget_controls
+                :if={@editing_dashboard}
+                item={item}
+                title={Gettext.gettext(DelivestWeb.Gettext, Map.fetch!(@widget_titles, item.id))}
+              />
+              <Widgets.widget id={item.id} data={@widget_data} />
             </div>
-            <Widgets.widget id={item.id} data={@widget_data} />
           </div>
         </div>
+        <.card :if={@visible_widgets == []} class="p-8 text-center text-base-content/60">
+          {gettext("Your dashboard is empty. Customize it to add widgets.")}
+        </.card>
       </div>
-      <.card :if={@dashboard_layout.widgets == []} class="p-8 text-center text-base-content/60">
-        {gettext("Your dashboard is empty. Customize it to add widgets.")}
-      </.card>
     </div>
     """
   end

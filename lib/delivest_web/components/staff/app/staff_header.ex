@@ -58,6 +58,7 @@ defmodule DelivestWeb.StaffHeader do
           aggregate={
             @current_path in ~w(/staff/dashboard /staff/statistics /staff/analytics/channels /staff/analytics/sources /staff/analytics/funnel /staff/analytics/customers /staff/analytics/comparison /staff/analytics/advertising)
           }
+          aggregate_label={if(@current_path == "/staff/dashboard", do: gettext("All branches"))}
         />
       </div>
       <div class="ml-auto flex shrink-0 items-center gap-2">

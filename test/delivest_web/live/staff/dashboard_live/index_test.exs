@@ -5,9 +5,10 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
   import Delivest.Factory
 
   describe "dashboard page" do
-    test "network and branch dashboards keep today's charts without the historical heatmap", %{
-      conn: conn
-    } do
+    test "network and branch dashboards show compact empty hourly state without the historical heatmap",
+         %{
+           conn: conn
+         } do
       branch = insert(:branch)
 
       staff =
@@ -19,14 +20,36 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
       {:ok, network, _} = live(conn, ~p"/staff/dashboard")
-      assert has_element?(network, "#dashboard-orders-by-hour-plot[data-chart]")
+      assert has_element?(network, "#dashboard-hourly-empty")
+      refute has_element?(network, "#dashboard-orders-by-hour-plot")
+
       refute has_element?(network, "#dashboard-order-heatmap")
       refute has_element?(network, "#statistics-heatmap-chart")
 
       {:ok, local, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
-      assert has_element?(local, "#dashboard-orders-by-hour-plot[data-chart]")
+      assert has_element?(local, "#dashboard-hourly-empty")
+      refute has_element?(local, "#dashboard-orders-by-hour-plot")
       refute has_element?(local, "#dashboard-order-heatmap")
       refute has_element?(local, "#statistics-heatmap-chart")
+    end
+
+    test "hourly comparison remains visible when only yesterday has orders", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["statistics.read"]))
+      insert(:staff_branch, staff: staff, branch: branch)
+      zone = Delivest.LocalTime.timezone(branch.id)
+      yesterday = Date.add(Delivest.LocalTime.today(zone), -1)
+      at = DateTime.new!(yesterday, ~T[12:00:00], zone) |> DateTime.shift_zone!("Etc/UTC")
+
+      Delivest.OrderFixtures.order_fixture(branch.id)
+      |> Ecto.Changeset.change(inserted_at: at)
+      |> Delivest.Repo.update!()
+
+      conn = init_test_session(conn, %{"staff_id" => staff.id})
+      {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
+
+      assert has_element?(view, "#dashboard-hourly-empty")
+      assert has_element?(view, "#dashboard-orders-by-hour-plot[data-chart*='yesterday_orders']")
     end
 
     test "all-branch dashboard includes only accessible branches", %{conn: conn} do
@@ -52,6 +75,14 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       {:ok, all, html} = live(conn, ~p"/staff/dashboard")
       assert has_element?(all, "#dashboard-orders-by-hour-plot[data-chart]")
       assert has_element?(all, "#dashboard-orders-by-hour-plot table")
+
+      assert has_element?(
+               all,
+               "#dashboard-branch-#{first.id} a[href='/staff/b/#{first.slug}/dashboard']"
+             )
+
+      assert has_element?(all, "#dashboard-branch-#{second.id} a[href*='status=created']")
+      refute has_element?(all, "#dashboard-branch-#{foreign.id}")
       assert has_element?(all, "#dashboard-order-#{a.id}")
       assert has_element?(all, "#dashboard-order-#{b.id}")
       refute has_element?(all, "#dashboard-order-#{c.id}")
@@ -64,6 +95,7 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       assert html =~ "300 ₽"
       refute html =~ "700 ₽"
       assert has_element?(all, "#dashboard-problem-orders", "1")
+      assert has_element?(all, "#dashboard-alert-problem a[href*='/staff/branches/select']")
 
       {:ok, branch_view, _} = live(conn, ~p"/staff/b/#{first}/dashboard")
       assert has_element?(branch_view, "#dashboard-order-#{a.id}")
@@ -117,8 +149,10 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
 
       conn = init_test_session(conn, %{"staff_id" => staff.id})
       {:ok, view, _} = live(conn, ~p"/staff/dashboard")
-      assert has_element?(view, "#dashboard-top-products-plot[data-chart]")
+      assert has_element?(view, "#dashboard-top-products-plot")
       assert has_element?(view, "#dashboard-product-#{shared.id}")
+      assert has_element?(view, "#dashboard-branch-#{first.id}")
+      refute has_element?(view, "#dashboard-branch-#{first.id} a[href*='problem=true']")
     end
 
     test "all-branch today uses each branch's local date", %{conn: conn} do
@@ -180,6 +214,8 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
 
       conn = init_test_session(conn, %{"staff_id" => staff.id})
       {:ok, view, _} = live(conn, ~p"/staff/dashboard")
+      assert has_element?(view, "#dashboard-branch-#{first.id} a[href*='problem=true']")
+      refute has_element?(view, "#dashboard-widget-revenue")
       assert Enum.all?(Enum.take(orders, 2), &(!has_element?(view, "#dashboard-order-#{&1.id}")))
       assert Enum.all?(Enum.drop(orders, 2), &has_element?(view, "#dashboard-order-#{&1.id}"))
     end
@@ -261,7 +297,8 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
       branch: branch
     } do
       {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/dashboard")
-      assert has_element?(lv, "#dashboard-alert-problem", "0")
+      assert has_element?(lv, "#dashboard-attention-empty")
+      refute has_element?(lv, "#dashboard-alert-problem")
 
       order = Delivest.OrderFixtures.order_fixture(branch.id, price: 10_000)
 

@@ -1047,7 +1047,7 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_action:b9984d8ee400843b:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_action:signature:08b9c8da4b5144de:1",
+      "id": "control:lib/delivest_web/live/staff/dashboard_live/editor.ex:dashboard_action:signature:05267d43269dea9d:1",
       "label": "{Gettext.gettext(DelivestWeb.Gettext, elem(Map.fetch!(@action_titles, id), 0))}",
       "operation": [
         "DashboardLayout.action_ids",
@@ -1056,23 +1056,13 @@
       "result": [],
       "rights": {
         "inline": [],
-        "module_references": [
-          "admin",
-          "clients.read",
-          "orders.cook",
-          "orders.create",
-          "orders.deliver",
-          "orders.read",
-          "products.read",
-          "statistics.network",
-          "statistics.read"
-        ]
+        "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:708",
+      "source": "lib/delivest_web/live/staff/dashboard_live/editor.ex:104",
       "target_section": "Overview"
     },
     {
-      "availability": "conditional :if in source",
+      "availability": "no inline :if",
       "confirmation": "no inline confirmation marker",
       "disposition": "retain control in Overview",
       "error_state": [
@@ -1082,8 +1072,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_add:a7e6fe3e404db9b6:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_add:signature:c69a971ce21ccef2:1",
-      "label": "{Gettext.gettext( DelivestWeb.Gettext, Map.fetch!(@widget_titles, id) )}",
+      "id": "control:lib/delivest_web/live/staff/dashboard_live/editor.ex:dashboard_add:signature:fc4757d83563bfbe:1",
+      "label": "Show",
       "operation": [
         "DashboardLayout.default",
         "Enum.any?",
@@ -1093,19 +1083,111 @@
       "result": [],
       "rights": {
         "inline": [],
-        "module_references": [
-          "admin",
-          "clients.read",
-          "orders.cook",
-          "orders.create",
-          "orders.deliver",
-          "orders.read",
-          "products.read",
-          "statistics.network",
-          "statistics.read"
-        ]
+        "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:693",
+      "source": "lib/delivest_web/live/staff/dashboard_live/editor.ex:74",
+      "target_section": "Overview"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Overview",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "dashboard_move",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:29493891cabdc7dd:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/dashboard_live/editor.ex:dashboard_move:signature:404c45d8deef9c66:1",
+      "label": "unlabelled/icon control at source anchor",
+      "operation": [
+        "Enum.at",
+        "Enum.filter",
+        "Enum.find_index",
+        "Enum.map"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/dashboard_live/editor.ex:136",
+      "target_section": "Overview"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Overview",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "dashboard_move",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:29493891cabdc7dd:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/dashboard_live/editor.ex:dashboard_move:signature:a1375d6b2c3ee47c:1",
+      "label": "unlabelled/icon control at source anchor",
+      "operation": [
+        "Enum.at",
+        "Enum.filter",
+        "Enum.find_index",
+        "Enum.map"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/dashboard_live/editor.ex:145",
+      "target_section": "Overview"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Overview",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "dashboard_remove",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_remove:69ed2d7d38ebdc5a:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/dashboard_live/editor.ex:dashboard_remove:signature:0333379111f9f92c:1",
+      "label": "unlabelled/icon control at source anchor",
+      "operation": [
+        "Enum.reject"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/dashboard_live/editor.ex:154",
+      "target_section": "Overview"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Overview",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "dashboard_remove",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_remove:69ed2d7d38ebdc5a:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/dashboard_live/editor.ex:dashboard_remove:signature:665bc14c576bbbec:1",
+      "label": "Hide",
+      "operation": [
+        "Enum.reject"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/dashboard_live/editor.ex:43",
       "target_section": "Overview"
     },
     {
@@ -1137,7 +1219,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:248",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:271",
       "target_section": "Overview"
     },
     {
@@ -1169,144 +1251,26 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:234",
-      "target_section": "Overview"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Overview",
-      "error_state": [
-        "no explicit :error in clause"
-      ],
-      "event": "dashboard_move",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:44f4704d8f863df1:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:signature:271e9fcef1fa3c1d:1",
-      "label": "unlabelled/icon control at source anchor",
-      "operation": [
-        "Enum.at",
-        "Enum.filter",
-        "Enum.find_index",
-        "Enum.map",
-        "Enum.reject",
-        "List.replace_at",
-        "Map.fetch!",
-        "Map.new"
-      ],
-      "result": [],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "admin",
-          "clients.read",
-          "orders.cook",
-          "orders.create",
-          "orders.deliver",
-          "orders.read",
-          "products.read",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:763",
-      "target_section": "Overview"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Overview",
-      "error_state": [
-        "no explicit :error in clause"
-      ],
-      "event": "dashboard_move",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:44f4704d8f863df1:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:signature:e4a58d33baf0d09c:1",
-      "label": "unlabelled/icon control at source anchor",
-      "operation": [
-        "Enum.at",
-        "Enum.filter",
-        "Enum.find_index",
-        "Enum.map",
-        "Enum.reject",
-        "List.replace_at",
-        "Map.fetch!",
-        "Map.new"
-      ],
-      "result": [],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "admin",
-          "clients.read",
-          "orders.cook",
-          "orders.create",
-          "orders.deliver",
-          "orders.read",
-          "products.read",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:755",
-      "target_section": "Overview"
-    },
-    {
-      "availability": "no inline :if",
-      "confirmation": "no inline confirmation marker",
-      "disposition": "retain control in Overview",
-      "error_state": [
-        "no explicit :error in clause"
-      ],
-      "event": "dashboard_remove",
-      "handler_clauses": [
-        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_remove:69ed2d7d38ebdc5a:1"
-      ],
-      "id": "control:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_remove:signature:9c25ced90317e867:1",
-      "label": "unlabelled/icon control at source anchor",
-      "operation": [
-        "Enum.reject"
-      ],
-      "result": [],
-      "rights": {
-        "inline": [],
-        "module_references": [
-          "admin",
-          "clients.read",
-          "orders.cook",
-          "orders.create",
-          "orders.deliver",
-          "orders.read",
-          "products.read",
-          "statistics.network",
-          "statistics.read"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:771",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:257",
       "target_section": "Overview"
     },
     {
       "availability": "conditional :if in source",
-      "confirmation": "confirmation marker in control",
+      "confirmation": "no inline confirmation marker",
       "disposition": "retain control in Overview",
       "error_state": [
-        "explicit :error branch/reference"
+        "no explicit :error in clause"
       ],
       "event": "dashboard_reset",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_reset:29658e3fb190d0b3:1"
+        "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_reset:fa0fa3577b517614:1"
       ],
       "id": "control:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_reset:dom:dashboard-reset:1",
       "label": "Reset to default",
       "operation": [
-        "DashboardLayout.reset"
+        "DashboardLayout.default"
       ],
-      "result": [
-        "put_flash"
-      ],
+      "result": [],
       "rights": {
         "inline": [],
         "module_references": [
@@ -1321,7 +1285,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:255",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:278",
       "target_section": "Overview"
     },
     {
@@ -1357,7 +1321,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:241",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:264",
       "target_section": "Overview"
     },
     {
@@ -11032,7 +10996,7 @@
       "error_state": "no explicit :error in clause",
       "event": "dashboard_action",
       "id": "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_action:b9984d8ee400843b:1",
-      "label": "{Gettext.gettext(DelivestWeb.Gettext, elem(Map.fetch!(@action_titles, id), 0))}",
+      "label": "event: dashboard_action",
       "operation": [
         "DashboardLayout.action_ids",
         "List.delete"
@@ -11052,7 +11016,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:399",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:431",
       "target_section": "Overview"
     },
     {
@@ -11084,7 +11048,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:358",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:390",
       "target_section": "Overview"
     },
     {
@@ -11111,7 +11075,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:312",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:335",
       "target_section": "Overview"
     },
     {
@@ -11138,7 +11102,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:307",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:330",
       "target_section": "Overview"
     },
     {
@@ -11167,7 +11131,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:291",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:314",
       "target_section": "Overview"
     },
     {
@@ -11194,7 +11158,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:304",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:327",
       "target_section": "Overview"
     },
     {
@@ -11203,14 +11167,14 @@
       "disposition": "retain operation; move control with Overview",
       "error_state": "no explicit :error in clause",
       "event": "dashboard_layout_change",
-      "id": "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_layout_change:e426977e04bf1e4f:1",
+      "id": "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_layout_change:852ad96d66cf115e:1",
       "label": "event: dashboard_layout_change",
       "operation": [
         "DashboardLayout.widget_limits",
         "Enum.all?",
-        "Enum.map",
+        "Enum.flat_map",
+        "Enum.map_reduce",
         "Enum.uniq_by",
-        "Map.fetch!",
         "Map.get",
         "Map.new",
         "MapSet.member?",
@@ -11231,7 +11195,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:317",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:340",
       "target_section": "Overview"
     },
     {
@@ -11240,17 +11204,13 @@
       "disposition": "retain operation; move control with Overview",
       "error_state": "no explicit :error in clause",
       "event": "dashboard_move",
-      "id": "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:44f4704d8f863df1:1",
+      "id": "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_move:29493891cabdc7dd:1",
       "label": "event: dashboard_move",
       "operation": [
         "Enum.at",
         "Enum.filter",
         "Enum.find_index",
-        "Enum.map",
-        "Enum.reject",
-        "List.replace_at",
-        "Map.fetch!",
-        "Map.new"
+        "Enum.map"
       ],
       "result": [],
       "rights": {
@@ -11267,7 +11227,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:419",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:451",
       "target_section": "Overview"
     },
     {
@@ -11296,23 +11256,21 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:384",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:416",
       "target_section": "Overview"
     },
     {
-      "availability": "conditional branch in handler clause",
+      "availability": "no inline conditional in handler clause",
       "confirmation": "no confirmation marker found in module",
       "disposition": "retain operation; move control with Overview",
-      "error_state": "explicit :error branch/reference",
+      "error_state": "no explicit :error in clause",
       "event": "dashboard_reset",
-      "id": "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_reset:29658e3fb190d0b3:1",
+      "id": "event:lib/delivest_web/live/staff/dashboard_live/index.ex:dashboard_reset:fa0fa3577b517614:1",
       "label": "{gettext(\"Reset to default\")}",
       "operation": [
-        "DashboardLayout.reset"
+        "DashboardLayout.default"
       ],
-      "result": [
-        "put_flash"
-      ],
+      "result": [],
       "rights": {
         "clause": [],
         "module_references": [
@@ -11327,7 +11285,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:466",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:499",
       "target_section": "Overview"
     },
     {
@@ -11358,7 +11316,7 @@
           "statistics.read"
         ]
       },
-      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:447",
+      "source": "lib/delivest_web/live/staff/dashboard_live/index.ex:480",
       "target_section": "Overview"
     },
     {

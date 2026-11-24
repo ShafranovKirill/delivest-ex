@@ -8,6 +8,7 @@ defmodule DelivestWeb.BranchSwitcher do
   attr :section, :string, default: nil
   attr :from, :string, default: nil
   attr :aggregate, :boolean, default: false
+  attr :aggregate_label, :string, default: nil
   attr :network_allowed, :boolean, default: true
 
   def branch_switcher(assigns) do
@@ -30,7 +31,7 @@ defmodule DelivestWeb.BranchSwitcher do
             do: assigns.current_branch.name,
             else:
               if(assigns.aggregate,
-                do: gettext("All accessible branches"),
+                do: assigns.aggregate_label || gettext("All accessible branches"),
                 else: gettext("Network")
               )
           ),
