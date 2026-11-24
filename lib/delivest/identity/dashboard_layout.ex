@@ -15,7 +15,7 @@ defmodule Delivest.Identity.DashboardLayout do
 
   @columns 12
   @max_y 120
-  @widget_ids ~w(attention quick_actions revenue orders avg_check in_work hourly cumulative_revenue latest_orders top_products)
+  @widget_ids ~w(attention quick_actions revenue orders avg_check in_work hourly cumulative_revenue latest_orders top_products branch_summary)
   @action_ids ~w(new_order orders statistics kitchen deliveries stop_list)
 
   @limits %{
@@ -28,7 +28,8 @@ defmodule Delivest.Identity.DashboardLayout do
     "hourly" => %{min_w: 4, min_h: 3, max_w: 12, max_h: 12},
     "cumulative_revenue" => %{min_w: 4, min_h: 3, max_w: 12, max_h: 12},
     "latest_orders" => %{min_w: 3, min_h: 3, max_w: 12, max_h: 12},
-    "top_products" => %{min_w: 3, min_h: 3, max_w: 12, max_h: 12}
+    "top_products" => %{min_w: 3, min_h: 3, max_w: 12, max_h: 12},
+    "branch_summary" => %{min_w: 3, min_h: 3, max_w: 12, max_h: 12}
   }
 
   @default_widgets [
@@ -40,7 +41,8 @@ defmodule Delivest.Identity.DashboardLayout do
     %{id: "in_work", x: 9, y: 2, w: 3, h: 2},
     %{id: "hourly", x: 0, y: 4, w: 8, h: 4},
     %{id: "latest_orders", x: 8, y: 4, w: 4, h: 4},
-    %{id: "top_products", x: 0, y: 8, w: 4, h: 4}
+    %{id: "top_products", x: 0, y: 8, w: 6, h: 4},
+    %{id: "branch_summary", x: 6, y: 8, w: 6, h: 4}
   ]
 
   def default, do: %{widgets: @default_widgets, actions: ~w(new_order orders statistics)}

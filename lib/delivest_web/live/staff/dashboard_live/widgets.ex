@@ -14,16 +14,25 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
     <%= case @id do %>
       <% "attention" -> %>
         <section id="dashboard-problem-orders" class="dashboard-widget-card border-warning/30">
-          <h2 class="dashboard-widget-title">
-            <%= if @data.problem_count == 0 and @data.created_count == 0 and @data.ready_count == 0 do %>
-              <.icon name="hero-check-circle" class="size-5 text-success" />{gettext(
-                "Everything is under control"
-              )}
-            <% else %>
-              <.icon name="hero-bell-alert" class="size-5 text-warning" />{gettext("Needs attention")}
-            <% end %>
+          <h2
+            :if={@data.problem_count == 0 and @data.created_count == 0 and @data.ready_count == 0}
+            id="dashboard-attention-empty"
+            class="dashboard-widget-title"
+          >
+            <.icon name="hero-check-circle" class="size-5 text-success" />{gettext(
+              "No orders need attention"
+            )}
           </h2>
-          <div class="grid grid-cols-3 gap-2 mt-4">
+          <h2
+            :if={@data.problem_count + @data.created_count + @data.ready_count > 0}
+            class="dashboard-widget-title"
+          >
+            <.icon name="hero-bell-alert" class="size-5 text-warning" />{gettext("Needs attention")}
+          </h2>
+          <div
+            :if={@data.problem_count + @data.created_count + @data.ready_count > 0}
+            class="grid grid-cols-3 gap-2 mt-3"
+          >
             <.attention_count
               id="dashboard-alert-problem"
               label={gettext("Problem orders")}
@@ -32,13 +41,13 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
             />
             <.attention_count
               id="dashboard-alert-waiting"
-              label={gettext("To confirm")}
+              label={gettext("Awaiting confirmation")}
               count={@data.created_count}
               href={@data.created_href}
             />
             <.attention_count
               id="dashboard-alert-ready"
-              label={gettext("Ready")}
+              label={gettext("Ready for handoff")}
               count={@data.ready_count}
               href={@data.ready_href}
             />
@@ -59,47 +68,65 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           </p>
         </section>
       <% "revenue" -> %>
-        <.stat_card
+        <.dashboard_kpi
           icon="hero-banknotes"
           label={gettext("Revenue today")}
+          change={@data.revenue_change}
           delta={@data.revenue_delta}
           hint={@data.revenue_hint}
-          class="h-full"
+          money
         >
           {OrderHelpers.money(@data.summary.revenue)}
-        </.stat_card>
+        </.dashboard_kpi>
       <% "orders" -> %>
-        <.stat_card
+        <.dashboard_kpi
           icon="hero-shopping-bag"
           label={gettext("Orders today")}
+          change={@data.orders_change}
           delta={@data.orders_delta}
           hint={@data.orders_hint}
-          class="h-full"
         >
           {@data.summary.orders_count}
-        </.stat_card>
+        </.dashboard_kpi>
       <% "avg_check" -> %>
-        <.stat_card
+        <.dashboard_kpi
           icon="hero-receipt-percent"
           label={gettext("Average check")}
+          change={@data.avg_change}
           delta={@data.avg_delta}
-          class="h-full"
+          money
         >
           {OrderHelpers.money(@data.summary.avg_check)}
-        </.stat_card>
+        </.dashboard_kpi>
       <% "in_work" -> %>
-        <.stat_card
+        <.dashboard_kpi
           icon="hero-fire"
           label={gettext("In work now")}
+          change={nil}
           hint={@data.cancelled_hint}
-          class="h-full"
         >
           {@data.in_work}
-        </.stat_card>
+        </.dashboard_kpi>
       <% "hourly" -> %>
         <section class="dashboard-widget-card">
-          <h2 class="dashboard-widget-title">{gettext("Orders by hour")}</h2>
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="dashboard-widget-title">{gettext("Orders by hour")}</h2>
+            <.link
+              :if={@data.statistics_action}
+              id="dashboard-hourly-statistics"
+              navigate={@data.statistics_action && @data.statistics_action.href}
+              class="text-xs text-primary hover:underline"
+            >{gettext("Statistics")}</.link>
+          </div>
+          <p
+            :if={@data.summary.orders_count == 0}
+            id="dashboard-hourly-empty"
+            class="mt-3 text-sm text-base-content/60"
+          >
+            {gettext("No orders yet today")}
+          </p>
           <.analytics_chart
+            :if={!@data.no_hourly_sales}
             id="dashboard-orders-by-hour-plot"
             label={gettext("Orders by hour")}
             height="h-52"
@@ -111,14 +138,20 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
                 <table class="table table-xs w-full">
                   <thead>
                     <tr>
-                      <th>{gettext("Time")}</th><th>{gettext("Orders")}</th><th>
+                      <th>{gettext("Time")}</th><th>{gettext("Today")}</th><th>
+                        {gettext("Yesterday")}
+                      </th><th>
                         {gettext("Revenue")} ({gettext("Before refunds")})
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr :for={row <- @data.hourly}>
-                      <td>{row.hour}:00</td><td>{row.orders}</td><td>
+                      <td>{String.pad_leading(to_string(row.hour), 2, "0")}:00</td><td>
+                        {Enum.at(@data.hourly_chart.orders, row.hour) || "—"}
+                      </td><td>
+                        {Enum.at(@data.yesterday_hourly, row.hour).orders}
+                      </td><td>
                         {OrderHelpers.money(row.revenue)}
                       </td>
                     </tr>
@@ -161,37 +194,29 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
       <% "top_products" -> %>
         <section class="dashboard-widget-card">
           <h2 class="dashboard-widget-title">{gettext("Best sellers today")}</h2>
-          <p :if={@data.top_products == []} class="text-sm text-base-content/50">
+          <p
+            :if={@data.top_products == []}
+            id="dashboard-top-products-empty"
+            class="mt-3 text-sm text-base-content/60"
+          >
             {gettext("No sales yet today")}
           </p>
-          <.analytics_chart
+          <ol
             :if={@data.top_products != []}
             id="dashboard-top-products-plot"
-            label={gettext("Best sellers today")}
-            data={@data.products_chart}
+            class="mt-3 divide-y divide-base-200"
           >
-            <details class="text-xs">
-              <summary class="cursor-pointer">{gettext("Chart data")}</summary>
-              <div class="max-h-48 overflow-auto">
-                <table class="table table-xs w-full">
-                  <thead>
-                    <tr>
-                      <th>{gettext("Product")}</th><th>
-                        {gettext("Revenue")} ({gettext("Before refunds")})
-                      </th><th>{gettext("Quantity")}</th><th>{gettext("Share of revenue")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr :for={row <- @data.top_products} id={"dashboard-product-#{row.product_id}"}>
-                      <td>{row.title}</td><td>{OrderHelpers.money(row.revenue)}</td><td>
-                        {row.quantity}
-                      </td><td>{row.share}%</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          </.analytics_chart>
+            <li
+              :for={{row, rank} <- Enum.with_index(@data.top_products, 1)}
+              id={"dashboard-product-#{row.product_id}"}
+              class="flex items-center gap-3 py-2 text-sm"
+            >
+              <span class="w-5 shrink-0 tabular-nums text-base-content/40">{rank}</span>
+              <span class="min-w-0 flex-1 truncate font-medium">{row.title}</span>
+              <span class="shrink-0 tabular-nums text-base-content/60">{row.quantity} ×</span>
+              <span class="shrink-0 tabular-nums font-semibold">{OrderHelpers.money(row.revenue)}</span>
+            </li>
+          </ol>
         </section>
       <% "latest_orders" -> %>
         <section class="dashboard-widget-card !p-0 overflow-hidden">
@@ -205,7 +230,13 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
               >{OrderHelpers.status_label(status)}: {Map.get(@data.status_counts, status)}</span>
             </div>
           </div>
-          <.empty_state :if={@data.latest_orders == []} title={gettext("No orders yet today")} />
+          <p
+            :if={@data.latest_orders == []}
+            id="dashboard-latest-empty"
+            class="p-4 text-sm text-base-content/60"
+          >
+            {gettext("No orders yet today")}
+          </p>
           <ul
             :if={@data.latest_orders != []}
             class="divide-y divide-base-200 max-h-full overflow-auto"
@@ -213,7 +244,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
             <li
               :for={order <- @data.latest_orders}
               id={"dashboard-order-#{order.id}"}
-              class="relative p-3 space-y-1 hover:bg-base-200/60 transition-colors"
+              class="relative px-3 py-2 hover:bg-base-200/60 transition-colors"
             >
               <div class="flex items-center gap-2 min-w-0">
                 <.link
@@ -221,8 +252,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
                     ~p"/staff/b/#{Map.fetch!(@data.branch_by_id, order.branch_id)}/orders/#{order.id}"
                   }
                   class="font-mono font-bold after:absolute after:inset-0"
-                >#{Order.short_number(order)}</.link><span class="text-xs text-base-content/60 tabular-nums">{OrderHelpers.local_time(
-                  order.inserted_at
+                >#{Order.short_number(order)}</.link><span class="text-xs text-base-content/60 tabular-nums">{OrderHelpers.order_time(
+                  order.inserted_at,
+                  order.branch_id
                 )}</span><span class={[
                   "badge badge-sm border",
                   OrderHelpers.status_color(order.status)
@@ -246,7 +278,95 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
             </li>
           </ul>
         </section>
+      <% "branch_summary" -> %>
+        <section id="dashboard-branch-summary" class="dashboard-widget-card">
+          <h2 class="dashboard-widget-title">{gettext("Branches today")}</h2>
+          <div class="mt-2 space-y-1.5">
+            <div
+              :for={branch <- @data.branch_summary}
+              id={"dashboard-branch-#{branch.id}"}
+              class="rounded-lg border border-base-200 bg-base-200/30 p-2.5"
+            >
+              <.link
+                navigate={branch.dashboard_href}
+                class="font-semibold text-primary hover:underline"
+              >{branch.name}</.link>
+              <div class="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3 xl:grid-cols-5">
+                <div :if={@data.can_stats} class="min-w-0">
+                  <span class="block text-base-content/55">{gettext("Revenue")}</span>
+                  <span class="font-semibold tabular-nums">{OrderHelpers.money(branch.revenue)}</span>
+                </div>
+                <div :if={@data.can_stats}>
+                  <span class="block text-base-content/55">{gettext("Orders")}</span>
+                  <span class="font-semibold tabular-nums">{branch.orders}</span>
+                </div>
+                <div :if={@data.can_orders}>
+                  <span class="block text-base-content/55">{gettext("Problem orders")}</span>
+                  <.link
+                    navigate={branch.problem_href}
+                    class="font-semibold tabular-nums text-primary hover:underline"
+                  >{branch.problems}</.link>
+                </div>
+                <div :if={@data.can_orders}>
+                  <span class="block text-base-content/55">{gettext("Awaiting confirmation")}</span>
+                  <.link
+                    navigate={branch.created_href}
+                    class="font-semibold tabular-nums text-primary hover:underline"
+                  >{branch.created}</.link>
+                </div>
+                <div :if={@data.can_orders}>
+                  <span class="block text-base-content/55">{gettext("Ready for handoff")}</span>
+                  <.link
+                    navigate={branch.ready_href}
+                    class="font-semibold tabular-nums text-primary hover:underline"
+                  >{branch.ready}</.link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
     <% end %>
+    """
+  end
+
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :change, :any, required: true
+  attr :delta, :any, default: nil
+  attr :hint, :string, default: nil
+  attr :money, :boolean, default: false
+  slot :inner_block, required: true
+
+  defp dashboard_kpi(assigns) do
+    ~H"""
+    <section class="dashboard-widget-card h-full flex flex-col justify-center gap-1">
+      <div class="flex items-center gap-2 text-sm text-base-content/65">
+        <.icon name={@icon} class="size-4 text-primary" />
+        <span>{@label}</span>
+      </div>
+      <p class="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
+        {render_slot(@inner_block)}
+      </p>
+      <p class="min-h-4 text-xs text-base-content/60">
+        <span
+          :if={is_number(@delta)}
+          class={[
+            @delta > 0 && "text-success",
+            @delta < 0 && "text-error",
+            "font-medium tabular-nums"
+          ]}
+        >{if @delta > 0, do: "+"}{@delta}%</span>
+        <span
+          :if={is_nil(@delta) and is_number(@change) and @change != 0}
+          class={[
+            @change > 0 && "text-success",
+            @change < 0 && "text-error",
+            "font-medium tabular-nums"
+          ]}
+        >{if @change > 0, do: "+"}{if @money, do: OrderHelpers.money(@change), else: @change}</span>
+        <span :if={@hint} class="ml-1">{@hint}</span>
+      </p>
+    </section>
     """
   end
 

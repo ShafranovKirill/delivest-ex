@@ -88,8 +88,7 @@ function toolbox(data, colors, zoomable, top = 0) {
       } : {}),
       saveAsImage: {
         title: labels.image,
-        name: data.kind === "products" ? "best-sellers" :
-          data.kind === "hourly" ? "orders-by-hour" :
+        name: data.kind === "hourly" ? "orders-by-hour" :
           data.kind === "cumulative" ? "revenue-through-day" :
           data.kind === "heatmap" ? "orders-heatmap" :
           data.kind === "ranking" ? "branch-ranking" :
@@ -176,11 +175,13 @@ function salesOption(data, colors) {
 }
 
 function hourlyOption(data, colors) {
+  const comparison = Array.isArray(data.yesterday_orders) && data.yesterday_orders.length === data.hours.length;
   return {
     animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
     aria: { enabled: true, label: { description: data.title } },
     textStyle: { color: colors.text },
-    grid: { left: 10, right: 12, top: 42, bottom: 32, containLabel: true },
+    grid: { left: 10, right: 12, top: comparison ? 62 : 42, bottom: 32, containLabel: true },
+    legend: comparison ? { show: true, top: 0, textStyle: { color: colors.text } } : { show: false },
     toolbox: toolbox(data, colors, false),
     tooltip: {
       className: "echarts-tooltip",
@@ -192,13 +193,16 @@ function hourlyOption(data, colors) {
         const point = params[0];
         if (!point) return "";
         const index = point.dataIndex;
-        return `${escapeHtml(data.hours[index])}:00<br>${escapeHtml(data.orders_label)}: <strong>${escapeHtml(count(data.orders[index], data.locale))}</strong><br>${escapeHtml(data.revenue_label)}: ${escapeHtml(data.revenue[index])}`;
+        const today = data.orders[index] == null ? "—" : count(data.orders[index], data.locale);
+        const yesterday = comparison ? `<br>${escapeHtml(data.yesterday_label)}: <strong>${escapeHtml(count(data.yesterday_orders[index], data.locale))}</strong>` : "";
+        const revenue = data.orders[index] == null ? "" : `<br>${escapeHtml(data.revenue_label)}: ${escapeHtml(data.revenue[index])}`;
+        return `${String(data.hours[index]).padStart(2, "0")}:00<br>${escapeHtml(data.today_label || data.orders_label)}: <strong>${escapeHtml(today)}</strong>${revenue}${yesterday}`;
       },
     },
     xAxis: {
       type: "category",
-      data: data.hours.map((hour) => String(hour)),
-      axisLabel: { interval: 2, color: colors.text },
+      data: data.hours.map((hour) => `${String(hour).padStart(2, "0")}:00`),
+      axisLabel: { interval: 2, color: colors.text, hideOverlap: true },
       axisLine: { lineStyle: { color: colors.grid } },
       axisTick: { show: false },
     },
@@ -209,7 +213,12 @@ function hourlyOption(data, colors) {
       axisLabel: { color: colors.text, formatter: (value) => count(value, data.locale) },
       splitLine: { lineStyle: { color: colors.grid } },
     },
-    series: [{ name: data.orders_label, type: "bar", data: data.orders, color: colors.primary, barMaxWidth: 22 }],
+    series: [
+      { name: data.today_label || data.orders_label, type: "bar", data: data.orders, color: colors.primary, barMaxWidth: 22 },
+      ...(comparison ? [{ name: data.yesterday_label, type: "line", data: data.yesterday_orders,
+        color: colors.secondary, showSymbol: false, smooth: true,
+        lineStyle: { width: 2, type: "dashed", opacity: 0.65 } }] : []),
+    ],
   };
 }
 
@@ -232,44 +241,6 @@ function cumulativeOption(data, colors) {
     xAxis: { type: "category", data: data.hours.map(String), axisLabel: { interval: 2, color: colors.text }, axisLine: { lineStyle: { color: colors.grid } }, axisTick: { show: false } },
     yAxis: { type: "value", min: 0, axisLabel: { color: colors.text, formatter: (value) => money(value, data.locale) }, splitLine: { lineStyle: { color: colors.grid } } },
     series: [{ name: data.revenue_label, type: "line", smooth: true, showSymbol: false, data: data.values, color: colors.primary, lineStyle: { width: 2.5 }, areaStyle: { opacity: 0.09 } }],
-  };
-}
-
-function productsOption(data, colors) {
-  return {
-    animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
-    aria: { enabled: true, label: { description: data.title } },
-    textStyle: { color: colors.text },
-    grid: { left: 12, right: 32, top: 42, bottom: 25, containLabel: true },
-    toolbox: toolbox(data, colors, false),
-    tooltip: {
-      className: "echarts-tooltip",
-      trigger: "item",
-      confine: true,
-      backgroundColor: colors.surface,
-      textStyle: { color: colors.text },
-      formatter(params) {
-        const product = data.products[params.dataIndex];
-        if (!product) return "";
-        return `<strong>${escapeHtml(product.name)}</strong><br>${escapeHtml(data.share_label)}: ${escapeHtml(count(product.share, data.locale))}%<br>${escapeHtml(data.quantity_label)}: ${escapeHtml(count(product.quantity, data.locale))}<br>${escapeHtml(data.revenue_label)}: ${escapeHtml(product.revenue)}`;
-      },
-    },
-    xAxis: {
-      type: "value",
-      min: 0,
-      max: 100,
-      axisLabel: { color: colors.text, formatter: "{value}%" },
-      splitLine: { lineStyle: { color: colors.grid } },
-    },
-    yAxis: {
-      type: "category",
-      inverse: true,
-      data: data.products.map((product) => product.name),
-      axisLabel: { color: colors.text, width: 105, overflow: "truncate" },
-      axisLine: { lineStyle: { color: colors.grid } },
-      axisTick: { show: false },
-    },
-    series: [{ name: data.share_label, type: "bar", data: data.products.map((product) => product.share), color: colors.primary, barMaxWidth: 24 }],
   };
 }
 
@@ -434,7 +405,7 @@ function options(data) {
   if (data.kind === "ranking") return rankingOption(data, colors);
   if (data.kind === "funnel") return funnelOption(data, colors);
   if (data.kind === "delivery") return deliveryOption(data, colors);
-  return productsOption(data, colors);
+  throw new Error(`Unsupported analytics chart kind: ${data.kind}`);
 }
 
 export const AnalyticsChart = {
@@ -448,9 +419,10 @@ export const AnalyticsChart = {
       }
       if (typeof data?.date === "string") this.pushEvent("delivery_day_detail", { day: data.date });
     });
-    this.chart.on("click", ({ dataIndex }) => {
+    this.chart.on("click", ({ dataIndex, seriesIndex }) => {
       const chartData = JSON.parse(this.el.dataset.chart);
-      if (chartData.kind === "hourly" && chartData.drilldown && Number.isInteger(dataIndex)) {
+      if (chartData.kind === "hourly" && chartData.drilldown && seriesIndex === 0 &&
+          Number.isInteger(dataIndex) && chartData.orders[dataIndex] != null) {
         this.pushEvent("dashboard_hour", { hour: chartData.hours[dataIndex] });
       }
     });

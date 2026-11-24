@@ -13138,3 +13138,77 @@ msgstr "By sales"
 
 msgid "Product limit"
 msgstr "Product limit"
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:269
+#, elixir-autogen, elixir-format
+msgid "Branches today"
+msgstr "Branches today"
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:20
+#, elixir-autogen, elixir-format
+msgid "Widgets"
+msgstr "Widgets"
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:22
+#, elixir-autogen, elixir-format
+msgid "Drag a card by its handle. Resize it from the lower corner."
+msgstr "Drag a card by its handle. Resize it from the lower corner."
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:25
+#, elixir-autogen, elixir-format
+msgid "Use the arrows on cards to change their order."
+msgstr "Use the arrows on cards to change their order."
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:28
+#, elixir-autogen, elixir-format
+msgid "This layout is shared across all branches. Changes take effect after you save."
+msgstr "This layout is shared across all branches. Changes take effect after you save."
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:32
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:34
+#, elixir-autogen, elixir-format
+msgid "Visible widgets"
+msgstr "Visible widgets"
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:63
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:65
+#, elixir-autogen, elixir-format
+msgid "Hidden widgets"
+msgstr "Hidden widgets"
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:59
+#, elixir-autogen, elixir-format
+msgid "No visible widgets"
+msgstr "No visible widgets"
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:90
+#, elixir-autogen, elixir-format
+msgid "All widgets are visible"
+msgstr "All widgets are visible"
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:51
+#, elixir-autogen, elixir-format
+msgid "Hide"
+msgstr "Hide"
+
+#: lib/delivest_web/live/staff/dashboard_live/editor.ex:101
+#, elixir-autogen, elixir-format
+msgid "Choose which shortcuts appear on the overview."
+msgstr "Choose which shortcuts appear on the overview."
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:23
+#, elixir-autogen, elixir-format
+msgid "No orders need attention"
+msgstr "No orders need attention"
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:44
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:311
+#, elixir-autogen, elixir-format
+msgid "Awaiting confirmation"
+msgstr "Awaiting confirmation"
+
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:50
+#: lib/delivest_web/live/staff/dashboard_live/widgets.ex:318
+#, elixir-autogen, elixir-format
+msgid "Ready for handoff"
+msgstr "Ready for handoff"
