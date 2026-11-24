@@ -3,7 +3,7 @@ defmodule Delivest.Integrations.Dadata do
 
   alias Delivest.{Identity, Repo}
   alias Delivest.Integrations.Dadata.{Api, Settings}
-  alias Delivest.Integrations.Health
+  alias Delivest.Integrations.{Health, StaffAccess}
 
   @cache :geo_cache
   @cache_ttl :timer.hours(24 * 7)
@@ -68,7 +68,7 @@ defmodule Delivest.Integrations.Dadata do
     end
   end
 
-  def active?, do: Settings.active?(get_settings())
+  def active?, do: StaffAccess.allowed?(:dadata) and Settings.active?(get_settings())
 
   defp normalize(text) do
     text
@@ -89,11 +89,13 @@ defmodule Delivest.Integrations.Dadata do
   end
 
   defp load(request) do
-    with {:ok, settings} <- fetch_settings(),
+    with true <- StaffAccess.allowed?(:dadata),
+         {:ok, settings} <- fetch_settings(),
          :ok <- ensure_available(),
          {:ok, addresses} <- request.(settings) do
       {:commit, addresses, expire: @cache_ttl}
     else
+      false -> {:ignore, {:error, :dadata_not_configured}}
       :unavailable -> {:ignore, {:error, :dadata_unavailable}}
       {:error, reason} = error -> {:ignore, failed(error, reason)}
     end

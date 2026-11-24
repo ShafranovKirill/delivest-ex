@@ -4,6 +4,7 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
   import Delivest.YandexEdaFixtures
 
   alias Delivest.Integrations.YandexEda
+  alias Delivest.Features.Gate
   alias Delivest.Net.ProductStop
   alias Delivest.Repo
 
@@ -25,6 +26,26 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
   end
 
   describe "token" do
+    test "issued token and token endpoint stop working when the integration is disabled",
+         %{conn: conn, anonymous: anonymous, settings: settings} do
+      Repo.insert!(
+        %Gate{feature: "integration_yandex_eda", scope_key: "franchise", enabled: false},
+        on_conflict: {:replace, [:enabled]},
+        conflict_target: [:feature, :scope_key]
+      )
+
+      assert %{"reason" => _} = conn |> get(@base <> "/restaurants") |> json_response(401)
+
+      assert [_ | _] =
+               anonymous
+               |> post(@base <> "/security/oauth/token", %{
+                 "client_id" => settings.client_id,
+                 "client_secret" => settings.client_secret,
+                 "grant_type" => "client_credentials"
+               })
+               |> json_response(400)
+    end
+
     test "client credentials get a bearer token", %{anonymous: conn, settings: settings} do
       body =
         conn

@@ -1,7 +1,7 @@
 defmodule Delivest.Loyalty do
   import Ecto.Query
 
-  alias Delivest.{Audit, Franchise, Gateway, Identity, Repo}
+  alias Delivest.{Audit, Features, Franchise, Gateway, Identity, Repo}
   alias Delivest.Franchise.Settings, as: FranchiseSettings
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.{BranchInfo, LoyaltySettings}
@@ -50,7 +50,9 @@ defmodule Delivest.Loyalty do
   end
 
   def enabled?(%Branch{} = branch),
-    do: settings(branch).enabled and Gateway.own?(branch, :loyalty)
+    do:
+      Features.enabled?("loyalty", {:branch, branch.id}) and settings(branch).enabled and
+        Gateway.own?(branch, :loyalty)
 
   def enabled?(branch_id) when is_binary(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
@@ -222,6 +224,10 @@ defmodule Delivest.Loyalty do
   def spend(%Order{client_id: nil}), do: {:error, :points_unavailable}
 
   def spend(%Order{} = order) do
+    if enabled?(order.branch_id), do: spend_enabled(order), else: {:error, :points_unavailable}
+  end
+
+  defp spend_enabled(%Order{} = order) do
     Repo.transaction(fn ->
       lock_account(order.client_id)
 

@@ -196,7 +196,8 @@ defmodule Delivest.Net.Products do
   end
 
   def import_products(staff, branch_id, rows) do
-    if Identity.authorize(staff, "products.create", branch_id) == :ok do
+    if Delivest.Features.enabled?("product_import", {:branch, branch_id}) and
+         Identity.authorize(staff, "products.create", branch_id) == :ok do
       Repo.transaction(fn ->
         {products, _categories} =
           Enum.map_reduce(rows, %{}, &import_row(staff, branch_id, &1, &2))

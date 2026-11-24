@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   alias Delivest.Identity.DashboardLayout
   alias Delivest.Oms.{OrderAttention, Orders}
 
-  alias Delivest.{Analytics, Couriers, Gateway, Identity, LocalTime}
+  alias Delivest.{Analytics, Couriers, Features, Gateway, Identity, LocalTime}
   alias Delivest.Oms.Kitchen
   alias DelivestWeb.Staff.DashboardLive.DayLabel
   alias DelivestWeb.Staff.DashboardLive.Editor
@@ -26,7 +26,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
      socket
      |> assign(
        page_title: gettext("Dashboard"),
-       can_stats: Identity.can?(staff, "statistics.read"),
+       can_stats:
+         Identity.can?(staff, "statistics.read") and
+           Features.enabled?("analytics_basic", dashboard_scope(socket)),
        can_orders: Identity.can?(staff, "orders.read"),
        can_create_order: Identity.can?(staff, "orders.create"),
        can_clients: Identity.can?(staff, "clients.read"),
@@ -45,6 +47,14 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
 
   @impl true
   def handle_info({Orders, _event, _order}, socket), do: {:noreply, schedule_reload(socket)}
+
+  def handle_info(:features_changed, socket) do
+    can_stats =
+      Identity.can?(socket.assigns.current_staff, "statistics.read") and
+        Features.enabled?("analytics_basic", dashboard_scope(socket))
+
+    {:noreply, socket |> assign(can_stats: can_stats) |> load()}
+  end
 
   def handle_info(:reload, socket) do
     {:noreply, socket |> assign(reload_scheduled: false) |> load()}
@@ -68,7 +78,9 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
        staff_branches: branches,
        dashboard_branches: branches,
        branch_by_id: Map.new(branches, &{&1.id, &1}),
-       can_stats: Identity.can?(staff, "statistics.read"),
+       can_stats:
+         Identity.can?(staff, "statistics.read") and
+           Features.enabled?("analytics_basic", dashboard_scope(socket)),
        can_orders: Identity.can?(staff, "orders.read"),
        can_create_order: Identity.can?(staff, "orders.create"),
        can_clients: Identity.can?(staff, "clients.read"),
@@ -79,6 +91,13 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
   end
 
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp dashboard_scope(socket) do
+    case socket.assigns[:current_branch] do
+      %{id: id} -> {:branch, id}
+      _ -> :franchise
+    end
+  end
 
   defp schedule_reload(%{assigns: %{reload_scheduled: true}} = socket), do: socket
 
@@ -553,10 +572,13 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
           assigns.can_stats
 
         id == "kitchen" ->
-          assigns.can_kitchen and Kitchen.working?(assigns.current_branch)
+          assigns.can_kitchen and
+            Features.enabled?("kitchen", {:branch, assigns.current_branch.id}) and
+            Kitchen.working?(assigns.current_branch)
 
         id == "deliveries" ->
-          Identity.can?(assigns.current_staff, "orders.deliver") and
+          Features.enabled?("couriers", {:branch, assigns.current_branch.id}) and
+            Identity.can?(assigns.current_staff, "orders.deliver") and
             Gateway.own?(assigns.current_branch, :couriers) and
             (Couriers.own_enabled?(assigns.current_branch.id) or
                Identity.can?(assigns.current_staff, "admin") or

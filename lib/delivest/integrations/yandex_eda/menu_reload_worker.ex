@@ -4,7 +4,7 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadWorker do
     max_attempts: 3,
     unique: [period: 30, states: [:available, :scheduled]]
 
-  alias Delivest.Integrations.{Journal, YandexEda}
+  alias Delivest.Integrations.{Journal, StaffAccess, YandexEda}
   alias Delivest.Integrations.YandexEda.PushApi
 
   @impl Oban.Worker
@@ -28,6 +28,6 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadWorker do
 
   defp current?(branch_id, generation) do
     current = YandexEda.get_branch_settings(branch_id)
-    current.enabled and current.generation == generation
+    StaffAccess.allowed?(:yandex_eda) and current.enabled and current.generation == generation
   end
 end

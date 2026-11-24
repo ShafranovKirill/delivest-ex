@@ -4,6 +4,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         notification_capabilities: capabilities,
         analytics_capabilities: analytics,
         links_capabilities: links,
+        optional_capabilities: optional,
         delivery_settings: delivery,
         payment_ready: payment_ready,
         loyalty_policy: loyalty_policy,
@@ -11,7 +12,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         timezones: timezones
       }) do
     prepared =
-      {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance}
+      {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional}
 
     %{
       data:
@@ -24,6 +25,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         notification_capabilities: capabilities,
         analytics_capabilities: analytics,
         links_capabilities: links,
+        optional_capabilities: optional,
         delivery_settings: delivery,
         payment_ready: payment_ready,
         loyalty_policy: loyalty_policy,
@@ -37,7 +39,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
           capabilities,
           analytics,
           links,
-          {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance}
+          {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional}
         )
     }
   end
@@ -101,7 +103,12 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     }
   end
 
-  defp loyalty(%{loyalty: %Delivest.Identity.Branch.LoyaltySettings{} = loyalty}, branch, policy) do
+  defp loyalty(
+         %{loyalty: %Delivest.Identity.Branch.LoyaltySettings{} = loyalty},
+         branch,
+         policy,
+         gate_enabled?
+       ) do
     loyalty = %{
       loyalty
       | per_rubles: policy.per_rubles,
@@ -109,7 +116,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
         expire_days: policy.expire_days
     }
 
-    enabled = loyalty.enabled and Delivest.Gateway.own?(branch, :loyalty)
+    enabled = gate_enabled? and loyalty.enabled and Delivest.Gateway.own?(branch, :loyalty)
 
     %{
       enabled: enabled,
@@ -121,7 +128,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
     }
   end
 
-  defp loyalty(_info, _branch, _policy),
+  defp loyalty(_info, _branch, _policy, _gate_enabled?),
     do: %{
       enabled: false,
       per_rubles: nil,
@@ -149,7 +156,7 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
          capabilities,
          analytics,
          links,
-         {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance}
+         {delivery, payment_ready, loyalty_policy, timezones, franchise_maintenance, optional}
        ) do
     %{
       id: info.id,
@@ -172,10 +179,14 @@ defmodule DelivestWeb.Client.Branch.BranchJSON do
       fulfillment_methods: Delivest.Identity.Branch.FulfillmentSettings.enabled(info.fulfillment),
       delivery: delivery_settings(branch.id, delivery),
       payment_methods: payment_methods(info, payment_ready),
-      loyalty: loyalty(info, branch, loyalty_policy),
+      loyalty:
+        loyalty(info, branch, loyalty_policy, MapSet.member?(optional["loyalty"], branch.id)),
       notifications_enabled: MapSet.member?(capabilities, branch.id),
       analytics_funnel_enabled: MapSet.member?(analytics, branch.id),
       analytics_links_enabled: MapSet.member?(links, branch.id),
+      stocks_enabled: MapSet.member?(optional["stocks"], branch.id),
+      promotions_enabled: MapSet.member?(optional["promotions"], branch.id),
+      couriers_enabled: MapSet.member?(optional["couriers"], branch.id),
       working_hours: info.working_hours || %{},
       special_hours: info.special_hours || %{},
       vk_url: info.vk_url,

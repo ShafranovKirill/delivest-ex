@@ -3,12 +3,13 @@ defmodule Delivest.Integrations.Availability do
 
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Crm.{BranchSettings, Registry}
+  alias Delivest.Integrations.StaffAccess
 
   def crm(%BranchSettings{} = settings, provider) do
     provider = normalize(provider)
     selected? = settings.provider == provider
     configured? = Crm.configured?(settings, provider)
-    desired? = settings.enabled == true and selected?
+    desired? = settings.enabled == true and selected? and StaffAccess.allowed?(provider)
     orders? = desired? and configured? and (settings.sources || []) != []
     catalog? = desired? and configured? and provider == :frontpad
     stops? = desired? and configured? and stops_enabled?(settings, provider)

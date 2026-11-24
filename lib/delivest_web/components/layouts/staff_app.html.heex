@@ -63,6 +63,7 @@
   } />
 
   <DelivestWeb.StaffSidebar.staff_sidebar
+    capability_revision={assigns[:capability_revision] || 0}
     current_staff={@current_staff}
     current_branch={assigns[:current_branch]}
     scope_branch={actual_scope_branch}
@@ -90,6 +91,7 @@
         return_source={section_return}
       />
       <DelivestWeb.StaffNav.local_navigation
+        capability_revision={assigns[:capability_revision] || 0}
         staff={@current_staff}
         branch={if chooser_path, do: nil, else: assigns[:current_branch]}
         navigation_branch={section_branch}

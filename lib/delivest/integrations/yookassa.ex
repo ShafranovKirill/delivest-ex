@@ -1,9 +1,10 @@
 defmodule Delivest.Integrations.Yookassa do
   import Ecto.Query
   alias Delivest.{Identity, Repo}
-  alias Delivest.Integrations.Health
+  alias Delivest.Integrations.{Health, StaffAccess}
   alias Delivest.Integrations.Health.Status
   alias Delivest.Integrations.Yookassa.{Api, Settings}
+  alias Delivest.Features.Gate
 
   def get_settings, do: Repo.one(Settings) || %Settings{}
 
@@ -37,7 +38,7 @@ defmodule Delivest.Integrations.Yookassa do
   def configured?, do: Settings.complete?(get_settings())
 
   def ready? do
-    configured?() and
+    StaffAccess.allowed?(:yookassa) and configured?() and
       match?(
         %{status: :ok, checked_at: checked_at} when not is_nil(checked_at),
         Health.get(:yookassa, nil)
@@ -50,9 +51,12 @@ defmodule Delivest.Integrations.Yookassa do
            from s in Settings,
              left_join: h in Status,
              on: h.provider == "yookassa" and is_nil(h.branch_id),
-             select: {s, h.status, h.checked_at}
+             left_join: g in Gate,
+             on: g.feature == "integration_yookassa" and g.scope_key == "franchise",
+             select: {s, h.status, h.checked_at, g.enabled}
          ) do
-      {%Settings{} = settings, :ok, checked_at} when not is_nil(checked_at) ->
+      {%Settings{} = settings, :ok, checked_at, gate_enabled}
+      when not is_nil(checked_at) and gate_enabled != false ->
         Settings.complete?(settings)
 
       _ ->

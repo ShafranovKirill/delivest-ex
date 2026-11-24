@@ -1,7 +1,7 @@
 defmodule Delivest.Integrations.YandexEda.BusyPoller do
   @behaviour Delivest.Integrations.Poller
 
-  alias Delivest.Integrations.{Journal, YandexEda}
+  alias Delivest.Integrations.{Journal, StaffAccess, YandexEda}
   alias Delivest.Integrations.YandexEda.{BusyMode, PushApi}
 
   @impl true
@@ -26,7 +26,7 @@ defmodule Delivest.Integrations.YandexEda.BusyPoller do
         :done
 
       branch_ids ->
-        if PushApi.configured?(settings),
+        if StaffAccess.allowed?(:yandex_eda) and PushApi.configured?(settings),
           do: Journal.scope([], fn -> BusyMode.sync(settings, branch_ids) end),
           else: :done
     end

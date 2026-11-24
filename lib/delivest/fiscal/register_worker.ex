@@ -5,12 +5,19 @@ defmodule Delivest.Fiscal.RegisterWorker do
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.Receipt
+  alias Delivest.Integrations.StaffAccess
 
   @impl Oban.Worker
   def backoff(%Oban.Job{attempt: attempt}), do: min(attempt * attempt * 15, 1800)
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"receipt_id" => id}, attempt: attempt, max_attempts: max}) do
+    if StaffAccess.allowed?(:atol),
+      do: perform_enabled(id, attempt, max),
+      else: {:snooze, 300}
+  end
+
+  defp perform_enabled(id, attempt, max) do
     case Fiscal.get(id) do
       %Receipt{status: :pending} = receipt ->
         receipt |> Fiscal.register() |> handle(receipt, attempt, max)

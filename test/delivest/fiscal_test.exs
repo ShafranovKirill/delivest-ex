@@ -7,6 +7,7 @@ defmodule Delivest.FiscalTest do
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.{BranchSettings, PollWorker, Receipt, RegisterWorker}
+  alias Delivest.Features.Gate
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.AtolOnline
   alias Delivest.{Payments, Repo}
@@ -65,6 +66,46 @@ defmodule Delivest.FiscalTest do
   defp from_receipt(id), do: Ecto.Query.from(r in Receipt, where: r.id == ^id)
 
   defp register(receipt), do: perform_job(RegisterWorker, %{"receipt_id" => receipt.id})
+
+  defp set_atol_enabled(enabled) do
+    Repo.insert!(
+      %Gate{feature: "integration_atol", scope_key: "franchise", enabled: enabled},
+      on_conflict: {:replace, [:enabled]},
+      conflict_target: [:feature, :scope_key]
+    )
+  end
+
+  test "network switch blocks new receipts and queued registration but reconciles a prior callback",
+       %{conn: conn, order: order, payments: payments} do
+    stub_atol(&Req.Test.json(&1, %{"uuid" => "u-1", "status" => "wait"}))
+    assert {:ok, receipt} = Fiscal.issue(order, payments)
+    assert :ok = register(receipt)
+    assert %Receipt{status: :wait, uuid: "u-1"} = Fiscal.get(receipt.id)
+
+    set_atol_enabled(false)
+    assert {:error, :disabled} = Fiscal.issue(order, payments)
+    assert {:error, :disabled} = Fiscal.register(receipt)
+    assert {:error, :disabled} = Fiscal.poll(receipt)
+    assert {:snooze, 300} = perform_job(PollWorker, %{"receipt_id" => receipt.id})
+
+    conn
+    |> post("/integrations/fiscal/atol/cb-token", %{"uuid" => "u-1", "status" => "done"})
+    |> json_response(200)
+
+    assert %Receipt{status: :done} = Fiscal.get(receipt.id)
+    set_atol_enabled(true)
+    assert Delivest.Integrations.StaffAccess.allowed?(:atol)
+  end
+
+  test "a queued registration waits without changing the receipt when switched off",
+       %{order: order, payments: payments} do
+    assert {:ok, receipt} = Fiscal.issue(order, payments)
+    set_atol_enabled(false)
+    Req.Test.stub(Delivest.HTTP.Client, fn _ -> flunk("disabled receipt called ATOL") end)
+
+    assert {:snooze, 300} = perform_job(RegisterWorker, %{"receipt_id" => receipt.id})
+    assert %Receipt{status: :pending} = Fiscal.get(receipt.id)
+  end
 
   test "a receipt is registered, then confirmed by the callback", %{
     conn: conn,

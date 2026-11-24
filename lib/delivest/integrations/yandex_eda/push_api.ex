@@ -1,6 +1,7 @@
 defmodule Delivest.Integrations.YandexEda.PushApi do
   alias Delivest.HTTP.Client
   alias Delivest.Integrations.TokenCache
+  alias Delivest.Integrations.StaffAccess
   alias Delivest.Integrations.YandexEda.Settings
 
   @base_url "https://dc-partner.eda.yandex.net"
@@ -60,17 +61,26 @@ defmodule Delivest.Integrations.YandexEda.PushApi do
   end
 
   defp call(settings, path, body) do
-    TokenCache.run(token_key(settings), fn -> issue(settings) end, fn token ->
-      Client.post(path, body,
-        base_url: @base_url,
-        journal: :yandex_eda,
-        headers: [{"authorization", "Bearer " <> token}, {"partner-name", settings.partner_name}]
-      )
-    end)
+    if StaffAccess.allowed?(:yandex_eda) do
+      TokenCache.run(token_key(settings), fn -> issue(settings) end, fn token ->
+        Client.post(path, body,
+          base_url: @base_url,
+          journal: :yandex_eda,
+          headers: [
+            {"authorization", "Bearer " <> token},
+            {"partner-name", settings.partner_name}
+          ]
+        )
+      end)
+    else
+      {:error, :disabled}
+    end
   end
 
   def check(%Settings{} = settings) do
-    with {:ok, _token, _ttl} <- issue(settings), do: :ok
+    with true <- StaffAccess.allowed?(:yandex_eda) || {:error, :disabled},
+         {:ok, _token, _ttl} <- issue(settings),
+         do: :ok
   end
 
   def configured?(%Settings{} = settings),

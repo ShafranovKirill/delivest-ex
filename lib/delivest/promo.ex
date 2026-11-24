@@ -1,4 +1,6 @@
 defmodule Delivest.Promo do
+  alias Delivest.Features
+
   alias Delivest.Promo.{
     Codes,
     Context,
@@ -9,15 +11,39 @@ defmodule Delivest.Promo do
     Redemptions
   }
 
-  def price(items, context), do: Engine.run(items, Context.new(context))
+  def price(items, context) do
+    context = Context.new(context)
+
+    context =
+      if Features.enabled?("promotions", {:branch, context.branch_id}) do
+        context
+      else
+        %{context | compiled_promotions: [], product_snapshot: %{}, code: nil}
+      end
+
+    Engine.run(items, context)
+  end
 
   defdelegate overlay_menu(categories, branch_id), to: MenuPrices, as: :overlay
   defdelegate overlay_menu_fresh(categories, branch_id), to: MenuPrices, as: :overlay_fresh
   defdelegate redeem(order, result), to: Redemptions, as: :replace
 
   defdelegate list_promotions(staff, branch_id), to: Promotions, as: :list
-  defdelegate list_running_promotions(branch_id), to: Promotions, as: :list_running
-  defdelegate list_personal_promotions(branch_id), to: Promotions, as: :list_personal
+
+  def list_running_promotions(branch_id),
+    do:
+      if(Features.enabled?("promotions", {:branch, branch_id}),
+        do: Promotions.list_running(branch_id),
+        else: []
+      )
+
+  def list_personal_promotions(branch_id),
+    do:
+      if(Features.enabled?("promotions", {:branch, branch_id}),
+        do: Promotions.list_personal(branch_id),
+        else: []
+      )
+
   defdelegate promotions_usage(promotions), to: Promotions, as: :usage
   defdelegate get_promotion(staff, branch_id, id), to: Promotions, as: :get
   defdelegate change_promotion(promotion, attrs \\ %{}), to: Promotions, as: :change

@@ -6,6 +6,7 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
   import Delivest.YandexEdaFixtures
 
   alias Delivest.Integrations.YandexEda
+  alias Delivest.Features.Gate
   alias Delivest.Integrations.YandexEda.{MenuReloadWorker, Settings}
   alias Delivest.Net.Stops
 
@@ -121,6 +122,33 @@ defmodule Delivest.Integrations.YandexEda.MenuReloadTest do
 
   test "without push access the worker does nothing" do
     branch = yandex_branch()
+
+    assert {:cancel, :disabled} =
+             perform_job(MenuReloadWorker, %{
+               "branch_id" => branch.id,
+               "operation" => "menu",
+               "generation" => 0
+             })
+  end
+
+  test "a queued reload does not call the provider after the network switch is disabled" do
+    branch = yandex_branch()
+
+    Repo.insert!(%Settings{
+      client_id: "ours",
+      client_secret: "secret",
+      partner_name: "delivest",
+      push_client_id: "push",
+      push_client_secret: "push-secret"
+    })
+
+    Req.Test.stub(Delivest.HTTP.Client, fn _ -> flunk("disabled reload called Yandex Eda") end)
+
+    Repo.insert!(
+      %Gate{feature: "integration_yandex_eda", scope_key: "franchise", enabled: false},
+      on_conflict: {:replace, [:enabled]},
+      conflict_target: [:feature, :scope_key]
+    )
 
     assert {:cancel, :disabled} =
              perform_job(MenuReloadWorker, %{

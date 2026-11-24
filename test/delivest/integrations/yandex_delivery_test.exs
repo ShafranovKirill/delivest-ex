@@ -10,6 +10,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
   alias Delivest.DeliveryMeasurement.ActualEvent
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.YandexDelivery
+  alias Delivest.Features.Gate
   alias Delivest.Integrations.Poller.Worker, as: PollWorker
   alias Delivest.Integrations.YandexDelivery.{ClaimLookupWorker, Journal, Settings}
   alias Delivest.Oms.{Order, Orders, OrderTransition}
@@ -772,6 +773,28 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
       assert YandexDelivery.returning?(Couriers.active(ctx.order.id))
     end
+  end
+
+  test "network switch blocks estimates and previously queued lookups without provider calls" do
+    branch = branch()
+    order = order(branch)
+
+    Repo.insert!(
+      %Gate{feature: "integration_yandex_delivery", scope_key: "franchise", enabled: false},
+      on_conflict: {:replace, [:enabled]},
+      conflict_target: [:feature, :scope_key]
+    )
+
+    assert {:error, :not_configured} = YandexDelivery.estimate(order)
+
+    assert {:cancel, :disabled} =
+             perform_job(ClaimLookupWorker, %{
+               "delivery_id" => Ecto.UUID.generate(),
+               "number" => order.number,
+               "started_at" => System.os_time(:second)
+             })
+
+    refute_received {:yandex, _, _, _}
   end
 
   test "settings keep the token when it is left blank" do

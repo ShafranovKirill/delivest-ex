@@ -1,4 +1,5 @@
 defmodule Delivest.Promo.MenuPrices do
+  alias Delivest.Features
   alias Delivest.Promo.{Catalog, Compiled, Context, Eligibility, Selection, Strategy, Usage}
   alias Delivest.Promo.Effects.ProductPrices
 
@@ -13,6 +14,12 @@ defmodule Delivest.Promo.MenuPrices do
   end
 
   defp sales(branch_id, fresh?) do
+    if Features.enabled?("promotions", {:branch, branch_id}),
+      do: enabled_sales(branch_id, fresh?),
+      else: []
+  end
+
+  defp enabled_sales(branch_id, fresh?) do
     candidates =
       branch_id
       |> then(fn id -> if fresh?, do: Catalog.list_uncached(id), else: Catalog.list(id) end)

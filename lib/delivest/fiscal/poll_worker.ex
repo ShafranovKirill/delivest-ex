@@ -3,12 +3,17 @@ defmodule Delivest.Fiscal.PollWorker do
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.Receipt
+  alias Delivest.Integrations.StaffAccess
 
   @impl Oban.Worker
   def backoff(%Oban.Job{attempt: attempt}), do: attempt * 60
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"receipt_id" => id}}) do
+    if StaffAccess.allowed?(:atol), do: perform_enabled(id), else: {:snooze, 300}
+  end
+
+  defp perform_enabled(id) do
     case Fiscal.get(id) do
       %Receipt{status: :wait} = receipt -> poll(receipt)
       _ -> :ok

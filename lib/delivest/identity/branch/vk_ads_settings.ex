@@ -21,7 +21,7 @@ defmodule Delivest.Identity.Branch.VkAdsSettings do
 
   def public_config(%__MODULE__{enabled: true, privacy_approved: true, counter_id: id})
       when is_binary(id) do
-    if valid_counter_id?(id),
+    if Delivest.Integrations.StaffAccess.allowed?(:vk_ads) and valid_counter_id?(id),
       do: %{enabled: true, counter_id: id},
       else: %{enabled: false, counter_id: nil}
   end

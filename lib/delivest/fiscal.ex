@@ -6,6 +6,7 @@ defmodule Delivest.Fiscal do
   alias Delivest.{Audit, Identity, Repo}
   alias Delivest.Fiscal.{BranchSettings, Builder, PollWorker, Receipt, RegisterWorker, Registry}
   alias Delivest.Identity.Branch
+  alias Delivest.Integrations.StaffAccess
   alias Delivest.Net.Product
   alias Delivest.Oms.Order
   alias Delivest.Payments.Payment
@@ -49,7 +50,8 @@ defmodule Delivest.Fiscal do
   def health_check(branch_id) do
     settings = settings(branch_id)
 
-    with {:ok, module} <- Registry.fetch(settings.provider),
+    with true <- StaffAccess.allowed?(:atol) || {:error, :disabled},
+         {:ok, module} <- Registry.fetch(settings.provider),
          %{} = provider_settings <- Map.get(settings, module.key()) || {:error, :missing_settings} do
       module.health_check(provider_settings)
     end
@@ -177,7 +179,8 @@ defmodule Delivest.Fiscal do
   defp do_issue(%Order{} = order, payments, opts, existing_refund?) do
     settings = settings(order.branch_id)
 
-    with true <-
+    with true <- StaffAccess.allowed?(:atol) || {:error, :disabled},
+         true <-
            (((settings.enabled and globally_enabled?()) or existing_refund?) and
               BranchSettings.own?(settings)) ||
              {:error, :not_own},
@@ -249,6 +252,12 @@ defmodule Delivest.Fiscal do
   end
 
   def retry(%Receipt{status: :fail} = receipt, staff) do
+    if StaffAccess.allowed?(:atol), do: retry_enabled(receipt, staff), else: {:error, :disabled}
+  end
+
+  def retry(_receipt, _staff), do: {:error, :not_failed}
+
+  defp retry_enabled(receipt, staff) do
     order = Repo.get!(Order, receipt.order_id)
 
     %Receipt{}
@@ -268,10 +277,9 @@ defmodule Delivest.Fiscal do
     |> tap(&audit(&1, staff, "fiscal.retried", order))
   end
 
-  def retry(_receipt, _staff), do: {:error, :not_failed}
-
   def correct(%Receipt{kind: :sell, status: :fail} = receipt, staff) do
-    with true <- Identity.admin_staff?(staff) || {:error, :forbidden},
+    with true <- StaffAccess.allowed?(:atol) || {:error, :disabled},
+         true <- Identity.admin_staff?(staff) || {:error, :forbidden},
          {:ok, module} <- Registry.fetch(receipt.provider) do
       order = Repo.get!(Order, receipt.order_id)
 
@@ -337,7 +345,8 @@ defmodule Delivest.Fiscal do
   defp existing_sale?(_, _), do: false
 
   def register(%Receipt{} = receipt) do
-    with {:ok, module, settings} <- provider(receipt) do
+    with true <- StaffAccess.allowed?(:atol) || {:error, :disabled},
+         {:ok, module, settings} <- provider(receipt) do
       case module.register(receipt, receipt.request, settings) do
         {:ok, result} -> apply_result(receipt, result)
         {:error, _reason} = error -> error
@@ -346,7 +355,8 @@ defmodule Delivest.Fiscal do
   end
 
   def poll(%Receipt{} = receipt) do
-    with {:ok, module, settings} <- provider(receipt),
+    with true <- StaffAccess.allowed?(:atol) || {:error, :disabled},
+         {:ok, module, settings} <- provider(receipt),
          {:ok, result} <- module.fetch(receipt, settings) do
       apply_result(receipt, result, poll: false)
     end
@@ -389,7 +399,11 @@ defmodule Delivest.Fiscal do
 
   def apply_result(%Receipt{retries: retries} = receipt, %{status: :fail, retriable: true}, _opts)
       when retries < @max_retries,
-      do: reregister(receipt)
+      do:
+        if(StaffAccess.allowed?(:atol),
+          do: reregister(receipt),
+          else: receipt |> Receipt.result_changeset(%{status: :fail}) |> Repo.update()
+        )
 
   def apply_result(%Receipt{} = receipt, result, opts) do
     with {:ok, updated} <- receipt |> Receipt.result_changeset(result) |> Repo.update() do
@@ -472,9 +486,11 @@ defmodule Delivest.Fiscal do
   defp find_by_external_id(_module, _external_id), do: nil
 
   defp after_result(%Receipt{status: :wait} = receipt) do
-    %{"receipt_id" => receipt.id}
-    |> PollWorker.new(schedule_in: @poll_seconds)
-    |> Oban.insert()
+    if StaffAccess.allowed?(:atol) do
+      %{"receipt_id" => receipt.id}
+      |> PollWorker.new(schedule_in: @poll_seconds)
+      |> Oban.insert()
+    end
   end
 
   defp after_result(%Receipt{status: :done, kind: :sell, payment_ids: [_ | _] = ids}) do

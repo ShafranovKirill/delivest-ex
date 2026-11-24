@@ -79,6 +79,13 @@ defmodule DelivestWeb.StaffNav do
 
   defp feature_description("segments"), do: {gettext("Segments"), :segments}
   defp feature_description("couriers"), do: {gettext("Own couriers"), :delivery_settings}
+  defp feature_description("product_import"), do: {gettext("Product import"), :products}
+  defp feature_description("event_log"), do: {gettext("Event log"), :logs}
+  defp feature_description("analytics_basic"), do: {gettext("Sales statistics"), :statistics}
+  defp feature_description("stocks"), do: {gettext("Banners"), :stocks}
+  defp feature_description("promotions"), do: {gettext("Promotions"), :promotions}
+  defp feature_description("loyalty"), do: {gettext("Loyalty"), :loyalty}
+  defp feature_description("kitchen"), do: {gettext("Kitchen display"), :kitchen}
   defp feature_description("notifications"), do: {gettext("Notifications"), nil}
 
   defp feature_description("marketing_policies"),
@@ -188,6 +195,7 @@ defmodule DelivestWeb.StaffNav do
       end
 
     (settings_entries(staff, branch) ++ frontpad ++ menu_items(staff, branch) ++ legacy)
+    |> Enum.filter(&visible_capability?(&1, branch))
     |> Enum.uniq_by(& &1.id)
   end
 
@@ -213,6 +221,7 @@ defmodule DelivestWeb.StaffNav do
         label: gettext("Errors")
       }
     ]
+    |> Enum.filter(fn _ -> Features.enabled?("event_log", :franchise) end)
   end
 
   def menu_items(staff, branch) do
@@ -286,6 +295,7 @@ defmodule DelivestWeb.StaffNav do
   attr :id_prefix, :string, default: ""
   attr :items_override, :any, default: nil
   attr :group_id, :any, default: nil
+  attr :capability_revision, :integer, default: 0
 
   def local_navigation(assigns) do
     navigation_branch =
@@ -380,13 +390,15 @@ defmodule DelivestWeb.StaffNav do
     assigns = assign(assigns, entries: entries)
 
     ~H"""
-    <SubsectionNavigation.subsection_navigation
-      :if={@entries != []}
-      id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
-      label={gettext("Page sections")}
-      entries={@entries}
-      sidebar={@id_prefix == "sidebar-"}
-    />
+    <div data-capability-revision={@capability_revision}>
+      <SubsectionNavigation.subsection_navigation
+        :if={@entries != []}
+        id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
+        label={gettext("Page sections")}
+        entries={@entries}
+        sidebar={@id_prefix == "sidebar-"}
+      />
+    </div>
     """
   end
 
@@ -410,6 +422,7 @@ defmodule DelivestWeb.StaffNav do
         %{kind: :group, items: children} -> children
         item -> [item]
       end)
+      |> Enum.filter(&visible_capability?(&1, branch))
 
     find = fn id -> Enum.find(items, &(&1.id == id)) end
 
@@ -708,6 +721,7 @@ defmodule DelivestWeb.StaffNav do
           gettext("Kitchen")
         )
         |> allowed(staff, "orders.cook")
+        |> with_feature("kitchen")
         |> operating(branch),
         item(
           :deliveries,
@@ -716,6 +730,7 @@ defmodule DelivestWeb.StaffNav do
           gettext("Deliveries")
         )
         |> allowed(staff, "orders.deliver")
+        |> with_feature("couriers")
         |> owned(branch, :couriers)
         |> courier_available(staff, branch, :own),
         item(
@@ -725,6 +740,7 @@ defmodule DelivestWeb.StaffNav do
           gettext("Couriers")
         )
         |> allowed(staff, "orders.update")
+        |> with_feature("couriers")
         |> owned(branch, :couriers)
         |> courier_available(staff, branch, :dispatch)
       ]),
@@ -775,6 +791,7 @@ defmodule DelivestWeb.StaffNav do
       )
       |> covering([:analytics_channels, :analytics_comparison])
       |> allowed(staff, "statistics.read")
+      |> with_feature("analytics_basic")
       |> then(fn entry -> if branch || can?(staff, "statistics.network"), do: entry end),
       group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch))
     ]
@@ -849,6 +866,7 @@ defmodule DelivestWeb.StaffNav do
       end),
       item(:stocks, marketing_path(branch, "stocks"), "hero-photo", gettext("Banners"))
       |> allowed(staff, "stocks.read")
+      |> with_feature("stocks")
       |> available_in(available_branches, fn _ -> true end),
       item(
         :promotions,
@@ -857,8 +875,10 @@ defmodule DelivestWeb.StaffNav do
         gettext("Discounts & promo codes")
       )
       |> allowed(staff, "promotions.read")
+      |> with_feature("promotions")
       |> available_in(available_branches, fn _ -> true end),
       item(:loyalty, global_marketing_path(:bonuses, branch), "hero-star", gettext("Bonuses"))
+      |> with_feature("loyalty")
       |> then(fn item ->
         if can?(staff, "franchise.update") or
              Enum.any?(bonus_branches, fn branch ->
@@ -917,9 +937,11 @@ defmodule DelivestWeb.StaffNav do
       ]),
       group(:diagnostics, "hero-beaker", gettext("Diagnostics"), [
         item(:logs, ~p"/staff/logs", "hero-document-magnifying-glass", gettext("Logs"))
-        |> allowed(staff, "logs.read"),
+        |> allowed(staff, "logs.read")
+        |> with_feature("event_log"),
         item(:metrics, ~p"/staff/diagnostics", "hero-chart-bar", gettext("Metrics"))
         |> allowed(staff, "logs.read")
+        |> with_feature("event_log")
       ]),
       item(:settings, ~p"/staff/settings", "hero-cog-6-tooth", gettext("Settings"))
       |> then(fn item ->
@@ -1018,6 +1040,15 @@ defmodule DelivestWeb.StaffNav do
 
   defp with_feature(nil, _feature), do: nil
   defp with_feature(item, feature), do: %{item | feature: feature}
+
+  defp visible_capability?(%{feature: feature}, branch) when is_binary(feature) do
+    Features.enabled?(feature, if(branch, do: {:branch, branch.id}, else: :franchise))
+  end
+
+  defp visible_capability?(%{id: :frontpad}, _branch),
+    do: Delivest.Integrations.StaffAccess.allowed?(:frontpad)
+
+  defp visible_capability?(_, _), do: true
 
   defp route_for(path, nil) do
     case DelivestWeb.StaffBranchPath.transition(path, :network) do

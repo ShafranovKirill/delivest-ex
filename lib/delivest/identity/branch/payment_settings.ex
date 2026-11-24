@@ -23,10 +23,13 @@ defmodule Delivest.Identity.Branch.PaymentSettings do
   end
 
   def enabled(%__MODULE__{} = settings, online_ready? \\ true) do
-    Enum.filter(@methods, fn
-      :online -> settings.online and online_ready?
-      method -> Map.fetch!(settings, method)
-    end)
+    methods =
+      Enum.filter(@methods, fn
+        :online -> settings.online and online_ready?
+        method -> Map.fetch!(settings, method)
+      end)
+
+    if methods == [] and settings.online and not online_ready?, do: [:cash], else: methods
   end
 
   defp clear_call_without_online(changeset) do
