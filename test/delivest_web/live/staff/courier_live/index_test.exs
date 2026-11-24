@@ -96,6 +96,7 @@ defmodule DelivestWeb.Staff.CourierLive.IndexTest do
   end
 
   test "after the handover the courier shows the receipt QR", ctx do
+    {:ok, _} = Delivest.Franchise.SettingsStore.save(%{fiscal_enabled: true})
     info = Repo.get_by!(BranchInfo, branch_id: ctx.branch.id)
 
     info

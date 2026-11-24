@@ -8,6 +8,7 @@ defmodule Delivest.EventsRemoteRecoveryTest do
   alias Delivest.Couriers.Delivery, as: CourierDelivery
   alias Delivest.Events.{DeliverWorker, Event}
   alias Delivest.Fiscal.{BranchSettings, Receipt, RegisterWorker}
+  alias Delivest.Franchise.SettingsStore
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.AtolOnline
   alias Delivest.Integrations.Yookassa
@@ -220,6 +221,21 @@ defmodule Delivest.EventsRemoteRecoveryTest do
     product_id =
       order |> Repo.preload(:items) |> Map.fetch!(:items) |> hd() |> Map.fetch!(:product_id)
 
+    original_fiscal_enabled = SettingsStore.get_uncached().fiscal_enabled
+
+    try do
+      {:ok, _} = SettingsStore.save(%{fiscal_enabled: true})
+      fiscal_recovery_assertions(order, branch, suffix)
+    after
+      try do
+        cleanup_fiscal_fixture(order, product_id, branch)
+      after
+        {:ok, _} = SettingsStore.save(%{fiscal_enabled: original_fiscal_enabled})
+      end
+    end
+  end
+
+  defp fiscal_recovery_assertions(order, branch, suffix) do
     [payment] = Payments.list(order.id)
     payment |> Ecto.Changeset.change(status: :paid) |> Repo.update!()
     clear_prior_events(order.id)
@@ -314,7 +330,6 @@ defmodule Delivest.EventsRemoteRecoveryTest do
                Repo.all(Ecto.Query.from(r in Receipt, where: r.order_id == ^order.id))
     after
       Process.exit(pid, :kill)
-      cleanup_fiscal_fixture(order, product_id, branch)
     end
   end
 

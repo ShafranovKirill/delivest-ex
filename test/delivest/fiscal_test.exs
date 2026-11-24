@@ -403,13 +403,16 @@ defmodule Delivest.FiscalTest do
     insert(:staff_branch, staff: staff, branch: branch)
 
     {:ok, lv, _html} =
-      live(init_test_session(conn, %{"staff_id" => staff.id}), ~p"/staff/b/#{branch}/orders")
+      live(
+        init_test_session(conn, %{"staff_id" => staff.id}),
+        ~p"/staff/b/#{branch}/orders/#{order.id}"
+      )
 
-    assert lv |> element("#receipt-#{receipt.id}") |> render() =~ "32: bad"
-    assert has_element?(lv, "#order-balance-#{order.id}.badge-ghost")
-    assert has_element?(lv, "#order-payments-#{order.id}")
+    assert lv |> element("#shown-order #receipt-#{receipt.id}") |> render() =~ "32: bad"
+    assert has_element?(lv, "#shown-order #order-balance-#{order.id}.badge-ghost")
+    assert has_element?(lv, "#shown-order #order-payments-#{order.id}")
 
-    retry_button = "#receipt-#{receipt.id} button[phx-click=retry_receipt]"
+    retry_button = "#shown-order #receipt-#{receipt.id} button[phx-click=retry_receipt]"
     refute has_element?(lv, retry_button)
     render_click(lv, "retry_receipt", %{"id" => receipt.id})
     assert [_failed] = Fiscal.list(order.id)
@@ -420,7 +423,10 @@ defmodule Delivest.FiscalTest do
     insert(:staff_branch, staff: accountant, branch: branch)
 
     {:ok, lv, _html} =
-      live(init_test_session(conn, %{"staff_id" => accountant.id}), ~p"/staff/b/#{branch}/orders")
+      live(
+        init_test_session(conn, %{"staff_id" => accountant.id}),
+        ~p"/staff/b/#{branch}/orders/#{order.id}"
+      )
 
     lv |> element(retry_button) |> render_click()
     assert [_failed, %Receipt{status: :pending}] = Fiscal.list(order.id)

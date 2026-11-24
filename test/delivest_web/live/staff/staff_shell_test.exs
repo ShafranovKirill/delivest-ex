@@ -210,8 +210,8 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
     {:ok, lv, _} = live(conn, ~p"/staff/branches")
-    assert has_element?(lv, "main #staff-page-header h1", "Settings for branches")
-    assert has_element?(lv, "main #staff-page-header-actions #create-branch")
+    assert has_element?(lv, "main #branches-toolbar h1.sr-only", "Settings for branches")
+    assert has_element?(lv, "main #branches-toolbar .staff-page-toolbar-actions #create-branch")
     refute has_element?(lv, "#staff-header h1")
     refute has_element?(lv, "#branch-settings-list h1")
   end

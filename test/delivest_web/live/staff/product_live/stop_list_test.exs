@@ -118,17 +118,36 @@ defmodule DelivestWeb.Staff.ProductLive.StopListTest do
   end
 
   test "the sidebar exposes menu and local navigation exposes product pages", ctx do
-    {:ok, _lv, html} =
+    conn = sign_in(ctx.conn, ctx.branch, ["categories.read", "products.read", "orders.read"])
+
+    {:ok, lv, html} =
       live(
-        sign_in(ctx.conn, ctx.branch, ["categories.read", "products.read", "orders.read"]),
+        conn,
         ~p"/staff/b/#{ctx.branch}/products/stops"
       )
 
     assert html =~ ~s(id="nav-section-main")
     assert html =~ ~s(href="/staff/b/#{ctx.branch.slug}/products")
-    assert html =~ ~s(href="/staff/b/#{ctx.branch.slug}/products/suggested")
+
+    assert has_element?(
+             lv,
+             ~s(#staff-context-navigation a[href="/staff/b/#{ctx.branch.slug}/products/collections"])
+           )
+
     refute html =~ ~s(id="nav-group-orders")
     assert html =~ ~s(href="/staff/b/#{ctx.branch.slug}/orders")
+
+    {:ok, collections, _} = live(conn, ~p"/staff/b/#{ctx.branch}/products/collections")
+
+    assert has_element?(
+             collections,
+             ~s(#collections-suggested a[href="/staff/b/#{ctx.branch.slug}/products/suggested"])
+           )
+
+    assert has_element?(
+             collections,
+             ~s(#collections-popular a[href="/staff/b/#{ctx.branch.slug}/menu/popular"])
+           )
   end
 
   test "the sidebar splits branch pages from network pages", ctx do

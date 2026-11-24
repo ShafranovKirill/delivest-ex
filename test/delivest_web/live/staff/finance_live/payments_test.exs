@@ -19,8 +19,15 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
   end
 
   test "the nav has the finance group with payment and receipts", %{conn: conn, branch: branch} do
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["finance.read", "orders.read"]))
+
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
-    assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/payments"]))
+    assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/transactions"]))
+    assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/receipts"]))
   end
 
   test "online payment is locked until YooKassa passes the check", %{conn: conn, branch: branch} do
