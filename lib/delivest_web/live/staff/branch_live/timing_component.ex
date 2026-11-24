@@ -202,7 +202,7 @@ defmodule DelivestWeb.Staff.BranchLive.TimingComponent do
               <colgroup><col /><col class="w-28" /></colgroup>
               <thead class="bg-base-200/70">
                 <tr>
-                  <th scope="col">{gettext("Category or default")}</th><th scope="col">
+                  <th scope="col" class="whitespace-normal">{gettext("Category")}</th><th scope="col">
                     {gettext("Minutes")}
                   </th>
                 </tr>
