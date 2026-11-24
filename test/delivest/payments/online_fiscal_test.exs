@@ -1,5 +1,6 @@
 defmodule Delivest.Payments.OnlineFiscalTest do
-  use DelivestWeb.ConnCase, async: true
+  # Shares global YooKassa settings and provider health rows with other suites.
+  use DelivestWeb.ConnCase, async: false
 
   import Delivest.Factory
 

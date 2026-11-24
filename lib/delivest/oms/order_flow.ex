@@ -96,7 +96,7 @@ defmodule Delivest.Oms.OrderFlow do
 
   defp permit(%Order{} = order, [{_from, to}] = steps, {:staff, staff}) do
     cond do
-      Order.crm_managed?(order) -> {:error, :order_locked}
+      Delivest.Integrations.Crm.effective_managed?(order) -> {:error, :order_locked}
       authorized?(staff, Map.fetch!(@staff_permissions, to), order.branch_id) -> {:ok, steps}
       true -> {:error, :forbidden}
     end

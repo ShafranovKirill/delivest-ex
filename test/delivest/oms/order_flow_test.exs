@@ -5,6 +5,7 @@ defmodule Delivest.Oms.OrderFlowTest do
   import Delivest.OrderFixtures
 
   alias Delivest.Identity.{Branch, Role, Staff}
+  alias Delivest.Features
   alias Delivest.Oms.{Order, OrderFlow, Orders, OrderTransition}
 
   @branch_id Ecto.UUID.generate()
@@ -60,6 +61,20 @@ defmodule Delivest.Oms.OrderFlowTest do
 
       assert {:error, :order_locked} =
                OrderFlow.steps(order(:created, crm: %{provider: "frontpad"}), :accepted, admin)
+    end
+
+    test "known CRM orders use staff permissions while the provider is off, unknown providers stay locked" do
+      admin = {:staff, staff(["admin"])}
+      stranger = {:staff, %Staff{staff(["orders.update"]) | branches: []}}
+      frontpad = order(:created, crm: %{provider: "frontpad"})
+      unknown = order(:created, crm: %{provider: "unknown_provider"})
+
+      assert {:ok, _} =
+               Features.configure("integration_frontpad", :franchise, false, actor: "test")
+
+      assert {:ok, [{:created, :accepted}]} = OrderFlow.steps(frontpad, :accepted, admin)
+      assert {:error, :forbidden} = OrderFlow.steps(frontpad, :accepted, stranger)
+      assert {:error, :order_locked} = OrderFlow.steps(unknown, :accepted, admin)
     end
   end
 

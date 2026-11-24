@@ -1,6 +1,8 @@
 defmodule Delivest.Integrations.StaffAccess do
   @moduledoc "Network-wide access to integration setup in the staff console."
 
+  import Ecto.Query
+
   alias Delivest.Features.Gate
   alias Delivest.Integrations.Crm.Registry, as: CrmRegistry
   alias Delivest.Repo
@@ -15,6 +17,18 @@ defmodule Delivest.Integrations.StaffAccess do
 
   def keys, do: Enum.map(providers(), &elem(&1, 1))
   def permission?(key), do: key in keys()
+
+  def snapshot do
+    gates =
+      Repo.all(
+        from gate in Gate,
+          where: gate.feature in ^keys() and gate.scope_key == "franchise",
+          select: {gate.feature, gate.enabled}
+      )
+      |> Map.new()
+
+    Map.new(providers(), fn {provider, key} -> {provider, Map.get(gates, key, true)} end)
+  end
 
   # Phone verification is part of checkout authentication, not an optional add-on.
   def allowed?(:zvonok), do: true

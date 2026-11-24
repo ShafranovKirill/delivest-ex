@@ -5,12 +5,13 @@ defmodule Delivest.Integrations.CrmTest do
   import Delivest.Factory
 
   alias Delivest.Audit.Event
+  alias Delivest.Features
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker}
   alias Delivest.Integrations.Crm
   alias Delivest.Integrations.Frontpad
   alias Delivest.Oms
-  alias Delivest.Oms.{Carts, Order}
+  alias Delivest.Oms.{Carts, Order, Orders}
 
   defp branch(crm) do
     branch = insert(:branch, is_active: true)
@@ -74,6 +75,124 @@ defmodule Delivest.Integrations.CrmTest do
     refute_enqueued(worker: SyncWorker)
     deliver_events()
     assert_enqueued(worker: SyncWorker, queue: :crm, args: %{"order_id" => order.id})
+  end
+
+  test "turning Frontpad off routes new app and staff orders locally and restores CRM routing on enable" do
+    branch = branch(frontpad(true))
+    staff = insert(:staff, role: build(:role, permissions: ["admin"]), branches: [branch])
+    assert {:ok, %Order{crm: %{provider: "frontpad"}}} = place_order(branch)
+
+    assert {:ok, _} = Features.configure("integration_frontpad", :franchise, false, actor: "test")
+    refute Crm.effective_managed?(%Order{crm: nil})
+
+    assert {:ok, %Order{status: :created, crm: nil} = local_app} =
+             place_order(branch, external_id: "fp-off-app")
+
+    product = insert_branch_product(branch.id, price: 100, external_id: "fp-off-staff")
+    {:ok, cart} = Carts.create_cart(%{branch_id: branch.id})
+    {:ok, _, _} = Carts.add_item(cart.id, product.id, 1)
+
+    assert {:ok, %Order{status: :accepted, crm: nil} = local_staff} =
+             Oms.create_order(
+               %{
+                 "cart_id" => cart.id,
+                 "branch_id" => branch.id,
+                 "fulfillment_type" => "pickup",
+                 "payment_method" => "cash"
+               },
+               source: "staff",
+               auto_accept: true,
+               actor: staff
+             )
+
+    deliver_events()
+    refute_enqueued(worker: SyncWorker)
+    assert {:ok, accepted} = Orders.advance_order(local_app, :accepted, {:staff, staff})
+    assert {:ok, completed} = Orders.advance_order(accepted, :completed, :system)
+    assert completed.crm == nil
+
+    assert {:ok, _} =
+             Features.configure("integration_frontpad", :franchise, true,
+               actor: "test",
+               selected_integration_branches: true
+             )
+
+    assert {:ok, %Order{crm: %{provider: "frontpad", status: "pending"}}} =
+             place_order(branch, external_id: "fp-on-again")
+
+    assert Repo.reload!(local_app).crm == nil
+    assert Repo.reload!(local_staff).crm == nil
+    refute_enqueued(worker: SyncWorker, args: %{"order_id" => local_app.id})
+    refute_enqueued(worker: SyncWorker, args: %{"order_id" => local_staff.id})
+  end
+
+  test "old pending and sent Frontpad orders become manually operable while off without losing CRM metadata" do
+    branch = branch(frontpad(true))
+    staff = insert(:staff, role: build(:role, permissions: ["admin"]), branches: [branch])
+    unauthorized = insert(:staff, role: build(:role, permissions: []), branches: [branch])
+
+    for crm_status <- ["pending", "sent"] do
+      {:ok, order} = place_order(branch, external_id: "fp-#{crm_status}")
+
+      order =
+        order
+        |> Order.crm_changeset(%{status: crm_status, external_id: "remote-#{crm_status}"})
+        |> Repo.update!()
+
+      assert Crm.effective_managed?(order)
+      refute Orders.client_cancellable?(order, true)
+      assert {:error, :order_locked} = Orders.advance_order(order, :accepted, {:staff, staff})
+
+      assert {:ok, _} =
+               Features.configure("integration_frontpad", :franchise, false, actor: "test")
+
+      refute Crm.effective_managed?(order)
+      assert Orders.client_cancellable?(order, true)
+      assert {:error, :forbidden} = Orders.advance_order(order, :accepted, {:staff, unauthorized})
+
+      assert {:ok, edited} =
+               Orders.update_payment_method(order, %{"payment_method" => "card_offline"}, staff)
+
+      assert edited.payment_method == :card_offline
+
+      {:ok, draft} = Orders.create_draft_cart(edited)
+
+      assert {:ok, updated} =
+               Orders.update_order(edited, %{"cart_id" => draft.id, "comment" => "manual"},
+                 actor: staff
+               )
+
+      assert updated.comment == "manual"
+      assert {:ok, accepted} = Orders.advance_order(updated, :accepted, {:staff, staff})
+      assert {:ok, completed} = Orders.advance_order(accepted, :completed, :system)
+      external_id = "remote-#{crm_status}"
+
+      assert %{provider: "frontpad", status: ^crm_status, external_id: ^external_id} =
+               Repo.reload!(completed).crm
+
+      deliver_events()
+      refute_enqueued(worker: SyncWorker, args: %{"order_id" => order.id})
+
+      assert {:ok, _} =
+               Features.configure("integration_frontpad", :franchise, true,
+                 actor: "test",
+                 selected_integration_branches: true
+               )
+
+      assert Crm.effective_managed?(Repo.reload!(completed))
+      refute Orders.client_cancellable?(order, true)
+    end
+  end
+
+  test "unknown CRM provider stays locked while known integration is off" do
+    assert Crm.effective_managed?(%Order{crm: %{provider: "unknown_provider"}})
+    assert Crm.effective_managed?(%Order{crm: %{}})
+    assert Crm.effective_managed?(%Order{crm: %{provider: "frontpad"}})
+
+    assert {:ok, _} = Features.configure("integration_frontpad", :franchise, false, actor: "test")
+
+    refute Crm.effective_managed?(%Order{crm: %{provider: "frontpad"}})
+    assert Crm.effective_managed?(%Order{crm: %{provider: "unknown_provider"}})
   end
 
   test "successful delivery stores the crm order id, number and warnings" do

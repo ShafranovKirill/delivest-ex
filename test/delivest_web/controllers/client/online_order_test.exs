@@ -1,5 +1,6 @@
 defmodule DelivestWeb.Client.OnlineOrderTest do
-  use DelivestWeb.ConnCase, async: true
+  # Shares global YooKassa settings and provider health rows with other suites.
+  use DelivestWeb.ConnCase, async: false
 
   import Ecto.Query
   import Delivest.Factory

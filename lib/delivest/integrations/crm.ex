@@ -19,6 +19,7 @@ defmodule Delivest.Integrations.Crm do
   alias Delivest.Integrations.Journal
   alias Delivest.Integrations.Availability
   alias Delivest.Integrations.Health
+  alias Delivest.Integrations.StaffAccess
   alias Delivest.Oms.{Order, Orders}
 
   @permanent_errors [:branch_not_found, :unknown_provider, :missing_settings]
@@ -67,10 +68,25 @@ defmodule Delivest.Integrations.Crm do
 
   def active_provider(_branch), do: nil
 
-  def provider_for(%Branch{info: %{crm: %BranchSettings{} = settings}}, source),
-    do: BranchSettings.provider_for(settings, source)
+  def provider_for(%Branch{info: %{crm: %BranchSettings{} = settings}}, source) do
+    case BranchSettings.provider_for(settings, source) do
+      nil -> nil
+      provider -> if StaffAccess.allowed?(provider), do: provider
+    end
+  end
 
   def provider_for(_branch, _source), do: nil
+
+  def effective_managed?(%Order{crm: nil}), do: false
+
+  def effective_managed?(%Order{crm: %{provider: provider}}) do
+    case Registry.fetch(provider) do
+      {:ok, module} -> StaffAccess.allowed?(module.key())
+      {:error, :unknown_provider} -> true
+    end
+  end
+
+  def effective_managed?(%Order{}), do: true
 
   def manual_cancel_required?(
         %Order{

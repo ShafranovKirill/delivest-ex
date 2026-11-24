@@ -4,7 +4,10 @@ defmodule Delivest.GatewayTest do
   import Delivest.Factory
 
   alias Delivest.Gateway
+  alias Delivest.Features
+  alias Delivest.Identity.Branch
   alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.Crm.BranchSettings
 
   defp branch(crm) do
     branch = insert(:branch)
@@ -53,5 +56,35 @@ defmodule Delivest.GatewayTest do
     assert mode.provider == :iiko
     assert mode.name == "iiko"
     assert Gateway.crm?(branch(%{enabled: true, provider: :iiko}), :kitchen)
+  end
+
+  test "disabled CRM integrations return local ownership without changing saved settings" do
+    for provider <- [:frontpad, :iiko] do
+      branch = branch(%{enabled: true, provider: provider, menu_source: :crm})
+      assert Gateway.active?(branch)
+      assert Gateway.crm?(branch, :statuses)
+
+      assert {:ok, _} =
+               Features.configure("integration_#{provider}", :franchise, false, actor: "test")
+
+      mode = Gateway.mode(branch)
+      assert mode.provider == nil
+      assert Enum.all?(Map.values(mode.areas), &(&1 == :own))
+      assert Repo.reload!(branch.info).crm.provider == provider
+
+      assert {:ok, _} =
+               Features.configure("integration_#{provider}", :franchise, true,
+                 actor: "test",
+                 selected_integration_branches: true
+               )
+
+      assert Gateway.crm?(branch, :statuses)
+    end
+  end
+
+  test "unknown configured CRM provider retains its locked gateway mode" do
+    branch = %Branch{info: %{crm: %BranchSettings{enabled: true, provider: :unknown}}}
+    assert Gateway.active?(branch)
+    assert Gateway.crm?(branch, :statuses)
   end
 end

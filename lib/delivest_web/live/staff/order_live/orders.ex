@@ -2,7 +2,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
   use DelivestWeb, :live_view
 
   alias Delivest.{Couriers, DeliveryMeasurement, Identity, Intake, LocalTime, Money}
-  alias Delivest.Integrations.{Crm, YandexEda}
+  alias Delivest.Integrations.{Crm, StaffAccess, YandexEda}
   alias Delivest.Oms.{Order, OrderDeadline, Orders}
   alias DelivestWeb.CourierPresence
   alias DelivestWeb.Staff.OrderLive.{OrdersQuery, StatusErrors}
@@ -34,6 +34,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
     {:ok, branch} = Identity.get_branch(branch_id, preload: :info)
     couriers = Couriers.list_couriers(branch_id)
+    {own_couriers_enabled, estimable} = courier_capabilities(branch_id)
 
     {:ok,
      socket
@@ -50,8 +51,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
        crm_retry_poll_ms: 1_000,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id),
        couriers: couriers,
-       estimable: Couriers.settings(branch_id).source == :yandex,
-       own_couriers_enabled: Couriers.own_enabled?(branch_id),
+       estimable: estimable,
+       own_couriers_enabled: own_couriers_enabled,
        pickup: branch.info,
        printing: Delivest.Printing.settings(branch_id),
        positions: CourierPresence.positions(branch_id, couriers)
@@ -102,6 +103,14 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
       {:error, _meta} ->
         {:noreply, push_patch(socket, to: ~p"/staff/b/#{socket.assigns.current_branch}/orders")}
+    end
+  end
+
+  defp courier_capabilities(branch_id) do
+    case Couriers.settings(branch_id).source do
+      :staff -> {Couriers.own_enabled?(branch_id), false}
+      :yandex -> {false, StaffAccess.allowed?(:yandex_delivery)}
+      _ -> {false, false}
     end
   end
 
@@ -370,6 +379,18 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
     do: {:noreply, assign(socket, order_to_delete: nil)}
 
   @impl true
+  def handle_info(:features_changed, socket) do
+    branch_id = socket.assigns.current_branch.id
+    {own_couriers_enabled, estimable} = courier_capabilities(branch_id)
+
+    socket
+    |> assign(
+      own_couriers_enabled: own_couriers_enabled,
+      estimable: estimable
+    )
+    |> load()
+  end
+
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
 
   def handle_info({:intake_changed, branch_id}, socket) do
@@ -597,6 +618,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           couriers={@couriers}
           estimable={@estimable}
           own_couriers_enabled={@own_couriers_enabled}
+          capability_revision={@capability_revision}
         />
       </div>
 
@@ -626,6 +648,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
           couriers={@couriers}
           estimable={@estimable}
           own_couriers_enabled={@own_couriers_enabled}
+          capability_revision={@capability_revision}
           positions={@positions}
           pickup={@pickup}
           crm_retry_at={@crm_retry_at}
