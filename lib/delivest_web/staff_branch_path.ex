@@ -8,7 +8,7 @@ defmodule DelivestWeb.StaffBranchPath do
     integrations/ycart integrations/vk-ads integrations/iiko integrations/rkeeper integrations/routes
     integrations/zvonok integrations/dadata integrations/yookassa integrations/yandex-eda
     integrations/yandex-delivery integrations/fiscal categories products products/bulk
-    products/operations products/stops products/modifiers products/suggested products/tags
+    products/operations products/stops products/modifiers products/collections products/suggested products/tags
     menu/popular stocks loyalty promotions advertising-links pos kitchen
   )
   @network_routes ~w(
@@ -27,6 +27,8 @@ defmodule DelivestWeb.StaffBranchPath do
     "integrations" => "integrations"
   }
   @data_settings_paths ~w(/staff/settings/data-transfer /staff/settings/data-system)
+  @analytics_routes ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers analytics/comparison analytics/advertising)
+  @choosable_analytics_routes ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers)
   @creation_routes ~w(
     orders/new products/new products/tags/new categories/new promotions/new promotions/new/full
     promotions/new/first-order promotions/sale stocks/new
@@ -35,7 +37,8 @@ defmodule DelivestWeb.StaffBranchPath do
     "products" => ~w(search is_active page_size order_by order_directions[]),
     "orders" =>
       ~w(status search period problem sort date_from date_to receiving payment source page_size),
-    "statistics" => ~w(tab period from to channel sort compare compare_from compare_to),
+    "statistics" =>
+      ~w(tab period from to channel sort compare compare_from compare_to granularity),
     "analytics/channels" => ~w(period from to channel page),
     "analytics/sources" => ~w(period from to channel page),
     "analytics/funnel" => ~w(period from to channel page),
@@ -89,8 +92,12 @@ defmodule DelivestWeb.StaffBranchPath do
           URI.parse(return_source).path == "/staff/settings" ->
         settings_source_path(return_source)
 
-      path == "/staff/analytics/comparison" ->
-        comparison_period_path(path, return_source)
+      analytics_target?(path) ->
+        if analytics_target?(return_source) or not choosable_analytics_target?(path) do
+          analytics_period_path(path, return_source)
+        else
+          selection_path(path, return_source) || path
+        end
 
       parsed_path in @data_settings_paths ->
         case scope_branch do
@@ -113,25 +120,58 @@ defmodule DelivestWeb.StaffBranchPath do
     end
   end
 
-  defp comparison_period_path(path, source) when is_binary(source) do
+  defp analytics_target?(path) when is_binary(path) do
+    case classify(path) do
+      {:ok, {:branch, _, route}, _} -> route in @analytics_routes
+      {:ok, {:network, route}, _} -> route in @analytics_routes
+      _ -> false
+    end
+  end
+
+  defp analytics_target?(_), do: false
+
+  defp choosable_analytics_target?(path) when is_binary(path) do
+    case classify(path) do
+      {:ok, {:branch, _, route}, _} -> route in @choosable_analytics_routes
+      {:ok, {:network, route}, _} -> route in @choosable_analytics_routes
+      _ -> false
+    end
+  end
+
+  defp choosable_analytics_target?(_), do: false
+
+  defp analytics_period_path(path, source) when is_binary(source) do
     case classify(source) do
       {:ok, {:branch, _slug, route}, query} ->
-        if route in ~w(statistics analytics/channels analytics/sources analytics/funnel analytics/customers),
-          do: path <> encode_query(query, ~w(period from to)),
-          else: path
+        if route in @analytics_routes, do: merge_period(path, query), else: path
+
+      {:ok, {:network, route}, query} ->
+        if route in @analytics_routes, do: merge_period(path, query), else: path
 
       _ ->
         path
     end
   end
 
-  defp comparison_period_path(path, _source), do: path
+  defp analytics_period_path(path, _source), do: path
+
+  defp merge_period(path, source_query) do
+    uri = URI.parse(path)
+
+    query =
+      Map.merge(Map.take(source_query, ~w(period from to)), URI.decode_query(uri.query || ""))
+
+    URI.to_string(%{
+      uri
+      | query: if(map_size(query) == 0, do: nil, else: URI.encode_query(query))
+    })
+  end
 
   def selection_path(target_path, return_source) do
     case selection_intent(target_path, return_source) do
       {:ok, %{source: source, return_to: return_to}} ->
         "/staff/branches/select?" <>
-          URI.encode_query(%{"modal" => "true", "from" => source, "return_to" => return_to})
+          URI.encode_query(%{"from" => source, "return_to" => return_to})
 
       :error ->
         nil
@@ -160,9 +200,32 @@ defmodule DelivestWeb.StaffBranchPath do
 
   def selection_intent(target_path, return_source) do
     with {:ok, source} <- selection_source(target_path) do
-      {:ok, %{source: source, return_to: safe_network_return(return_source)}}
+      return_to =
+        if choosable_analytics_target?(source),
+          do: safe_analytics_return(return_source),
+          else: safe_network_return(return_source)
+
+      {:ok, %{source: source, return_to: return_to}}
     end
   end
+
+  @doc "Optional report tab for branch feature filtering on the selection page."
+  def selection_report_section(source) when is_binary(source) do
+    case classify(source) do
+      {:ok, {:branch, _, "analytics/" <> tab}, _}
+      when tab in ~w(channels sources funnel customers) ->
+        tab
+
+      {:ok, {:network, "analytics/" <> tab}, _}
+      when tab in ~w(channels sources funnel customers) ->
+        tab
+
+      _ ->
+        nil
+    end
+  end
+
+  def selection_report_section(_), do: nil
 
   defp selection_source(source) when is_binary(source) do
     case classify(source) do
@@ -175,6 +238,12 @@ defmodule DelivestWeb.StaffBranchPath do
 
       {:ok, {:branch_settings, slug, _section}, _query} ->
         canonical_branch_source(source, slug)
+
+      {:ok, {:network, route}, _query} when route in @choosable_analytics_routes ->
+        case transition(source, :network) do
+          {:ok, %{path: path}} -> {:ok, path}
+          _ -> :error
+        end
 
       _ ->
         :error
@@ -214,6 +283,21 @@ defmodule DelivestWeb.StaffBranchPath do
   end
 
   defp safe_network_return(_), do: "/staff/dashboard"
+
+  defp safe_analytics_return(source) when is_binary(source) do
+    case classify(source) do
+      {:ok, {:branch, slug, _route}, _query} ->
+        case canonical_branch_source(source, slug) do
+          {:ok, path} -> path
+          :error -> "/staff/dashboard"
+        end
+
+      _ ->
+        safe_network_return(source)
+    end
+  end
+
+  defp safe_analytics_return(_), do: "/staff/dashboard"
 
   defp network_return(source) do
     case transition(source, :network) do

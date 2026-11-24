@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.IntegrationLive.Index do
   use DelivestWeb, :live_view
 
+  import DelivestWeb.Staff.FoundationComponents, only: [status_badge: 1]
+
   alias Delivest.Identity
   alias Delivest.Integrations.{Crm, StaffAccess}
   alias Delivest.Integrations.Crm.BranchSettings
@@ -147,9 +149,9 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
       <DelivestWeb.GatewayNote.gateway_summary :if={@selected_branch} branch={@selected_branch} />
 
       <.link
-        :if={Identity.can?(@current_staff, "orders.update")}
+        :if={@selected_branch && Identity.can?(@current_staff, "orders.update")}
         id="integration-recovery"
-        navigate={~p"/staff/b/#{@current_branch}/integrations/recovery"}
+        navigate={~p"/staff/b/#{@selected_branch}/integrations/recovery"}
         class="btn btn-outline btn-sm"
       >
         {gettext("Review blocked deliveries")}
@@ -335,9 +337,16 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
   attr :state, :map, required: true
 
   defp compact_state(assigns) do
+    assigns = assign(assigns, :status, overall_status(assigns.state))
+
     ~H"""
     <div id={@id} class="flex items-center gap-2 text-sm">
-      <.status_badge status={overall_status(@state)} />
+      <.status_badge
+        id={"#{@id}-badge"}
+        label={status_text(@status)}
+        tone={status_tone(@status)}
+        class="badge-sm badge-soft rounded-full"
+      />
     </div>
     """
   end
@@ -376,34 +385,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.Index do
     %{configuration: if(config.enabled, do: :enabled, else: :disabled)}
   end
 
-  defp status_badge(assigns) do
-    ~H"""
-    <span class={[
-      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-      @status in [:ok, :enabled] && "bg-success/10 text-success",
-      @status == :disabled && "bg-base-300/50 text-base-content/60",
-      @status in [:attention, :partial, :finishing] && "bg-warning/10 text-warning",
-      @status == :error && "bg-error/10 text-error",
-      @status == :auth && "bg-error/10 text-error",
-      @status == :failed && "bg-error/10 text-error",
-      @status == :unchecked && "bg-base-300/50 text-base-content/60",
-      @status == :needs_setup && "bg-base-300/50 text-base-content/50"
-    ]}>
-      <span class={[
-        "size-1.5 rounded-full",
-        @status in [:ok, :enabled] && "bg-success",
-        @status == :disabled && "bg-base-content/30",
-        @status in [:attention, :partial, :finishing] && "bg-warning",
-        @status == :error && "bg-error",
-        @status == :auth && "bg-error",
-        @status == :failed && "bg-error",
-        @status == :unchecked && "bg-base-content/30",
-        @status == :needs_setup && "bg-base-content/20"
-      ]} />
-      {status_text(@status)}
-    </span>
-    """
-  end
+  defp status_tone(status) when status in [:ok, :enabled], do: :success
+  defp status_tone(status) when status in [:attention, :partial, :finishing], do: :warning
+  defp status_tone(status) when status in [:error, :auth, :failed], do: :error
+  defp status_tone(_status), do: :muted
 
   defp status_text(:enabled), do: gettext("Enabled")
   defp status_text(:partial), do: gettext("Partially enabled")

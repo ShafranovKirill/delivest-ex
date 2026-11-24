@@ -5,6 +5,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
 
   use DelivestWeb, :html
 
+  import DelivestWeb.Staff.FoundationComponents, only: [status_badge: 1]
+
   alias Delivest.LocalTime
   alias DelivestWeb.Staff.IntegrationLive.Presentation
 
@@ -79,9 +81,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
     ~H"""
     <div id={@id} class="flex flex-wrap items-center justify-between gap-2">
       <span class="text-base-content/70">{gettext("Connection data")}</span>
-      <span class={["badge badge-sm", credential_class(@credentials.state)]}>
-        {@credentials.text}
-      </span>
+      <.status_badge
+        id={"#{@id}-badge"}
+        label={@credentials.text}
+        tone={credential_tone(@credentials.state)}
+        class="badge-sm"
+      />
     </div>
     """
   end
@@ -95,9 +100,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
     <div id={@id} class="flex flex-wrap items-center justify-between gap-2">
       <span class="text-base-content/70">{gettext("Connection check")}</span>
       <span class="flex flex-wrap items-center gap-2">
-        <span class={["badge badge-sm", connection_class(@connection.state)]}>
-          {@connection.text}
-        </span>
+        <.status_badge
+          id={"#{@id}-badge"}
+          label={@connection.text}
+          tone={connection_tone(@connection.state)}
+          class="badge-sm"
+        />
         <span :if={@connection.checked_at} class="text-xs text-base-content/60">
           {format_time(@connection.checked_at, @branch)}
         </span>
@@ -118,7 +126,12 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
         class="flex flex-wrap items-center justify-between gap-2"
       >
         <span class="text-base-content/70">{item.label}</span>
-        <span class={["badge badge-sm", usage_class(item.state)]}>{usage_text(item.state)}</span>
+        <.status_badge
+          id={"#{@id}-#{usage_key(item.label)}-badge"}
+          label={usage_text(item.state)}
+          tone={usage_tone(item.state)}
+          class="badge-sm"
+        />
         <p :if={item.detail} class="w-full text-xs text-base-content/60">{item.detail}</p>
       </div>
     </div>
@@ -192,10 +205,10 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
   def usage_text(:not_ready), do: gettext("Not ready")
   def usage_text(:paused), do: gettext("Paused")
 
-  defp usage_class(:on), do: "badge-success"
-  defp usage_class(:not_ready), do: "badge-warning"
-  defp usage_class(:paused), do: "badge-warning"
-  defp usage_class(_state), do: "badge-ghost text-base-content/60"
+  defp usage_tone(:on), do: :success
+  defp usage_tone(:not_ready), do: :warning
+  defp usage_tone(:paused), do: :warning
+  defp usage_tone(_state), do: :muted
 
   defp main_text(:enabled), do: gettext("Enabled")
   defp main_text(:partial), do: gettext("Partially enabled")
@@ -215,15 +228,14 @@ defmodule DelivestWeb.Staff.IntegrationLive.StateComponents do
   defp main_class(:finishing), do: "text-warning"
   defp main_class(_), do: "text-base-content/70"
 
-  defp credential_class(:complete), do: "badge-success"
-  defp credential_class(:partial), do: "badge-warning"
-  defp credential_class(:not_required), do: "badge-ghost text-base-content/60"
-  defp credential_class(_state), do: "badge-ghost text-base-content/60"
+  defp credential_tone(:complete), do: :success
+  defp credential_tone(:partial), do: :warning
+  defp credential_tone(_state), do: :muted
 
-  defp connection_class(:ok), do: "badge-success"
-  defp connection_class(:auth), do: "badge-error"
-  defp connection_class(:failed), do: "badge-warning"
-  defp connection_class(_state), do: "badge-ghost text-base-content/60"
+  defp connection_tone(:ok), do: :success
+  defp connection_tone(:auth), do: :error
+  defp connection_tone(:failed), do: :warning
+  defp connection_tone(_state), do: :muted
 
   defp usage_key(label) do
     label

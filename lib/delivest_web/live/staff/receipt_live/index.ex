@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.ReceiptLive.Index do
   use DelivestWeb, :live_view
-  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [filter_bar: 1, pagination_footer: 1, status_badge: 1]
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.Receipt
@@ -55,11 +57,62 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
   end
 
   def staff_page_header(assigns) do
+    assigns = assign(assigns, filters: filters())
+
     ~H"""
-    <.page_header
-      title={gettext("Receipts")}
-      subtitle={gettext("Fiscal receipts of the branch. Find the ones not issued during the shift.")}
-    />
+    <.page_toolbar id="receipts-toolbar" title={gettext("Receipts")}>
+      <:filters>
+        <div class="flex min-w-0 flex-wrap items-center gap-2 min-[800px]:flex-nowrap">
+          <div class="tabs tabs-box max-w-64 shrink-0 flex-nowrap overflow-x-auto">
+            <.link
+              :for={{value, label} <- @filters}
+              id={"receipts-filter-#{value || "all"}"}
+              patch={
+                receipt_path(
+                  assigns,
+                  Map.merge(@query, %{"status" => value && to_string(value), "page" => 1})
+                )
+              }
+              class={["tab tab-sm", @status == value && "tab-active"]}
+            >{label}</.link>
+          </div>
+          <.filter_bar
+            id="receipts-filter"
+            query={@query["search"] || ""}
+            query_name="search"
+            reset_path={receipt_path(assigns, %{})}
+            event="filter"
+            active={
+              @status != nil or @query["from"] not in [nil, ""] or @query["to"] not in [nil, ""]
+            }
+            compact
+          >
+            <:filter>
+              <div>
+                <label for="receipts-from" class="sr-only">{gettext("From")}</label>
+                <input
+                  id="receipts-from"
+                  name="from"
+                  type="date"
+                  value={@query["from"]}
+                  class="input input-bordered input-sm w-32"
+                />
+              </div>
+              <div>
+                <label for="receipts-to" class="sr-only">{gettext("To")}</label>
+                <input
+                  id="receipts-to"
+                  name="to"
+                  type="date"
+                  value={@query["to"]}
+                  class="input input-bordered input-sm w-32"
+                />
+              </div>
+            </:filter>
+          </.filter_bar>
+        </div>
+      </:filters>
+    </.page_toolbar>
     """
   end
 
@@ -79,53 +132,6 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
           "New receipts are managed by the connected system. Existing fiscal obligations remain visible here."
         )}
       </p>
-      <div class="tabs tabs-box w-fit">
-        <.link
-          :for={{value, label} <- @filters}
-          id={"receipts-filter-#{value || "all"}"}
-          patch={
-            receipt_path(
-              assigns,
-              Map.merge(@query, %{"status" => value && to_string(value), "page" => 1})
-            )
-          }
-          class={["tab", @status == value && "tab-active"]}
-        >
-          {label}
-        </.link>
-      </div>
-
-      <.filter_bar
-        id="receipts-filter"
-        query={@query["search"] || ""}
-        query_name="search"
-        reset_path={receipt_path(assigns, %{})}
-        event="filter"
-        active={@status != nil or @query["from"] not in [nil, ""] or @query["to"] not in [nil, ""]}
-      >
-        <:filter>
-          <div>
-            <label for="receipts-from" class="block text-sm font-medium">{gettext("From")}</label>
-            <input
-              id="receipts-from"
-              name="from"
-              type="date"
-              value={@query["from"]}
-              class="input input-bordered"
-            />
-          </div>
-          <div>
-            <label for="receipts-to" class="block text-sm font-medium">{gettext("To")}</label>
-            <input
-              id="receipts-to"
-              name="to"
-              type="date"
-              value={@query["to"]}
-              class="input input-bordered"
-            />
-          </div>
-        </:filter>
-      </.filter_bar>
 
       <.card>
         <.table
@@ -149,7 +155,12 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
             <span class="tabular-nums">{Delivest.Money.format(receipt.amount)}</span>
           </:col>
           <:col :let={{receipt, _number}} label={gettext("Status")}>
-            <span class={["badge badge-sm", badge(receipt.status)]}>{status(receipt.status)}</span>
+            <.status_badge
+              id={"receipt-status-#{receipt.id}"}
+              label={status(receipt.status)}
+              tone={status_tone(receipt.status)}
+              class="badge-sm whitespace-nowrap"
+            />
             <a
               :if={url = Receipt.ofd_url(receipt)}
               href={url}
@@ -168,14 +179,12 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
             </span>
           </:col>
         </.table>
-        <p class="px-3 pt-3 text-sm text-base-content/70">
-          {gettext("%{count} receipts", count: @pagination.total)}
-        </p>
-        <.pagination
-          id="receipts-page-size"
-          meta={pagination_meta(@pagination)}
+        <.pagination_footer
+          id="receipts-footer"
+          page_size_id="receipts-page-size"
+          count_label={gettext("%{count} receipts", count: @pagination.total)}
+          page={@pagination}
           path_fn={fn overrides -> receipt_path(assigns, Map.merge(@query, overrides)) end}
-          page_sizes={[25, 50, 100]}
         />
       </.card>
     </div>
@@ -185,15 +194,6 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
   defp receipt_path(assigns, params) do
     params = Map.reject(params, fn {_key, value} -> value in [nil, "", []] end)
     ~p"/staff/b/#{assigns.current_branch}/finance/receipts?#{params}"
-  end
-
-  defp pagination_meta(page) do
-    %Flop.Meta{
-      current_page: page.page,
-      page_size: page.page_size,
-      total_pages: page.pages,
-      total_count: page.total
-    }
   end
 
   defp filters,
@@ -215,7 +215,7 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
   defp status(:done), do: gettext("Issued")
   defp status(:fail), do: gettext("Failed")
 
-  defp badge(:done), do: "badge-success"
-  defp badge(:fail), do: "badge-error"
-  defp badge(_status), do: "badge-warning"
+  defp status_tone(:done), do: :success
+  defp status_tone(:fail), do: :error
+  defp status_tone(_status), do: :warning
 end

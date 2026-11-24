@@ -23,7 +23,7 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
     assert Enum.count(
              LazyHTML.query(
                document,
-               "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
+               "#staff-context-navigation #staff-section-navigation #product-section-tab-collections[aria-current='page']"
              )
            ) == 1
 
@@ -41,17 +41,32 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
 
     assert has_element?(
              lv,
-             "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
+             "#staff-context-navigation #staff-section-navigation #product-section-tab-collections[aria-current='page']"
            )
 
-    assert has_element?(lv, "main #staff-page-header h1", "Popular products")
+    assert has_element?(lv, "main #popular-toolbar h1:not(.sr-only)", "Popular products")
+
+    assert has_element?(
+             lv,
+             "#popular-toolbar a[href='/staff/b/#{branch.slug}/products/collections'][aria-label='Back']"
+           )
+
+    refute has_element?(lv, "#collections-tab-popular")
+    refute has_element?(lv, "#collections-tab-suggested")
     refute has_element?(lv, "#staff-header-context")
 
     assert Enum.count(
              LazyHTML.query(LazyHTML.from_fragment(render(lv)), "#staff-section-navigation")
            ) == 1
 
-    assert render(element(lv, "#staff-page-header-actions")) =~ ~s(form="popular-settings")
+    assert has_element?(
+             lv,
+             "#popular-toolbar .staff-page-toolbar-actions button[form='popular-settings']"
+           )
+
+    refute has_element?(lv, "#popular-toolbar #popular-more-actions #popular-add-products")
+
+    refute has_element?(lv, "#popular-toolbar .staff-page-toolbar-actions details > summary")
   end
 
   defp sign_in(conn, branch, permissions) do
@@ -98,10 +113,10 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
 
     assert has_element?(
              lv,
-             "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
+             "#staff-context-navigation #staff-section-navigation #product-section-tab-collections[aria-current='page']"
            )
 
-    refute has_element?(lv, "#staff-page-header-actions")
+    refute has_element?(lv, "#popular-toolbar .staff-page-toolbar-actions")
     refute has_element?(lv, "#popular-add-products")
     assert has_element?(lv, "#popular_show_in_menu[disabled]")
     assert has_element?(lv, "#popular_show_in_cart[disabled]")
@@ -126,6 +141,45 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
     assert %{show_in_menu: true, show_in_cart: false} = Popular.get_settings(branch.id)
   end
 
+  test "mode selection is a draft until Save and survives catalog refresh", %{conn: conn} do
+    branch = insert(:branch)
+
+    {:ok, lv, _} =
+      live(
+        sign_in(conn, branch, ["products.read", "products.update"]),
+        ~p"/staff/b/#{branch}/menu/popular"
+      )
+
+    assert has_element?(lv, "#popular_mode option[value='off'][selected]")
+    assert has_element?(lv, "#popular_mode option[value='auto']")
+    assert has_element?(lv, "#popular_mode option[value='manual']")
+    refute has_element?(lv, "#popular_auto_limit")
+
+    lv |> form("#popular-settings", popular: %{mode: "auto"}) |> render_change()
+    assert has_element?(lv, "#popular_auto_limit")
+    assert has_element?(lv, "#popular-settings-dirty")
+    assert has_element?(lv, "#popular-off-empty")
+    assert Popular.get_settings(branch.id).mode == :off
+
+    lv |> form("#popular-settings", popular: %{mode: "off"}) |> render_change()
+    refute has_element?(lv, "#popular-settings-dirty")
+
+    lv |> form("#popular-settings", popular: %{mode: "auto"}) |> render_change()
+
+    send(lv.pid, :catalog_changed)
+    assert has_element?(lv, "#popular_auto_limit")
+    assert has_element?(lv, "#popular-settings-dirty")
+
+    lv |> form("#popular-settings", popular: %{mode: "auto", auto_limit: "0"}) |> render_submit()
+    assert has_element?(lv, "#popular_auto_limit")
+    assert Popular.get_settings(branch.id).mode == :off
+
+    lv |> form("#popular-settings", popular: %{mode: "auto", auto_limit: "4"}) |> render_submit()
+    assert Popular.get_settings(branch.id).mode == :auto
+    refute has_element?(lv, "#popular-settings-dirty")
+    assert has_element?(lv, "#popular-preview-auto")
+  end
+
   test "auto mode offers an authorized refresh", %{conn: conn} do
     branch = insert(:branch)
 
@@ -136,7 +190,14 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
       )
 
     editable |> form("#popular-settings", popular: %{mode: "auto"}) |> render_submit()
-    assert has_element?(editable, "#popular-recalculate")
+    assert has_element?(editable, "#popular-toolbar #popular-recalculate")
+
+    assert has_element?(
+             editable,
+             "#popular-toolbar .staff-page-toolbar-actions details > summary",
+             "More"
+           )
+
     editable |> element("#popular-recalculate") |> render_click()
     assert Popular.get_settings(branch.id).calculated_at
 

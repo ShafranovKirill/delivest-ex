@@ -4,6 +4,7 @@ defmodule DelivestWeb.StaffNav do
   import Delivest.Identity.Acl
 
   alias Delivest.{Couriers, Features, Gateway, Identity, Segments}
+  alias DelivestWeb.Staff.SubsectionNavigation
 
   def pages(staff, branch) do
     staff
@@ -234,17 +235,12 @@ defmodule DelivestWeb.StaffNav do
             ),
             item(:tags, "/staff/b/#{branch.slug}/products/tags", "hero-tag", gettext("Tags")),
             item(
-              :suggested,
-              "/staff/b/#{branch.slug}/products/suggested",
-              "hero-sparkles",
-              gettext("Recommended")
-            ),
-            item(
-              :popular,
-              "/staff/b/#{branch.slug}/menu/popular",
-              "hero-fire",
-              gettext("Popular products")
+              :collections,
+              "/staff/b/#{branch.slug}/products/collections",
+              "hero-squares-2x2",
+              gettext("Collections")
             )
+            |> Map.put(:pages, [:collections, :popular, :suggested])
           ]
           |> Enum.map(&%{&1 | read_permissions: ["products.read"]})
         else
@@ -361,75 +357,36 @@ defmodule DelivestWeb.StaffNav do
         assigns.items_override
       end
 
-    assigns = assign(assigns, items: items)
+    entries =
+      Enum.map(items, fn item ->
+        %{
+          id:
+            assigns.id_prefix <>
+              if(item.parent == :menu,
+                do: "product-section-tab-#{item.id}",
+                else: "section-nav-#{item.id}"
+              ),
+          path:
+            DelivestWeb.StaffBranchPath.contextual_navigation_path(
+              item.path,
+              assigns.scope_branch,
+              assigns.return_source
+            ),
+          label: item.label,
+          active: active_local?(item, assigns.current_page, assigns.current_path)
+        }
+      end)
+
+    assigns = assign(assigns, entries: entries)
 
     ~H"""
-    <ul
-      :if={@items != [] and @id_prefix == "sidebar-"}
+    <SubsectionNavigation.subsection_navigation
+      :if={@entries != []}
       id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
-      phx-hook="ActiveSectionNav"
-      aria-label={gettext("Page sections")}
-    >
-      <li :for={item <- @items}>
-        <.local_link
-          item={item}
-          id_prefix={@id_prefix}
-          scope_branch={@scope_branch}
-          return_source={@return_source}
-          current_page={@current_page}
-          current_path={@current_path}
-        />
-      </li>
-    </ul>
-    <nav
-      :if={@items != [] and @id_prefix == ""}
-      id={"#{@id_prefix}staff-section-navigation#{if @group_id, do: "-#{@group_id}"}"}
-      phx-hook="ActiveSectionNav"
-      aria-label={gettext("Page sections")}
-      class="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-base-300 px-4 py-2 sm:px-6"
-    >
-      <.local_link
-        :for={item <- @items}
-        item={item}
-        id_prefix={@id_prefix}
-        scope_branch={@scope_branch}
-        return_source={@return_source}
-        current_page={@current_page}
-        current_path={@current_path}
-      />
-    </nav>
-    """
-  end
-
-  attr :item, :map, required: true
-  attr :id_prefix, :string, required: true
-  attr :scope_branch, :any, default: nil
-  attr :return_source, :string, default: nil
-  attr :current_page, :any, default: nil
-  attr :current_path, :string, default: nil
-
-  defp local_link(assigns) do
-    ~H"""
-    <.link
-      id={@id_prefix <> if(@item.parent == :menu, do: "product-section-tab-#{@item.id}", else: "section-nav-#{@item.id}")}
-      navigate={
-        DelivestWeb.StaffBranchPath.contextual_navigation_path(
-          @item.path,
-          @scope_branch,
-          @return_source
-        )
-      }
-      aria-current={active_local?(@item, @current_page, @current_path) && "page"}
-      class={
-        if(@id_prefix == "sidebar-",
-          do: active_local?(@item, @current_page, @current_path) && "menu-active",
-          else: [
-            "whitespace-nowrap rounded-field px-3 py-2 text-sm hover:bg-base-200",
-            active_local?(@item, @current_page, @current_path) && "bg-base-200 font-semibold"
-          ]
-        )
-      }
-    >{@item.label}</.link>
+      label={gettext("Page sections")}
+      entries={@entries}
+      sidebar={@id_prefix == "sidebar-"}
+    />
     """
   end
 
@@ -511,7 +468,7 @@ defmodule DelivestWeb.StaffNav do
           :analytics,
           gettext("Analytics"),
           "hero-chart-bar",
-          Enum.map([:statistics], find)
+          [find.(:statistics) | analytics_entries(staff, branch)]
         )
       ]
       |> Enum.reject(&is_nil/1)
@@ -557,6 +514,7 @@ defmodule DelivestWeb.StaffNav do
           "franchise.update",
           "branches.read",
           "delivery.read",
+          "orders.update",
           "integrations.read",
           "logs.read"
         ]
@@ -580,7 +538,8 @@ defmodule DelivestWeb.StaffNav do
       ),
       setting(:branches, gettext("Branches"), "/staff/branches", "hero-map-pin", :network, [
         "branches.read",
-        "delivery.read"
+        "delivery.read",
+        "orders.update"
       ]),
       setting(
         :branch_settings,
@@ -771,13 +730,6 @@ defmodule DelivestWeb.StaffNav do
       ]),
       group(:finance, "hero-banknotes", gettext("Finance"), [
         item(
-          :printing,
-          branch && ~p"/staff/b/#{branch}/finance/printing",
-          "hero-printer",
-          "Чеки и печать"
-        )
-        |> allowed(staff, "integrations.read"),
-        item(
           :payments,
           branch && ~p"/staff/b/#{branch}/finance/transactions",
           "hero-credit-card",
@@ -806,7 +758,7 @@ defmodule DelivestWeb.StaffNav do
           "hero-cube",
           gettext("Products")
         )
-        |> covering([:tags, :suggested, :popular, :stops])
+        |> covering([:tags, :collections, :suggested, :popular, :stops])
         |> allowed(staff, "products.read")
       ])
     ]
@@ -819,13 +771,62 @@ defmodule DelivestWeb.StaffNav do
         :statistics,
         if(branch, do: ~p"/staff/b/#{branch}/statistics", else: ~p"/staff/statistics"),
         "hero-chart-bar",
-        gettext("Statistics")
+        gettext("Sales")
       )
+      |> covering([:analytics_channels, :analytics_comparison])
       |> allowed(staff, "statistics.read")
       |> then(fn entry -> if branch || can?(staff, "statistics.network"), do: entry end),
       group(:marketing, "hero-megaphone", gettext("Marketing"), marketing_entries(staff, branch))
     ]
     |> compact_all()
+  end
+
+  defp analytics_entries(staff, branch) do
+    if can?(staff, "statistics.read") and (branch || can?(staff, "statistics.network")) do
+      branch_ids =
+        if(branch,
+          do: [branch.id],
+          else: Enum.map(Identity.list_branch_for_staff(staff), & &1.id)
+        )
+
+      enabled =
+        Features.enabled_branches_many(
+          ~w(analytics_links analytics_funnel analytics_extended),
+          branch_ids
+        )
+
+      available? = fn feature -> MapSet.size(Map.get(enabled, feature, MapSet.new())) > 0 end
+
+      acquisition =
+        cond do
+          available?.("analytics_links") -> "sources"
+          available?.("analytics_funnel") -> "funnel"
+          is_nil(branch) and Features.enabled?("yandex_costs", :franchise) -> "advertising"
+          true -> nil
+        end
+
+      acquisition_path =
+        case {branch, acquisition} do
+          {_, nil} -> nil
+          {nil, section} -> "/staff/analytics/#{section}"
+          {branch, section} -> "/staff/b/#{branch.slug}/analytics/#{section}"
+        end
+
+      buyers_path =
+        if available?.("analytics_extended") do
+          if branch,
+            do: ~p"/staff/b/#{branch}/analytics/customers",
+            else: ~p"/staff/analytics/customers"
+        end
+
+      [
+        item(:analytics_acquisition, acquisition_path, "hero-megaphone", gettext("Acquisition"))
+        |> covering([:analytics_sources, :analytics_funnel]),
+        item(:analytics_customers, buyers_path, "hero-users", gettext("Buyers"))
+      ]
+    else
+      []
+    end
   end
 
   defp marketing_entries(staff, branch) do

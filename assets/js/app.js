@@ -20,6 +20,8 @@ import { FoundationColumns } from "./hooks/foundation_columns";
 import { FoundationDirty } from "./hooks/foundation_dirty";
 import { StaffDirtyGuard } from "./hooks/staff_dirty_guard";
 import { ActiveSectionNav } from "./hooks/active_section_nav";
+import { AnalyticsChart } from "./hooks/analytics_chart";
+import { DashboardGrid } from "./hooks/dashboard_grid";
 
 let Uploaders = {};
 
@@ -174,6 +176,82 @@ export const SortableZones = {
   },
 };
 
+const SortablePrintLayout = {
+  mounted() {
+    this.sortables = new Map();
+    const hook = this;
+    this.rowSortable = new Sortable(this.el, {
+      animation: 150,
+      draggable: ".print-row",
+      handle: ".row-handle",
+      ghostClass: "bg-blue-100",
+      onEnd() {
+        hook.pushEvent("layout_reorder_rows", {
+          rows: [...hook.el.querySelectorAll(":scope > .print-row")].map((row) => row.dataset.row),
+        });
+      },
+    });
+    this.attach();
+  },
+  updated() {
+    this.attach();
+  },
+  attach() {
+    for (const [element, sortable] of this.sortables) {
+      if (!this.el.contains(element)) {
+        sortable.destroy();
+        this.sortables.delete(element);
+      }
+    }
+
+    for (const column of this.el.querySelectorAll(".print-column")) {
+      if (this.sortables.has(column)) continue;
+      const hook = this;
+      this.sortables.set(
+        column,
+        new Sortable(column, {
+          group: "print-layout",
+          animation: 150,
+          draggable: ".print-block",
+          ghostClass: "bg-blue-100",
+          onEnd() {
+            hook.pushEvent("layout_reorder", {
+              rows: [...hook.el.querySelectorAll(".print-row")].map((row) =>
+                [...row.querySelectorAll(".print-column")].map((col) =>
+                  [...col.querySelectorAll(":scope > .print-block")].map((block) => block.dataset.id),
+                ),
+              ),
+            });
+          },
+        }),
+      );
+    }
+  },
+  destroyed() {
+    this.rowSortable?.destroy();
+    for (const sortable of this.sortables.values()) sortable.destroy();
+    this.sortables.clear();
+  },
+};
+
+const PrintingPdf = {
+  mounted() {
+    this.handleEvent("printing_pdf", ({ base64, filename }) => {
+      const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    });
+  },
+};
+
 const BulkPaste = {
   mounted() {
     this.el.addEventListener("paste", (event) => {
@@ -196,6 +274,22 @@ const csrfToken = document
   .getAttribute("content");
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
+  dom: {
+    onBeforeElUpdated(from, to) {
+      if (from.id === "dashboard-grid" || from.classList.contains("grid-stack-item")) {
+        if (from.hasAttribute("style")) to.setAttribute("style", from.getAttribute("style"));
+        for (const name of from.classList) {
+          if (name.startsWith("ui-") || name.startsWith("gridstack-") || name.startsWith("gs-") ||
+              name === "dashboard-grid-compact" || name === "dashboard-grid-mobile") to.classList.add(name);
+        }
+        if (from.classList.contains("grid-stack-item")) {
+          for (const handle of from.querySelectorAll(":scope > .ui-resizable-handle")) {
+            if (!to.querySelector(`:scope > .${handle.classList[1]}`)) to.appendChild(handle.cloneNode(true));
+          }
+        }
+      }
+    },
+  },
   params: { _csrf_token: csrfToken },
   uploaders: Uploaders,
   hooks: {
@@ -205,6 +299,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
     SortableStocks,
     SortableProducts,
     SortableZones,
+    SortablePrintLayout,
+    PrintingPdf,
     BulkPaste,
     LocationMap,
     ZoneMap,
@@ -218,6 +314,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
     CopyLink,
     HeaderScroll,
     ActiveSectionNav,
+    AnalyticsChart,
+    DashboardGrid,
     FoundationDialog,
     FoundationColumns,
     FoundationDirty,

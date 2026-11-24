@@ -144,9 +144,17 @@ defmodule DelivestWeb.Staff.IntegrationLive.Fiscal do
         <.input
           field={@form[:enabled]}
           type="checkbox"
-          label="Выпуск новых фискальных чеков"
+          label="Выпуск новых фискальных чеков в этом филиале"
           disabled={not @can_edit}
         />
+        <p class="text-sm text-base-content/70">
+          Для выпуска чеков также должен быть включён общий переключатель франшизы.
+          <.link
+            :if={Identity.can?(@current_staff, "franchise.update")}
+            navigate={~p"/staff/franchise/printing"}
+            class="link"
+          >Чеки и печать</.link>
+        </p>
         <.input
           field={@form[:mode]}
           type="select"

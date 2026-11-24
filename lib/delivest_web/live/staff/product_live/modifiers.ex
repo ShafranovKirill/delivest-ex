@@ -278,17 +278,14 @@ defmodule DelivestWeb.Staff.ProductLive.Modifiers do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Modifiers")}
-      title_in_header={false}
-    >
-      <:actions>
+    <.page_toolbar id="modifiers-toolbar" title={gettext("Modifiers")}>
+      <:primary_action>
         <button :if={@can_edit} type="button" phx-click="new_group" class="btn btn-primary btn-sm">
           <.icon name="hero-plus" class="size-4" />
           {gettext("Add group")}
         </button>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 

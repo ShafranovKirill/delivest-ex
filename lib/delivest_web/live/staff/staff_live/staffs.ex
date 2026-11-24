@@ -185,36 +185,47 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={if @live_action in [:new, :edit], do: @page_title, else: gettext("Staff")}
-      subtitle={
-        if @live_action == :index, do: gettext("Manage system staff accounts and branches access.")
-      }
-    >
-      <:actions>
-        <.link
-          :if={@live_action in [:new, :edit]}
-          id="staff-back-to-list"
-          navigate={staff_list_path(assigns, @staff.id)}
-          class="btn btn-ghost"
-        >{gettext("Back to staff")}</.link>
-        <button
-          :if={@live_action in [:new, :edit]}
-          type="submit"
-          form="account-form"
-          class="btn btn-primary"
-          data-staff-save={if @live_action == :new, do: "create", else: "edit"}
-        >{gettext("Save")}</button>
-        <.button
-          :if={@live_action == :index and Identity.can?(@current_staff, "staff.create")}
-          navigate={~p"/staff/employee/new?#{build_query_params(assigns, %{})}"}
-          class="btn btn-primary"
-        >
-          <.icon name="hero-plus" class="size-5" />
-          {gettext("Create Staff")}
-        </.button>
-      </:actions>
-    </.page_header>
+    <%= if @live_action == :index do %>
+      <.page_toolbar id="staff-list-toolbar" title={gettext("Staff")}>
+        <:filters>
+          <.filter_bar
+            id="staff-filter"
+            query={@search}
+            query_name="search"
+            query_placeholder={gettext("Search staff...")}
+            event="search"
+            reset_path={~p"/staff/employee"}
+            compact
+          />
+        </:filters>
+        <:primary_action>
+          <.button
+            :if={Identity.can?(@current_staff, "staff.create")}
+            navigate={~p"/staff/employee/new?#{build_query_params(assigns, %{})}"}
+            class="btn btn-primary btn-sm"
+            aria-label={gettext("Create Staff")}
+          >
+            <.icon name="hero-plus" class="size-4" />{gettext("Create")}
+          </.button>
+        </:primary_action>
+      </.page_toolbar>
+    <% else %>
+      <.page_header title={@page_title}>
+        <:actions>
+          <.link
+            id="staff-back-to-list"
+            navigate={staff_list_path(assigns, @staff.id)}
+            class="btn btn-ghost"
+          >{gettext("Back to staff")}</.link>
+          <button
+            type="submit"
+            form="account-form"
+            class="btn btn-primary"
+            data-staff-save={if @live_action == :new, do: "create", else: "edit"}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
+    <% end %>
     """
   end
 
@@ -238,15 +249,6 @@ defmodule DelivestWeb.Staff.StaffLive.Staffs do
           />
         </div>
       <% else %>
-        <.filter_bar
-          id="staff-filter"
-          query={@search}
-          query_name="search"
-          query_placeholder={gettext("Search staff...")}
-          event="search"
-          reset_path={~p"/staff/employee"}
-        />
-
         <% path_fn = fn overrides -> ~p"/staff/employee?#{build_query_params(assigns, overrides)}" end %>
 
         <.table

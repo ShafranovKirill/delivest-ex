@@ -54,8 +54,13 @@ defmodule Delivest.SiteSnapshotTest do
       printing: %Settings{
         kitchen_enabled: true,
         customer_enabled: true,
-        kitchen: %Preset{blocks: ~w(items number)},
-        customer: %Preset{blocks: ~w(qr items), paper: :a5, qr_url: "https://example.org/menu"}
+        kitchen: %Preset{blocks: ~w(items number), layout: Preset.layout_for(~w(items number))},
+        customer: %Preset{
+          blocks: ~w(qr items),
+          paper: :a5,
+          layout: Preset.layout_for(~w(qr items)),
+          qr_url: "https://example.org/menu"
+        }
       }
     })
 
@@ -63,13 +68,21 @@ defmodule Delivest.SiteSnapshotTest do
     source_info = Repo.get_by!(BranchInfo, branch_id: source.id)
 
     Repo.update!(
-      BranchInfo.changeset(source_info, %{"printing" => %{"kitchen_enabled" => false}})
+      BranchInfo.changeset(source_info, %{
+        "printing" => %{
+          "kitchen_enabled" => false,
+          "kitchen" => %{"layout" => Preset.layout_for(~w(number))},
+          "customer" => %{"layout" => Preset.layout_for(~w(items))}
+        }
+      })
     )
 
     assert {:ok, _} = SiteSnapshot.import_franchise(staff, archive)
     target_info = Repo.get_by!(BranchInfo, branch_id: target.id)
     assert target_info.printing.kitchen.blocks == ~w(items number)
+    assert target_info.printing.kitchen.layout == Preset.layout_for(~w(items number))
     assert target_info.printing.customer.paper == :a5
+    assert target_info.printing.customer.layout == Preset.layout_for(~w(qr items))
 
     {:ok, files} = :zip.extract(archive, [:memory])
 

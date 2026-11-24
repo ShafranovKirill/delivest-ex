@@ -7,7 +7,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
 
   def section(path) when is_binary(path) do
     case StaffBranchPath.strip(path) do
-      "/staff/menu/popular" -> :popular
+      "/staff/menu/popular" -> :collections
       "/staff/products" -> :products
       "/staff/products/" <> rest -> section_suffix(rest)
       _ -> nil
@@ -30,7 +30,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductTags do
       ["stops" | _] -> :stops
       ["modifiers" | _] -> :modifiers
       ["tags" | _] -> :tags
-      ["suggested" | _] -> :suggested
+      ["collections" | _] -> :collections
+      ["suggested" | _] -> :collections
       ["bulk" | _] -> :bulk
       [_ | _] -> :products
       [] -> :products

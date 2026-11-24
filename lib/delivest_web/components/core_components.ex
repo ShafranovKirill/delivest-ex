@@ -385,6 +385,61 @@ defmodule DelivestWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Renders the controls for a staff list page in one compact row.
+
+  The page title remains available to assistive technology by default. Set
+  `show_title` for pages that need a visible title beside the back link.
+  Filters and actions are supplied by the page.
+  """
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  attr :show_title, :boolean, default: false
+  attr :more_id, :string, default: nil
+  attr :back, :string, default: nil
+  slot :filters
+  slot :primary_action
+  slot :more_actions
+
+  def page_toolbar(assigns) do
+    ~H"""
+    <div id={@id} class="staff-page-toolbar flex min-w-0 flex-wrap items-center gap-2">
+      <.link
+        :if={@back}
+        navigate={@back}
+        class="btn btn-ghost btn-sm btn-square"
+        aria-label={gettext("Back")}
+        title={gettext("Back")}
+      ><.icon name="hero-arrow-left" class="size-4" /></.link>
+      <h1 class={if(@show_title, do: "min-w-0 flex-1 text-base font-semibold", else: "sr-only")}>
+        {@title}
+      </h1>
+      <div :if={@filters != []} class="staff-page-toolbar-filters min-w-0 flex-1">
+        {render_slot(@filters)}
+      </div>
+      <div
+        :if={@more_actions != [] or @primary_action != []}
+        class="staff-page-toolbar-actions ml-auto flex shrink-0 items-center gap-2"
+      >
+        <details
+          :if={@more_actions != []}
+          id={@more_id || "#{@id}-more-actions"}
+          class="dropdown dropdown-end"
+        >
+          <summary class="btn btn-ghost btn-sm cursor-pointer list-none">
+            <.icon name="hero-ellipsis-horizontal" class="size-4" />
+            {gettext("More")}
+          </summary>
+          <div class="dropdown-content z-30 mt-1 flex max-h-[min(70vh,32rem)] min-w-52 flex-col items-start overflow-y-auto rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
+            {render_slot(@more_actions)}
+          </div>
+        </details>
+        {render_slot(@primary_action)}
+      </div>
+    </div>
+    """
+  end
+
   attr :label, :string, default: nil
   slot :inner_block, required: true
 
@@ -495,6 +550,7 @@ defmodule DelivestWeb.CoreComponents do
   attr :list_id, :string, default: nil, doc: "Stable list key for column preferences"
   attr :empty_title, :string, default: nil
   attr :sticky_leading, :boolean, default: false
+  attr :show_column_chooser, :boolean, default: true
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -520,32 +576,11 @@ defmodule DelivestWeb.CoreComponents do
     ~H"""
     <div class="space-y-2">
       <details
-        :if={@variant != :foundation and Enum.any?(@col, & &1[:secondary])}
+        :if={@show_column_chooser and @variant != :foundation and Enum.any?(@col, & &1[:secondary])}
         class="staff-column-chooser text-sm"
       >
         <summary class="btn btn-ghost btn-sm">{gettext("Visible columns")}</summary>
-        <fieldset
-          id={"#{@id}-columns"}
-          phx-hook="FoundationColumns"
-          phx-update="ignore"
-          data-staff-id={@staff_id}
-          data-list-id={@list_id || @id}
-          data-table-id={"#{@id}-table"}
-          class="flex flex-wrap gap-3 p-2"
-        >
-          <label
-            :for={{col, index} <- Enum.with_index(@col)}
-            :if={col[:label] not in [nil, ""]}
-            class="flex items-center gap-1"
-          >
-            <input
-              type="checkbox"
-              data-column={column_key(col, index)}
-              checked={!col[:secondary]}
-              disabled={!col[:secondary]}
-            />{col[:label]}
-          </label>
-        </fieldset>
+        <.table_column_chooser id={@id} columns={@col} staff_id={@staff_id} list_id={@list_id} />
       </details>
       <div class="overflow-x-auto overflow-y-visible sm:border sm:border-base-300 rounded-box">
         <table
@@ -678,6 +713,42 @@ defmodule DelivestWeb.CoreComponents do
         title={@empty_title}
       />
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :columns, :list, required: true
+  attr :staff_id, :string, default: nil
+  attr :list_id, :string, default: nil
+  attr :compact, :boolean, default: false
+
+  def table_column_chooser(assigns) do
+    ~H"""
+    <fieldset
+      id={"#{@id}-columns"}
+      phx-hook="FoundationColumns"
+      phx-update="ignore"
+      data-staff-id={@staff_id}
+      data-list-id={@list_id || @id}
+      data-table-id={"#{@id}-table"}
+      class={if(@compact, do: "grid grid-cols-1 gap-2 p-2", else: "flex flex-wrap gap-3 p-2")}
+    >
+      <legend class="px-1 text-xs font-semibold text-base-content/60">
+        {gettext("Visible columns")}
+      </legend>
+      <label
+        :for={{col, index} <- Enum.with_index(@columns)}
+        :if={col[:label] not in [nil, ""]}
+        class="flex items-center gap-2 whitespace-nowrap"
+      >
+        <input
+          type="checkbox"
+          data-column={column_key(col, index)}
+          checked={!col[:secondary]}
+          disabled={!col[:secondary]}
+        />{col[:label]}
+      </label>
+    </fieldset>
     """
   end
 

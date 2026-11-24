@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
        search: "",
        picker_open: false,
        mode: settings.mode,
-       auto_limit: settings.auto_limit,
+       calculated_at: settings.calculated_at,
        settings_form: to_form(Popular.change_settings(settings, %{}), as: "popular")
      )
      |> load()}
@@ -32,7 +32,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
 
   @impl true
   def handle_event("settings", %{"popular" => params}, socket) do
-    settings = Popular.change_settings(settings(socket), params)
+    settings = Popular.change_settings(Popular.get_settings(socket.assigns.branch_id), params)
     {:noreply, assign(socket, settings_form: to_form(settings, as: "popular"))}
   end
 
@@ -44,7 +44,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
          |> assign(
            mode: settings.mode,
            picker_open: settings.mode == :manual and socket.assigns.picker_open,
-           auto_limit: settings.auto_limit,
+           calculated_at: settings.calculated_at,
            settings_form: to_form(Popular.change_settings(settings, %{}), as: "popular")
          )
          |> load()
@@ -82,7 +82,11 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
     {:noreply, assign(socket, search: params["search"] || "") |> filter()}
   end
 
-  def handle_event("open_picker", _, socket), do: {:noreply, assign(socket, picker_open: true)}
+  def handle_event("open_picker", _, socket) do
+    if socket.assigns.can_edit and socket.assigns.mode == :manual,
+      do: {:noreply, assign(socket, picker_open: true)},
+      else: {:noreply, socket}
+  end
 
   def handle_event("toggle", %{"id" => id}, socket) do
     branch_id = socket.assigns.branch_id
@@ -150,12 +154,6 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
   def handle_info(:catalog_changed, socket), do: {:noreply, load(socket)}
   def handle_info(_message, socket), do: {:noreply, socket}
 
-  defp settings(socket) do
-    settings = Popular.get_settings(socket.assigns.branch_id)
-
-    %{settings | mode: socket.assigns.mode, auto_limit: socket.assigns.auto_limit}
-  end
-
   defp load(socket) do
     branch_id = socket.assigns.branch_id
     picked_ids = Popular.list_product_ids(branch_id)
@@ -163,9 +161,17 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
     products = BranchProducts.load(branch_id)
 
     socket
-    |> assign(picked_ids: picked_ids, picked: picked, products: products)
+    |> assign(
+      picked_ids: picked_ids,
+      picked: picked,
+      products: products,
+      calculated_at: Popular.get_settings(branch_id).calculated_at
+    )
     |> filter()
   end
+
+  defp draft_mode(form), do: Ecto.Changeset.get_field(form.source, :mode)
+  defp settings_dirty?(form), do: form.source.changes != %{}
 
   defp filter(socket) do
     %{products: products, search: search} = socket.assigns
@@ -174,107 +180,158 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
+    <.page_toolbar
+      id="popular-toolbar"
       title={gettext("Popular products")}
-      subtitle={gettext("The products the app shows in the popular block of the menu.")}
-      title_in_header={false}
+      show_title
+      back={~p"/staff/b/#{@current_branch}/products/collections"}
     >
-      <:actions :if={@can_edit}>
+      <:primary_action :if={@can_edit}>
         <button
           type="submit"
           form="popular-settings"
-          class="btn btn-primary"
+          class={if(@mode == :manual, do: "btn btn-outline btn-sm", else: "btn btn-primary btn-sm")}
           phx-disable-with={gettext("Saving...")}
         >{gettext("Save")}</button>
-      </:actions>
-    </.page_header>
+        <button
+          :if={@mode == :manual}
+          id="popular-add-products"
+          type="button"
+          class="btn btn-primary btn-sm"
+          phx-click={JS.push_focus() |> JS.push("open_picker")}
+        >{gettext("Add products")}</button>
+      </:primary_action>
+      <:more_actions :if={@can_edit and @mode == :auto}>
+        <button
+          :if={@mode == :auto}
+          id="popular-recalculate"
+          type="button"
+          phx-click="recalculate"
+          class="btn btn-ghost btn-sm justify-start"
+        >{gettext("Recalculate")}</button>
+      </:more_actions>
+    </.page_toolbar>
     """
   end
 
   @impl true
   def render(assigns) do
-    ~H"""
-    <div class="space-y-6 py-4 sm:p-6">
-      <button
-        :if={@can_edit and @mode == :auto}
-        id="popular-recalculate"
-        type="button"
-        phx-click="recalculate"
-        class="btn btn-outline"
-      >{gettext("Recalculate")}</button>
+    assigns =
+      assign(assigns,
+        draft_mode: draft_mode(assigns.settings_form),
+        settings_dirty: settings_dirty?(assigns.settings_form)
+      )
 
+    ~H"""
+    <div class="space-y-5">
       <.form
         for={@settings_form}
         id="popular-settings"
         phx-change="settings"
         data-staff-dirty
         phx-submit="save_settings"
-        class="space-y-4 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6"
+        class="space-y-4 rounded-box border border-base-300 bg-base-100 p-4 sm:p-5"
       >
-        <div :if={@can_edit} class="flex flex-wrap gap-2">
-          <label
-            :for={{value, label} <- mode_options()}
-            class="flex cursor-pointer items-center gap-2"
-          >
-            <input
-              type="radio"
-              name="popular[mode]"
-              value={value}
-              checked={to_string(@mode) == value}
-              class="radio radio-primary radio-sm"
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-sm font-semibold">{gettext("Collection settings")}</h2>
+          <span
+            :if={@settings_dirty}
+            id="popular-settings-dirty"
+            class="badge badge-warning badge-outline"
+          >{gettext("Unsaved settings")}</span>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 md:gap-6">
+          <div class="space-y-2">
+            <.input
+              field={@settings_form[:mode]}
+              type="select"
+              options={mode_options()}
+              label={gettext("How to choose products")}
+              disabled={not @can_edit}
+              class="select select-bordered select-sm w-full"
             />
-            <span>{label}</span>
-          </label>
+            <div :if={@draft_mode == :auto} class="flex items-end gap-3">
+              <div class="w-36 shrink-0">
+                <.input
+                  field={@settings_form[:auto_limit]}
+                  type="number"
+                  min={1}
+                  max={24}
+                  label={gettext("Product limit")}
+                  disabled={not @can_edit}
+                />
+              </div>
+              <p class="pb-2 text-xs text-base-content/60">
+                {gettext("The app picks the best-selling products of the last 30 days automatically.")}
+              </p>
+            </div>
+          </div>
+          <div class="md:border-l md:border-base-200 md:pl-6">
+            <h3 class="mb-2 text-sm font-semibold">{gettext("Where to show")}</h3>
+            <div class="grid gap-2">
+              <div>
+                <.input
+                  field={@settings_form[:show_in_menu]}
+                  type="checkbox"
+                  label={gettext("Show in menu")}
+                  disabled={not @can_edit}
+                />
+                <p class="pl-7 text-xs text-base-content/60">
+                  {gettext("In a separate category in the menu.")}
+                </p>
+              </div>
+              <div>
+                <.input
+                  field={@settings_form[:show_in_cart]}
+                  type="checkbox"
+                  label={gettext("Show in cart")}
+                  disabled={not @can_edit}
+                />
+                <p class="pl-7 text-xs text-base-content/60">
+                  {gettext("As additional offers in the cart.")}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div :if={@mode == :auto} class="max-w-xs space-y-2">
-          <.input
-            field={@settings_form[:auto_limit]}
-            type="number"
-            min={1}
-            max={24}
-            label={gettext("How many products to pick automatically")}
-            disabled={not @can_edit}
-          />
-          <p class="text-sm text-base-content/60">
-            {gettext("The app picks the best-selling products of the last 30 days automatically.")}
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-6">
-          <.input
-            field={@settings_form[:show_in_menu]}
-            type="checkbox"
-            label={gettext("Show in menu")}
-            disabled={not @can_edit}
-          />
-          <.input
-            field={@settings_form[:show_in_cart]}
-            type="checkbox"
-            label={gettext("Show in cart")}
-            disabled={not @can_edit}
-          />
-        </div>
-
-        <p :if={@mode == :manual} class="text-sm text-base-content/60">
-          {gettext("Pick the products by hand below and set their order.")}
-        </p>
-        <p :if={@mode == :off} class="text-sm text-base-content/60">
-          {gettext("The popular block is hidden in the app.")}
-        </p>
       </.form>
 
-      <section :if={@mode != :off} class="space-y-3">
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="font-bold">{gettext("Shown in the app")}</h2><button
-              :if={@can_edit and @mode == :manual}
-              id="popular-add-products"
-              type="button"
-              class="btn btn-primary"
-              phx-click={JS.push_focus() |> JS.push("open_picker")}
-            >{gettext("Add products")}</button>
-          </div>
+      <section id="popular-products-section" class="space-y-3">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 class="font-semibold">{gettext("Products in collection")}</h2>
+          <span :if={@mode != :off} class="text-sm text-base-content/60">{gettext("%{count} products",
+            count: length(@picked)
+          )}</span>
+        </div>
+        <p :if={@draft_mode != @mode and @mode != :off} class="text-sm text-base-content/60">
+          {gettext("Save settings to apply the selected mode.")}
+        </p>
+        <div
+          :if={@mode == :off}
+          id="popular-off-empty"
+          class="rounded-box border border-dashed border-base-300 bg-base-100 px-4 py-5 text-sm text-base-content/70"
+        >
+          <%= if @draft_mode == :off do %>
+            {gettext("Choose how to build the collection, then save settings.")}
+          <% else %>
+            {gettext("Save settings to apply the selected mode.")}
+          <% end %>
+        </div>
+
+        <div :if={@mode != :off} class="space-y-3">
+          <p :if={@mode == :auto} class="text-sm text-base-content/60">
+            {gettext("Based on sales over the last 30 days.")}
+            <span :if={@calculated_at}>{gettext("Last calculated: %{date}",
+              date:
+                @calculated_at
+                |> Delivest.LocalTime.local(@current_branch)
+                |> Calendar.strftime("%d.%m.%Y %H:%M %Z")
+            )}</span>
+          </p>
+          <p :if={@mode == :manual} class="text-sm text-base-content/60">
+            {gettext("Set the order with the arrow buttons.")}
+          </p>
 
           <div
             :if={@mode == :auto}
@@ -356,9 +413,9 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
 
   defp mode_options do
     [
-      {"off", gettext("Off")},
-      {"auto", gettext("Automatically pick popular products")},
-      {"manual", gettext("Pick products manually")}
+      {gettext("Off"), "off"},
+      {gettext("By sales"), "auto"},
+      {gettext("Manually"), "manual"}
     ]
   end
 end

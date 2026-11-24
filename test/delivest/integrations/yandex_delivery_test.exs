@@ -7,6 +7,7 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
   alias Delivest.Couriers
   alias Delivest.Couriers.Delivery
+  alias Delivest.DeliveryMeasurement.ActualEvent
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.YandexDelivery
   alias Delivest.Integrations.Poller.Worker, as: PollWorker
@@ -593,6 +594,100 @@ defmodule Delivest.Integrations.YandexDeliveryTest do
 
       assert sources == [:delivering, :completed]
       assert YandexDelivery.poll(ctx.branch.id) == :done
+    end
+
+    test "records a verified destination timestamp once after provider completion", ctx do
+      actual = DateTime.utc_now() |> DateTime.to_iso8601()
+
+      set_status(ctx.yandex, ctx.delivery.external_id, "delivered_finish", %{
+        "route_points" => [
+          %{"id" => 11, "type" => "source"},
+          %{
+            "id" => 99,
+            "type" => "destination",
+            "external_order_id" => "another-order",
+            "visit_status" => "visited",
+            "visited_at" => %{"actual" => actual}
+          },
+          %{
+            "id" => 12,
+            "type" => "destination",
+            "external_order_id" => ctx.order.number,
+            "visit_status" => "visited",
+            "visited_at" => %{"actual" => actual}
+          }
+        ]
+      })
+
+      assert {:ok, _} = YandexDelivery.sync(ctx.delivery, @settings)
+
+      assert %Order{status: :completed, delivery_actual_source: "yandex_delivery"} =
+               Repo.reload!(ctx.order)
+
+      assert %ActualEvent{event_id: event_id} =
+               Repo.get_by(ActualEvent, order_id: ctx.order.id)
+
+      assert event_id == "#{ctx.delivery.external_id}:12"
+
+      assert {:ok, _} = YandexDelivery.sync(Repo.reload!(ctx.delivery), @settings)
+      assert Repo.aggregate(ActualEvent, :count, :id) == 1
+    end
+
+    test "does not turn an ETA into a verified actual event", ctx do
+      set_status(ctx.yandex, ctx.delivery.external_id, "delivered_finish", %{
+        "route_points" => [
+          %{
+            "id" => 12,
+            "type" => "destination",
+            "external_order_id" => ctx.order.number,
+            "visit_status" => "visited",
+            "visited_at" => %{"expected" => DateTime.utc_now() |> DateTime.to_iso8601()}
+          }
+        ]
+      })
+
+      assert :ok = poll(ctx.branch)
+      assert %Order{status: :completed, delivered_at: nil} = Repo.reload!(ctx.order)
+      assert Repo.aggregate(ActualEvent, :count, :id) == 0
+    end
+
+    test "ignores a destination for another order", ctx do
+      set_status(ctx.yandex, ctx.delivery.external_id, "delivered_finish", %{
+        "route_points" => [
+          %{
+            "id" => 12,
+            "type" => "destination",
+            "external_order_id" => "other",
+            "visit_status" => "visited",
+            "visited_at" => %{"actual" => DateTime.to_iso8601(DateTime.utc_now())}
+          }
+        ]
+      })
+
+      assert :ok = poll(ctx.branch)
+      assert %Order{status: :completed, delivered_at: nil} = Repo.reload!(ctx.order)
+      assert Repo.aggregate(ActualEvent, :count, :id) == 0
+    end
+
+    test "keeps the claim retryable when a verified timestamp cannot be stored", ctx do
+      invalid = DateTime.add(ctx.order.inserted_at, -60, :second) |> DateTime.to_iso8601()
+
+      set_status(ctx.yandex, ctx.delivery.external_id, "delivered_finish", %{
+        "route_points" => [
+          %{
+            "id" => 12,
+            "type" => "destination",
+            "external_order_id" => ctx.order.number,
+            "visit_status" => "visited",
+            "visited_at" => %{"actual" => invalid}
+          }
+        ]
+      })
+
+      assert {:error, :not_eligible} = YandexDelivery.sync(ctx.delivery, @settings)
+      assert %Order{status: :preparing, delivered_at: nil} = Repo.reload!(ctx.order)
+      assert %Delivery{status: :searching} = Couriers.active(ctx.order.id)
+      assert Repo.aggregate(ActualEvent, :count, :id) == 0
     end
 
     test "a pickup before the kitchen marks it ready still moves the order", ctx do

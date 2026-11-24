@@ -189,20 +189,21 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Categories Management")}
-      subtitle={gettext("Drag and drop items to reorder menu categories")}
-    >
-      <:actions>
-        <.link
-          :if={Identity.can?(@current_staff, "categories.create")}
-          patch={~p"/staff/b/#{@current_branch}/categories/new"}
-          class="btn btn-primary"
-        >
-          {gettext("Create Category")}
-        </.link>
-      </:actions>
-    </.page_header>
+    <%= if @live_action == :index do %>
+      <.page_toolbar id="categories-toolbar" title={gettext("Categories Management")}>
+        <:primary_action>
+          <.link
+            :if={Identity.can?(@current_staff, "categories.create")}
+            patch={~p"/staff/b/#{@current_branch}/categories/new"}
+            class="btn btn-primary btn-sm"
+          >
+            {gettext("Create Category")}
+          </.link>
+        </:primary_action>
+      </.page_toolbar>
+    <% else %>
+      <.page_header title={@page_title} />
+    <% end %>
     """
   end
 
@@ -210,6 +211,9 @@ defmodule DelivestWeb.Staff.CategoryLive.Categories do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <p class="text-sm text-base-content/60">
+        {gettext("Drag and drop items to reorder menu categories")}
+      </p>
       <div id="categories-list" phx-hook="SortableCategories" class="space-y-2">
         <.empty_state :if={@categories == []} title={gettext("No categories")} />
         <%= for category <- @categories do %>

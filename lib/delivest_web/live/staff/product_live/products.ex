@@ -508,80 +508,151 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     if product_id, do: path <> "#product-row-#{product_id}", else: path
   end
 
+  defp product_columns do
+    [
+      %{label: nil},
+      %{label: nil, key: "actions"},
+      %{label: gettext("Name"), sort: "name"},
+      %{label: gettext("Category")},
+      %{label: gettext("Price"), sort: "price"},
+      %{label: gettext("Quantity"), secondary: true},
+      %{label: gettext("Weight"), secondary: true},
+      %{label: gettext("Status")},
+      %{label: gettext("Stop list")},
+      %{label: gettext("Description"), secondary: true},
+      %{label: gettext("Media"), secondary: true},
+      %{label: gettext("External ID"), secondary: true},
+      %{label: gettext("Created At"), sort: "inserted_at", secondary: true}
+    ]
+  end
+
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={if @live_action in [:edit, :show], do: @page_title, else: gettext("Products")}
-      title_in_header={false}
-    >
-      <:actions>
-        <.link
-          :if={@live_action in [:edit, :show]}
-          id="product-back-to-list"
-          navigate={product_list_path(assigns, @product.id)}
-          class="btn btn-ghost"
-        >{gettext("Back to products")}</.link>
-        <button
-          :if={@live_action == :edit}
-          type="submit"
-          form="product-form"
-          class="btn btn-primary"
-          data-staff-save="edit"
-        >{gettext("Save")}</button>
-        <.link
-          :if={@live_action == :show and Identity.can?(@current_staff, "products.update")}
-          id="product-edit-link"
-          navigate={
-            ~p"/staff/b/#{@current_branch}/products/#{@product.id}/edit?#{build_query_params(assigns, %{})}"
-          }
-          class="btn btn-primary"
-        >{gettext("Edit")}</.link>
-        <.button
-          :if={
-            @live_action not in [:edit, :show] and Identity.can?(@current_staff, "products.create") and
-              not @crm_menu
-          }
-          id="create-product"
-          patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
-          class="btn btn-primary"
-        >
-          <.icon name="hero-plus" class="size-5" />
-          {gettext("Create Product")}
-        </.button>
-        <details :if={@live_action not in [:edit, :show]} id="product-more-actions">
-          <summary class="btn btn-ghost list-none cursor-pointer">
-            <.icon name="hero-ellipsis-horizontal" class="size-5" />
-            {gettext("More")}
-          </summary>
-          <div class="flex flex-col items-start gap-1 py-2">
-            <.link
-              id="product-operations-link"
-              navigate={
-                ~p"/staff/b/#{@current_branch}/products/operations?#{build_query_params(assigns, %{})}"
-              }
-              class="btn btn-ghost btn-sm justify-start"
-            >{gettext("Product operations")}</.link>
-            <.link
-              :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
-              id="bulk-add-products"
-              navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
-              class="btn btn-ghost btn-sm justify-start"
-            >{gettext("Bulk add")}</.link>
-            <button
-              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
-              id="product-toggle-selection"
-              type="button"
-              phx-click={
-                JS.push("toggle_selection")
-                |> JS.remove_attribute("open", to: "#product-more-actions")
-              }
-              aria-pressed={if(@selection_mode, do: "true", else: "false")}
-              class="btn btn-ghost btn-sm justify-start"
-            >{if @selection_mode, do: gettext("Cancel selection"), else: gettext("Select multiple")}</button>
-          </div>
-        </details>
-      </:actions>
-    </.page_header>
+    <%= if @live_action in [:edit, :show] do %>
+      <.page_header title={@page_title} title_in_header={false}>
+        <:actions>
+          <.link
+            :if={@live_action in [:edit, :show]}
+            id="product-back-to-list"
+            navigate={product_list_path(assigns, @product.id)}
+            class="btn btn-ghost"
+          >{gettext("Back to products")}</.link>
+          <button
+            :if={@live_action == :edit}
+            type="submit"
+            form="product-form"
+            class="btn btn-primary"
+            data-staff-save="edit"
+          >{gettext("Save")}</button>
+          <.link
+            :if={@live_action == :show and Identity.can?(@current_staff, "products.update")}
+            id="product-edit-link"
+            navigate={
+              ~p"/staff/b/#{@current_branch}/products/#{@product.id}/edit?#{build_query_params(assigns, %{})}"
+            }
+            class="btn btn-primary"
+          >{gettext("Edit")}</.link>
+        </:actions>
+      </.page_header>
+    <% else %>
+      <.page_toolbar id="products-toolbar" title={gettext("Products")} more_id="product-more-actions">
+        <:filters>
+          <.filter_bar
+            id="products-filter-bar"
+            form_id="products-filter"
+            query={@search}
+            query_name="search"
+            query_placeholder={gettext("Search products...")}
+            reset_path={~p"/staff/b/#{@current_branch}/products"}
+            active={@selected_category_id != nil or @selected_status != nil or @stopped_filter}
+            compact
+          >
+            <:filter>
+              <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <select
+                  name="category_id"
+                  aria-label={gettext("Category")}
+                  class="select select-bordered select-sm w-full sm:w-36 shrink-0"
+                >
+                  <option value="">{gettext("All categories")}</option>
+                  <%= for cat <- @categories do %>
+                    <option value={cat.id} selected={@selected_category_id == cat.id}>
+                      {cat.name}
+                    </option>
+                  <% end %>
+                </select>
+                <select
+                  name="is_active"
+                  aria-label={gettext("Status")}
+                  class="select select-bordered select-sm w-full sm:w-36 shrink-0"
+                >
+                  <option value="">{gettext("All statuses")}</option>
+                  <option value="true" selected={@selected_status == true}>
+                    {gettext("Active")}
+                  </option>
+                  <option value="false" selected={@selected_status == false}>
+                    {gettext("Inactive")}
+                  </option>
+                  <option value="stopped" selected={@stopped_filter}>
+                    {gettext("In stop list")}
+                  </option>
+                </select>
+              </div>
+            </:filter>
+          </.filter_bar>
+        </:filters>
+        <:primary_action>
+          <.button
+            :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+            id="create-product"
+            patch={~p"/staff/b/#{@current_branch}/products/new?#{build_query_params(assigns, %{})}"}
+            class="btn btn-primary btn-sm"
+            aria-label={gettext("Create Product")}
+          >
+            <.icon name="hero-plus" class="size-4" />
+            {gettext("Create")}
+          </.button>
+        </:primary_action>
+        <:more_actions>
+          <.link
+            id="product-operations-link"
+            navigate={
+              ~p"/staff/b/#{@current_branch}/products/operations?#{build_query_params(assigns, %{})}"
+            }
+            class="btn btn-ghost btn-sm justify-start"
+          >{gettext("Product operations")}</.link>
+          <.link
+            :if={Identity.can?(@current_staff, "products.create") and not @crm_menu}
+            id="bulk-add-products"
+            navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
+            class="btn btn-ghost btn-sm justify-start"
+          >{gettext("Bulk add")}</.link>
+          <button
+            :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+            id="product-toggle-selection"
+            type="button"
+            phx-click={
+              JS.push("toggle_selection")
+              |> JS.remove_attribute("open", to: "#product-more-actions")
+            }
+            aria-pressed={if(@selection_mode, do: "true", else: "false")}
+            class="btn btn-ghost btn-sm justify-start"
+          >{if @selection_mode, do: gettext("Cancel selection"), else: gettext("Select multiple")}</button>
+          <details class="w-full border-t border-base-300 pt-1">
+            <summary class="btn btn-ghost btn-sm w-full cursor-pointer justify-start">
+              {gettext("Visible columns")}
+            </summary>
+            <.table_column_chooser
+              id="products"
+              columns={product_columns()}
+              staff_id={to_string(@current_staff.id)}
+              list_id="products"
+              compact
+            />
+          </details>
+        </:more_actions>
+      </.page_toolbar>
+    <% end %>
     """
   end
 
@@ -609,38 +680,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           />
         </div>
       <% else %>
-        <.filter_bar
-          id="products-filter-bar"
-          form_id="products-filter"
-          query={@search}
-          query_name="search"
-          query_placeholder={gettext("Search products...")}
-          reset_path={~p"/staff/b/#{@current_branch}/products"}
-          active={@selected_category_id != nil or @selected_status != nil or @stopped_filter}
-        >
-          <:filter>
-            <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-              <select name="category_id" class="select select-bordered w-full sm:w-52 shrink-0">
-                <option value="">{gettext("All categories")}</option>
-                <%= for cat <- @categories do %>
-                  <option value={cat.id} selected={@selected_category_id == cat.id}>
-                    {cat.name}
-                  </option>
-                <% end %>
-              </select>
-
-              <select name="is_active" class="select select-bordered w-full sm:w-48 shrink-0">
-                <option value="">{gettext("All statuses")}</option>
-                <option value="true" selected={@selected_status == true}>{gettext("Active")}</option>
-                <option value="false" selected={@selected_status == false}>
-                  {gettext("Inactive")}
-                </option>
-                <option value="stopped" selected={@stopped_filter}>{gettext("In stop list")}</option>
-              </select>
-            </div>
-          </:filter>
-        </.filter_bar>
-
         <% path_fn = fn overrides ->
           ~p"/staff/b/#{@current_branch}/products?#{build_query_params(assigns, overrides)}"
         end %>
@@ -649,6 +688,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
         <.table
           id="products"
+          show_column_chooser={false}
           rows={@streams.products}
           meta={@meta}
           path_fn={path_fn}

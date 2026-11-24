@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.BranchLive.Sections do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @ids ~w(general fulfillment location hours kitchen board links analytics snapshot)a
+  @ids ~w(general fulfillment timing location hours kitchen board links analytics snapshot)a
 
   def all, do: Enum.map(@ids, &describe/1)
 
@@ -33,6 +33,15 @@ defmodule DelivestWeb.Staff.BranchLive.Sections do
         "hero-map-pin",
         gettext("Location"),
         gettext("The address and the point of the branch for customers and the pickup map.")
+      )
+
+  def describe(:timing),
+    do:
+      section(
+        :timing,
+        "hero-clock",
+        gettext("Order timing"),
+        gettext("Choose the customer delivery time and optional kitchen estimates.")
       )
 
   def describe(:hours), do: section(:hours, "hero-clock", gettext("Working Hours"), nil)

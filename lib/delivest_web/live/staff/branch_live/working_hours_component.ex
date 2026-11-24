@@ -47,7 +47,7 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
               type="time"
               name={"branch_form[working_hours][#{day_key}][open]"}
               value={open_at}
-              class="input input-bordered input-xs w-full"
+              class="input input-xs w-full"
             />
           </label>
 
@@ -60,7 +60,7 @@ defmodule DelivestWeb.Staff.BranchLive.WorkingHoursComponent do
               type="time"
               name={"branch_form[working_hours][#{day_key}][close]"}
               value={close_at}
-              class="input input-bordered input-xs w-full"
+              class="input input-xs w-full"
             />
           </label>
 

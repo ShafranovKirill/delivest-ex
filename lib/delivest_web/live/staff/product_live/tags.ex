@@ -128,21 +128,18 @@ defmodule DelivestWeb.Staff.ProductLive.Tags do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Tags")}
-      title_in_header={false}
-    >
-      <:actions>
+    <.page_toolbar id="tags-toolbar" title={gettext("Tags")}>
+      <:primary_action>
         <.button
           :if={Identity.can?(@current_staff, "catalog.global.manage")}
           patch={~p"/staff/b/#{@current_branch}/products/tags/new"}
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
         >
           <.icon name="hero-plus" class="size-5" />
           {gettext("Add tag")}
         </.button>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 

@@ -1,7 +1,8 @@
 defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   use DelivestWeb, :live_view
 
-  alias Delivest.Identity
+  alias Delivest.{Couriers, Features, Identity}
+  alias Delivest.Analytics.Reports
   alias Delivest.Oms.Kitchen
 
   alias DelivestWeb.{KitchenAccess, StaffBranchPath}
@@ -12,20 +13,25 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
     to = if StaffBranchPath.valid_section?(params["to"]), do: params["to"]
     kitchen_only? = Kitchen.account?(staff)
 
-    intent =
-      if params["modal"] == "true",
-        do: StaffBranchPath.selection_intent(params["from"], params["return_to"]),
-        else: :error
+    intent = StaffBranchPath.selection_intent(params["from"], params["return_to"])
 
-    {modal?, from, return_to} =
+    {from, return_to} =
       case intent do
-        {:ok, %{source: source, return_to: return_to}} -> {true, source, return_to}
-        :error -> {false, nil, "/staff/dashboard"}
+        {:ok, %{source: source, return_to: return_to}} -> {source, return_to}
+        :error -> {nil, nil}
       end
 
+    to = if(from, do: nil, else: to)
+
+    branches = Identity.list_branch_for_staff(staff, preload: :info)
+    feature = from |> StaffBranchPath.selection_report_section() |> Reports.feature_for_tab()
+
+    enabled_ids =
+      if feature, do: Features.enabled_branches(feature, Enum.map(branches, & &1.id))
+
     entries =
-      staff
-      |> Identity.list_branch_for_staff(preload: :info)
+      branches
+      |> Enum.filter(&(is_nil(enabled_ids) or MapSet.member?(enabled_ids, &1.id)))
       |> Enum.map(fn branch ->
         %{
           branch: branch,
@@ -33,85 +39,43 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
         }
       end)
 
+    navigation_branch = chooser_navigation_branch(entries, from)
+    navigation_path = chooser_navigation_path(from, to, navigation_branch)
+
     {:ok,
      assign(socket,
        entries: entries,
        page_title: gettext("Select a branch"),
        kitchen_only?: kitchen_only?,
        available?: Enum.any?(entries, & &1.kitchen?),
-       to: if(modal?, do: nil, else: to),
-       modal?: modal?,
+       to: to,
        from: from,
-       return_to: return_to
+       return_to: return_to,
+       chooser_navigation_path: navigation_path,
+       chooser_navigation_branch: navigation_branch,
+       network_path: if(entries == [], do: nil, else: network_choice_path(staff, from, to))
      )}
-  end
-
-  def staff_page_header(%{modal?: true} = assigns) do
-    ~H"""
-    <div class="sr-only" aria-hidden="true"></div>
-    """
   end
 
   def staff_page_header(assigns) do
     ~H"""
     <.page_header
       title={gettext("Select a branch")}
-      subtitle={gettext("Choose a branch to continue working in the system")}
+      back={@return_to}
     />
     """
   end
 
   @impl true
-  def handle_event("close_branch_selector", _params, socket) do
-    {:noreply, push_navigate(socket, to: socket.assigns.return_to)}
-  end
-
-  @impl true
   def render(assigns) do
     ~H"""
-    <div
-      :if={@modal?}
-      id="branch-select-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="branch-select-dialog-title"
-      phx-hook="FoundationDialog"
-      data-dirty="false"
-      data-close-event="close_branch_selector"
-      class="fixed inset-0 z-[60] grid place-items-center p-4"
-    >
-      <div class="absolute inset-0 bg-black/50" phx-click="close_branch_selector" aria-hidden="true">
-      </div>
-      <div class="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col rounded-box bg-base-100 shadow-xl">
-        <div class="flex items-center justify-between border-b border-base-300 p-4">
-          <h2 id="branch-select-dialog-title" class="text-lg font-semibold">
-            {gettext("Select a branch")}
-          </h2>
-          <button
-            type="button"
-            phx-click="close_branch_selector"
-            aria-label={gettext("Close")}
-            class="btn btn-ghost btn-square"
-          >×</button>
-        </div>
-        <div class="min-h-0 overflow-y-auto p-4">
-          <.branch_choices
-            entries={@entries}
-            kitchen_only?={@kitchen_only?}
-            available?={@available?}
-            to={@to}
-            from={@from}
-          />
-        </div>
-      </div>
-    </div>
     <.branch_choices
-      :if={!@modal?}
       entries={@entries}
       kitchen_only?={@kitchen_only?}
       available?={@available?}
       to={@to}
       from={@from}
+      network_path={@network_path}
     />
     """
   end
@@ -121,10 +85,11 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
   attr :available?, :boolean, required: true
   attr :to, :string, default: nil
   attr :from, :string, default: nil
+  attr :network_path, :string, default: nil
 
   defp branch_choices(assigns) do
     ~H"""
-    <div class="space-y-6">
+    <div id="branch-select-page" class="space-y-6">
       <div :if={@kitchen_only?} id="branch-select-kitchen-note" class="alert alert-info mb-4">
         <.icon name="hero-information-circle" class="size-5" />
         <span>
@@ -134,32 +99,49 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
         </span>
       </div>
 
-      <div class="space-y-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          :if={@network_path}
+          id="branch-select-all"
+          class="card border border-base-300 bg-base-100"
+        >
+          <div class="card-body gap-3">
+            <h2 id="branch-select-all-title" class="card-title">{gettext("All branches")}</h2>
+            <.link
+              id="branch-select-all-go"
+              href={@network_path}
+              aria-describedby="branch-select-all-title"
+              class="btn btn-sm btn-outline self-start"
+            >
+              {gettext("Go")}
+            </.link>
+          </div>
+        </div>
         <%= for %{branch: branch, kitchen?: kitchen?} <- @entries do %>
           <%= if kitchen? do %>
-            <.link
-              href={select_path(branch, @to, @from)}
-              method="get"
-              class="block p-6 rounded-box border border-base-300 bg-base-100 shadow-sm hover:border-base-content/30 hover:shadow-md transition-all group"
+            <div
+              id={"branch-select-card-#{branch.id}"}
+              class="card border border-base-300 bg-base-100"
             >
-              <h2 class="text-lg font-semibold tracking-tight text-base-content group-hover:text-primary transition-colors">
-                {branch.name}
-              </h2>
-              <p class="mt-1 text-sm text-base-content/60">
-                {gettext("Click to activate this branch")}
-              </p>
-            </.link>
+              <div class="card-body gap-3">
+                <h2 id={"branch-select-title-#{branch.id}"} class="card-title">{branch.name}</h2>
+                <.link
+                  id={"branch-select-go-#{branch.id}"}
+                  href={select_path(branch, @to, @from)}
+                  aria-describedby={"branch-select-title-#{branch.id}"}
+                  class="btn btn-sm btn-outline self-start"
+                >{gettext("Go")}</.link>
+              </div>
+            </div>
           <% else %>
             <div
               id={"branch-select-disabled-#{branch.id}"}
-              class="block p-6 rounded-box border border-dashed border-base-300 bg-base-200/40"
+              class="card border border-dashed border-base-300 bg-base-200/40"
             >
-              <h2 class="text-lg font-semibold tracking-tight text-base-content/60">
-                {branch.name}
-              </h2>
-              <p class="mt-1 text-sm text-error">
-                {KitchenAccess.message(branch)}
-              </p>
+              <div class="card-body gap-3">
+                <h2 class="card-title text-base-content/60">{branch.name}</h2>
+                <p class="text-sm text-error">{KitchenAccess.message(branch)}</p>
+              </div>
             </div>
           <% end %>
         <% end %>
@@ -199,4 +181,73 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelect do
 
   defp select_path(branch, nil, nil), do: ~p"/staff/branches/select/#{branch.id}"
   defp select_path(branch, to, nil), do: ~p"/staff/branches/select/#{branch.id}?#{%{to: to}}"
+
+  defp chooser_navigation_branch(entries, from) do
+    source_slug =
+      case Regex.run(~r{^/staff/b/([^/]+)}, from || "") do
+        [_, slug] -> slug
+        _ -> nil
+      end
+
+    Enum.find_value(entries, fn %{branch: branch, kitchen?: available?} ->
+      if available? and branch.slug == source_slug, do: branch
+    end) ||
+      Enum.find_value(entries, fn %{branch: branch, kitchen?: available?} ->
+        if available?, do: branch
+      end)
+  end
+
+  defp chooser_navigation_path(from, _to, %{slug: slug}) when is_binary(from) do
+    if DelivestWeb.StaffNav.network_analytics_path?(URI.parse(from).path) do
+      case StaffBranchPath.selection_destination(from, slug) do
+        {:ok, branch_path} -> branch_path
+        :error -> from
+      end
+    else
+      from
+    end
+  end
+
+  defp chooser_navigation_path(from, _to, _branch) when is_binary(from), do: from
+
+  defp chooser_navigation_path(nil, to, %{slug: slug}) when is_binary(to) do
+    source = "/staff/b/#{slug}#{to}"
+
+    case StaffBranchPath.selection_intent(source, nil) do
+      {:ok, %{source: canonical}} -> canonical
+      :error -> nil
+    end
+  end
+
+  defp chooser_navigation_path(_, _, _), do: nil
+
+  defp network_choice_path(staff, source, to) do
+    cond do
+      Kitchen.account?(staff) or Couriers.account?(staff) or is_binary(to) ->
+        nil
+
+      is_nil(source) ->
+        ~p"/staff/branches/all"
+
+      true ->
+        case StaffBranchPath.transition(source, :network) do
+          {:ok, %{path: destination}} ->
+            if network_allowed?(staff, destination),
+              do: ~p"/staff/branches/all?#{%{from: source}}"
+
+          _ ->
+            nil
+        end
+    end
+  end
+
+  defp network_allowed?(staff, destination) do
+    path = URI.parse(destination).path
+
+    if path == "/staff/statistics" or String.starts_with?(path, "/staff/analytics/") do
+      Identity.can?(staff, "statistics.read") and Identity.can?(staff, "statistics.network")
+    else
+      true
+    end
+  end
 end

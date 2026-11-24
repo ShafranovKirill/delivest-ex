@@ -23,12 +23,21 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
 
     ~H"""
     <nav id="order-status-tabs" aria-label={gettext("Status")}>
-      <details class="dropdown w-full">
-        <summary id="order-status-select" class="btn btn-sm btn-outline w-full justify-between">
-          <span class="truncate">{@selected_label}</span>
-          <.icon name="hero-chevron-down" class="size-4 shrink-0" />
+      <details class="dropdown w-full" name="orders-toolbar-menu">
+        <summary
+          id="order-status-select"
+          class={[
+            "btn btn-sm btn-outline w-full justify-between",
+            @selected != "" && "btn-active"
+          ]}
+          aria-label={"#{gettext("Status")} — #{@selected_label}"}
+          title={@selected_label}
+        >
+          <.icon name="hero-list-bullet" class="orders-status-icon size-4 shrink-0" />
+          <span class="orders-status-label truncate">{@selected_label}</span>
+          <.icon name="hero-chevron-down" class="orders-status-chevron size-4 shrink-0" />
         </summary>
-        <div class="dropdown-content z-20 mt-1 max-h-80 w-full overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
+        <div class="orders-status-menu dropdown-content z-20 mt-1 max-h-80 min-w-48 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
           <.tab
             id="order-status-tab-all"
             label={gettext("All")}
@@ -63,15 +72,15 @@ defmodule DelivestWeb.Staff.OrderLive.Components.StatusTabs do
       patch={@to}
       aria-current={@active && "page"}
       class={[
-        "flex w-full items-center justify-between rounded-field px-3 py-2 text-left text-sm hover:bg-base-200",
-        @active && "btn-primary",
-        !@active && "bg-base-100"
+        "flex w-full items-center justify-between rounded-field px-3 py-2 text-left text-sm",
+        @active && "bg-primary text-primary-content hover:bg-primary/90",
+        !@active && "bg-base-100 hover:bg-base-200"
       ]}
     >
       {@label}
       <span class={[
         "badge badge-sm font-mono",
-        @active && "bg-primary-content/20 border-0 text-primary-content",
+        @active && "border-transparent bg-base-100 text-base-content",
         !@active && "badge-ghost"
       ]}>
         {@count}

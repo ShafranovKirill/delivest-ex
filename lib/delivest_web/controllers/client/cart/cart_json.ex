@@ -1,6 +1,7 @@
 defmodule DelivestWeb.Client.Cart.CartJSON do
   alias Delivest.Net.Stops
   alias Delivest.Oms.CartView
+  alias Delivest.Oms.OrderTiming
   alias DelivestWeb.Client.Cart.PromoJSON
 
   def show(%{cart: %CartView{} = cart}) do
@@ -25,6 +26,7 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       subtotal_amount: cart.subtotal_amount,
       discount_amount: cart.discount_amount,
       total_amount: cart.total_amount,
+      prep_minutes: prep_minutes(cart),
       points_earned: cart.points_earned,
       base_stars: cart.base_stars,
       product_stars: cart.product_stars,
@@ -32,6 +34,14 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       promotions: Enum.map(cart.promotions, &PromoJSON.applied/1),
       hints: Enum.map(cart.hints, &PromoJSON.hint/1)
     }
+  end
+
+  defp prep_minutes(%CartView{branch_id: nil}), do: nil
+
+  defp prep_minutes(%CartView{} = cart) do
+    if OrderTiming.get(cart.branch_id).mode == :calculated,
+      do: OrderTiming.cart_prep_minutes(cart.branch_id, cart.items),
+      else: nil
   end
 
   defp stopped_ids(nil), do: MapSet.new()

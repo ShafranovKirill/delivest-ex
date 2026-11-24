@@ -4,7 +4,7 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   alias Delivest.Identity
   alias Delivest.Identity.Client
   alias DelivestWeb.Staff.ClientLive.ClientFormComponent
-  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
+  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1, status_badge: 1]
 
   on_mount {DelivestWeb.Hooks.Permission, "clients.read"}
 
@@ -232,21 +232,51 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Clients")}
-      subtitle={gettext("Manage system clients, status, and information.")}
-    >
-      <:actions>
+    <.page_toolbar id="clients-toolbar" title={gettext("Clients")}>
+      <:filters>
+        <.filter_bar
+          id="clients-filter"
+          form_id="clients-filter-form"
+          query={@search}
+          query_name="search"
+          query_input_id="clients-search"
+          query_placeholder={gettext("Search by name or phone...")}
+          reset_path={~p"/staff/clients"}
+          event="filter"
+          active={not is_nil(@selected_status)}
+          compact
+        >
+          <:filter>
+            <select
+              name="status"
+              aria-label={gettext("Status")}
+              class="select select-bordered select-sm w-full sm:w-40 shrink-0"
+            >
+              <option value="">{gettext("All statuses")}</option>
+              <option value="guest" selected={to_string(@selected_status) == "guest"}>
+                {gettext("Guest")}
+              </option>
+              <option value="active" selected={to_string(@selected_status) == "active"}>
+                {gettext("Active")}
+              </option>
+              <option value="blocked" selected={to_string(@selected_status) == "blocked"}>
+                {gettext("Blocked")}
+              </option>
+            </select>
+          </:filter>
+        </.filter_bar>
+      </:filters>
+      <:primary_action>
         <.button
           :if={Identity.can?(@current_staff, "clients.create")}
           patch={~p"/staff/clients/new?#{build_query_params(assigns, %{})}"}
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
+          aria-label={gettext("Create Client")}
         >
-          <.icon name="hero-user-plus" class="size-5" />
-          {gettext("Create Client")}
+          <.icon name="hero-user-plus" class="size-4" />{gettext("Create")}
         </.button>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 
@@ -254,33 +284,6 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.filter_bar
-        id="clients-filter"
-        form_id="clients-filter-form"
-        query={@search}
-        query_name="search"
-        query_input_id="clients-search"
-        query_placeholder={gettext("Search by name or phone...")}
-        reset_path={~p"/staff/clients"}
-        event="filter"
-        active={not is_nil(@selected_status)}
-      >
-        <:filter>
-          <select name="status" class="select select-bordered w-full sm:w-48 shrink-0">
-            <option value="">{gettext("All statuses")}</option>
-            <option value="guest" selected={to_string(@selected_status) == "guest"}>
-              {gettext("Guest")}
-            </option>
-            <option value="active" selected={to_string(@selected_status) == "active"}>
-              {gettext("Active")}
-            </option>
-            <option value="blocked" selected={to_string(@selected_status) == "blocked"}>
-              {gettext("Blocked")}
-            </option>
-          </select>
-        </:filter>
-      </.filter_bar>
-
       <% path_fn = fn overrides -> ~p"/staff/clients?#{build_query_params(assigns, overrides)}" end %>
 
       <.table
@@ -315,15 +318,32 @@ defmodule DelivestWeb.Staff.ClientLive.Clients do
         <:col :let={{_id, client}} label={gettext("Status")} sort="status">
           <%= case client.status do %>
             <% :active -> %>
-              <span class="badge badge-success badge-sm whitespace-nowrap">{gettext("Active")}</span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={gettext("Active")}
+                tone={:success}
+                class="badge-sm whitespace-nowrap"
+              />
             <% :guest -> %>
-              <span class="badge badge-info badge-sm whitespace-nowrap">{gettext("Guest")}</span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={gettext("Guest")}
+                tone={:info}
+                class="badge-sm whitespace-nowrap"
+              />
             <% :blocked -> %>
-              <span class="badge badge-error badge-sm text-error-content whitespace-nowrap">
-                {gettext("Blocked")}
-              </span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={gettext("Blocked")}
+                tone={:error}
+                class="badge-sm whitespace-nowrap"
+              />
             <% _ -> %>
-              <span class="badge badge-ghost badge-sm">{client.status}</span>
+              <.status_badge
+                id={"client-status-#{client.id}"}
+                label={to_string(client.status)}
+                class="badge-sm badge-ghost"
+              />
           <% end %>
         </:col>
 

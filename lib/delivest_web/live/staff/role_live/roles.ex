@@ -152,42 +152,43 @@ defmodule DelivestWeb.Staff.RoleLive.Roles do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={if @live_action in [:new, :edit], do: @page_title, else: gettext("Roles Management")}
-      subtitle={if @live_action == :index, do: gettext("List of available company roles")}
-    >
-      <:actions>
-        <.link
-          :if={@live_action in [:new, :edit]}
-          id="role-back-to-list"
-          navigate={role_list_path(@role.id)}
-          class="btn btn-ghost"
-        >{gettext("Back to roles")}</.link>
-        <button
-          :if={@live_action in [:new, :edit]}
-          type="submit"
-          form="role-form"
-          class="btn btn-primary"
-          data-staff-save={if @live_action == :new, do: "create", else: "edit"}
-        >{gettext("Save")}</button>
-        <button
-          :if={@live_action == :index and Identity.can?(@current_staff, "admin")}
-          id="seed-roles"
-          type="button"
-          phx-click="seed_roles"
-          class="btn btn-outline"
-        >
-          {gettext("Create Base Roles")}
-        </button>
-        <.link
-          :if={@live_action == :index and Identity.can?(@current_staff, "roles.create")}
-          navigate={~p"/staff/roles/new"}
-          class="btn btn-primary"
-        >
-          {gettext("Create Role")}
-        </.link>
-      </:actions>
-    </.page_header>
+    <%= if @live_action == :index do %>
+      <.page_toolbar id="roles-toolbar" title={gettext("Roles Management")}>
+        <:more_actions :if={Identity.can?(@current_staff, "admin")}>
+          <button
+            id="seed-roles"
+            type="button"
+            phx-click="seed_roles"
+            class="btn btn-ghost btn-sm justify-start"
+          >{gettext("Create Base Roles")}</button>
+        </:more_actions>
+        <:primary_action>
+          <.link
+            :if={Identity.can?(@current_staff, "roles.create")}
+            navigate={~p"/staff/roles/new"}
+            class="btn btn-primary btn-sm"
+          >{gettext("Create Role")}</.link>
+        </:primary_action>
+      </.page_toolbar>
+    <% else %>
+      <.page_header title={@page_title}>
+        <:actions>
+          <.link
+            :if={@live_action in [:new, :edit]}
+            id="role-back-to-list"
+            navigate={role_list_path(@role.id)}
+            class="btn btn-ghost"
+          >{gettext("Back to roles")}</.link>
+          <button
+            :if={@live_action in [:new, :edit]}
+            type="submit"
+            form="role-form"
+            class="btn btn-primary"
+            data-staff-save={if @live_action == :new, do: "create", else: "edit"}
+          >{gettext("Save")}</button>
+        </:actions>
+      </.page_header>
+    <% end %>
     """
   end
 

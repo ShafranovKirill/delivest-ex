@@ -28,9 +28,14 @@ defmodule DelivestWeb.Schemas.BranchSchemas do
         delivery_time: %Schema{
           type: :integer,
           example: "30",
-          nullable: true,
-          description: "Минуты до готовности вместе с добавкой на загрузку"
+          description:
+            "Общий срок доставки до выбора адреса: фиксированное время или базовый расчёт"
         },
+        timing_mode: %Schema{type: :string, enum: ["fixed", "calculated"]},
+        fixed_delivery_minutes: %Schema{type: :integer},
+        kitchen_minutes: %Schema{type: :integer},
+        packing_minutes: %Schema{type: :integer},
+        travel_minutes: %Schema{type: :integer},
         manual_rating: %Schema{type: :number, format: :float, nullable: true},
         notifications_enabled: %Schema{
           type: :boolean,

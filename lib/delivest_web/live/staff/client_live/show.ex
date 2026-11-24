@@ -238,13 +238,13 @@ defmodule DelivestWeb.Staff.ClientLive.Show do
                 name="amount"
                 type="number"
                 placeholder="+50 / -20"
-                class="input input-bordered input-sm w-24"
+                class="input input-sm w-24"
               />
               <input
                 name="reason"
                 type="text"
                 placeholder={gettext("Reason")}
-                class="input input-bordered input-sm grow"
+                class="input input-sm grow"
               />
               <button type="submit" class="btn btn-sm btn-outline">{gettext("Apply")}</button>
             </form>

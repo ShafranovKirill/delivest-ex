@@ -281,12 +281,15 @@ defmodule DelivestWeb.Staff.AnalyticsLive.Advertising do
   @impl true
   def render(assigns) do
     ~H"""
-    <nav id="sources-advertising-tabs" class="tabs tabs-sm mb-3">
+    <nav
+      id="sources-advertising-tabs"
+      class="tabs tabs-box tabs-sm mb-3 max-w-full flex-nowrap overflow-x-auto"
+    >
       <.link
         navigate={"/staff/analytics/sources?" <> URI.encode_query(%{"period" => "custom", "from" => @from, "to" => @to})}
         class="tab"
       >{gettext("Sources")}</.link>
-      <span class="tab tab-active">{gettext("Campaigns")}</span>
+      <span class="tab tab-active" aria-current="page">{gettext("Campaigns")}</span>
     </nav>
 
     <div class="space-y-3">

@@ -12,12 +12,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
     path = URI.parse(url).path
     stripped = DelivestWeb.StaffBranchPath.strip(path)
 
-    page =
-      cond do
-        stripped == "/staff/marketing" -> marketing_section_page(params["section"])
-        String.match?(stripped, ~r{^/staff/branches/[^/]+/edit(?:/|$)}) -> :settings
-        true -> determine_page_by_path(stripped)
-      end
+    page = page_for_route(stripped, params)
 
     socket =
       socket
@@ -33,6 +28,25 @@ defmodule DelivestWeb.Hooks.StaffPath do
       )
 
     {:cont, socket}
+  end
+
+  def page_for_path(path) when is_binary(path) do
+    uri = URI.parse(path)
+
+    page_for_route(
+      DelivestWeb.StaffBranchPath.strip(uri.path || ""),
+      URI.decode_query(uri.query || "")
+    )
+  end
+
+  def page_for_path(_), do: :unknown
+
+  defp page_for_route(stripped, params) do
+    cond do
+      stripped == "/staff/marketing" -> marketing_section_page(params["section"])
+      String.match?(stripped, ~r{^/staff/branches/[^/]+/edit(?:/|$)}) -> :settings
+      true -> determine_page_by_path(stripped)
+    end
   end
 
   @pages [
@@ -53,10 +67,10 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/finance/payments", :payments},
     {"/staff/finance/transactions", :payments},
     {"/staff/finance/receipts", :receipts},
-    {"/staff/finance/printing", :printing},
     {"/staff/categories", :categories},
     {"/staff/menu/popular", :popular},
     {"/staff/products/stops", :stops},
+    {"/staff/products/collections", :collections},
     {"/staff/products/tags", :tags},
     {"/staff/products/suggested", :suggested},
     {"/staff/products", :products},

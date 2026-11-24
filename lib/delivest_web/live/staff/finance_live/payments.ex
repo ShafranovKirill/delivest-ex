@@ -73,20 +73,17 @@ defmodule DelivestWeb.Staff.FinanceLive.Payments do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Payment")}
-      subtitle={gettext("How customers of this branch can pay for an order.")}
-    >
-      <:actions :if={@can_edit}>
+    <.page_toolbar id="payment-methods-toolbar" title={gettext("Payment")}>
+      <:primary_action :if={@can_edit}>
         <button
           type="submit"
           form="payments-form"
           data-staff-save="edit"
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
           phx-disable-with={gettext("Saving...")}
         >{gettext("Save")}</button>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 

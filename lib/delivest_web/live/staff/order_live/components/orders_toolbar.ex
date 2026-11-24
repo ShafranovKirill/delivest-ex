@@ -2,6 +2,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
   use DelivestWeb, :html
   attr :selected, :map, required: true
   attr :reset_path, :string, required: true
+  slot :inner_block, required: true
 
   def orders_toolbar(assigns) do
     ~H"""
@@ -25,90 +26,128 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             class="input input-sm w-full"
           />
         </div>
-        <div class="orders-filter-fields flex min-w-0 flex-wrap items-center gap-2">
-          <label for="orders-period" class="sr-only">{gettext("Period")}</label>
-          <select
-            id="orders-period"
-            name="period"
-            class="select select-bordered select-sm min-w-28 flex-1"
+        <label for="orders-period" class="sr-only">{gettext("Period")}</label>
+        <select id="orders-period" name="period" class="select select-sm">
+          <option
+            :for={{value, label} <- periods()}
+            value={value}
+            selected={@selected.period == value}
           >
-            <option
-              :for={{value, label} <- periods()}
-              value={value}
-              selected={@selected.period == value}
-            >
-              {label}
-            </option>
-          </select>
-          <label for="orders-receiving" class="sr-only">{gettext("Receiving")}</label>
-          <select
-            id="orders-receiving"
-            name="receiving"
-            class="select select-bordered select-sm min-w-32 flex-1"
-          >
-            <option value="">{gettext("All receiving types")}</option>
-            <option value="dine_in" selected={@selected.receiving == "dine_in"}>
-              {gettext("Dine in")}
-            </option>
-            <option value="delivery" selected={@selected.receiving == "delivery"}>
-              {gettext("Delivery")}
-            </option>
-            <option value="pickup" selected={@selected.receiving == "pickup"}>
-              {gettext("Pickup")}
-            </option>
-          </select>
-          <label for="orders-payment" class="sr-only">{gettext("Payment")}</label>
-          <select
-            id="orders-payment"
-            name="payment"
-            class="select select-bordered select-sm min-w-28 flex-1"
-          >
-            <option value="">{gettext("All payment methods")}</option>
-            <option value="cash" selected={@selected.payment == "cash"}>{gettext("Cash")}</option>
-            <option value="card_offline" selected={@selected.payment == "card_offline"}>
-              {gettext("Card")}
-            </option>
-            <option value="online" selected={@selected.payment == "online"}>
-              {gettext("Online")}
-            </option>
-          </select>
-          <label for="orders-source" class="sr-only">{gettext("Source")}</label>
-          <select
-            id="orders-source"
-            name="source"
-            class="select select-bordered select-sm min-w-28 flex-1"
-          >
-            <option value="">{gettext("All sources")}</option>
-            <option
-              :for={source <- Delivest.Oms.OrderSource.all()}
-              value={source}
-              selected={@selected.source == source}
-            >
-              {source_label(source)}
-            </option>
-          </select>
-          <label class="label cursor-pointer gap-1.5 whitespace-nowrap py-0">
-            <input type="hidden" name="problem" value="false" />
-            <input
-              id="orders-problem"
-              type="checkbox"
-              name="problem"
-              value="true"
-              checked={@selected.problem}
-              class="checkbox checkbox-sm"
-            />
-            <span class="text-sm">{gettext("Needs attention")}</span>
-          </label>
-          <button type="submit" class="btn btn-sm btn-outline">{gettext("Apply")}</button>
-          <.link
-            :if={
-              @selected.period != "today" or @selected.problem or @selected.receiving != "" or
-                @selected.payment != "" or @selected.source != "" or @selected.search != ""
-            }
-            patch={@reset_path}
-            class="btn btn-sm btn-ghost"
-          >{gettext("Reset")}</.link>
+            {label}
+          </option>
+        </select>
+        <input :if={@selected.sold} type="hidden" name="sold" value="true" />
+        <div :if={@selected.hour != nil} class="flex items-center gap-1.5 whitespace-nowrap text-xs">
+          <input type="hidden" name="hour" value={@selected.hour} />
+          <span class="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
+            {gettext("Hour")}: {String.pad_leading(to_string(@selected.hour), 2, "0")}:00
+          </span>
+          <.link patch={@reset_path} aria-label={gettext("Reset")} class="btn btn-ghost btn-xs px-1">
+            <.icon name="hero-x-mark" class="size-3.5" />
+          </.link>
         </div>
+        {render_slot(@inner_block)}
+        <details
+          id="orders-extra-filters"
+          name="orders-toolbar-menu"
+          class="orders-extra-filters"
+          phx-mounted={JS.ignore_attributes("open")}
+        >
+          <summary class="btn btn-sm btn-outline" aria-label={gettext("Filters")}>
+            <.icon name="hero-funnel" class="size-4 shrink-0" />
+            <span class="orders-filter-label">{gettext("Filters")}</span>
+          </summary>
+          <div class="orders-filter-panel rounded-box border border-base-300 bg-base-100 p-3 shadow-lg">
+            <div class="orders-filter-fields grid gap-2">
+              <label for="orders-receiving" class="sr-only">{gettext("Receiving")}</label>
+              <select
+                id="orders-receiving"
+                name="receiving"
+                class="select select-sm w-full"
+              >
+                <option value="">{gettext("All receiving types")}</option>
+                <option value="dine_in" selected={@selected.receiving == "dine_in"}>
+                  {gettext("Dine in")}
+                </option>
+                <option value="delivery" selected={@selected.receiving == "delivery"}>
+                  {gettext("Delivery")}
+                </option>
+                <option value="pickup" selected={@selected.receiving == "pickup"}>
+                  {gettext("Pickup")}
+                </option>
+              </select>
+              <label for="orders-payment" class="sr-only">{gettext("Payment")}</label>
+              <select
+                id="orders-payment"
+                name="payment"
+                class="select select-sm w-full"
+              >
+                <option value="">{gettext("All payment methods")}</option>
+                <option value="cash" selected={@selected.payment == "cash"}>{gettext("Cash")}</option>
+                <option value="card_offline" selected={@selected.payment == "card_offline"}>
+                  {gettext("Card")}
+                </option>
+                <option value="online" selected={@selected.payment == "online"}>
+                  {gettext("Online")}
+                </option>
+              </select>
+              <label for="orders-source" class="sr-only">{gettext("Source")}</label>
+              <select
+                id="orders-source"
+                name="source"
+                class="select select-sm w-full"
+              >
+                <option value="">{gettext("All sources")}</option>
+                <option
+                  :for={source <- Delivest.Oms.OrderSource.all()}
+                  value={source}
+                  selected={@selected.source == source}
+                >
+                  {source_label(source)}
+                </option>
+              </select>
+              <label class="label cursor-pointer gap-1.5 whitespace-nowrap py-0">
+                <input type="hidden" name="problem" value="false" />
+                <input
+                  id="orders-problem"
+                  type="checkbox"
+                  name="problem"
+                  value="true"
+                  checked={@selected.problem}
+                  class="checkbox checkbox-sm"
+                />
+                <span class="text-sm">{gettext("Needs attention")}</span>
+              </label>
+              <div class="orders-sort flex items-center">
+                <div class="join" role="radiogroup" aria-label={gettext("Sort")}>
+                  <button
+                    :for={{value, label, icon} <- sorts()}
+                    id={"orders-sort-#{value}"}
+                    type="button"
+                    role="radio"
+                    aria-checked={to_string(@selected.sort == value)}
+                    phx-click="sort"
+                    phx-value-sort={value}
+                    class={["join-item btn btn-sm", @selected.sort == value && "btn-active"]}
+                  >
+                    <.icon name={icon} class="size-4" /> {label}
+                  </button>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-sm btn-outline">{gettext("Apply")}</button>
+              <.link
+                :if={
+                  @selected.period != "today" or @selected.problem or @selected.receiving != "" or
+                    @selected.payment != "" or @selected.source != "" or @selected.search != "" or
+                    @selected.status != "" or @selected.sort != "urgency" or
+                    @selected.hour != nil or @selected.sold
+                }
+                patch={@reset_path}
+                class="btn btn-sm btn-ghost"
+              >{gettext("Reset")}</.link>
+            </div>
+          </div>
+        </details>
         <div
           :if={@selected.period == "custom"}
           class="orders-date-range flex min-w-0 items-center gap-1"
@@ -119,7 +158,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             type="date"
             name="date_from"
             value={@selected.date_from}
-            class="input input-bordered input-sm min-w-0 w-32"
+            class="input input-sm min-w-0 w-32"
           />
           <span class="text-base-content/40">—</span>
           <label for="orders-date-to" class="sr-only">{gettext("To")}</label>
@@ -128,27 +167,10 @@ defmodule DelivestWeb.Staff.OrderLive.Components.OrdersToolbar do
             type="date"
             name="date_to"
             value={@selected.date_to}
-            class="input input-bordered input-sm min-w-0 w-32"
+            class="input input-sm min-w-0 w-32"
           />
         </div>
       </form>
-
-      <div class="orders-sort flex items-center justify-end">
-        <div class="join" role="radiogroup" aria-label={gettext("Sort")}>
-          <button
-            :for={{value, label, icon} <- sorts()}
-            id={"orders-sort-#{value}"}
-            type="button"
-            role="radio"
-            aria-checked={to_string(@selected.sort == value)}
-            phx-click="sort"
-            phx-value-sort={value}
-            class={["join-item btn btn-sm", @selected.sort == value && "btn-active"]}
-          >
-            <.icon name={icon} class="size-4" /> {label}
-          </button>
-        </div>
-      </div>
     </div>
     """
   end

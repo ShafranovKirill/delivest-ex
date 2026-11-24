@@ -390,9 +390,10 @@ defmodule Delivest.Analytics.Reports.Refresh do
     if Date.diff(today, day) >= 90 do
       retained =
         published_rows(feature, branch_id, day, "stage") ++
+          published_rows(feature, branch_id, day, "coverage") ++
           published_rows(feature, branch_id, day, "session_source")
 
-      Enum.reject(rows, &(&1.dimension in ["stage", "session_source"])) ++ retained
+      Enum.reject(rows, &(&1.dimension in ["stage", "coverage", "session_source"])) ++ retained
     else
       rows
     end

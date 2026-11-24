@@ -330,6 +330,8 @@ defmodule DelivestWeb.Router do
     get "/b/:branch_slug/products/export", StaffMenuExportController, :show
     get "/b/:branch_slug/products/workbook", StaffProductWorkbookController, :show
     get "/b/:branch_slug/printing/:type/:order_id", PrintingController, :show
+    get "/b/:branch_slug/printing/:type/:order_id/print", PrintingController, :print
+    get "/b/:branch_slug/finance/printing", PrintingController, :settings_redirect
     get "/b/:branch_slug/site-snapshot", StaffSiteSnapshotController, :show
     get "/franchise/site-snapshot", StaffSiteSnapshotController, :show_franchise
     get "/franchise/instance-backup/:id", StaffSiteSnapshotController, :download_instance
@@ -380,6 +382,8 @@ defmodule DelivestWeb.Router do
       live "/settings", SettingsLive.Index, :index
       live "/settings/data-transfer", SettingsLive.DataTransfer, :index
       live "/settings/data-system", LogLive.Index, :data_system
+      live "/franchise/printing", ReceiptLive.Printing, :index
+      live "/franchise/printing/:type", ReceiptLive.Printing, :editor
 
       if Mix.env() in [:dev, :test] do
         live "/foundation-gallery", FoundationGalleryLive, :index
@@ -510,7 +514,6 @@ defmodule DelivestWeb.Router do
         live "/finance/payments", FinanceLive.Payments, :index
         live "/finance/transactions", FinanceLive.Transactions, :index
         live "/finance/receipts", ReceiptLive.Index, :index
-        live "/finance/printing", ReceiptLive.Printing, :index
 
         scope "/integrations", IntegrationLive do
           live "/", Index, :index
@@ -542,6 +545,7 @@ defmodule DelivestWeb.Router do
           live "/operations", Operations, :index
           live "/stops", StopList, :index
           live "/modifiers", Modifiers, :index
+          live "/collections", Collections, :index
           live "/suggested", Suggested, :index
           live "/tags", Tags, :index
           live "/tags/new", Tags, :new

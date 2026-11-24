@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaPause do
   use DelivestWeb, :html
 
+  import DelivestWeb.Staff.FoundationComponents, only: [state_notice: 1]
+
   attr :pauses, Phoenix.LiveView.AsyncResult, required: true
   attr :can_edit, :boolean, required: true
 
@@ -19,15 +21,22 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaPause do
 
       <.async_result :let={pauses} assign={@pauses}>
         <:loading>
-          <p class="text-sm text-base-content/50">{gettext("Loading...")}</p>
+          <.state_notice id="yandex-eda-pause-loading" title={gettext("Loading...")} kind={:loading} />
         </:loading>
         <:failed>
-          <p class="text-sm text-error">{gettext("Yandex did not return the pauses")}</p>
+          <.state_notice
+            id="yandex-eda-pause-error"
+            title={gettext("Yandex did not return the pauses")}
+            kind={:error}
+          />
         </:failed>
 
-        <p :if={pauses == []} class="text-sm text-base-content/50 italic">
-          {gettext("No active pauses")}
-        </p>
+        <.state_notice
+          :if={pauses == []}
+          id="yandex-eda-pause-empty"
+          title={gettext("No active pauses")}
+          kind={:empty}
+        />
 
         <ul :if={pauses != []} class="divide-y divide-base-300">
           <li

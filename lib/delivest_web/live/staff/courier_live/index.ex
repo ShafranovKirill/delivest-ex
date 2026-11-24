@@ -30,7 +30,6 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
      |> assign(
        page_title: gettext("Deliveries"),
        pickup: branch.info,
-       fiscal: (settings = Fiscal.settings(branch_id)).enabled and BranchSettings.own?(settings),
        handed: nil,
        receipt: nil,
        delivery_minutes: OrderDeadline.delivery_minutes(branch_id)
@@ -75,14 +74,21 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
   defp run("pick_up", staff, branch_id, id), do: Couriers.pick_up(staff, branch_id, id)
   defp run("hand_over", staff, branch_id, id), do: Couriers.hand_over(staff, branch_id, id)
 
-  defp handed(%{assigns: %{fiscal: true}} = socket, "hand_over", id) do
-    case Enum.find(socket.assigns.mine, &(&1.id == id)) do
-      nil -> socket
-      delivery -> socket |> assign(handed: delivery.order) |> refresh_receipt()
+  defp handed(socket, "hand_over", id) do
+    with %{order: order} <- Enum.find(socket.assigns.mine, &(&1.id == id)),
+         true <- Fiscal.sale_receipt(order.id) != nil or expects_receipt?(order.branch_id) do
+      socket |> assign(handed: order) |> refresh_receipt()
+    else
+      _ -> socket
     end
   end
 
   defp handed(socket, _action, _id), do: socket
+
+  defp expects_receipt?(branch_id) do
+    settings = Fiscal.settings(branch_id)
+    Fiscal.globally_enabled?() and settings.enabled and BranchSettings.own?(settings)
+  end
 
   defp refresh_receipt(%{assigns: %{handed: nil}} = socket), do: socket
 

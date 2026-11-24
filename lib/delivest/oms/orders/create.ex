@@ -114,7 +114,33 @@ defmodule Delivest.Oms.Orders.Create do
       StopGuard.check(cart.branch_id, pricing)
     end)
     |> Multi.run(:delivery, fn _, %{pricing: pricing, cart: cart} ->
-      DeliveryFee.run(cart.branch_id, attrs, pricing, opts)
+      DeliveryFee.run_with_quote(cart.branch_id, attrs, pricing, opts)
+    end)
+    |> Multi.run(:timing, fn _, %{pricing: pricing, cart: cart, delivery: delivery} ->
+      if attrs["cook_by"] not in [nil, ""] || opts[:crm] || opts[:channel] do
+        {:ok, nil}
+      else
+        items =
+          Enum.map(pricing.lines, fn line ->
+            product = Map.get(pricing.products, line.product_id)
+
+            %{
+              product_id: line.product_id,
+              category_id: product && product.category_id,
+              quantity: line.quantity
+            }
+          end)
+
+        fulfillment = if(attrs["fulfillment_type"] == "delivery", do: :delivery, else: :pickup)
+
+        {:ok,
+         Delivest.Oms.OrderTiming.estimate(
+           cart.branch_id,
+           fulfillment,
+           items,
+           delivery.minutes
+         )}
+      end
     end)
     |> Multi.run(:lines, fn _, %{pricing: pricing} -> Lines.from_pricing(pricing) end)
     |> Multi.run(:number, fn repo, %{cart: cart} -> OrderNumber.next(repo, cart.branch_id) end)

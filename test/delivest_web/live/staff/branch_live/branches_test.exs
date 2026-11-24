@@ -12,8 +12,8 @@ defmodule DelivestWeb.Staff.BranchLive.BranchesTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id})
 
     {:ok, lv, _} = live(conn, ~p"/staff/branches")
-    assert has_element?(lv, "main #staff-page-header h1", "Settings for branches")
-    assert has_element?(lv, "#staff-page-header-actions #create-branch")
+    assert has_element?(lv, "main #branches-toolbar h1", "Settings for branches")
+    assert has_element?(lv, "#branches-toolbar #create-branch")
     assert has_element?(lv, "#branch-edit-#{branch.id}")
     refute has_element?(lv, "#branch-delivery-#{branch.id}")
     refute has_element?(lv, "#branch-delete-#{branch.id}")
@@ -47,7 +47,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchesTest do
     assert has_element?(lv, "#branch-edit-#{own.id}[href='/staff/branches/#{own.slug}/edit']")
     refute has_element?(lv, "#branch-delivery-#{own.id}")
     refute has_element?(lv, "#branch-delete-#{own.id}")
-    refute has_element?(lv, "#staff-page-header-actions #create-branch")
+    refute has_element?(lv, "#branches-toolbar #create-branch")
     refute has_element?(lv, "#branch-card-#{own.id}", "Branch is not active")
 
     {:ok, overview, _} = live(conn, ~p"/staff/branches/#{own.slug}/edit")

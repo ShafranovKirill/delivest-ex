@@ -111,6 +111,7 @@ defmodule Delivest.Oms.Orders.StatusChange do
     reason = Keyword.get(opts, :reason)
 
     with {:ok, updated} <- repo.update(changeset),
+         {:ok, updated} <- Delivest.DeliveryMeasurement.record_handover(repo, updated, steps, by),
          :ok <- record(repo, updated, steps, by, reason),
          {:ok, _payments} <- Delivest.Payments.on_status(repo, updated, steps, by),
          {:ok, _event} <- OrderEvents.status_changed(repo, updated, steps, by, reason) do

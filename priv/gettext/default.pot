@@ -13307,3 +13307,200 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Yandex Cart"
 msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Filters"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Print Order"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Print kitchen ticket"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Download kitchen ticket PDF"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Print order sheet"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "Download order sheet PDF"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "View Order"
+msgstr ""
+
+#, elixir-autogen, elixir-format
+msgid "%{count} more item"
+msgid_plural "%{count} more items"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Legacy funnel days are excluded until refreshed."
+msgstr ""
+
+msgid "From previous step"
+msgstr ""
+
+msgid "From start"
+msgstr ""
+
+msgid "Lost before next step"
+msgstr ""
+
+msgid "Stage"
+msgstr ""
+
+msgid "Sessions"
+msgstr ""
+
+msgid "Delivery quality"
+msgstr ""
+
+msgid "On-time rate"
+msgstr ""
+
+msgid "Measurement coverage"
+msgstr ""
+
+msgid "Measured deliveries"
+msgstr ""
+
+msgid "Late deliveries"
+msgstr ""
+
+msgid "Completed deliveries by local order creation date. On-time rate uses only deliveries with a confirmed staff promise and a verified actual delivery event. The original promise is used for revised orders."
+msgstr ""
+
+msgid "No confirmed delivery measurements in this period"
+msgstr ""
+
+msgid "Delivery quality by day"
+msgstr ""
+
+msgid "Completed deliveries"
+msgstr ""
+
+msgid "On time"
+msgstr ""
+
+msgid "Missing measurements"
+msgstr ""
+
+msgid "Customize"
+msgstr ""
+
+msgid "Save layout"
+msgstr ""
+
+msgid "Restore the default dashboard layout?"
+msgstr ""
+
+msgid "Reset to default"
+msgstr ""
+
+msgid "Could not save dashboard layout"
+msgstr ""
+
+msgid "Could not reset dashboard layout"
+msgstr ""
+
+msgid "yesterday by this time %{amount}"
+msgstr ""
+
+msgid "yesterday by this time %{count}"
+msgstr ""
+
+msgid "Revenue through the day"
+msgstr ""
+
+msgid "Widget catalog"
+msgstr ""
+
+msgid "Choose what appears on your dashboard, then drag or resize the cards."
+msgstr ""
+
+msgid "Quick actions"
+msgstr ""
+
+msgid "Drag widget"
+msgstr ""
+
+msgid "Hide widget"
+msgstr ""
+
+msgid "Your dashboard is empty. Customize it to add widgets."
+msgstr ""
+
+msgid "Everything is under control"
+msgstr ""
+
+msgid "Problem orders"
+msgstr ""
+
+
+msgid "Choose actions in the catalog"
+msgstr ""
+
+msgid "To confirm"
+msgstr ""
+
+msgid "Collections"
+msgstr ""
+
+msgid "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+msgstr ""
+
+msgid "Choose products to recommend to customers."
+msgstr ""
+
+msgid "Collection settings"
+msgstr ""
+
+msgid "How to choose products"
+msgstr ""
+
+msgid "Unsaved settings"
+msgstr ""
+
+msgid "Where to show"
+msgstr ""
+
+msgid "In a separate category in the menu."
+msgstr ""
+
+msgid "As additional offers in the cart."
+msgstr ""
+
+msgid "Products in collection"
+msgstr ""
+
+msgid "%{count} products"
+msgstr ""
+
+msgid "Save settings to apply the selected mode."
+msgstr ""
+
+msgid "Choose how to build the collection, then save settings."
+msgstr ""
+
+msgid "Based on sales over the last 30 days."
+msgstr ""
+
+msgid "Last calculated: %{date}"
+msgstr ""
+
+msgid "Set the order with the arrow buttons."
+msgstr ""
+
+msgid "By sales"
+msgstr ""
+
+msgid "Product limit"
+msgstr ""

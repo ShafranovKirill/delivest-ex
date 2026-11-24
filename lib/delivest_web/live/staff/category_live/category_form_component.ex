@@ -128,12 +128,10 @@ defmodule DelivestWeb.Staff.CategoryLive.CategoryFormComponent do
           </.form_section>
         </div>
 
-        <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
-          <.link patch={@patch} class="btn btn-ghost">{gettext("Cancel")}</.link>
-          <button type="submit" class="btn btn-primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save")}
-          </button>
-        </div>
+        <DelivestWeb.Staff.FoundationComponents.editor_actions
+          id="category-form-actions"
+          patch={@patch}
+        />
       </.form>
     </div>
     """

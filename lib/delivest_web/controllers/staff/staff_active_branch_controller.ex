@@ -19,7 +19,7 @@ defmodule DelivestWeb.Staff.StaffActiveBranchController do
           conn
           |> put_flash(
             :info,
-            gettext("Choose Overview of the network to leave this branch page.")
+            gettext("Choose Whole franchise to leave this branch page.")
           )
           |> redirect(to: source)
 

@@ -2,35 +2,12 @@ defmodule Delivest.Analytics.Reports.Calculator do
   @moduledoc "Bounded daily source queries. All monetary values remain integer kopecks."
 
   alias Delivest.{LocalTime, Repo}
-
-  @funnel_events ~w(visit menu_view product_view cart_add checkout_start fulfillment_selected)
+  alias Delivest.Analytics.Reports.OrderedFunnel
 
   def calculate("analytics_funnel", branch_id, day) do
     {start_at, end_at} = bounds(branch_id, day)
 
-    event_rows =
-      Repo.query!(
-        """
-        SELECT e.event, count(DISTINCT e.session_id)::bigint
-        FROM funnel_events e JOIN funnel_sessions s ON s.id=e.session_id
-        WHERE s.branch_id=$1::text::uuid AND s.started_at >= $2 AND s.started_at < $3
-          AND e.event = ANY($4::text[])
-        GROUP BY event
-        """,
-        [branch_id, start_at, end_at, @funnel_events]
-      ).rows
-
-    stages =
-      for [event, count] <- event_rows,
-          do: row("funnel", "stage", event, %{"sessions" => count})
-
-    [[started]] =
-      Repo.query!(
-        "SELECT count(*)::bigint FROM funnel_sessions WHERE branch_id=$1::text::uuid AND started_at >= $2 AND started_at < $3",
-        [branch_id, start_at, end_at]
-      ).rows
-
-    stages = [row("funnel", "stage", "session_started", %{"sessions" => started}) | stages]
+    stages = OrderedFunnel.calculate(branch_id, start_at, end_at)
 
     source_rows =
       Repo.query!(

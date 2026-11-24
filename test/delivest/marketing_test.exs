@@ -684,12 +684,19 @@ defmodule Delivest.MarketingTest do
       :telemetry.attach(
         id,
         [:delivest, :repo, :query],
-        fn _event, _measurements, _metadata, _config -> send(pid, {:marketing_query, id}) end,
+        fn _event, _measurements, _metadata, _config ->
+          if self() == pid, do: send(pid, {:marketing_query, id})
+        end,
         nil
       )
 
-    result = fun.()
-    :ok = :telemetry.detach(id)
+    result =
+      try do
+        fun.()
+      after
+        :ok = :telemetry.detach(id)
+      end
+
     {drain_queries(id, 0), result}
   end
 

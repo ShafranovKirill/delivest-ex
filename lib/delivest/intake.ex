@@ -7,6 +7,8 @@ defmodule Delivest.Intake do
   @pause_minutes [15, 30, 60]
   @load_minutes [10, 20, 30, 45, 60]
 
+  def subscribe(branch_id), do: Phoenix.PubSub.subscribe(Delivest.PubSub, topic(branch_id))
+
   def pause_minutes, do: @pause_minutes
   def load_minutes, do: @load_minutes
 
@@ -147,7 +149,10 @@ defmodule Delivest.Intake do
   defp notify_changed(branch_id) do
     Cachex.del(:branch_cache, branch_id)
     Notifier.branch_changed(branch_id)
+    Phoenix.PubSub.broadcast(Delivest.PubSub, topic(branch_id), {:intake_changed, branch_id})
   end
+
+  defp topic(branch_id), do: "intake:#{branch_id}"
 
   defp change_intake(info, attrs) do
     info

@@ -730,18 +730,80 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title="Сегменты"
-      subtitle="Группируйте клиентов вручную или по их выполненным заказам."
-    >
-      <:actions>
+    <.page_toolbar id="segments-toolbar" title="Сегменты">
+      <:filters :if={
+        @live_action == :show and not is_nil(@group) and @active_tab == "clients" and
+          not is_nil(@client_page)
+      }>
+        <div class="flex min-w-0 flex-wrap items-center gap-2 min-[800px]:flex-nowrap">
+          <div :if={@group.kind == :manual and @can_manage} class="flex shrink-0 gap-1">
+            <.link
+              patch={
+                ~p"/staff/segments/#{@group.id}?#{client_query(@client_params, %{"mode" => "members", "page" => "1"})}"
+              }
+              class={[
+                "btn btn-sm",
+                @client_page.mode == "members" && "btn-primary",
+                @client_page.mode != "members" && "btn-outline"
+              ]}
+            >В сегменте</.link>
+            <.link
+              patch={
+                ~p"/staff/segments/#{@group.id}?#{client_query(@client_params, %{"mode" => "available", "page" => "1"})}"
+              }
+              class={[
+                "btn btn-sm",
+                @client_page.mode == "available" && "btn-primary",
+                @client_page.mode != "available" && "btn-outline"
+              ]}
+            >Добавить клиентов</.link>
+          </div>
+          <.form
+            for={@client_filter_form}
+            id="segment-client-search"
+            phx-change="client_search"
+            phx-submit="client_search"
+            role="search"
+            class="min-w-40 flex-1 [&_fieldset]:mb-0 [&_fieldset]:pb-0"
+          >
+            <label for="filter_search" class="sr-only">Поиск по имени или телефону</label>
+            <.input
+              field={@client_filter_form[:search]}
+              id="filter_search"
+              type="text"
+              placeholder="Поиск по имени или телефону"
+              maxlength="100"
+              phx-debounce="350"
+              aria-describedby={@client_search_error && "segment-client-search-error"}
+              class="input input-bordered input-sm w-full"
+            />
+          </.form>
+        </div>
+      </:filters>
+      <:more_actions :if={@live_action == :show and not is_nil(@group) and @can_manage}>
         <.link
-          :if={@can_manage and @live_action not in [:new, :edit]}
+          id="segment-edit-link"
+          navigate={~p"/staff/segments/#{@group.id}/edit"}
+          class="btn btn-ghost btn-sm justify-start"
+        >Изменить</.link>
+        <button
+          :if={@active_tab == "settings" and @group.kind == :dynamic}
+          id="segment-recalculate-now"
+          type="button"
+          phx-click="recalculate_segment"
+          phx-disable-with="Запускаем…"
+          class="btn btn-ghost btn-sm justify-start"
+        >{if @calculation && @calculation.state in [:queued, :running],
+          do: "Проверить расчёт",
+          else: "Рассчитать сейчас"}</button>
+      </:more_actions>
+      <:primary_action :if={@can_manage and @live_action not in [:new, :edit]}>
+        <.link
           navigate={~p"/staff/segments/new"}
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
         >Создать сегмент</.link>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 
@@ -1019,12 +1081,6 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
         <.link navigate={~p"/staff/segments"} class="text-sm text-primary">← Все сегменты</.link>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <h2 class="min-w-0 break-words text-2xl font-semibold">{@group.name}</h2>
-          <.link
-            :if={@can_manage}
-            navigate={~p"/staff/segments/#{@group.id}/edit"}
-            id="segment-edit-link"
-            class="btn btn-outline btn-sm"
-          >Изменить</.link>
         </div>
         <div
           class="tabs tabs-box border border-base-300 bg-base-200"
@@ -1096,16 +1152,6 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
               else: "Ещё не рассчитан"}
           </p>
           <div :if={@group.kind == :dynamic} class="flex flex-wrap items-center gap-3">
-            <button
-              :if={@can_manage}
-              id="segment-recalculate-now"
-              type="button"
-              phx-click="recalculate_segment"
-              phx-disable-with="Запускаем…"
-              class="btn btn-outline btn-sm"
-            >{if @calculation && @calculation.state in [:queued, :running],
-              do: "Проверить расчёт",
-              else: "Рассчитать сейчас"}</button>
             <p :if={@calculation} id="segment-calculation-status" class="text-sm" role="status">
               {case @calculation.state do
                 :queued -> "Пересчёт поставлен в очередь"
@@ -1133,44 +1179,12 @@ defmodule DelivestWeb.Staff.SegmentLive.Index do
                 "Состав ручного сегмента."
             end}
           </p>
-          <div :if={@group.kind == :manual and @can_manage} class="flex flex-wrap gap-2">
-            <.link
-              patch={
-                ~p"/staff/segments/#{@group.id}?#{client_query(@client_params, %{"mode" => "members", "page" => "1"})}"
-              }
-              class={[
-                "btn btn-sm",
-                @client_page.mode == "members" && "btn-primary",
-                @client_page.mode != "members" && "btn-outline"
-              ]}
-            >В сегменте</.link>
-            <.link
-              :if={@group.kind == :manual and @can_manage}
-              patch={
-                ~p"/staff/segments/#{@group.id}?#{client_query(@client_params, %{"mode" => "available", "page" => "1"})}"
-              }
-              class={[
-                "btn btn-sm",
-                @client_page.mode == "available" && "btn-primary",
-                @client_page.mode != "available" && "btn-outline"
-              ]}
-            >Добавить клиентов</.link>
-          </div>
-          <.form
-            for={@client_filter_form}
-            id="segment-client-search"
-            phx-submit="client_search"
-            class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end [&_fieldset]:mb-0 [&_fieldset]:pb-0"
+          <p
+            :if={@client_search_error}
+            id="segment-client-search-error"
+            class="text-sm text-error"
+            role="alert"
           >
-            <.input
-              field={@client_filter_form[:search]}
-              type="text"
-              label="Поиск по имени или телефону"
-              maxlength="100"
-            />
-            <button class="btn btn-outline w-full sm:w-auto" phx-disable-with="Ищем…">Найти</button>
-          </.form>
-          <p :if={@client_search_error} class="text-sm text-error" role="alert">
             {@client_search_error}
           </p>
           <div class="flex flex-wrap items-center justify-between gap-3">

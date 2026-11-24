@@ -62,6 +62,101 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     end
   end
 
+  test "analytics sidebar shows reachable acquisition and buyers for the branch" do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["statistics.read"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    staff = Repo.preload(staff, [:role, :branches])
+
+    assert {:ok, _} = Features.configure("analytics_funnel", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_funnel", {:branch, branch.id}, true, actor: "test")
+
+    assert {:ok, _} = Features.configure("analytics_extended", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, branch.id}, true, actor: "test")
+
+    entries = analytics_entries(staff, branch)
+
+    assert Enum.map(entries, & &1.id) == [
+             :statistics,
+             :analytics_acquisition,
+             :analytics_customers
+           ]
+
+    assert Enum.at(entries, 0).label == "Sales"
+    assert Enum.at(entries, 1).path == "/staff/b/#{branch.slug}/analytics/funnel"
+    assert Enum.at(entries, 2).path == "/staff/b/#{branch.slug}/analytics/customers"
+
+    assert {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_links", {:branch, branch.id}, true, actor: "test")
+
+    assert Enum.at(analytics_entries(staff, branch), 1).path ==
+             "/staff/b/#{branch.slug}/analytics/sources"
+
+    assert {:ok, _} =
+             Features.configure("analytics_links", {:branch, branch.id}, false, actor: "test")
+
+    assert Enum.at(analytics_entries(staff, branch), 1).path ==
+             "/staff/b/#{branch.slug}/analytics/funnel"
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, branch.id}, false, actor: "test")
+
+    assert Enum.map(analytics_entries(staff, branch), & &1.id) ==
+             [:statistics, :analytics_acquisition]
+  end
+
+  test "network analytics uses only allowed branches and network permission" do
+    allowed = insert(:branch)
+    other = insert(:branch)
+
+    assert {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_links", {:branch, other.id}, true, actor: "test")
+
+    staff =
+      insert(:staff, role: insert(:role, permissions: ~w(statistics.read statistics.network)))
+
+    insert(:staff_branch, staff: staff, branch: allowed)
+    staff = Repo.preload(staff, [:role, :branches])
+
+    assert Enum.map(analytics_entries(staff, nil), & &1.id) == [:statistics]
+
+    assert {:ok, _} = Features.configure("yandex_ads", :franchise, true, actor: "test")
+    assert {:ok, _} = Features.configure("yandex_costs", :franchise, true, actor: "test")
+    assert Enum.at(analytics_entries(staff, nil), 1).path == "/staff/analytics/advertising"
+
+    assert {:ok, _} =
+             Features.configure("analytics_links", {:branch, allowed.id}, true, actor: "test")
+
+    assert Enum.at(analytics_entries(staff, nil), 1).path == "/staff/analytics/sources"
+
+    assert {:ok, _} = Features.configure("analytics_extended", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, allowed.id}, true, actor: "test")
+
+    assert Enum.at(analytics_entries(staff, nil), 2).path == "/staff/analytics/customers"
+
+    limited = insert(:staff, role: insert(:role, permissions: ["statistics.read"]))
+    insert(:staff_branch, staff: limited, branch: allowed)
+    limited = Repo.preload(limited, [:role, :branches])
+    assert analytics_entries(limited, nil) == []
+  end
+
+  defp analytics_entries(staff, branch) do
+    DelivestWeb.StaffNav.entries(staff, branch)
+    |> Enum.flat_map(& &1.entries)
+    |> Enum.find(&(&1.id == :analytics))
+    |> then(fn group -> if group, do: group.items, else: [] end)
+  end
+
   test "advertising feature link requires both statistics permissions" do
     network_only =
       insert(:staff, role: insert(:role, permissions: ["statistics.network"]))
@@ -85,7 +180,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
 
     {:ok, view, _} = live(conn, ~p"/staff/statistics?period=today")
 
-    assert has_element?(view, "#statistics-overview")
+    assert has_element?(view, "#statistics-sales-detail")
 
     assert has_element?(view, "#header-branch")
     refute has_element?(view, "#statistics-scope")
@@ -98,7 +193,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     conn = login(conn, ["statistics.read"], [branch])
     assert {:error, {:redirect, _}} = live(conn, ~p"/staff/statistics")
     {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/statistics")
-    assert has_element?(view, "#statistics-overview")
+    assert has_element?(view, "#statistics-sales-detail")
     assert has_element?(view, "#header-branch-static")
     refute has_element?(view, "#statistics-scope")
     refute has_element?(view, "#sidebar-section-nav-analytics_comparison")
@@ -131,6 +226,115 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     query = URI.decode_query(URI.parse(path).query)
     assert query["from"] == "2026-11-01" and query["to"] == "2026-11-07"
     refute query["link_id"]
+  end
+
+  test "analytics sidebar keeps section active and carries the selected period", %{conn: conn} do
+    branch = insert(:branch)
+    conn = login(conn, ~w(statistics.read statistics.network), [branch], branch.id)
+
+    assert {:ok, _} = Features.configure("analytics_links", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_links", {:branch, branch.id}, true, actor: "test")
+
+    assert {:ok, _} = Features.configure("analytics_extended", :franchise, true, actor: "test")
+
+    assert {:ok, _} =
+             Features.configure("analytics_extended", {:branch, branch.id}, true, actor: "test")
+
+    period = "period=custom&from=2026-11-01&to=2026-11-07"
+    {:ok, sources, _} = live(conn, "/staff/b/#{branch.slug}/analytics/sources?#{period}")
+
+    assert has_element?(sources, "#sidebar-group-analytics[open]")
+
+    assert has_element?(
+             sources,
+             "#sidebar-section-nav-analytics_acquisition[aria-current='page'][href^='/staff/b/#{branch.slug}/analytics/sources?']"
+           )
+
+    assert has_element?(
+             sources,
+             "#sidebar-section-nav-analytics_customers[href^='/staff/b/#{branch.slug}/analytics/customers?']"
+           )
+
+    assert_sidebar_period(sources, "#sidebar-section-nav-analytics_customers")
+
+    {:ok, channels, _} = live(conn, "/staff/analytics/channels?#{period}")
+
+    assert has_element?(
+             channels,
+             "#sidebar-section-nav-statistics[aria-current='page'][href^='/staff/statistics?']"
+           )
+
+    assert has_element?(
+             channels,
+             "#sidebar-section-nav-analytics_acquisition[href^='/staff/analytics/sources?']"
+           )
+
+    assert_sidebar_period(channels, "#sidebar-section-nav-analytics_acquisition")
+  end
+
+  defp assert_sidebar_period(view, selector) do
+    assert [href] =
+             view
+             |> render()
+             |> LazyHTML.from_fragment()
+             |> LazyHTML.query(selector)
+             |> LazyHTML.attribute("href")
+
+    assert URI.decode_query(URI.parse(href).query) == %{
+             "period" => "custom",
+             "from" => "2026-11-01",
+             "to" => "2026-11-07"
+           }
+  end
+
+  test "analytics period links and scope transition preserve compatible filters" do
+    source =
+      "/staff/b/first/analytics/sources?period=custom&from=2026-11-01&to=2026-11-07&link_id=123"
+
+    path =
+      DelivestWeb.StaffBranchPath.contextual_navigation_path(
+        "/staff/analytics/comparison",
+        nil,
+        source
+      )
+
+    assert URI.parse(path).path == "/staff/analytics/comparison"
+
+    assert URI.decode_query(URI.parse(path).query) == %{
+             "period" => "custom",
+             "from" => "2026-11-01",
+             "to" => "2026-11-07"
+           }
+
+    path =
+      DelivestWeb.StaffBranchPath.contextual_navigation_path(
+        "/staff/b/first/analytics/customers?channel=web",
+        nil,
+        source
+      )
+
+    assert URI.decode_query(URI.parse(path).query) == %{
+             "period" => "custom",
+             "from" => "2026-11-01",
+             "to" => "2026-11-07",
+             "channel" => "web"
+           }
+
+    assert {:ok, %{path: transitioned}} =
+             DelivestWeb.StaffBranchPath.transition(
+               "/staff/b/first/statistics?tab=sales&period=month&granularity=month",
+               {:branch, "second"}
+             )
+
+    assert URI.parse(transitioned).path == "/staff/b/second/statistics"
+
+    assert URI.decode_query(URI.parse(transitioned).query) == %{
+             "tab" => "sales",
+             "period" => "month",
+             "granularity" => "month"
+           }
   end
 
   test "marketing hub requires explicit allowed branch selection", %{conn: conn} do
@@ -221,6 +425,9 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
              clients,
              "#staff-section-navigation a[href='/staff/clients'][aria-current='page']"
            )
+
+    assert has_element?(clients, "#staff-section-navigation.tabs-box.rounded-none .tab-active")
+    assert has_element?(clients, "#sidebar-staff-section-navigation .menu-active")
 
     assert has_element?(clients, "#staff-section-navigation a[href='/staff/segments']")
 
@@ -435,6 +642,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
     {:ok, admin, _} = live(admin_conn, "/staff/settings/data-system?branch=#{branch.slug}")
     assert has_element?(admin, "#sidebar-settings-nav-data_system[aria-current='page']")
     assert has_element?(admin, "#settings-nav-data_system[aria-current='page']")
+    assert has_element?(admin, "#settings-navigation.tabs-box.rounded-none .tab-active")
     assert has_element?(admin, "#data-system-content #audit-events")
     assert has_element?(admin, "#data-system-action-events[aria-current='page']")
 
@@ -612,7 +820,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
       assert has_element?(view, "#nav-section-main")
 
       assert has_element?(view, "#nav-section-main a[href='/staff/b/#{branch.slug}/products']")
-      active = if String.ends_with?(path, "/stops"), do: "stops", else: "popular"
+      active = if String.ends_with?(path, "/stops"), do: "stops", else: "collections"
 
       assert has_element?(
                view,
@@ -620,7 +828,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
              )
 
       assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-stops")
-      assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-popular")
+      assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-collections")
 
       refute has_element?(
                view,
@@ -632,7 +840,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
                "#nav-section-main > ul > li > a[href='/staff/b/#{branch.slug}/menu/popular']"
              )
 
-      assert has_element?(view, "#staff-section-navigation #product-section-tab-popular")
+      assert has_element?(view, "#staff-section-navigation #product-section-tab-collections")
       assert has_element?(view, "#staff-section-navigation #product-section-tab-stops")
 
       assert Enum.count(

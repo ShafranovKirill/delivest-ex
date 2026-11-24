@@ -9,12 +9,13 @@ defmodule DelivestWeb.Staff.OrderLive.Components.TabsComponent do
 
   def render_tabs(assigns) do
     ~H"""
-    <div class="tabs tabs-boxed grid grid-cols-2">
+    <div class="tabs tabs-box grid grid-cols-2">
       <button
         type="button"
         class={["tab text-xs", @active_tab == :cart && "tab-active font-bold"]}
         phx-click="switch_tab"
         phx-value-tab="cart"
+        aria-pressed={to_string(@active_tab == :cart)}
       >
         <.icon name="hero-shopping-bag" class={["size-4", if(@compact, do: "mr-1", else: "mr-1.5")]} />
         {@cart_label}
@@ -33,6 +34,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.TabsComponent do
         class={["tab text-xs", @active_tab == :details && "tab-active font-bold"]}
         phx-click="switch_tab"
         phx-value-tab="details"
+        aria-pressed={to_string(@active_tab == :details)}
       >
         <.icon
           name="hero-document-text"

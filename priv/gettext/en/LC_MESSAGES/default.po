@@ -12975,3 +12975,166 @@ msgstr "Not collected or disabled"
 #, elixir-autogen, elixir-format
 msgid "Configure menu and checkout goals"
 msgstr "Configure menu and checkout goals"
+
+msgid "Legacy funnel days are excluded until refreshed."
+msgstr "Legacy funnel days are excluded until refreshed."
+
+msgid "From previous step"
+msgstr "From previous step"
+
+msgid "From start"
+msgstr "From start"
+
+msgid "Lost before next step"
+msgstr "Lost before next step"
+
+msgid "Stage"
+msgstr "Stage"
+
+msgid "Sessions"
+msgstr "Sessions"
+
+msgid "Delivery quality"
+msgstr "Delivery quality"
+
+msgid "On-time rate"
+msgstr "On-time rate"
+
+msgid "Measurement coverage"
+msgstr "Measurement coverage"
+
+msgid "Measured deliveries"
+msgstr "Measured deliveries"
+
+msgid "Late deliveries"
+msgstr "Late deliveries"
+
+msgid "Completed deliveries by local order creation date. On-time rate uses only deliveries with a confirmed staff promise and a verified actual delivery event. The original promise is used for revised orders."
+msgstr "Completed deliveries by local order creation date. On-time rate uses only deliveries with a confirmed staff promise and a verified actual delivery event. The original promise is used for revised orders."
+
+msgid "No confirmed delivery measurements in this period"
+msgstr "No confirmed delivery measurements in this period"
+
+msgid "Delivery quality by day"
+msgstr "Delivery quality by day"
+
+msgid "Completed deliveries"
+msgstr "Completed deliveries"
+
+msgid "On time"
+msgstr "On time"
+
+msgid "Missing measurements"
+msgstr "Missing measurements"
+
+msgid "Customize"
+msgstr "Customize"
+
+msgid "Save layout"
+msgstr "Save layout"
+
+msgid "Restore the default dashboard layout?"
+msgstr "Restore the default dashboard layout?"
+
+msgid "Reset to default"
+msgstr "Reset to default"
+
+msgid "Could not save dashboard layout"
+msgstr "Could not save dashboard layout"
+
+msgid "Could not reset dashboard layout"
+msgstr "Could not reset dashboard layout"
+
+msgid "yesterday by this time %{amount}"
+msgstr "yesterday by this time %{amount}"
+
+msgid "yesterday by this time %{count}"
+msgstr "yesterday by this time %{count}"
+
+msgid "Revenue through the day"
+msgstr "Revenue through the day"
+
+msgid "Widget catalog"
+msgstr "Widget catalog"
+
+msgid "Choose what appears on your dashboard, then drag or resize the cards."
+msgstr "Choose what appears on your dashboard, then drag or resize the cards."
+
+msgid "Quick actions"
+msgstr "Quick actions"
+
+msgid "Drag widget"
+msgstr "Drag widget"
+
+msgid "Hide widget"
+msgstr "Hide widget"
+
+msgid "Your dashboard is empty. Customize it to add widgets."
+msgstr "Your dashboard is empty. Customize it to add widgets."
+
+msgid "Everything is under control"
+msgstr "Everything is under control"
+
+msgid "Problem orders"
+msgstr "Problem orders"
+
+
+msgid "Choose actions in the catalog"
+msgstr "Choose actions in the catalog"
+
+msgid "To confirm"
+msgstr "To confirm"
+
+msgid "Collections"
+msgstr "Collections"
+
+msgid "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+msgstr "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+
+msgid "Choose products to recommend to customers."
+msgstr "Choose products to recommend to customers."
+
+msgid "Collection settings"
+msgstr "Collection settings"
+
+msgid "How to choose products"
+msgstr "How to choose products"
+
+msgid "Unsaved settings"
+msgstr "Unsaved settings"
+
+msgid "Where to show"
+msgstr "Where to show"
+
+msgid "In a separate category in the menu."
+msgstr "In a separate category in the menu."
+
+msgid "As additional offers in the cart."
+msgstr "As additional offers in the cart."
+
+msgid "Products in collection"
+msgstr "Products in collection"
+
+msgid "%{count} products"
+msgstr "%{count} products"
+
+msgid "Save settings to apply the selected mode."
+msgstr "Save settings to apply the selected mode."
+
+msgid "Choose how to build the collection, then save settings."
+msgstr "Choose how to build the collection, then save settings."
+
+msgid "Based on sales over the last 30 days."
+msgstr "Based on sales over the last 30 days."
+
+msgid "Last calculated: %{date}"
+msgstr "Last calculated: %{date}"
+
+msgid "Set the order with the arrow buttons."
+msgstr "Set the order with the arrow buttons."
+
+msgid "By sales"
+msgstr "By sales"
+
+msgid "Product limit"
+msgstr "Product limit"

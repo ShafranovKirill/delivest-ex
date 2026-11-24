@@ -61,6 +61,35 @@ defmodule Delivest.AnalyticsTest do
     assert summary.cancelled_count == 1
   end
 
+  test "dashboard comparison stops at the same branch-local time", ctx do
+    date = ~D[2026-10-19]
+    order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 09:00:00Z])
+    order!(@branch_id, [{ctx.khinkali, 1}], ~U[2026-10-19 11:00:00Z])
+
+    cancelled = order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 09:30:00Z])
+    {:ok, _} = Orders.cancel_order(cancelled, :system, %{"cancel_reason" => "other"})
+
+    assert %{
+             revenue: 100,
+             orders_count: 1,
+             avg_check: 100,
+             cancelled_count: 1
+           } = Analytics.dashboard_summary_to(@branch_id, date, ~T[13:00:00])
+  end
+
+  test "hour and sold order filters match the local hourly chart", ctx do
+    date = ~D[2026-10-19]
+    first = order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 09:15:00Z])
+    order!(@branch_id, [{ctx.khinkali, 1}], ~U[2026-10-19 10:15:00Z])
+    cancelled = order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-19 09:30:00Z])
+    {:ok, _} = Orders.cancel_order(cancelled, :system, %{"cancel_reason" => "other"})
+
+    filters = %{branch_id: @branch_id, date_from: date, date_to: date, hour: 12, sold: true}
+
+    assert Enum.map(Orders.list_latest_orders(filters, 10), & &1.id) == [first.id]
+    assert %{orders: 1} = Enum.at(Analytics.raw_hourly(@branch_id, {date, date}), 12)
+  end
+
   test "daily fills empty days and buckets by local date", ctx do
     order!(@branch_id, [{ctx.tea, 1}], ~U[2026-10-18 22:30:00Z])
 

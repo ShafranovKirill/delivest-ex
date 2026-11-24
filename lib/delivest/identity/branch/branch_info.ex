@@ -13,6 +13,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
   }
 
   alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Oms.OrderTiming.Settings, as: TimingSettings
   alias Delivest.Identity
 
   use Gettext, backend: DelivestWeb.Gettext
@@ -49,6 +50,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     embeds_one :ycart_settings, YcartSettings, on_replace: :update
     embeds_one :vk_ads, VkAdsSettings, on_replace: :update
     embeds_one :kitchen, KitchenSettings, on_replace: :update, defaults_to_struct: true
+    embeds_one :timing, TimingSettings, on_replace: :update, defaults_to_struct: true
 
     embeds_one :fulfillment, Delivest.Identity.Branch.FulfillmentSettings,
       on_replace: :update,
@@ -106,6 +108,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> cast_embed(:ycart_settings, with: &YcartSettings.changeset/2)
     |> cast_embed(:vk_ads, with: &VkAdsSettings.changeset/2)
     |> cast_embed(:kitchen, with: &KitchenSettings.changeset/2)
+    |> cast_embed(:timing, with: &TimingSettings.changeset/2)
     |> cast_embed(:fulfillment, with: &Delivest.Identity.Branch.FulfillmentSettings.changeset/2)
     |> cast_embed(:intake, with: &IntakeSettings.changeset/2)
     |> cast_embed(:loyalty, with: &LoyaltySettings.changeset/2)
@@ -120,6 +123,7 @@ defmodule Delivest.Identity.Branch.BranchInfo do
     |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)
     |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)
     |> validate_number(:manual_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
+    |> validate_number(:delivery_time, greater_than: 0, less_than_or_equal_to: 600)
     |> validate_format(:phone_number, Identity.phone_regex(),
       message:
         dgettext_noop(

@@ -563,7 +563,7 @@ defmodule DelivestWeb.Staff.FoundationGalleryLive do
       <section :if={@gallery_view == "queue"} id="gallery-queue" class="space-y-4">
         <.state_notice
           id="queue-freshness"
-          kind={:loading}
+          kind={:status}
           title="Updated just now · Connection active"
         />
         <div class="grid gap-3 sm:grid-cols-2">
@@ -824,7 +824,7 @@ defmodule DelivestWeb.Staff.FoundationGalleryLive do
             id="gallery-panel-note"
             name="note"
             value={@panel_draft}
-            class="input input-bordered w-full"
+            class="input w-full"
           />
         </form><:actions>
           <button

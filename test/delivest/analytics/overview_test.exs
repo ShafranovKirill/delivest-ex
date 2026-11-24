@@ -205,6 +205,7 @@ defmodule Delivest.Analytics.OverviewTest do
     assert overview.comparison.state == :ready
     assert overview.comparison.summary.revenue == 1_000
     assert overview.comparison.summary.orders_count == 1
+    assert overview.comparison.daily == [%{date: yesterday, revenue: 1_000, orders: 1}]
     assert overview.comparison.cutoff == ~T[12:00:00]
   end
 

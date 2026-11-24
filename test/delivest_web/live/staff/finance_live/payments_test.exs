@@ -19,8 +19,15 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
   end
 
   test "the nav has the finance group with payment and receipts", %{conn: conn, branch: branch} do
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["finance.read", "orders.read"]))
+
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
-    assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/payments"]))
+    assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/transactions"]))
+    assert has_element?(lv, ~s(a[href="/staff/b/#{branch.slug}/finance/receipts"]))
   end
 
   test "online payment is locked until YooKassa passes the check", %{conn: conn, branch: branch} do
@@ -32,7 +39,7 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
   test "saves the methods of the branch", %{conn: conn, branch: branch} do
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
 
-    assert has_element?(lv, "#staff-page-header-actions button[form='payments-form']")
+    assert has_element?(lv, "#payment-methods-toolbar button[form='payments-form']")
 
     refute has_element?(lv, "#payments-form button[type='submit']")
 
@@ -48,7 +55,7 @@ defmodule DelivestWeb.Staff.FinanceLive.PaymentsTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/finance/payments")
-    refute has_element?(lv, "#staff-page-header-actions")
+    refute has_element?(lv, "#payment-methods-toolbar .staff-page-toolbar-actions")
     refute has_element?(lv, "#payments-form button[type='submit']")
   end
 

@@ -216,38 +216,12 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
           <.form_section id="stock-main-section" title={gettext("Banner")}>
             <input type="hidden" name={@form[:media_id].name} value={@form[:media_id].value} />
 
-            <div class="form-control w-full">
-              <label class="label">
-                <span class="label-text font-bold">{gettext("Banner Image")}</span>
-              </label>
-
-              <div class="flex items-center gap-4">
-                <div class="avatar">
-                  <div class="w-24 h-24 rounded-box bg-base-200 border border-base-300 flex items-center justify-center overflow-hidden">
-                    <%= if url = Media.get_url(@current_media && @current_media.id) do %>
-                      <img src={url} alt={gettext("Banner Image")} class="w-full h-full object-cover" />
-                    <% else %>
-                      <span class="text-xs text-base-content/40">{gettext("No image")}</span>
-                    <% end %>
-                  </div>
-                </div>
-
-                <div class="flex-1">
-                  <button
-                    type="button"
-                    phx-click="open_upload_modal"
-                    phx-target={@myself}
-                    class="btn btn-outline btn-sm"
-                  >
-                    <.icon name="hero-photo" class="size-4 mr-1" />
-                    {if @current_media, do: gettext("Change Image"), else: gettext("Upload Image")}
-                  </button>
-                  <p class="text-xs text-base-content/60 mt-1">
-                    {gettext("PNG, JPG, WEBP up to 5MB")}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <DelivestWeb.Staff.MediaComponents.image_field
+              label={gettext("Banner Image")}
+              media={@current_media}
+              url={Media.get_url(@current_media && @current_media.id)}
+              target={@myself}
+            />
 
             <.input
               field={@form[:text]}
@@ -292,16 +266,7 @@ defmodule DelivestWeb.Staff.StockLive.StockFormComponent do
           </.form_section>
         </div>
 
-        <div class="shrink-0 p-6 border-t border-base-200 bg-base-100 flex justify-end gap-3">
-          <.link patch={@patch} class="btn btn-ghost">{gettext("Cancel")}</.link>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            phx-disable-with={gettext("Saving...")}
-          >
-            {gettext("Save")}
-          </button>
-        </div>
+        <DelivestWeb.Staff.FoundationComponents.editor_actions id="stock-form-actions" patch={@patch} />
       </.form>
       <.live_component
         :if={@picker_open}

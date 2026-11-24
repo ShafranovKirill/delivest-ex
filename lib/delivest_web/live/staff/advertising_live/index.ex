@@ -154,7 +154,7 @@ defmodule DelivestWeb.Staff.AdvertisingLive.Index do
           <div class="flex gap-2">
             <input
               id={"advertising-url-#{link.id}"}
-              class="input input-bordered w-full"
+              class="input w-full"
               readonly
               value={url(~p"/r/#{link.token}")}
               aria-label={gettext("Advertising URL")}

@@ -4642,9 +4642,6 @@ msgstr "Клиент"
 
 #: lib/delivest_web/live/staff/order_live/components/details_component.ex:37
 #, elixir-autogen, elixir-format
-msgid "Fulfillment"
-msgstr "Способ получения"
-
 #: lib/delivest_web/live/staff/order_live/components/client_panel.ex:52
 #, elixir-autogen, elixir-format
 msgid "New client"
@@ -11591,8 +11588,8 @@ msgstr "Выберите «Обзор точки», чтобы перейти с
 
 #: lib/delivest_web/controllers/staff/staff_active_branch_controller.ex:22
 #, elixir-autogen, elixir-format
-msgid "Choose Overview of the network to leave this branch page."
-msgstr "Выберите «Обзор сети», чтобы выйти со страницы точки."
+msgid "Choose Whole franchise to leave this branch page."
+msgstr "Выберите «Вся франшиза», чтобы выйти со страницы точки."
 
 #: lib/delivest_web/components/staff/foundation_components.ex:479
 #, elixir-autogen, elixir-format
@@ -11761,6 +11758,9 @@ msgstr "Обзор точки"
 #, elixir-autogen, elixir-format
 msgid "Overview of the network"
 msgstr "Обзор сети"
+
+msgid "Whole franchise"
+msgstr "Вся франшиза"
 
 #: lib/delivest_web/components/staff/foundation_components.ex:194
 #, elixir-autogen, elixir-format
@@ -13601,3 +13601,456 @@ msgstr "Открыть филиал"
 #, elixir-autogen, elixir-format
 msgid "Without CRM transfer"
 msgstr "Без передачи в CRM"
+
+#, elixir-autogen, elixir-format
+msgid "Filters"
+msgstr "Фильтры"
+
+#, elixir-autogen, elixir-format
+msgid "Print Order"
+msgstr "Печать заказа"
+
+#, elixir-autogen, elixir-format
+msgid "Print kitchen ticket"
+msgstr "Печать талона"
+
+#, elixir-autogen, elixir-format
+msgid "Download kitchen ticket PDF"
+msgstr "Скачать талон PDF"
+
+#, elixir-autogen, elixir-format
+msgid "Print order sheet"
+msgstr "Печать листа заказа"
+
+#, elixir-autogen, elixir-format
+msgid "Download order sheet PDF"
+msgstr "Скачать лист заказа PDF"
+
+#, elixir-autogen, elixir-format
+msgid "View Order"
+msgstr "Посмотреть заказ"
+
+#, elixir-autogen, elixir-format
+msgid "%{count} more item"
+msgid_plural "%{count} more items"
+msgstr[0] "Ещё %{count} позиция"
+msgstr[1] "Ещё %{count} позиции"
+msgstr[2] "Ещё %{count} позиций"
+
+msgid "Acquisition"
+msgstr "Привлечение"
+
+msgid "Granularity"
+msgstr "Шаг графика"
+
+msgid "Chart data"
+msgstr "Данные графика"
+
+msgid "Compare periods"
+msgstr "Сравнить периоды"
+
+msgid "Compare branches"
+msgstr "Сравнить филиалы"
+
+msgid "Top 5 products"
+msgstr "Топ-5 товаров"
+
+msgid "Top 5 categories"
+msgstr "Топ-5 категорий"
+
+msgid "All products"
+msgstr "Все товары"
+
+msgid "Chart grouping"
+msgstr "Группировка графика"
+
+msgid "By day"
+msgstr "По дням"
+
+msgid "By week"
+msgstr "По неделям"
+
+msgid "By month"
+msgstr "По месяцам"
+
+msgid "Go"
+msgstr "Перейти"
+
+msgid "When orders arrive"
+msgstr "Когда приходят заказы"
+
+msgid "Includes cancelled orders. Average per calendar weekday, including dates with zero orders."
+msgstr "Включая отменённые заказы. Среднее по календарным дням недели, включая дни без заказов."
+
+msgid "From Monday"
+msgstr "С понедельника"
+
+msgid "Through Sunday"
+msgstr "По воскресенье"
+
+msgid "Choose a range of complete Monday–Sunday weeks (up to 52 weeks)"
+msgstr "Выберите период из полных недель с понедельника по воскресенье (не более 52 недель)"
+
+msgid "All fulfillment"
+msgstr "Все способы получения"
+
+msgid "Fulfillment"
+msgstr "Способ получения"
+
+msgid "Detail branch"
+msgstr "Филиал для детализации"
+
+msgid "No accessible branches"
+msgstr "Нет доступных филиалов"
+
+msgid "No created orders in this period"
+msgstr "За этот период не создано заказов"
+
+msgid "Total orders"
+msgstr "Всего заказов"
+
+msgid "Dates"
+msgstr "Даты"
+
+msgid "Average per date"
+msgstr "Среднее за дату"
+
+msgid "Orders per date"
+msgstr "Заказов за дату"
+
+msgid "Local hour"
+msgstr "Местный час"
+
+msgid "Created orders"
+msgstr "Созданные заказы"
+
+msgid "Average created orders by weekday and local hour"
+msgstr "Среднее число созданных заказов по дням недели и местному часу"
+
+msgid "Branch ranking"
+msgstr "Рейтинг филиалов"
+
+msgid "Branches ranked by selected metric"
+msgstr "Рейтинг филиалов по выбранному показателю"
+
+msgid "Ranking metric"
+msgstr "Показатель рейтинга"
+
+msgid "Orders per calendar day"
+msgstr "Заказов в календарный день"
+
+msgid "Completed orders per calendar day"
+msgstr "Выполненных заказов в календарный день"
+
+msgid "Calendar days"
+msgstr "Календарных дней"
+
+msgid "No branch data for this period"
+msgstr "Нет данных по филиалам за этот период"
+
+msgid "Net revenue after successful refunds by order creation date."
+msgstr "Выручка за вычетом успешных возвратов по дате создания заказа."
+
+msgid "Legacy funnel days are excluded until refreshed."
+msgstr "Данные старой воронки исключены до обновления."
+
+msgid "From previous step"
+msgstr "От предыдущего этапа"
+
+msgid "From start"
+msgstr "От начала"
+
+msgid "Lost before next step"
+msgstr "Не дошли до следующего этапа"
+
+msgid "Stage"
+msgstr "Этап"
+
+msgid "Sessions"
+msgstr "Сессии"
+
+msgid "Delivery quality"
+msgstr "Качество доставки"
+
+msgid "On-time rate"
+msgstr "Доля доставок вовремя"
+
+msgid "Measurement coverage"
+msgstr "Полнота измерений"
+
+msgid "Measured deliveries"
+msgstr "Доставки с измерением"
+
+msgid "Late deliveries"
+msgstr "Опоздавшие доставки"
+
+msgid "Completed deliveries by local order creation date. On-time rate uses only deliveries with a confirmed staff promise and a verified actual delivery event. The original promise is used for revised orders."
+msgstr "Завершённые доставки по местной дате создания заказа. Доля доставок вовремя учитывает только подтверждённое обещание сотрудника и подтверждённое событие доставки. При изменении обещания используется исходный срок."
+
+msgid "No confirmed delivery measurements in this period"
+msgstr "За этот период нет подтверждённых измерений доставки"
+
+msgid "Delivery quality by day"
+msgstr "Качество доставки по дням"
+
+msgid "Completed deliveries"
+msgstr "Завершённые доставки"
+
+msgid "On time"
+msgstr "Вовремя"
+
+msgid "Missing measurements"
+msgstr "Без измерений"
+
+msgid "Customize"
+msgstr "Настроить"
+
+msgid "Save layout"
+msgstr "Сохранить"
+
+msgid "Restore the default dashboard layout?"
+msgstr "Восстановить стандартную раскладку?"
+
+msgid "Reset to default"
+msgstr "Сбросить раскладку"
+
+msgid "Could not save dashboard layout"
+msgstr "Не удалось сохранить раскладку"
+
+msgid "Could not reset dashboard layout"
+msgstr "Не удалось сбросить раскладку"
+
+msgid "yesterday by this time %{amount}"
+msgstr "вчера к этому времени %{amount}"
+
+msgid "yesterday by this time %{count}"
+msgstr "вчера к этому времени %{count}"
+
+msgid "Revenue through the day"
+msgstr "Накопленная выручка за день"
+
+msgid "Widget catalog"
+msgstr "Каталог виджетов"
+
+msgid "Choose what appears on your dashboard, then drag or resize the cards."
+msgstr "Выберите виджеты, затем перетаскивайте карточки и меняйте их размер."
+
+msgid "Quick actions"
+msgstr "Быстрые действия"
+
+msgid "Drag widget"
+msgstr "Перетащить виджет"
+
+msgid "Hide widget"
+msgstr "Скрыть виджет"
+
+msgid "Your dashboard is empty. Customize it to add widgets."
+msgstr "Панель пуста. Откройте настройки, чтобы добавить виджеты."
+
+msgid "Everything is under control"
+msgstr "Всё под контролем"
+
+msgid "Problem orders"
+msgstr "Проблемные"
+
+
+msgid "Choose actions in the catalog"
+msgstr "Выберите действия в каталоге"
+
+msgid "To confirm"
+msgstr "Подтвердить"
+
+msgid "Order timing"
+msgstr "Время заказов"
+
+msgid "Choose the customer delivery time and optional kitchen estimates."
+msgstr "Настройте время доставки для клиентов и оценки работы кухни."
+
+msgid "Customer delivery estimate"
+msgstr "Время доставки для клиента"
+
+msgid "Choose how the time shown to customers is calculated."
+msgstr "Выберите способ расчёта времени, которое видит клиент."
+
+msgid "One delivery time"
+msgstr "Единое время доставки"
+
+msgid "Show one full time from order to handover for every delivery."
+msgstr "Один полный срок от заказа до вручения для всех доставок."
+
+msgid "Calculated time"
+msgstr "Расчётное время"
+
+msgid "Kitchen time plus the time to deliver to the address."
+msgstr "Время кухни плюс время доставки по адресу."
+
+msgid "Full delivery time, minutes"
+msgstr "Полный срок доставки, мин"
+
+msgid "Used in one-time mode. Includes cooking and delivery. This value is also editable in Delivery settings."
+msgstr "Используется в режиме единого времени. Включает приготовление и доставку. Значение также меняется в настройках доставки."
+
+msgid "Kitchen estimate"
+msgstr "Время кухни"
+
+msgid "Enter times for categories. Add a product only when it differs from its category."
+msgstr "Укажите время категорий. Отдельный товар добавляйте, только если его время отличается."
+
+msgid "Default cooking, minutes"
+msgstr "Обычное время кухни, мин"
+
+msgid "Packing, minutes"
+msgstr "Упаковка, мин"
+
+msgid "Average travel after ready, minutes"
+msgstr "Доставка после готовности, мин"
+
+msgid "Category times"
+msgstr "Время категорий"
+
+msgid "Product exceptions"
+msgstr "Исключения для товаров"
+
+msgid "Choose category"
+msgstr "Выберите категорию"
+
+msgid "Add category"
+msgstr "Добавить категорию"
+
+msgid "Remove category time"
+msgstr "Убрать время категории"
+
+msgid "Choose product"
+msgstr "Выберите товар"
+
+msgid "Add product"
+msgstr "Добавить товар"
+
+msgid "Remove product time"
+msgstr "Убрать время товара"
+
+msgid "Order timing saved"
+msgstr "Время заказов сохранено"
+
+msgid "Check the time settings"
+msgstr "Проверьте настройки времени"
+
+msgid "Delivery time"
+msgstr "Время доставки"
+
+msgid "Choose the time shown to customers. Kitchen details are configured in branch Order timing."
+msgstr "Настройте время для клиентов. Время кухни задаётся в разделе «Время заказов» филиала."
+
+msgid "Full time is used in one-time mode. In calculated mode, travel starts after the order is ready. A zone may have its own travel time."
+msgstr "Полный срок используется в режиме единого времени. В расчётном режиме доставка отсчитывается после готовности заказа. У зоны может быть своё время."
+
+msgid "Delivery time saved"
+msgstr "Время доставки сохранено"
+
+msgid "Travel after ready, min"
+msgstr "Доставка после готовности, мин"
+
+msgid "Category or default"
+msgstr "Категория или значение по умолчанию"
+
+msgid "Minutes"
+msgstr "Минуты"
+
+msgid "Default preparation time"
+msgstr "Время готовности по умолчанию"
+
+msgid "From starting preparation until the order is ready for handover."
+msgstr "От начала приготовления до заказа, готового к выдаче."
+
+msgid "Default preparation time, minutes"
+msgstr "Время готовности по умолчанию, мин"
+
+msgid "Preparation time for %{name}, minutes"
+msgstr "Время готовности «%{name}», мин"
+
+msgid "Leave a category blank to use the default time."
+msgstr "Пустое поле категории использует время по умолчанию."
+
+msgid "Add only products whose preparation time differs from their category. A blank value inherits the category time."
+msgstr "Добавляйте только товары, время которых отличается от категории. Пустое поле наследует время категории."
+
+msgid "Remove time for %{name}"
+msgstr "Убрать время товара «%{name}»"
+
+msgid "Advanced"
+msgstr "Дополнительно"
+
+msgid "Additional buffer, minutes"
+msgstr "Дополнительный запас, мин"
+
+msgid "Optional extra time added after the kitchen estimate; leave 0 if not needed."
+msgstr "Необязательное дополнительное время после расчёта кухни; оставьте 0, если не нужно."
+
+msgid "Courier travel time is configured in Delivery settings."
+msgstr "Время курьера настраивается в разделе «Доставка»."
+
+msgid "Open delivery settings"
+msgstr "Открыть настройки доставки"
+
+msgid "Courier travel time, minutes"
+msgstr "Время курьера, мин"
+
+msgid "Courier travel time for this zone, minutes"
+msgstr "Время курьера для этой зоны, мин"
+
+msgid "In calculated mode, courier time runs from the order being ready to handover. A zone may have its own courier time."
+msgstr "В расчётном режиме время курьера отсчитывается от готовности заказа до вручения. У зоны может быть своё время курьера."
+
+msgid "Collections"
+msgstr "Подборки"
+
+msgid "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+msgstr "Соберите популярные товары вручную или по продажам за последние 30 дней и выберите, где их показывать."
+
+msgid "Choose products to recommend to customers."
+msgstr "Выберите товары, которые хотите рекомендовать покупателям."
+
+msgid "Collection settings"
+msgstr "Настройки подборки"
+
+msgid "How to choose products"
+msgstr "Как подбирать"
+
+msgid "Unsaved settings"
+msgstr "Есть несохранённые настройки"
+
+msgid "Where to show"
+msgstr "Где показывать"
+
+msgid "In a separate category in the menu."
+msgstr "Отдельной категорией в меню."
+
+msgid "As additional offers in the cart."
+msgstr "Дополнительными предложениями в корзине."
+
+msgid "Products in collection"
+msgstr "Товары в подборке"
+
+msgid "%{count} products"
+msgstr "Товаров: %{count}"
+
+msgid "Save settings to apply the selected mode."
+msgstr "Сохраните настройки, чтобы применить выбранный режим."
+
+msgid "Choose how to build the collection, then save settings."
+msgstr "Выберите способ подбора товаров и сохраните настройки."
+
+msgid "Based on sales over the last 30 days."
+msgstr "На основе продаж за последние 30 дней."
+
+msgid "Last calculated: %{date}"
+msgstr "Последний расчёт: %{date}"
+
+msgid "Set the order with the arrow buttons."
+msgstr "Задайте порядок кнопками со стрелками."
+
+msgid "By sales"
+msgstr "По продажам"
+
+msgid "Product limit"
+msgstr "Количество товаров"

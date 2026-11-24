@@ -38,6 +38,8 @@ defmodule Delivest.Franchise.Settings do
     field :maintenance_enabled, :boolean, default: false
     field :marketing_push_limit_count, :integer, default: 1
     field :marketing_push_window_hours, :integer, default: 24
+    field :fiscal_enabled, :boolean, default: false
+    embeds_one :printing, Delivest.Printing.Settings, on_replace: :update
 
     timestamps(type: :utc_datetime)
   end
@@ -77,6 +79,7 @@ defmodule Delivest.Franchise.Settings do
     |> validate_format(:inn, ~r/^(\d{10}|\d{12})$/, message: gettext("10 or 12 digits"))
     |> validate_format(:ogrn, ~r/^(\d{13}|\d{15})$/, message: gettext("13 or 15 digits"))
     |> validate_format(:email, @email_format, message: gettext("Not an email"))
+    |> cast_embed(:printing, with: &Delivest.Printing.Settings.changeset/2)
   end
 
   def images_changeset(settings, attrs),
@@ -129,7 +132,8 @@ defmodule Delivest.Franchise.Settings do
       :client_auth_required,
       :maintenance_enabled,
       :marketing_push_limit_count,
-      :marketing_push_window_hours
+      :marketing_push_window_hours,
+      :fiscal_enabled
     ]
   end
 

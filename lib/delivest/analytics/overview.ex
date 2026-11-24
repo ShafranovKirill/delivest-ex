@@ -455,6 +455,7 @@ defmodule Delivest.Analytics.Overview do
       %{
         period: period,
         summary: rows |> Enum.map(& &1.metrics) |> sum_metrics(),
+        daily: days(rows, period),
         state: if(stale?, do: :partial, else: :ready),
         cutoff:
           if(elapsed?,

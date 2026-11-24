@@ -5,7 +5,7 @@ defmodule Delivest.Integrations.YandexDelivery do
 
   require Logger
 
-  alias Delivest.{Couriers, Identity, Push, Repo}
+  alias Delivest.{Couriers, DeliveryMeasurement, Identity, Push, Repo}
   alias Delivest.Couriers.Delivery
   alias Delivest.Identity.Branch
   alias Delivest.Integrations.Journal, as: RequestJournal
@@ -280,11 +280,58 @@ defmodule Delivest.Integrations.YandexDelivery do
         |> Map.merge(courier_details(token, claim, delivery.details))
         |> Map.merge(point_eta(token, claim))
 
-      Couriers.report(delivery, state(status), details)
+      if status == "delivered_finish",
+        do: report_finished_claim(delivery, claim, details),
+        else: Couriers.report(delivery, state(status), details)
     else
       {:error, reason} = error ->
         Logger.warning("delivery #{delivery.id}: yandex claim sync failed (#{inspect(reason)})")
         error
+    end
+  end
+
+  defp report_finished_claim(delivery, claim, details) do
+    Repo.transaction(fn ->
+      case Couriers.report(delivery, :delivered, details) do
+        {:ok, updated} ->
+          case record_actual(delivery, claim) do
+            {:error, reason} -> Repo.rollback(reason)
+            _ -> {:ok, updated}
+          end
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, result} -> result
+      error -> error
+    end
+  end
+
+  defp record_actual(delivery, claim) do
+    order = Repo.get(Order, delivery.order_id)
+    points = if is_list(claim["route_points"]), do: claim["route_points"], else: []
+
+    destination =
+      Enum.find(points, fn point ->
+        is_map(point) and point["type"] == "destination" and
+          point["external_order_id"] == (order && order.number)
+      end)
+
+    with %Order{} <- order,
+         %{"id" => point_id, "visit_status" => "visited", "visited_at" => %{"actual" => actual}} <-
+           destination,
+         true <- is_binary(actual),
+         {:ok, occurred_at, _offset} <- DateTime.from_iso8601(actual) do
+      DeliveryMeasurement.record_provider_actual(
+        delivery.order_id,
+        :yandex_delivery,
+        "#{delivery.external_id}:#{point_id}",
+        occurred_at
+      )
+    else
+      _ -> :no_verified_actual
     end
   end
 

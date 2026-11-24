@@ -171,11 +171,15 @@ defmodule Delivest.Fiscal do
     do_issue(order, payments, opts, false)
   end
 
+  def globally_enabled?,
+    do: Delivest.Franchise.SettingsStore.get_uncached().fiscal_enabled == true
+
   defp do_issue(%Order{} = order, payments, opts, existing_refund?) do
     settings = settings(order.branch_id)
 
     with true <-
-           ((settings.enabled or existing_refund?) and BranchSettings.own?(settings)) ||
+           (((settings.enabled and globally_enabled?()) or existing_refund?) and
+              BranchSettings.own?(settings)) ||
              {:error, :not_own},
          {:ok, module} <- Registry.fetch(settings.provider),
          %{} <- Map.get(settings, module.key()) || {:error, :missing_settings},

@@ -9,6 +9,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
     "payment",
     "source",
     "problem",
+    "hour",
+    "sold",
     "sort",
     "date_from",
     "date_to",
@@ -26,6 +28,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
       payment: scalar(params, "payment", ""),
       source: scalar(params, "source", ""),
       problem: Map.get(params, "problem", "") == "true",
+      hour: hour_param(params["hour"]),
+      sold: params["sold"] == "true",
       sort: scalar(params, "sort", "urgency"),
       date_from: scalar(params, "date_from", ""),
       date_to: scalar(params, "date_to", "")
@@ -46,6 +50,8 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
         payment: selected.payment,
         source: selected.source,
         problem: selected.problem,
+        hour: selected.hour,
+        sold: selected.sold,
         sort: selected.sort,
         date_from: date_from,
         date_to: date_to
@@ -63,7 +69,9 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
     |> Map.take(@keys)
     |> Map.reject(fn {key, value} ->
       (not is_binary(value) and not (key in ["page", "page_size"] and is_integer(value))) or
-        value in [nil, ""] or (key == "problem" and value == "false")
+        value in [nil, ""] or (key == "problem" and value == "false") or
+        (key == "sold" and value != "true") or
+        (key == "hour" and is_nil(hour_param(value)))
     end)
   end
 
@@ -73,6 +81,15 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersQuery do
       _ -> fallback
     end
   end
+
+  defp hour_param(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {hour, ""} when hour in 0..23 -> hour
+      _ -> nil
+    end
+  end
+
+  defp hour_param(_), do: nil
 
   defp page_param(value, _fallback) when is_integer(value) and value > 0, do: value
 

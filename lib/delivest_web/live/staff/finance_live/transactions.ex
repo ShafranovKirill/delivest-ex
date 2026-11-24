@@ -1,7 +1,8 @@
 defmodule DelivestWeb.Staff.FinanceLive.Transactions do
   use DelivestWeb, :live_view
 
-  import DelivestWeb.Staff.FoundationComponents, only: [filter_bar: 1]
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [filter_bar: 1, pagination_footer: 1, status_badge: 1]
 
   alias Delivest.{Identity, Payments}
 
@@ -39,21 +40,67 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
   end
 
   def staff_page_header(assigns) do
+    assigns = assign(assigns, statuses: @statuses)
+
     ~H"""
-    <.page_header
-      title={gettext("Payments")}
-      subtitle={
-        gettext(
-          "Payment operations for this branch. Open an order for supported actions and refunds."
-        )
-      }
-    >
-      <:actions>
-        <.link navigate={~p"/staff/b/#{@current_branch}/finance/payments"} class="btn btn-ghost">
-          {gettext("Payment methods")}
-        </.link>
-      </:actions>
-    </.page_header>
+    <.page_toolbar id="transactions-toolbar" title={gettext("Payments")}>
+      <:filters>
+        <.filter_bar
+          id="transactions-filter"
+          query={@query["search"] || ""}
+          query_name="search"
+          reset_path={transactions_path(assigns, %{})}
+          event="filter"
+          active={
+            @query["status"] not in [nil, ""] or @query["from"] not in [nil, ""] or
+              @query["to"] not in [nil, ""]
+          }
+          compact
+        >
+          <:filter>
+            <div>
+              <label for="transactions-status" class="sr-only">{gettext("Status")}</label>
+              <select
+                id="transactions-status"
+                name="status"
+                class="select select-bordered select-sm w-32"
+              >
+                <option value="">{gettext("All statuses")}</option>
+                <option :for={value <- @statuses} value={value} selected={@query["status"] == value}>
+                  {status(String.to_existing_atom(value))}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label for="transactions-from" class="sr-only">{gettext("From")}</label>
+              <input
+                id="transactions-from"
+                name="from"
+                type="date"
+                value={@query["from"]}
+                class="input input-bordered input-sm w-32"
+              />
+            </div>
+            <div>
+              <label for="transactions-to" class="sr-only">{gettext("To")}</label>
+              <input
+                id="transactions-to"
+                name="to"
+                type="date"
+                value={@query["to"]}
+                class="input input-bordered input-sm w-32"
+              />
+            </div>
+          </:filter>
+        </.filter_bar>
+      </:filters>
+      <:more_actions>
+        <.link
+          navigate={~p"/staff/b/#{@current_branch}/finance/payments"}
+          class="btn btn-ghost btn-sm justify-start"
+        >{gettext("Payment methods")}</.link>
+      </:more_actions>
+    </.page_toolbar>
     """
   end
 
@@ -63,50 +110,6 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
 
     ~H"""
     <div id="transactions-page" class="space-y-5">
-      <.filter_bar
-        id="transactions-filter"
-        query={@query["search"] || ""}
-        query_name="search"
-        reset_path={transactions_path(assigns, %{})}
-        event="filter"
-        active={
-          @query["status"] not in [nil, ""] or @query["from"] not in [nil, ""] or
-            @query["to"] not in [nil, ""]
-        }
-      >
-        <:filter>
-          <div>
-            <label for="transactions-status" class="block text-sm font-medium">{gettext("Status")}</label>
-            <select id="transactions-status" name="status" class="select select-bordered">
-              <option value="">{gettext("All statuses")}</option>
-              <option :for={value <- @statuses} value={value} selected={@query["status"] == value}>
-                {status(String.to_existing_atom(value))}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label for="transactions-from" class="block text-sm font-medium">{gettext("From")}</label>
-            <input
-              id="transactions-from"
-              name="from"
-              type="date"
-              value={@query["from"]}
-              class="input input-bordered"
-            />
-          </div>
-          <div>
-            <label for="transactions-to" class="block text-sm font-medium">{gettext("To")}</label>
-            <input
-              id="transactions-to"
-              name="to"
-              type="date"
-              value={@query["to"]}
-              class="input input-bordered"
-            />
-          </div>
-        </:filter>
-      </.filter_bar>
-
       <.table
         id="transactions"
         rows={@rows}
@@ -125,7 +128,12 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
           <span class="tabular-nums">{Delivest.Money.format(payment.amount)}</span>
         </:col>
         <:col :let={{payment, _number}} key="status" label={gettext("Status")}>
-          <span class={["badge badge-sm", status_tone(payment.status)]}>{status(payment.status)}</span>
+          <.status_badge
+            id={"payment-status-#{payment.id}"}
+            label={status(payment.status)}
+            tone={status_tone(payment.status)}
+            class="badge-sm whitespace-nowrap"
+          />
         </:col>
         <:col :let={{payment, _number}} key="method" label={gettext("Method")} secondary>
           {method(payment.method)}
@@ -143,14 +151,12 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
         </:col>
       </.table>
 
-      <p class="text-sm text-base-content/70">
-        {gettext("%{count} payments", count: @pagination.total)}
-      </p>
-      <.pagination
-        id="transactions-page-size"
-        meta={pagination_meta(@pagination)}
+      <.pagination_footer
+        id="transactions-footer"
+        page_size_id="transactions-page-size"
+        count_label={gettext("%{count} payments", count: @pagination.total)}
+        page={@pagination}
         path_fn={fn overrides -> transactions_path(assigns, Map.merge(@query, overrides)) end}
-        page_sizes={[25, 50, 100]}
       />
     </div>
     """
@@ -161,24 +167,15 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
     ~p"/staff/b/#{assigns.current_branch}/finance/transactions?#{params}"
   end
 
-  defp pagination_meta(page) do
-    %Flop.Meta{
-      current_page: page.page,
-      page_size: page.page_size,
-      total_pages: page.pages,
-      total_count: page.total
-    }
-  end
-
   defp status(:pending), do: gettext("Pending")
   defp status(:authorized), do: gettext("Authorized")
   defp status(:paid), do: gettext("Paid")
   defp status(:failed), do: gettext("Failed")
   defp status(:cancelled), do: gettext("Cancelled")
 
-  defp status_tone(:paid), do: "badge-success"
-  defp status_tone(status) when status in [:failed, :cancelled], do: "badge-error"
-  defp status_tone(_), do: "badge-warning"
+  defp status_tone(:paid), do: :success
+  defp status_tone(status) when status in [:failed, :cancelled], do: :error
+  defp status_tone(_), do: :warning
 
   defp method(:cash), do: gettext("Cash")
   defp method(:card), do: gettext("Card")

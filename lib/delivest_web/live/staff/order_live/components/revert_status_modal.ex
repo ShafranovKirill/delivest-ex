@@ -38,7 +38,7 @@ defmodule DelivestWeb.Staff.OrderLive.Components.RevertStatusModal do
           maxlength="300"
           required
           placeholder={gettext("Why is the status reverted?")}
-          class="textarea textarea-bordered w-full"
+          class="textarea w-full"
         ></textarea>
         <div class="modal-action">
           <button type="button" class="btn btn-ghost btn-sm" phx-click="dismiss_revert">

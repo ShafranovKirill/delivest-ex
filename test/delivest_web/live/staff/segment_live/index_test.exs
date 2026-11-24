@@ -24,6 +24,15 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     Repo.insert!(%Segment{name: "First visible", kind: :manual, scope: :franchise})
 
     {:ok, single, _} = live(conn, ~p"/staff/segments")
+    assert has_element?(single, "#segments-toolbar h1.sr-only", "Сегменты")
+
+    assert has_element?(
+             single,
+             "#segments-toolbar .staff-page-toolbar-actions a",
+             "Создать сегмент"
+           )
+
+    refute has_element?(single, "#segments-toolbar #segment-client-search")
     refute has_element?(single, "a", "Следующая страница")
 
     for index <- 1..50 do
@@ -97,11 +106,20 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
     assert {:ok, []} = Segments.list_members(staff, group.id)
 
     {:ok, detail, _} = live(conn, ~p"/staff/segments/#{group.id}")
+    assert has_element?(detail, "#segments-toolbar h1.sr-only", "Сегменты")
+    assert has_element?(detail, "#segments-toolbar #segment-edit-link")
     refute has_element?(detail, "#segment-clients")
     detail |> element("a[role='tab']", "Клиенты") |> render_click()
     assert has_element?(detail, "#segment-clients")
+
+    assert has_element?(
+             detail,
+             "#segments-toolbar #segment-client-search[phx-change='client_search']"
+           )
+
+    refute has_element?(detail, "#segment-client-search button[type='submit']")
     detail |> element("a", "Добавить клиентов") |> render_click()
-    detail |> form("#segment-client-search", filter: %{search: "Test Guest"}) |> render_submit()
+    detail |> form("#segment-client-search", filter: %{search: "Test Guest"}) |> render_change()
     assert has_element?(detail, "#client-row-#{client.id}")
     detail |> element("#client-row-#{client.id} button") |> render_click()
     refute has_element?(detail, "#client-row-#{client.id}")
@@ -404,7 +422,7 @@ defmodule DelivestWeb.Staff.SegmentLive.IndexTest do
       )
 
     {:ok, view, _} = live(ctx.conn, ~p"/staff/segments/#{group.id}?tab=settings")
-    assert has_element?(view, "#segment-recalculate-now")
+    assert has_element?(view, "#segments-toolbar #segment-recalculate-now")
     assert has_element?(view, "#segment-calculation-status")
     assert has_element?(view, "#segment-recalculate-now", "Проверить расчёт")
     old_token = :sys.get_state(view.pid).socket.assigns.poll_token

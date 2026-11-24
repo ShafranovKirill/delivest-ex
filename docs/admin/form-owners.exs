@@ -18,6 +18,9 @@
   "branch_live/special_hours_component.ex" =>
     {"branch special-hours operation", "Settings / Branch operations / Schedule",
      "branch_live/special_hours_component.ex"},
+  "branch_live/timing_component.ex" =>
+    {"Delivest.Oms.OrderTiming settings and branch delivery-time operation",
+     "Settings / Branch operations / Order timing", "branch_live/timing_component.ex"},
   "branch_live/working_hours_component.ex" =>
     {"lib/delivest_web/live/staff/branch_live/branch_form.ex",
      "Settings / Branch operations / Schedule", "branch_live/branch_form_component.ex"},
@@ -189,7 +192,7 @@
   "receipt_live/index.ex" =>
     {"fiscal receipt register filters", "Finance / Receipts", "receipt_live/index.ex"},
   "receipt_live/printing.ex" =>
-    {"lib/delivest/printing/settings.ex", "Finance / Receipts and printing",
+    {"lib/delivest/printing/settings.ex", "Franchise / Receipts and printing",
      "receipt_live/printing.ex"},
   "role_live/role_form_component.ex" =>
     {"lib/delivest/identity/role.ex", "Settings / Team and access / Roles",
@@ -202,6 +205,8 @@
   "staff_live/staffs.ex" =>
     {"staff list search filter", "Settings / Team and access / Staff", "staff_live/staffs.ex"},
   "statistics_live/index.ex" =>
+    {"Delivest.Analytics report filters", "Analytics", "statistics_live/index.ex"},
+  "statistics_live/report_components.ex" =>
     {"Delivest.Analytics report filters", "Analytics", "statistics_live/index.ex"},
   "stock_live/stock_form_component.ex" =>
     {"lib/delivest/net/stock.ex", "Marketing / Banners", "stock_live/stock_form_component.ex"}

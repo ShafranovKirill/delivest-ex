@@ -52,5 +52,18 @@ defmodule Delivest.Franchise.SettingsStore do
 
   def current(field), do: Map.fetch!(load(), field)
 
-  defp load, do: Repo.one(Settings) || %Settings{}
+  defp load do
+    Repo.one(Settings) || %Settings{fiscal_enabled: legacy_fiscal_active?()}
+  end
+
+  defp legacy_fiscal_active? do
+    case Ecto.Adapters.SQL.query(
+           Repo,
+           "SELECT EXISTS (SELECT 1 FROM branch_info WHERE fiscal->>'mode' = 'own' AND COALESCE((fiscal->>'enabled')::boolean, TRUE))",
+           []
+         ) do
+      {:ok, %{rows: [[active?]]}} -> active?
+      _ -> false
+    end
+  end
 end

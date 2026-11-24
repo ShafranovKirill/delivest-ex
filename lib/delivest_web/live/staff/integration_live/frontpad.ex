@@ -604,24 +604,24 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         }
       </script>
 
-      <div role="tablist" class="tabs tabs-boxed w-fit max-w-full overflow-x-auto">
-        <.tab_button tab={:settings} current={@tab} icon="hero-cog-6-tooth">
+      <DelivestWeb.Staff.SubsectionNavigation.integration_tabs active={@tab}>
+        <:tab value={:settings} icon="hero-cog-6-tooth">
           {gettext("Settings")}
-        </.tab_button>
-        <.tab_button tab={:check} current={@tab} icon="hero-check-badge">
+        </:tab>
+        <:tab value={:check} icon="hero-check-badge">
           {gettext("Check")}
-        </.tab_button>
-        <.tab_button tab={:products} current={@tab} icon="hero-cube">
+        </:tab>
+        <:tab value={:products} icon="hero-cube">
           {gettext("Frontpad products")}
           <span :if={@snapshot}>({length(@snapshot.products)})</span>
-        </.tab_button>
-        <.tab_button tab={:certificates} current={@tab} icon="hero-ticket">
+        </:tab>
+        <:tab value={:certificates} icon="hero-ticket">
           Сертификаты
-        </.tab_button>
-        <.tab_button tab={:journal} current={@tab} icon="hero-queue-list">
+        </:tab>
+        <:tab value={:journal} icon="hero-queue-list">
           {gettext("Request journal")}
-        </.tab_button>
-      </div>
+        </:tab>
+      </DelivestWeb.Staff.SubsectionNavigation.integration_tabs>
 
       <section
         :if={@tab == :settings}
@@ -763,25 +763,6 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
         <% end %>
       <% end %>
     </div>
-    """
-  end
-
-  attr :tab, :atom, required: true
-  attr :current, :atom, required: true
-  attr :icon, :string, required: true
-  slot :inner_block, required: true
-
-  defp tab_button(assigns) do
-    ~H"""
-    <button
-      type="button"
-      role="tab"
-      phx-click="tab"
-      phx-value-tab={@tab}
-      class={["tab gap-2 whitespace-nowrap", @tab == @current && "tab-active font-bold"]}
-    >
-      <.icon name={@icon} class="size-4" /> {render_slot(@inner_block)}
-    </button>
     """
   end
 
@@ -1228,7 +1209,7 @@ defmodule DelivestWeb.Staff.IntegrationLive.Frontpad do
           name="q"
           value={@query}
           placeholder={gettext("Search by name or CRM ID...")}
-          class="input input-bordered w-full sm:max-w-sm"
+          class="input w-full sm:max-w-sm"
           phx-debounce="300"
         />
       </form>

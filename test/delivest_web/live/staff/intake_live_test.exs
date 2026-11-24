@@ -14,7 +14,14 @@ defmodule DelivestWeb.Staff.IntakeLiveTest do
     insert(:staff_branch, staff: staff, branch: branch)
 
     conn = init_test_session(conn, %{"staff_id" => staff.id})
-    {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
+    {:ok, orders, _html} = live(conn, ~p"/staff/b/#{branch}/orders")
+    {:ok, branches, _html} = live(conn, ~p"/staff/branches")
+
+    assert has_element?(branches, "#branch-edit-#{branch.id}")
+
+    {:ok, lv, _html} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
+    {:ok, second_settings, _html} = live(conn, ~p"/staff/branches/#{branch.slug}/edit")
+    refute has_element?(orders, "#intake-menu")
 
     assert has_element?(
              lv,
@@ -25,9 +32,14 @@ defmodule DelivestWeb.Staff.IntakeLiveTest do
 
     assert render(lv) =~ "поломка"
     refute Intake.accepting?(branch.id)
+    assert render(orders) =~ "поломка"
+    assert has_element?(second_settings, "#intake-resume")
+    refute has_element?(orders, "#intake-resume")
 
     lv |> element("#intake-resume") |> render_click()
     refute has_element?(lv, "#intake-plate")
     assert Intake.accepting?(branch.id)
+    refute has_element?(orders, "#intake-plate")
+    refute has_element?(second_settings, "#intake-plate")
   end
 end

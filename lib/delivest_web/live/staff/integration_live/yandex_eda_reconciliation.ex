@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaReconciliation do
   use DelivestWeb, :html
 
+  import DelivestWeb.Staff.FoundationComponents, only: [state_notice: 1]
+
   alias Delivest.Money
   alias DelivestWeb.Staff.OrderLive.OrderHelpers
 
@@ -32,10 +34,18 @@ defmodule DelivestWeb.Staff.IntegrationLive.YandexEdaReconciliation do
 
       <.async_result :let={result} :if={@result} assign={@result}>
         <:loading>
-          <p class="text-sm text-base-content/50">{gettext("Loading...")}</p>
+          <.state_notice
+            id="yandex-eda-reconciliation-loading"
+            title={gettext("Loading...")}
+            kind={:loading}
+          />
         </:loading>
         <:failed>
-          <p class="text-sm text-error">{gettext("Yandex did not return the order history")}</p>
+          <.state_notice
+            id="yandex-eda-reconciliation-error"
+            title={gettext("Yandex did not return the order history")}
+            kind={:error}
+          />
         </:failed>
 
         <p id="yandex-eda-reconciliation-summary" class="text-sm">

@@ -53,6 +53,33 @@ defmodule Delivest.Analytics.ReportsTest do
     assert success >= 1
   end
 
+  test "funnel report authorizes branch scope and does not treat channel as cohort filter", ctx do
+    enable("analytics_funnel", ctx.branch)
+    collected_before("analytics_funnel", ctx.branch, today(ctx.branch))
+    run_report("analytics.funnel", ctx.branch)
+    day = today(ctx.branch)
+
+    assert {:ok, %{rows: own_rows}} =
+             Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {day, day}, "funnel")
+
+    assert {:ok, %{rows: filtered_rows}} =
+             Reports.read(
+               ctx.analyst,
+               {:branch, ctx.branch.id},
+               {day, day},
+               "funnel",
+               %{"channel" => "hidden-unrelated-source"}
+             )
+
+    assert Enum.find(own_rows, &(&1.dimension == "stage")).counts ==
+             Enum.find(filtered_rows, &(&1.dimension == "stage")).counts
+
+    foreign = insert(:branch)
+
+    assert {:error, :forbidden} =
+             Reports.read(ctx.analyst, {:branch, foreign.id}, {day, day}, "funnel")
+  end
+
   test "disabled extended analytics writes no identity or report and refuses reads", ctx do
     order = order_fixture(ctx.branch.id)
 
@@ -557,10 +584,14 @@ defmodule Delivest.Analytics.ReportsTest do
     run_report("analytics.funnel", ctx.branch)
     run_report("analytics.links", ctx.branch)
 
-    assert {:ok, %{rows: funnel_rows}} =
+    assert {:ok, %{rows: funnel_rows, state: :partial, conversion_ready?: false}} =
              Reports.read(ctx.analyst, {:branch, ctx.branch.id}, {old_day, old_day}, "funnel")
 
-    assert Enum.find(funnel_rows, &(&1.dimension == "stage")).counts["sessions"] == 7
+    assert Enum.find(funnel_rows, &(&1.dimension == "stage")).counts["sessions"] == 0
+
+    assert Enum.find(funnel_rows, &(&1.dimension == "coverage")).counts["legacy_snapshot_days"] ==
+             1
+
     assert Enum.find(funnel_rows, &(&1.dimension == "session_source")).counts["sessions"] == 7
 
     assert {:ok, %{rows: [%{counts: %{"clicks" => 5}}]}} =

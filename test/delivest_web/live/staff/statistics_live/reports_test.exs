@@ -89,6 +89,41 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
     refute has_element?(manager, "select[name=branch_id]")
   end
 
+  test "franchise ranking and exact table use filtered report branch rows", %{conn: conn} do
+    branch = insert(:branch)
+    assert {:ok, _} = Features.configure("analytics_franchise", :franchise, true, actor: "host")
+
+    assert {:ok, _} =
+             Features.configure("analytics_franchise", {:branch, branch.id}, true, actor: "host")
+
+    published(branch, "analytics_extended", [
+      {"extended", "channel", "app", %{"completed" => 42, "revenue" => 1400}},
+      {"extended", "channel", "staff", %{"completed" => 2, "revenue" => 300}}
+    ])
+
+    conn = login(conn, ["statistics.read", "statistics.network"], branch)
+    {:ok, view, _} = live(conn, ~p"/staff/analytics/comparison?period=today&channel=app")
+    row = "#statistics-branch-#{branch.id}"
+
+    assert has_element?(view, "#statistics-ranking-chart[data-chart]")
+
+    assert has_element?(
+             view,
+             "#{row} td[data-column=branch]",
+             ~r/^\s*#{Regex.escape(branch.name)}\s*$/
+           )
+
+    assert has_element?(view, "#{row} td[data-column=completed]", ~r/^\s*42\s*$/)
+    refute has_element?(view, "#{row} td[data-column=completed]", ~r/^\s*44\s*$/)
+
+    view
+    |> element("#statistics-ranking-metric")
+    |> render_change(%{"metric" => "orders_per_day"})
+
+    assert_patch(view)
+    assert has_element?(view, "#{row} td[data-column=per_day]", ~r/^\s*42\.00\s*$/)
+  end
+
   test "branch franchise link stays hidden while the global feature is off", %{conn: conn} do
     branch = insert(:branch)
     conn = login(conn, ["statistics.read", "statistics.network"], branch)
@@ -120,7 +155,10 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportsTest do
       )
 
     assert has_element?(view, "#statistics-funnel-path", "Sessions started")
-    assert has_element?(view, "#statistics-funnel-path", "Visits")
+    assert has_element?(view, "#statistics-funnel-path", "Menu views")
+
+    assert has_element?(view, "#statistics-funnel-chart[data-chart]")
+    assert has_element?(view, "#statistics-funnel-data")
     assert has_element?(view, "#statistics-funnel-sources", "Direct visit")
     assert has_element?(view, "#statistics-funnel-sources", "Unknown source")
     assert has_element?(view, "#statistics-funnel-sources", "unverified observations")

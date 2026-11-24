@@ -43,7 +43,7 @@ defmodule DelivestWeb.Staff.FinanceLive.TransactionsTest do
 
     assert has_element?(
              lv,
-             "#staff-page-header a[href='/staff/b/#{branch.slug}/finance/payments']"
+             "#transactions-toolbar a[href='/staff/b/#{branch.slug}/finance/payments']"
            )
 
     assert has_element?(lv, "#transactions-page-size option[value='25'][selected]")

@@ -27,6 +27,7 @@ defmodule Delivest.Delivery do
       |> get_settings()
       |> Settings.changeset(attrs)
       |> Repo.insert_or_update()
+      |> invalidate_quote_cache(branch_id)
     end
   end
 
@@ -82,6 +83,7 @@ defmodule Delivest.Delivery do
   def create_zone(staff, branch_id, polygon) do
     with :ok <- authorize(staff, branch_id) do
       insert_first_zone(staff, branch_id, fn zone -> Zone.polygon_changeset(zone, polygon) end)
+      |> invalidate_quote_cache(branch_id)
     end
   end
 
@@ -94,6 +96,7 @@ defmodule Delivest.Delivery do
         |> Zone.radius_changeset(center, radius)
         |> Ecto.Changeset.put_change(:name, "#{zone.name} · #{radius} км")
       end)
+      |> invalidate_quote_cache(branch_id)
     end
   end
 
@@ -121,6 +124,7 @@ defmodule Delivest.Delivery do
         Audit.record(staff, "delivery.zones_reordered", branch, metadata: %{zone_ids: ids})
         list_zones(branch_id)
       end)
+      |> invalidate_quote_cache(branch_id)
     else
       false -> {:error, :invalid_zone_order}
       error -> error
@@ -130,7 +134,11 @@ defmodule Delivest.Delivery do
   def update_zone(staff, branch_id, id, attrs) do
     with :ok <- authorize(staff, branch_id),
          {:ok, zone} <- get_zone(branch_id, id) do
-      zone |> resize(branch_id, attrs) |> Zone.changeset(attrs) |> Repo.update()
+      zone
+      |> resize(branch_id, attrs)
+      |> Zone.changeset(attrs)
+      |> Repo.update()
+      |> invalidate_quote_cache(branch_id)
     end
   end
 
@@ -141,6 +149,7 @@ defmodule Delivest.Delivery do
       |> Zone.polygon_changeset(polygon)
       |> Ecto.Changeset.put_change(:radius_km, nil)
       |> Repo.update()
+      |> invalidate_quote_cache(branch_id)
     end
   end
 
@@ -162,17 +171,18 @@ defmodule Delivest.Delivery do
             Repo.rollback(reason)
         end
       end)
+      |> invalidate_quote_cache(branch_id)
     end
   end
 
   def quote(branch_id, point, subtotal) do
-    settings = get_settings(branch_id)
-    Quote.run(effective_settings(settings), list_zones(branch_id), point, subtotal)
+    {settings, zones} = quote_catalog(branch_id)
+    Quote.run(effective_settings(settings), zones, point, subtotal)
   end
 
   def check(branch_id, point, subtotal) do
-    settings = branch_id |> get_settings() |> effective_settings()
-    zones = list_zones(branch_id)
+    {settings, zones} = quote_catalog(branch_id)
+    settings = effective_settings(settings)
 
     case Quote.run(settings, zones, point, subtotal) do
       {:ok, quote} ->
@@ -203,6 +213,35 @@ defmodule Delivest.Delivery do
     do: %{settings | mode: :flat}
 
   defp effective_settings(settings), do: settings
+
+  defp quote_catalog(branch_id) do
+    if Repo.in_transaction?() do
+      {get_settings(branch_id), list_zones(branch_id)}
+    else
+      cached_quote_catalog(branch_id)
+    end
+  end
+
+  defp cached_quote_catalog(branch_id) do
+    key = {:delivery_quote, branch_id}
+
+    case Cachex.get(:branch_cache, key) do
+      {:ok, {settings, zones}} ->
+        {settings, zones}
+
+      _ ->
+        catalog = {get_settings(branch_id), list_zones(branch_id)}
+        Cachex.put(:branch_cache, key, catalog, expire: :timer.minutes(1))
+        catalog
+    end
+  end
+
+  defp invalidate_quote_cache({:ok, _} = result, branch_id) do
+    Cachex.del(:branch_cache, {:delivery_quote, branch_id})
+    result
+  end
+
+  defp invalidate_quote_cache(result, _branch_id), do: result
 
   defp quote_fields(quote) do
     quote

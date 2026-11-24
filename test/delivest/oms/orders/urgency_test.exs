@@ -4,7 +4,7 @@ defmodule Delivest.Oms.Orders.UrgencyTest do
   import Delivest.Factory
 
   alias Delivest.Identity.Branch.BranchInfo
-  alias Delivest.Oms.{Carts, OrderDeadline, Orders}
+  alias Delivest.Oms.{Carts, OrderAttention, OrderDeadline, Orders}
 
   setup do
     branch = insert(:branch, is_active: true)
@@ -102,5 +102,26 @@ defmodule Delivest.Oms.Orders.UrgencyTest do
     assert Enum.sort(ids) == Enum.sort([overdue.id, alerted.id, failed.id])
     refute on_time.id in ids
     refute finished_late.id in ids
+  end
+
+  test "daily attention count excludes finished orders with a CRM alert", ctx do
+    day =
+      DateTime.utc_now(:second) |> Delivest.LocalTime.local(ctx.branch.id) |> DateTime.to_date()
+
+    past = DateTime.utc_now(:second) |> DateTime.add(-1, :hour)
+
+    order(ctx, 0, status: :preparing, cook_by: past)
+
+    order(ctx, 0,
+      status: :accepted,
+      crm: %Delivest.Oms.Order.CrmSync{provider: "frontpad", status: "sent", alert: "check"}
+    )
+
+    order(ctx, 0,
+      status: :completed,
+      crm: %Delivest.Oms.Order.CrmSync{provider: "frontpad", status: "sent", alert: "old"}
+    )
+
+    assert OrderAttention.count_for_day(ctx.branch.id, day) == 2
   end
 end
