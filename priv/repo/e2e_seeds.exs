@@ -82,6 +82,9 @@ Repo.get_by(BranchInfo, branch_id: branch.id) ||
   })
   |> Repo.insert!()
 
+# POS scenarios need fiscal receipts even when the global gate defaults to off.
+{:ok, _} = Delivest.Franchise.SettingsStore.save(%{fiscal_enabled: true})
+
 role = fn name -> Repo.one!(from r in Role, where: r.name == ^name) end
 
 for {login, name, role_name} <- [
