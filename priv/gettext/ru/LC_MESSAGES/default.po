@@ -14000,3 +14000,57 @@ msgstr "Время курьера для этой зоны, мин"
 
 msgid "In calculated mode, courier time runs from the order being ready to handover. A zone may have its own courier time."
 msgstr "В расчётном режиме время курьера отсчитывается от готовности заказа до вручения. У зоны может быть своё время курьера."
+
+msgid "Collections"
+msgstr "Подборки"
+
+msgid "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+msgstr "Соберите популярные товары вручную или по продажам за последние 30 дней и выберите, где их показывать."
+
+msgid "Choose products to recommend to customers."
+msgstr "Выберите товары, которые хотите рекомендовать покупателям."
+
+msgid "Collection settings"
+msgstr "Настройки подборки"
+
+msgid "How to choose products"
+msgstr "Как подбирать"
+
+msgid "Unsaved settings"
+msgstr "Есть несохранённые настройки"
+
+msgid "Where to show"
+msgstr "Где показывать"
+
+msgid "In a separate category in the menu."
+msgstr "Отдельной категорией в меню."
+
+msgid "As additional offers in the cart."
+msgstr "Дополнительными предложениями в корзине."
+
+msgid "Products in collection"
+msgstr "Товары в подборке"
+
+msgid "%{count} products"
+msgstr "Товаров: %{count}"
+
+msgid "Save settings to apply the selected mode."
+msgstr "Сохраните настройки, чтобы применить выбранный режим."
+
+msgid "Choose how to build the collection, then save settings."
+msgstr "Выберите способ подбора товаров и сохраните настройки."
+
+msgid "Based on sales over the last 30 days."
+msgstr "На основе продаж за последние 30 дней."
+
+msgid "Last calculated: %{date}"
+msgstr "Последний расчёт: %{date}"
+
+msgid "Set the order with the arrow buttons."
+msgstr "Задайте порядок кнопками со стрелками."
+
+msgid "By sales"
+msgstr "По продажам"
+
+msgid "Product limit"
+msgstr "Количество товаров"

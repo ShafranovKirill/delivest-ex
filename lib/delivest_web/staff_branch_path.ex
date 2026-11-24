@@ -8,7 +8,7 @@ defmodule DelivestWeb.StaffBranchPath do
     integrations/ycart integrations/vk-ads integrations/iiko integrations/rkeeper integrations/routes
     integrations/zvonok integrations/dadata integrations/yookassa integrations/yandex-eda
     integrations/yandex-delivery integrations/fiscal categories products products/bulk
-    products/operations products/stops products/modifiers products/suggested products/tags
+    products/operations products/stops products/modifiers products/collections products/suggested products/tags
     menu/popular stocks loyalty promotions advertising-links pos kitchen
   )
   @network_routes ~w(

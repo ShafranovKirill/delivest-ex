@@ -13450,3 +13450,57 @@ msgstr ""
 
 msgid "To confirm"
 msgstr ""
+
+msgid "Collections"
+msgstr ""
+
+msgid "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+msgstr ""
+
+msgid "Choose products to recommend to customers."
+msgstr ""
+
+msgid "Collection settings"
+msgstr ""
+
+msgid "How to choose products"
+msgstr ""
+
+msgid "Unsaved settings"
+msgstr ""
+
+msgid "Where to show"
+msgstr ""
+
+msgid "In a separate category in the menu."
+msgstr ""
+
+msgid "As additional offers in the cart."
+msgstr ""
+
+msgid "Products in collection"
+msgstr ""
+
+msgid "%{count} products"
+msgstr ""
+
+msgid "Save settings to apply the selected mode."
+msgstr ""
+
+msgid "Choose how to build the collection, then save settings."
+msgstr ""
+
+msgid "Based on sales over the last 30 days."
+msgstr ""
+
+msgid "Last calculated: %{date}"
+msgstr ""
+
+msgid "Set the order with the arrow buttons."
+msgstr ""
+
+msgid "By sales"
+msgstr ""
+
+msgid "Product limit"
+msgstr ""

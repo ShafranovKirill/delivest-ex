@@ -179,7 +179,7 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
 
     assert has_element?(
              view,
-             "#staff-section-navigation #product-section-tab-popular[aria-current='page']"
+             "#staff-section-navigation #product-section-tab-collections[aria-current='page']"
            )
 
     assert has_element?(
@@ -188,6 +188,27 @@ defmodule DelivestWeb.Staff.BranchLive.BranchSelectTest do
            )
 
     assert has_element?(view, "#branch-select-go-#{branch.id}[href*='from=']")
+  end
+
+  test "chooser preserves the collections destination", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+    conn = init_test_session(conn, %{"staff_id" => staff.id})
+    source = "/staff/b/#{branch.slug}/products/collections"
+    chooser = DelivestWeb.StaffBranchPath.selection_path(source, "/staff/segments")
+
+    {:ok, view, _} = live(conn, chooser)
+
+    assert has_element?(
+             view,
+             "#staff-section-navigation #product-section-tab-collections[aria-current='page']"
+           )
+
+    assert has_element?(view, "#branch-select-go-#{branch.id}[href*='products%2Fcollections']")
+
+    assert DelivestWeb.StaffBranchPath.selection_destination(source, "other") ==
+             {:ok, "/staff/b/other/products/collections"}
   end
 
   test "chooser keeps order and settings section navigation", %{conn: conn} do

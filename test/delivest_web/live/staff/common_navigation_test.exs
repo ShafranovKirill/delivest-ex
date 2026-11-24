@@ -820,7 +820,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
       assert has_element?(view, "#nav-section-main")
 
       assert has_element?(view, "#nav-section-main a[href='/staff/b/#{branch.slug}/products']")
-      active = if String.ends_with?(path, "/stops"), do: "stops", else: "popular"
+      active = if String.ends_with?(path, "/stops"), do: "stops", else: "collections"
 
       assert has_element?(
                view,
@@ -828,7 +828,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
              )
 
       assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-stops")
-      assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-popular")
+      assert has_element?(view, "#sidebar-group-menu #sidebar-product-section-tab-collections")
 
       refute has_element?(
                view,
@@ -840,7 +840,7 @@ defmodule DelivestWeb.Staff.CommonNavigationTest do
                "#nav-section-main > ul > li > a[href='/staff/b/#{branch.slug}/menu/popular']"
              )
 
-      assert has_element?(view, "#staff-section-navigation #product-section-tab-popular")
+      assert has_element?(view, "#staff-section-navigation #product-section-tab-collections")
       assert has_element?(view, "#staff-section-navigation #product-section-tab-stops")
 
       assert Enum.count(

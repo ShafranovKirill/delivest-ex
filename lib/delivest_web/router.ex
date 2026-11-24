@@ -545,6 +545,7 @@ defmodule DelivestWeb.Router do
           live "/operations", Operations, :index
           live "/stops", StopList, :index
           live "/modifiers", Modifiers, :index
+          live "/collections", Collections, :index
           live "/suggested", Suggested, :index
           live "/tags", Tags, :index
           live "/tags/new", Tags, :new

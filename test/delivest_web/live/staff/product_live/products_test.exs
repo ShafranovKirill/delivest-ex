@@ -15,8 +15,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
     assert ProductTags.section("/staff/b/north/products/operations") == nil
     assert ProductTags.section("/staff/b/north/products-foo") == nil
     assert ProductTags.section("/staff/products") == :products
-    assert ProductTags.section("/staff/menu/popular") == :popular
-    assert ProductTags.section("/staff/b/north/menu/popular") == :popular
+    assert ProductTags.section("/staff/menu/popular") == :collections
+    assert ProductTags.section("/staff/b/north/menu/popular") == :collections
     assert ProductTags.section("/staff/b/north/menu/popular/other") == nil
     assert ProductTags.section("/staff/b/north/menu/popular-other") == nil
   end
@@ -414,7 +414,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
                  LazyHTML.from_fragment(render(lv)),
                  "#staff-context-navigation #staff-section-navigation a"
                )
-             ) == 7
+             ) == 6
 
       refute has_element?(lv, "#staff-header-context")
       assert has_element?(lv, "main #products-toolbar h1.sr-only", "Products")
@@ -510,7 +510,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
             {"/stops", "stops", "Stop list", true},
             {"/modifiers", "modifiers", "Modifiers", true},
             {"/tags", "tags", "Tags", true},
-            {"/suggested", "suggested", "Recommended", true},
+            {"/collections", "collections", "Collections", false},
+            {"/suggested", "collections", "Recommended", true},
             {"/bulk", "products", "Bulk add products", true}
           ] do
         {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products" <> path)
@@ -520,7 +521,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
                  "#staff-context-navigation #staff-section-navigation #product-section-tab-#{key}[aria-current='page']"
                )
 
-        for other <- ~w(products stops modifiers tags suggested) do
+        for other <- ~w(products stops modifiers tags collections) do
           assert has_element?(
                    lv,
                    "#staff-context-navigation #staff-section-navigation #product-section-tab-#{other}"

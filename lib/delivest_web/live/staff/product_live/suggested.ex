@@ -112,6 +112,12 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   def staff_page_header(assigns) do
     ~H"""
     <.page_toolbar id="suggested-toolbar" title={gettext("Recommended")}>
+      <:filters>
+        <DelivestWeb.Staff.CollectionsNavigation.collections_navigation
+          branch={@current_branch}
+          active={:suggested}
+        />
+      </:filters>
       <:primary_action>
         <button
           :if={@can_edit}
@@ -129,6 +135,9 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <p class="text-sm text-base-content/70">
+        {gettext("Choose products to recommend to customers.")}
+      </p>
       <BranchProducts.product_list
         id="suggested-list"
         products={Enum.filter(@products, & &1.suggested)}

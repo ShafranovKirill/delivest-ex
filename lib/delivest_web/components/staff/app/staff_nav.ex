@@ -235,17 +235,12 @@ defmodule DelivestWeb.StaffNav do
             ),
             item(:tags, "/staff/b/#{branch.slug}/products/tags", "hero-tag", gettext("Tags")),
             item(
-              :suggested,
-              "/staff/b/#{branch.slug}/products/suggested",
-              "hero-sparkles",
-              gettext("Recommended")
-            ),
-            item(
-              :popular,
-              "/staff/b/#{branch.slug}/menu/popular",
-              "hero-fire",
-              gettext("Popular products")
+              :collections,
+              "/staff/b/#{branch.slug}/products/collections",
+              "hero-squares-2x2",
+              gettext("Collections")
             )
+            |> Map.put(:pages, [:collections, :popular, :suggested])
           ]
           |> Enum.map(&%{&1 | read_permissions: ["products.read"]})
         else
@@ -763,7 +758,7 @@ defmodule DelivestWeb.StaffNav do
           "hero-cube",
           gettext("Products")
         )
-        |> covering([:tags, :suggested, :popular, :stops])
+        |> covering([:tags, :collections, :suggested, :popular, :stops])
         |> allowed(staff, "products.read")
       ])
     ]

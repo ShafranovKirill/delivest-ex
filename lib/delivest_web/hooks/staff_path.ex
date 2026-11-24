@@ -70,6 +70,7 @@ defmodule DelivestWeb.Hooks.StaffPath do
     {"/staff/categories", :categories},
     {"/staff/menu/popular", :popular},
     {"/staff/products/stops", :stops},
+    {"/staff/products/collections", :collections},
     {"/staff/products/tags", :tags},
     {"/staff/products/suggested", :suggested},
     {"/staff/products", :products},

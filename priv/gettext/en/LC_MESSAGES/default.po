@@ -13084,3 +13084,57 @@ msgstr "Choose actions in the catalog"
 
 msgid "To confirm"
 msgstr "To confirm"
+
+msgid "Collections"
+msgstr "Collections"
+
+msgid "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+msgstr "Build a popular selection manually or from sales over the last 30 days. Choose where customers see it."
+
+msgid "Choose products to recommend to customers."
+msgstr "Choose products to recommend to customers."
+
+msgid "Collection settings"
+msgstr "Collection settings"
+
+msgid "How to choose products"
+msgstr "How to choose products"
+
+msgid "Unsaved settings"
+msgstr "Unsaved settings"
+
+msgid "Where to show"
+msgstr "Where to show"
+
+msgid "In a separate category in the menu."
+msgstr "In a separate category in the menu."
+
+msgid "As additional offers in the cart."
+msgstr "As additional offers in the cart."
+
+msgid "Products in collection"
+msgstr "Products in collection"
+
+msgid "%{count} products"
+msgstr "%{count} products"
+
+msgid "Save settings to apply the selected mode."
+msgstr "Save settings to apply the selected mode."
+
+msgid "Choose how to build the collection, then save settings."
+msgstr "Choose how to build the collection, then save settings."
+
+msgid "Based on sales over the last 30 days."
+msgstr "Based on sales over the last 30 days."
+
+msgid "Last calculated: %{date}"
+msgstr "Last calculated: %{date}"
+
+msgid "Set the order with the arrow buttons."
+msgstr "Set the order with the arrow buttons."
+
+msgid "By sales"
+msgstr "By sales"
+
+msgid "Product limit"
+msgstr "Product limit"
