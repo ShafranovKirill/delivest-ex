@@ -85,21 +85,25 @@ defmodule Delivest.DeliveryMeasurementTest do
     assert {:ok, _} = Couriers.take(ctx.courier, ctx.branch.id, delivery.id)
     {:ok, ready} = Orders.advance_order(preparing, :ready, {:staff, ctx.staff})
     assert {:ok, _} = Couriers.pick_up(ctx.courier, ctx.branch.id, delivery.id)
+
     outsider =
       insert(:staff, role: build(:role, permissions: ["orders.deliver"]), branches: [ctx.foreign])
       |> Repo.preload([:role, :branches])
+
     assert {:error, :forbidden} = Couriers.hand_over(outsider, ctx.branch.id, delivery.id)
     assert is_nil(Repo.reload!(ready).delivered_at)
     assert {:ok, _} = Couriers.hand_over(ctx.courier, ctx.branch.id, delivery.id)
     actual = Repo.reload!(ready).delivered_at
     assert %DateTime{} = actual
     assert Repo.reload!(ready).delivery_actual_source == "staff_handover"
+
     assert %ActualEvent{
              source: "staff_handover",
              event_id: "staff_handover:" <> _,
              occurred_at: ^actual,
              received_at: ^actual
            } = Repo.get_by!(ActualEvent, order_id: ready.id, source: "staff_handover")
+
     assert {:error, _} = Couriers.hand_over(ctx.courier, ctx.branch.id, delivery.id)
     assert Repo.reload!(ready).delivered_at == actual
     assert Repo.aggregate(ActualEvent, :count, :id) == 1
@@ -111,21 +115,38 @@ defmodule Delivest.DeliveryMeasurementTest do
         {:ok, next} = Orders.advance_order(order, status, {:staff, ctx.staff})
         next
       end)
+
     assert completed.status == :completed
     assert is_nil(Repo.reload!(completed).delivered_at)
+
     assert {:error, :not_eligible} =
              DeliveryMeasurement.record_provider_actual(
-               completed.id, :yandex_delivery, "provider-sync-1", DateTime.utc_now()
+               completed.id,
+               :yandex_delivery,
+               "provider-sync-1",
+               DateTime.utc_now()
              )
+
     assert is_nil(Repo.reload!(completed).delivered_at)
     assert Repo.aggregate(ActualEvent, :count, :id) == 0
   end
 
   test "invalid and missing provider order IDs return errors, not exceptions" do
     assert {:error, :not_found} =
-             DeliveryMeasurement.record_provider_actual("invalid", :yandex_delivery, "evt", DateTime.utc_now())
+             DeliveryMeasurement.record_provider_actual(
+               "invalid",
+               :yandex_delivery,
+               "evt",
+               DateTime.utc_now()
+             )
+
     assert {:error, :not_found} =
-             DeliveryMeasurement.record_provider_actual(Ecto.UUID.generate(), :yandex_delivery, "evt", DateTime.utc_now())
+             DeliveryMeasurement.record_provider_actual(
+               Ecto.UUID.generate(),
+               :yandex_delivery,
+               "evt",
+               DateTime.utc_now()
+             )
   end
 
   test "provider events are deduplicated without overwriting first actual", ctx do

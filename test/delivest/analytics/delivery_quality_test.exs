@@ -45,6 +45,7 @@ defmodule Delivest.Analytics.DeliveryQualityTest do
           promised_at: promise,
           recorded_at: DateTime.utc_now()
         })
+
         Repo.insert!(%ActualEvent{
           order_id: order.id,
           source: "staff_handover",
@@ -83,6 +84,7 @@ defmodule Delivest.Analytics.DeliveryQualityTest do
 
     # A singleton settings row is not required for a branch-local cohort.
     Repo.delete_all(Delivest.Franchise.Settings)
+
     assert {:ok, %{summary: %{total: 10, measured: 8}}} =
              DeliveryQuality.read(staff, {:branch, branch.id}, {day, day})
   end
@@ -91,7 +93,10 @@ defmodule Delivest.Analytics.DeliveryQualityTest do
     branch = insert(:branch, is_active: true)
     foreign = insert(:branch, is_active: true)
     Repo.insert!(%BranchInfo{branch_id: branch.id, timezone: "Asia/Vladivostok"})
-    staff = insert(:staff, role: insert(:role, permissions: ["statistics.read", "statistics.network"]))
+
+    staff =
+      insert(:staff, role: insert(:role, permissions: ["statistics.read", "statistics.network"]))
+
     insert(:staff_branch, staff: staff, branch: branch)
     staff = Repo.preload(staff, [:role, :branches])
     day = ~D[2026-11-22]
@@ -104,21 +109,30 @@ defmodule Delivest.Analytics.DeliveryQualityTest do
           {:delivery, :created}
         ] do
       order = order_fixture(branch.id, price: 100)
-      Repo.update!(Ecto.Changeset.change(order,
-        fulfillment_type: fulfillment,
-        status: status,
-        inserted_at: ~U[2026-11-21 15:30:00Z]
-      ))
+
+      Repo.update!(
+        Ecto.Changeset.change(order,
+          fulfillment_type: fulfillment,
+          status: status,
+          inserted_at: ~U[2026-11-21 15:30:00Z]
+        )
+      )
     end
 
     outsider = order_fixture(foreign.id, price: 100)
-    Repo.update!(Ecto.Changeset.change(outsider,
-      status: :completed, fulfillment_type: :delivery, inserted_at: ~U[2026-11-21 15:30:00Z]
-    ))
 
-    assert {:ok, %{summary: %{total: 1, measured: 0, missing: 1,
-                              coverage: 0.0, on_time_rate: nil}}} =
+    Repo.update!(
+      Ecto.Changeset.change(outsider,
+        status: :completed,
+        fulfillment_type: :delivery,
+        inserted_at: ~U[2026-11-21 15:30:00Z]
+      )
+    )
+
+    assert {:ok,
+            %{summary: %{total: 1, measured: 0, missing: 1, coverage: 0.0, on_time_rate: nil}}} =
              DeliveryQuality.read(staff, :network, {day, day})
+
     assert {:error, :forbidden} = DeliveryQuality.read(staff, {:branch, foreign.id}, {day, day})
   end
 end

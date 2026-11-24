@@ -7,9 +7,10 @@ defmodule DelivestWeb.Staff.OrderLive.DeliveryPromiseTest do
 
   alias Delivest.{DeliveryMeasurement, LocalTime, Repo}
 
-  test "authorized operator submits promise; forged foreign order and read-only submission fail", %{
-    conn: conn
-  } do
+  test "authorized operator submits promise; forged foreign order and read-only submission fail",
+       %{
+         conn: conn
+       } do
     branch = insert(:branch)
     foreign = insert(:branch)
     order = accepted_delivery(branch.id)
@@ -30,15 +31,18 @@ defmodule DelivestWeb.Staff.OrderLive.DeliveryPromiseTest do
       "order_id" => foreign_order.id,
       "promise" => %{"at" => local}
     })
+
     assert is_nil(Repo.reload!(foreign_order).promised_delivery_at)
 
     reader = staff(branch, ["orders.read"])
     {:ok, read_view, _} = live(login(build_conn(), branch, reader), ~p"/staff/b/#{branch}/orders")
     refute has_element?(read_view, selector)
+
     render_hook(read_view, "confirm_delivery_promise", %{
       "order_id" => order.id,
       "promise" => %{"at" => LocalTime.input(DateTime.add(promised, 1800), branch.id)}
     })
+
     assert Repo.reload!(order).promised_delivery_at == LocalTime.parse(local, branch.id)
     assert length(DeliveryMeasurement.history(order.id)) == 1
   end
