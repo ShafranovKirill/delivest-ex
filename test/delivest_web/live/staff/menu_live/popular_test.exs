@@ -44,14 +44,21 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
              "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
            )
 
-    assert has_element?(lv, "main #staff-page-header h1", "Popular products")
+    assert has_element?(lv, "main #popular-toolbar h1.sr-only", "Popular products")
     refute has_element?(lv, "#staff-header-context")
 
     assert Enum.count(
              LazyHTML.query(LazyHTML.from_fragment(render(lv)), "#staff-section-navigation")
            ) == 1
 
-    assert render(element(lv, "#staff-page-header-actions")) =~ ~s(form="popular-settings")
+    assert has_element?(
+             lv,
+             "#popular-toolbar .staff-page-toolbar-actions button[form='popular-settings']"
+           )
+
+    refute has_element?(lv, "#popular-toolbar #popular-more-actions #popular-add-products")
+
+    refute has_element?(lv, "#popular-toolbar .staff-page-toolbar-actions details > summary")
   end
 
   defp sign_in(conn, branch, permissions) do
@@ -101,7 +108,7 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
              "#staff-context-navigation #staff-section-navigation #product-section-tab-popular[aria-current='page']"
            )
 
-    refute has_element?(lv, "#staff-page-header-actions")
+    refute has_element?(lv, "#popular-toolbar .staff-page-toolbar-actions")
     refute has_element?(lv, "#popular-add-products")
     assert has_element?(lv, "#popular_show_in_menu[disabled]")
     assert has_element?(lv, "#popular_show_in_cart[disabled]")
@@ -136,7 +143,14 @@ defmodule DelivestWeb.Staff.MenuLive.PopularTest do
       )
 
     editable |> form("#popular-settings", popular: %{mode: "auto"}) |> render_submit()
-    assert has_element?(editable, "#popular-recalculate")
+    assert has_element?(editable, "#popular-toolbar #popular-recalculate")
+
+    assert has_element?(
+             editable,
+             "#popular-toolbar .staff-page-toolbar-actions details > summary",
+             "More"
+           )
+
     editable |> element("#popular-recalculate") |> render_click()
     assert Popular.get_settings(branch.id).calculated_at
 

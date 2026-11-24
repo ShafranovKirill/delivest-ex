@@ -174,20 +174,32 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Popular products")}
-      subtitle={gettext("The products the app shows in the popular block of the menu.")}
-      title_in_header={false}
-    >
-      <:actions :if={@can_edit}>
+    <.page_toolbar id="popular-toolbar" title={gettext("Popular products")}>
+      <:primary_action :if={@can_edit}>
         <button
           type="submit"
           form="popular-settings"
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
           phx-disable-with={gettext("Saving...")}
         >{gettext("Save")}</button>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+      <:more_actions :if={@can_edit and @mode in [:auto, :manual]}>
+        <button
+          :if={@mode == :auto}
+          id="popular-recalculate"
+          type="button"
+          phx-click="recalculate"
+          class="btn btn-ghost btn-sm justify-start"
+        >{gettext("Recalculate")}</button>
+        <button
+          :if={@mode == :manual}
+          id="popular-add-products"
+          type="button"
+          class="btn btn-ghost btn-sm justify-start"
+          phx-click={JS.push_focus() |> JS.push("open_picker")}
+        >{gettext("Add products")}</button>
+      </:more_actions>
+    </.page_toolbar>
     """
   end
 
@@ -195,13 +207,9 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
   def render(assigns) do
     ~H"""
     <div class="space-y-6 py-4 sm:p-6">
-      <button
-        :if={@can_edit and @mode == :auto}
-        id="popular-recalculate"
-        type="button"
-        phx-click="recalculate"
-        class="btn btn-outline"
-      >{gettext("Recalculate")}</button>
+      <p class="text-sm text-base-content/70">
+        {gettext("The products the app shows in the popular block of the menu.")}
+      </p>
 
       <.form
         for={@settings_form}
@@ -266,15 +274,7 @@ defmodule DelivestWeb.Staff.MenuLive.Popular do
 
       <section :if={@mode != :off} class="space-y-3">
         <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="font-bold">{gettext("Shown in the app")}</h2><button
-              :if={@can_edit and @mode == :manual}
-              id="popular-add-products"
-              type="button"
-              class="btn btn-primary"
-              phx-click={JS.push_focus() |> JS.push("open_picker")}
-            >{gettext("Add products")}</button>
-          </div>
+          <h2 class="font-bold">{gettext("Shown in the app")}</h2>
 
           <div
             :if={@mode == :auto}
