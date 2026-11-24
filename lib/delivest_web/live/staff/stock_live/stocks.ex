@@ -195,22 +195,18 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      navigation_label={gettext("Marketing areas")}
-      title={gettext("Banners")}
-      subtitle={gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
-    >
-      <:actions>
+    <.page_toolbar id="banners-toolbar" title={gettext("Banners")}>
+      <:primary_action>
         <.link
           :if={Identity.can?(@current_staff, "stocks.create")}
           patch={~p"/staff/b/#{@current_branch}/stocks/new"}
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
         >
           <.icon name="hero-plus" class="size-5" />
           {gettext("Create Banner")}
         </.link>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 
@@ -218,6 +214,9 @@ defmodule DelivestWeb.Staff.StockLive.Stocks do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <p class="text-sm text-base-content/60">
+        {gettext("Photos shown as stories on the website. Drag and drop to reorder.")}
+      </p>
       <div id="stocks-list" phx-hook="SortableStocks" class="space-y-3">
         <%= for stock <- @stocks do %>
           <div

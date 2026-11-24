@@ -185,6 +185,12 @@
 }
 .staff-header-scroll { display: flex; align-items: stretch; }
 #staff-page-header { margin-bottom: 1.25rem; }
+.staff-page-toolbar { margin-bottom: 1.25rem; }
+.staff-page-toolbar-actions .dropdown-content { white-space: nowrap; }
+@media (max-width: 639px) {
+  .staff-page-toolbar-filters { flex-basis: 100%; }
+  .staff-page-toolbar-actions { width: 100%; justify-content: flex-end; }
+}
 .staff-page-header-two-rows { flex-wrap: wrap; align-items: center; gap: .75rem; }
 .staff-page-header-two-rows > .staff-header-scroll { flex: 1 1 100%; width: 100%; }
 .staff-page-header-title { max-width: none; white-space: normal; }

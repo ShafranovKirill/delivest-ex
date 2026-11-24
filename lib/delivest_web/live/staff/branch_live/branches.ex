@@ -25,12 +25,12 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
+    <.page_toolbar
+      id="branches-toolbar"
       title={gettext("Settings for branches")}
-      subtitle={gettext("List of available company branches")}
       back={~p"/staff/settings"}
     >
-      <:actions>
+      <:primary_action>
         <.link
           :if={
             Identity.can?(@current_staff, "branches.read") and
@@ -38,12 +38,12 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
           }
           id="create-branch"
           navigate={~p"/staff/branches/new"}
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
         >
           {gettext("Create Branch")}
         </.link>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 

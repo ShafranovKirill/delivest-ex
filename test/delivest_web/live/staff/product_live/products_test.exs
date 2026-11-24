@@ -38,8 +38,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
            )
 
     assert Enum.empty?(LazyHTML.query(document, "#staff-header #staff-header-context"))
-    assert Enum.any?(LazyHTML.query(document, "main #staff-page-header h1"))
-    assert Enum.any?(LazyHTML.query(document, "main #staff-page-header-actions"))
+    assert Enum.any?(LazyHTML.query(document, "main .staff-page-toolbar h1"))
+    assert Enum.any?(LazyHTML.query(document, "main .staff-page-toolbar-actions"))
   end
 
   test "branch editor sees a refusal when editing a shared product", %{conn: conn} do
@@ -402,7 +402,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
 
-      actions = render(element(lv, "#staff-page-header-actions"))
+      actions = render(element(lv, ".staff-page-toolbar-actions"))
 
       assert has_element?(
                lv,
@@ -417,8 +417,12 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
              ) == 7
 
       refute has_element?(lv, "#staff-header-context")
-      assert has_element?(lv, "main #staff-page-header h1", "Products")
-      assert has_element?(lv, "main #staff-page-header-actions")
+      assert has_element?(lv, "main #products-toolbar h1.sr-only", "Products")
+      assert has_element?(lv, "#products-toolbar #products-filter")
+      refute has_element?(lv, "#products-filter button[type='submit']")
+      assert has_element?(lv, "#products-toolbar #create-product")
+      assert has_element?(lv, "#products-toolbar #product-more-actions")
+      assert has_element?(lv, "main .staff-page-toolbar-actions")
       refute actions =~ ~s(id="copy-products-trigger")
       assert has_element?(lv, "#product-more-actions > summary", "More")
       assert has_element?(lv, "#product-more-actions #product-operations-link")
@@ -430,6 +434,35 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
       assert actions =~ ~s(id="create-product")
       assert has_element?(lv, "main #products-filter")
       refute has_element?(lv, "main #products-filter [role='tablist']")
+
+      assert has_element?(
+               lv,
+               "#product-more-actions #products-columns[phx-hook='FoundationColumns']"
+             )
+
+      refute has_element?(lv, ".staff-column-chooser")
+
+      for key <- ~w(column-5 column-6 column-9 column-10 column-11 inserted_at) do
+        assert has_element?(lv, "#products-columns input[data-column='#{key}']")
+        assert has_element?(lv, "#products-table th[data-column='#{key}']")
+      end
+    end
+
+    test "filters products immediately when the search changes", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+      matching = insert_branch_product(branch.id, name: "Маргарита")
+      other = insert_branch_product(branch.id, name: "Пепперони")
+
+      {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
+      assert has_element?(lv, "#product-row-#{matching.id}")
+      assert has_element?(lv, "#product-row-#{other.id}")
+
+      lv |> form("#products-filter", %{search: "Маргарита"}) |> render_change()
+
+      assert has_element?(lv, "#product-row-#{matching.id}")
+      refute has_element?(lv, "#product-row-#{other.id}")
     end
 
     test "multiple selection is opt-in and cancellation clears it", %{conn: conn} do
@@ -474,7 +507,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       for {path, key, title, actions?} <- [
             {"", "products", "Products", true},
-            {"/stops", "stops", "Stop list", false},
+            {"/stops", "stops", "Stop list", true},
             {"/modifiers", "modifiers", "Modifiers", true},
             {"/tags", "tags", "Tags", true},
             {"/suggested", "suggested", "Recommended", true},
@@ -503,13 +536,21 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
               )
         end
 
-        assert has_element?(lv, "main #staff-page-header h1", title)
+        if path == "/bulk" do
+          assert has_element?(lv, "main #staff-page-header h1", title)
+        else
+          assert has_element?(lv, "main .staff-page-toolbar h1", title)
+        end
+
         refute has_element?(lv, "#staff-header-context")
 
         if actions? do
-          assert has_element?(lv, "main #staff-page-header-actions > *")
+          assert has_element?(
+                   lv,
+                   "main :is(.staff-page-toolbar-actions, #staff-page-header-actions) > *"
+                 )
         else
-          refute has_element?(lv, "#staff-page-header-actions")
+          refute has_element?(lv, ".staff-page-toolbar-actions")
         end
       end
     end
@@ -528,7 +569,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
                  "#staff-context-navigation #staff-section-navigation [aria-current='page']"
                )
 
-        refute has_element?(lv, "#staff-page-header-actions > *")
+        refute has_element?(lv, ".staff-page-toolbar-actions > *")
       end
     end
 
@@ -540,7 +581,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
 
       {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products")
 
-      actions = render(element(lv, "#staff-page-header-actions"))
+      actions = render(element(lv, ".staff-page-toolbar-actions"))
       assert has_element?(lv, "#product-more-actions #product-operations-link")
       refute has_element?(lv, "#product-toggle-selection")
       refute has_element?(lv, "#products input[form='product-selection']")

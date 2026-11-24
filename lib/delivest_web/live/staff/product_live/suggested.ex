@@ -111,20 +111,17 @@ defmodule DelivestWeb.Staff.ProductLive.Suggested do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Recommended")}
-      title_in_header={false}
-    >
-      <:actions>
+    <.page_toolbar id="suggested-toolbar" title={gettext("Recommended")}>
+      <:primary_action>
         <button
           :if={@can_edit}
           id="suggested-add-products"
           type="button"
-          class="btn btn-primary"
+          class="btn btn-primary btn-sm"
           phx-click={JS.push_focus() |> JS.push("open_picker")}
         >{gettext("Add products")}</button>
-      </:actions>
-    </.page_header>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 

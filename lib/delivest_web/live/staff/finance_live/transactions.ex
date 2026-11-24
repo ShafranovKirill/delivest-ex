@@ -39,21 +39,67 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
   end
 
   def staff_page_header(assigns) do
+    assigns = assign(assigns, statuses: @statuses)
+
     ~H"""
-    <.page_header
-      title={gettext("Payments")}
-      subtitle={
-        gettext(
-          "Payment operations for this branch. Open an order for supported actions and refunds."
-        )
-      }
-    >
-      <:actions>
-        <.link navigate={~p"/staff/b/#{@current_branch}/finance/payments"} class="btn btn-ghost">
-          {gettext("Payment methods")}
-        </.link>
-      </:actions>
-    </.page_header>
+    <.page_toolbar id="transactions-toolbar" title={gettext("Payments")}>
+      <:filters>
+        <.filter_bar
+          id="transactions-filter"
+          query={@query["search"] || ""}
+          query_name="search"
+          reset_path={transactions_path(assigns, %{})}
+          event="filter"
+          active={
+            @query["status"] not in [nil, ""] or @query["from"] not in [nil, ""] or
+              @query["to"] not in [nil, ""]
+          }
+          compact
+        >
+          <:filter>
+            <div>
+              <label for="transactions-status" class="sr-only">{gettext("Status")}</label>
+              <select
+                id="transactions-status"
+                name="status"
+                class="select select-bordered select-sm w-32"
+              >
+                <option value="">{gettext("All statuses")}</option>
+                <option :for={value <- @statuses} value={value} selected={@query["status"] == value}>
+                  {status(String.to_existing_atom(value))}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label for="transactions-from" class="sr-only">{gettext("From")}</label>
+              <input
+                id="transactions-from"
+                name="from"
+                type="date"
+                value={@query["from"]}
+                class="input input-bordered input-sm w-32"
+              />
+            </div>
+            <div>
+              <label for="transactions-to" class="sr-only">{gettext("To")}</label>
+              <input
+                id="transactions-to"
+                name="to"
+                type="date"
+                value={@query["to"]}
+                class="input input-bordered input-sm w-32"
+              />
+            </div>
+          </:filter>
+        </.filter_bar>
+      </:filters>
+      <:more_actions>
+        <.link
+          navigate={~p"/staff/b/#{@current_branch}/finance/payments"}
+          class="btn btn-ghost btn-sm justify-start"
+        >{gettext("Payment methods")}</.link>
+      </:more_actions>
+    </.page_toolbar>
     """
   end
 
@@ -63,50 +109,6 @@ defmodule DelivestWeb.Staff.FinanceLive.Transactions do
 
     ~H"""
     <div id="transactions-page" class="space-y-5">
-      <.filter_bar
-        id="transactions-filter"
-        query={@query["search"] || ""}
-        query_name="search"
-        reset_path={transactions_path(assigns, %{})}
-        event="filter"
-        active={
-          @query["status"] not in [nil, ""] or @query["from"] not in [nil, ""] or
-            @query["to"] not in [nil, ""]
-        }
-      >
-        <:filter>
-          <div>
-            <label for="transactions-status" class="block text-sm font-medium">{gettext("Status")}</label>
-            <select id="transactions-status" name="status" class="select select-bordered">
-              <option value="">{gettext("All statuses")}</option>
-              <option :for={value <- @statuses} value={value} selected={@query["status"] == value}>
-                {status(String.to_existing_atom(value))}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label for="transactions-from" class="block text-sm font-medium">{gettext("From")}</label>
-            <input
-              id="transactions-from"
-              name="from"
-              type="date"
-              value={@query["from"]}
-              class="input input-bordered"
-            />
-          </div>
-          <div>
-            <label for="transactions-to" class="block text-sm font-medium">{gettext("To")}</label>
-            <input
-              id="transactions-to"
-              name="to"
-              type="date"
-              value={@query["to"]}
-              class="input input-bordered"
-            />
-          </div>
-        </:filter>
-      </.filter_bar>
-
       <.table
         id="transactions"
         rows={@rows}

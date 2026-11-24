@@ -234,11 +234,46 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
 
   def staff_page_header(assigns) do
     ~H"""
-    <.page_header
-      title={gettext("Stop list")}
-      title_in_header={false}
-    >
-    </.page_header>
+    <.page_toolbar id="stop-list-toolbar" title={gettext("Stop list")}>
+      <:filters>
+        <.filter_bar
+          id="stop-list-filter-bar"
+          form_id="stop-list-filter"
+          query={@search}
+          query_name="search"
+          query_placeholder={gettext("Search products...")}
+          reset_path={~p"/staff/b/#{@current_branch}/products/stops"}
+          active={@category_id != ""}
+          compact
+        >
+          <:filter>
+            <select
+              name="category_id"
+              aria-label={gettext("Category")}
+              class="select select-bordered select-sm w-40"
+            >
+              <option value="">{gettext("All categories")}</option>
+              <option
+                :for={category <- @categories}
+                value={category.id}
+                selected={@category_id == category.id}
+              >
+                {category.name}
+              </option>
+            </select>
+          </:filter>
+        </.filter_bar>
+      </:filters>
+      <:primary_action>
+        <button
+          :if={@can_edit}
+          id="stop-add-products"
+          type="button"
+          class="btn btn-primary btn-sm"
+          phx-click={JS.push_focus() |> JS.push("open_picker")}
+        >{gettext("Add products")}</button>
+      </:primary_action>
+    </.page_toolbar>
     """
   end
 
@@ -246,36 +281,6 @@ defmodule DelivestWeb.Staff.ProductLive.StopList do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
-      <.filter_bar
-        id="stop-list-filter-bar"
-        form_id="stop-list-filter"
-        query={@search}
-        query_name="search"
-        query_placeholder={gettext("Search products...")}
-        reset_path={~p"/staff/b/#{@current_branch}/products/stops"}
-        active={@category_id != ""}
-      >
-        <:filter>
-          <select name="category_id" class="select select-bordered">
-            <option value="">{gettext("All categories")}</option>
-            <option
-              :for={category <- @categories}
-              value={category.id}
-              selected={@category_id == category.id}
-            >
-              {category.name}
-            </option>
-          </select>
-        </:filter>
-      </.filter_bar>
-      <button
-        :if={@can_edit}
-        id="stop-add-products"
-        type="button"
-        class="btn btn-primary"
-        phx-click={JS.push_focus() |> JS.push("open_picker")}
-      >{gettext("Add products")}</button>
-
       <% path_fn = fn overrides -> stop_path(assigns, overrides) end %>
       <.table id="stop-list" rows={@streams.stopped_products} meta={@meta} path_fn={path_fn}>
         <:col :let={{_id, product}} label={gettext("Name")}>{product.name}</:col>

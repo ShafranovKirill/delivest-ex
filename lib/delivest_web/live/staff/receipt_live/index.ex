@@ -55,11 +55,62 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
   end
 
   def staff_page_header(assigns) do
+    assigns = assign(assigns, filters: filters())
+
     ~H"""
-    <.page_header
-      title={gettext("Receipts")}
-      subtitle={gettext("Fiscal receipts of the branch. Find the ones not issued during the shift.")}
-    />
+    <.page_toolbar id="receipts-toolbar" title={gettext("Receipts")}>
+      <:filters>
+        <div class="flex min-w-0 flex-wrap items-center gap-2 min-[800px]:flex-nowrap">
+          <div class="tabs tabs-box max-w-64 shrink-0 flex-nowrap overflow-x-auto">
+            <.link
+              :for={{value, label} <- @filters}
+              id={"receipts-filter-#{value || "all"}"}
+              patch={
+                receipt_path(
+                  assigns,
+                  Map.merge(@query, %{"status" => value && to_string(value), "page" => 1})
+                )
+              }
+              class={["tab tab-sm", @status == value && "tab-active"]}
+            >{label}</.link>
+          </div>
+          <.filter_bar
+            id="receipts-filter"
+            query={@query["search"] || ""}
+            query_name="search"
+            reset_path={receipt_path(assigns, %{})}
+            event="filter"
+            active={
+              @status != nil or @query["from"] not in [nil, ""] or @query["to"] not in [nil, ""]
+            }
+            compact
+          >
+            <:filter>
+              <div>
+                <label for="receipts-from" class="sr-only">{gettext("From")}</label>
+                <input
+                  id="receipts-from"
+                  name="from"
+                  type="date"
+                  value={@query["from"]}
+                  class="input input-bordered input-sm w-32"
+                />
+              </div>
+              <div>
+                <label for="receipts-to" class="sr-only">{gettext("To")}</label>
+                <input
+                  id="receipts-to"
+                  name="to"
+                  type="date"
+                  value={@query["to"]}
+                  class="input input-bordered input-sm w-32"
+                />
+              </div>
+            </:filter>
+          </.filter_bar>
+        </div>
+      </:filters>
+    </.page_toolbar>
     """
   end
 
@@ -79,53 +130,6 @@ defmodule DelivestWeb.Staff.ReceiptLive.Index do
           "New receipts are managed by the connected system. Existing fiscal obligations remain visible here."
         )}
       </p>
-      <div class="tabs tabs-box w-fit">
-        <.link
-          :for={{value, label} <- @filters}
-          id={"receipts-filter-#{value || "all"}"}
-          patch={
-            receipt_path(
-              assigns,
-              Map.merge(@query, %{"status" => value && to_string(value), "page" => 1})
-            )
-          }
-          class={["tab", @status == value && "tab-active"]}
-        >
-          {label}
-        </.link>
-      </div>
-
-      <.filter_bar
-        id="receipts-filter"
-        query={@query["search"] || ""}
-        query_name="search"
-        reset_path={receipt_path(assigns, %{})}
-        event="filter"
-        active={@status != nil or @query["from"] not in [nil, ""] or @query["to"] not in [nil, ""]}
-      >
-        <:filter>
-          <div>
-            <label for="receipts-from" class="block text-sm font-medium">{gettext("From")}</label>
-            <input
-              id="receipts-from"
-              name="from"
-              type="date"
-              value={@query["from"]}
-              class="input input-bordered"
-            />
-          </div>
-          <div>
-            <label for="receipts-to" class="block text-sm font-medium">{gettext("To")}</label>
-            <input
-              id="receipts-to"
-              name="to"
-              type="date"
-              value={@query["to"]}
-              class="input input-bordered"
-            />
-          </div>
-        </:filter>
-      </.filter_bar>
 
       <.card>
         <.table

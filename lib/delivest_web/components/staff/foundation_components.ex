@@ -59,23 +59,33 @@ defmodule DelivestWeb.Staff.FoundationComponents do
   attr :event, :any, default: "filter"
   attr :target, :any, default: nil
   attr :active, :boolean, default: false
+  attr :compact, :boolean, default: false
   slot :filter
 
   def filter_bar(assigns) do
     ~H"""
-    <div id={@id} class="flex flex-wrap items-end gap-3">
+    <div
+      id={@id}
+      class={["flex min-w-0 flex-wrap items-end gap-3", @compact && "staff-compact-filter"]}
+    >
       <form
         id={@form_id || "#{@id}-form"}
         phx-change={@event}
         phx-submit={@event}
         phx-target={@target}
         role="search"
-        class="flex min-w-56 flex-1 flex-wrap items-end gap-3"
+        class={
+          if(@compact,
+            do: "flex min-w-0 flex-1 flex-wrap items-center gap-2",
+            else: "flex min-w-56 flex-1 flex-wrap items-end gap-3"
+          )
+        }
       >
-        <div class="min-w-56 flex-1">
-          <label for={@query_input_id || "#{@id}-query"} class="block text-sm font-medium">{gettext(
-            "Search"
-          )}</label>
+        <div class={if(@compact, do: "min-w-36 flex-1", else: "min-w-56 flex-1")}>
+          <label
+            for={@query_input_id || "#{@id}-query"}
+            class={if(@compact, do: "sr-only", else: "block text-sm font-medium")}
+          >{gettext("Search")}</label>
           <input
             id={@query_input_id || "#{@id}-query"}
             type="search"
@@ -83,13 +93,26 @@ defmodule DelivestWeb.Staff.FoundationComponents do
             value={@query}
             placeholder={@query_placeholder}
             phx-debounce="350"
-            class="input input-bordered w-full"
+            class={
+              if(@compact,
+                do: "input input-bordered input-sm w-full",
+                else: "input input-bordered w-full"
+              )
+            }
           />
         </div>
         {render_slot(@filter)}
-        <button type="submit" class="btn btn-outline">{gettext("Apply")}</button>
+        <button
+          :if={not @compact}
+          type="submit"
+          class="btn btn-outline"
+        >{gettext("Apply")}</button>
       </form>
-      <.link :if={@active or @query != ""} patch={@reset_path} class="btn btn-ghost">{gettext("Reset")}</.link>
+      <.link
+        :if={@active or @query != ""}
+        patch={@reset_path}
+        class={if(@compact, do: "btn btn-ghost btn-sm", else: "btn btn-ghost")}
+      >{gettext("Reset")}</.link>
     </div>
     """
   end

@@ -27,7 +27,9 @@ defmodule DelivestWeb.Staff.ProductLive.ModifiersTest do
         ~p"/staff/b/#{branch}/products/modifiers"
       )
 
-    assert render(element(lv, "#staff-page-header-actions")) =~ ~s(phx-click="new_group")
+    assert render(element(lv, "#modifiers-toolbar .staff-page-toolbar-actions")) =~
+             ~s(phx-click="new_group")
+
     render_click(lv, "new_group")
 
     lv
