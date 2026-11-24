@@ -52,7 +52,6 @@ defmodule DelivestWeb.Staff.StatsComponents do
   attr :data, :map, required: true
   attr :label, :string, required: true
   attr :height, :string, default: "h-64"
-  attr :target, :any, default: nil
   slot :inner_block
 
   def analytics_chart(assigns) do
@@ -61,7 +60,6 @@ defmodule DelivestWeb.Staff.StatsComponents do
       id={@id}
       phx-hook="AnalyticsChart"
       data-chart={Jason.encode!(@data)}
-      data-target={@target}
       class="min-w-0"
     >
       <div phx-update="ignore" id={"#{@id}-canvas"}>

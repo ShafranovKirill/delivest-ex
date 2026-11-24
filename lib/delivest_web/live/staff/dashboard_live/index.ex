@@ -258,14 +258,6 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
       <p :if={is_nil(@current_branch)} class="text-sm text-base-content/60">
         {gettext("All branches")}
       </p>
-      <.live_component
-        :if={@can_stats}
-        module={DelivestWeb.Staff.DashboardLive.Heatmap}
-        id="dashboard-order-heatmap"
-        staff={@current_staff}
-        scope={if(@current_branch, do: {:branch, @current_branch.id}, else: :network)}
-      />
-
       <.link
         :if={@can_orders and @problem_count > 0 and @current_branch}
         id="dashboard-problem-orders"

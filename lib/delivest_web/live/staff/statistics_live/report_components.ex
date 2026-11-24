@@ -13,7 +13,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
   attr :fulfillment, :string, required: true
   attr :branch_id, :any, default: nil
   attr :network?, :boolean, required: true
-  attr :target, :any, default: nil
 
   def heatmap_panel(assigns) do
     assigns =
@@ -58,7 +57,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         for={to_form(%{})}
         id="statistics-heatmap-filter"
         phx-change="heatmap_filter"
-        phx-target={@target}
         class="flex flex-wrap gap-2"
       >
         <.input
@@ -111,7 +109,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         data={@chart_data}
         label={gettext("Average created orders by weekday and local hour")}
         height="h-80"
-        target={@target}
       >
         <details class="text-xs">
           <summary class="cursor-pointer">{gettext("Chart data")}</summary>
@@ -133,7 +130,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
                       type="button"
                       class="link link-primary"
                       phx-click="heatmap_detail"
-                      phx-target={@target}
                       phx-value-day={cell.day}
                       phx-value-hour={cell.hour}
                     >
@@ -152,7 +148,6 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
           <button
             type="button"
             phx-click="close_heatmap_detail"
-            phx-target={@target}
             class="btn btn-xs btn-ghost"
           >{gettext("Close")}</button>
         </div>

@@ -1606,6 +1606,11 @@ defmodule DelivestWeb.Staff.StatisticsLive.Index do
         id="statistics-sales-detail"
         class="space-y-4"
       >
+        <.link
+          id="statistics-heatmap-link"
+          href={tab_path(assigns, "overview") <> "#statistics-heatmap"}
+          class="btn btn-sm btn-outline"
+        >{gettext("When orders arrive")}</.link>
         <p
           :if={@overview.state == :partial}
           id="statistics-partial"

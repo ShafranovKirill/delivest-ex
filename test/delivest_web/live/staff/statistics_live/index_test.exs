@@ -35,6 +35,12 @@ defmodule DelivestWeb.Staff.StatisticsLive.IndexTest do
     assert html =~ "600 ₽"
     assert has_element?(lv, "#statistics-filter option[value=month][selected]")
     assert has_element?(lv, "#statistics-sales-detail")
+
+    assert has_element?(
+             lv,
+             ~s{#statistics-heatmap-link[href*="tab=overview"][href$="#statistics-heatmap"]}
+           )
+
     refute has_element?(lv, "#statistics-sales-tabs")
     assert has_element?(lv, "#statistics-chart-revenue")
     assert has_element?(lv, "#statistics-chart-orders")

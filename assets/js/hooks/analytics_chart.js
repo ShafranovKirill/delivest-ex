@@ -420,8 +420,7 @@ export const AnalyticsChart = {
     this.chart.on("click", ({ data }) => {
       if (data?.day !== undefined && data?.hour !== undefined) {
         const payload = { day: data.day + 1, hour: data.hour };
-        if (this.el.dataset.target) this.pushEventTo(this.el.dataset.target, "heatmap_detail", payload);
-        else this.pushEvent("heatmap_detail", payload);
+        this.pushEvent("heatmap_detail", payload);
       }
       if (typeof data?.date === "string") this.pushEvent("delivery_day_detail", { day: data.date });
     });
