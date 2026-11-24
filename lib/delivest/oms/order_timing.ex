@@ -10,6 +10,7 @@ defmodule Delivest.Oms.OrderTiming do
   alias Delivest.Relations.EntityRelation
 
   @fixed_minutes 60
+  @additional_work_divisor 10
 
   def get(branch_id) do
     case Identity.get_branch(branch_id, preload: :info) do
@@ -108,19 +109,31 @@ defmodule Delivest.Oms.OrderTiming do
   end
 
   def prep_minutes(%Settings{} = settings, items, extra_minutes \\ 0) when is_list(items) do
-    longest =
+    {longest, total_work} =
       items
       |> Enum.reject(&Map.get(&1, :unavailable, false))
-      |> Enum.map(fn item ->
+      |> Enum.reduce({0, 0}, fn item, {longest, total_work} ->
         product_id = Map.get(item, :product_id)
         category_id = Map.get(item, :category_id)
 
-        Map.get(settings.product_minutes || %{}, product_id) ||
-          Map.get(settings.category_minutes || %{}, category_id) || settings.kitchen_minutes
-      end)
-      |> Enum.max(fn -> settings.kitchen_minutes end)
+        minutes =
+          Map.get(settings.product_minutes || %{}, product_id) ||
+            Map.get(settings.category_minutes || %{}, category_id) || settings.kitchen_minutes
 
-    longest + settings.packing_minutes + max(extra_minutes, 0)
+        quantity =
+          case Map.get(item, :quantity) do
+            value when is_integer(value) and value > 0 -> value
+            _ -> 1
+          end
+
+        {max(longest, minutes), total_work + minutes * quantity}
+      end)
+
+    base = if longest == 0, do: settings.kitchen_minutes, else: longest
+    additional_work = max(total_work - longest, 0)
+    volume_minutes = div(additional_work + @additional_work_divisor - 1, @additional_work_divisor)
+
+    base + volume_minutes + settings.packing_minutes + max(extra_minutes, 0)
   end
 
   def cart_prep_minutes(branch_id, items) when is_binary(branch_id) and is_list(items) do

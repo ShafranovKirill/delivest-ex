@@ -6,6 +6,7 @@ defmodule Delivest.Oms.OrderTimingTest do
   alias Delivest.Identity
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Oms.OrderTiming
+  alias Delivest.Oms.OrderTiming.Settings
 
   setup do
     branch = insert(:branch)
@@ -57,10 +58,55 @@ defmodule Delivest.Oms.OrderTimingTest do
       %{product_id: Ecto.UUID.generate(), category_id: category.id}
     ]
 
-    assert OrderTiming.prep_minutes(settings, items) == 23
-    assert OrderTiming.estimate(branch.id, :delivery, items, 18).total_minutes == 41
-    assert OrderTiming.estimate(branch.id, :delivery, items).total_minutes == 58
-    assert OrderTiming.estimate(branch.id, :pickup, items).total_minutes == 23
+    assert OrderTiming.prep_minutes(settings, items) == 25
+    assert OrderTiming.estimate(branch.id, :delivery, items, 18).total_minutes == 43
+    assert OrderTiming.estimate(branch.id, :delivery, items).total_minutes == 60
+    assert OrderTiming.estimate(branch.id, :pickup, items).total_minutes == 25
+  end
+
+  test "volume allowance counts portions in one line and across lines" do
+    product = Ecto.UUID.generate()
+    settings = %Settings{product_minutes: %{product => 30}}
+    one_line = [%{product_id: product, quantity: 5}]
+    split_lines = List.duplicate(%{product_id: product}, 5)
+
+    assert OrderTiming.prep_minutes(settings, one_line) == 42
+    assert OrderTiming.prep_minutes(settings, split_lines) == 42
+    assert OrderTiming.prep_minutes(settings, [%{product_id: product}]) == 30
+  end
+
+  test "mixed products add ten percent of work beyond the longest portion, rounded up" do
+    short = Ecto.UUID.generate()
+    medium = Ecto.UUID.generate()
+    long = Ecto.UUID.generate()
+
+    settings = %Settings{product_minutes: %{short => 10, medium => 20, long => 30}}
+
+    items = [
+      %{product_id: short, quantity: 2},
+      %{product_id: medium, quantity: 2},
+      %{product_id: long, quantity: 1}
+    ]
+
+    assert OrderTiming.prep_minutes(settings, items) == 36
+  end
+
+  test "volume rounding, unavailable exclusion, empty fallback, and existing allowances" do
+    short = Ecto.UUID.generate()
+    long = Ecto.UUID.generate()
+    settings = %Settings{product_minutes: %{short => 1, long => 30}, packing_minutes: 3}
+
+    assert OrderTiming.prep_minutes(settings, [%{product_id: long}, %{product_id: short}], 2) ==
+             36
+
+    assert OrderTiming.prep_minutes(settings, [%{product_id: long, quantity: 2}], 2) == 38
+
+    assert OrderTiming.prep_minutes(settings, [
+             %{product_id: short},
+             %{product_id: long, quantity: 5, unavailable: true}
+           ]) == 4
+
+    assert OrderTiming.prep_minutes(settings, [], 2) == 30
   end
 
   test "delivery form changes one source of settings without dropping product rules", %{

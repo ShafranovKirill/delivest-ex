@@ -104,6 +104,44 @@ defmodule DelivestWeb.Client.OrderControllerTest do
     assert calculated["data"]["estimated_delivery_at"] == nil
   end
 
+  test "calculated cart preview and checkout ETA agree for several portions", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    staff = insert(:staff, role: insert(:role, permissions: ["branches.update"]))
+    insert(:staff_branch, staff: staff, branch: branch)
+
+    assert {:ok, _} =
+             Delivest.Oms.OrderTiming.update(staff, branch.id, %{
+               mode: "calculated",
+               kitchen_minutes: "30",
+               product_minutes: %{product.id => "30"}
+             })
+
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+
+    conn =
+      Enum.reduce(1..4, conn, fn _, conn ->
+        post(conn, ~p"/client/cart/#{cart_id}/items/#{product.id}")
+        |> recycle_with_headers()
+      end)
+
+    preview = conn |> get(~p"/client/cart?branch_id=#{branch.id}") |> json_response(200)
+    assert preview["data"]["prep_minutes"] == 42
+
+    data =
+      conn
+      |> post(~p"/client/orders", order_params(branch, cart_id))
+      |> json_response(200)
+      |> Map.fetch!("data")
+
+    ready = DateTime.from_iso8601(data["estimated_ready_at"]) |> elem(1)
+    created = DateTime.from_iso8601(data["inserted_at"]) |> elem(1)
+    assert DateTime.diff(ready, created, :minute) in 41..43
+  end
+
   test "fixed delivery ETA is exactly the configured total", %{
     conn: conn,
     branch: branch,

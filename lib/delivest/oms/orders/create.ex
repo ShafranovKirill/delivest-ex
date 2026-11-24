@@ -123,7 +123,12 @@ defmodule Delivest.Oms.Orders.Create do
         items =
           Enum.map(pricing.lines, fn line ->
             product = Map.get(pricing.products, line.product_id)
-            %{product_id: line.product_id, category_id: product && product.category_id}
+
+            %{
+              product_id: line.product_id,
+              category_id: product && product.category_id,
+              quantity: line.quantity
+            }
           end)
 
         fulfillment = if(attrs["fulfillment_type"] == "delivery", do: :delivery, else: :pickup)
