@@ -454,8 +454,12 @@ defmodule Delivest.SiteSnapshot.Archive do
   defp printing_preset_fields?(nil), do: true
 
   defp printing_preset_fields?(printing) when is_map(printing) do
-    Fields.nested_fields?(printing, "kitchen", ~w(blocks paper free_text qr_url qr_kind)) and
-      Fields.nested_fields?(printing, "customer", ~w(blocks paper free_text qr_url qr_kind))
+    Fields.nested_fields?(printing, "kitchen", ~w(blocks paper layout free_text qr_url qr_kind)) and
+      Fields.nested_fields?(
+        printing,
+        "customer",
+        ~w(blocks paper layout free_text qr_url qr_kind)
+      )
   end
 
   defp printing_preset_fields?(_), do: false
