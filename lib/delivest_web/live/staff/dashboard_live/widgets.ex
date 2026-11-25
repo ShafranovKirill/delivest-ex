@@ -13,7 +13,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
     ~H"""
     <%= case @id do %>
       <% "attention" -> %>
-        <section id="dashboard-problem-orders" class="dashboard-widget-card border-warning/30">
+        <section id="dashboard-problem-orders" class="dashboard-widget-card dashboard-attention-card">
           <h2
             :if={@data.problem_count == 0 and @data.created_count == 0 and @data.ready_count == 0}
             id="dashboard-attention-empty"
@@ -31,7 +31,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           </h2>
           <div
             :if={@data.problem_count + @data.created_count + @data.ready_count > 0}
-            class="grid grid-cols-3 gap-2 mt-3"
+            class="dashboard-attention-grid"
           >
             <.attention_count
               id="dashboard-alert-problem"
@@ -58,7 +58,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           <h2 class="dashboard-widget-title">
             <.icon name="hero-bolt" class="size-5 text-primary" />{gettext("Quick actions")}
           </h2>
-          <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="dashboard-actions-grid">
             <.link :for={action <- @data.actions} navigate={action.href} class="dashboard-action-link">
               <.icon name={action.icon} class="size-5" /><span>{action.label}</span>
             </.link>
@@ -134,7 +134,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           >
             <details class="text-xs">
               <summary class="cursor-pointer">{gettext("Chart data")}</summary>
-              <div class="max-h-48 overflow-auto">
+              <div class="dashboard-chart-table">
                 <table class="table table-xs w-full">
                   <thead>
                     <tr>
@@ -172,7 +172,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           >
             <details class="text-xs">
               <summary class="cursor-pointer">{gettext("Chart data")}</summary>
-              <div class="max-h-48 overflow-auto">
+              <div class="dashboard-chart-table">
                 <table class="table table-xs w-full">
                   <thead>
                     <tr>
@@ -204,25 +204,25 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           <ol
             :if={@data.top_products != []}
             id="dashboard-top-products-plot"
-            class="mt-3 divide-y divide-base-200"
+            class="dashboard-product-list"
           >
             <li
               :for={{row, rank} <- Enum.with_index(@data.top_products, 1)}
               id={"dashboard-product-#{row.product_id}"}
-              class="flex items-center gap-3 py-2 text-sm"
+              class="dashboard-product-row"
             >
-              <span class="w-5 shrink-0 tabular-nums text-base-content/40">{rank}</span>
-              <span class="min-w-0 flex-1 truncate font-medium">{row.title}</span>
-              <span class="shrink-0 tabular-nums text-base-content/60">{row.quantity} ×</span>
-              <span class="shrink-0 tabular-nums font-semibold">{OrderHelpers.money(row.revenue)}</span>
+              <span class="dashboard-product-rank">{rank}</span>
+              <span class="dashboard-product-name">{row.title}</span>
+              <span class="dashboard-product-quantity">{row.quantity} ×</span>
+              <span class="dashboard-product-revenue">{OrderHelpers.money(row.revenue)}</span>
             </li>
           </ol>
         </section>
       <% "latest_orders" -> %>
-        <section class="dashboard-widget-card !p-0 overflow-hidden">
-          <div class="p-4 border-b border-base-200 flex flex-wrap items-center justify-between gap-3">
+        <section class="dashboard-widget-card dashboard-latest-card">
+          <div class="dashboard-latest-header">
             <h2 class="dashboard-widget-title">{gettext("Latest orders")}</h2>
-            <div class="flex flex-wrap gap-1.5">
+            <div class="dashboard-status-chips">
               <span
                 :for={status <- [:created, :accepted, :preparing, :ready, :delivering, :completed]}
                 :if={Map.get(@data.status_counts, status, 0) > 0}
@@ -239,12 +239,12 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           </p>
           <ul
             :if={@data.latest_orders != []}
-            class="divide-y divide-base-200 max-h-full overflow-auto"
+            class="dashboard-latest-list"
           >
             <li
               :for={order <- @data.latest_orders}
               id={"dashboard-order-#{order.id}"}
-              class="relative px-3 py-2 hover:bg-base-200/60 transition-colors"
+              class="dashboard-latest-row"
             >
               <div class="flex items-center gap-2 min-w-0">
                 <.link
@@ -281,17 +281,17 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
       <% "branch_summary" -> %>
         <section id="dashboard-branch-summary" class="dashboard-widget-card">
           <h2 class="dashboard-widget-title">{gettext("Branches today")}</h2>
-          <div class="mt-2 space-y-1.5">
+          <div class="dashboard-branch-list">
             <div
               :for={branch <- @data.branch_summary}
               id={"dashboard-branch-#{branch.id}"}
-              class="rounded-lg border border-base-200 bg-base-200/30 p-2.5"
+              class="dashboard-branch-row"
             >
               <.link
                 navigate={branch.dashboard_href}
                 class="font-semibold text-primary hover:underline"
               >{branch.name}</.link>
-              <div class="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3 xl:grid-cols-5">
+              <div class="dashboard-branch-metrics">
                 <div :if={@data.can_stats} class="min-w-0">
                   <span class="block text-base-content/55">{gettext("Revenue")}</span>
                   <span class="font-semibold tabular-nums">{OrderHelpers.money(branch.revenue)}</span>
@@ -339,15 +339,15 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
 
   defp dashboard_kpi(assigns) do
     ~H"""
-    <section class="dashboard-widget-card h-full flex flex-col justify-center gap-1">
+    <section class="dashboard-widget-card dashboard-kpi-card">
       <div class="flex items-center gap-2 text-sm text-base-content/65">
         <.icon name={@icon} class="size-4 text-primary" />
         <span>{@label}</span>
       </div>
-      <p class="text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
+      <p class="dashboard-kpi-value">
         {render_slot(@inner_block)}
       </p>
-      <p class="min-h-4 text-xs text-base-content/60">
+      <p class="dashboard-kpi-context">
         <span
           :if={is_number(@delta)}
           class={[
@@ -377,10 +377,10 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
 
   defp attention_count(assigns) do
     ~H"""
-    <div id={@id} class="rounded-lg bg-base-200/60 p-2 min-w-0">
-      <p class="text-xl font-bold tabular-nums">{@count}</p>
-      <.link :if={@href} navigate={@href} class="text-xs text-primary hover:underline break-words">{@label}</.link>
-      <p :if={!@href} class="text-xs text-base-content/60 break-words">{@label}</p>
+    <div id={@id} class="dashboard-attention-item">
+      <p class="dashboard-attention-value">{@count}</p>
+      <.link :if={@href} navigate={@href} class="dashboard-attention-label">{@label}</.link>
+      <p :if={!@href} class="dashboard-attention-label">{@label}</p>
     </div>
     """
   end
