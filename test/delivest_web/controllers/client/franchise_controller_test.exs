@@ -34,6 +34,7 @@ defmodule DelivestWeb.Client.FranchiseControllerTest do
              "primary_color" => "#123456",
              "dark_primary_color" => nil,
              "default_theme" => "light",
+             "cutlery_enabled" => false,
              "logo_url" => nil,
              "logo_dark_url" => nil,
              "legal" => %{"form" => "ООО", "name" => "Суши"},

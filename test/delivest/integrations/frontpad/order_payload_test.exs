@@ -48,6 +48,18 @@ defmodule Delivest.Integrations.Frontpad.OrderPayloadTest do
     assert {"descr", "Добавочный 123"} in params
   end
 
+  test "sends explicit zero persons to Frontpad" do
+    assert {:ok, view} =
+             OrderPayload.build(
+               %Order{items: [], persons: 0, comment: "Без лука"},
+               %Settings{api_key: "secret"},
+               %{}
+             )
+
+    assert {"person", "0"} in OrderPayload.to_form_params(view)
+    assert {"descr", "Без лука"} in OrderPayload.to_form_params(view)
+  end
+
   test "omits the order number but keeps the customer comment" do
     order = %Order{items: [], number: "A123", comment: "Без лука"}
 

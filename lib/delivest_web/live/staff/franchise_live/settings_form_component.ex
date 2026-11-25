@@ -142,6 +142,22 @@ defmodule DelivestWeb.Staff.FranchiseLive.SettingsFormComponent do
           form_name={@form.name}
         />
         <section
+          :if={@section == :cutlery}
+          id="franchise-cutlery-settings"
+          class="rounded-box border border-base-300 bg-base-100 p-5 space-y-3"
+        >
+          <.input
+            field={@form[:cutlery_enabled]}
+            type="checkbox"
+            label={gettext("Cutlery with orders")}
+          />
+          <p class="text-sm text-base-content/60">
+            {gettext(
+              "Free: one set per started 1,000 ₽ of food after discounts, excluding delivery. Customers can change the quantity, including to 0."
+            )}
+          </p>
+        </section>
+        <section
           :if={@section == :maintenance}
           id="franchise-maintenance-settings"
           class="rounded-box border border-base-300 bg-base-100 p-5 space-y-3"

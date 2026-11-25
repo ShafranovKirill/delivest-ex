@@ -14,6 +14,7 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   alias DelivestWeb.ClientToken
 
   setup %{conn: conn} do
+    Cachex.clear(:franchise_cache)
     branch = insert(:branch, is_active: true)
 
     Repo.insert!(%BranchInfo{
@@ -68,6 +69,53 @@ defmodule DelivestWeb.Client.OrderControllerTest do
   end
 
   defp keyed(conn, key), do: put_req_header(conn, "idempotency-key", key)
+
+  test "public cutlery count is ignored when disabled and accepts zero when enabled", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    params = order_params(branch, cart_id, %{"persons" => 5})
+    first = conn |> post(~p"/client/orders", params) |> json_response(200)
+    assert first["data"]["persons"] == nil
+
+    assert {:ok, _} = Delivest.Franchise.SettingsStore.save(%{cutlery_enabled: true})
+    {conn, cart_id} = cart_with_product(recycle_with_headers(conn), branch, product)
+
+    zero =
+      conn
+      |> post(~p"/client/orders", order_params(branch, cart_id, %{"persons" => 0}))
+      |> json_response(200)
+
+    assert zero["data"]["persons"] == 0
+  end
+
+  test "keyed retry survives a cutlery setting change", %{
+    conn: conn,
+    branch: branch,
+    product: product
+  } do
+    conn = start_session(conn, branch)
+    {conn, cart_id} = cart_with_product(conn, branch, product)
+    params = order_params(branch, cart_id, %{"persons" => 3})
+    key = Ecto.UUID.generate()
+    first = conn |> keyed(key) |> post(~p"/client/orders", params) |> json_response(200)
+    assert first["data"]["persons"] == nil
+
+    assert {:ok, _} = Delivest.Franchise.SettingsStore.save(%{cutlery_enabled: true})
+
+    replay =
+      conn
+      |> recycle_with_headers()
+      |> keyed(key)
+      |> post(~p"/client/orders", params)
+      |> json_response(200)
+
+    assert replay["data"]["id"] == first["data"]["id"]
+    assert replay["data"]["persons"] == nil
+  end
 
   test "checkout saves a fixed or calculated ready estimate for immediate pickup", %{
     conn: conn,

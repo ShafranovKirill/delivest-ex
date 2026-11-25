@@ -1865,7 +1865,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:262",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:278",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1889,7 +1889,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:229",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:245",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -1948,7 +1948,7 @@
           "admin"
         ]
       },
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:403",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:419",
       "target_section": "Settings / Network and brand"
     },
     {
@@ -24229,7 +24229,28 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "client_auth_required",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:client_auth_required",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:335",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:351",
+      "target_section": "Settings / Network and brand",
+      "type": "literal staff form control",
+      "validation": []
+    },
+    {
+      "binding": "@form",
+      "canonical_form": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex",
+      "current_forms": [
+        "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex"
+      ],
+      "default": "false",
+      "disposition": "retain canonical editor in Settings / Network and brand",
+      "expression": null,
+      "field": "cutlery_enabled",
+      "id": "form:lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:@form:cutlery_enabled",
+      "name_template": null,
+      "owner": "lib/delivest/franchise/settings.ex",
+      "required": "no literal validate_required call for field",
+      "resolved_field": "cutlery_enabled",
+      "schema_field": "schema:lib/delivest/franchise/settings.ex:cutlery_enabled",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": []
@@ -24250,7 +24271,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "dark_primary_color",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:dark_primary_color",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:278",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:294",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24273,7 +24294,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "default_theme",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:default_theme",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:179",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:195",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24297,7 +24318,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "description",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:description",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:172",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:188",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24320,7 +24341,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "email",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:email",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:369",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:385",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24343,7 +24364,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "inn",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:inn",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:362",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:378",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24366,7 +24387,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "legal_address",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:legal_address",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:373",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:389",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24389,7 +24410,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "legal_form",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:legal_form",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:348",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:364",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24412,7 +24433,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "legal_name",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:legal_name",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:355",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:371",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24435,7 +24456,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "maintenance_enabled",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:maintenance_enabled",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:150",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:166",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": []
@@ -24456,7 +24477,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "marketing_push_limit_count",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:marketing_push_limit_count",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:303",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:319",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24480,7 +24501,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "marketing_push_window_hours",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:marketing_push_window_hours",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:310",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:326",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24504,7 +24525,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "name",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:name",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:164",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:180",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24528,7 +24549,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "ogrn",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:ogrn",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:364",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:380",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24551,7 +24572,7 @@
       "required": "no literal validate_required call for field",
       "resolved_field": "phone",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:phone",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:370",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:386",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": []
@@ -24572,7 +24593,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "primary_color",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:primary_color",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:215",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:231",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24596,7 +24617,7 @@
       "required": "declared validate_required call; may be conditional",
       "resolved_field": "timezone",
       "schema_field": "schema:lib/delivest/franchise/settings.ex:timezone",
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:166",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:182",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": [
@@ -24619,7 +24640,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "rating",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:412",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:428",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24640,7 +24661,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "reviews_count",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:420",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:436",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24661,7 +24682,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "settings[dark_primary_color]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:225",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:241",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -24682,7 +24703,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "settings[primary_color]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:191",
+      "source": "lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:207",
       "target_section": "Settings / Network and brand",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -33338,6 +33359,14 @@
       "type": ":boolean"
     },
     {
+      "default": "false",
+      "field": "cutlery_enabled",
+      "id": "schema:lib/delivest/franchise/settings.ex:cutlery_enabled",
+      "owner": "lib/delivest/franchise/settings.ex",
+      "source": "lib/delivest/franchise/settings.ex:39",
+      "type": ":boolean"
+    },
+    {
       "default": "not declared",
       "field": "dark_primary_color",
       "id": "schema:lib/delivest/franchise/settings.ex:dark_primary_color",
@@ -33374,7 +33403,7 @@
       "field": "fiscal_enabled",
       "id": "schema:lib/delivest/franchise/settings.ex:fiscal_enabled",
       "owner": "lib/delivest/franchise/settings.ex",
-      "source": "lib/delivest/franchise/settings.ex:41",
+      "source": "lib/delivest/franchise/settings.ex:42",
       "type": ":boolean"
     },
     {
@@ -33470,7 +33499,7 @@
       "field": "marketing_push_limit_count",
       "id": "schema:lib/delivest/franchise/settings.ex:marketing_push_limit_count",
       "owner": "lib/delivest/franchise/settings.ex",
-      "source": "lib/delivest/franchise/settings.ex:39",
+      "source": "lib/delivest/franchise/settings.ex:40",
       "type": ":integer"
     },
     {
@@ -33478,7 +33507,7 @@
       "field": "marketing_push_window_hours",
       "id": "schema:lib/delivest/franchise/settings.ex:marketing_push_window_hours",
       "owner": "lib/delivest/franchise/settings.ex",
-      "source": "lib/delivest/franchise/settings.ex:40",
+      "source": "lib/delivest/franchise/settings.ex:41",
       "type": ":integer"
     },
     {

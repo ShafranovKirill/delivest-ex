@@ -39,6 +39,38 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
     assert get_resp_header(response, "cache-control") == ["no-store"]
   end
 
+  test "warm bootstrap publishes cutlery setting after revision change", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    refresh_revisions()
+
+    path = "/client/storefront/v1/bootstrap?slug=#{branch.slug}&locale=ru"
+    first = conn |> get(path) |> json_response(200)
+    assert first["franchise"]["cutlery_enabled"] == false
+
+    {:ok, _settings} = Delivest.Franchise.SettingsStore.save(%{cutlery_enabled: true})
+    refresh_revisions()
+    second = conn |> recycle() |> get(path) |> json_response(200)
+    assert second["franchise"]["cutlery_enabled"] == true
+    assert second["revisions"]["franchise"] != first["revisions"]["franchise"]
+
+    handler = "cutlery-bootstrap-warm-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler,
+      [:delivest, :repo, :query],
+      fn _, _, metadata, owner ->
+        if self() == owner and not String.contains?(metadata[:query] || "", "schema_migrations") do
+          send(owner, :sql_query)
+        end
+      end,
+      self()
+    )
+
+    on_exit(fn -> :telemetry.detach(handler) end)
+    assert conn |> recycle() |> get(path) |> json_response(200)
+    refute_received :sql_query
+  end
+
   test "maintenance changes effective branch state and both public revisions", %{conn: conn} do
     branch = insert(:branch, is_active: true)
     other_branch = insert(:branch, is_active: true)

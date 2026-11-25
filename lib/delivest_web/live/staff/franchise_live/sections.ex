@@ -1,7 +1,7 @@
 defmodule DelivestWeb.Staff.FranchiseLive.Sections do
   use Gettext, backend: DelivestWeb.Gettext
 
-  @ids ~w(brand maintenance auth seller loyalty logo images documents analytics snapshot)a
+  @ids ~w(brand maintenance auth cutlery seller loyalty logo images documents analytics snapshot)a
 
   def all, do: Enum.map(@ids, &describe/1)
 
@@ -66,6 +66,15 @@ defmodule DelivestWeb.Staff.FranchiseLive.Sections do
         gettext(
           "Temporarily close every public storefront while keeping staff and existing orders available."
         )
+      )
+
+  def describe(:cutlery),
+    do:
+      section(
+        :cutlery,
+        "hero-sparkles",
+        gettext("Cutlery with orders"),
+        gettext("Free cutlery for orders placed on the site.")
       )
 
   def describe(:seller),

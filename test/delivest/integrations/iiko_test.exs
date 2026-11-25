@@ -116,6 +116,16 @@ defmodule Delivest.Integrations.IikoTest do
              OrderPayload.build(%{order | payment_method: :online}, @settings, articles)
   end
 
+  test "native guest count preserves zero and positive quantities", %{order: order} do
+    order = Repo.preload(order, [items: :modifiers], force: true)
+    articles = %{products: %{hd(order.items).product_id => "iiko-pizza"}, modifiers: %{}}
+
+    for count <- [0, 3] do
+      assert {:ok, %{guests: %{count: ^count}, comment: "Без лука"}} =
+               OrderPayload.build(%{order | persons: count}, @settings, articles)
+    end
+  end
+
   test "creation waits for the webhook, then statuses follow iiko", %{conn: conn, order: order} do
     stub(fn conn, path ->
       case path do

@@ -8,7 +8,7 @@ defmodule Delivest.Integrations.RkeeperTest do
   alias Delivest.Identity.Branch.BranchInfo
   alias Delivest.Integrations.Crm.{BranchSettings, SyncWorker}
   alias Delivest.Integrations.{Crm, Rkeeper}
-  alias Delivest.Integrations.Rkeeper.{Poller, PollWorker}
+  alias Delivest.Integrations.Rkeeper.{OrderPayload, Poller, PollWorker}
   alias Delivest.Integrations.Poller.Worker, as: BranchPollWorker
   alias Delivest.Net.ProductExternalId
   alias Delivest.Oms
@@ -76,6 +76,20 @@ defmodule Delivest.Integrations.RkeeperTest do
         "branch_id" => order.branch_id,
         "generation" => Crm.get_branch_settings(order.branch_id).generation
       })
+
+  test "native persons quantity preserves zero and positive values", %{order: order} do
+    order = Repo.preload(order, [items: :modifiers], force: true)
+    articles = %{products: %{hd(order.items).product_id => "1024545"}, modifiers: %{}}
+
+    for count <- [0, 3] do
+      assert {:ok, %{personsQuantity: ^count}} =
+               OrderPayload.build(
+                 %{order | persons: count, comment: "Без лука"},
+                 @settings,
+                 articles
+               )
+    end
+  end
 
   test "the order reaches the pos and statuses come by polling", %{order: order} do
     stub(%{

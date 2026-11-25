@@ -13,8 +13,13 @@ defmodule Delivest.Oms.Checkout do
   def create(params, client, session_id, key, analytics_guest_id \\ nil) do
     request_attrs = Map.take(params, @public_fields)
 
+    order_attrs =
+      if Delivest.Franchise.SettingsStore.get().cutlery_enabled,
+        do: request_attrs,
+        else: Map.delete(request_attrs, "persons")
+
     attrs =
-      request_attrs
+      order_attrs
       |> Map.put("session_id", session_id)
       |> put_client(client)
 

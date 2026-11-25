@@ -15,7 +15,7 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
   test "settings are split into sections", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/staff/franchise")
 
-    for section <- ~w(brand seller loyalty logo images documents printing) do
+    for section <- ~w(brand cutlery seller loyalty logo images documents printing) do
       assert has_element?(
                lv,
                ~s(#franchise-section-#{section}[href="/staff/franchise/#{section}"])
@@ -35,6 +35,18 @@ defmodule DelivestWeb.Staff.FranchiseLive.IndexTest do
 
     assert {:error, {:live_redirect, %{to: "/staff/franchise"}}} =
              live(conn, ~p"/staff/franchise/unknown")
+  end
+
+  test "cutlery setting is off by default and can be enabled", %{conn: conn} do
+    {:ok, lv, _html} = live(conn, ~p"/staff/franchise/cutlery")
+    assert has_element?(lv, "#franchise-cutlery-settings")
+    assert has_element?(lv, ~s|input[name="settings[cutlery_enabled]"]:not(:checked)|)
+
+    lv
+    |> form("#franchise-settings-form", settings: %{cutlery_enabled: "true"})
+    |> render_submit()
+
+    assert Delivest.Franchise.get_settings().cutlery_enabled
   end
 
   test "saves brand and seller details", %{conn: conn} do

@@ -14128,3 +14128,19 @@ msgstr "Ждут подтверждения"
 #, elixir-autogen, elixir-format
 msgid "Ready for handoff"
 msgstr "Готовы к выдаче"
+
+#: lib/delivest_web/live/staff/franchise_live/sections.ex:77
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:169
+#, elixir-autogen, elixir-format
+msgid "Cutlery with orders"
+msgstr "Приборы к заказу"
+
+#: lib/delivest_web/live/staff/franchise_live/sections.ex:78
+#, elixir-autogen, elixir-format
+msgid "Free cutlery for orders placed on the site."
+msgstr "Бесплатные приборы при оформлении заказа на сайте."
+
+#: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:172
+#, elixir-autogen, elixir-format
+msgid "Free: one set per started 1,000 ₽ of food after discounts, excluding delivery. Customers can change the quantity, including to 0."
+msgstr "Бесплатно: по одному набору на каждые начатые 1 000 ₽ стоимости блюд после скидок, без доставки. Покупатель может изменить количество, в том числе выбрать 0."
