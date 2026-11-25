@@ -5,10 +5,17 @@ defmodule DelivestWeb.OpenApi do
 
   @impl OpenApi
   def spec do
+    build_spec(Server.from_endpoint(Endpoint))
+  end
+
+  @doc "Build the same contract without starting the Endpoint or connecting to a database."
+  def export_spec do
+    build_spec(%Server{url: "/"})
+  end
+
+  defp build_spec(server) do
     %OpenApi{
-      servers: [
-        Server.from_endpoint(Endpoint)
-      ],
+      servers: [server],
       info: %Info{
         title: "My App",
         version: "1.0",
