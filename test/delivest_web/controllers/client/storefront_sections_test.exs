@@ -16,7 +16,9 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
     refresh_worker()
     path = "/client/storefront/v1/sections/menu?branch_id=#{branch.id}&locale=ru"
     first = get(conn, path)
-    assert is_list(json_response(first, 200)["data"])
+    first_body = json_response(first, 200)
+    assert is_list(first_body["data"])
+    assert_section_contract(first_body)
     [tag] = get_resp_header(first, "etag")
     assert get_resp_header(first, "cache-control") == ["public, no-cache, must-revalidate"]
 
@@ -120,7 +122,9 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
     Repo.insert!(%Delivest.Identity.Branch.BranchInfo{branch_id: branch.id})
     refresh_worker()
     branches = get(conn, "/client/storefront/v1/sections/branches")
-    data = json_response(branches, 200)["data"]
+    body = json_response(branches, 200)
+    assert_section_contract(body)
+    data = body["data"]
     assert Enum.find(data, &(&1["id"] == branch.id))["branch_info"]
     [tag] = get_resp_header(branches, "etag")
 
@@ -130,10 +134,13 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
            |> get("/client/storefront/v1/sections/branches")
            |> Map.get(:status) == 304
 
-    assert conn
-           |> recycle()
-           |> get("/client/storefront/v1/sections/franchise")
-           |> json_response(200)
+    franchise =
+      conn
+      |> recycle()
+      |> get("/client/storefront/v1/sections/franchise")
+      |> json_response(200)
+
+    assert_section_contract(franchise)
   end
 
   test "warm conditional section request performs no application SQL", %{conn: conn} do
@@ -404,5 +411,16 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
   defp refresh_worker do
     send(Delivest.Storefront.Revisions, :refresh)
     :sys.get_state(Delivest.Storefront.Revisions)
+  end
+
+  defp assert_section_contract(body) do
+    spec = DelivestWeb.OpenApi.spec()
+
+    schema =
+      spec.paths["/client/storefront/v1/sections/{section}"].get.responses[200].content[
+        "application/json"
+      ].schema
+
+    assert {:ok, _} = OpenApiSpex.cast_value(body, schema, spec)
   end
 end

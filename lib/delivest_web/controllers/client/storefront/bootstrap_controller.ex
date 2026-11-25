@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Client.Storefront.BootstrapController do
   use DelivestWeb, :controller
 
+  def open_api_operation(action), do: DelivestWeb.ApiContracts.operation(__MODULE__, action)
+
   alias Delivest.Storefront
 
   def show(conn, params) do

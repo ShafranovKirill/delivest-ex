@@ -57,6 +57,7 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
         |> json_response(200)
 
       assert %{"token_type" => "bearer", "expires_in" => 86_400, "access_token" => token} = body
+      assert_contract(body, "/integrations/yandex-eda/security/oauth/token", :post, 200)
       assert YandexEda.valid_token?(token)
     end
 
@@ -108,7 +109,17 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
       assert response_content_type(conn, :json) =~
                "application/vnd.eats.menu.composition.v2+json"
 
-      assert %{"items" => [%{"id" => id, "price" => 300}]} = Jason.decode!(conn.resp_body)
+      body = Jason.decode!(conn.resp_body)
+
+      assert_contract(
+        body,
+        "/integrations/yandex-eda/menu/{restaurant_id}/composition",
+        :get,
+        200,
+        "application/vnd.eats.menu.composition.v2+json"
+      )
+
+      assert %{"items" => [%{"id" => id, "price" => 300}]} = body
       assert id == product.id
     end
 
@@ -166,6 +177,37 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
   end
 
   describe "orders" do
+    test "order contract accepts each discriminator and rejects missing required values", %{
+      branch: branch,
+      product: product
+    } do
+      spec = DelivestWeb.OpenApi.spec()
+
+      schema =
+        spec.paths["/integrations/yandex-eda/order"].post.requestBody.content["application/json"].schema
+
+      pickup = order_params(branch, [product])
+      marketplace = marketplace(pickup)
+
+      yandex =
+        pickup
+        |> Map.put("discriminator", "yandex")
+        |> Map.put("deliveryInfo", %{"courierArrivementDate" => "2026-10-27T12:30:00+03:00"})
+
+      for valid <- [pickup, marketplace, yandex] do
+        assert {:ok, _} = OpenApiSpex.cast_value(valid, schema, spec)
+      end
+
+      for invalid <- [
+            put_in(pickup, ["deliveryInfo", "clientArrivementDate"], nil),
+            update_in(marketplace["deliveryInfo"], &Map.delete(&1, "deliveryAddress"))
+            |> then(&Map.put(marketplace, "deliveryInfo", &1)),
+            put_in(pickup, ["items", Access.at(0), "quantity"], 0)
+          ] do
+        assert {:error, _} = OpenApiSpex.cast_value(invalid, schema, spec)
+      end
+    end
+
     test "the full order flow", %{conn: conn, branch: branch, product: product} do
       params = order_params(branch, [product])
 
@@ -177,7 +219,17 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
 
       shown = get(conn, @base <> "/order/#{order_id}")
       assert response_content_type(shown, :json) =~ "application/vnd.eats.order.v2+json"
-      assert %{"eatsId" => eats_id} = Jason.decode!(shown.resp_body)
+      shown_body = Jason.decode!(shown.resp_body)
+
+      assert_contract(
+        shown_body,
+        "/integrations/yandex-eda/order/{id}",
+        :get,
+        200,
+        "application/vnd.eats.order.v2+json"
+      )
+
+      assert %{"eatsId" => eats_id} = shown_body
       assert eats_id == params["eatsId"]
 
       assert %{"status" => "ACCEPTED_BY_RESTAURANT"} =
@@ -220,6 +272,7 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
         conn |> post(@base <> "/order", order_params(branch, [product])) |> json_response(406)
 
       assert %{"type" => "unavailable_goods", "goods" => goods, "message" => message} = body
+      assert_contract(body, "/integrations/yandex-eda/order", :post, 406)
       assert goods == %{product.id => "Борщ"}
       assert message =~ "Борщ"
     end
@@ -283,5 +336,15 @@ defmodule DelivestWeb.Integrations.YandexEdaControllerTest do
                |> post(@base <> "/v1/feedback", %{"feedback" => %{feedback | "rating" => 7}})
                |> json_response(400)
     end
+  end
+
+  defp assert_contract(body, path, method, status, media \\ "application/json") do
+    spec = DelivestWeb.OpenApi.spec()
+
+    schema =
+      spec.paths[path] |> Map.fetch!(method) |> Map.fetch!(:responses) |> Map.fetch!(status)
+
+    schema = schema.content[media].schema
+    assert {:ok, _} = OpenApiSpex.cast_value(body, schema, spec)
   end
 end

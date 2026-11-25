@@ -23,7 +23,12 @@ defmodule DelivestWeb.OpenApi do
       },
       components: %Components{
         securitySchemes: %{
-          "bearer" => %SecurityScheme{type: "http", scheme: "bearer", bearerFormat: "JWT"}
+          "bearer" => %SecurityScheme{type: "http", scheme: "bearer", bearerFormat: "JWT"},
+          "yandexEdaBearer" => %SecurityScheme{
+            type: "http",
+            scheme: "bearer",
+            description: "OAuth token from /integrations/yandex-eda/security/oauth/token"
+          }
         }
       },
       paths: Paths.from_router(Router)

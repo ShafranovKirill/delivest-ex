@@ -3,7 +3,7 @@ defmodule DelivestWeb.ApiCatalogTest do
 
   alias DelivestWeb.ApiCatalog
 
-  test "Scalar reference exposes every selected HTTP API route without changing the public contract",
+  test "public and Scalar specs expose all selected routes with concrete contracts",
        %{
          conn: conn
        } do
@@ -22,11 +22,46 @@ defmodule DelivestWeb.ApiCatalogTest do
       assert get_in(scalar, ["paths", path, method]), "missing Scalar #{method} #{path}"
     end
 
-    assert get_in(scalar, ["paths", "/integrations/yandex-eda/order", "post"])[
-             "x-delivest-contract-status"
-           ] == "undocumented"
+    assert length(ApiCatalog.routes()) == 82
+    assert ApiCatalog.missing() == []
+    assert scalar["x-delivest-contract-coverage"]["undocumentedCount"] == 0
 
-    refute get_in(public, ["paths", "/integrations/yandex-eda/order", "post"])
+    for {method, path} <- ApiCatalog.routes() do
+      contract = get_in(public, ["paths", path, method])
+      assert contract["operationId"], "operationId missing for #{method} #{path}"
+      assert contract["responses"] != %{}, "responses missing for #{method} #{path}"
+      refute contract["x-delivest-contract-status"] == "undocumented"
+      refute Map.has_key?(contract["responses"], "default")
+    end
+
+    order = get_in(public, ["paths", "/integrations/yandex-eda/order", "post"])
+    assert order["security"] == [%{"yandexEdaBearer" => []}]
+    assert order["requestBody"]["content"]["application/json"]["schema"]["oneOf"] |> length() == 3
+    assert Map.has_key?(order["responses"], "406")
+
+    assert get_in(public, [
+             "paths",
+             "/integrations/yandex-eda/order/{id}",
+             "put",
+             "responses",
+             "422"
+           ])
+
+    refute get_in(public, ["paths", "/integrations/yandex-eda/order/{id}", "put", "requestBody"])
+
+    assert get_in(public, [
+             "paths",
+             "/integrations/yandex-eda/menu/{restaurant_id}/composition",
+             "get",
+             "responses",
+             "200",
+             "content",
+             "application/vnd.eats.menu.composition.v2+json"
+           ])
+
+    assert get_in(public, ["paths", "/integrations/crm/{provider}/{token}", "post", "security"]) ==
+             []
+
     assert scalar["servers"] == [%{"url" => "/"}]
     assert scalar["tags"] |> Enum.map(& &1["name"]) |> hd() == "Health"
 
@@ -48,10 +83,9 @@ defmodule DelivestWeb.ApiCatalogTest do
 
   test "new and resolved contract gaps require a baseline update" do
     assert ApiCatalog.baseline_diff() == {[], []}
-    [first | rest] = ApiCatalog.baseline()
-    assert ApiCatalog.baseline_diff(rest) == {[], [first]}
+    assert ApiCatalog.baseline() == []
 
-    assert ApiCatalog.baseline_diff([{"get", "/client/new"} | ApiCatalog.baseline()]) ==
+    assert ApiCatalog.baseline_diff([{"get", "/client/new"}]) ==
              {[{"get", "/client/new"}], []}
   end
 
