@@ -1,4 +1,4 @@
-import { GridStack } from "gridstack";
+import { GridStack, GridStackEngine } from "gridstack";
 
 const parseLayout = (el) => {
   try { return JSON.parse(el.dataset.layout || "[]"); } catch { return []; }
@@ -6,7 +6,20 @@ const parseLayout = (el) => {
 
 const widthColumns = (width, editing) =>
   width < 640 ? 2 : width < (editing && window.innerWidth >= 1280 ? 680 : 1100) ? 6 : 12;
-const byPosition = (a, b) => a.y - b.y || a.x - b.x || a.order - b.order;
+// Interactive changes use free cells only. Layout loading and content sizing
+// still use GridStack's normal collision handling.
+class DashboardGridEngine extends GridStackEngine {
+  moveNodeCheck(node, options) {
+    if (!options.rect) return super.moveNodeCheck(node, options);
+    const candidate = { ...node, ...options };
+    this.nodeBoundFix(candidate, options.resizing);
+    if (candidate.y > 120 || this.collide(node, candidate)) return false;
+    return super.moveNodeCheck(node, {
+      ...options, x: candidate.x, y: candidate.y, w: candidate.w, h: candidate.h, pack: false,
+    });
+  }
+}
+
 const mobileHeight = (item, editing, el, extraNarrow) => {
   if (item.id === "attention") return editing || extraNarrow ? 3 : 2;
   if (item.id === "quick_actions") {
@@ -23,23 +36,23 @@ export const DashboardGrid = {
     this.defaultLayout = this.el.dataset.defaultLayout === "true";
     this.serverLayout = this.el.dataset.layout;
     this.canonical = parseLayout(this.el);
-    this.manualHeights = new Map();
-    this.autoShift = new Map();
     this.onDetailsToggle = (event) => {
       if (event.target instanceof HTMLDetailsElement) this.scheduleFit();
     };
     this.container.addEventListener("toggle", this.onDetailsToggle, true);
     this.minimumHeights = new Map([...this.container.children].map((el) =>
       [el.dataset.widgetId, Number(el.getAttribute("gs-min-h"))]));
+    this.maximumHeights = new Map([...this.container.children].map((el) =>
+      [el.dataset.widgetId, Number(el.getAttribute("gs-max-h"))]));
     this.widthLimits = new Map([...this.container.children].map((el) =>
       [el.dataset.widgetId, {
         minW: Number(el.getAttribute("gs-min-w")), maxW: Number(el.getAttribute("gs-max-w")),
       }]));
     this.columns = widthColumns(this.container.clientWidth, this.editing);
     this.extraNarrow = this.container.clientWidth < 340;
-    this.silent = true;
     this.grid = GridStack.init({
       column: 12,
+      engineClass: DashboardGridEngine,
       cellHeight: 72,
       margin: 12,
       float: true,
@@ -51,21 +64,13 @@ export const DashboardGrid = {
       disableResize: !this.editing || this.columns !== 12,
     }, this.container);
     this.applyLayout();
-    this.grid.on("change", () => {
-      if (this.silent || this.gestureActive) return;
-      this.commitGeometry();
-    });
     for (const name of ["dragstart", "resizestart"]) {
       this.grid.on(name, () => { this.gestureActive = true; });
     }
     for (const name of ["dragstop", "resizestop"]) {
       this.grid.on(name, (_event, el) => {
         this.gestureActive = false;
-        if (name === "resizestop" && el) {
-          const node = this.grid.engine.nodes.find((entry) => entry.el === el);
-          if (node) this.manualHeights.set(node.id, node.h);
-        }
-        this.commitGeometry();
+        if (el?.gridstackNode) this.commitGeometry(el.gridstackNode);
         if (this.patchDuringGesture) {
           this.patchDuringGesture = false;
           this.updated();
@@ -79,7 +84,6 @@ export const DashboardGrid = {
     this.contentObserver = new ResizeObserver(() => this.scheduleFit());
     this.observeContent();
     this.lastWidth = this.container.clientWidth;
-    this.silent = false;
     this.scheduleFit();
     this.readyTimer = window.setTimeout(() => this.showGrid(), 1800);
   },
@@ -94,7 +98,6 @@ export const DashboardGrid = {
     if (next !== this.serverLayout) {
       this.serverLayout = next;
       this.canonical = parseLayout(this.el);
-      this.manualHeights.clear();
     }
     this.editing = editing;
     this.defaultLayout = this.el.dataset.defaultLayout === "true";
@@ -112,36 +115,18 @@ export const DashboardGrid = {
     this.grid?.destroy(false);
   },
 
-  commitGeometry() {
+  commitGeometry(node) {
     if (!this.editing || this.columns !== 12) return;
-    const next = this.readDesktop();
-    if (JSON.stringify(next) === JSON.stringify(this.canonical)) return;
-    this.canonical = next;
-    this.pushEvent("dashboard_layout_change", { widgets: next });
-  },
-
-  // GridStack knows only cards mounted in this scope. Keep inaccessible cards intact.
-  readDesktop() {
-    const changed = this.canonical.map((item, order) => {
-      const node = this.grid.engine.nodes.find((entry) => entry.id === item.id);
-      return node
-        ? { id: item.id, x: node.x,
-            y: Math.max(0, node.y - (this.autoShift.get(item.id) || 0)), w: node.w,
-            h: this.manualHeights.get(item.id) ?? item.h, order }
-        : { ...item, order };
-    });
-    const visible = changed.filter((item) => this.grid.engine.nodes.some((node) => node.id === item.id))
-      .sort(byPosition);
-    let index = 0;
-    return changed.map((item) => {
-      const value = this.grid.engine.nodes.some((node) => node.id === item.id) ? visible[index++] : item;
-      const { order, ...layout } = value;
-      return layout;
-    });
+    const current = this.canonical.find((item) => item.id === node.id);
+    if (!current) return;
+    const { id, x, y, w, h } = node;
+    if (current.x === x && current.y === y && current.w === w && current.h === h) return;
+    // Preserve every other widget, including widgets hidden in this branch.
+    this.canonical = this.canonical.map((item) => item.id === id ? { id, x, y, w, h } : item);
+    this.pushEvent("dashboard_layout_change", { widgets: this.canonical });
   },
 
   applyLayout() {
-    this.silent = true;
     const present = [...this.container.querySelectorAll(":scope > .grid-stack-item")];
     const known = new Set(this.grid.engine.nodes.map((node) => node.el));
     this.grid.batchUpdate();
@@ -151,6 +136,7 @@ export const DashboardGrid = {
     for (const el of present) {
       if (!this.minimumHeights.has(el.dataset.widgetId)) {
         this.minimumHeights.set(el.dataset.widgetId, Number(el.getAttribute("gs-min-h")));
+        this.maximumHeights.set(el.dataset.widgetId, Number(el.getAttribute("gs-max-h")));
         this.widthLimits.set(el.dataset.widgetId, {
           minW: Number(el.getAttribute("gs-min-w")),
           maxW: Number(el.getAttribute("gs-max-w")),
@@ -166,7 +152,6 @@ export const DashboardGrid = {
     }
     this.grid.batchUpdate(false);
     this.resize(true);
-    this.silent = false;
   },
 
   orderedVisible() {
@@ -259,7 +244,6 @@ export const DashboardGrid = {
     const columns = widthColumns(width, this.editing);
     const extraNarrow = width < 340;
     if (!force && columns === this.columns && this.grid.opts.column === columns && extraNarrow === this.extraNarrow) return;
-    this.silent = true;
     this.lastWidth = width;
     this.columns = columns;
     this.extraNarrow = extraNarrow;
@@ -269,6 +253,7 @@ export const DashboardGrid = {
       const el = [...this.container.children].find((entry) => entry.dataset.widgetId === item.id);
       if (el) this.grid.update(el, {
         minH: this.minimumHeights.get(item.id),
+        maxH: this.maximumHeights.get(item.id),
         ...(columns === 2 ? { minW: 1, maxW: 2 } : this.widthLimits.get(item.id)),
       });
     }
@@ -288,7 +273,6 @@ export const DashboardGrid = {
     } else {
       this.applyCompactOrder();
     }
-    this.silent = false;
     this.scheduleFit();
   },
 
@@ -308,20 +292,23 @@ export const DashboardGrid = {
 
   fitContent() {
     if (this.gestureActive) return;
+    // Keep the desktop editor on the saved grid. View mode fits live content.
+    if (this.editing && this.columns === 12) {
+      this.showGrid();
+      return;
+    }
     this.fitting = true;
-    this.silent = true;
     // Start from the saved geometry on every pass so collapsed details can shrink again.
     if (this.columns === 2) this.applyMobileOrder();
     else if (this.columns === 6) this.applyCompactOrder();
     else {
       this.grid.batchUpdate();
       for (const { item, el } of this.orderedVisible()) {
-        this.grid.update(el, { ...item, h: this.manualHeights.get(item.id) ?? item.h });
+        this.grid.update(el, { ...item });
       }
       this.grid.batchUpdate(false);
       if (!this.editing && this.defaultLayout) this.applyDefaultView();
     }
-    const baseY = new Map(this.grid.engine.nodes.map((node) => [node.id, node.y]));
     const cell = 72;
     this.grid.batchUpdate();
     for (const { item, el } of this.orderedVisible()) {
@@ -344,9 +331,6 @@ export const DashboardGrid = {
       if (node && needed > node.h) this.grid.update(el, { h: needed, maxH: Math.max(needed, 100) });
     }
     this.grid.batchUpdate(false);
-    this.autoShift = new Map(this.grid.engine.nodes.map((node) =>
-      [node.id, node.y - (baseY.get(node.id) ?? node.y)]));
-    this.silent = false;
     this.fitting = false;
     this.showGrid();
   },
