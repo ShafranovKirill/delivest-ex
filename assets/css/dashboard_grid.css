@@ -122,7 +122,33 @@ a.dashboard-attention-label:hover { color: var(--color-primary); opacity: 1; tex
 .dashboard-grid-editing :is([data-widget-id="revenue"], [data-widget-id="orders"], [data-widget-id="avg_check"], [data-widget-id="in_work"]) .dashboard-widget-card > p:nth-of-type(1) { font-size: 1.5rem; line-height: 1.1; }
 #dashboard-grid:not(.dashboard-grid-editing) [data-dashboard-empty="true"] .dashboard-widget-card { padding: .65rem .85rem; }
 #dashboard-grid:not(.dashboard-grid-editing) [data-dashboard-empty="true"] #dashboard-orders-by-hour-plot { display: none; }
-.dashboard-grid-editing .ui-resizable-se { width: 1.75rem; height: 1.75rem; border: 2px solid var(--color-primary); border-radius: .4rem 0 0 0; background: var(--color-base-100); opacity: 1; }
+/* Keep GridStack's drag and resize layers below both sticky headers. */
+#dashboard-grid.dashboard-grid-editing { isolation: isolate; }
+#dashboard-grid.dashboard-grid-editing > .grid-stack-item > .ui-resizable-se {
+  width: 20px;
+  height: 20px;
+  background: none;
+  transform: none;
+  color: var(--color-base-content);
+  opacity: .65;
+}
+#dashboard-grid.dashboard-grid-editing > .grid-stack-item > .ui-resizable-se::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 11px;
+  height: 11px;
+  background: linear-gradient(135deg,
+    transparent 46%, currentColor 46% 54%, transparent 54% 70%,
+    currentColor 70% 79%, transparent 79%);
+  pointer-events: none;
+}
+#dashboard-grid.dashboard-grid-editing > .grid-stack-item > .ui-resizable-se:hover,
+#dashboard-grid.dashboard-grid-editing > .grid-stack-item.ui-resizable-resizing > .ui-resizable-se {
+  color: var(--color-primary);
+  opacity: 1;
+}
 #dashboard-grid.dashboard-grid-compact .ui-resizable-handle,
 #dashboard-grid.dashboard-grid-compact .dashboard-drag-handle { display: none !important; }
 .dashboard-widget-controls .dashboard-mobile-move { display: none; }
