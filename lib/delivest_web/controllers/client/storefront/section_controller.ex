@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Client.Storefront.SectionController do
   use DelivestWeb, :controller
 
+  def open_api_operation(action), do: DelivestWeb.ApiContracts.operation(__MODULE__, action)
+
   alias Delivest.Storefront
 
   @cache_control "public, no-cache, must-revalidate"

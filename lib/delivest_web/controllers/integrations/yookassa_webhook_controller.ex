@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Integrations.YookassaWebhookController do
   use DelivestWeb, :controller
 
+  def open_api_operation(action), do: DelivestWeb.ApiContracts.operation(__MODULE__, action)
+
   alias Delivest.Integrations.Yookassa.Webhook
 
   def create(conn, %{"token" => token} = params) do

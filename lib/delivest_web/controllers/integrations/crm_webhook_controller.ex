@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Integrations.CrmWebhookController do
   use DelivestWeb, :controller
 
+  def open_api_operation(action), do: DelivestWeb.ApiContracts.operation(__MODULE__, action)
+
   alias Delivest.Integrations.Crm
 
   def create(conn, %{"provider" => provider, "token" => token} = params) do

@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Client.Session.BootstrapController do
   use DelivestWeb, :controller
 
+  def open_api_operation(action), do: DelivestWeb.ApiContracts.operation(__MODULE__, action)
+
   alias Delivest.{Identity, Oms}
   alias Delivest.Oms.Carts
   alias DelivestWeb.Client.Cart.CartJSON

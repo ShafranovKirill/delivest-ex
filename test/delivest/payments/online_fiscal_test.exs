@@ -3,6 +3,7 @@ defmodule Delivest.Payments.OnlineFiscalTest do
   use DelivestWeb.ConnCase, async: false
 
   import Delivest.Factory
+  import Ecto.Query
 
   alias Delivest.Fiscal
   alias Delivest.Fiscal.BranchSettings
@@ -129,9 +130,13 @@ defmodule Delivest.Payments.OnlineFiscalTest do
   defp rub(value), do: %{"value" => value, "currency" => "RUB"}
 
   defp drain do
-    for _round <- 1..3,
-        queue <- [:default, :events, :payments, :events, :fiscal],
-        do: Oban.drain_queue(queue: queue, with_safety: false, with_recursion: true)
+    for _round <- 1..3 do
+      Oban.drain_queue(queue: :default, with_safety: false, with_recursion: true)
+      Delivest.DataCase.deliver_events()
+      Oban.drain_queue(queue: :payments, with_safety: false, with_recursion: true)
+      Delivest.DataCase.deliver_events()
+      Oban.drain_queue(queue: :fiscal, with_safety: false, with_recursion: true)
+    end
   end
 
   defp sell_bodies do
@@ -165,6 +170,29 @@ defmodule Delivest.Payments.OnlineFiscalTest do
     assert [%{"type" => 1, "sum" => 3}] = receipt["payments"]
   end
 
+  test "scheduled event deliveries still print the prepayment receipt", ctx do
+    {:ok, _} = accept(ctx)
+    event_ids = Delivest.Events.list("order", ctx.order.id) |> Enum.map(& &1.id)
+
+    {scheduled_count, _} =
+      Repo.update_all(
+        from(j in Oban.Job,
+          where:
+            j.queue == "events" and j.state == "available" and
+              fragment("?->>'subscriber' = 'fiscal'", j.args),
+          where: fragment("?->>'event_id'", j.args) in ^event_ids
+        ),
+        set: [state: "scheduled", scheduled_at: DateTime.add(DateTime.utc_now(), 60, :second)]
+      )
+
+    assert scheduled_count > 0
+
+    drain()
+
+    assert [%{kind: :sell, stage: :full_prepayment, status: :done, amount: 300}] =
+             Fiscal.list(ctx.order.id)
+  end
+
   test "completing the order prints the final receipt that offsets the prepayment", ctx do
     {:ok, _} = accept(ctx)
     drain()
@@ -184,6 +212,7 @@ defmodule Delivest.Payments.OnlineFiscalTest do
   test "a refund prints a refund receipt", ctx do
     {:ok, _} = accept(ctx)
     drain()
+    assert [%{kind: :sell, stage: :full_prepayment, status: :done}] = Fiscal.list(ctx.order.id)
     _ = sell_bodies()
 
     [payment] = Payments.list(ctx.order.id)

@@ -631,6 +631,11 @@ defmodule DelivestWeb.Router do
     pipe_through :api
 
     get "/openapi", OpenApiSpex.Plug.RenderSpec, spec: DelivestWeb.OpenApi
+    get "/scalar/openapi", DelivestWeb.Plugs.ScalarSpec, []
+  end
+
+  scope "/api" do
+    get "/reference", DelivestWeb.Plugs.ScalarReference, []
   end
 
   if Application.compile_env(:delivest, :dev_routes) do

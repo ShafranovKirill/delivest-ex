@@ -23,6 +23,7 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
     refresh_revisions()
     response = get(conn, "/client/storefront/v1/bootstrap?slug=#{branch.slug}&locale=ru")
     data = json_response(response, 200)
+    assert_response_contract(data, DelivestWeb.Client.Storefront.BootstrapController, :show)
 
     assert data["schema_version"] == 1
     assert data["locale"] == "ru"
@@ -162,6 +163,7 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
     refresh_revisions()
 
     data = conn |> get("/client/storefront/v1/bootstrap?locale=ru") |> json_response(200)
+    assert_response_contract(data, DelivestWeb.Client.Storefront.BootstrapController, :show)
     assert data["selected_branch"] == nil
     assert length(data["branches"]) == 2
     assert data["menu"] == nil
@@ -187,6 +189,7 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
     branch = insert(:branch, is_active: true)
     response = get(conn, "/client/session/bootstrap?branch_id=#{branch.id}")
     data = json_response(response, 200)
+    assert_response_contract(data, DelivestWeb.Client.Session.BootstrapController, :show)
 
     assert data["cart"] == nil
     assert data["active_orders"] == []
@@ -205,7 +208,9 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
       |> Plug.Test.put_req_cookie("session_id", session_id)
       |> get("/client/session/bootstrap?branch_id=#{branch.id}")
 
-    assert json_response(response, 200)["cart"]["id"] == cart.id
+    data = json_response(response, 200)
+    assert_response_contract(data, DelivestWeb.Client.Session.BootstrapController, :show)
+    assert data["cart"]["id"] == cart.id
   end
 
   test "private bootstrap scopes cart lookup to the actual session and branch", %{conn: conn} do
@@ -663,5 +668,30 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
     )
 
     refresh_worker()
+  end
+
+  defp assert_response_contract(data, controller, action) do
+    path =
+      case {controller, action} do
+        {DelivestWeb.Client.Storefront.BootstrapController, :show} ->
+          "/client/storefront/v1/bootstrap"
+
+        {DelivestWeb.Client.Session.BootstrapController, :show} ->
+          "/client/session/bootstrap"
+      end
+
+    spec = DelivestWeb.OpenApi.spec()
+
+    schema =
+      spec.paths
+      |> Map.fetch!(path)
+      |> Map.fetch!(:get)
+      |> Map.fetch!(:responses)
+      |> Map.fetch!(200)
+      |> Map.fetch!(:content)
+      |> Map.fetch!("application/json")
+      |> Map.fetch!(:schema)
+
+    assert {:ok, _} = OpenApiSpex.cast_value(data, schema, spec)
   end
 end

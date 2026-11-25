@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Integrations.FiscalCallbackController do
   use DelivestWeb, :controller
 
+  def open_api_operation(action), do: DelivestWeb.ApiContracts.operation(__MODULE__, action)
+
   alias Delivest.Fiscal
 
   def create(conn, %{"provider" => provider, "token" => token} = params) do
