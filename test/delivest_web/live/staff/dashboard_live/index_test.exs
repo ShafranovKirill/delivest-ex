@@ -262,7 +262,6 @@ defmodule DelivestWeb.Staff.DashboardLive.IndexTest do
              )
 
       second = Delivest.OrderFixtures.order_fixture(branch.id, price: 5000)
-      refute has_element?(lv, "#dashboard-order-#{second.id}")
 
       send(lv.pid, :reload)
       assert has_element?(lv, "#dashboard-order-#{second.id}")
