@@ -833,6 +833,14 @@ defmodule DelivestWeb.Staff.DashboardLive.Index do
             </div>
           </div>
         </div>
+        <div
+          :if={@visible_widgets != []}
+          id="dashboard-grid-loading"
+          role="status"
+          aria-label={gettext("Loading...")}
+        >
+          <span class="loading loading-spinner loading-lg" aria-hidden="true"></span>
+        </div>
         <.card :if={@visible_widgets == []} class="p-8 text-center text-base-content/60">
           {gettext("Your dashboard is empty. Customize it to add widgets.")}
         </.card>

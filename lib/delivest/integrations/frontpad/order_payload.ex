@@ -165,7 +165,7 @@ defmodule Delivest.Integrations.Frontpad.OrderPayload do
     end
   end
 
-  defp person(count) when is_integer(count) and count > 0, do: Integer.to_string(count)
+  defp person(count) when is_integer(count) and count >= 0, do: Integer.to_string(count)
   defp person(_count), do: nil
 
   defp extract_secret(%Settings{api_key: secret}) when is_binary(secret) and secret != "",

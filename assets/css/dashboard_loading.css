@@ -1,0 +1,31 @@
+#dashboard-grid:not(.dashboard-grid-ready) > .grid-stack-item {
+  visibility: hidden;
+}
+
+.dashboard-editor-preview { position: relative; }
+
+#dashboard-grid:not(.dashboard-grid-ready) {
+  height: 9rem !important;
+  overflow: hidden;
+}
+
+#dashboard-grid-loading {
+  display: none;
+  min-height: 9rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+}
+
+.dashboard-editor-preview:has(#dashboard-grid:not(.dashboard-grid-ready)) #dashboard-grid-loading {
+  display: flex;
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+}
+
+/* Reposition immediately on load and on data refresh. Only animate deliberate edits. */
+#dashboard-grid:not(.dashboard-grid-editing) > .grid-stack-item,
+#dashboard-grid:not(.dashboard-grid-ready) > .grid-stack-item {
+  transition: none !important;
+}

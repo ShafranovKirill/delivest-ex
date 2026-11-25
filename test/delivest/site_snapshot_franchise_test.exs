@@ -41,7 +41,12 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     franchise = Repo.one(FranchiseSettings) || Repo.insert!(%FranchiseSettings{name: "Brand"})
 
     franchise
-    |> Ecto.Changeset.change(name: "Brand", phone: "+79990000000", maintenance_enabled: true)
+    |> Ecto.Changeset.change(
+      name: "Brand",
+      phone: "+79990000000",
+      maintenance_enabled: true,
+      cutlery_enabled: true
+    )
     |> Repo.update!()
 
     assert {:ok, _} = Documents.save(:privacy, "Our privacy")
@@ -64,7 +69,11 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
     Repo.delete_all(LegalDocument)
 
     franchise
-    |> Ecto.Changeset.change(name: "Old brand", maintenance_enabled: false)
+    |> Ecto.Changeset.change(
+      name: "Old brand",
+      maintenance_enabled: false,
+      cutlery_enabled: false
+    )
     |> Repo.update!()
 
     assert {:ok, counts} = SiteSnapshot.import_franchise(staff, archive)
@@ -95,6 +104,7 @@ defmodule Delivest.SiteSnapshotFranchiseTest do
 
     assert Repo.one!(FranchiseSettings).name == "Brand"
     assert Repo.one!(FranchiseSettings).maintenance_enabled
+    assert Repo.one!(FranchiseSettings).cutlery_enabled
     assert Documents.get(:privacy).body == "Our privacy"
     assert Documents.get(:offer).body == "Our offer"
     assert Repo.one!(Yookassa.Settings).shop_id == "123456"
