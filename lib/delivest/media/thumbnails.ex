@@ -63,7 +63,8 @@ defmodule Delivest.Media.Thumbnails do
     result =
       Repo.transaction(fn ->
         case Repo.one(from(f in File, where: f.id == ^file.id, lock: "FOR UPDATE")) do
-          %File{key: original_key, thumb_key: nil} = current when original_key == file.key ->
+          %File{key: original_key, bucket: original_bucket, thumb_key: nil} = current
+          when original_key == file.key and original_bucket == file.bucket ->
             current |> File.thumb_changeset(key) |> Repo.update!()
 
           _ ->
@@ -116,8 +117,9 @@ defmodule Delivest.Media.Thumbnails do
     result =
       Repo.transaction(fn ->
         case Repo.one(from(f in File, where: f.id == ^file.id, lock: "FOR UPDATE")) do
-          %File{key: original_key, thumb_key: thumb_key} = current
-          when original_key == file.key and thumb_key == file.thumb_key ->
+          %File{key: original_key, bucket: original_bucket, thumb_key: thumb_key} = current
+          when original_key == file.key and original_bucket == file.bucket and
+                 thumb_key == file.thumb_key ->
             variants =
               Map.put(current.variant_keys || %{}, to_string(requested), %{
                 "key" => key,

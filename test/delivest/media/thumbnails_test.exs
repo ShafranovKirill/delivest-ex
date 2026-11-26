@@ -156,6 +156,18 @@ defmodule Delivest.Media.ThumbnailsTest do
     assert url =~ "/delivest/product/a_thumb_v2_192.webp"
   end
 
+  test "private media does not expose presigned variant URLs" do
+    file = %File{
+      bucket: "delivest-private",
+      key: "product/a.png",
+      context: :product,
+      is_private: true,
+      variant_keys: %{"192" => %{"key" => "product/a_192.webp", "width" => 192}}
+    }
+
+    assert Media.photo_variants_from_file(file) == []
+  end
+
   test "an unreadable image is cancelled instead of retried" do
     serve_image("not an image")
     file = create_file()
