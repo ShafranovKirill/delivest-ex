@@ -2,7 +2,7 @@ defmodule Delivest.Media.Thumbnail do
   alias Vix.Vips.{Image, Operation}
 
   @sizes %{product: 800, stock: 1600}
-  @product_variants [192, 384, 800]
+  @product_variants [800, 192, 384]
 
   def key(original_key), do: Path.rootname(original_key) <> "_thumb.webp"
 

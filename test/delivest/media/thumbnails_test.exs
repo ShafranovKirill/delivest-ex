@@ -93,6 +93,8 @@ defmodule Delivest.Media.ThumbnailsTest do
     assert {:error, _} = perform_job(ThumbnailWorker, %{file_id: file.id})
     updated = Repo.reload!(file)
     assert updated.thumb_key == Thumbnail.key(file.key)
+    assert updated.variant_keys["800"]["width"] == 800
+    assert Enum.map(Media.photo_variants_from_file(updated), & &1.width) == [192, 800]
     assert updated.variant_keys["192"]["width"] == 192
     assert updated.variant_keys["384"] == nil
     assert_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb.webp", _}
