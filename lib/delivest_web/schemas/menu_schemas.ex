@@ -95,6 +95,19 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           example: "https://storage.example.com/images/pepperoni.jpg",
           description: "Ссылка на изображение товара"
         },
+        photo_variants: %Schema{
+          type: :array,
+          description:
+            "Доступные WebP варианты изображения с фактической шириной в пикселях; для старых файлов может быть пустым",
+          items: %Schema{
+            type: :object,
+            required: [:url, :width],
+            properties: %{
+              url: %Schema{type: :string, format: :uri},
+              width: %Schema{type: :integer, minimum: 1}
+            }
+          }
+        },
         slug: %Schema{
           type: :string,
           nullable: true,

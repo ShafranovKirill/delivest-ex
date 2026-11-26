@@ -52,7 +52,7 @@ defmodule Delivest.SiteSnapshot.Apply do
 
     affected_branch_ids =
       if global_catalog?,
-        do: Repo.all(from b in Branch, select: b.id),
+        do: Repo.all(from(b in Branch, select: b.id)),
         else: branch_ids
 
     case plan.scope do
@@ -197,7 +197,10 @@ defmodule Delivest.SiteSnapshot.Apply do
 
     changes =
       if old && old.key != key,
-        do: Ecto.Changeset.put_change(changes, :thumb_key, nil),
+        do:
+          changes
+          |> Ecto.Changeset.put_change(:thumb_key, nil)
+          |> Ecto.Changeset.put_change(:variant_keys, %{}),
         else: changes
 
     save!(changes)

@@ -8,17 +8,18 @@ defmodule Delivest.Media.File do
   @foreign_key_type :binary_id
 
   schema "media_files" do
-    field :bucket, :string
-    field :key, :string
-    field :original_name, :string
-    field :mime_type, :string
-    field :size, :integer
-    field :is_private, :boolean, default: false
+    field(:bucket, :string)
+    field(:key, :string)
+    field(:original_name, :string)
+    field(:mime_type, :string)
+    field(:size, :integer)
+    field(:is_private, :boolean, default: false)
 
-    field :context, Ecto.Enum, values: [:product, :stock]
+    field(:context, Ecto.Enum, values: [:product, :stock])
 
-    field :owner_id, :binary_id
-    field :thumb_key, :string
+    field(:owner_id, :binary_id)
+    field(:thumb_key, :string)
+    field(:variant_keys, :map, default: %{})
 
     timestamps(type: :utc_datetime)
   end
@@ -44,4 +45,6 @@ defmodule Delivest.Media.File do
 
   @spec thumb_changeset(t(), String.t()) :: Ecto.Changeset.t()
   def thumb_changeset(file, key), do: change(file, thumb_key: key)
+
+  def variants_changeset(file, variants), do: change(file, variant_keys: variants)
 end
