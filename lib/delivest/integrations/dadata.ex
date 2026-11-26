@@ -7,7 +7,7 @@ defmodule Delivest.Integrations.Dadata do
 
   @cache :geo_cache
   @cache_ttl :timer.hours(24 * 7)
-  @pause :timer.minutes(5)
+  @pause :timer.seconds(3)
 
   def suggest(query, city) do
     query = normalize(query)
