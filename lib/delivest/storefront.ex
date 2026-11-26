@@ -6,7 +6,7 @@ defmodule Delivest.Storefront do
   alias Delivest.Integrations.{Dadata, YandexAds, Zvonok}
   alias Delivest.Franchise.Rating
   alias Delivest.Franchise.SettingsStore
-  alias Delivest.Net.{ModifierStop, ProductStop, PublicOffers}
+  alias Delivest.Net.PublicOffers
   alias Delivest.Promo.Promotion
   alias Delivest.Storefront.Revisions
   alias Delivest.Storefront.BranchProjection
@@ -221,9 +221,10 @@ defmodule Delivest.Storefront do
 
   defp maybe_menu(branch_id, locale, revision) do
     case cached({:menu, branch_id, locale, revision}, fn ->
-           boundary = next_menu_boundary(branch_id)
+           stops = PublicOffers.stop_snapshot(branch_id)
+           boundary = next_menu_boundary(branch_id, stops.boundary)
 
-           case load_menu(branch_id, locale) do
+           case load_menu(branch_id, locale, stops) do
              {:error, _} = error ->
                error
 
@@ -459,8 +460,8 @@ defmodule Delivest.Storefront do
     end
   end
 
-  defp load_menu(branch_id, locale) do
-    case PublicOffers.menu_fresh(branch_id) do
+  defp load_menu(branch_id, locale, stops) do
+    case PublicOffers.menu_fresh_known_active(branch_id, stops) do
       {:ok, categories} ->
         Gettext.with_locale(DelivestWeb.Gettext, locale, fn ->
           categories
@@ -479,33 +480,34 @@ defmodule Delivest.Storefront do
     end
   end
 
-  defp next_menu_boundary(branch_id) do
+  defp next_menu_boundary(branch_id, stop_boundary) do
     now = DateTime.utc_now()
-
-    stops =
-      Repo.all(
-        from s in ProductStop,
-          where: s.branch_id == ^branch_id and s.until > ^now,
-          select: s.until
-      )
-
-    modifiers =
-      Repo.all(
-        from s in ModifierStop,
-          where: s.branch_id == ^branch_id and s.until > ^now,
-          select: s.until
-      )
 
     promotions =
       Repo.all(
-        from p in Promotion,
+        from(p in Promotion,
           where: p.branch_id == ^branch_id and p.enabled and is_nil(p.deleted_at),
           select: {p.starts_at, p.ends_at}
+        )
       )
 
-    (stops ++ modifiers ++ Enum.flat_map(promotions, fn {start, finish} -> [start, finish] end))
+    menu_boundary(
+      stop_boundary,
+      Enum.flat_map(promotions, fn {start, finish} -> [start, finish] end),
+      now
+    )
+  end
+
+  @doc false
+  def menu_boundary(stop_boundary, promotion_times, now) do
+    promotion_boundary =
+      promotion_times
+      |> Enum.reject(&is_nil/1)
+      |> Enum.filter(&(DateTime.compare(&1, now) == :gt))
+      |> Enum.min_by(&DateTime.to_unix(&1, :millisecond), fn -> nil end)
+
+    [stop_boundary, promotion_boundary]
     |> Enum.reject(&is_nil/1)
-    |> Enum.filter(&(DateTime.compare(&1, now) == :gt))
     |> Enum.min_by(&DateTime.to_unix(&1, :millisecond), fn -> nil end)
   end
 

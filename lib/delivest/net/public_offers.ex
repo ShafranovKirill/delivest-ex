@@ -30,14 +30,56 @@ defmodule Delivest.Net.PublicOffers do
     with {:ok, uuid} <- Ecto.UUID.cast(branch_id),
          true <-
            Repo.exists?(
-             from b in Delivest.Identity.Branch,
+             from(b in Delivest.Identity.Branch,
                where: b.id == ^uuid and b.is_active and is_nil(b.deleted_at)
+             )
            ),
          {:ok, categories} <- Catalogs.get_menu_uncached_for_branch(uuid) do
       {:ok, decorate(categories, uuid, false, true)}
     else
       _ -> {:error, :not_found}
     end
+  end
+
+  @doc "Build a fresh menu for a branch already checked against the storefront branch revision."
+  def menu_fresh_known_active(branch_id, stops) do
+    with {:ok, uuid} <- Ecto.UUID.cast(branch_id),
+         {:ok, categories} <- Catalogs.get_menu_uncached_for_branch(uuid) do
+      {:ok, decorate(categories, uuid, false, true, stops)}
+    end
+  end
+
+  @doc "One branch-scoped stop snapshot supplies both menu decoration and its next expiry."
+  def stop_snapshot(branch_id) do
+    now = DateTime.utc_now()
+
+    products =
+      Repo.all(
+        from(s in ProductStop,
+          where: s.branch_id == ^branch_id and (is_nil(s.until) or s.until > ^now),
+          select: {s.product_id, s.until}
+        )
+      )
+
+    modifiers =
+      Repo.all(
+        from(s in ModifierStop,
+          where: s.branch_id == ^branch_id and (is_nil(s.until) or s.until > ^now),
+          select: {s.modifier_id, s.until}
+        )
+      )
+
+    boundary =
+      (products ++ modifiers)
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.min_by(&DateTime.to_unix(&1, :millisecond), fn -> nil end)
+
+    %{
+      products: products |> Enum.map(&elem(&1, 0)) |> MapSet.new(),
+      modifiers: modifiers |> Enum.map(&elem(&1, 0)) |> MapSet.new(),
+      boundary: boundary
+    }
   end
 
   def product(branch_id, key) when is_binary(key) do
@@ -178,7 +220,13 @@ defmodule Delivest.Net.PublicOffers do
       end)
   end
 
-  defp decorate(categories, branch_id, load_popular? \\ false, fresh? \\ false) do
+  defp decorate(
+         categories,
+         branch_id,
+         load_popular? \\ false,
+         fresh? \\ false,
+         stop_snapshot \\ nil
+       ) do
     ids = categories |> Enum.flat_map(& &1.products) |> Enum.map(& &1.id) |> Enum.uniq()
     groups = Net.Modifiers.for_products(ids)
 
@@ -191,25 +239,34 @@ defmodule Delivest.Net.PublicOffers do
 
     now = DateTime.utc_now()
 
+    stops =
+      stop_snapshot ||
+        %{
+          products:
+            Repo.all(
+              from(s in ProductStop,
+                where:
+                  s.branch_id == ^branch_id and s.product_id in ^ids and
+                    (is_nil(s.until) or s.until > ^now),
+                select: s.product_id
+              )
+            )
+            |> MapSet.new(),
+          modifiers:
+            Repo.all(
+              from(s in ModifierStop,
+                where:
+                  s.branch_id == ^branch_id and s.modifier_id in ^modifier_ids and
+                    (is_nil(s.until) or s.until > ^now),
+                select: s.modifier_id
+              )
+            )
+            |> MapSet.new()
+        }
+
     stopped = %{
-      products:
-        Repo.all(
-          from s in ProductStop,
-            where:
-              s.branch_id == ^branch_id and s.product_id in ^ids and
-                (is_nil(s.until) or s.until > ^now),
-            select: s.product_id
-        )
-        |> MapSet.new(),
-      modifiers:
-        Repo.all(
-          from s in ModifierStop,
-            where:
-              s.branch_id == ^branch_id and s.modifier_id in ^modifier_ids and
-                (is_nil(s.until) or s.until > ^now),
-            select: s.modifier_id
-        )
-        |> MapSet.new(),
+      products: stops.products,
+      modifiers: stops.modifiers,
       groups: groups,
       rewards: %{}
     }
@@ -246,9 +303,10 @@ defmodule Delivest.Net.PublicOffers do
 
       %{show_in_cart: true, mode: :manual} ->
         Repo.all(
-          from e in Popular.Entry,
+          from(e in Popular.Entry,
             where: e.branch_id == ^branch_id and e.product_id in ^ids,
             select: e.product_id
+          )
         )
         |> MapSet.new()
 
@@ -260,7 +318,7 @@ defmodule Delivest.Net.PublicOffers do
   defp tags_for(products) do
     ids = products |> Enum.flat_map(&(&1.tags || [])) |> Enum.uniq()
 
-    Repo.all(from t in ProductTag, where: t.id in ^ids)
+    Repo.all(from(t in ProductTag, where: t.id in ^ids))
     |> Map.new(&{&1.id, %{id: &1.id, name: &1.name, icon_url: Net.ProductTags.icon_url(&1)}})
   end
 
@@ -277,7 +335,7 @@ defmodule Delivest.Net.PublicOffers do
   end
 
   defp product_query(branch_id) do
-    from p in Product,
+    from(p in Product,
       join: r in EntityRelation,
       on:
         r.to_id == p.id and r.to_entity_type == "Product" and r.from_entity_type == "Branch" and
@@ -289,15 +347,17 @@ defmodule Delivest.Net.PublicOffers do
         cr.to_id == c.id and cr.to_entity_type == "Category" and cr.from_entity_type == "Branch" and
           cr.from_id == ^branch_id,
       where: p.is_active and is_nil(p.deleted_at) and c.is_active
+    )
   end
 
   defp category_query(branch_id) do
-    from c in Category,
+    from(c in Category,
       join: r in EntityRelation,
       on:
         r.to_id == c.id and r.to_entity_type == "Category" and r.from_entity_type == "Branch" and
           r.from_id == ^branch_id,
       where: c.is_active
+    )
   end
 
   defp after_id(query, nil), do: query

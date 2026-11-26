@@ -95,6 +95,49 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
            end)
   end
 
+  test "stop snapshot reuses active stops without crossing branch scope" do
+    branch = insert(:branch, is_active: true)
+    other = insert(:branch, is_active: true)
+    product = insert(:product)
+    group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Extras"})
+    modifier = Repo.insert!(%Delivest.Net.Modifier{group_id: group.id, name: "Extra"})
+    future = DateTime.utc_now() |> DateTime.add(60, :second) |> DateTime.truncate(:second)
+
+    Repo.insert!(%Delivest.Net.ProductStop{
+      branch_id: branch.id,
+      product_id: product.id,
+      source: "manual",
+      until: future
+    })
+
+    Repo.insert!(%Delivest.Net.ModifierStop{
+      branch_id: other.id,
+      modifier_id: modifier.id,
+      until: future
+    })
+
+    snapshot = Delivest.Net.PublicOffers.stop_snapshot(branch.id)
+    assert MapSet.member?(snapshot.products, product.id)
+    refute MapSet.member?(snapshot.modifiers, modifier.id)
+    assert snapshot.boundary == future
+
+    other_snapshot = Delivest.Net.PublicOffers.stop_snapshot(other.id)
+    refute MapSet.member?(other_snapshot.products, product.id)
+    assert MapSet.member?(other_snapshot.modifiers, modifier.id)
+  end
+
+  test "stop expiring between its snapshot and promotion read remains a stale boundary" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    expired_during_build = DateTime.add(now, -1, :second)
+    future_promotion = DateTime.add(now, 60, :second)
+
+    assert Delivest.Storefront.menu_boundary(
+             expired_during_build,
+             [future_promotion, DateTime.add(now, -60, :second)],
+             now
+           ) == expired_during_build
+  end
+
   test "inactive branch and invalid section never return 304", %{conn: conn} do
     branch = insert(:branch, is_active: true)
     refresh_worker()
