@@ -90,7 +90,7 @@ defmodule Delivest.Media do
         %File{context: :product, is_private: false, variant_keys: variants} = file
       ) do
     for {_size, %{"key" => key, "width" => width}} <- variants || %{},
-        is_binary(key) and is_integer(width),
+        is_binary(key) and key != "" and is_integer(width) and width > 0,
         {:ok, url} <- [generate_url_by_flag(file.bucket, key, file.is_private)] do
       %{url: url, width: width}
     end

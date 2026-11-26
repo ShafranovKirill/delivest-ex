@@ -204,7 +204,8 @@ if mode == "cold" do
                   if label == "private-bootstrap" and
                        Plug.Conn.get_resp_header(response, "cache-control") != [
                          "private, no-store"
-                       ], do: raise("private cache-control changed")
+                       ],
+                     do: raise("private cache-control changed")
 
                   tag =
                     if label == "section-200" do
@@ -274,8 +275,12 @@ if mode == "cold" do
       end
 
     case System.get_env("STOREFRONT_MEASURE_OUTPUT") do
-      nil -> IO.puts(:stderr, "Set STOREFRONT_MEASURE_OUTPUT to save raw JSON samples")
-      path -> File.write!(path, Jason.encode!(rows, pretty: true))
+      nil ->
+        IO.puts(:stderr, "Set STOREFRONT_MEASURE_OUTPUT to save raw JSON samples")
+
+      path ->
+        File.mkdir_p!(Path.dirname(path))
+        File.write!(path, Jason.encode!(rows, pretty: true))
     end
   after
     :telemetry.detach(handler)

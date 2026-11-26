@@ -10,6 +10,58 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
     :ok
   end
 
+  test "responsive photo variants reach bootstrap, section and direct product", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    category = insert(:category)
+    product = insert(:product, category_id: category.id)
+
+    media =
+      Repo.insert!(%Delivest.Media.File{
+        bucket: "delivest",
+        key: "product/variant-test.png",
+        original_name: "variant-test.png",
+        mime_type: "image/png",
+        size: 100,
+        context: :product,
+        owner_id: product.id,
+        is_private: false,
+        thumb_key: "product/variant-test_thumb.webp",
+        variant_keys: %{
+          "192" => %{"key" => "product/variant-test_thumb_v2_192.webp", "width" => 192}
+        }
+      })
+
+    product = product |> Ecto.Changeset.change(media_id: media.id) |> Repo.update!()
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+    refresh_worker()
+
+    bootstrap =
+      conn |> get("/client/storefront/v1/bootstrap?slug=#{branch.slug}") |> json_response(200)
+
+    section =
+      conn
+      |> recycle()
+      |> get("/client/storefront/v1/sections/menu?branch_id=#{branch.id}")
+      |> json_response(200)
+
+    direct =
+      conn
+      |> recycle()
+      |> get("/client/branches/#{branch.id}/products/#{product.id}")
+      |> json_response(200)
+
+    for offer <- [
+          hd(hd(bootstrap["menu"])["products"]),
+          hd(hd(section["data"])["products"]),
+          direct["data"]
+        ] do
+      assert offer["photo_url"] =~ "/delivest/product/variant-test_thumb.webp"
+      assert [%{"url" => url, "width" => 192}] = offer["photo_variants"]
+      assert url =~ "/delivest/product/variant-test_thumb_v2_192.webp"
+    end
+  end
+
   test "conditional menu response is empty and scoped by locale and branch", %{conn: conn} do
     branch = insert(:branch, is_active: true)
     other = insert(:branch, is_active: true)

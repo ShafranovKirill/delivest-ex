@@ -11,7 +11,7 @@ The machine-readable [inventory](inventory.json) contains stable IDs, source anc
 | Features/integrations | 35 |
 | Background jobs | 77 |
 
-The separate schema census has 852 declarations. It guards source drift; only staff controls receive editor assignments. The 21 service, authentication and internal routes are outside the four page types. The foundation gallery is an internal dev/test fixture and is excluded from controls and actions.
+The separate schema census has 853 declarations. It guards source drift; only staff controls receive editor assignments. The 21 service, authentication and internal routes are outside the four page types. The foundation gallery is an internal dev/test fixture and is excluded from controls and actions.
 
 335/336 literal event controls have a source handler candidate. `lib/delivest_web/live/staff/order_live/components/intake_controls.ex:30` intake_resume has no receiver in `lib/delivest_web` or `assets/js` according to repository search. The hook receiver for `acknowledge_cancel` and `crm_alert` is `DelivestWeb.Hooks.NewOrders`.
 

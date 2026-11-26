@@ -10,7 +10,7 @@ defmodule Delivest.Media.Thumbnails do
   def missing?(%File{thumb_key: nil}), do: true
 
   def missing?(%File{context: :product, variant_keys: variants}) do
-    Enum.any?(Thumbnail.product_variants(), &is_nil((variants || %{})[to_string(&1)]))
+    Enum.any?(Thumbnail.product_variants(), &(not valid_variant?(variants, &1)))
   end
 
   def missing?(_file), do: false
@@ -41,9 +41,8 @@ defmodule Delivest.Media.Thumbnails do
 
   def store(%File{} = file) do
     with {:ok, %{body: original}} <- request(ExAws.S3.get_object(file.bucket, file.key)),
-         {:ok, file} <- ensure_thumbnail(file, original),
-         {:ok, file} <- ensure_variants(file, original) do
-      {:ok, file}
+         {:ok, file} <- ensure_thumbnail(file, original) do
+      ensure_variants(file, original)
     end
   end
 
@@ -86,7 +85,7 @@ defmodule Delivest.Media.Thumbnails do
 
   defp ensure_variants(%File{context: :product} = file, original) do
     Enum.reduce_while(Thumbnail.product_variants(), {:ok, file}, fn requested, {:ok, current} ->
-      if (current.variant_keys || %{})[to_string(requested)] do
+      if valid_variant?(current.variant_keys, requested) do
         {:cont, {:ok, current}}
       else
         case store_variant(current, original, requested) do
@@ -110,6 +109,16 @@ defmodule Delivest.Media.Thumbnails do
     with {:ok, webp, width} <- Thumbnail.build_width(original, requested),
          {:ok, _response} <- request(put_object(file.bucket, key, webp)) do
       publish_variant(file, requested, key, width)
+    end
+  end
+
+  defp valid_variant?(variants, requested) do
+    case is_map(variants) && Map.get(variants, to_string(requested)) do
+      %{"key" => key, "width" => width} ->
+        is_binary(key) and key != "" and is_integer(width) and width > 0 and width <= requested
+
+      _ ->
+        false
     end
   end
 
@@ -158,7 +167,9 @@ defmodule Delivest.Media.Thumbnails do
   def delete(%File{} = file) do
     keys = [
       file.thumb_key
-      | Enum.map(file.variant_keys || %{}, fn {_size, variant} -> variant["key"] end)
+      | Enum.map(file.variant_keys || %{}, fn {_size, variant} ->
+          if is_map(variant), do: variant["key"], else: nil
+        end)
     ]
 
     keys

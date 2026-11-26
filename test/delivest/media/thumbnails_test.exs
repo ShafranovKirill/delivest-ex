@@ -108,6 +108,34 @@ defmodule Delivest.Media.ThumbnailsTest do
     refute_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_192_" <> _, _}
   end
 
+  test "backfill repairs incomplete variant metadata" do
+    file = create_file()
+    legacy_key = Thumbnail.key(file.key)
+
+    file =
+      file
+      |> Ecto.Changeset.change(
+        thumb_key: legacy_key,
+        variant_keys: %{
+          "800" => %{"key" => legacy_key, "width" => 0},
+          "192" => %{"key" => "", "width" => 192},
+          "384" => "invalid"
+        }
+      )
+      |> Repo.update!()
+
+    assert Thumbnails.missing?(file)
+    assert Media.photo_variants_from_file(file) == []
+    serve_image(S3Stub.png(1000, 500))
+    assert :ok = perform_job(ThumbnailWorker, %{file_id: file.id})
+
+    updated = Repo.reload!(file)
+    refute Thumbnails.missing?(updated)
+    assert Enum.map(Media.photo_variants_from_file(updated), & &1.width) == [192, 384, 800]
+    assert_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_192_" <> _, _}
+    assert_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_384_" <> _, _}
+  end
+
   test "variant keys include image content and deletion includes published variants" do
     assert Thumbnail.variant_key("product/a.png", 192, "first") !=
              Thumbnail.variant_key("product/a.png", 192, "second")
