@@ -163,6 +163,13 @@ defmodule DelivestWeb.Client.Order.OrderController do
       "Для заказа, который ждёт онлайн-оплаты: возвращает страницу оплаты ЮKassa, " <>
         "чтобы клиент мог вернуться и оплатить.",
     tags: ["Orders"],
+    request_body:
+      {"Опциональный переход на обычную оплату после отменённой сохранённой попытки",
+       "application/json",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{fallback_to_new_method: %OpenApiSpex.Schema{type: :boolean}}
+       }},
     parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
     responses: [
       ok: {"Страница оплаты", "application/json", PaymentLinkResponse},
@@ -171,10 +178,15 @@ defmodule DelivestWeb.Client.Order.OrderController do
     ]
   )
 
-  def pay(conn, %{"id" => id}) do
+  def pay(conn, %{"id" => id} = params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
 
-    case Oms.payment_link(session_id, client_id(conn.assigns.current_client), id) do
+    case Oms.payment_link(
+           session_id,
+           client_id(conn.assigns.current_client),
+           id,
+           params["fallback_to_new_method"] == true
+         ) do
       {:ok, url} ->
         json(conn, %{data: %{confirmation_url: url}})
 
@@ -420,6 +432,17 @@ defmodule DelivestWeb.Client.Order.OrderController do
         :client_auth_required,
         "Sign in to place the order"
       )
+
+  defp render_error(conn, reason)
+       when reason in [
+              :saved_payment_methods_disabled,
+              :saved_payment_method_not_found,
+              :saved_payment_method_conflict,
+              :expected_total_required,
+              :payment_amount_changed
+            ] do
+    ApiError.send_error(conn, :unprocessable_entity, reason, Phoenix.Naming.humanize(reason))
+  end
 
   defp render_error(conn, reason)
        when reason in [

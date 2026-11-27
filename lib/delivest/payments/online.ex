@@ -10,21 +10,104 @@ defmodule Delivest.Payments.Online do
   alias Delivest.Oms.{Order, OrderEvents, OrderFlow, Orders}
   alias Delivest.Oms.Orders.Notifier
   alias Delivest.Payments
-  alias Delivest.Payments.{Payment, Refund}
+  alias Delivest.Payments.{Payment, Refund, SavedMethods}
   alias Delivest.Repo
 
   def start(%Order{awaiting_payment: true} = order) do
     with %Payment{} = payment <- pending(order.id) do
       case payment.details do
-        %{"confirmation_url" => url} when is_binary(url) -> {:ok, url}
-        _details -> create(order, payment)
+        %{"confirmation_url" => url} when is_binary(url) ->
+          {:ok, url}
+
+        _details when is_binary(payment.external_id) ->
+          with {:ok, _changed} <- sync(payment.external_id), do: {:ok, nil}
+
+        _details ->
+          create(order, payment)
       end
     else
-      nil -> {:error, :no_payment}
+      nil ->
+        if SavedMethods.fallback_available?(order.id), do: {:ok, nil}, else: {:error, :no_payment}
     end
   end
 
   def start(%Order{}), do: {:error, :not_awaiting}
+
+  def fallback(%Order{awaiting_payment: true, status: :created, client_id: client_id} = order)
+      when not is_nil(client_id) do
+    with true <- Yookassa.ready?() || {:error, :online_unavailable},
+         {:ok, branch} <- Delivest.Identity.get_branch(order.branch_id),
+         true <- :online in Payments.enabled_methods(branch) || {:error, :payment_method_disabled},
+         %Payment{} = previous <- last_saved_payment(order.id),
+         true <- previous.status == :cancelled || {:error, :payment_outcome_unknown},
+         :ok <- verify_previous_attempt(previous),
+         {:ok, payment} <- new_fallback_payment(order) do
+      create(order, payment)
+    else
+      nil -> {:error, :fallback_unavailable}
+      false -> {:error, :fallback_unavailable}
+      error -> error
+    end
+  end
+
+  def fallback(_order), do: {:error, :fallback_unavailable}
+
+  defp verify_previous_attempt(%Payment{
+         external_id: nil,
+         details: %{"no_remote_attempt" => true}
+       }),
+       do: :ok
+
+  defp verify_previous_attempt(%Payment{external_id: id, details: details}) when is_binary(id) do
+    case Api.get_payment(Yookassa.get_settings(), id) do
+      {:ok, %{"status" => "canceled"} = remote} ->
+        check_create_recipient(remote, details, details["shop_id"])
+
+      {:ok, _other} ->
+        {:error, :payment_outcome_unknown}
+
+      error ->
+        error
+    end
+  end
+
+  defp verify_previous_attempt(_payment), do: {:error, :payment_outcome_unknown}
+
+  defp last_saved_payment(order_id) do
+    Repo.one(
+      from(p in Payment,
+        where:
+          p.order_id == ^order_id and
+            fragment("(?->>'saved_payment_method_id') IS NOT NULL", p.details),
+        order_by: [desc: p.inserted_at],
+        limit: 1
+      )
+    )
+  end
+
+  defp new_fallback_payment(order) do
+    Repo.transaction(fn ->
+      current = locked_order(order.id) || Repo.rollback(:not_awaiting)
+
+      if not (current.awaiting_payment and current.status == :created),
+        do: Repo.rollback(:not_awaiting)
+
+      if pending(order.id), do: Repo.rollback(:payment_outcome_unknown)
+      if not SavedMethods.fallback_available?(order.id), do: Repo.rollback(:fallback_unavailable)
+
+      %Payment{
+        order_id: current.id,
+        branch_id: current.branch_id,
+        method: :online,
+        amount: current.total_amount,
+        status: :pending,
+        provider: "yookassa",
+        details: %{"saved_method_fallback" => true, "shop_id" => Yookassa.get_settings().shop_id}
+      }
+      |> Payment.changeset(%{})
+      |> Repo.insert!()
+    end)
+  end
 
   def abandon(%Order{} = order) do
     Orders.advance_order(order, :cancelled, :system, attrs: %{cancel_reason: :not_paid})
@@ -42,6 +125,8 @@ defmodule Delivest.Payments.Online do
            %Order{} = order <- locked_order(found.order_id),
            %Payment{} = payment <- locked(id),
            {:ok, amount} <- check_amount(payment, remote),
+           :ok <- check_payment_recipient(payment, remote),
+           :ok <- maybe_save_method(payment, remote),
            {:ok, changed} <- move(order, payment, status, amount) do
         {order, changed}
       else
@@ -312,7 +397,11 @@ defmodule Delivest.Payments.Online do
   defp move(order, %Payment{status: status} = payment, "canceled", _amount)
        when status in [:pending, :authorized] do
     with {:ok, _payment} <- Payments.advance(Repo, order, payment, :cancelled, :system) do
-      {:ok, if(order.awaiting_payment, do: :abandoned, else: :cancelled)}
+      {:ok,
+       if(order.awaiting_payment and payment.details["saved_payment_method_id"],
+         do: :saved_method_canceled,
+         else: if(order.awaiting_payment, do: :abandoned, else: :cancelled)
+       )}
     end
   end
 
@@ -329,13 +418,15 @@ defmodule Delivest.Payments.Online do
   end
 
   defp record_capture(order, payment, amount) do
-    with {:ok, payment} <- payment |> Ecto.Changeset.change(amount: amount) |> Repo.update(),
-         {:ok, payment} <-
-           Payments.advance(Repo, order, payment, :paid, :system, %{
-             paid_at: DateTime.utc_now(:second),
-             fiscalized_by: if(order.crm, do: :crm)
-           }) do
-      {:ok, payment}
+    case payment |> Ecto.Changeset.change(amount: amount) |> Repo.update() do
+      {:ok, payment} ->
+        Payments.advance(Repo, order, payment, :paid, :system, %{
+          paid_at: DateTime.utc_now(:second),
+          fiscalized_by: if(order.crm, do: :crm)
+        })
+
+      error ->
+        error
     end
   end
 
@@ -427,37 +518,262 @@ defmodule Delivest.Payments.Online do
   defp create_enabled(order, payment) do
     settings = Yookassa.get_settings()
 
-    with {:ok, body} <- Api.create_payment(settings, payment.id, body(order, payment)),
-         {:ok, id, url} <- confirmation(body),
-         {:ok, _payment} <-
-           payment
-           |> Payment.link_changeset(id, %{
-             "confirmation_url" => url,
-             "hold_amount" => payment.amount
-           })
-           |> Repo.update() do
-      {:ok, url}
-    else
-      {:error, reason} -> {:error, reason}
-      :error -> {:error, :bad_response}
+    with {:ok, attempt} <- mark_provider_attempt(order, payment) do
+      create_attempt(order, payment, settings, attempt)
     end
   end
 
-  defp body(order, payment) do
-    %{
+  defp mark_provider_attempt(order, payment) do
+    Repo.transaction(fn ->
+      current = locked_order(order.id) || Repo.rollback(:not_awaiting)
+
+      if not (current.awaiting_payment and current.status == :created),
+        do: Repo.rollback(:not_awaiting)
+
+      locked = Repo.one!(from(p in Payment, where: p.id == ^payment.id, lock: "FOR UPDATE"))
+
+      if locked.status != :pending or pending(order.id).id != locked.id,
+        do: Repo.rollback(:payment_outcome_unknown)
+
+      cond do
+        locked.external_id ->
+          :existing
+
+        locked.details["provider_attempted_at"] ->
+          generation = (locked.details["attempt_generation"] || 1) + 1
+
+          locked
+          |> Ecto.Changeset.change(
+            details: Map.put(locked.details, "attempt_generation", generation)
+          )
+          |> Repo.update!()
+
+          {:previous, generation}
+
+        true ->
+          locked
+          |> Ecto.Changeset.change(
+            details:
+              (locked.details || %{})
+              |> Map.put(
+                "provider_attempted_at",
+                DateTime.utc_now(:second) |> DateTime.to_iso8601()
+              )
+              |> Map.put("attempt_generation", 1)
+          )
+          |> Repo.update!()
+
+          {:fresh, 1}
+      end
+    end)
+  end
+
+  defp create_attempt(order, payment, settings, attempt) do
+    case Repo.transaction(fn ->
+           current = locked_order(order.id) || Repo.rollback(:not_awaiting)
+
+           if not (current.awaiting_payment and current.status == :created),
+             do: Repo.rollback(:not_awaiting)
+
+           locked_payment =
+             Repo.one!(from(p in Payment, where: p.id == ^payment.id, lock: "FOR UPDATE"))
+
+           if locked_payment.status != :pending or pending(order.id).id != locked_payment.id,
+             do: Repo.rollback(:payment_outcome_unknown)
+
+           context = locked_payment.details || %{}
+
+           if locked_payment.external_id do
+             {:existing, locked_payment}
+           else
+             with :ok <- same_shop?(settings, context),
+                  :ok <- saved_method_gate(context),
+                  :ok <- retry_window(locked_payment, context),
+                  {:ok, provider_method_id} <- provider_method(order, context) do
+               create_with_method(
+                 order,
+                 payment,
+                 settings,
+                 locked_payment,
+                 context,
+                 provider_method_id
+               )
+             else
+               {:error, :saved_payment_method_not_found} ->
+                 if attempt == {:fresh, 1} and context["attempt_generation"] == 1 do
+                   locked_payment
+                   |> Ecto.Changeset.change(
+                     status: :cancelled,
+                     details: Map.put(context, "no_remote_attempt", true)
+                   )
+                   |> Repo.update!()
+
+                   {:no_remote_attempt}
+                 else
+                   Repo.rollback(:payment_outcome_unknown)
+                 end
+
+               {:error, reason} ->
+                 Repo.rollback(reason)
+             end
+           end
+         end) do
+      {:ok, {:existing, existing}} ->
+        {:ok, existing.details["confirmation_url"]}
+
+      {:ok, {:no_remote_attempt}} ->
+        {:ok, nil}
+
+      {:ok, {:created, remote, url}} ->
+        with {:ok, _changed} <- apply_created_remote(remote), do: {:ok, url}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp create_with_method(order, payment, settings, locked_payment, context, provider_method_id) do
+    with {:ok, remote} <-
+           Api.create_payment(
+             settings,
+             payment.id,
+             body(order, locked_payment, context, provider_method_id)
+           ),
+         {:ok, id, url} <- confirmation(remote),
+         :ok <- check_create_recipient(remote, context, settings.shop_id),
+         {:ok, _payment} <-
+           locked_payment
+           |> Payment.link_changeset(id, %{
+             "confirmation_url" => url,
+             "hold_amount" => locked_payment.amount
+           })
+           |> Repo.update() do
+      {:created, remote, url}
+    else
+      {:error, reason} -> Repo.rollback(reason)
+      :error -> Repo.rollback(:bad_response)
+    end
+  end
+
+  defp body(order, payment, context, provider_method_id) do
+    base = %{
       amount: Api.amount(payment.amount),
       capture: false,
       confirmation: %{type: "redirect", return_url: return_url(order)},
       description: "Заказ #{Order.short_number(order)}",
       metadata: %{order_id: order.id, payment_id: payment.id}
     }
+
+    cond do
+      provider_method_id ->
+        Map.put(base, :payment_method_id, provider_method_id)
+
+      context["save_payment_method"] ->
+        Map.put(base, :save_payment_method, true)
+
+      true ->
+        base
+    end
   end
 
   defp confirmation(%{"id" => id, "confirmation" => %{"confirmation_url" => url}})
        when is_binary(id) and is_binary(url),
        do: {:ok, id, url}
 
+  defp confirmation(%{"id" => id, "status" => status})
+       when is_binary(id) and status in ["waiting_for_capture", "succeeded", "canceled"],
+       do: {:ok, id, nil}
+
   defp confirmation(_body), do: :error
+
+  defp same_shop?(settings, %{"shop_id" => shop_id}) do
+    if settings.shop_id == shop_id, do: :ok, else: {:error, :saved_payment_shop_changed}
+  end
+
+  defp same_shop?(_settings, _context), do: :ok
+
+  defp saved_method_gate(%{"save_payment_method" => true}) do
+    if SavedMethods.enabled?(), do: :ok, else: {:error, :saved_payment_methods_disabled}
+  end
+
+  defp saved_method_gate(%{"saved_payment_method_id" => _id}) do
+    if SavedMethods.enabled?(), do: :ok, else: {:error, :saved_payment_methods_disabled}
+  end
+
+  defp saved_method_gate(_context), do: :ok
+
+  defp provider_method(_order, %{
+         "saved_payment_method_id" => id,
+         "client_id" => client_id,
+         "shop_id" => shop_id
+       }) do
+    case SavedMethods.active(client_id, shop_id, id, "FOR UPDATE") do
+      nil -> {:error, :saved_payment_method_not_found}
+      method -> {:ok, method.provider_method_id}
+    end
+  end
+
+  defp provider_method(_order, _context), do: {:ok, nil}
+
+  defp check_recipient(%{"recipient" => %{"account_id" => id}}, shop_id)
+       when is_binary(shop_id) do
+    if to_string(id) == shop_id, do: :ok, else: {:error, :saved_payment_shop_changed}
+  end
+
+  defp check_recipient(_remote, _shop_id), do: :ok
+
+  defp check_create_recipient(remote, %{"shop_id" => shop_id}, _current_shop_id) do
+    case remote["recipient"] do
+      %{"account_id" => ^shop_id} -> :ok
+      _ -> {:error, :saved_payment_shop_changed}
+    end
+  end
+
+  defp check_create_recipient(remote, _context, shop_id), do: check_recipient(remote, shop_id)
+
+  defp retry_window(payment, context) do
+    if context["save_payment_method"] == true or not is_nil(context["saved_payment_method_id"]) or
+         context["saved_method_fallback"] == true do
+      if DateTime.diff(DateTime.utc_now(), payment.inserted_at, :second) < 82_800,
+        do: :ok,
+        else: {:error, :payment_outcome_unknown}
+    else
+      :ok
+    end
+  end
+
+  defp apply_created_remote(remote) do
+    case Api.parse_amount(remote["amount"]) do
+      {:ok, _amount} -> apply_remote(remote)
+      :error -> {:ok, :unchanged}
+    end
+  end
+
+  defp check_payment_recipient(%Payment{details: %{"shop_id" => shop_id}}, remote),
+    do: check_create_recipient(remote, %{"shop_id" => shop_id}, shop_id)
+
+  defp check_payment_recipient(_payment, _remote), do: :ok
+
+  defp maybe_save_method(
+         %Payment{
+           details: %{
+             "save_payment_method" => true,
+             "client_id" => client_id,
+             "shop_id" => shop_id,
+             "consented_at" => consented_at
+           }
+         },
+         remote
+       ) do
+    with %{"account_id" => ^shop_id} <- remote["recipient"],
+         %{"saved" => true} = method <- remote["payment_method"] do
+      SavedMethods.save_from_provider(client_id, shop_id, method, consented_at)
+    else
+      _ -> :ok
+    end
+  end
+
+  defp maybe_save_method(_payment, _remote), do: :ok
 
   defp return_url(order) do
     slug = Repo.one(from(b in Branch, where: b.id == ^order.branch_id, select: b.slug))

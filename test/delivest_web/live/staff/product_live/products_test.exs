@@ -10,7 +10,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
   test "the product editor saves a combo group with a branch dish and a surcharge", %{conn: conn} do
     branch = insert(:branch)
     staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
-    dish = insert_menu_dish(branch, name: "Burger", price: 35000)
+    dish = insert_menu_dish(branch, name: "Burger", price: 35_000)
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/new")

@@ -121,6 +121,13 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
             "Сколько звёзд списать с суммы заказа (1 звезда = 1 ₽). Только для вошедшего клиента в филиале с включённым списанием"
         },
         address: AddressRequest,
+        save_payment_method: %Schema{type: :boolean, nullable: true},
+        saved_payment_method_id: %Schema{type: :string, format: :uuid, nullable: true},
+        confirmed_payment_total: %Schema{
+          type: :integer,
+          nullable: true,
+          description: "Подтверждённая итоговая сумма онлайн-оплаты, в копейках"
+        },
         expected_total: %Schema{
           type: :integer,
           nullable: true,
@@ -221,11 +228,14 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               type: :boolean,
               description: "Заказ ждёт онлайн-оплаты и ещё не принят в работу"
             },
+            saved_payment_fallback_available: %Schema{type: :boolean},
             payment: %Schema{
               type: :object,
               nullable: true,
               description: "Только в ответе на создание онлайн-заказа",
-              properties: %{confirmation_url: %Schema{type: :string, format: :uri}}
+              properties: %{
+                confirmation_url: %Schema{type: :string, format: :uri, nullable: true}
+              }
             },
             points_earned: %Schema{
               type: :integer,
@@ -366,6 +376,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
           type: :boolean,
           description: "Заказ ждёт онлайн-оплаты и ещё не принят в работу"
         },
+        saved_payment_fallback_available: %Schema{type: :boolean},
         points_earned: %Schema{
           type: :integer,
           description: "Звёзды после выполнения заказа, включая бонусы за товары"
@@ -444,7 +455,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       properties: %{
         data: %Schema{
           type: :object,
-          properties: %{confirmation_url: %Schema{type: :string, format: :uri}},
+          properties: %{confirmation_url: %Schema{type: :string, format: :uri, nullable: true}},
           required: [:confirmation_url]
         }
       },

@@ -20,6 +20,8 @@ defmodule DelivestWeb.Client.CapabilitiesController do
       money_unit: "kopeck",
       timestamp_format: "RFC3339",
       features: ["checkout_idempotency", "cart_revision"],
+      saved_payment_methods_enabled:
+        Delivest.Integrations.Yookassa.get_settings().saved_payment_methods_enabled == true,
       push: %{web_push: true, apns_fcm: false},
       deprecation: nil
     })

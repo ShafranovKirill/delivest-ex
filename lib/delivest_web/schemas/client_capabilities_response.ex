@@ -11,6 +11,7 @@ defmodule DelivestWeb.Schemas.ClientCapabilitiesResponse do
       money_unit: %Schema{type: :string, enum: ["kopeck"]},
       timestamp_format: %Schema{type: :string, enum: ["RFC3339"]},
       features: %Schema{type: :array, items: %Schema{type: :string}},
+      saved_payment_methods_enabled: %Schema{type: :boolean},
       push: %Schema{
         type: :object,
         properties: %{
@@ -27,6 +28,7 @@ defmodule DelivestWeb.Schemas.ClientCapabilitiesResponse do
       :money_unit,
       :timestamp_format,
       :features,
+      :saved_payment_methods_enabled,
       :push,
       :deprecation
     ]

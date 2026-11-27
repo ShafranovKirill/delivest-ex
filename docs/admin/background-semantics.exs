@@ -39,6 +39,11 @@
      "Receipt exists and Fiscal polling path checks provider state; no feature gate in worker",
      "No global feature disable callback",
      "Issued receipt needs terminal fiscal status even if editor configuration later changes"},
+  "worker:Delivest.Fiscal.RefundWorker" =>
+    {"Fiscal.issue_online_refund submits a persistent refund receipt task",
+     "Refund and sale receipt state; pending sale receipt or disabled fiscalization snoozes",
+     "No feature disable cancellation; the refund task remains durable",
+     "Retry until the sale receipt exists and the refund receipt reaches a terminal outcome"},
   "worker:Delivest.Fiscal.RegisterWorker" =>
     {"Fiscal.register_receipt submits fiscal receipt to provider",
      "Receipt state and Fiscal provider checks; no feature gate in worker",

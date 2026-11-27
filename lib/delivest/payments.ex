@@ -146,7 +146,8 @@ defmodule Delivest.Payments do
           method: :online,
           amount: order.total_amount,
           status: :pending,
-          provider: "yookassa"
+          provider: "yookassa",
+          details: opts[:payment_context] || %{}
         })
 
       opts[:paid_online] && order.channel ->

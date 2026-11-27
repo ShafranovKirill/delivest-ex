@@ -146,12 +146,23 @@ defmodule Delivest.Oms.Orders.Create do
     |> Multi.run(:number, fn repo, %{cart: cart} -> OrderNumber.next(repo, cart.branch_id) end)
     |> Multi.run(:analytics_cutoff, fn _, _ -> {:ok, OrderReceipts.cutoff()} end)
     |> Multi.insert(:order, &build(attrs, &1, opts))
+    |> Multi.run(:confirmed_payment_total, fn _, %{order: order} ->
+      if is_nil(opts[:confirmed_payment_total]) or
+           opts[:confirmed_payment_total] == order.total_amount or
+           opts[:confirmed_payment_total] == to_string(order.total_amount),
+         do: {:ok, :confirmed},
+         else: {:error, :payment_amount_changed}
+    end)
     |> Multi.run(:analytics_receipts, fn _, %{order: order, analytics_cutoff: as_of_at} ->
       OrderReceipts.capture(order, opts, as_of_at)
     end)
     |> Multi.run(:points, fn _, %{order: order} -> Loyalty.spend(order) end)
     |> Multi.run(:payments, fn repo, %{order: order} ->
-      Payments.open(repo, order, paid_online: opts[:paid_online], cash_given: cash_given(attrs))
+      Payments.open(repo, order,
+        paid_online: opts[:paid_online],
+        cash_given: cash_given(attrs),
+        payment_context: opts[:payment_context]
+      )
     end)
     |> Multi.run(:collected, fn repo, %{order: order} -> collect(repo, order, opts[:collect]) end)
     |> Multi.run(:created, fn repo, %{order: order} ->
