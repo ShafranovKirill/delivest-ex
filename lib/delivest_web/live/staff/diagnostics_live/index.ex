@@ -24,7 +24,7 @@ defmodule DelivestWeb.Staff.DiagnosticsLive.Index do
       id="staff-metrics-frame"
       title={gettext("Metrics")}
       src={~p"/staff/metrics"}
-      class="h-[calc(100dvh-var(--staff-header-height)-3rem)] min-h-[32rem] w-full bg-base-100"
+      class="h-[calc(100dvh-var(--staff-header-height)-3rem)] min-h-96 w-full rounded-box border border-base-300 bg-base-100"
     />
     """
   end

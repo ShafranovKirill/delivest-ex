@@ -27,11 +27,16 @@ defmodule DelivestWeb.Staff.DeliveryLive.ZonesTest do
         ~p"/staff/b/#{branch}/delivery/zones"
       )
 
+    assert has_element?(lv, "#delivery-time-section")
+    assert has_element?(lv, "#delivery-price-section")
+
     lv
     |> form("#delivery-settings",
       delivery: %{mode: "flat", min_order: "", price: "200", free_from: "1500"}
     )
     |> render_submit()
+
+    assert_push_event(lv, "staff:form-saved", %{id: "delivery-settings"})
 
     assert %{mode: :flat, thresholds: thresholds} = Delivery.get_settings(branch.id)
     assert Enum.map(thresholds, &{&1.order_from, &1.price}) == [{0, 20_000}, {150_000, 0}]

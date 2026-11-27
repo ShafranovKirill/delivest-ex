@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.SettingsLive.Index do
   use DelivestWeb, :live_view
 
+  import DelivestWeb.Staff.FoundationComponents, only: [form_section: 1]
+
   alias Delivest.Availability
   alias Delivest.Features.{Registry, Settings}
   alias Delivest.Integrations.StaffAccess
@@ -437,13 +439,12 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
             </div>
           </.focus_wrap>
         </div>
-        <section
+        <.form_section
           :for={{group_id, _features} <- @groups}
           :if={Enum.any?(@feature_rows, &(&1.group == group_id))}
           id={"settings-group-#{group_id}"}
-          class="space-y-2"
+          title={group_label(group_id)}
         >
-          <h3 class="text-base font-semibold">{group_label(group_id)}</h3>
           <div class="grid gap-2 lg:grid-cols-2">
             <article
               :for={row <- Enum.filter(@feature_rows, &(&1.group == group_id))}
@@ -452,7 +453,7 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
             >
               <div class="flex items-start gap-3">
                 <div class="min-w-0 flex-1">
-                  <h4 class="text-sm font-semibold">{row.label}</h4>
+                  <h3 class="text-sm font-semibold">{row.label}</h3>
                   <p class="text-xs text-base-content/65">{row.description}</p>
                 </div>
                 <button
@@ -517,7 +518,7 @@ defmodule DelivestWeb.Staff.SettingsLive.Index do
               </div>
             </article>
           </div>
-        </section>
+        </.form_section>
       </section>
     </div>
     """

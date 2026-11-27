@@ -661,49 +661,34 @@ defmodule DelivestWeb.Staff.StatisticsLive.ReportComponents do
         </p>
       </div>
 
-      <div
+      <.table
         :if={@report.rows != [] and @tab != "funnel"}
-        class="rounded-2xl border border-base-300 bg-base-100 overflow-x-auto"
+        id="statistics-report-rows"
+        rows={@report.rows}
+        show_column_chooser={false}
       >
-        <table id="statistics-report-table" class="table table-sm">
-          <thead>
-            <tr>
-              <th>{gettext("Source / channel")}</th>
-              <th :if={@tab == "sources"} class="text-right">{gettext("Clicks")}</th>
-              <th :if={@tab == "sources"} class="text-right">{gettext("First source clients")}</th>
-              <th :if={@tab != "sources"} class="text-right">{gettext("Authorized orders")}</th>
-              <th class="text-right">
-                {gettext("Created")}
-              </th><th class="text-right">{gettext("Completed")}</th><th class="text-right">
-                {gettext("Revenue")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr :for={row <- @report.rows}>
-              <td class="font-medium">{row_label(row, @tab)}</td>
-              <td :if={@tab == "sources"} class="text-right tabular-nums">
-                {Map.get(row.counts, "clicks", 0)}
-              </td>
-              <td :if={@tab == "sources"} class="text-right tabular-nums">
-                {Map.get(row.counts, "first_source_clients", 0)}
-              </td>
-              <td :if={@tab != "sources"} class="text-right tabular-nums">
-                {Map.get(row.counts, "authorized_orders", "—")}
-              </td>
-              <td class="text-right tabular-nums">
-                {Map.get(row.counts, "created", Map.get(row.counts, "sessions", "—"))}
-              </td>
-              <td class="text-right tabular-nums">{Map.get(row.counts, "completed", "—")}</td>
-              <td class="text-right tabular-nums">
-                {if Map.has_key?(row.counts, "revenue"),
-                  do: OrderHelpers.money(row.counts["revenue"]),
-                  else: "—"}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <:col :let={row} label={gettext("Source / channel")}>{row_label(row, @tab)}</:col>
+        <:col :let={row} :if={@tab == "sources"} label={gettext("Clicks")} numeric>
+          {Map.get(row.counts, "clicks", 0)}
+        </:col>
+        <:col :let={row} :if={@tab == "sources"} label={gettext("First source clients")} numeric>
+          {Map.get(row.counts, "first_source_clients", 0)}
+        </:col>
+        <:col :let={row} :if={@tab != "sources"} label={gettext("Authorized orders")} numeric>
+          {Map.get(row.counts, "authorized_orders", "—")}
+        </:col>
+        <:col :let={row} label={gettext("Created")} numeric>
+          {Map.get(row.counts, "created", Map.get(row.counts, "sessions", "—"))}
+        </:col>
+        <:col :let={row} label={gettext("Completed")} numeric>
+          {Map.get(row.counts, "completed", "—")}
+        </:col>
+        <:col :let={row} label={gettext("Revenue")} numeric>
+          {if Map.has_key?(row.counts, "revenue"),
+            do: OrderHelpers.money(row.counts["revenue"]),
+            else: "—"}
+        </:col>
+      </.table>
       <nav
         :if={@report.pages > 1 and @tab != "franchise"}
         id="statistics-report-pagination"

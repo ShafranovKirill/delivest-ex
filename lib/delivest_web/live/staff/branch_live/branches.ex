@@ -51,36 +51,34 @@ defmodule DelivestWeb.Staff.BranchLive.Branches do
   def render(assigns) do
     ~H"""
     <div id="branch-settings-list" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
-          :for={branch <- @branches}
-          id={"branch-card-#{branch.id}"}
-          class="card bg-base-100 border border-base-300"
-        >
-          <div class="card-body gap-3">
-            <h2 class="card-title">{branch.name}</h2>
-            <p
-              :if={Identity.can?(@current_staff, "branches.read") and branch.is_active == false}
-              class="text-xs text-error"
-            >
-              {gettext("Branch is not active")}
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <.link
-                :if={
-                  (Identity.can?(@current_staff, "branches.read") and
-                     Identity.can?(@current_staff, "branches.update")) or
-                    Identity.authorize(@current_staff, "delivery.read", branch.id) == :ok or
-                    Identity.authorize(@current_staff, "orders.update", branch.id) == :ok
-                }
-                id={"branch-edit-#{branch.id}"}
-                navigate={~p"/staff/branches/#{branch.slug}/edit"}
-                class="btn btn-sm btn-outline"
-              >{gettext("Settings")}</.link>
-            </div>
-          </div>
-        </div>
-      </div>
+      <.table
+        id="branch-settings"
+        rows={@branches}
+        row_id={&"branch-card-#{&1.id}"}
+        show_column_chooser={false}
+      >
+        <:col :let={branch} label={gettext("Branch")}>
+          <span class="font-medium">{branch.name}</span>
+          <span
+            :if={Identity.can?(@current_staff, "branches.read") and !branch.is_active}
+            class="ml-2 badge badge-error badge-soft"
+          >{gettext("Branch is not active")}</span>
+        </:col>
+        <:action :let={branch}>
+          <.link
+            :if={
+              (Identity.can?(@current_staff, "branches.read") and
+                 Identity.can?(@current_staff, "branches.update")) or
+                Identity.authorize(@current_staff, "delivery.read", branch.id) == :ok or
+                Identity.authorize(@current_staff, "orders.update", branch.id) == :ok
+            }
+            id={"branch-edit-#{branch.id}"}
+            navigate={~p"/staff/branches/#{branch.slug}/edit"}
+            class="btn btn-sm btn-outline"
+          >{gettext("Settings")}</.link>
+        </:action>
+      </.table>
+      <.empty_state :if={@branches == []} title={gettext("No results")} />
     </div>
     """
   end

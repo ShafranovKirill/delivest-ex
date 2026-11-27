@@ -1,6 +1,8 @@
 defmodule DelivestWeb.Staff.DeliveryLive.Address do
   use DelivestWeb, :live_view
-  import DelivestWeb.Staff.FoundationComponents, only: [error_summary: 1, changeset_errors: 1]
+
+  import DelivestWeb.Staff.FoundationComponents,
+    only: [error_summary: 1, changeset_errors: 1, form_section: 1]
 
   alias Delivest.{Delivery, Identity}
   alias Delivest.Integrations.Dadata
@@ -38,7 +40,9 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
 
     if map_mode and not Dadata.active?() do
       {:noreply,
-       put_flash(socket, :error, gettext("Configure DaData before enabling map selection."))}
+       socket
+       |> put_flash(:error, gettext("Configure DaData before enabling map selection."))
+       |> push_event("staff:form-failed", %{id: "address-settings"})}
     else
       attrs =
         params
@@ -55,13 +59,19 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
            socket
            |> assign_settings(settings)
            |> put_flash(:info, gettext("Settings saved"))
-           |> push_event("staff:form-saved", %{})}
+           |> push_event("staff:form-saved", %{id: "address-settings"})}
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, assign(socket, form: to_form(changeset, as: "address"))}
+          {:noreply,
+           socket
+           |> assign(form: to_form(changeset, as: "address"))
+           |> push_event("staff:form-failed", %{id: "address-settings"})}
 
         {:error, :forbidden} ->
-          {:noreply, put_flash(socket, :error, gettext("Permission denied"))}
+          {:noreply,
+           socket
+           |> put_flash(:error, gettext("Permission denied"))
+           |> push_event("staff:form-failed", %{id: "address-settings"})}
       end
     end
   end
@@ -106,80 +116,87 @@ defmodule DelivestWeb.Staff.DeliveryLive.Address do
           errors={changeset_errors(@form.source)}
           form_name="address"
         />
-        <fieldset class="grid gap-2 sm:grid-cols-2 sm:gap-3">
-          <legend class="mb-4 w-full text-center text-lg font-semibold sm:text-xl">
-            {gettext("How customers choose a delivery address")}
-          </legend>
-          <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-box border border-base-300 px-4 py-3 text-sm font-medium has-checked:border-primary has-checked:bg-primary/5">
-            <input
-              type="radio"
-              class="radio radio-primary radio-sm shrink-0"
-              name="address[map_address]"
-              value="true"
-              checked={@map_mode}
-              disabled={not @can_edit}
-            />
-            {gettext("On the map")}
-          </label>
-          <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-box border border-base-300 px-4 py-3 text-sm font-medium has-checked:border-primary has-checked:bg-primary/5">
-            <input
-              type="radio"
-              class="radio radio-primary radio-sm shrink-0"
-              name="address[map_address]"
-              value="false"
-              checked={not @map_mode}
-              disabled={not @can_edit}
-            />
-            {gettext("Manually in the order form")}
-          </label>
-        </fieldset>
-
-        <div :if={@map_mode} class="space-y-2 rounded-box bg-base-200/60 p-4 text-sm">
-          <p>{gettext("Customers confirm their address on the map before checkout.")}</p>
-          <p :if={not @dadata_active} class="text-warning">
-            {gettext("Configure DaData before enabling map selection.")}
-          </p>
-          <.link
-            navigate={~p"/staff/b/#{@current_branch}/integrations/dadata"}
-            class="link link-primary"
-          >
-            {gettext("DaData integration settings")}
-          </.link>
-        </div>
-
-        <div
-          :if={not @map_mode}
-          class="space-y-3 rounded-box bg-base-200/60 p-4 [&_.checkbox]:shrink-0 [&_.label-text]:whitespace-normal"
+        <.form_section
+          id="address-method-section"
+          title={gettext("How customers choose a delivery address")}
         >
-          <.input
-            field={@form[:show_city]}
-            type="checkbox"
-            label={gettext("Show city in the order form")}
-            disabled={not @can_edit}
-          />
-          <.input
-            field={@form[:operator_address]}
-            type="checkbox"
-            label={gettext("Allow customers to tell the address to an operator")}
-            disabled={not @can_edit}
-          />
-          <p class="text-sm text-base-content/70">
-            <span :if={@zone_mode}>
-              {gettext(
-                "Manual addresses use the branch's flat delivery price. Your delivery zones stay saved for map mode."
-              )}
-            </span>
-            <.link navigate={~p"/staff/b/#{@current_branch}/delivery/zones"} class="link link-primary">
-              {gettext("Edit delivery prices")}
+          <fieldset class="grid gap-2 sm:grid-cols-2 sm:gap-3">
+            <legend class="sr-only">{gettext("How customers choose a delivery address")}</legend>
+            <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-box border border-base-300 px-4 py-3 text-sm font-medium has-checked:border-primary has-checked:bg-primary/5">
+              <input
+                type="radio"
+                class="radio radio-primary radio-sm shrink-0"
+                name="address[map_address]"
+                value="true"
+                checked={@map_mode}
+                disabled={not @can_edit}
+              />
+              {gettext("On the map")}
+            </label>
+            <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-box border border-base-300 px-4 py-3 text-sm font-medium has-checked:border-primary has-checked:bg-primary/5">
+              <input
+                type="radio"
+                class="radio radio-primary radio-sm shrink-0"
+                name="address[map_address]"
+                value="false"
+                checked={not @map_mode}
+                disabled={not @can_edit}
+              />
+              {gettext("Manually in the order form")}
+            </label>
+          </fieldset>
+
+          <div :if={@map_mode} class="space-y-2 rounded-box bg-base-200/60 p-4 text-sm">
+            <p>{gettext("Customers confirm their address on the map before checkout.")}</p>
+            <p :if={not @dadata_active} class="text-warning">
+              {gettext("Configure DaData before enabling map selection.")}
+            </p>
+            <.link
+              navigate={~p"/staff/b/#{@current_branch}/integrations/dadata"}
+              class="link link-primary"
+            >
+              {gettext("DaData integration settings")}
             </.link>
-          </p>
-        </div>
+          </div>
+
+          <div
+            :if={not @map_mode}
+            class="space-y-3 rounded-box bg-base-200/60 p-4 [&_.checkbox]:shrink-0 [&_.label-text]:whitespace-normal"
+          >
+            <.input
+              field={@form[:show_city]}
+              type="checkbox"
+              label={gettext("Show city in the order form")}
+              disabled={not @can_edit}
+            />
+            <.input
+              field={@form[:operator_address]}
+              type="checkbox"
+              label={gettext("Allow customers to tell the address to an operator")}
+              disabled={not @can_edit}
+            />
+            <p class="text-sm text-base-content/70">
+              <span :if={@zone_mode}>
+                {gettext(
+                  "Manual addresses use the branch's flat delivery price. Your delivery zones stay saved for map mode."
+                )}
+              </span>
+              <.link
+                navigate={~p"/staff/b/#{@current_branch}/delivery/zones"}
+                class="link link-primary"
+              >
+                {gettext("Edit delivery prices")}
+              </.link>
+            </p>
+          </div>
+        </.form_section>
 
         <div :if={@can_edit} class="flex justify-end border-t border-base-300 pt-4">
           <button
             type="submit"
             data-staff-save="edit"
             class="btn btn-primary min-h-12 w-full sm:w-auto sm:min-w-32"
+            phx-disable-with={gettext("Saving...")}
           >
             {gettext("Save")}
           </button>

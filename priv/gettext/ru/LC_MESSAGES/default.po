@@ -14232,3 +14232,7 @@ msgstr "Сначала оформите возврат оплаты через �
 #: lib/delivest_web/live/staff/order_live/status_errors.ex
 msgid "The YooKassa payment amount differs from the order total. Check the payment and refunds in the order."
 msgstr "Сумма оплаты ЮKassa не совпадает с итогом заказа. Проверьте оплату и возвраты в заказе."
+
+#, elixir-autogen, elixir-format
+msgid "Not connected"
+msgstr "Не подключено"

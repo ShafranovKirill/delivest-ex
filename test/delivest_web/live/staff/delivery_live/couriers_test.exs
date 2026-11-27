@@ -21,6 +21,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.CouriersTest do
     conn = sign_in(conn, branch, ["delivery.read", "delivery.update"])
 
     {:ok, lv, _html} = live(conn, ~p"/staff/b/#{branch}/delivery/couriers")
+    assert has_element?(lv, "#couriers-settings-section")
 
     assert {:error, {:live_redirect, %{to: to}}} =
              lv

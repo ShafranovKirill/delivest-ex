@@ -13,6 +13,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.AddressTest do
     conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
 
     {:ok, view, _html} = live(conn, ~p"/staff/b/#{branch}/delivery/address")
+    assert has_element?(view, "#address-method-section")
 
     view
     |> form("#address-settings", address: %{map_address: "false"})
@@ -36,6 +37,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.AddressTest do
     assert has_element?(view, "input[name='address[operator_address]'][checked]")
 
     view |> form("#address-settings") |> render_submit()
+    assert_push_event(view, "staff:form-saved", %{id: "address-settings"})
 
     assert %{
              map_address: false,
@@ -49,6 +51,7 @@ defmodule DelivestWeb.Staff.DeliveryLive.AddressTest do
     |> render_submit()
 
     assert has_element?(view, "[role=alert]", "Configure DaData before enabling map selection.")
+    assert_push_event(view, "staff:form-failed", %{id: "address-settings"})
     assert Delivery.get_settings(branch.id).map_address == false
   end
 end

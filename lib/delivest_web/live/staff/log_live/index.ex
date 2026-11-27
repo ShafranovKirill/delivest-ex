@@ -208,9 +208,19 @@ defmodule DelivestWeb.Staff.LogLive.Index do
         scope_branch={@settings_scope_branch}
         events_path={@events_path}
       />
-      <form id="logs-filter" phx-change="filter" phx-submit="filter" class="flex flex-wrap gap-3">
+      <form
+        id="logs-filter"
+        role="search"
+        phx-change="filter"
+        phx-submit="filter"
+        class="staff-compact-filter flex min-w-0 flex-wrap items-center gap-2"
+      >
         <%= if @events? do %>
-          <select name="type" class="select w-full sm:w-48">
+          <select
+            name="type"
+            aria-label={gettext("All sections")}
+            class="select select-sm w-full sm:w-48"
+          >
             <option value="">{gettext("All sections")}</option>
             <option
               :for={{value, label} <- @subject_types}
@@ -221,7 +231,11 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </option>
           </select>
 
-          <select name="action" class="select w-full sm:w-52">
+          <select
+            name="action"
+            aria-label={gettext("All events")}
+            class="select select-sm w-full sm:w-52"
+          >
             <option value="">{gettext("All events")}</option>
             <optgroup :for={{section, actions} <- @options.actions} label={section}>
               <option
@@ -234,7 +248,11 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </optgroup>
           </select>
 
-          <select name="actor" class="select w-full sm:w-48">
+          <select
+            name="actor"
+            aria-label={gettext("All employees")}
+            class="select select-sm w-full sm:w-48"
+          >
             <option value="">{gettext("All employees")}</option>
             <option
               :for={{id, name} <- @options.actors}
@@ -245,7 +263,11 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </option>
           </select>
 
-          <select name="branch" class="select w-full sm:w-44">
+          <select
+            name="branch"
+            aria-label={gettext("All branches")}
+            class="select select-sm w-full sm:w-44"
+          >
             <option value="">{gettext("All branches")}</option>
             <option
               :for={{id, name} <- Enum.sort_by(@options.branches, &elem(&1, 1))}
@@ -256,14 +278,14 @@ defmodule DelivestWeb.Staff.LogLive.Index do
             </option>
           </select>
 
-          <select name="sort" class="select w-full sm:w-44">
+          <select name="sort" aria-label={gettext("Sort")} class="select select-sm w-full sm:w-44">
             {Phoenix.HTML.Form.options_for_select(sort_options(), @filters["sort"] || "")}
           </select>
 
           <button
             :if={Map.drop(@filters, ["page", "page_size"]) != %{}}
             type="button"
-            class="btn btn-ghost"
+            class="btn btn-ghost btn-sm"
             phx-click="reset_events"
           >
             <.icon name="hero-x-mark" class="size-4" /> {gettext("Reset")}
@@ -272,15 +294,21 @@ defmodule DelivestWeb.Staff.LogLive.Index do
 
         <input
           :if={!@events?}
-          type="text"
+          type="search"
           name="q"
+          aria-label={gettext("Search")}
           value={@filters["q"]}
           placeholder={gettext("Search in messages...")}
-          class="input w-full sm:max-w-sm"
+          class="input input-sm w-full sm:max-w-sm"
           phx-debounce="500"
         />
 
-        <select :if={@live_action == :raw} name="level" class="select w-full sm:w-44">
+        <select
+          :if={@live_action == :raw}
+          name="level"
+          aria-label={gettext("Level")}
+          class="select select-sm w-full sm:w-44"
+        >
           <option value="">{gettext("All levels")}</option>
           <option :for={level <- @levels} value={level} selected={@filters["level"] == level}>
             {level}
@@ -292,7 +320,7 @@ defmodule DelivestWeb.Staff.LogLive.Index do
               Map.drop(@filters, ["page", "page_size"]) != %{}
           }
           type="button"
-          class="btn btn-ghost"
+          class="btn btn-ghost btn-sm"
           phx-click="reset_entries"
         >
           <.icon name="hero-x-mark" class="size-4" /> {gettext("Reset")}

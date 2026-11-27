@@ -89,6 +89,8 @@ defmodule DelivestWeb.Staff.IntegrationLive.Routes do
   def render(assigns) do
     ~H"""
     <div class="space-y-6">
+      <DelivestWeb.GatewayNote.gateway_summary branch={@current_branch} />
+
       <div :if={is_nil(@provider)} id="routes-no-crm" class="alert">
         <.icon name="hero-information-circle" class="size-5" />
         <span>{gettext("No CRM is connected to this branch. All orders stay in the app.")}</span>
