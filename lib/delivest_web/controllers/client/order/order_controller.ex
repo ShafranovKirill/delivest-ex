@@ -173,6 +173,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
     parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
     responses: [
       ok: {"Страница оплаты", "application/json", PaymentLinkResponse},
+      no_content: "Ссылка на оплату не требуется",
       not_found: {"Заказ не найден", "application/json", ErrorResponse},
       unprocessable_entity: {"Заказ не ждёт оплаты", "application/json", ErrorResponse}
     ]
@@ -187,6 +188,9 @@ defmodule DelivestWeb.Client.Order.OrderController do
            id,
            params["fallback_to_new_method"] == true
          ) do
+      {:ok, nil} ->
+        send_resp(conn, :no_content, "")
+
       {:ok, url} ->
         json(conn, %{data: %{confirmation_url: url}})
 

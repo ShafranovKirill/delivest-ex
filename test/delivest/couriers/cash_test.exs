@@ -38,6 +38,19 @@ defmodule Delivest.Couriers.CashTest do
 
     {:ok, _payments} = Delivest.Payments.sync(Repo, order)
 
+    if payment_method == :online do
+      Payment
+      |> where([p], p.order_id == ^order.id)
+      |> Repo.one!()
+      |> Ecto.Changeset.change(
+        method: :online,
+        status: :paid,
+        provider: "yookassa",
+        paid_at: DateTime.utc_now(:second)
+      )
+      |> Repo.update!()
+    end
+
     order =
       Enum.reduce([:accepted, :preparing], order, fn to, order ->
         {:ok, order} = Orders.advance_order(order, to, {:staff, ctx.operator})

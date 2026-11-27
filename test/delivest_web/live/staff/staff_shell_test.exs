@@ -76,6 +76,7 @@ defmodule DelivestWeb.Staff.StaffShellTest do
     {:ok, off, _} = live(conn, ~p"/staff/b/#{branch}/dashboard")
     refute has_element?(off, "#sidebar-section-nav-deliveries")
     refute has_element?(off, "#sidebar-section-nav-couriers")
+    GenServer.stop(off.pid)
 
     {:ok, _} = Features.configure("couriers", :franchise, true, actor: "host")
     {:ok, _} = Features.configure("couriers", {:branch, branch.id}, true, actor: "host")

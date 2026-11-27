@@ -378,7 +378,8 @@ defmodule DelivestWeb.Client.SavedPaymentMethodsTest do
              )
 
     assert {:ok, _} = SavedMethods.delete(context.client.id, saved.id)
-    assert {:ok, nil} = Delivest.Payments.Online.start(order)
+    pay_conn = context.conn |> post(~p"/client/orders/#{order.id}/pay")
+    assert response(pay_conn, 204) == ""
 
     assert [
              %Payment{

@@ -234,7 +234,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
               nullable: true,
               description: "Только в ответе на создание онлайн-заказа",
               properties: %{
-                confirmation_url: %Schema{type: :string, format: :uri, nullable: true}
+                confirmation_url: %Schema{type: :string, format: :uri}
               }
             },
             points_earned: %Schema{
@@ -455,7 +455,7 @@ defmodule DelivestWeb.Schemas.OrderSchemas do
       properties: %{
         data: %Schema{
           type: :object,
-          properties: %{confirmation_url: %Schema{type: :string, format: :uri, nullable: true}},
+          properties: %{confirmation_url: %Schema{type: :string, format: :uri}},
           required: [:confirmation_url]
         }
       },
