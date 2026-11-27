@@ -9,6 +9,7 @@ defmodule Delivest.Net.Modifier do
 
   schema "modifiers" do
     belongs_to :group, Delivest.Net.ModifierGroup
+    belongs_to :component_product, Delivest.Net.Product, type: :binary_id
     field :name, :string
     field :price, Delivest.Money.Type, default: 0
     field :max_quantity, :integer, default: 1
@@ -25,6 +26,7 @@ defmodule Delivest.Net.Modifier do
     modifier
     |> cast(attrs, [
       :group_id,
+      :component_product_id,
       :name,
       :price,
       :max_quantity,
@@ -40,5 +42,6 @@ defmodule Delivest.Net.Modifier do
     |> validate_number(:max_quantity, greater_than: 0, less_than_or_equal_to: 20)
     |> validate_number(:weight, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:group_id)
+    |> foreign_key_constraint(:component_product_id)
   end
 end

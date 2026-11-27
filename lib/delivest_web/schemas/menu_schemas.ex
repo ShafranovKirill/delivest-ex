@@ -57,6 +57,7 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
           }
         },
         is_active: %Schema{type: :boolean, example: true},
+        is_combo: %Schema{type: :boolean, description: "Комбо с выбором компонентов"},
         tags: %Schema{
           type: :array,
           items: %Schema{
@@ -136,6 +137,7 @@ defmodule DelivestWeb.Schemas.MenuSchemas do
                     price: %Schema{type: :integer, example: 20_000},
                     max_quantity: %Schema{type: :integer, example: 1},
                     is_default: %Schema{type: :boolean},
+                    component_product_id: %Schema{type: :string, format: :uuid, nullable: true},
                     weight: %Schema{type: :integer, nullable: true},
                     photo_url: %Schema{type: :string, nullable: true},
                     stopped: %Schema{type: :boolean}

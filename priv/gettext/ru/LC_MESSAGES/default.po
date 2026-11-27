@@ -14172,3 +14172,37 @@ msgstr "Курьер возвращается в ресторан"
 
 msgid "Returned to the restaurant"
 msgstr "Курьер вернулся в ресторан"
+
+
+msgid "Combo"
+msgstr "Комбо"
+
+msgid "Product type"
+msgstr "Тип позиции"
+
+msgid "Combo components"
+msgstr "Состав комбо"
+
+msgid "Choose one dish from each required group. Optional groups can be skipped."
+msgstr "Выберите одно блюдо в каждой обязательной группе. Необязательные группы можно пропустить."
+
+msgid "Group name"
+msgstr "Название группы"
+
+msgid "Remove group"
+msgstr "Удалить группу"
+
+msgid "Dish"
+msgstr "Блюдо"
+
+msgid "Select a dish"
+msgstr "Выберите блюдо"
+
+msgid "Surcharge"
+msgstr "Доплата"
+
+msgid "Remove option"
+msgstr "Удалить вариант"
+
+msgid "Add option"
+msgstr "Добавить вариант"

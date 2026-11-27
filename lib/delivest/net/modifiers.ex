@@ -23,10 +23,21 @@ defmodule Delivest.Net.Modifiers do
         }
 
   def list_groups do
+    combo_group_ids =
+      from(link in ProductModifierGroup,
+        join: product in Delivest.Net.Product,
+        on: product.id == link.product_id,
+        where: product.is_combo,
+        select: link.group_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
+
     ModifierGroup
     |> order_by([g], asc: g.position, asc: g.name)
     |> preload(:modifiers)
     |> Repo.all()
+    |> Enum.reject(&MapSet.member?(combo_group_ids, &1.id))
   end
 
   def get_group(id), do: ModifierGroup |> Repo.get(id) |> Repo.preload(:modifiers)

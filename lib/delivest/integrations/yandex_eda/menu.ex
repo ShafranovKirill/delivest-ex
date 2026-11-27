@@ -9,7 +9,8 @@ defmodule Delivest.Integrations.YandexEda.Menu do
     channel_products = Products.by_product(@channel)
 
     for category <- Net.list_category_for_branch(branch.id),
-        {product, index} <- Enum.with_index(category.products) do
+        {product, index} <- Enum.with_index(category.products),
+        not product.is_combo do
       channel_product = channel_products[product.id]
 
       %{

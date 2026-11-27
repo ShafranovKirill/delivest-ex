@@ -15,12 +15,28 @@ defmodule Delivest.Net.PublicOffer do
       measure_unit: Map.get(product, :measure_unit, "g"),
       nutrition: Map.get(product, :nutrition),
       is_active: Map.get(product, :is_active),
+      is_combo: Map.get(product, :is_combo, false),
       tags: Map.get(product, :tags, []),
       suggested: Map.get(product, :suggested, false),
       popular: Map.get(product, :popular, false),
       photo_url: Map.get(product, :photo_url),
       photo_variants: Map.get(product, :photo_variants, []),
-      stopped: MapSet.member?(stopped.products, product.id),
+      stopped:
+        MapSet.member?(stopped.products, product.id) or
+          (Map.get(product, :is_combo, false) and
+             (not Delivest.Net.ComboAvailability.valid_groups?(
+                Map.get(stopped.groups, product.id, [])
+              ) or
+                Enum.any?(Map.get(stopped.groups, product.id, []), fn group ->
+                  group.min == 1 and
+                    Enum.all?(group.modifiers, fn modifier ->
+                      MapSet.member?(stopped.modifiers, modifier.id) or
+                        MapSet.member?(
+                          Map.get(stopped, :unavailable_components, MapSet.new()),
+                          modifier.component_product_id
+                        )
+                    end)
+                end))),
       modifier_groups:
         for(group <- Map.get(stopped.groups, product.id, []), do: group_data(group, stopped))
     }
@@ -40,10 +56,16 @@ defmodule Delivest.Net.PublicOffer do
             name: m.name,
             price: m.price,
             max_quantity: m.max_quantity,
+            component_product_id: m.component_product_id,
             is_default: m.is_default,
             weight: m.weight,
             photo_url: Delivest.Net.Modifiers.photo_url(m),
-            stopped: MapSet.member?(stopped.modifiers, m.id)
+            stopped:
+              MapSet.member?(stopped.modifiers, m.id) or
+                MapSet.member?(
+                  Map.get(stopped, :unavailable_components, MapSet.new()),
+                  m.component_product_id
+                )
           }
         end
     }

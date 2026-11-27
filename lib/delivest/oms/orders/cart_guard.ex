@@ -3,6 +3,7 @@ defmodule Delivest.Oms.Orders.CartGuard do
 
   alias Delivest.Oms.{Cart, CartItem, CartRevision, CartView, Carts, Order}
   alias Delivest.Net.Products
+  alias Delivest.Integrations.Crm
   alias Delivest.Promo.{Catalog, Strategy}
   alias Delivest.Repo
 
@@ -15,10 +16,34 @@ defmodule Delivest.Oms.Orders.CartGuard do
          {:ok, items} <- lock_items(cart_id),
          :ok <- ensure_revision(locked_cart, version, items, epoch, opts),
          :ok <- ensure_not_ordered(cart_id, order_id),
+         :ok <- ensure_branch(locked_cart, branch_id),
+         :ok <- ensure_combo_route(locked_cart, items, opts),
          {:ok, cart} <- fetch(%{locked_cart | items: items}, version),
-         :ok <- ensure_branch(cart, branch_id),
          :ok <- ensure_guest_rewards(cart, opts) do
       {:ok, cart}
+    end
+  end
+
+  defp ensure_combo_route(%Cart{branch_id: nil}, _items, _opts), do: :ok
+
+  defp ensure_combo_route(cart, items, opts) do
+    ids = Enum.map(items, & &1.product_id)
+
+    if ids == [] do
+      :ok
+    else
+      branch = Repo.get(Delivest.Identity.Branch, cart.branch_id)
+      branch = if branch, do: Repo.preload(branch, :info)
+
+      if opts[:crm] || (branch && Crm.provider_for(branch, Keyword.get(opts, :source, "app"))) do
+        products = Products.list_branch_cart_products_by_ids(cart.branch_id, ids)
+
+        if Enum.any?(items, fn item -> match?(%{is_combo: true}, products[item.product_id]) end),
+          do: {:error, :combo_requires_delivest},
+          else: :ok
+      else
+        :ok
+      end
     end
   end
 
@@ -130,6 +155,6 @@ defmodule Delivest.Oms.Orders.CartGuard do
   end
 
   defp ensure_branch(_cart, nil), do: :ok
-  defp ensure_branch(%CartView{branch_id: branch_id}, branch_id), do: :ok
+  defp ensure_branch(%Cart{branch_id: branch_id}, branch_id), do: :ok
   defp ensure_branch(_cart, _branch_id), do: {:error, :cart_branch_mismatch}
 end

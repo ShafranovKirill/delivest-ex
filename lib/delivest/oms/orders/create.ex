@@ -111,7 +111,7 @@ defmodule Delivest.Oms.Orders.Create do
       )
     end)
     |> Multi.run(:stops, fn _, %{pricing: pricing, cart: cart} ->
-      StopGuard.check(cart.branch_id, pricing)
+      StopGuard.check(cart.branch_id, pricing, opts)
     end)
     |> Multi.run(:delivery, fn _, %{pricing: pricing, cart: cart} ->
       DeliveryFee.run_with_quote(cart.branch_id, attrs, pricing, opts)

@@ -7,6 +7,116 @@ defmodule DelivestWeb.Staff.ProductLive.ProductsTest do
   alias Delivest.{Repo, Relations}
   alias DelivestWeb.Staff.ProductLive.ProductTags
 
+  test "the product editor saves a combo group with a branch dish and a surcharge", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    dish = insert_menu_dish(branch, name: "Burger", price: 35000)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/new")
+
+    lv
+    |> form("#product-form", product: %{name: "Lunch combo", price: "450", is_combo: true})
+    |> render_change()
+
+    assert has_element?(lv, "#product-combo-editor")
+    lv |> element("#product-combo-editor button[phx-click='add_combo_group']") |> render_click()
+
+    lv
+    |> form("#product-form",
+      product: %{name: "Lunch combo", price: "450", is_combo: true},
+      combo: %{
+        "groups" => %{
+          "0" => %{
+            "name" => "Main",
+            "required" => "true",
+            "options" => %{"0" => %{"component_product_id" => dish.id, "price" => "25"}}
+          }
+        }
+      }
+    )
+    |> render_submit()
+
+    saved = Repo.get_by!(Delivest.Net.Product, name: "Lunch combo")
+    assert saved.is_combo
+
+    assert [%{name: "Main", required: true, options: [%{component_product_id: id, price: "25"}]}] =
+             Delivest.Net.Combos.load(saved.id)
+
+    assert id == dish.id
+  end
+
+  test "the product editor rejects a combo component from another branch" do
+    branch = insert(:branch)
+    other = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    dish = insert_menu_dish(other, name: "Other branch dish")
+    combo = insert_branch_product(branch.id, name: "Combo", is_combo: true)
+    staff = Repo.preload(staff, [:role, :branches])
+
+    assert {:error, :invalid_combo} =
+             Delivest.Net.Combos.replace(staff, combo, branch.id, [
+               %{
+                 "name" => "Main",
+                 "required" => "true",
+                 "options" => [%{"component_product_id" => dish.id, "price" => "0"}]
+               }
+             ])
+
+    assert Delivest.Net.Combos.load(combo.id) == []
+  end
+
+  test "changing a combo to a dish removes its private groups", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    dish = insert_menu_dish(branch, name: "Burger")
+    combo = insert_branch_product(branch.id, name: "Lunch", is_combo: true)
+    actor = Repo.preload(staff, [:role, :branches])
+
+    assert {:ok, _} =
+             Delivest.Net.Combos.replace(actor, combo, branch.id, [
+               %{
+                 "name" => "Main",
+                 "required" => true,
+                 "options" => [%{"component_product_id" => dish.id, "price" => "0"}]
+               }
+             ])
+
+    [group_id] = Delivest.Net.Modifiers.group_ids(combo.id)
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/#{combo}/edit")
+
+    lv
+    |> form("#product-form", product: %{is_combo: false})
+    |> render_submit()
+
+    refute Repo.get!(Delivest.Net.Product, combo.id).is_combo
+    assert Delivest.Net.Modifiers.group_ids(combo.id) == []
+    assert Repo.get(Delivest.Net.ModifierGroup, group_id) == nil
+  end
+
+  test "malformed combo form indexes do not terminate the editor", %{conn: conn} do
+    branch = insert(:branch)
+    staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+    conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+    {:ok, lv, _} = live(conn, ~p"/staff/b/#{branch}/products/new")
+
+    lv
+    |> element("#product-form")
+    |> render_change(%{
+      "product" => %{"name" => "Lunch", "is_combo" => "true"},
+      "combo" => %{"groups" => %{"invalid" => %{"name" => "Main"}}}
+    })
+
+    assert has_element?(lv, "#product-combo-editor")
+  end
+
+  defp insert_menu_dish(branch, attrs) do
+    category = insert(:category)
+    {:ok, _} = Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    insert_branch_product(branch.id, Keyword.put(attrs, :category, category))
+  end
+
   test "product section matches only the branch product namespace" do
     assert ProductTags.section("/staff/b/north/products") == :products
     assert ProductTags.section("/staff/b/north/products/123/edit") == :products

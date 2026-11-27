@@ -4,6 +4,7 @@ defmodule Delivest.Oms.Carts do
   alias Delivest.{Repo, Net}
   alias Delivest.Identity.Branch
   alias Delivest.Net.Modifiers
+  alias Delivest.Net.ComboAvailability
   alias Delivest.Oms.{Cart, CartItem, CartPricing, CartRevision, CartView}
 
   @cache_store :cart_cache
@@ -341,11 +342,51 @@ defmodule Delivest.Oms.Carts do
   defp choose(product_id, branch_id, modifiers) do
     groups = Map.get(Modifiers.for_products([product_id]), product_id, [])
     stopped = if branch_id, do: Modifiers.stopped_ids(branch_id), else: MapSet.new()
+    product = Repo.get(Net.Product, product_id)
 
-    case {groups, modifiers} do
-      {[], selection} when selection in [nil, []] -> {:ok, []}
-      {[], _selection} -> {:error, :modifier_unavailable}
-      _ -> Modifiers.resolve(groups, modifiers, stopped)
+    unavailable =
+      if product && product.is_combo && branch_id,
+        do: ComboAvailability.unavailable_component_ids(branch_id, %{product_id => groups}),
+        else: MapSet.new()
+
+    cond do
+      product && product.is_combo && not ComboAvailability.valid_groups?(groups) ->
+        {:error, :product_unavailable}
+
+      true ->
+        stopped =
+          if product && product.is_combo do
+            Enum.reduce(groups, stopped, fn group, acc ->
+              Enum.reduce(group.modifiers, acc, fn modifier, inner ->
+                if MapSet.member?(unavailable, modifier.component_product_id),
+                  do: MapSet.put(inner, modifier.id),
+                  else: inner
+              end)
+            end)
+          else
+            stopped
+          end
+
+        case {groups, modifiers} do
+          {[], selection} when selection in [nil, []] ->
+            {:ok, []}
+
+          {[], _selection} ->
+            {:error, :modifier_unavailable}
+
+          _ ->
+            case Modifiers.resolve(groups, modifiers, stopped) do
+              {:ok, choices} = result ->
+                if product && product.is_combo &&
+                     (not ComboAvailability.explicitly_selected?(modifiers, choices) or
+                        not ComboAvailability.selected_available?(groups, choices, unavailable)),
+                   do: {:error, :modifiers_required},
+                   else: result
+
+              error ->
+                error
+            end
+        end
     end
   end
 
@@ -535,6 +576,7 @@ defmodule Delivest.Oms.Carts do
   defp do_build_cart_view(%Cart{} = cart, items, products_map) when is_list(items) do
     product_ids = Enum.map(items, & &1.product_id) |> Enum.uniq()
     groups = Modifiers.for_products(product_ids)
+    unavailable_components = ComboAvailability.unavailable_component_ids(cart.branch_id, groups)
 
     {view_items, total_qty, total_amt} =
       Enum.reduce(items, {[], 0, 0}, fn item, {acc_items, acc_qty, acc_amt} ->
@@ -543,7 +585,8 @@ defmodule Delivest.Oms.Carts do
             {[unavailable_item(item, nil, :product_missing) | acc_items], acc_qty, acc_amt}
 
           product ->
-            choices = current_choices(item, Map.get(groups, item.product_id, []))
+            product_groups = Map.get(groups, item.product_id, [])
+            choices = current_choices(item, product_groups)
 
             if item.modifier_key == @star_key do
               if product.is_active && is_nil(product.deleted_at) &&
@@ -569,7 +612,18 @@ defmodule Delivest.Oms.Carts do
                  acc_amt}
               end
             else
-              if product.is_active && is_nil(product.deleted_at) && choices != :gone do
+              combo_valid =
+                not product.is_combo or
+                  (choices != :gone and
+                     ComboAvailability.explicitly_selected?(item.modifiers, choices) and
+                     ComboAvailability.selected_available?(
+                       product_groups,
+                       choices,
+                       unavailable_components
+                     ))
+
+              if product.is_active && is_nil(product.deleted_at) && choices != :gone &&
+                   combo_valid do
                 price = product.price + Modifiers.price(choices)
                 item_total = price * item.quantity
 

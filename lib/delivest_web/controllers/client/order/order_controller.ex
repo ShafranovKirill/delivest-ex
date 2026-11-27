@@ -430,6 +430,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :cart_already_ordered,
               :cart_branch_mismatch,
               :product_unavailable,
+              :combo_requires_delivest,
               :client_blocked,
               :price_changed,
               :promo_gift_not_available,
