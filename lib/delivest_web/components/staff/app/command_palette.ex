@@ -19,7 +19,7 @@ defmodule DelivestWeb.CommandPalette do
       title={gettext("Search")}
     >
       <.icon name="hero-magnifying-glass" class="size-5" />
-      <span :if={!@icon_only} class="hidden sm:inline">{gettext("Search")}</span>
+      <span :if={!@icon_only} class="staff-search-label hidden sm:inline">{gettext("Search")}</span>
       <kbd
         id="command-palette-shortcut"
         phx-update="ignore"

@@ -29,7 +29,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
        selected_category_id: nil,
        selected_status: nil,
        selected_ids: [],
-       selection_mode: false,
        bulk_delete_open: false,
        form_version: 0,
        crm_menu: Gateway.crm?(socket.assigns.current_branch, :menu),
@@ -149,27 +148,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     end
   end
 
-  @impl true
-  def handle_event("toggle_selection", _, socket) do
-    if Identity.can?(socket.assigns.current_staff, "products.delete") and
-         not socket.assigns.crm_menu do
-      socket =
-        assign(socket,
-          selection_mode: not socket.assigns.selection_mode,
-          selected_ids: [],
-          bulk_delete_open: false
-        )
-
-      handle_params(socket.assigns.params, nil, socket)
-    else
-      {:noreply, socket}
-    end
-  end
-
   def handle_event("select_products", params, socket) do
     ids =
-      if socket.assigns.selection_mode and
-           Identity.can?(socket.assigns.current_staff, "products.delete") and
+      if Identity.can?(socket.assigns.current_staff, "products.delete") and
            not socket.assigns.crm_menu do
         params
         |> Map.get("ids")
@@ -184,8 +165,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   def handle_event("select_product_page", _, socket) do
-    if socket.assigns.selection_mode and
-         Identity.can?(socket.assigns.current_staff, "products.delete") and
+    if Identity.can?(socket.assigns.current_staff, "products.delete") and
          not socket.assigns.crm_menu do
       {:noreply,
        socket
@@ -200,7 +180,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   end
 
   def handle_event("clear_selection", _params, socket) do
-    socket = assign(socket, selected_ids: [], selection_mode: false, bulk_delete_open: false)
+    socket = assign(socket, selected_ids: [], bulk_delete_open: false)
     handle_params(socket.assigns.params, nil, socket)
   end
 
@@ -305,8 +285,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
     {:noreply,
      assign(socket,
        bulk_delete_open:
-         socket.assigns.selection_mode and socket.assigns.selected_ids != [] and
-           not socket.assigns.crm_menu and
+         socket.assigns.selected_ids != [] and not socket.assigns.crm_menu and
            Identity.can?(socket.assigns.current_staff, "products.delete")
      )}
   end
@@ -322,7 +301,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   def handle_event(
         "confirm_bulk_delete",
         _,
-        %{assigns: %{bulk_delete_open: true, selection_mode: true, selected_ids: [_ | _]}} =
+        %{assigns: %{bulk_delete_open: true, selected_ids: [_ | _]}} =
           socket
       ) do
     %{branch_id: branch_id, selected_ids: ids} = socket.assigns
@@ -333,7 +312,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
       {:ok, deleted} ->
         {:noreply,
          socket
-         |> assign(selected_ids: [], selection_mode: false, bulk_delete_open: false)
+         |> assign(selected_ids: [], bulk_delete_open: false)
          |> put_flash(
            :info,
            gettext("Products deleted: %{count}; failed: %{failed}",
@@ -545,7 +524,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
   defp product_columns do
     [
       %{label: nil},
-      %{label: nil, key: "actions"},
       %{label: gettext("Name"), sort: "name"},
       %{label: gettext("Category")},
       %{label: gettext("Price"), sort: "price"},
@@ -661,17 +639,6 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             navigate={~p"/staff/b/#{@current_branch}/products/bulk"}
             class="btn btn-ghost btn-sm justify-start"
           >{gettext("Bulk add")}</.link>
-          <button
-            :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
-            id="product-toggle-selection"
-            type="button"
-            phx-click={
-              JS.push("toggle_selection")
-              |> JS.remove_attribute("open", to: "#product-more-actions")
-            }
-            aria-pressed={if(@selection_mode, do: "true", else: "false")}
-            class="btn btn-ghost btn-sm justify-start"
-          >{if @selection_mode, do: gettext("Cancel selection"), else: gettext("Select multiple")}</button>
           <details class="w-full border-t border-base-300 pt-1">
             <summary class="btn btn-ghost btn-sm w-full cursor-pointer justify-start">
               {gettext("Visible columns")}
@@ -720,8 +687,11 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
         <form id="product-selection" phx-change="select_products"></form>
         <div
-          :if={@selection_mode and MapSet.size(@page_product_ids) > 0}
-          class="mb-3 flex flex-wrap items-center gap-2"
+          :if={
+            Identity.can?(@current_staff, "products.delete") and not @crm_menu and
+              MapSet.size(@page_product_ids) > 0
+          }
+          class="mb-3 flex flex-wrap items-center gap-2 sm:hidden"
         >
           <button
             id="product-select-page"
@@ -744,14 +714,37 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
           list_id="products"
           sticky_leading
         >
+          <:select_header>
+            <input
+              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+              id="product-select-page-header"
+              type="checkbox"
+              checked={
+                length(@selected_ids) == MapSet.size(@page_product_ids) and @selected_ids != []
+              }
+              aria-label={
+                if length(@selected_ids) == MapSet.size(@page_product_ids) and @selected_ids != [],
+                  do: gettext("Clear selection"),
+                  else: gettext("Select all on this page")
+              }
+              aria-checked={
+                if @selected_ids != [] and length(@selected_ids) < MapSet.size(@page_product_ids),
+                  do: "mixed"
+              }
+              phx-click={
+                if length(@selected_ids) == MapSet.size(@page_product_ids) and @selected_ids != [],
+                  do: "clear_selection",
+                  else: "select_product_page"
+              }
+              class="checkbox checkbox-sm"
+            />
+          </:select_header>
           <:col
             :let={{_id, prod}}
             label=""
           >
             <input
-              :if={
-                @selection_mode and Identity.can?(@current_staff, "products.delete") and not @crm_menu
-              }
+              :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
               type="checkbox"
               id={"product-select-#{prod.id}"}
               name="ids[]"
@@ -763,30 +756,57 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
             />
           </:col>
 
-          <:col :let={{_id, prod}} label="" key="actions">
-            <div class="flex items-center gap-1 whitespace-nowrap">
-              <.link
-                :if={Identity.can?(@current_staff, "products.update")}
-                id={"product-edit-#{prod.id}"}
-                navigate={
-                  ~p"/staff/b/#{@current_branch}/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"
-                }
-                class="btn btn-ghost btn-square btn-xs"
-                aria-label={gettext("Edit %{name}", name: prod.name)}
-                title={gettext("Edit")}
-              ><.icon name="hero-pencil-square" class="size-4" /></.link>
+          <:action :let={{_id, prod}}>
+            <div :if={
+              Identity.can?(@current_staff, "products.update") or
+                (Identity.can?(@current_staff, "products.delete") and not @crm_menu) or
+                Identity.can?(@current_staff, "stops.update")
+            }>
               <button
-                :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
-                id={"product-delete-#{prod.id}"}
+                id={"product-row-more-#{prod.id}"}
                 type="button"
-                phx-click="delete_click"
-                phx-value-id={prod.id}
-                class="btn btn-ghost btn-square btn-xs text-error hover:bg-error/10"
-                aria-label={gettext("Delete %{name}", name: prod.name)}
-                title={gettext("Delete")}
-              ><.icon name="hero-trash" class="size-4" /></button>
+                popovertarget={"product-row-actions-#{prod.id}"}
+                class="btn btn-ghost btn-square btn-sm"
+                aria-label={gettext("Actions for %{name}", name: prod.name)}
+                title={gettext("Actions")}
+                style={"anchor-name: --product-actions-#{prod.id}"}
+              ><.icon name="hero-ellipsis-horizontal" class="size-5" /></button>
+              <div
+                id={"product-row-actions-#{prod.id}"}
+                popover="auto"
+                class="w-44 rounded-box border border-base-300 bg-base-100 p-1 text-base-content shadow-lg"
+                style={"position-anchor: --product-actions-#{prod.id}; top: anchor(bottom); right: anchor(right); bottom: auto; left: auto; margin: .25rem 0 0; position-try-fallbacks: flip-block; background: var(--staff-popover-color, var(--color-base-100))"}
+              >
+                <.link
+                  :if={Identity.can?(@current_staff, "products.update")}
+                  id={"product-edit-#{prod.id}"}
+                  navigate={
+                    ~p"/staff/b/#{@current_branch}/products/#{prod.id}/edit?#{build_query_params(assigns, %{})}"
+                  }
+                  class="block rounded-field px-3 py-2 text-start text-sm hover:bg-base-200"
+                  aria-label={gettext("Edit %{name}", name: prod.name)}
+                >{gettext("Edit")}</.link>
+                <button
+                  :if={Identity.can?(@current_staff, "products.delete") and not @crm_menu}
+                  id={"product-delete-#{prod.id}"}
+                  type="button"
+                  phx-click="delete_click"
+                  phx-value-id={prod.id}
+                  popovertarget={"product-row-actions-#{prod.id}"}
+                  class="w-full rounded-field px-3 py-2 text-start text-sm text-error hover:bg-error/10"
+                  aria-label={gettext("Delete %{name}", name: prod.name)}
+                >{gettext("Delete")}</button>
+                <.stop_control
+                  :if={Identity.can?(@current_staff, "stops.update")}
+                  product={prod}
+                  stops={Map.get(@stops, prod.id, [])}
+                  can_edit={true}
+                  menu
+                  popover_id={"product-row-actions-#{prod.id}"}
+                />
+              </div>
             </div>
-          </:col>
+          </:action>
 
           <:col :let={{_id, prod}} label={gettext("Name")} sort="name">
             <.link
@@ -828,9 +848,9 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
 
           <:col :let={{_id, prod}} label={gettext("Status")}>
             <%= if prod.is_active do %>
-              <span class="badge badge-success badge-sm whitespace-nowrap">{gettext("Active")}</span>
+              <span class="product-status badge badge-sm whitespace-nowrap" data-active="true">{gettext("Active")}</span>
             <% else %>
-              <span class="badge badge-error badge-sm text-error-content whitespace-nowrap">{gettext(
+              <span class="product-status badge badge-sm whitespace-nowrap" data-active="false">{gettext(
                 "Inactive"
               )}</span>
             <% end %>
@@ -841,6 +861,7 @@ defmodule DelivestWeb.Staff.ProductLive.Products do
               product={prod}
               stops={Map.get(@stops, prod.id, [])}
               can_edit={Identity.can?(@current_staff, "stops.update")}
+              show_actions={false}
             />
           </:col>
 

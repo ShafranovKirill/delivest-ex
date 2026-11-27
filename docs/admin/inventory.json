@@ -7743,7 +7743,7 @@
       ],
       "event": "bulk_delete_click",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/product_live/products.ex:bulk_delete_click:360990d14462d424:1"
+        "event:lib/delivest_web/live/staff/product_live/products.ex:bulk_delete_click:3f02b4e50b656f56:1"
       ],
       "id": "control:lib/delivest_web/live/staff/product_live/products.ex:bulk_delete_click:signature:9c5827306ec8170e:1",
       "label": "Delete",
@@ -7763,7 +7763,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:890",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:911",
       "target_section": "Menu"
     },
     {
@@ -7777,8 +7777,8 @@
       "handler_clauses": [
         "event:lib/delivest_web/live/staff/product_live/products.ex:delete_click:87d4e168dcedd79c:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/product_live/products.ex:delete_click:signature:96191de66bf534b9:1",
-      "label": "unlabelled/icon control at source anchor",
+      "id": "control:lib/delivest_web/live/staff/product_live/products.ex:delete_click:signature:9256b862afb81185:1",
+      "label": "Delete",
       "operation": [
         "Identity.can?",
         "Net.get_branch_product"
@@ -7799,7 +7799,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:778",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:789",
       "target_section": "Menu"
     },
     {
@@ -7811,7 +7811,7 @@
       ],
       "event": "select_product_page",
       "handler_clauses": [
-        "event:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:1a23bc201a329c30:1"
+        "event:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:c307199bdebffdca:1"
       ],
       "id": "control:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:dom:product-select-page:1",
       "label": "Select all on this page",
@@ -7830,7 +7830,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:726",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:696",
       "target_section": "Menu"
     },
     {
@@ -7846,7 +7846,7 @@
         "event:lib/delivest_web/live/staff/product_live/products.ex:resume:10ddba97d4fe66e7:1",
         "event:lib/delivest_web/live/staff/product_live/stop_list.ex:resume:209d103c020a09b9:1"
       ],
-      "id": "control:lib/delivest_web/live/staff/product_live/stop_control.ex:resume:signature:a1433b37529e2a31:1",
+      "id": "control:lib/delivest_web/live/staff/product_live/stop_control.ex:resume:signature:5549658d196f6e81:1",
       "label": "Lift",
       "operation": [
         "Identity.fresh_staff",
@@ -7859,7 +7859,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:33",
+      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:44",
       "target_section": "Menu"
     },
     {
@@ -7889,7 +7889,67 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:54",
+      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:96",
+      "target_section": "Menu"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Menu",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "stop",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/product_live/modifiers.ex:stop:2d6763aab06a3c64:1",
+        "event:lib/delivest_web/live/staff/product_live/products.ex:stop:353092102b03e940:1",
+        "event:lib/delivest_web/live/staff/product_live/stop_list.ex:stop:65e6275480359aa9:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/product_live/stop_control.ex:stop:signature:486b3b72e949b3a6:1",
+      "label": "Until lifted",
+      "operation": [
+        "Identity.fresh_staff",
+        "Modifiers.get_modifier",
+        "Modifiers.stop",
+        "Stops.stop",
+        "String.to_existing_atom"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:72",
+      "target_section": "Menu"
+    },
+    {
+      "availability": "no inline :if",
+      "confirmation": "no inline confirmation marker",
+      "disposition": "retain control in Menu",
+      "error_state": [
+        "no explicit :error in clause"
+      ],
+      "event": "stop",
+      "handler_clauses": [
+        "event:lib/delivest_web/live/staff/product_live/modifiers.ex:stop:2d6763aab06a3c64:1",
+        "event:lib/delivest_web/live/staff/product_live/products.ex:stop:353092102b03e940:1",
+        "event:lib/delivest_web/live/staff/product_live/stop_list.ex:stop:65e6275480359aa9:1"
+      ],
+      "id": "control:lib/delivest_web/live/staff/product_live/stop_control.ex:stop:signature:5b731e1314cc09fe:1",
+      "label": "Until end of day",
+      "operation": [
+        "Identity.fresh_staff",
+        "Modifiers.get_modifier",
+        "Modifiers.stop",
+        "Stops.stop",
+        "String.to_existing_atom"
+      ],
+      "result": [],
+      "rights": {
+        "inline": [],
+        "module_references": []
+      },
+      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:64",
       "target_section": "Menu"
     },
     {
@@ -7919,7 +7979,7 @@
         "inline": [],
         "module_references": []
       },
-      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:49",
+      "source": "lib/delivest_web/live/staff/product_live/stop_control.ex:91",
       "target_section": "Menu"
     },
     {
@@ -18022,7 +18082,7 @@
       "disposition": "retain operation; move control with Menu",
       "error_state": "no explicit :error in clause",
       "event": "bulk_delete_click",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:bulk_delete_click:360990d14462d424:1",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:bulk_delete_click:3f02b4e50b656f56:1",
       "label": "event: bulk_delete_click",
       "operation": [
         "Identity.can?"
@@ -18040,7 +18100,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:304",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:284",
       "target_section": "Menu"
     },
     {
@@ -18063,7 +18123,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:314",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:293",
       "target_section": "Menu"
     },
     {
@@ -18086,7 +18146,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:300",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:280",
       "target_section": "Menu"
     },
     {
@@ -18109,7 +18169,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:362",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:341",
       "target_section": "Menu"
     },
     {
@@ -18118,7 +18178,7 @@
       "disposition": "retain operation; move control with Menu",
       "error_state": "no explicit :error in clause",
       "event": "clear_selection",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:clear_selection:c05e34620a207fa9:1",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:clear_selection:27f872e4dd0645eb:1",
       "label": "event: clear_selection",
       "operation": [],
       "result": [],
@@ -18132,7 +18192,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:202",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:182",
       "target_section": "Menu"
     },
     {
@@ -18155,7 +18215,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:357",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:336",
       "target_section": "Menu"
     },
     {
@@ -18178,7 +18238,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:318",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:297",
       "target_section": "Menu"
     },
     {
@@ -18187,7 +18247,7 @@
       "disposition": "retain operation; move control with Menu",
       "error_state": "explicit :error branch/reference",
       "event": "confirm_bulk_delete",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:confirm_bulk_delete:fb91ec1fa2fc486c:1",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:confirm_bulk_delete:d558a5d9cb8a6366:1",
       "label": "event: confirm_bulk_delete",
       "operation": [
         "Enum.filter",
@@ -18209,7 +18269,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:322",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:301",
       "target_section": "Menu"
     },
     {
@@ -18232,7 +18292,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:280",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:260",
       "target_section": "Menu"
     },
     {
@@ -18255,7 +18315,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:276",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:256",
       "target_section": "Menu"
     },
     {
@@ -18284,7 +18344,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:283",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:263",
       "target_section": "Menu"
     },
     {
@@ -18294,7 +18354,7 @@
       "error_state": "explicit :error branch/reference",
       "event": "delete_click",
       "id": "event:lib/delivest_web/live/staff/product_live/products.ex:delete_click:87d4e168dcedd79c:1",
-      "label": "event: delete_click",
+      "label": "{gettext(\"Delete\")}",
       "operation": [
         "Identity.can?",
         "Net.get_branch_product"
@@ -18315,7 +18375,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:262",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:242",
       "target_section": "Menu"
     },
     {
@@ -18340,7 +18400,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:207",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:187",
       "target_section": "Menu"
     },
     {
@@ -18366,7 +18426,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:245",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:225",
       "target_section": "Menu"
     },
     {
@@ -18375,7 +18435,7 @@
       "disposition": "retain operation; move control with Menu",
       "error_state": "no explicit :error in clause",
       "event": "select_product_page",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:1a23bc201a329c30:1",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:select_product_page:c307199bdebffdca:1",
       "label": "{gettext(\"Select all on this page\")}",
       "operation": [
         "Identity.can?",
@@ -18394,7 +18454,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:186",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:167",
       "target_section": "Menu"
     },
     {
@@ -18403,7 +18463,7 @@
       "disposition": "retain operation; move control with Menu",
       "error_state": "no explicit :error in clause",
       "event": "select_products",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:select_products:8c46abc5b79b8881:1",
+      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:select_products:d41b8726b3e8c859:1",
       "label": "event: select_products",
       "operation": [
         "Enum.filter",
@@ -18426,7 +18486,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:169",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:151",
       "target_section": "Menu"
     },
     {
@@ -18453,34 +18513,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:233",
-      "target_section": "Menu"
-    },
-    {
-      "availability": "conditional branch in handler clause",
-      "confirmation": "no confirmation marker found in module",
-      "disposition": "retain operation; move control with Menu",
-      "error_state": "no explicit :error in clause",
-      "event": "toggle_selection",
-      "id": "event:lib/delivest_web/live/staff/product_live/products.ex:toggle_selection:9e0937ecf9314831:1",
-      "label": "event: toggle_selection",
-      "operation": [
-        "Identity.can?"
-      ],
-      "result": [],
-      "rights": {
-        "clause": [
-          "products.delete"
-        ],
-        "module_references": [
-          "products.create",
-          "products.delete",
-          "products.read",
-          "products.update",
-          "stops.update"
-        ]
-      },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:153",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:213",
       "target_section": "Menu"
     },
     {
@@ -18505,7 +18538,7 @@
           "stops.update"
         ]
       },
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:255",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:235",
       "target_section": "Menu"
     },
     {
@@ -30500,7 +30533,7 @@
       "required": "not applicable: transient search/query input",
       "resolved_field": "search",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:594",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:572",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30521,7 +30554,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "category_id",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:606",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:584",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30542,7 +30575,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "ids[]",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:751",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:746",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"
@@ -30563,7 +30596,7 @@
       "required": "not declared in control/owner schema",
       "resolved_field": "is_active",
       "schema_field": null,
-      "source": "lib/delivest_web/live/staff/product_live/products.ex:618",
+      "source": "lib/delivest_web/live/staff/product_live/products.ex:596",
       "target_section": "Menu / Products",
       "type": "literal staff form control",
       "validation": "form operation; no direct schema field"

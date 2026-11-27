@@ -329,7 +329,7 @@ if ("serviceWorker" in navigator && location.pathname.startsWith("/staff")) {
   navigator.serviceWorker.register("/staff/sw.js", { scope: "/staff/" }).catch(() => {});
 }
 
-const staffDesktop = () => window.matchMedia("(min-width: 1024px)").matches;
+const staffDesktop = () => window.matchMedia("(min-width: 720px)").matches;
 
 function syncSidebarToggle() {
   const expanded = staffDesktop()
@@ -369,7 +369,9 @@ window.addEventListener("sidebar:toggle", () => {
     const collapsed = root.toggleAttribute("data-sidebar-collapsed");
     localStorage.setItem("sidebar_collapsed", collapsed);
   } else {
-    root.toggleAttribute("data-sidebar-open");
+    const open = root.toggleAttribute("data-sidebar-open");
+    if (open) document.getElementById("sidebar-home")?.focus({ preventScroll: true });
+    else document.getElementById("header-sidebar-toggle")?.focus({ preventScroll: true });
   }
   syncSidebarToggle();
   focusVisibleSidebarToggle(focused);

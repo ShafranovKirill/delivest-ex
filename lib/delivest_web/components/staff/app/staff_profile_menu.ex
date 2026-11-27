@@ -28,7 +28,7 @@ defmodule DelivestWeb.StaffProfileMenu do
         aria-expanded="false"
         aria-label={gettext("Profile: %{name}", name: @staff_name)}
         title={@staff_name}
-        class="staff-profile-trigger flex w-full min-w-0 items-center gap-2 rounded-field p-1 text-left hover:bg-base-200"
+        class="staff-profile-trigger flex w-full min-w-0 items-center gap-2 rounded-field p-1 text-left hover:bg-base-200 aria-expanded:bg-base-200"
       >
         <span class="flex size-8 shrink-0 items-center justify-center rounded-field bg-primary text-sm font-bold text-primary-content">
           {@initial}
@@ -38,7 +38,7 @@ defmodule DelivestWeb.StaffProfileMenu do
           <span class="block truncate text-xs text-base-content/60">{@current_staff.role.name}</span>
         </span>
         <.icon
-          name="hero-chevron-up"
+          name="hero-chevron-right"
           class="staff-sidebar-label staff-profile-chevron size-4 shrink-0 text-base-content/55"
         />
       </button>
@@ -47,7 +47,7 @@ defmodule DelivestWeb.StaffProfileMenu do
         id="staff-profile-menu"
         data-profile-menu
         hidden
-        class="staff-profile-menu menu rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
+        class="staff-profile-menu menu rounded-box bg-base-100 p-2"
       >
         <li class="menu-title">{gettext("Language")}</li>
         <li>

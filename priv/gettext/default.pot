@@ -6150,6 +6150,11 @@ msgstr ""
 msgid "Clear selection"
 msgstr ""
 
+#: lib/delivest_web/live/staff/product_live/products.ex:747
+#, elixir-autogen, elixir-format
+msgid "Actions for %{name}"
+msgstr ""
+
 #: lib/delivest_web/components/core_components.ex:443
 #, elixir-autogen, elixir-format
 msgid "Selected: %{count}"

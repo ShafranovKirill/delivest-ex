@@ -8,6 +8,9 @@ defmodule DelivestWeb.Staff.ProductLive.StopControl do
   attr :product, :map, required: true
   attr :stops, :list, required: true
   attr :can_edit, :boolean, required: true
+  attr :menu, :boolean, default: false
+  attr :show_actions, :boolean, default: true
+  attr :popover_id, :string, default: nil
 
   def stop_control(assigns) do
     assigns =
@@ -17,30 +20,69 @@ defmodule DelivestWeb.Staff.ProductLive.StopControl do
       )
 
     ~H"""
-    <div id={"product-stop-#{@product.id}"} class="flex flex-wrap items-center gap-1">
+    <div
+      id={if @menu, do: "product-stop-actions-#{@product.id}", else: "product-stop-#{@product.id}"}
+      class={if @menu, do: "flex flex-col", else: "flex flex-wrap items-center gap-1"}
+    >
       <span
         :for={stop <- @external}
+        :if={not @menu}
         class="badge badge-warning badge-sm whitespace-nowrap"
         title={gettext("Lifted in %{crm}", crm: crm_name(stop.source))}
       >
         {gettext("Stop in %{crm}", crm: crm_name(stop.source))}
       </span>
 
-      <span :if={@manual} class="badge badge-error badge-sm whitespace-nowrap" title={author(@manual)}>
+      <span
+        :if={@manual && not @menu}
+        class="badge badge-error badge-sm whitespace-nowrap"
+        title={author(@manual)}
+      >
         {until_label(@manual)}
       </span>
 
       <button
-        :if={@manual && @can_edit}
+        :if={@manual && @can_edit && @show_actions}
         type="button"
-        class="btn btn-ghost btn-xs"
+        class={
+          if @menu,
+            do: "w-full rounded-field px-3 py-2 text-start text-sm hover:bg-base-200",
+            else: "btn btn-ghost btn-xs"
+        }
         phx-click="resume"
         phx-value-id={@product.id}
+        popovertarget={@popover_id}
       >
         {gettext("Lift")}
       </button>
 
-      <div :if={is_nil(@manual) && @can_edit} class="dropdown dropdown-end">
+      <div
+        :if={is_nil(@manual) && @can_edit && @show_actions && @menu}
+        class="border-t border-base-300 pt-1"
+      >
+        <p class="px-3 py-1 text-xs font-semibold text-base-content/60">{gettext("Stop")}</p>
+        <button
+          type="button"
+          class="w-full rounded-field px-3 py-2 text-start text-sm hover:bg-base-200"
+          phx-click="stop"
+          phx-value-id={@product.id}
+          phx-value-period="today"
+          popovertarget={@popover_id}
+        >{gettext("Until end of day")}</button>
+        <button
+          type="button"
+          class="w-full rounded-field px-3 py-2 text-start text-sm hover:bg-base-200"
+          phx-click="stop"
+          phx-value-id={@product.id}
+          phx-value-period="until_resumed"
+          popovertarget={@popover_id}
+        >{gettext("Until lifted")}</button>
+      </div>
+
+      <div
+        :if={is_nil(@manual) && @can_edit && @show_actions && not @menu}
+        class="dropdown dropdown-end"
+      >
         <button type="button" tabindex="0" class="btn btn-ghost btn-xs">
           <.icon name="hero-no-symbol" class="size-4" /> {gettext("Stop")}
         </button>

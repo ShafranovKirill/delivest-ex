@@ -1,0 +1,26 @@
+/* Palette values from satnaing/shadcn-admin, src/styles/theme.css (MIT). */
+.foundation-shell {
+  --color-base-100: oklch(1 0 0);
+  --color-base-200: oklch(.968 .007 247.896);
+  --color-base-300: oklch(.929 .013 255.508);
+  --color-base-content: oklch(.129 .042 264.695);
+  --color-primary: oklch(.208 .042 265.755);
+  --color-primary-content: oklch(.984 .003 247.858);
+  --color-error: oklch(.577 .245 27.325);
+  --staff-popover-color: var(--color-base-100);
+  --staff-sidebar-surface: var(--color-base-100);
+
+  background-color: var(--color-base-100);
+}
+
+[data-theme="dark"] .foundation-shell {
+  --color-base-100: oklch(.129 .042 264.695);
+  --color-base-200: oklch(.279 .041 260.031);
+  --color-base-300: oklch(1 0 0 / 10%);
+  --color-base-content: oklch(.984 .003 247.858);
+  --color-primary: oklch(.929 .013 255.508);
+  --color-primary-content: oklch(.208 .042 265.755);
+  --color-error: oklch(.704 .191 22.216);
+  --staff-popover-color: oklch(.208 .042 265.755);
+  --staff-sidebar-surface: oklch(.14 .04 259.21);
+}

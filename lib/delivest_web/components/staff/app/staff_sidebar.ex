@@ -88,7 +88,7 @@ defmodule DelivestWeb.StaffSidebar do
     <aside
       data-capability-revision={@capability_revision}
       id="main-sidebar"
-      class="staff-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-base-300 bg-base-100 transition-[width] duration-300"
+      class="staff-sidebar fixed z-50 flex flex-col transition-[width] duration-300"
     >
       <div class="shrink-0 space-y-3 p-2">
         <div
@@ -119,21 +119,6 @@ defmodule DelivestWeb.StaffSidebar do
               count={@new_orders_count}
               branch={@scope_branch}
             />
-            <button
-              id="sidebar-toggle"
-              type="button"
-              data-sidebar-toggle
-              phx-click={JS.dispatch("sidebar:toggle")}
-              data-expand-label={gettext("Expand menu")}
-              data-collapse-label={gettext("Collapse menu")}
-              aria-controls="main-sidebar"
-              aria-expanded="false"
-              aria-label={gettext("Expand menu")}
-              title={gettext("Expand menu")}
-              class="staff-sidebar-toggle btn btn-square h-10 min-h-10 w-10 shrink-0 rounded-field border border-base-300 bg-base-100 hover:bg-base-200"
-            >
-              <.icon name="panel-left" class="size-5" />
-            </button>
           </div>
         </div>
       </div>
@@ -226,7 +211,7 @@ defmodule DelivestWeb.StaffSidebar do
         </div>
       </nav>
 
-      <div class="staff-sidebar-footer shrink-0 border-t border-base-300 p-1">
+      <div class="staff-sidebar-footer shrink-0 p-2">
         <div class="flex min-w-0 items-center gap-1">
           <DelivestWeb.StaffProfileMenu.staff_profile_menu current_staff={@current_staff} />
         </div>
@@ -299,7 +284,11 @@ defmodule DelivestWeb.StaffSidebar do
         aria-label={@item.label}
       >
         <.icon name={@item.icon} class="size-5 shrink-0" />
-        <span>{@item.label}</span>
+        <span class="min-w-0 flex-1 truncate">{@item.label}</span>
+        <.icon
+          name="hero-chevron-right"
+          class="staff-sidebar-disclosure size-4 shrink-0 text-base-content/50"
+        />
       </summary>
       {render_slot(@inner_block)}
     </details>
