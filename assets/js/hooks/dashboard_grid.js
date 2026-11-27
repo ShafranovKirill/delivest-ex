@@ -21,7 +21,7 @@ class DashboardGridEngine extends GridStackEngine {
 }
 
 const mobileHeight = (item, editing, el, extraNarrow) => {
-  if (item.id === "attention") return editing || extraNarrow ? 3 : 2;
+  if (item.id === "attention") return editing ? 3 : 2;
   if (item.id === "quick_actions") {
     const actions = el.querySelectorAll(".dashboard-action-link").length;
     return editing || extraNarrow || actions > 4 ? 3 : 2;
@@ -336,7 +336,10 @@ export const DashboardGrid = {
   },
 
   showGrid() {
-    this.container.classList.add("dashboard-grid-ready");
+    if (!this.container.classList.contains("dashboard-grid-ready")) {
+      this.container.classList.add("dashboard-grid-ready");
+      this.container.dispatchEvent(new CustomEvent("dashboard-grid-ready"));
+    }
     clearTimeout(this.readyTimer);
   },
 };

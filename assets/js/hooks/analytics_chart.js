@@ -178,10 +178,13 @@ function hourlyOption(data, colors) {
   const comparison = Array.isArray(data.yesterday_orders) && data.yesterday_orders.length === data.hours.length;
   return {
     animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    animationDuration: 750,
+    animationEasing: "cubicOut",
     aria: { enabled: true, label: { description: data.title } },
     textStyle: { color: colors.text },
-    grid: { left: 10, right: 12, top: comparison ? 62 : 42, bottom: 32, containLabel: true },
-    legend: comparison ? { show: true, top: 0, textStyle: { color: colors.text } } : { show: false },
+    grid: { left: 4, right: 8, top: comparison ? 34 : 26, bottom: 18, containLabel: true },
+    legend: comparison ? { show: true, left: 4, right: 34, top: 0,
+      textStyle: { color: colors.text, opacity: 0.65, fontSize: 11 } } : { show: false },
     toolbox: toolbox(data, colors, false),
     tooltip: {
       className: "echarts-tooltip",
@@ -202,21 +205,24 @@ function hourlyOption(data, colors) {
     xAxis: {
       type: "category",
       data: data.hours.map((hour) => `${String(hour).padStart(2, "0")}:00`),
-      axisLabel: { interval: 2, color: colors.text, hideOverlap: true },
-      axisLine: { lineStyle: { color: colors.grid } },
+      axisLabel: { interval: "auto", color: colors.text, opacity: 0.58, hideOverlap: true, fontSize: 10 },
+      axisLine: { lineStyle: { color: colors.grid, opacity: 0.65 } },
       axisTick: { show: false },
     },
     yAxis: {
       type: "value",
       min: 0,
       minInterval: 1,
-      axisLabel: { color: colors.text, formatter: (value) => count(value, data.locale) },
-      splitLine: { lineStyle: { color: colors.grid } },
+      splitNumber: 3,
+      axisLabel: { color: colors.text, opacity: 0.58, fontSize: 10,
+        formatter: (value) => count(value, data.locale) },
+      splitLine: { lineStyle: { color: colors.grid, opacity: 0.55 } },
     },
     series: [
-      { name: data.today_label || data.orders_label, type: "bar", data: data.orders, color: colors.primary, barMaxWidth: 22 },
+      { name: data.today_label || data.orders_label, type: "bar", data: data.orders, color: colors.primary,
+        barMaxWidth: 24, itemStyle: { borderRadius: [4, 4, 0, 0] } },
       ...(comparison ? [{ name: data.yesterday_label, type: "line", data: data.yesterday_orders,
-        color: colors.secondary, showSymbol: false, smooth: true,
+        color: colors.secondary, showSymbol: data.hours.length === 1, symbolSize: 7, smooth: true,
         lineStyle: { width: 2, type: "dashed", opacity: 0.65 } }] : []),
     ],
   };
@@ -412,6 +418,14 @@ export const AnalyticsChart = {
   mounted() {
     this.surface = this.el.querySelector(`[id="${this.el.id}-plot"]`);
     this.chart = echarts.init(this.surface, null, { renderer: "canvas" });
+    this.dashboardGrid = JSON.parse(this.el.dataset.chart).kind === "hourly"
+      ? this.el.closest("#dashboard-grid") : null;
+    this.chartReady = !this.dashboardGrid || this.dashboardGrid.classList.contains("dashboard-grid-ready");
+    this.onDashboardGridReady = () => {
+      this.chartReady = true;
+      this.renderChart();
+    };
+    this.dashboardGrid?.addEventListener("dashboard-grid-ready", this.onDashboardGridReady);
     this.chart.on("click", ({ data }) => {
       if (data?.day !== undefined && data?.hour !== undefined) {
         const payload = { day: data.day + 1, hour: data.hour };
@@ -427,7 +441,7 @@ export const AnalyticsChart = {
       }
     });
     this.renderChart();
-    this.resizeObserver = new ResizeObserver(() => this.chart.resize());
+    this.resizeObserver = new ResizeObserver(() => this.resizeChart());
     this.resizeObserver.observe(this.el);
     this.themeObserver = new MutationObserver(() => this.renderChart());
     this.themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -440,11 +454,20 @@ export const AnalyticsChart = {
   },
   destroyed() {
     this.resizeObserver.disconnect();
+    this.dashboardGrid?.removeEventListener("dashboard-grid-ready", this.onDashboardGridReady);
     this.themeObserver.disconnect();
     this.colorScheme.removeEventListener("change", this.onColorScheme);
     this.chart.dispose();
   },
+  resizeChart() {
+    const width = this.surface.clientWidth;
+    const height = this.surface.clientHeight;
+    if (width && height && (width !== this.chart.getWidth() || height !== this.chart.getHeight())) {
+      this.chart.resize();
+    }
+  },
   renderChart() {
+    if (!this.chartReady) return;
     const data = JSON.parse(this.el.dataset.chart);
     const labels = data.kind === "sales" ? JSON.stringify({
       labels: data.labels,
@@ -455,6 +478,11 @@ export const AnalyticsChart = {
     const oldZoom = labels === this.labels && oldOption.dataZoom?.[0];
     const oldLegend = labels === this.labels && oldOption.legend?.[0]?.selected;
     const next = options(data);
+    this.resizeChart();
+    if (data.kind === "hourly") {
+      next.animation = !this.hourlyEntranceDone && next.animation;
+      this.hourlyEntranceDone = true;
+    }
     this.chart.setOption(next, { notMerge: true });
     if (oldZoom && next.dataZoom?.length) {
       this.chart.dispatchAction({ type: "dataZoom", start: oldZoom.start, end: oldZoom.end });
@@ -465,6 +493,5 @@ export const AnalyticsChart = {
       });
     }
     this.labels = labels;
-    this.chart.resize();
   },
 };

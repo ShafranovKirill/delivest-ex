@@ -17,17 +17,17 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           <h2
             :if={@data.problem_count == 0 and @data.created_count == 0 and @data.ready_count == 0}
             id="dashboard-attention-empty"
-            class="dashboard-widget-title"
+            class="dashboard-kpi-heading"
           >
-            <.icon name="hero-check-circle" class="size-5 text-success" />{gettext(
-              "No orders need attention"
-            )}
+            <span>{gettext("No orders need attention")}</span>
+            <.icon name="hero-check-circle" class="dashboard-kpi-icon size-4 text-success" />
           </h2>
           <h2
             :if={@data.problem_count + @data.created_count + @data.ready_count > 0}
-            class="dashboard-widget-title"
+            class="dashboard-kpi-heading"
           >
-            <.icon name="hero-bell-alert" class="size-5 text-warning" />{gettext("Needs attention")}
+            <span>{gettext("Needs attention")}</span>
+            <.icon name="hero-bell-alert" class="dashboard-kpi-icon size-4" />
           </h2>
           <div
             :if={@data.problem_count + @data.created_count + @data.ready_count > 0}
@@ -108,7 +108,7 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
           {@data.in_work}
         </.dashboard_kpi>
       <% "hourly" -> %>
-        <section class="dashboard-widget-card">
+        <section class="dashboard-widget-card dashboard-hourly-card">
           <div class="flex items-center justify-between gap-3">
             <h2 class="dashboard-widget-title">{gettext("Orders by hour")}</h2>
             <.link
@@ -146,13 +146,13 @@ defmodule DelivestWeb.Staff.DashboardLive.Widgets do
                     </tr>
                   </thead>
                   <tbody>
-                    <tr :for={row <- @data.hourly}>
+                    <tr :for={row <- @data.hourly_rows}>
                       <td>{String.pad_leading(to_string(row.hour), 2, "0")}:00</td><td>
-                        {Enum.at(@data.hourly_chart.orders, row.hour) || "—"}
+                        {if is_nil(row.orders), do: "—", else: row.orders}
                       </td><td>
-                        {Enum.at(@data.yesterday_hourly, row.hour).orders}
+                        {row.yesterday_orders}
                       </td><td>
-                        {OrderHelpers.money(row.revenue)}
+                        {if is_nil(row.revenue), do: "—", else: OrderHelpers.money(row.revenue)}
                       </td>
                     </tr>
                   </tbody>
