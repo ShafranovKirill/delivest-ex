@@ -19,6 +19,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  @orders_refresh_interval :timer.seconds(30)
+
   on_mount {DelivestWeb.Hooks.Permission, "orders.read"}
 
   @impl true
@@ -30,6 +32,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       Intake.subscribe(branch_id)
       Couriers.subscribe(branch_id)
       CourierPresence.subscribe(branch_id)
+      schedule_orders_refresh()
     end
 
     {:ok, branch} = Identity.get_branch(branch_id, preload: :info)
@@ -413,6 +416,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
 
+  def handle_info(:refresh_orders, socket) do
+    schedule_orders_refresh()
+    load(socket)
+  end
+
   def handle_info({:intake_changed, branch_id}, socket) do
     {:noreply, assign(socket, :intake, Intake.status(branch_id))}
   end
@@ -435,6 +443,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
      socket
      |> assign(positions: positions)
      |> push_event("courier_positions", %{positions: positions})}
+  end
+
+  defp schedule_orders_refresh do
+    Process.send_after(self(), :refresh_orders, @orders_refresh_interval)
   end
 
   defp refresh_crm_retry(socket, reset_poll? \\ false) do

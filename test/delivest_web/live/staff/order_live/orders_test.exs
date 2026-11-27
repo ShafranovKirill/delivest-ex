@@ -3,6 +3,7 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
 
   import Phoenix.LiveViewTest
   import Delivest.Factory
+  import Delivest.OrderFixtures
 
   alias Delivest.Features.Settings
   alias Delivest.Couriers.Delivery
@@ -51,6 +52,26 @@ defmodule DelivestWeb.Staff.OrderLive.OrdersTest do
       refute html =~ "intake-popover"
       assert html =~ "orders-search"
       assert html =~ "orders-sound-toggle"
+    end
+
+    test "refreshes the current list when a new order notification is missed", %{conn: conn} do
+      branch = insert(:branch)
+      staff = insert(:staff, role: insert(:role, permissions: ["admin"]))
+      conn = init_test_session(conn, %{"staff_id" => staff.id, "active_branch_id" => branch.id})
+
+      {:ok, view, _} = live(conn, ~p"/staff/b/#{branch}/orders?period=all")
+
+      :sys.replace_state(view.pid, fn state ->
+        Delivest.Oms.Orders.unsubscribe(branch.id)
+        state
+      end)
+
+      order = order_fixture(branch.id)
+      card = "#orders-#{order.id}"
+      refute has_element?(view, card)
+
+      send(view.pid, :refresh_orders)
+      assert has_element?(view, card)
     end
   end
 
