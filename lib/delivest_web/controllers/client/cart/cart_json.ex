@@ -1,5 +1,8 @@
 defmodule DelivestWeb.Client.Cart.CartJSON do
   alias Delivest.Net.Stops
+  alias Delivest.Net.Products
+  alias Delivest.Integrations.Crm
+  alias Delivest.Identity
   alias Delivest.Oms.CartView
   alias Delivest.Oms.OrderTiming
   alias DelivestWeb.Client.Cart.PromoJSON
@@ -14,6 +17,7 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
 
   defp cart_data(%CartView{} = cart) do
     stopped = stopped_ids(cart.branch_id)
+    combo_ids = unavailable_combo_ids(cart)
 
     %{
       id: cart.id,
@@ -21,7 +25,7 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       session_id: cart.session_id,
       branch_id: cart.branch_id,
       fulfillment_type: cart.fulfillment_type,
-      items: Enum.map(cart.items, &item_data(&1, stopped)),
+      items: Enum.map(cart.items, &item_data(&1, stopped, combo_ids)),
       total_quantity: cart.total_quantity,
       subtotal_amount: cart.subtotal_amount,
       discount_amount: cart.discount_amount,
@@ -47,7 +51,30 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
   defp stopped_ids(nil), do: MapSet.new()
   defp stopped_ids(branch_id), do: Stops.stopped_ids(branch_id)
 
-  defp item_data(item, stopped) do
+  defp unavailable_combo_ids(%CartView{branch_id: nil}), do: MapSet.new()
+  defp unavailable_combo_ids(%CartView{items: []}), do: MapSet.new()
+
+  defp unavailable_combo_ids(%CartView{} = cart) do
+    with {:ok, branch} <- Identity.get_branch(cart.branch_id, preload: [:info]),
+         provider when not is_nil(provider) <- Crm.provider_for(branch, "app") do
+      ids = Enum.map(cart.items, & &1.product_id)
+      products = Products.list_branch_cart_products_by_ids(cart.branch_id, ids)
+
+      MapSet.new(ids, fn id ->
+        case products[id] do
+          %{is_combo: true} -> id
+          _ -> nil
+        end
+      end)
+      |> MapSet.delete(nil)
+    else
+      _ -> MapSet.new()
+    end
+  end
+
+  defp item_data(item, stopped, combo_ids) do
+    combo_unavailable = MapSet.member?(combo_ids, item.product_id)
+
     %{
       key: Map.get(item, :key, item.product_id),
       product_id: item.product_id,
@@ -63,8 +90,12 @@ defmodule DelivestWeb.Client.Cart.CartJSON do
       stars_price: Map.get(item, :stars_price),
       promotion_ids: Map.get(item, :promotion_ids, []),
       stopped: MapSet.member?(stopped, item.product_id),
-      unavailable: Map.get(item, :unavailable, false),
-      unavailable_reason: Map.get(item, :unavailable_reason),
+      unavailable: Map.get(item, :unavailable, false) or combo_unavailable,
+      unavailable_reason:
+        if(combo_unavailable,
+          do: :combo_requires_delivest,
+          else: Map.get(item, :unavailable_reason)
+        ),
       modifiers: Enum.map(Map.get(item, :modifiers, []), &modifier/1)
     }
   end

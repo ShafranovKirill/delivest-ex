@@ -62,6 +62,7 @@ defmodule Delivest.Net.MenuView do
       measure_unit: to_string(Map.get(product, :measure_unit) || :g),
       nutrition: nutrition(product),
       is_active: Map.get(product, :is_active),
+      is_combo: Map.get(product, :is_combo, false),
       tags: product |> Map.get(:tags, []) |> Enum.flat_map(&List.wrap(tags[&1])),
       suggested: Map.get(product, :suggested, false),
       photo_url: Delivest.Media.thumb_url_from_file(product.media),

@@ -146,7 +146,8 @@ defmodule Delivest.Payments do
           method: :online,
           amount: order.total_amount,
           status: :pending,
-          provider: "yookassa"
+          provider: "yookassa",
+          details: opts[:payment_context] || %{}
         })
 
       opts[:paid_online] && order.channel ->
@@ -364,6 +365,8 @@ defmodule Delivest.Payments do
         order_id: payment.order_id,
         amount: amount,
         status: if(instant?, do: :succeeded, else: :pending),
+        provider:
+          if(payment.method == :online and payment.provider == "yookassa", do: "yookassa"),
         refunded_at: if(instant?, do: DateTime.utc_now(:second)),
         refunded_by_id: staff_id(by)
       })

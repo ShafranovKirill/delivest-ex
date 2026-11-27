@@ -42,6 +42,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       fulfillment_type: order.fulfillment_type,
       payment_method: order.payment_method,
       awaiting_payment: order.awaiting_payment,
+      saved_payment_fallback_available: fallback_available?(order),
       total_amount: order.total_amount,
       points_earned: order.points_earned || 0,
       subtotal_amount: order.subtotal_amount || order.total_amount,
@@ -86,6 +87,11 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
 
   defp payment_data(_order, _url), do: nil
 
+  defp fallback_available?(%{awaiting_payment: true, status: :created, id: id}),
+    do: Delivest.Payments.SavedMethods.fallback_available?(id)
+
+  defp fallback_available?(_order), do: false
+
   defp order_data(order) do
     items = order.items || []
     product_ids = items |> Enum.map(& &1.product_id) |> Enum.uniq()
@@ -103,6 +109,7 @@ defmodule DelivestWeb.Client.Order.OrderJSON do
       fulfillment_type: order.fulfillment_type,
       payment_method: order.payment_method,
       awaiting_payment: order.awaiting_payment,
+      saved_payment_fallback_available: fallback_available?(order),
       total_amount: order.total_amount,
       points_earned: order.points_earned || 0,
       subtotal_amount: order.subtotal_amount || order.total_amount,

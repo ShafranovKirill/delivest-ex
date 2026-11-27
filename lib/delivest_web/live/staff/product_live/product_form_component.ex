@@ -5,7 +5,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   alias Delivest.Identity.Branch
   alias Delivest.Identity.Staff
   alias Delivest.Integrations.Crm
-  alias Delivest.Net.{Product, ProductCrmIds}
+  alias Delivest.Net.{Combos, Product, ProductCrmIds}
   alias Delivest.Net.SharedOwnership
 
   import Ecto.Changeset
@@ -18,7 +18,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
 
   alias DelivestWeb.Staff.ProductLive.ProductTags
 
-  @editable_fields ~w(name old_price price description quantity weight measure_unit calories proteins fats carbohydrates excise is_active category_id media_id slug tags stars_price stars_reward suggested)a
+  @editable_fields ~w(name old_price price description quantity weight measure_unit calories proteins fats carbohydrates excise is_active is_combo category_id media_id slug tags stars_price stars_reward suggested)a
   @advanced_fields ~w(quantity weight measure_unit calories proteins fats carbohydrates excise tags suggested stars_price stars_reward crm_ids slug)a
 
   @impl true
@@ -83,6 +83,18 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
           |> assign(:category_options, category_options)
           |> assign(:crm_owner, Crm.menu_owner(branch_id, product && product.id))
           |> assign(:product_tags, Net.list_product_tags())
+          |> assign(
+            :combo_groups,
+            if(product && product.is_combo, do: Combos.load(product.id), else: [])
+          )
+          |> assign(
+            :original_combo_groups,
+            if(product && product.is_combo, do: Combos.load(product.id), else: [])
+          )
+          |> assign(
+            :combo_options,
+            if(product && product.is_combo, do: Combos.options(branch_id, product.id), else: [])
+          )
           |> assign(:modifier_groups, Delivest.Net.Modifiers.list_groups())
           |> assign(
             :modifier_group_ids,
@@ -108,7 +120,10 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"product" => params}, socket) do
+  def handle_event("validate", %{"product" => params} = event, socket) do
+    socket = assign(socket, :combo_groups, combo_params(event, socket))
+    socket = maybe_load_combo_options(socket, params)
+
     base_form =
       if socket.assigns.product.id,
         do: socket.assigns.product,
@@ -136,6 +151,69 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
     {:noreply, assign(socket, advanced_open: not socket.assigns.advanced_open)}
   end
 
+  def handle_event("add_combo_group", _, socket) do
+    {:noreply,
+     Phoenix.Component.update(
+       socket,
+       :combo_groups,
+       &(&1 ++ [%{name: "", required: true, options: [%{component_product_id: "", price: "0"}]}])
+     )}
+  end
+
+  def handle_event("remove_combo_group", %{"index" => index}, socket) do
+    {:noreply,
+     Phoenix.Component.update(
+       socket,
+       :combo_groups,
+       fn groups ->
+         case parse_index(index) do
+           {:ok, value} -> List.delete_at(groups, value)
+           :error -> groups
+         end
+       end
+     )}
+  end
+
+  def handle_event("add_combo_option", %{"index" => index}, socket) do
+    {:noreply,
+     Phoenix.Component.update(
+       socket,
+       :combo_groups,
+       fn groups ->
+         case parse_index(index) do
+           {:ok, value} ->
+             List.update_at(groups, value, fn group ->
+               put_options(
+                 group,
+                 group_options(group) ++ [%{component_product_id: "", price: "0"}]
+               )
+             end)
+
+           :error ->
+             groups
+         end
+       end
+     )}
+  end
+
+  def handle_event("remove_combo_option", %{"group" => group, "index" => index}, socket) do
+    {:noreply,
+     Phoenix.Component.update(
+       socket,
+       :combo_groups,
+       fn groups ->
+         with {:ok, group_index} <- parse_index(group),
+              {:ok, option_index} <- parse_index(index) do
+           List.update_at(groups, group_index, fn entry ->
+             put_options(entry, List.delete_at(group_options(entry), option_index))
+           end)
+         else
+           :error -> groups
+         end
+       end
+     )}
+  end
+
   def handle_event("open_upload_modal", _, socket) do
     unless socket.assigns[:readonly], do: notify_parent({:open_upload_modal})
     {:noreply, socket}
@@ -156,6 +234,9 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   end
 
   defp save_event(params, event, socket) do
+    socket = assign(socket, :combo_groups, combo_params(event, socket))
+    socket = maybe_load_combo_options(socket, params)
+
     socket =
       if Map.has_key?(event, "modifier_group_ids") do
         assign(
@@ -173,6 +254,69 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
 
     save_product_with_params(socket, socket.assigns.action, params)
   end
+
+  defp combo_params(%{"combo" => %{"groups" => groups}}, _socket) do
+    groups
+    |> indexed_values()
+    |> Enum.map(fn group ->
+      %{
+        "name" => Map.get(group, "name", ""),
+        "required" => Map.get(group, "required", "false"),
+        "options" =>
+          group
+          |> Map.get("options", %{})
+          |> indexed_values()
+      }
+    end)
+  end
+
+  defp combo_params(_event, socket), do: socket.assigns.combo_groups
+
+  defp indexed_values(values) when is_map(values) do
+    values
+    |> Enum.flat_map(fn
+      {index, value} when is_binary(index) and is_map(value) ->
+        case parse_index(index) do
+          {:ok, number} -> [{number, value}]
+          :error -> []
+        end
+
+      _ ->
+        []
+    end)
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.map(&elem(&1, 1))
+  end
+
+  defp indexed_values(_values), do: []
+
+  defp parse_index(index) when is_binary(index) do
+    case Integer.parse(index) do
+      {number, ""} when number >= 0 -> {:ok, number}
+      _ -> :error
+    end
+  end
+
+  defp parse_index(_index), do: :error
+
+  defp maybe_load_combo_options(socket, %{"is_combo" => value}) when value in [true, "true"] do
+    if socket.assigns.combo_options == [] do
+      assign(
+        socket,
+        :combo_options,
+        Combos.options(socket.assigns.branch_id, socket.assigns.product.id)
+      )
+    else
+      socket
+    end
+  end
+
+  defp maybe_load_combo_options(socket, _params), do: socket
+
+  defp group_options(group), do: Map.get(group, "options", Map.get(group, :options, []))
+
+  defp put_options(group, options),
+    do: Map.put(group, if(Map.has_key?(group, "options"), do: "options", else: :options), options)
 
   defp normalize_params(params) do
     params = ProductTags.without_blank(params)
@@ -261,7 +405,8 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
                  product.id,
                  socket.assigns.modifier_group_ids,
                  []
-               ) do
+               ),
+             {:ok, _} <- maybe_save_combo(actor, product, branch_id, socket.assigns.combo_groups) do
           product
         else
           true -> Repo.rollback(:forbidden)
@@ -319,7 +464,11 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   defp update_current_product(socket, params) do
     baseline = socket.assigns.product
     branch_id = socket.assigns.branch_id
-    selected_groups = socket.assigns.modifier_group_ids
+    changing_type? = Map.has_key?(params, "is_combo") and params["is_combo"] != baseline.is_combo
+
+    selected_groups =
+      if changing_type?, do: [], else: socket.assigns.modifier_group_ids
+
     original_groups = socket.assigns.original_modifier_group_ids
 
     Repo.transaction(fn ->
@@ -339,10 +488,15 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
            {:ok, _} <- Net.get_branch_product(branch_id, current.id),
            true <- same_baseline?(baseline, current, branch_id),
            true <- MapSet.new(current_groups) == MapSet.new(original_groups),
+           true <-
+             not current.is_combo or
+               Combos.load(current.id) == socket.assigns.original_combo_groups,
            :ok <- crm_edit_permission(current, branch_id, params),
            :ok <- group_permission(staff, current.id, selected_groups, current_groups),
+           {:ok, _} <- maybe_clear_combo(staff, current, branch_id, changing_type?),
            {:ok, saved} <- Net.update_product(staff, current, params),
-           {:ok, _} <- maybe_attach_groups(staff, saved.id, selected_groups, current_groups) do
+           {:ok, _} <- maybe_attach_groups(staff, saved.id, selected_groups, current_groups),
+           {:ok, _} <- maybe_save_combo(staff, saved, branch_id, socket.assigns.combo_groups) do
         saved
       else
         false -> Repo.rollback(:conflict)
@@ -381,6 +535,35 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
   defp maybe_attach_groups(staff, id, selected, _current),
     do: Delivest.Net.Modifiers.attach(staff, id, selected)
 
+  defp maybe_clear_combo(staff, %Product{is_combo: true} = product, branch_id, true),
+    do: Combos.clear(staff, product, branch_id)
+
+  defp maybe_clear_combo(_staff, _product, _branch_id, _changing_type?),
+    do: {:ok, :unchanged}
+
+  defp maybe_save_combo(_staff, %Product{is_combo: false}, _branch_id, _groups),
+    do: {:ok, :unchanged}
+
+  defp maybe_save_combo(staff, %Product{} = product, branch_id, groups),
+    do: Combos.replace(staff, product, branch_id, combo_group_strings(groups))
+
+  defp combo_group_strings(groups) do
+    Enum.map(groups, fn group ->
+      %{
+        "name" => Map.get(group, "name", Map.get(group, :name, "")),
+        "required" => Map.get(group, "required", Map.get(group, :required, false)),
+        "options" =>
+          Enum.map(Map.get(group, "options", Map.get(group, :options, [])), fn option ->
+            %{
+              "component_product_id" =>
+                Map.get(option, "component_product_id", Map.get(option, :component_product_id)),
+              "price" => Map.get(option, "price", Map.get(option, :price, "0"))
+            }
+          end)
+      }
+    end)
+  end
+
   defp to_params(changeset) do
     data = apply_changes(changeset)
 
@@ -399,6 +582,7 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
       :carbohydrates,
       :excise,
       :is_active,
+      :is_combo,
       :crm_ids,
       :category_id,
       :media_id,
@@ -503,6 +687,122 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             />
 
             <.input
+              field={@form[:is_combo]}
+              type="select"
+              label={gettext("Product type")}
+              options={[{gettext("Dish"), "false"}, {gettext("Combo"), "true"}]}
+            />
+            <div
+              :if={@form[:is_combo].value in [true, "true"]}
+              id="product-combo-editor"
+              class="space-y-4 rounded-box border border-base-300 p-4"
+            >
+              <h3 class="font-semibold">{gettext("Combo components")}</h3>
+              <p class="text-sm text-base-content/60">
+                {gettext("Choose one dish from each required group. Optional groups can be skipped.")}
+              </p>
+              <div
+                :for={{group, group_index} <- Enum.with_index(@combo_groups)}
+                class="space-y-3 rounded-box border border-base-200 p-3"
+              >
+                <div class="flex items-end gap-2">
+                  <label class="flex-1">
+                    <span class="label-text">{gettext("Group name")}</span>
+                    <input
+                      class="input input-bordered w-full"
+                      name={"combo[groups][#{group_index}][name]"}
+                      value={Map.get(group, "name", Map.get(group, :name))}
+                    />
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input
+                      type="hidden"
+                      name={"combo[groups][#{group_index}][required]"}
+                      value="false"
+                    />
+                    <input
+                      type="checkbox"
+                      name={"combo[groups][#{group_index}][required]"}
+                      value="true"
+                      checked={
+                        Map.get(group, "required", Map.get(group, :required)) in [true, "true"]
+                      }
+                    />
+                    {gettext("Required")}
+                  </label>
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    phx-click="remove_combo_group"
+                    phx-value-index={group_index}
+                    phx-target={@myself}
+                  >{gettext("Remove group")}</button>
+                </div>
+                <div
+                  :for={
+                    {option, option_index} <-
+                      Enum.with_index(Map.get(group, "options", Map.get(group, :options, [])))
+                  }
+                  class="flex flex-wrap items-end gap-2"
+                >
+                  <label class="flex-1">
+                    <span class="label-text">{gettext("Dish")}</span>
+                    <select
+                      name={"combo[groups][#{group_index}][options][#{option_index}][component_product_id]"}
+                      class="select select-bordered w-full"
+                    >
+                      <option value="">{gettext("Select a dish")}</option>
+                      <option
+                        :for={{name, id} <- @combo_options}
+                        value={id}
+                        selected={
+                          id ==
+                            Map.get(
+                              option,
+                              "component_product_id",
+                              Map.get(option, :component_product_id)
+                            )
+                        }
+                      >
+                        {name}
+                      </option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="label-text">{gettext("Surcharge")}</span>
+                    <input
+                      class="input input-bordered w-24"
+                      name={"combo[groups][#{group_index}][options][#{option_index}][price]"}
+                      value={Map.get(option, "price", Map.get(option, :price, "0"))}
+                      inputmode="decimal"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    phx-click="remove_combo_option"
+                    phx-value-group={group_index}
+                    phx-value-index={option_index}
+                    phx-target={@myself}
+                  >{gettext("Remove option")}</button>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  phx-click="add_combo_option"
+                  phx-value-index={group_index}
+                  phx-target={@myself}
+                >{gettext("Add option")}</button>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline"
+                phx-click="add_combo_group"
+                phx-target={@myself}
+              >{gettext("Add group")}</button>
+            </div>
+
+            <.input
               field={@form[:description]}
               type="textarea"
               label={gettext("Description")}
@@ -586,7 +886,10 @@ defmodule DelivestWeb.Staff.ProductLive.ProductFormComponent do
             >
               <.tag_checkboxes field={@form[:tags]} tags={@product_tags} branch={@current_branch} />
 
-              <fieldset :if={@modifier_groups != []} class="space-y-2">
+              <fieldset
+                :if={@modifier_groups != [] and @form[:is_combo].value not in [true, "true"]}
+                class="space-y-2"
+              >
                 <legend class="label-text font-bold">{gettext("Modifiers")}</legend>
                 <input type="hidden" name="modifier_group_ids[]" value="" />
                 <div class="flex flex-wrap gap-2">

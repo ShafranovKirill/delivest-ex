@@ -51,8 +51,14 @@ defmodule DelivestWeb.Staff.CourierLive.Index do
       when action in ~w(take refuse pick_up hand_over) do
     %{current_staff: staff, current_branch: branch} = socket.assigns
 
+    result =
+      case Identity.fresh_staff(staff) do
+        %Identity.Staff{} = fresh -> run(action, fresh, branch.id, id)
+        nil -> {:error, :forbidden}
+      end
+
     socket =
-      case run(action, staff, branch.id, id) do
+      case result do
         {:ok, _result} -> handed(socket, action, id)
         error -> put_flash(socket, :error, StatusErrors.message(error))
       end

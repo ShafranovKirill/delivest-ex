@@ -23,13 +23,17 @@ defmodule Delivest.Fiscal.OrderSubscriber do
            Repo.get(Order, event.aggregate_id),
          true <- Fiscal.globally_enabled?(),
          %BranchSettings{mode: :own, enabled: true} = settings <- Fiscal.settings(order.branch_id) do
-      case payments(order, settings) do
-        [] ->
-          :ok
+      if awaiting_prepayment?(order) do
+        {:error, :prepayment_receipt_pending}
+      else
+        case payments(order, settings) do
+          [] ->
+            :ok
 
-        payments ->
-          with {:ok, _receipt} <- Fiscal.issue(order, payments, cashier: cashier(event.actor)),
-               do: :ok
+          payments ->
+            with {:ok, _receipt} <- Fiscal.issue(order, payments, cashier: cashier(event.actor)),
+                 do: :ok
+        end
       end
     else
       _skip -> :ok
@@ -50,6 +54,16 @@ defmodule Delivest.Fiscal.OrderSubscriber do
   end
 
   def handle(_event), do: :ok
+
+  defp awaiting_prepayment?(order) do
+    Repo.exists?(
+      from(p in Payment,
+        where:
+          p.order_id == ^order.id and p.provider == "yookassa" and p.status == :paid and
+            is_nil(p.fiscalized_by)
+      )
+    )
+  end
 
   def payments(%Order{} = order, %BranchSettings{} = settings) do
     if issued?(order) do

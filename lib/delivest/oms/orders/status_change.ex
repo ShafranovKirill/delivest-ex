@@ -4,9 +4,12 @@ defmodule Delivest.Oms.Orders.StatusChange do
   require Logger
 
   alias Delivest.{Audit, Payments, Repo}
+  alias Delivest.Couriers.Delivery
+  alias Delivest.Identity
   alias Delivest.Identity.Staff
   alias Delivest.Oms.{Order, OrderEvents, OrderFlow, OrderLock, OrderTransition}
   alias Delivest.Oms.Orders.Notifier
+  alias Delivest.Payments.Payment
   alias Ecto.Multi
 
   def run(%Order{} = order, to, by, opts \\ []) do
@@ -23,7 +26,13 @@ defmodule Delivest.Oms.Orders.StatusChange do
   def apply(repo, %Order{} = order, to, by, opts \\ []) do
     case OrderFlow.steps(order, to, by) do
       {:ok, steps} ->
-        persist(repo, order, steps, by, opts)
+        with :ok <- check_online_payment(repo, order, steps),
+             {:ok, delivery} <- manual_delivery(repo, order, steps, by, opts),
+             opts <- normalize_manual_reason(opts, delivery),
+             {:ok, change} <- persist(repo, order, steps, by, opts),
+             :ok <- confirm_delivery(repo, delivery, steps) do
+          {:ok, change}
+        end
 
       {:ignored, reason} ->
         Logger.info("order #{order.number}: #{OrderFlow.source(by)} #{to} ignored (#{reason})")
@@ -31,6 +40,88 @@ defmodule Delivest.Oms.Orders.StatusChange do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp manual_delivery(_repo, _order, steps, by, _opts)
+       when steps == [] or not is_tuple(by), do: {:ok, nil}
+
+  defp manual_delivery(repo, order, steps, {:staff, staff}, opts) do
+    if Enum.any?(steps, fn {_from, to} -> to in [:delivering, :completed] end) and
+         order.fulfillment_type == :delivery do
+      delivery =
+        Delivery
+        |> where([d], d.order_id == ^order.id and d.status in [:searching, :assigned, :picked_up])
+        |> lock("FOR UPDATE")
+        |> repo.one()
+
+      case delivery do
+        nil ->
+          if Keyword.has_key?(opts, :delivery_id),
+            do: {:error, :delivery_changed},
+            else: {:ok, nil}
+
+        %Delivery{id: id} = delivery ->
+          reason = Keyword.get(opts, :reason)
+
+          cond do
+            Keyword.get(opts, :delivery_id) != id ->
+              {:error, :delivery_changed}
+
+            Identity.authorize(staff, "orders.update", order.branch_id) != :ok ->
+              {:error, :forbidden}
+
+            not is_binary(reason) or String.trim(reason) == "" ->
+              {:error, :delivery_reason_required}
+
+            true ->
+              {:ok, delivery}
+          end
+      end
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp manual_delivery(_repo, _order, _steps, _by, _opts), do: {:ok, nil}
+
+  defp normalize_manual_reason(opts, nil), do: opts
+
+  defp normalize_manual_reason(opts, _delivery) do
+    Keyword.update!(opts, :reason, &(String.trim(&1) |> String.slice(0, 300)))
+  end
+
+  defp confirm_delivery(_repo, nil, _steps), do: :ok
+
+  defp confirm_delivery(repo, delivery, steps) do
+    {_from, to} = List.last(steps)
+
+    changeset =
+      case to do
+        :delivering ->
+          changeset = Delivery.pick_up_changeset(delivery)
+
+          if delivery.provider == :yandex,
+            do:
+              Ecto.Changeset.put_change(
+                changeset,
+                :details,
+                Map.put(delivery.details || %{}, "manual_pickup", true)
+              ),
+            else: changeset
+
+        :completed when delivery.provider == :yandex ->
+          Ecto.Changeset.change(delivery,
+            details: Map.put(delivery.details || %{}, "manual_delivered", true)
+          )
+
+        :completed ->
+          Delivery.close_changeset(delivery, :delivered, nil)
+      end
+
+    case repo.update(changeset) do
+      {:ok, _delivery} -> :ok
+      error -> error
     end
   end
 
@@ -97,6 +188,40 @@ defmodule Delivest.Oms.Orders.StatusChange do
       order -> {:ok, order}
     end
   end
+
+  defp check_online_payment(repo, %Order{payment_method: :online, channel: nil} = order, steps) do
+    if Enum.any?(steps, fn {_from, to} -> to in [:delivering, :completed] end) do
+      payments =
+        repo.all(
+          from(p in Payment,
+            where: p.order_id == ^order.id and p.method == :online and p.provider == "yookassa",
+            where: p.status == :paid and not is_nil(p.paid_at),
+            preload: :refunds
+          )
+        )
+
+      net =
+        Enum.reduce(payments, 0, fn payment, total ->
+          refunded =
+            payment.refunds
+            |> Enum.filter(&(&1.status == :succeeded))
+            |> Enum.map(& &1.amount)
+            |> Enum.sum()
+
+          total + payment.amount - refunded
+        end)
+
+      cond do
+        payments == [] -> {:error, :online_payment_not_captured}
+        net == order.total_amount -> :ok
+        true -> {:error, :online_payment_amount_mismatch}
+      end
+    else
+      :ok
+    end
+  end
+
+  defp check_online_payment(_repo, _order, _steps), do: :ok
 
   defp persist(repo, order, steps, by, opts) do
     if Enum.any?(steps, fn {_from, to} -> to == :completed end),

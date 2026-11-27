@@ -1,5 +1,6 @@
 defmodule Delivest.Integrations.YandexDelivery.ClaimLookupWorker do
   use Oban.Worker, queue: :default, max_attempts: 1
+  import Ecto.Query
 
   alias Delivest.{Couriers, Repo}
   alias Delivest.Couriers.Delivery
@@ -36,6 +37,10 @@ defmodule Delivest.Integrations.YandexDelivery.ClaimLookupWorker do
       %Delivery{external_id: nil, status: :searching} = delivery ->
         lookup(delivery, number, started)
 
+      %Delivery{external_id: nil, status: :picked_up, details: %{"manual_pickup" => true}} =
+          delivery ->
+        lookup(delivery, number, started)
+
       _other ->
         :ok
     end
@@ -56,7 +61,21 @@ defmodule Delivest.Integrations.YandexDelivery.ClaimLookupWorker do
   end
 
   defp attach(delivery, claim_id) do
-    delivery |> Delivery.provider_changeset(%{external_id: claim_id}) |> Repo.update!()
+    Repo.transaction(fn ->
+      Repo.one!(
+        from o in Delivest.Oms.Order, where: o.id == ^delivery.order_id, lock: "FOR UPDATE"
+      )
+
+      case Repo.one!(from d in Delivery, where: d.id == ^delivery.id, lock: "FOR UPDATE") do
+        %Delivery{external_id: nil, status: status} = current
+        when status in [:searching, :picked_up] ->
+          current |> Delivery.provider_changeset(%{external_id: claim_id}) |> Repo.update!()
+
+        _closed ->
+          :ok
+      end
+    end)
+
     Poller.enqueue(YandexDelivery.Poller, delivery.branch_id)
     :ok
   end

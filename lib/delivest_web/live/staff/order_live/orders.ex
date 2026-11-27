@@ -19,6 +19,8 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   use Gettext, backend: DelivestWeb.Gettext
 
+  @orders_refresh_interval :timer.seconds(30)
+
   on_mount {DelivestWeb.Hooks.Permission, "orders.read"}
 
   @impl true
@@ -30,6 +32,7 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       Intake.subscribe(branch_id)
       Couriers.subscribe(branch_id)
       CourierPresence.subscribe(branch_id)
+      schedule_orders_refresh()
     end
 
     {:ok, branch} = Identity.get_branch(branch_id, preload: :info)
@@ -178,6 +181,26 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
       load(socket)
     else
       error -> failed(socket, error)
+    end
+  end
+
+  def handle_event("confirm_delivery_step", params, socket) do
+    with %{"order_id" => id, "delivery_id" => delivery_id, "to" => target, "reason" => reason} <-
+           params,
+         {:ok, to} when to in [:delivering, :completed] <- StatusErrors.parse_status(target),
+         {:ok, delivery_id} <- Ecto.UUID.cast(delivery_id),
+         {:ok, order} <- fetch_branch_order(socket, id),
+         {:staff, %Identity.Staff{}} = actor <- staff(socket),
+         {:ok, _order} <-
+           Orders.advance_order(order, to, actor,
+             delivery_id: delivery_id,
+             reason: reason
+           ) do
+      load(socket)
+    else
+      {:error, _} = error -> failed(socket, error)
+      {:staff, nil} -> failed(socket, :forbidden)
+      _ -> failed(socket, :delivery_changed)
     end
   end
 
@@ -393,6 +416,11 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
 
   def handle_info({Orders, [:order, _event], _order}, socket), do: load(socket)
 
+  def handle_info(:refresh_orders, socket) do
+    schedule_orders_refresh()
+    load(socket)
+  end
+
   def handle_info({:intake_changed, branch_id}, socket) do
     {:noreply, assign(socket, :intake, Intake.status(branch_id))}
   end
@@ -415,6 +443,10 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
      socket
      |> assign(positions: positions)
      |> push_event("courier_positions", %{positions: positions})}
+  end
+
+  defp schedule_orders_refresh do
+    Process.send_after(self(), :refresh_orders, @orders_refresh_interval)
   end
 
   defp refresh_crm_retry(socket, reset_poll? \\ false) do
@@ -468,8 +500,19 @@ defmodule DelivestWeb.Staff.OrderLive.Orders do
          {:ok, _receipt} <- action.(receipt, Identity.fresh_staff(socket.assigns.current_staff)) do
       load(socket)
     else
-      {:error, :forbidden} = error -> failed(socket, error)
-      _error -> socket |> put_flash(:error, gettext("Failed to issue the receipt")) |> load()
+      {:error, :forbidden} = error ->
+        failed(socket, error)
+
+      {:error, :refund_online_payment} ->
+        socket
+        |> put_flash(
+          :error,
+          gettext("Refund the YooKassa payment first. The receipt is issued after confirmation.")
+        )
+        |> load()
+
+      _error ->
+        socket |> put_flash(:error, gettext("Failed to issue the receipt")) |> load()
     end
   end
 

@@ -8445,6 +8445,9 @@ msgstr "Не оплачен вовремя"
 msgid "The order is waiting for the online payment"
 msgstr "Заказ ждёт онлайн-оплаты"
 
+msgid "Wait for YooKassa to confirm payment, then try again."
+msgstr "Дождитесь подтверждения оплаты от ЮKassa и повторите действие."
+
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:392
 #, elixir-autogen, elixir-format
 msgid "Payments differ from YooKassa: %{count}"
@@ -14144,3 +14147,73 @@ msgstr "Бесплатные приборы при оформлении зака
 #, elixir-autogen, elixir-format
 msgid "Free: one set per started 1,000 ₽ of food after discounts, excluding delivery. Customers can change the quantity, including to 0."
 msgstr "Бесплатно: по одному набору на каждые начатые 1 000 ₽ стоимости блюд после скидок, без доставки. Покупатель может изменить количество, в том числе выбрать 0."
+
+msgid "Enter a reason for manual delivery confirmation"
+msgstr "Укажите причину ручного подтверждения"
+
+msgid "The delivery has changed. Check its current status."
+msgstr "Доставка изменилась. Проверьте её текущий статус."
+
+msgid "Reason for manual confirmation"
+msgstr "Причина ручного подтверждения"
+
+msgid "Confirm pickup manually"
+msgstr "Подтвердить передачу курьеру вручную"
+
+msgid "Confirm delivery manually"
+msgstr "Подтвердить доставку вручную"
+
+#, elixir-format
+msgid "Yandex claim: %{status}"
+msgstr "Заявка Яндекса: %{status}"
+
+msgid "Courier not found"
+msgstr "Курьер не найден"
+
+msgid "Returning to the restaurant"
+msgstr "Курьер возвращается в ресторан"
+
+msgid "Returned to the restaurant"
+msgstr "Курьер вернулся в ресторан"
+
+
+msgid "Combo"
+msgstr "Комбо"
+
+msgid "Product type"
+msgstr "Тип позиции"
+
+msgid "Combo components"
+msgstr "Состав комбо"
+
+msgid "Choose one dish from each required group. Optional groups can be skipped."
+msgstr "Выберите одно блюдо в каждой обязательной группе. Необязательные группы можно пропустить."
+
+msgid "Group name"
+msgstr "Название группы"
+
+msgid "Remove group"
+msgstr "Удалить группу"
+
+msgid "Dish"
+msgstr "Блюдо"
+
+msgid "Select a dish"
+msgstr "Выберите блюдо"
+
+msgid "Surcharge"
+msgstr "Доплата"
+
+msgid "Remove option"
+msgstr "Удалить вариант"
+
+msgid "Add option"
+msgstr "Добавить вариант"
+
+#: lib/delivest_web/live/staff/order_live/orders.ex
+msgid "Refund the YooKassa payment first. The receipt is issued after confirmation."
+msgstr "Сначала оформите возврат оплаты через ЮKassa. Чек сформируется после подтверждения возврата."
+
+#: lib/delivest_web/live/staff/order_live/status_errors.ex
+msgid "The YooKassa payment amount differs from the order total. Check the payment and refunds in the order."
+msgstr "Сумма оплаты ЮKassa не совпадает с итогом заказа. Проверьте оплату и возвраты в заказе."

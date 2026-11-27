@@ -4,7 +4,7 @@ defmodule Delivest.Integrations.Yookassa.Settings do
 
   @type t :: %__MODULE__{}
 
-  @fields [:shop_id, :secret_key]
+  @fields [:shop_id, :secret_key, :saved_payment_methods_enabled]
 
   @primary_key {:id, :binary_id, autogenerate: true}
 
@@ -12,6 +12,7 @@ defmodule Delivest.Integrations.Yookassa.Settings do
     field :shop_id, :string
     field :secret_key, :string, redact: true
     field :webhook_token, :string, redact: true
+    field :saved_payment_methods_enabled, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -22,13 +23,13 @@ defmodule Delivest.Integrations.Yookassa.Settings do
     |> update_change(:shop_id, &trim/1)
     |> update_change(:secret_key, &trim/1)
     |> keep_secret(settings)
-    |> validate_required(@fields)
+    |> validate_required([:shop_id, :secret_key])
     |> validate_format(:shop_id, ~r/^\d+$/)
     |> put_webhook_token()
   end
 
   def complete?(%__MODULE__{} = settings),
-    do: Enum.all?(@fields, &(Map.get(settings, &1) not in [nil, ""]))
+    do: Enum.all?([:shop_id, :secret_key], &(Map.get(settings, &1) not in [nil, ""]))
 
   def complete?(_settings), do: false
 

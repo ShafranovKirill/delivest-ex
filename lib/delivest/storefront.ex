@@ -84,7 +84,9 @@ defmodule Delivest.Storefront do
          :active <-
            if(Enum.any?(branches.full, &(&1.id == branch_id)), do: :active, else: :missing),
          {:ok, revision} <- Revisions.current(name, branch_id),
-         {:ok, data, boundary} <- section_data(name, branch_id, locale, revision),
+         public_revision =
+           if(name == "menu", do: menu_revision(revision, branches_revision), else: revision),
+         {:ok, data, boundary} <- section_data(name, branch_id, locale, public_revision),
          :fresh <-
            if(crossed_boundary?(branch_boundary) or crossed_boundary?(boundary),
              do: :stale,
@@ -95,7 +97,7 @@ defmodule Delivest.Storefront do
       {:ok,
        %{
          data: data,
-         revision: revision,
+         revision: public_revision,
          valid_until: valid_until([branch_boundary, boundary])
        }}
     else
@@ -274,7 +276,7 @@ defmodule Delivest.Storefront do
        %{
          franchise: franchise,
          branches: branches,
-         menu: menu,
+         menu: menu_revision(menu, branches),
          stories: stories,
          advertising: advertising
        }}
@@ -283,6 +285,8 @@ defmodule Delivest.Storefront do
 
   defp current_or_value(section, nil), do: Revisions.current(section)
   defp current_or_value(_section, value), do: {:ok, value}
+
+  defp menu_revision(menu, branches), do: menu <> "|" <> branches
 
   defp revisions_current?(branch_id, expected) do
     current =
@@ -340,8 +344,16 @@ defmodule Delivest.Storefront do
   defp fresh_key?({:franchise, revision}), do: Revisions.db_matches?("franchise", "*", revision)
   defp fresh_key?({:branches, revision}), do: Revisions.db_matches?("branches", "*", revision)
 
-  defp fresh_key?({:menu, branch_id, _locale, revision}),
-    do: Revisions.db_matches?("menu", branch_id, revision)
+  defp fresh_key?({:menu, branch_id, _locale, revision}) do
+    case String.split(revision, "|", parts: 2) do
+      [menu, branches] ->
+        Revisions.db_matches?("menu", branch_id, menu) and
+          Revisions.db_matches?("branches", "*", branches)
+
+      _ ->
+        false
+    end
+  end
 
   defp fresh_key?({:stories, branch_id, revision}),
     do: Revisions.db_matches?("stories", branch_id, revision)

@@ -4,10 +4,66 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
   import Delivest.Factory
 
   alias Delivest.Repo
+  alias Delivest.Identity.Branch.BranchInfo
+  alias Delivest.Integrations.Crm.BranchSettings
+  alias Delivest.Integrations.Frontpad
 
   setup do
     Cachex.clear(:storefront_cache)
     :ok
+  end
+
+  test "CRM route changes menu revision, section ETag and manifest", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    category = insert(:category)
+    combo = insert_branch_product(branch.id, category: category, is_combo: true)
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    refresh_worker()
+
+    bootstrap_path = "/client/storefront/v1/bootstrap?slug=#{branch.slug}"
+    section_path = "/client/storefront/v1/sections/menu?branch_id=#{branch.id}"
+    manifest_path = "/client/storefront/v1/manifest?branch_id=#{branch.id}"
+
+    initial = conn |> get(bootstrap_path) |> json_response(200)
+    assert Enum.any?(Enum.flat_map(initial["menu"], & &1["products"]), &(&1["id"] == combo.id))
+    first = conn |> recycle() |> get(section_path)
+    [old_tag] = get_resp_header(first, "etag")
+    manifest = conn |> recycle() |> get(manifest_path) |> json_response(200)
+    assert manifest["revisions"]["menu"] == initial["revisions"]["menu"]
+
+    Repo.insert!(%BranchInfo{
+      branch_id: branch.id,
+      crm: %BranchSettings{
+        enabled: true,
+        provider: :frontpad,
+        sources: ["app"],
+        frontpad: %Frontpad.Settings{api_key: "test", affiliate: "3"}
+      }
+    })
+
+    Cachex.del(:branch_cache, branch.id)
+    refresh_worker()
+
+    changed = conn |> recycle() |> get(bootstrap_path) |> json_response(200)
+    refute Enum.any?(Enum.flat_map(changed["menu"], & &1["products"]), &(&1["id"] == combo.id))
+    refute changed["revisions"]["menu"] == initial["revisions"]["menu"]
+
+    new_manifest = conn |> recycle() |> get(manifest_path) |> json_response(200)
+    assert new_manifest["revisions"]["menu"] == changed["revisions"]["menu"]
+
+    response =
+      conn
+      |> recycle()
+      |> put_req_header("if-none-match", old_tag)
+      |> get(section_path)
+
+    assert response.status == 200
+    refute get_resp_header(response, "etag") == [old_tag]
+
+    refute Enum.any?(
+             Enum.flat_map(json_response(response, 200)["data"], & &1["products"]),
+             &(&1["id"] == combo.id)
+           )
   end
 
   test "responsive photo variants reach bootstrap, section and direct product", %{conn: conn} do

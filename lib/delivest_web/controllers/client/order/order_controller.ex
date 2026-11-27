@@ -163,18 +163,34 @@ defmodule DelivestWeb.Client.Order.OrderController do
       "Для заказа, который ждёт онлайн-оплаты: возвращает страницу оплаты ЮKassa, " <>
         "чтобы клиент мог вернуться и оплатить.",
     tags: ["Orders"],
+    request_body:
+      {"Опциональный переход на обычную оплату после отменённой сохранённой попытки",
+       "application/json",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{fallback_to_new_method: %OpenApiSpex.Schema{type: :boolean}}
+       }},
     parameters: [id: [in: :path, type: :string, description: "ID заказа"]],
     responses: [
       ok: {"Страница оплаты", "application/json", PaymentLinkResponse},
+      no_content: "Ссылка на оплату не требуется",
       not_found: {"Заказ не найден", "application/json", ErrorResponse},
       unprocessable_entity: {"Заказ не ждёт оплаты", "application/json", ErrorResponse}
     ]
   )
 
-  def pay(conn, %{"id" => id}) do
+  def pay(conn, %{"id" => id} = params) do
     session_id = CookieHelper.get_cookie(conn, "session_id")
 
-    case Oms.payment_link(session_id, client_id(conn.assigns.current_client), id) do
+    case Oms.payment_link(
+           session_id,
+           client_id(conn.assigns.current_client),
+           id,
+           params["fallback_to_new_method"] == true
+         ) do
+      {:ok, nil} ->
+        send_resp(conn, :no_content, "")
+
       {:ok, url} ->
         json(conn, %{data: %{confirmation_url: url}})
 
@@ -423,6 +439,17 @@ defmodule DelivestWeb.Client.Order.OrderController do
 
   defp render_error(conn, reason)
        when reason in [
+              :saved_payment_methods_disabled,
+              :saved_payment_method_not_found,
+              :saved_payment_method_conflict,
+              :expected_total_required,
+              :payment_amount_changed
+            ] do
+    ApiError.send_error(conn, :unprocessable_entity, reason, Phoenix.Naming.humanize(reason))
+  end
+
+  defp render_error(conn, reason)
+       when reason in [
               :branch_id_required,
               :branch_not_found,
               :cart_not_found,
@@ -430,6 +457,7 @@ defmodule DelivestWeb.Client.Order.OrderController do
               :cart_already_ordered,
               :cart_branch_mismatch,
               :product_unavailable,
+              :combo_requires_delivest,
               :client_blocked,
               :price_changed,
               :promo_gift_not_available,

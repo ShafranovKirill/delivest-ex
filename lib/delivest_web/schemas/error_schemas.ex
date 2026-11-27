@@ -27,6 +27,7 @@ defmodule DelivestWeb.Schemas.ErrorSchemas do
             "payment_unavailable",
             "cart_branch_mismatch",
             "product_unavailable",
+            "combo_requires_delivest",
             "client_blocked",
             "quantity_limit_exceeded",
             "item_not_found",

@@ -142,6 +142,15 @@ defmodule DelivestWeb.Staff.IntegrationLive.Yookassa do
           </div>
         </div>
 
+        <div class="space-y-1">
+          <.input
+            field={@form[:saved_payment_methods_enabled]}
+            type="checkbox"
+            label="Сохранённые способы оплаты"
+          />
+          <p class="text-xs text-base-content/60">После подключения сохранения способов в ЮKassa</p>
+        </div>
+
         <div class="flex justify-end gap-2">
           <button
             :if={@settings.id}

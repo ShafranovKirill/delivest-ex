@@ -1,7 +1,7 @@
 defmodule Delivest.Net.Products do
   import Ecto.Query
 
-  alias Delivest.Net.{Product, ProductCrmIds, SharedOwnership}
+  alias Delivest.Net.{Category, Product, ProductCrmIds, SharedOwnership}
   alias Ecto.Multi
   alias Delivest.{Repo, Identity, Relations}
   alias Delivest.Audit
@@ -81,6 +81,29 @@ defmodule Delivest.Net.Products do
     )
     |> where([p], p.id in ^ids and is_nil(p.deleted_at) and p.is_active == true)
     |> maybe_preload_query(opts)
+    |> Repo.all()
+    |> Map.new(&{&1.id, &1})
+  end
+
+  def list_branch_menu_products_by_ids(_branch_id, []), do: %{}
+
+  def list_branch_menu_products_by_ids(branch_id, ids) when is_list(ids) do
+    Product
+    |> join(:inner, [p], r in EntityRelation,
+      on:
+        r.to_id == p.id and r.to_entity_type == "Product" and
+          r.from_entity_type == "Branch" and r.from_id == ^branch_id
+    )
+    |> join(:inner, [p], c in Category, on: c.id == p.category_id)
+    |> join(:inner, [_p, _r, c], cr in EntityRelation,
+      on:
+        cr.to_id == c.id and cr.to_entity_type == "Category" and
+          cr.from_entity_type == "Branch" and cr.from_id == ^branch_id
+    )
+    |> where(
+      [p, _r, c],
+      p.id in ^ids and p.is_active and is_nil(p.deleted_at) and c.is_active
+    )
     |> Repo.all()
     |> Map.new(&{&1.id, &1})
   end

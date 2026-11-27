@@ -3,6 +3,8 @@ defmodule Delivest.Net.PublicOffers do
   import Ecto.Query
 
   alias Delivest.{Identity, Net, Popular, Promo, Repo}
+  alias Delivest.Integrations.Crm
+  alias Delivest.Net.ComboAvailability
 
   alias Delivest.Net.{
     Catalogs,
@@ -88,8 +90,11 @@ defmodule Delivest.Net.PublicOffers do
       tags = tags_for([product])
       projection = MenuView.build_product(product, tags)
       category = %{id: product.category_id, products: [projection]}
-      [%{products: [offer]}] = decorate([category], branch_id, true)
-      {:ok, offer}
+
+      case decorate([category], branch_id, true) do
+        [%{products: [offer]}] -> {:ok, offer}
+        _ -> {:error, :not_found}
+      end
     else
       _ -> {:error, :not_found}
     end
@@ -208,6 +213,9 @@ defmodule Delivest.Net.PublicOffers do
 
   def purchasable?(offer) do
     not offer.stopped and
+      (not offer.is_combo or
+         (offer.modifier_groups != [] and
+            Enum.all?(offer.modifier_groups, &(&1.max == 1 and &1.min in [0, 1])))) and
       Enum.all?(offer.modifier_groups, fn group ->
         capacity =
           group.modifiers
@@ -229,6 +237,7 @@ defmodule Delivest.Net.PublicOffers do
        ) do
     ids = categories |> Enum.flat_map(& &1.products) |> Enum.map(& &1.id) |> Enum.uniq()
     groups = Net.Modifiers.for_products(ids)
+    unavailable_components = ComboAvailability.unavailable_component_ids(branch_id, groups)
 
     modifier_ids =
       groups
@@ -267,11 +276,13 @@ defmodule Delivest.Net.PublicOffers do
     stopped = %{
       products: stops.products,
       modifiers: stops.modifiers,
+      unavailable_components: unavailable_components,
       groups: groups,
       rewards: %{}
     }
 
     popular = if load_popular?, do: popular_ids(branch_id, ids), else: nil
+    crm_route? = crm_menu?(branch_id)
 
     categories
     |> then(fn values ->
@@ -281,7 +292,9 @@ defmodule Delivest.Net.PublicOffers do
     end)
     |> Enum.map(fn category ->
       Map.update!(category, :products, fn products ->
-        Enum.map(products, fn product ->
+        products
+        |> Enum.reject(&(Map.get(&1, :is_combo, false) and crm_route?))
+        |> Enum.map(fn product ->
           product
           |> Map.put(
             :popular,
@@ -335,19 +348,29 @@ defmodule Delivest.Net.PublicOffers do
   end
 
   defp product_query(branch_id) do
-    from(p in Product,
-      join: r in EntityRelation,
-      on:
-        r.to_id == p.id and r.to_entity_type == "Product" and r.from_entity_type == "Branch" and
-          r.from_id == ^branch_id,
-      join: c in Category,
-      on: c.id == p.category_id,
-      join: cr in EntityRelation,
-      on:
-        cr.to_id == c.id and cr.to_entity_type == "Category" and cr.from_entity_type == "Branch" and
-          cr.from_id == ^branch_id,
-      where: p.is_active and is_nil(p.deleted_at) and c.is_active
-    )
+    query =
+      from(p in Product,
+        join: r in EntityRelation,
+        on:
+          r.to_id == p.id and r.to_entity_type == "Product" and r.from_entity_type == "Branch" and
+            r.from_id == ^branch_id,
+        join: c in Category,
+        on: c.id == p.category_id,
+        join: cr in EntityRelation,
+        on:
+          cr.to_id == c.id and cr.to_entity_type == "Category" and cr.from_entity_type == "Branch" and
+            cr.from_id == ^branch_id,
+        where: p.is_active and is_nil(p.deleted_at) and c.is_active
+      )
+
+    if crm_menu?(branch_id), do: where(query, [p], not p.is_combo), else: query
+  end
+
+  defp crm_menu?(branch_id) do
+    case Identity.get_branch(branch_id, preload: [:info]) do
+      {:ok, branch} -> Crm.provider_for(branch, "app") != nil
+      _ -> false
+    end
   end
 
   defp category_query(branch_id) do

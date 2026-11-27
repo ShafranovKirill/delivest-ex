@@ -7,7 +7,7 @@ defmodule Delivest.Payments.Online.PollWorker do
 
   alias Delivest.Integrations.Yookassa
   alias Delivest.Oms.Order
-  alias Delivest.Payments.{Online, Payment}
+  alias Delivest.Payments.{Online, Payment, Refund}
   alias Delivest.Repo
 
   @quiet_seconds 120
@@ -19,10 +19,26 @@ defmodule Delivest.Payments.Online.PollWorker do
     if Yookassa.configured?() do
       now = DateTime.utc_now()
       poll(now)
+      poll_refunds(now)
       abandon(now)
     end
 
     :ok
+  end
+
+  def poll_refunds(now) do
+    cutoff = DateTime.add(now, -@quiet_seconds, :second)
+
+    from(r in Refund,
+      where: r.provider == "yookassa" and r.status == :pending and not is_nil(r.external_id),
+      where: r.updated_at < ^cutoff,
+      order_by: r.updated_at,
+      limit: @limit,
+      select: r.external_id
+    )
+    |> Repo.all()
+    |> Enum.map(fn id -> {id, Online.sync_refund(id)} end)
+    |> tap(&log/1)
   end
 
   def poll(now) do

@@ -4,11 +4,14 @@ defmodule Delivest.Oms.Checkout do
   require Logger
 
   alias Delivest.{Delivery, Identity, Oms}
+  alias Delivest.Payments.SavedMethods
+  alias Delivest.Integrations.Yookassa
   alias Delivest.Oms.Order
+  alias Delivest.Repo
 
   @public_fields ~w(cart_id branch_id customer_phone customer_name fulfillment_type
                     payment_method cook_by comment persons cash_given address expected_total spend_points cart_revision
-                    address_by_operator)
+                    address_by_operator save_payment_method saved_payment_method_id confirmed_payment_total)
 
   def create(params, client, session_id, key, analytics_guest_id \\ nil) do
     request_attrs = Map.take(params, @public_fields)
@@ -23,15 +26,32 @@ defmodule Delivest.Oms.Checkout do
       |> Map.put("session_id", session_id)
       |> put_client(client)
 
-    with {:ok, order, replay?} <-
-           create_order(attrs, request_attrs, client, session_id, key, analytics_guest_id),
-         {:ok, confirmation_url} <- begin_payment(order, not is_nil(key)) do
+    with {:ok, payment_context} <- payment_context(request_attrs, client, key),
+         {:ok, order, replay?} <-
+           create_order(
+             attrs,
+             request_attrs,
+             client,
+             session_id,
+             key,
+             analytics_guest_id,
+             payment_context
+           ),
+         {:ok, confirmation_url} <- begin_payment(order, not is_nil(key), payment_context) do
       unless replay?, do: remember_address(client, order)
       {:ok, order, confirmation_url}
     end
   end
 
-  defp create_order(attrs, request_attrs, client, session_id, key, analytics_guest_id) do
+  defp create_order(
+         attrs,
+         request_attrs,
+         client,
+         session_id,
+         key,
+         analytics_guest_id,
+         payment_context
+       ) do
     opts = [
       update_client: false,
       guest_session_access: is_nil(client),
@@ -41,7 +61,12 @@ defmodule Delivest.Oms.Checkout do
       authenticated_client_id: client && client.id,
       analytics_guest_id: analytics_guest_id,
       cart_revision: attrs["cart_revision"],
-      public_checkout: true
+      public_checkout: true,
+      payment_context: payment_context,
+      confirmed_payment_total:
+        if(payment_context && payment_context["saved_payment_method_id"],
+          do: attrs["confirmed_payment_total"]
+        )
     ]
 
     preflight = fn ->
@@ -73,6 +98,81 @@ defmodule Delivest.Oms.Checkout do
       {:ok, order, :replay} -> {:ok, order, true}
       {:ok, order} -> {:ok, order, false}
       other -> other
+    end
+  end
+
+  defp payment_context(params, client, key) do
+    save? = params["save_payment_method"] == true
+    method_id = params["saved_payment_method_id"]
+
+    cond do
+      params["save_payment_method"] not in [nil, false, true] ->
+        {:error, :saved_payment_method_conflict}
+
+      not save? and is_nil(method_id) ->
+        {:ok, nil}
+
+      save? and not is_nil(method_id) ->
+        {:error, :saved_payment_method_conflict}
+
+      is_nil(client) ->
+        {:error, :client_auth_required}
+
+      params["payment_method"] != "online" ->
+        {:error, :saved_payment_method_conflict}
+
+      existing_replay?(params, client, key) ->
+        {:ok, nil}
+
+      not SavedMethods.enabled?() ->
+        {:error, :saved_payment_methods_disabled}
+
+      save? ->
+        {:ok,
+         %{
+           "save_payment_method" => true,
+           "shop_id" => Yookassa.get_settings().shop_id,
+           "client_id" => client.id,
+           "consent_version" => 1,
+           "consented_at" => DateTime.utc_now(:microsecond) |> DateTime.to_iso8601()
+         }}
+
+      is_nil(params["expected_total"]) or is_nil(params["confirmed_payment_total"]) ->
+        {:error, :expected_total_required}
+
+      true ->
+        shop_id = Yookassa.get_settings().shop_id
+
+        case SavedMethods.active(client.id, shop_id, method_id) do
+          nil ->
+            if existing_replay?(params, client, key),
+              do: {:ok, nil},
+              else: {:error, :saved_payment_method_not_found}
+
+          _ ->
+            {:ok,
+             %{
+               "saved_payment_method_id" => method_id,
+               "shop_id" => shop_id,
+               "client_id" => client.id
+             }}
+        end
+    end
+  end
+
+  defp existing_replay?(_params, _client, nil), do: false
+
+  defp existing_replay?(params, client, key) do
+    with {:ok, branch_id} <- cast_branch_id(params["branch_id"]),
+         %Order{} = order <-
+           Repo.get_by(Order,
+             branch_id: branch_id,
+             idempotency_key: key,
+             idempotency_owner: "client:#{client.id}"
+           ) do
+      order.idempotency_fingerprint == fingerprint(params, client)
+    else
+      _ -> false
     end
   end
 
@@ -175,7 +275,7 @@ defmodule Delivest.Oms.Checkout do
     end
   end
 
-  defp begin_payment(%Order{awaiting_payment: true} = order, keyed?) do
+  defp begin_payment(%Order{awaiting_payment: true} = order, keyed?, context) do
     case Delivest.Payments.Online.start(order) do
       {:ok, url} ->
         {:ok, url}
@@ -185,12 +285,12 @@ defmodule Delivest.Oms.Checkout do
           "online payment of order #{order.number} was not started: #{inspect(reason)}"
         )
 
-        unless keyed?, do: Delivest.Payments.Online.abandon(order)
+        unless keyed? or not is_nil(context), do: Delivest.Payments.Online.abandon(order)
         {:error, :payment_unavailable}
     end
   end
 
-  defp begin_payment(_order, _keyed?), do: {:ok, nil}
+  defp begin_payment(_order, _keyed?, _context), do: {:ok, nil}
 
   defp ensure_client_auth(client) do
     if Delivest.Franchise.get_settings().client_auth_required == true and is_nil(client),

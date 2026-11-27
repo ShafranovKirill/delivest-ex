@@ -8442,6 +8442,9 @@ msgstr ""
 msgid "The order is waiting for the online payment"
 msgstr ""
 
+msgid "Wait for YooKassa to confirm payment, then try again."
+msgstr ""
+
 #: lib/delivest_web/live/staff/integration_live/presentation.ex:392
 #, elixir-autogen, elixir-format
 msgid "Payments differ from YooKassa: %{count}"
@@ -13593,4 +13596,12 @@ msgstr ""
 #: lib/delivest_web/live/staff/franchise_live/settings_form_component.ex:172
 #, elixir-autogen, elixir-format
 msgid "Free: one set per started 1,000 ₽ of food after discounts, excluding delivery. Customers can change the quantity, including to 0."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/orders.ex
+msgid "Refund the YooKassa payment first. The receipt is issued after confirmation."
+msgstr ""
+
+#: lib/delivest_web/live/staff/order_live/status_errors.ex
+msgid "The YooKassa payment amount differs from the order total. Check the payment and refunds in the order."
 msgstr ""

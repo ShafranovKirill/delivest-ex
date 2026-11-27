@@ -246,14 +246,16 @@ defmodule Delivest.Oms.Orders do
   defp cancellation_enabled?(%{client_cancellation: false}), do: false
   defp cancellation_enabled?(_), do: true
 
-  def payment_link(session_id, client_id, order_id) do
+  def payment_link(session_id, client_id, order_id, fallback? \\ false) do
     with {:ok, id} <- Ecto.UUID.cast(order_id),
          %Order{awaiting_payment: true, status: :created} = order <-
            Order
            |> where([o], o.id == ^id and is_nil(o.deleted_at))
            |> where(^owner_filter(session_id, client_id))
            |> Repo.one() || {:error, :not_found} do
-      Delivest.Payments.Online.start(order)
+      if fallback?,
+        do: Delivest.Payments.Online.fallback(order),
+        else: Delivest.Payments.Online.start(order)
     else
       %Order{} -> {:error, :not_awaiting}
       :error -> {:error, :not_found}

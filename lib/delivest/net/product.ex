@@ -36,6 +36,7 @@ defmodule Delivest.Net.Product do
     field :excise, Ecto.Enum, values: @excises
     field :vat, Ecto.Enum, values: Delivest.Fiscal.Vat.rates()
     field :is_active, :boolean, default: true
+    field :is_combo, :boolean, default: false
     field :tags, {:array, :string}, default: []
     field :suggested, :boolean, default: false
     field :stars_price, :integer
@@ -71,6 +72,7 @@ defmodule Delivest.Net.Product do
       :measure_unit,
       :media_id,
       :is_active,
+      :is_combo,
       :crm_ids,
       :category_id,
       :deleted_at,

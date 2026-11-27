@@ -280,9 +280,64 @@ defmodule Delivest.CouriersTest do
       assert deliveries(ctx.order) == [{:cancelled, :order_cancelled}]
     end
 
-    test "the operator hands the order over without the courier", ctx do
-      advance(ctx.order, [:ready, :delivering], operator(ctx.branch))
-      assert deliveries(ctx.order) == [{:cancelled, :handed_over}]
+    test "the operator confirms an active delivery with a reason", ctx do
+      operator = operator(ctx.branch)
+      order = advance(ctx.order, [:ready], operator)
+
+      assert {:error, :delivery_changed} =
+               Orders.advance_order(order, :delivering, {:staff, operator})
+
+      assert {:error, :delivery_reason_required} =
+               Orders.advance_order(order, :delivering, {:staff, operator},
+                 delivery_id: ctx.delivery.id,
+                 reason: "  "
+               )
+
+      assert {:ok, %Order{status: :delivering}} =
+               Orders.advance_order(order, :delivering, {:staff, operator},
+                 delivery_id: ctx.delivery.id,
+                 reason: "  Забрал другой курьер  "
+               )
+
+      assert %Delivery{status: :picked_up} = Repo.reload!(ctx.delivery)
+
+      assert %OrderTransition{staff_id: id, reason: "Забрал другой курьер"} =
+               Repo.get_by!(OrderTransition, order_id: order.id, to: :delivering)
+
+      assert id == operator.id
+
+      assert {:error, :delivery_reason_required} =
+               Orders.advance_order(Repo.reload!(order), :completed, {:staff, operator},
+                 delivery_id: ctx.delivery.id,
+                 reason: ""
+               )
+
+      assert {:ok, %Order{status: :completed}} =
+               Orders.advance_order(Repo.reload!(order), :completed, {:staff, operator},
+                 delivery_id: ctx.delivery.id,
+                 reason: "Вручено клиенту"
+               )
+
+      assert %Delivery{status: :delivered} = Repo.reload!(ctx.delivery)
+
+      assert Repo.get_by!(OrderTransition, order_id: order.id, to: :completed).reason ==
+               "Вручено клиенту"
+    end
+
+    test "a stale manual confirmation cannot act on a new attempt", ctx do
+      operator = operator(ctx.branch)
+      order = advance(ctx.order, [:ready], operator)
+      assert {:ok, _} = Couriers.take(courier(ctx.branch), ctx.branch.id, ctx.delivery.id)
+      assert {:ok, _} = Couriers.unassign(operator, order)
+      deliver_events()
+
+      assert {:error, :delivery_changed} =
+               Orders.advance_order(Repo.reload!(order), :delivering, {:staff, operator},
+                 delivery_id: ctx.delivery.id,
+                 reason: "Забрал"
+               )
+
+      assert Repo.reload!(order).status == :ready
     end
   end
 

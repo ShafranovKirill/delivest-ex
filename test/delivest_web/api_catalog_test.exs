@@ -22,7 +22,9 @@ defmodule DelivestWeb.ApiCatalogTest do
       assert get_in(scalar, ["paths", path, method]), "missing Scalar #{method} #{path}"
     end
 
-    assert length(ApiCatalog.routes()) == 82
+    assert length(ApiCatalog.routes()) == 84
+    assert {"get", "/client/payment-methods"} in ApiCatalog.routes()
+    assert {"delete", "/client/payment-methods/{id}"} in ApiCatalog.routes()
     assert ApiCatalog.missing() == []
     assert scalar["x-delivest-contract-coverage"]["undocumentedCount"] == 0
 

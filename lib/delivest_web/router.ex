@@ -148,6 +148,8 @@ defmodule DelivestWeb.Router do
     pipe_through [:client_api, :client_identity, :client_required]
 
     get "/me", Profile.ProfileController, :show
+    get "/payment-methods", PaymentMethodController, :index
+    delete "/payment-methods/:id", PaymentMethodController, :delete
     get "/loyalty", Loyalty.LoyaltyController, :show
     post "/push", Push.PushController, :subscribe_client
     delete "/push", Push.PushController, :unsubscribe_client

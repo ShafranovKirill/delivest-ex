@@ -51,11 +51,12 @@ defmodule Delivest.Oms.Orders.Update do
     |> Multi.run(:editable, fn _, %{lock: locked} -> editable(locked) end)
     |> Multi.run(:client_id, fn _, _ -> ClientResolver.resolve(attrs) end)
     |> Multi.run(:cart, fn _, _ ->
-      CartGuard.acquire(attrs["cart_id"], order.branch_id, order.id)
+      CartGuard.acquire(attrs["cart_id"], order.branch_id, order.id, source: order.source)
     end)
     |> Multi.run(:pricing, fn _, %{cart: cart, client_id: client_id} ->
       with {:ok, result} <- Pricing.run(cart, attrs, client_id, order),
-           {:ok, _} <- Delivest.Oms.Orders.StopGuard.check(cart.branch_id, result),
+           {:ok, _} <-
+             Delivest.Oms.Orders.StopGuard.check(cart.branch_id, result, source: order.source),
            do: {:ok, result}
     end)
     |> Multi.run(:delivery, fn _, %{pricing: pricing} ->

@@ -19,6 +19,15 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
   def message(:order_locked), do: gettext("The order is managed by the CRM")
   def message(:awaiting_payment), do: gettext("The order is waiting for the online payment")
 
+  def message(:online_payment_not_captured),
+    do: gettext("Wait for YooKassa to confirm payment, then try again.")
+
+  def message(:online_payment_amount_mismatch),
+    do:
+      gettext(
+        "The YooKassa payment amount differs from the order total. Check the payment and refunds in the order."
+      )
+
   def message(:paid),
     do: gettext("The payment is already handed over or receipted, refund it before reverting")
 
@@ -38,6 +47,13 @@ defmodule DelivestWeb.Staff.OrderLive.StatusErrors do
     do: gettext("The courier has picked up the order, its status cannot be reverted")
 
   def message(:not_ready), do: gettext("The order is not ready yet")
+
+  def message(:delivery_reason_required),
+    do: gettext("Enter a reason for manual delivery confirmation")
+
+  def message(:delivery_changed),
+    do: gettext("The delivery has changed. Check its current status.")
+
   def message(:no_offers), do: gettext("Yandex Delivery has no offers for this address")
   def message(:not_configured), do: gettext("Yandex Delivery is not set up for this branch")
 
