@@ -56,6 +56,148 @@ defmodule Delivest.Media.ThumbnailsTest do
     assert Repo.reload!(file).thumb_key == "product/menu/pizza_thumb.webp"
   end
 
+  test "product variants expose actual widths without upscaling small originals" do
+    serve_image(S3Stub.png(300, 150))
+    file = create_file()
+
+    assert :ok = perform_job(ThumbnailWorker, %{file_id: file.id})
+    updated = Repo.reload!(file)
+    assert updated.thumb_key == Thumbnail.key(file.key)
+    assert updated.variant_keys["192"]["width"] == 192
+    assert updated.variant_keys["384"]["width"] == 300
+    assert updated.variant_keys["800"]["width"] == 300
+    assert Enum.map(Media.photo_variants_from_file(updated), & &1.width) == [192, 300]
+
+    first_key = Thumbnail.variant_key(file.key, 192, S3Stub.png(300, 150))
+    assert_received {:s3, "PUT", "/delivest/" <> ^first_key, first_webp}
+    {:ok, image} = Vix.Vips.Image.new_from_buffer(first_webp)
+    assert Vix.Vips.Image.width(image) == 192
+  end
+
+  test "retry builds missing variants without rewriting a successful thumbnail" do
+    file = create_file()
+    png = S3Stub.png(1000, 500)
+    test_pid = self()
+
+    Req.Test.stub(S3Stub, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn, length: 20_000_000)
+      send(test_pid, {:s3, conn.method, conn.request_path, body})
+
+      if conn.method == "PUT" and String.contains?(conn.request_path, "_v2_384_") do
+        Plug.Conn.send_resp(conn, 500, "")
+      else
+        Plug.Conn.send_resp(conn, 200, if(conn.method == "GET", do: png, else: ""))
+      end
+    end)
+
+    assert {:error, _} = perform_job(ThumbnailWorker, %{file_id: file.id})
+    updated = Repo.reload!(file)
+    assert updated.thumb_key == Thumbnail.key(file.key)
+    assert updated.variant_keys["800"]["width"] == 800
+    assert Enum.map(Media.photo_variants_from_file(updated), & &1.width) == [192, 800]
+    assert updated.variant_keys["192"]["width"] == 192
+    assert updated.variant_keys["384"] == nil
+    assert_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb.webp", _}
+    assert_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_192_" <> _, _}
+    refute_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_800_" <> _, _}
+
+    serve_image(png)
+    assert :ok = perform_job(ThumbnailWorker, %{file_id: file.id})
+    assert Repo.reload!(file).variant_keys["384"]["width"] == 384
+    refute_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb.webp", _}
+    refute_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_192_" <> _, _}
+  end
+
+  test "backfill repairs incomplete variant metadata" do
+    file = create_file()
+    legacy_key = Thumbnail.key(file.key)
+
+    file =
+      file
+      |> Ecto.Changeset.change(
+        thumb_key: legacy_key,
+        variant_keys: %{
+          "800" => %{"key" => legacy_key, "width" => 0},
+          "192" => %{"key" => "", "width" => 192},
+          "384" => "invalid"
+        }
+      )
+      |> Repo.update!()
+
+    assert Thumbnails.missing?(file)
+    assert Media.photo_variants_from_file(file) == []
+    serve_image(S3Stub.png(1000, 500))
+    assert :ok = perform_job(ThumbnailWorker, %{file_id: file.id})
+
+    updated = Repo.reload!(file)
+    refute Thumbnails.missing?(updated)
+    assert Enum.map(Media.photo_variants_from_file(updated), & &1.width) == [192, 384, 800]
+    assert_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_192_" <> _, _}
+    assert_received {:s3, "PUT", "/delivest/product/menu/pizza_thumb_v2_384_" <> _, _}
+  end
+
+  test "variant keys include image content and deletion includes published variants" do
+    assert Thumbnail.variant_key("product/a.png", 192, "first") !=
+             Thumbnail.variant_key("product/a.png", 192, "second")
+
+    file = create_file()
+    serve_image(S3Stub.png(1200, 800))
+    assert :ok = perform_job(ThumbnailWorker, %{file_id: file.id})
+
+    assert {:ok, _} = Media.delete_file(Repo.reload!(file))
+    assert_received {:s3, "DELETE", "/delivest/product/menu/pizza_thumb.webp", _}
+    assert_received {:s3, "DELETE", "/delivest/product/menu/pizza_thumb_v2_192_" <> _, _}
+    assert_received {:s3, "DELETE", "/delivest/product/menu/pizza_thumb_v2_384_" <> _, _}
+    assert_received {:s3, "DELETE", "/delivest/product/menu/pizza.png", _}
+  end
+
+  test "transparent source keeps an alpha channel in WebP" do
+    transparent_png =
+      Base.decode64!(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg=="
+      )
+
+    assert {:ok, webp, 1} = Thumbnail.build_width(transparent_png, 192)
+    assert {:ok, image} = Vix.Vips.Image.new_from_buffer(webp)
+    assert Vix.Vips.Image.has_alpha?(image)
+  end
+
+  test "menu projection includes variants while preserving photo_url" do
+    file = %File{
+      bucket: "delivest",
+      key: "product/a.png",
+      context: :product,
+      is_private: false,
+      thumb_key: "product/a_thumb.webp",
+      variant_keys: %{"192" => %{"key" => "product/a_thumb_v2_192.webp", "width" => 192}}
+    }
+
+    product = %{
+      id: Ecto.UUID.generate(),
+      name: "Pizza",
+      price: 1_000,
+      media: file,
+      tags: []
+    }
+
+    projection = Delivest.Net.MenuView.build_product(product)
+    assert projection.photo_url =~ "/delivest/product/a_thumb.webp"
+    assert [%{url: url, width: 192}] = projection.photo_variants
+    assert url =~ "/delivest/product/a_thumb_v2_192.webp"
+  end
+
+  test "private media does not expose presigned variant URLs" do
+    file = %File{
+      bucket: "delivest-private",
+      key: "product/a.png",
+      context: :product,
+      is_private: true,
+      variant_keys: %{"192" => %{"key" => "product/a_192.webp", "width" => 192}}
+    }
+
+    assert Media.photo_variants_from_file(file) == []
+  end
+
   test "an unreadable image is cancelled instead of retried" do
     serve_image("not an image")
     file = create_file()

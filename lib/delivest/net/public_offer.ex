@@ -19,6 +19,7 @@ defmodule Delivest.Net.PublicOffer do
       suggested: Map.get(product, :suggested, false),
       popular: Map.get(product, :popular, false),
       photo_url: Map.get(product, :photo_url),
+      photo_variants: Map.get(product, :photo_variants, []),
       stopped: MapSet.member?(stopped.products, product.id),
       modifier_groups:
         for(group <- Map.get(stopped.groups, product.id, []), do: group_data(group, stopped))

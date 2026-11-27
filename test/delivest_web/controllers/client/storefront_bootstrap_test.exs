@@ -506,7 +506,10 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
         handler,
         [:delivest, :repo, :query],
         fn _, _, metadata, _ ->
-          if String.contains?(metadata[:query] || "", ~s(SELECT p0."until" FROM "product_stops")) and
+          if String.contains?(
+               metadata[:query] || "",
+               ~s(SELECT p0."product_id", p0."until" FROM "product_stops")
+             ) and
                :atomics.compare_exchange(gate, 1, 0, 1) == :ok do
             send(owner, {:boundary_query, self()})
 
@@ -554,7 +557,10 @@ defmodule DelivestWeb.Client.StorefrontBootstrapTest do
         handler,
         [:delivest, :repo, :query],
         fn _, _, metadata, _ ->
-          if String.contains?(metadata[:query] || "", ~s(SELECT p0."until" FROM "product_stops")) do
+          if String.contains?(
+               metadata[:query] || "",
+               ~s(SELECT p0."product_id", p0."until" FROM "product_stops")
+             ) do
             :atomics.add_get(counter, 1, 1)
           end
         end,

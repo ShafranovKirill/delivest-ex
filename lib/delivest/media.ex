@@ -85,6 +85,21 @@ defmodule Delivest.Media do
 
   def thumb_url_from_file(file), do: get_url_from_file(file)
 
+  @spec photo_variants_from_file(File.t() | term()) :: [map()]
+  def photo_variants_from_file(
+        %File{context: :product, is_private: false, variant_keys: variants} = file
+      ) do
+    for {_size, %{"key" => key, "width" => width}} <- variants || %{},
+        is_binary(key) and key != "" and is_integer(width) and width > 0,
+        {:ok, url} <- [generate_url_by_flag(file.bucket, key, file.is_private)] do
+      %{url: url, width: width}
+    end
+    |> Enum.sort_by(& &1.width)
+    |> Enum.uniq_by(& &1.width)
+  end
+
+  def photo_variants_from_file(_), do: []
+
   defp generate_url_by_flag(bucket, key, true = _is_private),
     do: generate_download_url(bucket, key)
 

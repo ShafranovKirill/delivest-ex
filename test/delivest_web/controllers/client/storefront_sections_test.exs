@@ -10,6 +10,58 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
     :ok
   end
 
+  test "responsive photo variants reach bootstrap, section and direct product", %{conn: conn} do
+    branch = insert(:branch, is_active: true)
+    category = insert(:category)
+    product = insert(:product, category_id: category.id)
+
+    media =
+      Repo.insert!(%Delivest.Media.File{
+        bucket: "delivest",
+        key: "product/variant-test.png",
+        original_name: "variant-test.png",
+        mime_type: "image/png",
+        size: 100,
+        context: :product,
+        owner_id: product.id,
+        is_private: false,
+        thumb_key: "product/variant-test_thumb.webp",
+        variant_keys: %{
+          "192" => %{"key" => "product/variant-test_thumb_v2_192.webp", "width" => 192}
+        }
+      })
+
+    product = product |> Ecto.Changeset.change(media_id: media.id) |> Repo.update!()
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Category", category.id)
+    Delivest.Relations.create_relation(Repo, "Branch", branch.id, "Product", product.id)
+    refresh_worker()
+
+    bootstrap =
+      conn |> get("/client/storefront/v1/bootstrap?slug=#{branch.slug}") |> json_response(200)
+
+    section =
+      conn
+      |> recycle()
+      |> get("/client/storefront/v1/sections/menu?branch_id=#{branch.id}")
+      |> json_response(200)
+
+    direct =
+      conn
+      |> recycle()
+      |> get("/client/branches/#{branch.id}/products/#{product.id}")
+      |> json_response(200)
+
+    for offer <- [
+          hd(hd(bootstrap["menu"])["products"]),
+          hd(hd(section["data"])["products"]),
+          direct["data"]
+        ] do
+      assert offer["photo_url"] =~ "/delivest/product/variant-test_thumb.webp"
+      assert [%{"url" => url, "width" => 192}] = offer["photo_variants"]
+      assert url =~ "/delivest/product/variant-test_thumb_v2_192.webp"
+    end
+  end
+
   test "conditional menu response is empty and scoped by locale and branch", %{conn: conn} do
     branch = insert(:branch, is_active: true)
     other = insert(:branch, is_active: true)
@@ -93,6 +145,49 @@ defmodule DelivestWeb.Client.StorefrontSectionsTest do
     assert Enum.any?(json_response(second, 200)["data"], fn category ->
              Enum.any?(category["products"], &(&1["id"] == product.id and &1["stopped"]))
            end)
+  end
+
+  test "stop snapshot reuses active stops without crossing branch scope" do
+    branch = insert(:branch, is_active: true)
+    other = insert(:branch, is_active: true)
+    product = insert(:product)
+    group = Repo.insert!(%Delivest.Net.ModifierGroup{name: "Extras"})
+    modifier = Repo.insert!(%Delivest.Net.Modifier{group_id: group.id, name: "Extra"})
+    future = DateTime.utc_now() |> DateTime.add(60, :second) |> DateTime.truncate(:second)
+
+    Repo.insert!(%Delivest.Net.ProductStop{
+      branch_id: branch.id,
+      product_id: product.id,
+      source: "manual",
+      until: future
+    })
+
+    Repo.insert!(%Delivest.Net.ModifierStop{
+      branch_id: other.id,
+      modifier_id: modifier.id,
+      until: future
+    })
+
+    snapshot = Delivest.Net.PublicOffers.stop_snapshot(branch.id)
+    assert MapSet.member?(snapshot.products, product.id)
+    refute MapSet.member?(snapshot.modifiers, modifier.id)
+    assert snapshot.boundary == future
+
+    other_snapshot = Delivest.Net.PublicOffers.stop_snapshot(other.id)
+    refute MapSet.member?(other_snapshot.products, product.id)
+    assert MapSet.member?(other_snapshot.modifiers, modifier.id)
+  end
+
+  test "stop expiring between its snapshot and promotion read remains a stale boundary" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    expired_during_build = DateTime.add(now, -1, :second)
+    future_promotion = DateTime.add(now, 60, :second)
+
+    assert Delivest.Storefront.menu_boundary(
+             expired_during_build,
+             [future_promotion, DateTime.add(now, -60, :second)],
+             now
+           ) == expired_during_build
   end
 
   test "inactive branch and invalid section never return 304", %{conn: conn} do

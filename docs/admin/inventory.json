@@ -21509,7 +21509,7 @@
       "in_flight_obligation": "S3 write may succeed before DB update; retry must reconcile object key, invalid images cancel",
       "on_disable": "No feature disable callback",
       "producer_scheduler": [
-        "lib/delivest/media/thumbnails.ex:9"
+        "lib/delivest/media/thumbnails.ex:20"
       ],
       "source": "lib/delivest/media/workers/thumbnail_worker.ex",
       "worker_process": "Delivest.Media.Workers.ThumbnailWorker"
@@ -36517,6 +36517,14 @@
       "owner": "lib/delivest/media/file.ex",
       "source": "lib/delivest/media/file.ex:21",
       "type": ":string"
+    },
+    {
+      "default": "%{}",
+      "field": "variant_keys",
+      "id": "schema:lib/delivest/media/file.ex:variant_keys",
+      "owner": "lib/delivest/media/file.ex",
+      "source": "lib/delivest/media/file.ex:22",
+      "type": ":map"
     },
     {
       "default": "not declared",

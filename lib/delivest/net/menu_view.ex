@@ -13,7 +13,8 @@ defmodule Delivest.Net.MenuView do
           is_active: boolean() | nil,
           tags: [%{id: binary(), name: String.t(), icon_url: String.t() | nil}],
           suggested: boolean(),
-          photo_url: String.t() | nil
+          photo_url: String.t() | nil,
+          photo_variants: [%{url: String.t(), width: pos_integer()}]
         }
 
   @type category :: %{
@@ -63,7 +64,8 @@ defmodule Delivest.Net.MenuView do
       is_active: Map.get(product, :is_active),
       tags: product |> Map.get(:tags, []) |> Enum.flat_map(&List.wrap(tags[&1])),
       suggested: Map.get(product, :suggested, false),
-      photo_url: Delivest.Media.thumb_url_from_file(product.media)
+      photo_url: Delivest.Media.thumb_url_from_file(product.media),
+      photo_variants: Delivest.Media.photo_variants_from_file(product.media)
     }
   end
 end

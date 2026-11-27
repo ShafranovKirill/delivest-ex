@@ -10,7 +10,7 @@ defmodule Delivest.Media.Workers.ThumbnailWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_id" => id}}) do
     case Media.get_file(id) do
-      %File{thumb_key: nil} = file -> store(file)
+      %File{} = file -> if Thumbnails.missing?(file), do: store(file), else: :ok
       _done_or_deleted -> :ok
     end
   end

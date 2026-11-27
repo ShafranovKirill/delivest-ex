@@ -135,6 +135,42 @@ unless Repo.exists?(from c in Category, where: c.id in ^category_ids) do
   end)
 end
 
+# Opt-in isolated media fixture for the report-only storefront performance workflow.
+# The workflow copies deterministic images into priv/static/images and serves them
+# through Phoenix Plug.Static; no S3 service or external image host is involved.
+if System.get_env("MENU_PERFORMANCE_PHOTO_FIXTURE") == "1" do
+  alias Delivest.Media.File, as: MediaFile
+
+  product = Repo.get_by!(Product, slug: "e2e-1")
+
+  variants =
+    for width <- [192, 384, 800], into: %{} do
+      {Integer.to_string(width), %{"key" => "menu-performance-#{width}.webp", "width" => width}}
+    end
+
+  media =
+    Repo.get_by(MediaFile, bucket: "images", key: "menu-performance.png") ||
+      %MediaFile{
+        bucket: "images",
+        key: "menu-performance.png",
+        original_name: "menu-performance.png",
+        mime_type: "image/png",
+        size: 13_708,
+        is_private: false,
+        context: :product,
+        owner_id: product.id
+      }
+      |> Repo.insert!()
+
+  media
+  |> Ecto.Changeset.change(thumb_key: "menu-performance-800.webp", variant_keys: variants)
+  |> Repo.update!()
+
+  product
+  |> Ecto.Changeset.change(media_id: media.id)
+  |> Repo.update!()
+end
+
 # A separate, inactive branch with enough orders to exercise the pickup board paging.
 # It stays inactive so it does not appear in the customer branch picker.
 board_branch =
